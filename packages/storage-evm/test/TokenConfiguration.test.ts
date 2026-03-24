@@ -290,7 +290,7 @@ describe('Token Configuration Tests', function () {
       // Try to update max supply - should fail
       await expect(
         token.connect(executorSigner).setMaxSupply(ethers.parseEther('2000')),
-      ).to.be.revertedWith('Max supply is fixed and cannot be changed');
+      ).to.be.revertedWith('supply fixed');
     });
 
     it('Should reject max supply update below current total supply', async function () {
@@ -343,7 +343,7 @@ describe('Token Configuration Tests', function () {
       await expect(
         token.connect(executorSigner).setMaxSupply(ethers.parseEther('400')),
       ).to.be.revertedWith(
-        'New max supply must be greater than current total supply',
+        'supply < total',
       );
     });
   });
@@ -585,7 +585,7 @@ describe('Token Configuration Tests', function () {
       // Alice is not whitelisted, cannot transfer
       await expect(
         token.connect(alice).transfer(bob.address, ethers.parseEther('10')),
-      ).to.be.revertedWith('Sender not whitelisted to transfer');
+      ).to.be.revertedWith('!send whitelist');
 
       // Whitelist alice for transfer
       await token
@@ -597,7 +597,7 @@ describe('Token Configuration Tests', function () {
       // Bob is not whitelisted to receive
       await expect(
         token.connect(alice).transfer(bob.address, ethers.parseEther('10')),
-      ).to.be.revertedWith('Recipient not whitelisted to receive');
+      ).to.be.revertedWith('!recv whitelist');
     });
 
     it('Should enforce receive whitelist', async function () {
@@ -609,7 +609,7 @@ describe('Token Configuration Tests', function () {
       // Bob not whitelisted to receive
       await expect(
         token.connect(alice).transfer(bob.address, ethers.parseEther('10')),
-      ).to.be.revertedWith('Recipient not whitelisted to receive');
+      ).to.be.revertedWith('!recv whitelist');
 
       // Whitelist bob to receive
       await token
@@ -667,7 +667,7 @@ describe('Token Configuration Tests', function () {
       // Currently whitelists are enforced
       await expect(
         token.connect(alice).transfer(bob.address, ethers.parseEther('10')),
-      ).to.be.revertedWith('Sender not whitelisted to transfer');
+      ).to.be.revertedWith('!send whitelist');
 
       // Disable transfer whitelist
       await expect(token.connect(executorSigner).setUseTransferWhitelist(false))
@@ -692,17 +692,17 @@ describe('Token Configuration Tests', function () {
         token
           .connect(executorSigner)
           .batchSetTransferWhitelist([alice.address, bob.address], [true]), // Mismatched lengths
-      ).to.be.revertedWith('Array lengths must match');
+      ).to.be.revertedWith('length mismatch');
     });
 
     it('Should only allow executor to update whitelists', async function () {
       await expect(
         token.connect(alice).batchSetTransferWhitelist([bob.address], [true]),
-      ).to.be.revertedWith('Only executor can update whitelist');
+      ).to.be.revertedWith('!executor');
 
       await expect(
         token.connect(bob).batchSetReceiveWhitelist([charlie.address], [true]),
-      ).to.be.revertedWith('Only executor can update whitelist');
+      ).to.be.revertedWith('!executor');
     });
   });
 
@@ -1084,7 +1084,7 @@ describe('Token Configuration Tests', function () {
 
       await expect(
         token.connect(alice).setPriceInUSD(5000000n),
-      ).to.be.revertedWith('Only executor can update price');
+      ).to.be.revertedWith('!executor');
     });
   });
 
@@ -1140,7 +1140,7 @@ describe('Token Configuration Tests', function () {
       // Alice cannot transfer
       await expect(
         token.connect(alice).transfer(bob.address, ethers.parseEther('10')),
-      ).to.be.revertedWith('Token transfers are disabled');
+      ).to.be.revertedWith('!transferable');
 
       // Enable transferability
       await expect(token.connect(executorSigner).setTransferable(true))
@@ -1383,10 +1383,10 @@ describe('Token Configuration Tests', function () {
         const token = await deployDecayingTokenForConfigTests();
 
         await expect(token.connect(alice).setDecayPercentage(250)).to.be.revertedWith(
-          'Only executor can update decay percentage',
+          '!executor',
         );
         await expect(token.connect(alice).setDecayInterval(7200)).to.be.revertedWith(
-          'Only executor can update decay interval',
+          '!executor',
         );
       });
 
@@ -1396,10 +1396,10 @@ describe('Token Configuration Tests', function () {
         await expect(
           token.connect(executorSigner).setDecayPercentage(10001),
         ).to.be.revertedWith(
-          'DecayingSpaceToken: decay percentage cannot exceed 100%',
+          'decay% > 100',
         );
         await expect(token.connect(executorSigner).setDecayInterval(0)).to.be
-          .revertedWith('DecayingSpaceToken: decay interval must be positive');
+          .revertedWith('!decay interval');
       });
     });
   });
@@ -1521,7 +1521,7 @@ describe('Token Configuration Tests', function () {
 
         await expect(
           token.connect(alice).mint(bob.address, mintAmount),
-        ).to.be.revertedWith('Only executor can mint');
+        ).to.be.revertedWith('!executor');
       });
 
       it('Should respect max supply when minting', async function () {
@@ -1529,7 +1529,7 @@ describe('Token Configuration Tests', function () {
 
         await expect(
           token.connect(executorSigner).mint(alice.address, overMintAmount),
-        ).to.be.revertedWith('Mint max supply problemchik blet');
+        ).to.be.revertedWith('supply exceeded');
       });
 
       it('Should allow minting up to max supply', async function () {
@@ -1765,7 +1765,7 @@ describe('Token Configuration Tests', function () {
           decayingToken
             .connect(executorSigner)
             .mint(alice.address, overMintAmount),
-        ).to.be.revertedWith('Mint max supply problemchik blet');
+        ).to.be.revertedWith('supply exceeded');
       });
 
       it('Should not allow non-executor to mint decaying tokens', async function () {
@@ -1773,7 +1773,7 @@ describe('Token Configuration Tests', function () {
 
         await expect(
           decayingToken.connect(bob).mint(alice.address, mintAmount),
-        ).to.be.revertedWith('Only executor can mint');
+        ).to.be.revertedWith('!executor');
       });
 
       it('Should apply decay before minting to existing holders', async function () {
@@ -1880,7 +1880,7 @@ describe('Token Configuration Tests', function () {
           ownershipToken
             .connect(executorSigner)
             .mint(charlie.address, mintAmount),
-        ).to.be.revertedWith('Can only mint to space members or executor');
+        ).to.be.revertedWith('!member/executor');
       });
 
       it('Should not allow non-executor to mint ownership tokens', async function () {
@@ -1888,7 +1888,7 @@ describe('Token Configuration Tests', function () {
 
         await expect(
           ownershipToken.connect(alice).mint(bob.address, mintAmount),
-        ).to.be.revertedWith('Only executor can mint');
+        ).to.be.revertedWith('!executor');
       });
 
       it('Should respect max supply for ownership tokens', async function () {
@@ -1898,7 +1898,7 @@ describe('Token Configuration Tests', function () {
           ownershipToken
             .connect(executorSigner)
             .mint(alice.address, overMintAmount),
-        ).to.be.revertedWith('Mint max supply problemchik blet');
+        ).to.be.revertedWith('supply exceeded');
       });
 
       it('Should allow minting to multiple space members', async function () {
@@ -1967,29 +1967,29 @@ describe('Token Configuration Tests', function () {
     it('Should restrict setMaxSupply to executor only', async function () {
       await expect(
         token.connect(alice).setMaxSupply(ethers.parseEther('20000')),
-      ).to.be.revertedWith('Only executor can update max supply');
+      ).to.be.revertedWith('!executor');
     });
 
     it('Should restrict setTransferable to executor only', async function () {
       await expect(
         token.connect(bob).setTransferable(false),
-      ).to.be.revertedWith('Only executor can update transferable');
+      ).to.be.revertedWith('!executor');
     });
 
     it('Should restrict setAutoMinting to executor only', async function () {
       await expect(
         token.connect(charlie).setAutoMinting(false),
-      ).to.be.revertedWith('Only executor or owner can update auto-minting');
+      ).to.be.revertedWith('!executor/owner');
     });
 
     it('Should restrict whitelist updates to executor only', async function () {
       await expect(
         token.connect(alice).setUseTransferWhitelist(true),
-      ).to.be.revertedWith('Only executor can update whitelist settings');
+      ).to.be.revertedWith('!executor');
 
       await expect(
         token.connect(bob).setUseReceiveWhitelist(true),
-      ).to.be.revertedWith('Only executor can update whitelist settings');
+      ).to.be.revertedWith('!executor');
     });
   });
 
@@ -2070,7 +2070,7 @@ describe('Token Configuration Tests', function () {
 
       it('Should not allow non-executor to archive token', async function () {
         await expect(token.connect(alice).setArchived(true)).to.be.revertedWith(
-          'Only executor can update archived status',
+          '!executor',
         );
       });
 
@@ -2080,7 +2080,7 @@ describe('Token Configuration Tests', function () {
 
         // Try to unarchive as non-executor
         await expect(token.connect(bob).setArchived(false)).to.be.revertedWith(
-          'Only executor can update archived status',
+          '!executor',
         );
       });
 
@@ -2093,7 +2093,7 @@ describe('Token Configuration Tests', function () {
           token
             .connect(executorSigner)
             .mint(bob.address, ethers.parseEther('100')),
-        ).to.be.revertedWith('Token is archived');
+        ).to.be.revertedWith('archived');
       });
 
       it('Should allow minting after unarchiving', async function () {
@@ -2118,7 +2118,7 @@ describe('Token Configuration Tests', function () {
         // Try to transfer - should fail
         await expect(
           token.connect(alice).transfer(bob.address, ethers.parseEther('10')),
-        ).to.be.revertedWith('Token is archived');
+        ).to.be.revertedWith('archived');
       });
 
       it('Should prevent executor transfers when archived', async function () {
@@ -2130,7 +2130,7 @@ describe('Token Configuration Tests', function () {
           token
             .connect(executorSigner)
             .transfer(bob.address, ethers.parseEther('10')),
-        ).to.be.revertedWith('Token is archived');
+        ).to.be.revertedWith('archived');
       });
 
       it('Should prevent transferFrom when archived', async function () {
@@ -2151,7 +2151,7 @@ describe('Token Configuration Tests', function () {
               charlie.address,
               ethers.parseEther('10'),
             ),
-        ).to.be.revertedWith('Token is archived');
+        ).to.be.revertedWith('archived');
       });
 
       it('Should allow transfers after unarchiving', async function () {
@@ -2258,7 +2258,7 @@ describe('Token Configuration Tests', function () {
           decayingToken
             .connect(executorSigner)
             .mint(bob.address, ethers.parseEther('100')),
-        ).to.be.revertedWith('Token is archived');
+        ).to.be.revertedWith('archived');
       });
 
       it('Should prevent decaying token transfers when archived', async function () {
@@ -2268,7 +2268,7 @@ describe('Token Configuration Tests', function () {
           decayingToken
             .connect(alice)
             .transfer(bob.address, ethers.parseEther('10')),
-        ).to.be.revertedWith('Token is archived');
+        ).to.be.revertedWith('archived');
       });
 
       it('Should allow decaying token operations after unarchiving', async function () {
@@ -2430,7 +2430,7 @@ describe('Token Configuration Tests', function () {
           ownershipToken
             .connect(executorSigner)
             .mint(bob.address, ethers.parseEther('5')),
-        ).to.be.revertedWith('Token is archived');
+        ).to.be.revertedWith('archived');
       });
 
       it('Should prevent ownership token transfers when archived', async function () {
@@ -2440,7 +2440,7 @@ describe('Token Configuration Tests', function () {
           ownershipToken
             .connect(executorSigner)
             .transfer(bob.address, ethers.parseEther('5')),
-        ).to.be.revertedWith('Token is archived');
+        ).to.be.revertedWith('archived');
       });
 
       it('Should prevent transferToEscrow when archived', async function () {
@@ -2450,7 +2450,7 @@ describe('Token Configuration Tests', function () {
           ownershipToken
             .connect(alice)
             .transferToEscrow(1, ethers.parseEther('1')),
-        ).to.be.revertedWith('Token is archived');
+        ).to.be.revertedWith('archived');
       });
 
       it('Should allow ownership token operations after unarchiving', async function () {
@@ -2531,7 +2531,7 @@ describe('Token Configuration Tests', function () {
           token
             .connect(executorSigner)
             .transfer(alice.address, ethers.parseEther('100')),
-        ).to.be.revertedWith('Token is archived');
+        ).to.be.revertedWith('archived');
       });
 
       it('Should allow auto-mint transfers after unarchiving', async function () {
@@ -2613,7 +2613,7 @@ describe('Token Configuration Tests', function () {
         // Even though alice is whitelisted, archived prevents transfer
         await expect(
           token.connect(alice).transfer(bob.address, ethers.parseEther('10')),
-        ).to.be.revertedWith('Token is archived');
+        ).to.be.revertedWith('archived');
       });
 
       it('Should allow updating whitelists when archived', async function () {
@@ -2693,14 +2693,14 @@ describe('Token Configuration Tests', function () {
       // Alice cannot transfer to anyone (soulbound)
       await expect(
         token.connect(alice).transfer(bob.address, ethers.parseEther('5')),
-      ).to.be.revertedWith('Token transfers are disabled');
+      ).to.be.revertedWith('!transferable');
 
       // Executor cannot transfer to non-whitelisted bob
       await expect(
         token
           .connect(executorSigner)
           .transfer(bob.address, ethers.parseEther('10')),
-      ).to.be.revertedWith('Recipient not whitelisted to receive');
+      ).to.be.revertedWith('!recv whitelist');
     });
 
     it('Should handle KYC token with both whitelists', async function () {
@@ -2752,7 +2752,7 @@ describe('Token Configuration Tests', function () {
       // Alice cannot transfer (not whitelisted)
       await expect(
         token.connect(alice).transfer(bob.address, ethers.parseEther('10')),
-      ).to.be.revertedWith('Sender not whitelisted to transfer');
+      ).to.be.revertedWith('!send whitelist');
 
       // Whitelist alice and bob
       await token
@@ -3097,7 +3097,7 @@ describe('Token Configuration Tests', function () {
       it('Should only allow executor to add spaces to transfer whitelist', async function () {
         await expect(
           token.connect(alice).batchAddTransferWhitelistSpaces([secondSpaceId]),
-        ).to.be.revertedWith('Only executor can update whitelist');
+        ).to.be.revertedWith('!executor');
       });
 
       it('Should only allow executor to remove spaces from transfer whitelist', async function () {
@@ -3109,7 +3109,7 @@ describe('Token Configuration Tests', function () {
           token
             .connect(bob)
             .batchRemoveTransferWhitelistSpaces([secondSpaceId]),
-        ).to.be.revertedWith('Only executor can update whitelist');
+        ).to.be.revertedWith('!executor');
       });
 
       it('Should only allow executor to add spaces to receive whitelist', async function () {
@@ -3117,7 +3117,7 @@ describe('Token Configuration Tests', function () {
           token
             .connect(charlie)
             .batchAddReceiveWhitelistSpaces([secondSpaceId]),
-        ).to.be.revertedWith('Only executor can update whitelist');
+        ).to.be.revertedWith('!executor');
       });
 
       it('Should only allow executor to remove spaces from receive whitelist', async function () {
@@ -3129,7 +3129,7 @@ describe('Token Configuration Tests', function () {
           token
             .connect(alice)
             .batchRemoveReceiveWhitelistSpaces([secondSpaceId]),
-        ).to.be.revertedWith('Only executor can update whitelist');
+        ).to.be.revertedWith('!executor');
       });
     });
 
@@ -3266,7 +3266,7 @@ describe('Token Configuration Tests', function () {
     it('Should only allow executor to set price with currency', async function () {
       await expect(
         token.connect(alice).setPriceWithCurrency(2000000n, alice.address),
-      ).to.be.revertedWith('Only executor can update price');
+      ).to.be.revertedWith('!executor');
     });
 
     it('Should keep tokenPrice and priceInUSD in sync', async function () {
@@ -3418,25 +3418,25 @@ describe('Token Configuration Tests', function () {
     it('Should not allow non-executor to change name', async function () {
       await expect(
         token.connect(alice).setTokenName('Hacked Name'),
-      ).to.be.revertedWith('Only executor can update token name');
+      ).to.be.revertedWith('!executor');
     });
 
     it('Should not allow non-executor to change symbol', async function () {
       await expect(
         token.connect(bob).setTokenSymbol('HACK'),
-      ).to.be.revertedWith('Only executor can update token symbol');
+      ).to.be.revertedWith('!executor');
     });
 
     it('Should not allow setting empty name', async function () {
       await expect(
         token.connect(executorSigner).setTokenName(''),
-      ).to.be.revertedWith('Name cannot be empty');
+      ).to.be.revertedWith('empty name');
     });
 
     it('Should not allow setting empty symbol', async function () {
       await expect(
         token.connect(executorSigner).setTokenSymbol(''),
-      ).to.be.revertedWith('Symbol cannot be empty');
+      ).to.be.revertedWith('empty symbol');
     });
 
     it('Should emit correct old values in events after multiple changes', async function () {
@@ -3677,7 +3677,7 @@ describe('Token Configuration Tests', function () {
 
       await expect(
         token.connect(alice).transfer(bob.address, ethers.parseEther('11')),
-      ).to.be.revertedWith('Insufficient credit');
+      ).to.be.revertedWith('!credit');
     });
 
     it('Should auto-repay debt when debtor receives tokens', async function () {
@@ -3732,14 +3732,14 @@ describe('Token Configuration Tests', function () {
       expect(await token.creditLimitOf(alice.address)).to.equal(0);
 
       await expect(token.connect(alice).setDefaultCreditLimit(1)).to.be.revertedWith(
-        'Only executor can update default credit limit',
+        '!executor',
       );
       await expect(
         token.connect(bob).batchAddCreditWhitelistSpaces([spaceId]),
-      ).to.be.revertedWith('Only executor can update credit whitelist');
+      ).to.be.revertedWith('!executor');
       await expect(
         token.connect(charlie).batchRemoveCreditWhitelistSpaces([spaceId]),
-      ).to.be.revertedWith('Only executor can update credit whitelist');
+      ).to.be.revertedWith('!executor');
     });
   });
 
@@ -3956,7 +3956,7 @@ describe('Token Configuration Tests', function () {
       await token.connect(alice).buyTokens(ethers.parseEther('5'));
       await expect(
         token.connect(alice).buyTokens(ethers.parseEther('1')),
-      ).to.be.revertedWith('Not enough tokens left');
+      ).to.be.revertedWith('sale cap');
     });
 
     it('Should default to issuer-space-only purchases', async function () {
@@ -3983,7 +3983,7 @@ describe('Token Configuration Tests', function () {
 
       await expect(
         token.connect(charlie).buyTokens(ethers.parseEther('1')),
-      ).to.be.revertedWith('Buyer not eligible to purchase');
+      ).to.be.revertedWith('!eligible');
     });
 
     it('Should allow custom-space purchase whitelist mode', async function () {
@@ -4011,7 +4011,7 @@ describe('Token Configuration Tests', function () {
         .setPurchaseEligibilityMode(1);
       await expect(
         token.connect(alice).buyTokens(ethers.parseEther('1')),
-      ).to.be.revertedWith('Buyer not eligible to purchase');
+      ).to.be.revertedWith('!eligible');
     });
 
     it('Should allow all-spaces purchase mode and runtime reconfiguration', async function () {
@@ -4035,7 +4035,7 @@ describe('Token Configuration Tests', function () {
       // Default mode is issuer-space-only, so Charlie (not in issuer space) cannot buy.
       await expect(
         token.connect(charlie).buyTokens(ethers.parseEther('1')),
-      ).to.be.revertedWith('Buyer not eligible to purchase');
+      ).to.be.revertedWith('!eligible');
 
       await expect(token.connect(executorSigner).setPurchaseEligibilityMode(2))
         .to.emit(token, 'PurchaseEligibilityModeUpdated')
@@ -4068,7 +4068,7 @@ describe('Token Configuration Tests', function () {
             1_000_000n,
             ethers.parseEther('10'),
           ),
-      ).to.be.revertedWith('Only executor can configure token sale');
+      ).to.be.revertedWith('!executor');
     });
   });
 });
