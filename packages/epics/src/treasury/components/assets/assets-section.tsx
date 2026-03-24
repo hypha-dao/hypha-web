@@ -82,29 +82,31 @@ export const AssetsSection: FC<AssetSectionProps> = ({
         </label>
       </SectionFilter>
       <div className="flex gap-2 justify-end">
-        {isDisabled ? (
-          <Button
-            colorVariant="accent"
-            variant="outline"
-            disabled
-            title={tooltipMessage || ''}
-            className="cursor-not-allowed"
-          >
+        {/*
+          Original link button preserved for reference. Uncomment to re-enable navigation:
+        
+        <Link
+          href={`${basePath}/create/issue-new-token?hideBack=true`}
+          scroll={false}
+          title={tooltipMessage || ''}
+        >
+          <Button colorVariant="accent" variant="outline">
             <RadiobuttonIcon />
             {tTreasury('newToken')}
           </Button>
-        ) : (
-          <Link
-            href={`${basePath}/create/issue-new-token?hideBack=true`}
-            scroll={false}
-            title={tooltipMessage || ''}
-          >
-            <Button colorVariant="accent" variant="outline">
-              <RadiobuttonIcon />
-              {tTreasury('newToken')}
-            </Button>
-          </Link>
-        )}
+        </Link>
+        */}
+        {/* Disabled duplicate as requested */}
+        <Button
+          colorVariant="accent"
+          variant="outline"
+          disabled
+          title={tooltipMessage || ''}
+          className="cursor-not-allowed"
+        >
+          <RadiobuttonIcon />
+          New Token
+        </Button>
         <Button
           className={cn(isDisabled && 'cursor-not-allowed')}
           title={tooltipMessage || ''}
