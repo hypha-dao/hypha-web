@@ -196,11 +196,7 @@ contract RegularSpaceToken is
     // Initialize mutual credit
     defaultCreditLimit = _defaultCreditLimit;
     for (uint256 i = 0; i < _initialCreditWhitelistSpaceIds.length; i++) {
-      uint256 sid = _initialCreditWhitelistSpaceIds[i];
-      if (!isCreditWhitelistedSpace[sid]) {
-        isCreditWhitelistedSpace[sid] = true;
-        _creditWhitelistedSpaceIds.push(sid);
-      }
+      _addSpaceToList(_creditWhitelistedSpaceIds, isCreditWhitelistedSpace, _initialCreditWhitelistSpaceIds[i]);
     }
 
     // Optional initial sale configuration. Keeping zero values means "sale disabled".
@@ -213,15 +209,11 @@ contract RegularSpaceToken is
 
     require(
       _purchaseEligibilityMode <= PURCHASE_MODE_ALL_SPACES,
-      'Invalid purchase eligibility mode'
+      'bad mode'
     );
     purchaseEligibilityMode = _purchaseEligibilityMode;
     for (uint256 i = 0; i < _initialPurchaseWhitelistSpaceIds.length; i++) {
-      uint256 sid = _initialPurchaseWhitelistSpaceIds[i];
-      if (!isPurchaseWhitelistedSpace[sid]) {
-        isPurchaseWhitelistedSpace[sid] = true;
-        _purchaseWhitelistedSpaceIds.push(sid);
-      }
+      _addSpaceToList(_purchaseWhitelistedSpaceIds, isPurchaseWhitelistedSpace, _initialPurchaseWhitelistSpaceIds[i]);
     }
   }
 
@@ -230,119 +222,77 @@ contract RegularSpaceToken is
   ) internal override onlyOwner {}
 
   function mint(address to, uint256 amount) public virtual {
-    require(msg.sender == executor, 'Only executor can mint');
+    require(msg.sender == executor, '!executor');
     _mintWithSupplyChecks(to, amount);
   }
 
   function _mintWithSupplyChecks(address to, uint256 amount) internal virtual {
-    require(!archived, 'Token is archived');
+    require(!archived, 'archived');
     // Check against maximum supply
     require(
       maxSupply == 0 || totalSupply() + amount <= maxSupply,
-      'Mint max supply problemchik blet'
+      'supply exceeded'
     );
 
     _mint(to, amount);
   }
 
-  // Override transfer function to respect transferability and whitelists
+  function _validateTransferAccess(
+    address from,
+    address to,
+    address spender
+  ) internal view virtual {
+    require(!archived, 'archived');
+    require(transferable || spender == executor, '!transferable');
+    if (from != executor && useTransferWhitelist) {
+      require(
+        canTransfer[from] || _isInTransferWhitelistedSpace(from),
+        '!send whitelist'
+      );
+    }
+    if (to != executor && useReceiveWhitelist) {
+      require(
+        canReceive[to] || _isInReceiveWhitelistedSpace(to),
+        '!recv whitelist'
+      );
+    }
+  }
+
+  function _autoMintIfNeeded(address account, uint256 amount) internal virtual {
+    if (account == executor && autoMinting) {
+      uint256 bal = balanceOf(account);
+      if (bal < amount) {
+        _mintWithSupplyChecks(account, amount - bal);
+      }
+    }
+  }
+
   function transfer(
     address to,
     uint256 amount
   ) public virtual override returns (bool) {
     address sender = _msgSender();
-    require(!archived, 'Token is archived');
-    require(transferable || sender == executor, 'Token transfers are disabled');
-
-    // Executor always bypasses whitelist checks
-    if (sender != executor) {
-      // Check transfer whitelist (direct or space-based)
-      if (useTransferWhitelist) {
-        require(
-          canTransfer[sender] || _isInTransferWhitelistedSpace(sender),
-          'Sender not whitelisted to transfer'
-        );
-      }
-    }
-
-    // Executor can always receive tokens
-    if (to != executor) {
-      // Check receive whitelist (direct or space-based)
-      if (useReceiveWhitelist) {
-        require(
-          canReceive[to] || _isInReceiveWhitelistedSpace(to),
-          'Recipient not whitelisted to receive'
-        );
-      }
-    }
-
-    // If executor is transferring and auto-minting is enabled, ensure they have enough balance, minting if necessary
-    if (sender == executor && autoMinting) {
-      uint256 senderBalance = balanceOf(sender);
-      if (senderBalance < amount) {
-        uint256 amountToMint = amount - senderBalance;
-        _mintWithSupplyChecks(sender, amountToMint);
-      }
-    }
-
+    _validateTransferAccess(sender, to, sender);
+    _autoMintIfNeeded(sender, amount);
     _beforeCreditTransfer(sender, amount);
     _transfer(sender, to, amount);
     _afterCreditTransfer(to, amount);
     return true;
   }
 
-  // Override transferFrom function to respect transferability and whitelists
   function transferFrom(
     address from,
     address to,
     uint256 amount
   ) public virtual override returns (bool) {
     address spender = _msgSender();
-    require(!archived, 'Token is archived');
-    require(
-      transferable || spender == executor,
-      'Token transfers are disabled'
-    );
-
-    // Executor always bypasses whitelist checks
-    if (from != executor) {
-      // Check transfer whitelist (direct or space-based)
-      if (useTransferWhitelist) {
-        require(
-          canTransfer[from] || _isInTransferWhitelistedSpace(from),
-          'Sender not whitelisted to transfer'
-        );
-      }
-    }
-
-    // Executor can always receive tokens
-    if (to != executor) {
-      // Check receive whitelist (direct or space-based)
-      if (useReceiveWhitelist) {
-        require(
-          canReceive[to] || _isInReceiveWhitelistedSpace(to),
-          'Recipient not whitelisted to receive'
-        );
-      }
-    }
-
-    // If executor is the one being transferred from and auto-minting is enabled, ensure they have enough balance, minting if necessary
-    if (from == executor && autoMinting) {
-      uint256 fromBalance = balanceOf(from);
-      if (fromBalance < amount) {
-        uint256 amountToMint = amount - fromBalance;
-        _mintWithSupplyChecks(from, amountToMint);
-      }
-    }
-
+    _validateTransferAccess(from, to, spender);
+    _autoMintIfNeeded(from, amount);
     _beforeCreditTransfer(from, amount);
-
     if (spender == transferHelper) {
-      // Skip allowance check for TransferHelper because the helper contract ensures the user's intent.
     } else {
       _spendAllowance(from, spender, amount);
     }
-
     _transfer(from, to, amount);
     _afterCreditTransfer(to, amount);
     return true;
@@ -353,11 +303,11 @@ contract RegularSpaceToken is
    * @param newMaxSupply The new maximum supply
    */
   function setMaxSupply(uint256 newMaxSupply) external virtual {
-    require(msg.sender == executor, 'Only executor can update max supply');
-    require(!fixedMaxSupply, 'Max supply is fixed and cannot be changed');
+    require(msg.sender == executor, '!executor');
+    require(!fixedMaxSupply, 'supply fixed');
     require(
       newMaxSupply == 0 || newMaxSupply >= totalSupply(),
-      'New max supply must be greater than current total supply'
+      'supply < total'
     );
 
     uint256 oldMaxSupply = maxSupply;
@@ -370,7 +320,7 @@ contract RegularSpaceToken is
    * @param _transferable Whether tokens can be transferred
    */
   function setTransferable(bool _transferable) external virtual {
-    require(msg.sender == executor, 'Only executor can update transferable');
+    require(msg.sender == executor, '!executor');
     transferable = _transferable;
     emit TransferableUpdated(_transferable);
   }
@@ -380,7 +330,7 @@ contract RegularSpaceToken is
    * @param _archived Whether token is archived (disables minting and transfers)
    */
   function setArchived(bool _archived) external virtual {
-    require(msg.sender == executor, 'Only executor can update archived status');
+    require(msg.sender == executor, '!executor');
     archived = _archived;
     emit ArchivedStatusUpdated(_archived);
   }
@@ -412,8 +362,8 @@ contract RegularSpaceToken is
    * @param newName The new token name
    */
   function setTokenName(string memory newName) external virtual {
-    require(msg.sender == executor, 'Only executor can update token name');
-    require(bytes(newName).length > 0, 'Name cannot be empty');
+    require(msg.sender == executor, '!executor');
+    require(bytes(newName).length > 0, 'empty name');
     string memory oldName = name();
     _customName = newName;
     emit TokenNameUpdated(oldName, newName);
@@ -424,8 +374,8 @@ contract RegularSpaceToken is
    * @param newSymbol The new token symbol
    */
   function setTokenSymbol(string memory newSymbol) external virtual {
-    require(msg.sender == executor, 'Only executor can update token symbol');
-    require(bytes(newSymbol).length > 0, 'Symbol cannot be empty');
+    require(msg.sender == executor, '!executor');
+    require(bytes(newSymbol).length > 0, 'empty symbol');
     string memory oldSymbol = symbol();
     _customSymbol = newSymbol;
     emit TokenSymbolUpdated(oldSymbol, newSymbol);
@@ -438,7 +388,7 @@ contract RegularSpaceToken is
   function setAutoMinting(bool _autoMinting) external virtual {
     require(
       msg.sender == executor || msg.sender == owner(),
-      'Only executor or owner can update auto-minting'
+      '!executor/owner'
     );
     autoMinting = _autoMinting;
     emit AutoMintingUpdated(_autoMinting);
@@ -449,7 +399,7 @@ contract RegularSpaceToken is
    * @param newPrice The new price in USD (with 6 decimals)
    */
   function setPriceInUSD(uint256 newPrice) external virtual {
-    require(msg.sender == executor, 'Only executor can update price');
+    require(msg.sender == executor, '!executor');
     uint256 oldPrice = priceInUSD;
     priceInUSD = newPrice;
     tokenPrice = newPrice;
@@ -468,7 +418,7 @@ contract RegularSpaceToken is
     uint256 newPrice,
     address currencyFeed
   ) external virtual {
-    require(msg.sender == executor, 'Only executor can update price');
+    require(msg.sender == executor, '!executor');
     uint256 oldPrice = priceInUSD;
     priceInUSD = newPrice;
     tokenPrice = newPrice;
@@ -488,12 +438,12 @@ contract RegularSpaceToken is
     uint256 _paymentTokenPricePerToken,
     uint256 _tokensForSale
   ) external {
-    require(msg.sender == executor, 'Only executor can configure token sale');
-    require(_paymentToken != address(0), 'Payment token cannot be zero address');
-    require(_paymentTokenPricePerToken > 0, 'Price must be greater than zero');
+    require(msg.sender == executor, '!executor');
+    require(_paymentToken != address(0), '!zero addr');
+    require(_paymentTokenPricePerToken > 0, '!zero price');
     require(
       _tokensForSale >= tokensSold,
-      'Tokens for sale cannot be less than already sold'
+      'sale < sold'
     );
 
     paymentToken = _paymentToken;
@@ -518,20 +468,20 @@ contract RegularSpaceToken is
    * @param tokenAmount Amount of tokens to buy (18 decimals)
    */
   function buyTokens(uint256 tokenAmount) external {
-    require(!archived, 'Token is archived');
-    require(paymentToken != address(0), 'Token sale is not configured');
-    require(paymentTokenPricePerToken > 0, 'Token sale price not set');
-    require(tokensForSale > 0, 'Token sale is disabled');
-    require(tokenAmount > 0, 'Token amount must be greater than zero');
-    require(tokensSold + tokenAmount <= tokensForSale, 'Not enough tokens left');
+    require(!archived, 'archived');
+    require(paymentToken != address(0), '!sale');
+    require(paymentTokenPricePerToken > 0, '!sale price');
+    require(tokensForSale > 0, 'sale disabled');
+    require(tokenAmount > 0, '!zero amount');
+    require(tokensSold + tokenAmount <= tokensForSale, 'sale cap');
     require(
       canAccountPurchase(msg.sender),
-      'Buyer not eligible to purchase'
+      '!eligible'
     );
 
     // Convert token amount (18 decimals) into payment-token amount.
     uint256 paymentAmount = (tokenAmount * paymentTokenPricePerToken) / 1e18;
-    require(paymentAmount > 0, 'Payment amount too small');
+    require(paymentAmount > 0, 'amount too small');
 
     tokensSold += tokenAmount;
     IERC20(paymentToken).safeTransferFrom(msg.sender, executor, paymentAmount);
@@ -573,19 +523,17 @@ contract RegularSpaceToken is
   function setPurchaseEligibilityMode(uint8 mode) external {
     require(
       msg.sender == executor,
-      'Only executor can update purchase eligibility mode'
+      '!executor'
     );
-    require(mode <= PURCHASE_MODE_ALL_SPACES, 'Invalid purchase eligibility mode');
+    require(mode <= PURCHASE_MODE_ALL_SPACES, 'bad mode');
     purchaseEligibilityMode = mode;
     emit PurchaseEligibilityModeUpdated(mode);
   }
 
   function batchAddPurchaseWhitelistSpaces(uint256[] calldata spaceIds) external {
-    require(msg.sender == executor, 'Only executor can update purchase whitelist');
+    require(msg.sender == executor, '!executor');
     for (uint256 i = 0; i < spaceIds.length; i++) {
-      if (!isPurchaseWhitelistedSpace[spaceIds[i]]) {
-        isPurchaseWhitelistedSpace[spaceIds[i]] = true;
-        _purchaseWhitelistedSpaceIds.push(spaceIds[i]);
+      if (_addSpaceToList(_purchaseWhitelistedSpaceIds, isPurchaseWhitelistedSpace, spaceIds[i])) {
         emit PurchaseWhitelistSpaceAdded(spaceIds[i]);
       }
     }
@@ -594,21 +542,10 @@ contract RegularSpaceToken is
   function batchRemovePurchaseWhitelistSpaces(
     uint256[] calldata spaceIds
   ) external {
-    require(msg.sender == executor, 'Only executor can update purchase whitelist');
-    for (uint256 j = 0; j < spaceIds.length; j++) {
-      uint256 sid = spaceIds[j];
-      if (isPurchaseWhitelistedSpace[sid]) {
-        isPurchaseWhitelistedSpace[sid] = false;
-        for (uint256 i = 0; i < _purchaseWhitelistedSpaceIds.length; i++) {
-          if (_purchaseWhitelistedSpaceIds[i] == sid) {
-            _purchaseWhitelistedSpaceIds[i] = _purchaseWhitelistedSpaceIds[
-              _purchaseWhitelistedSpaceIds.length - 1
-            ];
-            _purchaseWhitelistedSpaceIds.pop();
-            break;
-          }
-        }
-        emit PurchaseWhitelistSpaceRemoved(sid);
+    require(msg.sender == executor, '!executor');
+    for (uint256 i = 0; i < spaceIds.length; i++) {
+      if (_removeSpaceFromList(_purchaseWhitelistedSpaceIds, isPurchaseWhitelistedSpace, spaceIds[i])) {
+        emit PurchaseWhitelistSpaceRemoved(spaceIds[i]);
       }
     }
   }
@@ -630,8 +567,8 @@ contract RegularSpaceToken is
     address[] calldata accounts,
     bool[] calldata allowed
   ) external virtual {
-    require(msg.sender == executor, 'Only executor can update whitelist');
-    require(accounts.length == allowed.length, 'Array lengths must match');
+    require(msg.sender == executor, '!executor');
+    require(accounts.length == allowed.length, 'length mismatch');
 
     for (uint256 i = 0; i < accounts.length; i++) {
       canTransfer[accounts[i]] = allowed[i];
@@ -648,8 +585,8 @@ contract RegularSpaceToken is
     address[] calldata accounts,
     bool[] calldata allowed
   ) external virtual {
-    require(msg.sender == executor, 'Only executor can update whitelist');
-    require(accounts.length == allowed.length, 'Array lengths must match');
+    require(msg.sender == executor, '!executor');
+    require(accounts.length == allowed.length, 'length mismatch');
 
     for (uint256 i = 0; i < accounts.length; i++) {
       canReceive[accounts[i]] = allowed[i];
@@ -664,7 +601,7 @@ contract RegularSpaceToken is
   function setUseTransferWhitelist(bool enabled) external virtual {
     require(
       msg.sender == executor,
-      'Only executor can update whitelist settings'
+      '!executor'
     );
     useTransferWhitelist = enabled;
     emit UseTransferWhitelistUpdated(enabled);
@@ -677,7 +614,7 @@ contract RegularSpaceToken is
   function setUseReceiveWhitelist(bool enabled) external virtual {
     require(
       msg.sender == executor,
-      'Only executor can update whitelist settings'
+      '!executor'
     );
     useReceiveWhitelist = enabled;
     emit UseReceiveWhitelistUpdated(enabled);
@@ -690,7 +627,7 @@ contract RegularSpaceToken is
   function setTransferHelper(address _transferHelper) external virtual {
     require(
       msg.sender == executor || msg.sender == owner(),
-      'Only executor or owner can set transfer helper'
+      '!executor/owner'
     );
     transferHelper = _transferHelper;
   }
@@ -719,30 +656,20 @@ contract RegularSpaceToken is
   function batchAddTransferWhitelistSpaces(
     uint256[] calldata spaceIds
   ) external virtual {
-    require(msg.sender == executor, 'Only executor can update whitelist');
-
+    require(msg.sender == executor, '!executor');
     for (uint256 i = 0; i < spaceIds.length; i++) {
-      if (!isTransferWhitelistedSpace[spaceIds[i]]) {
-        isTransferWhitelistedSpace[spaceIds[i]] = true;
-        _transferWhitelistedSpaceIds.push(spaceIds[i]);
+      if (_addSpaceToList(_transferWhitelistedSpaceIds, isTransferWhitelistedSpace, spaceIds[i])) {
         emit TransferWhitelistSpaceAdded(spaceIds[i]);
       }
     }
   }
 
-  /**
-   * @dev Batch add spaces to receive whitelist
-   * @param spaceIds Array of space IDs to add
-   */
   function batchAddReceiveWhitelistSpaces(
     uint256[] calldata spaceIds
   ) external virtual {
-    require(msg.sender == executor, 'Only executor can update whitelist');
-
+    require(msg.sender == executor, '!executor');
     for (uint256 i = 0; i < spaceIds.length; i++) {
-      if (!isReceiveWhitelistedSpace[spaceIds[i]]) {
-        isReceiveWhitelistedSpace[spaceIds[i]] = true;
-        _receiveWhitelistedSpaceIds.push(spaceIds[i]);
+      if (_addSpaceToList(_receiveWhitelistedSpaceIds, isReceiveWhitelistedSpace, spaceIds[i])) {
         emit ReceiveWhitelistSpaceAdded(spaceIds[i]);
       }
     }
@@ -755,51 +682,21 @@ contract RegularSpaceToken is
   function batchRemoveTransferWhitelistSpaces(
     uint256[] calldata spaceIds
   ) external virtual {
-    require(msg.sender == executor, 'Only executor can update whitelist');
-
-    for (uint256 j = 0; j < spaceIds.length; j++) {
-      uint256 _spaceId = spaceIds[j];
-      if (isTransferWhitelistedSpace[_spaceId]) {
-        isTransferWhitelistedSpace[_spaceId] = false;
-        // Remove from array (swap and pop)
-        for (uint256 i = 0; i < _transferWhitelistedSpaceIds.length; i++) {
-          if (_transferWhitelistedSpaceIds[i] == _spaceId) {
-            _transferWhitelistedSpaceIds[i] = _transferWhitelistedSpaceIds[
-              _transferWhitelistedSpaceIds.length - 1
-            ];
-            _transferWhitelistedSpaceIds.pop();
-            break;
-          }
-        }
-        emit TransferWhitelistSpaceRemoved(_spaceId);
+    require(msg.sender == executor, '!executor');
+    for (uint256 i = 0; i < spaceIds.length; i++) {
+      if (_removeSpaceFromList(_transferWhitelistedSpaceIds, isTransferWhitelistedSpace, spaceIds[i])) {
+        emit TransferWhitelistSpaceRemoved(spaceIds[i]);
       }
     }
   }
 
-  /**
-   * @dev Batch remove spaces from receive whitelist
-   * @param spaceIds Array of space IDs to remove
-   */
   function batchRemoveReceiveWhitelistSpaces(
     uint256[] calldata spaceIds
   ) external virtual {
-    require(msg.sender == executor, 'Only executor can update whitelist');
-
-    for (uint256 j = 0; j < spaceIds.length; j++) {
-      uint256 _spaceId = spaceIds[j];
-      if (isReceiveWhitelistedSpace[_spaceId]) {
-        isReceiveWhitelistedSpace[_spaceId] = false;
-        // Remove from array (swap and pop)
-        for (uint256 i = 0; i < _receiveWhitelistedSpaceIds.length; i++) {
-          if (_receiveWhitelistedSpaceIds[i] == _spaceId) {
-            _receiveWhitelistedSpaceIds[i] = _receiveWhitelistedSpaceIds[
-              _receiveWhitelistedSpaceIds.length - 1
-            ];
-            _receiveWhitelistedSpaceIds.pop();
-            break;
-          }
-        }
-        emit ReceiveWhitelistSpaceRemoved(_spaceId);
+    require(msg.sender == executor, '!executor');
+    for (uint256 i = 0; i < spaceIds.length; i++) {
+      if (_removeSpaceFromList(_receiveWhitelistedSpaceIds, isReceiveWhitelistedSpace, spaceIds[i])) {
+        emit ReceiveWhitelistSpaceRemoved(spaceIds[i]);
       }
     }
   }
@@ -836,36 +733,13 @@ contract RegularSpaceToken is
   function _isInTransferWhitelistedSpace(
     address account
   ) internal view returns (bool) {
-    for (uint256 i = 0; i < _transferWhitelistedSpaceIds.length; i++) {
-      uint256 whitelistedSpaceId = _transferWhitelistedSpaceIds[i];
-      if (
-        isTransferWhitelistedSpace[whitelistedSpaceId] &&
-        IDAOSpaceFactory(spacesContract).isMember(whitelistedSpaceId, account)
-      ) {
-        return true;
-      }
-    }
-    return false;
+    return _isAccountInSpaceList(_transferWhitelistedSpaceIds, isTransferWhitelistedSpace, account);
   }
 
-  /**
-   * @dev Check if an address is a member of any receive-whitelisted space
-   * @param account The address to check
-   * @return True if account is member of any whitelisted space
-   */
   function _isInReceiveWhitelistedSpace(
     address account
   ) internal view returns (bool) {
-    for (uint256 i = 0; i < _receiveWhitelistedSpaceIds.length; i++) {
-      uint256 whitelistedSpaceId = _receiveWhitelistedSpaceIds[i];
-      if (
-        isReceiveWhitelistedSpace[whitelistedSpaceId] &&
-        IDAOSpaceFactory(spacesContract).isMember(whitelistedSpaceId, account)
-      ) {
-        return true;
-      }
-    }
-    return false;
+    return _isAccountInSpaceList(_receiveWhitelistedSpaceIds, isReceiveWhitelistedSpace, account);
   }
 
   /**
@@ -974,7 +848,7 @@ contract RegularSpaceToken is
   function setDefaultCreditLimit(uint256 _limit) external {
     require(
       msg.sender == executor,
-      'Only executor can update default credit limit'
+      '!executor'
     );
     uint256 old = defaultCreditLimit;
     defaultCreditLimit = _limit;
@@ -989,14 +863,12 @@ contract RegularSpaceToken is
     uint256 _limit,
     uint256[] calldata spaceIds
   ) external {
-    require(msg.sender == executor, 'Only executor can enable credit');
+    require(msg.sender == executor, '!executor');
     uint256 old = defaultCreditLimit;
     defaultCreditLimit = _limit;
     emit DefaultCreditLimitUpdated(old, _limit);
     for (uint256 i = 0; i < spaceIds.length; i++) {
-      if (!isCreditWhitelistedSpace[spaceIds[i]]) {
-        isCreditWhitelistedSpace[spaceIds[i]] = true;
-        _creditWhitelistedSpaceIds.push(spaceIds[i]);
+      if (_addSpaceToList(_creditWhitelistedSpaceIds, isCreditWhitelistedSpace, spaceIds[i])) {
         emit CreditWhitelistSpaceAdded(spaceIds[i]);
       }
     }
@@ -1007,12 +879,10 @@ contract RegularSpaceToken is
   ) external {
     require(
       msg.sender == executor,
-      'Only executor can update credit whitelist'
+      '!executor'
     );
     for (uint256 i = 0; i < spaceIds.length; i++) {
-      if (!isCreditWhitelistedSpace[spaceIds[i]]) {
-        isCreditWhitelistedSpace[spaceIds[i]] = true;
-        _creditWhitelistedSpaceIds.push(spaceIds[i]);
+      if (_addSpaceToList(_creditWhitelistedSpaceIds, isCreditWhitelistedSpace, spaceIds[i])) {
         emit CreditWhitelistSpaceAdded(spaceIds[i]);
       }
     }
@@ -1023,24 +893,66 @@ contract RegularSpaceToken is
   ) external {
     require(
       msg.sender == executor,
-      'Only executor can update credit whitelist'
+      '!executor'
     );
-    for (uint256 j = 0; j < spaceIds.length; j++) {
-      uint256 sid = spaceIds[j];
-      if (isCreditWhitelistedSpace[sid]) {
-        isCreditWhitelistedSpace[sid] = false;
-        for (uint256 i = 0; i < _creditWhitelistedSpaceIds.length; i++) {
-          if (_creditWhitelistedSpaceIds[i] == sid) {
-            _creditWhitelistedSpaceIds[i] = _creditWhitelistedSpaceIds[
-              _creditWhitelistedSpaceIds.length - 1
-            ];
-            _creditWhitelistedSpaceIds.pop();
-            break;
-          }
-        }
-        emit CreditWhitelistSpaceRemoved(sid);
+    for (uint256 i = 0; i < spaceIds.length; i++) {
+      if (_removeSpaceFromList(_creditWhitelistedSpaceIds, isCreditWhitelistedSpace, spaceIds[i])) {
+        emit CreditWhitelistSpaceRemoved(spaceIds[i]);
       }
     }
+  }
+
+  // =========================================================================
+  // Shared space-list helpers (credit & purchase whitelists)
+  // =========================================================================
+
+  function _addSpaceToList(
+    uint256[] storage list,
+    mapping(uint256 => bool) storage isInList,
+    uint256 sid
+  ) internal returns (bool) {
+    if (!isInList[sid]) {
+      isInList[sid] = true;
+      list.push(sid);
+      return true;
+    }
+    return false;
+  }
+
+  function _removeSpaceFromList(
+    uint256[] storage list,
+    mapping(uint256 => bool) storage isInList,
+    uint256 sid
+  ) internal returns (bool) {
+    if (isInList[sid]) {
+      isInList[sid] = false;
+      for (uint256 i = 0; i < list.length; i++) {
+        if (list[i] == sid) {
+          list[i] = list[list.length - 1];
+          list.pop();
+          break;
+        }
+      }
+      return true;
+    }
+    return false;
+  }
+
+  function _isAccountInSpaceList(
+    uint256[] storage list,
+    mapping(uint256 => bool) storage isInList,
+    address account
+  ) internal view returns (bool) {
+    for (uint256 i = 0; i < list.length; i++) {
+      uint256 sid = list[i];
+      if (
+        isInList[sid] &&
+        IDAOSpaceFactory(spacesContract).isMember(sid, account)
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
 
   // =========================================================================
@@ -1060,7 +972,7 @@ contract RegularSpaceToken is
     uint256 missing = amount - balance;
     uint256 limit = creditLimitOf(from);
     uint256 used = creditBalanceOf[from];
-    require(used + missing <= limit, 'Insufficient credit');
+    require(used + missing <= limit, '!credit');
 
     creditBalanceOf[from] = used + missing;
     _mintWithSupplyChecks(from, missing);
@@ -1088,31 +1000,13 @@ contract RegularSpaceToken is
   function _isInCreditWhitelistedSpace(
     address account
   ) internal view returns (bool) {
-    for (uint256 i = 0; i < _creditWhitelistedSpaceIds.length; i++) {
-      uint256 sid = _creditWhitelistedSpaceIds[i];
-      if (
-        isCreditWhitelistedSpace[sid] &&
-        IDAOSpaceFactory(spacesContract).isMember(sid, account)
-      ) {
-        return true;
-      }
-    }
-    return false;
+    return _isAccountInSpaceList(_creditWhitelistedSpaceIds, isCreditWhitelistedSpace, account);
   }
 
   function _isInPurchaseWhitelistedSpace(
     address account
   ) internal view returns (bool) {
-    for (uint256 i = 0; i < _purchaseWhitelistedSpaceIds.length; i++) {
-      uint256 sid = _purchaseWhitelistedSpaceIds[i];
-      if (
-        isPurchaseWhitelistedSpace[sid] &&
-        IDAOSpaceFactory(spacesContract).isMember(sid, account)
-      ) {
-        return true;
-      }
-    }
-    return false;
+    return _isAccountInSpaceList(_purchaseWhitelistedSpaceIds, isPurchaseWhitelistedSpace, account);
   }
 
   function _isInAnySpace(address account) internal view returns (bool) {

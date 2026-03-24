@@ -86,11 +86,11 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
     );
     require(
       _decayPercentage <= 10000,
-      'DecayingSpaceToken: decay percentage cannot exceed 100%'
+      'decay% > 100'
     );
     require(
       _decayInterval > 0,
-      'DecayingSpaceToken: decay interval must be positive'
+      '!decay interval'
     );
 
     decayPercentage = _decayPercentage;
@@ -195,11 +195,11 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
   function setDecayPercentage(uint256 _decayPercentage) external virtual {
     require(
       msg.sender == executor,
-      'Only executor can update decay percentage'
+      '!executor'
     );
     require(
       _decayPercentage <= 10000,
-      'DecayingSpaceToken: decay percentage cannot exceed 100%'
+      'decay% > 100'
     );
 
     uint256 oldDecayPercentage = decayPercentage;
@@ -213,10 +213,10 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
    * @param _decayInterval New decay interval
    */
   function setDecayInterval(uint256 _decayInterval) external virtual {
-    require(msg.sender == executor, 'Only executor can update decay interval');
+    require(msg.sender == executor, '!executor');
     require(
       _decayInterval > 0,
-      'DecayingSpaceToken: decay interval must be positive'
+      '!decay interval'
     );
 
     uint256 oldDecayInterval = decayRate;
@@ -225,131 +225,44 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
     emit DecayIntervalUpdated(oldDecayInterval, _decayInterval);
   }
 
-  /**
-   * @dev Override mint to track lastDecayTimestamp and token holders
-   */
   function mint(address to, uint256 amount) public override {
-    require(msg.sender == executor, 'Only executor can mint');
-    require(!archived, 'Token is archived');
-    if (lastApplied[to] == 0) {
-      lastApplied[to] = block.timestamp;
-    } else {
-      applyDecay(to); // Apply any pending decay first
-    }
+    require(msg.sender == executor, '!executor');
+    _applyDecayOrInit(to);
     _addTokenHolder(to);
-    // Call RegularSpaceToken's mint but skip the archived check since we already did it
-    require(msg.sender == executor, 'Only executor can mint');
-    // Check against maximum supply
-    require(
-      maxSupply == 0 || totalSupply() + amount <= maxSupply,
-      'Mint max supply problemchik blet'
-    );
-
-    _mint(to, amount);
+    _mintWithSupplyChecks(to, amount);
   }
 
-  /**
-   * @dev Apply decay before transfers
-   */
+  function _applyDecayOrInit(address account) internal {
+    if (lastApplied[account] == 0) {
+      lastApplied[account] = block.timestamp;
+    } else {
+      applyDecay(account);
+    }
+  }
+
   function transfer(address to, uint256 amount) public override returns (bool) {
     address sender = _msgSender();
-    require(!archived, 'Token is archived');
-    require(transferable || sender == executor, 'Token transfers are disabled');
-
-    // Executor always bypasses whitelist checks
-    if (sender != executor) {
-      // Check transfer whitelist (direct or space-based)
-      if (useTransferWhitelist) {
-        require(
-          canTransfer[sender] || _isInTransferWhitelistedSpace(sender),
-          'Sender not whitelisted to transfer'
-        );
-      }
-    }
-
-    // Executor can always receive tokens
-    if (to != executor) {
-      // Check receive whitelist (direct or space-based)
-      if (useReceiveWhitelist) {
-        require(
-          canReceive[to] || _isInReceiveWhitelistedSpace(to),
-          'Recipient not whitelisted to receive'
-        );
-      }
-    }
-
+    _validateTransferAccess(sender, to, sender);
     applyDecay(sender);
-    if (sender == executor && autoMinting) {
-      if (super.balanceOf(sender) < amount) {
-        uint256 amountToMint = amount - super.balanceOf(sender);
-        mint(sender, amountToMint);
-      }
-    }
-
-    if (lastApplied[to] == 0) {
-      lastApplied[to] = block.timestamp;
-    } else {
-      applyDecay(to);
-    }
+    _autoMintIfNeeded(sender, amount);
+    _applyDecayOrInit(to);
     _addTokenHolder(to);
     _transfer(sender, to, amount);
     return true;
   }
 
-  /**
-   * @dev Apply decay before transferFrom
-   */
   function transferFrom(
     address from,
     address to,
     uint256 amount
   ) public override returns (bool) {
     address spender = _msgSender();
-    require(!archived, 'Token is archived');
-    require(
-      transferable || spender == executor,
-      'Token transfers are disabled'
-    );
-
-    // Executor always bypasses whitelist checks
-    if (from != executor) {
-      // Check transfer whitelist (direct or space-based)
-      if (useTransferWhitelist) {
-        require(
-          canTransfer[from] || _isInTransferWhitelistedSpace(from),
-          'Sender not whitelisted to transfer'
-        );
-      }
-    }
-
-    // Executor can always receive tokens
-    if (to != executor) {
-      // Check receive whitelist (direct or space-based)
-      if (useReceiveWhitelist) {
-        require(
-          canReceive[to] || _isInReceiveWhitelistedSpace(to),
-          'Recipient not whitelisted to receive'
-        );
-      }
-    }
-
+    _validateTransferAccess(from, to, spender);
     applyDecay(from);
-    if (from == executor && autoMinting) {
-      if (super.balanceOf(from) < amount) {
-        uint256 amountToMint = amount - super.balanceOf(from);
-        mint(from, amountToMint);
-      }
-    }
-
-    if (lastApplied[to] == 0) {
-      lastApplied[to] = block.timestamp;
-    } else {
-      applyDecay(to);
-    }
+    _autoMintIfNeeded(from, amount);
+    _applyDecayOrInit(to);
     _addTokenHolder(to);
-
     if (spender == transferHelper) {
-      // Skip allowance check for TransferHelper if tx is initiated by token owner
     } else {
       _spendAllowance(from, spender, amount);
     }
@@ -379,7 +292,7 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
    * This prevents decay from accumulating during the archived period
    */
   function setArchived(bool _archived) external override {
-    require(msg.sender == executor, 'Only executor can update archived status');
+    require(msg.sender == executor, '!executor');
 
     // If we're unarchiving (going from true to false), update all holders' timestamps
     if (archived && !_archived) {
