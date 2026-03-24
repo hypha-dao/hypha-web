@@ -114,15 +114,12 @@ export const SelectSettingsAction = ({
     },
     {
       defaultDurationDays: 4,
-      group: 'Treasury',
-      // title: 'Issue New Token',
-      title: 'Issue New Token (maintenance on the PR that disables)',
-      description:
-        'Create a new token for utility, ownership, impact, cash credits, voice, or community currency within your space.',
+      group: t('groups.treasury'),
+      title: t('actions.issueNewToken.title'),
+      description: t('actions.issueNewToken.description'),
       href: 'create/issue-new-token',
       icon: <RadiobuttonIcon />,
-      // disabled: isPaymentExpired,
-      disabled: true,
+      disabled: isPaymentExpired,
     },
     {
       group: t('groups.treasury'),

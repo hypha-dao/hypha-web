@@ -6,7 +6,103 @@ import {
   daoSpaceFactoryImplementationAbi,
 } from '@hypha-platform/core/generated';
 
-/** Legacy deploy ABIs (priceInUSD, no priceCurrencyFeed) for proposals created before factory upgrade */
+/** Pre-purchase deploy ABIs (tokenPrice + priceCurrencyFeed, no purchase params). */
+const regularTokenFactoryDeployPrePurchaseAbi = [
+  {
+    type: 'function' as const,
+    name: 'deployToken',
+    inputs: [
+      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
+      { name: 'name', internalType: 'string', type: 'string' },
+      { name: 'symbol', internalType: 'string', type: 'string' },
+      { name: 'maxSupply', internalType: 'uint256', type: 'uint256' },
+      { name: 'transferable', internalType: 'bool', type: 'bool' },
+      { name: 'fixedMaxSupply', internalType: 'bool', type: 'bool' },
+      { name: 'autoMinting', internalType: 'bool', type: 'bool' },
+      { name: 'tokenPrice', internalType: 'uint256', type: 'uint256' },
+      { name: 'priceCurrencyFeed', internalType: 'address', type: 'address' },
+      { name: 'useTransferWhitelist', internalType: 'bool', type: 'bool' },
+      { name: 'useReceiveWhitelist', internalType: 'bool', type: 'bool' },
+      {
+        name: 'initialTransferWhitelist',
+        internalType: 'address[]',
+        type: 'address[]',
+      },
+      {
+        name: 'initialReceiveWhitelist',
+        internalType: 'address[]',
+        type: 'address[]',
+      },
+    ],
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'nonpayable' as const,
+  },
+];
+const ownershipTokenFactoryDeployPrePurchaseAbi = [
+  {
+    type: 'function' as const,
+    name: 'deployOwnershipToken',
+    inputs: [
+      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
+      { name: 'name', internalType: 'string', type: 'string' },
+      { name: 'symbol', internalType: 'string', type: 'string' },
+      { name: 'maxSupply', internalType: 'uint256', type: 'uint256' },
+      { name: 'fixedMaxSupply', internalType: 'bool', type: 'bool' },
+      { name: 'autoMinting', internalType: 'bool', type: 'bool' },
+      { name: 'tokenPrice', internalType: 'uint256', type: 'uint256' },
+      { name: 'priceCurrencyFeed', internalType: 'address', type: 'address' },
+      { name: 'useTransferWhitelist', internalType: 'bool', type: 'bool' },
+      { name: 'useReceiveWhitelist', internalType: 'bool', type: 'bool' },
+      {
+        name: 'initialTransferWhitelist',
+        internalType: 'address[]',
+        type: 'address[]',
+      },
+      {
+        name: 'initialReceiveWhitelist',
+        internalType: 'address[]',
+        type: 'address[]',
+      },
+    ],
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'nonpayable' as const,
+  },
+];
+const decayingTokenFactoryDeployPrePurchaseAbi = [
+  {
+    type: 'function' as const,
+    name: 'deployDecayingToken',
+    inputs: [
+      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
+      { name: 'name', internalType: 'string', type: 'string' },
+      { name: 'symbol', internalType: 'string', type: 'string' },
+      { name: 'maxSupply', internalType: 'uint256', type: 'uint256' },
+      { name: 'transferable', internalType: 'bool', type: 'bool' },
+      { name: 'fixedMaxSupply', internalType: 'bool', type: 'bool' },
+      { name: 'autoMinting', internalType: 'bool', type: 'bool' },
+      { name: 'tokenPrice', internalType: 'uint256', type: 'uint256' },
+      { name: 'priceCurrencyFeed', internalType: 'address', type: 'address' },
+      { name: 'useTransferWhitelist', internalType: 'bool', type: 'bool' },
+      { name: 'useReceiveWhitelist', internalType: 'bool', type: 'bool' },
+      {
+        name: 'initialTransferWhitelist',
+        internalType: 'address[]',
+        type: 'address[]',
+      },
+      {
+        name: 'initialReceiveWhitelist',
+        internalType: 'address[]',
+        type: 'address[]',
+      },
+      { name: 'decayPercentage', internalType: 'uint256', type: 'uint256' },
+      { name: 'decayInterval', internalType: 'uint256', type: 'uint256' },
+    ],
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'nonpayable' as const,
+  },
+];
+
+/** Legacy deploy ABIs (priceInUSD, no priceCurrencyFeed) for older proposals. */
 const regularTokenFactoryDeployLegacyAbi = [
   {
     type: 'function' as const,
@@ -213,6 +309,82 @@ export function decodeTransaction(tx: Tx) {
           : null,
     },
     {
+      abi: regularTokenFactoryDeployPrePurchaseAbi,
+      handler: (decoded) =>
+        decoded.functionName === 'deployToken'
+          ? {
+              type: 'token',
+              data: {
+                tokenType: 'regular',
+                spaceId: decoded.args[0],
+                name: decoded.args[1],
+                symbol: decoded.args[2],
+                maxSupply: decoded.args[3],
+                transferable: decoded.args[4],
+                fixedMaxSupply: decoded.args[5],
+                autoMinting: decoded.args[6],
+                priceInUSD: decoded.args[7],
+                priceCurrencyFeed: decoded.args[8],
+                useTransferWhitelist: decoded.args[9],
+                useReceiveWhitelist: decoded.args[10],
+                initialTransferWhitelist: decoded.args[11],
+                initialReceiveWhitelist: decoded.args[12],
+              },
+            }
+          : null,
+    },
+    {
+      abi: ownershipTokenFactoryDeployPrePurchaseAbi,
+      handler: (decoded) =>
+        decoded.functionName === 'deployOwnershipToken'
+          ? {
+              type: 'token',
+              data: {
+                tokenType: 'ownership',
+                spaceId: decoded.args[0],
+                name: decoded.args[1],
+                symbol: decoded.args[2],
+                maxSupply: decoded.args[3],
+                fixedMaxSupply: decoded.args[4],
+                autoMinting: decoded.args[5],
+                priceInUSD: decoded.args[6],
+                priceCurrencyFeed: decoded.args[7],
+                useTransferWhitelist: decoded.args[8],
+                useReceiveWhitelist: decoded.args[9],
+                initialTransferWhitelist: decoded.args[10],
+                initialReceiveWhitelist: decoded.args[11],
+              },
+            }
+          : null,
+    },
+    {
+      abi: decayingTokenFactoryDeployPrePurchaseAbi,
+      handler: (decoded) =>
+        decoded.functionName === 'deployDecayingToken'
+          ? {
+              type: 'token',
+              data: {
+                tokenType: 'voice',
+                spaceId: decoded.args[0],
+                name: decoded.args[1],
+                symbol: decoded.args[2],
+                maxSupply: decoded.args[3],
+                transferable: decoded.args[4],
+                fixedMaxSupply: decoded.args[5],
+                autoMinting: decoded.args[6],
+                priceInUSD: decoded.args[7],
+                priceCurrencyFeed: decoded.args[8],
+                useTransferWhitelist: decoded.args[9],
+                useReceiveWhitelist: decoded.args[10],
+                initialTransferWhitelist: decoded.args[11],
+                initialReceiveWhitelist: decoded.args[12],
+                decayPercentage: decoded.args[13],
+                decayInterval: decoded.args[14],
+              },
+            }
+          : null,
+    },
+    {
       abi: regularTokenFactoryDeployLegacyAbi,
       handler: (decoded) =>
         decoded.functionName === 'deployToken'
@@ -317,6 +489,16 @@ export function decodeTransaction(tx: Tx) {
               data: {
                 member: decoded.args[0],
                 number: decoded.args[1],
+              },
+            }
+          : decoded.functionName === 'configureTokenSale'
+          ? {
+              type: 'spaceTokenPurchase',
+              data: {
+                tokenAddress: '',
+                paymentToken: decoded.args[0],
+                paymentTokenPricePerToken: decoded.args[1],
+                tokensForSale: decoded.args[2],
               },
             }
           : null,
