@@ -1736,6 +1736,11 @@ export const decayingSpaceTokenAbi = [
     inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
     name: 'OwnableUnauthorizedAccount',
   },
+  {
+    type: 'error',
+    inputs: [{ name: 'token', internalType: 'address', type: 'address' }],
+    name: 'SafeERC20FailedOperation',
+  },
   { type: 'error', inputs: [], name: 'UUPSUnauthorizedCallContext' },
   {
     type: 'error',
@@ -1792,6 +1797,82 @@ export const decayingSpaceTokenAbi = [
     type: 'event',
     anonymous: false,
     inputs: [
+      {
+        name: 'member',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'newCreditBalance',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'CreditRepaid',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'member',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'newCreditBalance',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'CreditUsed',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+    ],
+    name: 'CreditWhitelistSpaceAdded',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+    ],
+    name: 'CreditWhitelistSpaceRemoved',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
       { name: 'user', internalType: 'address', type: 'address', indexed: true },
       {
         name: 'oldBalance',
@@ -1813,6 +1894,63 @@ export const decayingSpaceTokenAbi = [
       },
     ],
     name: 'DecayApplied',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'oldDecayInterval',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'newDecayInterval',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'DecayIntervalUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'oldDecayPercentage',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'newDecayPercentage',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'DecayPercentageUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'oldLimit',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'newLimit',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'DefaultCreditLimitUpdated',
   },
   {
     type: 'event',
@@ -1870,6 +2008,25 @@ export const decayingSpaceTokenAbi = [
     anonymous: false,
     inputs: [
       {
+        name: 'price',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'currencyFeed',
+        internalType: 'address',
+        type: 'address',
+        indexed: false,
+      },
+    ],
+    name: 'PriceCurrencyUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
         name: 'oldPrice',
         internalType: 'uint256',
         type: 'uint256',
@@ -1883,6 +2040,40 @@ export const decayingSpaceTokenAbi = [
       },
     ],
     name: 'PriceInUSDUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'mode', internalType: 'uint8', type: 'uint8', indexed: false },
+    ],
+    name: 'PurchaseEligibilityModeUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+    ],
+    name: 'PurchaseWhitelistSpaceAdded',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'spaceId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+    ],
+    name: 'PurchaseWhitelistSpaceRemoved',
   },
   {
     type: 'event',
@@ -1934,6 +2125,69 @@ export const decayingSpaceTokenAbi = [
     anonymous: false,
     inputs: [
       {
+        name: 'oldName',
+        internalType: 'string',
+        type: 'string',
+        indexed: false,
+      },
+      {
+        name: 'newName',
+        internalType: 'string',
+        type: 'string',
+        indexed: false,
+      },
+    ],
+    name: 'TokenNameUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'paymentToken',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'paymentTokenPricePerToken',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'tokensForSale',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'TokenSaleConfigured',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'oldSymbol',
+        internalType: 'string',
+        type: 'string',
+        indexed: false,
+      },
+      {
+        name: 'newSymbol',
+        internalType: 'string',
+        type: 'string',
+        indexed: false,
+      },
+    ],
+    name: 'TokenSymbolUpdated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
         name: 'burner',
         internalType: 'address',
         type: 'address',
@@ -1948,6 +2202,37 @@ export const decayingSpaceTokenAbi = [
       },
     ],
     name: 'TokensBurned',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'buyer',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'tokenAmount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'paymentAmount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'treasury',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'TokensPurchased',
   },
   {
     type: 'event',
@@ -2054,6 +2339,27 @@ export const decayingSpaceTokenAbi = [
   {
     type: 'function',
     inputs: [],
+    name: 'PURCHASE_MODE_ALL_SPACES',
+    outputs: [{ name: '', internalType: 'uint8', type: 'uint8' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'PURCHASE_MODE_CUSTOM_SPACES',
+    outputs: [{ name: '', internalType: 'uint8', type: 'uint8' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'PURCHASE_MODE_SPACE_ONLY',
+    outputs: [{ name: '', internalType: 'uint8', type: 'uint8' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
     name: 'UPGRADE_INTERFACE_VERSION',
     outputs: [{ name: '', internalType: 'string', type: 'string' }],
     stateMutability: 'view',
@@ -2111,6 +2417,24 @@ export const decayingSpaceTokenAbi = [
     inputs: [
       { name: 'spaceIds', internalType: 'uint256[]', type: 'uint256[]' },
     ],
+    name: 'batchAddCreditWhitelistSpaces',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'spaceIds', internalType: 'uint256[]', type: 'uint256[]' },
+    ],
+    name: 'batchAddPurchaseWhitelistSpaces',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'spaceIds', internalType: 'uint256[]', type: 'uint256[]' },
+    ],
     name: 'batchAddReceiveWhitelistSpaces',
     outputs: [],
     stateMutability: 'nonpayable',
@@ -2121,6 +2445,24 @@ export const decayingSpaceTokenAbi = [
       { name: 'spaceIds', internalType: 'uint256[]', type: 'uint256[]' },
     ],
     name: 'batchAddTransferWhitelistSpaces',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'spaceIds', internalType: 'uint256[]', type: 'uint256[]' },
+    ],
+    name: 'batchRemoveCreditWhitelistSpaces',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'spaceIds', internalType: 'uint256[]', type: 'uint256[]' },
+    ],
+    name: 'batchRemovePurchaseWhitelistSpaces',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -2181,6 +2523,20 @@ export const decayingSpaceTokenAbi = [
   },
   {
     type: 'function',
+    inputs: [{ name: 'tokenAmount', internalType: 'uint256', type: 'uint256' }],
+    name: 'buyTokens',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'canAccountPurchase',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
     name: 'canAccountReceive',
     outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
@@ -2209,6 +2565,42 @@ export const decayingSpaceTokenAbi = [
   },
   {
     type: 'function',
+    inputs: [
+      { name: '_paymentToken', internalType: 'address', type: 'address' },
+      {
+        name: '_paymentTokenPricePerToken',
+        internalType: 'uint256',
+        type: 'uint256',
+      },
+      { name: '_tokensForSale', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'configureTokenSale',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '', internalType: 'address', type: 'address' }],
+    name: 'creditBalanceOf',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'creditLimitLeftOf',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'creditLimitOf',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     inputs: [],
     name: 'decayPercentage',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
@@ -2231,6 +2623,23 @@ export const decayingSpaceTokenAbi = [
   {
     type: 'function',
     inputs: [],
+    name: 'defaultCreditLimit',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_limit', internalType: 'uint256', type: 'uint256' },
+      { name: 'spaceIds', internalType: 'uint256[]', type: 'uint256[]' },
+    ],
+    name: 'enableCredit',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
     name: 'executor',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
     stateMutability: 'view',
@@ -2245,6 +2654,13 @@ export const decayingSpaceTokenAbi = [
   {
     type: 'function',
     inputs: [],
+    name: 'getCreditWhitelistedSpaces',
+    outputs: [{ name: '', internalType: 'uint256[]', type: 'uint256[]' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
     name: 'getDecayedTotalSupply',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
@@ -2252,8 +2668,26 @@ export const decayingSpaceTokenAbi = [
   {
     type: 'function',
     inputs: [],
+    name: 'getPurchaseWhitelistedSpaces',
+    outputs: [{ name: '', internalType: 'uint256[]', type: 'uint256[]' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
     name: 'getReceiveWhitelistedSpaces',
     outputs: [{ name: '', internalType: 'uint256[]', type: 'uint256[]' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getTokenSaleDetails',
+    outputs: [
+      { name: 'salePaymentToken', internalType: 'address', type: 'address' },
+      { name: 'salePricePerToken', internalType: 'uint256', type: 'uint256' },
+      { name: 'tokensLeftToSell', internalType: 'uint256', type: 'uint256' },
+    ],
     stateMutability: 'view',
   },
   {
@@ -2274,7 +2708,8 @@ export const decayingSpaceTokenAbi = [
       { name: '_transferable', internalType: 'bool', type: 'bool' },
       { name: '_fixedMaxSupply', internalType: 'bool', type: 'bool' },
       { name: '_autoMinting', internalType: 'bool', type: 'bool' },
-      { name: '_priceInUSD', internalType: 'uint256', type: 'uint256' },
+      { name: '_tokenPrice', internalType: 'uint256', type: 'uint256' },
+      { name: '_priceCurrencyFeed', internalType: 'address', type: 'address' },
       { name: '_useTransferWhitelist', internalType: 'bool', type: 'bool' },
       { name: '_useReceiveWhitelist', internalType: 'bool', type: 'bool' },
       {
@@ -2287,8 +2722,29 @@ export const decayingSpaceTokenAbi = [
         internalType: 'address[]',
         type: 'address[]',
       },
-      { name: '_decayPercentage', internalType: 'uint256', type: 'uint256' },
-      { name: '_decayInterval', internalType: 'uint256', type: 'uint256' },
+      { name: '_defaultCreditLimit', internalType: 'uint256', type: 'uint256' },
+      {
+        name: '_initialCreditWhitelistSpaceIds',
+        internalType: 'uint256[]',
+        type: 'uint256[]',
+      },
+      { name: '_paymentToken', internalType: 'address', type: 'address' },
+      {
+        name: '_paymentTokenPricePerToken',
+        internalType: 'uint256',
+        type: 'uint256',
+      },
+      { name: '_tokensForSale', internalType: 'uint256', type: 'uint256' },
+      {
+        name: '_purchaseEligibilityMode',
+        internalType: 'uint8',
+        type: 'uint8',
+      },
+      {
+        name: '_initialPurchaseWhitelistSpaceIds',
+        internalType: 'uint256[]',
+        type: 'uint256[]',
+      },
     ],
     name: 'initialize',
     outputs: [],
@@ -2305,7 +2761,8 @@ export const decayingSpaceTokenAbi = [
       { name: '_transferable', internalType: 'bool', type: 'bool' },
       { name: '_fixedMaxSupply', internalType: 'bool', type: 'bool' },
       { name: '_autoMinting', internalType: 'bool', type: 'bool' },
-      { name: '_priceInUSD', internalType: 'uint256', type: 'uint256' },
+      { name: '_tokenPrice', internalType: 'uint256', type: 'uint256' },
+      { name: '_priceCurrencyFeed', internalType: 'address', type: 'address' },
       { name: '_useTransferWhitelist', internalType: 'bool', type: 'bool' },
       { name: '_useReceiveWhitelist', internalType: 'bool', type: 'bool' },
       {
@@ -2318,10 +2775,43 @@ export const decayingSpaceTokenAbi = [
         internalType: 'address[]',
         type: 'address[]',
       },
+      { name: '_decayPercentage', internalType: 'uint256', type: 'uint256' },
+      { name: '_decayInterval', internalType: 'uint256', type: 'uint256' },
+      { name: '_paymentToken', internalType: 'address', type: 'address' },
+      {
+        name: '_paymentTokenPricePerToken',
+        internalType: 'uint256',
+        type: 'uint256',
+      },
+      { name: '_tokensForSale', internalType: 'uint256', type: 'uint256' },
+      {
+        name: '_purchaseEligibilityMode',
+        internalType: 'uint8',
+        type: 'uint8',
+      },
+      {
+        name: '_initialPurchaseWhitelistSpaceIds',
+        internalType: 'uint256[]',
+        type: 'uint256[]',
+      },
     ],
     name: 'initialize',
     outputs: [],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    name: 'isCreditWhitelistedSpace',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    name: 'isPurchaseWhitelistedSpace',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -2370,8 +2860,36 @@ export const decayingSpaceTokenAbi = [
   },
   {
     type: 'function',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'netBalanceOf',
+    outputs: [{ name: '', internalType: 'int256', type: 'int256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     inputs: [],
     name: 'owner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'paymentToken',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'paymentTokenPricePerToken',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'priceCurrencyFeed',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
     stateMutability: 'view',
   },
@@ -2387,6 +2905,13 @@ export const decayingSpaceTokenAbi = [
     inputs: [],
     name: 'proxiableUUID',
     outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'purchaseEligibilityMode',
+    outputs: [{ name: '', internalType: 'uint8', type: 'uint8' }],
     stateMutability: 'view',
   },
   {
@@ -2413,6 +2938,31 @@ export const decayingSpaceTokenAbi = [
   {
     type: 'function',
     inputs: [
+      { name: '_decayInterval', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'setDecayInterval',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_decayPercentage', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'setDecayPercentage',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_limit', internalType: 'uint256', type: 'uint256' }],
+    name: 'setDefaultCreditLimit',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
       { name: 'newMaxSupply', internalType: 'uint256', type: 'uint256' },
     ],
     name: 'setMaxSupply',
@@ -2423,6 +2973,37 @@ export const decayingSpaceTokenAbi = [
     type: 'function',
     inputs: [{ name: 'newPrice', internalType: 'uint256', type: 'uint256' }],
     name: 'setPriceInUSD',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'newPrice', internalType: 'uint256', type: 'uint256' },
+      { name: 'currencyFeed', internalType: 'address', type: 'address' },
+    ],
+    name: 'setPriceWithCurrency',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'mode', internalType: 'uint8', type: 'uint8' }],
+    name: 'setPurchaseEligibilityMode',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'newName', internalType: 'string', type: 'string' }],
+    name: 'setTokenName',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'newSymbol', internalType: 'string', type: 'string' }],
+    name: 'setTokenSymbol',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -2475,6 +3056,27 @@ export const decayingSpaceTokenAbi = [
     inputs: [],
     name: 'symbol',
     outputs: [{ name: '', internalType: 'string', type: 'string' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'tokenPrice',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'tokensForSale',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'tokensSold',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
   {
@@ -2826,6 +3428,19 @@ export const decayingTokenFactoryAbi = [
       },
       { name: 'decayPercentage', internalType: 'uint256', type: 'uint256' },
       { name: 'decayInterval', internalType: 'uint256', type: 'uint256' },
+      { name: 'paymentToken', internalType: 'address', type: 'address' },
+      {
+        name: 'paymentTokenPricePerToken',
+        internalType: 'uint256',
+        type: 'uint256',
+      },
+      { name: 'tokensForSale', internalType: 'uint256', type: 'uint256' },
+      { name: 'purchaseEligibilityMode', internalType: 'uint8', type: 'uint8' },
+      {
+        name: 'initialPurchaseWhitelistSpaceIds',
+        internalType: 'uint256[]',
+        type: 'uint256[]',
+      },
     ],
     name: 'deployDecayingToken',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
@@ -4768,6 +5383,19 @@ export const ownershipTokenFactoryAbi = [
         internalType: 'address[]',
         type: 'address[]',
       },
+      { name: 'paymentToken', internalType: 'address', type: 'address' },
+      {
+        name: 'paymentTokenPricePerToken',
+        internalType: 'uint256',
+        type: 'uint256',
+      },
+      { name: 'tokensForSale', internalType: 'uint256', type: 'uint256' },
+      { name: 'purchaseEligibilityMode', internalType: 'uint8', type: 'uint8' },
+      {
+        name: 'initialPurchaseWhitelistSpaceIds',
+        internalType: 'uint256[]',
+        type: 'uint256[]',
+      },
     ],
     name: 'deployOwnershipToken',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
@@ -5390,6 +6018,25 @@ export const regularTokenFactoryAbi = [
         name: 'initialReceiveWhitelist',
         internalType: 'address[]',
         type: 'address[]',
+      },
+      { name: 'defaultCreditLimit', internalType: 'uint256', type: 'uint256' },
+      {
+        name: 'initialCreditWhitelistSpaceIds',
+        internalType: 'uint256[]',
+        type: 'uint256[]',
+      },
+      { name: 'paymentToken', internalType: 'address', type: 'address' },
+      {
+        name: 'paymentTokenPricePerToken',
+        internalType: 'uint256',
+        type: 'uint256',
+      },
+      { name: 'tokensForSale', internalType: 'uint256', type: 'uint256' },
+      { name: 'purchaseEligibilityMode', internalType: 'uint8', type: 'uint8' },
+      {
+        name: 'initialPurchaseWhitelistSpaceIds',
+        internalType: 'uint256[]',
+        type: 'uint256[]',
       },
     ],
     name: 'deployToken',
