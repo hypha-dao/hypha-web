@@ -225,7 +225,6 @@ export const PeoplePurchaseHyphaTokens = ({
         router.push(closePanelUrl);
       }, 3000);
       form.reset();
-      await manualUpdate();
     } catch (error) {
       console.error('Purchase failed:', error);
       let errorMessage: string = tActions(
@@ -256,6 +255,16 @@ export const PeoplePurchaseHyphaTokens = ({
         }
       }
       form.setError('root', { message: errorMessage });
+      return;
+    }
+
+    try {
+      await manualUpdate();
+    } catch (refreshError) {
+      console.error(
+        'Asset refresh failed after successful purchase:',
+        refreshError,
+      );
     }
   };
 
