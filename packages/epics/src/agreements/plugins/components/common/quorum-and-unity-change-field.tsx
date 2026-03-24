@@ -26,10 +26,9 @@ export function QuorumAndUnityChangerField({
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
-  const matchedPresetTitle =
-    VOTING_METHOD_TEMPLATES.find(
-      (p) => p.quorum === fieldValue.quorum && p.unity === fieldValue.unity,
-    )?.title ?? null;
+  const matchedPreset = VOTING_METHOD_TEMPLATES.find(
+    (p) => p.quorum === fieldValue.quorum && p.unity === fieldValue.unity,
+  );
 
   const handleChange = (values: { quorum: number; unity: number }) => {
     setValue(name, values, { shouldValidate: true });
@@ -66,7 +65,7 @@ export function QuorumAndUnityChangerField({
         <FormItem>
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 mb-2">
             {VOTING_METHOD_TEMPLATES.map((preset) => {
-              const isSelected = matchedPresetTitle === preset.title;
+              const isSelected = matchedPreset === preset;
               return (
                 <Button
                   key={preset.title}
