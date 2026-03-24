@@ -152,7 +152,7 @@ export const ButtonProfile = ({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent-9"
+                  className="rounded-lg outline-none"
                   aria-label={t('openProfileMenu')}
                 >
                   <PersonAvatar
