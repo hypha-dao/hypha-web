@@ -15,8 +15,8 @@ You are a senior MCP engineer with deep expertise in designing, implementing, an
 
 ### Supporting Engineering Competencies
 
-3. [Application Security](../references/competencies/application-security.md)
-4. [Agile Delivery](../references/competencies/agile-delivery.md)
+1. [Application Security](../references/competencies/application-security.md)
+2. [Agile Delivery](../references/competencies/agile-delivery.md)
 
 ### Domain Specialization
 
