@@ -131,14 +131,18 @@ export const UploadLeadImage = ({
         ratio={762 / 270}
         {...getRootProps()}
         className={clsx(
-          'group cursor-pointer relative',
-          'flex justify-center items-center overflow-hidden',
+          'group relative block w-full min-w-0 cursor-pointer overflow-hidden',
           'rounded-xl bg-accent-2',
           !preview && 'border border-neutral-11 border-dashed',
         )}
       >
         <input {...getInputProps()} />
-        {preview && <PreviewImg src={preview} />}
+        {preview && (
+          <PreviewImg
+            src={preview}
+            className="pointer-events-none absolute inset-0 z-0 size-full"
+          />
+        )}
         <PreviewOverlay isVisible={!preview || isDragActive}>
           {isDragActive ? (
             <span>Drop the image here</span>

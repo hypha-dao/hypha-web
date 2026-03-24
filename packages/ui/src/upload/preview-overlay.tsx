@@ -11,7 +11,7 @@ export const PreviewOverlay = ({
   return (
     <div
       className={clsx(
-        'absolute flex items-center justify-center',
+        'absolute inset-0 z-10 flex items-center justify-center pointer-events-none',
         'p-2 rounded transition-all duration-200',
         'group-hover:bg-background/100',
         'group-hover:opacity-100',
