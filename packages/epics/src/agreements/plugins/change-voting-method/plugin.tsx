@@ -95,6 +95,9 @@ export const ChangeVotingMethodPlugin = ({
     [duration],
   );
 
+  const isChainDurationUnavailable =
+    !chainReadEnabled || isChainDurationLoading || !!chainDurationError;
+
   const { tokens: rawTokens, isLoading } = useTokens({ spaceSlug }) as {
     tokens: Token[];
     isLoading: boolean;
@@ -269,6 +272,7 @@ export const ChangeVotingMethodPlugin = ({
                     <FormControl>
                       <Select
                         value={
+                          !isChainDurationUnavailable &&
                           isValidVotingDurationSelectValue(field.value)
                             ? String(field.value)
                             : undefined
@@ -277,9 +281,7 @@ export const ChangeVotingMethodPlugin = ({
                           votingDurationUserEdited.current = true;
                           field.onChange(Number(value));
                         }}
-                        disabled={
-                          isChainDurationLoading || !!chainDurationError
-                        }
+                        disabled={isChainDurationUnavailable}
                       >
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Duration" />
@@ -297,7 +299,12 @@ export const ChangeVotingMethodPlugin = ({
                       </Select>
                     </FormControl>
                   </span>
-                  {chainDurationError ? (
+                  {!chainReadEnabled ? (
+                    <span className="text-2 text-neutral-11">
+                      Minimum voting duration is unavailable until the space is
+                      connected.
+                    </span>
+                  ) : chainDurationError ? (
                     <span className="text-2 text-red-11">
                       Could not load minimum voting duration from the network.
                       Try again later.
