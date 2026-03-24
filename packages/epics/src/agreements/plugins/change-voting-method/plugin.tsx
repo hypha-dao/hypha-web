@@ -43,7 +43,32 @@ const votingDurationOptions = [
   { label: '14 days', value: 14 * 86400 },
   { label: '21 days', value: 21 * 86400 },
   { label: '30 days', value: 30 * 86400 },
-];
+] as const;
+
+const votingDurationOptionValues = new Set(
+  votingDurationOptions.map((o) => o.value),
+);
+
+const nearestVotingDurationOption = (seconds: number) =>
+  votingDurationOptions.reduce((best, opt) =>
+    Math.abs(opt.value - seconds) < Math.abs(best.value - seconds) ? opt : best,
+  ).value;
+
+const normalizeChainDurationForSelect = (
+  raw: bigint | number | undefined,
+): number | undefined => {
+  if (raw === undefined) return undefined;
+  const seconds = typeof raw === 'bigint' ? Number(raw) : raw;
+  if (!Number.isFinite(seconds) || seconds <= 0) return undefined;
+  return votingDurationOptionValues.has(seconds)
+    ? seconds
+    : nearestVotingDurationOption(seconds);
+};
+
+const isValidVotingDurationSelectValue = (value: unknown): value is number =>
+  typeof value === 'number' &&
+  Number.isFinite(value) &&
+  votingDurationOptionValues.has(value);
 
 export const ChangeVotingMethodPlugin = ({
   spaceSlug,
@@ -54,9 +79,15 @@ export const ChangeVotingMethodPlugin = ({
   spaceSlug: string;
   members: Person[];
 }) => {
-  const { duration } = useSpaceMinProposalDuration({
-    spaceId: BigInt(web3SpaceId as number),
-  });
+  const { duration, isLoading: isChainDurationLoading } =
+    useSpaceMinProposalDuration({
+      spaceId: BigInt(web3SpaceId as number),
+    });
+
+  const chainSelectDuration = React.useMemo(
+    () => normalizeChainDurationForSelect(duration),
+    [duration],
+  );
 
   const { tokens: rawTokens, isLoading } = useTokens({ spaceSlug }) as {
     tokens: Token[];
@@ -100,18 +131,15 @@ export const ChangeVotingMethodPlugin = ({
     name: 'autoExecution',
   });
 
-  const votingDuration = useWatch({
-    control,
-    name: 'votingDuration',
-  });
-
   const isQuorumTooLow = (quorumAndUnity?.quorum ?? 0) < 20;
 
   React.useEffect(() => {
-    if (duration !== undefined && votingDuration === undefined) {
-      setValue('votingDuration', duration);
-    }
-  }, [duration, votingDuration, setValue]);
+    if (autoExecution !== false) return;
+    if (chainSelectDuration === undefined) return;
+    const current = getValues('votingDuration');
+    if (isValidVotingDurationSelectValue(current)) return;
+    setValue('votingDuration', chainSelectDuration);
+  }, [autoExecution, chainSelectDuration, setValue, getValues]);
 
   React.useEffect(() => {
     const currentQuorum = quorumAndUnity?.quorum ?? 0;
@@ -122,8 +150,11 @@ export const ChangeVotingMethodPlugin = ({
       if (currentAutoExecution !== false) {
         setValue('autoExecution', false);
       }
-      if (currentVotingDuration === undefined && duration !== undefined) {
-        setValue('votingDuration', duration);
+      if (
+        chainSelectDuration !== undefined &&
+        !isValidVotingDurationSelectValue(currentVotingDuration)
+      ) {
+        setValue('votingDuration', chainSelectDuration);
       }
     } else {
       if (currentAutoExecution !== true) {
@@ -133,7 +164,7 @@ export const ChangeVotingMethodPlugin = ({
         setValue('votingDuration', 0);
       }
     }
-  }, [quorumAndUnity?.quorum, duration, setValue, getValues]);
+  }, [quorumAndUnity?.quorum, chainSelectDuration, setValue, getValues]);
 
   const handleMethodChange = (method: VotingMethodType | null) => {
     setValue('votingMethod', method);
@@ -156,10 +187,8 @@ export const ChangeVotingMethodPlugin = ({
 
     if (val) {
       setValue('votingDuration', 0);
-    } else {
-      if (duration !== undefined) {
-        setValue('votingDuration', duration);
-      }
+    } else if (chainSelectDuration !== undefined) {
+      setValue('votingDuration', chainSelectDuration);
     }
   };
 
@@ -220,8 +249,13 @@ export const ChangeVotingMethodPlugin = ({
                     </Label>
                     <FormControl>
                       <Select
-                        value={String(field.value)}
+                        value={
+                          isValidVotingDurationSelectValue(field.value)
+                            ? String(field.value)
+                            : undefined
+                        }
                         onValueChange={(value) => field.onChange(Number(value))}
+                        disabled={isChainDurationLoading}
                       >
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Duration" />
