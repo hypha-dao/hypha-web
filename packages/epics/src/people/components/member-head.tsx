@@ -60,7 +60,7 @@ export const MemberHead = ({
             typeof tMembersTab
           >[0],
         )
-      : status || tMembersTab('memberDetail.statusBadge.inactive');
+      : status?.trim() || undefined;
 
   return (
     <div className="flex">
@@ -82,13 +82,15 @@ export const MemberHead = ({
       <div className="flex justify-between items-center w-full">
         <div className="flex flex-col">
           <div className="flex gap-x-1">
-            <Badge
-              isLoading={isLoading}
-              variant={statusBadgeConfig.variant}
-              colorVariant={statusBadgeConfig.colorVariant}
-            >
-              {statusLabel}
-            </Badge>
+            {statusLabel ? (
+              <Badge
+                isLoading={isLoading}
+                variant={statusBadgeConfig.variant}
+                colorVariant={statusBadgeConfig.colorVariant}
+              >
+                {statusLabel}
+              </Badge>
+            ) : null}
           </div>
 
           <Skeleton
