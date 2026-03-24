@@ -6,9 +6,9 @@ export default async function RootLayout({
   aside: React.ReactNode;
 }) {
   return (
-    <div className="w-full h-full flex">
-      {children}
+    <div className="flex h-full w-full flex-row-reverse">
       {aside}
+      {children}
     </div>
   );
 }
