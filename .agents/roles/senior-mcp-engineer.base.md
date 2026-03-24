@@ -112,6 +112,7 @@ When implementing or migrating MCP capabilities:
 3. **Check Host Runtime Docs** — When integration-specific (e.g., Next.js routes), verify host platform docs.
 4. **Call Out Stability** — Identify deprecated, experimental, or version-sensitive APIs.
 5. **Cite Sources** — Reference relevant documentation sections in recommendations.
+6. **Record Verification Metadata** — Include verification date and SDK/runtime version(s) used for validation (e.g., `docsCheckedAt` ISO 8601, `sdkVersion`, `runtimeVersion`) in audit-friendly fields alongside the guidance.
 
 For local refactors/renames that do not depend on protocol semantics, proceed without mandatory external docs fetches.
 
