@@ -6,17 +6,23 @@ import useSWR from 'swr';
 
 export const useSpaceMinProposalDuration = ({
   spaceId,
+  enabled = true,
 }: {
   spaceId: bigint;
+  enabled?: boolean;
 }) => {
+  const swrKey = enabled
+    ? ([spaceId, 'spaceMinProposalDuration'] as const)
+    : null;
+
   const {
     data: duration,
     isLoading,
     error,
   } = useSWR(
-    [spaceId, 'spaceMinProposalDuration'],
-    async ([spaceId]) =>
-      publicClient.readContract(getSpaceMinProposalDuration({ spaceId })),
+    swrKey,
+    async ([id]) =>
+      publicClient.readContract(getSpaceMinProposalDuration({ spaceId: id })),
     { revalidateOnFocus: true },
   );
 

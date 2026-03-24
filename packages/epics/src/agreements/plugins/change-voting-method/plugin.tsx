@@ -79,12 +79,15 @@ export const ChangeVotingMethodPlugin = ({
   spaceSlug: string;
   members: Person[];
 }) => {
+  const chainReadEnabled = typeof web3SpaceId === 'number';
+
   const {
     duration,
     isLoading: isChainDurationLoading,
     error: chainDurationError,
   } = useSpaceMinProposalDuration({
-    spaceId: BigInt(web3SpaceId as number),
+    spaceId: chainReadEnabled ? BigInt(web3SpaceId) : 0n,
+    enabled: chainReadEnabled,
   });
 
   const chainSelectDuration = React.useMemo(
