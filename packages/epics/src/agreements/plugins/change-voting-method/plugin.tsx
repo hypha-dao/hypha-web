@@ -122,6 +122,8 @@ export const ChangeVotingMethodPlugin = ({
 
   const { control, setValue, getValues } = useFormContext();
 
+  const votingDurationUserEdited = React.useRef(false);
+
   const quorumAndUnity = useWatch({
     control,
     name: 'quorumAndUnity',
@@ -143,8 +145,14 @@ export const ChangeVotingMethodPlugin = ({
     if (autoExecution !== false) return;
     if (chainSelectDuration === undefined) return;
     const current = getValues('votingDuration');
-    if (isValidVotingDurationSelectValue(current)) return;
+    if (
+      votingDurationUserEdited.current &&
+      isValidVotingDurationSelectValue(current)
+    ) {
+      return;
+    }
     setValue('votingDuration', chainSelectDuration);
+    votingDurationUserEdited.current = false;
   }, [autoExecution, chainSelectDuration, setValue, getValues]);
 
   React.useEffect(() => {
@@ -158,9 +166,11 @@ export const ChangeVotingMethodPlugin = ({
       }
       if (
         chainSelectDuration !== undefined &&
-        !isValidVotingDurationSelectValue(currentVotingDuration)
+        (!votingDurationUserEdited.current ||
+          !isValidVotingDurationSelectValue(currentVotingDuration))
       ) {
         setValue('votingDuration', chainSelectDuration);
+        votingDurationUserEdited.current = false;
       }
     } else {
       if (currentAutoExecution !== true) {
@@ -169,6 +179,7 @@ export const ChangeVotingMethodPlugin = ({
       if (currentVotingDuration !== 0) {
         setValue('votingDuration', 0);
       }
+      votingDurationUserEdited.current = false;
     }
   }, [quorumAndUnity?.quorum, chainSelectDuration, setValue, getValues]);
 
@@ -193,8 +204,10 @@ export const ChangeVotingMethodPlugin = ({
 
     if (val) {
       setValue('votingDuration', 0);
+      votingDurationUserEdited.current = false;
     } else if (chainSelectDuration !== undefined) {
       setValue('votingDuration', chainSelectDuration);
+      votingDurationUserEdited.current = false;
     }
   };
 
@@ -260,7 +273,10 @@ export const ChangeVotingMethodPlugin = ({
                             ? String(field.value)
                             : undefined
                         }
-                        onValueChange={(value) => field.onChange(Number(value))}
+                        onValueChange={(value) => {
+                          votingDurationUserEdited.current = true;
+                          field.onChange(Number(value));
+                        }}
                         disabled={
                           isChainDurationLoading || !!chainDurationError
                         }
