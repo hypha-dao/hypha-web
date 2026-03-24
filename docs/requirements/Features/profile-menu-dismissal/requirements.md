@@ -25,7 +25,7 @@ The profile menu in the application chrome (triggered from the signed-in user co
 **Goals**
 
 - Restore predictable open/close behavior for the profile menu consistent with platform and accessibility expectations.
-- Ensure the menu can be dismissed without forcing a full page reload.
+- Ensure the menu can be dismissed without forcing a full-page reload.
 - Define verifiable acceptance criteria and automated regression coverage where feasible.
 
 **Non-goals**
