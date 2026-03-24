@@ -44,7 +44,32 @@ const votingDurationOptions = [
   { labelKey: 'd14', value: 14 * 86400 },
   { labelKey: 'd21', value: 21 * 86400 },
   { labelKey: 'd30', value: 30 * 86400 },
-];
+] as const;
+
+const votingDurationOptionValues = new Set(
+  votingDurationOptions.map((o) => o.value),
+);
+
+const nearestVotingDurationOption = (seconds: number) =>
+  votingDurationOptions.reduce((best, opt) =>
+    Math.abs(opt.value - seconds) < Math.abs(best.value - seconds) ? opt : best,
+  ).value;
+
+const normalizeChainDurationForSelect = (
+  raw: bigint | number | undefined,
+): number | undefined => {
+  if (raw === undefined) return undefined;
+  const seconds = typeof raw === 'bigint' ? Number(raw) : raw;
+  if (!Number.isFinite(seconds) || seconds < 0) return undefined;
+  return votingDurationOptionValues.has(seconds)
+    ? seconds
+    : nearestVotingDurationOption(seconds);
+};
+
+const isValidVotingDurationSelectValue = (value: unknown): value is number =>
+  typeof value === 'number' &&
+  Number.isFinite(value) &&
+  votingDurationOptionValues.has(value);
 
 export const ChangeVotingMethodPlugin = ({
   spaceSlug,
@@ -56,9 +81,24 @@ export const ChangeVotingMethodPlugin = ({
   members: Person[];
 }) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
-  const { duration } = useSpaceMinProposalDuration({
-    spaceId: BigInt(web3SpaceId as number),
+  const chainReadEnabled = typeof web3SpaceId === 'number';
+
+  const {
+    duration,
+    isLoading: isChainDurationLoading,
+    error: chainDurationError,
+  } = useSpaceMinProposalDuration({
+    spaceId: chainReadEnabled ? BigInt(web3SpaceId) : 0n,
+    enabled: chainReadEnabled,
   });
+
+  const chainSelectDuration = React.useMemo(
+    () => normalizeChainDurationForSelect(duration),
+    [duration],
+  );
+
+  const isChainDurationUnavailable =
+    !chainReadEnabled || isChainDurationLoading || !!chainDurationError;
 
   const { tokens: rawTokens, isLoading } = useTokens({ spaceSlug }) as {
     tokens: Token[];
@@ -87,6 +127,8 @@ export const ChangeVotingMethodPlugin = ({
 
   const { control, setValue, getValues } = useFormContext();
 
+  const votingDurationUserEdited = React.useRef(false);
+
   const quorumAndUnity = useWatch({
     control,
     name: 'quorumAndUnity',
@@ -102,18 +144,21 @@ export const ChangeVotingMethodPlugin = ({
     name: 'autoExecution',
   });
 
-  const votingDuration = useWatch({
-    control,
-    name: 'votingDuration',
-  });
-
   const isQuorumTooLow = (quorumAndUnity?.quorum ?? 0) < 20;
 
   React.useEffect(() => {
-    if (duration !== undefined && votingDuration === undefined) {
-      setValue('votingDuration', duration);
+    if (autoExecution !== false) return;
+    if (chainSelectDuration === undefined) return;
+    const current = getValues('votingDuration');
+    if (
+      votingDurationUserEdited.current &&
+      isValidVotingDurationSelectValue(current)
+    ) {
+      return;
     }
-  }, [duration, votingDuration, setValue]);
+    setValue('votingDuration', chainSelectDuration);
+    votingDurationUserEdited.current = false;
+  }, [autoExecution, chainSelectDuration, setValue, getValues]);
 
   React.useEffect(() => {
     const currentQuorum = quorumAndUnity?.quorum ?? 0;
@@ -124,8 +169,13 @@ export const ChangeVotingMethodPlugin = ({
       if (currentAutoExecution !== false) {
         setValue('autoExecution', false);
       }
-      if (currentVotingDuration === undefined && duration !== undefined) {
-        setValue('votingDuration', duration);
+      if (
+        chainSelectDuration !== undefined &&
+        (!votingDurationUserEdited.current ||
+          !isValidVotingDurationSelectValue(currentVotingDuration))
+      ) {
+        setValue('votingDuration', chainSelectDuration);
+        votingDurationUserEdited.current = false;
       }
     } else {
       if (currentAutoExecution !== true) {
@@ -134,8 +184,9 @@ export const ChangeVotingMethodPlugin = ({
       if (currentVotingDuration !== 0) {
         setValue('votingDuration', 0);
       }
+      votingDurationUserEdited.current = false;
     }
-  }, [quorumAndUnity?.quorum, duration, setValue, getValues]);
+  }, [quorumAndUnity?.quorum, chainSelectDuration, setValue, getValues]);
 
   const handleMethodChange = (method: VotingMethodType | null) => {
     setValue('votingMethod', method);
@@ -158,10 +209,10 @@ export const ChangeVotingMethodPlugin = ({
 
     if (val) {
       setValue('votingDuration', 0);
-    } else {
-      if (duration !== undefined) {
-        setValue('votingDuration', duration);
-      }
+      votingDurationUserEdited.current = false;
+    } else if (chainSelectDuration !== undefined) {
+      setValue('votingDuration', chainSelectDuration);
+      votingDurationUserEdited.current = false;
     }
   };
 
@@ -228,8 +279,17 @@ export const ChangeVotingMethodPlugin = ({
                     </Label>
                     <FormControl>
                       <Select
-                        value={String(field.value)}
-                        onValueChange={(value) => field.onChange(Number(value))}
+                        value={
+                          !isChainDurationUnavailable &&
+                          isValidVotingDurationSelectValue(field.value)
+                            ? String(field.value)
+                            : undefined
+                        }
+                        onValueChange={(value) => {
+                          votingDurationUserEdited.current = true;
+                          field.onChange(Number(value));
+                        }}
+                        disabled={isChainDurationUnavailable}
                       >
                         <SelectTrigger className="w-full">
                           <SelectValue
@@ -253,6 +313,19 @@ export const ChangeVotingMethodPlugin = ({
                       </Select>
                     </FormControl>
                   </span>
+                  {!chainReadEnabled ? (
+                    <span className="text-2 text-neutral-11">
+                      {tAgreementFlow(
+                        'plugins.quorumAndUnity.minDurationUnavailableNotConnected',
+                      )}
+                    </span>
+                  ) : chainDurationError ? (
+                    <span className="text-2 text-red-11">
+                      {tAgreementFlow(
+                        'plugins.quorumAndUnity.minDurationLoadError',
+                      )}
+                    </span>
+                  ) : null}
                   <FormMessage />
                 </FormItem>
               )}

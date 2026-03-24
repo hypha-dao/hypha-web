@@ -970,6 +970,8 @@
         "autoExecutionWhenConditionsMet": "Automatische Ausführung (wenn Bedingungen erfüllt sind)",
         "autoExecutionDisabled": "Die automatische Ausführung ist deaktiviert, wenn das Quorum unter 20 % liegt, um Treasury-Vermögenswerte zu schützen.",
         "minimumVotingDuration": "Minimale Abstimmungsdauer",
+        "minDurationUnavailableNotConnected": "Die minimale Abstimmungsdauer ist nicht verfügbar, bis der Space verbunden ist.",
+        "minDurationLoadError": "Die minimale Abstimmungsdauer konnte nicht vom Netzwerk geladen werden. Bitte versuchen Sie es später erneut.",
         "durationPlaceholder": "Dauer",
         "votingPower": "Stimmkraft",
         "votingTokenAllocation": "Abstimmungs-Token-Zuteilung",

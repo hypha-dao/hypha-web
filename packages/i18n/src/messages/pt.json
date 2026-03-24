@@ -274,6 +274,8 @@
         "autoExecutionWhenConditionsMet": "Execução automática (quando as condições forem atendidas)",
         "autoExecutionDisabled": "A execução automática é desativada quando o quorum está abaixo de 20% para proteger os ativos da tesouraria.",
         "minimumVotingDuration": "Duração mínima de votação",
+        "minDurationUnavailableNotConnected": "A duração mínima de votação não está disponível até o espaço estar conectado.",
+        "minDurationLoadError": "Não foi possível carregar a duração mínima de votação da rede. Tente novamente mais tarde.",
         "durationPlaceholder": "Duração",
         "votingPower": "Poder de voto",
         "votingTokenAllocation": "Alocação de token de votação",
