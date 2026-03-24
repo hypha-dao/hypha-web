@@ -22,6 +22,7 @@ import {
 } from '@hypha-platform/ui';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import {
   extractRevertReason,
   Space,
@@ -52,6 +53,8 @@ export const PeoplePurchaseHyphaTokens = ({
 }: PeoplePurchaseHyphaTokensProps) => {
   const tActions = useTranslations('ProfileActions');
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const router = useRouter();
+  const { lang } = useParams<{ lang: string }>();
   const { person, isLoading: isPersonLoading } = useMe();
   const { fundWallet } = useFundWallet({
     address: person?.address as `0x${string}`,
@@ -65,6 +68,13 @@ export const PeoplePurchaseHyphaTokens = ({
     useInvestInHyphaMutation();
 
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const closePanelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const closePanelUrl = useMemo(
+    () => `/${lang}/profile/${personSlug}`,
+    [lang, personSlug],
+  );
 
   const tokens: Token[] = PAYMENT_TOKEN
     ? [
@@ -169,6 +179,14 @@ export const PeoplePurchaseHyphaTokens = ({
     }
   }, [form, person]);
 
+  useEffect(() => {
+    return () => {
+      if (closePanelTimeoutRef.current) {
+        clearTimeout(closePanelTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const amount = useWatch({
     control: form.control,
     name: 'payout.amount',
@@ -200,8 +218,11 @@ export const PeoplePurchaseHyphaTokens = ({
       const result = await investInHypha({ usdcAmount });
       console.log('Purchase hash:', result);
       setShowSuccessMessage(true);
-      setTimeout(() => {
-        setShowSuccessMessage(false);
+      if (closePanelTimeoutRef.current) {
+        clearTimeout(closePanelTimeoutRef.current);
+      }
+      closePanelTimeoutRef.current = setTimeout(() => {
+        router.push(closePanelUrl);
       }, 3000);
       form.reset();
       await manualUpdate();
