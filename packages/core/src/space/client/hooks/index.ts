@@ -17,3 +17,4 @@ export { useSpaceDelegate } from './useSpaceDelegate';
 export { useSpaceMinProposalDuration } from './useSpaceMinProposalDuration';
 export { useGetDelegators } from './useGetDelegators';
 export { useRemoveMemberWeb3Rpc } from './useRemoveMember.web3.rpc';
+export { useSpacesBySlugs } from './useSpacesBySlugs';
