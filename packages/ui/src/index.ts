@@ -28,6 +28,7 @@ export * from './form';
 export * from './image';
 export * from './input';
 export * from './label';
+export * from './language-select';
 export * from './popover';
 export * from './progress';
 export * from './radio-group';

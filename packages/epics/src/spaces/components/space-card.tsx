@@ -1,3 +1,5 @@
+'use client';
+
 import { DEFAULT_SPACE_LEAD_IMAGE } from '@hypha-platform/core/client';
 import {
   Avatar,
@@ -14,6 +16,7 @@ import { ExitIcon } from '@radix-ui/react-icons';
 import { SpaceModeLabel } from './space-mode-label';
 import { cn, formatDate } from '@hypha-platform/ui-utils';
 import { ExitSpace } from './exit-space';
+import { useTranslations } from 'next-intl';
 
 type SpaceCardProps = {
   description: string;
@@ -54,6 +57,8 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
   className,
   showExitButton = false,
 }) => {
+  const t = useTranslations('Spaces');
+  const tCommon = useTranslations('Common');
   return (
     <Card
       className={cn('group relative w-full h-full flex flex-col', className)}
@@ -74,7 +79,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
                 variant="outline"
                 colorVariant="neutral"
                 className="border-0 w-[30px] h-[30px]"
-                title="Exit Space"
+                title={t('exitSpace')}
               >
                 <ExitIcon width={18} height={18} />
               </Button>
@@ -130,14 +135,16 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
                 <div className="flex flex-row">
                   <Skeleton loading={isLoading} height="16px" width="80px">
                     <div className="font-bold text-1">{members}</div>
-                    <div className="text-neutral-11 ml-1 text-1">Members</div>
+                    <div className="text-neutral-11 ml-1 text-1">
+                      {tCommon('Members')}
+                    </div>
                   </Skeleton>
                 </div>
                 <div className="flex flex-row">
                   <Skeleton loading={isLoading} height="16px" width="80px">
                     <div className="font-bold text-1">{agreements}</div>
                     <div className="text-neutral-11 ml-1 text-1">
-                      Agreements
+                      {tCommon('Agreements')}
                     </div>
                   </Skeleton>
                 </div>
@@ -147,7 +154,9 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
                   !Number.isNaN(createdAt.getTime()) && (
                     <Skeleton loading={isLoading} height="16px" width="80px">
                       <div className="text-neutral-11 text-1">
-                        Created on {formatDate(createdAt, true)}
+                        {tCommon('createdOn', {
+                          date: formatDate(createdAt, true),
+                        })}
                       </div>
                     </Skeleton>
                   )}

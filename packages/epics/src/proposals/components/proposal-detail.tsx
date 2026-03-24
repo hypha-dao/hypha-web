@@ -29,6 +29,7 @@ import {
   ProposalDelegatesData,
   MembershipExitData,
   ProposalTransparencySettingsInfo,
+  ProposalTokenBackingVaultData,
 } from '../../governance';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
 import { ButtonClose, ExpireProposalBanner } from '@hypha-platform/epics';
@@ -401,6 +402,13 @@ export const ProposalDetail = ({
                   .spaceActivityAccess as TransparencyLevel)
               : undefined
           }
+        />
+      ) : null}
+      {proposalDetails?.tokenBackingVaultData ? (
+        <ProposalTokenBackingVaultData
+          spaceSlug={spaceSlug}
+          dbTokens={dbTokens}
+          {...proposalDetails.tokenBackingVaultData}
         />
       ) : null}
       <FormVoting

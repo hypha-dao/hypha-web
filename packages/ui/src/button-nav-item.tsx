@@ -33,7 +33,7 @@ export const ButtonNavItem = ({
       asChild={!!href}
       onClick={onClick}
     >
-      {!!href ? <Link href={href}>{label}</Link> : <span>{label}</span>}
+      {href ? <Link href={href}>{label}</Link> : <span>{label}</span>}
     </Button>
   );
 };

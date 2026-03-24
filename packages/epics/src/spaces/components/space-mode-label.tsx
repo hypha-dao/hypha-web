@@ -2,6 +2,7 @@
 
 import { useAuthentication } from '@hypha-platform/authentication';
 import { Badge } from '@hypha-platform/ui';
+import { useTranslations } from 'next-intl';
 import clsx from 'clsx';
 import { useSpaceMember } from '../hooks';
 import { useRouter } from 'next/navigation';
@@ -24,6 +25,7 @@ const LabelButton = ({
   configPath: string;
   colorVariant?: 'accent' | 'error';
 }) => {
+  const t = useTranslations('Spaces');
   const router = useRouter();
   return (
     <Badge
@@ -31,7 +33,7 @@ const LabelButton = ({
       colorVariant={colorVariant}
       variant="outline"
       role="link"
-      title="Change Space Configuration"
+      title={t('changeSpaceConfiguration')}
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -93,17 +95,18 @@ export const SpaceModeLabel = ({
   web3SpaceId,
   className,
 }: SpaceModeLabelProps) => {
+  const t = useTranslations('Spaces');
   const { isAuthenticated } = useAuthentication();
   const isLive = !isSandbox && !isDemo && !isArchived;
   if (isLive) {
     return null;
   }
   const caption = isSandbox
-    ? 'Sandbox'
+    ? t('sandbox')
     : isDemo
-    ? 'Pilot'
+    ? t('pilot')
     : isArchived
-    ? 'Archived'
+    ? t('archived')
     : '';
   const colorVariant = isArchived ? 'error' : 'accent';
   return (

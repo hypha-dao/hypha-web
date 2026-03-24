@@ -251,9 +251,9 @@ async function main(): Promise<void> {
 
     let spacesChecked = 0;
     let spacesWithFreeTrial = 0;
-    let spacesToExtend: number[] = [];
+    const spacesToExtend: number[] = [];
     let extendedSpaces = 0;
-    let failedExtensions: { spaceId: number; error: string }[] = [];
+    const failedExtensions: { spaceId: number; error: string }[] = [];
 
     // Iterate through the specified range of spaces
     for (let spaceId = actualStartId; spaceId <= actualEndId; spaceId++) {

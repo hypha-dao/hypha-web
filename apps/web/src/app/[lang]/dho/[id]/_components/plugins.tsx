@@ -11,6 +11,7 @@ import {
   ActivateSpacesPlugin,
   SpaceToSpaceMembershipPlugin,
   MintTokensToSpaceTreasuryPlugin,
+  TokenBackingVaultPlugin,
   MembershipExitPlugin,
   SpaceTransparencySettingsPlugin,
 } from '@hypha-platform/epics';
@@ -28,6 +29,7 @@ export const PLUGINS = {
   'activate-spaces': ActivateSpacesPlugin,
   'space-to-space-membership': SpaceToSpaceMembershipPlugin,
   'mint-tokens-to-space-treasury': MintTokensToSpaceTreasuryPlugin,
+  'token-backing-vault': TokenBackingVaultPlugin,
   'membership-exit': MembershipExitPlugin,
   'space-transparency-settings': SpaceTransparencySettingsPlugin,
 };

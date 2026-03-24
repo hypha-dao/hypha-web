@@ -673,7 +673,7 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       // member[1] votes YES (counts as 2 votes due to delegation)
       await daoProposals.connect(members[1]).vote(proposalId, true);
 
-      let proposalState = await daoProposals.getProposalCore(proposalId);
+      const proposalState = await daoProposals.getProposalCore(proposalId);
       expect(proposalState.yesVotes).to.equal(2); // member[1]'s 2 (with delegation)
       console.log(
         `After delegate votes YES: ${proposalState.yesVotes} yes votes`,
@@ -1538,7 +1538,7 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         // Single vote should meet quorum immediately
         await daoProposals.connect(members[0]).vote(proposalId, true);
 
-        let proposalState = await daoProposals.getProposalCore(proposalId);
+        const proposalState = await daoProposals.getProposalCore(proposalId);
         console.log(
           `After 1 YES vote: ${proposalState.yesVotes} YES, ${proposalState.noVotes} NO, Executed: ${proposalState.executed}`,
         );
@@ -1696,7 +1696,7 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         await daoProposals.connect(members[1]).vote(proposalId, false);
         await daoProposals.connect(members[2]).vote(proposalId, false);
 
-        let currentState = await daoProposals.getProposalCore(proposalId);
+        const currentState = await daoProposals.getProposalCore(proposalId);
 
         // Should not execute immediately due to minimum duration
         expect(currentState.executed).to.equal(false);
@@ -1805,7 +1805,7 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         }
       }
 
-      let finalState = await daoProposals.getProposalCore(proposalId1);
+      const finalState = await daoProposals.getProposalCore(proposalId1);
       expect(finalState.expired || finalState.executed).to.equal(true);
       console.log('✅ Early rejection/execution logic working correctly');
 

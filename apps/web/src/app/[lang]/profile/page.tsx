@@ -19,8 +19,12 @@ import {
   TabsList,
   TabsTrigger,
 } from '@hypha-platform/ui/server';
+import { useTranslations } from 'next-intl';
 
 export default function Profile() {
+  const tNav = useTranslations('Navigation');
+  const tProfile = useTranslations('Profile');
+  const tCommon = useTranslations('Common');
   const { exportWallet, isEmbeddedWallet } = useAuthentication();
   const { lang } = useParams();
   const { person, isLoading } = useMe();
@@ -38,7 +42,7 @@ export default function Profile() {
     return (
       <Container className="flex flex-col space-y-6 py-4">
         <div className="flex items-center justify-center">
-          <Text>Redirecting to profile...</Text>
+          <Text>{tProfile('redirectingToProfile')}</Text>
         </div>
       </Container>
     );
@@ -52,9 +56,11 @@ export default function Profile() {
           className="cursor-pointer flex items-center"
         >
           <ChevronLeftIcon width={16} height={16} />
-          <Text className="text-sm">My Spaces</Text>
+          <Text className="text-sm">{tNav('mySpaces')}</Text>
         </Link>
-        <Text className="text-sm text-neutral-11 ml-1">/ Profile Page</Text>
+        <Text className="text-sm text-neutral-11 ml-1">
+          / {tProfile('profilePage')}
+        </Text>
       </div>
       <PersonHead
         isLoading={isLoading}
@@ -78,7 +84,7 @@ export default function Profile() {
             variant="ghost"
             onClick={() => setActiveTab('treasury')}
           >
-            Treasury
+            {tCommon('Treasury')}
           </TabsTrigger>
         </TabsList>
         <TabsContent value="treasury" className="flex flex-col gap-4">

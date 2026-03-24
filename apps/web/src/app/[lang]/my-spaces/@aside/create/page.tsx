@@ -16,6 +16,7 @@ import {
 } from '@hypha-platform/core/client';
 import { useConfig } from 'wagmi';
 import { Button } from '@hypha-platform/ui';
+import { useTranslations } from 'next-intl';
 
 export default function AsideCreateSpacePage() {
   const { lang } = useParams();
@@ -40,6 +41,9 @@ export default function AsideCreateSpacePage() {
     }
   }, [progress, spaceSlug]);
 
+  const tSpaces = useTranslations('Spaces');
+  const tCommon = useTranslations('Common');
+
   const closeUrl = pathname.split('/').slice(0, -1).join('/') || '/';
 
   return progress !== 100 ? (
@@ -52,8 +56,8 @@ export default function AsideCreateSpacePage() {
         message={
           isError ? (
             <div className="flex flex-col">
-              <div>Ouh Snap. There was an error</div>
-              <Button onClick={reset}>Reset</Button>
+              <div>{tSpaces('errorOhSnap')}</div>
+              <Button onClick={reset}>{tSpaces('reset')}</Button>
             </div>
           ) : (
             <div>{currentAction}</div>
@@ -67,11 +71,11 @@ export default function AsideCreateSpacePage() {
           }}
           closeUrl={closeUrl}
           backUrl={closeUrl}
-          backLabel="Back"
+          backLabel={tCommon('back')}
           onSubmit={(values) => createSpace(values)}
           isLoading={isLoadingJwt}
           label="create"
-          slugIncorrectMessage="A space with this name already exists. Please choose a different name for your space."
+          slugIncorrectMessage={tSpaces('slugAlreadyExistsLong')}
         />
       </LoadingBackdrop>
     </SidePanel>

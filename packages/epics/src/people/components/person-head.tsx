@@ -27,6 +27,7 @@ import {
 } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
 import { formatDate, tryDecodeUriPart } from '@hypha-platform/ui-utils';
+import { useTranslations } from 'next-intl';
 
 export type MemberType = {
   avatar: string;
@@ -62,6 +63,7 @@ export const PersonHead = ({
   onExportEmbeddedWallet,
   exportEmbeddedWallet,
 }: PersonHeadProps & MemberType) => {
+  const tProfile = useTranslations('Profile');
   const { exportWallet, isEmbeddedWallet } = useAuthentication();
   const { isMe } = useMe();
   const { lang, personSlug: personSlugRaw } =
@@ -105,6 +107,7 @@ export const PersonHead = ({
             <ExportEmbeddedWalletButton
               isLoading={isLoading}
               isEmbeddedWallet={isEmbeddedWallet || !!onExportEmbeddedWallet}
+              label={tProfile('exportKeys')}
               onExportEmbeddedWallet={
                 exportEmbeddedWallet && isEmbeddedWallet
                   ? exportWallet
@@ -113,7 +116,8 @@ export const PersonHead = ({
             />
           )}
           <ButtonCopyUserId
-            title="Copy user ID"
+            title={tProfile('copyUserId')}
+            successMessage={tProfile('copied')}
             slug={slug}
             isLoading={isLoading}
           />
@@ -126,7 +130,7 @@ export const PersonHead = ({
             >
               <Button colorVariant="accent" disabled={!isMe(personSlug)}>
                 <RxPencil2 />
-                Edit profile
+                {tProfile('editProfile')}
               </Button>
             </Link>
           </Skeleton>
@@ -142,7 +146,7 @@ export const PersonHead = ({
             <div className="flex gap-5 text-1">
               {signupDate ? (
                 <span className="flex gap-3">
-                  Hypha member since {signupDate}
+                  {tProfile('hyphaMemberSince', { date: signupDate })}
                 </span>
               ) : null}
               {email && isMe(personSlug) ? (

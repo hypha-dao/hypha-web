@@ -7,6 +7,7 @@ import { useMe, useSpaceBySlug, Address } from '@hypha-platform/core/client';
 import { useParams, useRouter } from 'next/navigation';
 import React from 'react';
 import { Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Locale } from '@hypha-platform/i18n';
 import { mutate as mutateCache, type Key } from 'swr';
 
@@ -16,6 +17,7 @@ type ExitSpaceProps = {
 };
 
 export const ExitSpace = ({ web3SpaceId, exitButton }: ExitSpaceProps) => {
+  const t = useTranslations('Spaces');
   const { isAuthenticated, user } = useAuthentication();
   const [showTooltip, setShowTooltip] = React.useState(false);
   const [justExit, setJustExit] = React.useState(false);
@@ -133,24 +135,20 @@ export const ExitSpace = ({ web3SpaceId, exitButton }: ExitSpaceProps) => {
       colorVariant="accent"
       variant="outline"
       className="relative"
-      title={
-        disabled
-          ? 'You need to be authorized and to be a member of current space to be able to exit'
-          : undefined
-      }
+      title={disabled ? t('exitSpaceDisabledTooltip') : undefined}
       disabled={disabled}
     >
       {showLoader && (
         <Loader2 className="animate-spin" width={16} height={16} />
       )}
-      Exit Space
+      {t('exitSpace')}
       {showTooltip && (
         <Badge
           variant="surface"
           colorVariant="error"
           className="absolute z-[1000] mt-[40px]"
         >
-          Could not exit space
+          {t('couldNotExitSpace')}
         </Badge>
       )}
     </Button>
@@ -162,10 +160,10 @@ export const ExitSpace = ({ web3SpaceId, exitButton }: ExitSpaceProps) => {
 
   return (
     <ConfirmDialog
-      title="Exit Space"
-      description="Do you really want to exit this space?"
-      customAcceptButtonText="Yes, leave"
-      customRejectButtonText="No, stay"
+      title={t('exitSpaceConfirmTitle')}
+      description={t('exitSpaceConfirmDescription')}
+      customAcceptButtonText={t('exitSpaceConfirmYes')}
+      customRejectButtonText={t('exitSpaceConfirmNo')}
       onAcceptClicked={handleExitSpace}
     >
       {button}

@@ -8,6 +8,7 @@ import {
 } from '@hypha-platform/epics';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import React from 'react';
+import { useTranslations } from 'next-intl';
 
 export const ProfileTabs = ({
   person,
@@ -16,6 +17,7 @@ export const ProfileTabs = ({
   person?: Person;
   lang: string;
 }) => {
+  const tCommon = useTranslations('Common');
   const [activeTab, setActiveTab] = React.useState('treasury');
   const { person: authenticatedPerson } = useMe();
   const isMyProfile =
@@ -30,7 +32,7 @@ export const ProfileTabs = ({
           variant="ghost"
           onClick={() => setActiveTab('treasury')}
         >
-          Treasury
+          {tCommon('Treasury')}
         </TabsTrigger>
       </TabsList>
       <TabsContent value="treasury" className="flex flex-col gap-6">

@@ -10,6 +10,7 @@ import { useSpaceDiscoverability } from '@hypha-platform/epics';
 import { useUserSpaceState } from '@hypha-platform/epics';
 import { checkAccess } from '@hypha-platform/epics';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
+import { useTranslations } from 'next-intl';
 
 interface NestedSpacesButtonProps {
   web3SpaceId?: number;
@@ -20,6 +21,7 @@ export const NestedSpacesButton = ({
   web3SpaceId,
   spaceSlug,
 }: NestedSpacesButtonProps) => {
+  const tDho = useTranslations('DHO');
   const pathname = usePathname();
   const { space } = useSpaceBySlug(spaceSlug || '');
   const effectiveSpaceId = web3SpaceId || space?.web3SpaceId || undefined;
@@ -41,10 +43,10 @@ export const NestedSpacesButton = ({
   const isDisabled = isLoading || !hasAccess;
 
   const tooltipMessage = isLoading
-    ? 'Loading...'
+    ? tDho('nestedSpacesButton.loading')
     : !hasAccess
-    ? 'You do not have access to view space navigation.'
-    : 'Space Navigation';
+    ? tDho('nestedSpacesButton.noAccess')
+    : tDho('nestedSpacesButton.label');
 
   return (
     <Link
@@ -62,7 +64,7 @@ export const NestedSpacesButton = ({
         className="flex items-center gap-2 text-accent-11"
       >
         <Eye className="w-4 h-4" />
-        <span>Space Navigation</span>
+        <span>{tDho('nestedSpacesButton.label')}</span>
       </Button>
     </Link>
   );

@@ -8,6 +8,7 @@ import React from 'react';
 import { Text } from '@radix-ui/themes';
 import { useFilterSpacesListWithDiscoverability } from '../hooks/use-spaces-discoverability-batch';
 import { SectionFilter, Input } from '@hypha-platform/ui';
+import { useTranslations } from 'next-intl';
 
 export function filterSpaces(
   spaces: Space[],
@@ -38,6 +39,7 @@ export function MyFilteredSpaces({
     personAddress: person?.address as Address | undefined,
   });
   const [hideArchivedSpaces, setHideArchivedSpaces] = React.useState(true);
+  const tSpaces = useTranslations('Spaces');
 
   const memberFilteredSpaces = React.useMemo(
     () => filterSpaces(spaces, person?.slug, web3SpaceIds),
@@ -59,15 +61,22 @@ export function MyFilteredSpaces({
 
   return (
     <div className="space-y-6">
-      <SectionFilter count={displayedSpaces.length} label="My Spaces">
-        <label className="flex items-center gap-1">
+      <SectionFilter
+        count={displayedSpaces.length}
+        label={tSpaces('mySpacesLabel')}
+      >
+        <label
+          htmlFor="hide-archived-spaces"
+          className="flex items-center gap-1"
+        >
           <Input
+            id="hide-archived-spaces"
             type="checkbox"
             checked={hideArchivedSpaces}
             onChange={(e) => setHideArchivedSpaces(e.target.checked)}
             className="h-4 w-4"
           />
-          <span>Hide archived spaces</span>
+          <span>{tSpaces('hideArchivedSpaces')}</span>
         </label>
       </SectionFilter>
       <SpaceCardList

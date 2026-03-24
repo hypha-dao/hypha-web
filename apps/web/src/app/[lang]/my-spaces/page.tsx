@@ -19,6 +19,7 @@ import { getAllSpaces } from '@hypha-platform/core/server';
 import { getDhoPathAgreements } from '../dho/[id]/@tab/agreements/constants';
 import { PlusIcon } from '@radix-ui/react-icons';
 import { DEFAULT_SPACE_LEAD_IMAGE } from '@hypha-platform/core/client';
+import { getTranslations } from 'next-intl/server';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -34,9 +35,10 @@ export default async function Index(props: PageProps) {
 
   const { lang } = params;
 
-  const [allSpaces, mySpaces] = await Promise.all([
+  const [allSpaces, mySpaces, t] = await Promise.all([
     getAllSpaces({ parentOnly: false, omitSandbox: true }),
     getAllSpaces({ search: query, parentOnly: false }),
+    getTranslations('Spaces'),
   ]);
 
   return (
@@ -49,8 +51,8 @@ export default async function Index(props: PageProps) {
           align="center"
           className="flex flex-col"
         >
-          <span>All your Spaces,</span>
-          <span> in One Place</span>
+          <span>{t('allYourSpaces')}</span>
+          <span> {t('inOnePlace')}</span>
         </Heading>
         <div className="flex justify-center">
           <SpaceSearch />
@@ -60,7 +62,7 @@ export default async function Index(props: PageProps) {
               href={`/${lang}/my-spaces/create`}
             >
               <PlusIcon />
-              Create Space
+              {t('createSpace')}
             </AuthenticatedLinkButton>
           ) : null}
         </div>
@@ -70,7 +72,7 @@ export default async function Index(props: PageProps) {
           className="w-full space-y-6"
         >
           <Text className="text-4 font-medium pb-4 pt-4">
-            Spaces you might like
+            {t('spacesYouMightLike')}
           </Text>
           <Carousel className="mt-6">
             <CarouselContent className="pb-5" showScrollbar>

@@ -1,8 +1,11 @@
 import type { NextConfig } from 'next';
-import { i18nConfig } from '../../packages/i18n/src/i18n-config';
+import createNextIntlPlugin from 'next-intl/plugin';
+import { routing } from '../../packages/i18n/src/routing';
 
 const IMAGE_HOSTS = process.env.NEXT_PUBLIC_IMAGE_HOSTS?.split(', ') ?? [];
-const LOCALES = i18nConfig.locales;
+const LOCALES = routing.locales;
+
+const withNextIntl = createNextIntlPlugin('../../packages/i18n/src/request.ts');
 
 const nextConfig: NextConfig = {
   headers: async () => {
@@ -38,7 +41,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/',
-        destination: `/${i18nConfig.defaultLocale}/network`,
+        destination: `/${routing.defaultLocale}/network`,
         permanent: true,
       },
       {
@@ -50,4 +53,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);
