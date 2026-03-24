@@ -222,7 +222,7 @@ export const PeoplePurchaseHyphaTokens = ({
         clearTimeout(closePanelTimeoutRef.current);
       }
       closePanelTimeoutRef.current = setTimeout(() => {
-        router.replace(closePanelUrl);
+        router.replace(closePanelUrl, { scroll: false });
       }, 3000);
       form.reset();
     } catch (error) {
