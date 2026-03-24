@@ -2,9 +2,10 @@ name: Deploy Preview
 
 on:
   pull_request:
+  merge_group:
 
 concurrency:
-  group: deploy-preview-${{ github.event.pull_request.number || github.ref }}
+  group: deploy-preview-${{ github.event.pull_request.number || github.event.merge_group.head_sha || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -21,6 +22,7 @@ env:
   PRIVATE_KEY: ${{ secrets.EVM_SC_OWNER_PRIVATE_KEY }}
   DEFAULT_DB_AUTHENTICATED_URL: ${{ secrets.POSTGRES_AUTHENTICATED_URL }}
   DEFAULT_DB_ANONYMOUS_URL: ${{secrets.POSTGRES_ANONYMOUS_URL}}
+  PR_OR_QUEUE_HEAD: ${{ github.event.pull_request.number || github.event.merge_group.head_sha }}
 
 jobs:
   detect-changes:
@@ -36,7 +38,7 @@ jobs:
 
   deploy-preview:
     needs: detect-changes
-    if: needs.detect-changes.outputs.has_preview_deploy_changes == 'true'
+    if: github.event_name == 'pull_request' && needs.detect-changes.outputs.has_preview_deploy_changes == 'true'
     runs-on: blacksmith-4vcpu-ubuntu-2404
 
     steps:
@@ -64,7 +66,7 @@ jobs:
         with:
           project_id: ${{ env.NEON_PROJECT_ID }}
           parent: main
-          branch_name: preview/pr-${{ github.event.number }}-${{ steps.branch-name.outputs.current_branch }}
+          branch_name: preview/pr-${{ env.PR_OR_QUEUE_HEAD }}-${{ steps.branch-name.outputs.current_branch }}
           username: ${{ env.NEON_DATABASE_USERNAME }}
           database: ${{ env.NEON_DATABASE_NAME }}
           api_key: ${{ env.NEON_API_KEY }}
@@ -93,7 +95,7 @@ jobs:
         uses: neondatabase/schema-diff-action@v1
         with:
           project_id: ${{ secrets.NEON_PROJECT_ID }}
-          compare_branch: preview/pr-${{ github.event.number }}-${{ steps.branch-name.outputs.current_branch }}
+          compare_branch: preview/pr-${{ env.PR_OR_QUEUE_HEAD }}-${{ steps.branch-name.outputs.current_branch }}
           api_key: ${{ secrets.NEON_API_KEY }}
 
       - name: Build Project Artifacts
@@ -140,7 +142,7 @@ jobs:
         with:
           project_id: ${{ env.NEON_PROJECT_ID }}
           parent: main
-          branch_name: test/pr-${{ github.event.number }}-${{ steps.branch-name.outputs.current_branch }}
+          branch_name: test/pr-${{ env.PR_OR_QUEUE_HEAD }}-${{ steps.branch-name.outputs.current_branch }}
           username: ${{ env.NEON_DATABASE_USERNAME }}
           database: ${{ env.NEON_DATABASE_NAME }}
           api_key: ${{ env.NEON_API_KEY }}
@@ -161,5 +163,5 @@ jobs:
         uses: neondatabase/delete-branch-action@v3
         with:
           project_id: ${{ secrets.NEON_PROJECT_ID }}
-          branch: test/pr-${{ github.event.number }}-${{ steps.branch-name.outputs.current_branch }}
+          branch: test/pr-${{ env.PR_OR_QUEUE_HEAD }}-${{ steps.branch-name.outputs.current_branch }}
           api_key: ${{ secrets.NEON_API_KEY }}
