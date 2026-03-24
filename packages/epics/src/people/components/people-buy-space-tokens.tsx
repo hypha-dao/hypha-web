@@ -31,9 +31,12 @@ import {
 } from '@hypha-platform/core/client';
 import { useScrollToErrors } from '../../hooks';
 import { useDbTokens } from '../../hooks/use-db-tokens';
+import { useDbSpaces } from '../../hooks';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { Loader2 } from 'lucide-react';
 import { formatUnits } from 'viem';
+import { RecipientField } from '../../agreements/plugins/components/common/recipient-field';
+import { useEffect } from 'react';
 
 type PurchasableToken = {
   id: number;
@@ -55,6 +58,8 @@ const buySpaceTokensSchema = z.object({
     .refine((v) => parseFloat(v) > 0, {
       message: 'Amount must be greater than 0',
     }),
+  buyerAddress: z.string().optional(),
+  paymentRecipient: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof buySpaceTokensSchema>;
@@ -170,6 +175,8 @@ export const PeopleBuySpaceTokens = ({
     defaultValues: {
       tokenAddress: '',
       amount: '',
+      buyerAddress: person?.address ?? '',
+      paymentRecipient: '',
     },
   });
 
@@ -229,6 +236,35 @@ export const PeopleBuySpaceTokens = ({
       formatUnits(sale.salePricePerToken, sale.paymentTokenDecimals),
     );
   }, [sale]);
+  const { spaces } = useDbSpaces({
+    parentOnly: false,
+  });
+  const buyerMembers = useMemo(
+    () => (person?.address ? [person] : []),
+    [person],
+  );
+  const recipientSpaces = useMemo(
+    () =>
+      spaces?.filter(
+        (space) =>
+          sale?.executor &&
+          space.address?.toLowerCase() === sale.executor.toLowerCase(),
+      ) ?? [],
+    [sale?.executor, spaces],
+  );
+
+  useEffect(() => {
+    if (buyerAddress || person?.address) {
+      form.setValue('buyerAddress', buyerAddress ?? person?.address ?? '', {
+        shouldDirty: false,
+      });
+    }
+    if (sale?.executor) {
+      form.setValue('paymentRecipient', sale.executor, {
+        shouldDirty: false,
+      });
+    }
+  }, [buyerAddress, person?.address, sale?.executor, form]);
 
   const handleApprove = async () => {
     form.clearErrors('root');
@@ -386,7 +422,7 @@ export const PeopleBuySpaceTokens = ({
           </div>
         </div>
 
-        {selectedToken && !isNaN(parsedAmount) && parsedAmount > 0 && (
+        {selectedToken && !isNaN(parsedAmount) && parsedAmount > 0 && sale && (
           <div className="text-sm text-neutral-11">
             <div>
               Price:{' '}
@@ -405,68 +441,6 @@ export const PeopleBuySpaceTokens = ({
             <div>
               Remaining in sale: <strong>{remainingForSale}</strong>
             </div>
-            <div>
-              Buyer eligibility:{' '}
-              <strong>
-                {sale?.canPurchase ? 'Eligible' : 'Not eligible for this sale'}
-              </strong>
-            </div>
-            <div>
-              Purchase mode:{' '}
-              <strong>{sale?.purchaseEligibilityMode ?? '-'}</strong>
-            </div>
-            <div>
-              Allowance:{' '}
-              <strong>
-                {sale
-                  ? `${formatCurrencyValue(
-                      Number(
-                        formatUnits(sale.allowance, sale.paymentTokenDecimals),
-                      ),
-                    )} ${paymentTokenMeta?.symbol ?? ''}`
-                  : '-'}
-              </strong>
-            </div>
-            <div>
-              Balance:{' '}
-              <strong>
-                {sale
-                  ? `${formatCurrencyValue(
-                      Number(
-                        formatUnits(sale.balance, sale.paymentTokenDecimals),
-                      ),
-                    )} ${paymentTokenMeta?.symbol ?? ''}`
-                  : '-'}
-              </strong>
-            </div>
-            <div>
-              Payment token treasury recipient:{' '}
-              <strong className="break-all">{sale?.executor ?? '-'}</strong>
-            </div>
-            <div>
-              Wallet used for tx:{' '}
-              <strong className="break-all">
-                {buyerAddress ?? person?.address ?? '-'}
-              </strong>
-            </div>
-            {needsApproval && (
-              <div>
-                <strong>Approval required before buying.</strong>
-              </div>
-            )}
-            {!hasEnoughBalance && (
-              <div>
-                <strong>Insufficient payment token balance.</strong>
-              </div>
-            )}
-            {(approveError || buyError) && (
-              <div>
-                <strong>
-                  {(approveError || buyError)?.message ??
-                    'Transaction failed. Please retry.'}
-                </strong>
-              </div>
-            )}
           </div>
         )}
 
@@ -494,45 +468,26 @@ export const PeopleBuySpaceTokens = ({
 
         <Separator />
 
-        {/* Token sent to (buyer) */}
-        <div className="flex flex-col gap-2">
-          <span className="text-2 text-neutral-11">Token sent to</span>
-          <div className="flex items-center gap-2 p-2 rounded-md bg-neutral-2 border border-neutral-6">
-            <span className="text-2 text-neutral-11 font-medium truncate">
-              {person?.name
-                ? `${person.name}${person.surname ? ` ${person.surname}` : ''}`
-                : person?.address ?? '—'}
-            </span>
-            {(buyerAddress || person?.address) && (
-              <span className="text-1 text-neutral-10 truncate">
-                {buyerAddress ?? person?.address}
-              </span>
-            )}
-          </div>
-        </div>
+        <RecipientField
+          label={`${selectedToken?.symbol ?? 'Token'} sent to`}
+          members={buyerMembers}
+          defaultRecipientType="member"
+          readOnly={true}
+          showTabs={false}
+          name="buyerAddress"
+        />
 
         <Separator />
 
-        {/* Payment sent to (space treasury) */}
-        <div className="flex flex-col gap-2">
-          <span className="text-2 text-neutral-11">Payment sent to</span>
-          <div className="flex items-center gap-2 p-2 rounded-md bg-neutral-2 border border-neutral-6">
-            {selectedToken ? (
-              <div className="flex flex-col">
-                <span className="text-2 text-neutral-11 font-medium">
-                  {selectedToken.name} Space Treasury
-                </span>
-                <span className="text-1 text-neutral-10 break-all">
-                  {sale?.executor ?? 'Loading...'}
-                </span>
-              </div>
-            ) : (
-              <span className="text-2 text-neutral-10 italic">
-                Select a token to see the treasury address
-              </span>
-            )}
-          </div>
-        </div>
+        <RecipientField
+          label={`${paymentTokenMeta?.symbol ?? 'Payment'} paid to`}
+          members={[]}
+          spaces={recipientSpaces}
+          defaultRecipientType="space"
+          readOnly={true}
+          showTabs={false}
+          name="paymentRecipient"
+        />
 
         <Separator />
 
@@ -592,6 +547,12 @@ export const PeopleBuySpaceTokens = ({
         {form.formState.errors.root && (
           <div className="text-2 text-foreground">
             {form.formState.errors.root.message}
+          </div>
+        )}
+        {(approveError || buyError) && (
+          <div className="text-2 text-foreground">
+            {(approveError || buyError)?.message ??
+              'Transaction failed. Please retry.'}
           </div>
         )}
       </form>
