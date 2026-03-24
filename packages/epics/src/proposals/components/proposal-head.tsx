@@ -5,6 +5,8 @@ import { Badge, Skeleton } from '@hypha-platform/ui';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { useParams } from 'next/navigation';
 import { useIsDelegate, useSpaceBySlug } from '@hypha-platform/core/client';
+import { useFormatter, useTranslations } from 'next-intl';
+import React from 'react';
 
 export type CreatorType = {
   avatar?: string;
@@ -21,7 +23,7 @@ export type ProposalHeadProps = {
   status?: string;
   isLoading?: boolean;
   label?: string;
-  createDate?: string;
+  createDate?: string | Date;
   proposalStatus?: string | null;
 };
 
@@ -33,6 +35,9 @@ export const ProposalHead = ({
   createDate,
   proposalStatus,
 }: ProposalHeadProps) => {
+  const tCommon = useTranslations('Common');
+  const tProposalDetails = useTranslations('ProposalDetails');
+  const format = useFormatter();
   const displayName =
     creator?.type === 'space'
       ? creator.name
@@ -51,11 +56,20 @@ export const ProposalHead = ({
   } => {
     switch (proposalStatus) {
       case 'accepted':
-        return { text: 'Accepted', colorVariant: 'success' };
+        return {
+          text: tProposalDetails('status.accepted'),
+          colorVariant: 'success',
+        };
       case 'rejected':
-        return { text: 'Rejected', colorVariant: 'error' };
+        return {
+          text: tProposalDetails('status.rejected'),
+          colorVariant: 'error',
+        };
       case 'onVoting':
-        return { text: 'On Voting', colorVariant: 'warn' };
+        return {
+          text: tProposalDetails('status.onVoting'),
+          colorVariant: 'warn',
+        };
       default:
         return { text: '', colorVariant: 'neutral' };
     }
@@ -69,6 +83,24 @@ export const ProposalHead = ({
     spaceId: currentSpace?.web3SpaceId as number,
     userAddress: creator?.address as `0x${string}`,
   });
+  const formattedCreateDate = React.useMemo(() => {
+    if (!createDate) return null;
+
+    const date = createDate instanceof Date ? createDate : new Date(createDate);
+    if (Number.isNaN(date.getTime())) {
+      return typeof createDate === 'string' ? createDate : null;
+    }
+
+    return format.dateTime(date, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  }, [createDate, format]);
+
   return (
     <div className="flex gap-3 w-full">
       <div className="flex items-center space-x-3">
@@ -94,7 +126,7 @@ export const ProposalHead = ({
                   colorVariant="neutral"
                   isLoading={isLoading}
                 >
-                  Space
+                  {tProposalDetails('badges.space')}
                 </Badge>
               )}
               {proposalStatus && (
@@ -112,7 +144,7 @@ export const ProposalHead = ({
                   colorVariant="accent"
                   isLoading={isLoading}
                 >
-                  Delegate
+                  {tProposalDetails('badges.delegate')}
                 </Badge>
               )}
             </div>
@@ -130,7 +162,10 @@ export const ProposalHead = ({
 
             <Skeleton height="16px" width="80px" loading={isLoading}>
               <Text className="text-1 text-gray-500">
-                {displayName} {createDate && <>· Created on {createDate}</>}
+                {displayName}{' '}
+                {formattedCreateDate && (
+                  <>· {tCommon('createdOn', { date: formattedCreateDate })}</>
+                )}
               </Text>
             </Skeleton>
           </div>

@@ -10,7 +10,6 @@ import {
   Badge,
 } from '@hypha-platform/ui';
 import { SewingPinFilledIcon } from '@radix-ui/react-icons';
-import { formatDate } from '@hypha-platform/ui-utils';
 import { useEvents } from '@hypha-platform/core/client';
 import React from 'react';
 import { useParams } from 'next/navigation';
@@ -24,6 +23,7 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import { useIsDelegate } from '@hypha-platform/core/client';
 import { useEffect } from 'react';
 import { mutate as mutateCache, type Key } from 'swr';
+import { useFormatter, useTranslations } from 'next-intl';
 
 export type MemberCardProps = {
   spaceId?: number;
@@ -50,6 +50,8 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   minimize,
   address,
 }) => {
+  const tCommon = useTranslations('Common');
+  const format = useFormatter();
   const { id: spaceSlug } = useParams();
   const { space } = useSpaceBySlug(spaceSlug as string);
   const { undelegate, isUndelegating } = useUndelegateWeb3Rpc();
@@ -194,7 +196,16 @@ export const MemberCard: React.FC<MemberCardProps> = ({
               >
                 <div className="flex items-center text-gray-500">
                   <Text className="text-1">
-                    Joined space on {formatDate(joinEvent.createdAt, true)}
+                    {tCommon('joinedSpaceOn', {
+                      date: format.dateTime(new Date(joinEvent.createdAt), {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                      }),
+                    })}
                   </Text>
                 </div>
               </Skeleton>

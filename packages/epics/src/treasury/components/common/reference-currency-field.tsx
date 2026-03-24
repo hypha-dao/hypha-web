@@ -13,9 +13,23 @@ import {
   SelectItem,
   RequirementMark,
 } from '@hypha-platform/ui';
+import { useTranslations } from 'next-intl';
+
+const CURRENCY_OPTIONS = [
+  { value: 'USD', key: 'usd' },
+  { value: 'GBP', key: 'gbp' },
+  { value: 'CAD', key: 'cad' },
+  { value: 'EUR', key: 'eur' },
+  { value: 'CNY', key: 'cny' },
+  { value: 'CHF', key: 'chf' },
+  { value: 'JPY', key: 'jpy' },
+  { value: 'AUD', key: 'aud' },
+  { value: 'HKD', key: 'hkd' },
+] as const;
 
 export const ReferenceCurrencyField = () => {
   const { control, formState } = useFormContext();
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const enableTokenPrice = useWatch({
     control,
     name: 'enableTokenPrice',
@@ -31,27 +45,32 @@ export const ReferenceCurrencyField = () => {
           <div className="flex w-full justify-between">
             <div className="flex gap-1 w-full">
               <span className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
-                Reference Currency
+                {tAgreementFlow(
+                  'plugins.issueNewToken.value.referenceCurrencyLabel',
+                )}
               </span>
               {enableTokenPrice && <RequirementMark className="text-2" />}
             </div>
             <FormControl>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select currency" />
+                  <SelectValue
+                    placeholder={tAgreementFlow(
+                      'plugins.issueNewToken.value.referenceCurrencyPlaceholder',
+                    )}
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="USD">
-                    USD - United States Dollar
-                  </SelectItem>
-                  <SelectItem value="GBP">GBP - British Pound</SelectItem>
-                  <SelectItem value="CAD">CAD - Canadian Dollar</SelectItem>
-                  <SelectItem value="EUR">EUR - Euro</SelectItem>
-                  <SelectItem value="CNY">CNY - Chinese Yuan</SelectItem>
-                  <SelectItem value="CHF">CHF - Swiss Franc</SelectItem>
-                  <SelectItem value="JPY">JPY - Japanese Yen</SelectItem>
-                  <SelectItem value="AUD">AUD - Australian Dollar</SelectItem>
-                  <SelectItem value="HKD">HKD - Hong Kong Dollar</SelectItem>
+                  {CURRENCY_OPTIONS.map((currency) => (
+                    <SelectItem key={currency.value} value={currency.value}>
+                      {currency.value} -{' '}
+                      {tAgreementFlow(
+                        `plugins.issueNewToken.value.currencies.${currency.key}` as Parameters<
+                          typeof tAgreementFlow
+                        >[0],
+                      )}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </FormControl>

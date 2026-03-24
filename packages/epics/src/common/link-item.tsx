@@ -7,9 +7,15 @@ type LinkItemProps = {
   link: string;
   error?: string;
   onChange: (value: string) => void;
+  placeholder?: string;
 };
 
-export const LinkItem = ({ link, error, onChange }: LinkItemProps) => {
+export const LinkItem = ({
+  link,
+  error,
+  onChange,
+  placeholder = 'Add your URL',
+}: LinkItemProps) => {
   const handleChange = React.useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       onChange(event.target.value);
@@ -24,7 +30,7 @@ export const LinkItem = ({ link, error, onChange }: LinkItemProps) => {
       <LinkIcon url={link} />
       <span className="flex flex-col flex-1 ml-4">
         <Input
-          placeholder="Add your URL"
+          placeholder={placeholder}
           className={cn(
             'text-2',
             error && 'border-destructive focus-visible:ring-destructive',

@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import { Button } from '@hypha-platform/ui';
 import { ReloadIcon } from '@radix-ui/react-icons';
+import { useTranslations } from 'next-intl';
 
 export default function AppError({
   error,
@@ -11,6 +12,7 @@ export default function AppError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const tCommon = useTranslations('Common');
   useEffect(() => {
     console.error(error);
   }, [error]);
@@ -20,13 +22,12 @@ export default function AppError({
       <div className="flex flex-col items-center justify-center p-0 gap-6 absolute top-0 left-0 right-0 bottom-0">
         <div className="flex flex-row items-center justify-center text-center p-2 md:p-0 gap-9">
           <h1 className="md:flex-none flex-wrap order-none self-stretch grow-0 text-9 font-medium">
-            We’ll Be Back Shortly!
+            {tCommon('errorMaintenanceTitle')}
           </h1>
         </div>
         <div className="flex flex-col items-center justify-center text-center p-2 md:p-0 gap-9">
           <div className="md:flex-none flex-wrap order-none self-stretch grow-0 text-4 text-neutral-11">
-            Hypha is taking a short break while we roll out updates. We’ll be
-            back soon with exciting improvements on the way!
+            {tCommon('errorMaintenanceDescription')}
           </div>
         </div>
         <div className="flex flex-row justify-center items-center pt-0 pb-0 pl-3 pr-3 gap-2 isolate">
@@ -38,7 +39,7 @@ export default function AppError({
               onClick={reset}
             >
               <ReloadIcon />
-              Refresh Page
+              {tCommon('errorRefreshPage')}
             </Button>
           </div>
         </div>

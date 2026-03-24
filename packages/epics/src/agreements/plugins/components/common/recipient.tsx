@@ -6,6 +6,7 @@ import { WalletAddress } from './wallet-address';
 import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui/server';
 import { Space, Person } from '@hypha-platform/core/client';
 import { useFilterSpacesListWithDiscoverability } from '@hypha-platform/epics';
+import { useTranslations } from 'next-intl';
 
 export type RecipientType = 'member' | 'space';
 
@@ -31,9 +32,10 @@ export const Recipient = ({
   readOnly,
   emptyMembersMessage,
   emptySpacesMessage,
-  label = 'Recipient',
+  label,
   showTabs = true,
 }: RecipientProps) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const [recipientType, setRecipientType] =
     useState<RecipientType>(defaultRecipientType);
   const [selected, setSelected] = useState<
@@ -56,7 +58,10 @@ export const Recipient = ({
   }, [value, members, filteredSpaces]);
 
   const placeholder =
-    recipientType === 'member' ? 'Select member...' : 'Select space...';
+    recipientType === 'member'
+      ? tAgreementFlow('plugins.recipient.selectMemberPlaceholder')
+      : tAgreementFlow('plugins.recipient.selectSpacePlaceholder');
+  const resolvedLabel = label ?? tAgreementFlow('plugins.recipient.recipient');
 
   const memberOptions = useMemo(
     () =>
@@ -135,7 +140,7 @@ export const Recipient = ({
     <div className="flex flex-col gap-4">
       <div className="flex flex-col md:flex-row md:items-center w-full gap-2">
         <div className="flex items-center justify-between gap-2 w-full">
-          <label className="text-sm text-neutral-11">{label}</label>
+          <label className="text-sm text-neutral-11">{resolvedLabel}</label>
           {showTabs && (
             <Tabs
               value={recipientType}
@@ -146,10 +151,10 @@ export const Recipient = ({
             >
               <TabsList triggerVariant="switch">
                 <TabsTrigger variant="switch" value="member">
-                  Member
+                  {tAgreementFlow('plugins.recipient.member')}
                 </TabsTrigger>
                 <TabsTrigger variant="switch" value="space">
-                  Space
+                  {tAgreementFlow('plugins.recipient.space')}
                 </TabsTrigger>
               </TabsList>
             </Tabs>

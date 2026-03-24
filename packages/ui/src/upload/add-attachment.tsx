@@ -17,6 +17,7 @@ interface AddAttachmentProps {
   onExistingAttachmentsChange?: (attachments: AttachmentInput[]) => void;
   value?: (File | AttachmentInput)[];
   defaultAttachments?: AttachmentInput[];
+  label?: React.ReactNode;
 }
 
 export const AddAttachment: React.FC<AddAttachmentProps> = ({
@@ -24,6 +25,7 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({
   onExistingAttachmentsChange,
   value,
   defaultAttachments,
+  label = 'Add Attachment (JPEG, PNG, WebP, or PDF — max 4MB)',
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [attachments, setAttachments] = useState<File[]>([]);
@@ -140,7 +142,7 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({
     <div className="flex flex-col items-end w-full">
       <Button variant="ghost" onClick={handleClick} type="button">
         <Link2Icon />
-        Add Attachment (JPEG, PNG, WebP, or PDF — max 4MB)
+        {label}
         <input
           ref={inputRef}
           type="file"

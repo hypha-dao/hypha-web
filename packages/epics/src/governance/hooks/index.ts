@@ -6,3 +6,4 @@ export * from './use-spaces-by-web3-ids-client';
 export * from './use-space-token-requirements-by-address';
 export * from './constants';
 export * from './use-proposal-notifications';
+export * from './use-localized-proposal-resolver';

@@ -4,7 +4,8 @@ import { CURRENCY_FEED_OPTIONS } from '@hypha-platform/core/client';
 import type { DbToken } from '@hypha-platform/core/client';
 import { EthAddress } from '../../../people';
 import { useTokens, useVaults } from '../../../treasury';
-import { formatDate, formatCurrencyValue } from '@hypha-platform/ui-utils';
+import { formatCurrencyValue } from '@hypha-platform/ui-utils';
+import { useFormatter, useTranslations } from 'next-intl';
 import { getTokenSymbol } from './get-token-symbol';
 import { TokenBackingVaultDetailRow } from './token-backing-vault-detail-row';
 import { TokenBackingVaultAddCollaterals } from './token-backing-vault-add-collaterals';
@@ -56,6 +57,8 @@ export function ProposalTokenBackingVaultData({
   whitelistEnabled,
   whitelistedAddresses,
 }: ProposalTokenBackingVaultDataProps) {
+  const tProposalDetails = useTranslations('ProposalDetails');
+  const format = useFormatter();
   const { tokens: spaceTokens } = useTokens({ spaceSlug });
   const { vaults } = useVaults();
   const currencyLabel =
@@ -85,12 +88,12 @@ export function ProposalTokenBackingVaultData({
   return (
     <div className="flex flex-col gap-4">
       <span className="text-neutral-11 text-2 font-medium">
-        Token Backing Vault
+        {tProposalDetails('labels.tokenBackingVault')}
       </span>
       <div className="flex flex-col gap-5">
         {spaceToken && (
           <TokenBackingVaultDetailRow
-            label="Space Token"
+            label={tProposalDetails('labels.spaceToken')}
             value={
               getTokenSymbol(spaceToken, dbTokens, spaceTokens) || (
                 <EthAddress address={spaceToken} />
@@ -101,7 +104,7 @@ export function ProposalTokenBackingVaultData({
         {currentVault && currentVault.collaterals.length > 0 && (
           <div className="flex flex-col gap-2">
             <div className="text-1 text-neutral-11">
-              Current Backing Collaterals
+              {tProposalDetails('labels.currentBackingCollaterals')}
             </div>
             {currentVault.collaterals.map((collateral, i) => (
               <div
@@ -146,19 +149,27 @@ export function ProposalTokenBackingVaultData({
         )}
         {enableRedemption !== undefined && (
           <TokenBackingVaultDetailRow
-            label="Redemption Enabled"
-            value={enableRedemption ? 'Yes' : 'No'}
+            label={tProposalDetails('labels.redemptionEnabled')}
+            value={
+              enableRedemption
+                ? tProposalDetails('labels.yes')
+                : tProposalDetails('labels.no')
+            }
           />
         )}
         {redemptionStartDate && (
           <TokenBackingVaultDetailRow
-            label="Redemption Start Date"
-            value={formatDate(redemptionStartDate, true)}
+            label={tProposalDetails('labels.redemptionStartDate')}
+            value={format.dateTime(redemptionStartDate, {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })}
           />
         )}
         {redemptionPrice !== undefined && (
           <TokenBackingVaultDetailRow
-            label="Redemption Price"
+            label={tProposalDetails('labels.redemptionPrice')}
             value={`${formatCompactNumber(redemptionPrice)} ${
               currencyLabel ?? 'USD'
             }`}
@@ -167,13 +178,16 @@ export function ProposalTokenBackingVaultData({
         {maxRedemptionPercent !== undefined &&
           maxRedemptionPeriodDays !== undefined && (
             <TokenBackingVaultDetailRow
-              label="Max Redemption"
-              value={`${maxRedemptionPercent}% over ${maxRedemptionPeriodDays} days`}
+              label={tProposalDetails('labels.maxRedemption')}
+              value={tProposalDetails('labels.maxRedemptionValue', {
+                percent: maxRedemptionPercent,
+                days: maxRedemptionPeriodDays,
+              })}
             />
           )}
         {minimumBackingPercent !== undefined && (
           <TokenBackingVaultDetailRow
-            label="Minimum Backing %"
+            label={tProposalDetails('labels.minimumBackingPercent')}
             value={`${minimumBackingPercent}%`}
           />
         )}

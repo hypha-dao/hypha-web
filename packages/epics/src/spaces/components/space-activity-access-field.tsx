@@ -12,37 +12,7 @@ import {
   TransparencyLevel,
   TransparencyOption,
 } from './transparency-level';
-
-const activityAccessOptions: TransparencyOption[] = [
-  {
-    id: TransparencyLevel.PUBLIC,
-    title: 'Public',
-    description:
-      'Access to your space activity is not restricted and visible publicly.',
-    disabled: false,
-  },
-  {
-    id: TransparencyLevel.NETWORK,
-    title: 'Network',
-    description:
-      'Access to your spaces activity is restricted to Hypha Network members.',
-    disabled: false,
-  },
-  {
-    id: TransparencyLevel.ORGANISATION,
-    title: 'Organisation',
-    description:
-      'Access to your space activity is restricted to members of your organisation.',
-    disabled: false,
-  },
-  {
-    id: TransparencyLevel.SPACE,
-    title: 'Space',
-    description:
-      'Access to your space activity is restricted to space members.',
-    disabled: false,
-  },
-];
+import { useTranslations } from 'next-intl';
 
 export function SpaceActivityAccessField({
   value,
@@ -51,6 +21,33 @@ export function SpaceActivityAccessField({
   value?: TransparencyLevel;
   onChange?: (selected: TransparencyLevel) => void;
 }) {
+  const tAgreementFlow = useTranslations('AgreementFlow');
+  const activityAccessOptions: TransparencyOption[] = [
+    {
+      id: TransparencyLevel.PUBLIC,
+      title: tAgreementFlow('plugins.transparency.publicTitle'),
+      description: tAgreementFlow('plugins.transparency.activityPublic'),
+      disabled: false,
+    },
+    {
+      id: TransparencyLevel.NETWORK,
+      title: tAgreementFlow('plugins.transparency.networkTitle'),
+      description: tAgreementFlow('plugins.transparency.activityNetwork'),
+      disabled: false,
+    },
+    {
+      id: TransparencyLevel.ORGANISATION,
+      title: tAgreementFlow('plugins.transparency.organisationTitle'),
+      description: tAgreementFlow('plugins.transparency.activityOrganisation'),
+      disabled: false,
+    },
+    {
+      id: TransparencyLevel.SPACE,
+      title: tAgreementFlow('plugins.transparency.spaceTitle'),
+      description: tAgreementFlow('plugins.transparency.activitySpace'),
+      disabled: false,
+    },
+  ];
   const { control } = useFormContext();
   return (
     <FormField

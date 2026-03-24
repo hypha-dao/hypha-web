@@ -26,8 +26,8 @@ import {
   useMe,
 } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
-import { formatDate, tryDecodeUriPart } from '@hypha-platform/ui-utils';
-import { useTranslations } from 'next-intl';
+import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
+import { useFormatter, useTranslations } from 'next-intl';
 
 export type MemberType = {
   avatar: string;
@@ -64,13 +64,23 @@ export const PersonHead = ({
   exportEmbeddedWallet,
 }: PersonHeadProps & MemberType) => {
   const tProfile = useTranslations('Profile');
+  const format = useFormatter();
   const { exportWallet, isEmbeddedWallet } = useAuthentication();
   const { isMe } = useMe();
   const { lang, personSlug: personSlugRaw } =
     useParams<ProfileComponentParams>();
   const personSlug = tryDecodeUriPart(personSlugRaw);
 
-  const signupDate = createdAt ? formatDate(createdAt, true) : null;
+  const signupDate = createdAt
+    ? format.dateTime(createdAt, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      })
+    : null;
 
   const customLogoStyles: React.CSSProperties = {
     width: '128px',

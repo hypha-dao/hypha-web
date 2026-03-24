@@ -32,6 +32,7 @@ import {
 import { TokenPayoutField } from '../../agreements/plugins/components/common/token-payout-field';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { purchaseSchema } from '../hooks/validation';
+import { useTranslations } from 'next-intl';
 
 interface PeoplePurchaseHyphaTokensProps {
   personSlug: string;
@@ -49,6 +50,8 @@ export const PeoplePurchaseHyphaTokens = ({
   personSlug,
   spaces,
 }: PeoplePurchaseHyphaTokensProps) => {
+  const tActions = useTranslations('ProfileActions');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { person, isLoading: isPersonLoading } = useMe();
   const { fundWallet } = useFundWallet({
     address: person?.address as `0x${string}`,
@@ -79,9 +82,75 @@ export const PeoplePurchaseHyphaTokens = ({
   const recipientSpace =
     spaces?.filter((s) => s?.address === RECIPIENT_SPACE_ADDRESS) || [];
 
+  const baseResolver = useMemo(() => zodResolver(schema), []);
+  const translatePurchaseError = useMemo(
+    () => (message: string) => {
+      const normalizedMessage = message.trim();
+      const map: Record<string, string> = {
+        'Please enter a purchase amount.':
+          'purchaseHypha.form.errors.purchaseAmountRequired',
+        'Please add a recipient or wallet address':
+          'purchaseHypha.form.errors.recipientRequired',
+        'Invalid Ethereum address':
+          'purchaseHypha.form.errors.invalidEthereumAddress',
+      };
+
+      const key = map[normalizedMessage];
+      return key
+        ? tActions(key as Parameters<typeof tActions>[0])
+        : normalizedMessage;
+    },
+    [tActions],
+  );
+  const resolver = useMemo(() => {
+    const localizeErrors = (errors: unknown): unknown => {
+      if (!errors || typeof errors !== 'object') return errors;
+      if (Array.isArray(errors)) return errors.map(localizeErrors);
+
+      const localized = { ...(errors as Record<string, unknown>) };
+
+      if (typeof localized.message === 'string') {
+        localized.message = translatePurchaseError(localized.message);
+      }
+
+      if (localized.types && typeof localized.types === 'object') {
+        const localizedTypes: Record<string, unknown> = { ...localized.types };
+        for (const [typeKey, typeValue] of Object.entries(localizedTypes)) {
+          if (typeof typeValue === 'string') {
+            localizedTypes[typeKey] = translatePurchaseError(typeValue);
+          }
+        }
+        localized.types = localizedTypes;
+      }
+
+      for (const [key, value] of Object.entries(localized)) {
+        if (
+          key === 'message' ||
+          key === 'type' ||
+          key === 'ref' ||
+          key === 'types'
+        )
+          continue;
+        if (value && typeof value === 'object') {
+          localized[key] = localizeErrors(value);
+        }
+      }
+
+      return localized;
+    };
+
+    return async (...args: Parameters<typeof baseResolver>) => {
+      const result = await baseResolver(...args);
+      return {
+        ...result,
+        errors: localizeErrors(result.errors) as typeof result.errors,
+      };
+    };
+  }, [baseResolver, translatePurchaseError]);
+
   const formRef = useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver,
     defaultValues: {
       payout: {
         amount: '',
@@ -113,11 +182,17 @@ export const PeoplePurchaseHyphaTokens = ({
   const handlePurchase = async (data: FormValues) => {
     try {
       if (!PAYMENT_TOKEN?.address) {
-        form.setError('root', { message: 'Payment token is not configured.' });
+        form.setError('root', {
+          message: tActions(
+            'purchaseHypha.form.errors.paymentTokenNotConfigured',
+          ),
+        });
         return;
       }
       if (data.payout.token !== PAYMENT_TOKEN.address) {
-        form.setError('payout.token', { message: 'Invalid token selected.' });
+        form.setError('payout.token', {
+          message: tActions('purchaseHypha.form.errors.invalidTokenSelected'),
+        });
         return;
       }
 
@@ -132,13 +207,15 @@ export const PeoplePurchaseHyphaTokens = ({
       await manualUpdate();
     } catch (error) {
       console.error('Purchase failed:', error);
-      let errorMessage: string =
-        'An error occurred while processing your purchase. Please try again.';
+      let errorMessage: string = tActions(
+        'purchaseHypha.form.errors.purchaseProcessingFailed',
+      );
 
       if (error instanceof Error) {
         if (error.message.includes('Smart wallet client not available')) {
-          errorMessage =
-            'Smart wallet is not connected. Please connect your wallet and try again.';
+          errorMessage = tActions(
+            'purchaseHypha.form.errors.smartWalletNotConnected',
+          );
         } else if (
           error.message.includes('ERC20: transfer amount exceeds balance')
         ) {
@@ -150,10 +227,11 @@ export const PeoplePurchaseHyphaTokens = ({
           errorMessage =
             match && match[1]
               ? extractRevertReason(match[1])
-              : 'Contract execution failed.';
+              : tActions('purchaseHypha.form.errors.contractExecutionFailed');
         } else if (error.message.includes('user rejected')) {
-          errorMessage =
-            'Transaction was rejected. Please approve the transaction to proceed.';
+          errorMessage = tActions(
+            'purchaseHypha.form.errors.transactionRejected',
+          );
         }
       }
       form.setError('root', { message: errorMessage });
@@ -163,7 +241,7 @@ export const PeoplePurchaseHyphaTokens = ({
   if (!spaces || spaces.length === 0) {
     return (
       <div className="text-error text-sm">
-        No valid spaces available. Please try again later.
+        {tActions('purchaseHypha.form.errors.noValidSpaces')}
       </div>
     );
   }
@@ -180,7 +258,7 @@ export const PeoplePurchaseHyphaTokens = ({
           <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
             <div className="flex gap-1">
               <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
-                Purchase Amount
+                {tAgreementFlow('plugins.buyHyphaTokens.purchaseAmount')}
               </label>
               <RequirementMark className="text-2" />
             </div>
@@ -207,12 +285,14 @@ export const PeoplePurchaseHyphaTokens = ({
             </div>
           </div>
           <div className="text-sm text-neutral-500">
-            You will receive {formatCurrencyValue(calculatedHypha)} HYPHA tokens
-            (1 HYPHA = {formatCurrencyValue(HYPHA_PRICE_USD)} USD)
+            {tActions('purchaseHypha.form.receiveHyphaTokens', {
+              amount: formatCurrencyValue(calculatedHypha),
+              price: formatCurrencyValue(HYPHA_PRICE_USD),
+            })}
           </div>
           <Separator />
           <RecipientField
-            label="HYPHA sent to"
+            label={tAgreementFlow('plugins.buyHyphaTokens.hyphaSentTo')}
             members={buyerMember}
             defaultRecipientType="member"
             readOnly={true}
@@ -221,7 +301,7 @@ export const PeoplePurchaseHyphaTokens = ({
           />
           <Separator />
           <RecipientField
-            label="USDC paid to"
+            label={tAgreementFlow('plugins.buyHyphaTokens.usdcPaidTo')}
             members={[]}
             spaces={recipientSpace}
             defaultRecipientType="space"
@@ -234,16 +314,15 @@ export const PeoplePurchaseHyphaTokens = ({
           {isInvesting ? (
             <div className="flex items-center gap-2 text-sm text-neutral-10">
               <Loader2 className="animate-spin w-4 h-4" />
-              Purchasing
+              {tActions('purchaseHypha.form.actions.purchasing')}
             </div>
           ) : showSuccessMessage ? (
             <div className="text-2 font-medium text-foreground">
-              You’ve successfully purchased your Hypha tokens. They will appear
-              in your wallet account within a few seconds.
+              {tActions('purchaseHypha.form.success.purchased')}
             </div>
           ) : (
             <Button type="submit" disabled={isInvesting}>
-              Buy
+              {tActions('purchaseHypha.form.actions.buy')}
             </Button>
           )}
         </div>
@@ -251,15 +330,24 @@ export const PeoplePurchaseHyphaTokens = ({
           <div className="text-2 text-foreground">
             {form.formState.errors.root.message === 'insufficient_funds' ? (
               <>
-                Your wallet balance is insufficient to complete this
-                transaction. Please{' '}
+                {tAgreementFlow(
+                  'buyHyphaTokensForm.insufficientFunds.walletBalanceInsufficient',
+                )}{' '}
+                {tAgreementFlow('buyHyphaTokensForm.insufficientFunds.please')}{' '}
                 <span
                   onClick={fundWallet}
                   className="font-bold cursor-pointer text-accent-9 underline"
                 >
-                  top up your account with USDC
+                  {tAgreementFlow(
+                    'buyHyphaTokensForm.insufficientFunds.topUpWith',
+                    {
+                      token: PAYMENT_TOKEN?.symbol ?? 'USDC',
+                    },
+                  )}
                 </span>{' '}
-                to proceed.
+                {tAgreementFlow(
+                  'buyHyphaTokensForm.insufficientFunds.toProceed',
+                )}
               </>
             ) : (
               form.formState.errors.root.message

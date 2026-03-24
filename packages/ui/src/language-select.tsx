@@ -46,13 +46,18 @@ export function LanguageSelect({
           </span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" side="bottom">
+      <DropdownMenuContent
+        align="end"
+        side="bottom"
+        className="bg-neutral-2 rounded-[6px] min-w-[185px] flex flex-col"
+      >
         {locales
           .filter((locale) => locale.code !== currentLocale)
           .map((locale) => (
             <DropdownMenuItem
               key={locale.code}
               onClick={() => onLocaleChange(locale.code)}
+              className="px-0 text-1"
             >
               {locale.label}
             </DropdownMenuItem>

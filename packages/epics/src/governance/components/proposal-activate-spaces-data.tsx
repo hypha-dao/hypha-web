@@ -3,6 +3,7 @@
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { useSpacesByWeb3IdsClient } from '../hooks';
 import { Image, Separator, Input } from '@hypha-platform/ui';
+import { useTranslations } from 'next-intl';
 
 interface ProposalActivateSpacesDataProps {
   spaceIds?: bigint[];
@@ -19,6 +20,7 @@ export const ProposalActivateSpacesData = ({
   paymentAmounts,
   tokenSymbol,
 }: ProposalActivateSpacesDataProps) => {
+  const tProposalDetails = useTranslations('ProposalDetails');
   const { spaces } = useSpacesByWeb3IdsClient(spaceIds ?? [], false);
 
   const getMonthsCount = (
@@ -88,10 +90,10 @@ export const ProposalActivateSpacesData = ({
       <div className="flex flex-col gap-2">
         <div className="flex justify-between items-center">
           <div className="flex text-2 text-neutral-11 w-full justify-start">
-            Spaces
+            {tProposalDetails('labels.spaces')}
           </div>
           <div className="flex text-2 text-neutral-11 w-full justify-end">
-            Months
+            {tProposalDetails('labels.months')}
           </div>
         </div>
       </div>
@@ -103,7 +105,9 @@ export const ProposalActivateSpacesData = ({
                 src={space?.logoUrl ?? '/placeholder/space-avatar-image.svg'}
                 width={24}
                 height={24}
-                alt={`Logo for ${space?.title}`}
+                alt={tProposalDetails('labels.logoForSpace', {
+                  title: space?.title ?? '',
+                })}
                 className="rounded-full min-h-[24px]"
               />
             </div>
@@ -118,7 +122,7 @@ export const ProposalActivateSpacesData = ({
       <div className="flex flex-col gap-2">
         <div className="flex justify-between items-center">
           <div className="flex text-2 text-neutral-11 w-full justify-start">
-            Pay with
+            {tProposalDetails('labels.payWith')}
           </div>
           <div className="flex text-2 text-neutral-11 w-full justify-end">
             {tokenSymbol}
@@ -127,7 +131,7 @@ export const ProposalActivateSpacesData = ({
       </div>
       <div className="flex w-full justify-between items-center">
         <span className="text-2 text-neutral-11 w-full">
-          Total amount in HYPHA
+          {tProposalDetails('labels.totalAmountInHypha')}
         </span>
         <span className="text-2 text-neutral-11 text-nowrap">
           <Input
@@ -136,7 +140,7 @@ export const ProposalActivateSpacesData = ({
                 src="/placeholder/space-avatar-image.svg"
                 width={24}
                 height={24}
-                alt="Hypha Token Icon"
+                alt={tProposalDetails('labels.hyphaTokenIcon')}
               />
             }
             value={totalHypha.toLocaleString(undefined, {
@@ -148,7 +152,7 @@ export const ProposalActivateSpacesData = ({
       </div>
       <div className="flex w-full justify-between items-center">
         <span className="text-2 text-neutral-11 w-full">
-          Total amount in USDC
+          {tProposalDetails('labels.totalAmountInUsdc')}
         </span>
         <span className="text-2 text-neutral-11 text-nowrap">
           <Input
@@ -157,7 +161,7 @@ export const ProposalActivateSpacesData = ({
                 src="/placeholder/usdc-icon.svg"
                 width={24}
                 height={24}
-                alt="USDC Icon"
+                alt={tProposalDetails('labels.usdcIcon')}
               />
             }
             value={totalUsdc.toLocaleString(undefined, {

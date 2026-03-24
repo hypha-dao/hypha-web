@@ -1,6 +1,5 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Address,
   createAgreementFiles,
@@ -13,7 +12,6 @@ import {
   type Space,
 } from '@hypha-platform/core/client';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { useConfig } from 'wagmi';
 import { z } from 'zod';
@@ -22,6 +20,8 @@ import React from 'react';
 import { useSpaceTokenRequirementsByAddress } from '../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
+import { useTranslations } from 'next-intl';
+import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
 
 const schemaCreateProposalChangeEntryMethod =
   schemaChangeEntryMethod.extend(createAgreementFiles);
@@ -51,7 +51,8 @@ export const CreateProposalChangeEntryMethodForm = ({
   plugin,
   spaces,
 }: CreateProposalChangeEntryMethodFormProps) => {
-  const router = useRouter();
+  const tSpaces = useTranslations('Spaces');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
@@ -72,6 +73,10 @@ export const CreateProposalChangeEntryMethodForm = ({
     isPending,
     progress,
   } = useChangeEntryMethodOrchestrator({ authToken: jwt, config });
+  const resolver = useLocalizedProposalResolver(
+    schemaCreateProposalChangeEntryMethod,
+    tAgreementFlow,
+  );
 
   const defaultValues = React.useMemo(() => {
     return {
@@ -91,7 +96,7 @@ export const CreateProposalChangeEntryMethodForm = ({
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
-    resolver: zodResolver(schemaCreateProposalChangeEntryMethod),
+    resolver,
     defaultValues: defaultValues,
   });
 
@@ -151,14 +156,15 @@ export const CreateProposalChangeEntryMethodForm = ({
   return (
     <LoadingBackdrop
       showKeepWindowOpenMessage={true}
+      keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       fullHeight={true}
       progress={progress}
       isLoading={isPending}
       message={
         isError ? (
           <div className="flex flex-col">
-            <div>Ouh Snap. There was an error</div>
-            <Button onClick={reset}>Reset</Button>
+            <div>{tSpaces('errorOhSnap')}</div>
+            <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (
           <div>{currentAction}</div>
@@ -180,16 +186,16 @@ export const CreateProposalChangeEntryMethodForm = ({
             }}
             successfulUrl={successfulUrl}
             backUrl={backUrl}
-            backLabel="Back to Settings"
+            backLabel={tSpaces('backToSettings')}
             closeUrl={successfulUrl}
             isLoading={false}
-            label="Entry Method"
+            label={tAgreementFlow('labels.entryMethod')}
             progress={progress}
           />
           {plugin}
           <Separator />
           <div className="flex justify-end w-full">
-            <Button type="submit">Publish</Button>
+            <Button type="submit">{tAgreementFlow('buttons.publish')}</Button>
           </div>
         </form>
       </Form>

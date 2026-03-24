@@ -8,9 +8,11 @@ import {
   Switch,
   FormMessage,
 } from '@hypha-platform/ui';
+import { useTranslations } from 'next-intl';
 
 export const EnableTokenPriceField = () => {
   const { control } = useFormContext();
+  const tAgreementFlow = useTranslations('AgreementFlow');
 
   return (
     <FormField
@@ -19,7 +21,7 @@ export const EnableTokenPriceField = () => {
       render={({ field }) => (
         <FormItem>
           <div className="flex w-full justify-between items-center text-2 text-neutral-11">
-            <span>Enable Token Price</span>
+            <span>{tAgreementFlow('plugins.issueNewToken.value.enable')}</span>
             <FormControl>
               <Switch
                 checked={field.value}

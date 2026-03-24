@@ -7,6 +7,7 @@ import { useIsDelegate } from '@hypha-platform/core/client';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface ExpireProposalBannerProps {
   quorumReached?: boolean;
@@ -20,12 +21,12 @@ interface ExpireProposalBannerProps {
   unityPercentage?: number;
 }
 
-type BannerState = {
-  title: string;
-  subtitle: string;
-  buttonText: string;
-  completedMessage: string;
-};
+type BannerStateKey =
+  | 'noParticipation'
+  | 'insufficientParticipation'
+  | 'lackAlignment'
+  | 'approved'
+  | 'insufficientParticipationAndAlignment';
 
 export const ExpireProposalBanner = ({
   quorumReached,
@@ -38,6 +39,8 @@ export const ExpireProposalBanner = ({
   quorumPercentage = 0,
   unityPercentage = 0,
 }: ExpireProposalBannerProps) => {
+  const tCommon = useTranslations('Common');
+  const tProposalDetails = useTranslations('ProposalDetails');
   const [localActionCompleted, setLocalActionCompleted] = useState(false);
 
   const { isMember, isMemberLoading } = useSpaceMember({
@@ -61,73 +64,70 @@ export const ExpireProposalBanner = ({
     isExpiring ||
     localActionCompleted;
   const tooltipMessage = !isAuthenticated
-    ? 'Please sign in to use this feature.'
+    ? tCommon('signIn')
     : isMemberLoading
-    ? 'Checking membership...'
+    ? tProposalDetails('expireBanner.checkingMembership')
     : !isMember && !isDelegate
-    ? 'Please join this space to use this feature.'
+    ? tCommon('joinSpaceToUse')
     : isExpiring
-    ? 'Processing...'
+    ? tProposalDetails('expireBanner.processing')
     : localActionCompleted
-    ? 'Action completed'
+    ? tProposalDetails('expireBanner.actionCompleted')
     : '';
 
-  const getBannerState = (): BannerState => {
+  const getBannerStateKey = (): BannerStateKey => {
     if (quorumPercentage === 0 && unityPercentage === 0) {
-      return {
-        title: 'The voting period has ended.',
-        subtitle:
-          'No votes were recorded for this proposal. Without any participation, this proposal will be rejected.',
-        buttonText: isExpiring ? 'Processing...' : 'Confirm Decision',
-        completedMessage:
-          'Decision recorded: Proposal rejected due to no participation.',
-      };
+      return 'noParticipation';
     }
 
     if (!quorumReached && unityReached) {
-      return {
-        title: 'The voting period has ended.',
-        subtitle:
-          'Participation was too low for this proposal to be approved. This proposal will be rejected.',
-        buttonText: isExpiring ? 'Processing...' : 'Confirm Decision',
-        completedMessage:
-          'Decision recorded: Proposal rejected due to insufficient participation.',
-      };
+      return 'insufficientParticipation';
     }
 
     if (quorumReached && !unityReached) {
-      return {
-        title: 'The voting period has ended.',
-        subtitle:
-          'Participation was sufficient, but support was too divided. This proposal will be rejected.',
-        buttonText: isExpiring ? 'Processing...' : 'Confirm Decision',
-        completedMessage:
-          'Decision recorded: Proposal rejected due to lack of alignment.',
-      };
+      return 'lackAlignment';
     }
 
     if (quorumReached && unityReached) {
-      return {
-        title: 'The voting period has ended.',
-        subtitle:
-          'This proposal has met all requirements and is approved as a new agreement.',
-        buttonText: isExpiring ? 'Processing...' : 'Confirm Decision',
-        completedMessage:
-          'Decision recorded: Proposal approved and moved to the Accepted section.',
-      };
+      return 'approved';
     }
 
-    return {
-      title: 'The voting period has ended.',
-      subtitle:
-        'Participation was too low, and support was too divided. This proposal will be rejected.',
-      buttonText: isExpiring ? 'Processing...' : 'Confirm Decision',
-      completedMessage:
-        'Decision recorded: Proposal rejected due to insufficient participation and lack of alignment.',
-    };
+    return 'insufficientParticipationAndAlignment';
   };
 
-  const { title, subtitle, buttonText, completedMessage } = getBannerState();
+  const stateKey = getBannerStateKey();
+  const title = tProposalDetails('expireBanner.title');
+  const subtitle =
+    stateKey === 'noParticipation'
+      ? tProposalDetails('expireBanner.states.noParticipation.subtitle')
+      : stateKey === 'insufficientParticipation'
+      ? tProposalDetails(
+          'expireBanner.states.insufficientParticipation.subtitle',
+        )
+      : stateKey === 'lackAlignment'
+      ? tProposalDetails('expireBanner.states.lackAlignment.subtitle')
+      : stateKey === 'approved'
+      ? tProposalDetails('expireBanner.states.approved.subtitle')
+      : tProposalDetails(
+          'expireBanner.states.insufficientParticipationAndAlignment.subtitle',
+        );
+  const completedMessage =
+    stateKey === 'noParticipation'
+      ? tProposalDetails('expireBanner.states.noParticipation.completedMessage')
+      : stateKey === 'insufficientParticipation'
+      ? tProposalDetails(
+          'expireBanner.states.insufficientParticipation.completedMessage',
+        )
+      : stateKey === 'lackAlignment'
+      ? tProposalDetails('expireBanner.states.lackAlignment.completedMessage')
+      : stateKey === 'approved'
+      ? tProposalDetails('expireBanner.states.approved.completedMessage')
+      : tProposalDetails(
+          'expireBanner.states.insufficientParticipationAndAlignment.completedMessage',
+        );
+  const buttonText = isExpiring
+    ? tProposalDetails('expireBanner.processing')
+    : tProposalDetails('expireBanner.confirmDecision');
 
   const handleAction = async () => {
     if (onHandleAction && !isExpiring && !localActionCompleted) {
@@ -162,7 +162,7 @@ export const ExpireProposalBanner = ({
             {isExpiring ? (
               <div className="flex items-center gap-2 text-sm text-neutral-10">
                 <Loader2 className="animate-spin w-4 h-4" />
-                Processing...
+                {tProposalDetails('expireBanner.processing')}
               </div>
             ) : (
               <Button

@@ -19,6 +19,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useDbTokens } from '../../../hooks';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
+import { useTranslations } from 'next-intl';
 
 interface ExtendedToken extends Token {
   space?: {
@@ -32,6 +33,7 @@ export const MintTokensToSpaceTreasuryPlugin = ({
 }: {
   spaceSlug: string;
 }) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { lang } = useParams();
   const { control, setValue, watch, getValues } = useFormContext();
   const { tokens, isLoading } = useTokens({ spaceSlug });
@@ -56,16 +58,17 @@ export const MintTokensToSpaceTreasuryPlugin = ({
     <div className="flex flex-col gap-4">
       <Skeleton loading={isLoading} width={'100%'} height={90}>
         <div className="flex flex-col gap-4">
-          <FormLabel>Mint to Space Treasury</FormLabel>
+          <FormLabel>
+            {tAgreementFlow('plugins.mintTokens.mintToSpaceTreasury')}
+          </FormLabel>
           <span className="text-2 text-neutral-11">
-            Mint tokens into your space treasury to fund operations, distribute
-            rewards, or provide liquidity.{' '}
+            {tAgreementFlow('plugins.mintTokens.description')}{' '}
           </span>
         </div>
         <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
           <div className="flex gap-1">
             <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
-              Select Token
+              {tAgreementFlow('plugins.mintTokens.selectToken')}
             </label>
             <RequirementMark className="text-2" />
           </div>
@@ -94,11 +97,11 @@ export const MintTokensToSpaceTreasuryPlugin = ({
           <div className="flex flex-col gap-4">
             <div className="flex justify-between">
               <span className="text-2 text-neutral-11 w-full">
-                Token Supply
+                {tAgreementFlow('plugins.mintTokens.tokenSupply')}
               </span>
               {selectedToken?.maxSupply == 0 ? (
                 <span className="text-2 text-neutral-11 text-nowrap">
-                  Unlimited Supply
+                  {tAgreementFlow('plugins.mintTokens.unlimitedSupply')}
                 </span>
               ) : (
                 <span className="text-2 text-neutral-11">
@@ -108,7 +111,7 @@ export const MintTokensToSpaceTreasuryPlugin = ({
             </div>
             <div className="flex justify-between items-center">
               <span className="text-2 text-neutral-11 w-full">
-                Issuance to Date
+                {tAgreementFlow('plugins.mintTokens.issuanceToDate')}
               </span>
               <Skeleton width={120} height={32} loading={isLoadingSupply}>
                 <span className="text-2 text-neutral-11">
@@ -120,7 +123,7 @@ export const MintTokensToSpaceTreasuryPlugin = ({
               <>
                 <div className="flex justify-between">
                   <span className="text-2 text-neutral-11 w-full">
-                    Mint Amount Limit
+                    {tAgreementFlow('plugins.mintTokens.mintAmountLimit')}
                   </span>
                   <span className="text-2 text-neutral-11">
                     {formatCurrencyValue(
@@ -131,9 +134,9 @@ export const MintTokensToSpaceTreasuryPlugin = ({
                 {Number(amount) >
                   Number(selectedToken?.maxSupply) - Number(supply) && (
                   <div className="text-2 text-foreground">
-                    The number of tokens requested exceeds the Mint Amount
-                    Limit. Please enter a value up to{' '}
-                    {Number(selectedToken?.maxSupply) - Number(supply)}
+                    {tAgreementFlow('plugins.mintTokens.exceedsLimit', {
+                      limit: Number(selectedToken?.maxSupply) - Number(supply),
+                    })}
                   </div>
                 )}
               </>
@@ -142,15 +145,15 @@ export const MintTokensToSpaceTreasuryPlugin = ({
         )}
         {filteredTokens.length === 0 && (
           <div className="text-2 text-foreground">
-            Your space has not yet created a token,{' '}
+            {tAgreementFlow('plugins.mintTokens.noTokensPrefix')}{' '}
             <Link
               href={`/${lang}/dho/${spaceSlug}/agreements/create/issue-new-token`}
               className="text-accent-9 underline"
               onClick={(e) => e.stopPropagation()}
             >
-              click here
+              {tAgreementFlow('plugins.mintTokens.clickHere')}
             </Link>{' '}
-            to first issue a token
+            {tAgreementFlow('plugins.mintTokens.noTokensSuffix')}
           </div>
         )}
       </Skeleton>

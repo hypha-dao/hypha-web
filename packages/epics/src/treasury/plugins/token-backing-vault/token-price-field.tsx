@@ -10,6 +10,7 @@ import {
 } from '@hypha-platform/ui';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { useFormContext } from 'react-hook-form';
+import { useTranslations } from 'next-intl';
 
 type TokenPriceFieldProps = {
   /** Token's reference price from contract (shown when redemption inactive) */
@@ -25,15 +26,19 @@ export function TokenPriceField({
   tokenReferenceCurrency,
   isRequired = false,
 }: TokenPriceFieldProps) {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { control } = useFormContext();
 
   const placeholder = isRequired
-    ? 'Enter redemption price'
+    ? tAgreementFlow('plugins.tokenBackingVault.enterRedemptionPrice')
     : tokenReferencePrice != null
-    ? `Leave blank to use token price (${formatCurrencyValue(
-        tokenReferencePrice,
-      )} ${tokenReferenceCurrency ?? 'USD'})`
-    : 'Leave blank for token contract price';
+    ? tAgreementFlow('plugins.tokenBackingVault.leaveBlankUseTokenPrice', {
+        price: formatCurrencyValue(tokenReferencePrice),
+        currency: tokenReferenceCurrency ?? 'USD',
+      })
+    : tAgreementFlow(
+        'plugins.tokenBackingVault.leaveBlankForTokenContractPrice',
+      );
 
   return (
     <FormField
@@ -43,7 +48,7 @@ export function TokenPriceField({
         <FormItem>
           <div className="flex justify-between items-center w-full">
             <span className="text-2 text-neutral-11 whitespace-nowrap items-center w-full flex gap-1">
-              Redemption Price
+              {tAgreementFlow('plugins.tokenBackingVault.redemptionPrice')}
               {isRequired && <RequirementMark className="text-2" />}
             </span>
             <FormControl className="w-full">

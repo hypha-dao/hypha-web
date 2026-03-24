@@ -17,6 +17,7 @@ import { Empty } from '../../../common';
 import { useSpaceMember } from '../../../spaces';
 import { useParams } from 'next/navigation';
 import { useSWRConfig } from 'swr';
+import { useTranslations } from 'next-intl';
 
 const HYPHA_TOKEN_ADDRESS = '0x8b93862835C36e9689E9bb1Ab21De3982e266CD3';
 
@@ -35,6 +36,7 @@ type SpacePendingRewardsSectionProps = {
 export const SpacePendingRewardsSection: FC<
   SpacePendingRewardsSectionProps
 > = ({ web3SpaceId }) => {
+  const tTreasury = useTranslations('TreasuryTab');
   const { id: spaceSlug } = useParams<{ id: string }>();
   const { mutate } = useSWRConfig();
   const { isAuthenticated } = useAuthentication();
@@ -158,24 +160,24 @@ export const SpacePendingRewardsSection: FC<
     <div className="flex flex-col w-full justify-center items-center gap-3">
       <div className="w-full flex justify-between">
         <SectionFilter
-          label="Rewards"
+          label={tTreasury('rewardsSection.title')}
           count={`${formatCurrencyValue(parsedRewardValue)} HYPHA`}
         />
         <Button
           title={
             !isAuthenticated
-              ? 'Please sign in to claim rewards'
+              ? tTreasury('rewardsSection.signInToClaimRewards')
               : !isMember
-              ? 'Only space members can claim rewards'
+              ? tTreasury('rewardsSection.onlySpaceMembersCanClaimRewards')
               : !hasRewards
-              ? 'No rewards to claim'
+              ? tTreasury('rewardsSection.noRewardsToClaim')
               : ''
           }
           disabled={!canClaim || disableClaimButton}
           onClick={onHandleClaim}
         >
           {isClaiming && <Loader2 className="animate-spin w-4 h-4" />}
-          Claim
+          {tTreasury('rewardsSection.claim')}
         </Button>
       </div>
       <div className="w-full">
@@ -185,7 +187,7 @@ export const SpacePendingRewardsSection: FC<
           </div>
         ) : !isAuthenticated ? (
           <Empty>
-            <p>Sign in to view space rewards</p>
+            <p>{tTreasury('rewardsSection.signInToViewSpaceRewards')}</p>
           </Empty>
         ) : (
           <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">

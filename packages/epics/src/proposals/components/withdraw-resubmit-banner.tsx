@@ -1,6 +1,7 @@
 'use client';
 
 import { Button, ConfirmDialog } from '@hypha-platform/ui';
+import { useTranslations } from 'next-intl';
 
 interface WithdrawResubmitBannerProps {
   onWithdraw: () => Promise<void>;
@@ -13,17 +14,20 @@ export const WithdrawResubmitBanner = ({
   onResubmit,
   isWithdrawing,
 }: WithdrawResubmitBannerProps) => {
+  const tProposalDetails = useTranslations('ProposalDetails');
   return (
     <div className="rounded-[8px] p-5 border-1 bg-accent-surface border-accent-6 bg-center flex flex-col gap-4">
       <span className="text-2 text-foreground font-bold">
-        Withdraw your proposal or edit and submit again?
+        {tProposalDetails('withdrawResubmit.title')}
       </span>
       <div className="flex gap-2">
         <ConfirmDialog
-          title="Withdraw Proposal"
-          description="Are you sure you want to withdraw this proposal? It will no longer appear on the Proposal screen and cannot be recovered."
-          customAcceptButtonText="Withdraw"
-          customRejectButtonText="Cancel"
+          title={tProposalDetails('withdrawResubmit.withdrawDialogTitle')}
+          description={tProposalDetails(
+            'withdrawResubmit.withdrawDialogDescription',
+          )}
+          customAcceptButtonText={tProposalDetails('withdrawResubmit.withdraw')}
+          customRejectButtonText={tProposalDetails('withdrawResubmit.cancel')}
           onAcceptClicked={onWithdraw}
           isLoading={isWithdrawing}
         >
@@ -32,14 +36,18 @@ export const WithdrawResubmitBanner = ({
             colorVariant="accent"
             disabled={isWithdrawing}
           >
-            {isWithdrawing ? 'Withdrawing...' : 'Withdraw'}
+            {isWithdrawing
+              ? tProposalDetails('withdrawResubmit.withdrawing')
+              : tProposalDetails('withdrawResubmit.withdraw')}
           </Button>
         </ConfirmDialog>
         <ConfirmDialog
-          title="Resubmit Proposal"
-          description="Are you sure you want to resubmit this proposal? The current proposal will be withdrawn, a new one will be created with your content, and votes will be reset."
-          customAcceptButtonText="Resubmit"
-          customRejectButtonText="Cancel"
+          title={tProposalDetails('withdrawResubmit.resubmitDialogTitle')}
+          description={tProposalDetails(
+            'withdrawResubmit.resubmitDialogDescription',
+          )}
+          customAcceptButtonText={tProposalDetails('withdrawResubmit.resubmit')}
+          customRejectButtonText={tProposalDetails('withdrawResubmit.cancel')}
           onAcceptClicked={onResubmit}
           isLoading={isWithdrawing}
         >
@@ -48,7 +56,9 @@ export const WithdrawResubmitBanner = ({
             colorVariant="accent"
             disabled={isWithdrawing}
           >
-            {isWithdrawing ? 'Processing...' : 'Resubmit'}
+            {isWithdrawing
+              ? tProposalDetails('withdrawResubmit.processing')
+              : tProposalDetails('withdrawResubmit.resubmit')}
           </Button>
         </ConfirmDialog>
       </div>

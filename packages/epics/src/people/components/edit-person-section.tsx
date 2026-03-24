@@ -24,7 +24,8 @@ import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/ui-utils';
 import { ButtonClose, Links } from '../../common';
 import { useScrollToErrors } from '../../hooks';
-import { useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface Person {
   avatarUrl?: string;
@@ -60,9 +61,119 @@ export const EditPersonSection = ({
   onUpdate,
   error,
 }: EditPersonSectionProps) => {
+  const tProfile = useTranslations('Profile');
+  const tSpaces = useTranslations('Spaces');
+  const baseResolver = useMemo(() => zodResolver(schemaEditPersonForm), []);
+
+  const translateEditProfileError = useCallback(
+    (message: string) => {
+      const map: Record<string, string> = {
+        'Please enter your first name': 'editForm.errors.firstNameRequired',
+        'Please enter your last name': 'editForm.errors.lastNameRequired',
+        'Please choose a nickname': 'editForm.errors.nicknameRequired',
+        'Nickname length should not exceed 12 characters':
+          'editForm.errors.nicknameMaxLength',
+        'Description length should not exceed 300 characters':
+          'editForm.errors.descriptionMaxLength',
+        'Please enter a valid email address': 'editForm.errors.emailInvalid',
+        'Email must be at most 100 characters long':
+          'editForm.errors.emailMaxLength',
+        'Location must be at most 100 characters long':
+          'editForm.errors.locationMaxLength',
+        'Please enter a valid URL (e.g., https://example.com)':
+          'editForm.errors.urlInvalid',
+        'Avatar URL must be a valid URL': 'editForm.errors.avatarUrlInvalid',
+        'Lead Image URL must be a valid URL':
+          'editForm.errors.leadImageUrlInvalid',
+        'Your file is too large and exceeds the 4MB limit. Please upload a smaller file':
+          'editForm.errors.fileTooLarge',
+        'File size must be less than 4MB': 'editForm.errors.fileTooLarge',
+        'File must be an image (JPEG, PNG, GIF, WEBP)':
+          'editForm.errors.fileMustBeImage',
+      };
+      const key = map[message];
+      return key ? tProfile(key as Parameters<typeof tProfile>[0]) : message;
+    },
+    [tProfile],
+  );
+
+  const localizeErrorsRef = useRef<(errors: unknown) => unknown>(
+    () => undefined,
+  );
+  localizeErrorsRef.current = (errors: unknown): unknown => {
+    if (!errors || typeof errors !== 'object') return errors;
+    if (Array.isArray(errors)) {
+      const localizedArray = errors.map((entry) =>
+        localizeErrorsRef.current(entry),
+      );
+      const localizedArrayWithMeta = localizedArray as unknown as Record<
+        string,
+        unknown
+      >;
+
+      for (const [key, value] of Object.entries(errors)) {
+        if (!/^\d+$/.test(key)) {
+          localizedArrayWithMeta[key] =
+            value && typeof value === 'object'
+              ? localizeErrorsRef.current(value)
+              : value;
+        }
+      }
+
+      return localizedArray;
+    }
+
+    const localized = { ...(errors as Record<string, unknown>) };
+
+    if (typeof localized.message === 'string') {
+      localized.message = translateEditProfileError(localized.message);
+    }
+
+    if (localized.types && typeof localized.types === 'object') {
+      const localizedTypes: Record<string, unknown> = { ...localized.types };
+      for (const [typeKey, typeValue] of Object.entries(localizedTypes)) {
+        if (typeof typeValue === 'string') {
+          localizedTypes[typeKey] = translateEditProfileError(typeValue);
+        }
+      }
+      localized.types = localizedTypes;
+    }
+
+    for (const [key, value] of Object.entries(localized)) {
+      if (
+        key === 'message' ||
+        key === 'type' ||
+        key === 'ref' ||
+        key === 'types'
+      )
+        continue;
+      if (value && typeof value === 'object') {
+        localized[key] = localizeErrorsRef.current(value);
+      }
+    }
+
+    return localized;
+  };
+  const localizeErrors = useCallback(
+    (errors: unknown): unknown => localizeErrorsRef.current(errors),
+    [],
+  );
+
+  const resolver = useMemo(
+    () =>
+      async (...args: Parameters<typeof baseResolver>) => {
+        const result = await baseResolver(...args);
+        return {
+          ...result,
+          errors: localizeErrors(result.errors) as typeof result.errors,
+        };
+      },
+    [baseResolver, localizeErrors],
+  );
+
   const formRef = useRef<HTMLFormElement>(null);
   const form = useForm<FormData>({
-    resolver: zodResolver(schemaEditPersonForm),
+    resolver,
     defaultValues: {
       avatarUrl: person?.avatarUrl || '',
       name: person?.name || '',
@@ -130,7 +241,9 @@ export const EditPersonSection = ({
                             <FormControl>
                               <Input
                                 disabled={isLoading}
-                                placeholder="First Name"
+                                placeholder={tProfile(
+                                  'editForm.placeholders.firstName',
+                                )}
                                 required
                                 aria-required="true"
                                 rightIcon={
@@ -153,7 +266,9 @@ export const EditPersonSection = ({
                             <FormControl>
                               <Input
                                 disabled={isLoading}
-                                placeholder="Last Name"
+                                placeholder={tProfile(
+                                  'editForm.placeholders.lastName',
+                                )}
                                 rightIcon={
                                   !field.value && (
                                     <RequirementMark className="text-4" />
@@ -174,7 +289,9 @@ export const EditPersonSection = ({
                         <FormItem>
                           <FormControl>
                             <Input
-                              placeholder="Nickname"
+                              placeholder={tProfile(
+                                'editForm.placeholders.nickname',
+                              )}
                               rightIcon={
                                 !field.value && (
                                   <RequirementMark className="text-4" />
@@ -202,6 +319,14 @@ export const EditPersonSection = ({
                 <FormItem>
                   <FormControl>
                     <UploadLeadImage
+                      uploadText={tProfile.rich(
+                        'editForm.uploadLeadImageLabel',
+                        {
+                          accent: (chunks) => (
+                            <span className="text-accent-11">{chunks}</span>
+                          ),
+                        },
+                      )}
                       defaultImage={
                         typeof person?.leadImageUrl === 'string'
                           ? person?.leadImageUrl
@@ -222,7 +347,9 @@ export const EditPersonSection = ({
                 <FormItem>
                   <FormControl>
                     <Textarea
-                      placeholder="Type your life purpose here..."
+                      placeholder={tProfile(
+                        'editForm.placeholders.lifePurpose',
+                      )}
                       disabled={isLoading}
                       {...field}
                     />
@@ -233,7 +360,9 @@ export const EditPersonSection = ({
             />
             <div className="flex gap-3 flex-col">
               <div className="flex justify-between">
-                <Text className={cn('text-2', 'text-neutral-11')}>Email</Text>
+                <Text className={cn('text-2', 'text-neutral-11')}>
+                  {tProfile('editForm.labels.email')}
+                </Text>
                 <span className="flex items-center">
                   <FormField
                     control={form.control}
@@ -243,7 +372,9 @@ export const EditPersonSection = ({
                         <FormControl>
                           <Input
                             disabled={isLoading}
-                            placeholder="Email"
+                            placeholder={tProfile(
+                              'editForm.placeholders.email',
+                            )}
                             className="w-60"
                             {...field}
                           />
@@ -256,7 +387,7 @@ export const EditPersonSection = ({
               </div>
               <div className="flex justify-between">
                 <Text className={cn('text-2', 'text-neutral-11')}>
-                  Location
+                  {tProfile('editForm.labels.location')}
                 </Text>
                 <span className="flex items-center">
                   <FormField
@@ -267,7 +398,9 @@ export const EditPersonSection = ({
                         <FormControl>
                           <Input
                             disabled={isLoading}
-                            placeholder="Location"
+                            placeholder={tProfile(
+                              'editForm.placeholders.location',
+                            )}
                             className="w-60"
                             {...field}
                           />
@@ -289,6 +422,7 @@ export const EditPersonSection = ({
                           links={field.value || []}
                           onChange={field.onChange}
                           errors={form.formState.errors.links}
+                          placeholder={tSpaces('addYourUrl')}
                         />
                       </FormControl>
                       <FormMessage />
@@ -309,7 +443,9 @@ export const EditPersonSection = ({
                     className="rounded-lg justify-start text-white w-fit"
                     disabled={isLoading}
                   >
-                    {error ? 'Retry' : 'Save'}
+                    {error
+                      ? tProfile('editForm.actions.retry')
+                      : tProfile('editForm.actions.save')}
                   </Button>
                 </div>
               </div>

@@ -20,16 +20,18 @@ import { formatDuration } from '@hypha-platform/ui-utils';
 import { useTheme } from 'next-themes';
 import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 function formatTimeRemaining(
   endTime: string,
+  tProposalDetails: any,
   executed?: boolean,
   expired?: boolean,
 ): string {
   const end = new Date(endTime);
 
   if (isPast(end) || executed || expired) {
-    return 'Vote closed';
+    return tProposalDetails('voting.voteClosed');
   }
 
   const duration = intervalToDuration({
@@ -43,8 +45,8 @@ function formatTimeRemaining(
   if (duration.minutes) parts.push(`${duration.minutes}m`);
 
   return parts.length
-    ? `This vote will close in ${parts.join(' ')}`
-    : 'Vote closing soon';
+    ? tProposalDetails('voting.voteWillCloseIn', { duration: parts.join(' ') })
+    : tProposalDetails('voting.voteClosingSoon');
 }
 
 const getCreateRouteForLabel = (label: string | undefined): string => {
@@ -124,6 +126,8 @@ export const FormVoting = ({
   closeUrl?: string;
   label?: string;
 }) => {
+  const tCommon = useTranslations('Common');
+  const tProposalDetails = useTranslations('ProposalDetails');
   const { myVote } = useMyVote(documentSlug);
   const { isMember } = useSpaceMember({ spaceId: web3SpaceId as number });
   const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
@@ -232,32 +236,47 @@ export const FormVoting = ({
     isCheckingExpiration ||
     (!isMember && !isDelegate);
   const tooltipMessage = !isAuthenticated
-    ? 'Please sign in to use this feature.'
+    ? tCommon('signIn')
     : !isMember && !isDelegate
-    ? 'Please join this space to use this feature.'
+    ? tCommon('joinSpaceToUse')
     : '';
 
   function getVoteLabels(spaceDetails?: SpaceDetails) {
     if (!spaceDetails) {
-      return { reject: 'Vote no', accept: 'Vote yes' };
+      return {
+        reject: tProposalDetails('voting.voteNo'),
+        accept: tProposalDetails('voting.voteYes'),
+      };
     }
 
     const quorum = Number(spaceDetails.quorum);
     const unity = Number(spaceDetails.unity);
 
     if (quorum === 0 && unity === 100) {
-      return { reject: 'Object', accept: 'Consent' };
+      return {
+        reject: tProposalDetails('voting.object'),
+        accept: tProposalDetails('voting.consent'),
+      };
     }
 
     if (quorum === 100 && unity === 100) {
-      return { reject: 'No', accept: 'Hell yeah' };
+      return {
+        reject: tProposalDetails('voting.no'),
+        accept: tProposalDetails('voting.hellYeah'),
+      };
     }
 
     if (quorum === 100 && unity === 0) {
-      return { reject: 'Not sure', accept: 'Looks good' };
+      return {
+        reject: tProposalDetails('voting.notSure'),
+        accept: tProposalDetails('voting.looksGood'),
+      };
     }
 
-    return { reject: 'Vote no', accept: 'Vote yes' };
+    return {
+      reject: tProposalDetails('voting.voteNo'),
+      accept: tProposalDetails('voting.voteYes'),
+    };
   }
 
   const labels = getVoteLabels(spaceDetails);
@@ -299,7 +318,7 @@ export const FormVoting = ({
           className="rounded-lg"
         >
           <ProgressLine
-            label="Quorum (Min. Participation)"
+            label={tProposalDetails('voting.quorumMinParticipation')}
             value={quorum}
             target={
               spaceDetails?.quorum ? Number(spaceDetails.quorum) : undefined
@@ -315,7 +334,7 @@ export const FormVoting = ({
           className="rounded-lg"
         >
           <ProgressLine
-            label="Unity (Min. Alignment)"
+            label={tProposalDetails('voting.unityMinAlignment')}
             value={unity}
             target={
               spaceDetails?.unity ? Number(spaceDetails.unity) : undefined
@@ -350,15 +369,16 @@ export const FormVoting = ({
                         ? '/placeholder/auto-execution-icon-light.svg'
                         : '/placeholder/auto-execution-icon.svg'
                     }
-                    alt="Proposal minimum voting icon"
+                    alt={tProposalDetails('voting.proposalVotingIconAlt')}
                   />
                   <div className="flex flex-col">
                     <span className="text-1 text-accent-11 text-nowrap font-medium">
-                      Auto-Execution
+                      {tProposalDetails('voting.autoExecution')}
                     </span>
                     <span className="text-[9px] text-accent-11 text-nowrap font-medium">
-                      {spaceDetails?.quorum}% Quorum | {spaceDetails?.unity}%
-                      Unity
+                      {spaceDetails?.quorum}%{' '}
+                      {tProposalDetails('labels.quorum')} |{' '}
+                      {spaceDetails?.unity}% {tProposalDetails('labels.unity')}
                     </span>
                   </div>
                 </div>
@@ -373,22 +393,30 @@ export const FormVoting = ({
                         ? '/placeholder/non-auto-execution-icon-light.svg'
                         : '/placeholder/non-auto-execution-icon.svg'
                     }
-                    alt="Proposal minimum voting icon"
+                    alt={tProposalDetails('voting.proposalVotingIconAlt')}
                   />
                   <div className="flex flex-col">
                     <span className="text-1 text-accent-11 text-nowrap font-medium">
-                      {formatDuration(Number(duration))} to Vote
+                      {tProposalDetails('voting.toVote', {
+                        duration: formatDuration(Number(duration)),
+                      })}
                     </span>
                     <span className="text-[9px] text-accent-11 text-nowrap font-medium">
-                      {spaceDetails?.quorum}% Quorum | {spaceDetails?.unity}%
-                      Unity
+                      {spaceDetails?.quorum}%{' '}
+                      {tProposalDetails('labels.quorum')} |{' '}
+                      {spaceDetails?.unity}% {tProposalDetails('labels.unity')}
                     </span>
                   </div>
                 </div>
               )}
             </Skeleton>
             <div className="text-1">
-              {formatTimeRemaining(endTime, executed, expired)}
+              {formatTimeRemaining(
+                endTime,
+                tProposalDetails,
+                executed,
+                expired,
+              )}
             </div>
           </div>
           {executed || expired || isPast(new Date(endTime)) ? null : (
@@ -417,7 +445,12 @@ export const FormVoting = ({
               </div>
               {showVotedMessage && (
                 <div className="text-2 text-neutral-10">
-                  You voted {voteText}
+                  {tProposalDetails('voting.youVoted', {
+                    vote:
+                      voteText === 'yes'
+                        ? tProposalDetails('voting.voteValueYes')
+                        : tProposalDetails('voting.voteValueNo'),
+                  })}
                 </div>
               )}
             </div>

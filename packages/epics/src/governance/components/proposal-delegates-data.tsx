@@ -2,6 +2,7 @@
 
 import { usePersonByWeb3Address, useSpacesByWeb3IdsClient } from '../hooks';
 import { Image } from '@hypha-platform/ui';
+import { useTranslations } from 'next-intl';
 
 interface ProposalDelegatesDataProps {
   member?: string;
@@ -12,13 +13,16 @@ export const ProposalDelegatesData = ({
   member,
   space,
 }: ProposalDelegatesDataProps) => {
+  const tProposalDetails = useTranslations('ProposalDetails');
   const { person } = usePersonByWeb3Address(member as `0x${string}`);
   const { spaces } = useSpacesByWeb3IdsClient([space as bigint]);
   const destructuredSpace = spaces?.[0];
   return (
     <div className="flex flex-col gap-5">
       <div className="flex w-full justify-between items-center">
-        <span className="text-2 text-neutral-11">Joining Space</span>
+        <span className="text-2 text-neutral-11">
+          {tProposalDetails('labels.joiningSpace')}
+        </span>
         <span className="flex gap-2 text-2 text-neutral-11">
           <Image
             className="w-[24px] h-[24px] rounded-lg"
@@ -34,7 +38,9 @@ export const ProposalDelegatesData = ({
         </span>
       </div>
       <div className="flex w-full justify-between items-center">
-        <span className="text-2 text-neutral-11">Delegated Voting Member</span>
+        <span className="text-2 text-neutral-11">
+          {tProposalDetails('labels.delegatedVotingMember')}
+        </span>
         <span className="flex gap-2 text-2 text-neutral-11">
           <Image
             className="rounded-lg"

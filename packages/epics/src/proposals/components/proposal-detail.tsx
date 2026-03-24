@@ -4,7 +4,6 @@ import { formatISO } from 'date-fns';
 import { FormVoting } from './form-voting';
 import { ProposalHead, ProposalHeadProps } from './proposal-head';
 import { Separator, AttachmentList, Skeleton } from '@hypha-platform/ui';
-import { formatDate } from '@hypha-platform/ui-utils';
 import Image from 'next/image';
 import {
   useProposalDetailsWeb3Rpc,
@@ -39,6 +38,7 @@ import { useSpaceDocumentsWithStatuses } from '../../governance';
 import { isPast } from 'date-fns';
 import { useState, useEffect } from 'react';
 import { TransparencyLevel } from '../../spaces/components/transparency-level';
+import { useTranslations } from 'next-intl';
 
 type ProposalDetailProps = ProposalHeadProps & {
   documentId?: number;
@@ -90,6 +90,7 @@ export const ProposalDetail = ({
   isVoting: externalIsVoting,
   onWithdrawSuccess,
 }: ProposalDetailProps) => {
+  const tProposalDetails = useTranslations('ProposalDetails');
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: proposalId as number,
   });
@@ -256,10 +257,11 @@ export const ProposalDetail = ({
           status={status}
           isLoading={isLoading}
           label={label}
-          createDate={formatDate(
-            proposalDetails?.startTime ?? new Date(),
-            true,
-          )}
+          createDate={
+            proposalDetails?.startTime
+              ? new Date(proposalDetails.startTime)
+              : undefined
+          }
           proposalStatus={proposalStatus}
         />
         <ButtonClose closeUrl={closeUrl} />
@@ -338,7 +340,9 @@ export const ProposalDetail = ({
       ))}
       {Boolean(proposalDetails?.transfers?.length) && (
         <div className="flex flex-col gap-4">
-          <span className="text-neutral-11 text-2 font-medium">Payment</span>
+          <span className="text-neutral-11 text-2 font-medium">
+            {tProposalDetails('sections.payment')}
+          </span>
           {proposalDetails?.transfers.map((tx, idx) => (
             <ProposalTransactionItem
               key={idx}

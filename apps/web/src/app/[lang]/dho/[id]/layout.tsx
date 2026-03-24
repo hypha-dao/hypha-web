@@ -32,8 +32,8 @@ import {
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
 import { Breadcrumbs } from './_components/breadcrumbs';
-import { canConvertToBigInt, formatDate } from '@hypha-platform/ui-utils';
-import { getTranslations } from 'next-intl/server';
+import { canConvertToBigInt } from '@hypha-platform/ui-utils';
+import { getFormatter, getTranslations } from 'next-intl/server';
 
 export default async function DhoLayout({
   aside,
@@ -49,6 +49,7 @@ export default async function DhoLayout({
   const { id: daoSlug, lang } = await params;
   const tCommon = await getTranslations('Common');
   const tSpaces = await getTranslations('Spaces');
+  const format = await getFormatter();
 
   const spaceFromDb = await findSpaceBySlug({ slug: daoSlug }, { db });
   if (!spaceFromDb) {
@@ -160,7 +161,16 @@ export default async function DhoLayout({
             </div>
             <div className="flex">
               <div className="text-gray-500 text-1">
-                Created on {formatDate(spaceFromDb.createdAt, true)}
+                {tCommon('createdOn', {
+                  date: format.dateTime(spaceFromDb.createdAt, {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                  }),
+                })}
               </div>
             </div>
           </div>

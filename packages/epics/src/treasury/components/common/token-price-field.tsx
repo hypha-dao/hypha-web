@@ -9,9 +9,11 @@ import {
   FormMessage,
   RequirementMark,
 } from '@hypha-platform/ui';
+import { useTranslations } from 'next-intl';
 
 export const TokenPriceField = () => {
   const { control, formState } = useFormContext();
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const enableTokenPrice = useWatch({
     control,
     name: 'enableTokenPrice',
@@ -22,19 +24,21 @@ export const TokenPriceField = () => {
     <FormField
       control={control}
       name="tokenPrice"
-      render={({ field, fieldState }) => (
+      render={({ field }) => (
         <FormItem>
           <div className="flex w-full justify-between">
             <div className="flex gap-1 w-full">
               <span className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
-                Token Price
+                {tAgreementFlow('plugins.issueNewToken.value.tokenPriceLabel')}
               </span>
               {enableTokenPrice && <RequirementMark className="text-2" />}
             </div>
             <FormControl>
               <Input
                 type="number"
-                placeholder="Enter token price"
+                placeholder={tAgreementFlow(
+                  'plugins.issueNewToken.value.tokenPricePlaceholder',
+                )}
                 {...field}
                 value={field.value ?? ''}
                 onChange={(e) => {

@@ -5,12 +5,14 @@ import { PATH_SELECT_CREATE_ACTION } from '@web/app/constants';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
 };
 
 export default async function CreateAgreementPage({ params }: PageProps) {
+  const tAgreementFlow = await getTranslations('AgreementFlow');
   const { lang, id } = await params;
 
   // TODO: implement authorization
@@ -29,7 +31,7 @@ export default async function CreateAgreementPage({ params }: PageProps) {
         backUrl={`${successfulUrl}${PATH_SELECT_CREATE_ACTION}`}
         spaceId={spaceId}
         web3SpaceId={web3SpaceId}
-        label="Collective Agreement"
+        label={tAgreementFlow('labels.collectiveAgreement')}
       />
     </SidePanel>
   );

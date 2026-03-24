@@ -2,6 +2,7 @@
 
 import { TokenBackingVaultCollateralItem } from './token-backing-vault-collateral-item';
 import type { DbToken } from '@hypha-platform/core/client';
+import { useTranslations } from 'next-intl';
 
 interface TokenBackingVaultAddCollateralsProps {
   collaterals: Array<{ token: string; amount: string; decimals: number }>;
@@ -14,9 +15,12 @@ export function TokenBackingVaultAddCollaterals({
   dbTokens,
   spaceTokens,
 }: TokenBackingVaultAddCollateralsProps) {
+  const tProposalDetails = useTranslations('ProposalDetails');
   return (
     <div className="flex flex-col gap-2">
-      <div className="text-1 text-neutral-11">Add Collaterals</div>
+      <div className="text-1 text-neutral-11">
+        {tProposalDetails('labels.addCollaterals')}
+      </div>
       {collaterals.map((c, i) => (
         <TokenBackingVaultCollateralItem
           key={`${c.token}-${i}`}

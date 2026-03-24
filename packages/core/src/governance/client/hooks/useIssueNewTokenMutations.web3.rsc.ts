@@ -49,9 +49,17 @@ interface CreateTokenArgs {
   useReceiveWhitelist?: boolean;
   initialTransferWhitelist?: `0x${string}`[];
   initialReceiveWhitelist?: `0x${string}`[];
+  defaultCreditLimit?: number;
+  initialCreditWhitelistSpaceIds?: number[];
+  salePaymentToken?: `0x${string}`;
+  salePaymentTokenPricePerToken?: bigint;
+  tokensForSale?: number;
+  purchaseEligibilityMode?: 0 | 1 | 2;
+  initialPurchaseWhitelistSpaceIds?: number[];
 }
 
 const chainId = 8453;
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
 export const useIssueTokenMutationsWeb3Rpc = ({
   proposalSlug,
@@ -91,6 +99,18 @@ export const useIssueTokenMutationsWeb3Rpc = ({
       const useReceiveWhitelist = arg.useReceiveWhitelist ?? false;
       const initialTransferWhitelist = arg.initialTransferWhitelist ?? [];
       const initialReceiveWhitelist = arg.initialReceiveWhitelist ?? [];
+      const defaultCreditLimit = BigInt(arg.defaultCreditLimit ?? 0);
+      const initialCreditWhitelistSpaceIds = (
+        arg.initialCreditWhitelistSpaceIds ?? []
+      ).map((id) => BigInt(id));
+      const salePaymentToken = arg.salePaymentToken ?? ZERO_ADDRESS;
+      const salePaymentTokenPricePerToken =
+        arg.salePaymentTokenPricePerToken ?? 0n;
+      const tokensForSale = BigInt(arg.tokensForSale ?? 0) * 10n ** 18n;
+      const purchaseEligibilityMode = arg.purchaseEligibilityMode ?? 0;
+      const initialPurchaseWhitelistSpaceIds = (
+        arg.initialPurchaseWhitelistSpaceIds ?? []
+      ).map((id) => BigInt(id));
 
       if (
         ['utility', 'credits', 'impact', 'community_currency'].includes(
@@ -118,6 +138,13 @@ export const useIssueTokenMutationsWeb3Rpc = ({
                 useReceiveWhitelist,
                 initialTransferWhitelist,
                 initialReceiveWhitelist,
+                defaultCreditLimit,
+                initialCreditWhitelistSpaceIds,
+                salePaymentToken,
+                salePaymentTokenPricePerToken,
+                tokensForSale,
+                purchaseEligibilityMode,
+                initialPurchaseWhitelistSpaceIds,
               ],
             }),
           },
@@ -143,6 +170,11 @@ export const useIssueTokenMutationsWeb3Rpc = ({
                 useReceiveWhitelist,
                 initialTransferWhitelist,
                 initialReceiveWhitelist,
+                salePaymentToken,
+                salePaymentTokenPricePerToken,
+                tokensForSale,
+                purchaseEligibilityMode,
+                initialPurchaseWhitelistSpaceIds,
               ],
             }),
           },
@@ -180,6 +212,11 @@ export const useIssueTokenMutationsWeb3Rpc = ({
                 initialReceiveWhitelist,
                 BigInt(arg.decayPercentage),
                 BigInt(arg.decayInterval),
+                salePaymentToken,
+                salePaymentTokenPricePerToken,
+                tokensForSale,
+                purchaseEligibilityMode,
+                initialPurchaseWhitelistSpaceIds,
               ],
             }),
           },

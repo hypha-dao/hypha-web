@@ -75,6 +75,12 @@ interface MultiSelectProps
   placeholder?: string;
 
   /**
+   * Placeholder text shown in the dropdown search input.
+   * Optional, defaults to "Search...".
+   */
+  searchPlaceholder?: string;
+
+  /**
    * Animation duration in seconds for the visual effects (e.g., bouncing badges).
    * Optional, defaults to 0 (no animation).
    */
@@ -140,6 +146,7 @@ export const MultiSelect = React.forwardRef<
       variant,
       defaultValue = [],
       placeholder = 'Select options',
+      searchPlaceholder = 'Search...',
       animation = 0,
       maxCount = 3,
       modalPopover = false,
@@ -304,7 +311,7 @@ export const MultiSelect = React.forwardRef<
         >
           <Command>
             <CommandInput
-              placeholder="Search..."
+              placeholder={searchPlaceholder}
               onKeyDown={handleInputKeyDown}
             />
             <CommandList>

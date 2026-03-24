@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { useTheme } from 'next-themes';
 import {
@@ -12,6 +11,7 @@ import {
 import { QuorumAndUnityChanger } from './quorum-and-unity-changer';
 import { Button } from '@hypha-platform/ui';
 import { VOTING_METHOD_TEMPLATES } from '../../../../governance';
+import { useTranslations } from 'next-intl';
 
 interface QuorumAndUnityChangerFieldProps {
   name: string;
@@ -20,29 +20,26 @@ interface QuorumAndUnityChangerFieldProps {
 export function QuorumAndUnityChangerField({
   name,
 }: QuorumAndUnityChangerFieldProps) {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { control, setValue } = useFormContext();
   const fieldValue = useWatch({ control, name }) || { quorum: 0, unity: 0 };
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
-  const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
+  const matchedPreset = VOTING_METHOD_TEMPLATES.find(
+    (p) => p.quorum === fieldValue.quorum && p.unity === fieldValue.unity,
+  );
 
   const handleChange = (values: { quorum: number; unity: number }) => {
     setValue(name, values, { shouldValidate: true });
-    const preset = VOTING_METHOD_TEMPLATES.find(
-      (p) => p.quorum === values.quorum && p.unity === values.unity,
-    );
-    if (!preset) {
-      setSelectedPreset(null);
-    }
   };
 
   const handlePresetClick = (preset: {
     title: string;
+    titleKey: string;
     quorum: number;
     unity: number;
   }) => {
-    setSelectedPreset(preset.title);
     setValue(
       name,
       { quorum: preset.quorum, unity: preset.unity },
@@ -68,7 +65,7 @@ export function QuorumAndUnityChangerField({
         <FormItem>
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 mb-2">
             {VOTING_METHOD_TEMPLATES.map((preset) => {
-              const isSelected = selectedPreset === preset.title;
+              const isSelected = matchedPreset === preset;
               return (
                 <Button
                   key={preset.title}
@@ -81,7 +78,13 @@ export function QuorumAndUnityChangerField({
                   }`}
                   variant="ghost"
                 >
-                  <div className="font-bold mb-2">{preset.title}</div>
+                  <div className="font-bold mb-2">
+                    {tAgreementFlow(
+                      `plugins.quorumAndUnity.templates.${preset.titleKey}` as Parameters<
+                        typeof tAgreementFlow
+                      >[0],
+                    )}
+                  </div>
                   <div className="space-y-3 text-sm text-neutral-11 w-full">
                     <div className="flex items-center gap-2">
                       <div className="flex-1 bg-neutral-6 h-5 rounded-2xl relative">
@@ -132,7 +135,7 @@ export function QuorumAndUnityChangerField({
           <FormMessage />
           {fieldValue.quorum === 0 && fieldValue.unity === 0 && (
             <span className="text-2 text-error-11 mt-2">
-              Quorum and unity cannot both be set to 0%
+              {tAgreementFlow('plugins.quorumAndUnity.cannotBothZero')}
             </span>
           )}
         </FormItem>
