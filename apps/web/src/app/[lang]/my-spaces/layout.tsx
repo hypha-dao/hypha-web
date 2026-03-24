@@ -10,6 +10,9 @@ export default async function RootLayout({
   children: React.ReactNode;
   aside: React.ReactNode;
 }) {
+  // Aside first + row-reverse: same visual order as children-then-aside, but main
+  // is later in the DOM so fixed/portaled UI stacks above SidePanel when z-index
+  // ties. Spec-defined stacking; identical in Chrome, Firefox, Safari, etc.
   return (
     <div className="flex h-full w-full flex-row-reverse">
       {aside}

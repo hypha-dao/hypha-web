@@ -93,6 +93,8 @@ export default async function DhoLayout({
 
   const spaces = await getAllSpaces({ parentOnly: false, omitSandbox: true });
 
+  // Aside first + row-reverse: main Container stays visually left; DOM order lets
+  // fixed/portaled UI from main stack above SidePanel when z-index ties (all browsers).
   return (
     <div className="mx-auto flex max-w-container-2xl flex-row-reverse">
       {aside}

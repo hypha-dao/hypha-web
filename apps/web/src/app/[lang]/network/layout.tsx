@@ -10,6 +10,7 @@ export default async function RootLayout({
   children: React.ReactNode;
   aside: React.ReactNode;
 }) {
+  // See my-spaces/layout.tsx — aside first + row-reverse for correct stacking vs SidePanel.
   return (
     <div className="flex h-full w-full flex-row-reverse">
       {aside}
