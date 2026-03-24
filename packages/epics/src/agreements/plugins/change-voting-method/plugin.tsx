@@ -59,7 +59,7 @@ const normalizeChainDurationForSelect = (
 ): number | undefined => {
   if (raw === undefined) return undefined;
   const seconds = typeof raw === 'bigint' ? Number(raw) : raw;
-  if (!Number.isFinite(seconds) || seconds <= 0) return undefined;
+  if (!Number.isFinite(seconds) || seconds < 0) return undefined;
   return votingDurationOptionValues.has(seconds)
     ? seconds
     : nearestVotingDurationOption(seconds);
@@ -79,10 +79,13 @@ export const ChangeVotingMethodPlugin = ({
   spaceSlug: string;
   members: Person[];
 }) => {
-  const { duration, isLoading: isChainDurationLoading } =
-    useSpaceMinProposalDuration({
-      spaceId: BigInt(web3SpaceId as number),
-    });
+  const {
+    duration,
+    isLoading: isChainDurationLoading,
+    error: chainDurationError,
+  } = useSpaceMinProposalDuration({
+    spaceId: BigInt(web3SpaceId as number),
+  });
 
   const chainSelectDuration = React.useMemo(
     () => normalizeChainDurationForSelect(duration),
@@ -255,7 +258,9 @@ export const ChangeVotingMethodPlugin = ({
                             : undefined
                         }
                         onValueChange={(value) => field.onChange(Number(value))}
-                        disabled={isChainDurationLoading}
+                        disabled={
+                          isChainDurationLoading || !!chainDurationError
+                        }
                       >
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Duration" />
@@ -273,6 +278,12 @@ export const ChangeVotingMethodPlugin = ({
                       </Select>
                     </FormControl>
                   </span>
+                  {chainDurationError ? (
+                    <span className="text-2 text-red-11">
+                      Could not load minimum voting duration from the network.
+                      Try again later.
+                    </span>
+                  ) : null}
                   <FormMessage />
                 </FormItem>
               )}
