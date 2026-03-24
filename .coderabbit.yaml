@@ -8,7 +8,7 @@ reviews:
   request_changes_workflow: true
   high_level_summary: true
   high_level_summary_placeholder: "@coderabbitai summary"
-  auto_approve: false
+  auto_approve: true
   poem: false
   review_status: true
   collapse_walkthrough: false
