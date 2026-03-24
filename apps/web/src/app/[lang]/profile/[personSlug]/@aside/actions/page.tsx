@@ -57,6 +57,13 @@ export default function ProfileWallet() {
       icon: <ArrowUpIcon />,
     },
     {
+      title: 'Buy Hypha Tokens (Rewards)',
+      description:
+        'Convert your tokens into their equivalent fiat value held in the vault.',
+      href: 'redeem-tokens',
+      icon: <ArrowUpIcon />,
+    },
+    {
       id: 'buyHyphaTokensRewards',
       title: tActions('actions.buyHyphaTokensRewards.title'),
       description: tActions('actions.buyHyphaTokensRewards.description'),

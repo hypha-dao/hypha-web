@@ -765,6 +765,22 @@ export function decodeTransaction(tx: Tx) {
         }
       },
     },
+    {
+      abi: tokenBackingVaultImplementationAbi,
+      handler: (decoded) =>
+        decoded.functionName === 'redeem'
+          ? {
+              type: 'redeemTokens',
+              data: {
+                web3SpaceId: decoded.args[0],
+                token: decoded.args[1],
+                amount: decoded.args[2],
+                backingTokens: decoded.args[3],
+                proportions: decoded.args[4],
+              },
+            }
+          : null,
+    },
   ];
 
   for (const { abi, handler } of decoders) {

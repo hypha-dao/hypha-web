@@ -29,6 +29,7 @@ import {
   MembershipExitData,
   ProposalTransparencySettingsInfo,
   ProposalTokenBackingVaultData,
+  ProposalRedeemTokensData,
 } from '../../governance';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
 import { ButtonClose, ExpireProposalBanner } from '@hypha-platform/epics';
@@ -413,6 +414,15 @@ export const ProposalDetail = ({
           spaceSlug={spaceSlug}
           dbTokens={dbTokens}
           {...proposalDetails.tokenBackingVaultData}
+        />
+      ) : null}
+      {proposalDetails?.redeemTokensData.amount &&
+      proposalDetails?.redeemTokensData.token ? (
+        <ProposalRedeemTokensData
+          amount={proposalDetails.redeemTokensData.amount}
+          token={proposalDetails.redeemTokensData.token}
+          web3SpaceId={proposalDetails.redeemTokensData.web3SpaceId}
+          conversions={proposalDetails.redeemTokensData.conversions}
         />
       ) : null}
       <FormVoting

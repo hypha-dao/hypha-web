@@ -33,6 +33,8 @@ interface UseRedeemTokensProps {
   authToken?: string | null;
 }
 
+const chainId: keyof typeof tokenBackingVaultImplementationAddress = 8453;
+
 export const useRedeemTokensMutation = ({
   authToken,
 }: UseRedeemTokensProps) => {
@@ -79,7 +81,7 @@ export const useRedeemTokensMutation = ({
       const decimals = await getTokenDecimals(token);
       const amount = parseUnits(arg.redemption.amount, decimals);
       const txHash: string = await client.writeContract({
-        address: tokenBackingVaultImplementationAddress[8453],
+        address: tokenBackingVaultImplementationAddress[chainId],
         abi: tokenBackingVaultImplementationAbi,
         functionName: 'redeem',
         args: [

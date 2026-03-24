@@ -199,6 +199,21 @@ export const useProposalDetailsWeb3Rpc = ({
       whitelistedAddresses?: string[];
     } = {};
 
+    const redeemTokensData: {
+      token?: `0x${string}`;
+      amount?: bigint;
+      web3SpaceId?: bigint;
+      conversions: {
+        asset: `0x${string}`;
+        percentage: bigint;
+      }[];
+    } = {
+      token: undefined,
+      amount: undefined,
+      web3SpaceId: undefined,
+      conversions: [],
+    };
+
     (transactions as any[]).forEach((tx) => {
       const decoded = decodeTransaction(tx);
 
@@ -384,6 +399,20 @@ export const useProposalDetailsWeb3Rpc = ({
           break;
         }
 
+        case 'redeemTokens':
+          redeemTokensData.amount = decoded.data.amount as bigint;
+          redeemTokensData.token = decoded.data.token as `0x${string}`;
+          redeemTokensData.web3SpaceId = decoded.data.web3SpaceId as bigint;
+          const backingTokens = decoded.data.backingTokens as `0x${string}`[];
+          const proportions = decoded.data.proportions as bigint[];
+          const len = Math.min(backingTokens.length, proportions.length);
+          for (let i = 0; i < len; i++) {
+            const asset = backingTokens[i]!;
+            const percentage = proportions[i]!;
+            redeemTokensData.conversions.push({ asset, percentage });
+          }
+          break;
+
         default:
           break;
       }
@@ -415,6 +444,7 @@ export const useProposalDetailsWeb3Rpc = ({
       membershipExitData,
       transparencySettingsData,
       tokenBackingVaultData,
+      redeemTokensData,
     };
   }, [data]);
 
