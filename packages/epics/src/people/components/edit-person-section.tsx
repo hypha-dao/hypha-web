@@ -114,13 +114,15 @@ export const EditPersonSection = ({
       for (const [key, value] of Object.entries(errors)) {
         if (!/^\d+$/.test(key)) {
           localizedArrayWithMeta[key] =
-            value && typeof value === 'object'
-              ? localizeErrorsRef.current(value)
-              : value;
+            typeof value === 'string'
+              ? translateEditProfileError(value)
+              : value && typeof value === 'object'
+                ? localizeErrorsRef.current(value)
+                : value;
         }
       }
 
-      return localizedArray;
+      return localizedArrayWithMeta;
     }
 
     const localized = { ...(errors as Record<string, unknown>) };
