@@ -253,7 +253,7 @@ reviews:
   auto_review:
     enabled: true
     drafts: false
-    incremental: true
+    auto_incremental_review: true
     base_branches:
       - "main"
     ignore_title_keywords:
@@ -298,8 +298,7 @@ reviews:
       enabled: true
       timeout_ms: 120000
     ast-grep:
-      enabled: true
-      essentials: true
+      essential_rules: true
     semgrep:
       enabled: true
     shellcheck:
