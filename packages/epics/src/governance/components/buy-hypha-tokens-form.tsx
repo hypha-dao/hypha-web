@@ -1,7 +1,6 @@
 'use client';
 
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import {
   createAgreementFiles,
   schemaBuyHyphaTokens,
@@ -15,10 +14,11 @@ import { z } from 'zod';
 import { LoadingBackdrop, Form, Separator, Button } from '@hypha-platform/ui';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useConfig } from 'wagmi';
-import { useRouter } from 'next/navigation';
 import { useAssets, useFundWallet } from '../../treasury';
 import React from 'react';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
+import { useTranslations } from 'next-intl';
+import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
 
 const RECIPIENT_SPACE_ADDRESS = '0x3dEf11d005F8C85c93e3374B28fcC69B25a650Af';
 const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
@@ -43,10 +43,11 @@ export const BuyHyphaTokensForm = ({
   spaceId,
   web3SpaceId,
 }: BuyHyphaTokensFormProps) => {
+  const tSpaces = useTranslations('Spaces');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
-  const router = useRouter();
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({
     spaceId: web3SpaceId as number,
   });
@@ -60,10 +61,14 @@ export const BuyHyphaTokensForm = ({
 
   const { buyHyphaTokens, reset, currentAction, isError, isPending, progress } =
     useBuyHyphaTokensOrchestrator({ authToken: jwt, config });
+  const resolver = useLocalizedProposalResolver(
+    conbinedSchemaBuyHyphaTokens,
+    tAgreementFlow,
+  );
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
-    resolver: zodResolver(conbinedSchemaBuyHyphaTokens),
+    resolver,
     mode: 'onChange',
     defaultValues: {
       title: '',
@@ -121,6 +126,7 @@ export const BuyHyphaTokensForm = ({
   return (
     <LoadingBackdrop
       showKeepWindowOpenMessage={true}
+      keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       fullHeight={true}
       progress={progress}
       isLoading={isPending || insufficientFunds}
@@ -128,18 +134,30 @@ export const BuyHyphaTokensForm = ({
         insufficientFunds ? (
           <div className="flex flex-col text-center gap-2 justify-center items-center">
             <span>
-              Your wallet balance is insufficient to complete this transaction.
-              <br /> Please{' '}
-              <span
-                onClick={() => {
-                  setInsufficientFunds(false);
-                  fundWallet();
-                }}
-                className="font-bold cursor-pointer text-accent-9 underline"
-              >
-                top up your account with {paymentAsset?.symbol ?? 'USDC'}
-              </span>{' '}
-              to proceed.
+              {tAgreementFlow.rich(
+                'buyHyphaTokensForm.insufficientFunds.fullMessage',
+                {
+                  token: paymentAsset?.symbol ?? 'USDC',
+                  topUpLink: (chunks) => (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setInsufficientFunds(false);
+                        fundWallet();
+                      }}
+                      aria-label={tAgreementFlow(
+                        'buyHyphaTokensForm.insufficientFunds.topUpWith',
+                        {
+                          token: paymentAsset?.symbol ?? 'USDC',
+                        },
+                      )}
+                      className="font-bold cursor-pointer text-accent-9 underline bg-transparent border-0 p-0"
+                    >
+                      {chunks}
+                    </button>
+                  ),
+                },
+              )}
             </span>
             <Button
               className="w-fit"
@@ -148,13 +166,13 @@ export const BuyHyphaTokensForm = ({
                 reset();
               }}
             >
-              Reset
+              {tSpaces('reset')}
             </Button>
           </div>
         ) : isError ? (
           <div className="flex flex-col">
-            <div>Ouh Snap. There was an error</div>
-            <Button onClick={reset}>Reset</Button>
+            <div>{tSpaces('errorOhSnap')}</div>
+            <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (
           <div>{currentAction}</div>
@@ -177,15 +195,15 @@ export const BuyHyphaTokensForm = ({
             successfulUrl={successfulUrl}
             closeUrl={successfulUrl}
             backUrl={backUrl}
-            backLabel="Back to Settings"
+            backLabel={tSpaces('backToSettings')}
             isLoading={false}
-            label="Buy Hypha Tokens (Rewards)"
+            label={tAgreementFlow('labels.buyHyphaTokensRewards')}
             progress={progress}
           />
           {children}
           <Separator />
           <div className="flex justify-end w-full">
-            <Button type="submit">Publish</Button>
+            <Button type="submit">{tAgreementFlow('buttons.publish')}</Button>
           </div>
         </form>
       </Form>

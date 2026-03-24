@@ -21,6 +21,7 @@ import { useParams } from 'next/navigation';
 import { ProfileComponentParams } from './types';
 import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
 import { useScrollToErrors } from '../../hooks';
+import { useTranslations } from 'next-intl';
 
 interface DelegateVotingSectionProps {
   spaceSlug?: string;
@@ -28,14 +29,10 @@ interface DelegateVotingSectionProps {
   useMembers: UseMembers;
 }
 
-const delegateToMemberSchema = z.object({
-  delegatedSpace: z.number({
-    required_error: 'Please select a space',
-    invalid_type_error: 'Please select a space',
-  }),
-  delegatedMember: z.string().min(1, 'Please select a member'),
-});
-type DelegateToMemberForm = z.infer<typeof delegateToMemberSchema>;
+type DelegateToMemberForm = {
+  delegatedSpace: number;
+  delegatedMember: string;
+};
 
 /*
 const passOnDelegatedVoiceSchema = z.object({
@@ -53,6 +50,7 @@ export const DelegateVotingSection = ({
   spaceSlug,
   useMembers,
 }: DelegateVotingSectionProps) => {
+  const tMembersTab = useTranslations('MembersTab');
   const { personSlug: personSlugRaw } = useParams<ProfileComponentParams>();
   const personSlug = tryDecodeUriPart(personSlugRaw);
   const { person } = useMe();
@@ -114,6 +112,16 @@ export const DelegateVotingSection = ({
   */
 
   if (!isMember) return null;
+
+  const delegateToMemberSchema = z.object({
+    delegatedSpace: z.number({
+      required_error: tMembersTab('delegateSection.errors.selectSpace'),
+      invalid_type_error: tMembersTab('delegateSection.errors.selectSpace'),
+    }),
+    delegatedMember: z
+      .string()
+      .min(1, tMembersTab('delegateSection.errors.selectMember')),
+  });
 
   const delegateToMemberFormRef = useRef<HTMLFormElement>(null);
   const delegateToMemberForm = useForm<DelegateToMemberForm>({
@@ -230,9 +238,9 @@ export const DelegateVotingSection = ({
           onSubmit={delegateToMemberForm.handleSubmit(handleDelegateToMember)}
           className="flex flex-col gap-5"
         >
-          <Label>Delegate to Member</Label>
+          <Label>{tMembersTab('delegateSection.title')}</Label>
           <span className="text-2 text-neutral-11">
-            Select a member of this space to receive your voting power.
+            {tMembersTab('delegateSection.description')}
           </span>
           <FormField
             control={delegateToMemberForm.control}
@@ -241,7 +249,7 @@ export const DelegateVotingSection = ({
               <FormItem>
                 <span className="flex w-full items-center">
                   <div className="text-2 text-neutral-11 w-full">
-                    Delegated Voting Member
+                    {tMembersTab('delegateSection.delegatedVotingMember')}
                   </div>
                   <DelegatedMemberSelector
                     members={filteredMembers}
@@ -264,19 +272,23 @@ export const DelegateVotingSection = ({
                 disabled={isUndelegating || isDelegatingToMember}
                 onClick={handleUndelegate}
               >
-                {isUndelegating ? 'Undelegating...' : 'Undelegate'}
+                {isUndelegating
+                  ? tMembersTab('delegateSection.undelegating')
+                  : tMembersTab('delegateSection.undelegate')}
               </Button>
             ) : null}
             <Button
               type="submit"
               disabled={isDelegatingToMember || isUndelegating}
             >
-              {isDelegatingToMember ? 'Delegating...' : 'Save'}
+              {isDelegatingToMember
+                ? tMembersTab('delegateSection.delegating')
+                : tMembersTab('delegateSection.save')}
             </Button>
           </span>
           {successMember && (
             <span className="text-foreground text-sm">
-              Delegation completed successfully!
+              {tMembersTab('delegateSection.success')}
             </span>
           )}
           {errorDelegateMember && (

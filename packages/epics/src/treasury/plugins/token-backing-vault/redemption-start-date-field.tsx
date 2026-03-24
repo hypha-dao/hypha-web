@@ -9,6 +9,31 @@ import {
   RequirementMark,
 } from '@hypha-platform/ui';
 import { useFormContext } from 'react-hook-form';
+import { useLocale, useTranslations } from 'next-intl';
+import {
+  enUS,
+  de,
+  fr,
+  es,
+  ptBR,
+  type Locale as DateFnsLocale,
+} from 'date-fns/locale';
+
+const DATE_FNS_LOCALES: Record<string, DateFnsLocale> = {
+  en: enUS,
+  de,
+  fr,
+  es,
+  pt: ptBR,
+  'pt-br': ptBR,
+};
+
+const resolveDateFnsLocale = (locale: string): DateFnsLocale => {
+  const normalized = locale.toLowerCase().replace('_', '-');
+  const baseLocale = normalized.split('-')[0] ?? 'en';
+
+  return DATE_FNS_LOCALES[normalized] ?? DATE_FNS_LOCALES[baseLocale] ?? enUS;
+};
 
 type RedemptionStartDateFieldProps = {
   isRequired?: boolean;
@@ -17,6 +42,9 @@ type RedemptionStartDateFieldProps = {
 export function RedemptionStartDateField({
   isRequired = false,
 }: RedemptionStartDateFieldProps) {
+  const locale = useLocale();
+  const tAgreementFlow = useTranslations('AgreementFlow');
+  const dateLocale = resolveDateFnsLocale(locale);
   const { control } = useFormContext();
 
   return (
@@ -27,14 +55,19 @@ export function RedemptionStartDateField({
         <FormItem>
           <div className="flex justify-between items-center w-full">
             <span className="text-2 text-neutral-11 whitespace-nowrap items-center w-full flex gap-1">
-              Authorise Redemption from
+              {tAgreementFlow(
+                'plugins.tokenBackingVault.authoriseRedemptionFrom',
+              )}
               {isRequired && <RequirementMark className="text-2" />}
             </span>
             <FormControl className="w-full">
               <DatePicker
                 mode="single"
                 value={field.value ?? undefined}
-                placeholder="Select a date"
+                locale={dateLocale}
+                placeholder={tAgreementFlow(
+                  'plugins.tokenBackingVault.selectDate',
+                )}
                 className="w-fit"
                 onChange={(val) =>
                   field.onChange(val instanceof Date ? val : null)

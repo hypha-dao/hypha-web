@@ -3,6 +3,7 @@
 import { useMemo, useCallback } from 'react';
 import { Image, Combobox } from '@hypha-platform/ui';
 import { Person } from '@hypha-platform/core/client';
+import { useTranslations } from 'next-intl';
 
 type DelegatedMemberProps = {
   members?: Person[];
@@ -17,7 +18,9 @@ export const DelegatedMemberSelector = ({
   value,
   readOnly,
 }: DelegatedMemberProps) => {
-  const placeholder = 'Find Member';
+  const tMembersTab = useTranslations('MembersTab');
+  const tSpaces = useTranslations('Spaces');
+  const placeholder = tMembersTab('delegateSection.findMember');
 
   const memberOptions = useMemo(
     () =>
@@ -64,6 +67,8 @@ export const DelegatedMemberSelector = ({
         <Combobox
           options={memberOptions}
           placeholder={placeholder}
+          searchPlaceholder={tSpaces('search')}
+          emptyListMessage={tMembersTab('delegateSection.noMembersFound')}
           onChange={handleChange}
           initialValue={value || undefined}
           disabled={readOnly}

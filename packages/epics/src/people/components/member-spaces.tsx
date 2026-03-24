@@ -18,6 +18,7 @@ import { useParams } from 'next/navigation';
 import { Empty } from '@hypha-platform/epics';
 import { GlobeIcon, PlusIcon } from '@radix-ui/react-icons';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { useTranslations } from 'next-intl';
 
 export type MemberSpacesProps = {
   spaces?: Space[];
@@ -34,6 +35,8 @@ export const MemberSpaces = ({
   personAddress,
   personSlug,
 }: MemberSpacesProps) => {
+  const tCommon = useTranslations('Common');
+  const tSpaces = useTranslations('Spaces');
   const { lang } = useParams();
   const { web3SpaceIds, isLoading: isLoadingSpaces } = useMemberWeb3SpaceIds({
     personAddress,
@@ -57,28 +60,23 @@ export const MemberSpaces = ({
       {!filteredSpaces?.length ? (
         <Empty>
           <div className="flex flex-col gap-7">
-            <p>
-              No spaces created or joined yet. Explore our network and join some
-              Space, or create your own
-            </p>
+            <p>{tCommon('noSpacesYet')}</p>
             <div className="flex gap-4 items-center justify-center">
               <Link href={`/${lang}/network`}>
                 <Button variant="outline" className="gap-2">
                   <GlobeIcon />
-                  Explore Spaces
+                  {tCommon('exploreSpaces')}
                 </Button>
               </Link>
               <Link
                 className={!isAuthenticated ? 'cursor-not-allowed' : ''}
-                title={
-                  !isAuthenticated ? 'Please sign in to use this feature.' : ''
-                }
+                title={!isAuthenticated ? tCommon('signIn') : ''}
                 href={isAuthenticated ? `/${lang}/my-spaces/create` : {}}
                 scroll={false}
               >
                 <Button disabled={!isAuthenticated} className="gap-2">
                   <PlusIcon />
-                  Create Space
+                  {tSpaces('createSpace')}
                 </Button>
               </Link>
             </div>
@@ -94,7 +92,7 @@ export const MemberSpaces = ({
               className="rounded-lg"
             />
           ) : !profileView ? (
-            <div className="text-4 mr-4">Spaces</div>
+            <div className="text-4 mr-4">{tCommon('Spaces')}</div>
           ) : null}
           {isLoadingState ? (
             <div className="flex flex-row gap-3 overflow-x-auto">

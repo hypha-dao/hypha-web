@@ -15,14 +15,24 @@ import {
   RequirementMark,
 } from '@hypha-platform/ui';
 import { ChevronDownIcon } from '@radix-ui/themes';
+import { useTranslations } from 'next-intl';
 
 const OPTIONS = [
-  { label: 'Forever Immutable', value: 'immutable' },
-  { label: 'Updatable Over Time', value: 'updatable' },
+  {
+    label: 'Forever Immutable',
+    value: 'immutable',
+    labelKey: 'plugins.issueNewToken.supply.maxSupplyTypeOptions.immutable',
+  },
+  {
+    label: 'Updatable Over Time',
+    value: 'updatable',
+    labelKey: 'plugins.issueNewToken.supply.maxSupplyTypeOptions.updatable',
+  },
 ];
 
 export function TokenMaxSupplyTypeField() {
   const { control, trigger, formState } = useFormContext();
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const maxSupply = useWatch({
     control,
     name: 'maxSupply',
@@ -43,14 +53,26 @@ export function TokenMaxSupplyTypeField() {
       control={control}
       name="maxSupplyType"
       render={({ field }) => {
-        const selectedLabel = field.value?.label || 'Select max supply type';
+        const selectedOption = OPTIONS.find(
+          (option) => option.value === field.value?.value,
+        );
+        const selectedLabel = selectedOption
+          ? tAgreementFlow(
+              selectedOption.labelKey as Parameters<typeof tAgreementFlow>[0],
+            )
+          : field.value?.label ||
+            tAgreementFlow(
+              'plugins.issueNewToken.supply.maxSupplyTypePlaceholder',
+            );
 
         return (
           <FormItem>
             <div className="flex justify-between items-center w-full">
               <div className="flex gap-1 w-full">
                 <FormLabel className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
-                  Max Supply Type
+                  {tAgreementFlow(
+                    'plugins.issueNewToken.supply.maxSupplyTypeLabel',
+                  )}
                 </FormLabel>
                 {enableLimitedSupply && <RequirementMark className="text-2" />}
               </div>
@@ -76,11 +98,16 @@ export function TokenMaxSupplyTypeField() {
                       <DropdownMenuItem
                         key={opt.value}
                         onSelect={() => {
-                          field.onChange(opt);
+                          field.onChange({
+                            label: opt.label,
+                            value: opt.value,
+                          });
                           trigger('maxSupply');
                         }}
                       >
-                        {opt.label}
+                        {tAgreementFlow(
+                          opt.labelKey as Parameters<typeof tAgreementFlow>[0],
+                        )}
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
@@ -95,11 +122,9 @@ export function TokenMaxSupplyTypeField() {
             )}
             <div className="text-2 text-neutral-11 flex flex-col gap-3">
               <span>
-                Choosing "Forever Immutable" locks in the maximum supply
-                permanently and blocks any future changes. Select "Updatable
-                Over Time" if you may raise the cap later (for example via
-                gradual or milestone-based releases), or leave limited supply
-                turned off to keep supply unlimited.
+                {tAgreementFlow(
+                  'plugins.issueNewToken.supply.maxSupplyTypeHelp',
+                )}
               </span>
             </div>
           </FormItem>

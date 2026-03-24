@@ -23,6 +23,79 @@ import {
   useResubmitProposalData,
 } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
+import { useTranslations } from 'next-intl';
+
+const ISSUE_NEW_TOKEN_ERROR_KEYS: Record<string, string> = {
+  'Please add a title for your proposal':
+    'issueNewTokenForm.errors.titleRequired',
+  'Please add content to your proposal':
+    'issueNewTokenForm.errors.descriptionRequired',
+  'Slug must contain only lowercase letters, numbers, and hyphens':
+    'issueNewTokenForm.errors.slugFormat',
+  'Please upload a valid file': 'issueNewTokenForm.errors.uploadValidFile',
+  'Your file is too large and exceeds the 4MB limit. Please upload a smaller file.':
+    'issueNewTokenForm.errors.fileTooLarge',
+  'Your file is too large and exceeds the 4MB limit. Please upload a smaller file':
+    'issueNewTokenForm.errors.fileTooLarge',
+  'File must be an image (JPEG, PNG, GIF, WEBP).':
+    'issueNewTokenForm.errors.imageFileType',
+  'File must be an image (JPEG, PNG, GIF, WEBP)':
+    'issueNewTokenForm.errors.imageFileType',
+  'Lead Image URL must be a valid URL':
+    'issueNewTokenForm.errors.leadImageUrlInvalid',
+  'Attachment URL must be a valid URL':
+    'issueNewTokenForm.errors.attachmentUrlInvalid',
+  'Attachment name is required':
+    'issueNewTokenForm.errors.attachmentNameRequired',
+  'You can attach up to 3 files. Please remove the extra attachments.':
+    'issueNewTokenForm.errors.attachmentsLimit',
+  'Please enter a token name (min. 2 characters)':
+    'issueNewTokenForm.errors.tokenNameMin',
+  'Token name must be at most 100 characters long':
+    'issueNewTokenForm.errors.tokenNameMax',
+  'Token name cannot contain emojis or links':
+    'issueNewTokenForm.errors.tokenNameInvalidContent',
+  'Please enter a token symbol (min. 2 characters)':
+    'issueNewTokenForm.errors.tokenSymbolMin',
+  'Token symbol must be at most 10 characters long':
+    'issueNewTokenForm.errors.tokenSymbolMax',
+  'Please enter the token symbol using only uppercase letters (A–Z)':
+    'issueNewTokenForm.errors.tokenSymbolUppercase',
+  'Token symbol cannot contain emojis or links':
+    'issueNewTokenForm.errors.tokenSymbolInvalidContent',
+  'Please upload a token icon': 'issueNewTokenForm.errors.tokenIconRequired',
+  'Icon URL must be a valid URL':
+    'issueNewTokenForm.errors.tokenIconUrlInvalid',
+  'Please select a token type': 'issueNewTokenForm.errors.tokenTypeRequired',
+  'Max supply must be 0 or greater':
+    'issueNewTokenForm.errors.maxSupplyMinZero',
+  'Max supply must be a non-negative number':
+    'issueNewTokenForm.errors.maxSupplyNonNegative',
+  'Please select a max supply type':
+    'issueNewTokenForm.errors.maxSupplyTypeRequired',
+  'Max supply must be greater than 0 when updatable type is selected':
+    'issueNewTokenForm.errors.maxSupplyUpdatablePositive',
+  'Enter a maximum supply greater than 0, or disable limited supply if you want unlimited supply.':
+    'issueNewTokenForm.errors.maxSupplyLimitedPositiveOrDisable',
+  'Please enter a voice decay frequency':
+    'issueNewTokenForm.errors.voiceDecayFrequencyRequired',
+  'Voice decay frequency must be greater than 0':
+    'issueNewTokenForm.errors.voiceDecayFrequencyPositive',
+  'Please enter a voice decay percentage':
+    'issueNewTokenForm.errors.voiceDecayPercentageRequired',
+  'Voice decay percentage must be greater than 0':
+    'issueNewTokenForm.errors.voiceDecayPercentagePositive',
+  'Decay percentage must not exceed 100%':
+    'issueNewTokenForm.errors.decayPercentageMax',
+  'Please enter a blockchain address':
+    'issueNewTokenForm.errors.blockchainAddressRequired',
+  'Please enter a valid blockchain address':
+    'issueNewTokenForm.errors.blockchainAddressInvalid',
+  'Please select a reference currency':
+    'issueNewTokenForm.errors.referenceCurrencyRequired',
+  'Please enter a token price greater than 0':
+    'issueNewTokenForm.errors.tokenPricePositive',
+};
 
 const extendedBaseSchema = baseSchemaIssueNewToken.merge(
   z.object({
@@ -30,13 +103,15 @@ const extendedBaseSchema = baseSchemaIssueNewToken.merge(
   }),
 );
 
-export const fullSchemaIssueNewToken = extendedBaseSchema.superRefine(
-  (data, ctx) => {
+const createFullSchemaIssueNewToken = (tAgreementFlow: any) =>
+  extendedBaseSchema.superRefine((data, ctx) => {
     if (data.enableLimitedSupply === true) {
       if (!data.maxSupplyType) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Please select a max supply type',
+          message: tAgreementFlow(
+            'issueNewTokenForm.errors.maxSupplyTypeRequired',
+          ),
           path: ['maxSupplyType'],
         });
       }
@@ -49,8 +124,9 @@ export const fullSchemaIssueNewToken = extendedBaseSchema.superRefine(
       ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message:
-            'Enter a maximum supply greater than 0, or disable limited supply if you want unlimited supply.',
+          message: tAgreementFlow(
+            'issueNewTokenForm.errors.maxSupplyLimitedPositiveOrDisable',
+          ),
           path: ['maxSupply'],
         });
       }
@@ -60,7 +136,9 @@ export const fullSchemaIssueNewToken = extendedBaseSchema.superRefine(
       if (!data.referenceCurrency) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Please select a reference currency',
+          message: tAgreementFlow(
+            'issueNewTokenForm.errors.referenceCurrencyRequired',
+          ),
           path: ['referenceCurrency'],
         });
       }
@@ -72,15 +150,16 @@ export const fullSchemaIssueNewToken = extendedBaseSchema.superRefine(
       ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Please enter a token price greater than 0',
+          message: tAgreementFlow(
+            'issueNewTokenForm.errors.tokenPricePositive',
+          ),
           path: ['tokenPrice'],
         });
       }
     }
-  },
-);
+  });
 
-type FormValues = z.infer<typeof fullSchemaIssueNewToken>;
+type FormValues = z.infer<typeof extendedBaseSchema>;
 
 interface IssueNewTokenFormProps {
   spaceId: number | undefined | null;
@@ -99,6 +178,8 @@ export const IssueNewTokenForm = ({
   web3SpaceId,
   plugin,
 }: IssueNewTokenFormProps) => {
+  const tSpaces = useTranslations('Spaces');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
@@ -116,10 +197,117 @@ export const IssueNewTokenForm = ({
   const agreementSlug = agreement?.slug;
 
   const [formError, setFormError] = React.useState<string | null>(null);
+  const fullSchemaIssueNewToken = React.useMemo(
+    () => createFullSchemaIssueNewToken(tAgreementFlow),
+    [tAgreementFlow],
+  );
+
+  const translateIssueNewTokenError = React.useCallback(
+    (message: string) => {
+      const tooLargeMatch = message.match(
+        /^Your file "(.+)" is too large and exceeds the 4MB limit\. Please upload a smaller file\.?$/,
+      );
+      if (tooLargeMatch?.[1]) {
+        return tAgreementFlow(
+          'issueNewTokenForm.errors.attachmentFileTooLarge',
+          {
+            fileName: tooLargeMatch[1],
+          },
+        );
+      }
+
+      const unsupportedFormatMatch = message.match(
+        /^This file "(.+)" format isn[’']t supported\. Please upload a JPEG, PNG, WebP, or PDF \(up to 4MB\)\.?$/,
+      );
+      if (unsupportedFormatMatch?.[1]) {
+        return tAgreementFlow(
+          'issueNewTokenForm.errors.attachmentFileTypeUnsupported',
+          {
+            fileName: unsupportedFormatMatch[1],
+          },
+        );
+      }
+
+      const key = ISSUE_NEW_TOKEN_ERROR_KEYS[message];
+      return key
+        ? tAgreementFlow(key as Parameters<typeof tAgreementFlow>[0])
+        : message;
+    },
+    [tAgreementFlow],
+  );
+
+  const localizeErrors = React.useCallback(
+    (errors: unknown): unknown => {
+      if (!errors || typeof errors !== 'object') return errors;
+      if (Array.isArray(errors)) {
+        const localizedArray = errors.map(localizeErrors);
+        const localizedArrayWithMeta = localizedArray as unknown as Record<
+          string,
+          unknown
+        >;
+
+        for (const [key, value] of Object.entries(errors)) {
+          if (!/^\d+$/.test(key)) {
+            localizedArrayWithMeta[key] =
+              value && typeof value === 'object'
+                ? localizeErrors(value)
+                : value;
+          }
+        }
+
+        return localizedArray;
+      }
+
+      const localized = { ...(errors as Record<string, unknown>) };
+
+      if (typeof localized.message === 'string') {
+        localized.message = translateIssueNewTokenError(localized.message);
+      }
+
+      if (localized.types && typeof localized.types === 'object') {
+        const localizedTypes: Record<string, unknown> = { ...localized.types };
+        for (const [typeKey, typeValue] of Object.entries(localizedTypes)) {
+          if (typeof typeValue === 'string') {
+            localizedTypes[typeKey] = translateIssueNewTokenError(typeValue);
+          }
+        }
+        localized.types = localizedTypes;
+      }
+
+      for (const [key, value] of Object.entries(localized)) {
+        if (
+          key === 'message' ||
+          key === 'type' ||
+          key === 'ref' ||
+          key === 'types'
+        ) {
+          continue;
+        }
+        if (value && typeof value === 'object') {
+          localized[key] = localizeErrors(value);
+        }
+      }
+
+      return localized;
+    },
+    [translateIssueNewTokenError],
+  );
+
+  const resolver = React.useMemo(() => {
+    const baseResolver = zodResolver(fullSchemaIssueNewToken);
+
+    return async (...args: Parameters<typeof baseResolver>) => {
+      const result = await baseResolver(...args);
+      return {
+        ...result,
+        errors: localizeErrors(result.errors) as typeof result.errors,
+      };
+    };
+  }, [fullSchemaIssueNewToken, localizeErrors]);
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
-    resolver: zodResolver(fullSchemaIssueNewToken),
+    resolver,
     defaultValues: {
       title: '',
       description: '',
@@ -136,7 +324,6 @@ export const IssueNewTokenForm = ({
         decayInterval: 2592000,
         decayPercentage: 1,
       },
-      label: 'Issue New Token',
       isVotingToken: false,
       transferable: true,
       enableAdvancedTransferControls: false,
@@ -147,6 +334,7 @@ export const IssueNewTokenForm = ({
       enableTokenPrice: false,
       referenceCurrency: undefined,
       tokenPrice: undefined,
+      label: tAgreementFlow('labels.issueNewToken'),
     },
     mode: 'onChange',
   });
@@ -181,9 +369,7 @@ export const IssueNewTokenForm = ({
     });
 
     if (dbTokens?.length && duplicateToken) {
-      setFormError(
-        'A token with the same name and symbol already exists in your space. Please modify either the name or symbol to proceed.',
-      );
+      setFormError(tAgreementFlow('issueNewTokenForm.duplicateToken'));
       return;
     }
     await createIssueToken({
@@ -203,14 +389,15 @@ export const IssueNewTokenForm = ({
   return (
     <LoadingBackdrop
       showKeepWindowOpenMessage={true}
+      keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       fullHeight={true}
       progress={progress}
       isLoading={isPending}
       message={
         isError ? (
           <div className="flex flex-col">
-            <div>Ouh Snap. There was an error</div>
-            <Button onClick={reset}>Reset</Button>
+            <div>{tSpaces('errorOhSnap')}</div>
+            <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (
           <div>{currentAction}</div>
@@ -233,9 +420,9 @@ export const IssueNewTokenForm = ({
             successfulUrl={successfulUrl}
             closeUrl={closeUrl || successfulUrl}
             backUrl={backUrl}
-            backLabel="Back to settings"
+            backLabel={tSpaces('backToSettings')}
             isLoading={false}
-            label="Issue New Token"
+            label={tAgreementFlow('labels.issueNewToken')}
             progress={progress}
           />
           {plugin}
@@ -247,7 +434,7 @@ export const IssueNewTokenForm = ({
               </div>
             )}
             <div className="flex justify-end w-full">
-              <Button type="submit">Publish</Button>
+              <Button type="submit">{tAgreementFlow('buttons.publish')}</Button>
             </div>
           </div>
         </form>

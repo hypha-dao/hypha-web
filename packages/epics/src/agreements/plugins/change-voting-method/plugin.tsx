@@ -30,19 +30,20 @@ import {
 } from '@hypha-platform/ui';
 import { VotingMethodSelector } from '../../components/voting-method-selector';
 import React from 'react';
+import { useTranslations } from 'next-intl';
 
 const votingDurationOptions = [
-  { label: '6 hours', value: 6 * 3600 },
-  { label: '12 hours', value: 12 * 3600 },
-  { label: '24 hours', value: 24 * 3600 },
-  { label: '2 days', value: 2 * 86400 },
-  { label: '3 days', value: 3 * 86400 },
-  { label: '5 days', value: 5 * 86400 },
-  { label: '7 days', value: 7 * 86400 },
-  { label: '10 days', value: 10 * 86400 },
-  { label: '14 days', value: 14 * 86400 },
-  { label: '21 days', value: 21 * 86400 },
-  { label: '30 days', value: 30 * 86400 },
+  { labelKey: 'h6', value: 6 * 3600 },
+  { labelKey: 'h12', value: 12 * 3600 },
+  { labelKey: 'h24', value: 24 * 3600 },
+  { labelKey: 'd2', value: 2 * 86400 },
+  { labelKey: 'd3', value: 3 * 86400 },
+  { labelKey: 'd5', value: 5 * 86400 },
+  { labelKey: 'd7', value: 7 * 86400 },
+  { labelKey: 'd10', value: 10 * 86400 },
+  { labelKey: 'd14', value: 14 * 86400 },
+  { labelKey: 'd21', value: 21 * 86400 },
+  { labelKey: 'd30', value: 30 * 86400 },
 ];
 
 export const ChangeVotingMethodPlugin = ({
@@ -54,6 +55,7 @@ export const ChangeVotingMethodPlugin = ({
   spaceSlug: string;
   members: Person[];
 }) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { duration } = useSpaceMinProposalDuration({
     spaceId: BigInt(web3SpaceId as number),
   });
@@ -166,10 +168,9 @@ export const ChangeVotingMethodPlugin = ({
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-5">
-        <Label>Voting Method</Label>
+        <Label>{tAgreementFlow('plugins.quorumAndUnity.title')}</Label>
         <span className="text-2 text-neutral-11">
-          Select a voting method template, or adjust Quorum and Unity values
-          with the sliders.
+          {tAgreementFlow('plugins.quorumAndUnity.description')}
         </span>
         <QuorumAndUnityChangerField name="quorumAndUnity" />
       </div>
@@ -177,7 +178,7 @@ export const ChangeVotingMethodPlugin = ({
       <Separator />
 
       <div className="flex flex-col gap-5">
-        <Label>Voting Period</Label>
+        <Label>{tAgreementFlow('plugins.quorumAndUnity.votingPeriod')}</Label>
 
         <FormField
           control={control}
@@ -186,7 +187,11 @@ export const ChangeVotingMethodPlugin = ({
             <FormItem>
               <FormControl>
                 <div className="flex w-full justify-between items-center text-2 text-neutral-11">
-                  <span>Auto-execution (when conditions are met)</span>
+                  <span>
+                    {tAgreementFlow(
+                      'plugins.quorumAndUnity.autoExecutionWhenConditionsMet',
+                    )}
+                  </span>
                   <Switch
                     checked={field.value}
                     onCheckedChange={handleAutoExecutionChange}
@@ -198,8 +203,9 @@ export const ChangeVotingMethodPlugin = ({
               <FormMessage />
               {isQuorumTooLow && (
                 <span className="text-2 text-neutral-11">
-                  Auto-execution is disabled when quorum is below 20% to protect
-                  treasury assets.
+                  {tAgreementFlow(
+                    'plugins.quorumAndUnity.autoExecutionDisabled',
+                  )}
                 </span>
               )}
             </FormItem>
@@ -215,7 +221,9 @@ export const ChangeVotingMethodPlugin = ({
                 <FormItem>
                   <span className="flex justify-between w-full">
                     <Label className="w-full flex items-center">
-                      Minimum Voting Duration
+                      {tAgreementFlow(
+                        'plugins.quorumAndUnity.minimumVotingDuration',
+                      )}
                       <RequirementMark className="text-2 ml-1" />
                     </Label>
                     <FormControl>
@@ -224,7 +232,11 @@ export const ChangeVotingMethodPlugin = ({
                         onValueChange={(value) => field.onChange(Number(value))}
                       >
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Duration" />
+                          <SelectValue
+                            placeholder={tAgreementFlow(
+                              'plugins.quorumAndUnity.durationPlaceholder',
+                            )}
+                          />
                         </SelectTrigger>
                         <SelectContent>
                           {votingDurationOptions.map((opt) => (
@@ -232,7 +244,9 @@ export const ChangeVotingMethodPlugin = ({
                               key={opt.value}
                               value={String(opt.value)}
                             >
-                              {opt.label}
+                              {tAgreementFlow(
+                                `plugins.quorumAndUnity.durations.${opt.labelKey}`,
+                              )}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -249,7 +263,7 @@ export const ChangeVotingMethodPlugin = ({
       <Separator />
       <div className="flex flex-col gap-5">
         <Skeleton loading={isLoading} width={'100%'} height={280}>
-          <Label>Voting Power</Label>
+          <Label>{tAgreementFlow('plugins.quorumAndUnity.votingPower')}</Label>
           <VotingMethodSelector
             value={votingMethod}
             onChange={handleMethodChange}
@@ -262,7 +276,9 @@ export const ChangeVotingMethodPlugin = ({
       <div className="flex flex-col gap-5">
         {votingMethod === '1v1v' && (
           <>
-            <Label>Voting Token Allocation</Label>
+            <Label>
+              {tAgreementFlow('plugins.quorumAndUnity.votingTokenAllocation')}
+            </Label>
             <TokenSelectorField
               showRequirementMark={true}
               name="token"
@@ -278,7 +294,9 @@ export const ChangeVotingMethodPlugin = ({
 
         {votingMethod === '1t1v' && (
           <Skeleton loading={isLoading} width={'100%'} height={24}>
-            <Label>Voting Token Allocation</Label>
+            <Label>
+              {tAgreementFlow('plugins.quorumAndUnity.votingTokenAllocation')}
+            </Label>
             <TokenSelectorField
               showRequirementMark={true}
               name="token"

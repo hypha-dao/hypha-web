@@ -1,6 +1,7 @@
 'use client';
 
 import { Switch } from '@hypha-platform/ui';
+import { useTranslations } from 'next-intl';
 
 export const DecaySettingsToggle = ({
   showDecaySettings,
@@ -9,13 +10,15 @@ export const DecaySettingsToggle = ({
   showDecaySettings: boolean;
   setShowDecaySettings: (value: boolean) => void;
 }) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
+
   return (
     <div className="flex items-center gap-3 justify-between">
       <label
         htmlFor="decay-settings-toggle"
         className="text-2 text-neutral-11 font-medium"
       >
-        Advanced Decay Settings
+        {tAgreementFlow('plugins.issueNewToken.decay.advancedSettings')}
       </label>
       <Switch
         id="decay-settings-toggle"

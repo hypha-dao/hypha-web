@@ -9,6 +9,7 @@ import {
   RequirementMark,
 } from '@hypha-platform/ui';
 import { useFormContext } from 'react-hook-form';
+import { useTranslations } from 'next-intl';
 
 type MinimumBackingPercentFieldProps = {
   isRequired?: boolean;
@@ -17,6 +18,7 @@ type MinimumBackingPercentFieldProps = {
 export function MinimumBackingPercentField({
   isRequired = false,
 }: MinimumBackingPercentFieldProps) {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { control } = useFormContext();
 
   return (
@@ -27,7 +29,9 @@ export function MinimumBackingPercentField({
         <FormItem>
           <div className="flex justify-between items-center w-full">
             <span className="text-2 text-neutral-11 whitespace-nowrap items-center w-full flex gap-1">
-              Minimum Backing %
+              {tAgreementFlow(
+                'plugins.tokenBackingVault.minimumBackingPercent',
+              )}
               {isRequired && <RequirementMark className="text-2" />}
             </span>
             <FormControl className="w-full">

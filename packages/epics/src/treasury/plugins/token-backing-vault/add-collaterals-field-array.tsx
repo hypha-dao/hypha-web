@@ -5,6 +5,7 @@ import { TokenPayoutField } from '../../../agreements/plugins/components/common/
 import { useFormContext, useFieldArray } from 'react-hook-form';
 import { PlusIcon, Cross2Icon } from '@radix-ui/react-icons';
 import { TOKENS, Token } from '@hypha-platform/core/client';
+import { useTranslations } from 'next-intl';
 
 interface ExtendedToken extends Token {
   space?: {
@@ -22,6 +23,7 @@ type AddCollateralsFieldArrayProps = {
 export function AddCollateralsFieldArray({
   filteredTokens,
 }: AddCollateralsFieldArrayProps) {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { control, setValue, getValues } = useFormContext();
   const collateralTokens: ExtendedToken[] = [...TOKENS, ...filteredTokens];
 
@@ -32,9 +34,11 @@ export function AddCollateralsFieldArray({
 
   return (
     <div className="flex flex-col gap-4">
-      <FormLabel>Add Collaterals to Vault</FormLabel>
+      <FormLabel>
+        {tAgreementFlow('plugins.tokenBackingVault.addCollaterals')}
+      </FormLabel>
       <span className="text-2 text-neutral-11">
-        Add backing collaterals from the treasury to the vault.
+        {tAgreementFlow('plugins.tokenBackingVault.addCollateralsDescription')}
       </span>
       <div className="flex flex-col gap-3">
         {fields.map((field, index) => (
@@ -45,7 +49,9 @@ export function AddCollateralsFieldArray({
             <div className="flex justify-between items-center w-full flex-col gap-4">
               <div className="flex gap-1 w-full">
                 <span className="text-2 text-neutral-11 whitespace-nowrap items-center w-full">
-                  Backing Collateral
+                  {tAgreementFlow(
+                    'plugins.tokenBackingVault.backingCollateral',
+                  )}
                 </span>
               </div>
               <FormControl className="w-full">
@@ -76,7 +82,7 @@ export function AddCollateralsFieldArray({
                 className="gap-2 text-2"
               >
                 <Cross2Icon />
-                Remove
+                {tAgreementFlow('plugins.tokenBackingVault.remove')}
               </Button>
             </div>
           </div>
@@ -93,7 +99,7 @@ export function AddCollateralsFieldArray({
           className="gap-2 text-2"
         >
           <PlusIcon />
-          Add
+          {tAgreementFlow('plugins.tokenBackingVault.add')}
         </Button>
       </div>
     </div>

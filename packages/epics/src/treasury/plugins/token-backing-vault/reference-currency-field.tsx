@@ -14,6 +14,7 @@ import {
 import { useFormContext } from 'react-hook-form';
 import { CURRENCY_FEED_OPTIONS } from '@hypha-platform/core/client';
 import React from 'react';
+import { useTranslations } from 'next-intl';
 
 type ReferenceCurrencyFieldProps = {
   isRequired?: boolean;
@@ -22,6 +23,7 @@ type ReferenceCurrencyFieldProps = {
 export function ReferenceCurrencyField({
   isRequired = false,
 }: ReferenceCurrencyFieldProps) {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { control, getValues, setValue } = useFormContext();
 
   React.useEffect(() => {
@@ -43,7 +45,7 @@ export function ReferenceCurrencyField({
         <FormItem>
           <div className="flex justify-between items-center w-full">
             <span className="text-2 text-neutral-11 whitespace-nowrap items-center w-full flex gap-1">
-              Reference Currency
+              {tAgreementFlow('plugins.tokenBackingVault.referenceCurrency')}
               {isRequired && <RequirementMark className="text-2" />}
             </span>
             <FormControl className="w-full">

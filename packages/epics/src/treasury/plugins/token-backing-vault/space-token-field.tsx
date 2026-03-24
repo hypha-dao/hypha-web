@@ -14,6 +14,7 @@ import {
 } from '@hypha-platform/ui';
 import { useFormContext } from 'react-hook-form';
 import { Token } from '@hypha-platform/core/client';
+import { useTranslations } from 'next-intl';
 
 interface ExtendedToken extends Token {
   space?: {
@@ -27,6 +28,7 @@ type SpaceTokenFieldProps = {
 };
 
 export function SpaceTokenField({ filteredTokens }: SpaceTokenFieldProps) {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { control } = useFormContext();
 
   return (
@@ -38,7 +40,7 @@ export function SpaceTokenField({ filteredTokens }: SpaceTokenFieldProps) {
           <div className="flex justify-between items-center w-full">
             <div className="flex gap-1 w-full">
               <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
-                Select Token
+                {tAgreementFlow('plugins.tokenBackingVault.selectTokenLabel')}
               </label>
               <RequirementMark className="text-2" />
             </div>
@@ -52,8 +54,12 @@ export function SpaceTokenField({ filteredTokens }: SpaceTokenFieldProps) {
                   <SelectValue
                     placeholder={
                       filteredTokens.length === 0
-                        ? 'No token found'
-                        : 'Select a token'
+                        ? tAgreementFlow(
+                            'plugins.tokenBackingVault.noTokenFound',
+                          )
+                        : tAgreementFlow(
+                            'plugins.tokenBackingVault.selectTokenPlaceholder',
+                          )
                     }
                   />
                 </SelectTrigger>

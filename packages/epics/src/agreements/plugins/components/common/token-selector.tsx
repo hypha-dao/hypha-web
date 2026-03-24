@@ -14,6 +14,7 @@ import {
 } from '@hypha-platform/ui';
 import { Token } from './token-payout-field-array';
 import { getTokenTypeLabel } from '../../../../treasury/components/common/token-type-field';
+import { useTranslations } from 'next-intl';
 
 interface TokenSelectorProps {
   value: string;
@@ -28,6 +29,7 @@ export const TokenSelector = ({
   tokens,
   showRequirementMark = false,
 }: TokenSelectorProps) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const selectedToken = tokens.find((t) => t.address === value);
 
   const handleTokenChange = (token: Token) => {
@@ -92,7 +94,7 @@ export const TokenSelector = ({
                     </span>
                     {token?.type && (
                       <div className="rounded-lg text-[10px] text-accent-11 border-1 border-accent-11 px-2 py-0.75">
-                        {getTokenTypeLabel(token.type)}
+                        {getTokenTypeLabel(token.type, tAgreementFlow)}
                       </div>
                     )}
                   </span>

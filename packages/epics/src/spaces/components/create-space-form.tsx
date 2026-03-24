@@ -611,6 +611,7 @@ export const SpaceForm = ({
               <FormControl>
                 <MultiSelect
                   placeholder={tSpaces('selectOneOrMore')}
+                  searchPlaceholder={tSpaces('search')}
                   options={categoryOptions}
                   value={field.value}
                   allowToggleAll={false}
@@ -663,6 +664,7 @@ export const SpaceForm = ({
                   links={field.value}
                   onChange={field.onChange}
                   errors={form.formState.errors.links}
+                  placeholder={tSpaces('addYourUrl')}
                 />
               </FormControl>
               <FormMessage />

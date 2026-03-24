@@ -8,9 +8,11 @@ import {
   FormMessage,
   Switch,
 } from '@hypha-platform/ui';
+import { useTranslations } from 'next-intl';
 
 export function TransferableField() {
   const { control } = useFormContext();
+  const tAgreementFlow = useTranslations('AgreementFlow');
 
   return (
     <FormField
@@ -19,7 +21,9 @@ export function TransferableField() {
       render={({ field }) => (
         <FormItem>
           <div className="flex w-full items-center justify-between text-2 text-neutral-11">
-            <span>Transferable</span>
+            <span>
+              {tAgreementFlow('plugins.issueNewToken.transfer.transferable')}
+            </span>
             <FormControl>
               <Switch
                 checked={field.value ?? true}

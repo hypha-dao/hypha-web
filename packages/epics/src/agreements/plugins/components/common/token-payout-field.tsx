@@ -13,6 +13,7 @@ import {
 import { cn } from '@hypha-platform/ui-utils';
 import { TokenType } from '@hypha-platform/core/client';
 import { getTokenTypeLabel } from '../../../../treasury/components/common/token-type-field';
+import { useTranslations } from 'next-intl';
 
 interface Token {
   icon: string;
@@ -41,6 +42,7 @@ export const TokenPayoutField = ({
   tokens,
   readOnlyDropdown,
 }: TokenPayoutFieldProps) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const selectedToken = tokens.find((t) => t.address === value.token);
 
   const handleTokenChange = (token: Token) => {
@@ -67,7 +69,7 @@ export const TokenPayoutField = ({
           value={value.amount ?? ''}
           type="text"
           inputMode="decimal"
-          placeholder="Amount"
+          placeholder={tAgreementFlow('plugins.tokenPayoutField.amount')}
           onChange={(e) => handleAmountChange(e.target.value)}
         />
       </div>
@@ -96,7 +98,7 @@ export const TokenPayoutField = ({
                   </>
                 ) : (
                   <span className="text-2 text-neutral-11 whitespace-nowrap">
-                    Select a token
+                    {tAgreementFlow('plugins.tokenPayoutField.selectToken')}
                   </span>
                 )}
               </div>
@@ -124,20 +126,24 @@ export const TokenPayoutField = ({
                       </span>
                       {token?.type && (
                         <div className="rounded-lg text-[10px] text-accent-11 border-1 border-accent-11 px-2 py-0.75">
-                          {getTokenTypeLabel(token.type)}
+                          {getTokenTypeLabel(token.type, tAgreementFlow)}
                         </div>
                       )}
                     </span>
                     {token?.space?.title ? (
                       <span className="text-1 text-accent-11">
-                        by {token?.space?.title}
+                        {tAgreementFlow('plugins.tokenPayoutField.bySpace', {
+                          space: token.space.title,
+                        })}
                       </span>
                     ) : null}
                   </div>
                 </DropdownMenuItem>
               ))
             ) : (
-              <span className="text-2 text-neutral-11">No tokens found</span>
+              <span className="text-2 text-neutral-11">
+                {tAgreementFlow('plugins.tokenPayoutField.noTokensFound')}
+              </span>
             )}
           </DropdownMenuContent>
         </DropdownMenu>

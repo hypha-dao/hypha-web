@@ -5,6 +5,7 @@ import { TokenTypeField } from './token-type-field';
 import { TokenNameField } from './token-name-field';
 import { TokenSymbolField } from './token-symbol-field';
 import { TokenIconField } from './token-icon-field';
+import { useTranslations } from 'next-intl';
 
 export const GeneralTokenSettings = ({
   tokenType,
@@ -13,12 +14,15 @@ export const GeneralTokenSettings = ({
   tokenType: string;
   setTokenType: (value: string) => void;
 }) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
+
   return (
     <>
-      <FormLabel>General</FormLabel>
+      <FormLabel>
+        {tAgreementFlow('plugins.issueNewToken.general.title')}
+      </FormLabel>
       <span className="text-2 text-neutral-11">
-        Select your token type and customize its name, symbol, and icon for
-        clear identification.
+        {tAgreementFlow('plugins.issueNewToken.general.description')}
       </span>
       <TokenTypeField
         onValueChange={(value: string) => {

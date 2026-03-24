@@ -1,5 +1,6 @@
+import { useTranslations } from 'next-intl';
 import { Locale } from '@hypha-platform/i18n';
-import { Skeleton, Image, StatusBadge } from '@hypha-platform/ui';
+import { Skeleton, Image, Badge } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import Link from 'next/link';
 
@@ -14,6 +15,24 @@ export type MemberHeadProps = {
   isLoading: boolean;
 };
 
+const STATUS_BADGE_VARIANTS = {
+  active: { variant: 'surface', colorVariant: 'success' },
+  voting: { variant: 'surface', colorVariant: 'warn' },
+  completed: { variant: 'surface', colorVariant: 'accent' },
+  rejected: { variant: 'surface', colorVariant: 'error' },
+  inactive: { variant: 'surface', colorVariant: 'neutral' },
+  applicant: { variant: 'surface', colorVariant: 'warn' },
+} as const;
+
+const STATUS_BADGE_TRANSLATION_KEYS = {
+  active: 'active',
+  voting: 'voting',
+  completed: 'completed',
+  rejected: 'rejected',
+  inactive: 'inactive',
+  applicant: 'applicant',
+} as const;
+
 export const MemberHead = ({
   avatarUrl,
   name,
@@ -24,6 +43,25 @@ export const MemberHead = ({
   lang,
   isLoading,
 }: MemberHeadProps) => {
+  const tMembersTab = useTranslations('MembersTab');
+  const normalizedStatus = (status || '').toLowerCase();
+  const statusKey = normalizedStatus as keyof typeof STATUS_BADGE_VARIANTS;
+  const statusBadgeConfig = STATUS_BADGE_VARIANTS[statusKey] ?? {
+    variant: 'surface',
+    colorVariant: 'neutral',
+  };
+  const statusTranslationKey = STATUS_BADGE_TRANSLATION_KEYS[statusKey] as
+    | keyof typeof STATUS_BADGE_TRANSLATION_KEYS
+    | undefined;
+  const statusLabel =
+    statusTranslationKey !== undefined
+      ? tMembersTab(
+          `memberDetail.statusBadge.${statusTranslationKey}` as Parameters<
+            typeof tMembersTab
+          >[0],
+        )
+      : status || tMembersTab('memberDetail.statusBadge.inactive');
+
   return (
     <div className="flex">
       <Skeleton
@@ -44,7 +82,13 @@ export const MemberHead = ({
       <div className="flex justify-between items-center w-full">
         <div className="flex flex-col">
           <div className="flex gap-x-1">
-            <StatusBadge isLoading={isLoading} status={status} />
+            <Badge
+              isLoading={isLoading}
+              variant={statusBadgeConfig.variant}
+              colorVariant={statusBadgeConfig.colorVariant}
+            >
+              {statusLabel}
+            </Badge>
           </div>
 
           <Skeleton

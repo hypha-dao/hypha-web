@@ -41,6 +41,7 @@ import { Locale } from '@hypha-platform/i18n';
 import { ButtonBack, ButtonClose } from '../../common';
 import { useProposalNotifications } from '../../governance/hooks';
 import React from 'react';
+import { useTranslations } from 'next-intl';
 
 type Creator = { avatar: string; name: string; surname: string };
 
@@ -69,18 +70,43 @@ export function CreateAgreementBaseFields({
   successfulUrl,
   closeUrl,
   backUrl,
-  backLabel = 'Back to Create',
-  label = 'Agreement',
+  backLabel,
+  label,
   progress,
 }: CreateAgreementFormProps) {
+  const tAgreementFlow = useTranslations('AgreementFlow');
+  const translateEditor = React.useCallback(
+    (
+      key: string,
+      defaultValue: string | undefined,
+      interpolations?: Record<string, string | number>,
+    ) => {
+      const translationKey = `createAgreementBaseFields.editor.${key}`;
+
+      if (!tAgreementFlow.has(translationKey)) {
+        return defaultValue ?? key;
+      }
+
+      return tAgreementFlow(translationKey, interpolations);
+    },
+    [tAgreementFlow],
+  );
   const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
   const { jwt: authToken } = useJwt();
   const router = useRouter();
 
   const form = useFormContext<CreateAgreementFormData>();
+  const resolvedBackLabel =
+    backLabel ?? tAgreementFlow('createAgreementBaseFields.backToCreate');
+  const resolvedLabel =
+    label ?? tAgreementFlow('createAgreementBaseFields.agreementLabel');
 
   if (!form) {
-    return <div>Form context is missing!</div>;
+    return (
+      <div>
+        {tAgreementFlow('createAgreementBaseFields.formContextMissing')}
+      </div>
+    );
   }
 
   const [resubmitFormData, setResubmitFormData] = React.useState<{
@@ -260,7 +286,7 @@ export function CreateAgreementBaseFields({
             <div className="flex flex-col w-full justify-between gap-4">
               <div className="flex flex-row w-full">
                 <Badge className="w-fit" colorVariant="accent">
-                  {label}
+                  {resolvedLabel}
                 </Badge>
                 {isDelegate && (
                   <Badge
@@ -269,13 +295,13 @@ export function CreateAgreementBaseFields({
                     isLoading={isLoading}
                     className="ml-2"
                   >
-                    Delegate
+                    {tAgreementFlow('createAgreementBaseFields.delegate')}
                   </Badge>
                 )}
                 <div className="flex grow"></div>
                 {backUrl && (
                   <ButtonBack
-                    label={backLabel}
+                    label={resolvedBackLabel}
                     backUrl={backUrl}
                     className="px-0 md:px-3 align-top"
                   />
@@ -294,7 +320,9 @@ export function CreateAgreementBaseFields({
                       <FormItem>
                         <FormControl>
                           <Input
-                            placeholder="Proposal title..."
+                            placeholder={tAgreementFlow(
+                              'createAgreementBaseFields.proposalTitlePlaceholder',
+                            )}
                             className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
                             disabled={isLoading}
                             rightIcon={<RequirementMark className="text-4" />}
@@ -320,11 +348,15 @@ export function CreateAgreementBaseFields({
                           ? '/placeholder/auto-execution-icon-light.svg'
                           : '/placeholder/auto-execution-icon.svg'
                       }
-                      alt="Proposal minimum voting icon"
+                      alt={tAgreementFlow(
+                        'createAgreementBaseFields.proposalMinimumVotingIconAlt',
+                      )}
                     />
                     <div className="flex flex-col">
                       <span className="text-3 text-accent-11 text-nowrap font-medium">
-                        Auto-Execution
+                        {tAgreementFlow(
+                          'createAgreementBaseFields.autoExecution',
+                        )}
                       </span>
                       <span className="text-[9px] text-accent-11 text-nowrap font-medium">
                         {spaceDetails?.quorum}% Quorum | {spaceDetails?.unity}%
@@ -343,11 +375,15 @@ export function CreateAgreementBaseFields({
                           ? '/placeholder/non-auto-execution-icon-light.svg'
                           : '/placeholder/non-auto-execution-icon.svg'
                       }
-                      alt="Proposal minimum voting icon"
+                      alt={tAgreementFlow(
+                        'createAgreementBaseFields.proposalMinimumVotingIconAlt',
+                      )}
                     />
                     <div className="flex flex-col">
                       <span className="text-2 text-accent-11 text-nowrap font-medium">
-                        {formatDuration(Number(duration))} to Vote
+                        {tAgreementFlow('createAgreementBaseFields.toVote', {
+                          duration: formatDuration(Number(duration)),
+                        })}
                       </span>
                       <span className="text-[9px] text-accent-11 text-nowrap font-medium">
                         {spaceDetails?.quorum}% Quorum | {spaceDetails?.unity}%
@@ -372,6 +408,14 @@ export function CreateAgreementBaseFields({
                 onChange={field.onChange}
                 maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
                 enableImageResizer={true}
+                uploadText={tAgreementFlow.rich(
+                  'createAgreementBaseFields.uploadImageLabel',
+                  {
+                    accent: (chunks) => (
+                      <span className="text-accent-11">{chunks}</span>
+                    ),
+                  },
+                )}
                 defaultImage={
                   resubmitFormData?.leadImage || field.value
                     ? typeof field.value === 'string'
@@ -394,13 +438,17 @@ export function CreateAgreementBaseFields({
           return (
             <FormItem>
               <FormLabel className="text-foreground gap-1">
-                Proposal Content <RequirementMark />
+                {tAgreementFlow('createAgreementBaseFields.proposalContent')}{' '}
+                <RequirementMark />
               </FormLabel>
               <FormControl>
                 <RichTextEditor
                   editorRef={null}
                   markdown={descriptionValue}
-                  placeholder="Type your proposal content here..."
+                  translation={translateEditor}
+                  placeholder={tAgreementFlow(
+                    'createAgreementBaseFields.proposalContentPlaceholder',
+                  )}
                   onChange={(markdown) => field.onChange(markdown)}
                 />
               </FormControl>
@@ -424,6 +472,9 @@ export function CreateAgreementBaseFields({
             <FormItem>
               <FormControl>
                 <AddAttachment
+                  label={tAgreementFlow(
+                    'createAgreementBaseFields.addAttachmentLabel',
+                  )}
                   onChange={(files) => {
                     field.onChange(files);
                     form.setValue(

@@ -6,9 +6,10 @@ type LinksProps = {
   links: string[];
   errors?: Partial<{ [key: number]: FieldError }> | FieldError;
   onChange: (value: string[]) => void;
+  placeholder?: string;
 };
 
-export const Links = ({ links, errors, onChange }: LinksProps) => {
+export const Links = ({ links, errors, onChange, placeholder }: LinksProps) => {
   const handleChange = React.useCallback(
     (index: number) => (value: string) => {
       const newLinks = [...links];
@@ -34,6 +35,7 @@ export const Links = ({ links, errors, onChange }: LinksProps) => {
             link={links[index] ?? ''}
             error={getError(index)}
             onChange={handleChange(index)}
+            placeholder={placeholder}
           />
         ))}
     </div>

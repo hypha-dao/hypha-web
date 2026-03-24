@@ -161,7 +161,7 @@ export const SelectSettingsAction = ({
       group: t('groups.extensionsPlugins'),
       title: t('actions.integrateSmartContractInSpace.title'),
       description: t('actions.integrateSmartContractInSpace.description'),
-      href: 'https://discord.gg/W7Cz7XD3BS',
+      href: 'https://hypha.services/',
       icon: <RadiobuttonIcon />,
       baseTab: 'agreements',
       target: '_blank',

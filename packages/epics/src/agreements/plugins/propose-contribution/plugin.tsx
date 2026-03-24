@@ -6,6 +6,7 @@ import { PaymentSchedule } from './components/payment-schedule';
 import { Separator, Skeleton } from '@hypha-platform/ui';
 import { Person, Space } from '@hypha-platform/core/client';
 import { useTokens } from '../../../treasury';
+import { useTranslations } from 'next-intl';
 
 export const ProposeContributionPlugin = ({
   spaceSlug,
@@ -16,6 +17,7 @@ export const ProposeContributionPlugin = ({
   members: Person[];
   spaces?: Space[];
 }) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { tokens, isLoading } = useTokens({ spaceSlug });
   return (
     <div className="flex flex-col gap-4">
@@ -23,7 +25,9 @@ export const ProposeContributionPlugin = ({
         members={members}
         spaces={spaces}
         defaultRecipientType="member"
-        emptySpacesMessage="No member spaces found."
+        emptySpacesMessage={tAgreementFlow(
+          'plugins.membershipExit.noMemberSpacesFound',
+        )}
       />
       <Separator />
       <PaymentSchedule />

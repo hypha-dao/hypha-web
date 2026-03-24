@@ -27,6 +27,7 @@ type Option = {
 type ComboboxProps = {
   options: Option[];
   placeholder?: string;
+  searchPlaceholder?: string;
   onChange?: (value: string) => void;
   renderOption?: (option: Option) => React.ReactNode;
   renderValue?: (option: Option | undefined) => React.ReactNode;
@@ -43,6 +44,7 @@ export const COMBOBOX_DELIMITER = '---';
 export function Combobox({
   options,
   placeholder = '',
+  searchPlaceholder = 'Search...',
   onChange,
   renderOption,
   renderValue,
@@ -112,7 +114,7 @@ export function Combobox({
       <PopoverContent className="w-full md:w-72 p-0" align="end">
         <Command shouldFilter={false}>
           <CommandInput
-            placeholder="Search..."
+            placeholder={searchPlaceholder}
             className="h-9"
             value={searchTerm}
             onValueChange={setSearchTerm}

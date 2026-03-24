@@ -15,6 +15,7 @@ import {
 } from '@hypha-platform/ui';
 import { useFormContext } from 'react-hook-form';
 import { MAX_REDEMPTION_PERIOD_OPTIONS } from '@hypha-platform/core/client';
+import { useTranslations } from 'next-intl';
 
 type MaxRedemptionFieldProps = {
   isRequired?: boolean;
@@ -23,13 +24,14 @@ type MaxRedemptionFieldProps = {
 export function MaxRedemptionField({
   isRequired = false,
 }: MaxRedemptionFieldProps) {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { control } = useFormContext();
 
   return (
     <div className="flex flex-col gap-1 w-full">
       <div className="flex justify-between items-center w-full gap-2 flex-wrap">
         <span className="text-2 text-neutral-11 whitespace-nowrap items-center flex gap-1">
-          Maximum Redemption %
+          {tAgreementFlow('plugins.tokenBackingVault.maximumRedemptionPercent')}
           {isRequired && <RequirementMark className="text-2" />}
         </span>
         <div className="flex items-center gap-2 min-w-0 flex-1 justify-end">
@@ -43,7 +45,9 @@ export function MaxRedemptionField({
                     type="number"
                     min={0}
                     max={100}
-                    placeholder="0 = no limit"
+                    placeholder={tAgreementFlow(
+                      'plugins.tokenBackingVault.maxRedemptionNoLimit',
+                    )}
                     className="w-full"
                     value={field.value ?? ''}
                     onChange={(e) => {
@@ -64,7 +68,9 @@ export function MaxRedemptionField({
               </FormItem>
             )}
           />
-          <span className="text-2 text-neutral-11 shrink-0">per</span>
+          <span className="text-2 text-neutral-11 shrink-0">
+            {tAgreementFlow('plugins.tokenBackingVault.per')}
+          </span>
           <FormField
             control={control}
             name="tokenBackingVault.maxRedemptionPeriodDays"
@@ -76,12 +82,21 @@ export function MaxRedemptionField({
                     value={String(field.value ?? '')}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select period" />
+                      <SelectValue
+                        placeholder={tAgreementFlow(
+                          'plugins.tokenBackingVault.selectPeriod',
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {MAX_REDEMPTION_PERIOD_OPTIONS.map((opt) => (
                         <SelectItem key={opt.value} value={String(opt.value)}>
-                          {opt.label}
+                          {tAgreementFlow(
+                            'plugins.tokenBackingVault.periodDays',
+                            {
+                              count: opt.value,
+                            },
+                          )}
                         </SelectItem>
                       ))}
                     </SelectContent>

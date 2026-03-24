@@ -8,8 +8,43 @@ export default getRequestConfig(async ({ requestLocale }) => {
     ? requested
     : routing.defaultLocale;
 
+  const defaultMessages = (await import('./messages/en.json')).default;
+  let localeMessages: Record<string, unknown> = {};
+
+  try {
+    localeMessages = (await import(`./messages/${locale}.json`)).default;
+  } catch (error) {
+    console.warn(
+      `[i18n] Missing messages for locale "${locale}", falling back to English.`,
+      error,
+    );
+  }
+
   return {
     locale,
-    messages: (await import(`./messages/${locale}.json`)).default,
+    messages: deepMerge(defaultMessages, localeMessages),
   };
 });
+
+function deepMerge(
+  base: Record<string, unknown>,
+  override: Record<string, unknown>,
+): Record<string, unknown> {
+  const result: Record<string, unknown> = { ...base };
+
+  for (const [key, value] of Object.entries(override)) {
+    const baseValue = result[key];
+
+    if (isObject(baseValue) && isObject(value)) {
+      result[key] = deepMerge(baseValue, value);
+    } else {
+      result[key] = value;
+    }
+  }
+
+  return result;
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}

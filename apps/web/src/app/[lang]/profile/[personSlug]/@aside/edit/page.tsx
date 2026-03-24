@@ -17,8 +17,11 @@ import {
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
+import { useTranslations } from 'next-intl';
 
 export default function EditProfilePage() {
+  const tSpaces = useTranslations('Spaces');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { lang, personSlug: personSlugRaw } = useParams<ProfilePageParams>();
   const personSlug = tryDecodeUriPart(personSlugRaw);
   const { person, isLoading, revalidate } = useMe();
@@ -51,14 +54,15 @@ export default function EditProfilePage() {
     <SidePanel>
       <LoadingBackdrop
         showKeepWindowOpenMessage={true}
+        keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
         fullHeight={true}
         isLoading={isEditing}
         progress={progress}
         message={
           isError ? (
             <div className="flex flex-col">
-              <div>Ouh Snap. There was an error</div>
-              <Button onClick={reset}>Reset</Button>
+              <div>{tSpaces('errorOhSnap')}</div>
+              <Button onClick={reset}>{tSpaces('reset')}</Button>
             </div>
           ) : (
             <div>{currentAction}</div>

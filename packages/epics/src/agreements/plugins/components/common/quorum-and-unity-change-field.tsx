@@ -12,6 +12,7 @@ import {
 import { QuorumAndUnityChanger } from './quorum-and-unity-changer';
 import { Button } from '@hypha-platform/ui';
 import { VOTING_METHOD_TEMPLATES } from '../../../../governance';
+import { useTranslations } from 'next-intl';
 
 interface QuorumAndUnityChangerFieldProps {
   name: string;
@@ -20,6 +21,7 @@ interface QuorumAndUnityChangerFieldProps {
 export function QuorumAndUnityChangerField({
   name,
 }: QuorumAndUnityChangerFieldProps) {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { control, setValue } = useFormContext();
   const fieldValue = useWatch({ control, name }) || { quorum: 0, unity: 0 };
   const { theme } = useTheme();
@@ -39,6 +41,7 @@ export function QuorumAndUnityChangerField({
 
   const handlePresetClick = (preset: {
     title: string;
+    titleKey: string;
     quorum: number;
     unity: number;
   }) => {
@@ -81,7 +84,13 @@ export function QuorumAndUnityChangerField({
                   }`}
                   variant="ghost"
                 >
-                  <div className="font-bold mb-2">{preset.title}</div>
+                  <div className="font-bold mb-2">
+                    {tAgreementFlow(
+                      `plugins.quorumAndUnity.templates.${preset.titleKey}` as Parameters<
+                        typeof tAgreementFlow
+                      >[0],
+                    )}
+                  </div>
                   <div className="space-y-3 text-sm text-neutral-11 w-full">
                     <div className="flex items-center gap-2">
                       <div className="flex-1 bg-neutral-6 h-5 rounded-2xl relative">
@@ -132,7 +141,7 @@ export function QuorumAndUnityChangerField({
           <FormMessage />
           {fieldValue.quorum === 0 && fieldValue.unity === 0 && (
             <span className="text-2 text-error-11 mt-2">
-              Quorum and unity cannot both be set to 0%
+              {tAgreementFlow('plugins.quorumAndUnity.cannotBothZero')}
             </span>
           )}
         </FormItem>
