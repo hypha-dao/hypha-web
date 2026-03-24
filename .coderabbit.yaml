@@ -1,178 +1,324 @@
-# CodeRabbit Configuration
-version: 1
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 
-# Review settings (see https://docs.coderabbit.ai/reference/configuration)
+language: "en-US"
+early_access: true
+
 reviews:
+  profile: "assertive"
   request_changes_workflow: true
-  # Default review language
-  default_language: en-US
+  high_level_summary: true
+  high_level_summary_placeholder: "@coderabbitai summary"
+  auto_approve: false
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  changed_files_summary: true
+  sequence_diagrams: true
+  assess_linked_issues: true
+  related_prs: true
+  suggested_labels: true
+  auto_apply_labels: false
+  suggested_reviewers: true
+  auto_assign_reviewers: false
 
-  # Automatically review new PRs
+  path_filters:
+    - "!**/node_modules/**"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/.next/**"
+    - "!**/.cache/**"
+    - "!**/.turbo/**"
+    - "!**/.nx/**"
+    - "!**/*.min.js"
+    - "!**/*.min.css"
+    - "!**/generated/**"
+    - "!pnpm-lock.yaml"
+    - "!**/__mocks__/**"
+    - "!**/__fixtures__/**"
+
+  path_instructions:
+    # ── Next.js Web Application ──────────────────────────────────────────
+    - path: "apps/web/**"
+      instructions: |
+        This is the primary Next.js 15 application using the App Router.
+        Verify:
+        - Correct use of Server Components vs Client Components ('use client' directive only where needed)
+        - Server Actions follow security best practices (input validation, authorization checks)
+        - Route handlers and middleware handle errors gracefully
+        - Dynamic imports and code splitting for performance-critical pages
+        - next-intl integration for i18n (no hardcoded user-facing strings)
+        - Proper use of caching, revalidation strategies (revalidatePath, revalidateTag)
+        - Accessibility: semantic HTML, ARIA attributes, keyboard navigation
+        - No secrets or environment variables leaked to client bundles
+
+    # ── Playwright E2E Tests ─────────────────────────────────────────────
+    - path: "apps/web-e2e/**"
+      instructions: |
+        Playwright end-to-end test suite for the web application.
+        Verify:
+        - Tests use resilient, user-facing locators (getByRole, getByLabel, getByText) — no CSS selectors or XPath
+        - Web-first assertions (toBeVisible, toHaveText, toHaveURL) — no waitForTimeout
+        - Tests are isolated with no shared state or ordering dependencies
+        - Accessibility assertions with axe-core where pages are visited
+        - Fixtures used for shared setup (auth, navigation)
+        - No flaky patterns (race conditions, hardcoded timeouts, network dependencies)
+
+    # ── Fastify API Application ──────────────────────────────────────────
+    - path: "apps/api/**"
+      instructions: |
+        Fastify HTTP API with Swagger documentation.
+        Verify:
+        - Input validation on all route handlers (Fastify schema validation or zod)
+        - Proper error handling with consistent error response format
+        - Authentication/authorization middleware applied to protected routes
+        - No secrets hardcoded — environment variables used via config
+        - Docker best practices in Dockerfile (multi-stage builds, non-root user, minimal layers)
+        - Rate limiting and request size limits where appropriate
+
+    # ── Migration Tools ──────────────────────────────────────────────────
+    - path: "apps/hypha-migration/**"
+      instructions: |
+        Token migration utilities (API, React demo, Telos contracts).
+        Verify:
+        - Transaction safety: all blockchain and token operations are idempotent or wrapped in proper error handling
+        - Private keys and sensitive config loaded exclusively from environment variables
+        - Migration scripts are repeatable and include rollback considerations
+
+    # ── Solidity Smart Contracts ─────────────────────────────────────────
+    - path: "packages/storage-evm/contracts/**"
+      instructions: |
+        Solidity smart contracts deployed on EVM chains.
+        CRITICAL — review with highest security scrutiny:
+        - Check for reentrancy, integer overflow/underflow, access control vulnerabilities
+        - Verify correct use of OpenZeppelin libraries and secure patterns
+        - Gas optimization: avoid unnecessary storage writes, use calldata over memory where possible
+        - Events emitted for all state-changing operations
+        - Follow Checks-Effects-Interactions pattern
+        - All external calls handled safely (no unchecked return values)
+
+    - path: "packages/storage-evm/**"
+      instructions: |
+        Hardhat project for EVM smart contract development.
+        Verify:
+        - Deploy scripts are idempotent and environment-aware
+        - Test coverage for all contract functions including edge cases
+        - Hardhat config does not contain hardcoded private keys or RPC URLs
+        - wagmi code generation outputs are not manually edited
+
+    # ── Database Layer ───────────────────────────────────────────────────
+    - path: "packages/storage-postgres/migrations/**"
+      instructions: |
+        Drizzle ORM database migrations for Neon PostgreSQL.
+        CRITICAL — review carefully:
+        - Backward compatibility: migrations must not break existing data or running queries
+        - Data integrity: foreign keys, NOT NULL constraints, and indexes are correct
+        - Reversibility: consider whether a rollback path exists
+        - No destructive operations (DROP TABLE, DROP COLUMN) without explicit confirmation
+        - Performance: large table migrations should be non-blocking where possible
+
+    - path: "packages/storage-postgres/**"
+      instructions: |
+        Drizzle ORM database layer with Neon PostgreSQL.
+        Verify:
+        - Query performance: proper use of indexes, avoid N+1 queries
+        - Row-Level Security policies applied where needed
+        - Connection pooling configuration is correct
+        - TypeScript types align with database schema
+        - Seed data and test utilities follow isolation principles
+
+    # ── Authentication ───────────────────────────────────────────────────
+    - path: "packages/authentication/**"
+      instructions: |
+        Authentication utilities for the platform.
+        SECURITY-CRITICAL:
+        - Verify token handling (generation, validation, expiry, rotation)
+        - Check for timing-safe comparisons where applicable
+        - Ensure no sensitive data (tokens, keys) logged or exposed in error messages
+        - Session management follows OWASP best practices
+        - EVM wallet authentication is properly validated (signature verification)
+
+    # ── Cookie Management ────────────────────────────────────────────────
+    - path: "packages/cookie/**"
+      instructions: |
+        Cookie management utilities.
+        SECURITY-CRITICAL:
+        - Cookies use Secure, HttpOnly, and SameSite attributes appropriately
+        - No sensitive data stored in cookies without encryption
+        - Cookie expiry and domain scoping are correct
+        - GDPR/privacy compliance considerations
+
+    # ── Core Business Logic ──────────────────────────────────────────────
+    - path: "packages/core/**"
+      instructions: |
+        Core domain logic: spaces, people, governance, actions, wagmi-generated ABIs.
+        Verify:
+        - Clear separation between client and server exports
+        - Business rules are well-encapsulated and testable
+        - Error handling is consistent and provides meaningful messages
+        - TypeScript strict mode compliance — no any types without justification
+        - Generated ABI code is not manually modified
+
+    # ── Epics (Feature Flows) ────────────────────────────────────────────
+    - path: "packages/epics/**"
+      instructions: |
+        Feature-level UI flows: treasury, governance, agreements, notifications.
+        Verify:
+        - State management patterns are consistent and predictable
+        - Components are composable and follow single-responsibility principle
+        - Error and loading states are handled in all user flows
+        - Proper use of React hooks (no stale closures, correct dependency arrays)
+        - i18n: all user-facing text uses translation keys
+
+    # ── EVM Integration ──────────────────────────────────────────────────
+    - path: "packages/evm/**"
+      instructions: |
+        EVM blockchain interaction utilities.
+        Verify:
+        - All RPC calls have proper error handling and retry logic
+        - Transaction building is safe (gas estimation, nonce management)
+        - Chain-specific logic is parameterized, not hardcoded
+        - No private keys in source code
+
+    # ── Notifications ────────────────────────────────────────────────────
+    - path: "packages/notifications/**"
+      instructions: |
+        Notification system (client/server) with OneSignal integration.
+        Verify:
+        - Templates are properly sanitized to prevent injection
+        - API keys handled via environment variables only
+        - Client/server boundary is respected (no server-only code in client exports)
+        - Error handling for notification delivery failures
+
+    # ── UI Components ────────────────────────────────────────────────────
+    - path: "packages/ui/**"
+      instructions: |
+        Shared React UI component library (Radix-based).
+        Verify:
+        - Accessibility: all interactive components have proper ARIA roles, labels, and keyboard support
+        - Components are composable via props/slots, not tightly coupled
+        - Performance: no unnecessary re-renders, memo/useMemo where beneficial
+        - TypeScript: props are fully typed with exported interfaces
+        - No hardcoded colors or spacing — use design tokens from ui-utils
+
+    # ── UI Utilities & Tokens ────────────────────────────────────────────
+    - path: "packages/ui-utils/**"
+      instructions: |
+        Tailwind v4 build, tailwind-merge utilities, and shared design tokens.
+        Verify:
+        - Design token changes are intentional and don't break existing components
+        - Tailwind config changes are backward-compatible
+        - Utility functions are tree-shakeable and well-typed
+
+    # ── i18n ─────────────────────────────────────────────────────────────
+    - path: "packages/i18n/**"
+      instructions: |
+        Internationalization package using next-intl.
+        Verify:
+        - All exports (client, request, routing, navigation) are correctly structured
+        - Locale routing and middleware configuration follows next-intl patterns
+        - Message files are consistent across locales (no missing keys)
+        - No hardcoded locale strings — use configuration
+
+    # ── Feature Flags ────────────────────────────────────────────────────
+    - path: "packages/feature-flags/**"
+      instructions: |
+        Feature flag management.
+        Verify:
+        - Flags have clear naming conventions and documentation
+        - Default values are safe (features default to off)
+        - Flag evaluation is deterministic and testable
+        - Cleanup path exists for removing old flags
+
+    # ── Shared Config ────────────────────────────────────────────────────
+    - path: "config/**"
+      instructions: |
+        Shared ESLint and TypeScript configuration packages.
+        Verify:
+        - Changes are backward-compatible across all consuming packages
+        - ESLint rules are justified and documented
+        - TypeScript compiler options follow strict mode best practices
+
+    # ── GitHub Actions CI/CD ─────────────────────────────────────────────
+    - path: ".github/**"
+      instructions: |
+        GitHub Actions workflows, composite actions, and Dependabot config.
+        Verify:
+        - Secrets are never echoed or logged
+        - Actions use pinned versions (SHA or specific version tags)
+        - Permissions follow least-privilege principle
+        - Concurrency groups prevent parallel deployments to same environment
+        - Cache strategies are effective and not stale
+        - No shell injection vulnerabilities in run steps
+
   auto_review:
     enabled: true
+    drafts: false
+    incremental: true
+    base_branches:
+      - "main"
+    ignore_title_keywords:
+      - "WIP"
+      - "DO NOT MERGE"
+      - "DRAFT"
 
-  # Approve once CodeRabbit threads are resolved and pre-merge checks pass
-  auto_approve:
-    enabled: true
-
-  # Configure the review engine based on languages
-  engines:
-    typescript:
+  finishing_touches:
+    docstrings:
       enabled: true
-      # Focus on best practices and patterns for TypeScript/React
-      review_comment_settings:
-        suggestion_threshold: 2 # Requires stronger confidence for suggestions
-      review_criteria:
-        best_practices: high
-        security: high
-        performance: medium
-        complexity: medium
-        maintainability: high
-
-    solidity:
+    unit_tests:
       enabled: true
-      # Focus heavily on security for smart contracts
-      review_criteria:
-        security: high
-        best_practices: high
-        gas_optimization: high
 
-    sql:
+  pre_merge_checks:
+    title:
+      mode: "warning"
+      requirements: |
+        PR title must follow conventional commits format: type(scope): description
+        Valid types: feat, fix, chore, docs, style, refactor, perf, test, build, ci
+        Scope should reference the affected package or app (e.g., web, ui, core, storage-postgres)
+    description:
+      mode: "warning"
+
+  tools:
+    eslint:
       enabled: true
-      # Focus on database best practices and security
-      review_criteria:
-        security: high
-        performance: high
-        readability: medium
+    biome:
+      enabled: true
+    hadolint:
+      enabled: true
+    actionlint:
+      enabled: true
+    gitleaks:
+      enabled: true
+    trufflehog:
+      enabled: true
+    markdownlint:
+      enabled: true
+    yamllint:
+      enabled: true
+    github-checks:
+      enabled: true
+      timeout_ms: 120000
+    ast-grep:
+      enabled: true
+      essentials: true
+    semgrep:
+      enabled: true
+    shellcheck:
+      enabled: true
 
-# Path-based review configuration
-path_filters:
-  ignore:
-    # Build artifacts and dependencies
-    - '**/*.min.js'
-    - '**/*.min.css'
-    - '**/node_modules/**'
-    - '**/dist/**'
-    - '**/build/**'
-    - '**/.next/**'
-    - '**/.cache/**'
-
-    # Generated code
-    - '**/generated/**'
-
-    # Lock files
-    - 'pnpm-lock.yaml'
-
-    # Test mocks and fixtures
-    - '**/__mocks__/**'
-    - '**/__fixtures__/**'
-    - '**/*test-utils/**'
-
-  # Path-specific review instructions
-  paths:
-    # Smart Contracts
-    'packages/storage-evm/contracts/**':
-      review_criteria:
-        security: high
-        gas_optimization: high
-      description: 'Solidity smart contracts - focus on security, gas optimization and best practices'
-
-    # Database
-    'packages/storage-postgres/migrations/**':
-      review_criteria:
-        data_integrity: high
-        performance: high
-      description: 'Database migrations - focus on backward compatibility and data integrity'
-
-    # Authentication
-    'packages/authentication/**':
-      review_criteria:
-        security: high
-        privacy: high
-      description: 'Authentication - focus on security and privacy best practices'
-
-    # Cookie management
-    'packages/cookie/**':
-      review_criteria:
-        security: high
-        privacy: high
-      description: 'Cookie management - focus on security and privacy compliance'
-
-    # Core business logic
-    'packages/core/**':
-      review_criteria:
-        maintainability: high
-        testability: high
-        performance: medium
-      description: 'Core business logic - focus on maintainability and testability'
-
-    # Epics (React state management)
-    'packages/epics/**':
-      review_criteria:
-        maintainability: high
-        state_management: high
-      description: 'Epics - focus on state management and maintainability'
-
-    # EVM integration
-    'packages/evm/**':
-      review_criteria:
-        security: high
-        error_handling: high
-      description: 'EVM interactions - focus on security and error handling'
-
-    # Feature flags
-    'packages/feature-flags/**':
-      review_criteria:
-        maintainability: high
-      description: 'Feature flags - focus on maintainability and clean implementation'
-
-    # Internationalization
-    'packages/i18n/**':
-      review_criteria:
-        internationalization: high
-        accessibility: high
-      description: 'Internationalization - focus on i18n best practices and accessibility'
-
-    # Developer tools
-    'packages/tools/**':
-      review_criteria:
-        maintainability: high
-        code_quality: medium
-      description: 'Developer tools - focus on maintainability and code quality'
-
-    # UI utilities
-    'packages/ui-utils/**':
-      review_criteria:
-        reusability: high
-        performance: medium
-        accessibility: high
-      description: 'UI utilities - focus on reusability, accessibility and maintainability'
-
-    # UI components
-    'packages/ui/**':
-      review_criteria:
-        performance: high
-        accessibility: high
-        maintainability: high
-      description: 'UI components - focus on performance, accessibility, and maintainability'
-
-    # Frontend applications
-    'apps/**':
-      review_criteria:
-        performance: high
-        accessibility: medium
-        maintainability: high
-      description: 'Frontend applications - focus on performance and maintainability'
-
-# PR size settings for manageable reviews
-pr_size:
-  small: 150
-  medium: 500
-  large: 1000
-  xl: 2000
-
-# Chat settings
 chat:
-  auto_reply: |
-    Thank you for your PR! I'll be assisting with code review.
-    This repository contains multiple languages and technologies, so please let me know if you'd like me to focus on specific areas.
+  auto_reply: true
+
+knowledge_base:
+  opt_out: false
+  learnings:
+    scope: "auto"
+  issues:
+    scope: "auto"
+  pull_requests:
+    scope: "auto"
+  web_search:
+    enabled: true
+  code_guidelines:
+    enabled: true
+  linear:
+    enabled: "auto"
