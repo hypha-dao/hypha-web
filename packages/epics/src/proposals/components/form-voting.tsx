@@ -66,6 +66,7 @@ const getCreateRouteForLabel = (label: string | undefined): string => {
     'Treasury Minting': 'mint-tokens-to-space-treasury',
     'Membership Exit': 'membership-exit',
     'Backing Vault': 'token-backing-vault',
+    'Token Purchase': 'space-token-purchase',
   };
 
   return labelToRoute[label] || '';

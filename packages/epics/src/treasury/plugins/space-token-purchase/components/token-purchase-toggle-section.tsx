@@ -9,19 +9,18 @@ import {
   Switch,
 } from '@hypha-platform/ui';
 import { useFormContext, useWatch } from 'react-hook-form';
+import { useTranslations } from 'next-intl';
 
 export const TokenPurchaseToggleSection = () => {
+  const t = useTranslations('SpaceTokenPurchase');
   const { control } = useFormContext();
   const activatePurchase =
     useWatch({ control, name: 'activatePurchase' }) ?? false;
 
   return (
     <div className="flex flex-col gap-4">
-      <FormLabel>Token Purchase</FormLabel>
-      <span className="text-2 text-neutral-11">
-        Activate this option to allow your members to purchase your space&apos;s
-        native tokens. Disable at any time.
-      </span>
+      <FormLabel>{t('toggle.sectionTitle')}</FormLabel>
+      <span className="text-2 text-neutral-11">{t('toggle.description')}</span>
       <FormField
         control={control}
         name="activatePurchase"
@@ -29,7 +28,7 @@ export const TokenPurchaseToggleSection = () => {
           <FormItem>
             <div className="flex items-center justify-between gap-4">
               <label className="text-2 text-neutral-11">
-                Activate Token Purchase
+                {t('toggle.activateLabel')}
               </label>
               <FormControl>
                 <Switch
@@ -44,7 +43,7 @@ export const TokenPurchaseToggleSection = () => {
       />
       {!activatePurchase && (
         <span className="text-2 text-neutral-11 italic">
-          When disabled, members can no longer purchase this token.
+          {t('toggle.disabledHint')}
         </span>
       )}
     </div>

@@ -164,6 +164,10 @@
         "title": "Hypha-Tokens kaufen (Belohnungen)",
         "description": "Kaufen Sie Hypha-Tokens, um am Netzwerk teilzunehmen und Belohnungen zu erhalten."
       },
+      "spaceTokenPurchase": {
+        "title": "Space-Token-Kauf",
+        "description": "Ermöglichen Sie Ihren Mitgliedern, die nativen Tokens Ihres Spaces zu kaufen."
+      },
       "depositFunds": {
         "title": "Mittel einzahlen",
         "description": "Zahlen Sie Mittel in Ihre Schatzkammer ein, indem Sie die Schatzkammer-Adresse kopieren oder den QR-Code scannen."
@@ -523,6 +527,42 @@
   "Proposals": {
     "CreateNew": "Neuen Vorschlag erstellen",
     "Create": "Neuer Vorschlag"
+  },
+  "SpaceTokenPurchase": {
+    "selection": {
+      "sectionTitle": "Token",
+      "description": "Wählen Sie einen Token aus, der in diesem Space gekauft werden kann.",
+      "fieldLabel": "Token",
+      "placeholder": "Token auswählen",
+      "noTokenFound": "Kein Token gefunden.",
+      "noTokenPrefix": "Ihr Space hat noch keinen Token erstellt,",
+      "clickHere": "hier klicken",
+      "noTokenSuffix": "um zuerst einen Token auszugeben",
+      "tokenSupply": "Token-Angebot",
+      "issuanceToDate": "Bisherige Ausgabe",
+      "unlimitedSupply": "Unbegrenztes Angebot",
+      "availableLimit": "Verfügbares Kauflimit für Tokens"
+    },
+    "toggle": {
+      "sectionTitle": "Token-Kauf",
+      "description": "Aktivieren Sie diese Option, damit Mitglieder die nativen Tokens Ihres Spaces kaufen können. Sie können dies jederzeit deaktivieren.",
+      "activateLabel": "Token-Kauf aktivieren",
+      "disabledHint": "Wenn deaktiviert, können Mitglieder diesen Token nicht mehr kaufen."
+    },
+    "price": {
+      "sectionTitle": "Token-Kaufpreis",
+      "description": "Legen Sie einen benutzerdefinierten Kaufpreis fest oder verwenden Sie den Standardpreis der Schatzkammer.",
+      "currentPriceLabel": "Aktueller Preis in der Schatzkammer:",
+      "currentPriceSuffix": "— in der Token-Konfiguration Ihres Spaces festgelegt.",
+      "fieldLabel": "Token-Kaufpreis",
+      "availableAtThisPriceLabel": "Bei diesem Preis verfügbare Tokens",
+      "exceedsLimit": "Die angeforderte Token-Anzahl überschreitet das verfügbare Kauflimit. Bitte geben Sie einen Wert bis {limit} ein."
+    },
+    "eligibility": {
+      "sectionTitle": "Kaufberechtigung",
+      "description": "Die Schaltfläche \"Space-Tokens kaufen\" wird im Profil der Spaces oder Mitglieder angezeigt, die in den Token-Einstellungen auf der Whitelist stehen. Wenn Sie diesen Zugriff prüfen möchten, können Sie Whitelists über einen Token-Konfigurationsvorschlag verwalten.",
+      "whitelistInfo": "Die Whitelist ist in den ursprünglichen Ausgabeeinstellungen des Tokens konfiguriert. Alle Mitglieder oder Spaces in der \"To\"-Whitelist können {tokenName}-Tokens sehen und kaufen."
+    }
   },
   "Spaces": {
     "createSpace": "Space erstellen",

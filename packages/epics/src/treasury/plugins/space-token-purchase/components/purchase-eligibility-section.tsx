@@ -1,6 +1,7 @@
 'use client';
 
 import { FormLabel } from '@hypha-platform/ui';
+import { useTranslations } from 'next-intl';
 
 type SpaceToken = {
   name: string;
@@ -13,22 +14,18 @@ type PurchaseEligibilitySectionProps = {
 export const PurchaseEligibilitySection = ({
   selectedToken,
 }: PurchaseEligibilitySectionProps) => {
+  const t = useTranslations('SpaceTokenPurchase');
+
   return (
     <div className="flex flex-col gap-4">
-      <FormLabel>Purchase Eligibility</FormLabel>
+      <FormLabel>{t('eligibility.sectionTitle')}</FormLabel>
       <span className="text-2 text-neutral-11">
-        The &quot;Buy Space tokens&quot; button will be shown on the profile of
-        the spaces or members which are whitelisted in the token settings. If
-        you&apos;d like to review this access, you can manage whitelists by
-        passing a token configuration proposal.
+        {t('eligibility.description')}
       </span>
       {selectedToken && (
         <div className="flex flex-col gap-2 p-3 rounded-md bg-neutral-2 border border-neutral-6">
           <span className="text-2 text-neutral-11">
-            Whitelist is configured in the token&apos;s original issuance
-            settings. All members or spaces in the &quot;To&quot; whitelist will
-            be able to see and purchase <strong>{selectedToken.name}</strong>{' '}
-            tokens.
+            {t('eligibility.whitelistInfo', { tokenName: selectedToken.name })}
           </span>
         </div>
       )}

@@ -19,6 +19,7 @@ import { useFormContext } from 'react-hook-form';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
+import { useTranslations } from 'next-intl';
 
 type SpaceToken = {
   id: number;
@@ -53,6 +54,7 @@ export const TokenSelectionSection = ({
   supply,
   treasuryBalance,
 }: TokenSelectionSectionProps) => {
+  const t = useTranslations('SpaceTokenPurchase');
   const { lang } = useParams();
   const { control, setValue } = useFormContext();
 
@@ -70,15 +72,15 @@ export const TokenSelectionSection = ({
   return (
     <Skeleton loading={isLoading} width="100%" height={90}>
       <div className="flex flex-col gap-4">
-        <FormLabel>Token</FormLabel>
+        <FormLabel>{t('selection.sectionTitle')}</FormLabel>
         <span className="text-2 text-neutral-11">
-          Choose a token available for purchase in this space.
+          {t('selection.description')}
         </span>
 
         <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
           <div className="flex gap-1">
             <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
-              Token
+              {t('selection.fieldLabel')}
             </label>
             <RequirementMark className="text-2" />
           </div>
@@ -117,7 +119,7 @@ export const TokenSelectionSection = ({
                         }}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a token">
+                          <SelectValue placeholder={t('selection.placeholder')}>
                             {sel && (
                               <div className="flex items-center gap-2">
                                 <Image
@@ -137,7 +139,7 @@ export const TokenSelectionSection = ({
                         <SelectContent>
                           {spaceTokens.length === 0 ? (
                             <SelectItem value="__none__" disabled>
-                              No token found.
+                              {t('selection.noTokenFound')}
                             </SelectItem>
                           ) : (
                             spaceTokens.map((t) => (
@@ -170,15 +172,15 @@ export const TokenSelectionSection = ({
             />
             {spaceTokens.length === 0 && !isLoading && (
               <div className="text-2 text-foreground">
-                Your space has not yet created a token,{' '}
+                {t('selection.noTokenPrefix')}{' '}
                 <Link
                   href={`/${lang}/dho/${spaceSlug}/agreements/create/issue-new-token`}
                   className="text-accent-9 underline"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  click here
+                  {t('selection.clickHere')}
                 </Link>{' '}
-                to first issue a token
+                {t('selection.noTokenSuffix')}
               </div>
             )}
           </div>
@@ -187,9 +189,13 @@ export const TokenSelectionSection = ({
         {selectedToken && (
           <div className="flex flex-col gap-3">
             <div className="flex justify-between">
-              <span className="text-2 text-neutral-11">Token Supply</span>
+              <span className="text-2 text-neutral-11">
+                {t('selection.tokenSupply')}
+              </span>
               {selectedToken.maxSupply === 0 ? (
-                <span className="text-2 text-neutral-11">Unlimited Supply</span>
+                <span className="text-2 text-neutral-11">
+                  {t('selection.unlimitedSupply')}
+                </span>
               ) : (
                 <span className="text-2 text-neutral-11">
                   {formatCurrencyValue(selectedToken.maxSupply)}
@@ -197,7 +203,9 @@ export const TokenSelectionSection = ({
               )}
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-2 text-neutral-11">Issuance to Date</span>
+              <span className="text-2 text-neutral-11">
+                {t('selection.issuanceToDate')}
+              </span>
               <Skeleton width={120} height={20} loading={isLoadingSupply}>
                 <span className="text-2 text-neutral-11">
                   {formatCurrencyValue(supply ?? 0)}
@@ -207,7 +215,7 @@ export const TokenSelectionSection = ({
             {isLimitedSupply && tokensAvailableLimit !== undefined && (
               <div className="flex justify-between items-center">
                 <span className="text-2 text-neutral-11">
-                  Tokens Available for Purchase Limit
+                  {t('selection.availableLimit')}
                 </span>
                 <Skeleton
                   width={120}
