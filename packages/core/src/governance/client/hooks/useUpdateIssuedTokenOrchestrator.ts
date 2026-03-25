@@ -1,7 +1,7 @@
 'use client';
 
 import useSWRMutation from 'swr/mutation';
-import { useCallback, useMemo, useReducer, useState, useRef } from 'react';
+import { useCallback, useMemo, useReducer, useState } from 'react';
 import { z } from 'zod';
 import { produce } from 'immer';
 
@@ -18,6 +18,7 @@ import { ReferenceCurrency } from '../../types';
 import { getPriceCurrencyFeed, TokenType } from '../../../common';
 import {
   UpdateIssuedTokenInput,
+  buildUpdateIssuedTokenTxData,
   useUpdateIssuedTokenMutationsWeb3Rpc,
 } from './useUpdateIssuedTokenMutations.web3.rpc';
 import useSWR from 'swr';
@@ -114,9 +115,14 @@ type UpdateIssuedTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
     decayPercentage: number;
   };
   web3SpaceId: number;
+  /** Form stores amount as tokenPrice; referencePrice is kept for orchestrator compatibility */
+  tokenPrice?: number;
   referencePrice?: number;
   referenceCurrency?: ReferenceCurrency;
   enableProposalAutoMinting?: boolean;
+  enableLimitedSupply?: boolean;
+  /** UI toggle for token price; not in schemaCreateAgreementWeb2 but always on form payload */
+  enableTokenPrice?: boolean;
   enableAdvancedTransferControls?: boolean;
   transferWhitelist?: {
     to?: Array<{
@@ -131,7 +137,96 @@ type UpdateIssuedTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
     }>;
   };
   archiveToken?: boolean;
+  /** Top-level react-hook-form dirty keys; drives partial on-chain updates */
+  changedTopLevelKeys?: string[];
 };
+
+/**
+ * DecayingSpaceToken updates vs form fields:
+ * — Sent on-chain when dirty: name, symbol, maxSupply (0 = unlimited), transferable, autoMinting,
+ *   price+feed, decay interval/%, whitelist toggles, archived.
+ * — Not implemented here: whitelist address membership (e.g. batchSetTransferWhitelist),
+ *   clearing on-chain price when disabling “token price”, token type (no setter on contract).
+ * — DB / Web2 only: icon URL, token type label stored off-chain.
+ */
+function buildPartialUpdateIssuedTokenWeb3Input(
+  arg: UpdateIssuedTokenArg,
+  changed: Set<string>,
+): UpdateIssuedTokenInput {
+  const base: UpdateIssuedTokenInput = {
+    address: arg.tokenAddress as `0x${string}`,
+    spaceId: arg.web3SpaceId,
+  };
+
+  if (changed.has('name')) {
+    base.name = arg.name;
+  }
+  if (changed.has('symbol')) {
+    base.symbol = arg.symbol;
+  }
+
+  if (
+    changed.has('maxSupply') ||
+    changed.has('enableLimitedSupply') ||
+    changed.has('maxSupplyType')
+  ) {
+    base.maxSupply = arg.enableLimitedSupply === true ? arg.maxSupply ?? 0 : 0;
+  }
+
+  if (changed.has('transferable')) {
+    base.transferable = arg.transferable;
+  }
+
+  if (changed.has('enableProposalAutoMinting')) {
+    base.autoMinting = arg.enableProposalAutoMinting;
+  }
+
+  const priceTouched =
+    changed.has('enableTokenPrice') ||
+    changed.has('tokenPrice') ||
+    changed.has('referenceCurrency');
+  if (priceTouched && arg.enableTokenPrice) {
+    const refPrice = arg.referencePrice ?? arg.tokenPrice;
+    const tokenPriceMicro =
+      refPrice !== undefined ? Math.round(refPrice * 1_000_000) : undefined;
+    const priceCurrencyFeed =
+      refPrice !== undefined && arg.referenceCurrency !== undefined
+        ? getPriceCurrencyFeed(arg.referenceCurrency)
+        : undefined;
+    if (tokenPriceMicro !== undefined && priceCurrencyFeed !== undefined) {
+      base.tokenPrice = tokenPriceMicro;
+      base.priceCurrencyFeed = priceCurrencyFeed;
+    }
+  }
+
+  if (changed.has('decaySettings')) {
+    base.decayInterval = arg.decaySettings?.decayInterval;
+    base.decayPercentage = arg.decaySettings?.decayPercentage;
+  }
+
+  const whitelistTouched =
+    changed.has('enableAdvancedTransferControls') ||
+    changed.has('transferWhitelist');
+  if (whitelistTouched) {
+    if (!arg.enableAdvancedTransferControls) {
+      base.useTransferWhitelist = false;
+      base.useReceiveWhitelist = false;
+    } else {
+      base.useTransferWhitelist = !!(
+        arg.transferWhitelist?.from && arg.transferWhitelist.from.length > 0
+      );
+      base.useReceiveWhitelist = !!(
+        arg.transferWhitelist?.to && arg.transferWhitelist.to.length > 0
+      );
+    }
+  }
+
+  if (changed.has('archiveToken')) {
+    base.archiveToken = arg.archiveToken;
+  }
+
+  return base;
+}
 
 export const useUpdateIssuedTokenOrchestrator = ({
   authToken,
@@ -226,17 +321,19 @@ export const useUpdateIssuedTokenOrchestrator = ({
       if (!createdAgreement?.id) {
         throw new Error('Created agreement missing ID');
       }
+      const effectiveMaxSupply =
+        arg.enableLimitedSupply === true ? arg.maxSupply ?? 0 : 0;
       const tokenUpdateData: TokenUpdateData = {
         name: arg.name,
         symbol: arg.symbol,
-        maxSupply: arg.maxSupply,
+        maxSupply: effectiveMaxSupply,
         type: arg.type,
         iconUrl,
         transferable: arg.transferable,
         isVotingToken: arg.isVotingToken,
         decayInterval: arg.decaySettings?.decayInterval,
         decayPercentage: arg.decaySettings?.decayPercentage,
-        referencePrice: arg.referencePrice,
+        referencePrice: arg.referencePrice ?? arg.tokenPrice,
         referenceCurrency: arg.referenceCurrency,
         archiveToken: arg.archiveToken,
       };
@@ -249,47 +346,27 @@ export const useUpdateIssuedTokenOrchestrator = ({
 
       try {
         if (config) {
-          startTask('CREATE_WEB3_AGREEMENT');
-          const autoMinting = arg.enableProposalAutoMinting;
-          const tokenPrice =
-            arg.referencePrice !== undefined
-              ? Math.round(arg.referencePrice * 1_000_000)
-              : undefined;
-          const priceCurrencyFeed =
-            arg.referencePrice !== undefined &&
-            arg.referenceCurrency !== undefined
-              ? getPriceCurrencyFeed(arg.referenceCurrency)
-              : undefined;
-          const useTransferWhitelist = arg.enableAdvancedTransferControls
-            ? arg.transferWhitelist?.from &&
-              arg.transferWhitelist.from.length > 0
-              ? true
-              : false
-            : undefined;
-          const useReceiveWhitelist = arg.enableAdvancedTransferControls
-            ? arg.transferWhitelist?.to && arg.transferWhitelist.to.length > 0
-              ? true
-              : false
-            : undefined;
+          const changed = new Set(arg.changedTopLevelKeys ?? []);
+          const partialWeb3 = buildPartialUpdateIssuedTokenWeb3Input(
+            arg,
+            changed,
+          );
+          const txs = buildUpdateIssuedTokenTxData(partialWeb3);
 
-          const updateData: UpdateIssuedTokenInput = {
-            address: arg.tokenAddress as `0x${string}`,
-            spaceId: arg.web3SpaceId,
-            name: arg.name,
-            symbol: arg.symbol,
-            maxSupply: arg.maxSupply,
-            transferable: arg.transferable,
-            decayInterval: arg.decaySettings?.decayInterval,
-            decayPercentage: arg.decaySettings?.decayPercentage,
-            tokenPrice,
-            priceCurrencyFeed,
-            autoMinting,
-            useTransferWhitelist,
-            useReceiveWhitelist,
-            archiveToken: arg.archiveToken,
-          };
-          const web3Result = await web3.updateIssuedToken(updateData);
-          completeTask('CREATE_WEB3_AGREEMENT');
+          startTask('CREATE_WEB3_AGREEMENT');
+
+          if (txs.length === 0) {
+            completeTask('CREATE_WEB3_AGREEMENT');
+            startTask('LINK_WEB2_AND_WEB3_AGREEMENT');
+            await web2.updateAgreementBySlug({
+              slug: web2Slug!,
+              web3ProposalId: undefined,
+            });
+            completeTask('LINK_WEB2_AND_WEB3_AGREEMENT');
+          } else {
+            await web3.updateIssuedToken(partialWeb3);
+            completeTask('CREATE_WEB3_AGREEMENT');
+          }
         }
 
         const files = schemaCreateAgreementFiles.parse(arg);

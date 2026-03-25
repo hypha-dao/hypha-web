@@ -22,6 +22,21 @@ import { CreateAgreementBaseFields } from '../../agreements';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
+function collectChangedTopLevelKeys(
+  dirty: Partial<Readonly<Record<string, unknown>>>,
+): string[] {
+  return Object.entries(dirty).reduce<string[]>((acc, [key, value]) => {
+    if (value === true) {
+      acc.push(key);
+    } else if (value && typeof value === 'object') {
+      if (Object.keys(value as object).length > 0) {
+        acc.push(key);
+      }
+    }
+    return acc;
+  }, []);
+}
+
 interface UpdateIssuedTokenFormProps {
   spaceId: number | undefined | null;
   web3SpaceId: number | undefined | null;
@@ -158,20 +173,6 @@ export const UpdateIssuedTokenForm = ({
     }
   }, [progress, agreementSlug, router, successfulUrl]);
 
-  const filterChangedFormFields = (allFields: FormValues) => {
-    const changedFieldValues: { [x: string]: unknown } = {};
-
-    Object.keys(dirtyFields).forEach((fieldKey) => {
-      const key = fieldKey as keyof FormValues;
-      if (typeof dirtyFields[key] === 'object' && dirtyFields[key] !== null) {
-        changedFieldValues[fieldKey] = allFields[key];
-      } else if (dirtyFields[key] === true) {
-        changedFieldValues[key] = allFields[key];
-      }
-    });
-    return changedFieldValues as FormValues;
-  };
-
   useScrollToErrors(form, formRef);
   const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
 
@@ -201,28 +202,19 @@ export const UpdateIssuedTokenForm = ({
       return;
     }
 
-    const filteredData = filterChangedFormFields(data);
-    const args = {
-      ...filteredData,
-      label: data.label,
-      title: data.title,
-      description: data.description,
-      creatorId: data.creatorId,
-      iconUrl: filteredData.iconUrl || undefined,
+    await updateIssuedToken({
+      ...data,
+      changedTopLevelKeys: collectChangedTopLevelKeys(dirtyFields),
+      label: 'Update Token',
       spaceId,
       web3SpaceId,
-      transferable: filteredData.transferable ?? filteredData.type !== 'voice',
-      isVotingToken: filteredData.type === 'voice',
-      referencePrice: filteredData.enableTokenPrice
-        ? filteredData.tokenPrice
+      transferable: data.transferable ?? data.type !== 'voice',
+      isVotingToken: data.type === 'voice',
+      referencePrice: data.enableTokenPrice ? data.tokenPrice : undefined,
+      referenceCurrency: data.enableTokenPrice
+        ? data.referenceCurrency
         : undefined,
-      referenceCurrency: filteredData.enableTokenPrice
-        ? filteredData.referenceCurrency
-        : undefined,
-      tokenAddress: filteredData.tokenAddress,
-      archiveToken: data.archiveToken,
-    };
-    await updateIssuedToken({ ...args });
+    });
   };
 
   const handleInvalid = async (errors: FieldErrors<FormValues>) => {
@@ -264,7 +256,7 @@ export const UpdateIssuedTokenForm = ({
             backUrl={backUrl}
             backLabel={tSpaces('backToSettings')}
             isLoading={false}
-            label={tProposalDetails('updateTokenLabel')}
+            label="Update Token"
             progress={progress}
           />
           {plugin}
