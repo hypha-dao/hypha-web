@@ -9,7 +9,7 @@ Turborepo + pnpm monorepo for the Hypha DAO platform (Web3/Base L2).
 | Service | Path | Dev command | Port | Notes |
 |---------|------|-------------|------|-------|
 | **Web** (Next.js 15) | `apps/web` | `pnpm dev` (from root) or `cd apps/web && pnpm dev` | 3000 | Requires `DEFAULT_DB_URL` for pages that touch DB |
-| **API** (Fastify 5) | `apps/api` | `cd apps/api && pnpm dev` | 3001 | Health at `GET /health` (not under `/api/v1`). Swagger at `/api/v1/docs` when DB is configured |
+| **API** (Fastify 5) | `apps/api` | `cd apps/api && pnpm dev` | 3001 | Health at `GET /health` (not under `/api/v1`). Swagger at `/v1/docs` (note: **not** `/api/v1/docs`) |
 
 ### Key commands (from repo root)
 
@@ -27,3 +27,14 @@ Turborepo + pnpm monorepo for the Hypha DAO platform (Web3/Base L2).
 - `pnpm build` (production) will fail at the "Collecting page data" step if `DEFAULT_DB_URL` is not set, even though TypeScript compilation succeeds.
 - Unit tests use `vitest` at the workspace root level. There is no `vitest.config` file; run with `npx vitest run --globals` to enable global test APIs (`describe`, `it`, `expect`).
 - Hardhat tests in `packages/storage-evm` require a separate `npx hardhat test` invocation inside that package.
+- The Swagger docs route is at `/v1/docs` (the `routePrefix` in `swagger.ts` uses `/${API_VERSION}/docs` which resolves to `/v1/docs`, separate from the `/api/v1` prefix used by other routes).
+- When restarting dev servers, ensure lingering `next-server` processes are killed first — the child processes spawned by `pnpm dev` may survive the parent being killed. Use `netstat -tlnp | grep <port>` to find them.
+- The `.env` files injected with secrets from the environment must include `DEFAULT_DB_URL` for the web app and all three DB URLs (`DEFAULT_DB_URL`, `DEFAULT_DB_AUTHENTICATED_URL`, `DEFAULT_DB_ANONYMOUS_URL`) for the API. These are provided as Cursor Cloud secrets.
+
+### Required secrets
+
+| Secret | Used by | Purpose |
+|--------|---------|---------|
+| `DEFAULT_DB_URL` | Web + API | Primary Neon Postgres connection string |
+| `DEFAULT_DB_AUTHENTICATED_URL` | API | Neon authenticated role connection |
+| `DEFAULT_DB_ANONYMOUS_URL` | API | Neon anonymous role connection |
