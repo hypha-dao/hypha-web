@@ -181,4 +181,6 @@ Then focus does not cycle inside the menu unless that is the documented pattern 
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.0 | 2026-03-24 | Engineering | Status → Implemented (pending QA); NFR-3 latency bound; open questions resolved/annotated; edge-case and DoD clarifications; measurement notes (follow-up commits on profile-menu spec PR). |
+| 0.2 | 2026-03-24 | Requirements + QA (agent) | Hyphenation (full-page reload); prior status/NFR-3/OQ table updates. |
 | 0.1 | 2026-03-24 | Requirements + QA (agent) | Initial specification from GitHub #1790 |
