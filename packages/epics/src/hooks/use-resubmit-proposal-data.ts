@@ -16,6 +16,7 @@ export const useResubmitProposalData = <
       | File
       | string
     >;
+    tokenAddress?: string;
   },
 >(
   form: UseFormReturn<T>,
@@ -76,6 +77,22 @@ export const useResubmitProposalData = <
           );
         }
 
+        let resubmitTokenAddress: string | undefined;
+        try {
+          const tokenFormRaw = sessionStorage.getItem(
+            'resubmitUpdateIssuedTokenForm',
+          );
+          if (tokenFormRaw) {
+            const tf = JSON.parse(tokenFormRaw) as { tokenAddress?: string };
+            if (tf?.tokenAddress) {
+              resubmitTokenAddress = tf.tokenAddress;
+            }
+            sessionStorage.removeItem('resubmitUpdateIssuedTokenForm');
+          }
+        } catch {
+          sessionStorage.removeItem('resubmitUpdateIssuedTokenForm');
+        }
+
         form.reset(
           {
             ...form.getValues(),
@@ -89,9 +106,11 @@ export const useResubmitProposalData = <
             attachments: undefined,
             spaceId: spaceId ?? undefined,
             creatorId: creatorId ?? undefined,
-            ...(parsed.tokenAddress !== undefined
-              ? { tokenAddress: parsed.tokenAddress }
-              : {}),
+            ...(resubmitTokenAddress
+              ? { tokenAddress: resubmitTokenAddress }
+              : parsed.tokenAddress !== undefined
+                ? { tokenAddress: parsed.tokenAddress }
+                : {}),
             ...(typeof parsed.activatePurchase === 'boolean'
               ? { activatePurchase: parsed.activatePurchase }
               : {}),
@@ -156,7 +175,12 @@ export const useResubmitProposalData = <
           });
         }
 
-        if (parsed.tokenAddress !== undefined) {
+        if (resubmitTokenAddress) {
+          form.setValue('tokenAddress' as any, resubmitTokenAddress as any, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+        } else if (parsed.tokenAddress !== undefined) {
           form.setValue('tokenAddress' as any, parsed.tokenAddress as any, {
             shouldDirty: true,
             shouldValidate: true,
@@ -204,7 +228,10 @@ export const useResubmitProposalData = <
         }
 
         const fieldsToTrigger: string[] = ['title', 'description'];
-        if (parsed.tokenAddress !== undefined) {
+        if (
+          resubmitTokenAddress !== undefined ||
+          parsed.tokenAddress !== undefined
+        ) {
           fieldsToTrigger.push('tokenAddress');
         }
         if (typeof parsed.activatePurchase === 'boolean') {

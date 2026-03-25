@@ -11,6 +11,7 @@ import {
 } from '@hypha-platform/ui';
 import { useFormContext } from 'react-hook-form';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import type { UpdateIssuedTokenResubmitPayload } from '../../../proposals/update-issued-token-resubmit';
 import {
   getPriceCurrencyCode,
   type Person,
@@ -48,14 +49,18 @@ export const UpdateIssuedTokenPlugin = ({
   const tTreasury = useTranslations('TreasuryTab');
   const tProposalDetails = useTranslations('ProposalDetails');
   const { control, getValues, setValue, watch } = useFormContext();
-  const values = getValues();
-  const [tokenType, setTokenType] = useState<string>(values['type'] || '');
+  const [tokenType, setTokenType] = useState<string>('');
   const [showDecaySettings, setShowDecaySettings] = useState<boolean>(false);
   const [showAdvancedSettings, setShowAdvancedSettings] =
     useState<boolean>(false);
-  const [selectedTokenAddress, setSelectedTokenAddress] = useState<
-    string | null
-  >(values['tokenAddress'] || null);
+  const selectedTokenAddress = watch('tokenAddress') || null;
+  const watchedType = watch('type');
+
+  useEffect(() => {
+    if (watchedType) {
+      setTokenType(watchedType);
+    }
+  }, [watchedType]);
 
   const enableLimitedSupply = watch('enableLimitedSupply') ?? false;
   const setEnableLimitedSupply = (value: boolean) => {
@@ -370,9 +375,100 @@ export const UpdateIssuedTokenPlugin = ({
     setShowAdvancedSettings(enableAdvancedTransferControls);
   }, [isLoadingOnChainData, onChainData, setValue, getValues]);
 
-  const handleTokenSelect = (tokenAddress: string) => {
-    setSelectedTokenAddress(tokenAddress);
-  };
+  const resubmitOverlayAppliedRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    if (!selectedTokenAddress || isLoadingOnChainData) {
+      return;
+    }
+    if (resubmitOverlayAppliedRef.current) {
+      return;
+    }
+
+    const raw = sessionStorage.getItem('resubmitUpdateIssuedTokenForm');
+    if (!raw) {
+      return;
+    }
+
+    let payload: UpdateIssuedTokenResubmitPayload;
+    try {
+      payload = JSON.parse(raw) as UpdateIssuedTokenResubmitPayload;
+    } catch {
+      return;
+    }
+
+    if (payload.tokenAddress !== selectedTokenAddress) {
+      return;
+    }
+
+    const patch = (
+      name: string,
+      value: unknown,
+      options?: { shouldDirty?: boolean; shouldValidate?: boolean },
+    ) =>
+      setValue(name as never, value as never, {
+        shouldDirty: options?.shouldDirty ?? true,
+        shouldValidate: options?.shouldValidate ?? false,
+        ...options,
+      });
+
+    patch('name', payload.name);
+    patch('symbol', payload.symbol);
+    if (payload.type) {
+      patch('type', payload.type);
+      setTokenType(payload.type);
+    }
+    if (payload.iconUrl !== undefined) {
+      patch('iconUrl', payload.iconUrl);
+    }
+    patch('enableLimitedSupply', payload.enableLimitedSupply, {
+      shouldDirty: false,
+    });
+    patch('maxSupply', payload.maxSupply, { shouldDirty: false });
+    if (payload.transferable !== undefined) {
+      patch('transferable', payload.transferable);
+    }
+    patch('isVotingToken', payload.isVotingToken);
+    patch('decaySettings', payload.decaySettings);
+    patch('enableProposalAutoMinting', payload.enableProposalAutoMinting);
+    patch('enableTokenPrice', payload.enableTokenPrice);
+    if (payload.enableTokenPrice) {
+      patch('tokenPrice', payload.tokenPrice);
+      patch('referenceCurrency', payload.referenceCurrency);
+    } else {
+      patch('tokenPrice', undefined);
+      patch('referenceCurrency', undefined);
+    }
+    patch(
+      'enableAdvancedTransferControls',
+      payload.enableAdvancedTransferControls,
+    );
+    patch('archiveToken', payload.archiveToken);
+
+    const showAdv =
+      payload.enableLimitedSupply ||
+      payload.enableTokenPrice ||
+      payload.enableAdvancedTransferControls ||
+      !payload.enableProposalAutoMinting ||
+      (payload.type === 'voice' &&
+        (payload.decaySettings.decayInterval !== 2592000 ||
+          payload.decaySettings.decayPercentage !== 1));
+    setShowAdvancedSettings(showAdv);
+
+    if (
+      payload.type === 'voice' &&
+      (payload.decaySettings.decayInterval !== 2592000 ||
+        payload.decaySettings.decayPercentage !== 1)
+    ) {
+      setShowDecaySettings(true);
+    }
+
+    resubmitOverlayAppliedRef.current = true;
+    sessionStorage.removeItem('resubmitUpdateIssuedTokenForm');
+  }, [selectedTokenAddress, isLoadingOnChainData, setValue]);
 
   const tokenSupply = selectedToken?.maxSupply ?? 0;
   const { supply, isLoading: isLoadingSupply } = useTokenSupply(
@@ -384,7 +480,6 @@ export const UpdateIssuedTokenPlugin = ({
       <SelectTokenField
         label={tProposalDetails('labels.token')}
         name="tokenAddress"
-        onValueChange={handleTokenSelect}
         tokens={spaceTokens.map((t) => ({
           name: t.name!,
           symbol: t.symbol!,

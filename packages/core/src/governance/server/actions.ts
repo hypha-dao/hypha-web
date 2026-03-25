@@ -25,7 +25,10 @@ import {
 } from '../types';
 // TODO: #602 Define RLS Policies for Agreement Table
 import { db } from '@hypha-platform/storage-postgres';
-import { findTokenUpdateByAddress } from './queries';
+import {
+  findTokenUpdateByAddress,
+  findTokenUpdateByDocumentId,
+} from './queries';
 
 export async function createAgreementAction(
   data: CreateAgreementInput,
@@ -151,4 +154,15 @@ export async function getTokenUpdateByAddressAction(
     throw new Error('Invalid address format');
   }
   return findTokenUpdateByAddress(address, { db });
+}
+
+export async function getTokenUpdateByDocumentIdAction(
+  documentId: number,
+  { authToken }: { authToken: string },
+) {
+  if (!authToken) throw new Error('authToken is required to get token update');
+  if (!Number.isFinite(documentId) || documentId < 1) {
+    throw new Error('Invalid document id');
+  }
+  return findTokenUpdateByDocumentId(documentId, { db });
 }

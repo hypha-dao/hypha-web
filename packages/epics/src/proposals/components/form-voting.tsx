@@ -14,9 +14,14 @@ import {
   useJwt,
   useAgreementMutationsWeb2Rsc,
   TOKENS,
+  useSpaceMinProposalDuration,
 } from '@hypha-platform/core/client';
+import { getTokenUpdateByDocumentIdAction } from '@hypha-platform/core/governance/server/actions';
+import {
+  buildUpdateIssuedTokenResubmitPayload,
+  type UpdateTokenProposalSnapshot,
+} from '../update-issued-token-resubmit';
 import { useSpaceMember } from '../../spaces';
-import { useSpaceMinProposalDuration } from '@hypha-platform/core/client';
 import { formatDuration } from '@hypha-platform/ui-utils';
 import { useTheme } from 'next-themes';
 import { useState } from 'react';
@@ -70,6 +75,7 @@ const getCreateRouteForLabel = (label: string | undefined): string => {
     'Token Burning': 'token-burning',
     'Membership Exit': 'membership-exit',
     'Backing Vault': 'token-backing-vault',
+    'Update Token': 'update-issued-token',
     'Token Purchase': 'space-token-purchase',
   };
 
@@ -110,6 +116,8 @@ export const FormVoting = ({
   spaceSlug,
   closeUrl,
   label,
+  documentId,
+  updateTokenProposalSnapshot,
   redeemResubmitPayload,
   proposalTemplateData,
   spaceTokenPurchaseData,
@@ -140,6 +148,8 @@ export const FormVoting = ({
   spaceSlug?: string;
   closeUrl?: string;
   label?: string;
+  documentId?: number;
+  updateTokenProposalSnapshot?: UpdateTokenProposalSnapshot | null;
   redeemResubmitPayload?: {
     token: string;
     amount: string;
@@ -262,6 +272,40 @@ export const FormVoting = ({
         JSON.stringify(proposalData),
       );
 
+      if (label === 'Update Token') {
+        let dbRow: Awaited<
+          ReturnType<typeof getTokenUpdateByDocumentIdAction>
+        > | null = null;
+        if (documentId != null && jwt) {
+          try {
+            dbRow = await getTokenUpdateByDocumentIdAction(documentId, {
+              authToken: jwt,
+            });
+          } catch {
+            dbRow = null;
+          }
+        }
+        const updatePayload = buildUpdateIssuedTokenResubmitPayload({
+          dbRow: dbRow
+            ? {
+                tokenAddress: dbRow.tokenAddress,
+                data: dbRow.data,
+              }
+            : null,
+          snapshot: updateTokenProposalSnapshot ?? null,
+        });
+        if (updatePayload) {
+          sessionStorage.setItem(
+            'resubmitUpdateIssuedTokenForm',
+            JSON.stringify(updatePayload),
+          );
+        } else {
+          sessionStorage.removeItem('resubmitUpdateIssuedTokenForm');
+        }
+      } else {
+        sessionStorage.removeItem('resubmitUpdateIssuedTokenForm');
+      }
+
       const saved = sessionStorage.getItem('resubmitProposalData');
       if (!saved) {
         console.error('Failed to save resubmit data to sessionStorage');
@@ -292,6 +336,7 @@ export const FormVoting = ({
       console.error('Error resubmitting proposal:', error);
       sessionStorage.removeItem('resubmitProposalData');
       sessionStorage.removeItem('resubmitFormData');
+      sessionStorage.removeItem('resubmitUpdateIssuedTokenForm');
     }
   };
 
