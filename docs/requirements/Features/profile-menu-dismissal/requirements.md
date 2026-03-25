@@ -151,6 +151,8 @@ Then focus does not cycle inside the menu unless that is the documented pattern 
 
 ### 9.4 Definition of Done (QA)
 
+**QA validation in progress:** Checklist below is the **target** DoD; items stay unchecked until executed and signed off (aligns with traceability **Status**: Implemented, pending QA).
+
 - [ ] All AC-1–AC-6 pass on desktop viewport.  
 - [ ] Spot validation on mobile viewport or documented shell breakpoint.  
 - [ ] Automated test merged or explicitly waived with reason (only if infeasible in CI).  
