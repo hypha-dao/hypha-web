@@ -17,8 +17,8 @@ import { Config } from '@wagmi/core';
 import { ReferenceCurrency } from '../../types';
 import { getPriceCurrencyFeed, TokenType } from '../../../common';
 import {
-  UpdateIssuedTokenInput,
-  buildUpdateIssuedTokenTxData,
+  type UpdateIssuedTokenInput,
+  padUpdateIssuedTokenInputIfNoTxs,
   useUpdateIssuedTokenMutationsWeb3Rpc,
 } from './useUpdateIssuedTokenMutations.web3.rpc';
 import useSWR from 'swr';
@@ -148,6 +148,8 @@ type UpdateIssuedTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
  * — Not implemented here: whitelist address membership (e.g. batchSetTransferWhitelist),
  *   clearing on-chain price when disabling “token price”, token type (no setter on contract).
  * — DB / Web2 only: icon URL, token type label stored off-chain.
+ * — If no calldata would be produced, the proposal still includes setTokenName(arg.name)
+ *   so createProposal is never called with an empty transaction list (reverts).
  */
 function buildPartialUpdateIssuedTokenWeb3Input(
   arg: UpdateIssuedTokenArg,
@@ -303,17 +305,22 @@ export const useUpdateIssuedTokenOrchestrator = ({
 
       const web2Slug = createdAgreement?.slug;
 
-      let iconUrl: string | undefined;
+      const changedTopLevel = new Set(arg.changedTopLevelKeys ?? []);
+      const iconTouched =
+        arg.iconUrl instanceof File || changedTopLevel.has('iconUrl');
+
+      let iconUrlForUpdate: string | undefined;
       if (arg.iconUrl instanceof File) {
         startTask('UPLOAD_TOKEN_ICON');
         const result = await tokenFiles.upload({ iconUrl: arg.iconUrl });
-        iconUrl = result.iconUrl;
-        console.log('iconUrl after upload:', iconUrl);
+        iconUrlForUpdate = result.iconUrl;
         completeTask('UPLOAD_TOKEN_ICON');
       } else {
         startTask('UPLOAD_TOKEN_ICON');
-        iconUrl = arg.iconUrl;
         completeTask('UPLOAD_TOKEN_ICON');
+        if (iconTouched && typeof arg.iconUrl === 'string') {
+          iconUrlForUpdate = arg.iconUrl;
+        }
       }
 
       startTask('UPDATE_TOKEN');
@@ -328,7 +335,9 @@ export const useUpdateIssuedTokenOrchestrator = ({
         symbol: arg.symbol,
         maxSupply: effectiveMaxSupply,
         type: arg.type,
-        iconUrl,
+        ...(iconTouched && iconUrlForUpdate !== undefined
+          ? { iconUrl: iconUrlForUpdate }
+          : {}),
         transferable: arg.transferable,
         isVotingToken: arg.isVotingToken,
         decayInterval: arg.decaySettings?.decayInterval,
@@ -346,27 +355,18 @@ export const useUpdateIssuedTokenOrchestrator = ({
 
       try {
         if (config) {
-          const changed = new Set(arg.changedTopLevelKeys ?? []);
           const partialWeb3 = buildPartialUpdateIssuedTokenWeb3Input(
             arg,
-            changed,
+            changedTopLevel,
           );
-          const txs = buildUpdateIssuedTokenTxData(partialWeb3);
+          const web3ProposalArg = padUpdateIssuedTokenInputIfNoTxs(
+            partialWeb3,
+            arg.name,
+          );
 
           startTask('CREATE_WEB3_AGREEMENT');
-
-          if (txs.length === 0) {
-            completeTask('CREATE_WEB3_AGREEMENT');
-            startTask('LINK_WEB2_AND_WEB3_AGREEMENT');
-            await web2.updateAgreementBySlug({
-              slug: web2Slug!,
-              web3ProposalId: undefined,
-            });
-            completeTask('LINK_WEB2_AND_WEB3_AGREEMENT');
-          } else {
-            await web3.updateIssuedToken(partialWeb3);
-            completeTask('CREATE_WEB3_AGREEMENT');
-          }
+          await web3.updateIssuedToken(web3ProposalArg);
+          completeTask('CREATE_WEB3_AGREEMENT');
         }
 
         const files = schemaCreateAgreementFiles.parse(arg);

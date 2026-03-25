@@ -270,38 +270,56 @@ export const UpdateIssuedTokenPlugin = ({
   const { data: onChainData, isLoading: isLoadingOnChainData } =
     useTokenOnChainData(selectedTokenAddress as `0x${string}` | undefined);
 
+  const lastHydratedTokenAddressRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (selectedToken) {
-      let shouldShowAdvanced = showAdvancedSettings;
-      setValue('name', selectedToken.name);
-      setValue('symbol', selectedToken.symbol);
-      setValue('iconUrl', selectedToken.iconUrl || '');
-      setValue('type', selectedToken.type);
-      const max = selectedToken.maxSupply ?? 0;
-      setValue('enableLimitedSupply', max > 0, { shouldDirty: false });
-      setValue('maxSupply', max, { shouldDirty: false });
-      setValue('transferable', selectedToken.transferable);
-      setValue('isVotingToken', selectedToken.isVotingToken);
-      setValue('decaySettings', {
-        decayInterval: selectedToken.decayInterval || 2592000,
-        decayPercentage: selectedToken.decayPercentage || 1,
-      });
-      setValue('archiveToken', selectedToken.archived);
-      setValue('referenceCurrency', selectedToken.referenceCurrency);
-      setValue('tokenPrice', selectedToken.referencePrice);
-      if (
-        selectedToken.referenceCurrency !== undefined &&
-        selectedToken.referencePrice !== undefined
-      ) {
-        setValue('enableTokenPrice', true);
-        shouldShowAdvanced = true;
-      } else {
-        setValue('enableTokenPrice', false);
-      }
-      setTokenType(selectedToken.type);
-      setShowAdvancedSettings(shouldShowAdvanced);
+    if (!selectedTokenAddress) {
+      lastHydratedTokenAddressRef.current = null;
+      return;
     }
-  }, [selectedToken, setValue]);
+    if (!selectedToken) {
+      return;
+    }
+
+    const tokenAddressChanged =
+      lastHydratedTokenAddressRef.current !== selectedTokenAddress;
+    lastHydratedTokenAddressRef.current = selectedTokenAddress;
+
+    let shouldShowAdvanced = showAdvancedSettings;
+    const iconFromDb = selectedToken.iconUrl || '';
+
+    setValue('name', selectedToken.name);
+    setValue('symbol', selectedToken.symbol);
+    const currentIcon = getValues('iconUrl');
+    if (tokenAddressChanged || !(currentIcon instanceof File)) {
+      setValue('iconUrl', iconFromDb, { shouldDirty: false });
+      setValue('initialIconUrl', iconFromDb, { shouldDirty: false });
+    }
+    setValue('type', selectedToken.type);
+    const max = selectedToken.maxSupply ?? 0;
+    setValue('enableLimitedSupply', max > 0, { shouldDirty: false });
+    setValue('maxSupply', max, { shouldDirty: false });
+    setValue('transferable', selectedToken.transferable);
+    setValue('isVotingToken', selectedToken.isVotingToken);
+    setValue('decaySettings', {
+      decayInterval: selectedToken.decayInterval || 2592000,
+      decayPercentage: selectedToken.decayPercentage || 1,
+    });
+    setValue('archiveToken', selectedToken.archived);
+    setValue('referenceCurrency', selectedToken.referenceCurrency);
+    setValue('tokenPrice', selectedToken.referencePrice);
+    if (
+      selectedToken.referenceCurrency !== undefined &&
+      selectedToken.referencePrice !== undefined
+    ) {
+      setValue('enableTokenPrice', true);
+      shouldShowAdvanced = true;
+    } else {
+      setValue('enableTokenPrice', false);
+    }
+    setTokenType(selectedToken.type);
+    setShowAdvancedSettings(shouldShowAdvanced);
+  }, [selectedToken, selectedTokenAddress, setValue, getValues]);
 
   useEffect(() => {
     if (isLoadingOnChainData || !onChainData) {
@@ -423,6 +441,10 @@ export const UpdateIssuedTokenPlugin = ({
     }
     if (payload.iconUrl !== undefined) {
       patch('iconUrl', payload.iconUrl);
+      setValue('initialIconUrl', payload.iconUrl, {
+        shouldDirty: false,
+        shouldValidate: false,
+      });
     }
     patch('enableLimitedSupply', payload.enableLimitedSupply, {
       shouldDirty: false,
