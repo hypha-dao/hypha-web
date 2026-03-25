@@ -41,13 +41,16 @@ export const UpdateIssuedTokenForm = ({
 }: UpdateIssuedTokenFormProps) => {
   const router = useRouter();
   const tSpaces = useTranslations('Spaces');
-  const tCommon = useTranslations('Common');
+  const tAgreementFlow = useTranslations('AgreementFlow');
+  const tProposalDetails = useTranslations('ProposalDetails');
 
   const fullSchemaUpdateIssuedToken = React.useMemo(() => {
     const extendedBaseSchema = baseSchemaIssueNewToken.merge(
       z.object({
         label: z.string().optional(),
-        tokenAddress: z.string({ message: tSpaces('tokenShouldBeChosen') }),
+        tokenAddress: z.string({
+          message: tProposalDetails('tokenShouldBeChosen'),
+        }),
         archiveToken: z.boolean().optional(),
       }),
     );
@@ -62,7 +65,7 @@ export const UpdateIssuedTokenForm = ({
         ) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: tSpaces('maxSupplyValidation'),
+            message: tProposalDetails('maxSupplyValidation'),
             path: ['maxSupply'],
           });
         }
@@ -72,7 +75,7 @@ export const UpdateIssuedTokenForm = ({
         if (!data.referenceCurrency) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: tSpaces('selectReferenceCurrency'),
+            message: tProposalDetails('selectReferenceCurrency'),
             path: ['referenceCurrency'],
           });
         }
@@ -84,13 +87,13 @@ export const UpdateIssuedTokenForm = ({
         ) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: tSpaces('tokenPriceGreaterThanZero'),
+            message: tProposalDetails('tokenPriceGreaterThanZero'),
             path: ['tokenPrice'],
           });
         }
       }
     });
-  }, [tSpaces]);
+  }, [tProposalDetails]);
 
   type FormValues = z.infer<typeof fullSchemaUpdateIssuedToken>;
 
@@ -194,7 +197,7 @@ export const UpdateIssuedTokenForm = ({
     setFormError(null);
 
     if (spaceId == null || web3SpaceId == null) {
-      setFormError('Space information is missing. Please try again.');
+      setFormError(tProposalDetails('spaceInformationMissing'));
       return;
     }
 
@@ -235,8 +238,8 @@ export const UpdateIssuedTokenForm = ({
       message={
         isError ? (
           <div className="flex flex-col">
-            <div>Ouh Snap. There was an error</div>
-            <Button onClick={reset}>Reset</Button>
+            <div>{tSpaces('errorOhSnap')}</div>
+            <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (
           <div>{currentAction}</div>
@@ -259,9 +262,9 @@ export const UpdateIssuedTokenForm = ({
             successfulUrl={successfulUrl}
             closeUrl={closeUrl || successfulUrl}
             backUrl={backUrl}
-            backLabel="Back to settings"
+            backLabel={tSpaces('backToSettings')}
             isLoading={false}
-            label="Update Token"
+            label={tProposalDetails('updateTokenLabel')}
             progress={progress}
           />
           {plugin}
@@ -273,7 +276,7 @@ export const UpdateIssuedTokenForm = ({
               </div>
             )}
             <div className="flex justify-end w-full">
-              <Button type="submit">Publish</Button>
+              <Button type="submit">{tAgreementFlow('buttons.publish')}</Button>
             </div>
           </div>
         </form>
