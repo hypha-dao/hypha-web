@@ -169,8 +169,8 @@ Then focus does not cycle inside the menu unless that is the documented pattern 
 
 ## 11. Open questions
 
-| ID | Question | Owner | Target |
-|----|----------|-------|--------|
+| ID | Question | Owner | Status / Resolution |
+|----|----------|-------|---------------------|
 | OQ-1 | Which routes and layouts render the profile menu (web only vs. other apps)? | Engineering | **Partially resolved:** `ConnectedButtonProfile` in `apps/web` root `layout.tsx` (all locales). Other apps: not used elsewhere yet. |
 | OQ-2 | Is the profile surface a `DropdownMenu`, `Popover`, or responsive `Sheet`? | Design / Engineering | **Resolved** in [PR #2047](https://github.com/hypha-dao/hypha-web/pull/2047): Radix `DropdownMenu` on **desktop** (`md+`); **mobile** uses the full-screen shell menu (stacked links, not a dropdown). |
 | OQ-3 | Are any menu items required to keep the menu open after click (e.g. “Copy address”)? | Product | **None required** in current `ButtonProfile` implementation; confirm with Product before FR-1 sign-off if new actions are added. |
