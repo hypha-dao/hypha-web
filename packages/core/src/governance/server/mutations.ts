@@ -220,14 +220,14 @@ export const applyTokenUpdate = async (
   const { tokenAddress, data } = tokenUpdate;
   const tokenUpdateData = data as TokenUpdateData;
 
-  // Prepare update input, including archiveToken
+  // Prepare update input, including archiveToken. Omit iconUrl when the pending
+  // update did not change the icon so the existing DB value is preserved.
   const updateInput: UpdateTokenInput = {
     address: tokenAddress,
     name: tokenUpdateData.name,
     symbol: tokenUpdateData.symbol,
     maxSupply: tokenUpdateData.maxSupply,
     type: tokenUpdateData.type,
-    iconUrl: tokenUpdateData.iconUrl,
     transferable: tokenUpdateData.transferable,
     isVotingToken: tokenUpdateData.isVotingToken,
     decayInterval: tokenUpdateData.decayInterval,
@@ -236,6 +236,9 @@ export const applyTokenUpdate = async (
     referenceCurrency: tokenUpdateData.referenceCurrency,
     archiveToken: tokenUpdateData.archiveToken,
   };
+  if (Object.hasOwn(tokenUpdateData, 'iconUrl')) {
+    updateInput.iconUrl = tokenUpdateData.iconUrl;
+  }
 
   // If archiveToken is true, we need to handle archiving (maybe set a flag in tokens table?)
   // Currently there's no archive flag, so we can ignore or implement later.
