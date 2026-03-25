@@ -1014,6 +1014,7 @@
         "general": {
           "title": "Allgemein",
           "description": "Wählen Sie den Typ Ihres Tokens und passen Sie Name, Symbol und Icon für eine eindeutige Identifikation an.",
+          "customizeIdentityDescription": "Passen Sie Name, Symbol und Icon des Tokens an, damit er klar erkennbar ist.",
           "tokenTypeLabel": "Token-Typ",
           "tokenTypePlaceholder": "Wählen Sie einen Token-Typ",
           "tokenTypeOptions": {

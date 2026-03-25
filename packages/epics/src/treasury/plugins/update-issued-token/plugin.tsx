@@ -46,7 +46,7 @@ export const UpdateIssuedTokenPlugin = ({
 }: UpdateIssuedTokenPluginProps) => {
   const { lang } = useParams();
   const tTreasury = useTranslations('TreasuryTab');
-  const tSpaces = useTranslations('Spaces');
+  const tProposalDetails = useTranslations('ProposalDetails');
   const { control, getValues, setValue, watch } = useFormContext();
   const values = getValues();
   const [tokenType, setTokenType] = useState<string>(values['type'] || '');
@@ -373,7 +373,7 @@ export const UpdateIssuedTokenPlugin = ({
   return (
     <div className="flex flex-col gap-4">
       <SelectTokenField
-        label="Token"
+        label={tProposalDetails('labels.token')}
         name="tokenAddress"
         onValueChange={handleTokenSelect}
         tokens={spaceTokens.map((t) => ({
@@ -388,8 +388,10 @@ export const UpdateIssuedTokenPlugin = ({
       {(isTokensLoading || spaceTokens.length === 0) && (
         <div className="text-2 text-neutral-11">
           {(() => {
-            const clickHereText = tSpaces('clickHere');
-            const message = tSpaces('noTokenCreated', { clickHere: '###' });
+            const clickHereText = tProposalDetails('clickHere');
+            const message = tProposalDetails('noTokenCreated', {
+              clickHere: '###',
+            });
             const [before, after] = message.split('###');
             return (
               <>
@@ -481,9 +483,9 @@ export const UpdateIssuedTokenPlugin = ({
             render={({ field }) => (
               <FormItem className="flex flex-row items-center justify-between rounded-lg">
                 <div className="space-y-0.5">
-                  <FormLabel>{tSpaces('archiveToken')}</FormLabel>
+                  <FormLabel>{tProposalDetails('archiveToken')}</FormLabel>
                   <div className="text-2 text-neutral-11">
-                    {tSpaces('archiveTokenDescription')}
+                    {tProposalDetails('archiveTokenDescription')}
                   </div>
                 </div>
                 <FormControl>

@@ -40,7 +40,9 @@ export const GeneralTokenSettings = ({
         </span>
       ) : (
         <span className="text-2 text-neutral-11">
-          Customize token name, symbol, and icon for clear identification.
+          {tAgreementFlow(
+            'plugins.issueNewToken.general.customizeIdentityDescription',
+          )}
         </span>
       )}
       <TokenTypeField

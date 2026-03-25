@@ -32,7 +32,9 @@
     "errorLoadOverviewTab": "Ups, algo salió mal. No se pudo cargar la pestaña de resumen.",
     "errorLoadMembersTab": "Ups, algo salió mal. No se pudo cargar la pestaña de miembros.",
     "errorLoadAgreementsTab": "Ups, algo salió mal. No se pudo cargar la pestaña de acuerdos.",
-    "errorLoadTreasuryTab": "Ups, algo salió mal. No se pudo cargar la pestaña de tesorería."
+    "errorLoadTreasuryTab": "Ups, algo salió mal. No se pudo cargar la pestaña de tesorería.",
+    "publish": "Publicar",
+    "invalidTransactions": "Transacciones inválidas"
   },
   "AgreementFlow": {
     "proposalErrors": {
@@ -145,6 +147,7 @@
         "general": {
           "title": "General",
           "description": "Seleccione su tipo de token y personalice su nombre, símbolo e ícono para una identificación clara.",
+          "customizeIdentityDescription": "Personalice el nombre, el símbolo y el ícono del token para una identificación clara.",
           "tokenTypeLabel": "Tipo de token",
           "tokenTypePlaceholder": "Seleccione un tipo de token",
           "tokenTypeOptions": {
@@ -753,6 +756,10 @@
         "title": "Emitir nuevo token",
         "description": "Cree un nuevo token de utilidad, propiedad, impacto, créditos en efectivo, voz o moneda comunitaria dentro de su espacio."
       },
+      "updateIssuedToken": {
+        "title": "Actualizar token emitido",
+        "description": "Actualice la configuración avanzada del token, incluidos el nombre, el símbolo y el ícono del token, el suministro total, las opciones de acuñación automática, los controles de transferencia, los parámetros de decadencia de voz y el valor del token mostrado en la tesorería."
+      },
       "mintTokensToSpaceTreasury": {
         "title": "Fichas de acuñación para la tesorería espacial",
         "description": "Acuña tokens en tu tesorería espacial para financiar operaciones, distribuir recompensas o proporcionar liquidez."
@@ -964,7 +971,10 @@
         "from": "Desde {name}",
         "to": "A {name}"
       }
-    }
+    },
+    "tokenSupply": "Suministro del token",
+    "issuanceToDate": "Emisión hasta la fecha",
+    "unlimitedSupply": "Suministro ilimitado"
   },
   "Footer": {
     "network": "RED",
@@ -1542,7 +1552,17 @@
           "completedMessage": "Decisión registrada: Propuesta rechazada por insuficiente participación y falta de alineación."
         }
       }
-    }
+    },
+    "archiveToken": "Archivar token",
+    "archiveTokenDescription": "Archivar un token desactivará su uso en nuevas propuestas y transferencias.",
+    "clickHere": "haz clic aquí",
+    "noTokenCreated": "Tu espacio aún no ha creado un token, {clickHere} para emitir un token primero.",
+    "tokenShouldBeChosen": "Debe elegirse un token",
+    "maxSupplyValidation": "Introduce un suministro máximo mayor que 0 o desactiva el suministro limitado si quieres suministro ilimitado.",
+    "selectReferenceCurrency": "Selecciona una moneda de referencia",
+    "tokenPriceGreaterThanZero": "Introduce un precio de token mayor que 0",
+    "updateTokenLabel": "Actualizar token",
+    "spaceInformationMissing": "Falta información del espacio. Inténtalo de nuevo."
   },
   "AiPanel": {
     "title": "Hypha AI",

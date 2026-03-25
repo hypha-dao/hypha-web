@@ -1014,6 +1014,7 @@
         "general": {
           "title": "Général",
           "description": "Sélectionnez le type de token et personnalisez son nom, son symbole et son icône pour une identification claire.",
+          "customizeIdentityDescription": "Personnalisez le nom, le symbole et l’icône du token pour une identification claire.",
           "tokenTypeLabel": "Type de token",
           "tokenTypePlaceholder": "Sélectionnez un type de token",
           "tokenTypeOptions": {
