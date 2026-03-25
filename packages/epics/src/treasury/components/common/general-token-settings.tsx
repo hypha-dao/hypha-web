@@ -45,12 +45,17 @@ export const GeneralTokenSettings = ({
           )}
         </span>
       )}
-      {showChooseType && (
+      {showChooseType ? (
         <TokenTypeField
           onValueChange={(value: string) => {
             setTokenType(value);
           }}
         />
+      ) : (
+        <div className="text-2 text-neutral-11 w-full gap-1">
+          <div className="text-1 font-medium">{label}</div>
+          <div className="text-1 text-neutral-11">{description}</div>
+        </div>
       )}
       <TokenNameField />
       <TokenSymbolField />

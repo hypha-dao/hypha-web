@@ -201,7 +201,7 @@ export const UpdateIssuedTokenForm = ({
       return;
     }
     form.setValue('creatorId', person?.id);
-  }, [person]);
+  }, [person, form]);
 
   React.useEffect(() => {
     if (spaceId === undefined || spaceId === null) {

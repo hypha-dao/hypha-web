@@ -90,6 +90,7 @@ export const useResubmitProposalData = <
             sessionStorage.removeItem('resubmitUpdateIssuedTokenForm');
           }
         } catch {
+          // ignore invalid token resubmit payload
           sessionStorage.removeItem('resubmitUpdateIssuedTokenForm');
         }
 
