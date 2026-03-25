@@ -72,7 +72,7 @@ The profile menu in the application chrome (triggered from the signed-in user co
 
 **NFR-2** Opening and closing the profile menu SHALL not cause **layout shift** beyond what is normal for the menu surface itself (CLS regression threshold: no new sustained overlay that shifts main content unexpectedly).
 
-**NFR-3** Dismissal SHALL complete within **≤ 200 ms** from the triggering user input to a **non-interactive closed state** on supported CI/browser targets (measure via Playwright or equivalent after the UI library reports closed), with no perceptible “stuck open” state.
+**NFR-3** Dismissal SHALL complete within **≤ 200 ms** from the triggering user input to a **non-interactive closed state** on supported CI/browser targets, with no perceptible “stuck open” state. **CI measurement (Playwright):** record a timestamp immediately before the dismiss action (e.g. the `click()` / `keyboard.press('Escape')` / navigation step that should close the menu), then assert `expect(menuContentLocator).toBeHidden({ timeout: 200 })` (or assert `data-state="closed"` on the Radix content/root if using a stable locator); elapsed wall time from the recorded start to assertion success is the observed latency.
 
 ---
 
