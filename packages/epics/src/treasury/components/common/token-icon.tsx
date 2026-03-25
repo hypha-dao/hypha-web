@@ -9,7 +9,7 @@ export type TokenIconUploadProps = {
   EditIcon?: React.ElementType;
   DropIcon?: React.ElementType;
   onChange: (acceptedFile: File | null) => void;
-  defaultImage?: string;
+  defaultImage?: string | File;
   maxFileSize?: number;
 };
 
@@ -20,18 +20,22 @@ export const TokenIconUpload = ({
   defaultImage,
   maxFileSize,
 }: TokenIconUploadProps) => {
-  const [preview, setPreview] = React.useState<string | null>(
-    defaultImage || null,
+  const [preview, setPreview] = React.useState<string | null>(() =>
+    typeof defaultImage === 'string' ? defaultImage || null : null,
   );
 
   React.useEffect(() => {
-    setPreview(defaultImage || null);
+    if (typeof defaultImage === 'string') {
+      setPreview(defaultImage || null);
+    }
   }, [defaultImage]);
 
   const onDrop = React.useCallback(
     (acceptedFiles: File[]) => {
       if (!acceptedFiles.length) {
-        setPreview(defaultImage || null);
+        setPreview(
+          typeof defaultImage === 'string' ? defaultImage || null : null,
+        );
         onChange(null);
         return;
       }
@@ -44,7 +48,9 @@ export const TokenIconUpload = ({
         reader.readAsDataURL(acceptedFiles[0] ?? new Blob());
       } catch (error) {
         console.error('Error reading file:', error);
-        setPreview(defaultImage || null);
+        setPreview(
+          typeof defaultImage === 'string' ? defaultImage || null : null,
+        );
         onChange(null);
       }
     },
