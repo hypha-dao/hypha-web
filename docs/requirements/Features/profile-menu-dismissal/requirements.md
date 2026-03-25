@@ -72,7 +72,7 @@ The profile menu in the application chrome (triggered from the signed-in user co
 
 **NFR-2** Opening and closing the profile menu SHALL not cause **layout shift** beyond what is normal for the menu surface itself (CLS regression threshold: no new sustained overlay that shifts main content unexpectedly).
 
-**NFR-3** Dismissal SHALL complete within **≤ 200 ms** from the triggering user input to a **non-interactive closed state** on supported CI/browser targets, with no perceptible “stuck open” state. **CI measurement (Playwright):** record a timestamp immediately before the dismiss action (e.g. the `click()` / `keyboard.press('Escape')` / navigation step that should close the menu), then assert `expect(menuContentLocator).toBeHidden({ timeout: 200 })` (or assert `data-state="closed"` on the Radix content/root if using a stable locator); elapsed wall time from the recorded start to assertion success is the observed latency.
+**NFR-3** Dismissal SHALL complete within **≤ 200 ms** from the triggering user input to a **non-interactive closed state** on supported CI/browser targets, with no perceptible “stuck open” state. **CI SHALL NOT** treat the `toBeHidden` timeout alone as proof of latency; it must **assert elapsed wall time** explicitly. **CI measurement (Playwright):** (1) `const start = Date.now()` immediately before the dismiss action (`click()`, `keyboard.press('Escape')`, or navigation that should close the menu). (2) Await a hide condition, e.g. `await expect(menuContentLocator).toBeHidden({ timeout: 200 })` **or** await a stable closed signal such as `data-state="closed"` on the Radix menu content/root. (3) `const elapsed = Date.now() - start`. (4) `expect(elapsed).toBeLessThanOrEqual(200)` (or equivalent). Implementers should use the symbols **`menuContentLocator`**, **`toBeHidden`**, **`click()`**, **`keyboard.press('Escape')`**, and **`data-state="closed"`** as the concrete hooks in test code.
 
 ---
 
@@ -181,6 +181,7 @@ Then focus does not cycle inside the menu unless that is the documented pattern 
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.1 | 2026-03-24 | Engineering | NFR-3: require explicit `elapsed <= 200 ms` assertion in CI (not timeout-only). |
 | 1.0 | 2026-03-24 | Engineering | Status → Implemented (pending QA); NFR-3 latency bound; open questions resolved/annotated; edge-case and DoD clarifications; measurement notes (follow-up commits on profile-menu spec PR). |
 | 0.2 | 2026-03-24 | Requirements + QA (agent) | Hyphenation (full-page reload); prior status/NFR-3/OQ table updates. |
 | 0.1 | 2026-03-24 | Requirements + QA (agent) | Initial specification from GitHub #1790 |
