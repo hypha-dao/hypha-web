@@ -72,15 +72,26 @@ export function SelectTokenField({
                     <SelectValue placeholder={placeholder} />
                   </SelectTrigger>
                   <SelectContent className="p-2">
-                    {tokens.map(({ name, symbol, address, iconUrl }) => (
-                      <SelectItem key={address} value={address!}>
-                        <div className="flex flex-col text-left">
-                          <span className="text-1 font-medium">
-                            {symbol ?? 'Unknown'} - {name ?? 'Unknown Token'}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
+                    {tokens.map(({ name, symbol, address, iconUrl }) => {
+                      const src =
+                        iconUrl?.trim() || '/placeholder/token-icon.svg';
+                      return (
+                        <SelectItem key={address} value={address!}>
+                          <div className="flex items-center gap-2 text-left text-sm leading-5">
+                            <img
+                              src={src}
+                              alt=""
+                              className="h-5 w-5 shrink-0 rounded-full object-cover"
+                              loading="lazy"
+                              draggable={false}
+                            />
+                            <span className="font-medium">
+                              {symbol ?? 'Unknown'} - {name ?? 'Unknown Token'}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               )}
