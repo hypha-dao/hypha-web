@@ -33,6 +33,149 @@ export interface UpdateIssuedTokenInput {
   archiveToken?: boolean;
 }
 
+type ProposalTx = {
+  target: `0x${string}`;
+  value: number;
+  data: `0x${string}`;
+};
+
+/** Encodes DecayingSpaceToken admin calls for a multisig proposal (no network I/O). */
+export function buildUpdateIssuedTokenTxData(
+  arg: UpdateIssuedTokenInput,
+): ProposalTx[] {
+  const txData: ProposalTx[] = [];
+
+  const tokenPriceWei =
+    arg.tokenPrice !== undefined ? BigInt(arg.tokenPrice) : 0n;
+  const priceCurrencyFeed =
+    arg.priceCurrencyFeed ??
+    ('0x0000000000000000000000000000000000000000' as `0x${string}`);
+
+  if (arg.name !== undefined) {
+    txData.push({
+      target: arg.address,
+      value: 0,
+      data: encodeFunctionData({
+        abi: decayingSpaceTokenAbi,
+        functionName: 'setTokenName',
+        args: [arg.name],
+      }),
+    });
+  }
+  if (arg.symbol !== undefined) {
+    txData.push({
+      target: arg.address,
+      value: 0,
+      data: encodeFunctionData({
+        abi: decayingSpaceTokenAbi,
+        functionName: 'setTokenSymbol',
+        args: [arg.symbol],
+      }),
+    });
+  }
+  if (arg.maxSupply !== undefined) {
+    txData.push({
+      target: arg.address,
+      value: 0,
+      data: encodeFunctionData({
+        abi: decayingSpaceTokenAbi,
+        functionName: 'setMaxSupply',
+        args: [BigInt(arg.maxSupply) * 10n ** 18n],
+      }),
+    });
+  }
+  if (arg.transferable !== undefined) {
+    txData.push({
+      target: arg.address,
+      value: 0,
+      data: encodeFunctionData({
+        abi: decayingSpaceTokenAbi,
+        functionName: 'setTransferable',
+        args: [arg.transferable],
+      }),
+    });
+  }
+  if (arg.autoMinting !== undefined) {
+    txData.push({
+      target: arg.address,
+      value: 0,
+      data: encodeFunctionData({
+        abi: decayingSpaceTokenAbi,
+        functionName: 'setAutoMinting',
+        args: [arg.autoMinting],
+      }),
+    });
+  }
+  if (arg.tokenPrice !== undefined && arg.priceCurrencyFeed !== undefined) {
+    txData.push({
+      target: arg.address,
+      value: 0,
+      data: encodeFunctionData({
+        abi: decayingSpaceTokenAbi,
+        functionName: 'setPriceWithCurrency',
+        args: [tokenPriceWei, priceCurrencyFeed],
+      }),
+    });
+  }
+  if (arg.decayPercentage !== undefined) {
+    txData.push({
+      target: arg.address,
+      value: 0,
+      data: encodeFunctionData({
+        abi: decayingSpaceTokenAbi,
+        functionName: 'setDecayPercentage',
+        args: [BigInt(arg.decayPercentage)],
+      }),
+    });
+  }
+  if (arg.decayInterval !== undefined) {
+    txData.push({
+      target: arg.address,
+      value: 0,
+      data: encodeFunctionData({
+        abi: decayingSpaceTokenAbi,
+        functionName: 'setDecayInterval',
+        args: [BigInt(arg.decayInterval)],
+      }),
+    });
+  }
+  if (arg.useTransferWhitelist !== undefined) {
+    txData.push({
+      target: arg.address,
+      value: 0,
+      data: encodeFunctionData({
+        abi: decayingSpaceTokenAbi,
+        functionName: 'setUseTransferWhitelist',
+        args: [arg.useTransferWhitelist],
+      }),
+    });
+  }
+  if (arg.useReceiveWhitelist !== undefined) {
+    txData.push({
+      target: arg.address,
+      value: 0,
+      data: encodeFunctionData({
+        abi: decayingSpaceTokenAbi,
+        functionName: 'setUseReceiveWhitelist',
+        args: [arg.useReceiveWhitelist],
+      }),
+    });
+  }
+  if (arg.archiveToken !== undefined) {
+    txData.push({
+      target: arg.address,
+      value: 0,
+      data: encodeFunctionData({
+        abi: decayingSpaceTokenAbi,
+        functionName: 'setArchived',
+        args: [arg.archiveToken],
+      }),
+    });
+  }
+
+  return txData;
+}
+
 export const useUpdateIssuedTokenMutationsWeb3Rpc = ({
   proposalSlug,
 }: {
@@ -55,138 +198,7 @@ export const useUpdateIssuedTokenMutationsWeb3Rpc = ({
         getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
       );
 
-      const txData: Array<{
-        target: `0x${string}`;
-        value: number;
-        data: `0x${string}`;
-      }> = [];
-
-      const tokenPrice = arg.tokenPrice ? BigInt(arg.tokenPrice) : 0n;
-      const priceCurrencyFeed =
-        arg.priceCurrencyFeed ??
-        ('0x0000000000000000000000000000000000000000' as `0x${string}`);
-
-      if (arg.name !== undefined) {
-        txData.push({
-          target: arg.address,
-          value: 0,
-          data: encodeFunctionData({
-            abi: decayingSpaceTokenAbi,
-            functionName: 'setTokenName',
-            args: [arg.name],
-          }),
-        });
-      }
-      if (arg.symbol !== undefined) {
-        txData.push({
-          target: arg.address,
-          value: 0,
-          data: encodeFunctionData({
-            abi: decayingSpaceTokenAbi,
-            functionName: 'setTokenSymbol',
-            args: [arg.symbol],
-          }),
-        });
-      }
-      if (arg.maxSupply !== undefined) {
-        txData.push({
-          target: arg.address,
-          value: 0,
-          data: encodeFunctionData({
-            abi: decayingSpaceTokenAbi,
-            functionName: 'setMaxSupply',
-            args: [BigInt(arg.maxSupply) * 10n ** 18n],
-          }),
-        });
-      }
-      if (arg.transferable !== undefined) {
-        txData.push({
-          target: arg.address,
-          value: 0,
-          data: encodeFunctionData({
-            abi: decayingSpaceTokenAbi,
-            functionName: 'setTransferable',
-            args: [arg.transferable],
-          }),
-        });
-      }
-      if (arg.autoMinting !== undefined) {
-        txData.push({
-          target: arg.address,
-          value: 0,
-          data: encodeFunctionData({
-            abi: decayingSpaceTokenAbi,
-            functionName: 'setAutoMinting',
-            args: [arg.autoMinting],
-          }),
-        });
-      }
-      if (arg.tokenPrice !== undefined && arg.priceCurrencyFeed !== undefined) {
-        txData.push({
-          target: arg.address,
-          value: 0,
-          data: encodeFunctionData({
-            abi: decayingSpaceTokenAbi,
-            functionName: 'setPriceWithCurrency',
-            args: [tokenPrice, priceCurrencyFeed],
-          }),
-        });
-      }
-      if (arg.decayPercentage !== undefined) {
-        txData.push({
-          target: arg.address,
-          value: 0,
-          data: encodeFunctionData({
-            abi: decayingSpaceTokenAbi,
-            functionName: 'setDecayPercentage',
-            args: [BigInt(arg.decayPercentage)],
-          }),
-        });
-      }
-      if (arg.decayInterval !== undefined) {
-        txData.push({
-          target: arg.address,
-          value: 0,
-          data: encodeFunctionData({
-            abi: decayingSpaceTokenAbi,
-            functionName: 'setDecayInterval',
-            args: [BigInt(arg.decayInterval)],
-          }),
-        });
-      }
-      if (arg.useTransferWhitelist !== undefined) {
-        txData.push({
-          target: arg.address,
-          value: 0,
-          data: encodeFunctionData({
-            abi: decayingSpaceTokenAbi,
-            functionName: 'setUseTransferWhitelist',
-            args: [arg.useTransferWhitelist],
-          }),
-        });
-      }
-      if (arg.useReceiveWhitelist !== undefined) {
-        txData.push({
-          target: arg.address,
-          value: 0,
-          data: encodeFunctionData({
-            abi: decayingSpaceTokenAbi,
-            functionName: 'setUseReceiveWhitelist',
-            args: [arg.useReceiveWhitelist],
-          }),
-        });
-      }
-      if (arg.archiveToken !== undefined) {
-        txData.push({
-          target: arg.address,
-          value: 0,
-          data: encodeFunctionData({
-            abi: decayingSpaceTokenAbi,
-            functionName: 'setArchived',
-            args: [arg.archiveToken],
-          }),
-        });
-      }
+      const txData = buildUpdateIssuedTokenTxData(arg);
 
       const proposal: z.infer<typeof schemaCreateProposalWeb3> = {
         spaceId: BigInt(arg.spaceId),
