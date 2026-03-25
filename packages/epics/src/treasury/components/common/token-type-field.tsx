@@ -99,6 +99,10 @@ export function getTokenTypeLabel(type: string, tAgreementFlow?: any): string {
   return TOKEN_TYPE_OPTIONS.find((o) => o.value === type)?.label ?? type;
 }
 
+export function getTokenTypeDescription(type: string): string {
+  return TOKEN_TYPE_OPTIONS.find((o) => o.value === type)?.description ?? '';
+}
+
 type TokenTypeFieldProps = {
   onValueChange?: (value: string) => void;
 };

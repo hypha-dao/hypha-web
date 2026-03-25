@@ -1,3 +1,5 @@
+import { TokenType } from '../common/web3/tokens';
+
 export type Creator = {
   avatarUrl?: string;
   name?: string;
@@ -119,13 +121,7 @@ export type CreateTokenInput = {
   name: string;
   symbol: string;
   maxSupply: number;
-  type:
-    | 'utility'
-    | 'credits'
-    | 'ownership'
-    | 'voice'
-    | 'impact'
-    | 'community_currency';
+  type: TokenType;
   iconUrl?: string;
   transferable: boolean;
   isVotingToken: boolean;
@@ -144,6 +140,39 @@ export type UpdateTokenInput = {
   agreementWeb3Id?: number;
   address?: string;
   agreementWeb3IdUpdate?: number;
+  iconUrl?: string;
+  name?: string;
+  symbol?: string;
+  maxSupply?: number;
+  type?: TokenType;
+  transferable?: boolean;
+  isVotingToken?: boolean;
+  decayInterval?: number;
+  decayPercentage?: number;
+  referencePrice?: number;
+  referenceCurrency?: ReferenceCurrency;
+  archiveToken?: boolean;
+};
+
+export type TokenUpdateData = {
+  name?: string;
+  symbol?: string;
+  maxSupply?: number;
+  type?: TokenType;
+  iconUrl?: string;
+  transferable?: boolean;
+  isVotingToken?: boolean;
+  decayInterval?: number;
+  decayPercentage?: number;
+  referencePrice?: number;
+  referenceCurrency?: ReferenceCurrency;
+  archiveToken?: boolean;
+};
+
+export type CreateTokenUpdateInput = {
+  documentId: number;
+  tokenAddress: string;
+  data: TokenUpdateData;
 };
 
 export type DeleteTokenInput = {

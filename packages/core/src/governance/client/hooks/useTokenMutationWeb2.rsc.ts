@@ -5,11 +5,15 @@ import {
   CreateTokenInput,
   DeleteTokenInput,
   UpdateTokenInput,
+  CreateTokenUpdateInput,
 } from '../../types';
 import {
   createTokenAction,
   deleteTokenAction,
   updateTokenAction,
+  createTokenUpdateAction,
+  applyTokenUpdateAction,
+  deleteTokenUpdateAction,
 } from '../../server/actions';
 
 export const useTokenMutationsWeb2Rsc = (authToken?: string | null) => {
@@ -49,6 +53,42 @@ export const useTokenMutationsWeb2Rsc = (authToken?: string | null) => {
       deleteTokenAction(arg, { authToken }),
   );
 
+  const {
+    trigger: createTokenUpdateMutation,
+    reset: resetCreateTokenUpdateMutation,
+    isMutating: isCreatingTokenUpdate,
+    error: errorCreateTokenUpdateMutation,
+    data: createdTokenUpdate,
+  } = useSWRMutation(
+    authToken ? [authToken, 'createTokenUpdate'] : null,
+    async ([authToken], { arg }: { arg: CreateTokenUpdateInput }) =>
+      createTokenUpdateAction(arg, { authToken }),
+  );
+
+  const {
+    trigger: applyTokenUpdateMutation,
+    reset: resetApplyTokenUpdateMutation,
+    isMutating: isApplyingTokenUpdate,
+    error: errorApplyTokenUpdateMutation,
+    data: appliedTokenUpdate,
+  } = useSWRMutation(
+    authToken ? [authToken, 'applyTokenUpdate'] : null,
+    async ([authToken], { arg }: { arg: number }) =>
+      applyTokenUpdateAction(arg, { authToken }),
+  );
+
+  const {
+    trigger: deleteTokenUpdateMutation,
+    reset: resetDeleteTokenUpdateMutation,
+    isMutating: isDeletingTokenUpdate,
+    error: errorDeleteTokenUpdateMutation,
+    data: deletedTokenUpdate,
+  } = useSWRMutation(
+    authToken ? [authToken, 'deleteTokenUpdate'] : null,
+    async ([authToken], { arg }: { arg: number }) =>
+      deleteTokenUpdateAction(arg, { authToken }),
+  );
+
   return {
     createToken: createTokenMutation,
     resetCreateTokenMutation,
@@ -67,5 +107,23 @@ export const useTokenMutationsWeb2Rsc = (authToken?: string | null) => {
     isDeletingToken,
     errorDeleteTokenMutation,
     deletedToken,
+
+    createTokenUpdate: createTokenUpdateMutation,
+    resetCreateTokenUpdateMutation,
+    isCreatingTokenUpdate,
+    errorCreateTokenUpdateMutation,
+    createdTokenUpdate,
+
+    applyTokenUpdate: applyTokenUpdateMutation,
+    resetApplyTokenUpdateMutation,
+    isApplyingTokenUpdate,
+    errorApplyTokenUpdateMutation,
+    appliedTokenUpdate,
+
+    deleteTokenUpdate: deleteTokenUpdateMutation,
+    resetDeleteTokenUpdateMutation,
+    isDeletingTokenUpdate,
+    errorDeleteTokenUpdateMutation,
+    deletedTokenUpdate,
   };
 };

@@ -1,29 +1,48 @@
 'use client';
 
 import { FormLabel } from '@hypha-platform/ui';
-import { TokenTypeField } from './token-type-field';
+import {
+  getTokenTypeDescription,
+  getTokenTypeLabel,
+  TokenTypeField,
+} from './token-type-field';
 import { TokenNameField } from './token-name-field';
 import { TokenSymbolField } from './token-symbol-field';
 import { TokenIconField } from './token-icon-field';
 import { useTranslations } from 'next-intl';
+import React from 'react';
 
 export const GeneralTokenSettings = ({
   tokenType,
   setTokenType,
+  showChooseType = true,
 }: {
   tokenType: string;
   setTokenType: (value: string) => void;
+  showChooseType?: boolean;
 }) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const label = React.useMemo(() => {
+    return getTokenTypeLabel(tokenType);
+  }, [tokenType]);
+  const description = React.useMemo(() => {
+    return getTokenTypeDescription(tokenType);
+  }, [tokenType]);
 
   return (
     <>
       <FormLabel>
         {tAgreementFlow('plugins.issueNewToken.general.title')}
       </FormLabel>
-      <span className="text-2 text-neutral-11">
-        {tAgreementFlow('plugins.issueNewToken.general.description')}
-      </span>
+      {showChooseType ? (
+        <span className="text-2 text-neutral-11">
+          {tAgreementFlow('plugins.issueNewToken.general.description')}
+        </span>
+      ) : (
+        <span className="text-2 text-neutral-11">
+          Customize token name, symbol, and icon for clear identification.
+        </span>
+      )}
       <TokenTypeField
         onValueChange={(value: string) => {
           setTokenType(value);

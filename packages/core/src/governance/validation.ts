@@ -560,7 +560,7 @@ export const schemaCreateProposalWeb3 = z.object({
     .min(1n, { message: 'Space ID must be a positive number' }),
   duration: z.bigint().min(1n, { message: 'Duration must be greater than 0' }),
   transactions: z
-    .array(transactionSchema)
+    .array(transactionSchema, { message: 'Invalid transactions' })
     .min(1, { message: 'At least one transaction is required' }),
 });
 

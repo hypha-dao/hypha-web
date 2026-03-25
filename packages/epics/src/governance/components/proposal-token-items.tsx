@@ -28,6 +28,7 @@ interface ProposalTokenItemProps {
   initialReceiveWhitelist?: `0x${string}`[];
   decayPercentage?: bigint;
   decayInterval?: bigint;
+  archived?: boolean;
 }
 
 interface WhitelistAddressItemProps {
@@ -206,6 +207,12 @@ export const ProposalTokenItem = ({
               ? tProposalDetails('labels.enabled')
               : tProposalDetails('labels.disabled')}
           </div>
+        </div>
+      )}
+      {dbToken?.archived !== undefined && (
+        <div className="flex justify-between items-center">
+          <div className="text-1 text-neutral-11 w-full">Archived</div>
+          <div className="text-1">{dbToken.archived ? 'Yes' : 'No'}</div>
         </div>
       )}
       {referencePrice && (
