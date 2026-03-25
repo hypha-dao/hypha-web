@@ -208,6 +208,37 @@ export const useProposalDetailsWeb3Rpc = ({
       whitelistedAddresses?: string[];
     } = {};
 
+    const updateTokenData: {
+      address?: `0x${string}`;
+      name?: string;
+      symbol?: string;
+      maxSupply?: bigint;
+      transferable?: boolean;
+      autoMinting?: boolean;
+      priceWithCurrency?: {
+        tokenPrice: bigint;
+        priceCurrencyFeed: string;
+      };
+      decayPercentage?: bigint;
+      decayInterval?: bigint;
+      useTransferWhitelist?: boolean;
+      useReceiveWhitelist?: boolean;
+      archiveToken?: boolean;
+    } = {
+      address: undefined,
+      name: undefined,
+      symbol: undefined,
+      maxSupply: undefined,
+      transferable: undefined,
+      autoMinting: undefined,
+      priceWithCurrency: undefined,
+      decayPercentage: undefined,
+      decayInterval: undefined,
+      useTransferWhitelist: undefined,
+      useReceiveWhitelist: undefined,
+      archiveToken: undefined,
+    };
+
     const redeemTokensData: {
       token?: `0x${string}`;
       amount?: bigint;
@@ -459,6 +490,119 @@ export const useProposalDetailsWeb3Rpc = ({
           }
           break;
         }
+        case 'setTokenName': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            name: string;
+          };
+          updateTokenData.address = d.address;
+          updateTokenData.name = d.name;
+          break;
+        }
+
+        case 'setTokenSymbol': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            symbol: string;
+          };
+          updateTokenData.address = d.address;
+          updateTokenData.symbol = d.symbol;
+          break;
+        }
+
+        case 'setTokenMaxSupply': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            maxSupply: bigint;
+          };
+          updateTokenData.address = d.address;
+          updateTokenData.maxSupply = d.maxSupply;
+          break;
+        }
+
+        case 'setTokenTransferable': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            transferable: boolean;
+          };
+          updateTokenData.address = d.address;
+          updateTokenData.transferable = d.transferable;
+          break;
+        }
+
+        case 'setTokenAutoMinting': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            autoMinting: boolean;
+          };
+          updateTokenData.address = d.address;
+          updateTokenData.autoMinting = d.autoMinting;
+          break;
+        }
+
+        case 'setTokenPriceWithCurrency': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            tokenPrice: bigint;
+            priceCurrencyFeed: string;
+          };
+          updateTokenData.address = d.address;
+          updateTokenData.priceWithCurrency = {
+            tokenPrice: d.tokenPrice,
+            priceCurrencyFeed: d.priceCurrencyFeed,
+          };
+          break;
+        }
+
+        case 'setTokenDecayPercentage': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            decayPercentage: bigint;
+          };
+          updateTokenData.address = d.address;
+          updateTokenData.decayPercentage = d.decayPercentage;
+          break;
+        }
+
+        case 'setTokenDecayInterval': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            decayInterval: bigint;
+          };
+          updateTokenData.address = d.address;
+          updateTokenData.decayInterval = d.decayInterval;
+          break;
+        }
+
+        case 'setTokenUseTransferWhitelist': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            useTransferWhitelist: boolean;
+          };
+          updateTokenData.address = d.address;
+          updateTokenData.useTransferWhitelist = d.useTransferWhitelist;
+          break;
+        }
+
+        case 'setTokenUseReceiveWhitelist': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            useReceiveWhitelist: boolean;
+          };
+          updateTokenData.address = d.address;
+          updateTokenData.useReceiveWhitelist = d.useReceiveWhitelist;
+          break;
+        }
+
+        case 'setTokenArchived': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            archiveToken: boolean;
+          };
+          updateTokenData.address = d.address;
+          updateTokenData.archiveToken = d.archiveToken;
+          break;
+        }
 
         case 'redeemTokens':
           redeemTokensData.amount = decoded.data.amount as bigint;
@@ -522,6 +666,7 @@ export const useProposalDetailsWeb3Rpc = ({
       membershipExitData,
       transparencySettingsData,
       tokenBackingVaultData,
+      updateTokenData,
       redeemTokensData,
       spaceTokenPurchaseData,
     };

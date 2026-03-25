@@ -8,6 +8,7 @@ import {
   people,
   Person as DbPerson,
   Space as DbSpace,
+  tokenUpdates,
 } from '@hypha-platform/storage-postgres';
 
 import { DocumentState } from '../types';
@@ -417,4 +418,28 @@ export const findAllDocumentsBySpaceSlugWithoutPagination = async (
       result.spaceCreator ?? undefined,
     ),
   );
+};
+
+export const findTokenUpdateByDocumentId = async (
+  documentId: number,
+  { db }: DbConfig,
+) => {
+  const [tokenUpdate] = await db
+    .select()
+    .from(tokenUpdates)
+    .where(eq(tokenUpdates.documentId, documentId))
+    .limit(1);
+  return tokenUpdate || null;
+};
+
+export const findTokenUpdateByAddress = async (
+  tokenAddress: string,
+  { db }: DbConfig,
+) => {
+  const [tokenUpdate] = await db
+    .select()
+    .from(tokenUpdates)
+    .where(eq(tokenUpdates.tokenAddress, tokenAddress))
+    .limit(1);
+  return tokenUpdate || null;
 };

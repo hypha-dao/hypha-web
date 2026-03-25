@@ -1,12 +1,10 @@
 'use client';
 
 import useSWRMutation from 'swr/mutation';
-import useSWR from 'swr';
-import { useCallback, useMemo, useReducer, useState } from 'react';
+import { useCallback, useMemo, useReducer, useState, useRef } from 'react';
 import { z } from 'zod';
 import { produce } from 'immer';
 
-import { useIssueTokenMutationsWeb3Rpc } from './useIssueNewTokenMutations.web3.rsc';
 import { useAgreementFileUploads } from './useAgreementFileUploads';
 import { useTokenFileUploads } from './useTokenFileUploads';
 import { useAgreementMutationsWeb2Rsc } from './useAgreementMutations.web2.rsc';
@@ -16,17 +14,21 @@ import {
 } from '../../validation';
 import { useTokenMutationsWeb2Rsc } from './useTokenMutationWeb2.rsc';
 import { Config } from '@wagmi/core';
-import { updateTokenAction } from '../../server/actions';
 import { ReferenceCurrency } from '../../types';
-import { getPriceCurrencyFeed } from '../../../common/web3/token-backing-vault';
-import { TokenType } from '../../../common';
+import { getPriceCurrencyFeed, TokenType } from '../../../common';
+import {
+  UpdateIssuedTokenInput,
+  useUpdateIssuedTokenMutationsWeb3Rpc,
+} from './useUpdateIssuedTokenMutations.web3.rpc';
+import useSWR from 'swr';
+import { TokenUpdateData } from '../../types';
 
 type TaskName =
   | 'CREATE_WEB2_AGREEMENT'
   | 'CREATE_WEB3_AGREEMENT'
   | 'UPLOAD_FILES'
   | 'UPLOAD_TOKEN_ICON'
-  | 'CREATE_TOKEN'
+  | 'UPDATE_TOKEN'
   | 'LINK_WEB2_AND_WEB3_AGREEMENT';
 
 type TaskState = {
@@ -48,7 +50,7 @@ const taskActionDescriptions: Record<TaskName, string> = {
   CREATE_WEB3_AGREEMENT: 'Creating Web3 Agreement...',
   UPLOAD_FILES: 'Uploading files...',
   UPLOAD_TOKEN_ICON: 'Uploading token icon...',
-  CREATE_TOKEN: 'Creating token...',
+  UPDATE_TOKEN: 'Updating token...',
   LINK_WEB2_AND_WEB3_AGREEMENT: 'Linking Web2 and Web3 agreements...',
 };
 
@@ -57,7 +59,7 @@ const initialTaskState: TaskState = {
   CREATE_WEB3_AGREEMENT: { status: TaskStatus.IDLE },
   UPLOAD_FILES: { status: TaskStatus.IDLE },
   UPLOAD_TOKEN_ICON: { status: TaskStatus.IDLE },
-  CREATE_TOKEN: { status: TaskStatus.IDLE },
+  UPDATE_TOKEN: { status: TaskStatus.IDLE },
   LINK_WEB2_AND_WEB3_AGREEMENT: { status: TaskStatus.IDLE },
 };
 
@@ -97,15 +99,15 @@ const computeProgress = (tasks: TaskState): number => {
   return Math.round(((done + pending * 0.5) / all.length) * 100);
 };
 
-type CreateIssueTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
+type UpdateIssuedTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
+  tokenAddress?: string;
   agreementId?: number;
-  spaceId: number;
   name: string;
   symbol: string;
-  maxSupply: number;
+  maxSupply?: number;
   type: TokenType;
   iconUrl?: string | File;
-  transferable: boolean;
+  transferable?: boolean;
   isVotingToken: boolean;
   decaySettings: {
     decayInterval: number;
@@ -114,7 +116,6 @@ type CreateIssueTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
   web3SpaceId: number;
   referencePrice?: number;
   referenceCurrency?: ReferenceCurrency;
-  maxSupplyType?: { label: string; value: 'immutable' | 'updatable' };
   enableProposalAutoMinting?: boolean;
   enableAdvancedTransferControls?: boolean;
   transferWhitelist?: {
@@ -129,9 +130,10 @@ type CreateIssueTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
       includeSpaceMembers?: boolean;
     }>;
   };
+  archiveToken?: boolean;
 };
 
-export const useCreateIssueTokenOrchestrator = ({
+export const useUpdateIssuedTokenOrchestrator = ({
   authToken,
   config,
 }: {
@@ -140,7 +142,7 @@ export const useCreateIssueTokenOrchestrator = ({
 }) => {
   const web2 = useAgreementMutationsWeb2Rsc(authToken);
   const web2TokenMutations = useTokenMutationsWeb2Rsc(authToken);
-  const web3 = useIssueTokenMutationsWeb3Rpc({
+  const web3 = useUpdateIssuedTokenMutationsWeb3Rpc({
     proposalSlug: web2.createdAgreement?.slug,
   });
   const agreementFiles = useAgreementFileUploads(
@@ -193,9 +195,12 @@ export const useCreateIssueTokenOrchestrator = ({
     dispatch({ type: 'RESET' });
   }, []);
 
-  const { trigger: createIssueToken } = useSWRMutation(
-    'createIssueTokenOrchestration',
-    async (_: string, { arg }: { arg: CreateIssueTokenArg }) => {
+  const { trigger: updateIssuedToken } = useSWRMutation(
+    'updateIssuedTokenOrchestration',
+    async (_: string, { arg }: { arg: UpdateIssuedTokenArg }) => {
+      if (!arg.tokenAddress || !arg.web3SpaceId) {
+        throw new Error('Either tokenAddress and web3SpaceId must be provided');
+      }
       startTask('CREATE_WEB2_AGREEMENT');
       const inputWeb2 = schemaCreateAgreementWeb2.parse(arg);
       const createdAgreement = await web2.createAgreement(inputWeb2);
@@ -211,84 +216,82 @@ export const useCreateIssueTokenOrchestrator = ({
         console.log('iconUrl after upload:', iconUrl);
         completeTask('UPLOAD_TOKEN_ICON');
       } else {
+        startTask('UPLOAD_TOKEN_ICON');
         iconUrl = arg.iconUrl;
+        completeTask('UPLOAD_TOKEN_ICON');
       }
 
-      startTask('CREATE_TOKEN');
-      const createdToken = await web2TokenMutations.createToken({
-        ...arg,
-        agreementId: createdAgreement.id,
+      startTask('UPDATE_TOKEN');
+      // Save token update data to DB for deferred update after proposal execution
+      if (!createdAgreement?.id) {
+        throw new Error('Created agreement missing ID');
+      }
+      const tokenUpdateData: TokenUpdateData = {
+        name: arg.name,
+        symbol: arg.symbol,
+        maxSupply: arg.maxSupply,
+        type: arg.type,
         iconUrl,
+        transferable: arg.transferable,
+        isVotingToken: arg.isVotingToken,
+        decayInterval: arg.decaySettings?.decayInterval,
+        decayPercentage: arg.decaySettings?.decayPercentage,
         referencePrice: arg.referencePrice,
         referenceCurrency: arg.referenceCurrency,
+        archiveToken: arg.archiveToken,
+      };
+      await web2TokenMutations.createTokenUpdate({
+        documentId: createdAgreement.id,
+        tokenAddress: arg.tokenAddress!,
+        data: tokenUpdateData,
       });
-      completeTask('CREATE_TOKEN');
+      completeTask('UPDATE_TOKEN');
 
       try {
         if (config) {
           startTask('CREATE_WEB3_AGREEMENT');
-
-          const fixedMaxSupply =
-            arg.maxSupplyType?.value === 'immutable' ? true : false;
-          const autoMinting = arg.enableProposalAutoMinting ?? true;
-          const tokenPrice = arg.referencePrice
-            ? Math.round(arg.referencePrice * 1_000_000)
-            : 0;
-          const priceCurrencyFeed = getPriceCurrencyFeed(arg.referenceCurrency);
-          const useTransferWhitelist =
-            arg.enableAdvancedTransferControls &&
-            arg.transferWhitelist?.from &&
-            arg.transferWhitelist.from.length > 0
+          const autoMinting = arg.enableProposalAutoMinting;
+          const tokenPrice =
+            arg.referencePrice !== undefined
+              ? Math.round(arg.referencePrice * 1_000_000)
+              : undefined;
+          const priceCurrencyFeed =
+            arg.referencePrice !== undefined &&
+            arg.referenceCurrency !== undefined
+              ? getPriceCurrencyFeed(arg.referenceCurrency)
+              : undefined;
+          const useTransferWhitelist = arg.enableAdvancedTransferControls
+            ? arg.transferWhitelist?.from &&
+              arg.transferWhitelist.from.length > 0
               ? true
-              : false;
-          const useReceiveWhitelist =
-            arg.enableAdvancedTransferControls &&
-            arg.transferWhitelist?.to &&
-            arg.transferWhitelist.to.length > 0
+              : false
+            : undefined;
+          const useReceiveWhitelist = arg.enableAdvancedTransferControls
+            ? arg.transferWhitelist?.to && arg.transferWhitelist.to.length > 0
               ? true
-              : false;
+              : false
+            : undefined;
 
-          const initialTransferWhitelist: `0x${string}`[] =
-            useTransferWhitelist && arg.transferWhitelist?.from
-              ? arg.transferWhitelist.from
-                  .map((entry) => entry.address as `0x${string}`)
-                  .filter((addr) => addr && addr.startsWith('0x'))
-              : [];
-
-          const initialReceiveWhitelist: `0x${string}`[] =
-            useReceiveWhitelist && arg.transferWhitelist?.to
-              ? arg.transferWhitelist.to
-                  .map((entry) => entry.address as `0x${string}`)
-                  .filter((addr) => addr && addr.startsWith('0x'))
-              : [];
-
-          const web3Result = await web3.createIssueToken({
+          const updateData: UpdateIssuedTokenInput = {
+            address: arg.tokenAddress as `0x${string}`,
             spaceId: arg.web3SpaceId,
             name: arg.name,
             symbol: arg.symbol,
             maxSupply: arg.maxSupply,
             transferable: arg.transferable,
-            isVotingToken: arg.isVotingToken,
-            type: arg.type,
-            decayPercentage:
-              arg.type === 'voice'
-                ? arg.decaySettings.decayPercentage
-                : undefined,
-            decayInterval:
-              arg.type === 'voice'
-                ? arg.decaySettings.decayInterval
-                : undefined,
-            fixedMaxSupply,
-            autoMinting,
+            decayInterval: arg.decaySettings?.decayInterval,
+            decayPercentage: arg.decaySettings?.decayPercentage,
             tokenPrice,
             priceCurrencyFeed,
+            autoMinting,
             useTransferWhitelist,
             useReceiveWhitelist,
-            initialTransferWhitelist,
-            initialReceiveWhitelist,
-          });
+            archiveToken: arg.archiveToken,
+          };
+          const web3Result = await web3.updateIssuedToken(updateData);
           completeTask('CREATE_WEB3_AGREEMENT');
         }
+
         const files = schemaCreateAgreementFiles.parse(arg);
         if (files.attachments?.length || files.leadImage) {
           startTask('UPLOAD_FILES');
@@ -311,29 +314,22 @@ export const useCreateIssueTokenOrchestrator = ({
     web2.createdAgreement?.slug &&
       taskState.UPLOAD_FILES.status === TaskStatus.IS_DONE &&
       taskState.CREATE_WEB3_AGREEMENT.status === TaskStatus.IS_DONE &&
-      web3.createdToken?.proposalId
+      web3.updatedIssuedToken?.proposalId
       ? [
           web2.createdAgreement.slug,
-          web3.createdToken.proposalId,
+          web3.updatedIssuedToken.proposalId,
           'linkingWeb2AndWeb3',
         ]
       : null,
     async ([slug, web3ProposalId]) => {
       try {
         startTask('LINK_WEB2_AND_WEB3_AGREEMENT');
+        console.log('slug', slug);
+        console.log('web3ProposalId', web3ProposalId);
         const result = await web2.updateAgreementBySlug({
           slug,
           web3ProposalId: Number(web3ProposalId),
         });
-
-        const updatedToken = await updateTokenAction(
-          {
-            agreementId: web2.createdAgreement!.id,
-            agreementWeb3IdUpdate: Number(web3ProposalId),
-          },
-          { authToken: authToken! },
-        );
-
         completeTask('LINK_WEB2_AND_WEB3_AGREEMENT');
         return result;
       } catch (error) {
@@ -353,24 +349,32 @@ export const useCreateIssueTokenOrchestrator = ({
     () =>
       [
         web2.errorCreateAgreementMutation,
-        web3.errorCreateToken,
+        web3.errorUpdateIssuedToken,
         web3.errorWaitTokenFromTx,
+        web2TokenMutations.errorUpdateTokenMutation,
+        web2TokenMutations.errorCreateTokenUpdateMutation,
+        web2TokenMutations.errorApplyTokenUpdateMutation,
+        web2TokenMutations.errorDeleteTokenUpdateMutation,
       ].filter(Boolean),
-    [web2, web3],
+    [web2, web3, web2TokenMutations],
   );
 
   const reset = useCallback(() => {
     resetTasks();
     web2.resetCreateAgreementMutation();
-    web3.resetCreateIssueToken();
-  }, [resetTasks, web2, web3]);
+    web3.resetUpdateIssuedToken();
+    web2TokenMutations.resetUpdateTokenMutation();
+    web2TokenMutations.resetCreateTokenUpdateMutation();
+    web2TokenMutations.resetApplyTokenUpdateMutation();
+    web2TokenMutations.resetDeleteTokenUpdateMutation();
+  }, [resetTasks, web2, web3, web2TokenMutations]);
 
   return {
     reset,
-    createIssueToken,
+    updateIssuedToken,
     agreement: {
       ...web2.createdAgreement,
-      ...web3.createdToken,
+      ...web3.updatedIssuedToken,
       ...updatedWeb2Agreement,
     },
     taskState,

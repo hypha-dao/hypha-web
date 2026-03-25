@@ -32,7 +32,9 @@
     "errorLoadOverviewTab": "Oops, something went wrong. Couldn't load overview tab.",
     "errorLoadMembersTab": "Oops, something went wrong. Couldn't load members tab.",
     "errorLoadAgreementsTab": "Oops, something went wrong. Couldn't load agreements tab.",
-    "errorLoadTreasuryTab": "Oops, something went wrong. Couldn't load treasury tab."
+    "errorLoadTreasuryTab": "Oops, something went wrong. Couldn't load treasury tab.",
+    "publish": "Publish",
+    "invalidTransactions": "Invalid transactions"
   },
   "Navigation": {
     "network": "Network",
@@ -152,6 +154,10 @@
       "issueNewToken": {
         "title": "Issue New Token",
         "description": "Create a new token for utility, ownership, impact, cash credits, voice, or community currency within your space."
+      },
+      "updateIssuedToken": {
+        "title": "Update Issued Token",
+        "description": "Update advanced token settings, including the token name, symbol and icon, total supply, auto-minting options, transfer controls, voice decay parameters, and the token value displayed in the treasury."
       },
       "mintTokensToSpaceTreasury": {
         "title": "Mint Tokens to Space Treasury",
@@ -364,7 +370,10 @@
         "from": "From {name}",
         "to": "To {name}"
       }
-    }
+    },
+    "tokenSupply": "Token Supply",
+    "issuanceToDate": "Issuance to Date",
+    "unlimitedSupply": "Unlimited Supply"
   },
   "Footer": {
     "network": "NETWORK",
@@ -1542,7 +1551,17 @@
           "completedMessage": "Decision recorded: Proposal rejected due to insufficient participation and lack of alignment."
         }
       }
-    }
+    },
+    "archiveToken": "Archive Token",
+    "archiveTokenDescription": "Archiving a token will disable its use in new proposals and transfers.",
+    "clickHere": "click here",
+    "noTokenCreated": "Your space has not yet created a token, {clickHere} to first issue a token.",
+    "tokenShouldBeChosen": "Token should be chosen",
+    "maxSupplyValidation": "Enter a maximum supply greater than 0, or disable limited supply if you want unlimited supply.",
+    "selectReferenceCurrency": "Please select a reference currency",
+    "tokenPriceGreaterThanZero": "Please enter a token price greater than 0",
+    "updateTokenLabel": "Update Token",
+    "spaceInformationMissing": "Space information is missing. Please try again."
   },
   "AiPanel": {
     "title": "Hypha AI",

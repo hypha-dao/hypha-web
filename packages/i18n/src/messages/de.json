@@ -32,7 +32,9 @@
     "errorLoadOverviewTab": "Ups, etwas ist schiefgelaufen. Der Überblick-Tab konnte nicht geladen werden.",
     "errorLoadMembersTab": "Ups, etwas ist schiefgelaufen. Der Mitglieder-Tab konnte nicht geladen werden.",
     "errorLoadAgreementsTab": "Ups, etwas ist schiefgelaufen. Der Vereinbarungen-Tab konnte nicht geladen werden.",
-    "errorLoadTreasuryTab": "Ups, etwas ist schiefgelaufen. Der Treasury-Tab konnte nicht geladen werden."
+    "errorLoadTreasuryTab": "Ups, etwas ist schiefgelaufen. Der Treasury-Tab konnte nicht geladen werden.",
+    "publish": "Veröffentlichen",
+    "invalidTransactions": "Ungültige Transaktionen"
   },
   "Navigation": {
     "network": "Netzwerk",
@@ -152,6 +154,10 @@
       "issueNewToken": {
         "title": "Neuen Token ausgeben",
         "description": "Erstellen Sie einen neuen Token für Nutzbarkeit, Eigentum, Wirkung, Gutschriften, Stimme oder Gemeinschaftswährung innerhalb Ihres Spaces."
+      },
+      "updateIssuedToken": {
+        "title": "Ausgegebenen Token aktualisieren",
+        "description": "Erweiterte Token-Einstellungen aktualisieren, einschließlich Token-Name, Symbol und Icon, Gesamtangebot, Auto-Minting-Optionen, Transferkontrollen, Voice-Decay-Parameter und im Treasury angezeigtem Token-Wert."
       },
       "mintTokensToSpaceTreasury": {
         "title": "Tokens in die Space-Schatzkammer prägen",
@@ -364,7 +370,10 @@
         "from": "Von {name}",
         "to": "An {name}"
       }
-    }
+    },
+    "tokenSupply": "Token-Angebot",
+    "issuanceToDate": "Ausgabe bis heute",
+    "unlimitedSupply": "Unbegrenztes Angebot"
   },
   "Footer": {
     "network": "NETZWERK",
@@ -1542,7 +1551,17 @@
           "completedMessage": "Entscheidung protokolliert: Vorschlag aufgrund unzureichender Beteiligung und mangelnder Abstimmung abgelehnt."
         }
       }
-    }
+    },
+    "archiveToken": "Token archivieren",
+    "archiveTokenDescription": "Das Archivieren eines Tokens deaktiviert seine Verwendung in neuen Vorschlägen und Transfers.",
+    "clickHere": "hier klicken",
+    "noTokenCreated": "Ihr Space hat noch keinen Token erstellt, {clickHere}, um zuerst einen Token auszugeben.",
+    "tokenShouldBeChosen": "Token sollte ausgewählt werden",
+    "maxSupplyValidation": "Geben Sie eine maximale Angebotsmenge größer als 0 ein oder deaktivieren Sie das begrenzte Angebot, wenn Sie unbegrenztes Angebot wünschen.",
+    "selectReferenceCurrency": "Bitte wählen Sie eine Referenzwährung",
+    "tokenPriceGreaterThanZero": "Bitte geben Sie einen Token-Preis größer als 0 ein",
+    "updateTokenLabel": "Token aktualisieren",
+    "spaceInformationMissing": "Space-Informationen fehlen. Bitte versuchen Sie es erneut."
   },
   "AiPanel": {
     "title": "Hypha AI",

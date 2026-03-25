@@ -295,6 +295,13 @@
       "when": 1774721384942,
       "tag": "0041_striped_ted_forrester",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1774722000000,
+      "tag": "0042_token_updates_archived",
+      "breakpoints": true
     }
   ]
 }
