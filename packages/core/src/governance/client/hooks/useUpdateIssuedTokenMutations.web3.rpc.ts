@@ -176,6 +176,21 @@ export function buildUpdateIssuedTokenTxData(
   return txData;
 }
 
+/**
+ * `createProposal` reverts when the transaction list is empty. If the partial
+ * update encodes no calls, include `setTokenName` with the current name (no
+ * on-chain state change when it already matches).
+ */
+export function padUpdateIssuedTokenInputIfNoTxs(
+  arg: UpdateIssuedTokenInput,
+  currentName: string,
+): UpdateIssuedTokenInput {
+  if (buildUpdateIssuedTokenTxData(arg).length > 0) {
+    return arg;
+  }
+  return { ...arg, name: currentName };
+}
+
 export const useUpdateIssuedTokenMutationsWeb3Rpc = ({
   proposalSlug,
 }: {

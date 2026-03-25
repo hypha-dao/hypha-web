@@ -37,6 +37,19 @@ function collectChangedTopLevelKeys(
   }, []);
 }
 
+/** Compare current icon to baseline; RHF often marks `iconUrl` dirty after hydration. */
+function iconUrlEffectivelyUnchanged(
+  iconUrl: unknown,
+  initialIconUrl: string | undefined,
+): boolean {
+  if (iconUrl instanceof File) {
+    return false;
+  }
+  const cur = typeof iconUrl === 'string' ? iconUrl : '';
+  const base = initialIconUrl ?? '';
+  return cur === base;
+}
+
 interface UpdateIssuedTokenFormProps {
   spaceId: number | undefined | null;
   web3SpaceId: number | undefined | null;
@@ -67,6 +80,8 @@ export const UpdateIssuedTokenForm = ({
           message: tProposalDetails('tokenShouldBeChosen'),
         }),
         archiveToken: z.boolean().optional(),
+        /** DB/chain icon URL when the token was loaded; not submitted to APIs */
+        initialIconUrl: z.string().optional(),
       }),
     );
 
@@ -142,7 +157,8 @@ export const UpdateIssuedTokenForm = ({
       creatorId: person?.id,
       name: '',
       symbol: '',
-      iconUrl: undefined,
+      iconUrl: '',
+      initialIconUrl: '',
       type: undefined,
       maxSupply: 0,
       decaySettings: {
@@ -202,17 +218,29 @@ export const UpdateIssuedTokenForm = ({
       return;
     }
 
+    const { initialIconUrl, ...submitData } = data;
+    let changedTopLevelKeys = collectChangedTopLevelKeys(dirtyFields);
+    if (
+      !(submitData.iconUrl instanceof File) &&
+      iconUrlEffectivelyUnchanged(submitData.iconUrl, initialIconUrl) &&
+      changedTopLevelKeys.includes('iconUrl')
+    ) {
+      changedTopLevelKeys = changedTopLevelKeys.filter((k) => k !== 'iconUrl');
+    }
+
     await updateIssuedToken({
-      ...data,
-      changedTopLevelKeys: collectChangedTopLevelKeys(dirtyFields),
+      ...submitData,
+      changedTopLevelKeys,
       label: 'Update Token',
       spaceId,
       web3SpaceId,
-      transferable: data.transferable ?? data.type !== 'voice',
-      isVotingToken: data.type === 'voice',
-      referencePrice: data.enableTokenPrice ? data.tokenPrice : undefined,
-      referenceCurrency: data.enableTokenPrice
-        ? data.referenceCurrency
+      transferable: submitData.transferable ?? submitData.type !== 'voice',
+      isVotingToken: submitData.type === 'voice',
+      referencePrice: submitData.enableTokenPrice
+        ? submitData.tokenPrice
+        : undefined,
+      referenceCurrency: submitData.enableTokenPrice
+        ? submitData.referenceCurrency
         : undefined,
     });
   };
