@@ -6,7 +6,7 @@
 |------|--------|
 | GitHub issue | [hypha-web#1790](https://github.com/hypha-dao/hypha-web/issues/1790) |
 | Title (issue) | Profile menu doesn't close anymore |
-| Status | Specification draft |
+| Status | Implemented (pending QA sign-off) |
 
 **Note:** The project requirements vault at `docs/requirements/` was introduced for this work item. When the Obsidian vault workflow is adopted, migrate this file into the canonical structure and link it from the main board.
 
