@@ -108,8 +108,8 @@ Then focus does not cycle inside the menu unless that is the documented pattern 
 
 | Scenario | Expected behavior |
 |----------|-------------------|
-| Menu open, user resizes window | Menu closes or repositions per component library; must not remain a stale full-screen blocker. |
-| Menu open, route change via browser back/forward | Menu SHALL close or unmount with the shell; no orphaned overlay. |
+| Menu open, user resizes window | Expected: menu closes or repositions per component library; should not remain a stale full-screen blocker. |
+| Menu open, route change via browser back/forward | Expected: menu closes or unmounts with the shell; no orphaned overlay. |
 | Nested submenus (if any) | Closing parent closes children; Escape closes innermost first where applicable. |
 | Mobile / narrow viewport (sheet vs dropdown) | Same dismissal rules apply to the actual profile surface (sheet, drawer, or menu). |
 | Concurrent with toast or modal | Profile menu closes when focus moves to modal, or modal stacks correctly without dead zones (implementation must pick one consistent stacking model). |
