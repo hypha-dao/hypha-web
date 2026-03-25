@@ -848,6 +848,7 @@
         "general": {
           "title": "General",
           "description": "Select your token type and customize its name, symbol, and icon for clear identification.",
+          "customizeIdentityDescription": "Customize token name, symbol, and icon for clear identification.",
           "tokenTypeLabel": "Token Type",
           "tokenTypePlaceholder": "Select a token type",
           "tokenTypeOptions": {
