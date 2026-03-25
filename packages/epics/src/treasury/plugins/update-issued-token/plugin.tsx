@@ -175,10 +175,15 @@ export const UpdateIssuedTokenPlugin = ({
     hasToggledAdvancedRef.current = true;
   }, [showAdvancedSettings, clearAdvancedSettingsFields]);
 
+  const prevEnableLimitedSupplyRef = useRef(enableLimitedSupply);
   useEffect(() => {
-    if (!enableLimitedSupply) {
+    if (
+      prevEnableLimitedSupplyRef.current === true &&
+      enableLimitedSupply === false
+    ) {
       clearLimitedSupplyFields();
     }
+    prevEnableLimitedSupplyRef.current = enableLimitedSupply;
   }, [enableLimitedSupply, clearLimitedSupplyFields]);
 
   useEffect(() => {
@@ -267,7 +272,9 @@ export const UpdateIssuedTokenPlugin = ({
       setValue('symbol', selectedToken.symbol);
       setValue('iconUrl', selectedToken.iconUrl || '');
       setValue('type', selectedToken.type);
-      setValue('maxSupply', selectedToken.maxSupply);
+      const max = selectedToken.maxSupply ?? 0;
+      setValue('enableLimitedSupply', max > 0, { shouldDirty: false });
+      setValue('maxSupply', max, { shouldDirty: false });
       setValue('transferable', selectedToken.transferable);
       setValue('isVotingToken', selectedToken.isVotingToken);
       setValue('decaySettings', {
@@ -304,7 +311,9 @@ export const UpdateIssuedTokenPlugin = ({
       setValue('symbol', onChainData.symbol);
     }
     if (onChainData.maxSupply !== undefined) {
-      setValue('maxSupply', onChainData.maxSupply);
+      const max = onChainData.maxSupply;
+      setValue('enableLimitedSupply', max > 0, { shouldDirty: false });
+      setValue('maxSupply', max, { shouldDirty: false });
     }
     if (onChainData.transferable !== undefined) {
       setValue('transferable', onChainData.transferable);
