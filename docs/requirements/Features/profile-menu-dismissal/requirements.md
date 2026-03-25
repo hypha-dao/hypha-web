@@ -72,7 +72,7 @@ The profile menu in the application chrome (triggered from the signed-in user co
 
 **NFR-2** Opening and closing the profile menu SHALL not cause **layout shift** beyond what is normal for the menu surface itself (CLS regression threshold: no new sustained overlay that shifts main content unexpectedly).
 
-**NFR-3** Dismissal SHALL complete within **one animation frame** after the triggering user input where the underlying UI library applies transitions (no perceptible “stuck open” state after the library reports closed).
+**NFR-3** Dismissal SHALL complete within **≤ 200 ms** from the triggering user input to a **non-interactive closed state** on supported CI/browser targets (measure via Playwright or equivalent after the UI library reports closed), with no perceptible “stuck open” state.
 
 ---
 
