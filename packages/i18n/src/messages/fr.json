@@ -32,7 +32,9 @@
     "errorLoadOverviewTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet aperçu.",
     "errorLoadMembersTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet membres.",
     "errorLoadAgreementsTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet accords.",
-    "errorLoadTreasuryTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet trésorerie."
+    "errorLoadTreasuryTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet trésorerie.",
+    "publish": "Publier",
+    "invalidTransactions": "Transactions invalides"
   },
   "Navigation": {
     "network": "Réseau",
@@ -151,6 +153,10 @@
       "issueNewToken": {
         "title": "Émettre un nouveau token",
         "description": "Créez un nouveau token pour l'utilité, la propriété, l'impact, les crédits, la voix ou la monnaie communautaire au sein de votre espace."
+      },
+      "updateIssuedToken": {
+        "title": "Mettre à jour le token émis",
+        "description": "Mettez à jour les paramètres avancés du token, y compris le nom, le symbole et l'icône du token, l'offre totale, les options de frappe automatique, les contrôles de transfert, les paramètres de décroissance de la voix et la valeur du token affichée dans la trésorerie."
       },
       "mintTokensToSpaceTreasury": {
         "title": "Frapper des tokens pour la trésorerie de l'espace",
@@ -351,7 +357,10 @@
         "from": "De {name}",
         "to": "À {name}"
       }
-    }
+    },
+    "tokenSupply": "Offre de tokens",
+    "issuanceToDate": "Émission à ce jour",
+    "unlimitedSupply": "Offre illimitée"
   },
   "Footer": {
     "network": "RÉSEAU",
@@ -1304,6 +1313,16 @@
           "completedMessage": "Décision enregistrée : Proposition rejetée en raison d'une participation insuffisante et d'un manque d'alignement."
         }
       }
-    }
+    },
+    "archiveToken": "Archiver le token",
+    "archiveTokenDescription": "L'archivage d'un token désactivera son utilisation dans les nouvelles propositions et transferts.",
+    "clickHere": "cliquez ici",
+    "noTokenCreated": "Votre espace n'a pas encore créé de token, {clickHere} pour d'abord émettre un token.",
+    "tokenShouldBeChosen": "Le token doit être choisi",
+    "maxSupplyValidation": "Veuillez saisir une quantité d'offre maximale supérieure à 0 ou désactiver l'offre limitée si vous souhaitez une offre illimitée.",
+    "selectReferenceCurrency": "Veuillez sélectionner une devise de référence",
+    "tokenPriceGreaterThanZero": "Veuillez saisir un prix de token supérieur à 0",
+    "updateTokenLabel": "Mettre à jour le token",
+    "spaceInformationMissing": "Les informations de l'espace sont manquantes. Veuillez réessayer."
   }
 }

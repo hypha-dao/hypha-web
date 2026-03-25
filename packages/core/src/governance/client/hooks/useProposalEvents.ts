@@ -15,6 +15,10 @@ import { useProposalActions } from './useProposalActions';
 import { useTokenManagement } from './useTokenManagement';
 import { useTokenDeploymentWatcher } from './useTokenDeploymentWatcher';
 import { extractTokenAddressFromReceipt } from './extractTokenAddressFromReceipt';
+import {
+  applyTokenUpdateAction,
+  deleteTokenUpdateAction,
+} from '../../server/actions';
 
 export const useProposalEvents = ({
   documentId,
@@ -59,6 +63,15 @@ export const useProposalEvents = ({
 
         if (!isValidProposalAction(actions)) {
           await onProposalExecuted?.(transactionHash);
+          // Apply token update if exists (for update token proposals)
+          if (documentId && authToken) {
+            try {
+              await applyTokenUpdateAction(documentId, { authToken });
+            } catch (error) {
+              // Ignore if no token update record exists
+              console.log('No token update to apply', error);
+            }
+          }
           return;
         }
 
@@ -79,6 +92,14 @@ export const useProposalEvents = ({
           console.log('Error extracting token address:', receiptError);
         }
 
+        try {
+          if (documentId && authToken) {
+            await applyTokenUpdateAction(documentId, { authToken });
+          }
+        } catch (receiptError) {
+          console.log('Error applying token update:', receiptError);
+        }
+
         await onProposalExecuted?.(transactionHash);
       } catch (error) {
         console.error('Error handling proposal execution:', error);
@@ -91,6 +112,10 @@ export const useProposalEvents = ({
       extractTokenAddressFromReceipt,
       updateToken,
       proposalId,
+      documentId,
+      authToken,
+      applyTokenUpdateAction,
+      setupTokenDeployedWatcher,
     ],
   );
 
@@ -100,6 +125,15 @@ export const useProposalEvents = ({
 
       if (!isValidProposalAction(actions)) {
         await onProposalRejected?.();
+        // Delete token update if exists (for update token proposals)
+        if (documentId && authToken) {
+          try {
+            await deleteTokenUpdateAction(documentId, { authToken });
+          } catch (error) {
+            // Ignore if no token update record exists
+            console.log('No token update to delete', error);
+          }
+        }
         return;
       }
 
@@ -125,6 +159,9 @@ export const useProposalEvents = ({
     deleteToken,
     proposalId,
     tokenSymbol,
+    documentId,
+    authToken,
+    deleteTokenUpdateAction,
   ]);
 
   const handleProposalCreated = useCallback(

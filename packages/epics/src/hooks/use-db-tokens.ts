@@ -27,6 +27,7 @@ type Token = {
   address?: string;
   referenceCurrency?: string | null;
   referencePrice?: number | null;
+  archived: boolean;
 };
 
 type UseDbTokensReturn = {

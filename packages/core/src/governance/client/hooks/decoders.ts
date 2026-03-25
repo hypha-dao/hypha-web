@@ -765,6 +765,151 @@ export function decodeTransaction(tx: Tx) {
         }
       },
     },
+    {
+      abi: decayingSpaceTokenAbi,
+      handler: (decoded, tx) =>
+        decoded.functionName === 'setTokenName'
+          ? {
+              type: 'setTokenName',
+              data: {
+                address: tx.target,
+                name: decoded.args[0],
+              },
+            }
+          : null,
+    },
+    {
+      abi: decayingSpaceTokenAbi,
+      handler: (decoded, tx) =>
+        decoded.functionName === 'setTokenSymbol'
+          ? {
+              type: 'setTokenSymbol',
+              data: {
+                address: tx.target,
+                symbol: decoded.args[0],
+              },
+            }
+          : null,
+    },
+    {
+      abi: decayingSpaceTokenAbi,
+      handler: (decoded, tx) =>
+        decoded.functionName === 'setMaxSupply'
+          ? {
+              type: 'setTokenMaxSupply',
+              data: {
+                address: tx.target,
+                maxSupply: decoded.args[0],
+              },
+            }
+          : null,
+    },
+    {
+      abi: decayingSpaceTokenAbi,
+      handler: (decoded, tx) =>
+        decoded.functionName === 'setTransferable'
+          ? {
+              type: 'setTokenTransferable',
+              data: {
+                address: tx.target,
+                transferable: decoded.args[0],
+              },
+            }
+          : null,
+    },
+    {
+      abi: decayingSpaceTokenAbi,
+      handler: (decoded, tx) =>
+        decoded.functionName === 'setAutoMinting'
+          ? {
+              type: 'setTokenAutoMinting',
+              data: {
+                address: tx.target,
+                autoMinting: decoded.args[0],
+              },
+            }
+          : null,
+    },
+    {
+      abi: decayingSpaceTokenAbi,
+      handler: (decoded, tx) => {
+        return decoded.functionName === 'setPriceWithCurrency'
+          ? {
+              type: 'setTokenPriceWithCurrency',
+              data: {
+                address: tx.target,
+                tokenPrice: decoded.args[0],
+                priceCurrencyFeed: decoded.args[1],
+              },
+            }
+          : null;
+      },
+    },
+    {
+      abi: decayingSpaceTokenAbi,
+      handler: (decoded, tx) =>
+        decoded.functionName === 'setDecayPercentage'
+          ? {
+              type: 'setTokenDecayPercentage',
+              data: {
+                address: tx.target,
+                decayPercentage: decoded.args[0],
+              },
+            }
+          : null,
+    },
+    {
+      abi: decayingSpaceTokenAbi,
+      handler: (decoded, tx) =>
+        decoded.functionName === 'setDecayInterval'
+          ? {
+              type: 'setTokenDecayInterval',
+              data: {
+                address: tx.target,
+                decayInterval: decoded.args[0],
+              },
+            }
+          : null,
+    },
+    {
+      abi: decayingSpaceTokenAbi,
+      handler: (decoded, tx) =>
+        decoded.functionName === 'setUseTransferWhitelist'
+          ? {
+              type: 'setTokenUseTransferWhitelist',
+              data: {
+                address: tx.target,
+                useTransferWhitelist: decoded.args[0],
+              },
+            }
+          : null,
+    },
+    {
+      abi: decayingSpaceTokenAbi,
+      handler: (decoded, tx) =>
+        decoded.functionName === 'setUseReceiveWhitelist'
+          ? {
+              type: 'setTokenUseReceiveWhitelist',
+              data: {
+                address: tx.target,
+                useReceiveWhitelist: decoded.args[0],
+              },
+            }
+          : null,
+    },
+    {
+      abi: decayingSpaceTokenAbi,
+      handler: (decoded, tx) =>
+        decoded.functionName === 'setArchived'
+          ? {
+              type: 'setTokenArchived',
+              data: {
+                address: tx.target,
+                archiveToken: decoded.args[0],
+              },
+            }
+          : null,
+    },
   ];
 
   for (const { abi, handler } of decoders) {

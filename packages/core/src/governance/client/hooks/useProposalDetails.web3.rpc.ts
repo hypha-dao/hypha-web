@@ -199,6 +199,37 @@ export const useProposalDetailsWeb3Rpc = ({
       whitelistedAddresses?: string[];
     } = {};
 
+    const updateTokenData: {
+      address?: `0x${string}`;
+      name?: string;
+      symbol?: string;
+      maxSupply?: bigint;
+      transferable?: boolean;
+      autoMinting?: boolean;
+      priceWithCurrency?: {
+        tokenPrice: bigint;
+        priceCurrencyFeed: string;
+      };
+      decayPercentage?: bigint;
+      decayInterval?: bigint;
+      useTransferWhitelist?: boolean;
+      useReceiveWhitelist?: boolean;
+      archiveToken?: boolean;
+    } = {
+      address: undefined,
+      name: undefined,
+      symbol: undefined,
+      maxSupply: undefined,
+      transferable: undefined,
+      autoMinting: undefined,
+      priceWithCurrency: undefined,
+      decayPercentage: undefined,
+      decayInterval: undefined,
+      useTransferWhitelist: undefined,
+      useReceiveWhitelist: undefined,
+      archiveToken: undefined,
+    };
+
     (transactions as any[]).forEach((tx) => {
       const decoded = decodeTransaction(tx);
 
@@ -383,6 +414,65 @@ export const useProposalDetailsWeb3Rpc = ({
           }
           break;
         }
+        case 'setTokenName':
+          updateTokenData.address = decoded.data.address;
+          updateTokenData.name = decoded.data.name;
+          break;
+
+        case 'setTokenSymbol':
+          updateTokenData.address = decoded.data.address;
+          updateTokenData.symbol = decoded.data.symbol;
+          break;
+
+        case 'setTokenMaxSupply':
+          updateTokenData.address = decoded.data.address;
+          updateTokenData.maxSupply = decoded.data.maxSupply;
+          break;
+
+        case 'setTokenTransferable':
+          updateTokenData.address = decoded.data.address;
+          updateTokenData.transferable = decoded.data.transferable;
+          break;
+
+        case 'setTokenAutoMinting':
+          updateTokenData.address = decoded.data.address;
+          updateTokenData.autoMinting = decoded.data.autoMinting;
+          break;
+
+        case 'setTokenPriceWithCurrency':
+          updateTokenData.address = decoded.data.address;
+          updateTokenData.priceWithCurrency = {
+            tokenPrice: decoded.data.tokenPrice,
+            priceCurrencyFeed: decoded.data.priceCurrencyFeed,
+          };
+          break;
+
+        case 'setTokenDecayPercentage':
+          updateTokenData.address = decoded.data.address;
+          updateTokenData.decayPercentage = decoded.data.decayPercentage;
+          break;
+
+        case 'setTokenDecayInterval':
+          updateTokenData.address = decoded.data.address;
+          updateTokenData.decayInterval = decoded.data.decayInterval;
+          break;
+
+        case 'setTokenUseTransferWhitelist':
+          updateTokenData.address = decoded.data.address;
+          updateTokenData.useTransferWhitelist =
+            decoded.data.useTransferWhitelist;
+          break;
+
+        case 'setTokenUseReceiveWhitelist':
+          updateTokenData.address = decoded.data.address;
+          updateTokenData.useReceiveWhitelist =
+            decoded.data.useReceiveWhitelist;
+          break;
+
+        case 'setTokenArchived':
+          updateTokenData.address = decoded.data.address;
+          updateTokenData.archiveToken = decoded.data.archiveToken;
+          break;
 
         default:
           break;
@@ -415,6 +505,7 @@ export const useProposalDetailsWeb3Rpc = ({
       membershipExitData,
       transparencySettingsData,
       tokenBackingVaultData,
+      updateTokenData,
     };
   }, [data]);
 

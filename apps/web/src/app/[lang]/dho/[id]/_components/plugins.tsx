@@ -14,6 +14,7 @@ import {
   TokenBackingVaultPlugin,
   MembershipExitPlugin,
   SpaceTransparencySettingsPlugin,
+  UpdateIssuedTokenPlugin,
 } from '@hypha-platform/epics';
 import { useMembers } from '@web/hooks/use-members';
 import { Person, Space } from '@hypha-platform/core/client';
@@ -32,12 +33,14 @@ export const PLUGINS = {
   'token-backing-vault': TokenBackingVaultPlugin,
   'membership-exit': MembershipExitPlugin,
   'space-transparency-settings': SpaceTransparencySettingsPlugin,
+  'update-issued-token': UpdateIssuedTokenPlugin,
 };
 
 type PluginProps = {
   name: keyof typeof PLUGINS;
   spaceSlug?: string;
   web3SpaceId?: number | null;
+  spaceId?: number;
   spaces?: Space[];
   members?: Person[];
 };
@@ -46,6 +49,7 @@ export const Plugin = ({
   name,
   spaceSlug,
   web3SpaceId,
+  spaceId,
   spaces,
   members,
 }: PluginProps) => {
@@ -60,6 +64,7 @@ export const Plugin = ({
     <PluginCmp
       spaceSlug={spaceSlug || ''}
       web3SpaceId={web3SpaceId}
+      spaceId={spaceId}
       members={members ?? persons?.data}
       spaces={spaces ?? memberSpaces?.data}
     />
