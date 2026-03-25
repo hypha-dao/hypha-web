@@ -9,6 +9,7 @@ export const useResubmitProposalData = <
     description?: string;
     leadImage?: any;
     attachments?: any;
+    tokenAddress?: string;
   },
 >(
   form: UseFormReturn<T>,
@@ -64,9 +65,11 @@ export const useResubmitProposalData = <
             if (tf?.tokenAddress) {
               resubmitTokenAddress = tf.tokenAddress;
             }
+            sessionStorage.removeItem('resubmitUpdateIssuedTokenForm');
           }
         } catch {
           // ignore invalid token resubmit payload
+          sessionStorage.removeItem('resubmitUpdateIssuedTokenForm');
         }
 
         form.reset(

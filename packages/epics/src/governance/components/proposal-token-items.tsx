@@ -105,6 +105,7 @@ export const ProposalTokenItem = ({
 }: ProposalTokenItemProps) => {
   const tProposalDetails = useTranslations('ProposalDetails');
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const tSpaces = useTranslations('Spaces');
   const originalSupply = initialSupply ? Number(initialSupply / 10n ** 18n) : 0;
   const { id } = useParams();
   const { space } = useSpaceBySlug(id as string);
@@ -211,8 +212,14 @@ export const ProposalTokenItem = ({
       )}
       {dbToken?.archived !== undefined && (
         <div className="flex justify-between items-center">
-          <div className="text-1 text-neutral-11 w-full">Archived</div>
-          <div className="text-1">{dbToken.archived ? 'Yes' : 'No'}</div>
+          <div className="text-1 text-neutral-11 w-full">
+            {tSpaces('archived')}
+          </div>
+          <div className="text-1">
+            {dbToken.archived
+              ? tProposalDetails('labels.yes')
+              : tProposalDetails('labels.no')}
+          </div>
         </div>
       )}
       {referencePrice && (

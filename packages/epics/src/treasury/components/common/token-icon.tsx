@@ -27,6 +27,8 @@ export const TokenIconUpload = ({
   React.useEffect(() => {
     if (typeof defaultImage === 'string') {
       setPreview(defaultImage || null);
+    } else {
+      setPreview(null);
     }
   }, [defaultImage]);
 

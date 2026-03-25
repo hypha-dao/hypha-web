@@ -240,9 +240,6 @@ export const applyTokenUpdate = async (
     updateInput.iconUrl = tokenUpdateData.iconUrl;
   }
 
-  // If archiveToken is true, we need to handle archiving (maybe set a flag in tokens table?)
-  // Currently there's no archive flag, so we can ignore or implement later.
-  // For now, we just update the token with the data.
   const updatedToken = await updateToken(updateInput, { db });
 
   // Delete the token update record after applying
