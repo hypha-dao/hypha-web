@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import '../interfaces/INanoPPA.sol';
 import '../interfaces/IDistanceOracle.sol';
-import '../interfaces/IEnergyDistribution.sol';
 
 contract NanoPPAStorage is Initializable {
   // ── Agreement storage ──────────────────────────────────────────────────
@@ -29,7 +28,6 @@ contract NanoPPAStorage is Initializable {
   // ── Configuration ──────────────────────────────────────────────────────
 
   IDistanceOracle internal distanceOracle;
-  IEnergyDistribution internal energyDistribution;
   address internal defaultAggregator;
   address internal defaultStablecoin;
   address internal membershipValidator;
@@ -37,5 +35,5 @@ contract NanoPPAStorage is Initializable {
   /**
    * @dev Reserved storage gap for future upgrades.
    */
-  uint256[39] private __gap;
+  uint256[40] private __gap;
 }

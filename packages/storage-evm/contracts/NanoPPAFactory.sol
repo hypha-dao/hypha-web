@@ -7,7 +7,6 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import './storage/NanoPPAStorage.sol';
 import './interfaces/INanoPPA.sol';
 import './interfaces/IDistanceOracle.sol';
-import './interfaces/IEnergyDistribution.sol';
 
 /// @title  NanoPPAFactory
 /// @notice Creates and settles bilateral nanoPPA energy agreements on-chain.
@@ -33,14 +32,12 @@ contract NanoPPAFactory is
 
   function initialize(
     address initialOwner,
-    address _energyDistribution,
     address _distanceOracle,
     address _defaultAggregator
   ) public initializer {
     __Ownable_init(initialOwner);
     __UUPSUpgradeable_init();
 
-    energyDistribution = IEnergyDistribution(_energyDistribution);
     distanceOracle = IDistanceOracle(_distanceOracle);
     defaultAggregator = _defaultAggregator;
   }
@@ -215,15 +212,8 @@ contract NanoPPAFactory is
     a.intervalsSettled++;
     lastSettledInterval[agreementId] = data.intervalStart;
 
-    // ── 5. Record in EnergyDistribution (adjusts cash credit balances) ─
-    if (settlementAmount > 0) {
-      energyDistribution.recordBilateralSettlement(
-        a.producer,
-        a.consumer,
-        int256(settlementAmount),
-        int256(fee)
-      );
-    }
+    // NOTE: This contract is superseded by EnergyPPAImplementation which
+    // handles settlement through its integrated balance system.
 
     emit IntervalSettled(
       agreementId,
@@ -371,10 +361,6 @@ contract NanoPPAFactory is
     distanceOracle = IDistanceOracle(oracle);
   }
 
-  function setEnergyDistribution(address _energyDistribution) external onlyOwner {
-    energyDistribution = IEnergyDistribution(_energyDistribution);
-  }
-
   function updateOracleWhitelist(
     address oracle,
     bool allowed
@@ -436,7 +422,4 @@ contract NanoPPAFactory is
     return defaultAggregator;
   }
 
-  function getEnergyDistributionAddress() external view returns (address) {
-    return address(energyDistribution);
-  }
 }
