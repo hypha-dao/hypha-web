@@ -36,13 +36,15 @@ From smart meter readings to blockchain settlement: every stage, every database,
 
 | Asset | Device ID | Meter type | What it measures |
 |---|---|---|---|
-| Alice's house | 101 | Bidirectional | Import (consumption) and export (feed-in) |
-| Bob's house | 201 | Bidirectional | Import and export |
-| Carol's house | 301 | Bidirectional | Import and export |
-| Solar park | 401 | Production | Active power generation (kWh out) |
-| Battery | 501 | Bidirectional | Charge (import) and discharge (export) |
-| Grid import | 601 | Import only | Energy drawn from the utility grid |
-| Grid export | 901 | Export only | Surplus energy sold back to grid |
+| Alice's house | 101 | Import only | Energy consumed from the community bus |
+| Bob's house | 201 | Import only | Energy consumed from the community bus |
+| Carol's house | 301 | Import only | Energy consumed from the community bus |
+| Solar park | 401 | Production | Active power generation (kWh fed into the bus) |
+| Battery | 501 | Bidirectional | Charge (drawing from bus) and discharge (feeding bus) |
+| Grid import | 601 | Import only | Energy drawn from the utility grid into the bus |
+| Grid export | 901 | Export only | Surplus energy sold from the bus back to grid |
+
+The households are pure consumers in this setup — they don't have their own solar panels. All production comes from the shared solar park. The battery stores and releases community energy. The grid absorbs any mismatch.
 
 Ownership: Alice 40%, Bob 40%, Carol 20% — these basis points govern both energy allocation and revenue split.
 
@@ -1653,32 +1655,146 @@ The three-pass contract handles the accounting merit-order (who pays what, from 
 
 The backend still reads the meters, aggregates to 15-minute intervals, controls the battery, and fetches the import price. But the financially sensitive decision — "who pays LOCAL price vs. IMPORT price" — is now computed by the contract, not the backend.
 
-**The trust surface shrinks to:**
-- Meter readings are accurate (physical tamper-proofing, not a software problem)
-- `totalLocalKwh` matches what the solar/battery meters actually reported (verifiable: sum of metered production, can be cross-checked against solar meter events)
-- `importPricePerKwh` is the real grid price (solvable with a price oracle like Chainlink or a simple admin-set value)
+### The hard truth: on-chain merit-order does NOT make the system trustless
 
-**When to use which:**
+Moving the allocation algorithm into the contract is a real improvement — it guarantees the **computation** is fair and order-independent. But it does not solve the trust problem. The trust problem is at the data layer, not the logic layer.
 
-| Scenario | Recommended approach |
-|---|---|
-| Small community (< 30 members), high trust requirement | On-chain 3-pass merit-order |
-| Large community (100+ members), cost-sensitive | Off-chain EMS with EnergyPPAImplementation |
-| Regulated context requiring auditable allocation logic | On-chain 3-pass (regulator can inspect contract) |
-| Rapid iteration on allocation algorithm | Off-chain EMS (deploy new code, no proxy upgrade) |
-| Multiple energy sources at different prices (solar, wind, hydro, battery) | Off-chain EMS (more flexible pricing logic) |
+**What the contract receives and cannot verify:**
+
+```
+settleInterval(
+    consumption = [Alice: 3.0, Bob: 4.5, Carol: 1.0],   ← backend says so
+    totalLocalKwh = 7.5,                                  ← backend says so
+    localPricePerKwh = 10,                                ← admin/oracle says so
+    importPricePerKwh = 25                                ← admin/oracle says so
+)
+```
+
+Every input is supplied by a trusted party. The contract has no way to verify any of them:
+
+| Input | Who provides it | Can the contract verify it? | Attack vector |
+|---|---|---|---|
+| Alice consumed 3.0 kWh | Backend (from meter) | No | Backend inflates Alice's consumption → she pays more |
+| Bob consumed 4.5 kWh | Backend (from meter) | No | Backend deflates Bob's consumption → he pays less |
+| Total local = 7.5 kWh | Backend (from solar meter) | No | Backend claims 10 kWh local → everyone pays LOCAL price, grid import cost disappears from the books |
+| Local price = 10 | Admin or config | No (it's a parameter) | Admin sets a favorable price for insiders |
+| Import price = 25 | Oracle or admin | No (unless Chainlink) | Backend claims import price is 50 → overconsumers are overcharged |
+
+**The on-chain 3-pass algorithm guarantees:**
+- Given these inputs, the split is mathematically fair (no ordering bias)
+- Given these inputs, overconsumers pay their own import (not socialized)
+- Given these inputs, zero-sum holds
+
+**It does NOT guarantee:**
+- The inputs reflect reality
+- Alice actually consumed 3.0 kWh and not 2.5
+- The solar park actually produced 7.5 kWh and not 9.0
+- The import price is the real grid tariff
+
+**Comparison: what do you actually gain?**
+
+```
+                            Off-chain EMS        On-chain 3-pass
+                            (EnergyPPA)          (theoretical)
+                            ──────────────       ──────────────
+Meter readings trusted?     Yes (backend)        Yes (backend)      ← same
+Prices trusted?             Yes (backend)        Yes (oracle/admin) ← same
+Allocation algorithm fair?  Trust the backend    Verified on-chain  ← improved
+Allocation auditable?       Via settlement_batches  On-chain code   ← improved
+Can backend favor a member? Yes (set their price   No (contract     ← improved
+                            lower)               computes prices)
+Can backend fabricate       Yes                  Yes                ← same
+  meter readings?
+Can backend fabricate       Yes (it sets it)     Yes (it submits    ← same
+  totalLocalKwh?                                  the number)
+```
+
+The on-chain approach eliminates one specific attack: the backend choosing to give one member a cheaper price than another. In the off-chain model, the backend submits `pricePerKwh` per reading — it could charge Alice 10 and Bob 25 for the same LOCAL energy. In the on-chain model, the contract computes prices from the algorithm, so all LOCAL energy is priced the same.
+
+But the bigger attacks — fabricating meter data, lying about total production — remain possible in both approaches. The trust boundary is the physical meter and the MQTT pipeline, not the contract.
+
+### What would actually make it trustless (and why it's hard)
+
+To truly remove trust from the system, you would need the contract to verify the **inputs**, not just the computation:
+
+| Input | How to verify on-chain | Difficulty |
+|---|---|---|
+| Meter readings | Hardware-signed readings (meter has a private key, signs each reading, contract verifies signature) | High — requires smart meters with cryptographic chips (some exist: DSMR 5.0 P1 has a signing capability, but it's not standard) |
+| Total local production | Cross-check: sum of individual consumption + grid import/export = total production (energy balance equation) | Medium — the contract could verify this if it receives ALL meter readings, not just consumption |
+| Import price | Chainlink or another decentralized oracle posting grid prices | Medium — oracle infrastructure exists but adds cost and dependency |
+| Local price | Governance vote by members (on-chain DAO proposal) | Low — already feasible with existing DAO tools |
+
+**The energy balance cross-check is the most practical improvement.** If the contract receives all 5 readings (3 households + grid import + grid export) and `totalLocalKwh`, it can verify:
+
+```
+totalLocalKwh + gridImport = Alice + Bob + Carol + gridExport + batteryCharge
+
+7.5 + 1.0 = 3.0 + 4.5 + 1.0 + 0.0 + 0.0
+8.5 = 8.5  ✓
+```
+
+If the backend fabricates one number, the balance breaks and the contract reverts. This doesn't prove each individual reading is correct, but it proves they are **internally consistent**. The backend would have to fabricate multiple readings that still balance — much harder.
+
+```solidity
+function settleInterval(
+    MeterReading[] calldata consumption,
+    uint256 totalLocalKwh,
+    uint256 gridImportKwh,
+    uint256 gridExportKwh,
+    uint256 batteryChargeKwh,
+    uint256 localPricePerKwh,
+    uint256 importPricePerKwh
+) external onlyWhitelist ensureZeroSum {
+    // Energy balance check — catches fabricated readings
+    uint256 totalConsumption = 0;
+    for (uint256 i = 0; i < consumption.length; i++) {
+        totalConsumption += consumption[i].quantityKwh;
+    }
+    require(
+        totalLocalKwh + gridImportKwh == totalConsumption + gridExportKwh + batteryChargeKwh,
+        "Energy balance violated"
+    );
+
+    // ... three-pass allocation as before ...
+}
+```
+
+This gives you: **fair algorithm (on-chain) + internally consistent data (energy balance) + financial enforcement (zero-sum)**. The only remaining trust assumption is that the individual meter readings match physical reality — which is a hardware problem, not a software one.
+
+### Summary: what each approach actually buys you
+
+```
+┌─────────────────────────────┬────────────────┬────────────────┬────────────────┐
+│ Property                    │ Off-chain EMS  │ On-chain 3-pass│ 3-pass + energy│
+│                             │ (EnergyPPA)    │ (theoretical)  │ balance check  │
+├─────────────────────────────┼────────────────┼────────────────┼────────────────┤
+│ Fair allocation algorithm   │ Trust backend  │ Verified       │ Verified       │
+│ No ordering bias            │ Trust backend  │ Guaranteed     │ Guaranteed     │
+│ Overconsumer pays own import│ Trust backend  │ Guaranteed     │ Guaranteed     │
+│ Can't favor one member      │ No             │ Yes            │ Yes            │
+│ Meter data is real          │ Trust backend  │ Trust backend  │ Consistent*    │
+│ Production data is real     │ Trust backend  │ Trust backend  │ Consistent*    │
+│ Prices are real             │ Trust backend  │ Trust oracle   │ Trust oracle   │
+│ Gas cost                    │ Lowest         │ Low            │ Low            │
+│ Flexibility                 │ Highest        │ Medium         │ Medium         │
+└─────────────────────────────┴────────────────┴────────────────┴────────────────┘
+
+* "Consistent" means the numbers must balance against each other.
+  The backend can't fabricate one reading without adjusting all others to match.
+  Not the same as "verified against physical reality" — but much harder to game.
+```
 
 ### Recommendation
 
-For most communities, keep the EMS off-chain using `EnergyPPAImplementation`. The three-pass algorithm runs in the EMS backend, and the contract receives the pre-computed result. This gives flexibility, low gas cost, and easy iteration.
+For most communities, the off-chain EMS with `EnergyPPAImplementation` is sufficient. The backend is operated by the aggregator (Hypha Energy), who has a reputation and legal obligation. The `settlement_batches` audit trail and public on-chain events provide accountability.
 
-For communities where trustlessness of the allocation is a hard requirement — particularly where members don't trust the operator or where regulation demands on-chain auditability of the merit-order — implement the three-pass contract as a new variant. It is O(n), gas-efficient, order-independent, and fair. It could coexist alongside `EnergyPPAImplementation` as an alternative settlement path.
+For communities that want stronger guarantees without full trustlessness (which requires hardware-signed meters), the on-chain three-pass algorithm with energy balance check is the best practical option. It guarantees fair computation and internally consistent data — the backend can still lie, but it has to lie consistently across all readings, which is detectable by any member who reads their own meter.
 
 Either way:
-- **On-chain**: configuration + merit-order (optional) + financial settlement + zero-sum enforcement
+- **On-chain**: configuration + allocation logic (optional) + energy balance check (optional) + financial settlement + zero-sum
 - **Off-chain**: metering + aggregation + battery control + optimization + price feeds
 
-The contract parameters remain the rulebook. The blockchain events remain the public record.
+The honest answer: blockchains are good at enforcing financial rules (zero-sum, fee splits, debt settlement). They are not good at verifying physical reality. The gap between "what the meter says" and "what happened physically" is a hardware trust problem that no smart contract can solve.
 
 ---
 
