@@ -47,7 +47,7 @@ export const TokenBurningPlugin = ({
     (token: ExtendedToken) => token?.space?.slug === spaceSlug,
   );
   const selectedTokenData = filteredTokens.find(
-    (token) => token.address === selectedToken,
+    (token: ExtendedToken) => token.address === selectedToken,
   );
 
   return (
