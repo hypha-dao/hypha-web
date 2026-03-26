@@ -5,7 +5,10 @@ import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
-import { getAllSpaces, findAllPeopleWithoutPagination } from '@hypha-platform/core/server';
+import {
+  getAllSpaces,
+  findAllPeopleWithoutPagination,
+} from '@hypha-platform/core/server';
 import { Person, Space } from '@hypha-platform/core/client';
 import { Plugin } from '../../../../_components/plugins';
 

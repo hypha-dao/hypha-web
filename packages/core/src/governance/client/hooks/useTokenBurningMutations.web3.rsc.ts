@@ -120,7 +120,9 @@ export const useTokenBurningMutationsWeb3Rsc = ({
     isLoading: isLoadingTokenBurningFromTransaction,
     error: errorWaitTokenBurningFromTransaction,
   } = useSWR(
-    createTokenBurningHash ? [createTokenBurningHash, 'waitForTokenBurning'] : null,
+    createTokenBurningHash
+      ? [createTokenBurningHash, 'waitForTokenBurning']
+      : null,
     async ([hash]) => {
       const { logs } = await publicClient.waitForTransactionReceipt({ hash });
       return getProposalFromLogs(logs);

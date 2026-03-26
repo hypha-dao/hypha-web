@@ -174,7 +174,7 @@ export const useTokenBurningOrchestrator = ({
       try {
         if (config && typeof web3SpaceId === 'number') {
           startTask('CREATE_WEB3_AGREEMENT');
-          await web3.createTokenBurningProposal({
+          await web3.createTokenBurning({
             spaceId: web3SpaceId,
             tokenBurning: arg.tokenBurning,
           });

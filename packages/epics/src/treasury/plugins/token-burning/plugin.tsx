@@ -47,7 +47,9 @@ export const TokenBurningPlugin = ({ spaceSlug }: { spaceSlug: string }) => {
     <div className="flex flex-col gap-4">
       <Skeleton loading={isLoading} width="100%" height={90}>
         <div className="flex flex-col gap-3">
-          <FormLabel>{tAgreementFlow('plugins.tokenBurning.selectToken')}</FormLabel>
+          <FormLabel>
+            {tAgreementFlow('plugins.tokenBurning.selectToken')}
+          </FormLabel>
           <span className="text-2 text-neutral-11">
             {tAgreementFlow('plugins.tokenBurning.selectTokenDescription')}
           </span>
@@ -75,7 +77,9 @@ export const TokenBurningPlugin = ({ spaceSlug }: { spaceSlug: string }) => {
                       <SelectValue
                         placeholder={
                           filteredTokens.length === 0
-                            ? tAgreementFlow('plugins.tokenBurning.noTokenFound')
+                            ? tAgreementFlow(
+                                'plugins.tokenBurning.noTokenFound',
+                              )
                             : tAgreementFlow(
                                 'plugins.tokenBurning.selectTokenPlaceholder',
                               )
@@ -115,7 +119,9 @@ export const TokenBurningPlugin = ({ spaceSlug }: { spaceSlug: string }) => {
       {selectedToken && (
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <FormLabel>{tAgreementFlow('plugins.tokenBurning.tokenBurn')}</FormLabel>
+            <FormLabel>
+              {tAgreementFlow('plugins.tokenBurning.tokenBurn')}
+            </FormLabel>
             <span className="text-2 text-neutral-11">
               {tAgreementFlow('plugins.tokenBurning.tokenBurnDescription')}
             </span>

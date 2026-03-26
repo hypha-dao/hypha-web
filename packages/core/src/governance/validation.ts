@@ -355,7 +355,9 @@ export const schemaTokenBurning = z.object({
     token: z
       .string({ message: 'Choose a token to burn' })
       .min(1, 'Choose a token to burn')
-      .refine((value) => isAddress(value), { message: 'Invalid token address' }),
+      .refine((value) => isAddress(value), {
+        message: 'Invalid token address',
+      }),
     burns: z
       .array(schemaTokenBurningTarget)
       .min(1, 'At least one burn target is required'),

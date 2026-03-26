@@ -145,11 +145,17 @@ export const TokenBurnTargetsFieldArray = ({
                 options={currentOptions}
                 placeholder={
                   currentType === 'member'
-                    ? tAgreementFlow('plugins.tokenBurning.selectMemberPlaceholder')
-                    : tAgreementFlow('plugins.tokenBurning.selectSpacePlaceholder')
+                    ? tAgreementFlow(
+                        'plugins.tokenBurning.selectMemberPlaceholder',
+                      )
+                    : tAgreementFlow(
+                        'plugins.tokenBurning.selectSpacePlaceholder',
+                      )
                 }
                 initialValue={entry.address}
-                onChange={(value) => setValue(`${name}.${index}.address`, value)}
+                onChange={(value) =>
+                  setValue(`${name}.${index}.address`, value)
+                }
                 emptyListMessage={
                   currentType === 'member'
                     ? tAgreementFlow('plugins.tokenBurning.noMembersFound')
@@ -194,9 +200,13 @@ export const TokenBurnTargetsFieldArray = ({
                       </span>
                     </div>
                   ) : currentType === 'member' ? (
-                    tAgreementFlow('plugins.tokenBurning.selectMemberPlaceholder')
+                    tAgreementFlow(
+                      'plugins.tokenBurning.selectMemberPlaceholder',
+                    )
                   ) : (
-                    tAgreementFlow('plugins.tokenBurning.selectSpacePlaceholder')
+                    tAgreementFlow(
+                      'plugins.tokenBurning.selectSpacePlaceholder',
+                    )
                   )
                 }
               />
@@ -219,7 +229,9 @@ export const TokenBurnTargetsFieldArray = ({
                   />
                   {selectedOption ? (
                     <span className="text-1 text-neutral-10">
-                      {tAgreementFlow('plugins.tokenBurning.addressAutofillHint')}
+                      {tAgreementFlow(
+                        'plugins.tokenBurning.addressAutofillHint',
+                      )}
                     </span>
                   ) : null}
                   <FormMessage />
