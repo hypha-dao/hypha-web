@@ -176,7 +176,13 @@ export const useTokenBurningOrchestrator = ({
           startTask('CREATE_WEB3_AGREEMENT');
           await web3.createTokenBurning({
             spaceId: web3SpaceId,
-            tokenBurning: arg.tokenBurning,
+            tokenBurning: {
+              token: arg.tokenBurning.token as `0x${string}`,
+              burns: arg.tokenBurning.burns.map((burn) => ({
+                ...burn,
+                address: burn.address as `0x${string}`,
+              })),
+            },
           });
           completeTask('CREATE_WEB3_AGREEMENT');
         }
