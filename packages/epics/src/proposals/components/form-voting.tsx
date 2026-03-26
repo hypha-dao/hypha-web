@@ -149,8 +149,8 @@ export const FormVoting = ({
 
   const isCreator = Boolean(
     proposalCreator &&
-    person?.address &&
-    proposalCreator.toLowerCase() === person.address.toLowerCase(),
+      person?.address &&
+      proposalCreator.toLowerCase() === person.address.toLowerCase(),
   );
 
   const showWithdrawBlock =
@@ -242,8 +242,8 @@ export const FormVoting = ({
   const tooltipMessage = !isAuthenticated
     ? tCommon('signIn')
     : !isMember && !isDelegate
-      ? tCommon('joinSpaceToUse')
-      : '';
+    ? tCommon('joinSpaceToUse')
+    : '';
 
   function getVoteLabels(spaceDetails?: SpaceDetails) {
     if (!spaceDetails) {
