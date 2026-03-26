@@ -15,6 +15,7 @@ import {
   RequirementMark,
   Skeleton,
 } from '@hypha-platform/ui';
+import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { ChevronDownIcon } from '@radix-ui/themes';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { Person, Space } from '@hypha-platform/core/client';
@@ -25,6 +26,8 @@ import { useParams } from 'next/navigation';
 import { TokenBurnTargetsFieldArray } from './token-burn-targets-field-array';
 import { getTokenTypeLabel } from '../../components/common/token-type-field';
 import { useEffect } from 'react';
+import { useTokenSupply } from '../../hooks';
+import { useDbTokens } from '../../../hooks';
 
 export const TokenBurningPlugin = ({
   spaceSlug,
@@ -39,6 +42,7 @@ export const TokenBurningPlugin = ({
   const { lang } = useParams();
   const { control, setValue } = useFormContext();
   const { tokens, isLoading } = useTokens({ spaceSlug });
+  const { tokens: dbTokens } = useDbTokens();
   const selectedToken = useWatch({
     control,
     name: 'tokenBurning.token',
@@ -49,6 +53,14 @@ export const TokenBurningPlugin = ({
   );
   const selectedTokenData = filteredTokens.find(
     (token: ExtendedToken) => token.address === selectedToken,
+  );
+  const selectedDbToken = dbTokens
+    .filter((token) => token.address)
+    .find(
+      (token) => token.address?.toLowerCase() === selectedToken?.toLowerCase(),
+    );
+  const { supply, isLoading: isLoadingSupply } = useTokenSupply(
+    selectedDbToken?.address as `0x${string}`,
   );
   const isSelectedTokenValid = Boolean(selectedTokenData);
 
@@ -209,6 +221,32 @@ export const TokenBurningPlugin = ({
 
       {isSelectedTokenValid && (
         <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4">
+            <div className="flex justify-between items-center">
+              <span className="text-2 text-neutral-11 w-full">
+                {tAgreementFlow('plugins.tokenBurning.tokenSupply')}
+              </span>
+              {selectedDbToken?.maxSupply === 0 ? (
+                <span className="text-2 text-neutral-11 text-nowrap">
+                  {tAgreementFlow('plugins.tokenBurning.unlimitedSupply')}
+                </span>
+              ) : (
+                <span className="text-2 text-neutral-11">
+                  {formatCurrencyValue(Number(selectedDbToken?.maxSupply ?? 0))}
+                </span>
+              )}
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-2 text-neutral-11 w-full">
+                {tAgreementFlow('plugins.tokenBurning.issuanceToDate')}
+              </span>
+              <Skeleton width={120} height={32} loading={isLoadingSupply}>
+                <span className="text-2 text-neutral-11">
+                  {formatCurrencyValue(Number(supply ?? 0))}
+                </span>
+              </Skeleton>
+            </div>
+          </div>
           <div className="flex flex-col gap-2">
             <FormLabel>
               {tAgreementFlow('plugins.tokenBurning.tokenBurn')}
