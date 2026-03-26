@@ -15,7 +15,7 @@ import { ConnectedButtonProfile } from '@hypha-platform/epics';
 import { EvmProvider } from '@hypha-platform/evm';
 import { useMe } from '@hypha-platform/core/client';
 import { fileRouter } from '@hypha-platform/core/server';
-import { MenuTop } from '@hypha-platform/ui';
+import { ButtonNavItem, MenuTop } from '@hypha-platform/ui';
 import { ROOT_URL } from './constants';
 import { NotificationSubscriber } from '@hypha-platform/notifications/client';
 
@@ -121,23 +121,21 @@ export default async function RootLayout({
                   openMenuLabel={tNav('openMenu')}
                   closeMenuLabel={tNav('closeMenu')}
                 >
+                  <ButtonNavItem
+                    label={tNav('network')}
+                    href={`/${locale}/network`}
+                  />
+                  <ButtonNavItem
+                    label={tNav('mySpaces')}
+                    href={`/${locale}/my-spaces`}
+                  />
+                  {isLanguageSelectVisible && <ConnectedLanguageSelect />}
                   <ConnectedButtonProfile
                     useAuthentication={useAuthentication}
                     useMe={useMe}
                     newUserRedirectPath="/profile/signup"
                     baseRedirectPath="/my-spaces"
-                    navItems={[
-                      {
-                        label: tNav('network'),
-                        href: `/${locale}/network`,
-                      },
-                      {
-                        label: tNav('mySpaces'),
-                        href: `/${locale}/my-spaces`,
-                      },
-                    ]}
                   />
-                  {isLanguageSelectVisible && <ConnectedLanguageSelect />}
                 </MenuTop>
                 <NextSSRPlugin routerConfig={extractRouterConfig(fileRouter)} />
                 <div className="mb-auto pb-8">

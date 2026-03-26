@@ -5,7 +5,6 @@ import { useRouter, useParams, usePathname } from 'next/navigation';
 import { UseAuthentication } from '@hypha-platform/authentication';
 import { UseMe } from '../hooks/types';
 import { useEffect, useMemo } from 'react';
-import { ButtonNavItemProps } from '@hypha-platform/ui';
 import { useTheme } from 'next-themes';
 import { getActiveTabFromPath } from '../../common';
 
@@ -14,7 +13,6 @@ type ConnectedButtonProfileProps = {
   useMe: UseMe;
   newUserRedirectPath: string;
   baseRedirectPath: string;
-  navItems: ButtonNavItemProps[];
 };
 
 type ErrorUser = {
@@ -30,7 +28,6 @@ export const ConnectedButtonProfile = ({
   useMe,
   newUserRedirectPath,
   baseRedirectPath,
-  navItems,
 }: ConnectedButtonProfileProps) => {
   const {
     isAuthenticated,
@@ -123,7 +120,6 @@ export const ConnectedButtonProfile = ({
           : newUserRedirectPath
       }
       notificationCentrePath={notificationCentrePath}
-      navItems={navItems}
     />
   );
 };
