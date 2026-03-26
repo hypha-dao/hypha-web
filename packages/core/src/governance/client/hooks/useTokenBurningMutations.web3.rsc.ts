@@ -45,7 +45,14 @@ const toTokenAmount = (amount: string) => {
     throw new Error('Amount must be greater than 0');
   }
 
-  const [integerPartRaw, fractionPartRaw = ''] = normalizedAmount.split('.');
+  const parts = normalizedAmount.split('.');
+  const integerPartRaw = parts[0] ?? '';
+  const fractionPartRaw = parts[1] ?? '';
+
+  if (fractionPartRaw.length > TOKEN_DECIMALS) {
+    throw new Error(`Amount supports up to ${TOKEN_DECIMALS} decimal places`);
+  }
+
   const integerPart = integerPartRaw.replace(/^0+/, '') || '0';
   const fractionPart = fractionPartRaw.slice(0, TOKEN_DECIMALS);
   const paddedFractionPart = fractionPart.padEnd(TOKEN_DECIMALS, '0');
