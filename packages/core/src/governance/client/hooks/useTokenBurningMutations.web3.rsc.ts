@@ -32,7 +32,7 @@ interface CreateTokenBurningInput {
   };
 }
 
-const chainId = 8453;
+const DEFAULT_CHAIN_ID = 8453 as keyof typeof daoProposalsImplementationAddress;
 const TOKEN_DECIMALS = 18;
 
 const toTokenAmount = (amount: string) => {
@@ -42,7 +42,7 @@ const toTokenAmount = (amount: string) => {
   }
 
   if (!/^\d+(\.\d+)?$/.test(normalizedAmount)) {
-    throw new Error('Amount must be greater than 0');
+    throw new Error('Invalid amount format');
   }
 
   const parts = normalizedAmount.split('.');
@@ -70,8 +70,10 @@ const toTokenAmount = (amount: string) => {
 
 export const useTokenBurningMutationsWeb3Rsc = ({
   proposalSlug,
+  chainId = DEFAULT_CHAIN_ID,
 }: {
   proposalSlug?: string | null;
+  chainId?: keyof typeof daoProposalsImplementationAddress;
 }) => {
   const { client } = useSmartWallets();
 
@@ -115,17 +117,15 @@ export const useTokenBurningMutationsWeb3Rsc = ({
         }),
       );
 
-      const transactions = [
-        ...burnTargets.map((target) => ({
-          target: arg.tokenBurning.token as `0x${string}`,
-          value: 0n,
-          data: encodeFunctionData({
-            abi: decayingSpaceTokenAbi,
-            functionName: 'burnFrom',
-            args: [target.address, target.burnAmount],
-          }),
-        })),
-      ];
+      const transactions = burnTargets.map((target) => ({
+        target: arg.tokenBurning.token as `0x${string}`,
+        value: 0n,
+        data: encodeFunctionData({
+          abi: decayingSpaceTokenAbi,
+          functionName: 'burnFrom',
+          args: [target.address, target.burnAmount],
+        }),
+      }));
 
       const proposalParams = {
         spaceId: BigInt(arg.spaceId),

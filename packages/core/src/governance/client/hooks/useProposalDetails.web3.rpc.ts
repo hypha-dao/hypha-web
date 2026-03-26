@@ -117,6 +117,7 @@ export const useProposalDetailsWeb3Rpc = ({
       member: `0x${string}` | null;
       number: bigint;
       token: `0x${string}`;
+      allBalance?: boolean;
     }> = [];
 
     const entryMethods: Array<{
@@ -232,7 +233,11 @@ export const useProposalDetailsWeb3Rpc = ({
           break;
 
         case 'burn':
-          burnings.push({ ...decoded.data, token: tx.target });
+          burnings.push({
+            ...decoded.data,
+            token: tx.target,
+            allBalance: false,
+          });
           break;
 
         case 'tokenRequirement':

@@ -56,6 +56,8 @@ const resolveTokenDecimals = (tokenAddress?: string) => {
   return TOKEN_DECIMALS_BY_ADDRESS[tokenAddress.toLowerCase()] ?? 18;
 };
 
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
+
 type ProposalDetailProps = ProposalHeadProps & {
   documentId?: number;
   content?: string;
@@ -227,13 +229,13 @@ export const ProposalDetail = ({
 
     const isQuorumReached = Boolean(
       Number(proposalDetails?.quorumPercentage ?? 0) >=
-        Number(spaceDetails?.quorum ?? 0),
+      Number(spaceDetails?.quorum ?? 0),
     );
     setQuorumReached(isQuorumReached);
 
     const isUnityReached = Boolean(
       Number(proposalDetails?.unityPercentage ?? 0) >=
-        Number(spaceDetails?.unity ?? 0),
+      Number(spaceDetails?.unity ?? 0),
     );
     setUnityReached(isUnityReached);
 
@@ -289,13 +291,12 @@ export const ProposalDetail = ({
           token: firstBurning.token,
           burns: burnings.map((burn) => ({
             type:
-              burn.member ===
-              ('0x0000000000000000000000000000000000000000' as const)
+              burn.member === ZERO_ADDRESS
                 ? ('space' as const)
                 : ('member' as const),
-            address: burn.member,
+            address: burn.member ?? '',
             amount: formatUnits(burn.number, resolveTokenDecimals(burn.token)),
-            allBalance: false,
+            allBalance: burn.allBalance ?? false,
           })),
         },
       };

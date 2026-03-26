@@ -114,6 +114,8 @@ export const useTokenBurningOrchestrator = ({
   const web3 = useTokenBurningMutationsWeb3Rsc({
     proposalSlug: web2.createdAgreement?.slug,
   });
+  const { resetCreateAgreementMutation, deleteAgreementBySlug } = web2;
+  const { resetCreateTokenBurningMutation } = web3;
   const agreementFiles = useAgreementFileUploads(
     authToken,
     (uploadedFiles, slug) => {
@@ -197,7 +199,11 @@ export const useTokenBurningOrchestrator = ({
         }
       } catch (err) {
         if (web2Slug) {
-          await web2.deleteAgreementBySlug({ slug: web2Slug });
+          try {
+            await deleteAgreementBySlug({ slug: web2Slug });
+          } catch (rollbackErr) {
+            console.error('Failed to rollback Web2 agreement:', rollbackErr);
+          }
         }
         throw err;
       }
@@ -252,9 +258,13 @@ export const useTokenBurningOrchestrator = ({
 
   const reset = useCallback(() => {
     resetTasks();
-    web2.resetCreateAgreementMutation();
-    web3.resetCreateTokenBurningMutation();
-  }, [resetTasks, web2, web3]);
+    resetCreateAgreementMutation();
+    resetCreateTokenBurningMutation();
+  }, [
+    resetTasks,
+    resetCreateAgreementMutation,
+    resetCreateTokenBurningMutation,
+  ]);
 
   return {
     reset,
