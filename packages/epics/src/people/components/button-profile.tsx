@@ -17,6 +17,8 @@ import { Person } from '@hypha-platform/core/client';
 import { Text } from '@radix-ui/themes';
 import { usePrivy, useMfaEnrollment } from '@privy-io/react-auth';
 import { useTranslations } from 'next-intl';
+import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export type ButtonProfileProps = {
   address?: string;
@@ -46,9 +48,16 @@ export const ButtonProfile = ({
   resolvedTheme,
 }: ButtonProfileProps) => {
   const t = useTranslations('Navigation');
+  const pathname = usePathname();
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const { user } = usePrivy();
   const { showMfaEnrollmentModal } = useMfaEnrollment();
   const hasMfaMethods = user && user.mfaMethods && user.mfaMethods.length > 0;
+
+  useEffect(() => {
+    setProfileMenuOpen(false);
+  }, [pathname]);
+
   return (
     <div>
       {isConnected ? (
@@ -136,13 +145,22 @@ export const ButtonProfile = ({
                 />
               ))}
             </div>
-            <DropdownMenu modal={false}>
-              <DropdownMenuTrigger>
-                <PersonAvatar
-                  size="md"
-                  avatarSrc={person?.avatarUrl}
-                  userName={person?.nickname}
-                />
+            <DropdownMenu
+              open={profileMenuOpen}
+              onOpenChange={setProfileMenuOpen}
+            >
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="rounded-lg outline-none"
+                  aria-label={t('openProfileMenu')}
+                >
+                  <PersonAvatar
+                    size="md"
+                    avatarSrc={person?.avatarUrl}
+                    userName={person?.nickname}
+                  />
+                </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="bg-neutral-2 rounded-[6px] min-w-[185px] flex flex-col">
                 <Text className="text-2 font-medium text-foreground">
@@ -154,7 +172,7 @@ export const ButtonProfile = ({
                   </DropdownMenuItem>
                 )}
                 {profileUrl && (
-                  <DropdownMenuItem className="px-0 text-1">
+                  <DropdownMenuItem className="px-0 text-1" asChild>
                     <Link className="text-accent-11" href={profileUrl}>
                       {t('viewProfile')}
                     </Link>
@@ -163,7 +181,7 @@ export const ButtonProfile = ({
                 {notificationCentrePath && (
                   <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="px-0 text-1">
+                    <DropdownMenuItem className="px-0 text-1" asChild>
                       <Link
                         className="text-accent-11"
                         href={notificationCentrePath}
