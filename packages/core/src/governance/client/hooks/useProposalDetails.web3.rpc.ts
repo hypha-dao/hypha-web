@@ -5,7 +5,6 @@ import useSWR from 'swr';
 import { getProposalDetails } from '../web3';
 import React from 'react';
 import { decodeTransaction } from './decoders';
-import { SpaceDetails } from '../../space/client/web3/fetch/fetchSpaceDetails';
 
 const formatRedemptionPrice = (rawPrice: unknown) => {
   const numeric = Number(rawPrice);
