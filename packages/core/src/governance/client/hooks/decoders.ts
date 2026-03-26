@@ -204,7 +204,6 @@ import {
   votingPowerDelegationImplementationAbi,
   daoProposalsImplementationAbi,
   tokenBackingVaultImplementationAbi,
-  regularSpaceTokenAbi,
 } from '@hypha-platform/core/generated';
 
 type Tx = {
@@ -505,7 +504,7 @@ export function decodeTransaction(tx: Tx) {
             : null,
     },
     {
-      abi: regularSpaceTokenAbi,
+      abi: decayingSpaceTokenAbi,
       handler: (decoded) => {
         return decoded.functionName === 'burnFrom'
           ? {
