@@ -26,7 +26,7 @@ export const ProposalBurnItem = ({
   });
   const { tokens: dbTokens } = useDbTokens();
   const originalNumber = Number(number) / Number(10n ** 18n);
-  const isSelfBurn = member === ZERO_ADDRESS;
+  const isSelfBurn = member === null || member === ZERO_ADDRESS;
   const { person, isLoading } = usePersonByWeb3Address(
     (member ?? ZERO_ADDRESS) as `0x${string}`,
   );
@@ -82,7 +82,7 @@ export const ProposalBurnItem = ({
                   alt="Default avatar"
                 />
                 <div className="text-1 w-full">
-                  <EthAddress address={member} />
+                  <EthAddress address={member ?? ZERO_ADDRESS} />
                 </div>
               </>
             )}
