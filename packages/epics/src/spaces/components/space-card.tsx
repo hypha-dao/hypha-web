@@ -90,7 +90,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
       )}
       <CardHeader
         style={customCardHeaderStyles}
-        className="p-0 rounded-tl-md rounded-tr-md overflow-hidden flex-shrink-0"
+        className="relative p-0 rounded-tl-md rounded-tr-md overflow-hidden flex-shrink-0"
       >
         <Skeleton loading={isLoading} className="w-full h-full">
           <Image
@@ -101,6 +101,17 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
             alt={title}
           />
         </Skeleton>
+        <SpaceModeLabel
+          web3SpaceId={web3SpaceId}
+          isSandbox={isSandbox}
+          isDemo={isDemo}
+          isArchived={isArchived}
+          configPath={configPath}
+          className={cn(
+            'absolute top-2 z-10',
+            showExitButton && web3SpaceId ? 'right-12' : 'right-2',
+          )}
+        />
       </CardHeader>
       <CardContent className="flex flex-col flex-1 pt-5 relative min-w-0">
         <div>
@@ -111,36 +122,27 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
           </Avatar>
         </div>
         <div className="flex flex-col flex-1 min-w-0">
-          <div className="mb-4 flex-shrink-0">
+          <div className="mb-3 flex-shrink-0">
             <Skeleton loading={isLoading} width="40px" height="26px">
               <CardTitle className="font-medium tracking-normal text-4 truncate">
                 {title}
               </CardTitle>
             </Skeleton>
           </div>
-          <div className="flex flex-col flex-1 flex-grow">
-            <Skeleton
-              loading={isLoading}
-              className="mb-4"
-              width="100%"
-              height="26px"
+          <Skeleton loading={isLoading} className="mb-3" width="100%" height="26px">
+            <div
+              className="text-1 text-neutral-11 mb-0 line-clamp-2"
+              style={{
+                lineHeight: 'calc(var(--text-1--line-height) * var(--text-1))',
+                minHeight: 'calc(var(--text-1--line-height) * var(--text-1) * 2)',
+              }}
+              title={description}
             >
-              <div
-                className="text-1 text-neutral-11 mb-4 line-clamp-2"
-                style={{
-                  lineHeight:
-                    'calc(var(--text-1--line-height) * var(--text-1))',
-                  minHeight:
-                    'calc(var(--text-1--line-height) * var(--text-1) * 2)',
-                }}
-                title={description}
-              >
-                {description}
-              </div>
-            </Skeleton>
-          </div>
+              {description}
+            </div>
+          </Skeleton>
           <div className="flex gap-2 text-xs items-center min-w-0">
-            <div className="flex flex-col gap-y-2 gap-x-4 flex-wrap min-w-0">
+            <div className="flex flex-col gap-y-1 gap-x-4 flex-wrap min-w-0 w-full">
               <div className="flex flex-row gap-y-2 gap-x-4 flex-wrap">
                 <div className="flex flex-row">
                   <Skeleton loading={isLoading} height="16px" width="80px">
@@ -159,11 +161,11 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
                   </Skeleton>
                 </div>
               </div>
-              <div className="flex flex-row min-w-0">
+              <div className="flex flex-row min-w-0 w-full max-w-full">
                 {createdAt instanceof Date &&
                   !Number.isNaN(createdAt.getTime()) && (
                     <Skeleton loading={isLoading} height="16px" width="80px">
-                      <div className="text-neutral-11 text-1 truncate">
+                      <div className="text-neutral-11 text-1 truncate w-full max-w-full">
                         {tCommon('createdOn', {
                           date: format.dateTime(createdAt, {
                             year: 'numeric',
@@ -179,15 +181,6 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
                   )}
               </div>
             </div>
-            <div className="flex grow"></div>
-            <SpaceModeLabel
-              web3SpaceId={web3SpaceId}
-              isSandbox={isSandbox}
-              isDemo={isDemo}
-              isArchived={isArchived}
-              configPath={configPath}
-              className="ml-2"
-            />
           </div>
         </div>
       </CardContent>
