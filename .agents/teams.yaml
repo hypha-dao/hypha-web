@@ -1,0 +1,45 @@
+teams:
+  agentic-engineering:
+    description: >
+      Agentic engineering team for the hypha-web DAO platform.
+      Coordinates specialized agents across fullstack development,
+      database engineering, security, QA, UI/UX design, product ownership,
+      requirements engineering, i18n, prompt engineering, user research,
+      meta-cognition, and Cursor IDE configuration.
+    agents:
+      - name: fullstack-nextjs
+        role: roles/Senior-Lead-Fullstack-Nextjs-Engineer.md
+        model: anthropic/claude-sonnet-4
+      - name: neon-db
+        role: roles/Senior-Neon-DB-Engineer.md
+        model: anthropic/claude-sonnet-4
+      - name: app-security
+        role: roles/Senior-Application-Security-Engineer.md
+        model: anthropic/claude-sonnet-4
+      - name: qa-test
+        role: roles/Senior-QA-Test-Engineer.md
+        model: anthropic/claude-sonnet-4
+      - name: ui-ux-design
+        role: roles/Senior-UI-UX-Design-Engineer.md
+        model: anthropic/claude-sonnet-4
+      - name: product-owner
+        role: roles/Senior-Product-Owner.md
+        model: anthropic/claude-sonnet-4
+      - name: requirements-eng
+        role: roles/Senior-Requirements-Engineer.md
+        model: anthropic/claude-sonnet-4
+      - name: prompt-eng
+        role: roles/Senior-Prompt-Engineer.md
+        model: anthropic/claude-sonnet-4
+      - name: user-researcher
+        role: roles/Senior-User-Researcher.md
+        model: anthropic/claude-sonnet-4
+      - name: cursor-engineer
+        role: roles/Elite-Senior-Lead-Cursor-Engineer.md
+        model: anthropic/claude-sonnet-4
+      - name: i18n-eng
+        role: roles/I18n-Engineer.md
+        model: anthropic/claude-sonnet-4
+      - name: meta-cognition
+        role: roles/Meta-Cognition-Bounding-Expert.md
+        model: anthropic/claude-sonnet-4
