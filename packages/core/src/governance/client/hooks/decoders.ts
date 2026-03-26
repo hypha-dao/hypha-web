@@ -473,14 +473,14 @@ export function decodeTransaction(tx: Tx) {
               },
             }
           : decoded.functionName === 'changeEntryMethod'
-            ? {
-                type: 'entryMethod',
-                data: {
-                  spaceId: decoded.args[0],
-                  joinMethod: decoded.args[1],
-                },
-              }
-            : null,
+          ? {
+              type: 'entryMethod',
+              data: {
+                spaceId: decoded.args[0],
+                joinMethod: decoded.args[1],
+              },
+            }
+          : null,
     },
     {
       abi: decayingSpaceTokenAbi,
@@ -494,16 +494,16 @@ export function decodeTransaction(tx: Tx) {
               },
             }
           : decoded.functionName === 'configureTokenSale'
-            ? {
-                type: 'spaceTokenPurchase',
-                data: {
-                  tokenAddress: '',
-                  paymentToken: decoded.args[0],
-                  paymentTokenPricePerToken: decoded.args[1],
-                  tokensForSale: decoded.args[2],
-                },
-              }
-            : null,
+          ? {
+              type: 'spaceTokenPurchase',
+              data: {
+                tokenAddress: '',
+                paymentToken: decoded.args[0],
+                paymentTokenPricePerToken: decoded.args[1],
+                tokensForSale: decoded.args[2],
+              },
+            }
+          : null,
     },
     {
       abi: decayingSpaceTokenAbi,
@@ -517,14 +517,14 @@ export function decodeTransaction(tx: Tx) {
               },
             }
           : decoded.functionName === 'burn'
-            ? {
-                type: 'burn',
-                data: {
-                  member: ZERO_ADDRESS,
-                  number: decoded.args[0],
-                },
-              }
-            : null;
+          ? {
+              type: 'burn',
+              data: {
+                member: ZERO_ADDRESS,
+                number: decoded.args[0],
+              },
+            }
+          : null;
       },
     },
     {
@@ -630,22 +630,22 @@ export function decodeTransaction(tx: Tx) {
               },
             }
           : decoded.functionName === 'setSpaceDiscoverability'
-            ? {
-                type: 'setSpaceDiscoverability',
-                data: {
-                  spaceId: decoded.args[0],
-                  discoverability: decoded.args[1],
-                },
-              }
-            : decoded.functionName === 'setSpaceAccess'
-              ? {
-                  type: 'setSpaceAccess',
-                  data: {
-                    spaceId: decoded.args[0],
-                    access: decoded.args[1],
-                  },
-                }
-              : null;
+          ? {
+              type: 'setSpaceDiscoverability',
+              data: {
+                spaceId: decoded.args[0],
+                discoverability: decoded.args[1],
+              },
+            }
+          : decoded.functionName === 'setSpaceAccess'
+          ? {
+              type: 'setSpaceAccess',
+              data: {
+                spaceId: decoded.args[0],
+                access: decoded.args[1],
+              },
+            }
+          : null;
       },
     },
     {
