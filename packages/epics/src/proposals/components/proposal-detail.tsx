@@ -41,20 +41,8 @@ import { useState, useEffect } from 'react';
 import { TransparencyLevel } from '../../spaces/components/transparency-level';
 import { useTranslations } from 'next-intl';
 import { formatUnits } from 'viem';
-
-const TOKEN_DECIMALS_BY_ADDRESS: Record<string, number> = {
-  // USDC (Base)
-  '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913': 6,
-  // USDC (test/development deployment)
-  '0x60a3e35cc302bfa44cb288bc5a4f316fdb1adb42': 6,
-  // cbBTC (Base)
-  '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf': 8,
-};
-
-const resolveTokenDecimals = (tokenAddress?: string) => {
-  if (!tokenAddress) return 18;
-  return TOKEN_DECIMALS_BY_ADDRESS[tokenAddress.toLowerCase()] ?? 18;
-};
+import { resolveTokenDecimals } from '../../governance/utils/token-decimals';
+import { useDbSpaces } from '../../hooks';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
@@ -126,6 +114,7 @@ export const ProposalDetail = ({
       },
     ],
   });
+  const { spaces: dbSpaces } = useDbSpaces({ parentOnly: false });
 
   const tokenSymbol = proposalDetails?.tokens?.[0]?.symbol;
 
@@ -229,13 +218,13 @@ export const ProposalDetail = ({
 
     const isQuorumReached = Boolean(
       Number(proposalDetails?.quorumPercentage ?? 0) >=
-        Number(spaceDetails?.quorum ?? 0),
+      Number(spaceDetails?.quorum ?? 0),
     );
     setQuorumReached(isQuorumReached);
 
     const isUnityReached = Boolean(
       Number(proposalDetails?.unityPercentage ?? 0) >=
-        Number(spaceDetails?.unity ?? 0),
+      Number(spaceDetails?.unity ?? 0),
     );
     setUnityReached(isUnityReached);
 
@@ -286,6 +275,18 @@ export const ProposalDetail = ({
       const firstBurning = burnings?.[0];
       if (!firstBurning || !burnings.length) return undefined;
 
+      const resolveBurnAddress = (member: `0x${string}` | null) => {
+        if (!member) return '';
+        if (member !== ZERO_ADDRESS) return member;
+
+        // For self/space sentinel rows, resolve a real space address
+        // so the resubmit form can preselect a valid space target.
+        const proposalSpaceAddress = dbSpaces.find(
+          (space) => space.web3SpaceId === proposalDetails.spaceId,
+        )?.address;
+        return proposalSpaceAddress ?? '';
+      };
+
       return {
         tokenBurning: {
           token: firstBurning.token,
@@ -294,7 +295,7 @@ export const ProposalDetail = ({
               burn.member === ZERO_ADDRESS
                 ? ('space' as const)
                 : ('member' as const),
-            address: burn.member ?? '',
+            address: resolveBurnAddress(burn.member),
             amount: formatUnits(burn.number, resolveTokenDecimals(burn.token)),
             allBalance: burn.allBalance ?? false,
           })),

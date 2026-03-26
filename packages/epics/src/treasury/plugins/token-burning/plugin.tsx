@@ -24,6 +24,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { TokenBurnTargetsFieldArray } from './token-burn-targets-field-array';
 import { getTokenTypeLabel } from '../../components/common/token-type-field';
+import { useEffect } from 'react';
 
 export const TokenBurningPlugin = ({
   spaceSlug,
@@ -36,7 +37,7 @@ export const TokenBurningPlugin = ({
 }) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const { lang } = useParams();
-  const { control } = useFormContext();
+  const { control, setValue } = useFormContext();
   const { tokens, isLoading } = useTokens({ spaceSlug });
   const selectedToken = useWatch({
     control,
@@ -49,6 +50,21 @@ export const TokenBurningPlugin = ({
   const selectedTokenData = filteredTokens.find(
     (token: ExtendedToken) => token.address === selectedToken,
   );
+  const isSelectedTokenValid = Boolean(selectedTokenData);
+
+  useEffect(() => {
+    if (selectedToken && !selectedTokenData) {
+      setValue('tokenBurning.token', '');
+      setValue('tokenBurning.burns', [
+        {
+          type: 'member',
+          address: '',
+          amount: '',
+          allBalance: false,
+        },
+      ]);
+    }
+  }, [selectedToken, selectedTokenData, setValue]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -191,7 +207,7 @@ export const TokenBurningPlugin = ({
         )}
       </Skeleton>
 
-      {selectedToken && (
+      {isSelectedTokenValid && (
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <FormLabel>

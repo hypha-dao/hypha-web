@@ -1261,7 +1261,8 @@
       "tokenBurning": "Token Burning",
       "burnRecipient": "Burn recipient",
       "burnAmount": "Burn amount",
-      "defaultAvatar": "Default avatar"
+      "defaultAvatar": "Default avatar",
+      "selfBurn": "Self burn"
     },
     "entryMethods": {
       "openAccess": "Open Access",

@@ -7,18 +7,10 @@ import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { useDbSpaces, useDbTokens } from '../../hooks';
 import { EthAddress } from '../../people';
 import { DbToken } from '@hypha-platform/core/server';
+import { useTranslations } from 'next-intl';
+import { resolveTokenDecimals } from '../utils/token-decimals';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
-const TOKEN_DECIMALS_BY_ADDRESS: Record<string, number> = {
-  '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913': 6,
-  '0x60a3e35cc302bfa44cb288bc5a4f316fdb1adb42': 6,
-  '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf': 8,
-};
-
-const resolveTokenDecimals = (tokenAddress?: string) => {
-  if (!tokenAddress) return 18;
-  return TOKEN_DECIMALS_BY_ADDRESS[tokenAddress.toLowerCase()] ?? 18;
-};
 
 interface ProposalBurnItemProps {
   member: `0x${string}` | null;
@@ -31,6 +23,7 @@ export const ProposalBurnItem = ({
   number,
   token,
 }: ProposalBurnItemProps) => {
+  const tProposalDetails = useTranslations('ProposalDetails');
   const { spaces: dbSpaces } = useDbSpaces({
     parentOnly: false,
   });
@@ -61,9 +54,11 @@ export const ProposalBurnItem = ({
                   src="/placeholder/default-profile.svg"
                   width={24}
                   height={24}
-                  alt="Self burn"
+                  alt={tProposalDetails('labels.selfBurn')}
                 />
-                <div className="text-1 w-full">Self burn</div>
+                <div className="text-1 w-full">
+                  {tProposalDetails('labels.selfBurn')}
+                </div>
               </>
             ) : person ? (
               <>
@@ -90,7 +85,7 @@ export const ProposalBurnItem = ({
                   src="/placeholder/default-profile.svg"
                   width={24}
                   height={24}
-                  alt="Default avatar"
+                  alt={tProposalDetails('labels.defaultAvatar')}
                 />
                 <div className="text-1 w-full">
                   <EthAddress address={member ?? ZERO_ADDRESS} />
@@ -106,7 +101,7 @@ export const ProposalBurnItem = ({
               }
               width={24}
               height={24}
-              alt="Default avatar"
+              alt={tProposalDetails('labels.tokenIcon')}
             />
             -{formatCurrencyValue(Number(originalNumber))}
             <span>{burnedToken?.symbol}</span>

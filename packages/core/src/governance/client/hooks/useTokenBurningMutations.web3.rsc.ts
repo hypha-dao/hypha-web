@@ -37,15 +37,21 @@ const TOKEN_DECIMALS = 18;
 
 const toTokenAmount = (amount: string) => {
   const normalizedAmount = amount.trim().replace(',', '.');
-  if (normalizedAmount.length === 0) {
+  const canonicalAmount = normalizedAmount.startsWith('.')
+    ? `0${normalizedAmount}`
+    : normalizedAmount.endsWith('.')
+      ? `${normalizedAmount}0`
+      : normalizedAmount;
+
+  if (canonicalAmount.length === 0) {
     throw new Error('Please enter amount');
   }
 
-  if (!/^\d+(\.\d+)?$/.test(normalizedAmount)) {
+  if (!/^(?:\d+\.?\d*|\.\d+)$/.test(canonicalAmount)) {
     throw new Error('Invalid amount format');
   }
 
-  const parts = normalizedAmount.split('.');
+  const parts = canonicalAmount.split('.');
   const integerPartRaw = parts[0] ?? '';
   const fractionPartRaw = parts[1] ?? '';
 

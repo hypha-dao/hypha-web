@@ -116,6 +116,7 @@ export const useTokenBurningOrchestrator = ({
   });
   const { resetCreateAgreementMutation, deleteAgreementBySlug } = web2;
   const { resetCreateTokenBurningMutation } = web3;
+  const shouldCreateWeb3 = Boolean(config);
   const agreementFiles = useAgreementFileUploads(
     authToken,
     (uploadedFiles, slug) => {
@@ -165,17 +166,26 @@ export const useTokenBurningOrchestrator = ({
   const { trigger: createTokenBurning } = useSWRMutation(
     'createTokenBurningOrchestration',
     async (_: string, { arg }: { arg: CreateTokenBurningArg }) => {
-      startTask('CREATE_WEB2_AGREEMENT');
+      let activeTask: TaskName | undefined;
+      const markTaskStarted = (taskName: TaskName) => {
+        activeTask = taskName;
+        startTask(taskName);
+      };
+
+      markTaskStarted('CREATE_WEB2_AGREEMENT');
       const inputWeb2 = schemaCreateAgreementWeb2.parse(arg);
       const createdAgreement = await web2.createAgreement(inputWeb2);
       completeTask('CREATE_WEB2_AGREEMENT');
+      activeTask = undefined;
 
       const web2Slug = createdAgreement?.slug ?? web2.createdAgreement?.slug;
       const web3SpaceId = arg.web3SpaceId;
+      const shouldCreateWeb3ForArg =
+        shouldCreateWeb3 && typeof web3SpaceId === 'number';
 
       try {
-        if (config && typeof web3SpaceId === 'number') {
-          startTask('CREATE_WEB3_AGREEMENT');
+        if (shouldCreateWeb3ForArg) {
+          markTaskStarted('CREATE_WEB3_AGREEMENT');
           await web3.createTokenBurning({
             spaceId: web3SpaceId,
             tokenBurning: {
@@ -187,17 +197,27 @@ export const useTokenBurningOrchestrator = ({
             },
           });
           completeTask('CREATE_WEB3_AGREEMENT');
+          activeTask = undefined;
         }
+
         const files = schemaCreateAgreementFiles.parse(arg);
         if (files.attachments?.length || files.leadImage) {
-          startTask('UPLOAD_FILES');
+          markTaskStarted('UPLOAD_FILES');
           await agreementFiles.upload(files, web2Slug);
           completeTask('UPLOAD_FILES');
+          activeTask = undefined;
         } else {
-          startTask('UPLOAD_FILES');
+          markTaskStarted('UPLOAD_FILES');
           completeTask('UPLOAD_FILES');
+          activeTask = undefined;
         }
       } catch (err) {
+        if (activeTask) {
+          errorTask(
+            activeTask,
+            err instanceof Error ? err.message : String(err),
+          );
+        }
         if (web2Slug) {
           try {
             await deleteAgreementBySlug({ slug: web2Slug });
@@ -213,7 +233,9 @@ export const useTokenBurningOrchestrator = ({
   const { data: updatedWeb2Agreement } = useSWR(
     web2.createdAgreement?.slug &&
       taskState.UPLOAD_FILES.status === TaskStatus.IS_DONE &&
-      (!config || taskState.CREATE_WEB3_AGREEMENT.status === TaskStatus.IS_DONE)
+      (!shouldCreateWeb3 ||
+        taskState.CREATE_WEB3_AGREEMENT.status === TaskStatus.IS_DONE) &&
+      (!shouldCreateWeb3 || Boolean(web3.createdTokenBurning?.proposalId))
       ? [
           web2.createdAgreement.slug,
           web3.createdTokenBurning?.proposalId,

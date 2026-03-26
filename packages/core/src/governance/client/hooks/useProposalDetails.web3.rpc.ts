@@ -5,6 +5,7 @@ import useSWR from 'swr';
 import { getProposalDetails } from '../web3';
 import React from 'react';
 import { decodeTransaction } from './decoders';
+import { SpaceDetails } from '../../space/client/web3/fetch/fetchSpaceDetails';
 
 const formatRedemptionPrice = (rawPrice: unknown) => {
   const numeric = Number(rawPrice);
@@ -27,6 +28,9 @@ const resolveTokenDecimals = (address: string) => {
   }
   return 18;
 };
+
+type ProposalDetailsResponse = Awaited<ReturnType<typeof getProposalDetails>>;
+type ProposalTransaction = ProposalDetailsResponse['result'][9][number];
 
 export const useProposalDetailsWeb3Rpc = ({
   proposalId,
@@ -206,7 +210,7 @@ export const useProposalDetailsWeb3Rpc = ({
       whitelistedAddresses?: string[];
     } = {};
 
-    (transactions as any[]).forEach((tx) => {
+    (transactions as ProposalTransaction[]).forEach((tx) => {
       const decoded = decodeTransaction(tx);
 
       if (!decoded) return;
