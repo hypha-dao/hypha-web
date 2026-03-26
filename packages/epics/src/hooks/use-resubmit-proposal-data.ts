@@ -32,6 +32,19 @@ export const useResubmitProposalData = <
           description?: string;
           leadImage?: any;
           attachments?: any;
+          mint?: {
+            amount?: string;
+            token?: string;
+          };
+          tokenBurning?: {
+            token?: string;
+            burns?: Array<{
+              type?: 'member' | 'space';
+              address?: string;
+              amount?: string;
+              allBalance?: boolean;
+            }>;
+          };
           applied?: boolean;
           [key: string]: any;
         };
@@ -59,6 +72,10 @@ export const useResubmitProposalData = <
             ...form.getValues(),
             title: parsed.title || '',
             description: parsed.description || '',
+            ...(parsed.mint ? { mint: parsed.mint } : {}),
+            ...(parsed.tokenBurning
+              ? { tokenBurning: parsed.tokenBurning }
+              : {}),
             leadImage: undefined,
             attachments: undefined,
             spaceId: spaceId ?? undefined,

@@ -40,6 +40,7 @@ import { isPast } from 'date-fns';
 import { useState, useEffect } from 'react';
 import { TransparencyLevel } from '../../spaces/components/transparency-level';
 import { useTranslations } from 'next-intl';
+import { formatUnits } from 'viem';
 
 type ProposalDetailProps = ProposalHeadProps & {
   documentId?: number;
@@ -248,6 +249,43 @@ export const ProposalDetail = ({
     }
   }, [proposalDetails?.executed, proposalDetails?.expired]);
 
+  const resubmitTemplateData = (() => {
+    if (!proposalDetails) return undefined;
+
+    if (label === 'Treasury Minting') {
+      const minting = proposalDetails.mintings?.[0];
+      if (!minting) return undefined;
+
+      return {
+        mint: {
+          token: minting.token,
+          amount: formatUnits(minting.number, 18),
+        },
+      };
+    }
+
+    if (label === 'Token Burning') {
+      const burnings = proposalDetails.burnings?.filter(
+        (burn) => !!burn.member,
+      );
+      if (!burnings?.length) return undefined;
+
+      return {
+        tokenBurning: {
+          token: burnings[0].token,
+          burns: burnings.map((burn) => ({
+            type: 'member' as const,
+            address: burn.member,
+            amount: formatUnits(burn.number, 18),
+            allBalance: false,
+          })),
+        },
+      };
+    }
+
+    return undefined;
+  })();
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex gap-2 justify-between">
@@ -451,6 +489,7 @@ export const ProposalDetail = ({
         closeUrl={closeUrl}
         onWithdrawSuccess={onWithdrawSuccess}
         label={label}
+        proposalTemplateData={resubmitTemplateData}
       />
     </div>
   );
