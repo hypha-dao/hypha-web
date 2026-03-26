@@ -63,6 +63,9 @@ const PROPOSAL_ERROR_KEY_MAP: Record<string, string> = {
   'Token address is required': 'proposalErrors.tokenAddressRequired',
   'Should be integer': 'proposalErrors.integerRequired',
   'Choose a token to mint': 'proposalErrors.chooseTokenToMint',
+  'Choose a token to burn': 'proposalErrors.chooseTokenToBurn',
+  'At least one burn target is required':
+    'proposalErrors.atLeastOneBurnTargetRequired',
   'Milestones cannot be empty':
     'plugins.paymentSchedule.errors.milestonesEmpty',
   'Each milestone must have a start date':

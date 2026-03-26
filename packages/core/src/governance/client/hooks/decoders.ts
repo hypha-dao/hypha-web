@@ -204,6 +204,7 @@ import {
   votingPowerDelegationImplementationAbi,
   daoProposalsImplementationAbi,
   tokenBackingVaultImplementationAbi,
+  regularSpaceTokenAbi,
 } from '@hypha-platform/core/generated';
 
 type Tx = {
@@ -471,14 +472,14 @@ export function decodeTransaction(tx: Tx) {
               },
             }
           : decoded.functionName === 'changeEntryMethod'
-          ? {
-              type: 'entryMethod',
-              data: {
-                spaceId: decoded.args[0],
-                joinMethod: decoded.args[1],
-              },
-            }
-          : null,
+            ? {
+                type: 'entryMethod',
+                data: {
+                  spaceId: decoded.args[0],
+                  joinMethod: decoded.args[1],
+                },
+              }
+            : null,
     },
     {
       abi: decayingSpaceTokenAbi,
@@ -492,16 +493,38 @@ export function decodeTransaction(tx: Tx) {
               },
             }
           : decoded.functionName === 'configureTokenSale'
+            ? {
+                type: 'spaceTokenPurchase',
+                data: {
+                  tokenAddress: '',
+                  paymentToken: decoded.args[0],
+                  paymentTokenPricePerToken: decoded.args[1],
+                  tokensForSale: decoded.args[2],
+                },
+              }
+            : null,
+    },
+    {
+      abi: regularSpaceTokenAbi,
+      handler: (decoded) => {
+        return decoded.functionName === 'burnFrom'
           ? {
-              type: 'spaceTokenPurchase',
+              type: 'burn',
               data: {
-                tokenAddress: '',
-                paymentToken: decoded.args[0],
-                paymentTokenPricePerToken: decoded.args[1],
-                tokensForSale: decoded.args[2],
+                member: decoded.args[0],
+                number: decoded.args[1],
               },
             }
-          : null,
+          : decoded.functionName === 'burn'
+            ? {
+                type: 'burn',
+                data: {
+                  member: null,
+                  number: decoded.args[0],
+                },
+              }
+            : null;
+      },
     },
     {
       abi: tokenBalanceJoinImplementationAbi,
@@ -606,22 +629,22 @@ export function decodeTransaction(tx: Tx) {
               },
             }
           : decoded.functionName === 'setSpaceDiscoverability'
-          ? {
-              type: 'setSpaceDiscoverability',
-              data: {
-                spaceId: decoded.args[0],
-                discoverability: decoded.args[1],
-              },
-            }
-          : decoded.functionName === 'setSpaceAccess'
-          ? {
-              type: 'setSpaceAccess',
-              data: {
-                spaceId: decoded.args[0],
-                access: decoded.args[1],
-              },
-            }
-          : null;
+            ? {
+                type: 'setSpaceDiscoverability',
+                data: {
+                  spaceId: decoded.args[0],
+                  discoverability: decoded.args[1],
+                },
+              }
+            : decoded.functionName === 'setSpaceAccess'
+              ? {
+                  type: 'setSpaceAccess',
+                  data: {
+                    spaceId: decoded.args[0],
+                    access: decoded.args[1],
+                  },
+                }
+              : null;
       },
     },
     {

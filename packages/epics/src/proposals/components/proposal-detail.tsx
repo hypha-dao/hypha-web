@@ -23,6 +23,7 @@ import {
   ProposalTokenRequirementsInfo,
   ProposalVotingInfo,
   ProposalMintItem,
+  ProposalBurnItem,
   ProposalEntryInfo,
   ProposalBuyHyphaTokensData,
   ProposalDelegatesData,
@@ -211,13 +212,13 @@ export const ProposalDetail = ({
 
     const isQuorumReached = Boolean(
       Number(proposalDetails?.quorumPercentage ?? 0) >=
-        Number(spaceDetails?.quorum ?? 0),
+      Number(spaceDetails?.quorum ?? 0),
     );
     setQuorumReached(isQuorumReached);
 
     const isUnityReached = Boolean(
       Number(proposalDetails?.unityPercentage ?? 0) >=
-        Number(spaceDetails?.unity ?? 0),
+      Number(spaceDetails?.unity ?? 0),
     );
     setUnityReached(isUnityReached);
 
@@ -360,6 +361,14 @@ export const ProposalDetail = ({
           member={mint.member}
           number={mint.number}
           token={mint.token}
+        />
+      ))}
+      {proposalDetails?.burnings.map((burn, idx) => (
+        <ProposalBurnItem
+          key={`${burn.member}-${burn.token}-${idx}`}
+          member={burn.member}
+          number={burn.number}
+          token={burn.token}
         />
       ))}
       {proposalDetails?.buyHyphaTokensData.amount ? (

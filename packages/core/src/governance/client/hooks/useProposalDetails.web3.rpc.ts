@@ -113,6 +113,12 @@ export const useProposalDetailsWeb3Rpc = ({
       token: `0x${string}`;
     }> = [];
 
+    const burnings: Array<{
+      member: `0x${string}`;
+      number: bigint;
+      token: `0x${string}`;
+    }> = [];
+
     const entryMethods: Array<{
       spaceId: bigint;
       joinMethod: bigint;
@@ -223,6 +229,10 @@ export const useProposalDetailsWeb3Rpc = ({
 
         case 'mint':
           mintings.push({ ...decoded.data, token: tx.target });
+          break;
+
+        case 'burn':
+          burnings.push({ ...decoded.data, token: tx.target });
           break;
 
         case 'tokenRequirement':
@@ -405,6 +415,7 @@ export const useProposalDetailsWeb3Rpc = ({
       tokens,
       votingMethods,
       mintings,
+      burnings,
       entryMethods,
       tokenRequirements,
       votingMethodsToken,

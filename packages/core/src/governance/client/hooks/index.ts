@@ -28,6 +28,8 @@ export * from './useMintTokensToSpaceTreasuryMutations.web3.rsc';
 export * from './useMintTokensToSpaceTreasuryOrchestrator';
 export * from './useTokenBackingVaultMutations.web3.rsc';
 export * from './useTokenBackingVaultOrchestrator';
+export * from './useTokenBurningMutations.web3.rsc';
+export * from './useTokenBurningOrchestrator';
 export * from './useMembershipExitOrchestrator';
 export * from './useMembershipExitMutations.web.rpc';
 export * from './useWithdrawProposal';

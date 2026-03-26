@@ -64,6 +64,7 @@ const getCreateRouteForLabel = (label: string | undefined): string => {
     'Activate Spaces': 'activate-spaces',
     'Space To Space': 'space-to-space-membership',
     'Treasury Minting': 'mint-tokens-to-space-treasury',
+    'Token Burning': 'token-burning',
     'Membership Exit': 'membership-exit',
     'Backing Vault': 'token-backing-vault',
   };
@@ -146,8 +147,8 @@ export const FormVoting = ({
 
   const isCreator = Boolean(
     proposalCreator &&
-      person?.address &&
-      proposalCreator.toLowerCase() === person.address.toLowerCase(),
+    person?.address &&
+    proposalCreator.toLowerCase() === person.address.toLowerCase(),
   );
 
   const showWithdrawBlock =
@@ -238,8 +239,8 @@ export const FormVoting = ({
   const tooltipMessage = !isAuthenticated
     ? tCommon('signIn')
     : !isMember && !isDelegate
-    ? tCommon('joinSpaceToUse')
-    : '';
+      ? tCommon('joinSpaceToUse')
+      : '';
 
   function getVoteLabels(spaceDetails?: SpaceDetails) {
     if (!spaceDetails) {
