@@ -24,6 +24,9 @@ import {
   daoProposalsImplementationAddress,
 } from '@hypha-platform/core/generated';
 import { getDuration } from '@hypha-platform/ui-utils';
+import { getGovernanceChainId } from './governance-chain-id';
+
+const chainId = getGovernanceChainId();
 
 export const useAgreementMutationsWeb3Rpc = ({
   proposalSlug,
@@ -50,13 +53,13 @@ export const useAgreementMutationsWeb3Rpc = ({
       );
 
       const proposalCounter = await publicClient.readContract({
-        address: daoProposalsImplementationAddress[8453],
+        address: daoProposalsImplementationAddress[chainId],
         abi: daoProposalsImplementationAbi,
         functionName: 'proposalCounter',
       });
 
       const acceptAgreementTx = {
-        target: agreementsImplementationAddress[8453],
+        target: agreementsImplementationAddress[chainId],
         value: 0,
         data: encodeFunctionData({
           abi: agreementsImplementationAbi,

@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { useAccount } from 'wagmi';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 import { daoProposalsImplementationConfig } from '@hypha-platform/core/generated';
+import { getGovernanceChainId } from './governance-chain-id';
 
 export const useWithdrawProposal = ({
   proposalId,
@@ -13,6 +14,7 @@ export const useWithdrawProposal = ({
   const { address } = useAccount();
   const { client } = useSmartWallets();
   const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const chainId = getGovernanceChainId();
 
   const withdrawProposal = useCallback(async () => {
     if (!client) throw new Error('Smart wallet not connected');
@@ -22,7 +24,7 @@ export const useWithdrawProposal = ({
     setIsWithdrawing(true);
     try {
       return await client.writeContract({
-        address: daoProposalsImplementationConfig.address[8453],
+        address: daoProposalsImplementationConfig.address[chainId],
         abi: daoProposalsImplementationConfig.abi,
         functionName: 'withdrawProposal',
         args: [BigInt(proposalId)],
@@ -30,7 +32,7 @@ export const useWithdrawProposal = ({
     } finally {
       setIsWithdrawing(false);
     }
-  }, [address, client, proposalId]);
+  }, [address, chainId, client, proposalId]);
 
   return {
     withdrawProposal,

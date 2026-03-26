@@ -4,12 +4,14 @@ import { useCallback, useState } from 'react';
 import { useAccount } from 'wagmi';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 import { daoProposalsImplementationConfig } from '@hypha-platform/core/generated';
+import { getGovernanceChainId } from './governance-chain-id';
 
 export const useProposalVoting = ({
   proposalId,
 }: {
   proposalId?: number | null;
 }) => {
+  const chainId = getGovernanceChainId();
   const { address } = useAccount();
   const { client } = useSmartWallets();
   const [isVoting, setIsVoting] = useState(false);
@@ -24,7 +26,7 @@ export const useProposalVoting = ({
       setIsVoting(true);
       try {
         return await client.writeContract({
-          address: daoProposalsImplementationConfig.address[8453],
+          address: daoProposalsImplementationConfig.address[chainId],
           abi: daoProposalsImplementationConfig.abi,
           functionName: 'vote',
           args: [BigInt(proposalId), support],
@@ -33,7 +35,7 @@ export const useProposalVoting = ({
         setIsVoting(false);
       }
     },
-    [address, client, proposalId],
+    [address, chainId, client, proposalId],
   );
 
   const checkProposalExpiration = useCallback(async () => {
@@ -44,7 +46,7 @@ export const useProposalVoting = ({
     setIsCheckingExpiration(true);
     try {
       return await client.writeContract({
-        address: daoProposalsImplementationConfig.address[8453],
+        address: daoProposalsImplementationConfig.address[chainId],
         abi: daoProposalsImplementationConfig.abi,
         functionName: 'triggerExecutionCheck',
         args: [BigInt(proposalId)],
@@ -55,7 +57,7 @@ export const useProposalVoting = ({
     } finally {
       setIsCheckingExpiration(false);
     }
-  }, [address, client, proposalId]);
+  }, [address, chainId, client, proposalId]);
 
   const handleAccept = () => vote(true);
   const handleReject = () => vote(false);

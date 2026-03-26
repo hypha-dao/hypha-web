@@ -32,8 +32,9 @@ import {
   transactionSchema,
 } from '@hypha-platform/core/client';
 import { getDuration } from '@hypha-platform/ui-utils';
+import { getGovernanceChainId } from './governance-chain-id';
 
-const chainId = 8453;
+const chainId = getGovernanceChainId();
 type TxData = z.infer<typeof transactionSchema>;
 
 interface ChangeVotingMethodArgs {

@@ -16,6 +16,7 @@ import {
   publicClient,
 } from '@hypha-platform/core/client';
 import { getDuration } from '@hypha-platform/ui-utils';
+import { getGovernanceChainId } from './governance-chain-id';
 
 interface TokenBurnRowInput {
   type: 'member' | 'space';
@@ -32,7 +33,7 @@ interface CreateTokenBurningInput {
   };
 }
 
-const DEFAULT_CHAIN_ID = 8453 as keyof typeof daoProposalsImplementationAddress;
+const DEFAULT_CHAIN_ID = getGovernanceChainId();
 const TOKEN_DECIMALS = 18;
 
 const toTokenAmount = (amount: string) => {

@@ -26,10 +26,11 @@ import {
 
 import { schemaCreateProposalWeb3 } from '../../validation';
 import { getDuration } from '@hypha-platform/ui-utils';
+import { getGovernanceChainId } from './governance-chain-id';
 
 type TxData = z.infer<typeof transactionSchema>;
 
-const chainId = 8453;
+const chainId = getGovernanceChainId();
 
 interface ChangeSpaceTransparencySettingsArgs {
   spaceId: number;

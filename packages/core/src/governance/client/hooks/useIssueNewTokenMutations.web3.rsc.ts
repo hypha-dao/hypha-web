@@ -24,6 +24,7 @@ import {
   decayingTokenFactoryAddress,
 } from '@hypha-platform/core/generated';
 import { getDuration } from '@hypha-platform/ui-utils';
+import { getGovernanceChainId } from './governance-chain-id';
 
 interface CreateTokenArgs {
   spaceId: number;
@@ -58,7 +59,7 @@ interface CreateTokenArgs {
   initialPurchaseWhitelistSpaceIds?: number[];
 }
 
-const chainId = 8453;
+const chainId = getGovernanceChainId();
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
 export const useIssueTokenMutationsWeb3Rpc = ({

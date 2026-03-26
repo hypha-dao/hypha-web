@@ -5,6 +5,7 @@ import {
   daoProposalsImplementationConfig,
   daoSpaceFactoryImplementationConfig,
 } from '@hypha-platform/core/generated';
+import { getGovernanceChainId } from './governance-chain-id';
 import {
   OnProposalCreatedInput,
   publicClient,
@@ -15,6 +16,8 @@ import { useProposalActions } from './useProposalActions';
 import { useTokenManagement } from './useTokenManagement';
 import { useTokenDeploymentWatcher } from './useTokenDeploymentWatcher';
 import { extractTokenAddressFromReceipt } from './extractTokenAddressFromReceipt';
+
+const chainId = getGovernanceChainId();
 
 export const useProposalEvents = ({
   documentId,
@@ -152,7 +155,7 @@ export const useProposalEvents = ({
     }
 
     const unwatchExecuted = publicClient.watchContractEvent({
-      address: daoProposalsImplementationConfig.address[8453],
+      address: daoProposalsImplementationConfig.address[chainId],
       abi: daoProposalsImplementationConfig.abi,
       eventName: 'ProposalExecuted',
       onLogs: async (logs) => {
@@ -182,7 +185,7 @@ export const useProposalEvents = ({
     });
 
     const unwatchRejected = publicClient.watchContractEvent({
-      address: daoProposalsImplementationConfig.address[8453],
+      address: daoProposalsImplementationConfig.address[chainId],
       abi: daoProposalsImplementationConfig.abi,
       eventName: 'ProposalRejected',
       onLogs: async (logs) => {
@@ -212,7 +215,7 @@ export const useProposalEvents = ({
     });
 
     const unwatchExpired = publicClient.watchContractEvent({
-      address: daoProposalsImplementationConfig.address[8453],
+      address: daoProposalsImplementationConfig.address[chainId],
       abi: daoProposalsImplementationConfig.abi,
       eventName: 'ProposalExpired',
       onLogs: async (logs) => {
@@ -242,7 +245,7 @@ export const useProposalEvents = ({
     });
 
     const unwatchMemberJoined = publicClient.watchContractEvent({
-      address: daoSpaceFactoryImplementationConfig.address[8453],
+      address: daoSpaceFactoryImplementationConfig.address[chainId],
       abi: daoSpaceFactoryImplementationConfig.abi,
       eventName: 'MemberJoined',
       onLogs: async (logs) => {
@@ -264,7 +267,7 @@ export const useProposalEvents = ({
     });
 
     const unwatchProposalCreated = publicClient.watchContractEvent({
-      address: daoProposalsImplementationConfig.address[8453],
+      address: daoProposalsImplementationConfig.address[chainId],
       abi: daoProposalsImplementationConfig.abi,
       eventName: 'ProposalCreated',
       onLogs: async (logs) => {
