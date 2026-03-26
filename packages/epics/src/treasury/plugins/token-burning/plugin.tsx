@@ -1,19 +1,21 @@
 'use client';
 
 import {
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
+  Image,
   RequirementMark,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Skeleton,
 } from '@hypha-platform/ui';
+import { ChevronDownIcon } from '@radix-ui/themes';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { Person, Space, Token } from '@hypha-platform/core/client';
 import { useTranslations } from 'next-intl';
@@ -21,6 +23,7 @@ import { useTokens } from '../../hooks';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { TokenBurnTargetsFieldArray } from './token-burn-targets-field-array';
+import { getTokenTypeLabel } from '../../components/common/token-type-field';
 
 interface ExtendedToken extends Token {
   space?: {
@@ -50,6 +53,9 @@ export const TokenBurningPlugin = ({
   const filteredTokens = tokens.filter(
     (token: ExtendedToken) => token?.space?.slug === spaceSlug,
   );
+  const selectedTokenData = filteredTokens.find(
+    (token) => token.address === selectedToken,
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -76,32 +82,100 @@ export const TokenBurningPlugin = ({
                   <RequirementMark className="text-2" />
                 </div>
                 <FormControl>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value || ''}
-                    disabled={filteredTokens.length === 0}
-                  >
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={
-                          filteredTokens.length === 0
-                            ? tAgreementFlow(
-                                'plugins.tokenBurning.noTokenFound',
-                              )
-                            : tAgreementFlow(
-                                'plugins.tokenBurning.selectTokenPlaceholder',
-                              )
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {filteredTokens.map((token: ExtendedToken) => (
-                        <SelectItem key={token.address} value={token.address}>
-                          {token.symbol} - {token.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        colorVariant="neutral"
+                        role="combobox"
+                        disabled={filteredTokens.length === 0}
+                        className="w-full text-2 md:w-72 justify-between py-2 font-normal"
+                      >
+                        <div className="flex items-center gap-2">
+                          {selectedTokenData ? (
+                            <>
+                              <Image
+                                src={
+                                  selectedTokenData.icon ??
+                                  '/placeholder/neutral-token-icon.svg'
+                                }
+                                width={20}
+                                height={20}
+                                alt={selectedTokenData.symbol}
+                                className="mr-2 rounded-full h-4 w-4"
+                              />
+                              <span className="text-2 text-neutral-11">
+                                {selectedTokenData.symbol}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-2 text-neutral-11 whitespace-nowrap">
+                              {filteredTokens.length === 0
+                                ? tAgreementFlow(
+                                    'plugins.tokenBurning.noTokenFound',
+                                  )
+                                : tAgreementFlow(
+                                    'plugins.tokenBurning.selectTokenPlaceholder',
+                                  )}
+                            </span>
+                          )}
+                        </div>
+                        <ChevronDownIcon className="size-2" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-full max-h-[200px] overflow-y-scroll">
+                      {filteredTokens.length > 0 ? (
+                        filteredTokens.map((token: ExtendedToken) => (
+                          <DropdownMenuItem
+                            key={token.address}
+                            onSelect={() => field.onChange(token.address)}
+                          >
+                            <Image
+                              src={
+                                token.icon ??
+                                '/placeholder/neutral-token-icon.svg'
+                              }
+                              width={24}
+                              height={24}
+                              alt={token.symbol}
+                              className="mr-2 rounded-full h-5 w-5"
+                            />
+                            <div className="flex flex-col">
+                              <span className="flex gap-2 items-center">
+                                <span className="text-2 text-neutral-11">
+                                  {token.symbol}
+                                </span>
+                                {token.type ? (
+                                  <div className="rounded-lg text-[10px] text-accent-11 border-1 border-accent-11 px-2 py-0.75">
+                                    {getTokenTypeLabel(
+                                      token.type,
+                                      tAgreementFlow,
+                                    )}
+                                  </div>
+                                ) : null}
+                              </span>
+                              {token?.space?.title ? (
+                                <span className="text-1 text-accent-11">
+                                  {tAgreementFlow(
+                                    'plugins.tokenPayoutField.bySpace',
+                                    {
+                                      space: token.space.title,
+                                    },
+                                  )}
+                                </span>
+                              ) : null}
+                            </div>
+                          </DropdownMenuItem>
+                        ))
+                      ) : (
+                        <span className="text-2 text-neutral-11">
+                          {tAgreementFlow(
+                            'plugins.tokenPayoutField.noTokensFound',
+                          )}
+                        </span>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </FormControl>
               </div>
               <FormMessage />
