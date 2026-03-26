@@ -81,6 +81,15 @@ export const TokenBurningPlugin = ({
   return (
     <div className="flex flex-col gap-4">
       <Skeleton loading={isLoading} width="100%" height={90}>
+        <div className="flex flex-col gap-2">
+          <FormLabel>
+            {tAgreementFlow('plugins.tokenBurning.tokenBurn')}
+          </FormLabel>
+          <span className="text-2 text-neutral-11">
+            {tAgreementFlow('plugins.tokenBurning.tokenBurnDescription')}
+          </span>
+        </div>
+
         <div className="flex flex-col gap-3">
           <FormLabel>
             {tAgreementFlow('plugins.tokenBurning.selectToken')}
@@ -221,39 +230,29 @@ export const TokenBurningPlugin = ({
 
       {isSelectedTokenValid && (
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-4">
-            <div className="flex justify-between items-center">
-              <span className="text-2 text-neutral-11 w-full">
-                {tAgreementFlow('plugins.tokenBurning.tokenSupply')}
-              </span>
-              {selectedDbToken?.maxSupply === 0 ? (
-                <span className="text-2 text-neutral-11 text-nowrap">
-                  {tAgreementFlow('plugins.tokenBurning.unlimitedSupply')}
-                </span>
-              ) : (
-                <span className="text-2 text-neutral-11">
-                  {formatCurrencyValue(Number(selectedDbToken?.maxSupply ?? 0))}
-                </span>
-              )}
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-2 text-neutral-11 w-full">
-                {tAgreementFlow('plugins.tokenBurning.issuanceToDate')}
-              </span>
-              <Skeleton width={120} height={32} loading={isLoadingSupply}>
-                <span className="text-2 text-neutral-11">
-                  {formatCurrencyValue(Number(supply ?? 0))}
-                </span>
-              </Skeleton>
-            </div>
-          </div>
-          <div className="flex flex-col gap-2">
-            <FormLabel>
-              {tAgreementFlow('plugins.tokenBurning.tokenBurn')}
-            </FormLabel>
-            <span className="text-2 text-neutral-11">
-              {tAgreementFlow('plugins.tokenBurning.tokenBurnDescription')}
+          <div className="flex justify-between items-center">
+            <span className="text-2 text-neutral-11 w-full">
+              {tAgreementFlow('plugins.tokenBurning.tokenSupply')}
             </span>
+            {selectedDbToken?.maxSupply === 0 ? (
+              <span className="text-2 text-neutral-11 text-nowrap">
+                {tAgreementFlow('plugins.tokenBurning.unlimitedSupply')}
+              </span>
+            ) : (
+              <span className="text-2 text-neutral-11">
+                {formatCurrencyValue(Number(selectedDbToken?.maxSupply ?? 0))}
+              </span>
+            )}
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-2 text-neutral-11">
+              {tAgreementFlow('plugins.tokenBurning.issuanceToDate')}
+            </span>
+            <Skeleton width={120} height={32} loading={isLoadingSupply}>
+              <span className="text-2 text-neutral-11">
+                {formatCurrencyValue(Number(supply ?? 0))}
+              </span>
+            </Skeleton>
           </div>
 
           <TokenBurnTargetsFieldArray members={members} spaces={spaces} />
