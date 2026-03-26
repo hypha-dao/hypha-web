@@ -268,11 +268,12 @@ export const ProposalDetail = ({
       const burnings = proposalDetails.burnings?.filter(
         (burn) => !!burn.member,
       );
-      if (!burnings?.length) return undefined;
+      const firstBurning = burnings?.[0];
+      if (!firstBurning || !burnings?.length) return undefined;
 
       return {
         tokenBurning: {
-          token: burnings[0].token,
+          token: firstBurning.token,
           burns: burnings.map((burn) => ({
             type: 'member' as const,
             address: burn.member,
