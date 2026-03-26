@@ -15,7 +15,7 @@ import {
   Skeleton,
 } from '@hypha-platform/ui';
 import { useFormContext, useWatch } from 'react-hook-form';
-import { Token } from '@hypha-platform/core/client';
+import { Person, Space, Token } from '@hypha-platform/core/client';
 import { useTranslations } from 'next-intl';
 import { useTokens } from '../../hooks';
 import Link from 'next/link';
@@ -29,7 +29,15 @@ interface ExtendedToken extends Token {
   };
 }
 
-export const TokenBurningPlugin = ({ spaceSlug }: { spaceSlug: string }) => {
+export const TokenBurningPlugin = ({
+  spaceSlug,
+  members = [],
+  spaces = [],
+}: {
+  spaceSlug: string;
+  members?: Person[];
+  spaces?: Space[];
+}) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const { lang } = useParams();
   const { control } = useFormContext();
@@ -127,7 +135,7 @@ export const TokenBurningPlugin = ({ spaceSlug }: { spaceSlug: string }) => {
             </span>
           </div>
 
-          <TokenBurnTargetsFieldArray />
+          <TokenBurnTargetsFieldArray members={members} spaces={spaces} />
         </div>
       )}
     </div>

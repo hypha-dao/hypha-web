@@ -5,12 +5,8 @@ import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
-import {
-  getAllSpaces,
-  findAllPeopleWithoutPagination,
-} from '@hypha-platform/core/server';
-import { Person, Space } from '@hypha-platform/core/client';
 import { Plugin } from '../../../../_components/plugins';
+import { fetchMembersAndSpaces } from '@web/utils/fetch-users-members';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string; tab: string }>;
@@ -37,24 +33,9 @@ export default async function TokenBurningPage({
     ? undefined
     : `${closeUrl}${PATH_SELECT_SETTINGS_ACTION}`;
 
-  let spaces: Space[] = [];
-  const people: Person[] = await findAllPeopleWithoutPagination({ db });
-  const filteredPeople = people.filter(
-    (person) => person.address && person.address.trim() !== '',
-  );
-
-  try {
-    spaces = await getAllSpaces({
-      parentOnly: false,
-      omitSandbox: false,
-    });
-  } catch (err) {
-    console.error('Failed to fetch spaces:', err);
-  }
-
-  const filteredSpaces = spaces?.filter(
-    (space) => space?.address && space.address.trim() !== '',
-  );
+  const { spaces, members } = await fetchMembersAndSpaces({
+    activeSpaceId: spaceId,
+  });
 
   return (
     <SidePanel>
@@ -68,8 +49,8 @@ export default async function TokenBurningPage({
           <Plugin
             name="token-burning"
             spaceSlug={slug}
-            spaces={filteredSpaces}
-            members={filteredPeople}
+            spaces={spaces}
+            members={members}
           />
         }
       />
