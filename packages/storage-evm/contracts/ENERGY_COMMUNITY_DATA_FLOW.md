@@ -78,10 +78,12 @@ Alice's meter sees **one number**: how many Wh flowed into her house during a ti
 ┌─────────────────────────────────────────────────────────────────┐
 │ LAYER 1: PHYSICS (real-time, continuous)                        │
 │                                                                 │
-│ The EMS controls what physically happens:                       │
+│ Energy flows according to physics, not software:                │
 │   • Solar inverter: always on, produces whatever the sun gives  │
 │   • Battery: EMS sends charge/discharge commands via MQTT       │
+│     (this is the ONLY physical action the EMS takes)            │
 │   • Grid: absorbs the mismatch automatically (Kirchhoff's law) │
+│   • Households: draw whatever they need from the shared bus     │
 │                                                                 │
 │ Meters on every asset measure what actually happened.           │
 │ Nothing is "routed" — physics routes itself.                    │
@@ -201,7 +203,7 @@ The on-chain parameters (ownership %, fees, export price) serve as the **rules**
  STAGE 1          STAGE 2           STAGE 3            STAGE 4
  ┌────────┐      ┌────────────┐    ┌──────────────┐   ┌───────────────┐
  │ Smart  │ MQTT │ Ingestion  │    │  Aggregation │   │     EMS       │
- │ Meters │─────►│  Service   │───►│  (15-min)    │──►│  Distribution │
+ │ Meters │─────►│  Service   │───►│  (15-min)    │──►│  Attribution  │
  │        │      │            │    │              │   │  Algorithm    │
  └────────┘      └─────┬──────┘    └──────┬───────┘   └───────┬───────┘
                        │                  │                    │
@@ -431,11 +433,11 @@ If `reading_count` < expected count (e.g., < 80 out of 90 expected readings at 1
 
 ---
 
-## Stage 4 — EMS Distribution Algorithm
+## Stage 4 — EMS Attribution Algorithm
 
 ### What happens
 
-The EMS is the brain. It takes the interval readings, reads the contract's configuration parameters, and decides how to attribute each kWh to each household — and at what price, from what source.
+The EMS does not distribute physical energy — physics already did that on the shared bus. The EMS looks at what happened (meter readings) and computes the **financial attribution**: which kWh each household is deemed to have consumed from which source, and at what price. This is an accounting exercise, not a physical one.
 
 ### Inputs
 
@@ -452,7 +454,7 @@ The EMS is the brain. It takes the interval readings, reads the contract's confi
 
 ### The contract guides the EMS
 
-The smart contract's parameters are not just for settlement — they define the economic rules that the EMS must follow when deciding physical energy dispatch:
+The smart contract's parameters are not just for settlement — they define the economic rules that the EMS must follow when computing the financial attribution:
 
 ```
 Contract parameter          │  EMS uses it to...
@@ -976,9 +978,10 @@ The battery is special because data flows in both directions — the EMS both **
             │              │             ▲
             ▼              │             │
      ┌──────────────┐      │    ┌──────────────┐
-     │  raw_readings │     │    │  EMS decides  │
-     │  (Stage 2)   │      │    │  based on:    │
-     └──────────────┘      │    │  - solar fcst │
+     │  raw_readings │     │    │  EMS controls │
+     │  (Stage 2)   │      │    │  battery      │
+     └──────────────┘      │    │  based on:    │
+                           │    │  - solar fcst │
                            │    │  - prices     │
                            │    │  - SoC        │
                            │    │  - demand     │
@@ -1234,7 +1237,7 @@ uint256 charge = readings[i].quantity * readings[i].pricePerKwh;
 
 The contract doesn't care about ordering. Alice's reading says `30 qty at 10 price` — she pays 300 regardless of whether her reading is first or last in the array. Bob's reading says `40 qty at 10 price + 5 qty at 25 price` — he pays 525 regardless of position.
 
-**The EMS decides the fair allocation off-chain.** But the algorithm matters. Two naive approaches that seem fair but aren't:
+**The EMS computes the fair financial attribution off-chain.** But the algorithm matters. Two naive approaches that seem fair but aren't:
 
 **Naive approach 1: Pro-rata by demand (unfair — socializes overconsumption)**
 
@@ -1802,8 +1805,8 @@ The honest answer: blockchains are good at enforcing financial rules (zero-sum, 
 
 | Term | Definition |
 |---|---|
-| **EMS** | Energy Management System — the backend that decides how to distribute physical energy and submits settlements on-chain |
-| **Merit-order dispatch** | Allocate cheapest energy first: solar → battery → community surplus → grid import |
+| **EMS** | Energy Management System — the backend that (1) controls the battery in real-time and (2) computes the financial attribution of energy after each interval, then submits settlements on-chain. It does NOT route or distribute physical energy — physics does that on the shared bus. |
+| **Merit-order** | The accounting rule for attributing consumption to sources, cheapest first: solar entitlement → community surplus → grid import. This is a financial label, not a physical action — all energy already flowed on the shared bus. |
 | **LOCAL** | Energy produced within the community (solar, battery discharge) |
 | **IMPORT** | Energy purchased from the external grid (utility) |
 | **cashCreditBalance** | Internal accounting unit in the contract; positive = credit (ERC-20 token), negative = debt |
