@@ -8,38 +8,38 @@ teams:
       meta-cognition, and Cursor IDE configuration.
     agents:
       - name: fullstack-nextjs
-        role: roles/Senior-Lead-Fullstack-Nextjs-Engineer.md
+        role: roles/senior-lead-fullstack-nextjs-engineer.base.md
         model: anthropic/claude-sonnet-4
       - name: neon-db
-        role: roles/Senior-Neon-DB-Engineer.md
+        role: roles/senior-neon-db-engineer.base.md
         model: anthropic/claude-sonnet-4
       - name: app-security
-        role: roles/Senior-Application-Security-Engineer.md
+        role: roles/senior-application-security-engineer.base.md
         model: anthropic/claude-sonnet-4
       - name: qa-test
-        role: roles/Senior-QA-Test-Engineer.md
+        role: roles/senior-qa-test-engineer.base.md
         model: anthropic/claude-sonnet-4
       - name: ui-ux-design
-        role: roles/Senior-UI-UX-Design-Engineer.md
+        role: roles/senior-ui-ux-design-engineer.base.md
         model: anthropic/claude-sonnet-4
       - name: product-owner
-        role: roles/Senior-Product-Owner.md
+        role: roles/senior-product-owner.base.md
         model: anthropic/claude-sonnet-4
       - name: requirements-eng
-        role: roles/Senior-Requirements-Engineer.md
+        role: roles/senior-requirements-engineer.base.md
         model: anthropic/claude-sonnet-4
       - name: prompt-eng
-        role: roles/Senior-Prompt-Engineer.md
+        role: roles/senior-prompt-engineer.base.md
         model: anthropic/claude-sonnet-4
       - name: user-researcher
-        role: roles/Senior-User-Researcher.md
+        role: roles/senior-user-researcher.base.md
         model: anthropic/claude-sonnet-4
       - name: cursor-engineer
-        role: roles/Elite-Senior-Lead-Cursor-Engineer.md
+        role: roles/elite-senior-lead-cursor-engineer.base.md
         model: anthropic/claude-sonnet-4
       - name: i18n-eng
-        role: roles/I18n-Engineer.md
+        role: roles/i18n-engineer.md
         model: anthropic/claude-sonnet-4
       - name: meta-cognition
-        role: roles/Meta-Cognition-Bounding-Expert.md
+        role: roles/meta-cognitive-reasoning-expert.base.md
         model: anthropic/claude-sonnet-4
