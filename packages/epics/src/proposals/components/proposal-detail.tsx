@@ -227,13 +227,13 @@ export const ProposalDetail = ({
 
     const isQuorumReached = Boolean(
       Number(proposalDetails?.quorumPercentage ?? 0) >=
-      Number(spaceDetails?.quorum ?? 0),
+        Number(spaceDetails?.quorum ?? 0),
     );
     setQuorumReached(isQuorumReached);
 
     const isUnityReached = Boolean(
       Number(proposalDetails?.unityPercentage ?? 0) >=
-      Number(spaceDetails?.unity ?? 0),
+        Number(spaceDetails?.unity ?? 0),
     );
     setUnityReached(isUnityReached);
 
@@ -295,7 +295,7 @@ export const ProposalDetail = ({
                 : ('member' as const),
             address: burn.member,
             amount: formatUnits(burn.number, resolveTokenDecimals(burn.token)),
-            allBalance: burn.allBalance ?? false,
+            allBalance: false,
           })),
         },
       };
