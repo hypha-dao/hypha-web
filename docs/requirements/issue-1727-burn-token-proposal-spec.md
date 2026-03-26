@@ -299,3 +299,56 @@ Choose one:
 - Proposal detail supports burn rendering.
 - i18n keys merged.
 - If contract changes included: solidity tests cover permission and execution behavior.
+
+## 17) Task Update (Issue #1727 Checklist)
+
+Use this section as the task/spec status block for the issue.
+
+### 17.1 UI/UX scope from issue prompts
+
+- [ ] Add a treasury menu entry under minting:
+  - **Title:** Burn Tokens on Specified Spaces or Wallets
+  - **Description:** Remove (burn) tokens from chosen spaces or wallet addresses. This action reduces the total token supply and can be used to manage circulation or correct allocations.
+  - **Position:** directly below minting action in Space Settings.
+
+- [ ] Create proposal type from mint template:
+  - **Proposal label:** Token Burning
+  - Keep base fields parity with mint proposal:
+    - title
+    - image upload
+    - description
+    - attachments
+
+- [ ] Add first section:
+  - **Section:** Select Token
+  - **Description:** Choose a token to burn
+  - **Field:** token dropdown scoped to tokens created in current space.
+
+- [ ] Empty-token UX:
+  - show `No token found.`
+  - show helper message with hyperlink:
+    - `Your space has not yet created a token, click here to first issue a token`
+    - link target: issue token proposal route.
+
+- [ ] Add token-burn rows section:
+  - **Section:** Token Burn
+  - **Description:** Remove (burn) tokens from chosen spaces or wallet addresses. This action reduces the total token supply and can be used to manage circulation or correct allocations.
+  - **Row fields:** Select Member, Space toggle, Address (auto-filled if selected), Amount, All balance, Add row.
+  - **All balance helper:** When selected, show warning that full balance is permanently burned.
+
+### 17.2 Smart-contract connection scope
+
+- [ ] Connect burn action so approved proposal execution calls token burn on-chain via DAO proposal transactions.
+- [ ] Apply mint-flow parity architecture:
+  - settings action -> create page -> form/plugin -> orchestrator -> web3 mutation -> `createProposal` tx list -> decoder/detail rendering.
+- [ ] Resolve burn authority decision before implementation (Section 10, D-1):
+  - Option A (recommended): executor-authorized burn method in space token contracts.
+  - Option B: allowance-based `burnFrom` with explicit UX warnings and prechecks.
+
+### 17.3 QA exit checklist
+
+- [ ] Validation tests for token selection, rows, addresses, amounts, and all-balance behavior.
+- [ ] Web3 transaction encoding tests (one burn tx per row).
+- [ ] Decoder/detail rendering tests for burn proposal data.
+- [ ] E2E flow for create + submit + detail + resubmit route mapping.
+- [ ] Contract tests for burn authority model chosen in D-1.
