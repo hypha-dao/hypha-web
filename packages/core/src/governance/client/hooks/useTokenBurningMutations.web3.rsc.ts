@@ -33,13 +33,32 @@ interface CreateTokenBurningInput {
 }
 
 const chainId = 8453;
+const TOKEN_DECIMALS = 18;
 
 const toTokenAmount = (amount: string) => {
-  const parsed = Number.parseFloat(amount);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
+  const normalizedAmount = amount.trim().replace(',', '.');
+  if (normalizedAmount.length === 0) {
+    throw new Error('Please enter amount');
+  }
+
+  if (!/^\d+(\.\d+)?$/.test(normalizedAmount)) {
     throw new Error('Amount must be greater than 0');
   }
-  return BigInt(Math.round(parsed * 1_000_000)) * 10n ** 12n;
+
+  const [integerPartRaw, fractionPartRaw = ''] = normalizedAmount.split('.');
+  const integerPart = integerPartRaw.replace(/^0+/, '') || '0';
+  const fractionPart = fractionPartRaw.slice(0, TOKEN_DECIMALS);
+  const paddedFractionPart = fractionPart.padEnd(TOKEN_DECIMALS, '0');
+
+  const tokenAmount =
+    BigInt(integerPart) * 10n ** BigInt(TOKEN_DECIMALS) +
+    BigInt(paddedFractionPart);
+
+  if (tokenAmount <= 0n) {
+    throw new Error('Amount must be greater than 0');
+  }
+
+  return tokenAmount;
 };
 
 export const useTokenBurningMutationsWeb3Rsc = ({
@@ -75,6 +94,9 @@ export const useTokenBurningMutationsWeb3Rsc = ({
               functionName: 'balanceOf',
               args: [row.address],
             });
+            if (balance === 0n) {
+              throw new Error(`Target has zero balance: ${row.address}`);
+            }
             return { ...row, burnAmount: balance };
           }
 

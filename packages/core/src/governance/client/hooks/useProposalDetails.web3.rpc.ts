@@ -114,7 +114,7 @@ export const useProposalDetailsWeb3Rpc = ({
     }> = [];
 
     const burnings: Array<{
-      member: `0x${string}`;
+      member: `0x${string}` | null;
       number: bigint;
       token: `0x${string}`;
     }> = [];

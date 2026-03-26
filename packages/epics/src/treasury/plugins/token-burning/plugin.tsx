@@ -17,20 +17,13 @@ import {
 } from '@hypha-platform/ui';
 import { ChevronDownIcon } from '@radix-ui/themes';
 import { useFormContext, useWatch } from 'react-hook-form';
-import { Person, Space, Token } from '@hypha-platform/core/client';
+import { Person, Space } from '@hypha-platform/core/client';
 import { useTranslations } from 'next-intl';
-import { useTokens } from '../../hooks';
+import { ExtendedToken, useTokens } from '../../hooks/use-tokens';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { TokenBurnTargetsFieldArray } from './token-burn-targets-field-array';
 import { getTokenTypeLabel } from '../../components/common/token-type-field';
-
-interface ExtendedToken extends Token {
-  space?: {
-    title: string;
-    slug: string;
-  };
-}
 
 export const TokenBurningPlugin = ({
   spaceSlug,

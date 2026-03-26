@@ -10,17 +10,20 @@ Feature intent: add a **Token Burning** proposal flow that mirrors existing **Tr
 ### Mint flow currently implemented
 
 1. **Settings action/menu entry**
+
    - `apps/web/src/app/[lang]/dho/[id]/_components/select-settings-action.tsx`
    - Action title/description from `SpaceSettingsAction.actions.mintTokensToSpaceTreasury`
    - Route: `create/mint-tokens-to-space-treasury`
 
 2. **Create page + form**
+
    - `apps/web/src/app/[lang]/dho/[id]/@aside/[tab]/create/mint-tokens-to-space-treasury/page.tsx`
    - Form: `packages/epics/src/governance/components/mint-tokens-to-space-treasury-form.tsx`
    - Plugin UI: `packages/epics/src/treasury/plugins/mint-tokens-to-space-treasury/plugin.tsx`
    - Validation: `schemaMintTokensToSpaceTreasury` in `packages/core/src/governance/validation.ts`
 
 3. **Web2 + Web3 orchestration**
+
    - Orchestrator: `useMintTokensToSpaceTreasuryOrchestrator.ts`
    - Web3 mutation: `useMintTokensToSpaceTreasuryMutations.web3.rsc.ts`
    - On-chain tx creation:
@@ -29,6 +32,7 @@ Feature intent: add a **Token Burning** proposal flow that mirrors existing **Tr
      - calldata = `decayingSpaceTokenAbi.mint(to, amount)`
 
 4. **Proposal details decoding + rendering**
+
    - Decode: `packages/core/src/governance/client/hooks/decoders.ts` (`type: 'mint'`)
    - Aggregate: `useProposalDetails.web3.rpc.ts` (`mintings[]`)
    - Render: `proposal-detail.tsx` + `proposal-mint-item.tsx`
@@ -42,6 +46,7 @@ Feature intent: add a **Token Burning** proposal flow that mirrors existing **Tr
 ### Contracts with burn capability found
 
 1. **Space tokens (the same token family used in mint proposal target dropdown)**
+
    - `RegularSpaceToken` inherits `ERC20BurnableUpgradeable`
    - ABI (generated) includes `burn(uint256)` and `burnFrom(address,uint256)`
    - `DecayingSpaceToken` and `OwnershipSpaceToken` inherit from `RegularSpaceToken`
@@ -53,6 +58,7 @@ Feature intent: add a **Token Burning** proposal flow that mirrors existing **Tr
 ### Connection approach (mint-parity compatible)
 
 **Primary connection path SHALL match mint proposal architecture:**
+
 - create a DAO proposal with one or more transactions via `daoProposalsImplementation.createProposal`
 - each transaction target is the selected token contract
 - each transaction calldata encodes burn function invocation
@@ -68,6 +74,7 @@ This is a blocker for frictionless burn from arbitrary member/wallet addresses u
 ## 4) Scope
 
 ### In scope
+
 - New settings action under treasury group, positioned below mint action.
 - New create proposal route and UI for token burning.
 - Burn proposal validation schema.
@@ -79,23 +86,25 @@ This is a blocker for frictionless burn from arbitrary member/wallet addresses u
 - QA automation additions (unit/integration/E2E where feasible).
 
 ### Out of scope
+
 - Non-Base chain support.
 - Bulk gas optimization contract redesign beyond burn capability needed for this feature.
 - Retroactive migration of previous proposals.
 
 ## 5) Functional Requirements
 
-**FR-1** The system SHALL display a new treasury settings action titled **“Burn Tokens on Specified Spaces or Wallets”** directly below the mint action entry.  
+**FR-1** The system SHALL display a new treasury settings action titled **“Burn Tokens on Specified Spaces or Wallets”** directly below the mint action entry.
 
-**FR-2** The system SHALL route the new action to a dedicated create page at `create/token-burning` (final slug to be confirmed) and load a burn proposal form patterned on the mint proposal form.  
+**FR-2** The system SHALL route the new action to a dedicated create page at `create/token-burning` (final slug to be confirmed) and load a burn proposal form patterned on the mint proposal form.
 
-**FR-3** The system SHALL create a burn proposal with proposal label **“Token Burning”** while preserving shared base fields parity with mint proposal: title, image, description, attachments.  
+**FR-3** The system SHALL create a burn proposal with proposal label **“Token Burning”** while preserving shared base fields parity with mint proposal: title, image, description, attachments.
 
-**FR-4** The system SHALL provide a **Select Token** section with description **“Choose a token to burn”** and a dropdown constrained to tokens created in the current space.  
+**FR-4** The system SHALL provide a **Select Token** section with description **“Choose a token to burn”** and a dropdown constrained to tokens created in the current space.
 
-**FR-5** The system SHALL show “No token found.” in the token selector and display: **“Your space has not yet created a token, click here to first issue a token”** linking to issue-token proposal creation when no eligible token exists.  
+**FR-5** The system SHALL show “No token found.” in the token selector and display: **“Your space has not yet created a token, click here to first issue a token”** linking to issue-token proposal creation when no eligible token exists.
 
 **FR-6** The system SHALL provide a **Token Burn** section with repeatable burn rows containing:
+
 - target type (member/space),
 - target selector,
 - resolved wallet address,
@@ -183,28 +192,34 @@ Then route resolves to burn create page using `Token Burning` label mapping.
 ### Decision D-1: Burn authority model
 
 To support “burn from chosen spaces or wallet addresses” without off-band approvals:
+
 - **Preferred:** implement executor-authorized burn method on space token contracts and use that for proposal tx encoding.
 
 If D-1 is not approved:
+
 - implement allowance-based burnFrom flow and explicitly require allowances from target addresses; UX must communicate potential execution revert risk.
 
 ### Decision D-2: “All balance” semantics
 
 Choose one:
+
 1. **Snapshot at proposal creation** (amount fixed then; execution may fail if balance falls).
 2. **Evaluate at execution** (requires callable contract function that computes current balance during execution).
 
 ## 11) Implementation Map (Expected files to touch)
 
 - Menu/action:
+
   - `apps/web/src/app/[lang]/dho/[id]/_components/select-settings-action.tsx`
   - `packages/i18n/src/messages/en.json` (`SpaceSettingsAction.actions.*`)
 
 - Routing/page:
+
   - `apps/web/src/app/[lang]/dho/[id]/@aside/[tab]/create/token-burning/page.tsx` (new)
   - `apps/web/src/app/[lang]/dho/[id]/_components/plugins.tsx`
 
 - Form/plugin:
+
   - `packages/epics/src/governance/components/create-proposal-token-burning-form.tsx` (new)
   - `packages/epics/src/treasury/plugins/token-burning/plugin.tsx` (new)
   - exports in:
@@ -212,17 +227,20 @@ Choose one:
     - `packages/epics/src/governance/components/index.ts`
 
 - Validation + hooks:
+
   - `packages/core/src/governance/validation.ts` (new schema)
   - `packages/core/src/governance/client/hooks/useTokenBurningOrchestrator.ts` (new)
   - `packages/core/src/governance/client/hooks/useTokenBurningMutations.web3.rsc.ts` (new)
 
 - Decode/details:
+
   - `packages/core/src/governance/client/hooks/decoders.ts` (burn decode case)
   - `packages/core/src/governance/client/hooks/useProposalDetails.web3.rpc.ts` (aggregate burns)
   - `packages/epics/src/governance/components/proposal-burn-item.tsx` (new)
   - `packages/epics/src/proposals/components/proposal-detail.tsx`
 
 - Resubmit mapping:
+
   - `packages/epics/src/proposals/components/form-voting.tsx`
 
 - Contract changes (if D-1 Option A approved):
@@ -235,11 +253,13 @@ Choose one:
 ### 12.1 Unit tests
 
 1. **Validation schema tests**
+
    - valid/invalid addresses
    - amount rules with/without all-balance
    - no-token/no-row errors
 
 2. **Web3 mutation builder tests**
+
    - creates one tx per burn row
    - encodes expected function selector and args
    - applies correct decimals conversion
@@ -251,6 +271,7 @@ Choose one:
 ### 12.2 Integration tests
 
 1. **Orchestrator tests**
+
    - successful Web2+Web3+link flow
    - rollback/delete behavior on Web3 failure
 
@@ -307,11 +328,13 @@ Use this section as the task/spec status block for the issue.
 ### 17.1 UI/UX scope from issue prompts
 
 - [ ] Add a treasury menu entry under minting:
+
   - **Title:** Burn Tokens on Specified Spaces or Wallets
   - **Description:** Remove (burn) tokens from chosen spaces or wallet addresses. This action reduces the total token supply and can be used to manage circulation or correct allocations.
   - **Position:** directly below minting action in Space Settings.
 
 - [ ] Create proposal type from mint template:
+
   - **Proposal label:** Token Burning
   - Keep base fields parity with mint proposal:
     - title
@@ -320,11 +343,13 @@ Use this section as the task/spec status block for the issue.
     - attachments
 
 - [ ] Add first section:
+
   - **Section:** Select Token
   - **Description:** Choose a token to burn
   - **Field:** token dropdown scoped to tokens created in current space.
 
 - [ ] Empty-token UX:
+
   - show `No token found.`
   - show helper message with hyperlink:
     - `Your space has not yet created a token, click here to first issue a token`

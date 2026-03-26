@@ -91,10 +91,19 @@ export const TokenBurningForm = ({
   const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
 
   const handleCreate = async (data: FormValues) => {
+    if (
+      typeof spaceId !== 'number' ||
+      !Number.isFinite(spaceId) ||
+      typeof web3SpaceId !== 'number' ||
+      !Number.isFinite(web3SpaceId)
+    ) {
+      throw new Error('Invalid space context for token burning proposal');
+    }
+
     await createTokenBurning({
       ...data,
-      spaceId: spaceId as number,
-      web3SpaceId: web3SpaceId as number,
+      spaceId,
+      web3SpaceId,
     });
   };
 

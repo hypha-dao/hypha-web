@@ -243,7 +243,11 @@ export const useTokenBurningOrchestrator = ({
         web3.errorCreateTokenBurning,
         web3.errorWaitTokenBurningFromTransaction,
       ].filter(Boolean),
-    [web2, web3],
+    [
+      web2.errorCreateAgreementMutation,
+      web3.errorCreateTokenBurning,
+      web3.errorWaitTokenBurningFromTransaction,
+    ],
   );
 
   const reset = useCallback(() => {

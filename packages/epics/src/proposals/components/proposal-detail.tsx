@@ -42,6 +42,20 @@ import { TransparencyLevel } from '../../spaces/components/transparency-level';
 import { useTranslations } from 'next-intl';
 import { formatUnits } from 'viem';
 
+const TOKEN_DECIMALS_BY_ADDRESS: Record<string, number> = {
+  // USDC (Base)
+  '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913': 6,
+  // USDC (test/development deployment)
+  '0x60a3e35cc302bfa44cb288bc5a4f316fdb1adb42': 6,
+  // cbBTC (Base)
+  '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf': 8,
+};
+
+const resolveTokenDecimals = (tokenAddress?: string) => {
+  if (!tokenAddress) return 18;
+  return TOKEN_DECIMALS_BY_ADDRESS[tokenAddress.toLowerCase()] ?? 18;
+};
+
 type ProposalDetailProps = ProposalHeadProps & {
   documentId?: number;
   content?: string;
@@ -213,13 +227,13 @@ export const ProposalDetail = ({
 
     const isQuorumReached = Boolean(
       Number(proposalDetails?.quorumPercentage ?? 0) >=
-        Number(spaceDetails?.quorum ?? 0),
+      Number(spaceDetails?.quorum ?? 0),
     );
     setQuorumReached(isQuorumReached);
 
     const isUnityReached = Boolean(
       Number(proposalDetails?.unityPercentage ?? 0) >=
-        Number(spaceDetails?.unity ?? 0),
+      Number(spaceDetails?.unity ?? 0),
     );
     setUnityReached(isUnityReached);
 
@@ -255,30 +269,33 @@ export const ProposalDetail = ({
     if (label === 'Treasury Minting') {
       const minting = proposalDetails.mintings?.[0];
       if (!minting) return undefined;
+      const decimals = resolveTokenDecimals(minting.token);
 
       return {
         mint: {
           token: minting.token,
-          amount: formatUnits(minting.number, 18),
+          amount: formatUnits(minting.number, decimals),
         },
       };
     }
 
     if (label === 'Token Burning') {
-      const burnings = proposalDetails.burnings?.filter(
-        (burn) => !!burn.member,
-      );
+      const burnings = proposalDetails.burnings;
       const firstBurning = burnings?.[0];
-      if (!firstBurning || !burnings?.length) return undefined;
+      if (!firstBurning || !burnings.length) return undefined;
 
       return {
         tokenBurning: {
           token: firstBurning.token,
           burns: burnings.map((burn) => ({
-            type: 'member' as const,
+            type:
+              burn.member ===
+              ('0x0000000000000000000000000000000000000000' as const)
+                ? ('space' as const)
+                : ('member' as const),
             address: burn.member,
-            amount: formatUnits(burn.number, 18),
-            allBalance: false,
+            amount: formatUnits(burn.number, resolveTokenDecimals(burn.token)),
+            allBalance: burn.allBalance ?? false,
           })),
         },
       };
