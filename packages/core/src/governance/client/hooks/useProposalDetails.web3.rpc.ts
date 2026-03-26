@@ -28,8 +28,7 @@ const resolveTokenDecimals = (address: string) => {
   return 18;
 };
 
-type ProposalDetailsResponse = Awaited<ReturnType<typeof getProposalDetails>>;
-type ProposalTransaction = ProposalDetailsResponse['result'][9][number];
+type ProposalTransaction = Parameters<typeof decodeTransaction>[0];
 
 export const useProposalDetailsWeb3Rpc = ({
   proposalId,
