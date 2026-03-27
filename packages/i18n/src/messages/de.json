@@ -1306,5 +1306,37 @@
         }
       }
     }
+  },
+  "AiPanel": {
+    "title": "Hypha AI",
+    "suggestions": {
+      "aboutSpace": "Erzähl mir etwas über diesen Space",
+      "memberCount": "Wie viele Mitglieder hat dieser Space?",
+      "agreements": "Welche Vereinbarungen gibt es in diesem Space?",
+      "structure": "Beschreibe die Struktur dieses Spaces"
+    },
+    "welcome": "Hallo! Ich bin dein Hypha AI-Assistent. Ich kann Space-Details wie Mitgliederzahlen, Vereinbarungen und Strukturen nachschlagen. Frag mich alles über den Space, den du gerade ansiehst.",
+    "placeholder": "Frag Hypha AI etwas...",
+    "sendButton": "Senden",
+    "stopButton": "Stoppen",
+    "newlineHint": "Shift+Enter für neue Zeile",
+    "signIn": "Melde dich an, um Hypha AI zu verwenden",
+    "signInButton": "Anmelden",
+    "loading": "Laden...",
+    "openPanel": "Hypha AI öffnen",
+    "hidePanel": "AI-Panel ausblenden",
+    "resetChat": "Chat zurücksetzen",
+    "closePanel": "Panel schließen",
+    "copyButton": "Kopieren",
+    "copiedButton": "Kopiert!",
+    "toolLookingUp": "Space wird gesucht…",
+    "toolLookingUpSlug": "Space \"{slug}\" wird gesucht…",
+    "toolCompleted": "Tool-Aufruf abgeschlossen.",
+    "toolFoundSpace": "{title} ({slug}) gefunden - {memberCount} Mitglieder, {documentCount} Vereinbarungen",
+    "toolNoSpace": "Kein Space für Slug \"{slug}\" gefunden",
+    "toolTokens": "{count} Token(s) für Space \"{slug}\" abgerufen.",
+    "toolError": "Fehler: {message}",
+    "streamError": "Beim Generieren der Antwort ist ein Fehler aufgetreten.",
+    "attachment": "Anhang"
   }
 }

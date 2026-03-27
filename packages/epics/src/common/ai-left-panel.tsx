@@ -19,6 +19,15 @@ import {
   MOCK_SUGGESTIONS,
 } from './ai-panel';
 
+type ChatUIMessage = {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  parts?: Array<
+    | { type: 'text'; text: string }
+    | { type: string; [k: string]: unknown }
+  >;
+};
+
 const DEBUG = process.env.NEXT_PUBLIC_CHAT_DEBUG === 'true';
 
 export function AiLeftPanel() {
@@ -66,7 +75,7 @@ export function AiLeftPanel() {
       console.error('[AiLeftPanel] sendMessage error:', err);
       setInput(text);
     }
-  }, [input, isStreaming, sendMessage, buildMessageOptions, spaceSlug]);
+  }, [input, isStreaming, sendMessage, buildMessageOptions]);
 
   const handleStop = useCallback(() => {
     void stop();
@@ -88,7 +97,7 @@ export function AiLeftPanel() {
         console.error('[AiLeftPanel] suggestion sendMessage error:', err);
       }
     },
-    [sendMessage, buildMessageOptions, spaceSlug],
+    [sendMessage, buildMessageOptions],
   );
 
   if (isLoading) {
@@ -132,16 +141,7 @@ export function AiLeftPanel() {
       </SidebarHeader>
       <SidebarContent className="bg-background-2 min-h-0">
         <AiPanelMessages
-          messages={
-            messages as Array<{
-              id: string;
-              role: 'user' | 'assistant' | 'system';
-              parts?: Array<
-                | { type: 'text'; text: string }
-                | { type: string; [k: string]: unknown }
-              >;
-            }>
-          }
+          messages={messages as ChatUIMessage[]}
           suggestions={MOCK_SUGGESTIONS}
           showSuggestions={true}
           onSuggestionSelect={handleSuggestionSelect}

@@ -218,8 +218,9 @@ export async function POST(req: Request) {
         message: error instanceof Error ? error.message : String(error),
         ...(OPENROUTER_DEBUG && { error }),
       });
-      // TODO: Resolve locale server-side or let the client render the localized fallback
-      return 'An error occurred while generating the response.';
+      // Non-locale API route — return a generic error code the client can map to a translation.
+      // The client-side AiPanel component handles localized display via the 'streamError' i18n key.
+      return 'STREAM_ERROR';
     },
   });
 }

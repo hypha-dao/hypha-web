@@ -186,7 +186,7 @@ export function AiPanelMessageBubble({
                     rel="noopener noreferrer"
                     className="text-xs text-primary underline"
                   >
-                    Attachment
+                    {t('attachment')}
                   </a>
                 ) : null,
               )}
@@ -239,6 +239,7 @@ export function AiPanelMessageBubble({
               onClick={handleCopy}
               disabled={!textContent}
               className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+              aria-label={copied ? t('copiedButton') : t('copyButton')}
               title={copied ? t('copiedButton') : t('copyButton')}
             >
               <Copy className="h-3 w-3" />

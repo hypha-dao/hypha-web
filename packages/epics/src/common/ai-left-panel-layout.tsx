@@ -22,6 +22,7 @@ function AiSidebarTrigger() {
 
   return (
     <button
+      type="button"
       onClick={toggleSidebar}
       className="fixed left-0 top-20 z-10 flex items-center gap-1.5 rounded-r-xl border border-l-0 border-border bg-primary px-2.5 py-2 text-primary-foreground shadow-lg hover:opacity-90 transition-opacity"
       title={t('openPanel')}

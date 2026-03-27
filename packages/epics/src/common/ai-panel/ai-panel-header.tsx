@@ -22,15 +22,17 @@ export function AiPanelHeader({ onResetChat }: AiPanelHeaderProps) {
         </span>
       </div>
       <div className="flex min-w-0 flex-wrap items-center justify-end gap-1">
-        <button
-          type="button"
-          onClick={onResetChat}
-          className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          title={t('resetChat')}
-          aria-label={t('resetChat')}
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-        </button>
+        {onResetChat && (
+          <button
+            type="button"
+            onClick={onResetChat}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            title={t('resetChat')}
+            aria-label={t('resetChat')}
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+          </button>
+        )}
         <button
           type="button"
           onClick={toggleSidebar}
