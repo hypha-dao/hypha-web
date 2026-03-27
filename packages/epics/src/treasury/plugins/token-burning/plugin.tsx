@@ -252,6 +252,8 @@ export const TokenBurningPlugin = ({
             </Skeleton>
           </div>
 
+          <div className="border-t border-neutral-6" />
+
           <TokenBurnTargetsFieldArray
             members={members}
             spaces={spaces}
