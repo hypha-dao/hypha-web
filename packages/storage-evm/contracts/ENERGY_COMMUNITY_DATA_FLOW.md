@@ -1277,17 +1277,19 @@ PASS 1 — Ownership entitlement
   Bob:   entitled 3.0, needs 4.5 → consumes 3.0 LOCAL, deficit 1.5
   Carol: entitled 1.5, needs 1.0 → consumes 1.0 LOCAL, surplus 0.5
 
-PASS 2 — Surplus redistribution
+PASS 2 — Surplus redistribution (by ownership %)
   Total surplus = 0.5 kWh (Carol's unused entitlement)
   Total deficit = 1.5 kWh (Bob's unmet demand)
   Redistributable = min(surplus, deficit) = 0.5 kWh
 
-  Each deficit member gets surplus proportional to their deficit:
-    Bob: 0.5 × (1.5 / 1.5) = 0.5 kWh LOCAL (he's the only one short)
+  Surplus is split among deficit members by their ownership percentage
+  (not by deficit size — that would reward overconsumption):
+    Bob: only deficit member → gets all 0.5 kWh LOCAL
 
-  If there were multiple deficit members (say Bob needs 1.2, Dave needs 0.8):
-    Bob:  0.5 × (1.2 / 2.0) = 0.3 kWh LOCAL
-    Dave: 0.5 × (0.8 / 2.0) = 0.2 kWh LOCAL
+  If there were multiple deficit members (say Bob 40% owns, Dave 20% owns):
+    Combined ownership of deficit members: 40 + 20 = 60
+    Bob:  0.5 × (40 / 60) = 0.333 kWh LOCAL
+    Dave: 0.5 × (20 / 60) = 0.167 kWh LOCAL
 
 PASS 3 — Grid import for remaining deficit
   Bob still needs: 1.5 - 0.5 = 1.0 kWh → IMPORT at grid price
@@ -1315,17 +1317,18 @@ def fair_allocation(members, total_local, local_price, import_price):
         m.surplus = m.entitlement - m.local_consumed
         m.deficit = m.demand - m.local_consumed
 
-    # PASS 2: Redistribute surplus proportionally to deficit
+    # PASS 2: Redistribute surplus by ownership % of deficit members
     total_surplus = sum(m.surplus for m in members)
-    total_deficit = sum(m.deficit for m in members)
-    redistributable = min(total_surplus, total_deficit)
+    deficit_members = [m for m in members if m.deficit > 0]
+    deficit_ownership_sum = sum(m.ownershipBps for m in deficit_members)
+    redistributable = min(total_surplus, sum(m.deficit for m in deficit_members))
 
-    if redistributable > 0 and total_deficit > 0:
-        for m in members:
-            if m.deficit > 0:
-                extra_local = redistributable * m.deficit / total_deficit
-                m.local_consumed += extra_local
-                m.deficit -= extra_local
+    if redistributable > 0 and deficit_ownership_sum > 0:
+        for m in deficit_members:
+            extra_local = redistributable * m.ownershipBps / deficit_ownership_sum
+            extra_local = min(extra_local, m.deficit)  # can't receive more than you need
+            m.local_consumed += extra_local
+            m.deficit -= extra_local
 
     # PASS 3: Remaining deficit → grid import
     readings = []
@@ -1531,18 +1534,29 @@ function settleInterval(
         totalDeficit += deficit[i];
     }
 
-    // ── PASS 2: Redistribute surplus proportionally ───────────────
-    // Unused entitlements are shared among members who need more.
-    // Each deficit member gets a share proportional to their deficit.
+    // ── PASS 2: Redistribute surplus by ownership % ────────────────
+    // Unused entitlements are shared among deficit members,
+    // proportional to their ownership — not their deficit size.
+    // This rewards investment, not overconsumption.
+
+    uint256 deficitOwnershipSum = 0;
+    for (uint256 i = 0; i < consumption.length; i++) {
+        if (deficit[i] > 0) {
+            address addr = deviceToMember[consumption[i].deviceId];
+            deficitOwnershipSum += members[addr].ownershipBps;
+        }
+    }
 
     uint256 redistributable = totalSurplus < totalDeficit
         ? totalSurplus
         : totalDeficit;
 
-    if (redistributable > 0 && totalDeficit > 0) {
+    if (redistributable > 0 && deficitOwnershipSum > 0) {
         for (uint256 i = 0; i < consumption.length; i++) {
             if (deficit[i] > 0) {
-                uint256 extraLocal = (redistributable * deficit[i]) / totalDeficit;
+                address addr = deviceToMember[consumption[i].deviceId];
+                uint256 extraLocal = (redistributable * members[addr].ownershipBps) / deficitOwnershipSum;
+                if (extraLocal > deficit[i]) extraLocal = deficit[i];
                 localConsumed[i] += extraLocal;
                 deficit[i] -= extraLocal;
             }
