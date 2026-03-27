@@ -108,7 +108,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
           isArchived={isArchived}
           configPath={configPath}
           className={cn(
-            'absolute top-2 z-10',
+            'absolute top-2 z-10 xl:hidden',
             showExitButton && web3SpaceId ? 'right-12' : 'right-2',
           )}
         />
@@ -129,7 +129,7 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
               </CardTitle>
             </Skeleton>
           </div>
-          <Skeleton loading={isLoading} className="mb-3" width="100%" height="26px">
+          <Skeleton loading={isLoading} className="mb-4" width="100%" height="26px">
             <div
               className="text-1 text-neutral-11 mb-0 line-clamp-2"
               style={{
@@ -141,8 +141,8 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
               {description}
             </div>
           </Skeleton>
-          <div className="flex gap-2 text-xs items-center min-w-0">
-            <div className="flex flex-col gap-y-1 gap-x-4 flex-wrap min-w-0 w-full">
+          <div className="mt-auto flex gap-2 text-xs items-end min-w-0">
+            <div className="flex flex-col gap-y-1 gap-x-4 flex-wrap min-w-0 flex-1">
               <div className="flex flex-row gap-y-2 gap-x-4 flex-wrap">
                 <div className="flex flex-row">
                   <Skeleton loading={isLoading} height="16px" width="80px">
@@ -181,6 +181,14 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
                   )}
               </div>
             </div>
+            <SpaceModeLabel
+              web3SpaceId={web3SpaceId}
+              isSandbox={isSandbox}
+              isDemo={isDemo}
+              isArchived={isArchived}
+              configPath={configPath}
+              className="hidden xl:flex ml-2 mb-0.5 shrink-0"
+            />
           </div>
         </div>
       </CardContent>
