@@ -7,18 +7,28 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createRemoteJWKSet, jwtVerify, errors as joseErrors } from 'jose';
 
-// Use the app's combined JWKS endpoint for JWT verification
-const JWKS_URL = new URL(
-  '/.well-known/jwks.json',
-  process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
-);
-const JWKS = createRemoteJWKSet(JWKS_URL);
+// Cache JWKS instances by origin to avoid redundant re-fetches across requests.
+// Using the request origin (instead of NEXT_PUBLIC_APP_URL) ensures the JWKS
+// endpoint is resolved relative to the same deployment that received the request.
+// This prevents 401s on Vercel preview deployments where NEXT_PUBLIC_APP_URL may
+// point to a URL protected by Vercel SSO, blocking server-side fetches.
+const jwksCache = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
+
+function getJWKS(origin: string): ReturnType<typeof createRemoteJWKSet> {
+  if (!jwksCache.has(origin)) {
+    const url = new URL('/.well-known/jwks.json', origin);
+    jwksCache.set(origin, createRemoteJWKSet(url));
+  }
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  return jwksCache.get(origin)!;
+}
 
 async function verifyAuthToken(
   token: string,
+  jwks: ReturnType<typeof createRemoteJWKSet>,
 ): Promise<{ valid: true } | { valid: false; reason: string }> {
   try {
-    await jwtVerify(token, JWKS);
+    await jwtVerify(token, jwks);
     return { valid: true };
   } catch (error) {
     if (error instanceof joseErrors.JWTExpired) {
@@ -143,7 +153,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const authResult = await verifyAuthToken(authToken);
+  const requestOrigin = new URL(req.url).origin;
+  const jwks = getJWKS(requestOrigin);
+  const authResult = await verifyAuthToken(authToken, jwks);
   if (!authResult.valid) {
     return NextResponse.json(
       { error: 'Unauthorized', reason: authResult.reason },

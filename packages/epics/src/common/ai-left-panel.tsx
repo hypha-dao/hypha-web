@@ -48,7 +48,7 @@ export function AiLeftPanel() {
     [],
   );
 
-  const { messages, sendMessage, stop, status, setMessages } = useChat({
+  const { messages, sendMessage, stop, status, setMessages, error } = useChat({
     transport,
   });
 
@@ -144,6 +144,14 @@ export function AiLeftPanel() {
         <AiPanelHeader onResetChat={handleResetChat} />
       </SidebarHeader>
       <SidebarContent className="bg-background-2 min-h-0">
+        {error && (
+          <div
+            role="alert"
+            className="mx-3 mt-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          >
+            {t('streamError')}
+          </div>
+        )}
         <AiPanelMessages
           messages={messages as ChatUIMessage[]}
           suggestions={suggestions}
