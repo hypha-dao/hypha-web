@@ -1,4 +1,4 @@
-import { flag } from '@vercel/flags/next';
+import { flag } from 'flags/next';
 import {
   HYPHA_AUTH_PROVIDER,
   HYPHA_ENABLE_AI_CHAT,
