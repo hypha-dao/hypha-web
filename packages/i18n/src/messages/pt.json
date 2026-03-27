@@ -398,6 +398,47 @@
         "clickHere": "Clique aqui",
         "noTokensSuffix": "primeiro emitir um token"
       },
+      "tokenBurning": {
+        "selectTokenTitle": "Selecionar token",
+        "selectTokenDescription": "Escolha um token para queimar",
+        "selectToken": "Selecionar token",
+        "tokenSupply": "Fornecimento de tokens",
+        "unlimitedSupply": "Fornecimento ilimitado",
+        "issuanceToDate": "Emissão até a data",
+        "tokenLabel": "Token",
+        "selectTokenPlaceholder": "Selecione um token",
+        "noTokenFound": "Nenhum token encontrado.",
+        "noTokensPrefix": "Seu espaço ainda não criou um token,",
+        "clickHere": "clique aqui",
+        "noTokensSuffix": "para emitir um token primeiro",
+        "tokenBurn": "Queima de tokens",
+        "tokenBurnDescription": "Remova (queime) tokens de espaços ou endereços de carteira selecionados. Esta ação reduz o fornecimento total de tokens e pode ser usada para gerenciar a circulação ou corrigir alocações.",
+        "burnTargetsLabel": "Queimar tokens",
+        "recipientTypeLabel": "Destinatário",
+        "member": "Membro",
+        "space": "Espaço",
+        "selectTarget": "Selecione membro ou espaço",
+        "selectMemberPlaceholder": "Selecione um membro...",
+        "selectSpacePlaceholder": "Selecione um espaço...",
+        "walletAddress": "Endereço da carteira",
+        "walletAddressPlaceholder": "Digite o endereço da carteira",
+        "addressAutofillHint": "Endereço preenchido automaticamente a partir do membro ou espaço selecionado.",
+        "amountLabel": "Valor",
+        "amountPlaceholder": "Digite o valor",
+        "recipientBalance": "Saldo de tokens do destinatário",
+        "recipientBalanceHint": "Saldo atual: {balance}",
+        "recipientBalanceValue": "{value} {symbol}",
+        "burnAmountExceedsBalance": "O valor da queima excede o saldo de tokens do destinatário. Insira um valor menor para continuar.",
+        "recipientBalanceLoading": "Carregando saldo...",
+        "recipientBalanceUnavailable": "Saldo indisponível",
+        "currentSpaceTag": "Espaço atual",
+        "allBalance": "Saldo total",
+        "noMembersFound": "Nenhum membro encontrado.",
+        "noSpacesFound": "Nenhum espaço encontrado.",
+        "allBalanceWarning": "Quando \"Saldo total\" estiver selecionado, todo o saldo de tokens deste membro ou espaço será queimado permanentemente.",
+        "add": "Adicionar",
+        "remove": "Remover"
+      },
       "spaceWithMonths": {
         "spaces": "Espaço(s)",
         "contribution": "Contribuição:",
@@ -432,6 +473,7 @@
       "spaceToSpace": "Espaço para Espaço",
       "issueNewToken": "Emitir novo token",
       "treasuryMinting": "Cunhagem de Tesouro",
+      "tokenBurning": "Queima de tokens",
       "backingVault": "Cofre de lastro",
       "buyHyphaTokensRewards": "Compre tokens Hypha (recompensas)",
       "spaceTransparency": "Transparência Espacial",
@@ -684,6 +726,10 @@
       "mintTokensToSpaceTreasury": {
         "title": "Mint Tokens para Tesouro Espacial",
         "description": "Crie tokens em seu tesouro espacial para financiar operações, distribuir recompensas ou fornecer liquidez."
+      },
+      "tokenBurning": {
+        "title": "Queimar tokens em espaços ou carteiras específicas",
+        "description": "Remova (queime) tokens de espaços ou endereços de carteira selecionados. Essa ação reduz o fornecimento total de tokens e pode ser usada para gerenciar a circulação ou corrigir alocações."
       },
       "tokenBackingVault": {
         "title": "Cofre de lastro de token",
@@ -1220,7 +1266,11 @@
       "maxRedemption": "Resgate máximo",
       "maxRedemptionValue": "{percent}% em {days} dias",
       "minimumBackingPercent": "Percentual mínimo de lastro",
-      "defaultAvatar": "Avatar padrão"
+      "tokenBurning": "Queima de tokens",
+      "burnRecipient": "Destinatário da queima",
+      "burnAmount": "Valor da queima",
+      "defaultAvatar": "Avatar padrão",
+      "selfBurn": "Autoqueima"
     },
     "entryMethods": {
       "openAccess": "Acesso aberto",
