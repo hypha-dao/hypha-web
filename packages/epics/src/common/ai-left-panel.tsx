@@ -44,8 +44,16 @@ export function AiLeftPanel() {
   );
 
   const transport = useMemo(
-    () => new DefaultChatTransport({ api: '/api/chat' }),
-    [],
+    () =>
+      new DefaultChatTransport({
+        api: '/api/chat',
+        headers: async () => {
+          const token = await getAccessToken?.();
+          return token ? { Authorization: `Bearer ${token}` } : {};
+        },
+        body: { ...(spaceSlug && { spaceSlug }) },
+      }),
+    [getAccessToken, spaceSlug],
   );
 
   const { messages, sendMessage, stop, status, setMessages, error } = useChat({
