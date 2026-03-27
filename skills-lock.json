@@ -1,6 +1,11 @@
 {
   "version": 1,
   "skills": {
+    "agentic-team-spawning": {
+      "source": "local/workspace",
+      "sourceType": "local",
+      "computedHash": "local-managed"
+    },
     "ai-sdk": {
       "source": "vercel/ai",
       "sourceType": "github",
