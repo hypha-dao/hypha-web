@@ -38,7 +38,8 @@ export async function POST(request: NextRequest) {
         errorMessage =
           'Profile with this nickname already exists. Please choose a different one.';
       } else if (error.message.includes('people_email_unique')) {
-        errorMessage = 'Profile with this email already exists.';
+        errorMessage =
+          'An account with this email already exists. Try signing in or use a different email.';
       }
     }
 
