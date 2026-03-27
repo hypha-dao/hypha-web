@@ -34,6 +34,10 @@ function AiSidebarTrigger() {
 }
 
 export function AiLeftPanelLayout({ children }: AiLeftPanelLayoutProps) {
+  if (process.env.NEXT_PUBLIC_ENABLE_AI_CHAT !== 'true') {
+    return <>{children}</>;
+  }
+
   return (
     <SidebarProvider
       defaultOpen={false}
