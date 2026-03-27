@@ -1,3 +1,4 @@
+// TODO: Replace with i18n translation keys (see ai-chat i18n follow-up)
 export const MOCK_SUGGESTIONS = [
   'Analyze recent signals',
   'Summarize top conversations',
@@ -13,13 +14,15 @@ export type Message = {
   isStreaming?: boolean;
 };
 
-export const MOCK_WELCOME_MESSAGE: Message = {
-  id: 'welcome',
-  role: 'assistant',
-  content:
-    "Hello! I'm your Hypha AI assistant. I can help you analyze signals, draft proposals, understand community dynamics, and coordinate across spaces. What would you like to explore?",
-  timestamp: new Date(),
-};
+export function createMockWelcomeMessage(): Message {
+  return {
+    id: 'welcome',
+    role: 'assistant',
+    content:
+      "Hello! I'm your Hypha AI assistant. I can help you analyze signals, draft proposals, understand community dynamics, and coordinate across spaces. What would you like to explore?",
+    timestamp: new Date(),
+  };
+}
 
 export const MOCK_AI_RESPONSES = [
   'Based on the current signal data, I can see a strong opportunity in the DeFi governance space. Three communities have shown 40%+ engagement spikes in the last 48 hours. Would you like me to generate a detailed breakdown?',

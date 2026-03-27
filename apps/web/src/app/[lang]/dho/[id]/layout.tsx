@@ -97,8 +97,8 @@ export default async function DhoLayout({
 
   return (
     <AiLeftPanelLayout>
-    <div className="flex max-w-container-2xl mx-auto">
-      <Container className="flex-grow min-w-0">
+      <div className="flex max-w-container-2xl mx-auto">
+        <Container className="flex-grow min-w-0">
         <div className="mb-6 flex items-center">
           <Breadcrumbs spaceId={spaceFromDb.id} lang={lang} />
         </div>
@@ -240,9 +240,9 @@ export default async function DhoLayout({
             </Carousel>
           </div>
         </div>
-      </Container>
-      {aside}
-    </div>
+        </Container>
+        {aside}
+      </div>
     </AiLeftPanelLayout>
   );
 }

@@ -1,6 +1,6 @@
 /**
  * Don't forget to update your APPs global.css to include this file!
- */
+
 @import 'tailwindcss';
 @source '../../../**/*.{ts,tsx}';
 
@@ -337,8 +337,8 @@
   }
 }
 
-/*---break---
- */
+
+
 
 :root {
   --sidebar: hsl(0 0% 98%);
@@ -351,8 +351,8 @@
   --sidebar-ring: hsl(217.2 91.2% 59.8%);
 }
 
-/*---break---
- */
+
+
 
 .dark {
   --sidebar: hsl(240 5.9% 10%);
@@ -365,8 +365,8 @@
   --sidebar-ring: hsl(217.2 91.2% 59.8%);
 }
 
-/*---break---
- */
+
+
 
 @theme inline {
   --color-sidebar: var(--sidebar);
