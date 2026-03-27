@@ -41,6 +41,8 @@
       "amountGreaterThanZero": "O valor deve ser maior que 0",
       "amountRequired": "Digite um valor",
       "tokenRequired": "Selecione um token",
+      "chooseTokenToBurn": "Escolha um token para queimar",
+      "atLeastOneBurnTargetRequired": "É necessário pelo menos um destino de queima",
       "atLeastOnePayoutRequired": "Pelo menos um pagamento é obrigatório",
       "purchaseAmountRequired": "Digite um valor de compra.",
       "selectSpaceToActivate": "Selecione um espaço para ativar.",

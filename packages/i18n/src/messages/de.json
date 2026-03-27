@@ -671,6 +671,8 @@
       "amountGreaterThanZero": "Der Betrag muss größer als 0 sein",
       "amountRequired": "Bitte geben Sie einen Betrag ein",
       "tokenRequired": "Bitte wählen Sie einen Token aus",
+      "chooseTokenToBurn": "Bitte wählen Sie einen Token zum Verbrennen aus",
+      "atLeastOneBurnTargetRequired": "Mindestens ein Verbrennungsziel ist erforderlich",
       "atLeastOnePayoutRequired": "Mindestens eine Auszahlung ist erforderlich",
       "purchaseAmountRequired": "Bitte geben Sie einen Kaufbetrag ein.",
       "selectSpaceToActivate": "Bitte wählen Sie einen Space zur Aktivierung aus.",

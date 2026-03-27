@@ -63,6 +63,8 @@
       "tokenAddressRequired": "La dirección del token es obligatoria",
       "integerRequired": "Debe ser un número entero",
       "chooseTokenToMint": "Elige un token para acuñar",
+      "chooseTokenToBurn": "Elige un token para quemar",
+      "atLeastOneBurnTargetRequired": "Se requiere al menos un objetivo de quema",
       "redemptionTokenPriceRequired": "El precio del token es obligatorio cuando la redención está activa. Ingresa un precio mayor que 0.",
       "redemptionReferenceCurrencyRequired": "La moneda de referencia es obligatoria cuando la redención está activa.",
       "redemptionMaxPercentRequired": "El % máximo de redención es obligatorio cuando la redención está activa. Ingresa 0 para no tener límite.",
