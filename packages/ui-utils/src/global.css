@@ -1,5 +1,6 @@
 /**
  * Don't forget to update your APPs global.css to include this file!
+ */
 
 @import 'tailwindcss';
 @source '../../../**/*.{ts,tsx}';
