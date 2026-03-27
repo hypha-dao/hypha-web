@@ -2,6 +2,7 @@
 
 import { useCallback, useRef } from 'react';
 import { Send, Square } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -20,8 +21,9 @@ export function AiPanelChatBar({
   onSend,
   onStop,
   isStreaming = false,
-  placeholder = 'Ask Hypha AI anything...',
+  placeholder,
 }: AiPanelChatBarProps) {
+  const t = useTranslations('AiPanel');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const autoResize = useCallback(() => {
@@ -33,9 +35,11 @@ export function AiPanelChatBar({
   }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
-      onSend();
+      if (value.trim().length > 0 && !isStreaming) {
+        onSend();
+      }
     }
   };
 
@@ -58,7 +62,8 @@ export function AiPanelChatBar({
             autoResize();
           }}
           onKeyDown={handleKeyDown}
-          placeholder={placeholder}
+          aria-label={placeholder ?? t('placeholder')}
+          placeholder={placeholder ?? t('placeholder')}
           rows={1}
           className={cn(
             'min-h-[36px] min-w-0 max-h-[160px] w-full resize-none',
@@ -71,7 +76,7 @@ export function AiPanelChatBar({
         {/* Bottom bar */}
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 px-3 pb-2.5">
           <span className="min-w-0 break-words text-xs text-muted-foreground">
-            Shift+Enter for newline
+            {t('newlineHint')}
           </span>
           <button
             type="button"
@@ -87,12 +92,12 @@ export function AiPanelChatBar({
             {isStreaming ? (
               <>
                 <Square className="h-3 w-3" />
-                Stop
+                {t('stopButton')}
               </>
             ) : (
               <>
                 <Send className="h-3 w-3" />
-                Send
+                {t('sendButton')}
               </>
             )}
           </button>

@@ -6,6 +6,11 @@ import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
+const chatRequestSchema = z.object({
+  messages: z.array(z.record(z.unknown())),
+  spaceSlug: z.string().nullish(),
+});
+
 export const maxDuration = 30;
 
 const OPENROUTER_DEBUG = process.env.OPENROUTER_DEBUG === 'true';
@@ -22,9 +27,19 @@ function isAbortLikeError(error: unknown): boolean {
 const BASE_SYSTEM_PROMPT =
   'You are Hypha AI, a helpful assistant for the Hypha DAO platform.';
 
+const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+function sanitizeSlug(slug: string): string | null {
+  const trimmed = slug.trim().toLowerCase();
+  if (!SLUG_PATTERN.test(trimmed) || trimmed.length > 128) return null;
+  return trimmed;
+}
+
 function buildSystemPrompt(spaceSlug?: string | null): string {
   if (spaceSlug) {
-    return `${BASE_SYSTEM_PROMPT}\n\nThe user is currently viewing the space with slug "${spaceSlug}". Use the get_space_by_slug tool to answer space-specific questions about space metadata, members, and structure.`;
+    const safe = sanitizeSlug(spaceSlug);
+    if (!safe) return BASE_SYSTEM_PROMPT;
+    return `${BASE_SYSTEM_PROMPT}\n\nThe user is currently viewing the space with slug "${safe}". Use the get_space_by_slug tool to answer space-specific questions about space metadata, members, and structure.`;
   }
   return BASE_SYSTEM_PROMPT;
 }
@@ -41,7 +56,13 @@ const getSpaceBySlugTool: any = {
       .describe('Hypha space slug, for example "hypha"'),
   }),
   execute: async ({ slug }: { slug: string }) => {
-    const space = await getSpaceBySlug({ slug });
+    let space;
+    try {
+      space = await getSpaceBySlug({ slug });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      return { found: false, slug, space: null, error: message };
+    }
     if (!space) {
       return { found: false, slug, space: null };
     }
@@ -90,13 +111,26 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const {
-    messages,
-    spaceSlug,
-  }: {
-    messages: UIMessage[];
-    spaceSlug?: string | null;
-  } = await req.json();
+  // TODO: Replace token presence check with proper JWT validation (e.g. jose/jwtVerify)
+  // Currently only checks that a token string exists, which is NOT authentication.
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  const parsed = chatRequestSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Invalid request payload', details: parsed.error.flatten() },
+      { status: 400 },
+    );
+  }
+
+  const messages = parsed.data.messages as unknown as UIMessage[];
+  const spaceSlug = parsed.data.spaceSlug;
 
   if (OPENROUTER_DEBUG) {
     console.log('[chat][openrouter][start]', {
@@ -163,7 +197,7 @@ export async function POST(req: Request) {
       console.error('[chat][openrouter][error]', {
         debugRequestId,
         message: error instanceof Error ? error.message : String(error),
-        error,
+        ...(OPENROUTER_DEBUG && { error }),
       });
     },
   });
@@ -182,8 +216,9 @@ export async function POST(req: Request) {
       console.error('[chat][ui-stream][error]', {
         debugRequestId,
         message: error instanceof Error ? error.message : String(error),
-        error,
+        ...(OPENROUTER_DEBUG && { error }),
       });
+      // TODO: Resolve locale server-side or let the client render the localized fallback
       return 'An error occurred while generating the response.';
     },
   });

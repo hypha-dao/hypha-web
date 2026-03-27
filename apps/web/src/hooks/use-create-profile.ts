@@ -10,6 +10,7 @@ import {
 } from '@hypha-platform/core/client';
 import { usePeopleFileUploads } from './use-people-file-uploads';
 import { useAuthHeader } from './use-auth-header';
+import type { ProfileFormData } from './profile-form-data';
 
 export const useCreateProfile = (
   endpoint = '/api/v1/people/create-profile',
@@ -23,8 +24,7 @@ export const useCreateProfile = (
   const { upload, isUploading } = usePeopleFileUploads({ authToken: jwt });
 
   const createProfile = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async (data: any) => {
+    async (data: ProfileFormData) => {
       if (!headers) {
         throw new Error('No auth headers available');
       }

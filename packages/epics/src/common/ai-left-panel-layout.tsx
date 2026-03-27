@@ -7,6 +7,7 @@ import {
   SidebarInset,
   useSidebar,
 } from '@hypha-platform/ui';
+import { useTranslations } from 'next-intl';
 import { AiLeftPanel } from './ai-left-panel';
 
 type AiLeftPanelLayoutProps = {
@@ -15,6 +16,7 @@ type AiLeftPanelLayoutProps = {
 
 function AiSidebarTrigger() {
   const { toggleSidebar, open } = useSidebar();
+  const t = useTranslations('AiPanel');
 
   if (open) return null;
 
@@ -22,8 +24,8 @@ function AiSidebarTrigger() {
     <button
       onClick={toggleSidebar}
       className="fixed left-0 top-20 z-10 flex items-center gap-1.5 rounded-r-xl border border-l-0 border-border bg-primary px-2.5 py-2 text-primary-foreground shadow-lg hover:opacity-90 transition-opacity"
-      title="Open Hypha AI"
-      aria-label="Open Hypha AI panel"
+      title={t('openPanel')}
+      aria-label={t('openPanel')}
     >
       <Sparkles className="h-4 w-4" />
     </button>

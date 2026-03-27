@@ -1,4 +1,11 @@
-// TODO: Replace with i18n translation keys (see ai-chat i18n follow-up)
+export const MOCK_SUGGESTION_KEYS = [
+  'AiPanel.suggestions.aboutSpace',
+  'AiPanel.suggestions.memberCount',
+  'AiPanel.suggestions.agreements',
+  'AiPanel.suggestions.structure',
+] as const;
+
+// Fallback values used when translations are not yet loaded
 export const MOCK_SUGGESTIONS = [
   'Tell me about this space',
   'How many members does this space have?',

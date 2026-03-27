@@ -21,6 +21,17 @@ type AiPanelMessagesProps = {
   isStreaming?: boolean;
 };
 
+const WELCOME_MESSAGE: UIMessage = {
+  id: 'welcome',
+  role: 'assistant',
+  parts: [
+    {
+      type: 'text',
+      text: "Hello! I'm your Hypha AI assistant. I can look up space details like member counts, agreements, and structure. Ask me anything about the space you're viewing.",
+    },
+  ],
+};
+
 export function AiPanelMessages({
   messages,
   suggestions,
@@ -37,18 +48,7 @@ export function AiPanelMessages({
     }
   }, [messages, isStreaming]);
 
-  const welcomeMessage: UIMessage = {
-    id: 'welcome',
-    role: 'assistant',
-    parts: [
-      {
-        type: 'text',
-        text: "Hello! I'm your Hypha AI assistant. I can look up space details like member counts, agreements, and structure. Ask me anything about the space you're viewing.",
-      },
-    ],
-  };
-
-  const displayMessages = messages.length > 0 ? messages : [welcomeMessage];
+  const displayMessages = messages.length > 0 ? messages : [WELCOME_MESSAGE];
 
   return (
     <div

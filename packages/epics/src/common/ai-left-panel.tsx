@@ -5,11 +5,11 @@ import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import {
   SidebarHeader,
   SidebarContent,
   SidebarFooter,
-  useSidebar,
 } from '@hypha-platform/ui';
 
 import {
@@ -26,7 +26,7 @@ export function AiLeftPanel() {
     useAuthentication();
   const params = useParams<{ id?: string }>();
   const spaceSlug = params?.id;
-  const { toggleSidebar } = useSidebar();
+  const t = useTranslations('AiPanel');
 
   const [input, setInput] = useState('');
 
@@ -41,20 +41,32 @@ export function AiLeftPanel() {
 
   const isStreaming = status === 'streaming' || status === 'submitted';
 
+  const buildMessageOptions = useCallback(async () => {
+    const token = await getAccessToken?.();
+    const hdrs: Record<string, string> = {};
+    if (token) hdrs['Authorization'] = `Bearer ${token}`;
+    return {
+      body: { ...(spaceSlug && { spaceSlug }) },
+      headers: hdrs,
+    };
+  }, [getAccessToken, spaceSlug]);
+
   const handleSend = useCallback(async () => {
     if (!input.trim() || isStreaming) return;
     const text = input;
     setInput('');
-    const token = await getAccessToken?.();
-    if (DEBUG) console.log('[AiLeftPanel] sendMessage', { text, spaceSlug });
-    await sendMessage(
-      { role: 'user', parts: [{ type: 'text', text }] },
-      {
-        body: { ...(spaceSlug && { spaceSlug }) },
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      },
-    );
-  }, [input, isStreaming, sendMessage, getAccessToken, spaceSlug]);
+    try {
+      const options = await buildMessageOptions();
+      if (DEBUG) console.log('[AiLeftPanel] sendMessage', { text, spaceSlug });
+      await sendMessage(
+        { role: 'user', parts: [{ type: 'text', text }] },
+        options,
+      );
+    } catch (err) {
+      console.error('[AiLeftPanel] sendMessage error:', err);
+      setInput(text);
+    }
+  }, [input, isStreaming, sendMessage, buildMessageOptions, spaceSlug]);
 
   const handleStop = useCallback(() => {
     void stop();
@@ -64,18 +76,19 @@ export function AiLeftPanel() {
 
   const handleSuggestionSelect = useCallback(
     async (text: string) => {
-      const token = await getAccessToken?.();
-      if (DEBUG)
-        console.log('[AiLeftPanel] suggestion selected', { text, spaceSlug });
-      await sendMessage(
-        { role: 'user', parts: [{ type: 'text', text }] },
-        {
-          body: { ...(spaceSlug && { spaceSlug }) },
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        },
-      );
+      try {
+        const options = await buildMessageOptions();
+        if (DEBUG)
+          console.log('[AiLeftPanel] suggestion selected', { text, spaceSlug });
+        await sendMessage(
+          { role: 'user', parts: [{ type: 'text', text }] },
+          options,
+        );
+      } catch (err) {
+        console.error('[AiLeftPanel] suggestion sendMessage error:', err);
+      }
     },
-    [sendMessage, getAccessToken, spaceSlug],
+    [sendMessage, buildMessageOptions, spaceSlug],
   );
 
   if (isLoading) {
@@ -85,7 +98,7 @@ export function AiLeftPanel() {
           <AiPanelHeader onResetChat={handleResetChat} />
         </SidebarHeader>
         <SidebarContent className="flex flex-1 items-center justify-center">
-          <div className="text-sm text-muted-foreground">Loading...</div>
+          <div className="text-sm text-muted-foreground">{t('loading')}</div>
         </SidebarContent>
       </>
     );
@@ -99,13 +112,13 @@ export function AiLeftPanel() {
         </SidebarHeader>
         <SidebarContent className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
           <div className="text-center text-sm text-muted-foreground">
-            Sign in to use Hypha AI
+            {t('signIn')}
           </div>
           <button
             onClick={login}
             className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
           >
-            Sign In
+            {t('signInButton')}
           </button>
         </SidebarContent>
       </>
@@ -119,8 +132,7 @@ export function AiLeftPanel() {
       </SidebarHeader>
       <SidebarContent className="bg-background-2 min-h-0">
         <AiPanelMessages
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          messages={messages as any[]}
+          messages={messages as Array<{ id: string; role: 'user' | 'assistant' | 'system'; parts?: Array<{ type: 'text'; text: string } | { type: string; [k: string]: unknown }> }>}
           suggestions={MOCK_SUGGESTIONS}
           showSuggestions={true}
           onSuggestionSelect={handleSuggestionSelect}

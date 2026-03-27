@@ -13,9 +13,9 @@ export function AiPanelSuggestions({
 }: AiPanelSuggestionsProps) {
   return (
     <div className="grid grid-cols-2 gap-2 pt-2">
-      {suggestions.map((suggestion) => (
+      {suggestions.map((suggestion, idx) => (
         <button
-          key={suggestion}
+          key={`${suggestion}-${idx}`}
           type="button"
           onClick={() => onSelect(suggestion)}
           className={cn(

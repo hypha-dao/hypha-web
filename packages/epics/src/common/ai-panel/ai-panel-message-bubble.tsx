@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useRef, useEffect } from 'react';
 import { Bot, Copy } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -37,7 +38,16 @@ export function AiPanelMessageBubble({
   message,
   isStreaming,
 }: AiPanelMessageBubbleProps) {
+  const t = useTranslations('AiPanel');
   const [copied, setCopied] = useState(false);
+  const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+    };
+  }, []);
+
   const isUser = message.role === 'user';
   const textParts =
     message.parts?.filter(
@@ -60,7 +70,8 @@ export function AiPanelMessageBubble({
     try {
       await navigator.clipboard.writeText(textContent);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+      copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
     } catch {
       // clipboard API not available
     }
@@ -69,7 +80,7 @@ export function AiPanelMessageBubble({
   const renderToolOutput = useCallback((output: unknown) => {
     if (!output || typeof output !== 'object') {
       return (
-        <span className="text-muted-foreground">Tool call completed.</span>
+        <span className="text-muted-foreground">{t('toolCompleted')}</span>
       );
     }
 
@@ -86,15 +97,18 @@ export function AiPanelMessageBubble({
       if (value.found && value.space) {
         return (
           <span>
-            Found <strong>{value.space.title ?? value.slug ?? 'space'}</strong>{' '}
-            ({value.slug ?? 'unknown'}) - {value.space.memberCount ?? 0}{' '}
-            members, {value.space.documentCount ?? 0} agreements
+            {t('toolFoundSpace', {
+              title: value.space.title ?? value.slug ?? 'space',
+              slug: value.slug ?? 'unknown',
+              memberCount: value.space.memberCount ?? 0,
+              documentCount: value.space.documentCount ?? 0,
+            })}
           </span>
         );
       }
       return (
         <span className="text-muted-foreground">
-          No space found for slug &quot;{value.slug ?? 'unknown'}&quot;
+          {t('toolNoSpace', { slug: value.slug ?? 'unknown' })}
         </span>
       );
     }
@@ -104,21 +118,20 @@ export function AiPanelMessageBubble({
       if (!value.spaceFound) {
         return (
           <span className="text-muted-foreground">
-            No space found for slug &quot;{value.slug ?? 'unknown'}&quot;
+            {t('toolNoSpace', { slug: value.slug ?? 'unknown' })}
           </span>
         );
       }
       const tokenCount = Array.isArray(value.tokens) ? value.tokens.length : 0;
       return (
         <span className="text-muted-foreground">
-          Retrieved {tokenCount} token{tokenCount === 1 ? '' : 's'} for space
-          &quot;{value.slug ?? 'unknown'}&quot;.
+          {t('toolTokens', { count: tokenCount, slug: value.slug ?? 'unknown' })}
         </span>
       );
     }
 
-    return <span className="text-muted-foreground">Tool call completed.</span>;
-  }, []);
+    return <span className="text-muted-foreground">{t('toolCompleted')}</span>;
+  }, [t]);
 
   return (
     <div className={cn('flex gap-2.5', isUser && 'flex-row-reverse')}>
@@ -148,7 +161,7 @@ export function AiPanelMessageBubble({
                   <img
                     key={i}
                     src={part.url}
-                    alt=""
+                    alt={`Uploaded image ${i + 1}`}
                     className="max-h-32 max-w-full rounded-lg object-contain"
                   />
                 ) : part.url ? (
@@ -174,20 +187,21 @@ export function AiPanelMessageBubble({
                 >
                   {part.state === 'input-streaming' && (
                     <span className="text-muted-foreground">
-                      Looking up space…
+                      {t('toolLookingUp')}
                     </span>
                   )}
                   {part.state === 'input-available' && (
                     <span className="text-muted-foreground">
-                      Looking up space
-                      {part.input?.slug ? ` "${part.input.slug}"` : ''}…
+                      {part.input?.slug
+                        ? t('toolLookingUpSlug', { slug: part.input.slug })
+                        : t('toolLookingUp')}
                     </span>
                   )}
                   {part.state === 'output-available' &&
                     renderToolOutput(part.output)}
                   {part.state === 'output-error' && (
                     <span className="text-destructive">
-                      Error: {part.errorText ?? 'Unknown error'}
+                      {t('toolError', { message: part.errorText ?? 'Unknown error' })}
                     </span>
                   )}
                 </div>
@@ -209,7 +223,7 @@ export function AiPanelMessageBubble({
               onClick={handleCopy}
               disabled={!textContent}
               className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
-              title={copied ? 'Copied!' : 'Copy'}
+              title={copied ? t('copiedButton') : t('copyButton')}
             >
               <Copy className="h-3 w-3" />
             </button>
