@@ -55,7 +55,7 @@ export const TokenBurnTargetsFieldArray = ({
   currentSpaceSlug,
   name = 'tokenBurning.burns',
 }: TokenBurnTargetsFieldArrayProps) => {
-  const { control, setValue, watch } = useFormContext();
+  const { control, setValue, watch, clearErrors } = useFormContext();
   const tAgreementFlow = useTranslations('AgreementFlow');
   const { filteredSpaces } = useFilterSpacesListWithDiscoverability({
     spaces,
@@ -259,7 +259,7 @@ export const TokenBurnTargetsFieldArray = ({
               )}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-end">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto] md:items-start">
               <FormField
                 control={control}
                 name={`${name}.${index}.amount`}
@@ -287,7 +287,7 @@ export const TokenBurnTargetsFieldArray = ({
                 control={control}
                 name={`${name}.${index}.allBalance`}
                 render={({ field: allBalanceField }) => (
-                  <FormItem className="flex flex-col gap-2">
+                  <FormItem className="flex flex-col gap-2 md:pt-8">
                     <div className="flex items-center gap-2 min-h-10">
                       <Checkbox
                         checked={Boolean(allBalanceField.value)}
@@ -296,6 +296,7 @@ export const TokenBurnTargetsFieldArray = ({
                           allBalanceField.onChange(isChecked);
                           if (isChecked) {
                             setValue(`${name}.${index}.amount`, '');
+                            clearErrors(`${name}.${index}.amount`);
                           }
                         }}
                       />
@@ -401,8 +402,12 @@ function RecipientTokenBalanceHint({
       currentError?.type === 'manual' &&
       currentError.message === exceedsBalanceMessage;
 
+    if (allBalance) {
+      clearErrors(amountFieldName);
+      return;
+    }
+
     if (
-      allBalance ||
       normalizedAmount.length === 0 ||
       !isValidRecipient ||
       isLoading ||
