@@ -29,6 +29,37 @@ function buildSystemPrompt(spaceSlug?: string | null): string {
   return BASE_SYSTEM_PROMPT;
 }
 
+const spaceDataSchema = z.object({
+  id: z.union([z.string(), z.number()]).transform(String),
+  slug: z.string(),
+  title: z.string(),
+  description: z.string().nullable(),
+  parentId: z
+    .union([z.string(), z.number(), z.null()])
+    .transform((val) => (val === null ? null : String(val))),
+  web3SpaceId: z.string().nullable(),
+  memberCount: z.number(),
+  documentCount: z.number(),
+  subspaceCount: z.number(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+type SpaceData = z.infer<typeof spaceDataSchema>;
+
+const getSpaceBySlugResultSchema = z.union([
+  z.object({
+    found: z.literal(false),
+    slug: z.string(),
+    space: z.null(),
+  }),
+  z.object({
+    found: z.literal(true),
+    slug: z.string(),
+    space: spaceDataSchema,
+  }),
+]);
+
 const getSpaceBySlugTool = tool({
   description:
     'Returns a single Hypha space and summary counts for members, documents, and subspaces. Use this when the user asks about a space, its members, agreements, or structure.',
@@ -44,15 +75,16 @@ const getSpaceBySlugTool = tool({
     if (!space) {
       return { found: false, slug, space: null };
     }
-    return {
+
+    const result = {
       found: true,
       slug,
       space: {
-        id: space.id,
+        id: String(space.id),
         slug: space.slug,
         title: space.title,
         description: space.description ?? null,
-        parentId: space.parentId ?? null,
+        parentId: space.parentId ? String(space.parentId) : null,
         web3SpaceId: space.web3SpaceId ?? null,
         memberCount:
           typeof space.memberCount === 'number'
@@ -73,6 +105,7 @@ const getSpaceBySlugTool = tool({
         updatedAt: new Date(space.updatedAt).toISOString(),
       },
     };
+    return result as z.infer<typeof getSpaceBySlugResultSchema>;
   },
 });
 
