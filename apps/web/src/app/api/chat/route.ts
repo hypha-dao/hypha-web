@@ -60,6 +60,7 @@ const getSpaceBySlugResultSchema = z.union([
   }),
 ]);
 
+// @ts-ignore – AI SDK tool() triggers TS2589 (type instantiation depth) in Vercel build TS context
 const getSpaceBySlugTool = tool({
   description:
     'Returns a single Hypha space and summary counts for members, documents, and subspaces. Use this when the user asks about a space, its members, agreements, or structure.',
