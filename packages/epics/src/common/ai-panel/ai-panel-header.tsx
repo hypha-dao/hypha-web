@@ -1,13 +1,14 @@
 'use client';
 
 import { PanelLeftClose, RefreshCw, Sparkles } from 'lucide-react';
+import { useSidebar } from '@hypha-platform/ui';
 
 type AiPanelHeaderProps = {
-  onClose: () => void;
   onResetChat?: () => void;
 };
 
-export function AiPanelHeader({ onClose, onResetChat }: AiPanelHeaderProps) {
+export function AiPanelHeader({ onResetChat }: AiPanelHeaderProps) {
+  const { toggleSidebar } = useSidebar();
   return (
     <div className="flex min-w-0 flex-shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background-2 px-4 py-3">
       <div className="flex min-w-0 shrink-0 items-center gap-2">
@@ -28,7 +29,7 @@ export function AiPanelHeader({ onClose, onResetChat }: AiPanelHeaderProps) {
         </button>
         <button
           type="button"
-          onClick={onClose}
+          onClick={toggleSidebar}
           className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           title="Hide AI panel"
           aria-label="Close panel"

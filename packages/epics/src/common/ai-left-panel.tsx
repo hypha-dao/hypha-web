@@ -5,6 +5,12 @@ import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useParams } from 'next/navigation';
+import {
+  SidebarHeader,
+  SidebarContent,
+  SidebarFooter,
+  useSidebar,
+} from '@hypha-platform/ui';
 
 import {
   AiPanelHeader,
@@ -15,15 +21,12 @@ import {
 
 const DEBUG = process.env.NEXT_PUBLIC_CHAT_DEBUG === 'true';
 
-type AiLeftPanelProps = {
-  onClose: () => void;
-};
-
-export function AiLeftPanel({ onClose }: AiLeftPanelProps) {
+export function AiLeftPanel() {
   const { isAuthenticated, isLoading, login, getAccessToken } =
     useAuthentication();
   const params = useParams<{ id?: string }>();
   const spaceSlug = params?.id;
+  const { toggleSidebar } = useSidebar();
 
   const [input, setInput] = useState('');
 
@@ -77,20 +80,24 @@ export function AiLeftPanel({ onClose }: AiLeftPanelProps) {
 
   if (isLoading) {
     return (
-      <div className="flex h-full w-full flex-col bg-background-2">
-        <AiPanelHeader onClose={onClose} onResetChat={handleResetChat} />
-        <div className="flex flex-1 items-center justify-center">
+      <>
+        <SidebarHeader className="bg-background-2 p-0">
+          <AiPanelHeader onResetChat={handleResetChat} />
+        </SidebarHeader>
+        <SidebarContent className="flex flex-1 items-center justify-center">
           <div className="text-sm text-muted-foreground">Loading...</div>
-        </div>
-      </div>
+        </SidebarContent>
+      </>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <div className="flex h-full w-full flex-col bg-background-2">
-        <AiPanelHeader onClose={onClose} onResetChat={handleResetChat} />
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
+      <>
+        <SidebarHeader className="bg-background-2 p-0">
+          <AiPanelHeader onResetChat={handleResetChat} />
+        </SidebarHeader>
+        <SidebarContent className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
           <div className="text-center text-sm text-muted-foreground">
             Sign in to use Hypha AI
           </div>
@@ -100,29 +107,35 @@ export function AiLeftPanel({ onClose }: AiLeftPanelProps) {
           >
             Sign In
           </button>
-        </div>
-      </div>
+        </SidebarContent>
+      </>
     );
   }
 
   return (
-    <div className="flex h-full flex-col border-r border-border bg-background-2">
-      <AiPanelHeader onClose={onClose} onResetChat={handleResetChat} />
-      <AiPanelMessages
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        messages={messages as any[]}
-        suggestions={MOCK_SUGGESTIONS}
-        showSuggestions={true}
-        onSuggestionSelect={handleSuggestionSelect}
-        isStreaming={isStreaming}
-      />
-      <AiPanelChatBar
-        value={input}
-        onChange={setInput}
-        onSend={handleSend}
-        onStop={handleStop}
-        isStreaming={isStreaming}
-      />
-    </div>
+    <>
+      <SidebarHeader className="bg-background-2 p-0">
+        <AiPanelHeader onResetChat={handleResetChat} />
+      </SidebarHeader>
+      <SidebarContent className="bg-background-2 min-h-0">
+        <AiPanelMessages
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          messages={messages as any[]}
+          suggestions={MOCK_SUGGESTIONS}
+          showSuggestions={true}
+          onSuggestionSelect={handleSuggestionSelect}
+          isStreaming={isStreaming}
+        />
+      </SidebarContent>
+      <SidebarFooter className="bg-background-2 p-0">
+        <AiPanelChatBar
+          value={input}
+          onChange={setInput}
+          onSend={handleSend}
+          onStop={handleStop}
+          isStreaming={isStreaming}
+        />
+      </SidebarFooter>
+    </>
   );
 }
