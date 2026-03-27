@@ -23,9 +23,9 @@ Map task signals to the minimum set of roles in `.agents/roles`.
 
 1. If one role can fully deliver, use that role only.
 2. If implementation + data model changes are both explicit, pair Fullstack + DB.
-3. Add QA when the task requests test automation, acceptance evidence, or has broad blast radius.
-4. Add Security for auth, data exposure, untrusted input, secrets, or compliance-sensitive surfaces.
-5. Add Requirements first when acceptance criteria are missing and coding would be speculative.
+3. Include QA when the task requests test automation, acceptance evidence, or has broad blast radius.
+4. Involve Security for auth, data exposure, untrusted input, secrets, or compliance-sensitive surfaces.
+5. Lead with Requirements when acceptance criteria are missing and coding would be speculative.
 
 ## Role Name Canonicalization
 

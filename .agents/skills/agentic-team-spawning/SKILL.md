@@ -1,6 +1,6 @@
 ---
 name: agentic-team-spawning
-description: Route a user request to the minimal expert team using roles in .agents/roles, then spawn only the required sub-agents for execution.
+description: Use when the user wants to spawn/assemble experts, route a multi-domain task, or orchestrate a minimal team from .agents/roles (including "max N agents" prompts); skip narrow single-expert work. Then map intent to roles and spawn only the sub-agents needed for execution.
 ---
 
 # Agentic Team Spawning
@@ -60,8 +60,9 @@ Selection rules:
 
 ### 4) Spawn Sub-Agents Minimally
 
-- Spawn at most 4 sub-agents concurrently.
-- If more are needed, run in waves.
+- Spawn at most 4 sub-agents concurrently (hard cap per wave).
+- If `max_agents` is provided, concurrent execution is `min(max_agents, 4)`.
+- If more are needed, run in waves while respecting the per-wave cap.
 - Give each agent a focused, non-overlapping scope.
 - Request strict structured output from each sub-agent:
   - Assumptions
@@ -103,7 +104,7 @@ Support user prompts in this shape:
 Optional user controls:
 - `required_roles: [...]`
 - `exclude_roles: [...]`
-- `max_agents: <number>`
+- `max_agents: <number>` (concurrent sub-agent cap per wave; effective ceiling is `min(max_agents, 4)`)
 - `focus: speed | quality | security`
 
 ## Response Format (for the orchestrator)
