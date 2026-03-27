@@ -308,7 +308,10 @@ export const FormVoting = ({
   const isAcceptDisabled = isDisabled || voteText === 'yes';
 
   return (
-    <div className="flex flex-col gap-7 text-neutral-11">
+    <div
+      data-testid="voting-form"
+      className="flex flex-col gap-7 text-neutral-11"
+    >
       <VoterList documentSlug={documentSlug} />
       <div className="flex flex-col gap-6">
         <Skeleton
@@ -410,7 +413,7 @@ export const FormVoting = ({
                 </div>
               )}
             </Skeleton>
-            <div className="text-1">
+            <div data-testid="time-remaining" className="text-1">
               {formatTimeRemaining(
                 endTime,
                 tProposalDetails,
@@ -423,6 +426,7 @@ export const FormVoting = ({
             <div className="flex flex-col gap-2 items-end">
               <div className="flex gap-2">
                 <Button
+                  data-testid="vote-no-button"
                   variant="outline"
                   colorVariant="accent"
                   className="active:bg-accent-9"
@@ -433,6 +437,7 @@ export const FormVoting = ({
                   {labels.reject}
                 </Button>
                 <Button
+                  data-testid="vote-yes-button"
                   variant="outline"
                   colorVariant="accent"
                   className="active:bg-accent-9"

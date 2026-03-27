@@ -151,6 +151,7 @@ export const ButtonProfile = ({
             >
               <DropdownMenuTrigger asChild>
                 <button
+                  data-testid="profile-button"
                   type="button"
                   className="rounded-lg outline-none"
                   aria-label={t('openProfileMenu')}
@@ -239,6 +240,7 @@ export const ButtonProfile = ({
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
+                  data-testid="logout-button"
                   onClick={onLogout}
                   className="px-0 text-1 text-error-11 flex justify-between"
                 >
@@ -258,7 +260,9 @@ export const ButtonProfile = ({
               label={item.label}
             />
           ))}
-          <Button onClick={onLogin}>{t('signIn')}</Button>
+          <Button data-testid="sign-in-button" onClick={onLogin}>
+            {t('signIn')}
+          </Button>
           <Button
             className="hidden md:flex"
             variant="outline"

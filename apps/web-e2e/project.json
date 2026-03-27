@@ -1,9 +1,282 @@
 {
-  "name": "web-e2e",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/web-e2e/src",
-  "tags": [],
-  "implicitDependencies": ["web"],
-  "// targets": "to see all targets run: nx show project web-e2e --web",
-  "targets": {}
+    "name":  "web-e2e",
+    "$schema":  "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot":  "apps/web-e2e/src",
+    "tags":  [
+
+             ],
+    "implicitDependencies":  [
+                                 "web"
+                             ],
+    "targets":  {
+                    "e2e":  {
+                                "executor":  "@nx/playwright:playwright",
+                                "outputs":  [
+                                                "{workspaceRoot}/apps/web-e2e/playwright-report"
+                                            ],
+                                "options":  {
+                                                "config":  "apps/web-e2e/playwright.config.ts"
+                                            }
+                            },
+                    "e2e-production":  {
+                                           "executor":  "@nx/playwright:playwright",
+                                           "outputs":  [
+                                                           "{workspaceRoot}/apps/web-e2e/playwright-report-production"
+                                                       ],
+                                           "options":  {
+                                                           "config":  "apps/web-e2e/playwright.production.config.ts"
+                                                       }
+                                       },
+                    "e2e-production-auth":  {
+                                                "executor":  "@nx/playwright:playwright",
+                                                "options":  {
+                                                                "config":  "apps/web-e2e/playwright.production.config.ts",
+                                                                "project":  [
+                                                                                "auth-setup"
+                                                                            ],
+                                                                "headed":  true
+                                                            }
+                                            },
+                    "e2e-production-public":  {
+                                                  "executor":  "@nx/playwright:playwright",
+                                                  "outputs":  [
+                                                                  "{workspaceRoot}/apps/web-e2e/playwright-report-production"
+                                                              ],
+                                                  "options":  {
+                                                                  "config":  "apps/web-e2e/playwright.production.config.ts",
+                                                                  "project":  [
+                                                                                  "production-public"
+                                                                              ]
+                                                              }
+                                              },
+                    "e2e-production-create-space":  {
+                                                        "executor":  "@nx/playwright:playwright",
+                                                        "outputs":  [
+                                                                        "{workspaceRoot}/apps/web-e2e/playwright-report-production"
+                                                                    ],
+                                                        "options":  {
+                                                                        "config":  "apps/web-e2e/playwright.production.config.ts",
+                                                                        "project":  [
+                                                                                        "production-quick"
+                                                                                    ],
+                                                                        "grep":  "create a new space"
+                                                                    }
+                                                    },
+                    "lint":  {
+                                 "executor":  "@nx/eslint:lint",
+                                 "options":  {
+                                                 "lintFilePatterns":  [
+                                                                          "apps/web-e2e/**/*.ts"
+                                                                      ]
+                                             }
+                             },
+                    "e2e-production-create-proposal":  {
+                                                           "outputs":  [
+                                                                           "{workspaceRoot}/apps/web-e2e/playwright-report-production"
+                                                                       ],
+                                                           "executor":  "@nx/playwright:playwright",
+                                                           "options":  {
+                                                                           "config":  "apps/web-e2e/playwright.production.config.ts",
+                                                                           "grep": "should create a collective agreement with title and description",
+                                                                           "project":  [
+                                                                                           "production-quick"
+                                                                                       ]
+                                                                       }
+                                                       },
+                    "e2e-production-create-contribution":  {
+                                                               "outputs":  [
+                                                                               "{workspaceRoot}/apps/web-e2e/playwright-report-production"
+                                                                           ],
+                                                               "executor":  "@nx/playwright:playwright",
+                                                               "options":  {
+                                                                               "config":  "apps/web-e2e/playwright.production.config.ts",
+                                                                               "grep": "should propose a contribution with title and description",
+                                                                               "project":  [
+                                                                                               "production-quick"
+                                                                                           ]
+                                                                           }
+                                                           },
+                    "e2e-production-create-expense":  {
+                                                          "outputs":  [
+                                                                          "{workspaceRoot}/apps/web-e2e/playwright-report-production"
+                                                                      ],
+                                                          "executor":  "@nx/playwright:playwright",
+                                                          "options":  {
+                                                                          "config":  "apps/web-e2e/playwright.production.config.ts",
+                                                                          "grep": "should create an expense proposal with title and description",
+                                                                          "project":  [
+                                                                                          "production-quick"
+                                                                                      ]
+                                                                      }
+                                                      },
+                    "e2e-production-create-token":  {
+                                                        "outputs":  [
+                                                                        "{workspaceRoot}/apps/web-e2e/playwright-report-production"
+                                                                    ],
+                                                        "executor":  "@nx/playwright:playwright",
+                                                        "options":  {
+                                                                        "config":  "apps/web-e2e/playwright.production.config.ts",
+                                                                        "grep": "should issue a new token in the QA TESTING space",
+                                                                        "project":  [
+                                                                                        "production-quick"
+                                                                                    ]
+                                                                    }
+                                                    },
+                    "e2e-production-create-deploy-funds":  {
+                                                               "outputs":  [
+                                                                               "{workspaceRoot}/apps/web-e2e/playwright-report-production"
+                                                                           ],
+                                                               "executor":  "@nx/playwright:playwright",
+                                                               "options":  {
+                                                                               "config":  "apps/web-e2e/playwright.production.config.ts",
+                                                                               "grep": "should create a deploy funds proposal with title and description",
+                                                                               "project":  [
+                                                                                               "production-quick"
+                                                                                           ]
+                                                                           }
+                                                           },
+                    "e2e-production-create-nested-space":  {
+                                                               "outputs":  [
+                                                                               "{workspaceRoot}/apps/web-e2e/playwright-report-production"
+                                                                           ],
+                                                               "executor":  "@nx/playwright:playwright",
+                                                               "options":  {
+                                                                               "config":  "apps/web-e2e/playwright.production.config.ts",
+                                                                               "grep": "should create a nested space within QA TESTING space",
+                                                                               "project":  [
+                                                                                               "production-quick"
+                                                                                           ]
+                                                                           }
+                                                           },
+                    "e2e-production-mint-token-treasury":  {
+                                                               "outputs":  [
+                                                                               "{workspaceRoot}/apps/web-e2e/playwright-report-production"
+                                                                           ],
+                                                               "executor":  "@nx/playwright:playwright",
+                                                               "options":  {
+                                                                               "config":  "apps/web-e2e/playwright.production.config.ts",
+                                                                               "grep": "should mint tokens to space treasury in QA TESTING space",
+                                                                               "project":  [
+                                                                                               "production-quick"
+                                                                                           ]
+                                                                           }
+                                                           },
+                   "e2e-production-create-token-advanced":  {
+                                                                "outputs":  [
+                                                                                "{workspaceRoot}/apps/web-e2e/playwright-report-production"
+                                                                            ],
+                                                                "executor":  "@nx/playwright:playwright",
+                                                                "options":  {
+                                                                                "config":  "apps/web-e2e/playwright.production.config.ts",
+                                                                                "grep": "should issue a new token with randomized advanced settings in the QA TESTING space",
+                                                                                "project":  [
+                                                                                                "production-quick"
+                                                                                            ]
+                                                                            }
+                                                            },
+                   "e2e-production-change-voting-method":  {
+                                                               "outputs":  [
+                                                                               "{workspaceRoot}/apps/web-e2e/playwright-report-production"
+                                                                           ],
+                                                               "executor":  "@nx/playwright:playwright",
+                                                               "options":  {
+                                                                               "config":  "apps/web-e2e/playwright.production.config.ts",
+                                                                               "grep": "should change voting method with randomized settings in the QA TESTING space",
+                                                                               "project":  [
+                                                                                               "production-quick"
+                                                                                           ]
+                                                                           }
+                                                           },
+                   "e2e-production-change-entry-method":  {
+                                                              "outputs":  [
+                                                                              "{workspaceRoot}/apps/web-e2e/playwright-report-production"
+                                                                          ],
+                                                              "executor":  "@nx/playwright:playwright",
+                                                              "options":  {
+                                                                              "config":  "apps/web-e2e/playwright.production.config.ts",
+                                                                              "grep": "should change entry method with randomized settings in the QA TESTING space",
+                                                                              "project":  [
+                                                                                              "production-quick"
+                                                                                          ]
+                                                                          }
+                                                          },
+                   "e2e-production-vote-yes-proposal":  {
+                                                            "outputs":  [
+                                                                            "{workspaceRoot}/apps/web-e2e/playwright-report-production"
+                                                                        ],
+                                                            "executor":  "@nx/playwright:playwright",
+                                                            "options":  {
+                                                                            "config":  "apps/web-e2e/playwright.production.config.ts",
+                                                                            "grep": "should vote yes on the first proposal in the QA TESTING space",
+                                                                            "project":  [
+                                                                                            "production-quick"
+                                                                                        ]
+                                                                        }
+                                                        },
+                   "e2e-production-configure-space":  {
+                                                          "outputs":  [
+                                                                          "{workspaceRoot}/apps/web-e2e/playwright-report-production"
+                                                                      ],
+                                                          "executor":  "@nx/playwright:playwright",
+                                                          "options":  {
+                                                                          "config":  "apps/web-e2e/playwright.production.config.ts",
+                                                                          "grep": "should configure space settings with randomized tags in the QA TESTING space",
+                                                                          "project":  [
+                                                                                          "production-quick"
+                                                                                      ]
+                                                                      }
+                                                      },
+                   "e2e-production-edit-profile":  {
+                                                       "outputs":  [
+                                                                       "{workspaceRoot}/apps/web-e2e/playwright-report-production"
+                                                                   ],
+                                                       "executor":  "@nx/playwright:playwright",
+                                                       "options":  {
+                                                                       "config":  "apps/web-e2e/playwright.production.config.ts",
+                                                                       "grep": "should edit profile with new image and description",
+                                                                       "project":  [
+                                                                                       "production-quick"
+                                                                                   ]
+                                                                   }
+                                                   },
+                   "e2e-production-space-to-space":  {
+                                                         "outputs":  [
+                                                                         "{workspaceRoot}/apps/web-e2e/playwright-report-production"
+                                                                     ],
+                                                         "executor":  "@nx/playwright:playwright",
+                                                         "options":  {
+                                                                         "config":  "apps/web-e2e/playwright.production.config.ts",
+                                                                         "grep": "should create space-to-space membership proposal in QA TESTING space",
+                                                                         "project":  [
+                                                                                         "production-quick"
+                                                                                     ]
+                                                                     }
+                                                     },
+                   "e2e-production-membership-exit":  {
+                                                          "outputs":  [
+                                                                          "{workspaceRoot}/apps/web-e2e/playwright-report-production"
+                                                                      ],
+                                                          "executor":  "@nx/playwright:playwright",
+                                                          "options":  {
+                                                                          "config":  "apps/web-e2e/playwright.production.config.ts",
+                                                                          "grep": "should create membership exit proposal in QA TESTING space",
+                                                                          "project":  [
+                                                                                          "production-quick"
+                                                                                      ]
+                                                                      }
+                                                      },
+                   "e2e-production-exit-space":  {
+                                                     "outputs":  [
+                                                                     "{workspaceRoot}/apps/web-e2e/playwright-report-production"
+                                                                 ],
+                                                     "executor":  "@nx/playwright:playwright",
+                                                     "options":  {
+                                                                     "config":  "apps/web-e2e/playwright.production.config.ts",
+                                                                     "grep": "should create a space and then exit it",
+                                                                     "project":  [
+                                                                                     "production-quick"
+                                                                                 ]
+                                                                 }
+                                                 }
+                }
 }
