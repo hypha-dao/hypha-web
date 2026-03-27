@@ -12,6 +12,7 @@ import {
   Input,
   RequirementMark,
   Image,
+  Skeleton,
 } from '@hypha-platform/ui';
 import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui/server';
 import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
@@ -20,14 +21,22 @@ import { useMemo } from 'react';
 import {
   DEFAULT_SPACE_AVATAR_IMAGE,
   Person,
+  publicClient,
   Space,
 } from '@hypha-platform/core/client';
 import { useFilterSpacesListWithDiscoverability } from '../../../spaces';
 import { useTranslations } from 'next-intl';
+import { formatCurrencyValue } from '@hypha-platform/ui-utils';
+import useSWR from 'swr';
+import { erc20Abi, formatUnits, isAddress } from 'viem';
+import { resolveTokenDecimals } from '../../../governance/utils/token-decimals';
 
 type TokenBurnTargetsFieldArrayProps = {
   members?: Person[];
   spaces?: Space[];
+  selectedTokenAddress?: `0x${string}`;
+  selectedTokenSymbol?: string;
+  currentSpaceSlug?: string;
   name?: string;
 };
 
@@ -41,6 +50,9 @@ const DEFAULT_TARGET = {
 export const TokenBurnTargetsFieldArray = ({
   members = [],
   spaces = [],
+  selectedTokenAddress,
+  selectedTokenSymbol,
+  currentSpaceSlug,
   name = 'tokenBurning.burns',
 }: TokenBurnTargetsFieldArrayProps) => {
   const { control, setValue, watch } = useFormContext();
@@ -70,18 +82,36 @@ export const TokenBurnTargetsFieldArray = ({
     [members],
   );
 
+  const currentSpace = useMemo(
+    () => spaces.find((space) => space.slug === currentSpaceSlug),
+    [spaces, currentSpaceSlug],
+  );
+
+  const spacesForDropdown = useMemo(() => {
+    if (!currentSpace) return filteredSpaces;
+    if (filteredSpaces.some((space) => space.id === currentSpace.id)) {
+      return filteredSpaces;
+    }
+    return [currentSpace, ...filteredSpaces];
+  }, [filteredSpaces, currentSpace]);
+
   const spaceOptions = useMemo(
     () =>
-      filteredSpaces
+      spacesForDropdown
         .filter((space) => space.address)
         .map((space) => ({
           value: space.address as string,
-          label: space.title,
+          label:
+            space.slug === currentSpaceSlug
+              ? `${space.title} (${tAgreementFlow(
+                  'plugins.tokenBurning.currentSpaceTag',
+                )})`
+              : space.title,
           searchText: space.title.toLowerCase(),
           avatarUrl: space.logoUrl,
           address: space.address as string,
         })),
-    [filteredSpaces],
+    [spacesForDropdown, currentSpaceSlug, tAgreementFlow],
   );
 
   return (
@@ -101,7 +131,6 @@ export const TokenBurnTargetsFieldArray = ({
         const selectedOption = currentOptions.find(
           (opt) => opt.value === entry.address,
         );
-
         return (
           <div
             key={field.id}
@@ -234,6 +263,14 @@ export const TokenBurnTargetsFieldArray = ({
                       )}
                     </span>
                   ) : null}
+                  {selectedTokenAddress &&
+                  (addressField.value ?? '').length > 0 ? (
+                    <RecipientTokenBalanceHint
+                      tokenAddress={selectedTokenAddress}
+                      recipientAddress={addressField.value}
+                      tokenSymbol={selectedTokenSymbol}
+                    />
+                  ) : null}
                   <FormMessage />
                 </FormItem>
               )}
@@ -328,3 +365,67 @@ export const TokenBurnTargetsFieldArray = ({
     </div>
   );
 };
+
+function RecipientTokenBalanceHint({
+  tokenAddress,
+  recipientAddress,
+  tokenSymbol,
+}: {
+  tokenAddress: `0x${string}`;
+  recipientAddress?: string;
+  tokenSymbol?: string;
+}) {
+  const tAgreementFlow = useTranslations('AgreementFlow');
+  const isValidRecipient = Boolean(
+    recipientAddress && isAddress(recipientAddress),
+  );
+
+  const { data, error, isLoading } = useSWR(
+    isValidRecipient
+      ? [tokenAddress, recipientAddress, 'recipient-balance']
+      : null,
+    async ([address, recipient]) =>
+      publicClient.readContract({
+        address: address as `0x${string}`,
+        abi: erc20Abi,
+        functionName: 'balanceOf',
+        args: [recipient as `0x${string}`],
+      }),
+    { revalidateOnFocus: true },
+  );
+
+  if (!isValidRecipient) {
+    return null;
+  }
+
+  if (isLoading) {
+    return (
+      <span className="text-1 text-neutral-10">
+        {tAgreementFlow('plugins.tokenBurning.recipientBalanceLoading')}
+      </span>
+    );
+  }
+
+  if (error || data == null) {
+    return (
+      <span className="text-1 text-neutral-10">
+        {tAgreementFlow('plugins.tokenBurning.recipientBalanceUnavailable')}
+      </span>
+    );
+  }
+
+  const decimals = resolveTokenDecimals(tokenAddress);
+  const normalizedBalance = Number(formatUnits(data, decimals));
+
+  return (
+    <Skeleton loading={false} width={220} height={20}>
+      <span className="text-1 text-neutral-10">
+        {tAgreementFlow('plugins.tokenBurning.recipientBalance')}:{' '}
+        {tAgreementFlow('plugins.tokenBurning.recipientBalanceValue', {
+          value: formatCurrencyValue(normalizedBalance),
+          symbol: tokenSymbol ?? '',
+        })}
+      </span>
+    </Skeleton>
+  );
+}

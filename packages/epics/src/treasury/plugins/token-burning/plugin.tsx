@@ -255,7 +255,13 @@ export const TokenBurningPlugin = ({
             </Skeleton>
           </div>
 
-          <TokenBurnTargetsFieldArray members={members} spaces={spaces} />
+          <TokenBurnTargetsFieldArray
+            members={members}
+            spaces={spaces}
+            selectedTokenAddress={selectedTokenData?.address}
+            selectedTokenSymbol={selectedTokenData?.symbol}
+            currentSpaceSlug={spaceSlug}
+          />
         </div>
       )}
     </div>
