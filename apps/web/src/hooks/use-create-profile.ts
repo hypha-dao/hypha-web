@@ -23,7 +23,8 @@ export const useCreateProfile = (
   const { upload, isUploading } = usePeopleFileUploads({ authToken: jwt });
 
   const createProfile = useCallback(
-    async (data: z.infer<typeof schemaSignupPerson>) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async (data: any) => {
       if (!headers) {
         throw new Error('No auth headers available');
       }

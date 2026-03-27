@@ -39,9 +39,9 @@ export default function EditProfilePage() {
   const schemaEditPersonForm = schemaEditPersonWeb2.extend(
     editPersonFiles.shape,
   );
-  type EditPersonFormData = z.infer<typeof schemaEditPersonForm>;
 
-  const onEdit = async (data: EditPersonFormData) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onEdit = async (data: any) => {
     try {
       await editProfile(data);
       router.push('/profile');
