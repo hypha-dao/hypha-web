@@ -20,7 +20,10 @@ export class AiChatPanelPage extends BasePage {
     this.closeButton = page.getByRole('button', { name: 'Close panel' });
     this.resetButton = page.getByRole('button', { name: 'Reset chat' });
     this.signInPrompt = page.getByText('Sign in to use Hypha AI');
-    this.signInButton = page.getByRole('button', { name: 'Sign In', exact: true });
+    this.signInButton = page.getByRole('button', {
+      name: 'Sign In',
+      exact: true,
+    });
     this.chatInput = page.getByPlaceholder('Ask Hypha AI anything...');
     this.sendButton = page.getByRole('button', { name: 'Send' });
   }

@@ -40,7 +40,12 @@ export function AiLeftPanelLayout({ children }: AiLeftPanelLayoutProps) {
         } as React.CSSProperties
       }
     >
-      <Sidebar side="left" variant="sidebar" collapsible="offcanvas" className="pt-16">
+      <Sidebar
+        side="left"
+        variant="sidebar"
+        collapsible="offcanvas"
+        className="pt-16"
+      >
         <AiLeftPanel />
       </Sidebar>
       <SidebarInset>
