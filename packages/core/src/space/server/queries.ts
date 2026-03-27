@@ -20,6 +20,8 @@ type FindAllSpacesProps = {
   parentOnly?: boolean;
   omitSandbox?: boolean;
   omitArchived?: boolean;
+  /** When set, caps rows returned (after ordering by title). */
+  limit?: number;
 };
 
 export const findAllSpaces = async (
@@ -29,9 +31,10 @@ export const findAllSpaces = async (
     parentOnly = true,
     omitSandbox = false,
     omitArchived = false,
+    limit,
   }: FindAllSpacesProps,
 ) => {
-  const results = await db
+  const query = db
     .select({
       id: spaces.id,
       logoUrl: spaces.logoUrl,
@@ -75,6 +78,11 @@ export const findAllSpaces = async (
       ),
     )
     .orderBy(asc(spaces.title));
+
+  const results =
+    typeof limit === 'number' && limit > 0
+      ? await query.limit(limit)
+      : await query;
 
   return results;
 };

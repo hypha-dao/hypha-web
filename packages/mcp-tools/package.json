@@ -1,0 +1,22 @@
+{
+  "name": "@hypha-platform/mcp-tools",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@hypha-platform/config-eslint": "workspace:*",
+    "@hypha-platform/config-typescript": "workspace:*"
+  },
+  "dependencies": {
+    "@hypha-platform/core": "workspace:*",
+    "@hypha-platform/storage-postgres": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "zod": "^3.25.76"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}
