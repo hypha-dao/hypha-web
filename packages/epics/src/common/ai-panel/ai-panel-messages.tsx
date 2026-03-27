@@ -28,10 +28,13 @@ export function AiPanelMessages({
   onSuggestionSelect,
   isStreaming = false,
 }: AiPanelMessagesProps) {
-  const endRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = containerRef.current;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
   }, [messages, isStreaming]);
 
   const welcomeMessage: UIMessage = {
@@ -48,7 +51,10 @@ export function AiPanelMessages({
   const displayMessages = messages.length > 0 ? messages : [welcomeMessage];
 
   return (
-    <div className="narrow-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto px-3 py-3">
+    <div
+      ref={containerRef}
+      className="narrow-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto px-3 py-3"
+    >
       <div className="flex flex-col gap-4">
         {displayMessages.map((msg, index) => (
           <AiPanelMessageBubble
@@ -69,7 +75,6 @@ export function AiPanelMessages({
           />
         )}
       </div>
-      <div ref={endRef} />
     </div>
   );
 }
