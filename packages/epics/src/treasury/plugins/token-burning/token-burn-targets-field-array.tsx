@@ -243,13 +243,6 @@ export const TokenBurnTargetsFieldArray = ({
                     value={addressField.value ?? ''}
                     onChange={addressField.onChange}
                   />
-                  {selectedOption ? (
-                    <span className="text-1 text-neutral-10">
-                      {tAgreementFlow(
-                        'plugins.tokenBurning.addressAutofillHint',
-                      )}
-                    </span>
-                  ) : null}
                   {selectedTokenAddress &&
                   (addressField.value ?? '').length > 0 ? (
                     <RecipientTokenBalanceHint
