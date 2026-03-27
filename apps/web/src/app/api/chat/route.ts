@@ -17,10 +17,18 @@ const jwksCache = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 // Allowlist of origins that are permitted to serve the JWKS endpoint.
 // Prevents Host-header injection from causing the server to fetch keys from
 // an attacker-controlled origin.
+// Includes all Vercel-provided URLs (deployment, branch, project production)
+// as well as the configured app URL to support preview deployments.
 const ALLOWED_ORIGINS = new Set<string>(
   [
     process.env.NEXT_PUBLIC_APP_URL,
     process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
+    process.env.VERCEL_BRANCH_URL
+      ? `https://${process.env.VERCEL_BRANCH_URL}`
+      : undefined,
+    process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : undefined,
   ].filter((v): v is string => Boolean(v)),
 );
 
@@ -165,7 +173,23 @@ export async function POST(req: Request) {
   }
 
   const requestOrigin = new URL(req.url).origin;
-  if (ALLOWED_ORIGINS.size > 0 && !ALLOWED_ORIGINS.has(requestOrigin)) {
+  if (OPENROUTER_DEBUG) {
+    console.log('[chat][auth] origin check', {
+      requestOrigin,
+      allowedOrigins: [...ALLOWED_ORIGINS],
+      vercelEnv: process.env.VERCEL,
+      vercelUrl: process.env.VERCEL_URL,
+    });
+  }
+  // On Vercel, also accept any *.vercel.app origin (covers all preview URLs).
+  const isVercelPreview =
+    process.env.VERCEL === '1' &&
+    new URL(req.url).hostname.endsWith('.vercel.app');
+  if (
+    ALLOWED_ORIGINS.size > 0 &&
+    !ALLOWED_ORIGINS.has(requestOrigin) &&
+    !isVercelPreview
+  ) {
     console.error(
       '[chat][security] Rejected unexpected JWKS origin:',
       requestOrigin,
