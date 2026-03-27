@@ -48,8 +48,12 @@ test.describe('AI Chat Panel', () => {
     await expect(chatPanel.closeButton).toBeVisible();
     await expect(chatPanel.resetButton).toBeVisible();
     // Verify accessibility: buttons have accessible labels
-    await expect(page.getByRole('button', { name: /reset chat/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /close panel/i })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: /reset chat/i }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: /close panel/i }),
+    ).toBeVisible();
   });
 
   test('panel should stay fixed when page is scrolled', async ({ page }) => {

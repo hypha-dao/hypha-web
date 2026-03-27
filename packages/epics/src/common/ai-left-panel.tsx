@@ -132,7 +132,16 @@ export function AiLeftPanel() {
       </SidebarHeader>
       <SidebarContent className="bg-background-2 min-h-0">
         <AiPanelMessages
-          messages={messages as Array<{ id: string; role: 'user' | 'assistant' | 'system'; parts?: Array<{ type: 'text'; text: string } | { type: string; [k: string]: unknown }> }>}
+          messages={
+            messages as Array<{
+              id: string;
+              role: 'user' | 'assistant' | 'system';
+              parts?: Array<
+                | { type: 'text'; text: string }
+                | { type: string; [k: string]: unknown }
+              >;
+            }>
+          }
           suggestions={MOCK_SUGGESTIONS}
           showSuggestions={true}
           onSuggestionSelect={handleSuggestionSelect}
