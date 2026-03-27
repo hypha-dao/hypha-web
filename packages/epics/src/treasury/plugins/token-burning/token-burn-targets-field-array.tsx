@@ -393,8 +393,8 @@ function RecipientTokenBalanceHint({
   const normalizedAmount = normalizedAmountInput.startsWith('.')
     ? `0${normalizedAmountInput}`
     : normalizedAmountInput.endsWith('.')
-      ? `${normalizedAmountInput}0`
-      : normalizedAmountInput;
+    ? `${normalizedAmountInput}0`
+    : normalizedAmountInput;
 
   useEffect(() => {
     const currentError = getFieldState(amountFieldName).error;
