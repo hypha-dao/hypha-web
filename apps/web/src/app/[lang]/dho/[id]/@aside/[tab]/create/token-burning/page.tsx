@@ -36,6 +36,10 @@ export default async function TokenBurningPage({
   const { spaces, members } = await fetchMembersAndSpaces({
     activeSpaceId: spaceId,
   });
+  const spacesForTokenBurning =
+    spaceFromDb.address && spaceFromDb.address.trim() !== ''
+      ? [spaceFromDb, ...spaces.filter((space) => space.id !== spaceFromDb.id)]
+      : spaces;
 
   return (
     <SidePanel>
@@ -49,7 +53,7 @@ export default async function TokenBurningPage({
           <Plugin
             name="token-burning"
             spaceSlug={slug}
-            spaces={spaces}
+            spaces={spacesForTokenBurning}
             members={members}
           />
         }
