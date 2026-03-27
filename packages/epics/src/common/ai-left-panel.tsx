@@ -23,8 +23,7 @@ type ChatUIMessage = {
   id: string;
   role: 'user' | 'assistant' | 'system';
   parts?: Array<
-    | { type: 'text'; text: string }
-    | { type: string; [k: string]: unknown }
+    { type: 'text'; text: string } | { type: string; [k: string]: unknown }
   >;
 };
 
