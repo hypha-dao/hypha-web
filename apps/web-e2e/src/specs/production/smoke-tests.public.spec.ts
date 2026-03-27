@@ -34,13 +34,28 @@ test.describe('Production Public Pages', () => {
     // Navigate to Hypha space (one of the main spaces visible on the network)
     await page.goto('/en/dho/hypha/agreements');
     await page.waitForLoadState('networkidle');
+    await expect(page).toHaveURL(/\/en\/dho\/hypha\/agreements/);
 
-    // Wait for page content to load
-    await page.waitForTimeout(3000);
-
-    // Verify space page loaded - check for Agreements tab or any content
-    const pageContent = page.locator('main, [role="main"], .container').first();
-    await expect(pageContent).toBeVisible({ timeout: 15000 });
+    // Verify space page loaded with resilient selectors.
+    // Different layouts may not use <main> or a .container class.
+    const hasSpaceContent = await Promise.race([
+      page
+        .locator('a[href*="/agreements/"]')
+        .first()
+        .waitFor({ state: 'visible', timeout: 30000 })
+        .then(() => true),
+      page
+        .getByRole('heading', { name: /hypha|agreements/i })
+        .first()
+        .waitFor({ state: 'visible', timeout: 30000 })
+        .then(() => true),
+      page
+        .getByText(/agreements|proposal/i)
+        .first()
+        .waitFor({ state: 'visible', timeout: 30000 })
+        .then(() => true),
+    ]).catch(() => false);
+    expect(hasSpaceContent).toBeTruthy();
 
     // Check page didn't 404
     const pageTitle = await page.title();

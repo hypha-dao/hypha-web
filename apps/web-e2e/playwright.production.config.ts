@@ -45,7 +45,10 @@ export default defineConfig({
   reporter: [
     [
       'html',
-      { open: 'on-failure', outputFolder: 'playwright-report-production' },
+      {
+        open: process.env.CI ? 'never' : 'on-failure',
+        outputFolder: 'playwright-report-production',
+      },
     ],
     ['list'],
   ],
