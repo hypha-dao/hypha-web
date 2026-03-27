@@ -1,9 +1,9 @@
 // TODO: Replace with i18n translation keys (see ai-chat i18n follow-up)
 export const MOCK_SUGGESTIONS = [
-  'Analyze recent signals',
-  'Summarize top conversations',
-  'Draft a coordination proposal',
-  'Find alignment opportunities',
+  'Tell me about this space',
+  'How many members does this space have?',
+  'What agreements exist in this space?',
+  'Describe the structure of this space',
 ];
 
 export type Message = {
@@ -19,13 +19,7 @@ export function createMockWelcomeMessage(): Message {
     id: 'welcome',
     role: 'assistant',
     content:
-      "Hello! I'm your Hypha AI assistant. I can help you analyze signals, draft proposals, understand community dynamics, and coordinate across spaces. What would you like to explore?",
+      "Hello! I'm your Hypha AI assistant. I can look up space details like member counts, agreements, and structure. Ask me anything about the space you're viewing.",
     timestamp: new Date(),
   };
 }
-
-export const MOCK_AI_RESPONSES = [
-  'Based on the current signal data, I can see a strong opportunity in the DeFi governance space. Three communities have shown 40%+ engagement spikes in the last 48 hours. Would you like me to generate a detailed breakdown?',
-  "I've analyzed 127 signals across your tracked spaces. The most actionable insight is a convergence of treasury proposals in 3 DAOs that align with your stated objectives. Shall I draft a summary report?",
-  'The pattern suggests this is a coordination signal, not noise. Similar signals in Q3 preceded successful multi-DAO collaborations. I recommend prioritizing this for immediate conversation.',
-];

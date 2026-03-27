@@ -43,7 +43,7 @@ export function AiPanelMessages({
     parts: [
       {
         type: 'text',
-        text: "Hello! I'm your Hypha AI assistant. I can help you analyze signals, draft proposals, understand community dynamics, and coordinate across spaces. What would you like to explore?",
+        text: "Hello! I'm your Hypha AI assistant. I can look up space details like member counts, agreements, and structure. Ask me anything about the space you're viewing.",
       },
     ],
   };
