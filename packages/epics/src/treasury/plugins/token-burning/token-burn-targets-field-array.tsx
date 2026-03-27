@@ -82,22 +82,9 @@ export const TokenBurnTargetsFieldArray = ({
     [members],
   );
 
-  const currentSpace = useMemo(
-    () => spaces.find((space) => space.slug === currentSpaceSlug),
-    [spaces, currentSpaceSlug],
-  );
-
-  const spacesForDropdown = useMemo(() => {
-    if (!currentSpace) return filteredSpaces;
-    if (filteredSpaces.some((space) => space.id === currentSpace.id)) {
-      return filteredSpaces;
-    }
-    return [currentSpace, ...filteredSpaces];
-  }, [filteredSpaces, currentSpace]);
-
   const spaceOptions = useMemo(
     () =>
-      spacesForDropdown
+      filteredSpaces
         .filter((space) => space.address)
         .map((space) => ({
           value: space.address as string,
@@ -111,7 +98,7 @@ export const TokenBurnTargetsFieldArray = ({
           avatarUrl: space.logoUrl,
           address: space.address as string,
         })),
-    [spacesForDropdown, currentSpaceSlug, tAgreementFlow],
+    [filteredSpaces, currentSpaceSlug, tAgreementFlow],
   );
 
   return (
