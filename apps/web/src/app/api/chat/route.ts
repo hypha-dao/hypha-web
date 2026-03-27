@@ -1,4 +1,5 @@
-import { convertToModelMessages, stepCountIs, streamText, tool } from 'ai';
+import { convertToModelMessages, stepCountIs, streamText } from 'ai';
+import type { Tool } from 'ai';
 import { openrouter } from '@openrouter/ai-sdk-provider';
 import type { UIMessage } from 'ai';
 import { getSpaceBySlug } from '@hypha-platform/core/server';
@@ -60,8 +61,7 @@ const getSpaceBySlugResultSchema = z.union([
   }),
 ]);
 
-// @ts-ignore – AI SDK tool() triggers TS2589 (type instantiation depth) in Vercel build TS context
-const getSpaceBySlugTool = tool({
+const getSpaceBySlugTool: Tool = {
   description:
     'Returns a single Hypha space and summary counts for members, documents, and subspaces. Use this when the user asks about a space, its members, agreements, or structure.',
   inputSchema: z.object({
@@ -71,7 +71,7 @@ const getSpaceBySlugTool = tool({
       .min(1)
       .describe('Hypha space slug, for example "hypha"'),
   }),
-  execute: async ({ slug }) => {
+  execute: async ({ slug }: { slug: string }) => {
     const space = await getSpaceBySlug({ slug });
     if (!space) {
       return { found: false, slug, space: null };
@@ -108,7 +108,7 @@ const getSpaceBySlugTool = tool({
     };
     return result as z.infer<typeof getSpaceBySlugResultSchema>;
   },
-});
+};
 
 export async function POST(req: Request) {
   const debugRequestId = `chat-${Date.now().toString(36)}-${Math.random()
