@@ -14,7 +14,19 @@ import { createRemoteJWKSet, jwtVerify, errors as joseErrors } from 'jose';
 // point to a URL protected by Vercel SSO, blocking server-side fetches.
 const jwksCache = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 
+// Allowlist of origins that are permitted to serve the JWKS endpoint.
+// Prevents Host-header injection from causing the server to fetch keys from
+// an attacker-controlled origin.
+const ALLOWED_ORIGINS = new Set<string>(
+  [
+    process.env.NEXT_PUBLIC_APP_URL,
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
+  ].filter((v): v is string => Boolean(v)),
+);
+
 function getJWKS(origin: string): ReturnType<typeof createRemoteJWKSet> {
+  // Safety valve: prevent unbounded cache growth (e.g. in tests or unusual traffic).
+  if (jwksCache.size >= 10) jwksCache.clear();
   if (!jwksCache.has(origin)) {
     const url = new URL('/.well-known/jwks.json', origin);
     jwksCache.set(origin, createRemoteJWKSet(url));
@@ -42,8 +54,7 @@ async function verifyAuthToken(
     }
     return {
       valid: false,
-      reason:
-        error instanceof Error ? error.message : 'Token verification failed',
+      reason: 'Token verification failed',
     };
   }
 }
@@ -154,6 +165,13 @@ export async function POST(req: Request) {
   }
 
   const requestOrigin = new URL(req.url).origin;
+  if (ALLOWED_ORIGINS.size > 0 && !ALLOWED_ORIGINS.has(requestOrigin)) {
+    console.error(
+      '[chat][security] Rejected unexpected JWKS origin:',
+      requestOrigin,
+    );
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   const jwks = getJWKS(requestOrigin);
   const authResult = await verifyAuthToken(authToken, jwks);
   if (!authResult.valid) {
