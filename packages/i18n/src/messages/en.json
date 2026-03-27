@@ -1132,6 +1132,7 @@
         "recipientBalance": "Recipient token balance",
         "recipientBalanceHint": "Current balance: {balance}",
         "recipientBalanceValue": "{value} {symbol}",
+        "burnAmountExceedsBalance": "The burn amount exceeds the recipient’s token balance. Enter a smaller amount to continue.",
         "recipientBalanceLoading": "Loading balance...",
         "recipientBalanceUnavailable": "Balance unavailable",
         "currentSpaceTag": "Current space",

@@ -17,7 +17,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui/server';
 import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
 import { useFieldArray, useFormContext } from 'react-hook-form';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   DEFAULT_SPACE_AVATAR_IMAGE,
   Person,
@@ -28,7 +28,7 @@ import { useFilterSpacesListWithDiscoverability } from '../../../spaces';
 import { useTranslations } from 'next-intl';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import useSWR from 'swr';
-import { erc20Abi, formatUnits, isAddress } from 'viem';
+import { erc20Abi, formatUnits, isAddress, parseUnits } from 'viem';
 import { resolveTokenDecimals } from '../../../governance/utils/token-decimals';
 
 type TokenBurnTargetsFieldArrayProps = {
@@ -249,6 +249,9 @@ export const TokenBurnTargetsFieldArray = ({
                       tokenAddress={selectedTokenAddress}
                       recipientAddress={addressField.value}
                       tokenSymbol={selectedTokenSymbol}
+                      amountFieldName={`${name}.${index}.amount`}
+                      amountValue={entry.amount}
+                      allBalance={entry.allBalance}
                     />
                   ) : null}
                   <FormMessage />
@@ -350,14 +353,24 @@ function RecipientTokenBalanceHint({
   tokenAddress,
   recipientAddress,
   tokenSymbol,
+  amountFieldName,
+  amountValue,
+  allBalance,
 }: {
   tokenAddress: `0x${string}`;
   recipientAddress?: string;
   tokenSymbol?: string;
+  amountFieldName: string;
+  amountValue?: string;
+  allBalance?: boolean;
 }) {
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const { setError, clearErrors, getFieldState } = useFormContext();
   const isValidRecipient = Boolean(
     recipientAddress && isAddress(recipientAddress),
+  );
+  const exceedsBalanceMessage = tAgreementFlow(
+    'plugins.tokenBurning.burnAmountExceedsBalance',
   );
 
   const { data, error, isLoading } = useSWR(
@@ -373,6 +386,71 @@ function RecipientTokenBalanceHint({
       }),
     { revalidateOnFocus: true },
   );
+
+  const decimals = resolveTokenDecimals(tokenAddress);
+  const normalizedAmountInput = (amountValue ?? '').trim().replace(',', '.');
+  const normalizedAmount = normalizedAmountInput.startsWith('.')
+    ? `0${normalizedAmountInput}`
+    : normalizedAmountInput.endsWith('.')
+      ? `${normalizedAmountInput}0`
+      : normalizedAmountInput;
+
+  useEffect(() => {
+    const currentError = getFieldState(amountFieldName).error;
+    const shouldClearManualError =
+      currentError?.type === 'manual' &&
+      currentError.message === exceedsBalanceMessage;
+
+    if (
+      allBalance ||
+      normalizedAmount.length === 0 ||
+      !isValidRecipient ||
+      isLoading ||
+      error ||
+      data == null
+    ) {
+      if (shouldClearManualError) {
+        clearErrors(amountFieldName);
+      }
+      return;
+    }
+
+    try {
+      const parsedAmount = parseUnits(normalizedAmount, decimals);
+      const shouldSetManualError = !(
+        currentError?.type === 'manual' &&
+        currentError.message === exceedsBalanceMessage
+      );
+      if (parsedAmount > data) {
+        if (shouldSetManualError) {
+          setError(amountFieldName, {
+            type: 'manual',
+            message: exceedsBalanceMessage,
+          });
+        }
+      } else if (shouldClearManualError) {
+        clearErrors(amountFieldName);
+      }
+    } catch {
+      if (shouldClearManualError) {
+        clearErrors(amountFieldName);
+      }
+    }
+  }, [
+    amountFieldName,
+    amountValue,
+    allBalance,
+    clearErrors,
+    data,
+    decimals,
+    error,
+    exceedsBalanceMessage,
+    getFieldState,
+    isLoading,
+    isValidRecipient,
+    normalizedAmount,
+    setError,
+  ]);
 
   if (!isValidRecipient) {
     return null;
@@ -394,7 +472,6 @@ function RecipientTokenBalanceHint({
     );
   }
 
-  const decimals = resolveTokenDecimals(tokenAddress);
   const normalizedBalance = Number(formatUnits(data, decimals));
 
   return (
