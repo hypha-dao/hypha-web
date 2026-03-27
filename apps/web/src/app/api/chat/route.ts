@@ -7,48 +7,24 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createRemoteJWKSet, jwtVerify, errors as joseErrors } from 'jose';
 
-// Cache JWKS instances by origin to avoid redundant re-fetches across requests.
-// Using the request origin (instead of NEXT_PUBLIC_APP_URL) ensures the JWKS
-// endpoint is resolved relative to the same deployment that received the request.
-// This prevents 401s on Vercel preview deployments where NEXT_PUBLIC_APP_URL may
-// point to a URL protected by Vercel SSO, blocking server-side fetches.
-const jwksCache = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
-
-// Allowlist of origins that are permitted to serve the JWKS endpoint.
-// Prevents Host-header injection from causing the server to fetch keys from
-// an attacker-controlled origin.
-// Includes all Vercel-provided URLs (deployment, branch, project production)
-// as well as the configured app URL to support preview deployments.
-const ALLOWED_ORIGINS = new Set<string>(
-  [
-    process.env.NEXT_PUBLIC_APP_URL,
-    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
-    process.env.VERCEL_BRANCH_URL
-      ? `https://${process.env.VERCEL_BRANCH_URL}`
-      : undefined,
-    process.env.VERCEL_PROJECT_PRODUCTION_URL
-      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-      : undefined,
-  ].filter((v): v is string => Boolean(v)),
+// Fetch JWKS directly from Privy's endpoint instead of the app's own
+// /.well-known/jwks.json route. On Vercel preview deployments, server-side
+// fetches to the same deployment are blocked by Vercel's SSO deployment
+// protection (the server doesn't carry the _vercel_jwt cookie).
+// Using Privy's external JWKS endpoint avoids this entirely.
+const PRIVY_APP_ID =
+  process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? 'cm5y07p2z02napk1cutzzx7o6';
+const PRIVY_JWKS_URL = new URL(
+  `/api/v1/apps/${PRIVY_APP_ID}/jwks.json`,
+  'https://auth.privy.io',
 );
-
-function getJWKS(origin: string): ReturnType<typeof createRemoteJWKSet> {
-  // Safety valve: prevent unbounded cache growth (e.g. in tests or unusual traffic).
-  if (jwksCache.size >= 10) jwksCache.clear();
-  if (!jwksCache.has(origin)) {
-    const url = new URL('/.well-known/jwks.json', origin);
-    jwksCache.set(origin, createRemoteJWKSet(url));
-  }
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return jwksCache.get(origin)!;
-}
+const JWKS = createRemoteJWKSet(PRIVY_JWKS_URL);
 
 async function verifyAuthToken(
   token: string,
-  jwks: ReturnType<typeof createRemoteJWKSet>,
 ): Promise<{ valid: true } | { valid: false; reason: string }> {
   try {
-    await jwtVerify(token, jwks);
+    await jwtVerify(token, JWKS);
     return { valid: true };
   } catch (error) {
     if (error instanceof joseErrors.JWTExpired) {
@@ -172,32 +148,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const requestOrigin = new URL(req.url).origin;
-  if (OPENROUTER_DEBUG) {
-    console.log('[chat][auth] origin check', {
-      requestOrigin,
-      allowedOrigins: [...ALLOWED_ORIGINS],
-      vercelEnv: process.env.VERCEL,
-      vercelUrl: process.env.VERCEL_URL,
-    });
-  }
-  // On Vercel, also accept any *.vercel.app origin (covers all preview URLs).
-  const isVercelPreview =
-    process.env.VERCEL === '1' &&
-    new URL(req.url).hostname.endsWith('.vercel.app');
-  if (
-    ALLOWED_ORIGINS.size > 0 &&
-    !ALLOWED_ORIGINS.has(requestOrigin) &&
-    !isVercelPreview
-  ) {
-    console.error(
-      '[chat][security] Rejected unexpected JWKS origin:',
-      requestOrigin,
-    );
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-  const jwks = getJWKS(requestOrigin);
-  const authResult = await verifyAuthToken(authToken, jwks);
+  const authResult = await verifyAuthToken(authToken);
   if (!authResult.valid) {
     return NextResponse.json(
       { error: 'Unauthorized', reason: authResult.reason },
