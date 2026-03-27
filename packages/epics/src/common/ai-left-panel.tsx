@@ -47,7 +47,7 @@ export function AiLeftPanel() {
     () =>
       new DefaultChatTransport({
         api: '/api/chat',
-        headers: async () => {
+        headers: async (): Promise<Record<string, string>> => {
           const token = await getAccessToken?.();
           return token ? { Authorization: `Bearer ${token}` } : {};
         },
