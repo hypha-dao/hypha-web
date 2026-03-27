@@ -12,6 +12,7 @@ import { AiLeftPanel } from './ai-left-panel';
 
 type AiLeftPanelLayoutProps = {
   children: React.ReactNode;
+  enabled?: boolean;
 };
 
 function AiSidebarTrigger() {
@@ -33,8 +34,11 @@ function AiSidebarTrigger() {
   );
 }
 
-export function AiLeftPanelLayout({ children }: AiLeftPanelLayoutProps) {
-  if (process.env.NEXT_PUBLIC_ENABLE_AI_CHAT !== 'true') {
+export function AiLeftPanelLayout({
+  children,
+  enabled = false,
+}: AiLeftPanelLayoutProps) {
+  if (!enabled) {
     return <>{children}</>;
   }
 

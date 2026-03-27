@@ -20,6 +20,7 @@ import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { getAllSpaces, findSpaceBySlug } from '@hypha-platform/core/server';
+import { enableAiChat } from '@hypha-platform/feature-flags';
 import { getDhoPathAgreements } from './@tab/agreements/constants';
 import { ActionButtons } from './_components/action-buttons';
 import { NestedSpacesButton } from './_components/nested-spaces-button';
@@ -94,9 +95,10 @@ export default async function DhoLayout({
   })();
 
   const spaces = await getAllSpaces({ parentOnly: false, omitSandbox: true });
+  const aiChatEnabled = await enableAiChat();
 
   return (
-    <AiLeftPanelLayout>
+    <AiLeftPanelLayout enabled={aiChatEnabled}>
       <div className="flex max-w-container-2xl mx-auto">
         <Container className="flex-grow min-w-0">
           <div className="mb-6 flex items-center">
