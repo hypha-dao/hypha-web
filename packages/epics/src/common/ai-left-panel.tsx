@@ -77,24 +77,30 @@ export function AiLeftPanel({ onClose }: AiLeftPanelProps) {
 
   if (isLoading) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-background-2">
-        <div className="text-sm text-muted-foreground">Loading...</div>
+      <div className="flex h-full w-full flex-col bg-background-2">
+        <AiPanelHeader onClose={onClose} onResetChat={handleResetChat} />
+        <div className="flex flex-1 items-center justify-center">
+          <div className="text-sm text-muted-foreground">Loading...</div>
+        </div>
       </div>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-background-2 p-6">
-        <div className="text-center text-sm text-muted-foreground">
-          Sign in to use Hypha AI
+      <div className="flex h-full w-full flex-col bg-background-2">
+        <AiPanelHeader onClose={onClose} onResetChat={handleResetChat} />
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
+          <div className="text-center text-sm text-muted-foreground">
+            Sign in to use Hypha AI
+          </div>
+          <button
+            onClick={login}
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+          >
+            Sign In
+          </button>
         </div>
-        <button
-          onClick={login}
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
-        >
-          Sign In
-        </button>
       </div>
     );
   }
