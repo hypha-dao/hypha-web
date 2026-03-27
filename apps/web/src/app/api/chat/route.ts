@@ -32,7 +32,8 @@ async function verifyAuthToken(
     }
     return {
       valid: false,
-      reason: error instanceof Error ? error.message : 'Token verification failed',
+      reason:
+        error instanceof Error ? error.message : 'Token verification failed',
     };
   }
 }

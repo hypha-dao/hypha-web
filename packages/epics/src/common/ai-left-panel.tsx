@@ -12,11 +12,7 @@ import {
   SidebarFooter,
 } from '@hypha-platform/ui';
 
-import {
-  AiPanelHeader,
-  AiPanelMessages,
-  AiPanelChatBar,
-} from './ai-panel';
+import { AiPanelHeader, AiPanelMessages, AiPanelChatBar } from './ai-panel';
 
 type ChatUIMessage = {
   id: string;
