@@ -16,7 +16,6 @@ import {
   AiPanelHeader,
   AiPanelMessages,
   AiPanelChatBar,
-  MOCK_SUGGESTIONS,
 } from './ai-panel';
 
 type ChatUIMessage = {
@@ -37,6 +36,16 @@ export function AiLeftPanel() {
   const t = useTranslations('AiPanel');
 
   const [input, setInput] = useState('');
+
+  const suggestions = useMemo(
+    () => [
+      t('suggestions.aboutSpace'),
+      t('suggestions.memberCount'),
+      t('suggestions.agreements'),
+      t('suggestions.structure'),
+    ],
+    [t],
+  );
 
   const transport = useMemo(
     () => new DefaultChatTransport({ api: '/api/chat' }),
@@ -141,7 +150,7 @@ export function AiLeftPanel() {
       <SidebarContent className="bg-background-2 min-h-0">
         <AiPanelMessages
           messages={messages as ChatUIMessage[]}
-          suggestions={MOCK_SUGGESTIONS}
+          suggestions={suggestions}
           showSuggestions={true}
           onSuggestionSelect={handleSuggestionSelect}
           isStreaming={isStreaming}

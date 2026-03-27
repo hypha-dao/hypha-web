@@ -5,6 +5,37 @@ import { getSpaceBySlug } from '@hypha-platform/core/server';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { createRemoteJWKSet, jwtVerify, errors as joseErrors } from 'jose';
+
+// Use the app's combined JWKS endpoint for JWT verification
+const JWKS_URL = new URL(
+  '/.well-known/jwks.json',
+  process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
+);
+const JWKS = createRemoteJWKSet(JWKS_URL);
+
+async function verifyAuthToken(
+  token: string,
+): Promise<{ valid: true } | { valid: false; reason: string }> {
+  try {
+    await jwtVerify(token, JWKS);
+    return { valid: true };
+  } catch (error) {
+    if (error instanceof joseErrors.JWTExpired) {
+      return { valid: false, reason: 'Token expired' };
+    }
+    if (error instanceof joseErrors.JWSSignatureVerificationFailed) {
+      return { valid: false, reason: 'Invalid token signature' };
+    }
+    if (error instanceof joseErrors.JWKSNoMatchingKey) {
+      return { valid: false, reason: 'No matching key found' };
+    }
+    return {
+      valid: false,
+      reason: error instanceof Error ? error.message : 'Token verification failed',
+    };
+  }
+}
 
 const chatRequestSchema = z.object({
   messages: z.array(z.record(z.unknown())),
@@ -111,8 +142,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // TODO: Replace token presence check with proper JWT validation (e.g. jose/jwtVerify)
-  // Currently only checks that a token string exists, which is NOT authentication.
+  const authResult = await verifyAuthToken(authToken);
+  if (!authResult.valid) {
+    return NextResponse.json(
+      { error: 'Unauthorized', reason: authResult.reason },
+      { status: 401 },
+    );
+  }
 
   let body: unknown;
   try {
