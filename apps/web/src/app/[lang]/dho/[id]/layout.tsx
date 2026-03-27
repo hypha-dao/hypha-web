@@ -1,4 +1,5 @@
 import {
+  AiLeftPanelLayout,
   JoinSpace,
   SalesBanner,
   SpaceCard,
@@ -95,6 +96,7 @@ export default async function DhoLayout({
   const spaces = await getAllSpaces({ parentOnly: false, omitSandbox: true });
 
   return (
+    <AiLeftPanelLayout>
     <div className="flex max-w-container-2xl mx-auto">
       <Container className="flex-grow min-w-0">
         <div className="mb-6 flex items-center">
@@ -241,5 +243,6 @@ export default async function DhoLayout({
       </Container>
       {aside}
     </div>
+    </AiLeftPanelLayout>
   );
 }
