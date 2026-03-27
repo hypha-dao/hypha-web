@@ -94,9 +94,6 @@ export const TokenBurningPlugin = ({
           <FormLabel>
             {tAgreementFlow('plugins.tokenBurning.selectToken')}
           </FormLabel>
-          <span className="text-2 text-neutral-11">
-            {tAgreementFlow('plugins.tokenBurning.selectTokenDescription')}
-          </span>
         </div>
 
         <FormField
