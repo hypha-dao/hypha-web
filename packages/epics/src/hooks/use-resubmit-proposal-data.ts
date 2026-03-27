@@ -9,6 +9,7 @@ export const useResubmitProposalData = <
     description?: string;
     leadImage?: any;
     attachments?: any;
+    tokenAddress?: string;
   },
 >(
   form: UseFormReturn<T>,
@@ -54,6 +55,23 @@ export const useResubmitProposalData = <
           );
         }
 
+        let resubmitTokenAddress: string | undefined;
+        try {
+          const tokenFormRaw = sessionStorage.getItem(
+            'resubmitUpdateIssuedTokenForm',
+          );
+          if (tokenFormRaw) {
+            const tf = JSON.parse(tokenFormRaw) as { tokenAddress?: string };
+            if (tf?.tokenAddress) {
+              resubmitTokenAddress = tf.tokenAddress;
+            }
+            sessionStorage.removeItem('resubmitUpdateIssuedTokenForm');
+          }
+        } catch {
+          // ignore invalid token resubmit payload
+          sessionStorage.removeItem('resubmitUpdateIssuedTokenForm');
+        }
+
         form.reset(
           {
             ...form.getValues(),
@@ -63,6 +81,9 @@ export const useResubmitProposalData = <
             attachments: undefined,
             spaceId: spaceId ?? undefined,
             creatorId: creatorId ?? undefined,
+            ...(resubmitTokenAddress
+              ? { tokenAddress: resubmitTokenAddress }
+              : {}),
           } as T,
           {
             keepDefaultValues: false,
@@ -89,6 +110,13 @@ export const useResubmitProposalData = <
           form.setValue('leadImage' as any, parsed.leadImage as any, {
             shouldDirty: true,
             shouldValidate: false,
+          });
+        }
+
+        if (resubmitTokenAddress) {
+          form.setValue('tokenAddress' as any, resubmitTokenAddress as any, {
+            shouldDirty: true,
+            shouldValidate: true,
           });
         }
 

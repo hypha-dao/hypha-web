@@ -47,3 +47,13 @@ export function getPriceCurrencyFeed(currency?: string | null): `0x${string}` {
   const feed = CURRENCY_FEEDS[currency as keyof typeof CURRENCY_FEEDS];
   return (feed ?? CURRENCY_FEEDS.USD) as `0x${string}`;
 }
+
+export function getPriceCurrencyCode(
+  feed?: `0x${string}`,
+): keyof typeof CURRENCY_FEEDS | undefined {
+  if (!feed) return undefined;
+  const normalizedFeed = feed.toLowerCase();
+  return CURRENCY_FEED_OPTIONS.find(
+    (option) => option.value.toLowerCase() === normalizedFeed,
+  )?.label;
+}

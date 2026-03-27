@@ -57,4 +57,7 @@ export type DbToken = {
   createdAt?: Date;
   referencePrice?: number | null;
   referenceCurrency?: string | null;
+  archived?: boolean;
+  decayInterval?: number | null;
+  decayPercentage?: number | null;
 };

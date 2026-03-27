@@ -9,6 +9,9 @@ import {
   createToken,
   updateToken,
   deleteToken,
+  createTokenUpdate,
+  applyTokenUpdate,
+  deleteTokenUpdate,
 } from './mutations';
 import {
   CreateAgreementInput,
@@ -18,9 +21,14 @@ import {
   CreateTokenInput,
   UpdateTokenInput,
   DeleteTokenInput,
+  CreateTokenUpdateInput,
 } from '../types';
 // TODO: #602 Define RLS Policies for Agreement Table
 import { db } from '@hypha-platform/storage-postgres';
+import {
+  findTokenUpdateByAddress,
+  findTokenUpdateByDocumentId,
+} from './queries';
 
 export async function createAgreementAction(
   data: CreateAgreementInput,
@@ -106,4 +114,55 @@ export async function deleteTokenAction(
 ) {
   if (!authToken) throw new Error('authToken is required to delete token');
   return deleteToken(input, { db });
+}
+
+export async function createTokenUpdateAction(
+  input: CreateTokenUpdateInput,
+  { authToken }: { authToken: string },
+) {
+  if (!authToken)
+    throw new Error('authToken is required to create token update');
+  return createTokenUpdate(input, { db });
+}
+
+export async function applyTokenUpdateAction(
+  documentId: number,
+  { authToken }: { authToken: string },
+) {
+  if (!authToken)
+    throw new Error('authToken is required to apply token update');
+  return applyTokenUpdate(documentId, { db });
+}
+
+export async function deleteTokenUpdateAction(
+  documentId: number,
+  { authToken }: { authToken: string },
+) {
+  if (!authToken)
+    throw new Error('authToken is required to delete token update');
+  return deleteTokenUpdate(documentId, { db });
+}
+
+import { isAddress } from 'ethers';
+
+export async function getTokenUpdateByAddressAction(
+  address: string,
+  { authToken }: { authToken: string },
+) {
+  if (!authToken) throw new Error('authToken is required to get token update');
+  if (!address || !isAddress(address)) {
+    throw new Error('Invalid address format');
+  }
+  return findTokenUpdateByAddress(address, { db });
+}
+
+export async function getTokenUpdateByDocumentIdAction(
+  documentId: number,
+  { authToken }: { authToken: string },
+) {
+  if (!authToken) throw new Error('authToken is required to get token update');
+  if (!Number.isFinite(documentId) || documentId < 1) {
+    throw new Error('Invalid document id');
+  }
+  return findTokenUpdateByDocumentId(documentId, { db });
 }

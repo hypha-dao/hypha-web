@@ -15,7 +15,9 @@ export const PreviewOverlay = ({
         'p-2 rounded transition-all duration-200',
         'group-hover:bg-background/100',
         'group-hover:opacity-100',
-        isVisible ? 'opacity-100 bg-background/20' : 'opacity-0',
+        isVisible
+          ? 'opacity-100 bg-background/20'
+          : 'pointer-events-none opacity-0',
       )}
     >
       {children}

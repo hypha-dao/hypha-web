@@ -29,6 +29,7 @@ import {
   MembershipExitData,
   ProposalTransparencySettingsInfo,
   ProposalTokenBackingVaultData,
+  ProposalUpdateToken,
 } from '../../governance';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
 import { ButtonClose, ExpireProposalBanner } from '@hypha-platform/epics';
@@ -415,6 +416,37 @@ export const ProposalDetail = ({
           {...proposalDetails.tokenBackingVaultData}
         />
       ) : null}
+      {proposalDetails?.updateTokenData?.address !== undefined &&
+      (proposalDetails.updateTokenData.name !== undefined ||
+        proposalDetails.updateTokenData.symbol !== undefined ||
+        proposalDetails.updateTokenData.maxSupply !== undefined ||
+        proposalDetails.updateTokenData.transferable !== undefined ||
+        proposalDetails.updateTokenData.autoMinting !== undefined ||
+        proposalDetails.updateTokenData.priceWithCurrency !== undefined ||
+        proposalDetails.updateTokenData.decayPercentage !== undefined ||
+        proposalDetails.updateTokenData.decayInterval !== undefined ||
+        proposalDetails.updateTokenData.useTransferWhitelist !== undefined ||
+        proposalDetails.updateTokenData.useReceiveWhitelist !== undefined ||
+        proposalDetails.updateTokenData.archiveToken !== undefined) ? (
+        <ProposalUpdateToken
+          address={proposalDetails.updateTokenData.address}
+          name={proposalDetails.updateTokenData.name}
+          symbol={proposalDetails.updateTokenData.symbol}
+          maxSupply={proposalDetails.updateTokenData.maxSupply}
+          transferable={proposalDetails.updateTokenData.transferable}
+          autoMinting={proposalDetails.updateTokenData.autoMinting}
+          priceWithCurrency={proposalDetails.updateTokenData.priceWithCurrency}
+          decayPercentage={proposalDetails.updateTokenData.decayPercentage}
+          decayInterval={proposalDetails.updateTokenData.decayInterval}
+          useTransferWhitelist={
+            proposalDetails.updateTokenData.useTransferWhitelist
+          }
+          useReceiveWhitelist={
+            proposalDetails.updateTokenData.useReceiveWhitelist
+          }
+          archiveToken={proposalDetails.updateTokenData.archiveToken}
+        />
+      ) : null}
       <FormVoting
         unity={proposalDetails?.unityPercentage || 0}
         quorum={proposalDetails?.quorumPercentage || 0}
@@ -442,6 +474,12 @@ export const ProposalDetail = ({
         closeUrl={closeUrl}
         onWithdrawSuccess={onWithdrawSuccess}
         label={label}
+        documentId={documentId}
+        updateTokenProposalSnapshot={
+          label === 'Update Token'
+            ? proposalDetails?.updateTokenData ?? null
+            : undefined
+        }
       />
     </div>
   );

@@ -10,6 +10,7 @@ import { tokenRelations, tokens } from './tokens';
 import { eventRelations } from './event.relations';
 import { events } from './event';
 import { transfers } from './transfers';
+import { tokenUpdates, tokenUpdateRelations } from './token-updates';
 
 export { SPACE_FLAGS } from './flags';
 export { CATEGORIES } from './categories';
@@ -21,6 +22,7 @@ export * from './space';
 export * from './tokens';
 export * from './event';
 export * from './transfers';
+export * from './token-updates';
 
 export const schema = {
   documents,
@@ -36,4 +38,6 @@ export const schema = {
   events,
   eventRelations,
   transfers,
+  tokenUpdates,
+  tokenUpdateRelations,
 };
