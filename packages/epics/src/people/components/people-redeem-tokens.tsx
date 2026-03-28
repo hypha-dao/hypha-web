@@ -63,7 +63,7 @@ export const ProfileRedeemTokens = ({
   lang,
   personSlug,
 }: ProfileRedeemTokensProps) => {
-  const { manualUpdate } = useUserAssets({
+  const { assets: userAssets, manualUpdate } = useUserAssets({
     personSlug,
     refreshInterval: 10000,
   });
@@ -107,14 +107,29 @@ export const ProfileRedeemTokens = ({
     },
   );
 
+  const inferredSpacesFromAssets = React.useMemo(() => {
+    const spacesBySlug = new Map<string, SpaceSummary>();
+    for (const asset of userAssets) {
+      if (!asset.space?.slug) continue;
+      spacesBySlug.set(asset.space.slug, {
+        slug: asset.space.slug,
+        title: asset.space.title ?? asset.space.slug,
+      });
+    }
+    return Array.from(spacesBySlug.values());
+  }, [userAssets]);
+
   const uniqueSpaces = React.useMemo(() => {
     const spacesBySlug = new Map<string, SpaceSummary>();
     for (const space of spaces ?? []) {
       if (!space.slug) continue;
       spacesBySlug.set(space.slug, space);
     }
+    for (const space of inferredSpacesFromAssets) {
+      spacesBySlug.set(space.slug, space);
+    }
     return Array.from(spacesBySlug.values());
-  }, [spaces]);
+  }, [spaces, inferredSpacesFromAssets]);
 
   const spaceSlugs = React.useMemo(
     () => uniqueSpaces.map((space) => space.slug),
@@ -257,6 +272,16 @@ export const ProfileRedeemTokens = ({
     if (spacesError) {
       reasons.push('Failed to load member spaces');
     }
+    if (
+      !spacesLoading &&
+      jwt &&
+      (spaces?.length ?? 0) === 0 &&
+      inferredSpacesFromAssets.length > 0
+    ) {
+      reasons.push(
+        'Membership spaces lookup returned no spaces; using wallet-token spaces fallback',
+      );
+    }
     if (!spacesLoading && jwt && !hasSpaces) {
       reasons.push('No spaces found for this member');
     }
@@ -286,8 +311,10 @@ export const ProfileRedeemTokens = ({
     jwt,
     personError,
     personLoading,
+    spaces,
     spacesError,
     spacesLoading,
+    inferredSpacesFromAssets.length,
   ]);
 
   return (
