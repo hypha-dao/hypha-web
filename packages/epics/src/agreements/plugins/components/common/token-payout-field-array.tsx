@@ -29,12 +29,15 @@ interface TokenPayoutFieldArrayProps {
   tokens: Token[];
   name?: string;
   label?: string;
+  /** When false, the payment-request label is omitted (use a section title outside the component). */
+  showInlineLabel?: boolean;
 }
 
 export const TokenPayoutFieldArray = ({
   tokens,
   name = 'payouts',
   label,
+  showInlineLabel = true,
 }: TokenPayoutFieldArrayProps) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const resolvedLabel =
@@ -63,9 +66,13 @@ export const TokenPayoutFieldArray = ({
   return (
     <div className="flex flex-col gap-2 w-full">
       <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
-        <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
-          {resolvedLabel} <RequirementMark />
-        </label>
+        {showInlineLabel ? (
+          <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
+            {resolvedLabel} <RequirementMark />
+          </label>
+        ) : (
+          <span className="sr-only">{resolvedLabel}</span>
+        )}
         <div className="flex flex-col gap-2 grow min-w-0">
           {fields.map((field, index) => (
             <div key={field.id} className="flex md:justify-end gap-2">
