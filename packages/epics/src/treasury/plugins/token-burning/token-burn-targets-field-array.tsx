@@ -530,12 +530,14 @@ function useRecipientPositiveBalanceAddresses({
 
       const recipientsWithPositiveBalance = new Set<string>();
       balances.forEach((result, index) => {
+        const recipientAddress = recipients[index];
         if (
           result.status === 'success' &&
           typeof result.result === 'bigint' &&
-          result.result > 0n
+          result.result > 0n &&
+          recipientAddress
         ) {
-          recipientsWithPositiveBalance.add(recipients[index]);
+          recipientsWithPositiveBalance.add(recipientAddress);
         }
       });
 
