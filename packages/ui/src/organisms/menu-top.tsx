@@ -1,7 +1,7 @@
 'use client';
 
 import { Logo } from '../atoms';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Menu } from 'lucide-react';
 import { RxCross1 } from 'react-icons/rx';
 import { usePathname } from 'next/navigation';
@@ -25,14 +25,29 @@ export const MenuTop = ({
   closeMenuLabel = 'Close menu',
 }: MenuTopProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
   const pathname = usePathname();
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    if (!headerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) setHeaderHeight(entry.contentRect.height);
+    });
+    observer.observe(headerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <header className="sticky top-0 flex min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background-2 px-4 py-3 z-20">
+    <header
+      ref={headerRef}
+      className="sticky top-0 flex min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background-2 px-4 py-3 z-20"
+    >
       <div
         className={clsx(
           'w-full mx-auto flex items-center',
@@ -70,7 +85,10 @@ export const MenuTop = ({
 
         {/* Mobile Full Screen Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden fixed inset-0 top-[52px] z-40 flex flex-col items-center p-4 bg-background-2 overflow-y-auto">
+          <div
+            className="md:hidden fixed inset-x-0 bottom-0 z-40 flex flex-col items-center p-4 bg-background-2 overflow-y-auto"
+            style={{ top: headerHeight }}
+          >
             <div className="flex flex-col space-y-8 items-center">
               {children}
             </div>
