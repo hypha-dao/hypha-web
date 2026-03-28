@@ -30,29 +30,6 @@ import {
   findTokenUpdateByDocumentId,
 } from './queries';
 
-export type DebugLogPayload = {
-  hypothesisId: string;
-  location: string;
-  message: string;
-  data?: Record<string, unknown>;
-  timestamp?: number;
-};
-
-export async function appendDebugLogAction(payload: DebugLogPayload) {
-  // #region agent log
-  require('fs').appendFileSync(
-    '/opt/cursor/logs/debug.log',
-    JSON.stringify({
-      hypothesisId: payload.hypothesisId,
-      location: payload.location,
-      message: payload.message,
-      data: payload.data ?? {},
-      timestamp: payload.timestamp ?? Date.now(),
-    }) + '\n',
-  );
-  // #endregion
-}
-
 export async function createAgreementAction(
   data: CreateAgreementInput,
   { authToken }: { authToken?: string },
@@ -145,44 +122,7 @@ export async function createTokenUpdateAction(
 ) {
   if (!authToken)
     throw new Error('authToken is required to create token update');
-  // #region agent log
-  require('fs').appendFileSync(
-    '/opt/cursor/logs/debug.log',
-    JSON.stringify({
-      hypothesisId: 'A',
-      location: 'actions.ts:createTokenUpdateAction:entry',
-      message: 'createTokenUpdateAction called',
-      data: {
-        hasAuthToken: !!authToken,
-        documentId: input.documentId,
-        tokenAddress: input.tokenAddress,
-        dataKeys: Object.keys(input.data ?? {}),
-      },
-      timestamp: Date.now(),
-    }) + '\n',
-  );
-  // #endregion
-  try {
-    const result = await createTokenUpdate(input, { db });
-    return result;
-  } catch (error) {
-    // #region agent log
-    require('fs').appendFileSync(
-      '/opt/cursor/logs/debug.log',
-      JSON.stringify({
-        hypothesisId: 'A',
-        location: 'actions.ts:createTokenUpdateAction:error',
-        message: 'createTokenUpdateAction failed',
-        data: {
-          errorMessage: error instanceof Error ? error.message : String(error),
-          errorName: error instanceof Error ? error.name : 'UnknownError',
-        },
-        timestamp: Date.now(),
-      }) + '\n',
-    );
-    // #endregion
-    throw error;
-  }
+  return createTokenUpdate(input, { db });
 }
 
 export async function applyTokenUpdateAction(

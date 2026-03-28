@@ -15,7 +15,6 @@ import {
   schemaCreateProposalWeb3,
 } from '../../../client';
 import { z } from 'zod';
-import { appendDebugLogAction } from '../../server/actions';
 
 export interface UpdateIssuedTokenInput {
   address: `0x${string}`;
@@ -206,8 +205,8 @@ export const useUpdateIssuedTokenMutationsWeb3Rpc = ({
     error: errorUpdateIssuedTokenMutation,
     data: updateIssuedTokenHash,
   } = useSWRMutation(
-    proposalSlug ? [proposalSlug, 'updateIssuedToken'] : null,
-    async ([proposalSlug], { arg }: { arg: UpdateIssuedTokenInput }) => {
+    `updateIssuedToken-${proposalSlug ?? 'pending'}`,
+    async (_key, { arg }: { arg: UpdateIssuedTokenInput }) => {
       if (!client) throw new Error('Smart wallet client not available');
 
       const duration = await publicClient.readContract(
@@ -215,50 +214,15 @@ export const useUpdateIssuedTokenMutationsWeb3Rpc = ({
       );
 
       const txData = buildUpdateIssuedTokenTxData(arg);
-      // #region agent log
-      await appendDebugLogAction({
-        hypothesisId: 'B',
-        location:
-          'useUpdateIssuedTokenMutations.web3.rpc.ts:updateIssuedToken:entry',
-        message: 'Web3 updateIssuedToken mutation entered',
-        data: {
-          proposalSlug,
-          hasClient: !!client,
-          txCount: txData.length,
-          txTargets: txData.map((tx) => tx.target),
-        },
-        timestamp: Date.now(),
-      });
-      // #endregion
-
-      try {
-        const proposal: z.infer<typeof schemaCreateProposalWeb3> = {
-          spaceId: BigInt(arg.spaceId),
-          duration: duration && duration > 0 ? duration : getDuration(4),
-          transactions: txData,
-        };
-        const parsedProposal = schemaCreateProposalWeb3.parse(proposal);
-        const proposalArgs = mapToCreateProposalWeb3Input(parsedProposal);
-        const txHash = await client.writeContract(createProposal(proposalArgs));
-        return txHash;
-      } catch (error) {
-        // #region agent log
-        await appendDebugLogAction({
-          hypothesisId: 'C',
-          location:
-            'useUpdateIssuedTokenMutations.web3.rpc.ts:updateIssuedToken:error',
-          message: 'Web3 updateIssuedToken mutation failed',
-          data: {
-            proposalSlug,
-            errorMessage:
-              error instanceof Error ? error.message : String(error),
-            errorName: error instanceof Error ? error.name : 'UnknownError',
-          },
-          timestamp: Date.now(),
-        });
-        // #endregion
-        throw error;
-      }
+      const proposal: z.infer<typeof schemaCreateProposalWeb3> = {
+        spaceId: BigInt(arg.spaceId),
+        duration: duration && duration > 0 ? duration : getDuration(4),
+        transactions: txData,
+      };
+      const parsedProposal = schemaCreateProposalWeb3.parse(proposal);
+      const proposalArgs = mapToCreateProposalWeb3Input(parsedProposal);
+      const txHash = await client.writeContract(createProposal(proposalArgs));
+      return txHash;
     },
   );
 
