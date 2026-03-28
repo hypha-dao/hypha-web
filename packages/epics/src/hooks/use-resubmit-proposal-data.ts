@@ -7,12 +7,13 @@ export const useResubmitProposalData = <
   T extends {
     title?: string;
     description?: string;
-    leadImage?: string;
+    leadImage?: string | File;
     attachments?: Array<
       | {
           url?: string;
           name?: string;
         }
+      | File
       | string
     >;
   },
