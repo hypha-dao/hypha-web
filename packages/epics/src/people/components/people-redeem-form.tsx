@@ -355,7 +355,9 @@ export const PeopleRedeemForm = ({
     ) {
       return undefined;
     }
-    return `${selectedTokenCurrencySymbol}${selectedToken.tokenPrice.toFixed(2)}`;
+    return `${selectedTokenCurrencySymbol}${selectedToken.tokenPrice.toFixed(
+      2,
+    )}`;
   }, [selectedToken, selectedTokenCurrencySymbol]);
 
   const selectedTokenUsdValue = React.useMemo(() => {
@@ -585,17 +587,10 @@ export const PeopleRedeemForm = ({
         });
         return;
       }
-      if (hasExceededCollateralAllocation) {
+      if (hasExceededCollateralAllocation || isSelectedCollateralInsufficient) {
         form.setError('root', {
           message:
-            'Selected allocation exceeds available amount for one or more collaterals. Adjust percentages or reduce redemption amount.',
-        });
-        return;
-      }
-      if (isSelectedCollateralInsufficient) {
-        form.setError('root', {
-          message:
-            'Selected collateral allocation is below redemption token value. Increase collateral coverage before redeeming.',
+            'The redemption value exceeds the collateral value, please enter a smaller amount.',
         });
         return;
       }
@@ -692,24 +687,11 @@ export const PeopleRedeemForm = ({
               }}
             />
           )}
-          {isSelectedCollateralInsufficient && (
+          {(isSelectedCollateralInsufficient ||
+            hasExceededCollateralAllocation) && (
             <div className="text-2 text-red-11">
-              Selected collateral coverage ($
-              {selectedCollateralUsdTotal.toFixed(2)}) is below redemption value
-              (${(selectedTokenUsdValue ?? 0).toFixed(2)}).
-            </div>
-          )}
-          {hasExceededCollateralAllocation && (
-            <div className="text-2 text-red-11">
-              <div>Requested collateral exceeds available amount for:</div>
-              <ul className="list-disc pl-5">
-                {exceededCollateralAllocations.map((item) => (
-                  <li key={item.address}>
-                    {item.symbol}: requested ${item.requestedUsd.toFixed(2)},
-                    available ${item.availableUsd.toFixed(2)}
-                  </li>
-                ))}
-              </ul>
+              The redemption value exceeds the collateral value, please enter a
+              smaller amount.
             </div>
           )}
           <Separator />
