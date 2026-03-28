@@ -48,6 +48,11 @@ type SpaceVaultsResponse = {
   }>;
 };
 
+type VaultFetchDiagnostic = {
+  spaceSlug: string;
+  status: number;
+};
+
 export const ProfileRedeemTokens = ({
   lang,
   personSlug,
@@ -102,7 +107,10 @@ export const ProfileRedeemTokens = ({
     [uniqueSpaces],
   );
 
-  const { data: redeemableTokens } = useSWR<Token[]>(
+  const { data: redeemableData } = useSWR<{
+    tokens: Token[];
+    diagnostics: VaultFetchDiagnostic[];
+  }>(
     jwt && spaceSlugs.length > 0
       ? [
           'redeemable-space-tokens',
@@ -113,9 +121,12 @@ export const ProfileRedeemTokens = ({
       : null,
     async () => {
       const redeemableTokensAcrossSpaces: Token[] = [];
+      const diagnostics: VaultFetchDiagnostic[] = [];
       const now = Date.now();
       const memberAddress = personData?.address as `0x${string}` | undefined;
-      if (!memberAddress) return [];
+      if (!memberAddress) {
+        return { tokens: [], diagnostics };
+      }
 
       const spaceResults = await Promise.all(
         uniqueSpaces.map(async (space) => {
@@ -128,6 +139,10 @@ export const ProfileRedeemTokens = ({
           });
 
           if (!vaultsRes.ok) {
+            diagnostics.push({
+              spaceSlug: space.slug,
+              status: vaultsRes.status,
+            });
             return [];
           }
 
@@ -192,11 +207,16 @@ export const ProfileRedeemTokens = ({
           redeemableTokensAcrossSpaces.push(token);
         }
       }
-      return redeemableTokensAcrossSpaces;
+      return {
+        tokens: redeemableTokensAcrossSpaces,
+        diagnostics,
+      };
     },
   );
 
-  const tokens = redeemableTokens ?? [];
+  const tokens = redeemableData?.tokens ?? [];
+  const diagnostics = redeemableData?.diagnostics ?? [];
+  const hasVaultAccessIssues = diagnostics.length > 0;
 
   return (
     <SidePanel>
@@ -217,6 +237,15 @@ export const ProfileRedeemTokens = ({
           Convert your tokens into their equivalent fiat value held in the
           vault.
         </span>
+        {hasVaultAccessIssues && (
+          <div className="text-2 text-red-11">
+            Unable to load vault data for some spaces:{' '}
+            {diagnostics
+              .map((entry) => `${entry.spaceSlug} (${entry.status})`)
+              .join(', ')}
+            . You may not have access to those spaces.
+          </div>
+        )}
         <Separator />
         <PeopleRedeemForm tokens={tokens} updateAssets={manualUpdate} />
       </div>
