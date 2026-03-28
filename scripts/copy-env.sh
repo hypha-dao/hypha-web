@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copy .env files from a sibling worktree to the current one.
+# Copy .env files and .vercel config from a sibling worktree to the current one.
 # Usage: ./scripts/copy-env.sh [source-worktree]
 #
 # If no argument is given, lists available worktrees and prompts for selection.
@@ -77,4 +77,22 @@ if [[ $COUNT -eq 0 ]]; then
 else
   echo ""
   echo "✅ Copied $COUNT .env file(s)."
+fi
+
+# Copy .vercel directories
+VERCEL_COUNT=0
+while IFS= read -r -d '' dir; do
+  rel="${dir#"$SOURCE"/}"
+  target="$CURRENT_DIR/$rel"
+  mkdir -p "$(dirname "$target")"
+  cp -r "$dir" "$target"
+  echo "  ✅ $rel/"
+  VERCEL_COUNT=$((VERCEL_COUNT + 1))
+done < <(find "$SOURCE" -name ".vercel" -not -path "*/node_modules/*" -not -path "*/.git/*" -type d -print0)
+
+if [[ $VERCEL_COUNT -eq 0 ]]; then
+  echo "⚠️  No .vercel directories found in source worktree."
+else
+  echo ""
+  echo "✅ Copied $VERCEL_COUNT .vercel director(y/ies)."
 fi
