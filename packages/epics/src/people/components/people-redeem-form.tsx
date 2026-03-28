@@ -39,6 +39,11 @@ interface PeopleRedeemFormType {
   updateAssets: () => Promise<void>;
 }
 
+type TouchedConversion = {
+  asset?: boolean;
+  percentage?: boolean;
+};
+
 type FormValues = z.infer<typeof personRedeem>;
 
 export const PeopleRedeemForm = ({
@@ -321,6 +326,24 @@ export const PeopleRedeemForm = ({
   const hasExceededCollateralAllocation =
     exceededCollateralAllocations.length > 0;
 
+  const shouldShowEmptyConversionFieldMessage = React.useMemo(() => {
+    const conversions = currentConversions ?? [];
+    const touchedConversions = (form.formState.touchedFields.conversions ??
+      []) as TouchedConversion[];
+
+    return conversions.some((conversion, index) => {
+      const touched = touchedConversions[index];
+      const isAssetTouched = Boolean(touched?.asset);
+      const isPercentageTouched = Boolean(touched?.percentage);
+      if (!isAssetTouched && !isPercentageTouched) {
+        return false;
+      }
+      const hasAsset = conversion.asset.trim().length > 0;
+      const hasPercentage = conversion.percentage.trim().length > 0;
+      return !hasAsset || !hasPercentage;
+    });
+  }, [currentConversions, form.formState.touchedFields.conversions]);
+
   React.useEffect(() => {
     const currentConversions = form.getValues('conversions');
     if (!currentConversions?.length) return;
@@ -489,6 +512,7 @@ export const PeopleRedeemForm = ({
               label="Converted into"
               assets={conversionAssets}
               name="conversions"
+              showEmptyFieldMessage={shouldShowEmptyConversionFieldMessage}
               onRemoveRebalance={(remainingAssets) => {
                 const rebalanced = rebalanceByUsd(remainingAssets);
                 form.setValue('conversions', rebalanced, {
