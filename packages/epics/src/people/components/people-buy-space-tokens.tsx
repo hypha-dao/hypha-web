@@ -37,6 +37,7 @@ import { Loader2 } from 'lucide-react';
 import { formatUnits } from 'viem';
 import { RecipientField } from '../../agreements/plugins/components/common/recipient-field';
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 type PurchasableToken = {
   id: number;
@@ -87,11 +88,14 @@ const spaceTokenPurchaseAbi = [
 
 interface PeopleBuySpaceTokensProps {
   personSlug: string;
+  closeUrl: string;
 }
 
 export const PeopleBuySpaceTokens = ({
   personSlug: _personSlug,
+  closeUrl,
 }: PeopleBuySpaceTokensProps) => {
+  const router = useRouter();
   const { person } = useMe();
   const { client } = useSmartWallets();
   const { tokens: dbTokens, isLoading: isTokensLoading } = useDbTokens();
@@ -195,13 +199,10 @@ export const PeopleBuySpaceTokens = ({
 
   const {
     sale,
-    needsApproval,
     hasEnoughBalance,
-    approve,
     buy,
     isApproving,
     isBuying,
-    approveError,
     buyError,
     reset,
     isLoadingSale,
@@ -266,24 +267,16 @@ export const PeopleBuySpaceTokens = ({
     }
   }, [buyerAddress, person?.address, sale?.executor, form]);
 
-  const handleApprove = async () => {
-    form.clearErrors('root');
-    try {
-      await approve();
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Approval failed. Try again.';
-      form.setError('root', { message });
-    }
-  };
-
   const handlePurchase = async (_data: FormValues) => {
     setIsSubmitting(true);
     form.clearErrors('root');
     try {
       await buy();
       setShowSuccessMessage(true);
-      setTimeout(() => setShowSuccessMessage(false), 3000);
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+        router.push(closeUrl);
+      }, 3000);
       form.setValue('amount', '');
       reset();
     } catch (error) {
@@ -507,40 +500,23 @@ export const PeopleBuySpaceTokens = ({
               shortly.
             </div>
           ) : (
-            <>
-              {needsApproval && (
-                <Button
-                  type="button"
-                  onClick={handleApprove}
-                  disabled={
-                    !selectedToken ||
-                    !sale ||
-                    sale.paymentAmount <= 0n ||
-                    !hasEnoughBalance
-                  }
-                >
-                  Approve {paymentTokenMeta?.symbol ?? 'Payment Token'}
-                </Button>
-              )}
-              <Button
-                type="submit"
-                disabled={
-                  isSubmitting ||
-                  !selectedToken ||
-                  !sale ||
-                  sale.salePaymentToken ===
-                    '0x0000000000000000000000000000000000000000' ||
-                  sale.salePricePerToken <= 0n ||
-                  !sale.canPurchase ||
-                  sale.tokenAmount <= 0n ||
-                  sale.tokensLeftToSell < sale.tokenAmount ||
-                  !hasEnoughBalance ||
-                  needsApproval
-                }
-              >
-                Buy
-              </Button>
-            </>
+            <Button
+              type="submit"
+              disabled={
+                isSubmitting ||
+                !selectedToken ||
+                !sale ||
+                sale.salePaymentToken ===
+                  '0x0000000000000000000000000000000000000000' ||
+                sale.salePricePerToken <= 0n ||
+                !sale.canPurchase ||
+                sale.tokenAmount <= 0n ||
+                sale.tokensLeftToSell < sale.tokenAmount ||
+                !hasEnoughBalance
+              }
+            >
+              Buy
+            </Button>
           )}
         </div>
 
@@ -549,10 +525,9 @@ export const PeopleBuySpaceTokens = ({
             {form.formState.errors.root.message}
           </div>
         )}
-        {(approveError || buyError) && (
+        {buyError && (
           <div className="text-2 text-foreground">
-            {(approveError || buyError)?.message ??
-              'Transaction failed. Please retry.'}
+            {buyError.message ?? 'Transaction failed. Please retry.'}
           </div>
         )}
       </form>
