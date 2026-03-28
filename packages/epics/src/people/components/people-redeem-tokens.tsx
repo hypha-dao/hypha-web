@@ -39,15 +39,8 @@ type SpaceVaultsResponse = {
     tokenSymbol?: string;
     tokenIcon?: string;
     redemptionEnabled?: boolean;
-  }>;
-};
-
-type SpaceAssetsResponse = {
-  assets?: Array<{
-    address: string;
-    symbol: string;
-    icon: string;
-    type?: string | null;
+    redemptionStartDate?: string | Date;
+    tokenName?: string;
   }>;
 };
 
@@ -88,6 +81,7 @@ export const ProfileRedeemTokens = ({
       : null,
     async () => {
       const tokensByAddress = new Map<string, Token>();
+      const now = Date.now();
 
       const spaceResults = await Promise.all(
         (spaces ?? []).map(async (space) => {
@@ -95,52 +89,38 @@ export const ProfileRedeemTokens = ({
             Authorization: `Bearer ${jwt}`,
             'Content-Type': 'application/json',
           };
-          const [vaultsRes, assetsRes] = await Promise.all([
-            fetch(`/api/v1/spaces/${space.slug}/vaults`, { headers }),
-            fetch(`/api/v1/spaces/${space.slug}/assets`, { headers }),
-          ]);
+          const vaultsRes = await fetch(`/api/v1/spaces/${space.slug}/vaults`, {
+            headers,
+          });
 
-          if (!vaultsRes.ok || !assetsRes.ok) {
+          if (!vaultsRes.ok) {
             return [];
           }
 
           const vaultsPayload = (await vaultsRes.json()) as SpaceVaultsResponse;
-          const assetsPayload = (await assetsRes.json()) as SpaceAssetsResponse;
-
-          const treasuryAssetsByAddress = new Map(
-            (assetsPayload.assets ?? []).map((asset) => [
-              asset.address.toLowerCase(),
-              asset,
-            ]),
-          );
-
           const activeVaultTokens = (vaultsPayload.vaults ?? []).filter(
-            (vault) => vault.redemptionEnabled === true,
+            (vault) => {
+              if (vault.redemptionEnabled !== true) return false;
+              if (!vault.redemptionStartDate) return true;
+              const startDate = new Date(vault.redemptionStartDate);
+              return (
+                Number.isNaN(startDate.getTime()) || startDate.getTime() <= now
+              );
+            },
           );
 
-          return activeVaultTokens
-            .map((vaultToken) => {
-              const lowerAddress = vaultToken.spaceToken.toLowerCase();
-              const treasuryToken = treasuryAssetsByAddress.get(lowerAddress);
-              if (!treasuryToken) {
-                return null;
-              }
-              return {
-                icon:
-                  treasuryToken.icon ||
-                  vaultToken.tokenIcon ||
-                  '/placeholder/token-icon.svg',
-                symbol:
-                  treasuryToken.symbol || vaultToken.tokenSymbol || 'UNKNOWN',
-                address: vaultToken.spaceToken as `0x${string}`,
-                type: treasuryToken.type ?? undefined,
-                space: {
-                  title: space.title,
-                  slug: space.slug,
-                },
-              } satisfies Token;
-            })
-            .filter((token): token is Token => token !== null);
+          return activeVaultTokens.map((vaultToken) => {
+            return {
+              icon: vaultToken.tokenIcon || '/placeholder/token-icon.svg',
+              symbol: vaultToken.tokenSymbol || 'UNKNOWN',
+              address: vaultToken.spaceToken as `0x${string}`,
+              type: undefined,
+              space: {
+                title: space.title,
+                slug: space.slug,
+              },
+            } satisfies Token;
+          });
         }),
       );
 
