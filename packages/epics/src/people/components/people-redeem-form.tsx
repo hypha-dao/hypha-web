@@ -317,12 +317,9 @@ export const PeopleRedeemForm = ({
           availableUsd: number;
         } => item !== null,
       );
-  }, [
-    conversionAssets,
-    currentConversions,
-    selectedTokenUsdValue,
-  ]);
-  const hasExceededCollateralAllocation = exceededCollateralAllocations.length > 0;
+  }, [conversionAssets, currentConversions, selectedTokenUsdValue]);
+  const hasExceededCollateralAllocation =
+    exceededCollateralAllocations.length > 0;
 
   React.useEffect(() => {
     const currentConversions = form.getValues('conversions');
