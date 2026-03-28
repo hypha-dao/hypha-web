@@ -616,6 +616,9 @@ function BurnAmountBalanceValidationMessage({
   const exceedsBalanceMessage = tAgreementFlow(
     'plugins.tokenBurning.burnAmountExceedsBalance',
   );
+  const amountGreaterThanZeroMessage = tAgreementFlow(
+    'proposalErrors.amountGreaterThanZero',
+  );
   const decimals = resolveTokenDecimals(tokenAddress);
   const normalizedAmountInput = (amountValue ?? '').trim().replace(',', '.');
   const normalizedAmount = normalizedAmountInput.startsWith('.')
@@ -624,47 +627,61 @@ function BurnAmountBalanceValidationMessage({
       ? `${normalizedAmountInput}0`
       : normalizedAmountInput;
 
-  let exceedsBalance: boolean | undefined;
-  if (allBalance || normalizedAmount.length === 0 || !isValidRecipient) {
-    exceedsBalance = false;
+  let nextManagedErrorMessage: string | null | undefined;
+  if (!isValidRecipient) {
+    nextManagedErrorMessage = null;
   } else if (isLoading || error || data == null) {
-    // Keep any existing manual error until balance state is resolvable.
-    exceedsBalance = undefined;
+    // Keep current managed manual error while balance state is unresolved.
+    nextManagedErrorMessage = undefined;
+  } else if (allBalance) {
+    nextManagedErrorMessage = data === 0n ? amountGreaterThanZeroMessage : null;
+  } else if (normalizedAmount.length === 0) {
+    nextManagedErrorMessage = null;
   } else {
     try {
-      exceedsBalance = parseUnits(normalizedAmount, decimals) > data;
+      nextManagedErrorMessage =
+        parseUnits(normalizedAmount, decimals) > data
+          ? exceedsBalanceMessage
+          : null;
     } catch {
-      exceedsBalance = false;
+      nextManagedErrorMessage = null;
     }
   }
 
   const currentError = getFieldState(amountFieldName, formState).error;
-  const hasManualExceedsError =
+  const hasManagedManualError =
     currentError?.type === 'manual' &&
-    currentError.message === exceedsBalanceMessage;
+    (currentError.message === exceedsBalanceMessage ||
+      currentError.message === amountGreaterThanZeroMessage);
 
   useEffect(() => {
-    if (exceedsBalance === true) {
-      const shouldSetManualError = !hasManualExceedsError;
-      if (shouldSetManualError) {
-        setError(amountFieldName, {
-          type: 'manual',
-          message: exceedsBalanceMessage,
-        });
+    if (nextManagedErrorMessage === undefined) {
+      return;
+    }
+
+    if (nextManagedErrorMessage === null) {
+      if (hasManagedManualError) {
+        clearErrors(amountFieldName);
       }
       return;
     }
 
-    if (exceedsBalance === false && hasManualExceedsError) {
-      clearErrors(amountFieldName);
+    const shouldSetManualError =
+      !hasManagedManualError ||
+      currentError?.message !== nextManagedErrorMessage;
+    if (shouldSetManualError) {
+      setError(amountFieldName, {
+        type: 'manual',
+        message: nextManagedErrorMessage,
+      });
     }
   }, [
     amountFieldName,
     clearErrors,
-    exceedsBalance,
-    exceedsBalanceMessage,
-    hasManualExceedsError,
+    nextManagedErrorMessage,
+    hasManagedManualError,
     setError,
+    currentError?.message,
   ]);
 
   return null;
