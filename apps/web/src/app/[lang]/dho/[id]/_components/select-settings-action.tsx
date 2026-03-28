@@ -149,18 +149,18 @@ export const SelectSettingsAction = ({
     },
     {
       group: t('groups.treasury'),
+      title: t('actions.spaceTokenPurchase.title'),
+      description: t('actions.spaceTokenPurchase.description'),
+      href: 'create/space-token-purchase',
+      icon: <ArrowLeftIcon />,
+      disabled: isPaymentExpired,
+    },
+    {
+      group: t('groups.treasury'),
       title: t('actions.buyHyphaTokensRewards.title'),
       description: t('actions.buyHyphaTokensRewards.description'),
       href: 'create/buy-hypha-tokens',
       icon: <ArrowLeftIcon />,
-    },
-    {
-      group: 'Treasury',
-      title: 'Space Token Purchase',
-      description: "Allow your members to purchase your space's native tokens.",
-      href: 'create/space-token-purchase',
-      icon: <ArrowLeftIcon />,
-      disabled: isPaymentExpired,
     },
     {
       group: t('groups.treasury'),
