@@ -762,7 +762,8 @@ export const schemaChangeSpaceTransparencySettings = z.object({
   spaceActivityAccess: z.number().int().min(0).max(3),
 });
 
-export const schemaSpaceTokenPurchase = z.object({
+/** Plain object schema so consumers can `.extend()` before `.superRefine(refineSpaceTokenPurchaseWhenActive)`. */
+export const schemaSpaceTokenPurchaseObject = z.object({
   ...createAgreementWeb2Props,
   ...createAgreementFiles,
   tokenAddress: z
@@ -778,6 +779,52 @@ export const schemaSpaceTokenPurchase = z.object({
   tokensAvailableForPurchase: z.preprocess(
     (val) =>
       val === '' || val === null || val === undefined ? undefined : Number(val),
-    z.number().positive('Available amount must be greater than 0').optional(),
+    z.number().min(0, 'Available amount cannot be negative').optional(),
   ),
 });
+
+export const refineSpaceTokenPurchaseWhenActive = (
+  data: {
+    activatePurchase: boolean;
+    purchasePrice?: number;
+    purchaseCurrency?: string;
+    tokensAvailableForPurchase?: number;
+  },
+  ctx: z.RefinementCtx,
+) => {
+  if (!data.activatePurchase) {
+    return;
+  }
+  if (data.purchasePrice === undefined || data.purchasePrice <= 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message:
+        'Purchase price must be greater than 0 when token purchase is active.',
+      path: ['purchasePrice'],
+    });
+  }
+  if (!data.purchaseCurrency) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message:
+        'Please select a payment currency when token purchase is active.',
+      path: ['purchaseCurrency'],
+    });
+  }
+  if (
+    data.tokensAvailableForPurchase === undefined ||
+    data.tokensAvailableForPurchase < 0
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message:
+        'Tokens available for purchase is required when token purchase is active (use 0 if none left).',
+      path: ['tokensAvailableForPurchase'],
+    });
+  }
+};
+
+export const schemaSpaceTokenPurchase =
+  schemaSpaceTokenPurchaseObject.superRefine(
+    refineSpaceTokenPurchaseWhenActive,
+  );

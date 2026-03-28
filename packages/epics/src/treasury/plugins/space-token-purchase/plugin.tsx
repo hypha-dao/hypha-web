@@ -2,12 +2,14 @@
 
 import { Separator } from '@hypha-platform/ui';
 import { useFormContext, useWatch } from 'react-hook-form';
+import React from 'react';
 import useSWR from 'swr';
 import { useDbTokens } from '../../../hooks';
 import { useTokenSupply } from '../../hooks';
 import {
   getBalance,
   useSpaceDetailsWeb3Rpc,
+  useSpaceTokenSaleDetailsFromChain,
 } from '@hypha-platform/core/client';
 import {
   TokenSelectionSection,
@@ -38,7 +40,7 @@ export const SpaceTokenPurchasePlugin = ({
   spaceId?: number;
   web3SpaceId?: number | null;
 }) => {
-  const { control } = useFormContext();
+  const { control, setValue } = useFormContext();
 
   const { tokens: dbTokens, isLoading } = useDbTokens();
 
@@ -52,6 +54,59 @@ export const SpaceTokenPurchasePlugin = ({
   const tokenAddress = useWatch({ control, name: 'tokenAddress' });
   const activatePurchase =
     useWatch({ control, name: 'activatePurchase' }) ?? false;
+
+  const hydratedFromChainForToken = React.useRef<string | null>(null);
+
+  const tokenAddressChecksum = tokenAddress as `0x${string}` | undefined;
+
+  const { data: saleDetailsFromChain } = useSpaceTokenSaleDetailsFromChain({
+    tokenAddress: tokenAddressChecksum,
+    enabled: Boolean(tokenAddressChecksum),
+  });
+
+  React.useEffect(() => {
+    hydratedFromChainForToken.current = null;
+  }, [tokenAddressChecksum]);
+
+  React.useEffect(() => {
+    if (!tokenAddressChecksum || saleDetailsFromChain === undefined) {
+      return;
+    }
+    if (hydratedFromChainForToken.current === tokenAddressChecksum) {
+      return;
+    }
+    hydratedFromChainForToken.current = tokenAddressChecksum;
+
+    setValue('activatePurchase', saleDetailsFromChain.activatePurchase, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+
+    if (saleDetailsFromChain.activatePurchase) {
+      if (saleDetailsFromChain.purchasePrice !== undefined) {
+        setValue('purchasePrice', saleDetailsFromChain.purchasePrice, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+      }
+      if (saleDetailsFromChain.purchaseCurrency !== undefined) {
+        setValue('purchaseCurrency', saleDetailsFromChain.purchaseCurrency, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+      }
+      if (saleDetailsFromChain.tokensAvailableForPurchase !== undefined) {
+        setValue(
+          'tokensAvailableForPurchase',
+          saleDetailsFromChain.tokensAvailableForPurchase,
+          {
+            shouldDirty: true,
+            shouldValidate: true,
+          },
+        );
+      }
+    }
+  }, [tokenAddressChecksum, saleDetailsFromChain, setValue]);
 
   const selectedToken = spaceTokens.find(
     (t) => t.address?.toLowerCase() === tokenAddress?.toLowerCase(),

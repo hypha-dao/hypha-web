@@ -33,3 +33,4 @@ export * from './useMembershipExitMutations.web.rpc';
 export * from './useWithdrawProposal';
 export * from './useSpaceTokenPurchaseOrchestrator';
 export * from './useSpaceTokenPurchaseMutations.web3.rsc';
+export * from './useSpaceTokenSaleDetailsFromChain';
