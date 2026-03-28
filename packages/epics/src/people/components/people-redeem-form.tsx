@@ -8,8 +8,10 @@ import { Separator, Button } from '@hypha-platform/ui';
 import { Loader2 } from 'lucide-react';
 import React, { useRef, useState } from 'react';
 import {
+  CURRENCY_FEED_OPTIONS,
   extractRevertReason,
   personRedeem,
+  publicClient,
   useMe,
   useRedeemTokensMutation,
   useSpacesBySlugs,
@@ -20,13 +22,55 @@ import {
 } from '../../agreements';
 import { useScrollToErrors } from '../../hooks';
 import { useFundWallet, useVaults } from '../../treasury/hooks';
-import { useJwt } from '@hypha-platform/core/client';
+import useSWR from 'swr';
+
+const USD_FEED_ADDRESS = '0x0000000000000000000000000000000000000000';
+const CURRENCY_CODE_BY_FEED = Object.fromEntries(
+  CURRENCY_FEED_OPTIONS.map((option) => [
+    option.value.toLowerCase(),
+    option.label,
+  ]),
+);
+const CURRENCY_SYMBOL_BY_CODE: Record<string, string> = {
+  USD: '$',
+  EUR: '€',
+  GBP: '£',
+  CAD: 'C$',
+  CHF: 'CHF ',
+  AUD: 'A$',
+};
+const chainlinkPriceFeedAbi = [
+  {
+    type: 'function',
+    name: 'decimals',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint8' }],
+  },
+  {
+    type: 'function',
+    name: 'latestRoundData',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [
+      { name: 'roundId', type: 'uint80' },
+      { name: 'answer', type: 'int256' },
+      { name: 'startedAt', type: 'uint256' },
+      { name: 'updatedAt', type: 'uint256' },
+      { name: 'answeredInRound', type: 'uint80' },
+    ],
+  },
+] as const;
+
+const getCurrencySymbol = (currencyCode?: string) =>
+  CURRENCY_SYMBOL_BY_CODE[(currencyCode ?? 'USD').toUpperCase()] ?? '$';
 
 interface Token {
   icon: string;
   symbol: string;
   address: `0x${string}`;
   tokenPrice?: number;
+  tokenCurrency?: string;
   value?: number;
   space?: {
     title: string;
@@ -42,6 +86,23 @@ interface PeopleRedeemFormType {
 type TouchedConversion = {
   asset?: boolean;
   percentage?: boolean;
+};
+
+type ConversionAssetDetail = {
+  address: string;
+  icon: string;
+  symbol: string;
+  value?: number;
+  usdEqual?: number;
+  tokenPrice?: number;
+  priceCurrencySymbol?: string;
+  requestedAmount?: number;
+  requestedCurrencySymbol?: string;
+  type?: string | null;
+  space?: {
+    title: string;
+    slug?: string;
+  };
 };
 
 type FormValues = z.infer<typeof personRedeem>;
@@ -166,6 +227,7 @@ export const PeopleRedeemForm = ({
           symbol: collateral.symbol,
           value: collateral.value,
           usdEqual: collateral.usdEqual,
+          tokenPrice: collateral.tokenPrice,
           availableInRedemptionToken,
           redemptionTokenSymbol: selectedTokenVault?.tokenSymbol,
           space: collateral.space,
@@ -216,28 +278,104 @@ export const PeopleRedeemForm = ({
     return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
   }, [selectedRedemption?.amount]);
 
-  const selectedTokenUsdValue = React.useMemo(() => {
-    const selectedToken = tokens.find(
-      (token) =>
-        token.address.toLowerCase() ===
-        (selectedRedemption?.token ?? '').toLowerCase(),
-    );
-    return typeof selectedToken?.tokenPrice === 'number'
-      ? redemptionAmount * selectedToken.tokenPrice
-      : undefined;
-  }, [tokens, selectedRedemption?.token, redemptionAmount]);
+  const selectedToken = React.useMemo(
+    () =>
+      tokens.find(
+        (token) =>
+          token.address.toLowerCase() ===
+          (selectedRedemption?.token ?? '').toLowerCase(),
+      ),
+    [tokens, selectedRedemption?.token],
+  );
 
-  const selectedTokenAvailableBalance = React.useMemo(() => {
-    const selectedToken = tokens.find(
-      (token) =>
-        token.address.toLowerCase() ===
-        (selectedRedemption?.token ?? '').toLowerCase(),
-    );
-    return typeof selectedToken?.value === 'number' &&
+  const selectedTokenCurrencyCode = React.useMemo(() => {
+    const feedAddress = (
+      selectedTokenVault?.redemptionCurrencyFeed ?? USD_FEED_ADDRESS
+    ).toLowerCase();
+    return CURRENCY_CODE_BY_FEED[feedAddress] ?? selectedToken?.tokenCurrency;
+  }, [
+    selectedToken?.tokenCurrency,
+    selectedTokenVault?.redemptionCurrencyFeed,
+  ]);
+
+  const selectedTokenCurrencySymbol = React.useMemo(
+    () => getCurrencySymbol(selectedTokenCurrencyCode),
+    [selectedTokenCurrencyCode],
+  );
+
+  const { data: selectedCurrencyUsdRate = 1 } = useSWR<number>(
+    selectedTokenVault?.redemptionCurrencyFeed
+      ? ['redeem-currency-usd-rate', selectedTokenVault.redemptionCurrencyFeed]
+      : null,
+    async ([, feed]) => {
+      const feedAddress = feed.toLowerCase();
+      if (feedAddress === USD_FEED_ADDRESS) {
+        return 1;
+      }
+      const [decimals, latestRoundData] = await Promise.all([
+        publicClient.readContract({
+          address: feed as `0x${string}`,
+          abi: chainlinkPriceFeedAbi,
+          functionName: 'decimals',
+        }),
+        publicClient.readContract({
+          address: feed as `0x${string}`,
+          abi: chainlinkPriceFeedAbi,
+          functionName: 'latestRoundData',
+        }),
+      ]);
+      const answer = latestRoundData[1];
+      if (answer <= 0n) {
+        return 1;
+      }
+      return Number(answer) / Math.pow(10, Number(decimals));
+    },
+  );
+
+  const selectedTokenPriceInUsd = React.useMemo(() => {
+    if (
+      !selectedToken ||
+      typeof selectedToken.tokenPrice !== 'number' ||
+      !Number.isFinite(selectedToken.tokenPrice)
+    ) {
+      return undefined;
+    }
+    const currencyToUsdRate =
+      Number.isFinite(selectedCurrencyUsdRate) && selectedCurrencyUsdRate > 0
+        ? selectedCurrencyUsdRate
+        : 1;
+    return selectedToken.tokenPrice * currencyToUsdRate;
+  }, [selectedCurrencyUsdRate, selectedToken]);
+
+  const selectedTokenPriceHint = React.useMemo(() => {
+    if (
+      !selectedToken ||
+      typeof selectedToken.tokenPrice !== 'number' ||
+      !Number.isFinite(selectedToken.tokenPrice)
+    ) {
+      return undefined;
+    }
+    return `${selectedTokenCurrencySymbol}${selectedToken.tokenPrice.toFixed(2)}`;
+  }, [selectedToken, selectedTokenCurrencySymbol]);
+
+  const selectedTokenUsdValue = React.useMemo(() => {
+    if (
+      typeof selectedTokenPriceInUsd !== 'number' ||
+      !Number.isFinite(selectedTokenPriceInUsd)
+    ) {
+      return undefined;
+    }
+    return redemptionAmount * selectedTokenPriceInUsd;
+  }, [redemptionAmount, selectedTokenPriceInUsd]);
+
+  const selectedTokenAvailableBalance = React.useMemo(
+    () =>
+      typeof selectedToken?.value === 'number' &&
       Number.isFinite(selectedToken.value)
-      ? selectedToken.value
-      : undefined;
-  }, [tokens, selectedRedemption?.token]);
+        ? selectedToken.value
+        : undefined,
+    [selectedToken],
+  );
 
   const isRequestedAmountExceedsBalance = React.useMemo(() => {
     if (
@@ -325,6 +463,36 @@ export const PeopleRedeemForm = ({
   }, [conversionAssets, currentConversions, selectedTokenUsdValue]);
   const hasExceededCollateralAllocation =
     exceededCollateralAllocations.length > 0;
+
+  const conversionAssetsWithDetails = React.useMemo(() => {
+    const requestedByAddress = new Map<string, number>();
+    for (const conversion of currentConversions ?? []) {
+      const percentage = Number(conversion.percentage ?? 0);
+      if (!Number.isFinite(percentage) || percentage <= 0) continue;
+      const assetKey = conversion.asset.toLowerCase();
+      const requestedInRedemptionCurrency =
+        (redemptionAmount * percentage) / 100;
+      requestedByAddress.set(
+        assetKey,
+        (requestedByAddress.get(assetKey) ?? 0) + requestedInRedemptionCurrency,
+      );
+    }
+
+    return conversionAssets.map(
+      (asset): ConversionAssetDetail => ({
+        ...asset,
+        tokenPrice: asset.tokenPrice,
+        priceCurrencySymbol: '$',
+        requestedAmount: requestedByAddress.get(asset.address.toLowerCase()),
+        requestedCurrencySymbol: selectedTokenCurrencySymbol,
+      }),
+    );
+  }, [
+    conversionAssets,
+    currentConversions,
+    redemptionAmount,
+    selectedTokenCurrencySymbol,
+  ]);
 
   const shouldShowEmptyConversionFieldMessage = React.useMemo(() => {
     const conversions = currentConversions ?? [];
@@ -500,6 +668,7 @@ export const PeopleRedeemForm = ({
             name="redemptions"
             allowAddOrRemove={false}
             showSelectedTokenBalanceHint
+            selectedTokenPriceHint={selectedTokenPriceHint}
           />
           {isRequestedAmountExceedsBalance && (
             <div className="text-2 text-red-11 mt-1">
@@ -510,9 +679,10 @@ export const PeopleRedeemForm = ({
           {selectedRedemption?.token && (
             <TokenPercentageFieldArray
               label="Converted into"
-              assets={conversionAssets}
+              assets={conversionAssetsWithDetails}
               name="conversions"
               showEmptyFieldMessage={shouldShowEmptyConversionFieldMessage}
+              showFieldDetails
               onRemoveRebalance={(remainingAssets) => {
                 const rebalanced = rebalanceByUsd(remainingAssets);
                 form.setValue('conversions', rebalanced, {

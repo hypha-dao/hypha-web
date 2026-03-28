@@ -21,6 +21,7 @@ export interface TokenPercentageFieldArrayProps {
   label?: string;
   onRemoveRebalance?: (remainingAssets: TokenPercentageAsset[]) => void;
   showEmptyFieldMessage?: boolean;
+  showFieldDetails?: boolean;
 }
 
 export const TokenPercentageFieldArray = ({
@@ -29,6 +30,7 @@ export const TokenPercentageFieldArray = ({
   label = 'Converted into',
   onRemoveRebalance,
   showEmptyFieldMessage = false,
+  showFieldDetails = false,
 }: TokenPercentageFieldArrayProps) => {
   const {
     control,
@@ -89,6 +91,7 @@ export const TokenPercentageFieldArray = ({
                           value={value}
                           onChange={onChange}
                           assets={assets}
+                          showFieldDetails={showFieldDetails}
                         />
                       </FormControl>
                       <FormMessage
