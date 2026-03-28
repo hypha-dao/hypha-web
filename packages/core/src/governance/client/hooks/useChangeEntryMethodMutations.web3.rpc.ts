@@ -26,10 +26,11 @@ import {
 import { Address, EntryMethodType, TokenBase } from '../../types';
 import { schemaCreateProposalWeb3, transactionSchema } from '../../validation';
 import { getDuration } from '@hypha-platform/ui-utils';
+import { getGovernanceChainId } from './governance-chain-id';
 
 type TxData = z.infer<typeof transactionSchema>;
 
-const chainId = 8453;
+const chainId = getGovernanceChainId();
 
 function changeEntryMethodTx(spaceId: number, joinMethod: number): TxData {
   return {

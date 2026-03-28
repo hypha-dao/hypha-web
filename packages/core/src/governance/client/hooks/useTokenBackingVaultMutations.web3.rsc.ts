@@ -24,6 +24,7 @@ import {
   getTokenDecimals,
 } from '@hypha-platform/core/client';
 import { getDuration } from '@hypha-platform/ui-utils';
+import { getGovernanceChainId } from './governance-chain-id';
 import {
   ASSET_PRICE_FEED_BY_TOKEN,
   HYPH_TOKEN_PRICE_FEED,
@@ -57,7 +58,7 @@ interface TokenBackingVaultInput {
   }>;
 }
 
-const chainId = 8453;
+const chainId = getGovernanceChainId();
 const PRICE_PRECISION = 1_000_000n;
 
 function parseUnits(value: string, decimals: number): bigint {

@@ -20,9 +20,10 @@ import {
   daoSpaceFactoryImplementationAddress,
 } from '../../../generated';
 import { getDuration } from '@hypha-platform/ui-utils';
+import { getGovernanceChainId } from './governance-chain-id';
 import z from 'zod';
 
-const chainId = 8453;
+const chainId = getGovernanceChainId();
 
 interface SpaceToSpaceMembershipInput {
   space: number;

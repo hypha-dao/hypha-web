@@ -58,11 +58,15 @@ const PROPOSAL_ERROR_KEY_MAP: Record<string, string> = {
   'Please select a backing collateral':
     'proposalErrors.backingCollateralRequired',
   'Please enter amount': 'proposalErrors.enterAmount',
+  'Enter an amount to continue.': 'proposalErrors.enterAmount',
   'Invalid token address': 'proposalErrors.invalidTokenAddress',
   'Invalid address': 'proposalErrors.invalidAddress',
   'Token address is required': 'proposalErrors.tokenAddressRequired',
   'Should be integer': 'proposalErrors.integerRequired',
   'Choose a token to mint': 'proposalErrors.chooseTokenToMint',
+  'Choose a token to burn': 'proposalErrors.chooseTokenToBurn',
+  'At least one burn target is required':
+    'proposalErrors.atLeastOneBurnTargetRequired',
   'Milestones cannot be empty':
     'plugins.paymentSchedule.errors.milestonesEmpty',
   'Each milestone must have a start date':

@@ -130,6 +130,14 @@ export const SelectSettingsAction = ({
       disabled: isPaymentExpired,
     },
     {
+      group: t('groups.treasury'),
+      title: t('actions.tokenBurning.title'),
+      description: t('actions.tokenBurning.description'),
+      href: 'create/token-burning',
+      icon: <ArrowDownIcon />,
+      disabled: isPaymentExpired,
+    },
+    {
       defaultDurationDays: 4,
       group: t('groups.treasury'),
       title: t('actions.tokenBackingVault.title'),

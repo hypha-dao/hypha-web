@@ -64,6 +64,7 @@ const getCreateRouteForLabel = (label: string | undefined): string => {
     'Activate Spaces': 'activate-spaces',
     'Space To Space': 'space-to-space-membership',
     'Treasury Minting': 'mint-tokens-to-space-treasury',
+    'Token Burning': 'token-burning',
     'Membership Exit': 'membership-exit',
     'Backing Vault': 'token-backing-vault',
   };
@@ -98,6 +99,7 @@ export const FormVoting = ({
   spaceSlug,
   closeUrl,
   label,
+  proposalTemplateData,
 }: {
   unity: number;
   quorum: number;
@@ -125,6 +127,7 @@ export const FormVoting = ({
   spaceSlug?: string;
   closeUrl?: string;
   label?: string;
+  proposalTemplateData?: Record<string, unknown>;
 }) => {
   const tCommon = useTranslations('Common');
   const tProposalDetails = useTranslations('ProposalDetails');
@@ -190,6 +193,7 @@ export const FormVoting = ({
         description: documentDescription || '',
         leadImage: documentLeadImage || undefined,
         attachments: documentAttachments || undefined,
+        ...(proposalTemplateData ?? {}),
       };
 
       sessionStorage.setItem(

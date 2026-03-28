@@ -16,6 +16,7 @@ import {
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import { getDuration } from '@hypha-platform/ui-utils';
+import { getGovernanceChainId } from './governance-chain-id';
 import { decayingSpaceTokenAbi } from '@hypha-platform/core/generated';
 import { useParams } from 'next/navigation';
 
@@ -27,7 +28,7 @@ interface CreateMintTokensToSpaceTreasuryInput {
   };
 }
 
-const chainId = 8453;
+const chainId = getGovernanceChainId();
 
 export const useMintTokensToSpaceTreasuryMutationsWeb3Rsc = ({
   proposalSlug,

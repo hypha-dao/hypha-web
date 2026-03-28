@@ -312,6 +312,58 @@ export const schemaMintTokensToSpaceTreasury = z.object({
   }),
 });
 
+const schemaTokenBurningTarget = z
+  .object({
+    type: z.enum(['member', 'space']).default('member'),
+    address: z
+      .string({ message: 'Please add a recipient or wallet address' })
+      .trim()
+      .min(1, { message: 'Please add a recipient or wallet address' })
+      .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' }),
+    amount: z.string().optional(),
+    allBalance: z.boolean().default(false),
+  })
+  .superRefine((data, ctx) => {
+    if (data.allBalance) {
+      return;
+    }
+
+    if (!data.amount || data.amount.trim() === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Enter an amount to continue.',
+        path: ['amount'],
+      });
+      return;
+    }
+
+    const parsedAmount = Number(data.amount);
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Amount must be greater than 0',
+        path: ['amount'],
+      });
+    }
+  });
+
+export const schemaTokenBurning = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  label: z.literal('Token Burning').optional(),
+  tokenBurning: z.object({
+    token: z
+      .string({ message: 'Choose a token to burn' })
+      .min(1, 'Choose a token to burn')
+      .refine((value) => isAddress(value), {
+        message: 'Invalid token address',
+      }),
+    burns: z
+      .array(schemaTokenBurningTarget)
+      .min(1, 'At least one burn target is required'),
+  }),
+});
+
 export const baseSchemaIssueNewToken = z.object({
   ...createAgreementWeb2Props,
   ...createAgreementFiles,

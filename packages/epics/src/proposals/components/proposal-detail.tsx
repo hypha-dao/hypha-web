@@ -23,6 +23,7 @@ import {
   ProposalTokenRequirementsInfo,
   ProposalVotingInfo,
   ProposalMintItem,
+  ProposalBurnItem,
   ProposalEntryInfo,
   ProposalBuyHyphaTokensData,
   ProposalDelegatesData,
@@ -39,6 +40,11 @@ import { isPast } from 'date-fns';
 import { useState, useEffect } from 'react';
 import { TransparencyLevel } from '../../spaces/components/transparency-level';
 import { useTranslations } from 'next-intl';
+import { formatUnits } from 'viem';
+import { resolveTokenDecimals } from '../../governance/utils/token-decimals';
+import { useDbSpaces } from '../../hooks';
+
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
 type ProposalDetailProps = ProposalHeadProps & {
   documentId?: number;
@@ -108,6 +114,7 @@ export const ProposalDetail = ({
       },
     ],
   });
+  const { spaces: dbSpaces } = useDbSpaces({ parentOnly: false });
 
   const tokenSymbol = proposalDetails?.tokens?.[0]?.symbol;
 
@@ -247,6 +254,58 @@ export const ProposalDetail = ({
     }
   }, [proposalDetails?.executed, proposalDetails?.expired]);
 
+  const resubmitTemplateData = (() => {
+    if (!proposalDetails) return undefined;
+
+    if (label === 'Treasury Minting') {
+      const minting = proposalDetails.mintings?.[0];
+      if (!minting) return undefined;
+      const decimals = resolveTokenDecimals(minting.token);
+
+      return {
+        mint: {
+          token: minting.token,
+          amount: formatUnits(minting.number, decimals),
+        },
+      };
+    }
+
+    if (label === 'Token Burning') {
+      const burnings = proposalDetails.burnings;
+      const firstBurning = burnings?.[0];
+      if (!firstBurning || !burnings.length) return undefined;
+
+      const resolveBurnAddress = (member: `0x${string}` | null) => {
+        if (!member) return '';
+        if (member !== ZERO_ADDRESS) return member;
+
+        // For self/space sentinel rows, resolve a real space address
+        // so the resubmit form can preselect a valid space target.
+        const proposalSpaceAddress = dbSpaces.find(
+          (space) => space.web3SpaceId === proposalDetails.spaceId,
+        )?.address;
+        return proposalSpaceAddress ?? '';
+      };
+
+      return {
+        tokenBurning: {
+          token: firstBurning.token,
+          burns: burnings.map((burn) => ({
+            type:
+              burn.member === ZERO_ADDRESS
+                ? ('space' as const)
+                : ('member' as const),
+            address: resolveBurnAddress(burn.member),
+            amount: formatUnits(burn.number, resolveTokenDecimals(burn.token)),
+            allBalance: burn.allBalance ?? false,
+          })),
+        },
+      };
+    }
+
+    return undefined;
+  })();
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex gap-2 justify-between">
@@ -362,6 +421,14 @@ export const ProposalDetail = ({
           token={mint.token}
         />
       ))}
+      {proposalDetails?.burnings.map((burn, idx) => (
+        <ProposalBurnItem
+          key={`${burn.member}-${burn.token}-${idx}`}
+          member={burn.member}
+          number={burn.number}
+          token={burn.token}
+        />
+      ))}
       {proposalDetails?.buyHyphaTokensData.amount ? (
         <ProposalBuyHyphaTokensData
           amount={proposalDetails?.buyHyphaTokensData.amount}
@@ -442,6 +509,7 @@ export const ProposalDetail = ({
         closeUrl={closeUrl}
         onWithdrawSuccess={onWithdrawSuccess}
         label={label}
+        proposalTemplateData={resubmitTemplateData}
       />
     </div>
   );

@@ -20,10 +20,11 @@ import {
 import { hyphaTokenAbi, hyphaTokenAddress } from '../../../generated';
 import { erc20Abi } from 'viem';
 import { getDuration } from '@hypha-platform/ui-utils';
+import { getGovernanceChainId } from './governance-chain-id';
 import z from 'zod';
 
 const USDC_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
-const chainId = 8453;
+const chainId = getGovernanceChainId();
 
 type PaymentToken = 'USDC' | 'HYPHA';
 
