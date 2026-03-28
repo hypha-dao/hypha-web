@@ -27,6 +27,7 @@ interface Token {
   symbol: string;
   address: `0x${string}`;
   tokenPrice?: number;
+  value?: number;
   space?: {
     title: string;
     slug: string;
@@ -221,6 +222,28 @@ export const PeopleRedeemForm = ({
       : undefined;
   }, [tokens, selectedRedemption?.token, redemptionAmount]);
 
+  const selectedTokenAvailableBalance = React.useMemo(() => {
+    const selectedToken = tokens.find(
+      (token) =>
+        token.address.toLowerCase() ===
+        (selectedRedemption?.token ?? '').toLowerCase(),
+    );
+    return typeof selectedToken?.value === 'number' &&
+      Number.isFinite(selectedToken.value)
+      ? selectedToken.value
+      : undefined;
+  }, [tokens, selectedRedemption?.token]);
+
+  const isRequestedAmountExceedsBalance = React.useMemo(() => {
+    if (
+      typeof selectedTokenAvailableBalance !== 'number' ||
+      !Number.isFinite(selectedTokenAvailableBalance)
+    ) {
+      return false;
+    }
+    return redemptionAmount > selectedTokenAvailableBalance + 0.000001;
+  }, [redemptionAmount, selectedTokenAvailableBalance]);
+
   const currentConversions = useWatch({
     control: form.control,
     name: 'conversions',
@@ -317,6 +340,13 @@ export const PeopleRedeemForm = ({
         });
         return;
       }
+      if (isRequestedAmountExceedsBalance) {
+        form.setError('root', {
+          message:
+            'Requested redemption amount exceeds your available token balance. Reduce the amount and try again.',
+        });
+        return;
+      }
       if (isSelectedCollateralInsufficient) {
         form.setError('root', {
           message:
@@ -410,6 +440,12 @@ export const PeopleRedeemForm = ({
               Selected collateral coverage ($
               {selectedCollateralUsdTotal.toFixed(2)}) is below redemption value
               (${(selectedTokenUsdValue ?? 0).toFixed(2)}).
+            </div>
+          )}
+          {isRequestedAmountExceedsBalance && (
+            <div className="text-2 text-red-11">
+              Requested amount ({redemptionAmount.toFixed(2)}) exceeds available
+              balance ({(selectedTokenAvailableBalance ?? 0).toFixed(2)}).
             </div>
           )}
           <Separator />
