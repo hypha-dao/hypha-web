@@ -1,0 +1,89 @@
+'use client';
+
+import useSWR from 'swr';
+import { formatUnits } from 'viem';
+import {
+  publicClient,
+  getTokenDecimals,
+  TOKENS,
+} from '@hypha-platform/core/client';
+
+const spaceTokenPurchaseAbi = [
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getTokenSaleDetails',
+    outputs: [
+      { name: 'salePaymentToken', internalType: 'address', type: 'address' },
+      { name: 'salePricePerToken', internalType: 'uint256', type: 'uint256' },
+      { name: 'tokensLeftToSell', internalType: 'uint256', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+  },
+] as const;
+
+const ZERO = '0x0000000000000000000000000000000000000000';
+
+const paymentTokenToReferenceCurrency = (
+  paymentToken: `0x${string}` | undefined,
+): 'USD' | 'EUR' | undefined => {
+  const lower = paymentToken?.toLowerCase();
+  const usdc = TOKENS.find((t) => t.symbol === 'USDC')?.address?.toLowerCase();
+  const eurc = TOKENS.find((t) => t.symbol === 'EURC')?.address?.toLowerCase();
+  if (lower === usdc) return 'USD';
+  if (lower === eurc) return 'EUR';
+  return undefined;
+};
+
+export type SpaceTokenSaleDetailsFromChain = {
+  purchasePrice: number;
+  purchaseCurrency: 'USD' | 'EUR';
+  tokensAvailableForPurchase: number;
+};
+
+export const useSpaceTokenSaleDetailsFromChain = ({
+  tokenAddress,
+  enabled,
+}: {
+  tokenAddress?: `0x${string}`;
+  enabled: boolean;
+}) => {
+  return useSWR(
+    enabled && tokenAddress
+      ? ['spaceTokenSaleDetailsHydrate', tokenAddress]
+      : null,
+    async ([, addr]) => {
+      const [salePaymentToken, salePricePerToken, tokensLeftToSell] =
+        await publicClient.readContract({
+          address: addr as `0x${string}`,
+          abi: spaceTokenPurchaseAbi,
+          functionName: 'getTokenSaleDetails',
+        });
+
+      if (
+        !salePaymentToken ||
+        salePaymentToken.toLowerCase() === ZERO.toLowerCase()
+      ) {
+        return null;
+      }
+
+      const currency = paymentTokenToReferenceCurrency(salePaymentToken);
+      if (!currency) {
+        return null;
+      }
+
+      const decimals = await getTokenDecimals(salePaymentToken);
+      const purchasePrice = Number(formatUnits(salePricePerToken, decimals));
+      const tokensAvailableForPurchase = Number(
+        formatUnits(tokensLeftToSell, 18),
+      );
+
+      return {
+        purchasePrice,
+        purchaseCurrency: currency,
+        tokensAvailableForPurchase,
+      } satisfies SpaceTokenSaleDetailsFromChain;
+    },
+    { revalidateOnFocus: false },
+  );
+};
