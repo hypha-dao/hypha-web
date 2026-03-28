@@ -34,7 +34,7 @@ export class AiChatPanelPage extends BasePage {
       name: 'Resize sidebar',
     });
     this.sidebar = page.locator('[data-sidebar="sidebar"]');
-    this.sidebarWrapper = page.locator('.group\\/sidebar-wrapper');
+    this.sidebarWrapper = page.locator('[data-sidebar="wrapper"]');
   }
 
   /**

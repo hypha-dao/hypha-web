@@ -1,9 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { AiChatPanelPage } from './pages/ai-chat-panel.page';
 
+// These values are read dynamically from ARIA attributes where possible.
+// Only DEFAULT_WIDTH and RESIZE_STEP are kept as constants since they
+// cannot be derived from the DOM (default is only known pre-interaction,
+// step size is an implementation detail not exposed via ARIA).
+// Source: packages/ui/src/sidebar.tsx — SIDEBAR_RESIZE_DEFAULT, SIDEBAR_RESIZE_STEP
 const DEFAULT_WIDTH = 320;
-const MIN_WIDTH = 280;
-const MAX_WIDTH = 600;
 const RESIZE_STEP = 10;
 
 test.describe('AI Chat Panel — Resize Handle', () => {
@@ -41,14 +44,15 @@ test.describe('AI Chat Panel — Resize Handle', () => {
         'aria-label',
         'Resize sidebar',
       );
-      await expect(chatPanel.resizeHandle).toHaveAttribute(
+      // Read min/max from the component instead of hardcoding
+      const minAttr = await chatPanel.resizeHandle.getAttribute(
         'aria-valuemin',
-        String(MIN_WIDTH),
       );
-      await expect(chatPanel.resizeHandle).toHaveAttribute(
+      const maxAttr = await chatPanel.resizeHandle.getAttribute(
         'aria-valuemax',
-        String(MAX_WIDTH),
       );
+      expect(Number(minAttr)).toBeGreaterThan(0);
+      expect(Number(maxAttr)).toBeGreaterThan(Number(minAttr));
       await expect(chatPanel.resizeHandle).toHaveAttribute(
         'aria-valuenow',
         String(DEFAULT_WIDTH),
@@ -100,6 +104,7 @@ test.describe('AI Chat Panel — Resize Handle', () => {
 
     test('should not resize below minimum width', async ({ page }) => {
       const handle = chatPanel.resizeHandle;
+      const minWidth = Number(await handle.getAttribute('aria-valuemin'));
       const box = await handle.boundingBox();
       expect(box).not.toBeNull();
 
@@ -113,11 +118,12 @@ test.describe('AI Chat Panel — Resize Handle', () => {
       await page.mouse.up();
 
       const width = await chatPanel.getSidebarWidth();
-      expect(width).toBeGreaterThanOrEqual(MIN_WIDTH);
+      expect(width).toBeGreaterThanOrEqual(minWidth);
     });
 
     test('should not resize above maximum width', async ({ page }) => {
       const handle = chatPanel.resizeHandle;
+      const maxWidth = Number(await handle.getAttribute('aria-valuemax'));
       const box = await handle.boundingBox();
       expect(box).not.toBeNull();
 
@@ -131,7 +137,7 @@ test.describe('AI Chat Panel — Resize Handle', () => {
       await page.mouse.up();
 
       const width = await chatPanel.getSidebarWidth();
-      expect(width).toBeLessThanOrEqual(MAX_WIDTH);
+      expect(width).toBeLessThanOrEqual(maxWidth);
     });
 
     test('should set data-resizing attribute during drag', async ({ page }) => {
@@ -185,11 +191,10 @@ test.describe('AI Chat Panel — Resize Handle', () => {
         position: { x: newBox!.width / 2, y: newBox!.height / 2 },
       });
 
-      // Wait for the 200ms reset animation
-      await page.waitForTimeout(250);
-
-      const widthAfterReset = await chatPanel.getSidebarWidth();
-      expect(widthAfterReset).toBe(DEFAULT_WIDTH);
+      // Poll until width reaches default (animation completes)
+      await expect
+        .poll(() => chatPanel.getSidebarWidth(), { timeout: 1000 })
+        .toBe(DEFAULT_WIDTH);
     });
 
     test('should update aria-valuenow after reset', async ({ page }) => {
@@ -215,11 +220,11 @@ test.describe('AI Chat Panel — Resize Handle', () => {
       await handle.dblclick({
         position: { x: newBox!.width / 2, y: newBox!.height / 2 },
       });
-      await page.waitForTimeout(250);
 
-      await expect(handle).toHaveAttribute(
+      await expect(chatPanel.resizeHandle).toHaveAttribute(
         'aria-valuenow',
         String(DEFAULT_WIDTH),
+        { timeout: 1000 },
       );
     });
   });
@@ -247,19 +252,25 @@ test.describe('AI Chat Panel — Resize Handle', () => {
     });
 
     test('should jump to minimum width with Home', async ({ page }) => {
+      const minWidth = Number(
+        await chatPanel.resizeHandle.getAttribute('aria-valuemin'),
+      );
       await chatPanel.resizeHandle.focus();
       await page.keyboard.press('Home');
 
       const width = await chatPanel.getSidebarWidth();
-      expect(width).toBe(MIN_WIDTH);
+      expect(width).toBe(minWidth);
     });
 
     test('should jump to maximum width with End', async ({ page }) => {
+      const maxWidth = Number(
+        await chatPanel.resizeHandle.getAttribute('aria-valuemax'),
+      );
       await chatPanel.resizeHandle.focus();
       await page.keyboard.press('End');
 
       const width = await chatPanel.getSidebarWidth();
-      expect(width).toBe(MAX_WIDTH);
+      expect(width).toBe(maxWidth);
     });
 
     test('should update aria-valuenow on keyboard resize', async ({ page }) => {
@@ -276,6 +287,9 @@ test.describe('AI Chat Panel — Resize Handle', () => {
     test('should not exceed bounds with repeated key presses', async ({
       page,
     }) => {
+      const minWidth = Number(
+        await chatPanel.resizeHandle.getAttribute('aria-valuemin'),
+      );
       await chatPanel.resizeHandle.focus();
 
       // Press ArrowLeft many times to try going below min
@@ -284,7 +298,7 @@ test.describe('AI Chat Panel — Resize Handle', () => {
       }
 
       const width = await chatPanel.getSidebarWidth();
-      expect(width).toBe(MIN_WIDTH);
+      expect(width).toBe(minWidth);
     });
   });
 

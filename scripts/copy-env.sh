@@ -46,7 +46,7 @@ else
     echo "  [$((i + 1))] ${OTHER_WORKTREES[$i]}"
   done
   read -rp "Select source worktree [1-${#OTHER_WORKTREES[@]}]: " choice
-  if [[ -z "$choice" || "$choice" -lt 1 || "$choice" -gt ${#OTHER_WORKTREES[@]} ]]; then
+  if [[ -z "$choice" || ! "$choice" =~ ^[0-9]+$ || "$choice" -lt 1 || "$choice" -gt ${#OTHER_WORKTREES[@]} ]]; then
     echo "❌ Invalid selection."
     exit 1
   fi
@@ -63,7 +63,7 @@ while IFS= read -r -d '' file; do
   basename="$(basename "$rel")"
 
   # Skip .env.template and .env.example files
-  [[ "$basename" == *.template || "$basename" == *.example ]] && continue
+  [[ "$basename" == .env.template || "$basename" == .env.example ]] && continue
 
   target="$CURRENT_DIR/$rel"
   mkdir -p "$(dirname "$target")"

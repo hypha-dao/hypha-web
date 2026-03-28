@@ -156,6 +156,7 @@ const SidebarProvider = React.forwardRef<HTMLDivElement, SidebarProviderProps>(
       <SidebarContext.Provider value={contextValue}>
         <TooltipProvider delayDuration={0}>
           <div
+            data-sidebar="wrapper"
             style={
               {
                 '--sidebar-width': SIDEBAR_WIDTH,
@@ -254,6 +255,7 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
       >
         {/* This is what handles the sidebar gap on desktop */}
         <div
+          data-sidebar-gap
           className={cn(
             'relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear',
             'group-data-[collapsible=offcanvas]:w-0',
@@ -264,6 +266,7 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
           )}
         />
         <div
+          data-sidebar-fixed
           ref={ref}
           className={cn(
             'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex',
@@ -379,19 +382,23 @@ const SidebarResizeHandle = React.forwardRef<
     const [isResizing, setIsResizing] = React.useState(false);
     const [currentWidth, setCurrentWidth] = React.useState(defaultWidth);
     const cleanupRef = React.useRef<(() => void) | null>(null);
+    const animationTimeoutRef = React.useRef<number | null>(null);
 
     // Cleanup on unmount (e.g., sidebar toggle during active drag)
     React.useEffect(() => {
       return () => {
         cleanupRef.current?.();
         cleanupRef.current = null;
+        if (animationTimeoutRef.current) {
+          clearTimeout(animationTimeoutRef.current);
+        }
       };
     }, []);
 
     const getProviderElement = React.useCallback(() => {
       const el = handleRef.current;
       if (!el) return null;
-      return el.closest('.group\\/sidebar-wrapper') as HTMLElement | null;
+      return el.closest('[data-sidebar="wrapper"]') as HTMLElement | null;
     }, []);
 
     const getCurrentWidth = React.useCallback(() => {
@@ -422,14 +429,11 @@ const SidebarResizeHandle = React.forwardRef<
         if (!providerEl) return;
 
         // Disable transitions during drag for snappy feel
-        const sidebarGroup = providerEl.querySelector(
-          '[data-state]',
+        const gapDiv = providerEl.querySelector(
+          '[data-sidebar-gap]',
         ) as HTMLElement | null;
-        const gapDiv = sidebarGroup?.querySelector(
-          ':scope > div:first-child',
-        ) as HTMLElement | null;
-        const fixedDiv = sidebarGroup?.querySelector(
-          ':scope > div:last-child',
+        const fixedDiv = providerEl.querySelector(
+          '[data-sidebar-fixed]',
         ) as HTMLElement | null;
 
         if (gapDiv) gapDiv.style.transition = 'none';
@@ -484,14 +488,11 @@ const SidebarResizeHandle = React.forwardRef<
       if (!providerEl) return;
 
       // Smooth snap-back animation for double-click reset
-      const sidebarGroup = providerEl.querySelector(
-        '[data-state]',
+      const gapDiv = providerEl.querySelector(
+        '[data-sidebar-gap]',
       ) as HTMLElement | null;
-      const gapDiv = sidebarGroup?.querySelector(
-        ':scope > div:first-child',
-      ) as HTMLElement | null;
-      const fixedDiv = sidebarGroup?.querySelector(
-        ':scope > div:last-child',
+      const fixedDiv = providerEl.querySelector(
+        '[data-sidebar-fixed]',
       ) as HTMLElement | null;
 
       if (gapDiv) gapDiv.style.transition = 'width 200ms ease-out';
@@ -501,7 +502,7 @@ const SidebarResizeHandle = React.forwardRef<
       setCurrentWidth(defaultWidth);
 
       // Clean up the inline transition after animation
-      setTimeout(() => {
+      animationTimeoutRef.current = window.setTimeout(() => {
         if (gapDiv) gapDiv.style.transition = '';
         if (fixedDiv) fixedDiv.style.transition = '';
       }, 200);
