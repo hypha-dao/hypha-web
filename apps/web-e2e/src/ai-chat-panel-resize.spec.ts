@@ -9,7 +9,12 @@ const RESIZE_STEP = 10;
 test.describe('AI Chat Panel — Resize Handle', () => {
   let chatPanel: AiChatPanelPage;
 
-  test.beforeEach(async ({ page }) => {
+  test.use({
+    extraHTTPHeaders: { Cookie: 'HYPHA_ENABLE_AI_CHAT=true' },
+  });
+
+  test.beforeEach(async ({ page, context }) => {
+    await AiChatPanelPage.enableAiChat(context);
     chatPanel = new AiChatPanelPage(page);
     await chatPanel.open();
     await chatPanel.openPanel();
@@ -63,11 +68,12 @@ test.describe('AI Chat Panel — Resize Handle', () => {
 
       const startX = box!.x + box!.width / 2;
       const startY = box!.y + box!.height / 2;
-      const dragDistance = 100;
+      const targetX = DEFAULT_WIDTH + 100;
 
       await page.mouse.move(startX, startY);
       await page.mouse.down();
-      await page.mouse.move(startX + dragDistance, startY, { steps: 5 });
+      // Move in steps to targetX — the component uses clientX as the new width
+      await page.mouse.move(targetX, startY, { steps: 10 });
       await page.mouse.up();
 
       const width = await chatPanel.getSidebarWidth();

@@ -1,5 +1,8 @@
-import { Page, Locator } from '@playwright/test';
+import { Page, Locator, BrowserContext } from '@playwright/test';
 import { BasePage } from './base.page';
+
+/** Cookie name used by the Vercel Flags SDK to toggle AI chat */
+const AI_CHAT_COOKIE = 'HYPHA_ENABLE_AI_CHAT';
 
 export class AiChatPanelPage extends BasePage {
   readonly openButton: Locator;
@@ -16,12 +19,10 @@ export class AiChatPanelPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.openButton = page.getByRole('button', {
-      name: 'Open Hypha AI panel',
-    });
+    this.openButton = page.locator('[aria-label="Open Hypha AI"]');
     this.headerText = page.getByText('Hypha AI', { exact: true });
-    this.closeButton = page.getByRole('button', { name: 'Close panel' });
-    this.resetButton = page.getByRole('button', { name: 'Reset chat' });
+    this.closeButton = page.getByRole('button', { name: /close/i });
+    this.resetButton = page.getByRole('button', { name: /reset chat/i });
     this.signInPrompt = page.getByText('Sign in to use Hypha AI');
     this.signInButton = page.getByRole('button', {
       name: 'Sign In',
@@ -34,6 +35,28 @@ export class AiChatPanelPage extends BasePage {
     });
     this.sidebar = page.locator('[data-sidebar="sidebar"]');
     this.sidebarWrapper = page.locator('.group\\/sidebar-wrapper');
+  }
+
+  /**
+   * Enable the AI chat feature flag.
+   *
+   * The flag is a server-side Vercel flag evaluated during SSR,
+   * so we need both:
+   * - extraHTTPHeaders with Cookie for the initial SSR request
+   * - browser cookies for any subsequent client-side navigations
+   *
+   * Call this BEFORE open() in test setup, or use the static helper.
+   */
+  static async enableAiChat(context: BrowserContext) {
+    // Browser cookie for client-side reads
+    await context.addCookies([
+      {
+        name: AI_CHAT_COOKIE,
+        value: 'true',
+        domain: '127.0.0.1',
+        path: '/',
+      },
+    ]);
   }
 
   async open() {
