@@ -6,7 +6,8 @@ import { EthAddress } from '../../people';
 interface ExchangeLeg {
   from: string;
   to: string;
-  token: string;
+  tokenAddress: string;
+  tokenSymbol?: string;
   amount: bigint;
   funded?: boolean;
 }
@@ -54,7 +55,7 @@ export const ProposalExchangeStakesAndTokensData = ({
       {legs.map((leg, index) => {
         return (
           <div
-            key={`${leg.from}-${leg.to}-${leg.token}-${index}`}
+            key={`${leg.from}-${leg.to}-${leg.tokenAddress}-${index}`}
             className="rounded-md border border-neutral-6 p-3 flex flex-col gap-2"
           >
             <div className="flex items-center justify-between">
@@ -62,8 +63,14 @@ export const ProposalExchangeStakesAndTokensData = ({
                 {tProposalDetails('exchange.leg')}
               </span>
               <span className="text-2">
-                {leg.amount.toString()} {leg.token}
+                {leg.amount.toString()} {leg.tokenSymbol ?? leg.tokenAddress}
               </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-2 text-neutral-11">
+                {tProposalDetails('labels.token')}
+              </span>
+              <EthAddress address={leg.tokenAddress} />
             </div>
             <div className="flex items-center justify-between">
               <span className="text-2 text-neutral-11">

@@ -151,6 +151,27 @@ export const useProposalDetailsWeb3Rpc = ({
     };
 
     let exchangeEscrowData: {
+      escrows: Array<{
+        index: number;
+        creator: string;
+        partyA: string;
+        partyB: string;
+        tokenA: string;
+        tokenB: string;
+        amountA: bigint;
+        amountB: bigint;
+        status: 'pending' | 'completed' | 'cancelled';
+        sellerFunded: boolean;
+        buyerFunded: boolean;
+      }>;
+      legs: Array<{
+        from: string;
+        to: string;
+        tokenAddress: string;
+        tokenSymbol?: string;
+        amount: bigint;
+        funded?: boolean;
+      }>;
       escrowId?: bigint;
       creator?: string;
       partyA?: string;
@@ -162,7 +183,7 @@ export const useProposalDetailsWeb3Rpc = ({
       status?: 'pending' | 'completed' | 'cancelled';
       sellerFunded?: boolean;
       buyerFunded?: boolean;
-    } = {};
+    } = { escrows: [], legs: [] };
 
     let activateSpacesData: {
       spaceIds: bigint[];
@@ -372,9 +393,10 @@ export const useProposalDetailsWeb3Rpc = ({
           buyHyphaTokensData = decoded.data as typeof buyHyphaTokensData;
           break;
 
-        case 'exchangeEscrow':
-          exchangeEscrowData = {
-            ...exchangeEscrowData,
+        case 'exchangeEscrow': {
+          const nextEscrowIndex = exchangeEscrowData.escrows.length + 1;
+          const nextEscrow = {
+            index: nextEscrowIndex,
             creator: creator as string,
             partyA: creator as string,
             partyB: decoded.data.partyB as string,
@@ -382,10 +404,28 @@ export const useProposalDetailsWeb3Rpc = ({
             tokenB: decoded.data.tokenB as string,
             amountA: decoded.data.amountA as bigint,
             amountB: decoded.data.amountB as bigint,
-            status: 'pending',
+            status: 'pending' as const,
             sellerFunded: Boolean(decoded.data.sendFundsNow),
+            buyerFunded: false,
+          };
+          exchangeEscrowData = {
+            ...exchangeEscrowData,
+            creator: exchangeEscrowData.creator ?? nextEscrow.creator,
+            partyA: exchangeEscrowData.partyA ?? nextEscrow.partyA,
+            partyB: exchangeEscrowData.partyB ?? nextEscrow.partyB,
+            tokenA: exchangeEscrowData.tokenA ?? nextEscrow.tokenA,
+            tokenB: exchangeEscrowData.tokenB ?? nextEscrow.tokenB,
+            amountA: exchangeEscrowData.amountA ?? nextEscrow.amountA,
+            amountB: exchangeEscrowData.amountB ?? nextEscrow.amountB,
+            status: exchangeEscrowData.status ?? nextEscrow.status,
+            sellerFunded:
+              exchangeEscrowData.sellerFunded ?? nextEscrow.sellerFunded,
+            buyerFunded:
+              exchangeEscrowData.buyerFunded ?? nextEscrow.buyerFunded,
+            escrows: [...exchangeEscrowData.escrows, nextEscrow],
           };
           break;
+        }
 
         case 'payForSpaces': {
           const payForSpacesData = decoded.data as Omit<
@@ -792,6 +832,23 @@ export const useProposalDetailsWeb3Rpc = ({
       }
     }
 
+    const exchangeLegs = exchangeEscrowData.escrows.flatMap((escrow) => [
+      {
+        from: escrow.partyA,
+        to: escrow.partyB,
+        tokenAddress: escrow.tokenA,
+        amount: escrow.amountA,
+        funded: escrow.sellerFunded,
+      },
+      {
+        from: escrow.partyB,
+        to: escrow.partyA,
+        tokenAddress: escrow.tokenB,
+        amount: escrow.amountB,
+        funded: escrow.buyerFunded,
+      },
+    ]);
+
     return {
       creator,
       spaceId: Number(spaceId),
@@ -813,7 +870,10 @@ export const useProposalDetailsWeb3Rpc = ({
       tokenRequirements,
       votingMethodsToken,
       buyHyphaTokensData,
-      exchangeEscrowData,
+      exchangeEscrowData: {
+        ...exchangeEscrowData,
+        legs: exchangeLegs,
+      },
       activateSpacesData,
       delegatesData,
       minimumProposalDurationData,

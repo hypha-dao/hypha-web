@@ -31,6 +31,21 @@ interface CreateExchangeStakesAndTokensFormProps {
   plugin: React.ReactNode;
 }
 
+const EXCHANGE_DETAILS_START = '<!-- exchange-details:start -->';
+const EXCHANGE_DETAILS_END = '<!-- exchange-details:end -->';
+
+const upsertExchangeDetailsSection = (
+  description: string,
+  section: string,
+): string => {
+  const detailsBlockRegex =
+    /\n?<!-- exchange-details:start -->[\s\S]*<!-- exchange-details:end -->\n?/g;
+  const sanitizedDescription = description
+    .replace(detailsBlockRegex, '')
+    .trimEnd();
+  return `${sanitizedDescription}\n\n${section}`.trim();
+};
+
 export const CreateExchangeStakesAndTokensForm = ({
   successfulUrl,
   backUrl,
@@ -80,8 +95,47 @@ export const CreateExchangeStakesAndTokensForm = ({
   const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
 
   const handleCreate = async (data: FormValues) => {
+    const sellerLegLines = data.sellerLeg
+      .map(
+        (leg, index) =>
+          `- ${index + 1}. ${leg.amount} | \`${leg.token as string}\``,
+      )
+      .join('\n');
+    const buyerLegLines = data.buyerLeg
+      .map(
+        (leg, index) =>
+          `- ${index + 1}. ${leg.amount} | \`${leg.token as string}\``,
+      )
+      .join('\n');
+
+    const exchangeDetailsSection = [
+      EXCHANGE_DETAILS_START,
+      `### ${tAgreementFlow('labels.exchange')}`,
+      '',
+      `**${tAgreementFlow('plugins.exchangeStakesAndTokens.seller')}:** \`${
+        data.sellerAddress
+      }\``,
+      '',
+      `**${tAgreementFlow(
+        'plugins.exchangeStakesAndTokens.sellerWillSend',
+      )}:**`,
+      sellerLegLines,
+      '',
+      `**${tAgreementFlow('plugins.exchangeStakesAndTokens.buyer')}:** \`${
+        data.buyerAddress
+      }\``,
+      '',
+      `**${tAgreementFlow('plugins.exchangeStakesAndTokens.buyerWillSend')}:**`,
+      buyerLegLines,
+      EXCHANGE_DETAILS_END,
+    ].join('\n');
+
     await createExchangeStakesAndTokens({
       ...data,
+      description: upsertExchangeDetailsSection(
+        data.description,
+        exchangeDetailsSection,
+      ),
       spaceId: spaceId as number,
       web3SpaceId: typeof web3SpaceId === 'number' ? web3SpaceId : undefined,
       label: 'Exchange',
