@@ -46,6 +46,7 @@ const DEFAULT_TARGET = {
   amount: '',
   allBalance: false,
 };
+const EMPTY_RECIPIENT_SET = new Set<string>();
 
 export const TokenBurnTargetsFieldArray = ({
   members = [],
@@ -68,7 +69,7 @@ export const TokenBurnTargetsFieldArray = ({
   });
   const entries = watch(name) ?? [];
 
-  const memberOptions = useMemo(
+  const memberOptionsAll = useMemo(
     () =>
       members
         .filter((member) => member.address)
@@ -82,7 +83,7 @@ export const TokenBurnTargetsFieldArray = ({
     [members],
   );
 
-  const spaceOptions = useMemo(
+  const spaceOptionsAll = useMemo(
     () =>
       filteredSpaces
         .filter((space) => space.address)
@@ -100,6 +101,84 @@ export const TokenBurnTargetsFieldArray = ({
         })),
     [filteredSpaces, currentSpaceSlug, tAgreementFlow],
   );
+  const allRecipientAddresses = useMemo(
+    () => [
+      ...memberOptionsAll.map((option) => option.address),
+      ...spaceOptionsAll.map((option) => option.address),
+    ],
+    [memberOptionsAll, spaceOptionsAll],
+  );
+  const {
+    positiveBalanceAddresses,
+    isLoading: isLoadingRecipientOptions,
+    hasLoaded: hasLoadedRecipientOptions,
+  } = useRecipientPositiveBalanceAddresses({
+    tokenAddress: selectedTokenAddress,
+    recipientAddresses: allRecipientAddresses,
+  });
+  const memberOptions = useMemo(() => {
+    if (!selectedTokenAddress) return memberOptionsAll;
+    if (!hasLoadedRecipientOptions) return [];
+    return memberOptionsAll.filter((option) =>
+      positiveBalanceAddresses.has(option.address.toLowerCase()),
+    );
+  }, [
+    selectedTokenAddress,
+    memberOptionsAll,
+    hasLoadedRecipientOptions,
+    positiveBalanceAddresses,
+  ]);
+  const spaceOptions = useMemo(() => {
+    if (!selectedTokenAddress) return spaceOptionsAll;
+    if (!hasLoadedRecipientOptions) return [];
+    return spaceOptionsAll.filter((option) =>
+      positiveBalanceAddresses.has(option.address.toLowerCase()),
+    );
+  }, [
+    selectedTokenAddress,
+    spaceOptionsAll,
+    hasLoadedRecipientOptions,
+    positiveBalanceAddresses,
+  ]);
+
+  useEffect(() => {
+    if (
+      !selectedTokenAddress ||
+      isLoadingRecipientOptions ||
+      !hasLoadedRecipientOptions
+    ) {
+      return;
+    }
+
+    entries.forEach((entry, index) => {
+      const selectedAddress = entry?.address?.trim?.() ?? '';
+      if (!selectedAddress) {
+        return;
+      }
+
+      const availableOptions =
+        entry.type === 'space' ? spaceOptions : memberOptions;
+      const isAddressAvailable = availableOptions.some(
+        (option) =>
+          option.value.toLowerCase() === selectedAddress.toLowerCase(),
+      );
+
+      if (!isAddressAvailable) {
+        setValue(`${name}.${index}.address`, '');
+        clearErrors(`${name}.${index}.address`);
+      }
+    });
+  }, [
+    selectedTokenAddress,
+    entries,
+    memberOptions,
+    spaceOptions,
+    name,
+    setValue,
+    clearErrors,
+    isLoadingRecipientOptions,
+    hasLoadedRecipientOptions,
+  ]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -151,6 +230,7 @@ export const TokenBurnTargetsFieldArray = ({
                   <div className="w-full md:min-w-72">
                     <Combobox
                       options={currentOptions}
+                      disabled={isLoadingRecipientOptions}
                       placeholder={
                         currentType === 'member'
                           ? tAgreementFlow(
@@ -165,11 +245,17 @@ export const TokenBurnTargetsFieldArray = ({
                         setValue(`${name}.${index}.address`, value)
                       }
                       emptyListMessage={
-                        currentType === 'member'
+                        isLoadingRecipientOptions
                           ? tAgreementFlow(
-                              'plugins.tokenBurning.noMembersFound',
+                              'plugins.tokenBurning.recipientBalanceLoading',
                             )
-                          : tAgreementFlow('plugins.tokenBurning.noSpacesFound')
+                          : currentType === 'member'
+                            ? tAgreementFlow(
+                                'plugins.tokenBurning.noMembersFound',
+                              )
+                            : tAgreementFlow(
+                                'plugins.tokenBurning.noSpacesFound',
+                              )
                       }
                       renderOption={(option) => (
                         <>
@@ -387,6 +473,70 @@ function useRecipientTokenBalance({
   );
 
   return { data, error, isLoading, isValidRecipient };
+}
+
+function useRecipientPositiveBalanceAddresses({
+  tokenAddress,
+  recipientAddresses,
+}: {
+  tokenAddress?: `0x${string}`;
+  recipientAddresses: string[];
+}) {
+  const normalizedRecipientAddresses = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          recipientAddresses
+            .filter((address): address is `0x${string}` => isAddress(address))
+            .map((address) => address.toLowerCase() as `0x${string}`),
+        ),
+      ),
+    [recipientAddresses],
+  );
+
+  const key =
+    tokenAddress && normalizedRecipientAddresses.length > 0
+      ? [
+          tokenAddress.toLowerCase(),
+          normalizedRecipientAddresses.join(','),
+          'token-burning-positive-balances',
+        ]
+      : null;
+
+  const { data, error, isLoading } = useSWR(key, async ([token, addresses]) => {
+    const recipients = addresses
+      .split(',')
+      .filter((address): address is `0x${string}` => isAddress(address));
+
+    const balances = await publicClient.multicall({
+      contracts: recipients.map((recipient) => ({
+        address: token as `0x${string}`,
+        abi: erc20Abi,
+        functionName: 'balanceOf',
+        args: [recipient],
+      })),
+      allowFailure: true,
+    });
+
+    const recipientsWithPositiveBalance = new Set<string>();
+    balances.forEach((result, index) => {
+      if (result.status === 'success' && result.result > 0n) {
+        recipientsWithPositiveBalance.add(recipients[index]);
+      }
+    });
+
+    return recipientsWithPositiveBalance;
+  });
+
+  return {
+    positiveBalanceAddresses: data ?? EMPTY_RECIPIENT_SET,
+    isLoading,
+    hasLoaded:
+      !tokenAddress ||
+      normalizedRecipientAddresses.length === 0 ||
+      Boolean(data),
+    error,
+  };
 }
 
 function RecipientTokenBalanceHint({
