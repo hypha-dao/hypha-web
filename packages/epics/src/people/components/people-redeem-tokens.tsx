@@ -28,6 +28,7 @@ interface Token {
   symbol: string;
   address: `0x${string}`;
   tokenPrice?: number;
+  value?: number;
   type?: string;
   space?: {
     title: string;
@@ -161,6 +162,38 @@ export const ProfileRedeemTokens = ({
     return map;
   }, [userAssets]);
 
+  const tokenBalancesBySpaceAndAddress = React.useMemo(() => {
+    const bySpaceAndAddress = new Map<string, number>();
+    const byAddress = new Map<string, number>();
+    for (const asset of userAssets) {
+      const addressKey = asset.address.toLowerCase();
+      if (!byAddress.has(addressKey)) {
+        byAddress.set(addressKey, asset.value);
+      }
+      if (asset.space?.slug) {
+        bySpaceAndAddress.set(`${asset.space.slug}:${addressKey}`, asset.value);
+      }
+    }
+    return { bySpaceAndAddress, byAddress };
+  }, [userAssets]);
+
+  const getTokenAvailableBalance = React.useCallback(
+    (tokenAddress: string, spaceSlug?: string): number | undefined => {
+      const addressKey = tokenAddress.toLowerCase();
+      if (spaceSlug) {
+        const scopedValue =
+          tokenBalancesBySpaceAndAddress.bySpaceAndAddress.get(
+            `${spaceSlug}:${addressKey}`,
+          );
+        if (typeof scopedValue === 'number') {
+          return scopedValue;
+        }
+      }
+      return tokenBalancesBySpaceAndAddress.byAddress.get(addressKey);
+    },
+    [tokenBalancesBySpaceAndAddress],
+  );
+
   const resolveRestrictedSpaceTokens = React.useCallback(
     async (
       space: SpaceSummary,
@@ -292,6 +325,7 @@ export const ProfileRedeemTokens = ({
           symbol: meta?.symbol || 'UNKNOWN',
           address: spaceToken,
           tokenPrice: redemptionPrice,
+          value: getTokenAvailableBalance(spaceToken, space.slug),
           type: undefined,
           space: {
             title: space.title,
@@ -301,7 +335,7 @@ export const ProfileRedeemTokens = ({
       }
       return fallbackTokens;
     },
-    [tokenMetadataByAddress, vaultAddress],
+    [getTokenAvailableBalance, tokenMetadataByAddress, vaultAddress],
   );
 
   const { data: redeemableData } = useSWR<{
@@ -405,6 +439,10 @@ export const ProfileRedeemTokens = ({
               symbol: entry.token.tokenSymbol || 'UNKNOWN',
               address: entry.token.spaceToken as `0x${string}`,
               tokenPrice: entry.token.redemptionPrice,
+              value: getTokenAvailableBalance(
+                entry.token.spaceToken,
+                space.slug,
+              ),
               type: undefined,
               space: {
                 title: space.title,
