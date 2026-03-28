@@ -514,7 +514,7 @@ function useRecipientPositiveBalanceAddresses({
         ]
       : null;
 
-  const { data, error, isLoading } = useSWR(
+  const { data, error, isLoading, isValidating } = useSWR(
     key,
     async ([token, addresses]: readonly [string, string, string]) => {
       const recipients = addresses
@@ -546,15 +546,29 @@ function useRecipientPositiveBalanceAddresses({
 
       return recipientsWithPositiveBalance;
     },
+    {
+      revalidateIfStale: true,
+      revalidateOnMount: true,
+      revalidateOnFocus: true,
+      dedupingInterval: 0,
+    },
   );
 
+  const requiresLiveBalanceCheck =
+    Boolean(tokenAddress) && normalizedRecipientAddresses.length > 0;
+  const isRefreshingLiveBalances = requiresLiveBalanceCheck && isValidating;
+
   return {
-    positiveBalanceAddresses: data ?? EMPTY_RECIPIENT_SET,
-    isLoading,
+    // Prevent stale cached balances from being shown while a live re-check runs.
+    positiveBalanceAddresses: isRefreshingLiveBalances
+      ? EMPTY_RECIPIENT_SET
+      : data ?? EMPTY_RECIPIENT_SET,
+    isLoading: isLoading || isRefreshingLiveBalances,
     hasLoaded:
       !tokenAddress ||
       normalizedRecipientAddresses.length === 0 ||
-      Boolean(data),
+      (Boolean(data) && !isRefreshingLiveBalances) ||
+      (Boolean(error) && !isRefreshingLiveBalances),
     error,
   };
 }
