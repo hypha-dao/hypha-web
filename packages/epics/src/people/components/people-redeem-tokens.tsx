@@ -58,7 +58,7 @@ export const ProfileRedeemTokens = ({
 
   const { data: spaces } = useSWR<SpaceSummary[]>(
     jwt ? `/api/v1/people/${personSlug}/spaces` : null,
-    async (url) => {
+    async (url: string) => {
       const res = await fetch(url, {
         headers: {
           Authorization: `Bearer ${jwt}`,
