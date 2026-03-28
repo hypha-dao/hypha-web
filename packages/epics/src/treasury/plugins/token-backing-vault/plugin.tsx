@@ -34,6 +34,7 @@ import { MinimumBackingPercentField } from './minimum-backing-percent-field';
 import { MaxRedemptionField } from './max-redemption-field';
 import { RedemptionStartDateField } from './redemption-start-date-field';
 import { EnableAdvancedRedemptionControlsField } from './enable-advanced-redemption-controls-field';
+import { TOKEN_BACKING_VAULT_PREFILL_TOKEN_KEY } from '../../../hooks/use-token-backing-vault-form-draft';
 
 interface ExtendedToken extends Token {
   space?: {
@@ -134,6 +135,20 @@ export const TokenBackingVaultPlugin = ({
     if (prefilledTokenRef.current === normalizedToken) return;
 
     if (!currentVault) {
+      if (typeof window !== 'undefined') {
+        try {
+          const lastPrefilled = sessionStorage
+            .getItem(TOKEN_BACKING_VAULT_PREFILL_TOKEN_KEY)
+            ?.toLowerCase();
+          if (lastPrefilled === normalizedToken) {
+            prefilledTokenRef.current = normalizedToken;
+            return;
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+
       setValue('tokenBackingVault.addCollaterals', [], { shouldDirty: false });
       setValue('tokenBackingVault.removeCollaterals', [], {
         shouldDirty: false,
@@ -168,6 +183,16 @@ export const TokenBackingVaultPlugin = ({
       setValue('tokenBackingVault.redemptionWhitelist', [], {
         shouldDirty: false,
       });
+      if (typeof window !== 'undefined') {
+        try {
+          sessionStorage.setItem(
+            TOKEN_BACKING_VAULT_PREFILL_TOKEN_KEY,
+            normalizedToken,
+          );
+        } catch {
+          /* ignore */
+        }
+      }
       prefilledTokenRef.current = normalizedToken;
       return;
     }
@@ -230,6 +255,16 @@ export const TokenBackingVaultPlugin = ({
     setValue('tokenBackingVault.redemptionWhitelist', [], {
       shouldDirty: false,
     });
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem(
+          TOKEN_BACKING_VAULT_PREFILL_TOKEN_KEY,
+          normalizedToken,
+        );
+      } catch {
+        /* ignore */
+      }
+    }
     prefilledTokenRef.current = normalizedToken;
   }, [spaceToken, currentVault, isLoadingVaults, setValue]);
 

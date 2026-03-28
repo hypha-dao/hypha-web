@@ -14,7 +14,12 @@ import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useConfig } from 'wagmi';
-import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
+import {
+  useScrollToErrors,
+  useResubmitProposalData,
+  useTokenBackingVaultFormDraft,
+  clearTokenBackingVaultFormDraft,
+} from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
@@ -96,6 +101,7 @@ export const CreateProposalTokenBackingVaultForm = ({
 
   useScrollToErrors(form, formRef);
   const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+  useTokenBackingVaultFormDraft(form, spaceId);
 
   const handleCreate = async (data: FormValues) => {
     setFormError(null);
@@ -104,6 +110,9 @@ export const CreateProposalTokenBackingVaultForm = ({
       spaceId: spaceId as number,
       web3SpaceId: web3SpaceId as number,
     });
+    if (typeof spaceId === 'number') {
+      clearTokenBackingVaultFormDraft(spaceId);
+    }
   };
 
   return (
