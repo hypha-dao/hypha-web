@@ -485,6 +485,7 @@ export const ProposalDetail = ({
       ) : null}
       {label === 'Token Purchase' && proposalDetails?.spaceTokenPurchaseData ? (
         <ProposalSpaceTokenPurchaseData
+          dbTokens={dbTokens}
           {...proposalDetails.spaceTokenPurchaseData}
         />
       ) : null}
