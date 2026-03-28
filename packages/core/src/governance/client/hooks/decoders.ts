@@ -1,4 +1,4 @@
-import { decodeFunctionData, erc20Abi } from 'viem';
+import { decodeFunctionData, erc20Abi, type Abi } from 'viem';
 import {
   regularTokenFactoryAbi,
   ownershipTokenFactoryAbi,
@@ -214,11 +214,22 @@ type Tx = {
   value: bigint;
 };
 
+type DecodedTransaction = ReturnType<typeof decodeFunctionData> & {
+  args: readonly unknown[];
+};
+
+type DecodedPayload = {
+  type: string;
+  data: Record<string, unknown>;
+};
+
+type TransactionDecoder = {
+  abi: Abi;
+  handler: (decoded: DecodedTransaction, tx: Tx) => DecodedPayload | null;
+};
+
 export function decodeTransaction(tx: Tx) {
-  const decoders: Array<{
-    abi: any;
-    handler: (decoded: any, tx: Tx) => { type: string; data: any } | null;
-  }> = [
+  const decoders: TransactionDecoder[] = [
     {
       abi: erc20Abi,
       handler: (decoded, tx) =>
@@ -796,7 +807,7 @@ export function decodeTransaction(tx: Tx) {
       const decoded = decodeFunctionData({
         abi,
         data: tx.data,
-      });
+      }) as DecodedTransaction;
       const result = handler(decoded, tx);
       if (result) return result;
     } catch (_) {
