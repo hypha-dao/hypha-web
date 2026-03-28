@@ -456,7 +456,7 @@ function BurnAmountBalanceValidationMessage({
   allBalance?: boolean;
 }) {
   const tAgreementFlow = useTranslations('AgreementFlow');
-  const { setError, clearErrors, getFieldState } = useFormContext();
+  const { setError, clearErrors, getFieldState, formState } = useFormContext();
   const { data, error, isLoading, isValidRecipient } = useRecipientTokenBalance(
     {
       tokenAddress,
@@ -488,14 +488,14 @@ function BurnAmountBalanceValidationMessage({
     }
   }
 
-  useEffect(() => {
-    const currentError = getFieldState(amountFieldName).error;
-    const shouldClearManualError =
-      currentError?.type === 'manual' &&
-      currentError.message === exceedsBalanceMessage;
+  const currentError = getFieldState(amountFieldName, formState).error;
+  const hasManualExceedsError =
+    currentError?.type === 'manual' &&
+    currentError.message === exceedsBalanceMessage;
 
+  useEffect(() => {
     if (exceedsBalance === true) {
-      const shouldSetManualError = !shouldClearManualError;
+      const shouldSetManualError = !hasManualExceedsError;
       if (shouldSetManualError) {
         setError(amountFieldName, {
           type: 'manual',
@@ -505,7 +505,7 @@ function BurnAmountBalanceValidationMessage({
       return;
     }
 
-    if (exceedsBalance === false && shouldClearManualError) {
+    if (exceedsBalance === false && hasManualExceedsError) {
       clearErrors(amountFieldName);
     }
   }, [
@@ -513,13 +513,9 @@ function BurnAmountBalanceValidationMessage({
     clearErrors,
     exceedsBalance,
     exceedsBalanceMessage,
-    getFieldState,
+    hasManualExceedsError,
     setError,
   ]);
 
-  if (exceedsBalance !== true) {
-    return null;
-  }
-
-  return <span className="text-2 text-error">{exceedsBalanceMessage}</span>;
+  return null;
 }
