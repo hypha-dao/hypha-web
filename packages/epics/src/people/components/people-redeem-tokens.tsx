@@ -9,7 +9,7 @@ import {
 } from '@hypha-platform/epics';
 import { PeopleRedeemForm } from './people-redeem-form';
 import { Separator } from '@hypha-platform/ui';
-import { useJwt, useMe } from '@hypha-platform/core/client';
+import { useJwt } from '@hypha-platform/core/client';
 import useSWR from 'swr';
 import { publicClient } from '@hypha-platform/core/client';
 import { erc20Abi } from 'viem';
@@ -57,7 +57,20 @@ export const ProfileRedeemTokens = ({
     refreshInterval: 10000,
   });
   const { jwt } = useJwt();
-  const { person } = useMe();
+  const { data: personData } = useSWR<{ address?: string }>(
+    `/api/v1/people/${personSlug}`,
+    async (url: string) => {
+      const res = await fetch(url, {
+        headers: {
+          Accept: 'application/json',
+        },
+      });
+      if (!res.ok) {
+        throw new Error(`Failed to load person: ${res.statusText}`);
+      }
+      return (await res.json()) as { address?: string };
+    },
+  );
 
   const { data: spaces } = useSWR<SpaceSummary[]>(
     jwt ? `/api/v1/people/${personSlug}/spaces` : null,
@@ -95,13 +108,13 @@ export const ProfileRedeemTokens = ({
           'redeemable-space-tokens',
           jwt,
           spaceSlugs.join(','),
-          person?.address ?? '',
+          personData?.address ?? '',
         ]
       : null,
     async () => {
       const redeemableTokensAcrossSpaces: Token[] = [];
       const now = Date.now();
-      const memberAddress = person?.address as `0x${string}` | undefined;
+      const memberAddress = personData?.address as `0x${string}` | undefined;
       if (!memberAddress) return [];
 
       const spaceResults = await Promise.all(
