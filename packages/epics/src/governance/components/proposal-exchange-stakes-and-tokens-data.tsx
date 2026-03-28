@@ -2,36 +2,46 @@
 
 import { useTranslations } from 'next-intl';
 import { EthAddress } from '../../people';
-import { formatUnits } from 'viem';
-import { resolveTokenDecimals } from '../utils/token-decimals';
+import { usePersonByWeb3Address } from '../hooks';
 
-interface ExchangeLeg {
-  from: string;
-  to: string;
-  tokenAddress: string;
-  tokenSymbol?: string;
-  amount: bigint;
-  funded?: boolean;
-}
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
+
+const isEvmAddress = (value?: string): value is `0x${string}` =>
+  typeof value === 'string' && /^0x[a-fA-F0-9]{40}$/.test(value);
 
 interface ProposalExchangeStakesAndTokensDataProps {
-  legs: ExchangeLeg[];
+  sellerAddress?: string;
+  buyerAddress?: string;
+  sellerLeg: Array<{
+    amount: string;
+    tokenAddress: string;
+  }>;
+  buyerLeg: Array<{
+    amount: string;
+    tokenAddress: string;
+  }>;
   escrowId?: bigint;
   completed?: boolean;
   cancelled?: boolean;
-  spaceSlug: string;
 }
 
 export const ProposalExchangeStakesAndTokensData = ({
-  legs,
+  sellerAddress,
+  buyerAddress,
+  sellerLeg,
+  buyerLeg,
   escrowId,
   completed,
   cancelled,
-  spaceSlug,
 }: ProposalExchangeStakesAndTokensDataProps) => {
   const tProposalDetails = useTranslations('ProposalDetails');
-  // Reserved for future token metadata resolution in this space context.
-  void spaceSlug;
+  const tAgreementFlow = useTranslations('AgreementFlow');
+  const { person: sellerPerson } = usePersonByWeb3Address(
+    isEvmAddress(sellerAddress) ? sellerAddress : ZERO_ADDRESS,
+  );
+  const { person: buyerPerson } = usePersonByWeb3Address(
+    isEvmAddress(buyerAddress) ? buyerAddress : ZERO_ADDRESS,
+  );
 
   const status = completed
     ? tProposalDetails('exchange.status.completed')
@@ -39,8 +49,79 @@ export const ProposalExchangeStakesAndTokensData = ({
     ? tProposalDetails('exchange.status.cancelled')
     : tProposalDetails('exchange.status.pendingFunding');
 
+  const renderPartyValue = (address?: string, label?: string) => {
+    if (label) {
+      return <span className="text-2">{label}</span>;
+    }
+    if (isEvmAddress(address)) {
+      return <EthAddress address={address} />;
+    }
+    return <span className="text-2">{tProposalDetails('labels.unknown')}</span>;
+  };
+
+  const renderLegRows = (
+    rows: Array<{
+      amount: string;
+      tokenAddress: string;
+    }>,
+  ) => {
+    if (!rows.length) {
+      return (
+        <span className="text-2">{tProposalDetails('labels.unknown')}</span>
+      );
+    }
+
+    return rows.map((leg, index) => (
+      <div
+        key={`${leg.tokenAddress}-${index}`}
+        className="flex items-center justify-between text-2"
+      >
+        <span>[{leg.amount}]</span>
+        {isEvmAddress(leg.tokenAddress) ? (
+          <EthAddress address={leg.tokenAddress} />
+        ) : (
+          <span>{leg.tokenAddress}</span>
+        )}
+      </div>
+    ));
+  };
+
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <span className="text-2 text-neutral-11">
+          {tAgreementFlow('plugins.exchangeStakesAndTokens.seller')}
+        </span>
+        {renderPartyValue(
+          sellerAddress,
+          sellerPerson
+            ? `${sellerPerson.name} ${sellerPerson.surname}`
+            : undefined,
+        )}
+      </div>
+      <div className="flex flex-col gap-2 rounded-md border border-neutral-6 p-3">
+        <span className="text-2 text-neutral-11">
+          {tAgreementFlow('plugins.exchangeStakesAndTokens.sellerWillSend')}
+        </span>
+        {renderLegRows(sellerLeg)}
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-2 text-neutral-11">
+          {tAgreementFlow('plugins.exchangeStakesAndTokens.buyer')}
+        </span>
+        {renderPartyValue(
+          buyerAddress,
+          buyerPerson
+            ? `${buyerPerson.name} ${buyerPerson.surname}`
+            : undefined,
+        )}
+      </div>
+      <div className="flex flex-col gap-2 rounded-md border border-neutral-6 p-3">
+        <span className="text-2 text-neutral-11">
+          {tAgreementFlow('plugins.exchangeStakesAndTokens.buyerWillSend')}
+        </span>
+        {renderLegRows(buyerLeg)}
+      </div>
       <div className="flex items-center justify-between">
         <span className="text-2 text-neutral-11">
           {tProposalDetails('exchange.escrowId')}
@@ -55,55 +136,6 @@ export const ProposalExchangeStakesAndTokensData = ({
         </span>
         <span className="text-2">{status}</span>
       </div>
-      {legs.map((leg, index) => {
-        return (
-          <div
-            key={`${leg.from}-${leg.to}-${leg.tokenAddress}-${index}`}
-            className="rounded-md border border-neutral-6 p-3 flex flex-col gap-2"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-2 text-neutral-11">
-                {tProposalDetails('exchange.leg')}
-              </span>
-              <span className="text-2">
-                {formatUnits(
-                  leg.amount,
-                  resolveTokenDecimals(leg.tokenAddress),
-                )}{' '}
-                {leg.tokenSymbol ?? leg.tokenAddress}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-2 text-neutral-11">
-                {tProposalDetails('labels.token')}
-              </span>
-              <EthAddress address={leg.tokenAddress} />
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-2 text-neutral-11">
-                {tProposalDetails('exchange.from')}
-              </span>
-              <EthAddress address={leg.from} />
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-2 text-neutral-11">
-                {tProposalDetails('exchange.to')}
-              </span>
-              <EthAddress address={leg.to} />
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-2 text-neutral-11">
-                {tProposalDetails('exchange.funded')}
-              </span>
-              <span className="text-2">
-                {leg.funded
-                  ? tProposalDetails('labels.yes')
-                  : tProposalDetails('labels.no')}
-              </span>
-            </div>
-          </div>
-        );
-      })}
     </div>
   );
 };

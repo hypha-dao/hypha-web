@@ -50,6 +50,7 @@ import { formatUnits } from 'viem';
 import { resolveTokenDecimals } from '../../governance/utils/token-decimals';
 import { useDbSpaces } from '../../hooks';
 import { hasUpdateTokenDataToDisplay } from '../utils/has-update-token-data-to-display';
+import { parseExchangeDetailsFromDescription } from '../../governance/utils';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
@@ -403,6 +404,8 @@ export const ProposalDetail = ({
     return undefined;
   })();
 
+  const parsedExchangeDetails = parseExchangeDetailsFromDescription(content);
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex gap-2 justify-between">
@@ -632,21 +635,28 @@ export const ProposalDetail = ({
           fixedMaxSupply={proposalDetails.updateTokenData.fixedMaxSupply}
         />
       ) : null}
+      {(parsedExchangeDetails ||
+        proposalDetails?.exchangeEscrowData?.legs?.length) && (
+        <ProposalExchangeStakesAndTokensData
+          sellerAddress={parsedExchangeDetails?.sellerAddress}
+          buyerAddress={parsedExchangeDetails?.buyerAddress}
+          sellerLeg={parsedExchangeDetails?.sellerLeg ?? []}
+          buyerLeg={parsedExchangeDetails?.buyerLeg ?? []}
+          escrowId={proposalDetails?.exchangeEscrowData?.escrowId}
+          completed={
+            proposalDetails?.exchangeEscrowData?.status === 'completed'
+          }
+          cancelled={
+            proposalDetails?.exchangeEscrowData?.status === 'cancelled'
+          }
+        />
+      )}
       {label === 'Token Purchase' && proposalDetails?.spaceTokenPurchaseData ? (
         <ProposalSpaceTokenPurchaseData
           dbTokens={dbTokens}
           {...proposalDetails.spaceTokenPurchaseData}
         />
       ) : null}
-      {proposalDetails?.exchangeEscrowData?.partyB && (
-        <ProposalExchangeStakesAndTokensData
-          spaceSlug={spaceSlug}
-          legs={proposalDetails.exchangeEscrowData.legs}
-          escrowId={proposalDetails.exchangeEscrowData.escrowId}
-          completed={proposalDetails.exchangeEscrowData.status === 'completed'}
-          cancelled={proposalDetails.exchangeEscrowData.status === 'cancelled'}
-        />
-      )}
       <FormVoting
         unity={proposalDetails?.unityPercentage || 0}
         quorum={proposalDetails?.quorumPercentage || 0}
