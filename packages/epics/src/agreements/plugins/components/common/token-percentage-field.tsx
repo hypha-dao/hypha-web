@@ -9,13 +9,24 @@ import {
   Image,
   Input,
 } from '@hypha-platform/ui';
-import { AssetItem, getTokenTypeLabel } from '../../../../treasury';
+import { getTokenTypeLabel } from '../../../../treasury';
 import { ChevronDownIcon } from '@radix-ui/themes';
+
+export interface TokenPercentageAsset {
+  address: string;
+  icon: string;
+  symbol: string;
+  type?: string | null;
+  space?: {
+    title: string;
+    slug?: string;
+  };
+}
 
 export interface TokenPercentageFieldProps {
   value: { asset: string; percentage: string };
   onChange: (val: { asset: string; percentage: string }) => void;
-  assets: AssetItem[];
+  assets: TokenPercentageAsset[];
 }
 
 export const TokenPercentageField = ({
@@ -42,8 +53,8 @@ export const TokenPercentageField = ({
     }
   };
 
-  const handleAssetChange = (asset: AssetItem) => {
-    onChange({ percentage: value.percentage, asset: asset.address ?? '' });
+  const handleAssetChange = (asset: TokenPercentageAsset) => {
+    onChange({ percentage: value.percentage, asset: asset.address });
   };
 
   return (
