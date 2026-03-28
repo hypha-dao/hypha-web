@@ -10,6 +10,9 @@ export class AiChatPanelPage extends BasePage {
   readonly signInButton: Locator;
   readonly chatInput: Locator;
   readonly sendButton: Locator;
+  readonly resizeHandle: Locator;
+  readonly sidebar: Locator;
+  readonly sidebarWrapper: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -26,6 +29,11 @@ export class AiChatPanelPage extends BasePage {
     });
     this.chatInput = page.getByPlaceholder('Ask Hypha AI anything...');
     this.sendButton = page.getByRole('button', { name: 'Send' });
+    this.resizeHandle = page.getByRole('separator', {
+      name: 'Resize sidebar',
+    });
+    this.sidebar = page.locator('[data-sidebar="sidebar"]');
+    this.sidebarWrapper = page.locator('.group\\/sidebar-wrapper');
   }
 
   async open() {
@@ -39,5 +47,12 @@ export class AiChatPanelPage extends BasePage {
 
   async closePanel() {
     await this.closeButton.click();
+  }
+
+  async getSidebarWidth(): Promise<number> {
+    const value = await this.sidebarWrapper.evaluate((el) =>
+      getComputedStyle(el).getPropertyValue('--sidebar-width'),
+    );
+    return parseInt(value, 10);
   }
 }
