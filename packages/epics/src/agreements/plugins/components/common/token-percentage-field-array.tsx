@@ -1,7 +1,6 @@
 'use client';
 
 import { useFieldArray, useFormContext } from 'react-hook-form';
-import { AssetItem } from '../../../../treasury';
 import {
   Button,
   FormControl,
@@ -10,11 +9,14 @@ import {
   FormMessage,
   RequirementMark,
 } from '@hypha-platform/ui';
-import { TokenPercentageField } from './token-percentage-field';
+import {
+  TokenPercentageAsset,
+  TokenPercentageField,
+} from './token-percentage-field';
 import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
 
 export interface TokenPercentageFieldArrayProps {
-  assets: AssetItem[];
+  assets: TokenPercentageAsset[];
   name?: string;
   label?: string;
 }

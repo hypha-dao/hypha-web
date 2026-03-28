@@ -1,6 +1,6 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form } from '@hypha-platform/ui';
@@ -19,11 +19,8 @@ import {
   TokenPayoutFieldArray,
 } from '../../agreements';
 import { useScrollToErrors } from '../../hooks';
-import { useFundWallet } from '../../treasury/hooks';
+import { useFundWallet, useVaults } from '../../treasury/hooks';
 import { useJwt } from '@hypha-platform/core/client';
-import { useUserAssets } from '../../treasury/hooks';
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
 
 interface Token {
   icon: string;
@@ -77,16 +74,63 @@ export const PeopleRedeemForm = ({
     },
   });
 
-  const { assets } = useUserAssets({
-    personSlug: person?.slug,
+  const redemptions = useWatch({
+    control: form.control,
+    name: 'redemptions',
   });
-  const restingAssets = React.useMemo(
+  const selectedRedemption = redemptions?.[0];
+
+  const { vaults } = useVaults({
+    spaceSlug: selectedRedemption?.spaceSlug,
+  });
+  const selectedTokenVault = React.useMemo(
     () =>
-      assets.filter(
-        (asset) => !tokens.find((token) => token.address === asset.address),
+      vaults.find(
+        (vault) =>
+          vault.spaceToken.toLowerCase() ===
+          selectedRedemption?.token?.toLowerCase(),
       ),
-    [tokens, assets],
+    [vaults, selectedRedemption?.token],
   );
+
+  const conversionAssets = React.useMemo(
+    () =>
+      (selectedTokenVault?.collaterals ?? []).map((collateral) => ({
+        address: collateral.address,
+        icon: collateral.icon,
+        symbol: collateral.symbol,
+        space: collateral.space,
+      })),
+    [selectedTokenVault?.collaterals],
+  );
+
+  React.useEffect(() => {
+    const currentConversions = form.getValues('conversions');
+    if (!currentConversions?.length) return;
+
+    const allowedAssets = new Set(
+      conversionAssets.map((asset) => asset.address.toLowerCase()),
+    );
+
+    let hasInvalidAsset = false;
+    const nextConversions = currentConversions.map((conversion, index) => {
+      if (allowedAssets.has(conversion.asset.toLowerCase())) {
+        return conversion;
+      }
+      hasInvalidAsset = true;
+      return {
+        ...conversion,
+        asset: index === 0 ? conversionAssets[0]?.address ?? '' : '',
+      };
+    });
+
+    if (!hasInvalidAsset) return;
+
+    form.setValue('conversions', nextConversions, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  }, [conversionAssets, form]);
   const tokenSlugs = React.useMemo(() => {
     return tokens
       .filter((token) => token.space?.slug)
@@ -102,8 +146,6 @@ export const PeopleRedeemForm = ({
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, []);
-
-  const { lang } = useParams();
 
   const handleRedeem = async (data: FormValues) => {
     try {
@@ -199,7 +241,7 @@ export const PeopleRedeemForm = ({
           />
           <TokenPercentageFieldArray
             label="Converted into"
-            assets={restingAssets}
+            assets={conversionAssets}
             name="conversions"
           />
           <Separator />
