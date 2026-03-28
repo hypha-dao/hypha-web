@@ -50,6 +50,8 @@ export const SpaceTokenPurchasePlugin = ({
   );
 
   const tokenAddress = useWatch({ control, name: 'tokenAddress' });
+  const activatePurchase =
+    useWatch({ control, name: 'activatePurchase' }) ?? false;
 
   const selectedToken = spaceTokens.find(
     (t) => t.address?.toLowerCase() === tokenAddress?.toLowerCase(),
@@ -95,16 +97,20 @@ export const SpaceTokenPurchasePlugin = ({
 
       <TokenPurchaseToggleSection />
 
-      <Separator />
+      {activatePurchase && (
+        <>
+          <Separator />
 
-      <TokenPurchasePriceSection
-        selectedToken={selectedToken}
-        supply={supply}
-      />
+          <TokenPurchasePriceSection
+            selectedToken={selectedToken}
+            supply={supply}
+          />
 
-      <Separator />
+          <Separator />
 
-      <PurchaseEligibilitySection selectedToken={selectedToken} />
+          <PurchaseEligibilitySection selectedToken={selectedToken} />
+        </>
+      )}
     </div>
   );
 };

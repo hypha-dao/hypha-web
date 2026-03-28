@@ -169,6 +169,10 @@
         "title": "Buy Hypha Tokens (Rewards)",
         "description": "Purchase Hypha tokens to participate in the network and earn rewards."
       },
+      "spaceTokenPurchase": {
+        "title": "Space Token Purchase",
+        "description": "Allow your members to purchase your space's native tokens."
+      },
       "depositFunds": {
         "title": "Deposit Funds",
         "description": "Deposit funds into your treasury by copying the treasury address or scanning the QR code."
@@ -528,6 +532,42 @@
   "Proposals": {
     "CreateNew": "Create a new Proposal",
     "Create": "Create Proposal"
+  },
+  "SpaceTokenPurchase": {
+    "selection": {
+      "sectionTitle": "Token",
+      "description": "Choose a token available for purchase in this space.",
+      "fieldLabel": "Token",
+      "placeholder": "Select a token",
+      "noTokenFound": "No token found.",
+      "noTokenPrefix": "Your space has not yet created a token,",
+      "clickHere": "click here",
+      "noTokenSuffix": "to first issue a token",
+      "tokenSupply": "Token Supply",
+      "issuanceToDate": "Issuance to Date",
+      "unlimitedSupply": "Unlimited Supply",
+      "availableLimit": "Tokens Available for Purchase Limit"
+    },
+    "toggle": {
+      "sectionTitle": "Token Purchase",
+      "description": "Activate this option to allow your members to purchase your space's native tokens. Disable at any time.",
+      "activateLabel": "Activate Token Purchase",
+      "disabledHint": "When disabled, members can no longer purchase this token."
+    },
+    "price": {
+      "sectionTitle": "Token Purchase Price",
+      "description": "Set a custom purchase price, or use the default treasury price.",
+      "currentPriceLabel": "Current price in treasury:",
+      "currentPriceSuffix": "\u2014 set in your space's token configuration.",
+      "fieldLabel": "Token Purchase Price",
+      "availableAtThisPriceLabel": "Tokens Available for Purchase at this Price",
+      "exceedsLimit": "The number of tokens requested exceeds the Tokens Available for Purchase Limit. Please enter a value up to {limit}."
+    },
+    "eligibility": {
+      "sectionTitle": "Purchase Eligibility",
+      "description": "The \"Buy Space tokens\" button will be shown on the profile of the spaces or members which are whitelisted in the token settings. If you'd like to review this access, you can manage whitelists by passing a token configuration proposal.",
+      "whitelistInfo": "Whitelist is configured in the token's original issuance settings. All members or spaces in the \"To\" whitelist will be able to see and purchase {tokenName} tokens."
+    }
   },
   "Spaces": {
     "createSpace": "Create Space",

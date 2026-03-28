@@ -17,6 +17,8 @@ import {
 import { useFormContext, useWatch } from 'react-hook-form';
 import { REFERENCE_CURRENCIES } from '@hypha-platform/core/client';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
+import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 
 type SpaceToken = {
   name: string;
@@ -34,10 +36,15 @@ export const TokenPurchasePriceSection = ({
   selectedToken,
   supply,
 }: TokenPurchasePriceSectionProps) => {
-  const { control } = useFormContext();
+  const t = useTranslations('SpaceTokenPurchase');
+  const { control, setValue } = useFormContext();
   const tokensAvailableForPurchase = useWatch({
     control,
     name: 'tokensAvailableForPurchase',
+  });
+  const selectedCurrency = useWatch({
+    control,
+    name: 'purchaseCurrency',
   });
 
   const isLimitedSupply = selectedToken && Number(selectedToken.maxSupply) > 0;
@@ -50,28 +57,37 @@ export const TokenPurchasePriceSection = ({
     isLimitedSupply &&
     tokensAvailableLimit !== undefined &&
     Number(tokensAvailableForPurchase) > tokensAvailableLimit;
+  const isCurrencyLocked = Boolean(selectedToken?.referenceCurrency);
+
+  useEffect(() => {
+    if (selectedToken?.referenceCurrency) {
+      setValue('purchaseCurrency', selectedToken.referenceCurrency, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  }, [selectedToken?.referenceCurrency, setValue]);
 
   return (
     <div className="flex flex-col gap-4">
-      <FormLabel>Token Purchase Price</FormLabel>
-      <span className="text-2 text-neutral-11">
-        Set a custom purchase price, or use the default treasury price.
-      </span>
+      <FormLabel>{t('price.sectionTitle')}</FormLabel>
+      <span className="text-2 text-neutral-11">{t('price.description')}</span>
 
       {selectedToken?.referencePrice && selectedToken?.referenceCurrency && (
         <span className="text-2 text-neutral-11">
-          Current price in treasury:{' '}
+          {t('price.currentPriceLabel')}{' '}
           <strong>
-            {selectedToken.referencePrice} {selectedToken.referenceCurrency}
+            {formatCurrencyValue(selectedToken.referencePrice)}{' '}
+            {selectedToken.referenceCurrency}
           </strong>{' '}
-          — set in your space&apos;s token configuration.
+          {t('price.currentPriceSuffix')}
         </span>
       )}
 
       <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
         <div className="flex gap-1">
           <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
-            Token Purchase Price
+            {t('price.fieldLabel')}
           </label>
           <RequirementMark className="text-2" />
         </div>
@@ -105,12 +121,16 @@ export const TokenPurchasePriceSection = ({
                   <Select
                     value={field.value ?? ''}
                     onValueChange={field.onChange}
+                    disabled={isCurrencyLocked}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Currency" />
                     </SelectTrigger>
                     <SelectContent>
-                      {REFERENCE_CURRENCIES.map((currency) => (
+                      {(isCurrencyLocked && selectedCurrency
+                        ? [selectedCurrency]
+                        : REFERENCE_CURRENCIES
+                      ).map((currency) => (
                         <SelectItem key={currency} value={currency}>
                           {currency}
                         </SelectItem>
@@ -128,7 +148,7 @@ export const TokenPurchasePriceSection = ({
       <div className="flex flex-col gap-2">
         <div className="flex gap-1">
           <label className="text-2 text-neutral-11 whitespace-nowrap">
-            Tokens Available for Purchase at this Price
+            {t('price.availableAtThisPriceLabel')}
           </label>
         </div>
         <FormField
@@ -153,9 +173,9 @@ export const TokenPurchasePriceSection = ({
         />
         {exceedsLimit && tokensAvailableLimit !== undefined && (
           <div className="text-2 text-foreground">
-            The number of tokens requested exceeds the Tokens Available for
-            Purchase Limit. Please enter a value up to{' '}
-            {formatCurrencyValue(tokensAvailableLimit)}.
+            {t('price.exceedsLimit', {
+              limit: formatCurrencyValue(tokensAvailableLimit),
+            })}
           </div>
         )}
       </div>
