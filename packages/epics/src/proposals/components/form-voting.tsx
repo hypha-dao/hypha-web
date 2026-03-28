@@ -13,6 +13,7 @@ import {
   useWithdrawProposal,
   useJwt,
   useAgreementMutationsWeb2Rsc,
+  TOKENS,
 } from '@hypha-platform/core/client';
 import { useSpaceMember } from '../../spaces';
 import { useSpaceMinProposalDuration } from '@hypha-platform/core/client';
@@ -21,6 +22,7 @@ import { useTheme } from 'next-themes';
 import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { formatUnits } from 'viem';
 
 function formatTimeRemaining(
   endTime: string,
@@ -73,6 +75,13 @@ const getCreateRouteForLabel = (label: string | undefined): string => {
   return labelToRoute[label] || '';
 };
 
+const USDC_ADDRESS = TOKENS.find(
+  (token) => token.symbol === 'USDC',
+)?.address?.toLowerCase();
+const EURC_ADDRESS = TOKENS.find(
+  (token) => token.symbol === 'EURC',
+)?.address?.toLowerCase();
+
 export const FormVoting = ({
   unity,
   quorum,
@@ -101,6 +110,7 @@ export const FormVoting = ({
   closeUrl,
   label,
   proposalTemplateData,
+  spaceTokenPurchaseData,
 }: {
   unity: number;
   quorum: number;
@@ -129,6 +139,13 @@ export const FormVoting = ({
   closeUrl?: string;
   label?: string;
   proposalTemplateData?: Record<string, unknown>;
+  spaceTokenPurchaseData?: {
+    tokenAddress?: string;
+    paymentToken?: string;
+    paymentTokenPricePerToken?: bigint;
+    tokensForSale?: bigint;
+    isActive?: boolean;
+  };
 }) => {
   const tCommon = useTranslations('Common');
   const tProposalDetails = useTranslations('ProposalDetails');
@@ -189,12 +206,45 @@ export const FormVoting = ({
 
   const handleResubmit = async () => {
     try {
+      const paymentTokenAddress =
+        spaceTokenPurchaseData?.paymentToken?.toLowerCase();
+      const purchaseCurrency =
+        paymentTokenAddress === EURC_ADDRESS
+          ? 'EUR'
+          : paymentTokenAddress === USDC_ADDRESS
+          ? 'USD'
+          : undefined;
+      const purchasePrice =
+        spaceTokenPurchaseData?.paymentTokenPricePerToken !== undefined
+          ? Number(
+              formatUnits(spaceTokenPurchaseData.paymentTokenPricePerToken, 6),
+            )
+          : undefined;
+      const tokensAvailableForPurchase =
+        spaceTokenPurchaseData?.tokensForSale !== undefined
+          ? Number(formatUnits(spaceTokenPurchaseData.tokensForSale, 18))
+          : undefined;
       const proposalData = {
         title: documentTitle || '',
         description: documentDescription || '',
         leadImage: documentLeadImage || undefined,
         attachments: documentAttachments || undefined,
         ...(proposalTemplateData ?? {}),
+        ...(label === 'Token Purchase'
+          ? {
+              tokenAddress: spaceTokenPurchaseData?.tokenAddress || '',
+              activatePurchase: Boolean(spaceTokenPurchaseData?.isActive),
+              purchaseCurrency,
+              purchasePrice: Number.isFinite(purchasePrice)
+                ? purchasePrice
+                : undefined,
+              tokensAvailableForPurchase: Number.isFinite(
+                tokensAvailableForPurchase,
+              )
+                ? tokensAvailableForPurchase
+                : undefined,
+            }
+          : {}),
       };
 
       sessionStorage.setItem(
