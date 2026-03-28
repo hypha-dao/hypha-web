@@ -52,12 +52,7 @@ export function AiLeftPanelLayout({
         } as React.CSSProperties
       }
     >
-      <Sidebar
-        side="left"
-        variant="sidebar"
-        collapsible="offcanvas"
-        className="pt-16"
-      >
+      <Sidebar side="left" variant="sidebar" collapsible="offcanvas">
         <AiLeftPanel />
         <SidebarResizeHandle />
       </Sidebar>

@@ -30,7 +30,7 @@ export const MenuTop = ({
   }, [pathname]);
 
   return (
-    <header className="fixed top-0 right-0 left-0 flex items-center h-9 bg-page-background z-20">
+    <header className="sticky top-0 flex items-center h-9 bg-page-background z-20">
       <div
         className={clsx(
           'w-full mx-auto flex items-center px-10',
