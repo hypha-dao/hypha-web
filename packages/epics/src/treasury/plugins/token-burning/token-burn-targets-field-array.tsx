@@ -355,9 +355,10 @@ export const TokenBurnTargetsFieldArray = ({
                 name={`${name}.${index}.amount`}
                 render={({ field: amountField }) => (
                   <FormItem className="flex flex-col gap-2">
-                    <span className="text-2 text-neutral-11">
+                    <label className="text-2 text-neutral-11 flex flex-row gap-1">
                       {tAgreementFlow('plugins.tokenBurning.amountLabel')}
-                    </span>
+                      <RequirementMark className="text-2" />
+                    </label>
                     <FormControl>
                       <Input
                         placeholder={tAgreementFlow(
@@ -387,8 +388,12 @@ export const TokenBurnTargetsFieldArray = ({
                 name={`${name}.${index}.allBalance`}
                 render={({ field: allBalanceField }) => (
                   <FormItem className="flex flex-col gap-2">
-                    <span className="invisible text-2 select-none" aria-hidden>
+                    <span
+                      className="invisible text-2 select-none flex flex-row gap-1"
+                      aria-hidden
+                    >
                       {tAgreementFlow('plugins.tokenBurning.amountLabel')}
+                      <RequirementMark className="text-2" />
                     </span>
                     <div className="flex items-center gap-2 h-10">
                       <Checkbox
