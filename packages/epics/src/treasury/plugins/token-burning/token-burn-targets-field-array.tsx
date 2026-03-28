@@ -115,117 +115,114 @@ export const TokenBurnTargetsFieldArray = ({
         const currentType = entry.type === 'space' ? 'space' : 'member';
         const currentOptions =
           currentType === 'member' ? memberOptions : spaceOptions;
-        const selectedOption = currentOptions.find(
-          (opt) => opt.value === entry.address,
-        );
         return (
           <div
             key={field.id}
             className="flex flex-col gap-4 rounded-xl border border-neutral-6 p-4"
           >
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div className="flex flex-col gap-1">
-                <span className="text-2 text-neutral-11">
-                  {tAgreementFlow('plugins.tokenBurning.recipientTypeLabel')}
-                </span>
-              </div>
-              <FormField
-                control={control}
-                name={`${name}.${index}.type`}
-                render={({ field: typeField }) => (
-                  <Tabs
-                    value={typeField.value ?? 'member'}
-                    onValueChange={(value) => {
-                      typeField.onChange(value);
-                      setValue(`${name}.${index}.address`, '');
-                    }}
-                  >
-                    <TabsList triggerVariant="switch">
-                      <TabsTrigger variant="switch" value="member">
-                        {tAgreementFlow('plugins.tokenBurning.member')}
-                      </TabsTrigger>
-                      <TabsTrigger variant="switch" value="space">
-                        {tAgreementFlow('plugins.tokenBurning.space')}
-                      </TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                )}
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <span className="text-2 text-neutral-11">
-                {tAgreementFlow('plugins.tokenBurning.selectTarget')}
+                {tAgreementFlow('plugins.tokenBurning.recipientTypeLabel')}
               </span>
-              <Combobox
-                options={currentOptions}
-                placeholder={
-                  currentType === 'member'
-                    ? tAgreementFlow(
-                        'plugins.tokenBurning.selectMemberPlaceholder',
-                      )
-                    : tAgreementFlow(
-                        'plugins.tokenBurning.selectSpacePlaceholder',
-                      )
-                }
-                initialValue={entry.address}
-                onChange={(value) =>
-                  setValue(`${name}.${index}.address`, value)
-                }
-                emptyListMessage={
-                  currentType === 'member'
-                    ? tAgreementFlow('plugins.tokenBurning.noMembersFound')
-                    : tAgreementFlow('plugins.tokenBurning.noSpacesFound')
-                }
-                renderOption={(option) => (
-                  <>
-                    <Image
-                      src={
-                        option.avatarUrl ||
-                        (currentType === 'member'
-                          ? '/placeholder/default-profile.svg'
-                          : DEFAULT_SPACE_AVATAR_IMAGE)
+              <div className="flex w-full flex-col gap-2 md:max-w-3xl">
+                <div className="flex flex-col gap-2 md:flex-row md:items-center">
+                  <FormField
+                    control={control}
+                    name={`${name}.${index}.type`}
+                    render={({ field: typeField }) => (
+                      <Tabs
+                        value={typeField.value ?? 'member'}
+                        onValueChange={(value) => {
+                          typeField.onChange(value);
+                          setValue(`${name}.${index}.address`, '');
+                        }}
+                      >
+                        <TabsList triggerVariant="switch">
+                          <TabsTrigger variant="switch" value="member">
+                            {tAgreementFlow('plugins.tokenBurning.member')}
+                          </TabsTrigger>
+                          <TabsTrigger variant="switch" value="space">
+                            {tAgreementFlow('plugins.tokenBurning.space')}
+                          </TabsTrigger>
+                        </TabsList>
+                      </Tabs>
+                    )}
+                  />
+                  <div className="w-full md:min-w-72">
+                    <Combobox
+                      options={currentOptions}
+                      placeholder={
+                        currentType === 'member'
+                          ? tAgreementFlow(
+                              'plugins.tokenBurning.selectMemberPlaceholder',
+                            )
+                          : tAgreementFlow(
+                              'plugins.tokenBurning.selectSpacePlaceholder',
+                            )
                       }
-                      alt={option.label}
-                      width={24}
-                      height={24}
-                      className="rounded-full min-h-5 min-w-5"
+                      initialValue={entry.address}
+                      onChange={(value) =>
+                        setValue(`${name}.${index}.address`, value)
+                      }
+                      emptyListMessage={
+                        currentType === 'member'
+                          ? tAgreementFlow(
+                              'plugins.tokenBurning.noMembersFound',
+                            )
+                          : tAgreementFlow('plugins.tokenBurning.noSpacesFound')
+                      }
+                      renderOption={(option) => (
+                        <>
+                          <Image
+                            src={
+                              option.avatarUrl ||
+                              (currentType === 'member'
+                                ? '/placeholder/default-profile.svg'
+                                : DEFAULT_SPACE_AVATAR_IMAGE)
+                            }
+                            alt={option.label}
+                            width={24}
+                            height={24}
+                            className="rounded-full min-h-5 min-w-5"
+                          />
+                          <span className="text-ellipsis overflow-hidden text-nowrap">
+                            {option.label}
+                          </span>
+                        </>
+                      )}
+                      renderValue={(option) =>
+                        option ? (
+                          <div className="flex items-center gap-2 truncate">
+                            <Image
+                              src={
+                                option.avatarUrl ||
+                                (currentType === 'member'
+                                  ? '/placeholder/default-profile.svg'
+                                  : DEFAULT_SPACE_AVATAR_IMAGE)
+                              }
+                              alt={option.label}
+                              width={24}
+                              height={24}
+                              className="rounded-full min-h-5 min-w-5"
+                            />
+                            <span className="truncate text-ellipsis overflow-hidden text-nowrap">
+                              {option.label}
+                            </span>
+                          </div>
+                        ) : currentType === 'member' ? (
+                          tAgreementFlow(
+                            'plugins.tokenBurning.selectMemberPlaceholder',
+                          )
+                        ) : (
+                          tAgreementFlow(
+                            'plugins.tokenBurning.selectSpacePlaceholder',
+                          )
+                        )
+                      }
                     />
-                    <span className="text-ellipsis overflow-hidden text-nowrap">
-                      {option.label}
-                    </span>
-                  </>
-                )}
-                renderValue={(option) =>
-                  option ? (
-                    <div className="flex items-center gap-2 truncate">
-                      <Image
-                        src={
-                          option.avatarUrl ||
-                          (currentType === 'member'
-                            ? '/placeholder/default-profile.svg'
-                            : DEFAULT_SPACE_AVATAR_IMAGE)
-                        }
-                        alt={option.label}
-                        width={24}
-                        height={24}
-                        className="rounded-full min-h-5 min-w-5"
-                      />
-                      <span className="truncate text-ellipsis overflow-hidden text-nowrap">
-                        {option.label}
-                      </span>
-                    </div>
-                  ) : currentType === 'member' ? (
-                    tAgreementFlow(
-                      'plugins.tokenBurning.selectMemberPlaceholder',
-                    )
-                  ) : (
-                    tAgreementFlow(
-                      'plugins.tokenBurning.selectSpacePlaceholder',
-                    )
-                  )
-                }
-              />
+                  </div>
+                </div>
+              </div>
             </div>
 
             <FormField
@@ -233,16 +230,21 @@ export const TokenBurnTargetsFieldArray = ({
               name={`${name}.${index}.address`}
               render={({ field: addressField }) => (
                 <FormItem className="flex flex-col gap-2">
-                  <span className="text-2 text-neutral-11">
-                    {tAgreementFlow('plugins.tokenBurning.walletAddress')}
-                  </span>
-                  <Input
-                    placeholder={tAgreementFlow(
-                      'plugins.tokenBurning.walletAddressPlaceholder',
-                    )}
-                    value={addressField.value ?? ''}
-                    onChange={addressField.onChange}
-                  />
+                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                    <label className="text-2 text-neutral-11 flex flex-row gap-1">
+                      {tAgreementFlow('plugins.tokenBurning.walletAddress')}
+                      <RequirementMark className="text-2" />
+                    </label>
+                    <div className="w-full md:max-w-3xl">
+                      <Input
+                        placeholder={tAgreementFlow(
+                          'plugins.tokenBurning.walletAddressPlaceholder',
+                        )}
+                        value={addressField.value ?? ''}
+                        onChange={addressField.onChange}
+                      />
+                    </div>
+                  </div>
                   {selectedTokenAddress &&
                   (addressField.value ?? '').length > 0 ? (
                     <RecipientTokenBalanceHint
@@ -469,8 +471,8 @@ function BurnAmountBalanceValidationMessage({
   const normalizedAmount = normalizedAmountInput.startsWith('.')
     ? `0${normalizedAmountInput}`
     : normalizedAmountInput.endsWith('.')
-    ? `${normalizedAmountInput}0`
-    : normalizedAmountInput;
+      ? `${normalizedAmountInput}0`
+      : normalizedAmountInput;
 
   let exceedsBalance = false;
   if (
