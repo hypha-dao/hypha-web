@@ -19,15 +19,18 @@ export interface TokenPercentageFieldArrayProps {
   assets: TokenPercentageAsset[];
   name?: string;
   label?: string;
+  onRemoveRebalance?: (remainingAssets: TokenPercentageAsset[]) => void;
 }
 
 export const TokenPercentageFieldArray = ({
   assets,
   name = 'conversions',
   label = 'Converted into',
+  onRemoveRebalance,
 }: TokenPercentageFieldArrayProps) => {
   const {
     control,
+    getValues,
     formState: { errors: formErrors },
   } = useFormContext();
   const { fields, append, remove } = useFieldArray({
@@ -46,7 +49,21 @@ export const TokenPercentageFieldArray = ({
   ) => {
     e.preventDefault();
     if (fields.length > 1) {
+      const currentRows = (getValues(name) as Array<{
+        asset: string;
+        percentage: string;
+      }>) ?? [{ asset: '', percentage: '100.00' }];
+      const remainingAssets = currentRows
+        .filter((_, rowIndex) => rowIndex !== index)
+        .map((row) =>
+          assets.find(
+            (asset) =>
+              asset.address.toLowerCase() === (row.asset ?? '').toLowerCase(),
+          ),
+        )
+        .filter((asset): asset is TokenPercentageAsset => !!asset);
       remove(index);
+      onRemoveRebalance?.(remainingAssets);
     }
   };
 
