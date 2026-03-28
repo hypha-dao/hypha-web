@@ -16,6 +16,10 @@ export interface TokenPercentageAsset {
   address: string;
   icon: string;
   symbol: string;
+  value?: number;
+  usdEqual?: number;
+  availableInRedemptionToken?: number;
+  redemptionTokenSymbol?: string;
   type?: string | null;
   space?: {
     title: string;
@@ -126,11 +130,27 @@ export const TokenPercentageField = ({
                         </div>
                       )}
                     </span>
-                    {asset?.space?.title ? (
-                      <span className="text-1 text-accent-11">
-                        by {asset?.space?.title}
-                      </span>
-                    ) : null}
+                    <div className="flex flex-col">
+                      {asset?.space?.title ? (
+                        <span className="text-1 text-accent-11">
+                          by {asset?.space?.title}
+                        </span>
+                      ) : null}
+                      {typeof asset.availableInRedemptionToken === 'number' &&
+                      asset.redemptionTokenSymbol ? (
+                        <span className="text-1 text-neutral-11">
+                          Available{' '}
+                          {asset.availableInRedemptionToken.toFixed(2)}{' '}
+                          {asset.redemptionTokenSymbol}
+                        </span>
+                      ) : typeof asset.value === 'number' &&
+                        typeof asset.usdEqual === 'number' ? (
+                        <span className="text-1 text-neutral-11">
+                          Available {asset.value.toFixed(2)} {asset.symbol} (~$
+                          {asset.usdEqual.toFixed(2)})
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                 </DropdownMenuItem>
               ))
