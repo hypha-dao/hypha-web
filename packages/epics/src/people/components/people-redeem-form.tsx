@@ -12,6 +12,7 @@ import {
   extractRevertReason,
   personRedeem,
   publicClient,
+  useJwt,
   useMe,
   useRedeemTokensMutation,
   useSpacesBySlugs,
