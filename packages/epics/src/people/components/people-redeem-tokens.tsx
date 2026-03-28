@@ -48,6 +48,25 @@ type SpaceVaultsResponse = {
   }>;
 };
 
+const writeDebugLog = async (payload: {
+  hypothesisId: string;
+  location: string;
+  message: string;
+  data: Record<string, unknown>;
+  timestamp: number;
+}) => {
+  try {
+    await fetch('/api/v1/debug-log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      keepalive: true,
+    });
+  } catch {
+    // no-op
+  }
+};
+
 export const ProfileRedeemTokens = ({
   lang,
   personSlug,
@@ -62,6 +81,15 @@ export const ProfileRedeemTokens = ({
   const { data: spaces } = useSWR<SpaceSummary[]>(
     jwt ? `/api/v1/people/${personSlug}/spaces` : null,
     async (url: string) => {
+      // #region agent log
+      void writeDebugLog({
+        hypothesisId: 'A',
+        location: 'people-redeem-tokens.tsx:spaces-fetch:start',
+        message: 'Fetching member spaces',
+        data: { personSlug, hasJwt: Boolean(jwt) },
+        timestamp: Date.now(),
+      });
+      // #endregion
       const res = await fetch(url, {
         headers: {
           Authorization: `Bearer ${jwt}`,
@@ -71,7 +99,20 @@ export const ProfileRedeemTokens = ({
       if (!res.ok) {
         throw new Error(`Failed to load spaces: ${res.statusText}`);
       }
-      return (await res.json()) as SpaceSummary[];
+      const payload = (await res.json()) as SpaceSummary[];
+      // #region agent log
+      void writeDebugLog({
+        hypothesisId: 'A',
+        location: 'people-redeem-tokens.tsx:spaces-fetch:done',
+        message: 'Member spaces loaded',
+        data: {
+          count: payload.length,
+          slugs: payload.map((space) => space.slug),
+        },
+        timestamp: Date.now(),
+      });
+      // #endregion
+      return payload;
     },
   );
 
@@ -102,6 +143,19 @@ export const ProfileRedeemTokens = ({
       const redeemableTokensAcrossSpaces: Token[] = [];
       const now = Date.now();
       const memberAddress = person?.address as `0x${string}` | undefined;
+      // #region agent log
+      void writeDebugLog({
+        hypothesisId: 'C',
+        location: 'people-redeem-tokens.tsx:redeemable-fetch:start',
+        message: 'Starting redeemable token scan',
+        data: {
+          uniqueSpaces: uniqueSpaces.length,
+          hasMemberAddress: Boolean(memberAddress),
+          memberAddress,
+        },
+        timestamp: Date.now(),
+      });
+      // #endregion
       if (!memberAddress) return [];
 
       const spaceResults = await Promise.all(
@@ -113,6 +167,15 @@ export const ProfileRedeemTokens = ({
           const vaultsRes = await fetch(`/api/v1/spaces/${space.slug}/vaults`, {
             headers,
           });
+          // #region agent log
+          void writeDebugLog({
+            hypothesisId: 'B',
+            location: 'people-redeem-tokens.tsx:vault-fetch:status',
+            message: 'Vault fetch response received',
+            data: { spaceSlug: space.slug, status: vaultsRes.status },
+            timestamp: Date.now(),
+          });
+          // #endregion
 
           if (!vaultsRes.ok) {
             return [];
@@ -144,6 +207,19 @@ export const ProfileRedeemTokens = ({
                   hasBalance: balance > 0n,
                 };
               } catch {
+                // #region agent log
+                void writeDebugLog({
+                  hypothesisId: 'D',
+                  location: 'people-redeem-tokens.tsx:balance-check:error',
+                  message: 'balanceOf read failed',
+                  data: {
+                    spaceSlug: space.slug,
+                    token: vaultToken.spaceToken,
+                    memberAddress,
+                  },
+                  timestamp: Date.now(),
+                });
+                // #endregion
                 return {
                   token: vaultToken,
                   hasBalance: false,
@@ -180,6 +256,15 @@ export const ProfileRedeemTokens = ({
         }
       }
 
+      // #region agent log
+      void writeDebugLog({
+        hypothesisId: 'A',
+        location: 'people-redeem-tokens.tsx:redeemable-fetch:done',
+        message: 'Redeemable token scan completed',
+        data: { count: redeemableTokensAcrossSpaces.length },
+        timestamp: Date.now(),
+      });
+      // #endregion
       return redeemableTokensAcrossSpaces;
     },
   );
