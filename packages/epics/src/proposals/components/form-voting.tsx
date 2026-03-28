@@ -292,7 +292,7 @@ export const FormVoting = ({
   const spaceIdBigInt = web3SpaceId ? BigInt(web3SpaceId) : undefined;
 
   const { duration } = useSpaceMinProposalDuration({
-    spaceId: spaceIdBigInt as bigint,
+    spaceId: spaceIdBigInt,
   });
 
   const handleAccept = () => {

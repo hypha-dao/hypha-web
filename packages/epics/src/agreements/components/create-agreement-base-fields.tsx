@@ -163,7 +163,7 @@ export function CreateAgreementBaseFields({
   });
 
   const { duration } = useSpaceMinProposalDuration({
-    spaceId: spaceIdBigInt as bigint,
+    spaceId: spaceIdBigInt,
   });
 
   const { theme } = useTheme();

@@ -188,7 +188,7 @@ export const ProposalDetail = ({
     : null;
 
   const { duration } = useSpaceMinProposalDuration({
-    spaceId: spaceIdBigInt as bigint,
+    spaceId: spaceIdBigInt,
   });
 
   const [displayExpireProposalBanner, setDisplayExpireProposalBanner] =
