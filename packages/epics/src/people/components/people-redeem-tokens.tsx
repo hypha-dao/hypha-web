@@ -53,6 +53,12 @@ type VaultFetchDiagnostic = {
   status: number;
 };
 
+type RedeemDiscoveryDiagnostics = {
+  vaultFetch: VaultFetchDiagnostic[];
+  checkedVaultTokenCount: number;
+  balanceReadFailureCount: number;
+};
+
 export const ProfileRedeemTokens = ({
   lang,
   personSlug,
@@ -62,7 +68,11 @@ export const ProfileRedeemTokens = ({
     refreshInterval: 10000,
   });
   const { jwt } = useJwt();
-  const { data: personData } = useSWR<{ address?: string }>(
+  const {
+    data: personData,
+    error: personError,
+    isLoading: personLoading,
+  } = useSWR<{ address?: string }>(
     `/api/v1/people/${personSlug}`,
     async (url: string) => {
       const res = await fetch(url, {
@@ -77,7 +87,11 @@ export const ProfileRedeemTokens = ({
     },
   );
 
-  const { data: spaces } = useSWR<SpaceSummary[]>(
+  const {
+    data: spaces,
+    error: spacesError,
+    isLoading: spacesLoading,
+  } = useSWR<SpaceSummary[]>(
     jwt ? `/api/v1/people/${personSlug}/spaces` : null,
     async (url: string) => {
       const res = await fetch(url, {
@@ -109,7 +123,7 @@ export const ProfileRedeemTokens = ({
 
   const { data: redeemableData } = useSWR<{
     tokens: Token[];
-    diagnostics: VaultFetchDiagnostic[];
+    diagnostics: RedeemDiscoveryDiagnostics;
   }>(
     jwt && spaceSlugs.length > 0
       ? [
@@ -121,7 +135,11 @@ export const ProfileRedeemTokens = ({
       : null,
     async () => {
       const redeemableTokensAcrossSpaces: Token[] = [];
-      const diagnostics: VaultFetchDiagnostic[] = [];
+      const diagnostics: RedeemDiscoveryDiagnostics = {
+        vaultFetch: [],
+        checkedVaultTokenCount: 0,
+        balanceReadFailureCount: 0,
+      };
       const now = Date.now();
       const memberAddress = personData?.address as `0x${string}` | undefined;
       if (!memberAddress) {
@@ -139,7 +157,7 @@ export const ProfileRedeemTokens = ({
           });
 
           if (!vaultsRes.ok) {
-            diagnostics.push({
+            diagnostics.vaultFetch.push({
               spaceSlug: space.slug,
               status: vaultsRes.status,
             });
@@ -157,6 +175,7 @@ export const ProfileRedeemTokens = ({
               );
             },
           );
+          diagnostics.checkedVaultTokenCount += activeVaultTokens.length;
 
           const balances = await Promise.all(
             activeVaultTokens.map(async (vaultToken) => {
@@ -172,6 +191,7 @@ export const ProfileRedeemTokens = ({
                   hasBalance: balance > 0n,
                 };
               } catch {
+                diagnostics.balanceReadFailureCount += 1;
                 return {
                   token: vaultToken,
                   hasBalance: false,
@@ -215,8 +235,60 @@ export const ProfileRedeemTokens = ({
   );
 
   const tokens = redeemableData?.tokens ?? [];
-  const diagnostics = redeemableData?.diagnostics ?? [];
-  const hasVaultAccessIssues = diagnostics.length > 0;
+  const diagnostics = redeemableData?.diagnostics;
+  const vaultFetchDiagnostics = diagnostics?.vaultFetch ?? [];
+  const hasVaultAccessIssues = vaultFetchDiagnostics.length > 0;
+  const hasMemberAddress = Boolean(personData?.address);
+  const hasSpaces = uniqueSpaces.length > 0;
+  const hasTokens = tokens.length > 0;
+  const isCoreLoading =
+    personLoading || spacesLoading || (hasSpaces && !redeemableData);
+  const emptyStateReasons = React.useMemo(() => {
+    const reasons: string[] = [];
+    if (!jwt) {
+      reasons.push('Missing authenticated session token');
+    }
+    if (personError) {
+      reasons.push('Failed to load profile data');
+    }
+    if (!personLoading && !hasMemberAddress) {
+      reasons.push('Profile has no wallet address');
+    }
+    if (spacesError) {
+      reasons.push('Failed to load member spaces');
+    }
+    if (!spacesLoading && jwt && !hasSpaces) {
+      reasons.push('No spaces found for this member');
+    }
+    if (
+      diagnostics &&
+      diagnostics.checkedVaultTokenCount > 0 &&
+      diagnostics.balanceReadFailureCount > 0
+    ) {
+      reasons.push(
+        `Failed to read on-chain balances for ${diagnostics.balanceReadFailureCount}/${diagnostics.checkedVaultTokenCount} vault token(s)`,
+      );
+    }
+    if (
+      diagnostics &&
+      diagnostics.checkedVaultTokenCount === 0 &&
+      hasSpaces &&
+      !hasVaultAccessIssues
+    ) {
+      reasons.push('No redemption-enabled vault tokens were found');
+    }
+    return reasons;
+  }, [
+    diagnostics,
+    hasMemberAddress,
+    hasSpaces,
+    hasVaultAccessIssues,
+    jwt,
+    personError,
+    personLoading,
+    spacesError,
+    spacesLoading,
+  ]);
 
   return (
     <SidePanel>
@@ -240,10 +312,15 @@ export const ProfileRedeemTokens = ({
         {hasVaultAccessIssues && (
           <div className="text-2 text-red-11">
             Unable to load vault data for some spaces:{' '}
-            {diagnostics
+            {vaultFetchDiagnostics
               .map((entry) => `${entry.spaceSlug} (${entry.status})`)
               .join(', ')}
             . You may not have access to those spaces.
+          </div>
+        )}
+        {!isCoreLoading && !hasTokens && emptyStateReasons.length > 0 && (
+          <div className="text-2 text-yellow-11">
+            Token discovery diagnostics: {emptyStateReasons.join('; ')}.
           </div>
         )}
         <Separator />
