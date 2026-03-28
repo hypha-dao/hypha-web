@@ -44,6 +44,49 @@ export const PeopleRedeemForm = ({
   tokens,
   updateAssets,
 }: PeopleRedeemFormType) => {
+  const PERCENT_SCALE = 100;
+  const PERCENT_BASE = 100 * PERCENT_SCALE; // 100.00%
+  const formatPercent = (value: number) => value.toFixed(2);
+  const rebalanceByUsd = (
+    assets: Array<{ address: string; usdEqual?: number }>,
+  ): Array<{ asset: string; percentage: string }> => {
+    if (assets.length === 0) return [];
+    const weights = assets.map((asset) =>
+      typeof asset.usdEqual === 'number' && asset.usdEqual > 0
+        ? asset.usdEqual
+        : 0,
+    );
+    const totalWeight = weights.reduce((sum, value) => sum + value, 0);
+    if (totalWeight <= 0) {
+      const baseShare = Math.floor(PERCENT_BASE / assets.length);
+      const remainder = PERCENT_BASE - baseShare * assets.length;
+      return assets.map((asset, index) => ({
+        asset: asset.address,
+        percentage: formatPercent(
+          (baseShare + (index < remainder ? 1 : 0)) / PERCENT_SCALE,
+        ),
+      }));
+    }
+    const exactShares = weights.map(
+      (weight) => (weight / totalWeight) * PERCENT_BASE,
+    );
+    const floorShares = exactShares.map((share) => Math.floor(share));
+    let distributed = floorShares.reduce((sum, value) => sum + value, 0);
+    const order = exactShares
+      .map((share, index) => ({ index, fraction: share - floorShares[index] }))
+      .sort((a, b) => b.fraction - a.fraction);
+    let cursor = 0;
+    while (distributed < PERCENT_BASE && cursor < order.length) {
+      floorShares[order[cursor].index] += 1;
+      distributed += 1;
+      cursor += 1;
+    }
+    return assets.map((asset, index) => ({
+      asset: asset.address,
+      percentage: formatPercent(floorShares[index] / PERCENT_SCALE),
+    }));
+  };
+
   const { person } = useMe();
   const { fundWallet } = useFundWallet({
     address: person?.address as `0x${string}`,
@@ -120,6 +163,85 @@ export const PeopleRedeemForm = ({
     ],
   );
 
+  const autoPopulateSignature = React.useMemo(
+    () =>
+      `${selectedRedemption?.token ?? ''}|${
+        selectedRedemption?.spaceSlug ?? ''
+      }|${conversionAssets
+        .map((asset) => `${asset.address}:${asset.usdEqual ?? 0}`)
+        .join(',')}`,
+    [
+      selectedRedemption?.token,
+      selectedRedemption?.spaceSlug,
+      conversionAssets,
+    ],
+  );
+
+  const lastAutoPopulateRef = React.useRef<string>('');
+
+  React.useEffect(() => {
+    if (!selectedRedemption?.token || conversionAssets.length === 0) return;
+    if (lastAutoPopulateRef.current === autoPopulateSignature) return;
+    const autoConversions = rebalanceByUsd(conversionAssets);
+    if (autoConversions.length === 0) return;
+    form.setValue('conversions', autoConversions, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    lastAutoPopulateRef.current = autoPopulateSignature;
+  }, [
+    autoPopulateSignature,
+    conversionAssets,
+    form,
+    selectedRedemption?.token,
+  ]);
+
+  const redemptionAmount = React.useMemo(() => {
+    const parsed = Number(selectedRedemption?.amount ?? 0);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  }, [selectedRedemption?.amount]);
+
+  const selectedTokenUsdValue = React.useMemo(() => {
+    const selectedToken = tokens.find(
+      (token) =>
+        token.address.toLowerCase() ===
+        (selectedRedemption?.token ?? '').toLowerCase(),
+    );
+    return typeof selectedToken?.tokenPrice === 'number'
+      ? redemptionAmount * selectedToken.tokenPrice
+      : undefined;
+  }, [tokens, selectedRedemption?.token, redemptionAmount]);
+
+  const currentConversions = useWatch({
+    control: form.control,
+    name: 'conversions',
+  }) as FormValues['conversions'] | undefined;
+
+  const selectedCollateralUsdTotal = React.useMemo(() => {
+    const conversions = currentConversions ?? [];
+    if (conversions.length === 0) return 0;
+    return conversions.reduce((sum, conversion) => {
+      const asset = conversionAssets.find(
+        (collateral) =>
+          collateral.address.toLowerCase() === conversion.asset.toLowerCase(),
+      );
+      if (!asset?.usdEqual) return sum;
+      const percentage = Number(conversion.percentage ?? 0);
+      if (!Number.isFinite(percentage) || percentage <= 0) return sum;
+      return sum + (asset.usdEqual * percentage) / 100;
+    }, 0);
+  }, [conversionAssets, currentConversions]);
+
+  const isSelectedCollateralInsufficient = React.useMemo(() => {
+    if (
+      typeof selectedTokenUsdValue !== 'number' ||
+      !Number.isFinite(selectedTokenUsdValue)
+    ) {
+      return false;
+    }
+    return selectedCollateralUsdTotal + 0.000001 < selectedTokenUsdValue;
+  }, [selectedCollateralUsdTotal, selectedTokenUsdValue]);
+
   React.useEffect(() => {
     const currentConversions = form.getValues('conversions');
     if (!currentConversions?.length) return;
@@ -183,6 +305,13 @@ export const PeopleRedeemForm = ({
       if (!space?.web3SpaceId) {
         form.setError('root', {
           message: 'Selected space is not configured for redemption.',
+        });
+        return;
+      }
+      if (isSelectedCollateralInsufficient) {
+        form.setError('root', {
+          message:
+            'Selected collateral allocation is below redemption token value. Increase collateral coverage before redeeming.',
         });
         return;
       }
@@ -259,7 +388,21 @@ export const PeopleRedeemForm = ({
             label="Converted into"
             assets={conversionAssets}
             name="conversions"
+            onRemoveRebalance={(remainingAssets) => {
+              const rebalanced = rebalanceByUsd(remainingAssets);
+              form.setValue('conversions', rebalanced, {
+                shouldDirty: true,
+                shouldValidate: true,
+              });
+            }}
           />
+          {isSelectedCollateralInsufficient && (
+            <div className="text-2 text-red-11">
+              Selected collateral coverage ($
+              {selectedCollateralUsdTotal.toFixed(2)}) is below redemption value
+              (${(selectedTokenUsdValue ?? 0).toFixed(2)}).
+            </div>
+          )}
           <Separator />
           <div className="flex gap-2 justify-end">
             {isRedeeming ? (
