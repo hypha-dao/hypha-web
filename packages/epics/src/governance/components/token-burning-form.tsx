@@ -92,6 +92,9 @@ export const TokenBurningForm = ({
   const burnAmountExceedsBalanceMessage = tAgreementFlow(
     'plugins.tokenBurning.burnAmountExceedsBalance',
   );
+  const amountGreaterThanZeroMessage = tAgreementFlow(
+    'proposalErrors.amountGreaterThanZero',
+  );
 
   const normalizeAmountInput = (amount: string) => {
     const normalizedAmountInput = amount.trim().replace(',', '.');
@@ -112,18 +115,56 @@ export const TokenBurningForm = ({
     }
 
     const decimals = resolveTokenDecimals(tokenAddress);
-    let hasExceededBalance = false;
+    let hasBlockingValidationError = false;
 
     await Promise.all(
       data.tokenBurning.burns.map(async (burn, index) => {
         const amountFieldPath = `tokenBurning.burns.${index}.amount` as const;
         const currentError = form.getFieldState(amountFieldPath).error;
-        const hasManualExceedsError =
+        const currentManualMessage = currentError?.message;
+        const hasManagedManualError =
           currentError?.type === 'manual' &&
-          currentError.message === burnAmountExceedsBalanceMessage;
+          (currentManualMessage === burnAmountExceedsBalanceMessage ||
+            currentManualMessage === amountGreaterThanZeroMessage);
 
-        if (burn.allBalance || !burn.amount || !isAddress(burn.address)) {
-          if (hasManualExceedsError) {
+        if (!isAddress(burn.address)) {
+          if (hasManagedManualError) {
+            form.clearErrors(amountFieldPath);
+          }
+          return;
+        }
+
+        let recipientBalance: bigint | null = null;
+        try {
+          recipientBalance = await publicClient.readContract({
+            address: tokenAddress,
+            abi: erc20Abi,
+            functionName: 'balanceOf',
+            args: [burn.address as `0x${string}`],
+          });
+        } catch {
+          // Don't block submit on transient RPC lookup issues.
+          return;
+        }
+
+        if (burn.allBalance) {
+          if (recipientBalance === 0n) {
+            hasBlockingValidationError = true;
+            form.setError(amountFieldPath, {
+              type: 'manual',
+              message: amountGreaterThanZeroMessage,
+            });
+            return;
+          }
+
+          if (hasManagedManualError) {
+            form.clearErrors(amountFieldPath);
+          }
+          return;
+        }
+
+        if (!burn.amount) {
+          if (hasManagedManualError) {
             form.clearErrors(amountFieldPath);
           }
           return;
@@ -134,21 +175,14 @@ export const TokenBurningForm = ({
         try {
           burnAmount = parseUnits(normalizedAmount, decimals);
         } catch {
-          if (hasManualExceedsError) {
+          if (hasManagedManualError) {
             form.clearErrors(amountFieldPath);
           }
           return;
         }
 
-        const recipientBalance = await publicClient.readContract({
-          address: tokenAddress,
-          abi: erc20Abi,
-          functionName: 'balanceOf',
-          args: [burn.address as `0x${string}`],
-        });
-
         if (burnAmount > recipientBalance) {
-          hasExceededBalance = true;
+          hasBlockingValidationError = true;
           form.setError(amountFieldPath, {
             type: 'manual',
             message: burnAmountExceedsBalanceMessage,
@@ -156,13 +190,13 @@ export const TokenBurningForm = ({
           return;
         }
 
-        if (hasManualExceedsError) {
+        if (hasManagedManualError) {
           form.clearErrors(amountFieldPath);
         }
       }),
     );
 
-    return hasExceededBalance;
+    return hasBlockingValidationError;
   };
 
   useScrollToErrors(form, formRef);
