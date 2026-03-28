@@ -95,13 +95,28 @@ export const PeopleRedeemForm = ({
 
   const conversionAssets = React.useMemo(
     () =>
-      (selectedTokenVault?.collaterals ?? []).map((collateral) => ({
-        address: collateral.address,
-        icon: collateral.icon,
-        symbol: collateral.symbol,
-        space: collateral.space,
-      })),
-    [selectedTokenVault?.collaterals],
+      (selectedTokenVault?.collaterals ?? []).map((collateral) => {
+        const availableInRedemptionToken =
+          typeof selectedTokenVault?.redemptionPrice === 'number' &&
+          selectedTokenVault.redemptionPrice > 0
+            ? collateral.usdEqual / selectedTokenVault.redemptionPrice
+            : undefined;
+        return {
+          address: collateral.address,
+          icon: collateral.icon,
+          symbol: collateral.symbol,
+          value: collateral.value,
+          usdEqual: collateral.usdEqual,
+          availableInRedemptionToken,
+          redemptionTokenSymbol: selectedTokenVault?.tokenSymbol,
+          space: collateral.space,
+        };
+      }),
+    [
+      selectedTokenVault?.collaterals,
+      selectedTokenVault?.redemptionPrice,
+      selectedTokenVault?.tokenSymbol,
+    ],
   );
 
   React.useEffect(() => {
