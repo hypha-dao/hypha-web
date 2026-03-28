@@ -156,6 +156,7 @@ const SidebarProvider = React.forwardRef<HTMLDivElement, SidebarProviderProps>(
       <SidebarContext.Provider value={contextValue}>
         <TooltipProvider delayDuration={0}>
           <div
+            data-sidebar="wrapper"
             style={
               {
                 '--sidebar-width': SIDEBAR_WIDTH,
@@ -254,6 +255,7 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
       >
         {/* This is what handles the sidebar gap on desktop */}
         <div
+          data-sidebar-gap
           className={cn(
             'relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear',
             'group-data-[collapsible=offcanvas]:w-0',
@@ -264,6 +266,7 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
           )}
         />
         <div
+          data-sidebar-fixed
           ref={ref}
           className={cn(
             'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex',
@@ -348,6 +351,277 @@ const SidebarRail = React.forwardRef<
   );
 });
 SidebarRail.displayName = 'SidebarRail';
+
+const SIDEBAR_RESIZE_MIN = 280;
+const SIDEBAR_RESIZE_MAX = 600;
+const SIDEBAR_RESIZE_DEFAULT = 320;
+const SIDEBAR_RESIZE_STEP = 10;
+
+export interface SidebarResizeHandleProps extends React.ComponentProps<'div'> {
+  minWidth?: number;
+  maxWidth?: number;
+  defaultWidth?: number;
+}
+
+const SidebarResizeHandle = React.forwardRef<
+  HTMLDivElement,
+  SidebarResizeHandleProps
+>(
+  (
+    {
+      className,
+      minWidth = SIDEBAR_RESIZE_MIN,
+      maxWidth = SIDEBAR_RESIZE_MAX,
+      defaultWidth = SIDEBAR_RESIZE_DEFAULT,
+      ...props
+    },
+    ref,
+  ) => {
+    const { state } = useSidebar();
+    const handleRef = React.useRef<HTMLDivElement>(null);
+    const [isResizing, setIsResizing] = React.useState(false);
+    const [currentWidth, setCurrentWidth] = React.useState(defaultWidth);
+    const cleanupRef = React.useRef<(() => void) | null>(null);
+    const animationTimeoutRef = React.useRef<number | null>(null);
+
+    // Cleanup on unmount (e.g., sidebar toggle during active drag)
+    React.useEffect(() => {
+      return () => {
+        cleanupRef.current?.();
+        cleanupRef.current = null;
+        if (animationTimeoutRef.current) {
+          clearTimeout(animationTimeoutRef.current);
+        }
+      };
+    }, []);
+
+    const getProviderElement = React.useCallback(() => {
+      const el = handleRef.current;
+      if (!el) return null;
+      return el.closest('[data-sidebar="wrapper"]') as HTMLElement | null;
+    }, []);
+
+    const getCurrentWidth = React.useCallback(() => {
+      const providerEl = getProviderElement();
+      if (!providerEl) return defaultWidth;
+      const value =
+        getComputedStyle(providerEl).getPropertyValue('--sidebar-width');
+      return parseInt(value, 10) || defaultWidth;
+    }, [getProviderElement, defaultWidth]);
+
+    const handlePointerDown = React.useCallback(
+      (e: React.PointerEvent<HTMLDivElement>) => {
+        // Only handle left mouse button
+        if (e.button !== 0) return;
+
+        e.preventDefault();
+        const target = e.currentTarget;
+        target.setPointerCapture(e.pointerId);
+        setIsResizing(true);
+
+        // Set col-resize cursor on body to prevent flicker
+        const prevCursor = document.body.style.cursor;
+        const prevUserSelect = document.body.style.userSelect;
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+
+        const providerEl = getProviderElement();
+        if (!providerEl) return;
+
+        // Disable transitions during drag for snappy feel
+        const gapDiv = providerEl.querySelector(
+          '[data-sidebar-gap]',
+        ) as HTMLElement | null;
+        const fixedDiv = providerEl.querySelector(
+          '[data-sidebar-fixed]',
+        ) as HTMLElement | null;
+
+        if (gapDiv) gapDiv.style.transition = 'none';
+        if (fixedDiv) fixedDiv.style.transition = 'none';
+
+        // Determine sidebar side from DOM for correct resize calculation
+        const sidebarGroup = providerEl.querySelector('[data-side]');
+        const side = sidebarGroup?.getAttribute('data-side') ?? 'left';
+
+        const handlePointerMove = (moveEvent: PointerEvent) => {
+          const rawWidth =
+            side === 'right'
+              ? document.documentElement.clientWidth - moveEvent.clientX
+              : moveEvent.clientX;
+          const newWidth = Math.round(
+            Math.min(maxWidth, Math.max(minWidth, rawWidth)),
+          );
+          providerEl.style.setProperty('--sidebar-width', `${newWidth}px`);
+        };
+
+        const cleanup = () => {
+          target.releasePointerCapture(e.pointerId);
+          setIsResizing(false);
+
+          // Commit final width to state for aria-valuenow
+          const finalWidth = parseInt(
+            providerEl.style.getPropertyValue('--sidebar-width'),
+            10,
+          );
+          if (finalWidth) setCurrentWidth(finalWidth);
+
+          // Restore body cursor and user-select
+          document.body.style.cursor = prevCursor;
+          document.body.style.userSelect = prevUserSelect;
+
+          // Re-enable transitions
+          if (gapDiv) gapDiv.style.transition = '';
+          if (fixedDiv) fixedDiv.style.transition = '';
+
+          target.removeEventListener('pointermove', handlePointerMove);
+          target.removeEventListener('pointerup', handlePointerUp);
+          cleanupRef.current = null;
+        };
+
+        const handlePointerUp = () => {
+          cleanup();
+        };
+
+        // Store cleanup for unmount safety
+        cleanupRef.current = cleanup;
+
+        target.addEventListener('pointermove', handlePointerMove);
+        target.addEventListener('pointerup', handlePointerUp);
+      },
+      [getProviderElement, minWidth, maxWidth],
+    );
+
+    const handleDoubleClick = React.useCallback(() => {
+      const providerEl = getProviderElement();
+      if (!providerEl) return;
+
+      // Smooth snap-back animation for double-click reset
+      const gapDiv = providerEl.querySelector(
+        '[data-sidebar-gap]',
+      ) as HTMLElement | null;
+      const fixedDiv = providerEl.querySelector(
+        '[data-sidebar-fixed]',
+      ) as HTMLElement | null;
+
+      if (gapDiv) gapDiv.style.transition = 'width 200ms ease-out';
+      if (fixedDiv) fixedDiv.style.transition = 'width 200ms ease-out';
+
+      providerEl.style.setProperty('--sidebar-width', `${defaultWidth}px`);
+      setCurrentWidth(defaultWidth);
+
+      // Clean up the inline transition after animation
+      animationTimeoutRef.current = window.setTimeout(() => {
+        if (gapDiv) gapDiv.style.transition = '';
+        if (fixedDiv) fixedDiv.style.transition = '';
+      }, 200);
+    }, [getProviderElement, defaultWidth]);
+
+    // Keyboard support: Arrow keys to resize, Home/End for min/max
+    const handleKeyDown = React.useCallback(
+      (e: React.KeyboardEvent<HTMLDivElement>) => {
+        const providerEl = getProviderElement();
+        if (!providerEl) return;
+
+        let newWidth: number | null = null;
+        const currentWidth = getCurrentWidth();
+
+        switch (e.key) {
+          case 'ArrowRight':
+            newWidth = Math.min(maxWidth, currentWidth + SIDEBAR_RESIZE_STEP);
+            break;
+          case 'ArrowLeft':
+            newWidth = Math.max(minWidth, currentWidth - SIDEBAR_RESIZE_STEP);
+            break;
+          case 'Home':
+            newWidth = minWidth;
+            break;
+          case 'End':
+            newWidth = maxWidth;
+            break;
+          default:
+            return;
+        }
+
+        e.preventDefault();
+        providerEl.style.setProperty('--sidebar-width', `${newWidth}px`);
+        setCurrentWidth(newWidth);
+      },
+      [getProviderElement, getCurrentWidth, minWidth, maxWidth],
+    );
+
+    // Don't render when collapsed
+    if (state === 'collapsed') return null;
+
+    return (
+      <div
+        ref={(node) => {
+          handleRef.current = node;
+          if (typeof ref === 'function') {
+            ref(node);
+          } else if (ref) {
+            ref.current = node;
+          }
+        }}
+        data-sidebar="resize-handle"
+        data-resizing={isResizing}
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize sidebar"
+        aria-valuenow={currentWidth}
+        aria-valuemin={minWidth}
+        aria-valuemax={maxWidth}
+        tabIndex={0}
+        onPointerDown={handlePointerDown}
+        onDoubleClick={handleDoubleClick}
+        onKeyDown={handleKeyDown}
+        className={cn(
+          // Layout & hit target (12px wide, centered on edge)
+          'group/resize absolute inset-y-0 -right-1.5 z-20 w-3',
+          'hidden sm:flex items-center justify-center',
+          'cursor-col-resize select-none touch-none',
+
+          // Visible indicator line (::after) — 3px rounded bar
+          'after:absolute after:inset-y-0 after:left-1/2 after:-translate-x-1/2',
+          'after:w-[3px] after:rounded-full',
+          'after:bg-sidebar-border/0',
+          'after:transition-all after:duration-150 after:ease-out',
+
+          // Hover: subtle border color
+          'hover:after:bg-sidebar-border',
+
+          // Active/dragging: primary accent with slight width bump
+          'data-[resizing=true]:after:bg-primary',
+          'data-[resizing=true]:after:w-[4px]',
+
+          // Focus-visible: keyboard accessibility
+          'focus-visible:outline-none',
+          'focus-visible:after:bg-sidebar-ring',
+
+          // Hide when sidebar is offcanvas-collapsed
+          'group-data-[collapsible=offcanvas]:hidden',
+          className,
+        )}
+        {...props}
+      >
+        {/* Grip indicator — 3 horizontal lines, visible on hover */}
+        <div
+          className={cn(
+            'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2',
+            'flex flex-col gap-[3px] pointer-events-none',
+            'opacity-0 transition-opacity duration-150',
+            'group-hover/resize:opacity-100',
+            'group-data-[resizing=true]/resize:!opacity-0',
+          )}
+        >
+          <span className="block w-2 h-[1.5px] rounded-full bg-sidebar-foreground/30" />
+          <span className="block w-2 h-[1.5px] rounded-full bg-sidebar-foreground/30" />
+          <span className="block w-2 h-[1.5px] rounded-full bg-sidebar-foreground/30" />
+        </div>
+      </div>
+    );
+  },
+);
+SidebarResizeHandle.displayName = 'SidebarResizeHandle';
 
 const SidebarInset = React.forwardRef<
   HTMLDivElement,
@@ -804,6 +1078,7 @@ export {
   SidebarMenuSubItem,
   SidebarProvider,
   SidebarRail,
+  SidebarResizeHandle,
   SidebarSeparator,
   SidebarTrigger,
   useSidebar,
