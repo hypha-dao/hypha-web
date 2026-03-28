@@ -11,4 +11,4 @@ export * from './get-active-tab-from-path';
 export * from './get-path-function';
 export * from './ai-panel';
 export { AiLeftPanel } from './ai-left-panel';
-export { AiLeftPanelLayout } from './ai-left-panel-layout';
+export { AiLeftPanelLayout, AiSidebarTrigger } from './ai-left-panel-layout';

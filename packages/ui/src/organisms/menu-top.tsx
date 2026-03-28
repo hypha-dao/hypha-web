@@ -9,6 +9,7 @@ import clsx from 'clsx';
 
 type MenuTopProps = {
   children?: React.ReactNode;
+  leadingAction?: React.ReactNode;
   logoHref?: string;
   hrefTarget?: string;
   openMenuLabel?: string;
@@ -17,6 +18,7 @@ type MenuTopProps = {
 
 export const MenuTop = ({
   children,
+  leadingAction,
   logoHref,
   hrefTarget,
   openMenuLabel = 'Open menu',
@@ -37,7 +39,12 @@ export const MenuTop = ({
           children ? 'justify-between' : 'justify-center',
         )}
       >
-        {!!logoHref && <Logo width={110} href={logoHref} target={hrefTarget} />}
+        <div className="flex items-center gap-2">
+          {leadingAction}
+          {!!logoHref && (
+            <Logo width={110} href={logoHref} target={hrefTarget} />
+          )}
+        </div>
 
         {/* Desktop Nav */}
         {children && (

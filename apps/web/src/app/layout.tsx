@@ -13,6 +13,7 @@ import { AuthProvider } from '@hypha-platform/authentication';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
   AiLeftPanelLayout,
+  AiSidebarTrigger,
   ConnectedButtonProfile,
 } from '@hypha-platform/epics';
 import { EvmProvider } from '@hypha-platform/evm';
@@ -126,6 +127,9 @@ export default async function RootLayout({
                     logoHref={ROOT_URL}
                     openMenuLabel={tNav('openMenu')}
                     closeMenuLabel={tNav('closeMenu')}
+                    leadingAction={
+                      aiChatEnabled ? <AiSidebarTrigger /> : undefined
+                    }
                   >
                     <ConnectedButtonProfile
                       useAuthentication={useAuthentication}
