@@ -222,9 +222,9 @@
         "title": "Accept Investment (Coming Soon)",
         "description": "Receive capital from investors, members, or aligned spaces in exchange for native space tokens."
       },
-      "exchangeOwnershipComingSoon": {
-        "title": "Exchange Ownership (Coming Soon)",
-        "description": "Swap ownership between members or spaces, whether selling a stake or exchanging assets."
+      "exchangeStakesAndTokens": {
+        "title": "Exchange Stakes & Tokens",
+        "description": "Swap ownership stakes, tokens, or other assets between members or spaces."
       },
       "deployFunds": {
         "title": "Deploy Funds",
@@ -798,7 +798,8 @@
       "collectiveAgreement": "Collective Agreement",
       "contribution": "Contribution",
       "expenses": "Expenses",
-      "funding": "Funding"
+      "funding": "Funding",
+      "exchange": "Exchange"
     },
     "buttons": {
       "publish": "Publish"
@@ -976,6 +977,18 @@
         "receiveHyphaTokens": "Our space will receive {amount} HYPHA tokens (1 HYPHA = {price} USD)",
         "hyphaSentTo": "HYPHA sent to",
         "usdcPaidTo": "USDC paid to"
+      },
+      "exchangeStakesAndTokens": {
+        "seller": "Seller (Wallet Address)",
+        "sellerWillSend": "Seller will send",
+        "buyer": "Buyer (Wallet Address)",
+        "buyerWillSend": "Buyer will send",
+        "escrowFunding": "Escrow Funding",
+        "escrowStatus": "Escrow Status",
+        "escrowPendingBuyerFunding": "Waiting for buyer funding",
+        "escrowCompleted": "Completed",
+        "escrowCancelled": "Cancelled",
+        "approveAndFundPrompt": "Buyer should approve token and call receiveFunds({escrowId}) to complete the exchange."
       },
       "tokenBackingVault": {
         "title": "Token Backing Vault",
@@ -1483,6 +1496,19 @@
       "whitelistEnforcementInactive": "Inactive",
       "spaceWhitelistMembersSuffix": "(Space & Members)",
       "spaceWhitelistOnlySuffix": "(Space only)"
+    },
+    "exchange": {
+      "escrowId": "Escrow ID",
+      "status": {
+        "label": "Escrow Status",
+        "pendingFunding": "Pending buyer funding",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      },
+      "leg": "Exchange Leg",
+      "from": "From",
+      "to": "To",
+      "funded": "Funded"
     },
     "entryMethods": {
       "openAccess": "Open Access",

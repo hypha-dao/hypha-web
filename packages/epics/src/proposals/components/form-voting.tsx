@@ -69,6 +69,7 @@ const getCreateRouteForLabel = (label: string | undefined): string => {
     'Entry Method': 'change-entry-method',
     'Issue New Token': 'issue-new-token',
     'Buy Hypha Tokens': 'buy-hypha-tokens',
+    Exchange: 'exchange-stakes-and-tokens',
     'Activate Spaces': 'activate-spaces',
     'Space To Space': 'space-to-space-membership',
     'Treasury Minting': 'mint-tokens-to-space-treasury',

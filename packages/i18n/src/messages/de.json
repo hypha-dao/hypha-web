@@ -798,7 +798,8 @@
       "collectiveAgreement": "Kollektive Vereinbarung",
       "contribution": "Beitrag",
       "expenses": "Ausgaben",
-      "funding": "Finanzierung"
+      "funding": "Finanzierung",
+      "exchange": "Exchange"
     },
     "buttons": {
       "publish": "Veröffentlichen"
@@ -1356,6 +1357,18 @@
         "enterAmountAndToken": "Bitte geben Sie einen Betrag ein und wählen Sie einen Token aus.",
         "add": "Hinzufügen"
       },
+      "exchangeStakesAndTokens": {
+        "seller": "Verkäufer (Wallet-Adresse)",
+        "buyer": "Käufer (Wallet-Adresse)",
+        "sellerWillSend": "Verkäufer sendet",
+        "buyerWillSend": "Käufer sendet",
+        "escrowFunding": "Escrow-Finanzierung",
+        "escrowStatus": "Escrow-Status",
+        "escrowPendingBuyerFunding": "Warten auf Käuferfinanzierung",
+        "escrowCompleted": "Abgeschlossen",
+        "escrowCancelled": "Abgebrochen",
+        "approveAndFundPrompt": "Käufer sollte den Token freigeben und receiveFunds({escrowId}) aufrufen, um den Tausch abzuschließen."
+      },
       "paymentSchedule": {
         "label": "Zahlungsplan",
         "immediately": "Sofort",
@@ -1483,6 +1496,19 @@
       "whitelistEnforcementInactive": "Inaktiv",
       "spaceWhitelistMembersSuffix": "(Space & Members)",
       "spaceWhitelistOnlySuffix": "(Nur Space)"
+    },
+    "exchange": {
+      "escrowId": "Escrow-ID",
+      "status": {
+        "label": "Status",
+        "pendingFunding": "Ausstehende Finanzierung",
+        "completed": "Abgeschlossen",
+        "cancelled": "Abgebrochen"
+      },
+      "leg": "Tausch-Teil",
+      "from": "Von",
+      "to": "An",
+      "funded": "Finanziert"
     },
     "entryMethods": {
       "openAccess": "Open Access",

@@ -35,6 +35,7 @@ import {
   ProposalRedeemTokensData,
   ProposalSpaceTokenPurchaseData,
   ProposalUpdateToken,
+  ProposalExchangeStakesAndTokensData,
 } from '../../governance';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
 import { ButtonClose, ExpireProposalBanner } from '@hypha-platform/epics';
@@ -637,6 +638,34 @@ export const ProposalDetail = ({
           {...proposalDetails.spaceTokenPurchaseData}
         />
       ) : null}
+      {proposalDetails?.exchangeEscrowData?.partyB && (
+        <ProposalExchangeStakesAndTokensData
+          spaceSlug={spaceSlug}
+          legs={[
+            {
+              from:
+                proposalDetails.exchangeEscrowData.partyA ??
+                proposalDetails.creator,
+              to: proposalDetails.exchangeEscrowData.partyB,
+              token: proposalDetails.exchangeEscrowData.tokenA ?? '',
+              amount: proposalDetails.exchangeEscrowData.amountA ?? 0n,
+              funded: proposalDetails.exchangeEscrowData.sellerFunded,
+            },
+            {
+              from: proposalDetails.exchangeEscrowData.partyB,
+              to:
+                proposalDetails.exchangeEscrowData.partyA ??
+                proposalDetails.creator,
+              token: proposalDetails.exchangeEscrowData.tokenB ?? '',
+              amount: proposalDetails.exchangeEscrowData.amountB ?? 0n,
+              funded: proposalDetails.exchangeEscrowData.buyerFunded,
+            },
+          ]}
+          escrowId={proposalDetails.exchangeEscrowData.escrowId}
+          completed={proposalDetails.exchangeEscrowData.status === 'completed'}
+          cancelled={proposalDetails.exchangeEscrowData.status === 'cancelled'}
+        />
+      )}
       <FormVoting
         unity={proposalDetails?.unityPercentage || 0}
         quorum={proposalDetails?.quorumPercentage || 0}

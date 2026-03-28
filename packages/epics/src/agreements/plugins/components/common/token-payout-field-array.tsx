@@ -33,6 +33,8 @@ interface TokenPayoutFieldArrayProps {
   name?: string;
   label?: string;
   allowAddOrRemove?: boolean;
+  /** When true, same as `allowAddOrRemove={false}` (exchange plugin). */
+  disableAddRemove?: boolean;
   showSelectedTokenBalanceHint?: boolean;
   showTreasuryBalanceHint?: boolean;
   selectedTokenPriceHint?: string;
@@ -43,6 +45,7 @@ function TokenPayoutFieldArrayInner({
   name = 'payouts',
   label,
   allowAddOrRemove = true,
+  disableAddRemove = false,
   showSelectedTokenBalanceHint = false,
   showTreasuryBalanceHint = false,
   selectedTokenPriceHint,
@@ -56,6 +59,8 @@ function TokenPayoutFieldArrayInner({
     name,
   });
 
+  const canAddRemove = !disableAddRemove && allowAddOrRemove;
+
   const handleAddField = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     append({ amount: '', token: '' as `0x${string}` });
@@ -66,6 +71,7 @@ function TokenPayoutFieldArrayInner({
     index: number,
   ) => {
     e.preventDefault();
+    if (!canAddRemove) return;
     if (fields.length > 1) {
       remove(index);
     }
@@ -108,7 +114,7 @@ function TokenPayoutFieldArrayInner({
                   )}
                 />
               </div>
-              {allowAddOrRemove && (
+              {canAddRemove && (
                 <Button
                   variant="ghost"
                   onClick={(ev) => handleDeleteField(ev, index)}
@@ -121,7 +127,7 @@ function TokenPayoutFieldArrayInner({
           ))}
         </div>
       </div>
-      {allowAddOrRemove && (
+      {canAddRemove && (
         <div className="flex justify-end w-full">
           <Button className="w-fit" onClick={handleAddField} variant="ghost">
             <PlusIcon />

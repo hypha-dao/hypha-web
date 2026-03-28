@@ -3,6 +3,7 @@
 import {
   ProposeContributionPlugin,
   PayForExpensesPlugin,
+  ExchangeStakesAndTokensPlugin,
   DeployFundsPlugin,
   ChangeVotingMethodPlugin,
   ChangeEntryMethodPlugin,
@@ -24,6 +25,7 @@ import { Person, Space } from '@hypha-platform/core/client';
 export const PLUGINS = {
   'propose-contribution': ProposeContributionPlugin,
   'pay-for-expenses': PayForExpensesPlugin,
+  'exchange-stakes-and-tokens': ExchangeStakesAndTokensPlugin,
   'deploy-funds': DeployFundsPlugin,
   'change-voting-method': ChangeVotingMethodPlugin,
   'change-entry-method': ChangeEntryMethodPlugin,

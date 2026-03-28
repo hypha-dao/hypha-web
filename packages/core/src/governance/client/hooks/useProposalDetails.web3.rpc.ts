@@ -150,6 +150,20 @@ export const useProposalDetailsWeb3Rpc = ({
       amount: undefined,
     };
 
+    let exchangeEscrowData: {
+      escrowId?: bigint;
+      creator?: string;
+      partyA?: string;
+      partyB?: string;
+      tokenA?: string;
+      tokenB?: string;
+      amountA?: bigint;
+      amountB?: bigint;
+      status?: 'pending' | 'completed' | 'cancelled';
+      sellerFunded?: boolean;
+      buyerFunded?: boolean;
+    } = {};
+
     let activateSpacesData: {
       spaceIds: bigint[];
       paymentAmounts: bigint[];
@@ -356,6 +370,21 @@ export const useProposalDetailsWeb3Rpc = ({
 
         case 'investInHypha':
           buyHyphaTokensData = decoded.data as typeof buyHyphaTokensData;
+          break;
+
+        case 'exchangeEscrow':
+          exchangeEscrowData = {
+            ...exchangeEscrowData,
+            creator: creator as string,
+            partyA: creator as string,
+            partyB: decoded.data.partyB as string,
+            tokenA: decoded.data.tokenA as string,
+            tokenB: decoded.data.tokenB as string,
+            amountA: decoded.data.amountA as bigint,
+            amountB: decoded.data.amountB as bigint,
+            status: 'pending',
+            sellerFunded: Boolean(decoded.data.sendFundsNow),
+          };
           break;
 
         case 'payForSpaces': {
@@ -784,6 +813,7 @@ export const useProposalDetailsWeb3Rpc = ({
       tokenRequirements,
       votingMethodsToken,
       buyHyphaTokensData,
+      exchangeEscrowData,
       activateSpacesData,
       delegatesData,
       minimumProposalDurationData,

@@ -47,6 +47,14 @@ const getDocumentBadges = (document: Document) => {
         colorVariant: 'accent',
       });
       break;
+    case 'Exchange':
+      badges.push({
+        label: 'Exchange',
+        className: 'capitalize',
+        variant: 'solid',
+        colorVariant: 'accent',
+      });
+      break;
     case 'Voting Method':
       badges.push({
         label: 'Voting Method',

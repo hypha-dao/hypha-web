@@ -226,6 +226,10 @@
         "title": "Échanger la propriété (bientôt disponible)",
         "description": "Échangez la propriété entre membres ou espaces, qu'il s'agisse de vendre une part ou d'échanger des actifs."
       },
+      "exchangeStakesAndTokens": {
+        "title": "Échanger des participations et des jetons",
+        "description": "Échangez des participations, des jetons ou d'autres actifs entre membres ou espaces."
+      },
       "deployFunds": {
         "title": "Déployer des fonds",
         "description": "Allouez des fonds de trésorerie à des investissements dans d'autres espaces du réseau ou à la distribution de ressources entre les espaces de votre organisation."
@@ -798,7 +802,8 @@
       "collectiveAgreement": "Accord collectif",
       "contribution": "Contribution",
       "expenses": "Dépenses",
-      "funding": "Financement"
+      "funding": "Financement",
+      "exchange": "Échange"
     },
     "buttons": {
       "publish": "Publier"
@@ -976,6 +981,12 @@
         "receiveHyphaTokens": "Notre espace recevra {amount} tokens HYPHA (1 HYPHA = {price} USD)",
         "hyphaSentTo": "HYPHA envoyé à",
         "usdcPaidTo": "USDC payé à"
+      },
+      "exchangeStakesAndTokens": {
+        "seller": "Vendeur (adresse du portefeuille)",
+        "buyer": "Acheteur (adresse du portefeuille)",
+        "sellerWillSend": "Le vendeur enverra",
+        "buyerWillSend": "L’acheteur enverra"
       },
       "tokenBackingVault": {
         "title": "Coffre de garantie de token",
@@ -1483,6 +1494,19 @@
       "whitelistEnforcementInactive": "Inactif",
       "spaceWhitelistMembersSuffix": "(Space et membres)",
       "spaceWhitelistOnlySuffix": "(Space uniquement)"
+    },
+    "exchange": {
+      "escrowId": "ID d’entiercement",
+      "status": {
+        "label": "Statut de l’entiercement",
+        "pendingFunding": "En attente du financement de l’acheteur",
+        "completed": "Terminé",
+        "cancelled": "Annulé"
+      },
+      "leg": "Échange",
+      "from": "De",
+      "to": "Vers",
+      "funded": "Financé"
     },
     "entryMethods": {
       "openAccess": "Accès libre",

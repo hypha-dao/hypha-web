@@ -1,0 +1,160 @@
+'use client';
+
+import useSWR from 'swr';
+import useSWRMutation from 'swr/mutation';
+import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
+import { encodeFunctionData, erc20Abi, parseUnits } from 'viem';
+
+import { getProposalFromLogs } from '../web3';
+import {
+  daoProposalsImplementationAbi,
+  daoProposalsImplementationAddress,
+} from '@hypha-platform/core/generated';
+import {
+  getTokenDecimals,
+  getSpaceMinProposalDuration,
+  publicClient,
+} from '@hypha-platform/core/client';
+import { getDuration } from '@hypha-platform/ui-utils';
+
+interface ExchangeLegInput {
+  amount: string;
+  token: string;
+}
+
+interface CreateExchangeStakesAndTokensInput {
+  spaceId: number;
+  sellerAddress: string;
+  buyerAddress: string;
+  sellerLeg: ExchangeLegInput;
+  buyerLeg: ExchangeLegInput;
+}
+
+const chainId = 8453;
+const escrowAddressByChain: Record<number, `0x${string}`> = {
+  [chainId]: '0x447A317cA5516933264Cdd6aeee0633Fa954B576',
+};
+const escrowCreateAbi = [
+  {
+    type: 'function',
+    name: 'createEscrow',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: '_partyB', type: 'address', internalType: 'address' },
+      { name: '_tokenA', type: 'address', internalType: 'address' },
+      { name: '_tokenB', type: 'address', internalType: 'address' },
+      { name: '_amountA', type: 'uint256', internalType: 'uint256' },
+      { name: '_amountB', type: 'uint256', internalType: 'uint256' },
+      { name: '_sendFundsNow', type: 'bool', internalType: 'bool' },
+    ],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+  },
+] as const;
+
+export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
+  proposalSlug,
+}: {
+  proposalSlug?: string | null;
+}) => {
+  const { client } = useSmartWallets();
+
+  const {
+    trigger: createExchangeStakesAndTokens,
+    reset: resetCreateExchangeStakesAndTokensMutation,
+    isMutating: isCreatingExchangeStakesAndTokens,
+    data: createExchangeStakesAndTokensHash,
+    error: errorCreateExchangeStakesAndTokens,
+  } = useSWRMutation(
+    `createExchangeStakesAndTokens-${proposalSlug}`,
+    async (_: string, { arg }: { arg: CreateExchangeStakesAndTokensInput }) => {
+      if (!client) {
+        throw new Error('Smart wallet client not available');
+      }
+      const escrowAddress = escrowAddressByChain[chainId];
+      if (!escrowAddress) {
+        throw new Error(`Escrow contract not configured for chain ${chainId}`);
+      }
+
+      const duration = await publicClient.readContract(
+        getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
+      );
+
+      const sellerTokenDecimals = await getTokenDecimals(arg.sellerLeg.token);
+      const buyerTokenDecimals = await getTokenDecimals(arg.buyerLeg.token);
+
+      const sellerAmount = parseUnits(
+        arg.sellerLeg.amount,
+        sellerTokenDecimals,
+      );
+      const buyerAmount = parseUnits(arg.buyerLeg.amount, buyerTokenDecimals);
+
+      const transactions = [
+        {
+          target: arg.sellerLeg.token as `0x${string}`,
+          value: BigInt(0),
+          data: encodeFunctionData({
+            abi: erc20Abi,
+            functionName: 'approve',
+            args: [escrowAddress, sellerAmount],
+          }),
+        },
+        {
+          target: escrowAddress,
+          value: BigInt(0),
+          data: encodeFunctionData({
+            abi: escrowCreateAbi,
+            functionName: 'createEscrow',
+            args: [
+              arg.buyerAddress as `0x${string}`,
+              arg.sellerLeg.token as `0x${string}`,
+              arg.buyerLeg.token as `0x${string}`,
+              sellerAmount,
+              buyerAmount,
+              true,
+            ],
+          }),
+        },
+      ] as const;
+
+      const proposalParams = {
+        spaceId: BigInt(arg.spaceId),
+        duration: duration && duration > 0 ? duration : getDuration(7),
+        transactions,
+      };
+
+      const txHash = await client.writeContract({
+        address: daoProposalsImplementationAddress[chainId],
+        abi: daoProposalsImplementationAbi,
+        functionName: 'createProposal',
+        args: [proposalParams],
+      });
+
+      return txHash;
+    },
+  );
+
+  const {
+    data: createdExchangeStakesAndTokens,
+    isLoading: isLoadingExchangeStakesAndTokensFromTransaction,
+    error: errorWaitExchangeStakesAndTokensFromTransaction,
+  } = useSWR(
+    createExchangeStakesAndTokensHash
+      ? [createExchangeStakesAndTokensHash, 'waitForExchangeStakesAndTokens']
+      : null,
+    async ([hash]) => {
+      const { logs } = await publicClient.waitForTransactionReceipt({ hash });
+      return getProposalFromLogs(logs);
+    },
+  );
+
+  return {
+    createExchangeStakesAndTokens,
+    resetCreateExchangeStakesAndTokensMutation,
+    isCreatingExchangeStakesAndTokens,
+    createExchangeStakesAndTokensHash,
+    errorCreateExchangeStakesAndTokens,
+    createdExchangeStakesAndTokens,
+    isLoadingExchangeStakesAndTokensFromTransaction,
+    errorWaitExchangeStakesAndTokensFromTransaction,
+  };
+};

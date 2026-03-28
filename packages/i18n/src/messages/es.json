@@ -106,6 +106,18 @@
         "hyphaSentTo": "HYPHA enviado a",
         "usdcPaidTo": "USDC pagado a"
       },
+      "exchangeStakesAndTokens": {
+        "seller": "Vendedor (dirección de cartera)",
+        "buyer": "Comprador (dirección de cartera)",
+        "sellerWillSend": "El vendedor enviará",
+        "buyerWillSend": "El comprador enviará",
+        "escrowFunding": "Financiación de escrow",
+        "escrowStatus": "Estado del escrow",
+        "escrowPendingBuyerFunding": "Esperando financiación del comprador",
+        "escrowCompleted": "Completado",
+        "escrowCancelled": "Cancelado",
+        "approveAndFundPrompt": "El comprador debe aprobar el token y llamar a receiveFunds({escrowId}) para completar el intercambio."
+      },
       "tokenBackingVault": {
         "title": "Bóveda de respaldo de token",
         "description": "Crea una bóveda de respaldo de token, define reglas y restricciones de redención, establece la fecha de inicio y el precio de redención, y autoriza la adición o el retiro de colaterales de la bóveda.",
@@ -509,7 +521,8 @@
       "collectiveAgreement": "Convenio Colectivo",
       "contribution": "Contribución",
       "expenses": "Gastos",
-      "funding": "Fondos"
+      "funding": "Fondos",
+      "exchange": "Intercambio"
     },
     "buttons": {
       "publish": "Publicar"
@@ -826,9 +839,9 @@
         "title": "Aceptar inversión (próximamente)",
         "description": "Reciba capital de inversores, miembros o espacios alineados a cambio de tokens espaciales nativos."
       },
-      "exchangeOwnershipComingSoon": {
-        "title": "Propiedad de Exchange (próximamente)",
-        "description": "Intercambia la propiedad entre miembros o espacios, ya sea vendiendo una participación o intercambiando activos."
+      "exchangeStakesAndTokens": {
+        "title": "Intercambiar participaciones y tokens",
+        "description": "Intercambia participaciones de propiedad, tokens u otros activos entre miembros o espacios."
       },
       "deployFunds": {
         "title": "Implementar fondos",
@@ -1483,6 +1496,19 @@
       "whitelistEnforcementInactive": "Inactivo",
       "spaceWhitelistMembersSuffix": "(Space y miembros)",
       "spaceWhitelistOnlySuffix": "(Solo space)"
+    },
+    "exchange": {
+      "escrowId": "ID de escrow",
+      "status": {
+        "label": "Estado",
+        "pendingFunding": "Pendiente de financiación",
+        "completed": "Completado",
+        "cancelled": "Cancelado"
+      },
+      "leg": "Tramo",
+      "from": "Desde",
+      "to": "Hacia",
+      "funded": "Financiado"
     },
     "entryMethods": {
       "openAccess": "Acceso abierto",
