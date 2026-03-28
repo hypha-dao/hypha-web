@@ -199,10 +199,13 @@ export const PeopleBuySpaceTokens = ({
 
   const {
     sale,
+    needsApproval,
     hasEnoughBalance,
+    approve,
     buy,
     isApproving,
     isBuying,
+    approveError,
     buyError,
     reset,
     isLoadingSale,
@@ -271,6 +274,9 @@ export const PeopleBuySpaceTokens = ({
     setIsSubmitting(true);
     form.clearErrors('root');
     try {
+      if (needsApproval) {
+        await approve();
+      }
       await buy();
       setShowSuccessMessage(true);
       setTimeout(() => {
@@ -525,9 +531,10 @@ export const PeopleBuySpaceTokens = ({
             {form.formState.errors.root.message}
           </div>
         )}
-        {buyError && (
+        {(approveError || buyError) && (
           <div className="text-2 text-foreground">
-            {buyError.message ?? 'Transaction failed. Please retry.'}
+            {(approveError || buyError)?.message ??
+              'Transaction failed. Please retry.'}
           </div>
         )}
       </form>
