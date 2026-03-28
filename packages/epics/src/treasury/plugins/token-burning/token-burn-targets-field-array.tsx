@@ -511,30 +511,33 @@ function useRecipientPositiveBalanceAddresses({
         ]
       : null;
 
-  const { data, error, isLoading } = useSWR(key, async ([token, addresses]) => {
-    const recipients = addresses
-      .split(',')
-      .filter((address): address is `0x${string}` => isAddress(address));
+  const { data, error, isLoading } = useSWR(
+    key,
+    async ([token, addresses]: readonly [string, string, string]) => {
+      const recipients = addresses
+        .split(',')
+        .filter((address): address is `0x${string}` => isAddress(address));
 
-    const balances = await publicClient.multicall({
-      contracts: recipients.map((recipient) => ({
-        address: token as `0x${string}`,
-        abi: erc20Abi,
-        functionName: 'balanceOf',
-        args: [recipient],
-      })),
-      allowFailure: true,
-    });
+      const balances = await publicClient.multicall({
+        contracts: recipients.map((recipient) => ({
+          address: token as `0x${string}`,
+          abi: erc20Abi,
+          functionName: 'balanceOf',
+          args: [recipient],
+        })),
+        allowFailure: true,
+      });
 
-    const recipientsWithPositiveBalance = new Set<string>();
-    balances.forEach((result, index) => {
-      if (result.status === 'success' && result.result > 0n) {
-        recipientsWithPositiveBalance.add(recipients[index]);
-      }
-    });
+      const recipientsWithPositiveBalance = new Set<string>();
+      balances.forEach((result, index) => {
+        if (result.status === 'success' && result.result > 0n) {
+          recipientsWithPositiveBalance.add(recipients[index]);
+        }
+      });
 
-    return recipientsWithPositiveBalance;
-  });
+      return recipientsWithPositiveBalance;
+    },
+  );
 
   return {
     positiveBalanceAddresses: data ?? EMPTY_RECIPIENT_SET,
