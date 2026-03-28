@@ -231,11 +231,11 @@ export const TokenBurnTargetsFieldArray = ({
               render={({ field: addressField }) => (
                 <FormItem className="flex flex-col gap-2">
                   <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                    <label className="text-2 text-neutral-11 flex flex-row gap-1">
+                    <label className="text-2 text-neutral-11 flex flex-row gap-1 whitespace-nowrap">
                       {tAgreementFlow('plugins.tokenBurning.walletAddress')}
                       <RequirementMark className="text-2" />
                     </label>
-                    <div className="w-full md:max-w-3xl">
+                    <div className="w-full md:w-72">
                       <Input
                         placeholder={tAgreementFlow(
                           'plugins.tokenBurning.walletAddressPlaceholder',
