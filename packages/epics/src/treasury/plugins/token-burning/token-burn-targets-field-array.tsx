@@ -424,6 +424,7 @@ function RecipientTokenBalanceHint({
     );
   }
 
+  const decimals = resolveTokenDecimals(tokenAddress);
   const normalizedBalance = Number(formatUnits(data, decimals));
 
   return (
