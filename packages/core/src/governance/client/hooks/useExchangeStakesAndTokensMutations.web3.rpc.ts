@@ -120,6 +120,7 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
         getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
       );
 
+<<<<<<< HEAD
       const transactionGroups = await Promise.all(
         sellerRows.map(async (sellerRow, index) => {
           const buyerRow = buyerRows[index];
@@ -130,7 +131,6 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
               }. Seller and buyer rows must be paired.`,
             );
           }
-
           const sellerTokenDecimals = await getTokenDecimals(sellerRow.token);
           const buyerTokenDecimals = await getTokenDecimals(buyerRow.token);
 
