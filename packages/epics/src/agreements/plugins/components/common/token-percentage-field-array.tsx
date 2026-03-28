@@ -35,6 +35,7 @@ export const TokenPercentageFieldArray = ({
   const {
     control,
     getValues,
+    trigger,
     formState: { errors: formErrors },
   } = useFormContext();
   const { fields, append, remove } = useFieldArray({
@@ -89,7 +90,10 @@ export const TokenPercentageFieldArray = ({
                       <FormControl>
                         <TokenPercentageField
                           value={value}
-                          onChange={onChange}
+                          onChange={(nextValue) => {
+                            onChange(nextValue);
+                            void trigger(name);
+                          }}
                           assets={assets}
                           showFieldDetails={showFieldDetails}
                         />
