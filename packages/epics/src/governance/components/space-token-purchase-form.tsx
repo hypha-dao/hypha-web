@@ -94,6 +94,10 @@ export const SpaceTokenPurchaseForm = ({
     }
   };
 
+  const handleInvalid = () => {
+    void form.trigger();
+  };
+
   return (
     <LoadingBackdrop
       showKeepWindowOpenMessage={true}
@@ -114,7 +118,7 @@ export const SpaceTokenPurchaseForm = ({
       <Form {...form}>
         <form
           ref={formRef}
-          onSubmit={form.handleSubmit(handleCreate)}
+          onSubmit={form.handleSubmit(handleCreate, handleInvalid)}
           className="flex flex-col gap-5"
         >
           <CreateAgreementBaseFields
