@@ -4,11 +4,14 @@ import useSWR from 'swr';
 import useSWRMutation from 'swr/mutation';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 import { encodeFunctionData, erc20Abi, parseUnits } from 'viem';
+import { useAccount } from 'wagmi';
 
 import { getProposalFromLogs } from '../web3';
 import {
   daoProposalsImplementationAbi,
   daoProposalsImplementationAddress,
+  escrowImplementationAbi,
+  escrowImplementationAddress,
 } from '@hypha-platform/core/generated';
 import {
   getTokenDecimals,
@@ -16,6 +19,7 @@ import {
   publicClient,
 } from '@hypha-platform/core/client';
 import { getDuration } from '@hypha-platform/ui-utils';
+import { getGovernanceChainId } from './governance-chain-id';
 
 interface ExchangeLegInput {
   amount: string;
@@ -30,32 +34,13 @@ interface CreateExchangeStakesAndTokensInput {
   buyerLeg: ExchangeLegInput[];
 }
 
-const chainId = 8453;
-const escrowAddressByChain: Record<number, `0x${string}`> = {
-  [chainId]: '0x447A317cA5516933264Cdd6aeee0633Fa954B576',
-};
-const escrowCreateAbi = [
-  {
-    type: 'function',
-    name: 'createEscrow',
-    stateMutability: 'nonpayable',
-    inputs: [
-      { name: '_partyB', type: 'address', internalType: 'address' },
-      { name: '_tokenA', type: 'address', internalType: 'address' },
-      { name: '_tokenB', type: 'address', internalType: 'address' },
-      { name: '_amountA', type: 'uint256', internalType: 'uint256' },
-      { name: '_amountB', type: 'uint256', internalType: 'uint256' },
-      { name: '_sendFundsNow', type: 'bool', internalType: 'bool' },
-    ],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-  },
-] as const;
-
 export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
   proposalSlug,
 }: {
   proposalSlug?: string | null;
 }) => {
+  const chainId = getGovernanceChainId();
+  const { address } = useAccount();
   const { client } = useSmartWallets();
 
   const {
@@ -70,14 +55,6 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
       if (!client) {
         throw new Error('Smart wallet client not available');
       }
-      const escrowAddress = escrowAddressByChain[chainId];
-      if (!escrowAddress) {
-        throw new Error(`Escrow contract not configured for chain ${chainId}`);
-      }
-
-      const duration = await publicClient.readContract(
-        getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
-      );
 
       const sellerRows = arg.sellerLeg ?? [];
       const buyerRows = arg.buyerLeg ?? [];
@@ -93,6 +70,39 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
           'Seller and buyer rows must have the same count to build exchange escrows',
         );
       }
+
+      const clientAccountAddress = (
+        client as { account?: { address?: `0x${string}` } }
+      ).account?.address;
+      const allowedExecutors = [address, clientAccountAddress]
+        .filter((value): value is `0x${string}` => Boolean(value))
+        .map((value) => value.toLowerCase());
+      if (allowedExecutors.length === 0) {
+        throw new Error('Wallet address not available');
+      }
+      if (!allowedExecutors.includes(arg.sellerAddress.toLowerCase())) {
+        throw new Error(
+          'Seller address must match the connected wallet executing this proposal',
+        );
+      }
+
+      const escrowAddress =
+        escrowImplementationAddress[
+          chainId as keyof typeof escrowImplementationAddress
+        ];
+      if (!escrowAddress) {
+        throw new Error(`Escrow contract not configured for chain ${chainId}`);
+      }
+      const proposalAddress = daoProposalsImplementationAddress[chainId];
+      if (!proposalAddress) {
+        throw new Error(
+          `DAO proposals contract not configured for chain ${chainId}`,
+        );
+      }
+
+      const duration = await publicClient.readContract(
+        getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
+      );
 
       const transactionGroups = await Promise.all(
         sellerRows.map(async (sellerRow, index) => {
@@ -121,6 +131,15 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
               data: encodeFunctionData({
                 abi: erc20Abi,
                 functionName: 'approve',
+                args: [escrowAddress, BigInt(0)],
+              }),
+            },
+            {
+              target: sellerRow.token as `0x${string}`,
+              value: BigInt(0),
+              data: encodeFunctionData({
+                abi: erc20Abi,
+                functionName: 'approve',
                 args: [escrowAddress, sellerAmount],
               }),
             },
@@ -128,7 +147,7 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
               target: escrowAddress,
               value: BigInt(0),
               data: encodeFunctionData({
-                abi: escrowCreateAbi,
+                abi: escrowImplementationAbi,
                 functionName: 'createEscrow',
                 args: [
                   arg.buyerAddress as `0x${string}`,
@@ -153,7 +172,7 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
       };
 
       const txHash = await client.writeContract({
-        address: daoProposalsImplementationAddress[chainId],
+        address: proposalAddress,
         abi: daoProposalsImplementationAbi,
         functionName: 'createProposal',
         args: [proposalParams],

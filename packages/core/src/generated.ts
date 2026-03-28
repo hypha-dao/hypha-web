@@ -239,6 +239,7 @@ export const daoProposalsImplementationAbi = [
     inputs: [{ name: 'target', internalType: 'address', type: 'address' }],
     name: 'AddressEmptyCode',
   },
+  { type: 'error', inputs: [], name: 'DurationTooLong' },
   {
     type: 'error',
     inputs: [
@@ -247,9 +248,25 @@ export const daoProposalsImplementationAbi = [
     name: 'ERC1967InvalidImplementation',
   },
   { type: 'error', inputs: [], name: 'ERC1967NonPayable' },
+  { type: 'error', inputs: [], name: 'EmptyData' },
+  { type: 'error', inputs: [], name: 'Executed' },
+  { type: 'error', inputs: [], name: 'ExecutionFailed' },
+  { type: 'error', inputs: [], name: 'Expired' },
   { type: 'error', inputs: [], name: 'FailedCall' },
+  { type: 'error', inputs: [], name: 'InvalidDelegation' },
+  { type: 'error', inputs: [], name: 'InvalidDirectory' },
+  { type: 'error', inputs: [], name: 'InvalidFactory' },
   { type: 'error', inputs: [], name: 'InvalidInitialization' },
+  { type: 'error', inputs: [], name: 'InvalidTarget' },
+  { type: 'error', inputs: [], name: 'InvalidTracker' },
+  { type: 'error', inputs: [], name: 'NoExecutor' },
+  { type: 'error', inputs: [], name: 'NoPower' },
+  { type: 'error', inputs: [], name: 'NoTransactions' },
+  { type: 'error', inputs: [], name: 'NotInitialized' },
   { type: 'error', inputs: [], name: 'NotInitializing' },
+  { type: 'error', inputs: [], name: 'NotMember' },
+  { type: 'error', inputs: [], name: 'NotStarted' },
+  { type: 'error', inputs: [], name: 'OnlyExecutor' },
   {
     type: 'error',
     inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
@@ -260,12 +277,15 @@ export const daoProposalsImplementationAbi = [
     inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
     name: 'OwnableUnauthorizedAccount',
   },
+  { type: 'error', inputs: [], name: 'SetMinDuration' },
+  { type: 'error', inputs: [], name: 'SubscriptionInactive' },
   { type: 'error', inputs: [], name: 'UUPSUnauthorizedCallContext' },
   {
     type: 'error',
     inputs: [{ name: 'slot', internalType: 'bytes32', type: 'bytes32' }],
     name: 'UUPSUnsupportedProxiableUUID',
   },
+  { type: 'error', inputs: [], name: 'Voted' },
   {
     type: 'event',
     anonymous: false,
@@ -516,31 +536,6 @@ export const daoProposalsImplementationAbi = [
     anonymous: false,
     inputs: [
       {
-        name: 'proposalId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      {
-        name: 'spaceId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      {
-        name: 'withdrawnBy',
-        internalType: 'address',
-        type: 'address',
-        indexed: false,
-      },
-    ],
-    name: 'ProposalWithdrawn',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
         name: 'implementation',
         internalType: 'address',
         type: 'address',
@@ -733,13 +728,6 @@ export const daoProposalsImplementationAbi = [
   },
   {
     type: 'function',
-    inputs: [{ name: '_spaceId', internalType: 'uint256', type: 'uint256' }],
-    name: 'getWithdrawnProposalsBySpace',
-    outputs: [{ name: '', internalType: 'uint256[]', type: 'uint256[]' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     inputs: [
       { name: '_proposalId', internalType: 'uint256', type: 'uint256' },
       { name: '_voter', internalType: 'address', type: 'address' },
@@ -750,26 +738,12 @@ export const daoProposalsImplementationAbi = [
   },
   {
     type: 'function',
-    inputs: [],
-    name: 'hyphaTokenAddress',
-    outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     inputs: [
       { name: 'initialOwner', internalType: 'address', type: 'address' },
     ],
     name: 'initialize',
     outputs: [],
     stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '_proposalId', internalType: 'uint256', type: 'uint256' }],
-    name: 'isProposalWithdrawn',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -922,13 +896,6 @@ export const daoProposalsImplementationAbi = [
       { name: '_support', internalType: 'bool', type: 'bool' },
     ],
     name: 'vote',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '_proposalId', internalType: 'uint256', type: 'uint256' }],
-    name: 'withdrawProposal',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -1096,31 +1063,6 @@ export const daoSpaceFactoryImplementationAbi = [
         indexed: true,
       },
       {
-        name: 'oldAccess',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-      {
-        name: 'newAccess',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'SpaceAccessChanged',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'spaceId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      {
         name: 'unity',
         internalType: 'uint256',
         type: 'uint256',
@@ -1164,31 +1106,6 @@ export const daoSpaceFactoryImplementationAbi = [
       },
     ],
     name: 'SpaceCreated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'spaceId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      {
-        name: 'oldDiscoverability',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-      {
-        name: 'newDiscoverability',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'SpaceDiscoverabilityChanged',
   },
   {
     type: 'event',
@@ -1312,8 +1229,6 @@ export const daoSpaceFactoryImplementationAbi = [
           },
           { name: 'exitMethod', internalType: 'uint256', type: 'uint256' },
           { name: 'joinMethod', internalType: 'uint256', type: 'uint256' },
-          { name: 'access', internalType: 'uint256', type: 'uint256' },
-          { name: 'discoverability', internalType: 'uint256', type: 'uint256' },
         ],
       },
     ],
@@ -1403,23 +1318,6 @@ export const daoSpaceFactoryImplementationAbi = [
     inputs: [{ name: '_spaceId', internalType: 'uint256', type: 'uint256' }],
     name: 'getSpaceMembers',
     outputs: [{ name: '', internalType: 'address[]', type: 'address[]' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '_spaceId', internalType: 'uint256', type: 'uint256' }],
-    name: 'getSpaceVisibility',
-    outputs: [
-      {
-        name: '',
-        internalType: 'struct IDAOSpaceFactory.SpaceVisibility',
-        type: 'tuple',
-        components: [
-          { name: 'discoverability', internalType: 'uint256', type: 'uint256' },
-          { name: 'access', internalType: 'uint256', type: 'uint256' },
-        ],
-      },
-    ],
     stateMutability: 'view',
   },
   {
@@ -1567,42 +1465,8 @@ export const daoSpaceFactoryImplementationAbi = [
   },
   {
     type: 'function',
-    inputs: [
-      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: '_access', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'setSpaceAccess',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: '_discoverability', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'setSpaceDiscoverability',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    name: 'spaceAccess',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     inputs: [],
     name: 'spaceCounter',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    name: 'spaceDiscoverability',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
@@ -1736,11 +1600,6 @@ export const decayingSpaceTokenAbi = [
     inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
     name: 'OwnableUnauthorizedAccount',
   },
-  {
-    type: 'error',
-    inputs: [{ name: 'token', internalType: 'address', type: 'address' }],
-    name: 'SafeERC20FailedOperation',
-  },
   { type: 'error', inputs: [], name: 'UUPSUnauthorizedCallContext' },
   {
     type: 'error',
@@ -1776,103 +1635,6 @@ export const decayingSpaceTokenAbi = [
     type: 'event',
     anonymous: false,
     inputs: [
-      { name: 'archived', internalType: 'bool', type: 'bool', indexed: false },
-    ],
-    name: 'ArchivedStatusUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'autoMinting',
-        internalType: 'bool',
-        type: 'bool',
-        indexed: false,
-      },
-    ],
-    name: 'AutoMintingUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'member',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      {
-        name: 'amount',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-      {
-        name: 'newCreditBalance',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'CreditRepaid',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'member',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      {
-        name: 'amount',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-      {
-        name: 'newCreditBalance',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'CreditUsed',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'spaceId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-    ],
-    name: 'CreditWhitelistSpaceAdded',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'spaceId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-    ],
-    name: 'CreditWhitelistSpaceRemoved',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
       { name: 'user', internalType: 'address', type: 'address', indexed: true },
       {
         name: 'oldBalance',
@@ -1900,63 +1662,6 @@ export const decayingSpaceTokenAbi = [
     anonymous: false,
     inputs: [
       {
-        name: 'oldDecayInterval',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-      {
-        name: 'newDecayInterval',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'DecayIntervalUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'oldDecayPercentage',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-      {
-        name: 'newDecayPercentage',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'DecayPercentageUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'oldLimit',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-      {
-        name: 'newLimit',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'DefaultCreditLimitUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
         name: 'version',
         internalType: 'uint64',
         type: 'uint64',
@@ -1964,25 +1669,6 @@ export const decayingSpaceTokenAbi = [
       },
     ],
     name: 'Initialized',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'oldMaxSupply',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-      {
-        name: 'newMaxSupply',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'MaxSupplyUpdated',
   },
   {
     type: 'event',
@@ -2007,237 +1693,6 @@ export const decayingSpaceTokenAbi = [
     type: 'event',
     anonymous: false,
     inputs: [
-      {
-        name: 'price',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-      {
-        name: 'currencyFeed',
-        internalType: 'address',
-        type: 'address',
-        indexed: false,
-      },
-    ],
-    name: 'PriceCurrencyUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'oldPrice',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-      {
-        name: 'newPrice',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'PriceInUSDUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      { name: 'mode', internalType: 'uint8', type: 'uint8', indexed: false },
-    ],
-    name: 'PurchaseEligibilityModeUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'spaceId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-    ],
-    name: 'PurchaseWhitelistSpaceAdded',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'spaceId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-    ],
-    name: 'PurchaseWhitelistSpaceRemoved',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'spaceId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-    ],
-    name: 'ReceiveWhitelistSpaceAdded',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'spaceId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-    ],
-    name: 'ReceiveWhitelistSpaceRemoved',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'account',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      {
-        name: 'canReceive',
-        internalType: 'bool',
-        type: 'bool',
-        indexed: false,
-      },
-    ],
-    name: 'ReceiveWhitelistUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'oldName',
-        internalType: 'string',
-        type: 'string',
-        indexed: false,
-      },
-      {
-        name: 'newName',
-        internalType: 'string',
-        type: 'string',
-        indexed: false,
-      },
-    ],
-    name: 'TokenNameUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'paymentToken',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      {
-        name: 'paymentTokenPricePerToken',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-      {
-        name: 'tokensForSale',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'TokenSaleConfigured',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'oldSymbol',
-        internalType: 'string',
-        type: 'string',
-        indexed: false,
-      },
-      {
-        name: 'newSymbol',
-        internalType: 'string',
-        type: 'string',
-        indexed: false,
-      },
-    ],
-    name: 'TokenSymbolUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'burner',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      { name: 'from', internalType: 'address', type: 'address', indexed: true },
-      {
-        name: 'amount',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'TokensBurned',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'buyer',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      {
-        name: 'tokenAmount',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-      {
-        name: 'paymentAmount',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-      {
-        name: 'treasury',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-    ],
-    name: 'TokensPurchased',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
       { name: 'from', internalType: 'address', type: 'address', indexed: true },
       { name: 'to', internalType: 'address', type: 'address', indexed: true },
       {
@@ -2254,64 +1709,6 @@ export const decayingSpaceTokenAbi = [
     anonymous: false,
     inputs: [
       {
-        name: 'spaceId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-    ],
-    name: 'TransferWhitelistSpaceAdded',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'spaceId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-    ],
-    name: 'TransferWhitelistSpaceRemoved',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'account',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      {
-        name: 'canTransfer',
-        internalType: 'bool',
-        type: 'bool',
-        indexed: false,
-      },
-    ],
-    name: 'TransferWhitelistUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'transferable',
-        internalType: 'bool',
-        type: 'bool',
-        indexed: false,
-      },
-    ],
-    name: 'TransferableUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
         name: 'implementation',
         internalType: 'address',
         type: 'address',
@@ -2319,43 +1716,6 @@ export const decayingSpaceTokenAbi = [
       },
     ],
     name: 'Upgraded',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      { name: 'enabled', internalType: 'bool', type: 'bool', indexed: false },
-    ],
-    name: 'UseReceiveWhitelistUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      { name: 'enabled', internalType: 'bool', type: 'bool', indexed: false },
-    ],
-    name: 'UseTransferWhitelistUpdated',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'PURCHASE_MODE_ALL_SPACES',
-    outputs: [{ name: '', internalType: 'uint8', type: 'uint8' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'PURCHASE_MODE_CUSTOM_SPACES',
-    outputs: [{ name: '', internalType: 'uint8', type: 'uint8' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'PURCHASE_MODE_SPACE_ONLY',
-    outputs: [{ name: '', internalType: 'uint8', type: 'uint8' }],
-    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -2393,116 +1753,10 @@ export const decayingSpaceTokenAbi = [
   },
   {
     type: 'function',
-    inputs: [],
-    name: 'archived',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'autoMinting',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
     name: 'balanceOf',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceIds', internalType: 'uint256[]', type: 'uint256[]' },
-    ],
-    name: 'batchAddCreditWhitelistSpaces',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceIds', internalType: 'uint256[]', type: 'uint256[]' },
-    ],
-    name: 'batchAddPurchaseWhitelistSpaces',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceIds', internalType: 'uint256[]', type: 'uint256[]' },
-    ],
-    name: 'batchAddReceiveWhitelistSpaces',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceIds', internalType: 'uint256[]', type: 'uint256[]' },
-    ],
-    name: 'batchAddTransferWhitelistSpaces',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceIds', internalType: 'uint256[]', type: 'uint256[]' },
-    ],
-    name: 'batchRemoveCreditWhitelistSpaces',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceIds', internalType: 'uint256[]', type: 'uint256[]' },
-    ],
-    name: 'batchRemovePurchaseWhitelistSpaces',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceIds', internalType: 'uint256[]', type: 'uint256[]' },
-    ],
-    name: 'batchRemoveReceiveWhitelistSpaces',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceIds', internalType: 'uint256[]', type: 'uint256[]' },
-    ],
-    name: 'batchRemoveTransferWhitelistSpaces',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'accounts', internalType: 'address[]', type: 'address[]' },
-      { name: 'allowed', internalType: 'bool[]', type: 'bool[]' },
-    ],
-    name: 'batchSetReceiveWhitelist',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'accounts', internalType: 'address[]', type: 'address[]' },
-      { name: 'allowed', internalType: 'bool[]', type: 'bool[]' },
-    ],
-    name: 'batchSetTransferWhitelist',
-    outputs: [],
-    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -2514,90 +1768,12 @@ export const decayingSpaceTokenAbi = [
   {
     type: 'function',
     inputs: [
-      { name: 'from', internalType: 'address', type: 'address' },
-      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+      { name: 'account', internalType: 'address', type: 'address' },
+      { name: 'value', internalType: 'uint256', type: 'uint256' },
     ],
     name: 'burnFrom',
     outputs: [],
     stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'tokenAmount', internalType: 'uint256', type: 'uint256' }],
-    name: 'buyTokens',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
-    name: 'canAccountPurchase',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
-    name: 'canAccountReceive',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
-    name: 'canAccountTransfer',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '', internalType: 'address', type: 'address' }],
-    name: 'canReceive',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '', internalType: 'address', type: 'address' }],
-    name: 'canTransfer',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: '_paymentToken', internalType: 'address', type: 'address' },
-      {
-        name: '_paymentTokenPricePerToken',
-        internalType: 'uint256',
-        type: 'uint256',
-      },
-      { name: '_tokensForSale', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'configureTokenSale',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '', internalType: 'address', type: 'address' }],
-    name: 'creditBalanceOf',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
-    name: 'creditLimitLeftOf',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
-    name: 'creditLimitOf',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -2623,39 +1799,8 @@ export const decayingSpaceTokenAbi = [
   {
     type: 'function',
     inputs: [],
-    name: 'defaultCreditLimit',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: '_limit', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceIds', internalType: 'uint256[]', type: 'uint256[]' },
-    ],
-    name: 'enableCredit',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [],
     name: 'executor',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'fixedMaxSupply',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getCreditWhitelistedSpaces',
-    outputs: [{ name: '', internalType: 'uint256[]', type: 'uint256[]' }],
     stateMutability: 'view',
   },
   {
@@ -2667,38 +1812,6 @@ export const decayingSpaceTokenAbi = [
   },
   {
     type: 'function',
-    inputs: [],
-    name: 'getPurchaseWhitelistedSpaces',
-    outputs: [{ name: '', internalType: 'uint256[]', type: 'uint256[]' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getReceiveWhitelistedSpaces',
-    outputs: [{ name: '', internalType: 'uint256[]', type: 'uint256[]' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getTokenSaleDetails',
-    outputs: [
-      { name: 'salePaymentToken', internalType: 'address', type: 'address' },
-      { name: 'salePricePerToken', internalType: 'uint256', type: 'uint256' },
-      { name: 'tokensLeftToSell', internalType: 'uint256', type: 'uint256' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getTransferWhitelistedSpaces',
-    outputs: [{ name: '', internalType: 'uint256[]', type: 'uint256[]' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     inputs: [
       { name: 'name', internalType: 'string', type: 'string' },
       { name: 'symbol', internalType: 'string', type: 'string' },
@@ -2706,45 +1819,6 @@ export const decayingSpaceTokenAbi = [
       { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
       { name: '_maxSupply', internalType: 'uint256', type: 'uint256' },
       { name: '_transferable', internalType: 'bool', type: 'bool' },
-      { name: '_fixedMaxSupply', internalType: 'bool', type: 'bool' },
-      { name: '_autoMinting', internalType: 'bool', type: 'bool' },
-      { name: '_tokenPrice', internalType: 'uint256', type: 'uint256' },
-      { name: '_priceCurrencyFeed', internalType: 'address', type: 'address' },
-      { name: '_useTransferWhitelist', internalType: 'bool', type: 'bool' },
-      { name: '_useReceiveWhitelist', internalType: 'bool', type: 'bool' },
-      {
-        name: '_initialTransferWhitelist',
-        internalType: 'address[]',
-        type: 'address[]',
-      },
-      {
-        name: '_initialReceiveWhitelist',
-        internalType: 'address[]',
-        type: 'address[]',
-      },
-      { name: '_defaultCreditLimit', internalType: 'uint256', type: 'uint256' },
-      {
-        name: '_initialCreditWhitelistSpaceIds',
-        internalType: 'uint256[]',
-        type: 'uint256[]',
-      },
-      { name: '_paymentToken', internalType: 'address', type: 'address' },
-      {
-        name: '_paymentTokenPricePerToken',
-        internalType: 'uint256',
-        type: 'uint256',
-      },
-      { name: '_tokensForSale', internalType: 'uint256', type: 'uint256' },
-      {
-        name: '_purchaseEligibilityMode',
-        internalType: 'uint8',
-        type: 'uint8',
-      },
-      {
-        name: '_initialPurchaseWhitelistSpaceIds',
-        internalType: 'uint256[]',
-        type: 'uint256[]',
-      },
     ],
     name: 'initialize',
     outputs: [],
@@ -2759,73 +1833,12 @@ export const decayingSpaceTokenAbi = [
       { name: '_spaceId', internalType: 'uint256', type: 'uint256' },
       { name: '_maxSupply', internalType: 'uint256', type: 'uint256' },
       { name: '_transferable', internalType: 'bool', type: 'bool' },
-      { name: '_fixedMaxSupply', internalType: 'bool', type: 'bool' },
-      { name: '_autoMinting', internalType: 'bool', type: 'bool' },
-      { name: '_tokenPrice', internalType: 'uint256', type: 'uint256' },
-      { name: '_priceCurrencyFeed', internalType: 'address', type: 'address' },
-      { name: '_useTransferWhitelist', internalType: 'bool', type: 'bool' },
-      { name: '_useReceiveWhitelist', internalType: 'bool', type: 'bool' },
-      {
-        name: '_initialTransferWhitelist',
-        internalType: 'address[]',
-        type: 'address[]',
-      },
-      {
-        name: '_initialReceiveWhitelist',
-        internalType: 'address[]',
-        type: 'address[]',
-      },
       { name: '_decayPercentage', internalType: 'uint256', type: 'uint256' },
       { name: '_decayInterval', internalType: 'uint256', type: 'uint256' },
-      { name: '_paymentToken', internalType: 'address', type: 'address' },
-      {
-        name: '_paymentTokenPricePerToken',
-        internalType: 'uint256',
-        type: 'uint256',
-      },
-      { name: '_tokensForSale', internalType: 'uint256', type: 'uint256' },
-      {
-        name: '_purchaseEligibilityMode',
-        internalType: 'uint8',
-        type: 'uint8',
-      },
-      {
-        name: '_initialPurchaseWhitelistSpaceIds',
-        internalType: 'uint256[]',
-        type: 'uint256[]',
-      },
     ],
     name: 'initialize',
     outputs: [],
     stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    name: 'isCreditWhitelistedSpace',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    name: 'isPurchaseWhitelistedSpace',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    name: 'isReceiveWhitelistedSpace',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    name: 'isTransferWhitelistedSpace',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -2860,44 +1873,9 @@ export const decayingSpaceTokenAbi = [
   },
   {
     type: 'function',
-    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
-    name: 'netBalanceOf',
-    outputs: [{ name: '', internalType: 'int256', type: 'int256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     inputs: [],
     name: 'owner',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'paymentToken',
-    outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'paymentTokenPricePerToken',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'priceCurrencyFeed',
-    outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'priceInUSD',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
   {
@@ -2910,130 +1888,7 @@ export const decayingSpaceTokenAbi = [
   {
     type: 'function',
     inputs: [],
-    name: 'purchaseEligibilityMode',
-    outputs: [{ name: '', internalType: 'uint8', type: 'uint8' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
     name: 'renounceOwnership',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '_archived', internalType: 'bool', type: 'bool' }],
-    name: 'setArchived',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '_autoMinting', internalType: 'bool', type: 'bool' }],
-    name: 'setAutoMinting',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: '_decayInterval', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'setDecayInterval',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: '_decayPercentage', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'setDecayPercentage',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '_limit', internalType: 'uint256', type: 'uint256' }],
-    name: 'setDefaultCreditLimit',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'newMaxSupply', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'setMaxSupply',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'newPrice', internalType: 'uint256', type: 'uint256' }],
-    name: 'setPriceInUSD',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'newPrice', internalType: 'uint256', type: 'uint256' },
-      { name: 'currencyFeed', internalType: 'address', type: 'address' },
-    ],
-    name: 'setPriceWithCurrency',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'mode', internalType: 'uint8', type: 'uint8' }],
-    name: 'setPurchaseEligibilityMode',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'newName', internalType: 'string', type: 'string' }],
-    name: 'setTokenName',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'newSymbol', internalType: 'string', type: 'string' }],
-    name: 'setTokenSymbol',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: '_transferHelper', internalType: 'address', type: 'address' },
-    ],
-    name: 'setTransferHelper',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '_transferable', internalType: 'bool', type: 'bool' }],
-    name: 'setTransferable',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'enabled', internalType: 'bool', type: 'bool' }],
-    name: 'setUseReceiveWhitelist',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'enabled', internalType: 'bool', type: 'bool' }],
-    name: 'setUseTransferWhitelist',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -3047,36 +1902,8 @@ export const decayingSpaceTokenAbi = [
   {
     type: 'function',
     inputs: [],
-    name: 'spacesContract',
-    outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
     name: 'symbol',
     outputs: [{ name: '', internalType: 'string', type: 'string' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'tokenPrice',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'tokensForSale',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'tokensSold',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
   {
@@ -3144,20 +1971,6 @@ export const decayingSpaceTokenAbi = [
     name: 'upgradeToAndCall',
     outputs: [],
     stateMutability: 'payable',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'useReceiveWhitelist',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'useTransferWhitelist',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
   },
 ] as const;
 
@@ -3410,37 +2223,9 @@ export const decayingTokenFactoryAbi = [
       { name: 'symbol', internalType: 'string', type: 'string' },
       { name: 'maxSupply', internalType: 'uint256', type: 'uint256' },
       { name: 'transferable', internalType: 'bool', type: 'bool' },
-      { name: 'fixedMaxSupply', internalType: 'bool', type: 'bool' },
-      { name: 'autoMinting', internalType: 'bool', type: 'bool' },
-      { name: 'tokenPrice', internalType: 'uint256', type: 'uint256' },
-      { name: 'priceCurrencyFeed', internalType: 'address', type: 'address' },
-      { name: 'useTransferWhitelist', internalType: 'bool', type: 'bool' },
-      { name: 'useReceiveWhitelist', internalType: 'bool', type: 'bool' },
-      {
-        name: 'initialTransferWhitelist',
-        internalType: 'address[]',
-        type: 'address[]',
-      },
-      {
-        name: 'initialReceiveWhitelist',
-        internalType: 'address[]',
-        type: 'address[]',
-      },
+      { name: 'isVotingToken', internalType: 'bool', type: 'bool' },
       { name: 'decayPercentage', internalType: 'uint256', type: 'uint256' },
       { name: 'decayInterval', internalType: 'uint256', type: 'uint256' },
-      { name: 'paymentToken', internalType: 'address', type: 'address' },
-      {
-        name: 'paymentTokenPricePerToken',
-        internalType: 'uint256',
-        type: 'uint256',
-      },
-      { name: 'tokensForSale', internalType: 'uint256', type: 'uint256' },
-      { name: 'purchaseEligibilityMode', internalType: 'uint8', type: 'uint8' },
-      {
-        name: 'initialPurchaseWhitelistSpaceIds',
-        internalType: 'uint256[]',
-        type: 'uint256[]',
-      },
     ],
     name: 'deployDecayingToken',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
@@ -4324,6 +3109,395 @@ export const energyDistributionImplementationAddress = {
 export const energyDistributionImplementationConfig = {
   address: energyDistributionImplementationAddress,
   abi: energyDistributionImplementationAbi,
+} as const;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// EscrowImplementation
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0x447A317cA5516933264Cdd6aeee0633Fa954B576)
+ */
+export const escrowImplementationAbi = [
+  { type: 'constructor', inputs: [], stateMutability: 'nonpayable' },
+  {
+    type: 'error',
+    inputs: [{ name: 'target', internalType: 'address', type: 'address' }],
+    name: 'AddressEmptyCode',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'implementation', internalType: 'address', type: 'address' },
+    ],
+    name: 'ERC1967InvalidImplementation',
+  },
+  { type: 'error', inputs: [], name: 'ERC1967NonPayable' },
+  { type: 'error', inputs: [], name: 'FailedCall' },
+  { type: 'error', inputs: [], name: 'InvalidInitialization' },
+  { type: 'error', inputs: [], name: 'NotInitializing' },
+  {
+    type: 'error',
+    inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
+    name: 'OwnableInvalidOwner',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'OwnableUnauthorizedAccount',
+  },
+  { type: 'error', inputs: [], name: 'ReentrancyGuardReentrantCall' },
+  {
+    type: 'error',
+    inputs: [{ name: 'token', internalType: 'address', type: 'address' }],
+    name: 'SafeERC20FailedOperation',
+  },
+  { type: 'error', inputs: [], name: 'UUPSUnauthorizedCallContext' },
+  {
+    type: 'error',
+    inputs: [{ name: 'slot', internalType: 'bytes32', type: 'bytes32' }],
+    name: 'UUPSUnsupportedProxiableUUID',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'escrowId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'cancelledBy',
+        internalType: 'address',
+        type: 'address',
+        indexed: false,
+      },
+    ],
+    name: 'EscrowCancelled',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'escrowId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'partyA',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'partyB',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'EscrowCompleted',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'escrowId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'creator',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'partyA',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'partyB',
+        internalType: 'address',
+        type: 'address',
+        indexed: false,
+      },
+      {
+        name: 'tokenA',
+        internalType: 'address',
+        type: 'address',
+        indexed: false,
+      },
+      {
+        name: 'tokenB',
+        internalType: 'address',
+        type: 'address',
+        indexed: false,
+      },
+      {
+        name: 'amountA',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'amountB',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'EscrowCreated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'escrowId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      { name: 'from', internalType: 'address', type: 'address', indexed: true },
+      {
+        name: 'token',
+        internalType: 'address',
+        type: 'address',
+        indexed: false,
+      },
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'FundsReceived',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'escrowId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      { name: 'by', internalType: 'address', type: 'address', indexed: true },
+      {
+        name: 'token',
+        internalType: 'address',
+        type: 'address',
+        indexed: false,
+      },
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'FundsWithdrawn',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'version',
+        internalType: 'uint64',
+        type: 'uint64',
+        indexed: false,
+      },
+    ],
+    name: 'Initialized',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previousOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'newOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'OwnershipTransferred',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'implementation',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'Upgraded',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'UPGRADE_INTERFACE_VERSION',
+    outputs: [{ name: '', internalType: 'string', type: 'string' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_escrowId', internalType: 'uint256', type: 'uint256' }],
+    name: 'cancelEscrow',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_partyB', internalType: 'address', type: 'address' },
+      { name: '_tokenA', internalType: 'address', type: 'address' },
+      { name: '_tokenB', internalType: 'address', type: 'address' },
+      { name: '_amountA', internalType: 'uint256', type: 'uint256' },
+      { name: '_amountB', internalType: 'uint256', type: 'uint256' },
+      { name: '_sendFundsNow', internalType: 'bool', type: 'bool' },
+    ],
+    name: 'createEscrow',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'escrowCounter',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_escrowId', internalType: 'uint256', type: 'uint256' }],
+    name: 'escrowExists',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_escrowId', internalType: 'uint256', type: 'uint256' }],
+    name: 'getEscrow',
+    outputs: [
+      { name: 'creator', internalType: 'address', type: 'address' },
+      { name: 'partyA', internalType: 'address', type: 'address' },
+      { name: 'partyB', internalType: 'address', type: 'address' },
+      { name: 'tokenA', internalType: 'address', type: 'address' },
+      { name: 'tokenB', internalType: 'address', type: 'address' },
+      { name: 'amountA', internalType: 'uint256', type: 'uint256' },
+      { name: 'amountB', internalType: 'uint256', type: 'uint256' },
+      { name: 'isPartyAFunded', internalType: 'bool', type: 'bool' },
+      { name: 'isPartyBFunded', internalType: 'bool', type: 'bool' },
+      { name: 'isCompleted', internalType: 'bool', type: 'bool' },
+      { name: 'isCancelled', internalType: 'bool', type: 'bool' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_escrowId', internalType: 'uint256', type: 'uint256' }],
+    name: 'getEscrowCreator',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'initialOwner', internalType: 'address', type: 'address' },
+    ],
+    name: 'initialize',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'owner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'proxiableUUID',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_escrowId', internalType: 'uint256', type: 'uint256' }],
+    name: 'receiveFunds',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'renounceOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address' }],
+    name: 'transferOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'newImplementation', internalType: 'address', type: 'address' },
+      { name: 'data', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'upgradeToAndCall',
+    outputs: [],
+    stateMutability: 'payable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_escrowId', internalType: 'uint256', type: 'uint256' }],
+    name: 'withdrawFromCancelled',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'nonpayable',
+  },
+] as const;
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0x447A317cA5516933264Cdd6aeee0633Fa954B576)
+ */
+export const escrowImplementationAddress = {
+  8453: '0x447A317cA5516933264Cdd6aeee0633Fa954B576',
+} as const;
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0x447A317cA5516933264Cdd6aeee0633Fa954B576)
+ */
+export const escrowImplementationConfig = {
+  address: escrowImplementationAddress,
+  abi: escrowImplementationAbi,
 } as const;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -5367,35 +4541,7 @@ export const ownershipTokenFactoryAbi = [
       { name: 'name', internalType: 'string', type: 'string' },
       { name: 'symbol', internalType: 'string', type: 'string' },
       { name: 'maxSupply', internalType: 'uint256', type: 'uint256' },
-      { name: 'fixedMaxSupply', internalType: 'bool', type: 'bool' },
-      { name: 'autoMinting', internalType: 'bool', type: 'bool' },
-      { name: 'tokenPrice', internalType: 'uint256', type: 'uint256' },
-      { name: 'priceCurrencyFeed', internalType: 'address', type: 'address' },
-      { name: 'useTransferWhitelist', internalType: 'bool', type: 'bool' },
-      { name: 'useReceiveWhitelist', internalType: 'bool', type: 'bool' },
-      {
-        name: 'initialTransferWhitelist',
-        internalType: 'address[]',
-        type: 'address[]',
-      },
-      {
-        name: 'initialReceiveWhitelist',
-        internalType: 'address[]',
-        type: 'address[]',
-      },
-      { name: 'paymentToken', internalType: 'address', type: 'address' },
-      {
-        name: 'paymentTokenPricePerToken',
-        internalType: 'uint256',
-        type: 'uint256',
-      },
-      { name: 'tokensForSale', internalType: 'uint256', type: 'uint256' },
-      { name: 'purchaseEligibilityMode', internalType: 'uint8', type: 'uint8' },
-      {
-        name: 'initialPurchaseWhitelistSpaceIds',
-        internalType: 'uint256[]',
-        type: 'uint256[]',
-      },
+      { name: 'isVotingToken', internalType: 'bool', type: 'bool' },
     ],
     name: 'deployOwnershipToken',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
@@ -6003,41 +5149,7 @@ export const regularTokenFactoryAbi = [
       { name: 'symbol', internalType: 'string', type: 'string' },
       { name: 'maxSupply', internalType: 'uint256', type: 'uint256' },
       { name: 'transferable', internalType: 'bool', type: 'bool' },
-      { name: 'fixedMaxSupply', internalType: 'bool', type: 'bool' },
-      { name: 'autoMinting', internalType: 'bool', type: 'bool' },
-      { name: 'tokenPrice', internalType: 'uint256', type: 'uint256' },
-      { name: 'priceCurrencyFeed', internalType: 'address', type: 'address' },
-      { name: 'useTransferWhitelist', internalType: 'bool', type: 'bool' },
-      { name: 'useReceiveWhitelist', internalType: 'bool', type: 'bool' },
-      {
-        name: 'initialTransferWhitelist',
-        internalType: 'address[]',
-        type: 'address[]',
-      },
-      {
-        name: 'initialReceiveWhitelist',
-        internalType: 'address[]',
-        type: 'address[]',
-      },
-      { name: 'defaultCreditLimit', internalType: 'uint256', type: 'uint256' },
-      {
-        name: 'initialCreditWhitelistSpaceIds',
-        internalType: 'uint256[]',
-        type: 'uint256[]',
-      },
-      { name: 'paymentToken', internalType: 'address', type: 'address' },
-      {
-        name: 'paymentTokenPricePerToken',
-        internalType: 'uint256',
-        type: 'uint256',
-      },
-      { name: 'tokensForSale', internalType: 'uint256', type: 'uint256' },
-      { name: 'purchaseEligibilityMode', internalType: 'uint8', type: 'uint8' },
-      {
-        name: 'initialPurchaseWhitelistSpaceIds',
-        internalType: 'uint256[]',
-        type: 'uint256[]',
-      },
+      { name: 'isVotingToken', internalType: 'bool', type: 'bool' },
     ],
     name: 'deployToken',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
@@ -6495,991 +5607,6 @@ export const spacePaymentTrackerAddress = {
 export const spacePaymentTrackerConfig = {
   address: spacePaymentTrackerAddress,
   abi: spacePaymentTrackerAbi,
-} as const;
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// TokenBackingVaultImplementation
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/**
- * [__View Contract on Base Basescan__](https://basescan.org/address/0x9997C22f06F0aC67dF07C8Cb2A08562C53dD4E9f)
- */
-export const tokenBackingVaultImplementationAbi = [
-  { type: 'constructor', inputs: [], stateMutability: 'nonpayable' },
-  {
-    type: 'error',
-    inputs: [{ name: 'target', internalType: 'address', type: 'address' }],
-    name: 'AddressEmptyCode',
-  },
-  {
-    type: 'error',
-    inputs: [
-      { name: 'implementation', internalType: 'address', type: 'address' },
-    ],
-    name: 'ERC1967InvalidImplementation',
-  },
-  { type: 'error', inputs: [], name: 'ERC1967NonPayable' },
-  { type: 'error', inputs: [], name: 'FailedCall' },
-  { type: 'error', inputs: [], name: 'InvalidInitialization' },
-  { type: 'error', inputs: [], name: 'NotInitializing' },
-  {
-    type: 'error',
-    inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
-    name: 'OwnableInvalidOwner',
-  },
-  {
-    type: 'error',
-    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
-    name: 'OwnableUnauthorizedAccount',
-  },
-  { type: 'error', inputs: [], name: 'ReentrancyGuardReentrantCall' },
-  {
-    type: 'error',
-    inputs: [{ name: 'token', internalType: 'address', type: 'address' }],
-    name: 'SafeERC20FailedOperation',
-  },
-  { type: 'error', inputs: [], name: 'UUPSUnauthorizedCallContext' },
-  {
-    type: 'error',
-    inputs: [{ name: 'slot', internalType: 'bytes32', type: 'bytes32' }],
-    name: 'UUPSUnsupportedProxiableUUID',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'vaultId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      {
-        name: 'donor',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      {
-        name: 'backingToken',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      {
-        name: 'amount',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'BackingDeposited',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'vaultId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      {
-        name: 'backingToken',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      {
-        name: 'priceFeed',
-        internalType: 'address',
-        type: 'address',
-        indexed: false,
-      },
-    ],
-    name: 'BackingTokenAdded',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'vaultId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      {
-        name: 'backingToken',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-    ],
-    name: 'BackingTokenRemoved',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'vaultId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      {
-        name: 'backingToken',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      {
-        name: 'amount',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'BackingWithdrawn',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'version',
-        internalType: 'uint64',
-        type: 'uint64',
-        indexed: false,
-      },
-    ],
-    name: 'Initialized',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'vaultId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      {
-        name: 'maxRedemptionBps',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-      {
-        name: 'periodDays',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'MaxRedemptionPercentageUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'vaultId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      { name: 'enabled', internalType: 'bool', type: 'bool', indexed: false },
-    ],
-    name: 'MembersOnlyUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'vaultId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      {
-        name: 'minimumBackingBps',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'MinimumBackingUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'previousOwner',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      {
-        name: 'newOwner',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-    ],
-    name: 'OwnershipTransferred',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'vaultId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      {
-        name: 'backingToken',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      {
-        name: 'oldFeed',
-        internalType: 'address',
-        type: 'address',
-        indexed: false,
-      },
-      {
-        name: 'newFeed',
-        internalType: 'address',
-        type: 'address',
-        indexed: false,
-      },
-    ],
-    name: 'PriceFeedUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'vaultId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      { name: 'enabled', internalType: 'bool', type: 'bool', indexed: false },
-    ],
-    name: 'RedeemEnabledUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'vaultId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      { name: 'user', internalType: 'address', type: 'address', indexed: true },
-      {
-        name: 'spaceTokensIn',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-      {
-        name: 'backingTokens',
-        internalType: 'address[]',
-        type: 'address[]',
-        indexed: false,
-      },
-      {
-        name: 'backingAmounts',
-        internalType: 'uint256[]',
-        type: 'uint256[]',
-        indexed: false,
-      },
-    ],
-    name: 'Redeemed',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'vaultId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      {
-        name: 'price',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-      {
-        name: 'currencyFeed',
-        internalType: 'address',
-        type: 'address',
-        indexed: false,
-      },
-    ],
-    name: 'RedemptionPriceUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'vaultId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      {
-        name: 'startDate',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'RedemptionStartDateUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'implementation',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-    ],
-    name: 'Upgraded',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'vaultId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      {
-        name: 'spaceId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      {
-        name: 'spaceToken',
-        internalType: 'address',
-        type: 'address',
-        indexed: false,
-      },
-    ],
-    name: 'VaultCreated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'vaultId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      { name: 'enabled', internalType: 'bool', type: 'bool', indexed: false },
-    ],
-    name: 'WhitelistEnabledUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'vaultId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      {
-        name: 'whitelistedSpaceId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-    ],
-    name: 'WhitelistSpaceAdded',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'vaultId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      {
-        name: 'whitelistedSpaceId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-    ],
-    name: 'WhitelistSpaceRemoved',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'vaultId',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      {
-        name: 'accounts',
-        internalType: 'address[]',
-        type: 'address[]',
-        indexed: false,
-      },
-      { name: 'added', internalType: 'bool', type: 'bool', indexed: false },
-    ],
-    name: 'WhitelistUpdated',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'BASIS_POINTS',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'MAX_BACKING_BPS',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'PRICE_PRECISION',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'PRICE_STALENESS_THRESHOLD',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'UPGRADE_INTERFACE_VERSION',
-    outputs: [{ name: '', internalType: 'string', type: 'string' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-      { name: 'backingTokens', internalType: 'address[]', type: 'address[]' },
-      { name: 'amounts', internalType: 'uint256[]', type: 'uint256[]' },
-    ],
-    name: 'addBacking',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-      { name: 'backingTokens', internalType: 'address[]', type: 'address[]' },
-      { name: 'priceFeeds', internalType: 'address[]', type: 'address[]' },
-      { name: 'tokenDecimals', internalType: 'uint8[]', type: 'uint8[]' },
-      { name: 'fundingAmounts', internalType: 'uint256[]', type: 'uint256[]' },
-      { name: 'minimumBackingBps', internalType: 'uint256', type: 'uint256' },
-      { name: 'redemptionPrice', internalType: 'uint256', type: 'uint256' },
-      {
-        name: 'redemptionPriceCurrencyFeed',
-        internalType: 'address',
-        type: 'address',
-      },
-      { name: 'maxRedemptionBps', internalType: 'uint256', type: 'uint256' },
-      {
-        name: 'maxRedemptionPeriodDays',
-        internalType: 'uint256',
-        type: 'uint256',
-      },
-    ],
-    name: 'addBackingToken',
-    outputs: [{ name: 'vaultId', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-      { name: 'accounts', internalType: 'address[]', type: 'address[]' },
-    ],
-    name: 'addToWhitelist',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-      {
-        name: '_whitelistedSpaceIds',
-        internalType: 'uint256[]',
-        type: 'uint256[]',
-      },
-    ],
-    name: 'addWhitelistedSpaces',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-      { name: 'spaceTokenAmount', internalType: 'uint256', type: 'uint256' },
-      { name: 'backingToken', internalType: 'address', type: 'address' },
-    ],
-    name: 'calculateBackingOut',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-      { name: 'backingToken', internalType: 'address', type: 'address' },
-    ],
-    name: 'getBackingBalance',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-      { name: 'backingToken', internalType: 'address', type: 'address' },
-    ],
-    name: 'getBackingTokenConfig',
-    outputs: [
-      {
-        name: '',
-        internalType: 'struct ITokenBackingVault.BackingTokenConfig',
-        type: 'tuple',
-        components: [
-          { name: 'priceFeed', internalType: 'address', type: 'address' },
-          { name: 'tokenDecimals', internalType: 'uint8', type: 'uint8' },
-          { name: 'enabled', internalType: 'bool', type: 'bool' },
-        ],
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-    ],
-    name: 'getBackingTokens',
-    outputs: [{ name: '', internalType: 'address[]', type: 'address[]' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-    ],
-    name: 'getMaxRedemptionPercentage',
-    outputs: [
-      { name: 'maxRedemptionBps', internalType: 'uint256', type: 'uint256' },
-      { name: 'periodDays', internalType: 'uint256', type: 'uint256' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-    ],
-    name: 'getRedemptionPrice',
-    outputs: [
-      { name: 'price', internalType: 'uint256', type: 'uint256' },
-      { name: 'currencyFeed', internalType: 'address', type: 'address' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-    ],
-    name: 'getRedemptionUsage',
-    outputs: [
-      { name: 'redeemedInPeriod', internalType: 'uint256', type: 'uint256' },
-      { name: 'maxRedeemable', internalType: 'uint256', type: 'uint256' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'spaceId', internalType: 'uint256', type: 'uint256' }],
-    name: 'getSpaceVaults',
-    outputs: [{ name: '', internalType: 'uint256[]', type: 'uint256[]' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-    ],
-    name: 'getVaultConfig',
-    outputs: [
-      {
-        name: '',
-        internalType: 'struct ITokenBackingVault.VaultConfig',
-        type: 'tuple',
-        components: [
-          { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-          { name: 'spaceToken', internalType: 'address', type: 'address' },
-          { name: 'redeemEnabled', internalType: 'bool', type: 'bool' },
-          { name: 'membersOnly', internalType: 'bool', type: 'bool' },
-          { name: 'whitelistEnabled', internalType: 'bool', type: 'bool' },
-          {
-            name: 'minimumBackingBps',
-            internalType: 'uint256',
-            type: 'uint256',
-          },
-          {
-            name: 'redemptionStartDate',
-            internalType: 'uint256',
-            type: 'uint256',
-          },
-        ],
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-    ],
-    name: 'getWhitelistedSpaces',
-    outputs: [{ name: '', internalType: 'uint256[]', type: 'uint256[]' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'initialOwner', internalType: 'address', type: 'address' },
-      { name: '_spacesContract', internalType: 'address', type: 'address' },
-    ],
-    name: 'initialize',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-      { name: 'whitelistedSpaceId', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'isSpaceWhitelisted',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-      { name: 'account', internalType: 'address', type: 'address' },
-    ],
-    name: 'isWhitelisted',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'owner',
-    outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'proxiableUUID',
-    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-      { name: 'spaceTokenAmount', internalType: 'uint256', type: 'uint256' },
-      { name: 'backingTokens', internalType: 'address[]', type: 'address[]' },
-      { name: 'proportions', internalType: 'uint256[]', type: 'uint256[]' },
-    ],
-    name: 'redeem',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-      { name: 'backingToken', internalType: 'address', type: 'address' },
-    ],
-    name: 'removeBackingToken',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-      { name: 'accounts', internalType: 'address[]', type: 'address[]' },
-    ],
-    name: 'removeFromWhitelist',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-      {
-        name: '_whitelistedSpaceIds',
-        internalType: 'uint256[]',
-        type: 'uint256[]',
-      },
-    ],
-    name: 'removeWhitelistedSpaces',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'renounceOwnership',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-      { name: 'maxRedemptionBps', internalType: 'uint256', type: 'uint256' },
-      { name: 'periodDays', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'setMaxRedemptionPercentage',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-      { name: 'enabled', internalType: 'bool', type: 'bool' },
-    ],
-    name: 'setMembersOnly',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-      { name: 'minimumBackingBps', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'setMinimumBacking',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-      { name: 'enabled', internalType: 'bool', type: 'bool' },
-    ],
-    name: 'setRedeemEnabled',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-      { name: 'price', internalType: 'uint256', type: 'uint256' },
-      { name: 'currencyFeed', internalType: 'address', type: 'address' },
-    ],
-    name: 'setRedemptionPrice',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-      { name: 'startDate', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'setRedemptionStartDate',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: '_spacesContract', internalType: 'address', type: 'address' },
-    ],
-    name: 'setSpacesContract',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-      { name: 'enabled', internalType: 'bool', type: 'bool' },
-    ],
-    name: 'setWhitelistEnabled',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'spacesContract',
-    outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address' }],
-    name: 'transferOwnership',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-      { name: 'backingToken', internalType: 'address', type: 'address' },
-      { name: 'newPriceFeed', internalType: 'address', type: 'address' },
-    ],
-    name: 'updatePriceFeed',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'newImplementation', internalType: 'address', type: 'address' },
-      { name: 'data', internalType: 'bytes', type: 'bytes' },
-    ],
-    name: 'upgradeToAndCall',
-    outputs: [],
-    stateMutability: 'payable',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'vaultCounter',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-    ],
-    name: 'vaultExists',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
-      { name: 'spaceToken', internalType: 'address', type: 'address' },
-      { name: 'backingToken', internalType: 'address', type: 'address' },
-      { name: 'amount', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'withdrawBacking',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-] as const;
-
-/**
- * [__View Contract on Base Basescan__](https://basescan.org/address/0x9997C22f06F0aC67dF07C8Cb2A08562C53dD4E9f)
- */
-export const tokenBackingVaultImplementationAddress = {
-  8453: '0x9997C22f06F0aC67dF07C8Cb2A08562C53dD4E9f',
-} as const;
-
-/**
- * [__View Contract on Base Basescan__](https://basescan.org/address/0x9997C22f06F0aC67dF07C8Cb2A08562C53dD4E9f)
- */
-export const tokenBackingVaultImplementationConfig = {
-  address: tokenBackingVaultImplementationAddress,
-  abi: tokenBackingVaultImplementationAbi,
 } as const;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

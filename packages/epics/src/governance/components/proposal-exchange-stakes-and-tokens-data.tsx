@@ -2,6 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import { EthAddress } from '../../people';
+import { formatUnits } from 'viem';
+import { resolveTokenDecimals } from '../utils/token-decimals';
 
 interface ExchangeLeg {
   from: string;
@@ -28,6 +30,7 @@ export const ProposalExchangeStakesAndTokensData = ({
   spaceSlug,
 }: ProposalExchangeStakesAndTokensDataProps) => {
   const tProposalDetails = useTranslations('ProposalDetails');
+  // Reserved for future token metadata resolution in this space context.
   void spaceSlug;
 
   const status = completed
@@ -63,7 +66,11 @@ export const ProposalExchangeStakesAndTokensData = ({
                 {tProposalDetails('exchange.leg')}
               </span>
               <span className="text-2">
-                {leg.amount.toString()} {leg.tokenSymbol ?? leg.tokenAddress}
+                {formatUnits(
+                  leg.amount,
+                  resolveTokenDecimals(leg.tokenAddress),
+                )}{' '}
+                {leg.tokenSymbol ?? leg.tokenAddress}
               </span>
             </div>
             <div className="flex items-center justify-between">

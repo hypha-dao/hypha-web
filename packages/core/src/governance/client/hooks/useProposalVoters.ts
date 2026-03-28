@@ -15,8 +15,13 @@ export const useProposalVoters = (documentSlug?: string) => {
     async ([documentSlug]) => {
       const response = await fetch(`/api/v1/documents/${documentSlug}/voters`);
       if (!response.ok) {
-        // Proposal may be temporarily unavailable right after mutations.
-        return [] as Voter[];
+        if (response.status === 404) {
+          // Proposal may be temporarily unavailable right after mutations.
+          return [] as Voter[];
+        }
+        throw new Error(
+          `Failed to fetch proposal voters: ${response.status} ${response.statusText}`,
+        );
       }
       const payload = (await response.json()) as { voters?: Voter[] };
       return payload.voters ?? [];

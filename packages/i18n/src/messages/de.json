@@ -222,9 +222,9 @@
         "title": "Investition annehmen (Bald verfügbar)",
         "description": "Erhalten Sie Kapital von Investoren, Mitgliedern oder ausgerichteten Spaces im Austausch für native Space-Token."
       },
-      "exchangeOwnershipComingSoon": {
-        "title": "Eigentum austauschen (Bald verfügbar)",
-        "description": "Tauschen Sie Eigentum zwischen Mitgliedern oder Spaces aus, sei es durch den Verkauf eines Anteils oder den Austausch von Vermögenswerten."
+      "exchangeStakesAndTokens": {
+        "title": "Anteile und Tokens austauschen",
+        "description": "Tauschen Sie Eigentumsanteile, Tokens oder andere Vermögenswerte zwischen Mitgliedern oder Spaces aus."
       },
       "deployFunds": {
         "title": "Mittel einsetzen",

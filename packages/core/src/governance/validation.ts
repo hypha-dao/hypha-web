@@ -731,9 +731,16 @@ export const schemaExchangeStakesAndTokens = z.object({
   sellerLeg: z
     .array(
       z.object({
-        amount: z.string().refine((value) => parseFloat(value) > 0, {
-          message: 'Amount must be greater than 0',
-        }),
+        amount: z.string().refine(
+          (value) => {
+            const normalized = value.trim();
+            const amount = Number(normalized);
+            return normalized !== '' && Number.isFinite(amount) && amount > 0;
+          },
+          {
+            message: 'Amount must be greater than 0',
+          },
+        ),
         token: z
           .string()
           .min(1, { message: 'Please select a token' })
@@ -748,9 +755,16 @@ export const schemaExchangeStakesAndTokens = z.object({
   buyerLeg: z
     .array(
       z.object({
-        amount: z.string().refine((value) => parseFloat(value) > 0, {
-          message: 'Amount must be greater than 0',
-        }),
+        amount: z.string().refine(
+          (value) => {
+            const normalized = value.trim();
+            const amount = Number(normalized);
+            return normalized !== '' && Number.isFinite(amount) && amount > 0;
+          },
+          {
+            message: 'Amount must be greater than 0',
+          },
+        ),
         token: z
           .string()
           .min(1, { message: 'Please select a token' })

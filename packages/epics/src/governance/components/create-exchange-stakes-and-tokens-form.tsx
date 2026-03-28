@@ -2,7 +2,6 @@
 
 import { useForm } from 'react-hook-form';
 import {
-  createAgreementFiles,
   schemaExchangeStakesAndTokens,
   useCreateExchangeStakesAndTokensOrchestrator,
   useJwt,
@@ -19,7 +18,7 @@ import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
 
 const fullSchemaCreateExchangeStakesAndTokensForm =
-  schemaExchangeStakesAndTokens.extend(createAgreementFiles);
+  schemaExchangeStakesAndTokens;
 
 type FormValues = z.infer<typeof fullSchemaCreateExchangeStakesAndTokensForm>;
 
@@ -95,6 +94,10 @@ export const CreateExchangeStakesAndTokensForm = ({
   const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
 
   const handleCreate = async (data: FormValues) => {
+    if (typeof spaceId !== 'number') {
+      throw new Error('Space ID is required to create this proposal');
+    }
+
     const sellerLegLines = data.sellerLeg
       .map(
         (leg, index) =>
@@ -136,7 +139,7 @@ export const CreateExchangeStakesAndTokensForm = ({
         data.description,
         exchangeDetailsSection,
       ),
-      spaceId: spaceId as number,
+      spaceId,
       web3SpaceId: typeof web3SpaceId === 'number' ? web3SpaceId : undefined,
       label: 'Exchange',
     });

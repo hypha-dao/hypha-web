@@ -259,7 +259,11 @@ export const useCreateExchangeStakesAndTokensOrchestrator = ({
     taskState,
     currentAction,
     progress,
-    isPending: progress > 0 && progress < 100,
+    isPending:
+      (progress > 0 && progress < 100) ||
+      Object.values(taskState).some(
+        (task) => task.status === TaskStatus.IS_PENDING,
+      ),
     isError: errors.length > 0,
     errors,
   };

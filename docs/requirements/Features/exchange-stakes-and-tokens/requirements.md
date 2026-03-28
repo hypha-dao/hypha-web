@@ -123,7 +123,7 @@ Current create-flow exposes “Exchange Ownership (Coming Soon)” only, so user
 **FR-13** The system SHALL create the Web3 proposal using the same proposal endpoint used by `pay-for-expenses` (`createProposal` on DAO proposals implementation), but SHALL encode escrow-setup transactions targeting `EscrowImplementation`.
 
 **FR-14** The system SHALL encode the on-chain transaction sequence for proposal execution as:
-- ERC-20 `approve(escrowContract, amountA)` from executor/treasury for seller-side token
+- ERC-20 safe allowance update for seller-side token (for example `approve(escrowContract, 0)` followed by `approve(escrowContract, amountA)`, or another documented safe-allowance strategy for supported tokens) from executor/treasury
 - `EscrowImplementation.createEscrow(partyB, tokenA, tokenB, amountA, amountB, sendFundsNow)` where:
   - `partyB` = buyer wallet from form
   - `tokenA`/`amountA` = seller leg
@@ -209,14 +209,14 @@ Then both seller and buyer legs are displayed clearly with wallet + token + amou
 
 ## 9. Reuse map (clean implementation baseline)
 
-- Reuse create page + side panel wiring pattern from `pay-for-expenses`.
-- Reuse `CreateAgreementBaseFields`.
-- Reuse recipient selector + manual address component pattern for both seller and buyer.
-- Reuse token payout row and field-array pattern for both exchange legs.
-- Reuse orchestrator task state machine pattern (`CREATE_WEB2`, `CREATE_WEB3`, `UPLOAD_FILES`, `LINK`).
-- Reuse proposal details decoding/rendering infrastructure and extend only where necessary for exchange-specific labeling + escrow status.
-- Reuse wallet funding modal/QR integration for treasury deposit flow.
-- Add escrow ABI/address wiring in generated/runtime client contract configs.
+- Leverage the create page + side panel wiring pattern from `pay-for-expenses`.
+- Adopt `CreateAgreementBaseFields`.
+- Extend recipient selector + manual address component patterns for both seller and buyer.
+- Apply token payout row and field-array patterns for both exchange legs.
+- Integrate the orchestrator task state machine pattern (`CREATE_WEB2`, `CREATE_WEB3`, `UPLOAD_FILES`, `LINK`).
+- Extend proposal details decoding/rendering infrastructure only where necessary for exchange-specific labeling + escrow status.
+- Apply wallet funding modal/QR integration for treasury deposit flow.
+- Wire escrow ABI/address through generated/runtime client contract configs.
 
 ---
 
@@ -242,6 +242,22 @@ Then both seller and buyer legs are displayed clearly with wallet + token + amou
 - **T-5 Proposal detail rendering:** add exchange-specific proposal display/parsing + escrow status where needed.
 - **T-6 Funding UX linkage:** expose treasury deposit (QR/copy) action and buyer `approve + receiveFunds` flow guidance.
 - **T-7 QA coverage:** add/create-path and orchestration tests (success + rollback path).
+
+---
+
+## 13. Security notes for allowance handling
+
+- Implementations integrating `FR-14` SHALL use a token-safe approval pattern for
+  ERC-20 compatibility (especially for tokens that reject non-zero to non-zero
+  allowance updates).
+- The implementation MUST choose and document one of:
+  - `approve(0)` then `approve(amount)`,
+  - `SafeERC20.forceApprove(...)`,
+  - allowance delta updates (`safeIncreaseAllowance` /
+    `safeDecreaseAllowance`), or
+  - `permit()` (ERC-2612), when supported by the token.
+- The chosen approval strategy SHALL be consistent per supported token set and
+  SHALL be part of release validation criteria.
 
 ---
 
