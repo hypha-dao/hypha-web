@@ -5,6 +5,7 @@ import {
   SidebarProvider,
   Sidebar,
   SidebarInset,
+  SidebarResizeHandle,
   useSidebar,
 } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
@@ -58,6 +59,7 @@ export function AiLeftPanelLayout({
         className="pt-16"
       >
         <AiLeftPanel />
+        <SidebarResizeHandle />
       </Sidebar>
       <SidebarInset>
         <AiSidebarTrigger />
