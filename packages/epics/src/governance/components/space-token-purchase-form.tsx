@@ -3,8 +3,8 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  schemaSpaceTokenPurchase,
-  createAgreementFiles,
+  schemaSpaceTokenPurchaseObject,
+  refineSpaceTokenPurchaseWhenActive,
   useMe,
   useJwt,
   useSpaceTokenPurchaseOrchestrator,
@@ -18,11 +18,11 @@ import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useConfig } from 'wagmi';
 
-type FormValues = z.infer<typeof schemaSpaceTokenPurchase>;
-
-const fullSchemaSpaceTokenPurchase = schemaSpaceTokenPurchase
+const fullSchemaSpaceTokenPurchase = schemaSpaceTokenPurchaseObject
   .extend({ label: z.string().optional() })
-  .extend(createAgreementFiles);
+  .superRefine(refineSpaceTokenPurchaseWhenActive);
+
+type FormValues = z.infer<typeof fullSchemaSpaceTokenPurchase>;
 
 interface SpaceTokenPurchaseFormProps {
   spaceId: number | undefined | null;
