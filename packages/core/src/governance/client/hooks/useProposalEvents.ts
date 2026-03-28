@@ -62,8 +62,7 @@ export const useProposalEvents = ({
         const actions = await fetchProposalActions(Number(proposalId));
 
         if (!isValidProposalAction(actions)) {
-          await onProposalExecuted?.(transactionHash);
-          // Apply token update if exists (for update token proposals)
+          // Apply token update first so a fast document refresh immediately reflects accepted updates.
           if (documentId && authToken) {
             try {
               await applyTokenUpdateAction(documentId, { authToken });
@@ -72,6 +71,7 @@ export const useProposalEvents = ({
               console.log('No token update to apply', error);
             }
           }
+          await onProposalExecuted?.(transactionHash);
           return;
         }
 
