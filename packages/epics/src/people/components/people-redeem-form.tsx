@@ -26,6 +26,7 @@ interface Token {
   icon: string;
   symbol: string;
   address: `0x${string}`;
+  tokenPrice?: number;
   space?: {
     title: string;
     slug: string;
