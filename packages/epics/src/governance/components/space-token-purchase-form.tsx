@@ -16,6 +16,7 @@ import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useRouter } from 'next/navigation';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
+import { useConfig } from 'wagmi';
 
 type FormValues = z.infer<typeof schemaSpaceTokenPurchase>;
 
@@ -37,11 +38,13 @@ export const SpaceTokenPurchaseForm = ({
   backUrl,
   closeUrl,
   spaceId,
+  web3SpaceId,
   plugin,
 }: SpaceTokenPurchaseFormProps) => {
   const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
+  const config = useConfig();
   const {
     createSpaceTokenPurchase,
     reset,
@@ -49,7 +52,7 @@ export const SpaceTokenPurchaseForm = ({
     isError,
     isPending,
     progress,
-  } = useSpaceTokenPurchaseOrchestrator({ authToken: jwt });
+  } = useSpaceTokenPurchaseOrchestrator({ authToken: jwt, config });
 
   const [formError, setFormError] = React.useState<string | null>(null);
 
@@ -82,6 +85,7 @@ export const SpaceTokenPurchaseForm = ({
       await createSpaceTokenPurchase({
         ...data,
         spaceId: spaceId as number,
+        web3SpaceId: web3SpaceId ?? undefined,
         label: 'Token Purchase',
       });
       router.push(successfulUrl);

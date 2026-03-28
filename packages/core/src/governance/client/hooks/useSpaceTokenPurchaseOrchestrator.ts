@@ -5,6 +5,7 @@ import useSWR from 'swr';
 import useSWRMutation from 'swr/mutation';
 import { z } from 'zod';
 import { produce } from 'immer';
+import { Config } from '@wagmi/core';
 
 import {
   schemaCreateAgreement,
@@ -14,6 +15,7 @@ import {
 
 import { useAgreementFileUploads } from './useAgreementFileUploads';
 import { useAgreementMutationsWeb2Rsc } from './useAgreementMutations.web2.rsc';
+import { useSpaceTokenPurchaseMutationsWeb3Rpc } from './useSpaceTokenPurchaseMutations.web3.rsc';
 
 type CreateSpaceTokenPurchaseArg = z.infer<typeof schemaCreateAgreement> & {
   tokenAddress: string;
@@ -26,6 +28,7 @@ type CreateSpaceTokenPurchaseArg = z.infer<typeof schemaCreateAgreement> & {
 
 type TaskName =
   | 'CREATE_WEB2_AGREEMENT'
+  | 'CREATE_WEB3_PROPOSAL'
   | 'UPLOAD_FILES'
   | 'LINK_WEB2_AND_WEB3_AGREEMENT';
 
@@ -45,6 +48,7 @@ enum TaskStatus {
 
 const taskActionDescriptions: Record<TaskName, string> = {
   CREATE_WEB2_AGREEMENT: 'Creating agreement...',
+  CREATE_WEB3_PROPOSAL: 'Creating Web3 proposal...',
   UPLOAD_FILES: 'Uploading files...',
   LINK_WEB2_AND_WEB3_AGREEMENT: 'Linking Web2 and Web3 agreements',
 };
@@ -57,6 +61,7 @@ type ProgressAction =
 
 const initialTaskState: TaskState = {
   CREATE_WEB2_AGREEMENT: { status: TaskStatus.IDLE },
+  CREATE_WEB3_PROPOSAL: { status: TaskStatus.IDLE },
   UPLOAD_FILES: { status: TaskStatus.IDLE },
   LINK_WEB2_AND_WEB3_AGREEMENT: { status: TaskStatus.IDLE },
 };
@@ -104,10 +109,15 @@ const computeProgress = (tasks: TaskState): number => {
 
 export const useSpaceTokenPurchaseOrchestrator = ({
   authToken,
+  config,
 }: {
   authToken?: string | null;
+  config?: Config;
 }) => {
   const web2 = useAgreementMutationsWeb2Rsc(authToken);
+  const web3 = useSpaceTokenPurchaseMutationsWeb3Rpc({
+    proposalSlug: web2.createdAgreement?.slug,
+  });
   const agreementFiles = useAgreementFileUploads(
     authToken,
     (uploadedFiles, slug) => {
@@ -168,6 +178,19 @@ export const useSpaceTokenPurchaseOrchestrator = ({
       const web2Slug = createdAgreement?.slug ?? web2.createdAgreement?.slug;
 
       try {
+        if (config) {
+          startTask('CREATE_WEB3_PROPOSAL');
+          await web3.createSpaceTokenPurchaseProposal({
+            spaceId: arg.web3SpaceId ?? arg.spaceId,
+            tokenAddress: arg.tokenAddress as `0x${string}`,
+            activatePurchase: arg.activatePurchase,
+            purchasePrice: arg.purchasePrice,
+            purchaseCurrency: arg.purchaseCurrency,
+            tokensAvailableForPurchase: arg.tokensAvailableForPurchase,
+          });
+          completeTask('CREATE_WEB3_PROPOSAL');
+        }
+
         const files = schemaCreateAgreementFiles.parse(arg);
         startTask('UPLOAD_FILES');
         if (files.attachments?.length || files.leadImage) {
@@ -185,13 +208,22 @@ export const useSpaceTokenPurchaseOrchestrator = ({
 
   const { data: updatedWeb2Agreement } = useSWR(
     web2.createdAgreement?.slug &&
+      (!config ||
+        taskState.CREATE_WEB3_PROPOSAL.status === TaskStatus.IS_DONE) &&
       taskState.UPLOAD_FILES.status === TaskStatus.IS_DONE
-      ? [web2.createdAgreement.slug, 'linkingSpaceTokenPurchase']
+      ? [
+          web2.createdAgreement.slug,
+          web3.createdSpaceTokenPurchaseProposal?.proposalId,
+          'linkingSpaceTokenPurchase',
+        ]
       : null,
-    async ([slug]) => {
+    async ([slug, web3ProposalId]) => {
       try {
         startTask('LINK_WEB2_AND_WEB3_AGREEMENT');
-        const result = await web2.updateAgreementBySlug({ slug });
+        const result = await web2.updateAgreementBySlug({
+          slug,
+          web3ProposalId: web3ProposalId ? Number(web3ProposalId) : undefined,
+        });
         completeTask('LINK_WEB2_AND_WEB3_AGREEMENT');
         return result;
       } catch (error) {
@@ -208,14 +240,20 @@ export const useSpaceTokenPurchaseOrchestrator = ({
   );
 
   const errors = useMemo(
-    () => [web2.errorCreateAgreementMutation].filter(Boolean),
-    [web2],
+    () =>
+      [
+        web2.errorCreateAgreementMutation,
+        web3.createSpaceTokenPurchaseError,
+        web3.errorWaitCreatedSpaceTokenPurchaseProposal,
+      ].filter(Boolean),
+    [web2, web3],
   );
 
   const reset = useCallback(() => {
     resetTasks();
     web2.resetCreateAgreementMutation();
-  }, [resetTasks, web2]);
+    web3.resetCreateSpaceTokenPurchaseProposal();
+  }, [resetTasks, web2, web3]);
 
   return {
     reset,

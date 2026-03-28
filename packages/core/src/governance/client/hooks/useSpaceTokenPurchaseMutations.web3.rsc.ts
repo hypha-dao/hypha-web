@@ -1,0 +1,134 @@
+'use client';
+
+import useSWRMutation from 'swr/mutation';
+import useSWR from 'swr';
+import { encodeFunctionData } from 'viem';
+import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
+import {
+  schemaCreateProposalWeb3,
+  publicClient,
+  getSpaceMinProposalDuration,
+  TOKENS,
+  getTokenDecimals,
+} from '@hypha-platform/core/client';
+import {
+  getProposalFromLogs,
+  mapToCreateProposalWeb3Input,
+  createProposal,
+} from '../web3';
+import { decayingSpaceTokenAbi } from '@hypha-platform/core/generated';
+import { getDuration } from '@hypha-platform/ui-utils';
+
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
+const USDC_TOKEN = TOKENS.find((token) => token.symbol === 'USDC');
+const EURC_TOKEN = TOKENS.find((token) => token.symbol === 'EURC');
+
+type SpaceTokenPurchaseInput = {
+  spaceId: number;
+  tokenAddress: `0x${string}`;
+  activatePurchase: boolean;
+  purchasePrice?: number;
+  purchaseCurrency?: string;
+  tokensAvailableForPurchase?: number;
+};
+
+export const useSpaceTokenPurchaseMutationsWeb3Rpc = ({
+  proposalSlug,
+}: {
+  proposalSlug?: string | null;
+}) => {
+  const { client } = useSmartWallets();
+
+  const {
+    trigger: createSpaceTokenPurchaseProposal,
+    reset: resetCreateSpaceTokenPurchaseProposal,
+    isMutating: isCreatingSpaceTokenPurchaseProposal,
+    data: createSpaceTokenPurchaseHash,
+    error: createSpaceTokenPurchaseError,
+  } = useSWRMutation(
+    `spaceTokenPurchase-${proposalSlug}`,
+    async (_: string, { arg }: { arg: SpaceTokenPurchaseInput }) => {
+      if (!client) {
+        throw new Error('Smart wallet client not available');
+      }
+
+      const duration = await publicClient.readContract(
+        getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
+      );
+
+      const transactions: Array<{
+        target: `0x${string}`;
+        value: bigint;
+        data: `0x${string}`;
+      }> = [];
+
+      const paymentTokenAddress = (() => {
+        if (!arg.activatePurchase) return ZERO_ADDRESS;
+        if (arg.purchaseCurrency === 'EUR') {
+          return (EURC_TOKEN?.address as `0x${string}`) ?? ZERO_ADDRESS;
+        }
+        return (USDC_TOKEN?.address as `0x${string}`) ?? ZERO_ADDRESS;
+      })();
+      const paymentTokenDecimals =
+        paymentTokenAddress !== ZERO_ADDRESS
+          ? await getTokenDecimals(paymentTokenAddress)
+          : 6;
+      const paymentTokenPricePerToken =
+        arg.activatePurchase && arg.purchasePrice
+          ? BigInt(Math.round(arg.purchasePrice * 10 ** paymentTokenDecimals))
+          : 0n;
+      const tokensForSale =
+        arg.activatePurchase && arg.tokensAvailableForPurchase
+          ? BigInt(arg.tokensAvailableForPurchase) * 10n ** 18n
+          : 0n;
+
+      transactions.push({
+        target: arg.tokenAddress,
+        value: 0n,
+        data: encodeFunctionData({
+          abi: decayingSpaceTokenAbi,
+          functionName: 'configureTokenSale',
+          args: [paymentTokenAddress, paymentTokenPricePerToken, tokensForSale],
+        }),
+      });
+
+      const parsedInput = schemaCreateProposalWeb3.parse({
+        spaceId: BigInt(arg.spaceId),
+        duration: duration && duration > 0 ? duration : getDuration(4),
+        transactions,
+      });
+
+      const proposalArgs = mapToCreateProposalWeb3Input(parsedInput);
+      const txHash = await client.writeContract(createProposal(proposalArgs));
+
+      return txHash;
+    },
+  );
+
+  const {
+    data: createdSpaceTokenPurchaseProposal,
+    isLoading: isLoadingCreatedSpaceTokenPurchaseProposal,
+    error: errorWaitCreatedSpaceTokenPurchaseProposal,
+  } = useSWR(
+    createSpaceTokenPurchaseHash
+      ? [createSpaceTokenPurchaseHash, 'waitForSpaceTokenPurchaseProposal']
+      : null,
+    async ([hash]) => {
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: hash as `0x${string}`,
+      });
+      return getProposalFromLogs(receipt.logs);
+    },
+  );
+
+  return {
+    createSpaceTokenPurchaseProposal,
+    resetCreateSpaceTokenPurchaseProposal,
+    isCreatingSpaceTokenPurchaseProposal,
+    createSpaceTokenPurchaseHash,
+    createSpaceTokenPurchaseError,
+    createdSpaceTokenPurchaseProposal,
+    isLoadingCreatedSpaceTokenPurchaseProposal,
+    errorWaitCreatedSpaceTokenPurchaseProposal,
+  };
+};
