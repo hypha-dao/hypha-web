@@ -274,6 +274,56 @@ export const PeopleRedeemForm = ({
     return selectedCollateralUsdTotal + 0.000001 < selectedTokenUsdValue;
   }, [selectedCollateralUsdTotal, selectedTokenUsdValue]);
 
+  const exceededCollateralAllocations = React.useMemo(() => {
+    if (
+      typeof selectedTokenUsdValue !== 'number' ||
+      !Number.isFinite(selectedTokenUsdValue)
+    ) {
+      return [];
+    }
+    const conversions = currentConversions ?? [];
+    return conversions
+      .map((conversion) => {
+        const asset = conversionAssets.find(
+          (collateral) =>
+            collateral.address.toLowerCase() === conversion.asset.toLowerCase(),
+        );
+        if (!asset?.usdEqual) {
+          return null;
+        }
+        const percentage = Number(conversion.percentage ?? 0);
+        if (!Number.isFinite(percentage) || percentage <= 0) {
+          return null;
+        }
+        const requestedUsd = (selectedTokenUsdValue * percentage) / 100;
+        const availableUsd = asset.usdEqual;
+        if (requestedUsd <= availableUsd + 0.000001) {
+          return null;
+        }
+        return {
+          address: asset.address,
+          symbol: asset.symbol,
+          requestedUsd,
+          availableUsd,
+        };
+      })
+      .filter(
+        (
+          item,
+        ): item is {
+          address: string;
+          symbol: string;
+          requestedUsd: number;
+          availableUsd: number;
+        } => item !== null,
+      );
+  }, [
+    conversionAssets,
+    currentConversions,
+    selectedTokenUsdValue,
+  ]);
+  const hasExceededCollateralAllocation = exceededCollateralAllocations.length > 0;
+
   React.useEffect(() => {
     const currentConversions = form.getValues('conversions');
     if (!currentConversions?.length) return;
@@ -344,6 +394,13 @@ export const PeopleRedeemForm = ({
         form.setError('root', {
           message:
             'Requested redemption amount exceeds your available token balance. Reduce the amount and try again.',
+        });
+        return;
+      }
+      if (hasExceededCollateralAllocation) {
+        form.setError('root', {
+          message:
+            'Selected allocation exceeds available amount for one or more collaterals. Adjust percentages or reduce redemption amount.',
         });
         return;
       }
@@ -449,6 +506,19 @@ export const PeopleRedeemForm = ({
             <div className="text-2 text-red-11">
               Requested amount ({redemptionAmount.toFixed(2)}) exceeds available
               balance ({(selectedTokenAvailableBalance ?? 0).toFixed(2)}).
+            </div>
+          )}
+          {hasExceededCollateralAllocation && (
+            <div className="text-2 text-red-11">
+              <div>Requested collateral exceeds available amount for:</div>
+              <ul className="list-disc pl-5">
+                {exceededCollateralAllocations.map((item) => (
+                  <li key={item.address}>
+                    {item.symbol}: requested ${item.requestedUsd.toFixed(2)},
+                    available ${item.availableUsd.toFixed(2)}
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
           <Separator />
