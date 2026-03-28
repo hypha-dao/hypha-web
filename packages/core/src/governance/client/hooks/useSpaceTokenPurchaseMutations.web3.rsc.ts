@@ -2,7 +2,7 @@
 
 import useSWRMutation from 'swr/mutation';
 import useSWR from 'swr';
-import { encodeFunctionData } from 'viem';
+import { encodeFunctionData, erc20Abi, maxUint256 } from 'viem';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 import {
   schemaCreateProposalWeb3,
@@ -81,6 +81,20 @@ export const useSpaceTokenPurchaseMutationsWeb3Rpc = ({
         arg.activatePurchase && arg.tokensAvailableForPurchase
           ? BigInt(arg.tokensAvailableForPurchase) * 10n ** 18n
           : 0n;
+
+      // Allow the token contract to move sale inventory from the space executor
+      // when the proposal is executed.
+      if (arg.activatePurchase && tokensForSale > 0n) {
+        transactions.push({
+          target: arg.tokenAddress,
+          value: 0n,
+          data: encodeFunctionData({
+            abi: erc20Abi,
+            functionName: 'approve',
+            args: [arg.tokenAddress, maxUint256],
+          }),
+        });
+      }
 
       transactions.push({
         target: arg.tokenAddress,
