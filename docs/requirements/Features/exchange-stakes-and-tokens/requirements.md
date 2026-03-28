@@ -209,13 +209,13 @@ Then both seller and buyer legs are displayed clearly with wallet + token + amou
 
 ## 9. Reuse map (clean implementation baseline)
 
-- Leverage the create page + side panel wiring pattern from `pay-for-expenses`.
-- Adopt `CreateAgreementBaseFields`.
-- Extend recipient selector + manual address component patterns for both seller and buyer.
-- Apply token payout row and field-array patterns for both exchange legs.
-- Integrate the orchestrator task state machine pattern (`CREATE_WEB2`, `CREATE_WEB3`, `UPLOAD_FILES`, `LINK`).
+- Reuse the create page + side panel wiring pattern from `pay-for-expenses`.
+- Reuse `CreateAgreementBaseFields`.
+- Reuse recipient selector + manual address component patterns for both seller and buyer.
+- Reuse token payout row and field-array patterns for both exchange legs.
+- Reuse the orchestrator task state machine pattern (`CREATE_WEB2`, `CREATE_WEB3`, `UPLOAD_FILES`, `LINK`).
 - Extend proposal details decoding/rendering infrastructure only where necessary for exchange-specific labeling + escrow status.
-- Apply wallet funding modal/QR integration for treasury deposit flow.
+- Reuse wallet funding modal/QR integration for treasury deposit flow.
 - Wire escrow ABI/address through generated/runtime client contract configs.
 
 ---
