@@ -73,18 +73,27 @@ export const PeopleRedeemForm = ({
     const floorShares = exactShares.map((share) => Math.floor(share));
     let distributed = floorShares.reduce((sum, value) => sum + value, 0);
     const order = exactShares
-      .map((share, index) => ({ index, fraction: share - floorShares[index] }))
+      .map((share, index) => ({
+        index,
+        fraction: share - (floorShares[index] ?? 0),
+      }))
       .sort((a, b) => b.fraction - a.fraction);
     let cursor = 0;
     while (distributed < PERCENT_BASE && cursor < order.length) {
-      floorShares[order[cursor].index] += 1;
+      const next = order[cursor];
+      if (!next) break;
+      const currentShare = floorShares[next.index] ?? 0;
+      floorShares[next.index] = currentShare + 1;
       distributed += 1;
       cursor += 1;
     }
-    return assets.map((asset, index) => ({
-      asset: asset.address,
-      percentage: formatPercent(floorShares[index] / PERCENT_SCALE),
-    }));
+    return assets.map((asset, index) => {
+      const share = floorShares[index] ?? 0;
+      return {
+        asset: asset.address,
+        percentage: formatPercent(share / PERCENT_SCALE),
+      };
+    });
   };
 
   const { person } = useMe();
