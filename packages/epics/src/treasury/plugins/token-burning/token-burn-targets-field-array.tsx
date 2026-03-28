@@ -257,12 +257,10 @@ export const TokenBurnTargetsFieldArray = ({
                               'plugins.tokenBurning.recipientBalanceLoading',
                             )
                           : currentType === 'member'
-                            ? tAgreementFlow(
-                                'plugins.tokenBurning.noMembersFound',
-                              )
-                            : tAgreementFlow(
-                                'plugins.tokenBurning.noSpacesFound',
-                              )
+                          ? tAgreementFlow(
+                              'plugins.tokenBurning.noMembersFound',
+                            )
+                          : tAgreementFlow('plugins.tokenBurning.noSpacesFound')
                       }
                       renderOption={(option) => (
                         <>
@@ -642,8 +640,8 @@ function BurnAmountBalanceValidationMessage({
   const normalizedAmount = normalizedAmountInput.startsWith('.')
     ? `0${normalizedAmountInput}`
     : normalizedAmountInput.endsWith('.')
-      ? `${normalizedAmountInput}0`
-      : normalizedAmountInput;
+    ? `${normalizedAmountInput}0`
+    : normalizedAmountInput;
 
   let nextManagedErrorMessage: string | null | undefined;
   if (!isValidRecipient) {
