@@ -2,8 +2,13 @@
 
 import { Separator } from '@hypha-platform/ui';
 import { useFormContext, useWatch } from 'react-hook-form';
+import useSWR from 'swr';
 import { useDbTokens } from '../../../hooks';
 import { useTokenSupply } from '../../hooks';
+import {
+  getBalance,
+  useSpaceDetailsWeb3Rpc,
+} from '@hypha-platform/core/client';
 import {
   TokenSelectionSection,
   TokenPurchaseToggleSection,
@@ -27,9 +32,11 @@ type UseDbTokensToken = {
 export const SpaceTokenPurchasePlugin = ({
   spaceSlug,
   spaceId,
+  web3SpaceId,
 }: {
   spaceSlug: string;
   spaceId?: number;
+  web3SpaceId?: number | null;
 }) => {
   const { control } = useFormContext();
 
@@ -51,6 +58,25 @@ export const SpaceTokenPurchasePlugin = ({
   const { supply, isLoading: isLoadingSupply } = useTokenSupply(
     selectedToken?.address as `0x${string}` | undefined,
   );
+  const { spaceDetails } = useSpaceDetailsWeb3Rpc({
+    spaceId: web3SpaceId as number,
+  });
+  const treasuryAddress = spaceDetails?.executor as `0x${string}` | undefined;
+
+  const { data: treasuryBalanceData, isLoading: isLoadingTreasuryBalance } =
+    useSWR(
+      selectedToken?.address && treasuryAddress
+        ? ['spaceTokenTreasuryBalance', selectedToken.address, treasuryAddress]
+        : null,
+      async ([, tokenAddress, ownerAddress]) =>
+        getBalance(
+          tokenAddress as `0x${string}`,
+          ownerAddress as `0x${string}`,
+        ),
+      { revalidateOnFocus: true },
+    );
+
+  const treasuryBalance = treasuryBalanceData?.amount;
 
   return (
     <div className="flex flex-col gap-5">
@@ -60,7 +86,9 @@ export const SpaceTokenPurchasePlugin = ({
         selectedToken={selectedToken}
         isLoading={isLoading}
         isLoadingSupply={isLoadingSupply}
+        isLoadingTreasuryBalance={isLoadingTreasuryBalance}
         supply={supply}
+        treasuryBalance={treasuryBalance}
       />
 
       <Separator />
