@@ -292,8 +292,8 @@ test.describe('AI Chat Panel — Resize Handle', () => {
       );
       await chatPanel.resizeHandle.focus();
 
-      // Press ArrowLeft many times to try going below min
-      for (let i = 0; i < 20; i++) {
+      // Press ArrowLeft enough times to reach min + 2 extra to verify clamping
+      for (let i = 0; i < 6; i++) {
         await page.keyboard.press('ArrowLeft');
       }
 
@@ -306,7 +306,7 @@ test.describe('AI Chat Panel — Resize Handle', () => {
     test('main content should reflow when sidebar is resized', async ({
       page,
     }) => {
-      const main = page.locator('main').first();
+      const main = page.getByRole('main').first();
       const mainBoxBefore = await main.boundingBox();
       expect(mainBoxBefore).not.toBeNull();
 

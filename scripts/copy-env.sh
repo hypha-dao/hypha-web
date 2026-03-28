@@ -84,8 +84,8 @@ VERCEL_COUNT=0
 while IFS= read -r -d '' dir; do
   rel="${dir#"$SOURCE"/}"
   target="$CURRENT_DIR/$rel"
-  mkdir -p "$(dirname "$target")"
-  cp -r "$dir" "$target"
+  mkdir -p "$target"
+  cp -R "$dir"/. "$target"/
   echo "  ✅ $rel/"
   VERCEL_COUNT=$((VERCEL_COUNT + 1))
 done < <(find "$SOURCE" -name ".vercel" -not -path "*/node_modules/*" -not -path "*/.git/*" -type d -print0)

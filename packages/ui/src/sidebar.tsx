@@ -439,9 +439,17 @@ const SidebarResizeHandle = React.forwardRef<
         if (gapDiv) gapDiv.style.transition = 'none';
         if (fixedDiv) fixedDiv.style.transition = 'none';
 
+        // Determine sidebar side from DOM for correct resize calculation
+        const sidebarGroup = providerEl.querySelector('[data-side]');
+        const side = sidebarGroup?.getAttribute('data-side') ?? 'left';
+
         const handlePointerMove = (moveEvent: PointerEvent) => {
+          const rawWidth =
+            side === 'right'
+              ? document.documentElement.clientWidth - moveEvent.clientX
+              : moveEvent.clientX;
           const newWidth = Math.round(
-            Math.min(maxWidth, Math.max(minWidth, moveEvent.clientX)),
+            Math.min(maxWidth, Math.max(minWidth, rawWidth)),
           );
           providerEl.style.setProperty('--sidebar-width', `${newWidth}px`);
         };
@@ -547,11 +555,12 @@ const SidebarResizeHandle = React.forwardRef<
     return (
       <div
         ref={(node) => {
-          // Handle both refs
-          (handleRef as React.MutableRefObject<HTMLDivElement | null>).current =
-            node;
-          if (typeof ref === 'function') ref(node);
-          else if (ref) ref.current = node;
+          handleRef.current = node;
+          if (typeof ref === 'function') {
+            ref(node);
+          } else if (ref) {
+            ref.current = node;
+          }
         }}
         data-sidebar="resize-handle"
         data-resizing={isResizing}

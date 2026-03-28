@@ -1,8 +1,11 @@
 import { Page, Locator, BrowserContext } from '@playwright/test';
 import { BasePage } from './base.page';
 
-/** Cookie name used by the Vercel Flags SDK to toggle AI chat */
-const AI_CHAT_COOKIE = 'HYPHA_ENABLE_AI_CHAT';
+/**
+ * Cookie name for the AI chat feature flag.
+ * Canonical source: packages/cookie/src/constants.ts → HYPHA_ENABLE_AI_CHAT
+ */
+const HYPHA_ENABLE_AI_CHAT = 'HYPHA_ENABLE_AI_CHAT';
 
 export class AiChatPanelPage extends BasePage {
   readonly openButton: Locator;
@@ -19,7 +22,7 @@ export class AiChatPanelPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.openButton = page.locator('[aria-label="Open Hypha AI"]');
+    this.openButton = page.getByRole('button', { name: 'Open Hypha AI' });
     this.headerText = page.getByText('Hypha AI', { exact: true });
     this.closeButton = page.getByRole('button', { name: /close/i });
     this.resetButton = page.getByRole('button', { name: /reset chat/i });
@@ -51,7 +54,7 @@ export class AiChatPanelPage extends BasePage {
     // Browser cookie for client-side reads
     await context.addCookies([
       {
-        name: AI_CHAT_COOKIE,
+        name: HYPHA_ENABLE_AI_CHAT,
         value: 'true',
         domain: '127.0.0.1',
         path: '/',
@@ -76,6 +79,10 @@ export class AiChatPanelPage extends BasePage {
     const value = await this.sidebarWrapper.evaluate((el) =>
       getComputedStyle(el).getPropertyValue('--sidebar-width'),
     );
-    return parseInt(value, 10);
+    const width = parseInt(value, 10);
+    if (Number.isNaN(width)) {
+      throw new Error(`Invalid sidebar width value: "${value}"`);
+    }
+    return width;
   }
 }
