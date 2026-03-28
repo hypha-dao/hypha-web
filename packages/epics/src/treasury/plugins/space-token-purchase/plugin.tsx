@@ -2,12 +2,14 @@
 
 import { Separator } from '@hypha-platform/ui';
 import { useFormContext, useWatch } from 'react-hook-form';
+import React from 'react';
 import useSWR from 'swr';
 import { useDbTokens } from '../../../hooks';
 import { useTokenSupply } from '../../hooks';
 import {
   getBalance,
   useSpaceDetailsWeb3Rpc,
+  useSpaceTokenSaleDetailsFromChain,
 } from '@hypha-platform/core/client';
 import {
   TokenSelectionSection,
@@ -38,7 +40,7 @@ export const SpaceTokenPurchasePlugin = ({
   spaceId?: number;
   web3SpaceId?: number | null;
 }) => {
-  const { control } = useFormContext();
+  const { control, setValue } = useFormContext();
 
   const { tokens: dbTokens, isLoading } = useDbTokens();
 
@@ -52,6 +54,45 @@ export const SpaceTokenPurchasePlugin = ({
   const tokenAddress = useWatch({ control, name: 'tokenAddress' });
   const activatePurchase =
     useWatch({ control, name: 'activatePurchase' }) ?? false;
+
+  const hydratedFromChainForToken = React.useRef<string | null>(null);
+
+  const tokenAddressChecksum = tokenAddress as `0x${string}` | undefined;
+
+  const { data: saleDetailsFromChain } = useSpaceTokenSaleDetailsFromChain({
+    tokenAddress: tokenAddressChecksum,
+    enabled: Boolean(activatePurchase && tokenAddressChecksum),
+  });
+
+  React.useEffect(() => {
+    if (!activatePurchase || !tokenAddressChecksum) {
+      hydratedFromChainForToken.current = null;
+      return;
+    }
+    if (!saleDetailsFromChain) {
+      return;
+    }
+    if (hydratedFromChainForToken.current === tokenAddressChecksum) {
+      return;
+    }
+    hydratedFromChainForToken.current = tokenAddressChecksum;
+    setValue('purchasePrice', saleDetailsFromChain.purchasePrice, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    setValue('purchaseCurrency', saleDetailsFromChain.purchaseCurrency, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    setValue(
+      'tokensAvailableForPurchase',
+      saleDetailsFromChain.tokensAvailableForPurchase,
+      {
+        shouldDirty: true,
+        shouldValidate: true,
+      },
+    );
+  }, [activatePurchase, tokenAddressChecksum, saleDetailsFromChain, setValue]);
 
   const selectedToken = spaceTokens.find(
     (t) => t.address?.toLowerCase() === tokenAddress?.toLowerCase(),
