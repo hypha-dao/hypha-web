@@ -1510,6 +1510,19 @@
       "to": "To",
       "funded": "Funded"
     },
+    "exchange": {
+      "escrowId": "Escrow ID",
+      "status": {
+        "label": "Escrow Status",
+        "pendingFunding": "Pending buyer funding",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      },
+      "leg": "Exchange Leg",
+      "from": "From",
+      "to": "To",
+      "funded": "Funded"
+    },
     "entryMethods": {
       "openAccess": "Open Access",
       "tokenBased": "Token Based",

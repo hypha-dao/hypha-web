@@ -414,6 +414,48 @@ export function decodeTransaction(tx: Tx) {
     {
       abi: erc20Abi,
       handler: (decoded, tx) =>
+        decoded.functionName === 'approve'
+          ? {
+              type: 'approve',
+              data: {
+                spender: decoded.args[0],
+                rawAmount: decoded.args[1],
+                token: tx.target,
+                value: tx.value,
+              },
+            }
+          : decoded.functionName === 'transfer'
+          ? {
+              type: 'transfer',
+              data: {
+                recipient: decoded.args[0],
+                rawAmount: decoded.args[1],
+                token: tx.target,
+                value: tx.value,
+              },
+            }
+          : null,
+    },
+    {
+      abi: escrowCreateAbi,
+      handler: (decoded) =>
+        decoded.functionName === 'createEscrow'
+          ? {
+              type: 'exchangeEscrow',
+              data: {
+                partyB: decoded.args[0],
+                tokenA: decoded.args[1],
+                tokenB: decoded.args[2],
+                amountA: decoded.args[3],
+                amountB: decoded.args[4],
+                sendFundsNow: decoded.args[5],
+              },
+            }
+          : null,
+    },
+    {
+      abi: erc20Abi,
+      handler: (decoded, tx) =>
         decoded.functionName === 'transfer'
           ? {
               type: 'transfer',

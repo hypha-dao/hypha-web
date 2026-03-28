@@ -1510,6 +1510,19 @@
       "to": "Para",
       "funded": "Financiado"
     },
+    "exchange": {
+      "escrowId": "ID do escrow",
+      "status": {
+        "label": "Status do escrow",
+        "pendingFunding": "Aguardando financiamento",
+        "completed": "Concluído",
+        "cancelled": "Cancelado"
+      },
+      "leg": "Perna de troca",
+      "from": "De",
+      "to": "Para",
+      "funded": "Financiado"
+    },
     "entryMethods": {
       "openAccess": "Acesso aberto",
       "tokenBased": "Baseado em token",

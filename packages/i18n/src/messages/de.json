@@ -1510,6 +1510,19 @@
       "to": "An",
       "funded": "Finanziert"
     },
+    "exchange": {
+      "escrowId": "Escrow-ID",
+      "status": {
+        "label": "Status",
+        "pendingFunding": "Ausstehende Finanzierung",
+        "completed": "Abgeschlossen",
+        "cancelled": "Abgebrochen"
+      },
+      "leg": "Tausch-Teil",
+      "from": "Von",
+      "to": "An",
+      "funded": "Finanziert"
+    },
     "entryMethods": {
       "openAccess": "Open Access",
       "tokenBased": "Tokenbasiert",
