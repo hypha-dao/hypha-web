@@ -48,7 +48,7 @@ export const ProfileRedeemTokens = ({
   lang,
   personSlug,
 }: ProfileRedeemTokensProps) => {
-  const { manualUpdate } = useUserAssets({
+  const { assets: userAssets, manualUpdate } = useUserAssets({
     personSlug,
     refreshInterval: 10000,
   });
@@ -70,21 +70,54 @@ export const ProfileRedeemTokens = ({
     },
   );
 
+  const uniqueSpaces = React.useMemo(() => {
+    const spacesBySlug = new Map<string, SpaceSummary>();
+    for (const space of spaces ?? []) {
+      if (!space.slug) continue;
+      spacesBySlug.set(space.slug, space);
+    }
+    return Array.from(spacesBySlug.values());
+  }, [spaces]);
+
   const spaceSlugs = React.useMemo(
-    () => (spaces ?? []).map((space) => space.slug),
-    [spaces],
+    () => uniqueSpaces.map((space) => space.slug),
+    [uniqueSpaces],
+  );
+
+  const positiveBalanceTokenAddresses = React.useMemo(
+    () =>
+      new Set(
+        userAssets
+          .filter((asset) => asset.value > 0)
+          .map((asset) => asset.address.toLowerCase()),
+      ),
+    [userAssets],
+  );
+
+  const positiveBalanceKey = React.useMemo(
+    () => Array.from(positiveBalanceTokenAddresses).sort().join(','),
+    [positiveBalanceTokenAddresses],
   );
 
   const { data: redeemableTokens } = useSWR<Token[]>(
     jwt && spaceSlugs.length > 0
-      ? ['redeemable-space-tokens', jwt, spaceSlugs.join(',')]
+      ? [
+          'redeemable-space-tokens',
+          jwt,
+          spaceSlugs.join(','),
+          positiveBalanceKey,
+        ]
       : null,
     async () => {
-      const tokensByAddress = new Map<string, Token>();
+      if (positiveBalanceTokenAddresses.size === 0) {
+        return [];
+      }
+
+      const redeemableTokensAcrossSpaces: Token[] = [];
       const now = Date.now();
 
       const spaceResults = await Promise.all(
-        (spaces ?? []).map(async (space) => {
+        uniqueSpaces.map(async (space) => {
           const headers = {
             Authorization: `Bearer ${jwt}`,
             'Content-Type': 'application/json',
@@ -101,6 +134,13 @@ export const ProfileRedeemTokens = ({
           const activeVaultTokens = (vaultsPayload.vaults ?? []).filter(
             (vault) => {
               if (vault.redemptionEnabled !== true) return false;
+              if (
+                !positiveBalanceTokenAddresses.has(
+                  vault.spaceToken.toLowerCase(),
+                )
+              ) {
+                return false;
+              }
               if (!vault.redemptionStartDate) return true;
               const startDate = new Date(vault.redemptionStartDate);
               return (
@@ -124,13 +164,19 @@ export const ProfileRedeemTokens = ({
         }),
       );
 
+      const seen = new Set<string>();
       for (const tokenList of spaceResults) {
         for (const token of tokenList) {
-          tokensByAddress.set(token.address.toLowerCase(), token);
+          const key = `${
+            token.space?.slug ?? ''
+          }:${token.address.toLowerCase()}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          redeemableTokensAcrossSpaces.push(token);
         }
       }
 
-      return Array.from(tokensByAddress.values());
+      return redeemableTokensAcrossSpaces;
     },
   );
 
