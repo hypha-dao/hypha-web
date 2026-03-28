@@ -27,9 +27,14 @@ export const TokenIconUpload = ({
   React.useEffect(() => {
     if (typeof defaultImage === 'string') {
       setPreview(defaultImage || null);
-    } else {
-      setPreview(null);
+      return;
     }
+    if (defaultImage instanceof File) {
+      const objectUrl = URL.createObjectURL(defaultImage);
+      setPreview(objectUrl);
+      return () => URL.revokeObjectURL(objectUrl);
+    }
+    setPreview(null);
   }, [defaultImage]);
 
   const onDrop = React.useCallback(
