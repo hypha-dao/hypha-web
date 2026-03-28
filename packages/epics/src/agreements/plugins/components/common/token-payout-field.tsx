@@ -20,6 +20,8 @@ interface Token {
   symbol: string;
   address: `0x${string}`;
   value?: number;
+  tokenPrice?: number;
+  tokenCurrencyLabel?: string;
   space?: {
     title: string;
     slug: string;
@@ -41,6 +43,7 @@ interface TokenPayoutFieldProps {
   tokens: Token[];
   readOnlyDropdown?: boolean;
   showSelectedTokenBalanceHint?: boolean;
+  selectedTokenPriceHint?: string;
 }
 
 export const TokenPayoutField = ({
@@ -49,6 +52,7 @@ export const TokenPayoutField = ({
   tokens,
   readOnlyDropdown,
   showSelectedTokenBalanceHint = false,
+  selectedTokenPriceHint,
 }: TokenPayoutFieldProps) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const selectedToken = tokens.find((t) => t.address === value.token);
@@ -174,9 +178,14 @@ export const TokenPayoutField = ({
       selectedToken &&
       typeof selectedToken.value === 'number' &&
       Number.isFinite(selectedToken.value) ? (
-        <div className="text-1 text-neutral-11 self-end">
-          Wallet balance: {selectedToken.value.toFixed(2)}{' '}
-          {selectedToken.symbol}
+        <div className="flex flex-col text-1 text-neutral-11 self-end">
+          <span>
+            Wallet balance: {selectedToken.value.toFixed(2)}{' '}
+            {selectedToken.symbol}
+          </span>
+          {selectedTokenPriceHint ? (
+            <span>Token redemption price: {selectedTokenPriceHint}</span>
+          ) : null}
         </div>
       ) : null}
     </div>
