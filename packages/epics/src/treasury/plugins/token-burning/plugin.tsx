@@ -90,6 +90,8 @@ export const TokenBurningPlugin = ({
           </span>
         </div>
 
+        <div className="border-t border-neutral-6" />
+
         <div className="flex flex-col gap-3">
           <FormLabel>
             {tAgreementFlow('plugins.tokenBurning.selectToken')}
