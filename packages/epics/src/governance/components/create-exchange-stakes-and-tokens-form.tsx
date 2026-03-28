@@ -70,8 +70,8 @@ export const CreateExchangeStakesAndTokensForm = ({
       creatorId: person?.id,
       sellerAddress: '',
       buyerAddress: '',
-      sellerLeg: { amount: '', token: '' },
-      buyerLeg: { amount: '', token: '' },
+      sellerLeg: [{ amount: '', token: '' }],
+      buyerLeg: [{ amount: '', token: '' }],
       label: 'Exchange',
     },
   });

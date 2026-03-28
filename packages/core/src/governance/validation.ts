@@ -728,28 +728,36 @@ export const schemaExchangeStakesAndTokens = z.object({
     .string()
     .min(1, { message: 'Please add a recipient or wallet address' })
     .refine(isAddress, { message: 'Invalid Ethereum address' }),
-  sellerLeg: z.object({
-    amount: z.string().refine((value) => parseFloat(value) > 0, {
-      message: 'Amount must be greater than 0',
-    }),
-    token: z
-      .string()
-      .min(1, { message: 'Please select a token' })
-      .refine(isAddress, { message: 'Invalid Ethereum address' }),
-  }),
+  sellerLeg: z
+    .array(
+      z.object({
+        amount: z.string().refine((value) => parseFloat(value) > 0, {
+          message: 'Amount must be greater than 0',
+        }),
+        token: z
+          .string()
+          .min(1, { message: 'Please select a token' })
+          .refine(isAddress, { message: 'Invalid Ethereum address' }),
+      }),
+    )
+    .min(1, { message: 'Please add at least one seller token row' }),
   buyerAddress: z
     .string()
     .min(1, { message: 'Please add a recipient or wallet address' })
     .refine(isAddress, { message: 'Invalid Ethereum address' }),
-  buyerLeg: z.object({
-    amount: z.string().refine((value) => parseFloat(value) > 0, {
-      message: 'Amount must be greater than 0',
-    }),
-    token: z
-      .string()
-      .min(1, { message: 'Please select a token' })
-      .refine(isAddress, { message: 'Invalid Ethereum address' }),
-  }),
+  buyerLeg: z
+    .array(
+      z.object({
+        amount: z.string().refine((value) => parseFloat(value) > 0, {
+          message: 'Amount must be greater than 0',
+        }),
+        token: z
+          .string()
+          .min(1, { message: 'Please select a token' })
+          .refine(isAddress, { message: 'Invalid Ethereum address' }),
+      }),
+    )
+    .min(1, { message: 'Please add at least one buyer token row' }),
 });
 
 export const schemaActivateSpaces = z.object({

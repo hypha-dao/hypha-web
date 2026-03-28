@@ -26,8 +26,8 @@ interface CreateExchangeStakesAndTokensInput {
   spaceId: number;
   sellerAddress: string;
   buyerAddress: string;
-  sellerLeg: ExchangeLegInput;
-  buyerLeg: ExchangeLegInput;
+  sellerLeg: ExchangeLegInput[];
+  buyerLeg: ExchangeLegInput[];
 }
 
 const chainId = 8453;
@@ -79,42 +79,64 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
         getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
       );
 
-      const sellerTokenDecimals = await getTokenDecimals(arg.sellerLeg.token);
-      const buyerTokenDecimals = await getTokenDecimals(arg.buyerLeg.token);
+      const sellerRows = arg.sellerLeg ?? [];
+      const buyerRows = arg.buyerLeg ?? [];
 
-      const sellerAmount = parseUnits(
-        arg.sellerLeg.amount,
-        sellerTokenDecimals,
+      if (sellerRows.length === 0) {
+        throw new Error('Seller must add at least one amount/token row');
+      }
+      if (buyerRows.length === 0) {
+        throw new Error('Buyer must add at least one amount/token row');
+      }
+      if (sellerRows.length !== buyerRows.length) {
+        throw new Error(
+          'Seller and buyer rows must have the same count to build exchange escrows',
+        );
+      }
+
+      const transactionGroups = await Promise.all(
+        sellerRows.map(async (sellerRow, index) => {
+          const buyerRow = buyerRows[index];
+          const sellerTokenDecimals = await getTokenDecimals(sellerRow.token);
+          const buyerTokenDecimals = await getTokenDecimals(buyerRow.token);
+
+          const sellerAmount = parseUnits(
+            sellerRow.amount,
+            sellerTokenDecimals,
+          );
+          const buyerAmount = parseUnits(buyerRow.amount, buyerTokenDecimals);
+
+          return [
+            {
+              target: sellerRow.token as `0x${string}`,
+              value: BigInt(0),
+              data: encodeFunctionData({
+                abi: erc20Abi,
+                functionName: 'approve',
+                args: [escrowAddress, sellerAmount],
+              }),
+            },
+            {
+              target: escrowAddress,
+              value: BigInt(0),
+              data: encodeFunctionData({
+                abi: escrowCreateAbi,
+                functionName: 'createEscrow',
+                args: [
+                  arg.buyerAddress as `0x${string}`,
+                  sellerRow.token as `0x${string}`,
+                  buyerRow.token as `0x${string}`,
+                  sellerAmount,
+                  buyerAmount,
+                  true,
+                ],
+              }),
+            },
+          ] as const;
+        }),
       );
-      const buyerAmount = parseUnits(arg.buyerLeg.amount, buyerTokenDecimals);
 
-      const transactions = [
-        {
-          target: arg.sellerLeg.token as `0x${string}`,
-          value: BigInt(0),
-          data: encodeFunctionData({
-            abi: erc20Abi,
-            functionName: 'approve',
-            args: [escrowAddress, sellerAmount],
-          }),
-        },
-        {
-          target: escrowAddress,
-          value: BigInt(0),
-          data: encodeFunctionData({
-            abi: escrowCreateAbi,
-            functionName: 'createEscrow',
-            args: [
-              arg.buyerAddress as `0x${string}`,
-              arg.sellerLeg.token as `0x${string}`,
-              arg.buyerLeg.token as `0x${string}`,
-              sellerAmount,
-              buyerAmount,
-              true,
-            ],
-          }),
-        },
-      ] as const;
+      const transactions = transactionGroups.flat();
 
       const proposalParams = {
         spaceId: BigInt(arg.spaceId),
