@@ -99,7 +99,9 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
           const buyerRow = buyerRows[index];
           if (!buyerRow) {
             throw new Error(
-              `Missing buyer row ${index + 1}. Seller and buyer rows must be paired.`,
+              `Missing buyer row ${
+                index + 1
+              }. Seller and buyer rows must be paired.`,
             );
           }
 
