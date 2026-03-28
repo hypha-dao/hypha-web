@@ -8,12 +8,13 @@ export const useSpaceMinProposalDuration = ({
   spaceId,
   enabled = true,
 }: {
-  spaceId: bigint;
+  spaceId?: bigint | null;
   enabled?: boolean;
 }) => {
-  const swrKey = enabled
-    ? ([spaceId, 'spaceMinProposalDuration'] as const)
-    : null;
+  const swrKey =
+    enabled && typeof spaceId === 'bigint' && spaceId > 0n
+      ? ([spaceId, 'spaceMinProposalDuration'] as const)
+      : null;
 
   const {
     data: duration,

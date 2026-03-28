@@ -10,8 +10,9 @@ export const useWithdrawnProposalsWeb3Rpc = ({
 }: {
   spaceId: number;
 }) => {
+  const isValidSpaceId = Number.isFinite(spaceId) && spaceId > 0;
   const { data, isLoading, error, mutate } = useSWR(
-    [spaceId, 'withdrawnProposals'],
+    isValidSpaceId ? [spaceId, 'withdrawnProposals'] : null,
     async ([spaceId]) =>
       publicClient.readContract(
         getWithdrawnProposalsBySpace({ spaceId: BigInt(spaceId) }),

@@ -36,10 +36,15 @@ type ProposalTransaction = Parameters<typeof decodeTransaction>[0];
 export const useProposalDetailsWeb3Rpc = ({
   proposalId,
 }: {
-  proposalId: number;
+  proposalId?: number;
 }) => {
+  const isValidProposalId =
+    typeof proposalId === 'number' &&
+    Number.isFinite(proposalId) &&
+    proposalId > 0;
+
   const { data, isLoading, error } = useSWR(
-    [proposalId, 'proposalDetails'],
+    isValidProposalId ? ([proposalId, 'proposalDetails'] as const) : null,
     async ([proposalId]) =>
       publicClient.readContract(
         getProposalDetails({ proposalId: BigInt(proposalId) }),
