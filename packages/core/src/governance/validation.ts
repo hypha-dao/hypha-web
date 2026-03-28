@@ -331,7 +331,7 @@ const schemaTokenBurningTarget = z
     if (!data.amount || data.amount.trim() === '') {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Please enter amount',
+        message: 'Enter an amount to continue.',
         path: ['amount'],
       });
       return;

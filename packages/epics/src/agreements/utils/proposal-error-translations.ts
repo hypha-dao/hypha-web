@@ -58,6 +58,7 @@ const PROPOSAL_ERROR_KEY_MAP: Record<string, string> = {
   'Please select a backing collateral':
     'proposalErrors.backingCollateralRequired',
   'Please enter amount': 'proposalErrors.enterAmount',
+  'Enter an amount to continue.': 'proposalErrors.enterAmount',
   'Invalid token address': 'proposalErrors.invalidTokenAddress',
   'Invalid address': 'proposalErrors.invalidAddress',
   'Token address is required': 'proposalErrors.tokenAddressRequired',

@@ -45,7 +45,7 @@ const toTokenAmount = (amount: string) => {
     : normalizedAmount;
 
   if (canonicalAmount.length === 0) {
-    throw new Error('Please enter amount');
+    throw new Error('Enter an amount to continue.');
   }
 
   if (!/^(?:\d+\.?\d*|\.\d+)$/.test(canonicalAmount)) {
@@ -117,7 +117,7 @@ export const useTokenBurningMutationsWeb3Rsc = ({
           }
 
           if (!row.amount || row.amount.trim() === '') {
-            throw new Error('Please enter amount');
+            throw new Error('Enter an amount to continue.');
           }
 
           return { ...row, burnAmount: toTokenAmount(row.amount) };
