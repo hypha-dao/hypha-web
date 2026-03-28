@@ -40,6 +40,13 @@ type TokenBurnTargetsFieldArrayProps = {
   name?: string;
 };
 
+type BurnTargetEntry = {
+  type?: 'member' | 'space';
+  address?: string;
+  amount?: string;
+  allBalance?: boolean;
+};
+
 const DEFAULT_TARGET = {
   type: 'member' as const,
   address: '',
@@ -67,7 +74,7 @@ export const TokenBurnTargetsFieldArray = ({
     control,
     name,
   });
-  const entries = watch(name) ?? [];
+  const entries = (watch(name) ?? []) as BurnTargetEntry[];
 
   const memberOptionsAll = useMemo(
     () =>
