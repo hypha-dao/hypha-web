@@ -30,9 +30,23 @@ export const TokenIconUpload = ({
       return;
     }
     if (defaultImage instanceof File) {
-      const objectUrl = URL.createObjectURL(defaultImage);
-      setPreview(objectUrl);
-      return () => URL.revokeObjectURL(objectUrl);
+      let cancelled = false;
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (cancelled) return;
+        setPreview(typeof reader.result === 'string' ? reader.result : null);
+      };
+      reader.onerror = () => {
+        if (cancelled) return;
+        setPreview(null);
+      };
+      reader.readAsDataURL(defaultImage);
+      return () => {
+        cancelled = true;
+        if (reader.readyState === FileReader.LOADING) {
+          reader.abort();
+        }
+      };
     }
     setPreview(null);
   }, [defaultImage]);
