@@ -215,82 +215,111 @@ export const useProposalDetailsWeb3Rpc = ({
 
       switch (decoded.type) {
         case 'transfer':
-          transfers.push(decoded.data);
+          transfers.push(decoded.data as (typeof transfers)[number]);
           break;
 
         case 'token':
-          tokens.push(decoded.data);
+          tokens.push(decoded.data as (typeof tokens)[number]);
           break;
 
         case 'votingMethod':
-          votingMethods.push(decoded.data);
+          votingMethods.push(decoded.data as (typeof votingMethods)[number]);
           break;
 
         case 'entryMethod':
-          entryMethods.push(decoded.data);
+          entryMethods.push(decoded.data as (typeof entryMethods)[number]);
           break;
 
-        case 'mint':
-          mintings.push({ ...decoded.data, token: tx.target });
+        case 'mint': {
+          const mintData = decoded.data as Omit<
+            (typeof mintings)[number],
+            'token'
+          >;
+          mintings.push({ ...mintData, token: tx.target });
           break;
+        }
 
-        case 'burn':
+        case 'burn': {
+          const burnData = decoded.data as Omit<
+            (typeof burnings)[number],
+            'token' | 'allBalance'
+          >;
           burnings.push({
-            ...decoded.data,
+            ...burnData,
             token: tx.target,
             allBalance: false,
           });
           break;
+        }
 
         case 'tokenRequirement':
-          tokenRequirements.push(decoded.data);
+          tokenRequirements.push(
+            decoded.data as (typeof tokenRequirements)[number],
+          );
           break;
 
         case 'votingToken':
-          votingMethodsToken = decoded.data;
+          votingMethodsToken = decoded.data as typeof votingMethodsToken;
           break;
 
         case 'investInHypha':
-          buyHyphaTokensData = decoded.data;
+          buyHyphaTokensData = decoded.data as typeof buyHyphaTokensData;
           break;
 
-        case 'payForSpaces':
+        case 'payForSpaces': {
+          const payForSpacesData = decoded.data as Omit<
+            typeof activateSpacesData,
+            'tokenSymbol'
+          >;
           activateSpacesData = {
-            ...decoded.data,
+            ...payForSpacesData,
             tokenSymbol: 'USDC',
           };
           break;
+        }
 
-        case 'payInHypha':
+        case 'payInHypha': {
+          const payInHyphaData = decoded.data as Omit<
+            typeof activateSpacesData,
+            'tokenSymbol'
+          >;
           activateSpacesData = {
-            ...decoded.data,
+            ...payInHyphaData,
             tokenSymbol: 'HYPHA',
           };
           break;
+        }
 
         case 'delegate':
-          delegatesData = decoded.data;
+          delegatesData = decoded.data as typeof delegatesData;
           break;
 
         case 'setMinimumProposalDuration':
-          minimumProposalDurationData = decoded.data;
+          minimumProposalDurationData =
+            decoded.data as typeof minimumProposalDurationData;
           break;
 
         case 'membershipExit':
-          membershipExitData = decoded.data;
+          membershipExitData = decoded.data as typeof membershipExitData;
           break;
 
-        case 'setSpaceDiscoverability':
+        case 'setSpaceDiscoverability': {
+          const transparencyData = decoded.data as {
+            discoverability?: unknown;
+          };
           transparencySettingsData.spaceDiscoverability = Number(
-            decoded.data.discoverability,
+            transparencyData.discoverability,
           );
           break;
+        }
 
-        case 'setSpaceAccess':
+        case 'setSpaceAccess': {
+          const transparencyData = decoded.data as { access?: unknown };
           transparencySettingsData.spaceActivityAccess = Number(
-            decoded.data.access,
+            transparencyData.access,
           );
           break;
+        }
 
         case 'tokenBackingVault': {
           const d = decoded.data as Record<string, unknown>;
