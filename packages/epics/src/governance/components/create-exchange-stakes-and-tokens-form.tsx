@@ -97,7 +97,6 @@ export const CreateExchangeStakesAndTokensForm = ({
     if (typeof spaceId !== 'number') {
       throw new Error('Space ID is required to create this proposal');
     }
-
     const sellerLegLines = data.sellerLeg
       .map(
         (leg, index) =>
