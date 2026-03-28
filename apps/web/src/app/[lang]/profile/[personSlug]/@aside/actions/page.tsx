@@ -55,6 +55,14 @@ export default function ProfileWallet() {
       icon: <ArrowLeftIcon />,
     },
     {
+      id: 'buySpaceTokens',
+      title: 'Buy Space Tokens',
+      description:
+        "Purchase your space's native tokens using the configured payment currency.",
+      href: 'buy-space-tokens',
+      icon: <ArrowLeftIcon />,
+    },
+    {
       id: 'activateSpaces',
       title: tActions('actions.activateSpaces.title'),
       description: tActions('actions.activateSpaces.description'),
