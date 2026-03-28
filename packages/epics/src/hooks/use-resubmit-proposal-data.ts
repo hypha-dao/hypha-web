@@ -56,11 +56,8 @@ export const useResubmitProposalData = <
           [key: string]: any;
         };
 
-        if (parsed.applied) {
-          sessionStorage.removeItem('resubmitProposalData');
-          return;
-        }
-
+        // Re-apply whenever this data is present (including `applied: true`), so
+        // navigating back to the create form after a resubmit still hydrates the form.
         console.log('Resubmit data found:', parsed);
 
         if (parsed.leadImage || parsed.attachments) {
