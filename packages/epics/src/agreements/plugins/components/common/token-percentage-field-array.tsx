@@ -20,6 +20,7 @@ export interface TokenPercentageFieldArrayProps {
   name?: string;
   label?: string;
   onRemoveRebalance?: (remainingAssets: TokenPercentageAsset[]) => void;
+  showEmptyFieldMessage?: boolean;
 }
 
 export const TokenPercentageFieldArray = ({
@@ -27,6 +28,7 @@ export const TokenPercentageFieldArray = ({
   name = 'conversions',
   label = 'Converted into',
   onRemoveRebalance,
+  showEmptyFieldMessage = false,
 }: TokenPercentageFieldArrayProps) => {
   const {
     control,
@@ -91,8 +93,10 @@ export const TokenPercentageFieldArray = ({
                       </FormControl>
                       <FormMessage
                         custom={
-                          fieldState.error?.message?.toString() ||
-                          'Please enter a percentage and select an asset.'
+                          showEmptyFieldMessage
+                            ? fieldState.error?.message?.toString() ||
+                              'Please enter a percentage and select an asset.'
+                            : ''
                         }
                       />
                     </FormItem>
