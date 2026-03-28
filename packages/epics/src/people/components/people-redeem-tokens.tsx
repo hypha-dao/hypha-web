@@ -16,6 +16,7 @@ interface Token {
   icon: string;
   symbol: string;
   address: `0x${string}`;
+  tokenPrice?: number;
   type?: string;
   space?: {
     title: string;
@@ -38,6 +39,7 @@ type SpaceVaultsResponse = {
     spaceToken: string;
     tokenSymbol?: string;
     tokenIcon?: string;
+    redemptionPrice?: number;
     redemptionEnabled?: boolean;
     redemptionStartDate?: string | Date;
     tokenName?: string;
@@ -154,6 +156,7 @@ export const ProfileRedeemTokens = ({
               icon: vaultToken.tokenIcon || '/placeholder/token-icon.svg',
               symbol: vaultToken.tokenSymbol || 'UNKNOWN',
               address: vaultToken.spaceToken as `0x${string}`,
+              tokenPrice: vaultToken.redemptionPrice,
               type: undefined,
               space: {
                 title: space.title,
