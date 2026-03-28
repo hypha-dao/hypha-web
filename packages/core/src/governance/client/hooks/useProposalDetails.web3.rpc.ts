@@ -244,8 +244,15 @@ export const useProposalDetailsWeb3Rpc = ({
             (typeof burnings)[number],
             'token' | 'allBalance'
           >;
+          const normalizedMember =
+            burnData.member &&
+            burnData.member.toLowerCase() ===
+              '0x0000000000000000000000000000000000000000'
+              ? null
+              : burnData.member;
           burnings.push({
             ...burnData,
+            member: normalizedMember,
             token: tx.target,
             allBalance: false,
           });

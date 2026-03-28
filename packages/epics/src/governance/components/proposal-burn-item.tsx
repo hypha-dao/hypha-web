@@ -74,7 +74,9 @@ export const ProposalBurnItem = ({
                   src={space?.logoUrl ?? '/placeholder/default-profile.svg'}
                   width={24}
                   height={24}
-                  alt={`${space?.title} logo`}
+                  alt={tProposalDetails('labels.logoForSpace', {
+                    title: space?.title ?? tProposalDetails('labels.unknown'),
+                  })}
                 />
                 <div className="text-1 w-full">{space?.title}</div>
               </>

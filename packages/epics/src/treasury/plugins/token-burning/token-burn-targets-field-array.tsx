@@ -16,7 +16,7 @@ import {
 } from '@hypha-platform/ui';
 import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui/server';
 import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
-import { useFieldArray, useFormContext } from 'react-hook-form';
+import { useFieldArray, useFormContext, useWatch } from 'react-hook-form';
 import { useEffect, useMemo } from 'react';
 import {
   DEFAULT_SPACE_AVATAR_IMAGE,
@@ -63,7 +63,7 @@ export const TokenBurnTargetsFieldArray = ({
   currentSpaceSlug,
   name = 'tokenBurning.burns',
 }: TokenBurnTargetsFieldArrayProps) => {
-  const { control, setValue, watch, clearErrors } = useFormContext();
+  const { control, setValue, clearErrors } = useFormContext();
   const tAgreementFlow = useTranslations('AgreementFlow');
   const { filteredSpaces } = useFilterSpacesListWithDiscoverability({
     spaces,
@@ -74,7 +74,7 @@ export const TokenBurnTargetsFieldArray = ({
     control,
     name,
   });
-  const entries = (watch(name) ?? []) as BurnTargetEntry[];
+  const entries = (useWatch({ control, name }) ?? []) as BurnTargetEntry[];
 
   const memberOptionsAll = useMemo(
     () =>

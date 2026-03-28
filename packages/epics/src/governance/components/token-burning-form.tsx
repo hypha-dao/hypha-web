@@ -24,6 +24,8 @@ import { resolveTokenDecimals } from '../utils/token-decimals';
 type FormValues = z.infer<typeof schemaTokenBurning>;
 
 const fullSchemaTokenBurning = schemaTokenBurning.extend(createAgreementFiles);
+const BURN_BALANCE_ERROR_TYPE_EXCEEDS = 'burnAmountExceedsBalance';
+const BURN_BALANCE_ERROR_TYPE_ZERO_ALL = 'burnAllBalanceZero';
 
 interface TokenBurningFormProps {
   spaceId: number | undefined | null;
@@ -121,11 +123,9 @@ export const TokenBurningForm = ({
       data.tokenBurning.burns.map(async (burn, index) => {
         const amountFieldPath = `tokenBurning.burns.${index}.amount` as const;
         const currentError = form.getFieldState(amountFieldPath).error;
-        const currentManualMessage = currentError?.message;
         const hasManagedManualError =
-          currentError?.type === 'manual' &&
-          (currentManualMessage === burnAmountExceedsBalanceMessage ||
-            currentManualMessage === amountGreaterThanZeroMessage);
+          currentError?.type === BURN_BALANCE_ERROR_TYPE_EXCEEDS ||
+          currentError?.type === BURN_BALANCE_ERROR_TYPE_ZERO_ALL;
 
         if (!isAddress(burn.address)) {
           if (hasManagedManualError) {
@@ -151,7 +151,7 @@ export const TokenBurningForm = ({
           if (recipientBalance === 0n) {
             hasBlockingValidationError = true;
             form.setError(amountFieldPath, {
-              type: 'manual',
+              type: BURN_BALANCE_ERROR_TYPE_ZERO_ALL,
               message: amountGreaterThanZeroMessage,
             });
             return;
@@ -184,7 +184,7 @@ export const TokenBurningForm = ({
         if (burnAmount > recipientBalance) {
           hasBlockingValidationError = true;
           form.setError(amountFieldPath, {
-            type: 'manual',
+            type: BURN_BALANCE_ERROR_TYPE_EXCEEDS,
             message: burnAmountExceedsBalanceMessage,
           });
           return;

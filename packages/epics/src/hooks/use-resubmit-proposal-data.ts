@@ -7,8 +7,14 @@ export const useResubmitProposalData = <
   T extends {
     title?: string;
     description?: string;
-    leadImage?: any;
-    attachments?: any;
+    leadImage?: string;
+    attachments?: Array<
+      | {
+          url?: string;
+          name?: string;
+        }
+      | string
+    >;
   },
 >(
   form: UseFormReturn<T>,

@@ -26,13 +26,12 @@ import {
 import { getDuration } from '@hypha-platform/ui-utils';
 import { getGovernanceChainId } from './governance-chain-id';
 
-const chainId = getGovernanceChainId();
-
 export const useAgreementMutationsWeb3Rpc = ({
   proposalSlug,
 }: {
   proposalSlug?: string | null;
 }) => {
+  const chainId = getGovernanceChainId();
   const { client } = useSmartWallets();
 
   const {

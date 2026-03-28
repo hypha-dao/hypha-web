@@ -47,24 +47,28 @@ export const TokenBurningPlugin = ({
     control,
     name: 'tokenBurning.token',
   }) as string | undefined;
+  const selectedTokenLower = selectedToken?.toLowerCase();
 
   const filteredTokens = tokens.filter(
     (token: ExtendedToken) => token?.space?.slug === spaceSlug,
   );
   const selectedTokenData = filteredTokens.find(
-    (token: ExtendedToken) => token.address === selectedToken,
+    (token: ExtendedToken) =>
+      token.address.toLowerCase() === selectedTokenLower,
   );
   const selectedDbToken = dbTokens
     .filter((token) => token.address)
-    .find(
-      (token) => token.address?.toLowerCase() === selectedToken?.toLowerCase(),
-    );
+    .find((token) => token.address?.toLowerCase() === selectedTokenLower);
   const { supply, isLoading: isLoadingSupply } = useTokenSupply(
     selectedDbToken?.address as `0x${string}`,
   );
   const isSelectedTokenValid = Boolean(selectedTokenData);
 
   useEffect(() => {
+    if (isLoading) {
+      return;
+    }
+
     if (selectedToken && !selectedTokenData) {
       setValue('tokenBurning.token', '');
       setValue('tokenBurning.burns', [
@@ -76,7 +80,7 @@ export const TokenBurningPlugin = ({
         },
       ]);
     }
-  }, [selectedToken, selectedTokenData, setValue]);
+  }, [isLoading, selectedToken, selectedTokenData, setValue]);
 
   return (
     <div className="flex flex-col gap-4">
