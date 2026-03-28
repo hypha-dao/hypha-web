@@ -474,15 +474,13 @@ function BurnAmountBalanceValidationMessage({
       ? `${normalizedAmountInput}0`
       : normalizedAmountInput;
 
-  let exceedsBalance = false;
-  if (
-    !allBalance &&
-    isValidRecipient &&
-    !isLoading &&
-    !error &&
-    data != null &&
-    normalizedAmount.length > 0
-  ) {
+  let exceedsBalance: boolean | undefined;
+  if (allBalance || normalizedAmount.length === 0 || !isValidRecipient) {
+    exceedsBalance = false;
+  } else if (isLoading || error || data == null) {
+    // Keep any existing manual error until balance state is resolvable.
+    exceedsBalance = undefined;
+  } else {
     try {
       exceedsBalance = parseUnits(normalizedAmount, decimals) > data;
     } catch {
@@ -496,7 +494,7 @@ function BurnAmountBalanceValidationMessage({
       currentError?.type === 'manual' &&
       currentError.message === exceedsBalanceMessage;
 
-    if (exceedsBalance) {
+    if (exceedsBalance === true) {
       const shouldSetManualError = !shouldClearManualError;
       if (shouldSetManualError) {
         setError(amountFieldName, {
@@ -507,7 +505,7 @@ function BurnAmountBalanceValidationMessage({
       return;
     }
 
-    if (shouldClearManualError) {
+    if (exceedsBalance === false && shouldClearManualError) {
       clearErrors(amountFieldName);
     }
   }, [
@@ -519,7 +517,7 @@ function BurnAmountBalanceValidationMessage({
     setError,
   ]);
 
-  if (!exceedsBalance) {
+  if (exceedsBalance !== true) {
     return null;
   }
 

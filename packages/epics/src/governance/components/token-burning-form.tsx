@@ -7,6 +7,7 @@ import {
   useMe,
   useJwt,
   useTokenBurningOrchestrator,
+  publicClient,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
@@ -17,6 +18,8 @@ import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
+import { erc20Abi, isAddress, parseUnits } from 'viem';
+import { resolveTokenDecimals } from '../utils/token-decimals';
 
 type FormValues = z.infer<typeof schemaTokenBurning>;
 
@@ -86,6 +89,81 @@ export const TokenBurningForm = ({
     },
     mode: 'onChange',
   });
+  const burnAmountExceedsBalanceMessage = tAgreementFlow(
+    'plugins.tokenBurning.burnAmountExceedsBalance',
+  );
+
+  const normalizeAmountInput = (amount: string) => {
+    const normalizedAmountInput = amount.trim().replace(',', '.');
+    if (normalizedAmountInput.startsWith('.')) {
+      return `0${normalizedAmountInput}`;
+    }
+    if (normalizedAmountInput.endsWith('.')) {
+      return `${normalizedAmountInput}0`;
+    }
+    return normalizedAmountInput;
+  };
+
+  const validateRecipientBurnBalances = async (data: FormValues) => {
+    const tokenAddress = data.tokenBurning.token as `0x${string}`;
+
+    if (!isAddress(tokenAddress)) {
+      return false;
+    }
+
+    const decimals = resolveTokenDecimals(tokenAddress);
+    let hasExceededBalance = false;
+
+    await Promise.all(
+      data.tokenBurning.burns.map(async (burn, index) => {
+        const amountFieldPath = `tokenBurning.burns.${index}.amount` as const;
+        const currentError = form.getFieldState(amountFieldPath).error;
+        const hasManualExceedsError =
+          currentError?.type === 'manual' &&
+          currentError.message === burnAmountExceedsBalanceMessage;
+
+        if (burn.allBalance || !burn.amount || !isAddress(burn.address)) {
+          if (hasManualExceedsError) {
+            form.clearErrors(amountFieldPath);
+          }
+          return;
+        }
+
+        const normalizedAmount = normalizeAmountInput(burn.amount);
+        let burnAmount: bigint;
+        try {
+          burnAmount = parseUnits(normalizedAmount, decimals);
+        } catch {
+          if (hasManualExceedsError) {
+            form.clearErrors(amountFieldPath);
+          }
+          return;
+        }
+
+        const recipientBalance = await publicClient.readContract({
+          address: tokenAddress,
+          abi: erc20Abi,
+          functionName: 'balanceOf',
+          args: [burn.address as `0x${string}`],
+        });
+
+        if (burnAmount > recipientBalance) {
+          hasExceededBalance = true;
+          form.setError(amountFieldPath, {
+            type: 'manual',
+            message: burnAmountExceedsBalanceMessage,
+          });
+          return;
+        }
+
+        if (hasManualExceedsError) {
+          form.clearErrors(amountFieldPath);
+        }
+      }),
+    );
+
+    return hasExceededBalance;
+  };
 
   useScrollToErrors(form, formRef);
   const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
@@ -128,7 +206,13 @@ export const TokenBurningForm = ({
       <Form {...form}>
         <form
           ref={formRef}
-          onSubmit={form.handleSubmit(handleCreate)}
+          onSubmit={form.handleSubmit(async (data) => {
+            const hasBalanceErrors = await validateRecipientBurnBalances(data);
+            if (hasBalanceErrors) {
+              return;
+            }
+            await handleCreate(data);
+          })}
           className="flex flex-col gap-5"
         >
           <CreateAgreementBaseFields
