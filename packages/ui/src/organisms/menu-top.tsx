@@ -32,10 +32,10 @@ export const MenuTop = ({
   }, [pathname]);
 
   return (
-    <header className="sticky top-0 flex items-center h-9 bg-page-background z-20">
+    <header className="sticky top-0 flex min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background-2 px-4 py-3 z-20">
       <div
         className={clsx(
-          'w-full mx-auto flex items-center px-10',
+          'w-full mx-auto flex items-center',
           children ? 'justify-between' : 'justify-center',
         )}
       >
@@ -70,7 +70,7 @@ export const MenuTop = ({
 
         {/* Mobile Full Screen Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden fixed inset-0 top-9 z-40 flex flex-col items-center p-4 bg-page-background overflow-y-auto">
+          <div className="md:hidden fixed inset-0 top-[52px] z-40 flex flex-col items-center p-4 bg-background-2 overflow-y-auto">
             <div className="flex flex-col space-y-8 items-center">
               {children}
             </div>
