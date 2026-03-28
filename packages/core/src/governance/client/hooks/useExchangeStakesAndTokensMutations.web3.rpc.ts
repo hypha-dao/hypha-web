@@ -10,6 +10,8 @@ import { getProposalFromLogs } from '../web3';
 import {
   daoProposalsImplementationAbi,
   daoProposalsImplementationAddress,
+  escrowImplementationAbi,
+  escrowImplementationAddress,
 } from '@hypha-platform/core/generated';
 import {
   getTokenDecimals,
@@ -31,27 +33,6 @@ interface CreateExchangeStakesAndTokensInput {
   sellerLeg: ExchangeLegInput[];
   buyerLeg: ExchangeLegInput[];
 }
-
-const escrowCreateAbi = [
-  {
-    type: 'function',
-    name: 'createEscrow',
-    stateMutability: 'nonpayable',
-    inputs: [
-      { name: '_partyB', type: 'address', internalType: 'address' },
-      { name: '_tokenA', type: 'address', internalType: 'address' },
-      { name: '_tokenB', type: 'address', internalType: 'address' },
-      { name: '_amountA', type: 'uint256', internalType: 'uint256' },
-      { name: '_amountB', type: 'uint256', internalType: 'uint256' },
-      { name: '_sendFundsNow', type: 'bool', internalType: 'bool' },
-    ],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
-  },
-] as const;
-
-const escrowAddressByChain: Partial<Record<number, `0x${string}`>> = {
-  8453: '0x447A317cA5516933264Cdd6aeee0633Fa954B576',
-};
 
 export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
   proposalSlug,
@@ -105,7 +86,10 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
         );
       }
 
-      const escrowAddress = escrowAddressByChain[chainId];
+      const escrowAddress =
+        escrowImplementationAddress[
+          chainId as keyof typeof escrowImplementationAddress
+        ];
       if (!escrowAddress) {
         throw new Error(`Escrow contract not configured for chain ${chainId}`);
       }
@@ -162,7 +146,7 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
               target: escrowAddress,
               value: BigInt(0),
               data: encodeFunctionData({
-                abi: escrowCreateAbi,
+                abi: escrowImplementationAbi,
                 functionName: 'createEscrow',
                 args: [
                   arg.buyerAddress as `0x${string}`,
