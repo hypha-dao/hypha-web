@@ -247,59 +247,59 @@ export const ProfileRedeemTokens = ({
           }),
         ]);
 
-      return vaultSpaceTokens
-        .map((spaceToken, index) => {
-          const configResult = vaultConfigResults[index];
-          const config =
-            configResult?.status === 'success'
-              ? (configResult.result as {
-                  redeemEnabled?: boolean;
-                  redemptionStartDate?: bigint;
-                })
-              : undefined;
-          if (!config?.redeemEnabled) {
-            return null;
-          }
-          const redemptionStartDateSeconds = Number(
-            config.redemptionStartDate ?? 0n,
-          );
-          if (
-            redemptionStartDateSeconds > 0 &&
-            redemptionStartDateSeconds * 1000 > Date.now()
-          ) {
-            return null;
-          }
-          const balanceResult = balanceResults[index];
-          const hasBalance =
-            balanceResult?.status === 'success' && balanceResult.result > 0n;
-          if (!hasBalance) {
-            return null;
-          }
-          const priceResult = redemptionPriceResults[index];
-          const rawRedemptionPrice =
-            priceResult?.status === 'success' &&
-            Array.isArray(priceResult.result) &&
-            typeof priceResult.result[0] === 'bigint'
-              ? priceResult.result[0]
-              : 0n;
-          const redemptionPrice =
-            rawRedemptionPrice > 0n
-              ? Number(rawRedemptionPrice) / 1_000_000
-              : undefined;
-          const meta = tokenMetadataByAddress.get(spaceToken.toLowerCase());
-          return {
-            icon: meta?.icon || '/placeholder/token-icon.svg',
-            symbol: meta?.symbol || 'UNKNOWN',
-            address: spaceToken,
-            tokenPrice: redemptionPrice,
-            type: undefined,
-            space: {
-              title: space.title,
-              slug: space.slug,
-            },
-          } satisfies Token;
-        })
-        .filter((token): token is Token => token !== null);
+      const fallbackTokens: Token[] = [];
+      for (const [index, spaceToken] of vaultSpaceTokens.entries()) {
+        const configResult = vaultConfigResults[index];
+        const config =
+          configResult?.status === 'success'
+            ? (configResult.result as {
+                redeemEnabled?: boolean;
+                redemptionStartDate?: bigint;
+              })
+            : undefined;
+        if (!config?.redeemEnabled) {
+          continue;
+        }
+        const redemptionStartDateSeconds = Number(
+          config.redemptionStartDate ?? 0n,
+        );
+        if (
+          redemptionStartDateSeconds > 0 &&
+          redemptionStartDateSeconds * 1000 > Date.now()
+        ) {
+          continue;
+        }
+        const balanceResult = balanceResults[index];
+        const hasBalance =
+          balanceResult?.status === 'success' && balanceResult.result > 0n;
+        if (!hasBalance) {
+          continue;
+        }
+        const priceResult = redemptionPriceResults[index];
+        const rawRedemptionPrice =
+          priceResult?.status === 'success' &&
+          Array.isArray(priceResult.result) &&
+          typeof priceResult.result[0] === 'bigint'
+            ? priceResult.result[0]
+            : 0n;
+        const redemptionPrice =
+          rawRedemptionPrice > 0n
+            ? Number(rawRedemptionPrice) / 1_000_000
+            : undefined;
+        const meta = tokenMetadataByAddress.get(spaceToken.toLowerCase());
+        fallbackTokens.push({
+          icon: meta?.icon || '/placeholder/token-icon.svg',
+          symbol: meta?.symbol || 'UNKNOWN',
+          address: spaceToken,
+          tokenPrice: redemptionPrice,
+          type: undefined,
+          space: {
+            title: space.title,
+            slug: space.slug,
+          },
+        });
+      }
+      return fallbackTokens;
     },
     [tokenMetadataByAddress, vaultAddress],
   );
