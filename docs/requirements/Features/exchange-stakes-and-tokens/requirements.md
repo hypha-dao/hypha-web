@@ -7,6 +7,7 @@
 | GitHub issue | [hypha-web#743](https://github.com/hypha-dao/hypha-web/issues/743) |
 | Title (issue) | Exchange Ownership |
 | Status | Draft for implementation |
+| Smart contract target | `packages/storage-evm/contracts/EscrowImplementation.sol` (`IEscrow`) |
 | Related baseline | `en/dho/2026-1/agreements/create/pay-for-expenses` flow parity |
 
 ---
@@ -25,8 +26,9 @@ Current create-flow exposes “Exchange Ownership (Coming Soon)” only, so user
 
 - Enable a production-ready “Exchange Stakes & Tokens” create action and proposal template.
 - Reuse existing proposal architecture and UI components to keep implementation clean and low-risk.
-- Mirror the existing `pay-for-expenses` contract invocation pattern (`createProposal` with ERC-20 transfer transactions).
+- Mirror the existing `pay-for-expenses` create/orchestrator contract-invocation pattern while targeting escrow creation via `EscrowImplementation`.
 - Support two-sided exchange terms: seller leg and buyer leg, each with wallet + token/amount entries.
+- Integrate on-chain settlement through `EscrowImplementation` (`createEscrow`, `receiveFunds`, `getEscrow`) instead of direct bilateral transfer transactions.
 
 **Non-goals**
 
@@ -62,7 +64,9 @@ Current create-flow exposes “Exchange Ownership (Coming Soon)” only, so user
 
 **PAR-3** The system SHALL use the same Web3 proposal creation pattern as `pay-for-expenses`: compute min proposal duration, build transaction array, call `daoProposalsImplementation.createProposal`, wait for receipt, derive proposal ID from logs.
 
-**PAR-4** The system SHALL reuse existing recipient and token amount selector primitives (member/space selector + manual wallet entry + token payout rows) rather than introducing bespoke UI controls.
+**PAR-4** The system SHALL target escrow operations by encoding transactions against `EscrowImplementation` and ERC-20 approval calls needed by escrow funding.
+
+**PAR-5** The system SHALL reuse existing recipient and token amount selector primitives (member/space selector + manual wallet entry + token payout rows) rather than introducing bespoke UI controls.
 
 ---
 
@@ -90,25 +94,25 @@ Current create-flow exposes “Exchange Ownership (Coming Soon)” only, so user
 - member/space searchable dropdown selector
 - manual wallet address input field
 
-**FR-6** The system SHALL capture Seller “will send” leg as one-or-more rows of:
+**FR-6** The system SHALL capture Seller “will send” leg as one row in V1 escrow mode:
 - amount (numeric input)
 - token (treasury-referenced token dropdown)
-- add/remove row controls
+- optional future extensibility for multiple rows SHALL remain out-of-scope unless mapped to multiple escrows.
 
 **FR-7** The system SHALL capture Buyer wallet via:
 - member/space searchable dropdown selector
 - manual wallet address input field
 
-**FR-8** The system SHALL capture Buyer “will send” leg as one-or-more rows of:
+**FR-8** The system SHALL capture Buyer “will send” leg as one row in V1 escrow mode:
 - amount (numeric input)
 - token (native or treasury-referenced token dropdown; if native is unavailable in current stack, the system SHALL document and constrain to supported tokens)
-- add/remove row controls
+- optional future extensibility for multiple rows SHALL remain out-of-scope unless mapped to multiple escrows.
 
 ### 6.3 Validation and data model
 
 **FR-9** The system SHALL validate seller and buyer wallet fields as non-empty valid EVM addresses.
 
-**FR-10** The system SHALL require at least one valid `{amount, token}` row on each exchange leg.
+**FR-10** The system SHALL require exactly one valid `{amount, token}` entry on each exchange leg for the initial escrow integration release.
 
 **FR-11** The system SHALL enforce all existing agreement validation constraints for title, description, lead image, and attachments.
 
@@ -116,23 +120,38 @@ Current create-flow exposes “Exchange Ownership (Coming Soon)” only, so user
 
 ### 6.4 Contract integration and settlement
 
-**FR-13** The system SHALL create the Web3 proposal using the same contract endpoint used by `pay-for-expenses` (`createProposal` on DAO proposals implementation) and SHALL encode ERC-20 transfer transactions with `transfer(recipient, amount)`.
+**FR-13** The system SHALL create the Web3 proposal using the same proposal endpoint used by `pay-for-expenses` (`createProposal` on DAO proposals implementation), but SHALL encode escrow-setup transactions targeting `EscrowImplementation`.
 
-**FR-14** The system SHALL build Web3 transactions as bilateral settlement transfers from treasury:
-- each seller-leg row becomes transfer of seller token amount to buyer wallet
-- each buyer-leg row becomes transfer of buyer token amount to seller wallet
+**FR-14** The system SHALL encode the on-chain transaction sequence for proposal execution as:
+- ERC-20 `approve(escrowContract, amountA)` from executor/treasury for seller-side token
+- `EscrowImplementation.createEscrow(partyB, tokenA, tokenB, amountA, amountB, sendFundsNow)` where:
+  - `partyB` = buyer wallet from form
+  - `tokenA`/`amountA` = seller leg
+  - `tokenB`/`amountB` = buyer leg
+  - `sendFundsNow` = `true` for immediate party-A funding in the same execution flow
 
-**FR-15** The system SHALL use the same duration behavior as parity flow: space minimum proposal duration when configured, otherwise fallback default duration.
+**FR-15** The system SHALL provide buyer funding instructions after proposal acceptance/execution:
+- buyer MUST approve `tokenB` allowance to `EscrowImplementation`
+- buyer MUST call `receiveFunds(escrowId)` from buyer wallet
+- once both parties are funded, escrow auto-completion SHALL transfer `tokenA` to buyer and `tokenB` to party A per contract logic.
 
-**FR-16** The system SHALL link `web3ProposalId` back to the Web2 agreement record after successful on-chain proposal creation, matching existing agreement/proposal linkage behavior.
+**FR-16** The system SHALL use the same duration behavior as parity flow: space minimum proposal duration when configured, otherwise fallback default duration.
 
-**FR-17** The system SHALL fail creation atomically if on-chain proposal creation fails after Web2 draft creation, deleting the newly created Web2 agreement record before surfacing error state (same rollback policy as parity flow).
+**FR-17** The system SHALL link `web3ProposalId` back to the Web2 agreement record after successful on-chain proposal creation, matching existing agreement/proposal linkage behavior.
+
+**FR-18** The system SHALL fail creation atomically if on-chain proposal creation fails after Web2 draft creation, deleting the newly created Web2 agreement record before surfacing error state (same rollback policy as parity flow).
+
+**FR-19** The system SHALL record and expose escrow lifecycle metadata (`escrowId` when available, funding/completion/cancel status) in proposal detail views or linked activity surfaces.
 
 ### 6.5 Funding and execution UX
 
-**FR-18** The system SHALL provide a treasury funding path (copy address / QR modal) from proposal context using existing wallet-funding primitives so counterparties can deposit required tokens to settlement treasury.
+**FR-20** The system SHALL provide funding actions in proposal context using existing wallet-funding primitives:
+- treasury deposit (copy address / QR) for pre-funding seller-side token
+- buyer-side guidance for escrow allowance + `receiveFunds` execution.
 
-**FR-19** The system SHALL present exchange proposal details using existing proposal detail components plus exchange-specific rendering for both legs, without regressing existing transfer proposal displays.
+**FR-21** The system SHALL present exchange proposal details using existing proposal detail components plus exchange-specific rendering for both legs and escrow status, without regressing existing transfer proposal displays.
+
+**FR-22** The system SHALL define whether `cancelEscrow` and `withdrawFromCancelled` are exposed in V1 UI; if not exposed, the system SHALL document this operational constraint in release notes and support docs.
 
 ---
 
@@ -146,7 +165,9 @@ Current create-flow exposes “Exchange Ownership (Coming Soon)” only, so user
 
 **NFR-4** All new user-facing labels/messages SHALL be added to existing i18n message namespaces and SHALL not hardcode visible strings in components.
 
-**NFR-5** The solution SHALL not require smart contract changes for the initial release scope.
+**NFR-5** The solution SHALL integrate against the deployed `EscrowImplementation` ABI/address configuration used by the app runtime and SHALL avoid hardcoded ad-hoc addresses in component code.
+
+**NFR-6** The solution SHALL not require smart contract source changes for the initial release scope.
 
 ---
 
@@ -170,19 +191,19 @@ Then submission is blocked with a clear amount/token validation message.
 
 **AC-5** Given valid exchange input and connected smart wallet,  
 When the user publishes,  
-Then Web2 agreement is created, Web3 proposal is created via `createProposal`, files are uploaded, and `web3ProposalId` is linked in Web2.
+Then Web2 agreement is created, Web3 proposal is created via `createProposal` containing escrow-setup transactions (`approve` + `createEscrow`), files are uploaded, and `web3ProposalId` is linked in Web2.
 
 **AC-6** Given Web3 proposal creation fails after Web2 agreement creation,  
 When orchestration handles the failure,  
 Then the created Web2 agreement is deleted and the user sees recoverable error/reset state.
 
 **AC-7** Given an accepted exchange proposal needs funding,  
-When a participant selects funding action,  
-Then treasury wallet funding UX (address copy / QR) is available.
+When a participant opens funding guidance,  
+Then treasury wallet funding UX (address copy / QR) and buyer `approve + receiveFunds(escrowId)` instructions are available.
 
 **AC-8** Given an exchange proposal is opened in proposal detail,  
 When proposal metadata is rendered,  
-Then both seller and buyer legs are displayed clearly with wallet + token + amount context.
+Then both seller and buyer legs are displayed clearly with wallet + token + amount context and escrow lifecycle status (pending funded/completed/cancelled when available).
 
 ---
 
@@ -193,8 +214,9 @@ Then both seller and buyer legs are displayed clearly with wallet + token + amou
 - Reuse recipient selector + manual address component pattern for both seller and buyer.
 - Reuse token payout row and field-array pattern for both exchange legs.
 - Reuse orchestrator task state machine pattern (`CREATE_WEB2`, `CREATE_WEB3`, `UPLOAD_FILES`, `LINK`).
-- Reuse proposal details decoding/rendering infrastructure and extend only where necessary for exchange-specific labeling.
+- Reuse proposal details decoding/rendering infrastructure and extend only where necessary for exchange-specific labeling + escrow status.
 - Reuse wallet funding modal/QR integration for treasury deposit flow.
+- Add escrow ABI/address wiring in generated/runtime client contract configs.
 
 ---
 
@@ -202,10 +224,12 @@ Then both seller and buyer legs are displayed clearly with wallet + token + amou
 
 | ID | Question | Owner | Status |
 |----|----------|-------|--------|
-| OQ-1 | For “native token” support in buyer leg, do we support true native asset transfer in V1 or constrain to ERC-20 tokens only? | Product + Engineering | Open |
+| OQ-1 | For “native token” support in buyer leg, do we support true native asset transfer in V1 or constrain to ERC-20 tokens only (contract currently ERC-20 only)? | Product + Engineering | Open |
 | OQ-2 | Should seller funding also expose explicit QR/copy flow, or only buyer per current issue text? | Product | Open |
 | OQ-3 | Should exchange details be represented in dedicated structured fields on the document model, markdown payload, or both? | Engineering | Open |
-| OQ-4 | Is partial settlement (one leg funded, one unfunded) allowed to remain pending execution, or should UI block execution attempts until both legs are funded? | Product + Engineering | Open |
+| OQ-4 | Is partial settlement (one leg funded, one unfunded) allowed to remain pending indefinitely, or should timeout/cancel UX be mandatory in V1? | Product + Engineering | Open |
+| OQ-5 | Which deployed `EscrowImplementation` proxy address per environment (dev/staging/prod) is canonical for app integration? | DevOps + Engineering | Open |
+| OQ-6 | In V1, is party A always treasury/executor (proposal-created escrow), or must UI support direct seller-created escrows where party A is non-treasury wallet? | Product + Engineering | Open |
 
 ---
 
@@ -213,10 +237,10 @@ Then both seller and buyer legs are displayed clearly with wallet + token + amou
 
 - **T-1 Action & routing:** enable create action, route, and i18n copy updates.
 - **T-2 Form schema:** add exchange schema + validation (seller, buyer, dual payout arrays).
-- **T-3 Plugin UI:** implement exchange plugin using reusable recipient/payout components for both sides.
-- **T-4 Orchestrator + Web3 mutation:** implement parity lifecycle + transaction mapping for bilateral settlement.
-- **T-5 Proposal detail rendering:** add exchange-specific proposal display/parsing where needed.
-- **T-6 Funding UX linkage:** expose treasury deposit (QR/copy) action in relevant exchange context.
+- **T-3 Plugin UI:** implement exchange plugin using reusable recipient/payout components for both sides (single pair per side in V1).
+- **T-4 Orchestrator + Web3 mutation:** implement parity lifecycle + transaction mapping to escrow (`approve` + `createEscrow` via proposal).
+- **T-5 Proposal detail rendering:** add exchange-specific proposal display/parsing + escrow status where needed.
+- **T-6 Funding UX linkage:** expose treasury deposit (QR/copy) action and buyer `approve + receiveFunds` flow guidance.
 - **T-7 QA coverage:** add/create-path and orchestration tests (success + rollback path).
 
 ---
@@ -225,4 +249,5 @@ Then both seller and buyer legs are displayed clearly with wallet + token + amou
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 0.2 | 2026-03-28 | Requirements (agent) | Updated smart-contract integration target to `EscrowImplementation.sol`; revised FR/NFR/AC, reuse map, and open questions for escrow lifecycle. |
 | 0.1 | 2026-03-28 | Requirements (agent) | Initial draft spec for issue #743 with pay-for-expenses parity and contract integration definition. |
