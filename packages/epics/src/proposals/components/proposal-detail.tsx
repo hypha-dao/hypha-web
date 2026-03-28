@@ -449,6 +449,7 @@ export const ProposalDetail = ({
         closeUrl={closeUrl}
         onWithdrawSuccess={onWithdrawSuccess}
         label={label}
+        spaceTokenPurchaseData={proposalDetails?.spaceTokenPurchaseData}
       />
     </div>
   );

@@ -14,6 +14,7 @@ type PageProps = {
 export default async function BuySpaceTokensProfile(props: PageProps) {
   const { lang, personSlug: personSlugRaw } = await props.params;
   const personSlug = tryDecodeUriPart(personSlugRaw);
+  const closeUrl = `/${lang}/profile/${personSlug}`;
 
   return (
     <SidePanel>
@@ -27,14 +28,14 @@ export default async function BuySpaceTokensProfile(props: PageProps) {
               label="Back to actions"
               backUrl={`/${lang}/profile/${personSlug}/actions`}
             />
-            <ButtonClose closeUrl={`/${lang}/profile/${personSlug}`} />
+            <ButtonClose closeUrl={closeUrl} />
           </div>
         </div>
         <span className="text-2 text-neutral-11">
           Purchase your space&apos;s native tokens using the configured payment
           currency.
         </span>
-        <PeopleBuySpaceTokens personSlug={personSlug} />
+        <PeopleBuySpaceTokens personSlug={personSlug} closeUrl={closeUrl} />
       </div>
     </SidePanel>
   );
