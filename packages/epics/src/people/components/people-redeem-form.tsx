@@ -422,6 +422,7 @@ export const PeopleRedeemForm = ({
             tokens={tokens}
             name="redemptions"
             allowAddOrRemove={false}
+            showSelectedTokenBalanceHint
           />
           <TokenPercentageFieldArray
             label="Converted into"

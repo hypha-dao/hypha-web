@@ -18,6 +18,7 @@ export interface Token {
   icon: string;
   symbol: string;
   address: `0x${string}`;
+  value?: number;
   space?: {
     title: string;
     slug: string;
@@ -30,6 +31,7 @@ interface TokenPayoutFieldArrayProps {
   name?: string;
   label?: string;
   allowAddOrRemove?: boolean;
+  showSelectedTokenBalanceHint?: boolean;
 }
 
 export const TokenPayoutFieldArray = ({
@@ -37,6 +39,7 @@ export const TokenPayoutFieldArray = ({
   name = 'payouts',
   label,
   allowAddOrRemove = true,
+  showSelectedTokenBalanceHint = false,
 }: TokenPayoutFieldArrayProps) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const resolvedLabel =
@@ -82,6 +85,9 @@ export const TokenPayoutFieldArray = ({
                           value={value}
                           onChange={onChange}
                           tokens={tokens}
+                          showSelectedTokenBalanceHint={
+                            showSelectedTokenBalanceHint
+                          }
                         />
                       </FormControl>
                       <FormMessage
