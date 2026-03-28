@@ -35,7 +35,7 @@ export async function GET(
 
     // Then, get all spaces for this person using their ID
     const spaces = await findAllSpacesByMemberId(
-      { memberId: person.id },
+      { memberId: person.id, parentOnly: false },
       // TODO: implement authorization
       { db },
     );
