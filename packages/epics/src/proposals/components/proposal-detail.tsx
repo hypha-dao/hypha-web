@@ -517,6 +517,7 @@ export const ProposalDetail = ({
         onWithdrawSuccess={onWithdrawSuccess}
         label={label}
         proposalTemplateData={resubmitTemplateData}
+        spaceTokenPurchaseData={proposalDetails?.spaceTokenPurchaseData}
       />
     </div>
   );
