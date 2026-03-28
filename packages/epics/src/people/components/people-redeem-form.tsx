@@ -424,18 +424,20 @@ export const PeopleRedeemForm = ({
             allowAddOrRemove={false}
             showSelectedTokenBalanceHint
           />
-          <TokenPercentageFieldArray
-            label="Converted into"
-            assets={conversionAssets}
-            name="conversions"
-            onRemoveRebalance={(remainingAssets) => {
-              const rebalanced = rebalanceByUsd(remainingAssets);
-              form.setValue('conversions', rebalanced, {
-                shouldDirty: true,
-                shouldValidate: true,
-              });
-            }}
-          />
+          {selectedRedemption?.token && (
+            <TokenPercentageFieldArray
+              label="Converted into"
+              assets={conversionAssets}
+              name="conversions"
+              onRemoveRebalance={(remainingAssets) => {
+                const rebalanced = rebalanceByUsd(remainingAssets);
+                form.setValue('conversions', rebalanced, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+              }}
+            />
+          )}
           {isSelectedCollateralInsufficient && (
             <div className="text-2 text-red-11">
               Selected collateral coverage ($
