@@ -38,7 +38,9 @@ type TokenSelectionSectionProps = {
   selectedToken: SpaceToken | undefined;
   isLoading: boolean;
   isLoadingSupply: boolean;
+  isLoadingTreasuryBalance: boolean;
   supply: number | undefined;
+  treasuryBalance: number | undefined;
 };
 
 export const TokenSelectionSection = ({
@@ -47,7 +49,9 @@ export const TokenSelectionSection = ({
   selectedToken,
   isLoading,
   isLoadingSupply,
+  isLoadingTreasuryBalance,
   supply,
+  treasuryBalance,
 }: TokenSelectionSectionProps) => {
   const { lang } = useParams();
   const { control, setValue } = useFormContext();
@@ -55,7 +59,12 @@ export const TokenSelectionSection = ({
   const isLimitedSupply = selectedToken && Number(selectedToken.maxSupply) > 0;
 
   const tokensAvailableLimit = isLimitedSupply
-    ? Math.max(0, Number(selectedToken.maxSupply) - Number(supply ?? 0))
+    ? Math.max(
+        0,
+        Number(selectedToken.maxSupply) -
+          Number(supply ?? 0) +
+          Number(treasuryBalance ?? 0),
+      )
     : undefined;
 
   return (
@@ -200,7 +209,11 @@ export const TokenSelectionSection = ({
                 <span className="text-2 text-neutral-11">
                   Tokens Available for Purchase Limit
                 </span>
-                <Skeleton width={120} height={20} loading={isLoadingSupply}>
+                <Skeleton
+                  width={120}
+                  height={20}
+                  loading={isLoadingSupply || isLoadingTreasuryBalance}
+                >
                   <span className="text-2 text-neutral-11">
                     {formatCurrencyValue(tokensAvailableLimit)}
                   </span>
