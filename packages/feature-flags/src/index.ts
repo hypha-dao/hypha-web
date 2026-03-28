@@ -1,6 +1,7 @@
-import { flag } from '@vercel/flags/next';
+import { flag } from 'flags/next';
 import {
   HYPHA_AUTH_PROVIDER,
+  HYPHA_ENABLE_AI_CHAT,
   HYPHA_SHOW_LANGUAGE_SELECT,
 } from '@hypha-platform/cookie';
 
@@ -17,5 +18,17 @@ export const showLanguageSelect = flag<boolean>({
   description: 'Show the i18n language select button in the menu bar',
   decide({ cookies }) {
     return cookies.get(HYPHA_SHOW_LANGUAGE_SELECT)?.value === 'true';
+  },
+});
+
+export const enableAiChat = flag<boolean>({
+  key: 'enable-ai-chat',
+  defaultValue: false,
+  description: 'Enable the AI Chat panel in space pages',
+  decide({ cookies }) {
+    // Cookie override takes precedence, then fall back to env var
+    const cookieValue = cookies.get(HYPHA_ENABLE_AI_CHAT)?.value;
+    if (cookieValue !== undefined) return cookieValue === 'true';
+    return process.env.NEXT_PUBLIC_ENABLE_AI_CHAT === 'true';
   },
 });

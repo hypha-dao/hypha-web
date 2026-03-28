@@ -1,6 +1,6 @@
 ---
 name: hypha-ui-stack
-description: Hypha UI stack: Tailwind CSS 4, shadcn/ui, Radix UI colors. Use when working with packages/ui, design tokens, component specs, or styling in hypha-web.
+description: "Hypha UI stack: Tailwind CSS 4, shadcn/ui, Radix UI colors. Use when working with packages/ui, design tokens, component specs, or styling in hypha-web."
 ---
 
 # Hypha UI Stack

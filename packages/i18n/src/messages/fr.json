@@ -1306,5 +1306,37 @@
         }
       }
     }
+  },
+  "AiPanel": {
+    "title": "Hypha AI",
+    "suggestions": {
+      "aboutSpace": "Parle-moi de cet espace",
+      "memberCount": "Combien de membres compte cet espace ?",
+      "agreements": "Quels accords existent dans cet espace ?",
+      "structure": "Décris la structure de cet espace"
+    },
+    "welcome": "Bonjour ! Je suis votre assistant Hypha AI. Je peux rechercher les détails de l'espace comme le nombre de membres, les accords et la structure. Posez-moi n'importe quelle question sur l'espace que vous consultez.",
+    "placeholder": "Demandez à Hypha AI...",
+    "sendButton": "Envoyer",
+    "stopButton": "Arrêter",
+    "newlineHint": "Shift+Entrée pour nouvelle ligne",
+    "signIn": "Connectez-vous pour utiliser Hypha AI",
+    "signInButton": "Se connecter",
+    "loading": "Chargement...",
+    "openPanel": "Ouvrir Hypha AI",
+    "hidePanel": "Masquer le panneau AI",
+    "resetChat": "Réinitialiser le chat",
+    "closePanel": "Fermer le panneau",
+    "copyButton": "Copier",
+    "copiedButton": "Copié !",
+    "toolLookingUp": "Recherche de l'espace…",
+    "toolLookingUpSlug": "Recherche de l'espace \"{slug}\"…",
+    "toolCompleted": "Appel d'outil terminé.",
+    "toolFoundSpace": "{title} ({slug}) trouvé - {memberCount} membres, {documentCount} accords",
+    "toolNoSpace": "Aucun espace trouvé pour le slug \"{slug}\"",
+    "toolTokens": "{count} jeton(s) récupéré(s) pour l'espace \"{slug}\".",
+    "toolError": "Erreur : {message}",
+    "streamError": "Une erreur est survenue lors de la génération de la réponse.",
+    "attachment": "Pièce jointe"
   }
 }

@@ -1306,5 +1306,37 @@
         }
       }
     }
+  },
+  "AiPanel": {
+    "title": "Hypha AI",
+    "suggestions": {
+      "aboutSpace": "Tell me about this space",
+      "memberCount": "How many members does this space have?",
+      "agreements": "What agreements exist in this space?",
+      "structure": "Describe the structure of this space"
+    },
+    "welcome": "Hello! I'm your Hypha AI assistant. I can look up space details like member counts, agreements, and structure. Ask me anything about the space you're viewing.",
+    "placeholder": "Ask Hypha AI anything...",
+    "sendButton": "Send",
+    "stopButton": "Stop",
+    "newlineHint": "Shift+Enter for newline",
+    "signIn": "Sign in to use Hypha AI",
+    "signInButton": "Sign In",
+    "loading": "Loading...",
+    "openPanel": "Open Hypha AI",
+    "hidePanel": "Hide AI panel",
+    "resetChat": "Reset chat",
+    "closePanel": "Close panel",
+    "copyButton": "Copy",
+    "copiedButton": "Copied!",
+    "toolLookingUp": "Looking up space…",
+    "toolLookingUpSlug": "Looking up space \"{slug}\"…",
+    "toolCompleted": "Tool call completed.",
+    "toolFoundSpace": "Found {title} ({slug}) - {memberCount} members, {documentCount} agreements",
+    "toolNoSpace": "No space found for slug \"{slug}\"",
+    "toolTokens": "Retrieved {count} token(s) for space \"{slug}\".",
+    "toolError": "Error: {message}",
+    "streamError": "An error occurred while generating the response.",
+    "attachment": "Attachment"
   }
 }

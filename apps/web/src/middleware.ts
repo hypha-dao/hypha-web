@@ -35,7 +35,7 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
       "form-action 'self'",
       "frame-ancestors 'none'",
       'child-src https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org',
-      'frame-src https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com',
+      'frame-src https://auth.privy.io https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com https://vercel.live',
       `connect-src 'self' ${connectSrc}`,
       "worker-src 'self'",
       "manifest-src 'self'",

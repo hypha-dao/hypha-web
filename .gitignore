@@ -58,3 +58,5 @@ vitest.config.*.timestamp*
 
 # Turborepo
 .turbo
+.firecrawl/
+.playwright-cli/
