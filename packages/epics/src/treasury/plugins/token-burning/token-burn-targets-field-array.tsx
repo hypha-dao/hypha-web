@@ -249,9 +249,6 @@ export const TokenBurnTargetsFieldArray = ({
                       tokenAddress={selectedTokenAddress}
                       recipientAddress={addressField.value}
                       tokenSymbol={selectedTokenSymbol}
-                      amountFieldName={`${name}.${index}.amount`}
-                      amountValue={entry.amount}
-                      allBalance={entry.allBalance}
                     />
                   ) : null}
                   <FormMessage />
@@ -279,6 +276,15 @@ export const TokenBurnTargetsFieldArray = ({
                       />
                     </FormControl>
                     <FormMessage />
+                    {selectedTokenAddress ? (
+                      <BurnAmountBalanceValidationMessage
+                        tokenAddress={selectedTokenAddress}
+                        recipientAddress={entry.address}
+                        amountFieldName={`${name}.${index}.amount`}
+                        amountValue={entry.amount}
+                        allBalance={entry.allBalance}
+                      />
+                    ) : null}
                   </FormItem>
                 )}
               />
@@ -287,8 +293,11 @@ export const TokenBurnTargetsFieldArray = ({
                 control={control}
                 name={`${name}.${index}.allBalance`}
                 render={({ field: allBalanceField }) => (
-                  <FormItem className="flex flex-col gap-2 md:pt-8">
-                    <div className="flex items-center gap-2 min-h-10">
+                  <FormItem className="flex flex-col gap-2">
+                    <span className="invisible text-2 select-none" aria-hidden>
+                      {tAgreementFlow('plugins.tokenBurning.amountLabel')}
+                    </span>
+                    <div className="flex items-center gap-2 h-10">
                       <Checkbox
                         checked={Boolean(allBalanceField.value)}
                         onCheckedChange={(checked) => {
@@ -350,28 +359,15 @@ export const TokenBurnTargetsFieldArray = ({
   );
 };
 
-function RecipientTokenBalanceHint({
+function useRecipientTokenBalance({
   tokenAddress,
   recipientAddress,
-  tokenSymbol,
-  amountFieldName,
-  amountValue,
-  allBalance,
 }: {
   tokenAddress: `0x${string}`;
   recipientAddress?: string;
-  tokenSymbol?: string;
-  amountFieldName: string;
-  amountValue?: string;
-  allBalance?: boolean;
 }) {
-  const tAgreementFlow = useTranslations('AgreementFlow');
-  const { setError, clearErrors, getFieldState } = useFormContext();
   const isValidRecipient = Boolean(
     recipientAddress && isAddress(recipientAddress),
-  );
-  const exceedsBalanceMessage = tAgreementFlow(
-    'plugins.tokenBurning.burnAmountExceedsBalance',
   );
 
   const { data, error, isLoading } = useSWR(
@@ -388,74 +384,25 @@ function RecipientTokenBalanceHint({
     { revalidateOnFocus: true },
   );
 
-  const decimals = resolveTokenDecimals(tokenAddress);
-  const normalizedAmountInput = (amountValue ?? '').trim().replace(',', '.');
-  const normalizedAmount = normalizedAmountInput.startsWith('.')
-    ? `0${normalizedAmountInput}`
-    : normalizedAmountInput.endsWith('.')
-    ? `${normalizedAmountInput}0`
-    : normalizedAmountInput;
+  return { data, error, isLoading, isValidRecipient };
+}
 
-  useEffect(() => {
-    const currentError = getFieldState(amountFieldName).error;
-    const shouldClearManualError =
-      currentError?.type === 'manual' &&
-      currentError.message === exceedsBalanceMessage;
-
-    if (allBalance) {
-      clearErrors(amountFieldName);
-      return;
-    }
-
-    if (
-      normalizedAmount.length === 0 ||
-      !isValidRecipient ||
-      isLoading ||
-      error ||
-      data == null
-    ) {
-      if (shouldClearManualError) {
-        clearErrors(amountFieldName);
-      }
-      return;
-    }
-
-    try {
-      const parsedAmount = parseUnits(normalizedAmount, decimals);
-      const shouldSetManualError = !(
-        currentError?.type === 'manual' &&
-        currentError.message === exceedsBalanceMessage
-      );
-      if (parsedAmount > data) {
-        if (shouldSetManualError) {
-          setError(amountFieldName, {
-            type: 'manual',
-            message: exceedsBalanceMessage,
-          });
-        }
-      } else if (shouldClearManualError) {
-        clearErrors(amountFieldName);
-      }
-    } catch {
-      if (shouldClearManualError) {
-        clearErrors(amountFieldName);
-      }
-    }
-  }, [
-    amountFieldName,
-    amountValue,
-    allBalance,
-    clearErrors,
-    data,
-    decimals,
-    error,
-    exceedsBalanceMessage,
-    getFieldState,
-    isLoading,
-    isValidRecipient,
-    normalizedAmount,
-    setError,
-  ]);
+function RecipientTokenBalanceHint({
+  tokenAddress,
+  recipientAddress,
+  tokenSymbol,
+}: {
+  tokenAddress: `0x${string}`;
+  recipientAddress?: string;
+  tokenSymbol?: string;
+}) {
+  const tAgreementFlow = useTranslations('AgreementFlow');
+  const { data, error, isLoading, isValidRecipient } = useRecipientTokenBalance(
+    {
+      tokenAddress,
+      recipientAddress,
+    },
+  );
 
   if (!isValidRecipient) {
     return null;
@@ -490,4 +437,88 @@ function RecipientTokenBalanceHint({
       </span>
     </Skeleton>
   );
+}
+
+function BurnAmountBalanceValidationMessage({
+  tokenAddress,
+  recipientAddress,
+  amountFieldName,
+  amountValue,
+  allBalance,
+}: {
+  tokenAddress: `0x${string}`;
+  recipientAddress?: string;
+  amountFieldName: string;
+  amountValue?: string;
+  allBalance?: boolean;
+}) {
+  const tAgreementFlow = useTranslations('AgreementFlow');
+  const { setError, clearErrors, getFieldState } = useFormContext();
+  const { data, error, isLoading, isValidRecipient } = useRecipientTokenBalance(
+    {
+      tokenAddress,
+      recipientAddress,
+    },
+  );
+  const exceedsBalanceMessage = tAgreementFlow(
+    'plugins.tokenBurning.burnAmountExceedsBalance',
+  );
+  const decimals = resolveTokenDecimals(tokenAddress);
+  const normalizedAmountInput = (amountValue ?? '').trim().replace(',', '.');
+  const normalizedAmount = normalizedAmountInput.startsWith('.')
+    ? `0${normalizedAmountInput}`
+    : normalizedAmountInput.endsWith('.')
+    ? `${normalizedAmountInput}0`
+    : normalizedAmountInput;
+
+  let exceedsBalance = false;
+  if (
+    !allBalance &&
+    isValidRecipient &&
+    !isLoading &&
+    !error &&
+    data != null &&
+    normalizedAmount.length > 0
+  ) {
+    try {
+      exceedsBalance = parseUnits(normalizedAmount, decimals) > data;
+    } catch {
+      exceedsBalance = false;
+    }
+  }
+
+  useEffect(() => {
+    const currentError = getFieldState(amountFieldName).error;
+    const shouldClearManualError =
+      currentError?.type === 'manual' &&
+      currentError.message === exceedsBalanceMessage;
+
+    if (exceedsBalance) {
+      const shouldSetManualError = !shouldClearManualError;
+      if (shouldSetManualError) {
+        setError(amountFieldName, {
+          type: 'manual',
+          message: exceedsBalanceMessage,
+        });
+      }
+      return;
+    }
+
+    if (shouldClearManualError) {
+      clearErrors(amountFieldName);
+    }
+  }, [
+    amountFieldName,
+    clearErrors,
+    exceedsBalance,
+    exceedsBalanceMessage,
+    getFieldState,
+    setError,
+  ]);
+
+  if (!exceedsBalance) {
+    return null;
+  }
+
+  return <span className="text-2 text-error">{exceedsBalanceMessage}</span>;
 }
