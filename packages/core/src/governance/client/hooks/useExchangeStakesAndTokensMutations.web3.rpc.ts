@@ -97,6 +97,12 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
       const transactionGroups = await Promise.all(
         sellerRows.map(async (sellerRow, index) => {
           const buyerRow = buyerRows[index];
+          if (!buyerRow) {
+            throw new Error(
+              `Missing buyer row ${index + 1}. Seller and buyer rows must be paired.`,
+            );
+          }
+
           const sellerTokenDecimals = await getTokenDecimals(sellerRow.token);
           const buyerTokenDecimals = await getTokenDecimals(buyerRow.token);
 

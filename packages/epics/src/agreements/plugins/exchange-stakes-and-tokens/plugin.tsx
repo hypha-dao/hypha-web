@@ -3,7 +3,7 @@
 import { RecipientField } from '../components/common/recipient-field';
 import { TokenPayoutFieldArray } from '../components/common/token-payout-field-array';
 import { Separator, Skeleton } from '@hypha-platform/ui';
-import { Person, Space } from '@hypha-platform/core/client';
+import { Person, Space, Token } from '@hypha-platform/core/client';
 import { useTokens } from '../../../treasury';
 import { useTranslations } from 'next-intl';
 import React from 'react';
@@ -20,12 +20,14 @@ export const ExchangeStakesAndTokensPlugin = ({
   const tAgreementFlow = useTranslations('AgreementFlow');
   const { tokens, isLoading } = useTokens({ spaceSlug });
   const sellerTokens = React.useMemo(
-    () => tokens.filter((token) => token.type !== null),
+    () => tokens.filter((token: Token) => token.type !== null),
     [tokens],
   );
   const buyerTokens = React.useMemo(
     () =>
-      tokens.filter((token) => token.type === null || token.type === 'utility'),
+      tokens.filter(
+        (token: Token) => token.type === null || token.type === 'utility',
+      ),
     [tokens],
   );
 
