@@ -8,7 +8,15 @@ import {
   TOKENS,
 } from '@hypha-platform/core/client';
 
+/** Minimal decaying space token reads — no standalone `saleEnabled` bool; sale is off iff `paymentToken()` is zero (see `configureTokenSale`). */
 const spaceTokenPurchaseAbi = [
+  {
+    type: 'function',
+    inputs: [],
+    name: 'paymentToken',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
   {
     type: 'function',
     inputs: [],
@@ -36,7 +44,7 @@ const paymentTokenToReferenceCurrency = (
 };
 
 export type SpaceTokenSaleDetailsFromChain = {
-  /** Mirrors on-chain sale: active when payment token is not the zero address. */
+  /** From `paymentToken()`: non-zero means sale is configured (matches proposal `isActive`). */
   activatePurchase: boolean;
   purchasePrice?: number;
   purchaseCurrency?: 'USD' | 'EUR';
@@ -55,16 +63,25 @@ export const useSpaceTokenSaleDetailsFromChain = ({
       ? ['spaceTokenSaleDetailsHydrate', tokenAddress]
       : null,
     async ([, addr]) => {
-      const [salePaymentToken, salePricePerToken, tokensLeftToSell] =
-        await publicClient.readContract({
+      const [storedPaymentToken, saleDetails] = await Promise.all([
+        publicClient.readContract({
+          address: addr as `0x${string}`,
+          abi: spaceTokenPurchaseAbi,
+          functionName: 'paymentToken',
+        }),
+        publicClient.readContract({
           address: addr as `0x${string}`,
           abi: spaceTokenPurchaseAbi,
           functionName: 'getTokenSaleDetails',
-        });
+        }),
+      ]);
+
+      const [salePaymentToken, salePricePerToken, tokensLeftToSell] =
+        saleDetails;
 
       const saleActive =
-        Boolean(salePaymentToken) &&
-        salePaymentToken.toLowerCase() !== ZERO.toLowerCase();
+        Boolean(storedPaymentToken) &&
+        storedPaymentToken.toLowerCase() !== ZERO.toLowerCase();
 
       if (!saleActive) {
         return {
