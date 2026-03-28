@@ -43,7 +43,13 @@ export default async function SpaceTokenPurchasePage({
         successfulUrl={successfulUrl}
         backUrl={backUrl}
         closeUrl={closeUrl}
-        plugin={<SpaceTokenPurchasePlugin spaceSlug={slug} spaceId={spaceId} />}
+        plugin={
+          <SpaceTokenPurchasePlugin
+            spaceSlug={slug}
+            spaceId={spaceId}
+            web3SpaceId={web3SpaceId}
+          />
+        }
       />
     </SidePanel>
   );
