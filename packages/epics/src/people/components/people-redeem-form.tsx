@@ -478,6 +478,12 @@ export const PeopleRedeemForm = ({
             allowAddOrRemove={false}
             showSelectedTokenBalanceHint
           />
+          {isRequestedAmountExceedsBalance && (
+            <div className="text-2 text-red-11 mt-1">
+              Requested amount ({redemptionAmount.toFixed(2)}) exceeds available
+              balance ({(selectedTokenAvailableBalance ?? 0).toFixed(2)}).
+            </div>
+          )}
           {selectedRedemption?.token && (
             <TokenPercentageFieldArray
               label="Converted into"
@@ -497,12 +503,6 @@ export const PeopleRedeemForm = ({
               Selected collateral coverage ($
               {selectedCollateralUsdTotal.toFixed(2)}) is below redemption value
               (${(selectedTokenUsdValue ?? 0).toFixed(2)}).
-            </div>
-          )}
-          {isRequestedAmountExceedsBalance && (
-            <div className="text-2 text-red-11">
-              Requested amount ({redemptionAmount.toFixed(2)}) exceeds available
-              balance ({(selectedTokenAvailableBalance ?? 0).toFixed(2)}).
             </div>
           )}
           {hasExceededCollateralAllocation && (
