@@ -392,6 +392,7 @@ export const TokenBurnTargetsFieldArray = ({
                           const isChecked = checked === true;
                           allBalanceField.onChange(isChecked);
                           if (isChecked) {
+                            // Amount will be auto-populated from recipient balance.
                             setValue(`${name}.${index}.amount`, '');
                             clearErrors(`${name}.${index}.amount`);
                           }
@@ -606,7 +607,8 @@ function BurnAmountBalanceValidationMessage({
   allBalance?: boolean;
 }) {
   const tAgreementFlow = useTranslations('AgreementFlow');
-  const { setError, clearErrors, getFieldState, formState } = useFormContext();
+  const { setError, clearErrors, getFieldState, formState, setValue } =
+    useFormContext();
   const { data, error, isLoading, isValidRecipient } = useRecipientTokenBalance(
     {
       tokenAddress,
@@ -682,6 +684,36 @@ function BurnAmountBalanceValidationMessage({
     hasManagedManualError,
     setError,
     currentError?.message,
+  ]);
+
+  useEffect(() => {
+    if (!allBalance) {
+      return;
+    }
+    if (!isValidRecipient || isLoading || error || data == null) {
+      return;
+    }
+
+    const autoAmountRaw = formatUnits(data, decimals);
+    const autoAmount = autoAmountRaw.replace(/(\.\d*?[1-9])0+$|\.0+$/, '$1');
+    if (autoAmount.length === 0) {
+      return;
+    }
+
+    setValue(amountFieldName, autoAmount, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+  }, [
+    allBalance,
+    amountFieldName,
+    data,
+    decimals,
+    error,
+    isLoading,
+    isValidRecipient,
+    setValue,
   ]);
 
   return null;
