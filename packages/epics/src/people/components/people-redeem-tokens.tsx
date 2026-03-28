@@ -9,8 +9,10 @@ import {
 } from '@hypha-platform/epics';
 import { PeopleRedeemForm } from './people-redeem-form';
 import { Separator } from '@hypha-platform/ui';
-import { useJwt } from '@hypha-platform/core/client';
+import { useJwt, useMe } from '@hypha-platform/core/client';
 import useSWR from 'swr';
+import { publicClient } from '@hypha-platform/core/client';
+import { erc20Abi } from 'viem';
 
 interface Token {
   icon: string;
@@ -50,11 +52,12 @@ export const ProfileRedeemTokens = ({
   lang,
   personSlug,
 }: ProfileRedeemTokensProps) => {
-  const { assets: userAssets, manualUpdate } = useUserAssets({
+  const { manualUpdate } = useUserAssets({
     personSlug,
     refreshInterval: 10000,
   });
   const { jwt } = useJwt();
+  const { person } = useMe();
 
   const { data: spaces } = useSWR<SpaceSummary[]>(
     jwt ? `/api/v1/people/${personSlug}/spaces` : null,
@@ -86,37 +89,20 @@ export const ProfileRedeemTokens = ({
     [uniqueSpaces],
   );
 
-  const positiveBalanceTokenAddresses = React.useMemo(
-    () =>
-      new Set(
-        userAssets
-          .filter((asset) => asset.value > 0)
-          .map((asset) => asset.address.toLowerCase()),
-      ),
-    [userAssets],
-  );
-
-  const positiveBalanceKey = React.useMemo(
-    () => Array.from(positiveBalanceTokenAddresses).sort().join(','),
-    [positiveBalanceTokenAddresses],
-  );
-
   const { data: redeemableTokens } = useSWR<Token[]>(
     jwt && spaceSlugs.length > 0
       ? [
           'redeemable-space-tokens',
           jwt,
           spaceSlugs.join(','),
-          positiveBalanceKey,
+          person?.address ?? '',
         ]
       : null,
     async () => {
-      if (positiveBalanceTokenAddresses.size === 0) {
-        return [];
-      }
-
       const redeemableTokensAcrossSpaces: Token[] = [];
       const now = Date.now();
+      const memberAddress = person?.address as `0x${string}` | undefined;
+      if (!memberAddress) return [];
 
       const spaceResults = await Promise.all(
         uniqueSpaces.map(async (space) => {
@@ -136,13 +122,6 @@ export const ProfileRedeemTokens = ({
           const activeVaultTokens = (vaultsPayload.vaults ?? []).filter(
             (vault) => {
               if (vault.redemptionEnabled !== true) return false;
-              if (
-                !positiveBalanceTokenAddresses.has(
-                  vault.spaceToken.toLowerCase(),
-                )
-              ) {
-                return false;
-              }
               if (!vault.redemptionStartDate) return true;
               const startDate = new Date(vault.redemptionStartDate);
               return (
@@ -151,19 +130,41 @@ export const ProfileRedeemTokens = ({
             },
           );
 
-          return activeVaultTokens.map((vaultToken) => {
-            return {
-              icon: vaultToken.tokenIcon || '/placeholder/token-icon.svg',
-              symbol: vaultToken.tokenSymbol || 'UNKNOWN',
-              address: vaultToken.spaceToken as `0x${string}`,
-              tokenPrice: vaultToken.redemptionPrice,
+          const balances = await Promise.all(
+            activeVaultTokens.map(async (vaultToken) => {
+              try {
+                const balance = await publicClient.readContract({
+                  address: vaultToken.spaceToken as `0x${string}`,
+                  abi: erc20Abi,
+                  functionName: 'balanceOf',
+                  args: [memberAddress],
+                });
+                return {
+                  token: vaultToken,
+                  hasBalance: balance > 0n,
+                };
+              } catch {
+                return {
+                  token: vaultToken,
+                  hasBalance: false,
+                };
+              }
+            }),
+          );
+
+          return balances
+            .filter((entry) => entry.hasBalance)
+            .map((entry) => ({
+              icon: entry.token.tokenIcon || '/placeholder/token-icon.svg',
+              symbol: entry.token.tokenSymbol || 'UNKNOWN',
+              address: entry.token.spaceToken as `0x${string}`,
+              tokenPrice: entry.token.redemptionPrice,
               type: undefined,
               space: {
                 title: space.title,
                 slug: space.slug,
               },
-            } satisfies Token;
-          });
+            }));
         }),
       );
 
