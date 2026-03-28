@@ -171,7 +171,11 @@ export const TokenBurnTargetsFieldArray = ({
       );
 
       if (!isAddressAvailable) {
-        setValue(`${name}.${index}.address`, '');
+        setValue(`${name}.${index}.address`, '', {
+          shouldDirty: true,
+          shouldTouch: true,
+          shouldValidate: true,
+        });
         clearErrors(`${name}.${index}.address`);
       }
     });
@@ -220,7 +224,11 @@ export const TokenBurnTargetsFieldArray = ({
                         value={typeField.value ?? 'member'}
                         onValueChange={(value) => {
                           typeField.onChange(value);
-                          setValue(`${name}.${index}.address`, '');
+                          setValue(`${name}.${index}.address`, '', {
+                            shouldDirty: true,
+                            shouldTouch: true,
+                            shouldValidate: true,
+                          });
                         }}
                       >
                         <TabsList triggerVariant="switch">
@@ -249,7 +257,11 @@ export const TokenBurnTargetsFieldArray = ({
                       }
                       initialValue={entry.address}
                       onChange={(value) =>
-                        setValue(`${name}.${index}.address`, value)
+                        setValue(`${name}.${index}.address`, value, {
+                          shouldDirty: true,
+                          shouldTouch: true,
+                          shouldValidate: true,
+                        })
                       }
                       emptyListMessage={
                         isLoadingRecipientOptions
