@@ -167,9 +167,13 @@ export const useBuySpaceTokensMutation = ({
       ? ['spaceTokenPurchaseApprove', tokenAddress, buyerAddress]
       : null,
     async () => {
+      const currentBuyerAddress = buyerAddress;
+      const currentTokenAddress = tokenAddress;
       if (!client) throw new Error('Smart wallet client not available');
-      if (!tokenAddress || !data)
+      if (!currentBuyerAddress) throw new Error('Buyer wallet not available');
+      if (!currentTokenAddress || !data)
         throw new Error('Token sale details are missing');
+      if (!buyerAddress) throw new Error('Buyer wallet address is missing');
       if (data.paymentAmount <= 0n) {
         throw new Error('Enter a valid token amount');
       }
@@ -219,15 +223,32 @@ export const useBuySpaceTokensMutation = ({
       if (!data.canPurchase) {
         throw new Error('This wallet is not eligible to buy this token.');
       }
-      if (data.balance < data.paymentAmount) {
+      const currentBuyerAddress = buyerAddress as `0x${string}`;
+      const currentTokenAddress = tokenAddress as `0x${string}`;
+      const [latestAllowance, latestBalance] = await Promise.all([
+        publicClient.readContract({
+          address: data.salePaymentToken,
+          abi: erc20Abi,
+          functionName: 'allowance',
+          args: [currentBuyerAddress, currentTokenAddress],
+        }),
+        publicClient.readContract({
+          address: data.salePaymentToken,
+          abi: erc20Abi,
+          functionName: 'balanceOf',
+          args: [currentBuyerAddress],
+        }),
+      ]);
+
+      if (latestBalance < data.paymentAmount) {
         throw new Error('Insufficient payment token balance.');
       }
-      if (data.allowance < data.paymentAmount) {
+      if (latestAllowance < data.paymentAmount) {
         throw new Error('Approval required before buying tokens.');
       }
 
       const hash = await client.writeContract({
-        address: tokenAddress,
+        address: currentTokenAddress,
         abi: spaceTokenPurchaseAbi,
         functionName: 'buyTokens',
         args: [data.tokenAmount],
