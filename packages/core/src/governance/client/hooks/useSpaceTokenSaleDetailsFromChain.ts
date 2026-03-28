@@ -36,9 +36,11 @@ const paymentTokenToReferenceCurrency = (
 };
 
 export type SpaceTokenSaleDetailsFromChain = {
-  purchasePrice: number;
-  purchaseCurrency: 'USD' | 'EUR';
-  tokensAvailableForPurchase: number;
+  /** Mirrors on-chain sale: active when payment token is not the zero address. */
+  activatePurchase: boolean;
+  purchasePrice?: number;
+  purchaseCurrency?: 'USD' | 'EUR';
+  tokensAvailableForPurchase?: number;
 };
 
 export const useSpaceTokenSaleDetailsFromChain = ({
@@ -60,16 +62,21 @@ export const useSpaceTokenSaleDetailsFromChain = ({
           functionName: 'getTokenSaleDetails',
         });
 
-      if (
-        !salePaymentToken ||
-        salePaymentToken.toLowerCase() === ZERO.toLowerCase()
-      ) {
-        return null;
+      const saleActive =
+        Boolean(salePaymentToken) &&
+        salePaymentToken.toLowerCase() !== ZERO.toLowerCase();
+
+      if (!saleActive) {
+        return {
+          activatePurchase: false,
+        } satisfies SpaceTokenSaleDetailsFromChain;
       }
 
       const currency = paymentTokenToReferenceCurrency(salePaymentToken);
       if (!currency) {
-        return null;
+        return {
+          activatePurchase: true,
+        } satisfies SpaceTokenSaleDetailsFromChain;
       }
 
       const decimals = await getTokenDecimals(salePaymentToken);
@@ -79,6 +86,7 @@ export const useSpaceTokenSaleDetailsFromChain = ({
       );
 
       return {
+        activatePurchase: true,
         purchasePrice,
         purchaseCurrency: currency,
         tokensAvailableForPurchase,

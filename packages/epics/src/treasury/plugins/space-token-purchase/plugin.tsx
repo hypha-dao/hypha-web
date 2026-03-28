@@ -61,38 +61,52 @@ export const SpaceTokenPurchasePlugin = ({
 
   const { data: saleDetailsFromChain } = useSpaceTokenSaleDetailsFromChain({
     tokenAddress: tokenAddressChecksum,
-    enabled: Boolean(activatePurchase && tokenAddressChecksum),
+    enabled: Boolean(tokenAddressChecksum),
   });
 
   React.useEffect(() => {
-    if (!activatePurchase || !tokenAddressChecksum) {
-      hydratedFromChainForToken.current = null;
-      return;
-    }
-    if (!saleDetailsFromChain) {
+    hydratedFromChainForToken.current = null;
+  }, [tokenAddressChecksum]);
+
+  React.useEffect(() => {
+    if (!tokenAddressChecksum || saleDetailsFromChain === undefined) {
       return;
     }
     if (hydratedFromChainForToken.current === tokenAddressChecksum) {
       return;
     }
     hydratedFromChainForToken.current = tokenAddressChecksum;
-    setValue('purchasePrice', saleDetailsFromChain.purchasePrice, {
+
+    setValue('activatePurchase', saleDetailsFromChain.activatePurchase, {
       shouldDirty: true,
       shouldValidate: true,
     });
-    setValue('purchaseCurrency', saleDetailsFromChain.purchaseCurrency, {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-    setValue(
-      'tokensAvailableForPurchase',
-      saleDetailsFromChain.tokensAvailableForPurchase,
-      {
-        shouldDirty: true,
-        shouldValidate: true,
-      },
-    );
-  }, [activatePurchase, tokenAddressChecksum, saleDetailsFromChain, setValue]);
+
+    if (saleDetailsFromChain.activatePurchase) {
+      if (saleDetailsFromChain.purchasePrice !== undefined) {
+        setValue('purchasePrice', saleDetailsFromChain.purchasePrice, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+      }
+      if (saleDetailsFromChain.purchaseCurrency !== undefined) {
+        setValue('purchaseCurrency', saleDetailsFromChain.purchaseCurrency, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+      }
+      if (saleDetailsFromChain.tokensAvailableForPurchase !== undefined) {
+        setValue(
+          'tokensAvailableForPurchase',
+          saleDetailsFromChain.tokensAvailableForPurchase,
+          {
+            shouldDirty: true,
+            shouldValidate: true,
+          },
+        );
+      }
+    }
+  }, [tokenAddressChecksum, saleDetailsFromChain, setValue]);
 
   const selectedToken = spaceTokens.find(
     (t) => t.address?.toLowerCase() === tokenAddress?.toLowerCase(),
