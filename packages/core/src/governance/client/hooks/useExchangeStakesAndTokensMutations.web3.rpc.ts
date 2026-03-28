@@ -120,7 +120,6 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
         getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
       );
 
-<<<<<<< HEAD
       const transactionGroups = await Promise.all(
         sellerRows.map(async (sellerRow, index) => {
           const buyerRow = buyerRows[index];
