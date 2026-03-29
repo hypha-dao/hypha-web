@@ -12,6 +12,7 @@ import {
   validTokenTypes,
 } from '@hypha-platform/core/client';
 import {
+  useAssets,
   useTokens,
   useVaults,
   type Vault,
@@ -90,7 +91,20 @@ export const RedeemTokensPlugin = ({
 }) => {
   const form = useFormContext();
   const { vaults, isLoading: isVaultsLoading } = useVaults();
+  const { assets: treasuryAssets, isLoading: isTreasuryAssetsLoading } =
+    useAssets({});
   const { tokens: spaceTokensForTypes } = useTokens({ spaceSlug });
+
+  /** Space executor (treasury) token balances from the same source as the Treasury tab. */
+  const treasuryBalanceByTokenAddress = React.useMemo(() => {
+    const map = new Map<string, number>();
+    for (const asset of treasuryAssets) {
+      const addr = asset.address?.toLowerCase();
+      if (!addr) continue;
+      map.set(addr, asset.value ?? 0);
+    }
+    return map;
+  }, [treasuryAssets]);
 
   const tokenTypeByAddress = React.useMemo(() => {
     const map = new Map<string, TokenType | null>();
@@ -110,9 +124,16 @@ export const RedeemTokensPlugin = ({
   }, [spaces, spaceSlug]);
 
   const redeemableTokens = React.useMemo(() => {
+    if (isTreasuryAssetsLoading) return [];
     const now = Date.now();
     return vaults
       .filter((vault) => isRedemptionActive(vault, now))
+      .filter((vault) => {
+        const balance =
+          treasuryBalanceByTokenAddress.get(vault.spaceToken.toLowerCase()) ??
+          0;
+        return balance > 0;
+      })
       .map((vault) => ({
         icon: vault.tokenIcon || '/placeholder/token-icon.svg',
         symbol: vault.tokenSymbol || 'UNKNOWN',
@@ -124,7 +145,14 @@ export const RedeemTokensPlugin = ({
           slug: spaceSlug,
         },
       }));
-  }, [vaults, spaceSlug, spaceTitle, tokenTypeByAddress]);
+  }, [
+    isTreasuryAssetsLoading,
+    spaceSlug,
+    spaceTitle,
+    tokenTypeByAddress,
+    treasuryBalanceByTokenAddress,
+    vaults,
+  ]);
 
   const redemptions = useWatch({
     control: form.control,
@@ -237,7 +265,11 @@ export const RedeemTokensPlugin = ({
 
   return (
     <div className="flex flex-col gap-4">
-      <Skeleton loading={isVaultsLoading} width={'100%'} height={90}>
+      <Skeleton
+        loading={isVaultsLoading || isTreasuryAssetsLoading}
+        width={'100%'}
+        height={90}
+      >
         <TokenPayoutFieldArray
           tokens={redeemableTokens}
           name="redemptions"
