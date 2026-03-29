@@ -80,12 +80,10 @@ export function ProposalTokenBackingVaultData({
     !suppressRedeemDuplicates;
 
   const hasMeaningfulRedemptionPrice =
-    redemptionPrice !== undefined &&
-    String(redemptionPrice).trim() !== '';
+    redemptionPrice !== undefined && String(redemptionPrice).trim() !== '';
 
   const hasMaxRedemptionRow =
-    maxRedemptionPercent !== undefined &&
-    maxRedemptionPeriodDays !== undefined;
+    maxRedemptionPercent !== undefined && maxRedemptionPeriodDays !== undefined;
 
   const hasVaultConfigRows =
     (addCollaterals?.length ?? 0) > 0 ||
@@ -194,13 +192,13 @@ export function ProposalTokenBackingVaultData({
           />
         )}
         {hasMaxRedemptionRow && (
-            <TokenBackingVaultDetailRow
-              label={tProposalDetails('labels.maxRedemption')}
-              value={tProposalDetails('labels.maxRedemptionValue', {
-                percent: maxRedemptionPercent,
-                days: maxRedemptionPeriodDays,
-              })}
-            />
+          <TokenBackingVaultDetailRow
+            label={tProposalDetails('labels.maxRedemption')}
+            value={tProposalDetails('labels.maxRedemptionValue', {
+              percent: maxRedemptionPercent,
+              days: maxRedemptionPeriodDays,
+            })}
+          />
         )}
         {minimumBackingPercent !== undefined && (
           <TokenBackingVaultDetailRow
