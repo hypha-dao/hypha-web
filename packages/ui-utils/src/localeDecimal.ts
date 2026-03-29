@@ -1,3 +1,5 @@
+import { isPlainDecimalAscii } from './safe-decimal-string';
+
 /**
  * Read grouping (thousands) and decimal separators for a locale from Intl.
  */
@@ -34,7 +36,7 @@ export function parseLocaleDecimal(
     s = decParts.join('.');
   }
 
-  if (!/^\d*\.?\d*$/.test(s) || s === '.' || !/\d/.test(s)) {
+  if (!isPlainDecimalAscii(s) || s === '.' || !/\d/.test(s)) {
     return undefined;
   }
 

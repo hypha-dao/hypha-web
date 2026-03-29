@@ -10,7 +10,7 @@ import {
   Image,
   Button,
 } from '@hypha-platform/ui';
-import { cn } from '@hypha-platform/ui-utils';
+import { cn, isPlainDecimalAscii } from '@hypha-platform/ui-utils';
 import { TokenType } from '@hypha-platform/core/client';
 import { getTokenTypeLabel } from '../../../../treasury/components/common/token-type-field';
 import { useTranslations } from 'next-intl';
@@ -57,7 +57,7 @@ export const TokenPayoutField = ({
 
     const normalizedAmount = amount.replace(',', '.');
 
-    if (/^\d*\.?\d*$/.test(normalizedAmount)) {
+    if (isPlainDecimalAscii(normalizedAmount)) {
       onChange({ amount: normalizedAmount, token: value.token });
     }
   };

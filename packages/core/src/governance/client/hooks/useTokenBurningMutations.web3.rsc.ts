@@ -15,7 +15,10 @@ import {
   getSpaceMinProposalDuration,
   publicClient,
 } from '@hypha-platform/core/client';
-import { getDuration } from '@hypha-platform/ui-utils';
+import {
+  getDuration,
+  isCanonicalDecimalAmountAscii,
+} from '@hypha-platform/ui-utils';
 import { getGovernanceChainId } from './governance-chain-id';
 
 interface TokenBurnRowInput {
@@ -48,7 +51,7 @@ const toTokenAmount = (amount: string) => {
     throw new Error('Enter an amount to continue.');
   }
 
-  if (!/^(?:\d+\.?\d*|\.\d+)$/.test(canonicalAmount)) {
+  if (!isCanonicalDecimalAmountAscii(canonicalAmount)) {
     throw new Error('Invalid amount format');
   }
 

@@ -12,5 +12,6 @@ export * from './hasEmojiOrLink';
 export * from './try-decode-uri-part';
 export * from './formatDuration';
 export * from './canConvertToBigInt';
+export * from './safe-decimal-string';
 export * from './formatSeconds';
 export * from './formatDecayInterval';

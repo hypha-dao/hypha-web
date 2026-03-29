@@ -13,6 +13,7 @@ import {
 import { Address } from '@hypha-platform/core/client';
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { isPlainDecimalWithCommaAscii } from '@hypha-platform/ui-utils';
 
 interface Token {
   icon: string;
@@ -52,7 +53,7 @@ export const EntryMethodTokenField = ({
   const handleAmountChange = (next: string) => {
     // allow only digits with a single optional decimal point;
     // support intermediate states
-    if (!/^\d*(?:[\.\,]\d*)?$/.test(next)) return;
+    if (!isPlainDecimalWithCommaAscii(next)) return;
     setDisplayAmount(next);
     // don't propagate while incomplete (empty or trailing '.')
     if (next === '' || next.endsWith('.') || next.endsWith(',')) return;
