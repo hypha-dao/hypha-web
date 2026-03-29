@@ -445,15 +445,21 @@ export const useProposalDetailsWeb3Rpc = ({
           break;
         }
 
-        case 'spaceTokenPurchase':
+        case 'spaceTokenPurchase': {
+          const payload = decoded.data as {
+            paymentToken: string;
+            paymentTokenPricePerToken: bigint;
+            tokensForSale: bigint;
+          };
           spaceTokenPurchaseData = {
-            ...decoded.data,
+            ...payload,
             tokenAddress: tx.target,
             isActive:
-              decoded.data.paymentToken !==
+              payload.paymentToken !==
               '0x0000000000000000000000000000000000000000',
           };
           break;
+        }
 
         default:
           break;

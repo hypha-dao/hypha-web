@@ -32,3 +32,16 @@ export const getProposalFromLogs = (logs: any[]) => {
   }
   return undefined;
 };
+
+/** Persist only when the on-chain id fits PostgreSQL integer / JS safe integer. */
+export function web3ProposalIdForDb(
+  proposalId: bigint | undefined,
+): number | undefined {
+  if (proposalId === undefined) return undefined;
+  if (proposalId > BigInt(Number.MAX_SAFE_INTEGER)) {
+    throw new Error(
+      'Proposal ID exceeds safe integer range and cannot be stored reliably',
+    );
+  }
+  return Number(proposalId);
+}

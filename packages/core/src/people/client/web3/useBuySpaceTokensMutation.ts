@@ -6,48 +6,7 @@ import useSWRMutation from 'swr/mutation';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 import { erc20Abi, parseUnits } from 'viem';
 import { getTokenDecimals, publicClient } from '@hypha-platform/core/client';
-
-const spaceTokenPurchaseAbi = [
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getTokenSaleDetails',
-    outputs: [
-      { name: 'salePaymentToken', internalType: 'address', type: 'address' },
-      { name: 'salePricePerToken', internalType: 'uint256', type: 'uint256' },
-      { name: 'tokensLeftToSell', internalType: 'uint256', type: 'uint256' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
-    name: 'canAccountPurchase',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'purchaseEligibilityMode',
-    outputs: [{ name: '', internalType: 'uint8', type: 'uint8' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'executor',
-    outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'tokenAmount', internalType: 'uint256', type: 'uint256' }],
-    name: 'buyTokens',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-] as const;
+import { spaceTokenPurchaseAbi } from '../../../common/web3/abis/space-token-purchase';
 
 type BuySpaceTokensInput = {
   tokenAddress: `0x${string}`;
@@ -194,7 +153,6 @@ export const useBuySpaceTokensMutation = ({
       if (!currentBuyerAddress) throw new Error('Buyer wallet not available');
       if (!currentTokenAddress || !data)
         throw new Error('Token sale details are missing');
-      if (!buyerAddress) throw new Error('Buyer wallet address is missing');
       if (data.paymentAmount <= 0n) {
         throw new Error('Enter a valid token amount');
       }

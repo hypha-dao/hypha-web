@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useCallback, useMemo } from 'react';
-import useSWR from 'swr';
 import useSWRMutation from 'swr/mutation';
 import { z } from 'zod';
 import { produce } from 'immer';
@@ -16,6 +15,8 @@ import {
 import { useAgreementFileUploads } from './useAgreementFileUploads';
 import { useAgreementMutationsWeb2Rsc } from './useAgreementMutations.web2.rsc';
 import { useSpaceTokenPurchaseMutationsWeb3Rpc } from './useSpaceTokenPurchaseMutations.web3.rsc';
+import { getProposalFromLogs, web3ProposalIdForDb } from '../web3';
+import { publicClient } from '../../../common/web3/public-client';
 
 type CreateSpaceTokenPurchaseArg = z.infer<typeof schemaCreateAgreement> & {
   tokenAddress: string;
@@ -128,6 +129,10 @@ export const useSpaceTokenPurchaseOrchestrator = ({
     progressStateReducer,
     initialTaskState,
   );
+  const taskStateRef = React.useRef(taskState);
+  React.useEffect(() => {
+    taskStateRef.current = taskState;
+  }, [taskState]);
   const progress = computeProgress(taskState);
   const [currentTask, setCurrentTask] = React.useState<TaskName | null>(null);
 
@@ -168,23 +173,22 @@ export const useSpaceTokenPurchaseOrchestrator = ({
       completeTask('CREATE_WEB2_AGREEMENT');
 
       const web2Slug = createdAgreement?.slug ?? web2.createdAgreement?.slug;
+      if (!web2Slug) {
+        throw new Error('Agreement slug missing after create');
+      }
 
-      let pendingTask: TaskName | null = null;
       try {
         // Upload files before creating the irreversible on-chain proposal
         startTask('UPLOAD_FILES');
-        pendingTask = 'UPLOAD_FILES';
         const files = schemaCreateAgreementFiles.parse(arg);
         if (files.attachments?.length || files.leadImage) {
-          await agreementFiles.upload(files, web2Slug);
+          await agreementFiles.upload(files, web2Slug as string);
         }
         completeTask('UPLOAD_FILES');
-        pendingTask = null;
 
         if (config) {
           startTask('CREATE_WEB3_PROPOSAL');
-          pendingTask = 'CREATE_WEB3_PROPOSAL';
-          await web3.createSpaceTokenPurchaseProposal({
+          const txHash = await web3.createSpaceTokenPurchaseProposal({
             spaceId: arg.web3SpaceId ?? arg.spaceId,
             tokenAddress: arg.tokenAddress as `0x${string}`,
             activatePurchase: arg.activatePurchase,
@@ -193,54 +197,37 @@ export const useSpaceTokenPurchaseOrchestrator = ({
             tokensAvailableForPurchase: arg.tokensAvailableForPurchase,
           });
           completeTask('CREATE_WEB3_PROPOSAL');
-          pendingTask = null;
+
+          const receipt = await publicClient.waitForTransactionReceipt({
+            hash: txHash as `0x${string}`,
+          });
+          const proposalEvent = getProposalFromLogs(receipt.logs);
+          const proposalId = proposalEvent?.proposalId;
+          if (proposalId === undefined) {
+            throw new Error('Proposal ID not found in transaction receipt');
+          }
+
+          startTask('LINK_WEB2_AND_WEB3_AGREEMENT');
+          await web2.updateAgreementBySlug({
+            slug: web2Slug,
+            web3ProposalId: web3ProposalIdForDb(proposalId),
+          });
+          completeTask('LINK_WEB2_AND_WEB3_AGREEMENT');
         }
       } catch (err) {
-        if (pendingTask) {
-          errorTask(
-            pendingTask,
-            err instanceof Error ? err.message : 'Something went wrong',
-          );
+        const message =
+          err instanceof Error ? err.message : 'Something went wrong';
+        for (const taskName of Object.keys(
+          taskStateRef.current,
+        ) as TaskName[]) {
+          if (taskStateRef.current[taskName].status === TaskStatus.IS_PENDING) {
+            errorTask(taskName, message);
+          }
         }
         setCurrentTask(null);
-        if (web2Slug) {
-          await web2.deleteAgreementBySlug({ slug: web2Slug });
-        }
+        await web2.deleteAgreementBySlug({ slug: web2Slug });
         throw err;
       }
-    },
-  );
-
-  const { data: updatedWeb2Agreement } = useSWR(
-    web2.createdAgreement?.slug &&
-      (!config ||
-        taskState.CREATE_WEB3_PROPOSAL.status === TaskStatus.IS_DONE) &&
-      taskState.UPLOAD_FILES.status === TaskStatus.IS_DONE
-      ? [
-          web2.createdAgreement.slug,
-          web3.createdSpaceTokenPurchaseProposal?.proposalId,
-          'linkingSpaceTokenPurchase',
-        ]
-      : null,
-    async ([slug, web3ProposalId]) => {
-      try {
-        startTask('LINK_WEB2_AND_WEB3_AGREEMENT');
-        const result = await web2.updateAgreementBySlug({
-          slug,
-          web3ProposalId: web3ProposalId ? Number(web3ProposalId) : undefined,
-        });
-        completeTask('LINK_WEB2_AND_WEB3_AGREEMENT');
-        return result;
-      } catch (error) {
-        if (error instanceof Error) {
-          errorTask('LINK_WEB2_AND_WEB3_AGREEMENT', error.message);
-        }
-        throw error;
-      }
-    },
-    {
-      revalidateOnMount: true,
-      shouldRetryOnError: false,
     },
   );
 
@@ -277,8 +264,8 @@ export const useSpaceTokenPurchaseOrchestrator = ({
     () =>
       [
         web2.errorCreateAgreementMutation,
+        web2.errorUpdateAgreementBySlugMutation,
         web3.createSpaceTokenPurchaseError,
-        web3.errorWaitCreatedSpaceTokenPurchaseProposal,
         ...taskErrorMessages,
       ].filter(Boolean),
     [web2, web3, taskErrorMessages],
@@ -295,7 +282,7 @@ export const useSpaceTokenPurchaseOrchestrator = ({
     createSpaceTokenPurchase,
     agreement: {
       ...web2.createdAgreement,
-      ...updatedWeb2Agreement,
+      ...web2.updatedAgreement,
     },
     taskState,
     /** i18n: map with AgreementFlow.spaceTokenPurchaseProgress */

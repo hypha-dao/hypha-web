@@ -827,6 +827,10 @@ export const schemaSpaceTokenPurchaseObject = z.object({
       val === '' || val === null || val === undefined ? undefined : Number(val),
     z.number().positive('Purchase price must be greater than 0').optional(),
   ),
+  /**
+   * Full set of reference currencies for UI selection (REFERENCE_CURRENCIES).
+   * On-chain hydration via useSpaceTokenSaleDetailsFromChain only yields USD/EUR.
+   */
   purchaseCurrency: z.enum(REFERENCE_CURRENCIES).optional(),
   tokensAvailableForPurchase: z.preprocess(
     (val) =>

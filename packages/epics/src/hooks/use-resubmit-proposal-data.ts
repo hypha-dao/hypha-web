@@ -177,15 +177,23 @@ export const useResubmitProposalData = <
           );
         }
 
-        form.trigger([
-          'title',
-          'description',
-          'tokenAddress',
-          'activatePurchase',
-          'purchasePrice',
-          'purchaseCurrency',
-          'tokensAvailableForPurchase',
-        ] as any[]);
+        const fieldsToTrigger: string[] = ['title', 'description'];
+        if (parsed.tokenAddress !== undefined) {
+          fieldsToTrigger.push('tokenAddress');
+        }
+        if (typeof parsed.activatePurchase === 'boolean') {
+          fieldsToTrigger.push('activatePurchase');
+        }
+        if (parsed.purchasePrice !== undefined) {
+          fieldsToTrigger.push('purchasePrice');
+        }
+        if (parsed.purchaseCurrency !== undefined) {
+          fieldsToTrigger.push('purchaseCurrency');
+        }
+        if (parsed.tokensAvailableForPurchase !== undefined) {
+          fieldsToTrigger.push('tokensAvailableForPurchase');
+        }
+        form.trigger(fieldsToTrigger as any[]);
 
         sessionStorage.setItem(
           'resubmitProposalData',

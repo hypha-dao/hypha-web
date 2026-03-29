@@ -66,7 +66,23 @@ export const SpaceTokenPurchasePlugin = ({
 
   React.useEffect(() => {
     hydratedFromChainForToken.current = null;
-  }, [tokenAddressChecksum]);
+    setValue('activatePurchase', false, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    setValue('purchasePrice', undefined, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    setValue('purchaseCurrency', undefined, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    setValue('tokensAvailableForPurchase', undefined, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  }, [tokenAddressChecksum, setValue]);
 
   React.useEffect(() => {
     if (!tokenAddressChecksum || saleDetailsFromChain === undefined) {
@@ -123,7 +139,7 @@ export const SpaceTokenPurchasePlugin = ({
     selectedToken?.address as `0x${string}` | undefined,
   );
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({
-    spaceId: web3SpaceId as number,
+    spaceId: web3SpaceId ?? undefined,
   });
   const treasuryAddress = spaceDetails?.executor as `0x${string}` | undefined;
 
