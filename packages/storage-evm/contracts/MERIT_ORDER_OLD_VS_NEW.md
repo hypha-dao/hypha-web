@@ -15,7 +15,10 @@ Why the old system is unfair, and how the new one fixes it.
 | Carol | 301 | 20% | 1 kWh |
 | Dave | 401 | 20% | 3 kWh |
 
-Solar park produced: **10 kWh** at **8 cents/kWh** (local price).
+Energy sources this interval (all prices set by backend):
+- **Solar:** 8 kWh at **8 cents/kWh**
+- **Battery discharge:** 2 kWh at **15 cents/kWh**
+- Total local: 10 kWh
 
 Total demand: 3 + 5 + 1 + 3 = **12 kWh**.
 
@@ -39,12 +42,19 @@ TX 2: consumeEnergyTokens(consumptionRequests)
 **TX 1 builds a pool.** The contract takes each energy source, splits it by ownership %, and creates pool entries:
 
 ```
-Source: Solar (10 kWh at 8¢, local)
+Source: Solar (8 kWh at 8¢, local)
 
-  Alice (30%): 3.0 kWh at 8¢  → pool entry, owner=Alice
-  Bob   (30%): 3.0 kWh at 8¢  → pool entry, owner=Bob
-  Carol (20%): 2.0 kWh at 8¢  → pool entry, owner=Carol
-  Dave  (20%): 2.0 kWh at 8¢  → pool entry, owner=Dave
+  Alice (30%): 2.4 kWh at 8¢  → pool entry, owner=Alice
+  Bob   (30%): 2.4 kWh at 8¢  → pool entry, owner=Bob
+  Carol (20%): 1.6 kWh at 8¢  → pool entry, owner=Carol
+  Dave  (20%): 1.6 kWh at 8¢  → pool entry, owner=Dave
+
+Source: Battery (2 kWh at 15¢, local)
+
+  Alice (30%): 0.6 kWh at 15¢ → pool entry, owner=Alice
+  Bob   (30%): 0.6 kWh at 15¢ → pool entry, owner=Bob
+  Carol (20%): 0.4 kWh at 15¢ → pool entry, owner=Carol
+  Dave  (20%): 0.4 kWh at 15¢ → pool entry, owner=Dave
 
 Source: Grid import (2 kWh at 25¢, import)
 
@@ -55,11 +65,15 @@ The contract sorts the pool by price (cheapest first):
 
 ```
 Pool after sorting:
-  [0] Alice:  3.0 kWh at  8¢
-  [1] Bob:    3.0 kWh at  8¢
-  [2] Carol:  2.0 kWh at  8¢
-  [3] Dave:   2.0 kWh at  8¢
-  [4] Import: 2.0 kWh at 25¢
+  [0] Alice:  2.4 kWh at  8¢
+  [1] Bob:    2.4 kWh at  8¢
+  [2] Carol:  1.6 kWh at  8¢
+  [3] Dave:   1.6 kWh at  8¢
+  [4] Alice:  0.6 kWh at 15¢
+  [5] Bob:    0.6 kWh at 15¢
+  [6] Carol:  0.4 kWh at 15¢
+  [7] Dave:   0.4 kWh at 15¢
+  [8] Import: 2.0 kWh at 25¢
 ```
 
 **TX 2 processes consumption.** The contract loops through each consumption request sequentially. For each member:
@@ -75,79 +89,80 @@ The backend decides the order of `consumptionRequests[]`. Whoever is processed f
 
 ```
 Alice (needs 3 kWh, processed 1st):
-  Pass 1: eats own entry [0] → 3.0 kWh at 8¢. Done.
-  Cost: 3.0 × 8 = 24¢
+  Pass 1: eats own entries [0] 2.4 at 8¢ + [4] 0.6 at 15¢ = 3.0 kWh. Done.
+  Cost: 2.4 × 8 + 0.6 × 15 = 28.2¢
 
 Bob (needs 5 kWh, processed 2nd):
-  Pass 1: eats own entry [1] → 3.0 kWh at 8¢. Needs 2 more.
-  Pass 2: Carol's entry [2] has 2.0 kWh at 8¢ → takes all 2.0. Done.
-  Cost: 5.0 × 8 = 40¢
+  Pass 1: eats own entries [1] 2.4 at 8¢ + [5] 0.6 at 15¢ = 3.0 kWh. Needs 2 more.
+  Pass 2 (cheapest first): Carol's solar [2] 1.6 at 8¢ → takes 1.6. Needs 0.4 more.
+          Carol's battery [6] 0.4 at 15¢ → takes 0.4. Done.
+  Cost: 2.4 × 8 + 0.6 × 15 + 1.6 × 8 + 0.4 × 15 = 47.0¢
 
 Carol (needs 1 kWh, processed 3rd):
-  Pass 1: own entry [2] is empty (Bob took it). Gets 0.
-  Pass 2: Dave's entry [3] has 2.0 kWh at 8¢ → takes 1.0. Done.
-  Cost: 1.0 × 8 = 8¢
+  Pass 1: own entries [2] and [6] are empty (Bob took them). Gets 0.
+  Pass 2: Dave's solar [3] 1.6 at 8¢ → takes 1.0. Done.
+  Cost: 1.0 × 8 = 8.0¢
 
 Dave (needs 3 kWh, processed 4th):
-  Pass 1: own entry [3] has 1.0 kWh left → takes 1.0 at 8¢. Needs 2 more.
-  Pass 2: only import entry [4] left → takes 2.0 at 25¢. Done.
-  Cost: 1.0 × 8 + 2.0 × 25 = 58¢
+  Pass 1: own entries [3] has 0.6 left at 8¢ + [7] 0.4 at 15¢ = 1.0 kWh. Needs 2 more.
+  Pass 2: only import [8] left → takes 2.0 at 25¢. Done.
+  Cost: 0.6 × 8 + 0.4 × 15 + 2.0 × 25 = 60.8¢
 ```
 
 | Member | Consumption | Cost | Avg price/kWh |
 |---|---|---|---|
-| Alice | 3 kWh | 24¢ | 8.0¢ |
-| Bob | 5 kWh | 40¢ | 8.0¢ |
-| Carol | 1 kWh | 8¢ | 8.0¢ |
-| Dave | 3 kWh | **58¢** | **19.3¢** |
+| Alice | 3 kWh | 28.2¢ | 9.4¢ |
+| Bob | 5 kWh | 47.0¢ | 9.4¢ |
+| Carol | 1 kWh | 8.0¢ | 8.0¢ |
+| Dave | 3 kWh | **60.8¢** | **20.3¢** |
 
-Dave pays 19.3¢/kWh. Everyone else pays 8¢/kWh. Dave is the only one stuck with the expensive grid import.
+Dave pays 20.3¢/kWh. Carol gets lucky at 8¢. Dave is stuck with all the grid import because he's last in the array.
 
 **Order B: [Dave, Carol, Bob, Alice]**
 
 ```
 Dave (needs 3 kWh, processed 1st):
-  Pass 1: eats own entry [3] → 2.0 kWh at 8¢. Needs 1 more.
-  Pass 2: Alice's entry [0] has 3.0 kWh at 8¢ → takes 1.0. Done.
-  Cost: 3.0 × 8 = 24¢
+  Pass 1: eats own [3] 1.6 at 8¢ + [7] 0.4 at 15¢ = 2.0 kWh. Needs 1 more.
+  Pass 2: Alice's solar [0] 2.4 at 8¢ → takes 1.0. Done.
+  Cost: 1.6 × 8 + 0.4 × 15 + 1.0 × 8 = 26.8¢
 
 Carol (needs 1 kWh, processed 2nd):
-  Pass 1: eats own entry [2] → 1.0 kWh at 8¢. Done. (she has surplus of 1.0 left)
-  Cost: 1.0 × 8 = 8¢
+  Pass 1: eats own [2] 1.0 at 8¢. Done. (surplus: 0.6 solar + 0.4 battery)
+  Cost: 1.0 × 8 = 8.0¢
 
 Bob (needs 5 kWh, processed 3rd):
-  Pass 1: eats own entry [1] → 3.0 kWh at 8¢. Needs 2 more.
-  Pass 2: Alice's entry [0] has 2.0 kWh left at 8¢ → takes 2.0. Done.
-  Cost: 5.0 × 8 = 40¢
+  Pass 1: eats own [1] 2.4 at 8¢ + [5] 0.6 at 15¢ = 3.0 kWh. Needs 2 more.
+  Pass 2: Alice's solar [0] 1.4 left at 8¢ → takes 1.4. Carol's solar [2] 0.6 at 8¢ → takes 0.6. Done.
+  Cost: 2.4 × 8 + 0.6 × 15 + 1.4 × 8 + 0.6 × 8 = 42.6¢
 
 Alice (needs 3 kWh, processed 4th):
-  Pass 1: own entry [0] is empty (Dave and Bob took it). Gets 0.
-  Pass 2: Carol's entry [2] has 1.0 kWh at 8¢ → takes 1.0. Needs 2 more.
-           Import entry [4] has 2.0 kWh at 25¢ → takes 2.0. Done.
-  Cost: 1.0 × 8 + 2.0 × 25 = 58¢
+  Pass 1: own [0] is empty, own [4] 0.6 at 15¢ → takes 0.6. Needs 2.4 more.
+  Pass 2: Carol's battery [6] 0.4 at 15¢ → takes 0.4. Needs 2.0 more.
+          Import [8] 2.0 at 25¢ → takes 2.0. Done.
+  Cost: 0.6 × 15 + 0.4 × 15 + 2.0 × 25 = 65.0¢
 ```
 
 | Member | Consumption | Cost (Order A) | Cost (Order B) | Difference |
 |---|---|---|---|---|
-| Alice | 3 kWh | 24¢ | **58¢** | **+142%** |
-| Bob | 5 kWh | 40¢ | 40¢ | 0% |
-| Carol | 1 kWh | 8¢ | 8¢ | 0% |
-| Dave | 3 kWh | **58¢** | 24¢ | −59% |
+| Alice | 3 kWh | 28.2¢ | **65.0¢** | **+130%** |
+| Bob | 5 kWh | 47.0¢ | 42.6¢ | −9% |
+| Carol | 1 kWh | 8.0¢ | 8.0¢ | 0% |
+| Dave | 3 kWh | **60.8¢** | 26.8¢ | −56% |
 
-Same community. Same production. Same consumption. The backend just changed the array order — and Alice's bill swings from 24¢ to 58¢.
+Same community. Same production. Same consumption. The backend just changed the array order — and Alice's bill swings from 28.2¢ to 65.0¢. With three price tiers (solar 8¢, battery 15¢, grid 25¢), the ordering problem gets worse because there's more price variance in the pool.
 
 ### Why self-consumption doesn't save you
 
 Pass 1 (self-consumption) only helps if your demand fits within your own entitlement. Here:
 
-| Member | Entitlement | Demand | Covered by own? |
+| Member | Entitlement (solar + battery) | Demand | Covered by own? |
 |---|---|---|---|
-| Alice | 3.0 kWh | 3.0 kWh | Yes — protected |
-| Bob | 3.0 kWh | 5.0 kWh | No — needs 2 more from pool |
-| Carol | 2.0 kWh | 1.0 kWh | Yes — protected |
-| Dave | 2.0 kWh | 3.0 kWh | No — needs 1 more from pool |
+| Alice | 2.4 + 0.6 = 3.0 kWh | 3.0 kWh | Yes — protected |
+| Bob | 2.4 + 0.6 = 3.0 kWh | 5.0 kWh | No — needs 2 more from pool |
+| Carol | 1.6 + 0.4 = 2.0 kWh | 1.0 kWh | Yes — protected |
+| Dave | 1.6 + 0.4 = 2.0 kWh | 3.0 kWh | No — needs 1 more from pool |
 
-Alice and Carol are safe in both orderings because their demand fits within their entitlement. But Bob and Dave both need more than they own — and whoever is processed last in the array gets the expensive leftovers.
+Alice and Carol are safe in both orderings because their demand fits within their entitlement. But Bob and Dave both need more than they own — and whoever is processed last in the array gets the expensive leftovers. With battery in the mix, the price spread is wider (8¢ to 25¢ across three tiers), making the ordering problem worse.
 
 ### Could the old system be made fair?
 
@@ -179,88 +194,99 @@ The backend reads the meters and the contract's configuration, then runs this:
 
 ```
 INPUTS (from meters and contract):
-  Solar production:  10 kWh
-  Grid import:        2 kWh (= total demand - solar)
-  Local price:        8¢/kWh (community-agreed, stored on-chain or in config)
-  Import price:      25¢/kWh (from grid tariff API)
+  Solar production:   8 kWh at  8¢/kWh
+  Battery discharge:  2 kWh at 15¢/kWh
+  Total local:       10 kWh
+  Grid import:        2 kWh at 25¢/kWh (= total demand - local)
   Members:           Alice 30%, Bob 30%, Carol 20%, Dave 20%
   Demand:            Alice 3, Bob 5, Carol 1, Dave 3
 ```
 
-**PASS 1 — Ownership entitlement.**
+The backend runs a merit-order algorithm: cheapest source first (solar → battery → grid).
 
-Each member gets their ownership % of total local production.
-They consume the lesser of their entitlement or their demand.
+**PASS 1 — Ownership entitlement (solar first, then battery).**
 
-```
-                    Entitlement           Demand    Consumes LOCAL    Surplus    Deficit
-Alice (30%):    30% × 10 = 3.0 kWh      3.0 kWh   3.0 kWh          0.0        0.0
-Bob   (30%):    30% × 10 = 3.0 kWh      5.0 kWh   3.0 kWh          0.0        2.0
-Carol (20%):    20% × 10 = 2.0 kWh      1.0 kWh   1.0 kWh          1.0        0.0
-Dave  (20%):    20% × 10 = 2.0 kWh      3.0 kWh   2.0 kWh          0.0        1.0
-                                                                     ───        ───
-                                                    Total:           1.0        3.0
-```
-
-Alice consumes exactly her entitlement — fully covered.
-Carol only needs 1 of her 2 kWh entitlement — she has 1 kWh surplus.
-Bob and Dave need more than their entitlement — they have a deficit.
-
-**PASS 2 — Redistribute surplus by ownership.**
-
-Carol's unused 1.0 kWh goes to members who have a deficit, split by their **ownership percentage** (not by deficit size). Whoever invested more in the community gets a larger share of the surplus.
+Each member gets their ownership % of each source. They consume the lesser of entitlement or demand, cheapest source first.
 
 ```
-Total surplus:  1.0 kWh
-Deficit members: Bob (30% ownership), Dave (20% ownership)
-Their combined ownership: 30 + 20 = 50%
+Solar entitlement (8 kWh):
+  Alice: 2.4    Bob: 2.4    Carol: 1.6    Dave: 1.6
 
-Bob gets:   1.0 × (30 / 50) = 0.600 kWh extra LOCAL
-Dave gets:  1.0 × (20 / 50) = 0.400 kWh extra LOCAL
+Battery entitlement (2 kWh):
+  Alice: 0.6    Bob: 0.6    Carol: 0.4    Dave: 0.4
+
+Total entitlement:
+  Alice: 3.0    Bob: 3.0    Carol: 2.0    Dave: 2.0
 ```
 
-Why ownership and not deficit size? If we split by deficit, Bob (deficit 2.0) would get 0.667 and Dave (deficit 1.0) would get 0.333. That rewards overconsumption — the more you consume beyond your entitlement, the more cheap surplus you receive. Splitting by ownership rewards investment in the community instead.
+Consume cheapest first within entitlement:
+
+```
+                Solar used   Battery used   Total LOCAL   Surplus   Deficit
+Alice (3.0):    2.4          0.6            3.0           0.0       0.0
+Bob   (5.0):    2.4          0.6            3.0           0.0       2.0
+Carol (1.0):    1.0          0.0            1.0           1.0       0.0
+Dave  (3.0):    1.6          0.4            2.0           0.0       1.0
+                                                          ───       ───
+                                                          1.0       3.0
+```
+
+Carol only needs 1.0 of her 2.0 entitlement. Her surplus: 0.6 solar + 0.4 battery.
+
+**PASS 2 — Redistribute surplus by ownership (cheapest first).**
+
+Carol's 1.0 kWh surplus goes to deficit members by ownership %.
+
+```
+Deficit members: Bob (30%), Dave (20%)  →  combined 50%
+
+Bob gets:   1.0 × 30/50 = 0.6 kWh  (Carol's surplus solar at 8¢)
+Dave gets:  1.0 × 20/50 = 0.4 kWh  (Carol's surplus battery at 15¢)
+```
 
 Updated state:
 
 ```
-                    LOCAL consumed    Remaining deficit
-Alice:              3.000 kWh         0.000 kWh
-Bob:                3.600 kWh         1.400 kWh
-Carol:              1.000 kWh         0.000 kWh
-Dave:               2.400 kWh         0.600 kWh
+                Solar consumed   Battery consumed   Total LOCAL   Remaining deficit
+Alice:          2.4              0.6                3.0           0.0
+Bob:            2.4 + 0.6       0.6                3.6           1.4
+Carol:          1.0              0.0                1.0           0.0
+Dave:           1.6              0.4 + 0.4         2.4           0.6
 ```
 
 **PASS 3 — Remaining deficit = grid import.**
 
-Bob still needs 1.400 kWh. Dave still needs 0.600 kWh. That's 2.0 kWh total — exactly matching the grid import.
+Bob needs 1.4 more, Dave needs 0.6 more. That's 2.0 kWh — exactly the grid import.
 
 ```
-                    LOCAL consumed    IMPORT consumed    LOCAL cost    IMPORT cost    Total cost
-Alice:              3.000 kWh         0.000 kWh          24.00¢         0.00¢         24.00¢
-Bob:                3.600 kWh         1.400 kWh          28.80¢        35.00¢         63.80¢
-Carol:              1.000 kWh         0.000 kWh           8.00¢         0.00¢          8.00¢
-Dave:               2.400 kWh         0.600 kWh          19.20¢        15.00¢         34.20¢
-                    ──────────        ──────────          ──────        ──────         ──────
-Total:             10.000 kWh         2.000 kWh          80.00¢        50.00¢        130.00¢
+            Solar kWh   Battery kWh   Import kWh   Solar cost   Battery cost   Import cost   Total
+Alice:      2.4         0.6           —            19.20¢       9.00¢          —             28.20¢
+Bob:        3.0         0.6           1.4          24.00¢       9.00¢          35.00¢        68.00¢
+Carol:      1.0         —             —             8.00¢       —              —              8.00¢
+Dave:       1.6         0.8           0.6          12.80¢      12.00¢          15.00¢        39.80¢
+            ────        ────          ────         ──────       ──────         ──────        ──────
+Total:      8.0         2.0           2.0          64.00¢      30.00¢          50.00¢       144.00¢
 ```
 
-Verify: 10 × 8 + 2 × 25 = 80 + 50 = 130. Checks out.
+Verify: 8 × 8 + 2 × 15 + 2 × 25 = 64 + 30 + 50 = 144. Checks out.
 
 **This result is the same regardless of array order.** Every member's cost depends only on their own consumption, their own entitlement, and global totals — not on position in an array.
 
 ### What the backend sends to the contract
 
-The backend builds a `ConsumptionReading[]` from the three-pass result:
+The backend builds a `ConsumptionReading[]` from the three-pass result. Each source type becomes a separate reading:
 
 ```
 consumeEnergy([
-  { deviceId: 101, quantity: 3000, pricePerKwh: 8, source: LOCAL  },  // Alice: 3.0 kWh LOCAL
-  { deviceId: 201, quantity: 3600, pricePerKwh: 8, source: LOCAL  },  // Bob: 3.6 kWh LOCAL
-  { deviceId: 201, quantity: 1400, pricePerKwh: 25, source: IMPORT }, // Bob: 1.4 kWh IMPORT
-  { deviceId: 301, quantity: 1000, pricePerKwh: 8, source: LOCAL  },  // Carol: 1.0 kWh LOCAL
-  { deviceId: 401, quantity: 2400, pricePerKwh: 8, source: LOCAL  },  // Dave: 2.4 kWh LOCAL
-  { deviceId: 401, quantity:  600, pricePerKwh: 25, source: IMPORT }, // Dave: 0.6 kWh IMPORT
+  { deviceId: 101, quantity: 2400, pricePerKwh:  8, source: LOCAL  },  // Alice: 2.4 solar
+  { deviceId: 101, quantity:  600, pricePerKwh: 15, source: LOCAL  },  // Alice: 0.6 battery
+  { deviceId: 201, quantity: 3000, pricePerKwh:  8, source: LOCAL  },  // Bob: 3.0 solar
+  { deviceId: 201, quantity:  600, pricePerKwh: 15, source: LOCAL  },  // Bob: 0.6 battery
+  { deviceId: 201, quantity: 1400, pricePerKwh: 25, source: IMPORT },  // Bob: 1.4 grid
+  { deviceId: 301, quantity: 1000, pricePerKwh:  8, source: LOCAL  },  // Carol: 1.0 solar
+  { deviceId: 401, quantity: 1600, pricePerKwh:  8, source: LOCAL  },  // Dave: 1.6 solar
+  { deviceId: 401, quantity:  800, pricePerKwh: 15, source: LOCAL  },  // Dave: 0.8 battery
+  { deviceId: 401, quantity:  600, pricePerKwh: 25, source: IMPORT },  // Dave: 0.6 grid
 ])
 ```
 
@@ -275,53 +301,59 @@ The contract does NOT know about solar panels, ownership entitlements, surplus r
 For each reading: `charge = quantity × pricePerKwh`. Debit the member.
 
 ```
-Alice: 3000 × 8 = 24000                         → balance -= 24000
-Bob:   3600 × 8 + 1400 × 25 = 28800 + 35000     → balance -= 63800
-Carol: 1000 × 8 = 8000                           → balance -= 8000
-Dave:  2400 × 8 + 600 × 25  = 19200 + 15000      → balance -= 34200
+Alice: 2400 × 8 + 600 × 15                      = 28200   → balance -= 28200
+Bob:   3000 × 8 + 600 × 15 + 1400 × 25          = 68000   → balance -= 68000
+Carol: 1000 × 8                                  =  8000   → balance -=  8000
+Dave:  1600 × 8 + 800 × 15 + 600 × 25           = 39800   → balance -= 39800
 ```
 
 LOCAL charges go to the revenue pot. IMPORT charges go to `importCashCreditBalance`.
 
 ```
-LOCAL revenue pot: 24000 + 28800 + 8000 + 19200 = 80000
-Import balance: 35000 + 15000 = 50000
+LOCAL revenue pot:
+  Alice: 28200 + Bob: (24000 + 9000) + Carol: 8000 + Dave: (12800 + 12000) = 94000
+Import balance:
+  Bob: 35000 + Dave: 15000 = 50000
+Total charged: 94000 + 50000 = 144000
 ```
+
+Verify: 8 × 8 + 2 × 15 + 2 × 25 = 64 + 30 + 50 = 144 (in cents). Matches at scale ×1000.
 
 **Step 2 — Split the LOCAL revenue pot.**
 
 ```
-Revenue pot: 80000
+Revenue pot: 94000
 
-Community fee (5%):   80000 × 5%  = 4000   → communityAddress
-Aggregator fee (3%):  80000 × 3%  = 2400   → aggregatorAddress
-Remaining: 80000 - 4000 - 2400 = 73600
+Community fee (5%):   94000 × 5%  = 4700   → communityAddress
+Aggregator fee (3%):  94000 × 3%  = 2820   → aggregatorAddress
+Remaining: 94000 - 4700 - 2820 = 86480
 
 Owner distribution (by ownership %):
-  Alice (30%):  73600 × 30% = 22080  → Alice balance += 22080
-  Bob   (30%):  73600 × 30% = 22080  → Bob balance += 22080
-  Carol (20%):  73600 × 20% = 14720  → Carol balance += 14720
-  Dave  (20%):  73600 × 20% = 14720  → Dave balance += 14720
-                                       (last member gets remainder to avoid rounding dust)
+  Alice (30%):  86480 × 30% = 25944  → Alice balance += 25944
+  Bob   (30%):  86480 × 30% = 25944  → Bob balance += 25944
+  Carol (20%):  86480 × 20% = 17296  → Carol balance += 17296
+  Dave  (20%):  86480 × 20% = 17296  → Dave balance += 17296
 ```
 
 **Net balances after this interval:**
 
 ```
                 Charged     Revenue share    Net balance
-Alice:         -24000       +22080           -1920
-Bob:           -63800       +22080           -41720
-Carol:          -8000       +14720           +6720
-Dave:          -34200       +14720           -19480
-Community:         —        +4000            +4000
-Aggregator:        —        +2400            +2400
+Alice:         -28200       +25944           -2256
+Bob:           -68000       +25944           -42056
+Carol:          -8000       +17296           +9296
+Dave:          -39800       +17296           -22504
+Community:         —        +4700            +4700
+Aggregator:        —        +2820            +2820
 Import:            —           —             +50000
 
 Zero-sum check:
-  -1920 - 41720 + 6720 - 19480 + 4000 + 2400 + 50000 = 0  ✓
+  -2256 - 42056 + 9296 - 22504 + 4700 + 2820 + 50000 = 0  ✓
 ```
 
-Carol ends up with a positive balance (+6720) because she consumed less than her entitlement — she earns credits. Bob has the largest debt because he consumed the most, including expensive grid import. Alice has a small debt because her consumption exactly matched her entitlement, but fees reduce her revenue share slightly below her charge.
+The revenue pot is larger (94000 vs 80000 in a solar-only scenario) because battery energy costs more than solar. This means owners get a bigger distribution. Carol ends up with more credit (+9296) because the battery revenue lifts everyone's ownership payout.
+
+**How battery fits in:** The backend assigns each kWh its source price (solar 8¢, battery 15¢, grid 25¢). The contract doesn't know or care about source types — it just sees LOCAL readings at different prices. All LOCAL charges go to the same revenue pot and get distributed to owners equally. Battery energy is more expensive, so it generates more revenue for owners, but also costs more for the consumers who receive it. The merit-order algorithm (off-chain) ensures cheaper solar is used first.
 
 ---
 
@@ -398,6 +430,7 @@ The backend controls the inputs. The contract enforces the financial rules on th
 | **Merit-order runs** | On-chain (sequential pool depletion) | Off-chain (three-pass, simultaneous) |
 | **Array order matters?** | Yes — determines who gets cheap energy | No — each reading has its price baked in |
 | **Fair to overconsumers?** | No — last in array pays most | Yes — deficit members split import proportionally |
+| **Multiple price tiers (solar/battery/grid)?** | Pool sorts by price but ordering bias gets worse | Each reading carries its own price — no bias |
 | **Gas cost (4 members)** | ~200k (pool + sort + 2-pass consume) | ~100k (simple loop + revenue split) |
 | **Gas cost (50 members)** | ~5M+ (may hit block limit) | ~500k |
 | **Backend trust** | Must trust consumption array AND ordering | Must trust meter readings AND prices |

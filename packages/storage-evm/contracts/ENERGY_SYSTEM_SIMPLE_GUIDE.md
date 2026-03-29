@@ -138,7 +138,7 @@ For members who also have their own rooftop solar (prosumers), additional prices
 | **ProsumerBatteryChargePrice** | Extra cost for a prosumer to charge the community battery | 1 ct/kWh |
 | **ProsumerBatteryDischargePrice** | Extra cost for a prosumer to use battery energy | 1 ct/kWh |
 
-
+ 
 **The calculation (three simple passes):**
 
 Let's use a slightly different interval where grid import is needed:
