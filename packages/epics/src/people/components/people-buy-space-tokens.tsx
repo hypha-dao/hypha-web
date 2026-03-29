@@ -243,6 +243,7 @@ export const PeopleBuySpaceTokens = ({
     hasEnoughBalance,
     approve,
     buy,
+    waitForSufficientAllowance,
     isApproving,
     isBuying,
     approveError,
@@ -314,6 +315,7 @@ export const PeopleBuySpaceTokens = ({
     try {
       if (needsApproval) {
         await approve();
+        await waitForSufficientAllowance();
       }
       await buy();
       setShowSuccessMessage(true);
@@ -361,61 +363,55 @@ export const PeopleBuySpaceTokens = ({
         <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
           <div className="flex gap-1">
             <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
-              {t('selectToken')}
+              {t('amountAndToken')}
             </label>
             <RequirementMark className="text-2" />
           </div>
           <div className="flex flex-col gap-2 grow min-w-0">
-            <FormField
-              control={form.control}
-              name="tokenAddress"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <TokenSelectDropdown
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      tokens={purchasableDropdownTokens}
-                      placeholder={t('selectPlaceholder')}
-                      disabled={
-                        isTokensLoading ||
-                        purchasableDropdownTokens.length === 0
-                      }
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
-          <div className="flex gap-1">
-            <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
-              {t('amount')}
-            </label>
-            <RequirementMark className="text-2" />
-          </div>
-          <div className="flex flex-col gap-2 grow min-w-0">
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      type="number"
-                      min="0"
-                      step="1"
-                      placeholder="0"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="flex md:justify-end">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 md:justify-end items-end w-full">
+                <FormField
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
+                    <FormItem className="flex-1 min-w-0 w-full m-0 space-y-0">
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="number"
+                          min="0"
+                          step="1"
+                          placeholder="0"
+                          aria-label={t('amount')}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="tokenAddress"
+                  render={({ field }) => (
+                    <FormItem className="w-full sm:w-60 shrink-0 min-w-0 m-0 space-y-0">
+                      <FormControl>
+                        <TokenSelectDropdown
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          tokens={purchasableDropdownTokens}
+                          placeholder={t('selectPlaceholder')}
+                          disabled={
+                            isTokensLoading ||
+                            purchasableDropdownTokens.length === 0
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -525,7 +521,7 @@ export const PeopleBuySpaceTokens = ({
             {form.formState.errors.root.message}
           </div>
         )}
-        {(approveError || buyError) && (
+        {(approveError || buyError) && !form.formState.errors.root && (
           <div className="text-2 text-foreground">
             {(approveError || buyError)?.message ?? t('transactionFailed')}
           </div>
