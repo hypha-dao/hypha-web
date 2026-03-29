@@ -1418,6 +1418,7 @@
       "toWhitelist": "A la lista blanca"
     },
     "labels": {
+      "toEscrowAccount": "A: Cuenta de depósito en garantía",
       "unknown": "Desconocido",
       "custom": "Costumbre",
       "token": "Token",

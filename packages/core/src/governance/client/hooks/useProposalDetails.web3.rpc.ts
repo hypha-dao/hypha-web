@@ -169,6 +169,8 @@ export const useProposalDetailsWeb3Rpc = ({
         sellerFunded: boolean;
         buyerFunded: boolean;
       }>;
+      /** Escrow contract(s) from `createEscrow` tx targets (not party wallets). */
+      escrowContractAddresses: string[];
       legs: Array<{
         from: string;
         to: string;
@@ -188,7 +190,7 @@ export const useProposalDetailsWeb3Rpc = ({
       status?: 'pending' | 'completed' | 'cancelled';
       sellerFunded?: boolean;
       buyerFunded?: boolean;
-    } = { escrows: [], legs: [] };
+    } = { escrows: [], legs: [], escrowContractAddresses: [] };
 
     let activateSpacesData: {
       spaceIds: bigint[];
@@ -399,6 +401,7 @@ export const useProposalDetailsWeb3Rpc = ({
           break;
 
         case 'exchangeEscrow': {
+          const escrowFromTx = decoded.data.escrowContractAddress as string;
           const nextEscrowIndex = exchangeEscrowData.escrows.length + 1;
           const nextEscrow = {
             index: nextEscrowIndex,
@@ -428,6 +431,12 @@ export const useProposalDetailsWeb3Rpc = ({
             buyerFunded:
               exchangeEscrowData.buyerFunded ?? nextEscrow.buyerFunded,
             escrows: [...exchangeEscrowData.escrows, nextEscrow],
+            escrowContractAddresses: escrowFromTx
+              ? [
+                  ...exchangeEscrowData.escrowContractAddresses,
+                  escrowFromTx.toLowerCase(),
+                ]
+              : exchangeEscrowData.escrowContractAddresses,
           };
           break;
         }

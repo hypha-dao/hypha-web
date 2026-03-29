@@ -1418,6 +1418,7 @@
       "toWhitelist": "Para colocar na lista de permissões"
     },
     "labels": {
+      "toEscrowAccount": "Para: Conta de escrow",
       "unknown": "Desconhecido",
       "custom": "Personalizado",
       "token": "Símbolo",

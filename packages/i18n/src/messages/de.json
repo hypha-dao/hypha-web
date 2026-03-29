@@ -1418,6 +1418,7 @@
       "toWhitelist": "Zur Whitelist"
     },
     "labels": {
+      "toEscrowAccount": "An: Treuhandkonto",
       "unknown": "Unbekannt",
       "custom": "Benutzerdefiniert",
       "token": "Token",

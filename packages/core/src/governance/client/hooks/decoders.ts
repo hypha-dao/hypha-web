@@ -396,11 +396,13 @@ export function decodeTransaction(tx: Tx) {
     },
     {
       abi: escrowCreateAbi,
-      handler: (decoded) =>
+      handler: (decoded, tx) =>
         decoded.functionName === 'createEscrow'
           ? {
               type: 'exchangeEscrow',
               data: {
+                /** Escrow contract that receives the `createEscrow` call (not a party). */
+                escrowContractAddress: tx.target,
                 partyB: decoded.args[0],
                 tokenA: decoded.args[1],
                 tokenB: decoded.args[2],

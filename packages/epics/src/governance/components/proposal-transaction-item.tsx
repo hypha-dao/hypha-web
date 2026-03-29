@@ -5,9 +5,13 @@ import { erc20Abi } from 'viem';
 import { Image } from '@hypha-platform/ui';
 import { EthAddress } from '../../people';
 import { useTokens, usePersonByWeb3Address } from '@hypha-platform/epics';
-import { Token } from '@hypha-platform/core/client';
+import {
+  Token,
+  isExchangeEscrowContractAddress,
+} from '@hypha-platform/core/client';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { useDbSpaces } from '@hypha-platform/epics';
+import { useTranslations } from 'next-intl';
 
 interface ProposalTransactionItemProps {
   recipient?: string;
@@ -22,7 +26,10 @@ export const ProposalTransactionItem = ({
   tokenAddress,
   spaceSlug,
 }: ProposalTransactionItemProps) => {
+  const tProposalDetails = useTranslations('ProposalDetails');
   if (!recipient) return null;
+
+  const isEscrowRecipient = isExchangeEscrowContractAddress(recipient);
   const { spaces } = useDbSpaces({
     parentOnly: false,
   });
@@ -64,7 +71,12 @@ export const ProposalTransactionItem = ({
           {formatCurrencyValue(Number(formattedAmount))} {token.symbol}
         </div>
       </div>
-      <div className="w-[140px]">
+      <div className="w-[140px] flex flex-col items-end gap-0.5">
+        {isEscrowRecipient ? (
+          <span className="text-2 text-neutral-11 text-right">
+            {tProposalDetails('labels.toEscrowAccount')}
+          </span>
+        ) : null}
         {person ? (
           <span className="flex gap-2 text-2 text-neutral-11 justify-end">
             <Image

@@ -1422,6 +1422,7 @@
       "toWhitelist": "Vers la liste blanche"
     },
     "labels": {
+      "toEscrowAccount": "Vers : compte séquestre",
       "unknown": "Inconnu",
       "custom": "Personnalisé",
       "token": "Jeton",

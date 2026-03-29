@@ -18,6 +18,7 @@ import {
 } from '@hypha-platform/core/client';
 import { getDuration } from '@hypha-platform/ui-utils';
 import { getGovernanceChainId } from './governance-chain-id';
+import { EXCHANGE_ESCROW_CONTRACT_BY_CHAIN } from './exchange-escrow-contract';
 
 interface ExchangeLegInput {
   amount: string;
@@ -48,10 +49,6 @@ const escrowCreateAbi = [
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
   },
 ] as const;
-
-const escrowAddressByChain: Partial<Record<number, `0x${string}`>> = {
-  8453: '0x447A317cA5516933264Cdd6aeee0633Fa954B576',
-};
 
 export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
   proposalSlug,
@@ -105,7 +102,7 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
         );
       }
 
-      const escrowAddress = escrowAddressByChain[chainId];
+      const escrowAddress = EXCHANGE_ESCROW_CONTRACT_BY_CHAIN[chainId];
       if (!escrowAddress) {
         throw new Error(`Escrow contract not configured for chain ${chainId}`);
       }

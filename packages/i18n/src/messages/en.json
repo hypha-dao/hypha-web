@@ -1418,6 +1418,7 @@
       "toWhitelist": "To Whitelist"
     },
     "labels": {
+      "toEscrowAccount": "To: Escrow account",
       "unknown": "Unknown",
       "custom": "Custom",
       "token": "Token",
