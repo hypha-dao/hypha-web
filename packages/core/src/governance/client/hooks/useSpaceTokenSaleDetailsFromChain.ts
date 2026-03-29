@@ -44,6 +44,8 @@ const paymentTokenToReferenceCurrency = (
 };
 
 export type SpaceTokenSaleDetailsFromChain = {
+  /** Contract address these details were read from (echoed for SWR staleness checks). */
+  tokenAddress: `0x${string}`;
   /** From `paymentToken()`: non-zero means sale is configured (matches proposal `isActive`). */
   activatePurchase: boolean;
   purchasePrice?: number;
@@ -83,8 +85,11 @@ export const useSpaceTokenSaleDetailsFromChain = ({
         Boolean(storedPaymentToken) &&
         storedPaymentToken.toLowerCase() !== ZERO.toLowerCase();
 
+      const tokenAddress = addr as `0x${string}`;
+
       if (!saleActive) {
         return {
+          tokenAddress,
           activatePurchase: false,
         } satisfies SpaceTokenSaleDetailsFromChain;
       }
@@ -92,6 +97,7 @@ export const useSpaceTokenSaleDetailsFromChain = ({
       const currency = paymentTokenToReferenceCurrency(salePaymentToken);
       if (!currency) {
         return {
+          tokenAddress,
           activatePurchase: true,
         } satisfies SpaceTokenSaleDetailsFromChain;
       }
@@ -103,6 +109,7 @@ export const useSpaceTokenSaleDetailsFromChain = ({
       );
 
       return {
+        tokenAddress,
         activatePurchase: true,
         purchasePrice,
         purchaseCurrency: currency,
