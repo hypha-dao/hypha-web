@@ -3,6 +3,8 @@
 import { useTranslations } from 'next-intl';
 import { EthAddress } from '../../people';
 import { usePersonByWeb3Address } from '../hooks';
+import { TokenLabel } from './token-label';
+import { Image } from '@hypha-platform/ui';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
@@ -19,6 +21,7 @@ const getPreferredAddress = (
 };
 
 interface ProposalExchangeStakesAndTokensDataProps {
+  spaceSlug?: string;
   sellerAddress?: string;
   buyerAddress?: string;
   fallbackSellerAddress?: string;
@@ -37,17 +40,14 @@ interface ProposalExchangeStakesAndTokensDataProps {
 }
 
 export const ProposalExchangeStakesAndTokensData = ({
+  spaceSlug,
   sellerAddress,
   buyerAddress,
   fallbackSellerAddress,
   fallbackBuyerAddress,
   sellerLeg,
   buyerLeg,
-  escrowId,
-  completed,
-  cancelled,
 }: ProposalExchangeStakesAndTokensDataProps) => {
-  const tProposalDetails = useTranslations('ProposalDetails');
   const tAgreementFlow = useTranslations('AgreementFlow');
   const resolvedSellerAddress = getPreferredAddress(
     sellerAddress,
@@ -68,20 +68,30 @@ export const ProposalExchangeStakesAndTokensData = ({
       : ZERO_ADDRESS,
   );
 
-  const status = completed
-    ? tProposalDetails('exchange.status.completed')
-    : cancelled
-    ? tProposalDetails('exchange.status.cancelled')
-    : tProposalDetails('exchange.status.pendingFunding');
-
-  const renderPartyValue = (address?: string, label?: string) => {
+  const renderPartyValue = (
+    address?: string,
+    label?: string,
+    avatarUrl?: string,
+    avatarAlt?: string,
+  ) => {
     if (label) {
-      return <span className="text-2">{label}</span>;
+      return (
+        <span className="flex gap-2 text-2 text-neutral-11">
+          <Image
+            className="rounded-lg w-[24px] h-[24px]"
+            src={avatarUrl ?? '/placeholder/default-profile.svg'}
+            width={24}
+            height={24}
+            alt={avatarAlt ?? 'avatar'}
+          />
+          <span className="text-nowrap">{label}</span>
+        </span>
+      );
     }
     if (isEvmAddress(address)) {
       return <EthAddress address={address} />;
     }
-    return <span className="text-2">{tProposalDetails('labels.unknown')}</span>;
+    return <span className="text-2">-</span>;
   };
 
   const renderLegRows = (
@@ -91,30 +101,27 @@ export const ProposalExchangeStakesAndTokensData = ({
     }>,
   ) => {
     if (!rows.length) {
-      return (
-        <span className="text-2">{tProposalDetails('labels.unknown')}</span>
-      );
+      return <span className="text-2">-</span>;
     }
 
     return rows.map((leg, index) => (
-      <div
-        key={`${leg.tokenAddress}-${index}`}
-        className="flex items-center justify-between text-2"
-      >
-        <span>[{leg.amount}]</span>
-        {isEvmAddress(leg.tokenAddress) ? (
-          <EthAddress address={leg.tokenAddress} />
+      <div key={`${leg.tokenAddress}-${index}`} className="text-2">
+        {spaceSlug ? (
+          <TokenLabel
+            tokenAddress={leg.tokenAddress as `0x${string}`}
+            spaceSlug={spaceSlug}
+          />
         ) : (
-          <span>{leg.tokenAddress}</span>
+          <EthAddress address={leg.tokenAddress} />
         )}
       </div>
     ));
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between">
-        <span className="text-2 text-neutral-11">
+        <span className="text-1 text-neutral-11">
           {tAgreementFlow('plugins.exchangeStakesAndTokens.seller')}
         </span>
         {renderPartyValue(
@@ -122,16 +129,20 @@ export const ProposalExchangeStakesAndTokensData = ({
           sellerPerson
             ? `${sellerPerson.name} ${sellerPerson.surname}`
             : undefined,
+          sellerPerson?.avatarUrl,
+          `${sellerPerson?.nickname ?? 'seller'} avatar`,
         )}
       </div>
-      <div className="flex flex-col gap-2 rounded-md border border-neutral-6 p-3">
-        <span className="text-2 text-neutral-11">
+      <div className="flex items-center justify-between">
+        <span className="text-1 text-neutral-11">
           {tAgreementFlow('plugins.exchangeStakesAndTokens.sellerWillSend')}
         </span>
-        {renderLegRows(sellerLeg)}
+        <div className="flex flex-col items-end">
+          {renderLegRows(sellerLeg)}
+        </div>
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-2 text-neutral-11">
+        <span className="text-1 text-neutral-11">
           {tAgreementFlow('plugins.exchangeStakesAndTokens.buyer')}
         </span>
         {renderPartyValue(
@@ -139,27 +150,17 @@ export const ProposalExchangeStakesAndTokensData = ({
           buyerPerson
             ? `${buyerPerson.name} ${buyerPerson.surname}`
             : undefined,
+          buyerPerson?.avatarUrl,
+          `${buyerPerson?.nickname ?? 'buyer'} avatar`,
         )}
       </div>
-      <div className="flex flex-col gap-2 rounded-md border border-neutral-6 p-3">
-        <span className="text-2 text-neutral-11">
+      <div className="flex items-center justify-between">
+        <span className="text-1 text-neutral-11">
           {tAgreementFlow('plugins.exchangeStakesAndTokens.buyerWillSend')}
         </span>
-        {renderLegRows(buyerLeg)}
-      </div>
-      <div className="flex items-center justify-between">
-        <span className="text-2 text-neutral-11">
-          {tProposalDetails('exchange.escrowId')}
-        </span>
-        <span className="text-2">
-          {escrowId ? escrowId.toString() : tProposalDetails('labels.unknown')}
-        </span>
-      </div>
-      <div className="flex items-center justify-between">
-        <span className="text-2 text-neutral-11">
-          {tProposalDetails('exchange.status.label')}
-        </span>
-        <span className="text-2">{status}</span>
+        <div className="flex flex-col items-end">
+          {renderLegRows(buyerLeg)}
+        </div>
       </div>
     </div>
   );
