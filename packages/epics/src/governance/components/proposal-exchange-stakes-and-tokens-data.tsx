@@ -1,10 +1,11 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { EthAddress } from '../../people';
 import { usePersonByWeb3Address } from '../hooks';
 import { Image } from '@hypha-platform/ui';
 import { useTokens, ExtendedToken } from '../../treasury';
+import { CopyIcon } from '@radix-ui/react-icons';
+import { copyToClipboard } from '@hypha-platform/ui-utils';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
@@ -18,6 +19,11 @@ const getPreferredAddress = (
   if (isEvmAddress(primary)) return primary;
   if (isEvmAddress(fallback)) return fallback;
   return primary || fallback;
+};
+
+const getLookupAddress = (address?: string): `0x${string}` | undefined => {
+  if (!isEvmAddress(address)) return undefined;
+  return address.toLowerCase() as `0x${string}`;
 };
 
 interface ProposalExchangeStakesAndTokensDataProps {
@@ -58,15 +64,13 @@ export const ProposalExchangeStakesAndTokensData = ({
     buyerAddress,
     fallbackBuyerAddress,
   );
+  const sellerLookupAddress = getLookupAddress(resolvedSellerAddress);
+  const buyerLookupAddress = getLookupAddress(resolvedBuyerAddress);
   const { person: sellerPerson } = usePersonByWeb3Address(
-    resolvedSellerAddress && isEvmAddress(resolvedSellerAddress)
-      ? resolvedSellerAddress
-      : ZERO_ADDRESS,
+    sellerLookupAddress ?? ZERO_ADDRESS,
   );
   const { person: buyerPerson } = usePersonByWeb3Address(
-    resolvedBuyerAddress && isEvmAddress(resolvedBuyerAddress)
-      ? resolvedBuyerAddress
-      : ZERO_ADDRESS,
+    buyerLookupAddress ?? ZERO_ADDRESS,
   );
 
   const renderPartyValue = (
@@ -90,7 +94,17 @@ export const ProposalExchangeStakesAndTokensData = ({
       );
     }
     if (isEvmAddress(address)) {
-      return <EthAddress address={address} />;
+      return (
+        <button
+          type="button"
+          onClick={() => copyToClipboard(address)}
+          className="flex items-center gap-2 text-neutral-11"
+          aria-label="Copy wallet address"
+        >
+          <span>{`${address.slice(0, 6)}…${address.slice(-4)}`}</span>
+          <CopyIcon className="icon-sm" />
+        </button>
+      );
     }
     return <span className="text-2">-</span>;
   };
