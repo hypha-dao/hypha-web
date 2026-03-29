@@ -44,7 +44,9 @@ export const TokenPercentageField = ({
   assets,
   showFieldDetails = false,
 }: TokenPercentageFieldProps) => {
-  const selectedAsset = assets.find((t) => t.address === value.asset);
+  const selectedAsset = assets.find(
+    (t) => t.address.toLowerCase() === value.asset.toLowerCase(),
+  );
 
   const handlePercentageChange = (percentage: string) => {
     if (percentage === '') {

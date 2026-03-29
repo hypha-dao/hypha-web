@@ -1,6 +1,7 @@
 import { ALLOWED_IMAGE_FILE_SIZE, DEFAULT_IMAGE_ACCEPT } from '../assets';
 
 import { z } from 'zod';
+import { isAddress } from 'viem';
 import { percentageStringToBigInt } from '../common';
 
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
@@ -158,7 +159,9 @@ export const personRedeem = z.object({
       z.object({
         asset: z
           .string()
-          .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' }),
+          .refine((value) => isAddress(value, { strict: false }), {
+            message: 'Invalid Ethereum address',
+          }),
         percentage: z
           .string()
           .refine(
