@@ -162,33 +162,36 @@ const FormMessage = React.forwardRef<
 >(({ className, children, custom, ...props }, ref) => {
   const { error, formMessageId } = useFormField();
 
-  if (!error && !children) {
+  if (!error && !children && !custom) {
     return null;
   }
 
-  const body = custom ? (
-    custom
-  ) : Array.isArray(error) ? (
-    error.map((err, index) => (
-      <FormMessageError
-        key={`${formMessageId}-${index}`}
-        message={err?.message ?? ''}
-      />
-    ))
-  ) : error?.message ? (
-    <FormMessageError
-      key={`${formMessageId}-message`}
-      message={error?.message ?? ''}
-    />
-  ) : error ? (
-    Object.entries(error)
-      .filter(([_, value]) => (value as FieldError)?.message)
-      .map(([key, value], index) => (
+  /** Prefer resolver / setError messages; use `custom` only when there is no field error */
+  const body = error ? (
+    Array.isArray(error) ? (
+      error.map((err, index) => (
         <FormMessageError
-          key={`${formMessageId}-${key}-${index}`}
-          message={(value as FieldError).message}
+          key={`${formMessageId}-${index}`}
+          message={err?.message ?? ''}
         />
       ))
+    ) : error?.message ? (
+      <FormMessageError
+        key={`${formMessageId}-message`}
+        message={error?.message ?? ''}
+      />
+    ) : (
+      Object.entries(error)
+        .filter(([_, value]) => (value as FieldError)?.message)
+        .map(([key, value], index) => (
+          <FormMessageError
+            key={`${formMessageId}-${key}-${index}`}
+            message={(value as FieldError).message}
+          />
+        ))
+    )
+  ) : custom ? (
+    custom
   ) : (
     children
   );

@@ -1375,7 +1375,8 @@
       },
       "tokenPayoutFieldArray": {
         "paymentRequest": "Demande de paiement",
-        "enterAmountAndToken": "Veuillez saisir un montant et sélectionner un token.",
+        "enterAmount": "Veuillez saisir un montant.",
+        "selectToken": "Veuillez sélectionner un token.",
         "add": "Ajouter"
       },
       "paymentSchedule": {

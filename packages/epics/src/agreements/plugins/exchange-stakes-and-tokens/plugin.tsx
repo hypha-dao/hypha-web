@@ -275,7 +275,6 @@ export const ExchangeStakesAndTokensPlugin = ({
           label={tAgreementFlow(
             'plugins.exchangeStakesAndTokens.sellerWillSend',
           )}
-          showAmountFieldError
         />
       </Skeleton>
       <Separator />
