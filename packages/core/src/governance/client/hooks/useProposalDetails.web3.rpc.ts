@@ -208,6 +208,14 @@ export const useProposalDetailsWeb3Rpc = ({
       whitelistedAddresses?: string[];
     } = {};
 
+    let spaceTokenPurchaseData: {
+      tokenAddress?: string;
+      paymentToken?: string;
+      paymentTokenPricePerToken?: bigint;
+      tokensForSale?: bigint;
+      isActive?: boolean;
+    } = {};
+
     (transactions as ProposalTransaction[]).forEach((tx) => {
       const decoded = decodeTransaction(tx);
 
@@ -437,6 +445,22 @@ export const useProposalDetailsWeb3Rpc = ({
           break;
         }
 
+        case 'spaceTokenPurchase': {
+          const payload = decoded.data as {
+            paymentToken: string;
+            paymentTokenPricePerToken: bigint;
+            tokensForSale: bigint;
+          };
+          spaceTokenPurchaseData = {
+            ...payload,
+            tokenAddress: tx.target,
+            isActive:
+              payload.paymentToken !==
+              '0x0000000000000000000000000000000000000000',
+          };
+          break;
+        }
+
         default:
           break;
       }
@@ -469,6 +493,7 @@ export const useProposalDetailsWeb3Rpc = ({
       membershipExitData,
       transparencySettingsData,
       tokenBackingVaultData,
+      spaceTokenPurchaseData,
     };
   }, [data]);
 

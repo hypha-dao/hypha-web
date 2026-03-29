@@ -29,3 +29,5 @@ export * from './create-proposal-change-space-transparency-settings-form';
 export * from './proposal-transparency-settings-info';
 export * from './token-burning-form';
 export * from '../utils/token-decimals';
+export * from './space-token-purchase-form';
+export * from './proposal-space-token-purchase-data';

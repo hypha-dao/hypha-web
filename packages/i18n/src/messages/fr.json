@@ -169,6 +169,10 @@
         "title": "Acheter des tokens Hypha (récompenses)",
         "description": "Achetez des tokens Hypha pour participer au réseau et obtenir des récompenses."
       },
+      "spaceTokenPurchase": {
+        "title": "Activer l'achat de tokens d'espace",
+        "description": "Permettez à vos membres d'acheter les tokens natifs de votre espace."
+      },
       "depositFunds": {
         "title": "Déposer des fonds",
         "description": "Déposez des fonds dans votre trésorerie en copiant l'adresse de la trésorerie ou en scannant le QR code."
@@ -382,6 +386,7 @@
     "rewardValueMustBeGreaterThanZero": "La valeur de la récompense doit être supérieure à 0",
     "noRewardsFoundForUser": "Aucune récompense trouvée pour cet utilisateur",
     "buyHypha": "Acheter HYPHA",
+    "buySpaceTokens": "Acheter des tokens d'espace",
     "actions": "Actions",
     "noAssetsFoundForUser": "Aucun actif trouvé pour cet utilisateur",
     "editForm": {
@@ -434,6 +439,11 @@
       "buyHyphaTokensRewards": {
         "title": "Acheter des tokens Hypha (récompenses)",
         "description": "Achetez des tokens Hypha pour participer au réseau et obtenir des récompenses"
+      },
+      "buySpaceTokens": {
+        "title": "Acheter des tokens d'espace",
+        "backLabel": "Retour aux actions",
+        "description": "Achetez les tokens natifs de votre espace avec la devise de paiement configurée."
       },
       "activateSpaces": {
         "title": "Activer le(s) espace(s)",
@@ -528,6 +538,83 @@
   "Proposals": {
     "CreateNew": "Créer une nouvelle proposition",
     "Create": "Créer une proposition"
+  },
+  "SpaceTokenPurchase": {
+    "selection": {
+      "sectionTitle": "Token",
+      "description": "Choisissez un token disponible à l'achat dans cet espace.",
+      "fieldLabel": "Token",
+      "placeholder": "Sélectionner un token",
+      "noTokenFound": "Aucun token trouvé.",
+      "noTokenPrefix": "Votre espace n'a pas encore créé de token,",
+      "clickHere": "cliquez ici",
+      "noTokenSuffix": "pour d'abord émettre un token",
+      "tokenSupply": "Offre de tokens",
+      "issuanceToDate": "Émission à ce jour",
+      "unlimitedSupply": "Offre illimitée",
+      "availableLimit": "Limite de tokens disponibles à l'achat"
+    },
+    "toggle": {
+      "sectionTitle": "Achat de tokens",
+      "description": "Activez cette option pour permettre à vos membres d'acheter les tokens natifs de votre espace. Désactivez-la à tout moment.",
+      "activateLabel": "Activer l'achat de tokens",
+      "disabledHint": "Lorsqu'elle est désactivée, les membres ne peuvent plus acheter ce token."
+    },
+    "price": {
+      "sectionTitle": "Prix d'achat du token",
+      "description": "Définissez un prix d'achat personnalisé ou utilisez le prix par défaut de la trésorerie.",
+      "currencyPlaceholder": "Devise",
+      "currentPriceLabel": "Prix actuel en trésorerie :",
+      "currentPriceSuffix": "— défini dans la configuration du token de votre espace.",
+      "fieldLabel": "Prix d'achat du token",
+      "availableAtThisPriceLabel": "Tokens disponibles à l'achat à ce prix",
+      "exceedsLimit": "Le nombre de tokens demandés dépasse la limite de tokens disponibles à l'achat. Saisissez une valeur jusqu'à {limit}."
+    },
+    "eligibility": {
+      "sectionTitle": "Éligibilité à l'achat",
+      "description": "Le bouton « Acheter des tokens d'espace » s'affiche sur le profil des espaces ou membres figurant sur la liste blanche dans les paramètres du token. Pour revoir cet accès, vous pouvez gérer les listes blanches via une proposition de configuration du token.",
+      "whitelistInfo": "La liste blanche est configurée dans les paramètres d'émission d'origine du token. Tous les membres ou espaces de la liste blanche « Vers » pourront voir et acheter les tokens {tokenName}."
+    }
+  },
+  "ProposalSpaceTokenPurchase": {
+    "token": "Token",
+    "tokenAlt": "Token",
+    "purchase_status": "Statut de l'achat",
+    "enabled": "Activé",
+    "disabled": "Désactivé",
+    "payment_token": "Token de paiement",
+    "not_configured": "Non configuré",
+    "purchase_price": "Prix d'achat",
+    "tokens_for_sale": "Tokens en vente"
+  },
+  "PeopleBuySpaceTokens": {
+    "validation": {
+      "tokenRequired": "Veuillez sélectionner un token",
+      "amountRequired": "Veuillez saisir un montant",
+      "amountPositive": "Le montant doit être supérieur à 0"
+    },
+    "empty": "Aucun token d'espace n'est actuellement disponible à l'achat.",
+    "eligibilityLoadError": "Impossible de vérifier quels tokens sont disponibles. Veuillez réessayer.",
+    "selectToken": "Sélectionner un token",
+    "selectPlaceholder": "Sélectionner un token",
+    "amount": "Montant",
+    "pricePerToken": "Prix : {price} {currency} par token",
+    "totalCost": "Coût total : {amount} {currency}",
+    "remainingInSale": "Restant dans la vente : {amount}",
+    "loadingSale": "Chargement de la configuration de la vente...",
+    "unableToReadSale": "Impossible de lire la configuration de vente du token.",
+    "saleDisabled": "La vente est actuellement désactivée pour ce token.",
+    "recipientTokenSent": "{symbol} envoyé à",
+    "recipientPaymentPaid": "{symbol} payé à",
+    "fallbackTokenSymbol": "Token",
+    "fallbackPaymentSymbol": "Paiement",
+    "statusApproving": "Approbation en cours",
+    "statusPurchasing": "Achat en cours",
+    "statusProcessing": "Traitement en cours",
+    "success": "Votre achat a réussi. Les tokens apparaîtront bientôt dans votre portefeuille.",
+    "buy": "Acheter",
+    "transactionFailed": "La transaction a échoué. Veuillez réessayer.",
+    "purchaseFailedGeneric": "Une erreur s'est produite lors du traitement de votre achat. Veuillez réessayer."
   },
   "Spaces": {
     "createSpace": "Créer un espace",
@@ -630,6 +717,7 @@
       "tokenBurning": "Combustion de tokens",
       "backingVault": "Coffre de garantie",
       "buyHyphaTokensRewards": "Acheter des tokens Hypha (récompenses)",
+      "spaceTokenPurchase": "Achat de tokens d'espace",
       "spaceTransparency": "Transparence de l'espace",
       "collectiveAgreement": "Accord collectif",
       "contribution": "Contribution",
@@ -779,12 +867,19 @@
     "loadingBackdrop": {
       "keepWindowOpen": "Veuillez laisser cette fenêtre ouverte jusqu’à la fin de la barre de progression."
     },
+    "spaceTokenPurchaseProgress": {
+      "CREATE_WEB2_AGREEMENT": "Création de l'accord...",
+      "CREATE_WEB3_PROPOSAL": "Création de la proposition Web3...",
+      "UPLOAD_FILES": "Téléversement des fichiers...",
+      "LINK_WEB2_AND_WEB3_AGREEMENT": "Liaison des accords Web2 et Web3"
+    },
     "proposalLoader": {
       "processingVote": "Traitement du vote...",
       "savingVote": "Enregistrement du vote...",
       "gettingUpdatedData": "Récupération des données mises à jour...",
       "voteProcessed": "Vote traité !",
       "somethingWentWrong": "Une erreur s’est produite.",
+      "tryAgainGeneric": "Une erreur s’est produite. Veuillez réessayer.",
       "pleaseWait": "Veuillez patienter...",
       "retry": "Réessayer",
       "transactionRevertedUnknownReason": "La transaction a été annulée pour une raison inconnue.",
