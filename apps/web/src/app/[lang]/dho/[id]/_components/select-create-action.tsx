@@ -76,15 +76,6 @@ export const SelectCreateAction = ({
       disabled: isPaymentExpired,
     },
     {
-      defaultDurationDays: 7,
-      title: 'Redeem Tokens',
-      description:
-        'Convert your tokens into their equivalent fiat value held in the vault.',
-      href: 'agreements/create/redeem-tokens',
-      icon: <ArrowUpIcon />,
-      disabled: isPaymentExpired,
-    },
-    {
       title: t('actions.depositFunds.title'),
       description: t('actions.depositFunds.description'),
       icon: <ArrowDownIcon />,
