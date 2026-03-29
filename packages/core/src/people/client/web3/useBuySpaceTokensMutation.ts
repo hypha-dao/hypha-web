@@ -108,8 +108,10 @@ export const useBuySpaceTokensMutation = ({
       const [salePaymentToken, salePricePerToken, tokensLeftToSell] =
         saleDetails;
 
-      // Short-circuit if sale is disabled (zero address)
-      if (salePaymentToken === ZERO_ADDRESS) {
+      if (
+        !salePaymentToken ||
+        salePaymentToken.toLowerCase() === ZERO_ADDRESS.toLowerCase()
+      ) {
         return {
           salePaymentToken,
           salePricePerToken,

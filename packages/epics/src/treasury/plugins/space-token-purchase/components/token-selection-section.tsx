@@ -8,18 +8,15 @@ import {
   FormControl,
   FormMessage,
   FormLabel,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Image,
 } from '@hypha-platform/ui';
+import { useMemo } from 'react';
 import { useFormContext } from 'react-hook-form';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
+import type { TokenType } from '@hypha-platform/core/client';
+import { TokenSelectDropdown } from '../../../../agreements/plugins/components/common/token-select-dropdown';
 
 type SpaceToken = {
   id: number;
@@ -58,6 +55,20 @@ export const TokenSelectionSection = ({
   const { lang } = useParams();
   const { control, setValue } = useFormContext();
 
+  const dropdownTokens = useMemo(
+    () =>
+      spaceTokens
+        .filter((tok) => tok.address)
+        .map((tok) => ({
+          address: tok.address as string,
+          symbol: tok.symbol,
+          iconUrl: tok.iconUrl || '/placeholder/token-icon.svg',
+          type: tok.type as TokenType,
+          spaceSubtitle: spaceSlug,
+        })),
+    [spaceTokens, spaceSlug],
+  );
+
   const isLimitedSupply = selectedToken && Number(selectedToken.maxSupply) > 0;
 
   const tokensAvailableLimit = isLimitedSupply
@@ -88,87 +99,33 @@ export const TokenSelectionSection = ({
             <FormField
               control={control}
               name="tokenAddress"
-              render={({ field }) => {
-                const sel = spaceTokens.find(
-                  (t) =>
-                    t.address?.toLowerCase() === field.value?.toLowerCase(),
-                );
-                return (
-                  <FormItem>
-                    <FormControl>
-                      <Select
-                        value={field.value ?? ''}
-                        onValueChange={(val) => {
-                          field.onChange(val);
-                          const token = spaceTokens.find(
-                            (t) =>
-                              t.address?.toLowerCase() === val.toLowerCase(),
-                          );
-                          if (token?.referencePrice) {
-                            setValue(
-                              'purchasePrice',
-                              String(token.referencePrice),
-                            );
-                          }
-                          if (token?.referenceCurrency) {
-                            setValue(
-                              'purchaseCurrency',
-                              token.referenceCurrency,
-                            );
-                          }
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('selection.placeholder')}>
-                            {sel && (
-                              <div className="flex items-center gap-2">
-                                <Image
-                                  src={
-                                    sel.iconUrl || '/placeholder/token-icon.svg'
-                                  }
-                                  width={20}
-                                  height={20}
-                                  alt={sel.symbol}
-                                  className="rounded-full h-5 w-5 shrink-0"
-                                />
-                                {sel.name} ({sel.symbol})
-                              </div>
-                            )}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {spaceTokens.length === 0 ? (
-                            <SelectItem value="__none__" disabled>
-                              {t('selection.noTokenFound')}
-                            </SelectItem>
-                          ) : (
-                            spaceTokens.map((t) => (
-                              <SelectItem
-                                key={t.address}
-                                value={t.address ?? ''}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <Image
-                                    src={
-                                      t.iconUrl || '/placeholder/token-icon.svg'
-                                    }
-                                    width={20}
-                                    height={20}
-                                    alt={t.symbol}
-                                    className="rounded-full h-5 w-5 shrink-0"
-                                  />
-                                  {t.name} ({t.symbol})
-                                </div>
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                );
-              }}
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <TokenSelectDropdown
+                      value={field.value ?? ''}
+                      onValueChange={(val) => {
+                        field.onChange(val);
+                        const token = spaceTokens.find(
+                          (tok) =>
+                            tok.address?.toLowerCase() === val.toLowerCase(),
+                        );
+                        if (token?.referencePrice !== undefined) {
+                          setValue('purchasePrice', token.referencePrice);
+                        }
+                        if (token?.referenceCurrency) {
+                          setValue('purchaseCurrency', token.referenceCurrency);
+                        }
+                      }}
+                      tokens={dropdownTokens}
+                      placeholder={t('selection.placeholder')}
+                      emptyMessage={t('selection.noTokenFound')}
+                      disabled={dropdownTokens.length === 0}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
             {spaceTokens.length === 0 && !isLoading && (
               <div className="text-2 text-foreground">

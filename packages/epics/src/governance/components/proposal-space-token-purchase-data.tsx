@@ -34,7 +34,7 @@ export const ProposalSpaceTokenPurchaseData = ({
   );
 
   const paymentTokenDecimals = resolveTokenDecimals(paymentToken);
-  const tokenDecimals = resolveTokenDecimals(tokenAddress);
+  const saleTokenDecimals = resolveTokenDecimals(tokenAddress);
 
   const purchasePrice =
     paymentTokenPricePerToken !== undefined
@@ -42,7 +42,7 @@ export const ProposalSpaceTokenPurchaseData = ({
       : undefined;
   const tokenSaleAmount =
     tokensForSale !== undefined
-      ? Number(formatUnits(tokensForSale, tokenDecimals))
+      ? Number(formatUnits(tokensForSale, saleTokenDecimals))
       : undefined;
 
   return (
@@ -55,24 +55,30 @@ export const ProposalSpaceTokenPurchaseData = ({
             width={20}
             height={20}
             src={tokenMeta?.iconUrl || '/placeholder/neutral-token-icon.svg'}
-            alt={tokenMeta?.symbol || t('token')}
+            alt={tokenMeta?.symbol || t('tokenAlt')}
           />
           <span>{tokenMeta?.symbol ?? tokenAddress ?? '-'}</span>
         </div>
       </div>
       <div className="flex justify-between items-center">
-        <div className="text-1 text-neutral-11 w-full">{t('purchaseStatus')}</div>
+        <div className="text-1 text-neutral-11 w-full">
+          {t('purchase_status')}
+        </div>
         <div className="text-1">{isActive ? t('enabled') : t('disabled')}</div>
       </div>
       <div className="flex justify-between items-center">
-        <div className="text-1 text-neutral-11 w-full">{t('paymentToken')}</div>
+        <div className="text-1 text-neutral-11 w-full">
+          {t('payment_token')}
+        </div>
         <div className="text-1">
-          {paymentTokenMeta?.symbol ?? paymentToken ?? t('notConfigured')}
+          {paymentTokenMeta?.symbol ?? paymentToken ?? t('not_configured')}
         </div>
       </div>
       {purchasePrice !== undefined && (
         <div className="flex justify-between items-center">
-          <div className="text-1 text-neutral-11 w-full">{t('purchasePrice')}</div>
+          <div className="text-1 text-neutral-11 w-full">
+            {t('purchase_price')}
+          </div>
           <div className="text-1 whitespace-nowrap">
             {formatCurrencyValue(purchasePrice)}{' '}
             {paymentTokenMeta?.symbol ?? ''}
@@ -81,7 +87,9 @@ export const ProposalSpaceTokenPurchaseData = ({
       )}
       {tokenSaleAmount !== undefined && (
         <div className="flex justify-between items-center">
-          <div className="text-1 text-neutral-11 w-full">{t('tokensForSale')}</div>
+          <div className="text-1 text-neutral-11 w-full">
+            {t('tokens_for_sale')}
+          </div>
           <div className="text-1">{formatCurrencyValue(tokenSaleAmount)}</div>
         </div>
       )}

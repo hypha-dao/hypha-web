@@ -44,6 +44,8 @@ const paymentTokenToReferenceCurrency = (
 };
 
 export type SpaceTokenSaleDetailsFromChain = {
+  /** Contract address this payload was read for (guards against stale SWR data when the key changes). */
+  queriedTokenAddress: `0x${string}`;
   /** From `paymentToken()`: non-zero means sale is configured (matches proposal `isActive`). */
   activatePurchase: boolean;
   purchasePrice?: number;
@@ -85,6 +87,7 @@ export const useSpaceTokenSaleDetailsFromChain = ({
 
       if (!saleActive) {
         return {
+          queriedTokenAddress: addr as `0x${string}`,
           activatePurchase: false,
         } satisfies SpaceTokenSaleDetailsFromChain;
       }
@@ -92,6 +95,7 @@ export const useSpaceTokenSaleDetailsFromChain = ({
       const currency = paymentTokenToReferenceCurrency(salePaymentToken);
       if (!currency) {
         return {
+          queriedTokenAddress: addr as `0x${string}`,
           activatePurchase: true,
         } satisfies SpaceTokenSaleDetailsFromChain;
       }
@@ -103,6 +107,7 @@ export const useSpaceTokenSaleDetailsFromChain = ({
       );
 
       return {
+        queriedTokenAddress: addr as `0x${string}`,
         activatePurchase: true,
         purchasePrice,
         purchaseCurrency: currency,

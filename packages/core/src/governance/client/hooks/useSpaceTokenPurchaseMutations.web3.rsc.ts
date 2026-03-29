@@ -65,27 +65,37 @@ export const useSpaceTokenPurchaseMutationsWeb3Rpc = ({
       const paymentTokenAddress = (() => {
         if (!arg.activatePurchase) return ZERO_ADDRESS;
         if (!arg.purchaseCurrency) {
-          throw new Error('Purchase currency is required when activating purchase');
+          throw new Error(
+            'Purchase currency is required when activating purchase',
+          );
         }
         if (arg.purchaseCurrency === 'EUR') {
-          return (EURC_TOKEN?.address as `0x${string}`) ?? ZERO_ADDRESS;
+          if (!EURC_TOKEN?.address) {
+            throw new Error('EURC token is not configured');
+          }
+          return EURC_TOKEN.address as `0x${string}`;
         }
         if (arg.purchaseCurrency === 'USD') {
-          return (USDC_TOKEN?.address as `0x${string}`) ?? ZERO_ADDRESS;
+          if (!USDC_TOKEN?.address) {
+            throw new Error('USDC token is not configured');
+          }
+          return USDC_TOKEN.address as `0x${string}`;
         }
-        throw new Error(`Unsupported purchase currency: ${arg.purchaseCurrency}`);
+        throw new Error(
+          `Unsupported purchase currency: ${arg.purchaseCurrency}`,
+        );
       })();
       const paymentTokenDecimals =
         paymentTokenAddress !== ZERO_ADDRESS
           ? await getTokenDecimals(paymentTokenAddress)
           : 6;
       const paymentTokenPricePerToken =
-        arg.activatePurchase && arg.purchasePrice
-          ? parseUnits(arg.purchasePrice.toString(), paymentTokenDecimals)
+        arg.activatePurchase && arg.purchasePrice !== undefined
+          ? parseUnits(String(arg.purchasePrice), paymentTokenDecimals)
           : 0n;
       const tokensForSale =
-        arg.activatePurchase && arg.tokensAvailableForPurchase
-          ? parseUnits(arg.tokensAvailableForPurchase.toString(), 18)
+        arg.activatePurchase && arg.tokensAvailableForPurchase !== undefined
+          ? parseUnits(String(arg.tokensAvailableForPurchase), 18)
           : 0n;
 
       // Allow the token contract to move sale inventory from the space executor

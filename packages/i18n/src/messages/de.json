@@ -170,7 +170,7 @@
         "description": "Kaufen Sie Hypha-Tokens, um am Netzwerk teilzunehmen und Belohnungen zu erhalten."
       },
       "spaceTokenPurchase": {
-        "title": "Space-Token-Kauf",
+        "title": "Space-Token-Kauf aktivieren",
         "description": "Ermöglichen Sie Ihren Mitgliedern, die nativen Tokens Ihres Spaces zu kaufen."
       },
       "depositFunds": {
@@ -386,6 +386,7 @@
     "rewardValueMustBeGreaterThanZero": "Der Belohnungswert muss größer als 0 sein",
     "noRewardsFoundForUser": "Für diesen Benutzer wurden keine Belohnungen gefunden",
     "buyHypha": "HYPHA kaufen",
+    "buySpaceTokens": "Space-Tokens kaufen",
     "actions": "Aktionen",
     "noAssetsFoundForUser": "Keine Assets für diesen Benutzer gefunden",
     "editForm": {
@@ -438,6 +439,11 @@
       "buyHyphaTokensRewards": {
         "title": "Hypha-Tokens kaufen (Belohnungen)",
         "description": "Kaufen Sie Hypha-Tokens, um am Netzwerk teilzunehmen und Belohnungen zu erhalten"
+      },
+      "buySpaceTokens": {
+        "title": "Space-Tokens kaufen",
+        "backLabel": "Zurück zu den Aktionen",
+        "description": "Kaufen Sie die nativen Tokens Ihres Spaces mit der konfigurierten Zahlungswährung."
       },
       "activateSpaces": {
         "title": "Spaces aktivieren",
@@ -557,6 +563,7 @@
     "price": {
       "sectionTitle": "Token-Kaufpreis",
       "description": "Legen Sie einen benutzerdefinierten Kaufpreis fest oder verwenden Sie den Standardpreis der Schatzkammer.",
+      "currencyPlaceholder": "Währung",
       "currentPriceLabel": "Aktueller Preis in der Schatzkammer:",
       "currentPriceSuffix": "— in der Token-Konfiguration Ihres Spaces festgelegt.",
       "fieldLabel": "Token-Kaufpreis",
@@ -568,6 +575,46 @@
       "description": "Die Schaltfläche \"Space-Tokens kaufen\" wird im Profil der Spaces oder Mitglieder angezeigt, die in den Token-Einstellungen auf der Whitelist stehen. Wenn Sie diesen Zugriff prüfen möchten, können Sie Whitelists über einen Token-Konfigurationsvorschlag verwalten.",
       "whitelistInfo": "Die Whitelist ist in den ursprünglichen Ausgabeeinstellungen des Tokens konfiguriert. Alle Mitglieder oder Spaces in der \"To\"-Whitelist können {tokenName}-Tokens sehen und kaufen."
     }
+  },
+  "ProposalSpaceTokenPurchase": {
+    "token": "Token",
+    "tokenAlt": "Token",
+    "purchase_status": "Kaufstatus",
+    "enabled": "Aktiviert",
+    "disabled": "Deaktiviert",
+    "payment_token": "Zahlungstoken",
+    "not_configured": "Nicht konfiguriert",
+    "purchase_price": "Kaufpreis",
+    "tokens_for_sale": "Tokens zum Verkauf"
+  },
+  "PeopleBuySpaceTokens": {
+    "validation": {
+      "tokenRequired": "Bitte wählen Sie einen Token",
+      "amountRequired": "Bitte geben Sie einen Betrag ein",
+      "amountPositive": "Der Betrag muss größer als 0 sein"
+    },
+    "empty": "Derzeit sind keine Space-Tokens zum Kauf verfügbar.",
+    "eligibilityLoadError": "Verfügbare Tokens konnten nicht geprüft werden. Bitte versuchen Sie es erneut.",
+    "selectToken": "Token auswählen",
+    "selectPlaceholder": "Token auswählen",
+    "amount": "Betrag",
+    "pricePerToken": "Preis: {price} {currency} pro Token",
+    "totalCost": "Gesamtkosten: {amount} {currency}",
+    "remainingInSale": "Verbleibend im Verkauf: {amount}",
+    "loadingSale": "Verkaufskonfiguration wird geladen...",
+    "unableToReadSale": "Token-Verkaufskonfiguration konnte nicht gelesen werden.",
+    "saleDisabled": "Der Verkauf ist für diesen Token derzeit deaktiviert.",
+    "recipientTokenSent": "{symbol} gesendet an",
+    "recipientPaymentPaid": "{symbol} gezahlt an",
+    "fallbackTokenSymbol": "Token",
+    "fallbackPaymentSymbol": "Zahlung",
+    "statusApproving": "Genehmigung läuft",
+    "statusPurchasing": "Kauf läuft",
+    "statusProcessing": "Wird verarbeitet",
+    "success": "Ihr Kauf war erfolgreich. Die Tokens erscheinen in Kürze in Ihrer Wallet.",
+    "buy": "Kaufen",
+    "transactionFailed": "Transaktion fehlgeschlagen. Bitte erneut versuchen.",
+    "purchaseFailedGeneric": "Beim Verarbeiten Ihres Kaufs ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut."
   },
   "Spaces": {
     "createSpace": "Space erstellen",
@@ -670,6 +717,7 @@
       "tokenBurning": "Token-Verbrennung",
       "backingVault": "Sicherungsvault",
       "buyHyphaTokensRewards": "Hypha-Tokens kaufen (Belohnungen)",
+      "spaceTokenPurchase": "Token-Kauf",
       "spaceTransparency": "Space-Transparenz",
       "collectiveAgreement": "Kollektive Vereinbarung",
       "contribution": "Beitrag",
@@ -819,12 +867,19 @@
     "loadingBackdrop": {
       "keepWindowOpen": "Bitte lassen Sie dieses Fenster geöffnet, bis der Fortschrittsbalken abgeschlossen ist."
     },
+    "spaceTokenPurchaseProgress": {
+      "CREATE_WEB2_AGREEMENT": "Vereinbarung wird erstellt...",
+      "CREATE_WEB3_PROPOSAL": "Web3-Vorschlag wird erstellt...",
+      "UPLOAD_FILES": "Dateien werden hochgeladen...",
+      "LINK_WEB2_AND_WEB3_AGREEMENT": "Web2- und Web3-Vereinbarungen werden verknüpft"
+    },
     "proposalLoader": {
       "processingVote": "Abstimmung wird verarbeitet...",
       "savingVote": "Abstimmung wird gespeichert...",
       "gettingUpdatedData": "Aktualisierte Daten werden geladen...",
       "voteProcessed": "Abstimmung verarbeitet!",
       "somethingWentWrong": "Etwas ist schiefgelaufen.",
+      "tryAgainGeneric": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
       "pleaseWait": "Bitte warten...",
       "retry": "Erneut versuchen",
       "transactionRevertedUnknownReason": "Transaktion wurde aus unbekanntem Grund zurückgesetzt.",

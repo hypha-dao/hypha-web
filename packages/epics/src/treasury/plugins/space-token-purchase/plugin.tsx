@@ -72,16 +72,13 @@ export const SpaceTokenPurchasePlugin = ({
     if (!tokenAddressChecksum || saleDetailsFromChain === undefined) {
       return;
     }
-    if (hydratedFromChainForToken.current === tokenAddressChecksum) {
+    if (
+      saleDetailsFromChain.queriedTokenAddress.toLowerCase() !==
+      tokenAddressChecksum.toLowerCase()
+    ) {
       return;
     }
-
-    // Verify the sale details correspond to the current token before hydrating
-    // (This prevents stale SWR data from being applied to the wrong token)
-    if (
-      saleDetailsFromChain.tokenAddress &&
-      saleDetailsFromChain.tokenAddress.toLowerCase() !== tokenAddressChecksum.toLowerCase()
-    ) {
+    if (hydratedFromChainForToken.current === tokenAddressChecksum) {
       return;
     }
 
@@ -115,7 +112,6 @@ export const SpaceTokenPurchasePlugin = ({
       }
     }
 
-    // Only mark as hydrated after successfully applying values
     hydratedFromChainForToken.current = tokenAddressChecksum;
   }, [tokenAddressChecksum, saleDetailsFromChain, setValue]);
 

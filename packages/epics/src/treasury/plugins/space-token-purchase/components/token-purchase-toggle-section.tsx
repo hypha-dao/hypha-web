@@ -27,7 +27,10 @@ export const TokenPurchaseToggleSection = () => {
         render={({ field }) => (
           <FormItem>
             <div className="flex items-center justify-between gap-4">
-              <label id="activate-purchase-label" className="text-2 text-neutral-11">
+              <label
+                id="activate-purchase-label"
+                className="text-2 text-neutral-11"
+              >
                 {t('toggle.activateLabel')}
               </label>
               <FormControl>
