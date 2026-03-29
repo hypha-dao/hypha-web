@@ -36,6 +36,13 @@ describe('parseLocaleDecimal', () => {
   });
 });
 
+describe('parseLocaleDecimal integers with grouping', () => {
+  it('parses grouped integers', () => {
+    expect(parseLocaleDecimal('1,234', 'en-US')).toBe(1234);
+    expect(parseLocaleDecimal('1.234', 'de-DE')).toBe(1234);
+  });
+});
+
 describe('formatLocaleDecimal', () => {
   it('formats with locale separators', () => {
     const de = formatLocaleDecimal(1234.56, 'de-DE', {

@@ -57,6 +57,13 @@ export const TokenPurchasePriceSection = ({
   });
   const [purchasePriceText, setPurchasePriceText] = useState('');
   const purchasePriceFocusedRef = useRef(false);
+  const [tokensAvailableText, setTokensAvailableText] = useState('');
+  const tokensAvailableFocusedRef = useRef(false);
+
+  const integerFormatOptions = {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  } as const;
 
   useEffect(() => {
     if (purchasePriceFocusedRef.current) return;
@@ -75,6 +82,22 @@ export const TokenPurchasePriceSection = ({
       }),
     );
   }, [purchasePriceValue, locale]);
+
+  useEffect(() => {
+    if (tokensAvailableFocusedRef.current) return;
+    if (
+      tokensAvailableForPurchase === undefined ||
+      tokensAvailableForPurchase === null ||
+      !Number.isFinite(tokensAvailableForPurchase)
+    ) {
+      setTokensAvailableText('');
+      return;
+    }
+    const n = Math.round(Number(tokensAvailableForPurchase));
+    setTokensAvailableText(
+      formatLocaleDecimal(n, locale, integerFormatOptions),
+    );
+  }, [tokensAvailableForPurchase, locale]);
 
   const isLimitedSupply = selectedToken && Number(selectedToken.maxSupply) > 0;
 
@@ -226,13 +249,46 @@ export const TokenPurchasePriceSection = ({
             <FormItem>
               <FormControl>
                 <Input
-                  {...field}
-                  type="number"
-                  min="0"
-                  step="1"
-                  placeholder="0"
-                  value={field.value ?? ''}
-                  onChange={(e) => field.onChange(e.target.value)}
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  placeholder={formatLocaleDecimal(
+                    0,
+                    locale,
+                    integerFormatOptions,
+                  )}
+                  value={tokensAvailableText}
+                  onFocus={() => {
+                    tokensAvailableFocusedRef.current = true;
+                  }}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    setTokensAvailableText(raw);
+                    const parsed = parseLocaleDecimal(raw, locale);
+                    if (parsed !== undefined) {
+                      field.onChange(Math.max(0, Math.round(parsed)));
+                    } else if (raw.trim() === '') {
+                      field.onChange(undefined);
+                    }
+                  }}
+                  onBlur={() => {
+                    tokensAvailableFocusedRef.current = false;
+                    field.onBlur();
+                    const parsed = parseLocaleDecimal(
+                      tokensAvailableText,
+                      locale,
+                    );
+                    if (parsed !== undefined) {
+                      const n = Math.max(0, Math.round(parsed));
+                      field.onChange(n);
+                      setTokensAvailableText(
+                        formatLocaleDecimal(n, locale, integerFormatOptions),
+                      );
+                    } else {
+                      field.onChange(undefined);
+                      setTokensAvailableText('');
+                    }
+                  }}
                 />
               </FormControl>
               <FormMessage />
