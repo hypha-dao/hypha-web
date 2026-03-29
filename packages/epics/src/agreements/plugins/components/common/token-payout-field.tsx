@@ -55,7 +55,9 @@ export const TokenPayoutField = ({
   selectedTokenPriceHint,
 }: TokenPayoutFieldProps) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
-  const selectedToken = tokens.find((t) => t.address === value.token);
+  const selectedToken = tokens.find(
+    (t) => t.address.toLowerCase() === value.token.toLowerCase(),
+  );
 
   const handleTokenChange = (token: Token) => {
     onChange({

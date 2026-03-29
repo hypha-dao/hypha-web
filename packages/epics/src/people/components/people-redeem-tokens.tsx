@@ -14,7 +14,9 @@ import {
   getSpaceOwnershipTokens,
   getSpaceRegularTokens,
   publicClient,
+  TokenType,
   useJwt,
+  validTokenTypes,
 } from '@hypha-platform/core/client';
 import useSWR from 'swr';
 import {
@@ -29,7 +31,7 @@ interface Token {
   address: `0x${string}`;
   tokenPrice?: number;
   value?: number;
-  type?: string;
+  type?: TokenType | null;
   space?: {
     title: string;
     slug: string;
@@ -158,6 +160,17 @@ export const ProfileRedeemTokens = ({
         icon: asset.icon,
         symbol: asset.symbol,
       });
+    }
+    return map;
+  }, [userAssets]);
+
+  const tokenTypeByAddress = React.useMemo(() => {
+    const map = new Map<string, TokenType>();
+    for (const asset of userAssets) {
+      const raw = asset.type;
+      if (validTokenTypes.includes(raw as TokenType)) {
+        map.set(asset.address.toLowerCase(), raw as TokenType);
+      }
     }
     return map;
   }, [userAssets]);
@@ -326,7 +339,6 @@ export const ProfileRedeemTokens = ({
           address: spaceToken,
           tokenPrice: redemptionPrice,
           value: getTokenAvailableBalance(spaceToken, space.slug),
-          type: undefined,
           space: {
             title: space.title,
             slug: space.slug,
@@ -443,7 +455,6 @@ export const ProfileRedeemTokens = ({
                 entry.token.spaceToken,
                 space.slug,
               ),
-              type: undefined,
               space: {
                 title: space.title,
                 slug: space.slug,
@@ -470,7 +481,16 @@ export const ProfileRedeemTokens = ({
     },
   );
 
-  const tokens = redeemableData?.tokens ?? [];
+  const tokens = React.useMemo(() => {
+    const list = redeemableData?.tokens ?? [];
+    return list.map((token) => ({
+      ...token,
+      type:
+        tokenTypeByAddress.get(token.address.toLowerCase()) ??
+        token.type ??
+        null,
+    }));
+  }, [redeemableData?.tokens, tokenTypeByAddress]);
   const diagnostics = redeemableData?.diagnostics;
   const vaultFetchDiagnostics = diagnostics?.vaultFetch ?? [];
   const hasVaultAccessIssues = vaultFetchDiagnostics.length > 0;
