@@ -10,12 +10,14 @@ import {
   Token,
   getBalance,
   useMe,
+  useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import { useTokens } from '../../../treasury';
 import { useTranslations } from 'next-intl';
 import React from 'react';
 import useSWR from 'swr';
 import { useFormContext, useWatch } from 'react-hook-form';
+import { useParams } from 'next/navigation';
 
 const isEvmAddress = (value?: string): value is `0x${string}` =>
   typeof value === 'string' && /^0x[a-fA-F0-9]{40}$/.test(value);
@@ -24,18 +26,20 @@ export const ExchangeStakesAndTokensPlugin = ({
   spaceSlug,
   members,
   spaces,
-  currentSpaceAddress,
 }: {
   spaceSlug: string;
   members: Person[];
   spaces?: Space[];
-  currentSpaceAddress?: string;
 }) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const { control, setValue } = useFormContext();
+  const params = useParams();
+  const currentSpaceSlug = params.id as string;
+  const { space: activeSpace } = useSpaceBySlug(currentSpaceSlug);
   const { person: creator } = useMe();
   const [sellerRecipientType, setSellerRecipientType] =
     React.useState<RecipientType>('member');
+  const currentSpaceAddress = activeSpace?.address ?? undefined;
   const sellerAddress = useWatch({ control, name: 'sellerAddress' }) as
     | string
     | undefined;
@@ -43,6 +47,16 @@ export const ExchangeStakesAndTokensPlugin = ({
     | string
     | undefined;
   const { tokens, isLoading } = useTokens({ spaceSlug });
+
+  const sellerSpaces = React.useMemo(() => {
+    if (!activeSpace?.address) return spaces;
+    if (!spaces?.length) return [activeSpace];
+    const hasActiveSpace = spaces.some(
+      (space) =>
+        space.address?.toLowerCase() === activeSpace.address?.toLowerCase(),
+    );
+    return hasActiveSpace ? spaces : [activeSpace, ...spaces];
+  }, [activeSpace, spaces]);
 
   React.useEffect(() => {
     const creatorAddress =
@@ -163,7 +177,7 @@ export const ExchangeStakesAndTokensPlugin = ({
     <div className="flex flex-col gap-4">
       <RecipientField
         members={members}
-        spaces={spaces}
+        spaces={sellerSpaces}
         defaultRecipientType="member"
         label={tAgreementFlow('plugins.exchangeStakesAndTokens.seller')}
         name="sellerAddress"
