@@ -7,7 +7,12 @@ import { useTokens, ExtendedToken } from '../../treasury';
 import { CopyIcon } from '@radix-ui/react-icons';
 import { copyToClipboard } from '@hypha-platform/ui-utils';
 import { useSpaceBySlug, Space } from '@hypha-platform/core/client';
-import { useDbSpaces } from '../../hooks';
+import {
+  useDbSpaces,
+  useSpaceMembersForPartyResolution,
+  findMemberPersonByAddress,
+  findMemberSpaceByAddress,
+} from '../../hooks';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
@@ -60,6 +65,8 @@ export const ProposalExchangeStakesAndTokensData = ({
   const { tokens } = useTokens({ spaceSlug });
   const { space } = useSpaceBySlug(spaceSlug);
   const { spaces: dbSpaces } = useDbSpaces({ parentOnly: false });
+  const { memberPersons, memberSpaces } =
+    useSpaceMembersForPartyResolution(spaceSlug);
   const resolvedSellerAddress = getPreferredAddress(
     sellerAddress,
     fallbackSellerAddress,
@@ -84,11 +91,23 @@ export const ProposalExchangeStakesAndTokensData = ({
     (member) =>
       member.address?.toLowerCase() === resolvedBuyerAddress?.toLowerCase(),
   );
-  const displaySellerPerson = sellerPerson ?? sellerMemberInSpace;
-  const displayBuyerPerson = buyerPerson ?? buyerMemberInSpace;
+  const sellerFromMembersList = findMemberPersonByAddress(
+    resolvedSellerAddress,
+    memberPersons,
+  );
+  const buyerFromMembersList = findMemberPersonByAddress(
+    resolvedBuyerAddress,
+    memberPersons,
+  );
+  const displaySellerPerson =
+    sellerPerson ?? sellerFromMembersList ?? sellerMemberInSpace;
+  const displayBuyerPerson =
+    buyerPerson ?? buyerFromMembersList ?? buyerMemberInSpace;
 
   const resolveSpaceForWallet = (addr?: string): Space | undefined => {
     if (!addr) return undefined;
+    const fromMembers = findMemberSpaceByAddress(addr, memberSpaces);
+    if (fromMembers) return fromMembers;
     const lower = addr.toLowerCase();
     if (space?.address && space.address.toLowerCase() === lower) {
       return space;
