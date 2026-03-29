@@ -6,6 +6,7 @@ import { Image } from '@hypha-platform/ui';
 import { useTokens, ExtendedToken } from '../../treasury';
 import { CopyIcon } from '@radix-ui/react-icons';
 import { copyToClipboard } from '@hypha-platform/ui-utils';
+import { useSpaceBySlug } from '@hypha-platform/core/client';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
@@ -56,6 +57,7 @@ export const ProposalExchangeStakesAndTokensData = ({
 }: ProposalExchangeStakesAndTokensDataProps) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const { tokens } = useTokens({ spaceSlug });
+  const { space } = useSpaceBySlug(spaceSlug);
   const resolvedSellerAddress = getPreferredAddress(
     sellerAddress,
     fallbackSellerAddress,
@@ -72,6 +74,16 @@ export const ProposalExchangeStakesAndTokensData = ({
   const { person: buyerPerson } = usePersonByWeb3Address(
     buyerLookupAddress ?? ZERO_ADDRESS,
   );
+  const sellerMemberInSpace = space?.members?.find(
+    (member) =>
+      member.address?.toLowerCase() === resolvedSellerAddress?.toLowerCase(),
+  );
+  const buyerMemberInSpace = space?.members?.find(
+    (member) =>
+      member.address?.toLowerCase() === resolvedBuyerAddress?.toLowerCase(),
+  );
+  const displaySellerPerson = sellerPerson ?? sellerMemberInSpace;
+  const displayBuyerPerson = buyerPerson ?? buyerMemberInSpace;
 
   const renderPartyValue = (
     address?: string,
@@ -161,11 +173,11 @@ export const ProposalExchangeStakesAndTokensData = ({
         </span>
         {renderPartyValue(
           resolvedSellerAddress,
-          sellerPerson
-            ? `${sellerPerson.name} ${sellerPerson.surname}`
+          displaySellerPerson
+            ? `${displaySellerPerson.name} ${displaySellerPerson.surname}`
             : undefined,
-          sellerPerson?.avatarUrl,
-          `${sellerPerson?.nickname ?? 'seller'} avatar`,
+          displaySellerPerson?.avatarUrl,
+          `${displaySellerPerson?.nickname ?? 'seller'} avatar`,
         )}
       </div>
       <div className="flex items-center justify-between">
@@ -182,11 +194,11 @@ export const ProposalExchangeStakesAndTokensData = ({
         </span>
         {renderPartyValue(
           resolvedBuyerAddress,
-          buyerPerson
-            ? `${buyerPerson.name} ${buyerPerson.surname}`
+          displayBuyerPerson
+            ? `${displayBuyerPerson.name} ${displayBuyerPerson.surname}`
             : undefined,
-          buyerPerson?.avatarUrl,
-          `${buyerPerson?.nickname ?? 'buyer'} avatar`,
+          displayBuyerPerson?.avatarUrl,
+          `${displayBuyerPerson?.nickname ?? 'buyer'} avatar`,
         )}
       </div>
       <div className="flex items-center justify-between">
