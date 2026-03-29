@@ -47,6 +47,8 @@ export const ExchangeStakesAndTokensPlugin = ({
   const { person: creator } = useMe();
   const [sellerRecipientType, setSellerRecipientType] =
     React.useState<RecipientType>('member');
+  const [buyerRecipientType, setBuyerRecipientType] =
+    React.useState<RecipientType>('member');
   const sellerAddress = useWatch({ control, name: 'sellerAddress' }) as
     | string
     | undefined;
@@ -69,6 +71,33 @@ export const ExchangeStakesAndTokensPlugin = ({
     );
     return hasActiveSpace ? spaces : [activeSpace, ...spaces];
   }, [activeSpace, spaces]);
+
+  const buyerSpaces = sellerSpaces;
+
+  const buyerSpaceMeta = React.useMemo(() => {
+    if (!buyerAddress) return null;
+    const lower = buyerAddress.toLowerCase();
+    return buyerSpaces?.find((s) => s.address?.toLowerCase() === lower) ?? null;
+  }, [buyerAddress, buyerSpaces]);
+
+  const {
+    spaceDetails: buyerSpaceChainDetails,
+    isLoading: isLoadingBuyerSpaceChain,
+  } = useSpaceDetailsWeb3Rpc({
+    spaceId:
+      buyerRecipientType === 'space' && buyerSpaceMeta?.web3SpaceId
+        ? buyerSpaceMeta.web3SpaceId
+        : null,
+  });
+
+  const buyerExecutorAddress = buyerSpaceChainDetails?.executor as
+    | string
+    | undefined;
+
+  const buyerBalanceLookupAddress =
+    buyerRecipientType === 'space' && buyerExecutorAddress
+      ? buyerExecutorAddress
+      : buyerAddress;
 
   React.useEffect(() => {
     const creatorAddress =
@@ -149,10 +178,11 @@ export const ExchangeStakesAndTokensPlugin = ({
 
   const { data: buyerOwnedTokenSet, isLoading: isLoadingBuyerBalances } =
     useSWR(
-      isEvmAddress(buyerAddress) && buyerTokenCandidates.length
+      isEvmAddress(buyerBalanceLookupAddress) && buyerTokenCandidates.length
         ? [
             'exchangeBuyerOwnedTokens',
-            buyerAddress,
+            buyerBalanceLookupAddress,
+            buyerRecipientType,
             ...buyerTokenCandidates.map((token: Token) =>
               token.address.toLowerCase(),
             ),
@@ -163,7 +193,7 @@ export const ExchangeStakesAndTokensPlugin = ({
           buyerTokenCandidates.map(async (token: Token) => {
             const { amount } = await getBalance(
               token.address as `0x${string}`,
-              buyerAddress as `0x${string}`,
+              buyerBalanceLookupAddress as `0x${string}`,
             );
             return { tokenAddress: token.address, amount };
           }),
@@ -189,11 +219,12 @@ export const ExchangeStakesAndTokensPlugin = ({
   }, [sellerBalanceLookupAddress, sellerOwnedTokenSet, sellerTokenCandidates]);
 
   const buyerTokens = React.useMemo(() => {
-    if (!isEvmAddress(buyerAddress) || !buyerOwnedTokenSet) return [];
+    if (!isEvmAddress(buyerBalanceLookupAddress) || !buyerOwnedTokenSet)
+      return [];
     return buyerTokenCandidates.filter((token: Token) =>
       buyerOwnedTokenSet.has(token.address.toLowerCase()),
     );
-  }, [buyerAddress, buyerOwnedTokenSet, buyerTokenCandidates]);
+  }, [buyerBalanceLookupAddress, buyerOwnedTokenSet, buyerTokenCandidates]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -228,15 +259,19 @@ export const ExchangeStakesAndTokensPlugin = ({
       <Separator />
       <RecipientField
         members={members}
-        spaces={spaces}
+        spaces={buyerSpaces}
         defaultRecipientType="member"
         label={tAgreementFlow('plugins.exchangeStakesAndTokens.buyer')}
         name="buyerAddress"
+        recipientType={buyerRecipientType}
+        onRecipientTypeChange={setBuyerRecipientType}
       />
       <Separator />
       <Skeleton
         loading={
-          isLoading || (isEvmAddress(buyerAddress) && isLoadingBuyerBalances)
+          isLoading ||
+          (buyerRecipientType === 'space' && isLoadingBuyerSpaceChain) ||
+          (isEvmAddress(buyerBalanceLookupAddress) && isLoadingBuyerBalances)
         }
         width="100%"
         height={90}
