@@ -212,8 +212,13 @@ export const ProposalRedeemTokensData = ({
 
         {conversions.length > 0 ? (
           <div className="flex flex-col gap-2">
-            <div className="text-1 text-neutral-11">
-              {t('redeemCollateralPayout')}
+            <div className="flex flex-col gap-1">
+              <div className="text-1 text-neutral-11">
+                {t('redeemCollateralPayout')}
+              </div>
+              <p className="text-1 text-neutral-9 max-w-prose">
+                {t('redeemCollateralPayoutHelp')}
+              </p>
             </div>
             {conversions.map((conversion, index) => {
               const addr = conversion.asset;

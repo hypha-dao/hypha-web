@@ -79,13 +79,21 @@ export function ProposalTokenBackingVaultData({
     Boolean(currentVault && currentVault.collaterals.length > 0) &&
     !suppressRedeemDuplicates;
 
+  const hasMeaningfulRedemptionPrice =
+    redemptionPrice !== undefined &&
+    String(redemptionPrice).trim() !== '';
+
+  const hasMaxRedemptionRow =
+    maxRedemptionPercent !== undefined &&
+    maxRedemptionPeriodDays !== undefined;
+
   const hasVaultConfigRows =
     (addCollaterals?.length ?? 0) > 0 ||
     (removeCollaterals?.length ?? 0) > 0 ||
     enableRedemption !== undefined ||
-    redemptionStartDate ||
-    redemptionPrice !== undefined ||
-    maxRedemptionPercent !== undefined ||
+    Boolean(redemptionStartDate) ||
+    hasMeaningfulRedemptionPrice ||
+    hasMaxRedemptionRow ||
     minimumBackingPercent !== undefined ||
     whitelistEnabled !== undefined ||
     (whitelistedAddresses?.length ?? 0) > 0;
@@ -177,16 +185,15 @@ export function ProposalTokenBackingVaultData({
             })}
           />
         )}
-        {redemptionPrice !== undefined && (
+        {hasMeaningfulRedemptionPrice && (
           <TokenBackingVaultDetailRow
             label={tProposalDetails('labels.redemptionPrice')}
-            value={`${formatCompactNumber(redemptionPrice)} ${
+            value={`${formatCompactNumber(String(redemptionPrice))} ${
               currencyLabel ?? 'USD'
             }`}
           />
         )}
-        {maxRedemptionPercent !== undefined &&
-          maxRedemptionPeriodDays !== undefined && (
+        {hasMaxRedemptionRow && (
             <TokenBackingVaultDetailRow
               label={tProposalDetails('labels.maxRedemption')}
               value={tProposalDetails('labels.maxRedemptionValue', {
@@ -194,7 +201,7 @@ export function ProposalTokenBackingVaultData({
                 days: maxRedemptionPeriodDays,
               })}
             />
-          )}
+        )}
         {minimumBackingPercent !== undefined && (
           <TokenBackingVaultDetailRow
             label={tProposalDetails('labels.minimumBackingPercent')}

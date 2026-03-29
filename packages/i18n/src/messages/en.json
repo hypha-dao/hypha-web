@@ -1226,6 +1226,7 @@
       "redeemAmount": "Redemption amount",
       "redeemNotional": "Reference value",
       "redeemCollateralPayout": "Collateral payout",
+      "redeemCollateralPayoutHelp": "Per-asset amounts are the vault’s current balance for that collateral multiplied by the proposal’s allocation share. They are not “what is left” after redemption; execution moves the calculated amounts when the proposal passes.",
       "redeemApproxUsd": "≈ {value} USD",
       "spaceToken": "Space Token",
       "currentBackingCollaterals": "Current Backing Collaterals",
