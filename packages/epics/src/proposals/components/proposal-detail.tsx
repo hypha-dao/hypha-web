@@ -50,40 +50,12 @@ import { formatUnits } from 'viem';
 import { resolveTokenDecimals } from '../../governance/utils/token-decimals';
 import { useDbSpaces } from '../../hooks';
 import { hasUpdateTokenDataToDisplay } from '../utils/has-update-token-data-to-display';
-import { parseExchangeDetailsFromDescription } from '../../governance/utils';
+import {
+  parseExchangeDetailsFromDescription,
+  stripExchangeDetailsBlock,
+} from '../../governance/utils';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
-const EXCHANGE_DETAILS_START_MARKER = '<!-- exchange-details:start -->';
-const EXCHANGE_DETAILS_END_MARKER = '<!-- exchange-details:end -->';
-
-const stripExchangeDetailsBlock = (text: string): string => {
-  let cleaned = text;
-
-  while (true) {
-    const startIndex = cleaned.indexOf(EXCHANGE_DETAILS_START_MARKER);
-    if (startIndex === -1) break;
-
-    const endIndex = cleaned.indexOf(
-      EXCHANGE_DETAILS_END_MARKER,
-      startIndex + EXCHANGE_DETAILS_START_MARKER.length,
-    );
-    if (endIndex === -1) break;
-
-    const markerEndIndex = endIndex + EXCHANGE_DETAILS_END_MARKER.length;
-    const sliceStart =
-      startIndex > 0 && cleaned[startIndex - 1] === '\n'
-        ? startIndex - 1
-        : startIndex;
-    const sliceEnd =
-      markerEndIndex < cleaned.length && cleaned[markerEndIndex] === '\n'
-        ? markerEndIndex + 1
-        : markerEndIndex;
-
-    cleaned = `${cleaned.slice(0, sliceStart)}${cleaned.slice(sliceEnd)}`;
-  }
-
-  return cleaned.trim();
-};
 
 type ProposalDetailProps = ProposalHeadProps & {
   documentId?: number;

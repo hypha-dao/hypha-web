@@ -20,6 +20,7 @@ import {
   validateExchangeSellerLegBalances,
   EXCHANGE_SELLER_BALANCE_EXCEEDED,
 } from '../utils/validate-exchange-seller-balances';
+import { stripExchangeDetailsBlock } from '../utils/strip-exchange-details-block';
 
 const fullSchemaCreateExchangeStakesAndTokensForm =
   schemaExchangeStakesAndTokens;
@@ -41,11 +42,7 @@ const upsertExchangeDetailsSection = (
   description: string,
   section: string,
 ): string => {
-  const detailsBlockRegex =
-    /\n?<!-- exchange-details:start -->[\s\S]*<!-- exchange-details:end -->\n?/g;
-  const sanitizedDescription = description
-    .replace(detailsBlockRegex, '')
-    .trimEnd();
+  const sanitizedDescription = stripExchangeDetailsBlock(description).trimEnd();
   return `${sanitizedDescription}\n\n${section}`.trim();
 };
 

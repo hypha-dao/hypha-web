@@ -5,7 +5,7 @@ import useSWRMutation from 'swr/mutation';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 import { encodeFunctionData, erc20Abi, parseUnits } from 'viem';
 
-import { getProposalFromLogs } from '../web3';
+import { getProposalFromLogs, parseEscrowCreatedIdsFromLogs } from '../web3';
 import {
   daoProposalsImplementationAbi,
   daoProposalsImplementationAddress,
@@ -213,7 +213,16 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
       : null,
     async ([hash]) => {
       const { logs } = await publicClient.waitForTransactionReceipt({ hash });
-      return getProposalFromLogs(logs);
+      const proposal = getProposalFromLogs(logs);
+      const escrowIds = parseEscrowCreatedIdsFromLogs(logs);
+      if (!proposal) {
+        return proposal;
+      }
+      return {
+        ...proposal,
+        escrowIds,
+        ...(escrowIds.length > 0 ? { escrowId: escrowIds[0] } : {}),
+      };
     },
   );
 
