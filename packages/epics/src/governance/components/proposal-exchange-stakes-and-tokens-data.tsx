@@ -10,6 +10,7 @@ import { useSpaceBySlug, Space } from '@hypha-platform/core/client';
 import {
   useDbSpaces,
   useSpaceMembersForPartyResolution,
+  useSpaceByContractAddress,
   usePersonMemberProfileAnySpace,
   findMemberPersonByAddress,
   findMemberSpaceByAddress,
@@ -89,6 +90,11 @@ export const ProposalExchangeStakesAndTokensData = ({
   const { person: sellerMemberAnySpace } = usePersonMemberProfileAnySpace(
     resolvedSellerAddress,
   );
+  const { space: sellerSpaceByContractAddress } = useSpaceByContractAddress(
+    resolvedSellerAddress,
+  );
+  const { space: buyerSpaceByContractAddress } =
+    useSpaceByContractAddress(resolvedBuyerAddress);
   const sellerMemberInSpace = space?.members?.find(
     (member) =>
       member.address?.toLowerCase() === resolvedSellerAddress?.toLowerCase(),
@@ -128,8 +134,22 @@ export const ProposalExchangeStakesAndTokensData = ({
   };
 
   /** Space executor / contract address: show space title + logo when no person record */
-  const sellerSpaceMatch = resolveSpaceForWallet(resolvedSellerAddress);
-  const buyerSpaceMatch = resolveSpaceForWallet(resolvedBuyerAddress);
+  const sellerSpaceMatch =
+    resolveSpaceForWallet(resolvedSellerAddress) ??
+    (sellerSpaceByContractAddress
+      ? {
+          title: sellerSpaceByContractAddress.title,
+          logoUrl: sellerSpaceByContractAddress.logoUrl,
+        }
+      : undefined);
+  const buyerSpaceMatch =
+    resolveSpaceForWallet(resolvedBuyerAddress) ??
+    (buyerSpaceByContractAddress
+      ? {
+          title: buyerSpaceByContractAddress.title,
+          logoUrl: buyerSpaceByContractAddress.logoUrl,
+        }
+      : undefined);
   const sellerResolvedAsSpace = !displaySellerPerson && !!sellerSpaceMatch;
   const buyerResolvedAsSpace = !displayBuyerPerson && !!buyerSpaceMatch;
 
