@@ -357,6 +357,7 @@
     },
     "transactionCard": {
       "tokenIconAlt": "Token icon",
+      "escrowAccountName": "Escrow account",
       "memo": "Memo",
       "type": {
         "transfer": "Transfer",

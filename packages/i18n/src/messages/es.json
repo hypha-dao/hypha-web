@@ -980,6 +980,7 @@
     },
     "transactionCard": {
       "tokenIconAlt": "Icono de token",
+      "escrowAccountName": "Cuenta de depósito en garantía",
       "memo": "Memorándum",
       "type": {
         "transfer": "Transferir",

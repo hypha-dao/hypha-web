@@ -1,10 +1,14 @@
+'use client';
+
 import { FC } from 'react';
 import { TransferCard } from './transfer-card';
 import { TransferWithEntity } from '../../hooks';
 import { ZeroAddress } from 'ethers';
 import { tokenBackingVaultImplementationAddress } from '@hypha-platform/core/generated';
+import { isExchangeEscrowContractAddress } from '@hypha-platform/core/client';
 import { useVaults } from '../../hooks/use-vaults';
 import { useChainId } from 'wagmi';
+import { useTranslations } from 'next-intl';
 
 type TransactionsListProps = {
   transfers: TransferWithEntity[];
@@ -17,6 +21,7 @@ export const TransactionsList: FC<TransactionsListProps> = ({
   activeSort,
   isLoading,
 }) => {
+  const tTreasury = useTranslations('TreasuryTab');
   const { vaults } = useVaults();
   const chainId = useChainId();
   const vaultAddress =
@@ -56,6 +61,10 @@ export const TransactionsList: FC<TransactionsListProps> = ({
           ? `${matchedVault.tokenSymbol} Backing Vault`
           : singleVaultName ?? 'Token Backing Vault';
 
+        const isEscrowCounterparty =
+          !!counterpartyAddress &&
+          isExchangeEscrowContractAddress(counterpartyAddress);
+
         return (
           <TransferCard
             key={`${transfer.transactionHash}-${index}`}
@@ -63,7 +72,10 @@ export const TransactionsList: FC<TransactionsListProps> = ({
             surname={transfer.person?.surname}
             title={
               transfer.space?.title ||
-              (isVaultCounterparty ? vaultDisplayName : undefined)
+              (isVaultCounterparty ? vaultDisplayName : undefined) ||
+              (isEscrowCounterparty
+                ? tTreasury('transactionCard.escrowAccountName')
+                : undefined)
             }
             avatar={transfer.person?.avatarUrl || transfer.space?.avatarUrl}
             tokenIcon={transfer.tokenIcon}

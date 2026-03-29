@@ -361,6 +361,7 @@
     },
     "transactionCard": {
       "tokenIconAlt": "Icône du token",
+      "escrowAccountName": "Compte séquestre",
       "memo": "Mémo",
       "type": {
         "transfer": "Transfert",

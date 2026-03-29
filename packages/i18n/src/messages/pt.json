@@ -980,6 +980,7 @@
     },
     "transactionCard": {
       "tokenIconAlt": "Ícone de token",
+      "escrowAccountName": "Conta de custódia",
       "memo": "Memorando",
       "type": {
         "transfer": "Transferir",
