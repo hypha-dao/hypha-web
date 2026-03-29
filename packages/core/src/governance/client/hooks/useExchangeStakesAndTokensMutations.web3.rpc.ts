@@ -19,6 +19,23 @@ import { getDuration } from '@hypha-platform/ui-utils';
 import { getGovernanceChainId } from './governance-chain-id';
 import { EXCHANGE_ESCROW_CONTRACT_BY_CHAIN } from './exchange-escrow-contract';
 
+const READ_TIMEOUT_MS = 30_000;
+
+async function withReadTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const id = setTimeout(() => reject(new Error('RPC read timed out')), ms);
+    promise
+      .then((v) => {
+        clearTimeout(id);
+        resolve(v);
+      })
+      .catch((e) => {
+        clearTimeout(id);
+        reject(e);
+      });
+  });
+}
+
 interface ExchangeLegInput {
   amount: string;
   token: string;
@@ -96,8 +113,11 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
         );
       }
 
-      const duration = await publicClient.readContract(
-        getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
+      const duration = await withReadTimeout(
+        publicClient.readContract(
+          getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
+        ),
+        READ_TIMEOUT_MS,
       );
 
       const transactionGroups = await Promise.all(
@@ -110,8 +130,14 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
               }. Seller and buyer rows must be paired.`,
             );
           }
-          const sellerTokenDecimals = await getTokenDecimals(sellerRow.token);
-          const buyerTokenDecimals = await getTokenDecimals(buyerRow.token);
+          const sellerTokenDecimals = await withReadTimeout(
+            getTokenDecimals(sellerRow.token),
+            READ_TIMEOUT_MS,
+          );
+          const buyerTokenDecimals = await withReadTimeout(
+            getTokenDecimals(buyerRow.token),
+            READ_TIMEOUT_MS,
+          );
 
           const sellerAmount = parseUnits(
             sellerRow.amount,

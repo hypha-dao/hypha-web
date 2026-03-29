@@ -4,6 +4,23 @@ import { erc20Abi, parseUnits } from 'viem';
 const isEvmAddress = (value: string): value is `0x${string}` =>
   /^0x[a-fA-F0-9]{40}$/.test(value);
 
+const RPC_TIMEOUT_MS = 25_000;
+
+async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const id = setTimeout(() => reject(new Error('RPC_TIMEOUT')), ms);
+    promise
+      .then((v) => {
+        clearTimeout(id);
+        resolve(v);
+      })
+      .catch((e) => {
+        clearTimeout(id);
+        reject(e);
+      });
+  });
+}
+
 export const EXCHANGE_SELLER_BALANCE_EXCEEDED =
   'EXCHANGE_SELLER_BALANCE_EXCEEDED';
 
@@ -51,7 +68,7 @@ export async function checkSingleSellerLegBalance(
 
   let decimals: number;
   try {
-    decimals = await getTokenDecimals(leg.token);
+    decimals = await withTimeout(getTokenDecimals(leg.token), RPC_TIMEOUT_MS);
   } catch {
     return 'rpc_error';
   }
@@ -65,12 +82,15 @@ export async function checkSingleSellerLegBalance(
 
   let balanceWei: bigint;
   try {
-    balanceWei = await publicClient.readContract({
-      address: leg.token,
-      abi: erc20Abi,
-      functionName: 'balanceOf',
-      args: [owner],
-    });
+    balanceWei = await withTimeout(
+      publicClient.readContract({
+        address: leg.token,
+        abi: erc20Abi,
+        functionName: 'balanceOf',
+        args: [owner],
+      }),
+      RPC_TIMEOUT_MS,
+    );
   } catch {
     return 'rpc_error';
   }

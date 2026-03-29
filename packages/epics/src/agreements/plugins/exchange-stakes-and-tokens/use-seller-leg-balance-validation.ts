@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useFormContext, useWatch } from 'react-hook-form';
+import { useFormContext, useWatch, useFormState } from 'react-hook-form';
 import {
   checkSingleSellerLegBalance,
   resolveSellerBalanceOwner,
@@ -16,14 +16,19 @@ type FormSlice = {
   spaceExecutorAddress?: string;
 };
 
+const DEBOUNCE_MS = 450;
+
 /**
  * When a seller row has both amount and token, compare to on-chain balance and
  * set `sellerLeg[i].amount` error (shown under the row).
+ * Debounced and disabled during submit so RPC does not race the wallet flow.
  */
 export function useSellerLegBalanceValidation(
   tSellerAmountExceedsBalance: string,
 ) {
   const { control, setError, clearErrors } = useFormContext<FormSlice>();
+  const { isSubmitting } = useFormState({ control });
+  const runSeqRef = React.useRef(0);
 
   const sellerLeg = useWatch({ control, name: 'sellerLeg' }) as
     | SellerLeg[]
@@ -40,6 +45,9 @@ export function useSellerLegBalanceValidation(
     name: 'spaceExecutorAddress',
   }) as string | undefined;
 
+  const messageRef = React.useRef(tSellerAmountExceedsBalance);
+  messageRef.current = tSellerAmountExceedsBalance;
+
   const validationKey = React.useMemo(
     () =>
       JSON.stringify({
@@ -52,6 +60,10 @@ export function useSellerLegBalanceValidation(
   );
 
   React.useEffect(() => {
+    if (isSubmitting) {
+      return;
+    }
+
     const legs = sellerLeg ?? [];
     const owner = resolveSellerBalanceOwner({
       sellerRecipientType,
@@ -67,41 +79,47 @@ export function useSellerLegBalanceValidation(
       return;
     }
 
-    let cancelled = false;
+    runSeqRef.current += 1;
+    const seq = runSeqRef.current;
 
-    const run = async () => {
-      for (let i = 0; i < legs.length; i++) {
-        const leg = legs[i];
-        const trimmed = leg?.amount?.trim() ?? '';
-        const hasToken = !!leg?.token && /^0x[a-fA-F0-9]{40}$/i.test(leg.token);
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        for (let i = 0; i < legs.length; i++) {
+          if (seq !== runSeqRef.current) return;
 
-        if (!trimmed || !hasToken) {
-          clearErrors(`sellerLeg.${i}.amount` as const);
-          continue;
+          const leg = legs[i];
+          const trimmed = leg?.amount?.trim() ?? '';
+          const hasToken =
+            !!leg?.token && /^0x[a-fA-F0-9]{40}$/i.test(leg.token);
+
+          if (!trimmed || !hasToken) {
+            clearErrors(`sellerLeg.${i}.amount` as const);
+            continue;
+          }
+
+          const result = await checkSingleSellerLegBalance(owner, leg);
+          if (seq !== runSeqRef.current) return;
+
+          const msg = messageRef.current;
+          if (result === 'exceeds') {
+            setError(`sellerLeg.${i}.amount` as const, {
+              type: 'manual',
+              message: msg,
+            });
+          } else {
+            clearErrors(`sellerLeg.${i}.amount` as const);
+          }
         }
-
-        const result = await checkSingleSellerLegBalance(owner, leg);
-        if (cancelled) return;
-
-        if (result === 'exceeds') {
-          setError(`sellerLeg.${i}.amount` as const, {
-            type: 'manual',
-            message: tSellerAmountExceedsBalance,
-          });
-        } else {
-          clearErrors(`sellerLeg.${i}.amount` as const);
-        }
-      }
-    };
-
-    void run();
+      })();
+    }, DEBOUNCE_MS);
 
     return () => {
-      cancelled = true;
+      window.clearTimeout(timer);
+      runSeqRef.current += 1;
     };
   }, [
     validationKey,
-    tSellerAmountExceedsBalance,
+    isSubmitting,
     clearErrors,
     setError,
     sellerLeg,
