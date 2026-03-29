@@ -159,9 +159,13 @@ export const personRedeem = z.object({
       z.object({
         asset: z
           .string()
-          .refine((value) => isAddress(value, { strict: false }), {
-            message: 'Invalid Ethereum address',
-          }),
+          .refine(
+            (value): boolean =>
+              value.length > 0 && isAddress(value, { strict: false }),
+            {
+              message: 'Invalid Ethereum address',
+            },
+          ),
         percentage: z
           .string()
           .refine(
