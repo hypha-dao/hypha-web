@@ -19,7 +19,9 @@ const parseAddressFromLine = (line: string): string | undefined => {
 };
 
 const parseLegLine = (line: string): ParsedExchangeLeg | null => {
-  const match = line.match(/-\s*\d+\.\s*(.+?)\s*\|\s*`(0x[a-fA-F0-9]{40})`/);
+  const match = line.match(
+    /-\s*(?:\d+\.\s*)?(.+?)\s*\|\s*`?(0x[a-fA-F0-9]{40})`?/,
+  );
   if (!match) return null;
 
   return {

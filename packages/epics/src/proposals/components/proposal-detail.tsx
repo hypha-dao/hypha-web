@@ -53,6 +53,8 @@ import { hasUpdateTokenDataToDisplay } from '../utils/has-update-token-data-to-d
 import { parseExchangeDetailsFromDescription } from '../../governance/utils';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
+const EXCHANGE_DETAILS_BLOCK_REGEX =
+  /\n?<!-- exchange-details:start -->[\s\S]*?<!-- exchange-details:end -->\n?/g;
 
 type ProposalDetailProps = ProposalHeadProps & {
   documentId?: number;
@@ -405,6 +407,44 @@ export const ProposalDetail = ({
   })();
 
   const parsedExchangeDetails = parseExchangeDetailsFromDescription(content);
+  const contentWithoutExchangeDetails = useMemo(() => {
+    if (!content) return content;
+    return content.replace(EXCHANGE_DETAILS_BLOCK_REGEX, '').trim();
+  }, [content]);
+
+  const fallbackSellerAddress = proposalDetails?.exchangeEscrowData?.partyA;
+  const fallbackBuyerAddress = proposalDetails?.exchangeEscrowData?.partyB;
+  const fallbackSellerLeg = useMemo(() => {
+    const partyA = fallbackSellerAddress?.toLowerCase();
+    const legs = proposalDetails?.exchangeEscrowData?.legs ?? [];
+    return legs
+      .filter((leg) => (partyA ? leg.from.toLowerCase() === partyA : true))
+      .map((leg) => ({
+        amount: formatUnits(leg.amount, resolveTokenDecimals(leg.tokenAddress)),
+        tokenAddress: leg.tokenAddress,
+      }));
+  }, [fallbackSellerAddress, proposalDetails?.exchangeEscrowData?.legs]);
+  const fallbackBuyerLeg = useMemo(() => {
+    const partyB = fallbackBuyerAddress?.toLowerCase();
+    const legs = proposalDetails?.exchangeEscrowData?.legs ?? [];
+    return legs
+      .filter((leg) => (partyB ? leg.from.toLowerCase() === partyB : true))
+      .map((leg) => ({
+        amount: formatUnits(leg.amount, resolveTokenDecimals(leg.tokenAddress)),
+        tokenAddress: leg.tokenAddress,
+      }));
+  }, [fallbackBuyerAddress, proposalDetails?.exchangeEscrowData?.legs]);
+
+  const sellerAddressForDisplay =
+    parsedExchangeDetails?.sellerAddress ?? fallbackSellerAddress;
+  const buyerAddressForDisplay =
+    parsedExchangeDetails?.buyerAddress ?? fallbackBuyerAddress;
+  const sellerLegForDisplay = parsedExchangeDetails?.sellerLeg.length
+    ? parsedExchangeDetails.sellerLeg
+    : fallbackSellerLeg;
+  const buyerLegForDisplay = parsedExchangeDetails?.buyerLeg.length
+    ? parsedExchangeDetails.buyerLeg
+    : fallbackBuyerLeg;
 
   return (
     <div className="flex flex-col gap-5">
@@ -451,7 +491,7 @@ export const ProposalDetail = ({
         isExpiring={isExpiring}
         web3SpaceId={proposalDetails?.spaceId}
       />
-      <MarkdownSuspense>{content}</MarkdownSuspense>
+      <MarkdownSuspense>{contentWithoutExchangeDetails}</MarkdownSuspense>
       <AttachmentList attachments={attachments || []} />
       {proposalDetails?.votingMethods.map((method, idx) => (
         <ProposalVotingInfo
@@ -638,10 +678,10 @@ export const ProposalDetail = ({
       {(parsedExchangeDetails ||
         proposalDetails?.exchangeEscrowData?.legs?.length) && (
         <ProposalExchangeStakesAndTokensData
-          sellerAddress={parsedExchangeDetails?.sellerAddress}
-          buyerAddress={parsedExchangeDetails?.buyerAddress}
-          sellerLeg={parsedExchangeDetails?.sellerLeg ?? []}
-          buyerLeg={parsedExchangeDetails?.buyerLeg ?? []}
+          sellerAddress={sellerAddressForDisplay}
+          buyerAddress={buyerAddressForDisplay}
+          sellerLeg={sellerLegForDisplay}
+          buyerLeg={buyerLegForDisplay}
           escrowId={proposalDetails?.exchangeEscrowData?.escrowId}
           completed={
             proposalDetails?.exchangeEscrowData?.status === 'completed'

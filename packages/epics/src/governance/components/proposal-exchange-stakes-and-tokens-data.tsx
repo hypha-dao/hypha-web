@@ -9,9 +9,20 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 const isEvmAddress = (value?: string): value is `0x${string}` =>
   typeof value === 'string' && /^0x[a-fA-F0-9]{40}$/.test(value);
 
+const getPreferredAddress = (
+  primary?: string,
+  fallback?: string,
+): string | undefined => {
+  if (isEvmAddress(primary)) return primary;
+  if (isEvmAddress(fallback)) return fallback;
+  return primary || fallback;
+};
+
 interface ProposalExchangeStakesAndTokensDataProps {
   sellerAddress?: string;
   buyerAddress?: string;
+  fallbackSellerAddress?: string;
+  fallbackBuyerAddress?: string;
   sellerLeg: Array<{
     amount: string;
     tokenAddress: string;
@@ -28,6 +39,8 @@ interface ProposalExchangeStakesAndTokensDataProps {
 export const ProposalExchangeStakesAndTokensData = ({
   sellerAddress,
   buyerAddress,
+  fallbackSellerAddress,
+  fallbackBuyerAddress,
   sellerLeg,
   buyerLeg,
   escrowId,
@@ -36,11 +49,23 @@ export const ProposalExchangeStakesAndTokensData = ({
 }: ProposalExchangeStakesAndTokensDataProps) => {
   const tProposalDetails = useTranslations('ProposalDetails');
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const resolvedSellerAddress = getPreferredAddress(
+    sellerAddress,
+    fallbackSellerAddress,
+  );
+  const resolvedBuyerAddress = getPreferredAddress(
+    buyerAddress,
+    fallbackBuyerAddress,
+  );
   const { person: sellerPerson } = usePersonByWeb3Address(
-    isEvmAddress(sellerAddress) ? sellerAddress : ZERO_ADDRESS,
+    resolvedSellerAddress && isEvmAddress(resolvedSellerAddress)
+      ? resolvedSellerAddress
+      : ZERO_ADDRESS,
   );
   const { person: buyerPerson } = usePersonByWeb3Address(
-    isEvmAddress(buyerAddress) ? buyerAddress : ZERO_ADDRESS,
+    resolvedBuyerAddress && isEvmAddress(resolvedBuyerAddress)
+      ? resolvedBuyerAddress
+      : ZERO_ADDRESS,
   );
 
   const status = completed
@@ -93,7 +118,7 @@ export const ProposalExchangeStakesAndTokensData = ({
           {tAgreementFlow('plugins.exchangeStakesAndTokens.seller')}
         </span>
         {renderPartyValue(
-          sellerAddress,
+          resolvedSellerAddress,
           sellerPerson
             ? `${sellerPerson.name} ${sellerPerson.surname}`
             : undefined,
@@ -110,7 +135,7 @@ export const ProposalExchangeStakesAndTokensData = ({
           {tAgreementFlow('plugins.exchangeStakesAndTokens.buyer')}
         </span>
         {renderPartyValue(
-          buyerAddress,
+          resolvedBuyerAddress,
           buyerPerson
             ? `${buyerPerson.name} ${buyerPerson.surname}`
             : undefined,
