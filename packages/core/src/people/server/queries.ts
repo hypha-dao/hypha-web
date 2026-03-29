@@ -161,6 +161,26 @@ export const findPersonByWeb3Address = async (
   return mapToDomainPerson(person);
 };
 
+/**
+ * Profile for display when the wallet belongs to someone who is a member of at
+ * least one space (not necessarily the current proposal space).
+ */
+export const findPersonByWeb3AddressIfMemberInAnySpace = async (
+  { address }: FindPersonByWeb3AddressInput,
+  { db }: DbConfig,
+) => {
+  const person = await findPersonByWeb3Address({ address }, { db });
+  if (!person) return null;
+
+  const [membership] = await db
+    .select({ id: memberships.id })
+    .from(memberships)
+    .where(eq(memberships.personId, person.id))
+    .limit(1);
+
+  return membership ? person : null;
+};
+
 export type FindPeopleByWeb3AddressesInput = {
   addresses: string[];
 };

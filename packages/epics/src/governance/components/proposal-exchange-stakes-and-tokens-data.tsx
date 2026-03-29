@@ -10,6 +10,7 @@ import { useSpaceBySlug, Space } from '@hypha-platform/core/client';
 import {
   useDbSpaces,
   useSpaceMembersForPartyResolution,
+  usePersonMemberProfileAnySpace,
   findMemberPersonByAddress,
   findMemberSpaceByAddress,
 } from '../../hooks';
@@ -83,6 +84,11 @@ export const ProposalExchangeStakesAndTokensData = ({
   const { person: buyerPerson } = usePersonByWeb3Address(
     buyerLookupAddress ?? ZERO_ADDRESS,
   );
+  const { person: buyerMemberAnySpace } =
+    usePersonMemberProfileAnySpace(resolvedBuyerAddress);
+  const { person: sellerMemberAnySpace } = usePersonMemberProfileAnySpace(
+    resolvedSellerAddress,
+  );
   const sellerMemberInSpace = space?.members?.find(
     (member) =>
       member.address?.toLowerCase() === resolvedSellerAddress?.toLowerCase(),
@@ -100,9 +106,15 @@ export const ProposalExchangeStakesAndTokensData = ({
     memberPersons,
   );
   const displaySellerPerson =
-    sellerPerson ?? sellerFromMembersList ?? sellerMemberInSpace;
+    sellerPerson ??
+    sellerFromMembersList ??
+    sellerMemberAnySpace ??
+    sellerMemberInSpace;
   const displayBuyerPerson =
-    buyerPerson ?? buyerFromMembersList ?? buyerMemberInSpace;
+    buyerPerson ??
+    buyerFromMembersList ??
+    buyerMemberAnySpace ??
+    buyerMemberInSpace;
 
   const resolveSpaceForWallet = (addr?: string): Space | undefined => {
     if (!addr) return undefined;
