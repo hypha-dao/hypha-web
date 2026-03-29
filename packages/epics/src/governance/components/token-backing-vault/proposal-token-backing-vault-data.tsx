@@ -27,8 +27,6 @@ const formatCompactNumber = (value: string) => {
 interface ProposalTokenBackingVaultDataProps {
   spaceSlug: string;
   dbTokens?: DbToken[];
-  /** When set (e.g. redeem proposal above), hide space token + live vault collateral list as duplicates. */
-  suppressRedeemDuplicates?: boolean;
   spaceToken?: string;
   addCollaterals?: Array<{ token: string; amount: string; decimals: number }>;
   removeCollaterals?: Array<{ token: string; amount: string }>;
@@ -46,7 +44,6 @@ interface ProposalTokenBackingVaultDataProps {
 export function ProposalTokenBackingVaultData({
   spaceSlug,
   dbTokens = [],
-  suppressRedeemDuplicates = false,
   spaceToken,
   addCollaterals,
   removeCollaterals,
@@ -74,10 +71,10 @@ export function ProposalTokenBackingVaultData({
       )
     : undefined;
 
-  const showSpaceTokenRow = Boolean(spaceToken) && !suppressRedeemDuplicates;
-  const showCurrentBackingCollaterals =
-    Boolean(currentVault && currentVault.collaterals.length > 0) &&
-    !suppressRedeemDuplicates;
+  const showSpaceTokenRow = Boolean(spaceToken);
+  const showCurrentBackingCollaterals = Boolean(
+    currentVault && currentVault.collaterals.length > 0,
+  );
 
   const hasMeaningfulRedemptionPrice =
     redemptionPrice !== undefined && String(redemptionPrice).trim() !== '';
@@ -104,9 +101,7 @@ export function ProposalTokenBackingVaultData({
   return (
     <div className="flex flex-col gap-4">
       <span className="text-neutral-11 text-2 font-medium">
-        {suppressRedeemDuplicates
-          ? tProposalDetails('labels.vaultProposalFollowOn')
-          : tProposalDetails('labels.tokenBackingVault')}
+        {tProposalDetails('labels.tokenBackingVault')}
       </span>
       <div className="flex flex-col gap-5">
         {showSpaceTokenRow && (

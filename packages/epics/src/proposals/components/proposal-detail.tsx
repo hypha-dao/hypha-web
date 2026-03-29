@@ -420,14 +420,14 @@ export const ProposalDetail = ({
           conversions={proposalDetails.redeemTokensData.conversions}
         />
       ) : null}
-      {proposalDetails?.tokenBackingVaultData ? (
+      {proposalDetails?.tokenBackingVaultData &&
+      !(
+        proposalDetails?.redeemTokensData.amount &&
+        proposalDetails?.redeemTokensData.token
+      ) ? (
         <ProposalTokenBackingVaultData
           spaceSlug={spaceSlug}
           dbTokens={dbTokens}
-          suppressRedeemDuplicates={Boolean(
-            proposalDetails?.redeemTokensData.amount &&
-              proposalDetails?.redeemTokensData.token,
-          )}
           {...proposalDetails.tokenBackingVaultData}
         />
       ) : null}

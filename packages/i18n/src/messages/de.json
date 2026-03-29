@@ -1221,7 +1221,6 @@
       "votingPeriod": "Abstimmungszeitraum",
       "votingPower": "Stimmmacht",
       "tokenBackingVault": "Token-Sicherungsvault",
-      "vaultProposalFollowOn": "Vault proposal (additional changes)",
       "redeemTokens": "Redeem tokens",
       "redeemToken": "Token to redeem",
       "redeemAmount": "Redemption amount",
