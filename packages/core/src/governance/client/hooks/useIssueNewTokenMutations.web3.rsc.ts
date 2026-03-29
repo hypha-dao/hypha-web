@@ -15,7 +15,6 @@ import {
   mapToCreateProposalWeb3Input,
   createProposal,
 } from '../web3';
-import { appendDebugLogAction } from '../../server/actions';
 import {
   regularTokenFactoryAbi,
   regularTokenFactoryAddress,
@@ -78,181 +77,162 @@ export const useIssueTokenMutationsWeb3Rpc = ({
   } = useSWRMutation(
     `createIssueToken-${proposalSlug}`,
     async (_, { arg }: { arg: CreateTokenArgs }) => {
-      try {
-        if (!client) throw new Error('Smart wallet client not available');
+      if (!client) throw new Error('Smart wallet client not available');
 
-        const duration = await publicClient.readContract(
-          getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
-        );
+      const duration = await publicClient.readContract(
+        getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
+      );
 
-        let txData: Array<{
-          target: `0x${string}`;
-          value: number;
-          data: `0x${string}`;
-        }> = [];
+      let txData: Array<{
+        target: `0x${string}`;
+        value: number;
+        data: `0x${string}`;
+      }> = [];
 
-        const fixedMaxSupply = arg.fixedMaxSupply ?? false;
-        const autoMinting = arg.autoMinting ?? true;
-        const tokenPrice = arg.tokenPrice ? BigInt(arg.tokenPrice) : 0n;
-        const priceCurrencyFeed =
-          arg.priceCurrencyFeed ??
-          ('0x0000000000000000000000000000000000000000' as `0x${string}`);
-        const useTransferWhitelist = arg.useTransferWhitelist ?? false;
-        const useReceiveWhitelist = arg.useReceiveWhitelist ?? false;
-        const initialTransferWhitelist = arg.initialTransferWhitelist ?? [];
-        const initialReceiveWhitelist = arg.initialReceiveWhitelist ?? [];
-        const defaultCreditLimit = BigInt(arg.defaultCreditLimit ?? 0);
-        const initialCreditWhitelistSpaceIds = (
-          arg.initialCreditWhitelistSpaceIds ?? []
-        ).map((id) => BigInt(id));
-        const salePaymentToken = arg.salePaymentToken ?? ZERO_ADDRESS;
-        const salePaymentTokenPricePerToken =
-          arg.salePaymentTokenPricePerToken ?? 0n;
-        const tokensForSale = BigInt(arg.tokensForSale ?? 0) * 10n ** 18n;
-        const purchaseEligibilityMode = arg.purchaseEligibilityMode ?? 0;
-        const initialPurchaseWhitelistSpaceIds = (
-          arg.initialPurchaseWhitelistSpaceIds ?? []
-        ).map((id) => BigInt(id));
+      const fixedMaxSupply = arg.fixedMaxSupply ?? false;
+      const autoMinting = arg.autoMinting ?? true;
+      const tokenPrice = arg.tokenPrice ? BigInt(arg.tokenPrice) : 0n;
+      const priceCurrencyFeed =
+        arg.priceCurrencyFeed ??
+        ('0x0000000000000000000000000000000000000000' as `0x${string}`);
+      const useTransferWhitelist = arg.useTransferWhitelist ?? false;
+      const useReceiveWhitelist = arg.useReceiveWhitelist ?? false;
+      const initialTransferWhitelist = arg.initialTransferWhitelist ?? [];
+      const initialReceiveWhitelist = arg.initialReceiveWhitelist ?? [];
+      const defaultCreditLimit = BigInt(arg.defaultCreditLimit ?? 0);
+      const initialCreditWhitelistSpaceIds = (
+        arg.initialCreditWhitelistSpaceIds ?? []
+      ).map((id) => BigInt(id));
+      const salePaymentToken = arg.salePaymentToken ?? ZERO_ADDRESS;
+      const salePaymentTokenPricePerToken =
+        arg.salePaymentTokenPricePerToken ?? 0n;
+      const tokensForSale = BigInt(arg.tokensForSale ?? 0) * 10n ** 18n;
+      const purchaseEligibilityMode = arg.purchaseEligibilityMode ?? 0;
+      const initialPurchaseWhitelistSpaceIds = (
+        arg.initialPurchaseWhitelistSpaceIds ?? []
+      ).map((id) => BigInt(id));
 
+      if (
+        ['utility', 'credits', 'impact', 'community_currency'].includes(
+          arg.type,
+        )
+      ) {
+        txData = [
+          {
+            target: regularTokenFactoryAddress[chainId],
+            value: 0,
+            data: encodeFunctionData({
+              abi: regularTokenFactoryAbi,
+              functionName: 'deployToken',
+              args: [
+                BigInt(arg.spaceId),
+                arg.name,
+                arg.symbol,
+                BigInt(arg.maxSupply) * 10n ** 18n,
+                arg.transferable,
+                fixedMaxSupply,
+                autoMinting,
+                tokenPrice,
+                priceCurrencyFeed,
+                useTransferWhitelist,
+                useReceiveWhitelist,
+                initialTransferWhitelist,
+                initialReceiveWhitelist,
+                defaultCreditLimit,
+                initialCreditWhitelistSpaceIds,
+                salePaymentToken,
+                salePaymentTokenPricePerToken,
+                tokensForSale,
+                purchaseEligibilityMode,
+                initialPurchaseWhitelistSpaceIds,
+              ],
+            }),
+          },
+        ];
+      } else if (arg.type === 'ownership') {
+        txData = [
+          {
+            target: ownershipTokenFactoryAddress[chainId],
+            value: 0,
+            data: encodeFunctionData({
+              abi: ownershipTokenFactoryAbi,
+              functionName: 'deployOwnershipToken',
+              args: [
+                BigInt(arg.spaceId),
+                arg.name,
+                arg.symbol,
+                BigInt(arg.maxSupply) * 10n ** 18n,
+                fixedMaxSupply,
+                autoMinting,
+                tokenPrice,
+                priceCurrencyFeed,
+                useTransferWhitelist,
+                useReceiveWhitelist,
+                initialTransferWhitelist,
+                initialReceiveWhitelist,
+                salePaymentToken,
+                salePaymentTokenPricePerToken,
+                tokensForSale,
+                purchaseEligibilityMode,
+                initialPurchaseWhitelistSpaceIds,
+              ],
+            }),
+          },
+        ];
+      } else if (arg.type === 'voice') {
         if (
-          ['utility', 'credits', 'impact', 'community_currency'].includes(
-            arg.type,
-          )
+          typeof arg.decayPercentage !== 'number' ||
+          typeof arg.decayInterval !== 'number'
         ) {
-          txData = [
-            {
-              target: regularTokenFactoryAddress[chainId],
-              value: 0,
-              data: encodeFunctionData({
-                abi: regularTokenFactoryAbi,
-                functionName: 'deployToken',
-                args: [
-                  BigInt(arg.spaceId),
-                  arg.name,
-                  arg.symbol,
-                  BigInt(arg.maxSupply) * 10n ** 18n,
-                  arg.transferable,
-                  fixedMaxSupply,
-                  autoMinting,
-                  tokenPrice,
-                  priceCurrencyFeed,
-                  useTransferWhitelist,
-                  useReceiveWhitelist,
-                  initialTransferWhitelist,
-                  initialReceiveWhitelist,
-                  defaultCreditLimit,
-                  initialCreditWhitelistSpaceIds,
-                  salePaymentToken,
-                  salePaymentTokenPricePerToken,
-                  tokensForSale,
-                  purchaseEligibilityMode,
-                  initialPurchaseWhitelistSpaceIds,
-                ],
-              }),
-            },
-          ];
-        } else if (arg.type === 'ownership') {
-          txData = [
-            {
-              target: ownershipTokenFactoryAddress[chainId],
-              value: 0,
-              data: encodeFunctionData({
-                abi: ownershipTokenFactoryAbi,
-                functionName: 'deployOwnershipToken',
-                args: [
-                  BigInt(arg.spaceId),
-                  arg.name,
-                  arg.symbol,
-                  BigInt(arg.maxSupply) * 10n ** 18n,
-                  fixedMaxSupply,
-                  autoMinting,
-                  tokenPrice,
-                  priceCurrencyFeed,
-                  useTransferWhitelist,
-                  useReceiveWhitelist,
-                  initialTransferWhitelist,
-                  initialReceiveWhitelist,
-                  salePaymentToken,
-                  salePaymentTokenPricePerToken,
-                  tokensForSale,
-                  purchaseEligibilityMode,
-                  initialPurchaseWhitelistSpaceIds,
-                ],
-              }),
-            },
-          ];
-        } else if (arg.type === 'voice') {
-          if (
-            typeof arg.decayPercentage !== 'number' ||
-            typeof arg.decayInterval !== 'number'
-          ) {
-            throw new Error(
-              'Missing decayPercentage or decayInterval for voice token',
-            );
-          }
-
-          txData = [
-            {
-              target: decayingTokenFactoryAddress[chainId],
-              value: 0,
-              data: encodeFunctionData({
-                abi: decayingTokenFactoryAbi,
-                functionName: 'deployDecayingToken',
-                args: [
-                  BigInt(arg.spaceId),
-                  arg.name,
-                  arg.symbol,
-                  BigInt(arg.maxSupply) * 10n ** 18n,
-                  arg.transferable,
-                  fixedMaxSupply,
-                  autoMinting,
-                  tokenPrice,
-                  priceCurrencyFeed,
-                  useTransferWhitelist,
-                  useReceiveWhitelist,
-                  initialTransferWhitelist,
-                  initialReceiveWhitelist,
-                  BigInt(arg.decayPercentage),
-                  BigInt(arg.decayInterval),
-                  salePaymentToken,
-                  salePaymentTokenPricePerToken,
-                  tokensForSale,
-                  purchaseEligibilityMode,
-                  initialPurchaseWhitelistSpaceIds,
-                ],
-              }),
-            },
-          ];
+          throw new Error(
+            'Missing decayPercentage or decayInterval for voice token',
+          );
         }
 
-        const parsedProposal = schemaCreateProposalWeb3.parse({
-          spaceId: BigInt(arg.spaceId),
-          duration: duration && duration > 0 ? duration : getDuration(4),
-          transactions: txData,
-        });
-
-        const proposalArgs = mapToCreateProposalWeb3Input(parsedProposal);
-
-        const txHash = await client.writeContract(createProposal(proposalArgs));
-        return txHash;
-      } catch (error) {
-        // #region agent log
-        await appendDebugLogAction({
-          hypothesisId: 'W1',
-          location:
-            'useIssueNewTokenMutations.web3.rsc.ts:createIssueToken:error',
-          message: 'Issue token web3 mutation failed',
-          data: {
-            proposalSlug,
-            errorMessage:
-              error instanceof Error ? error.message : String(error),
-            errorName: error instanceof Error ? error.name : 'UnknownError',
+        txData = [
+          {
+            target: decayingTokenFactoryAddress[chainId],
+            value: 0,
+            data: encodeFunctionData({
+              abi: decayingTokenFactoryAbi,
+              functionName: 'deployDecayingToken',
+              args: [
+                BigInt(arg.spaceId),
+                arg.name,
+                arg.symbol,
+                BigInt(arg.maxSupply) * 10n ** 18n,
+                arg.transferable,
+                fixedMaxSupply,
+                autoMinting,
+                tokenPrice,
+                priceCurrencyFeed,
+                useTransferWhitelist,
+                useReceiveWhitelist,
+                initialTransferWhitelist,
+                initialReceiveWhitelist,
+                BigInt(arg.decayPercentage),
+                BigInt(arg.decayInterval),
+                salePaymentToken,
+                salePaymentTokenPricePerToken,
+                tokensForSale,
+                purchaseEligibilityMode,
+                initialPurchaseWhitelistSpaceIds,
+              ],
+            }),
           },
-          timestamp: Date.now(),
-        });
-        // #endregion
-        throw error;
+        ];
       }
+
+      const parsedProposal = schemaCreateProposalWeb3.parse({
+        spaceId: BigInt(arg.spaceId),
+        duration: duration && duration > 0 ? duration : getDuration(4),
+        transactions: txData,
+      });
+
+      const proposalArgs = mapToCreateProposalWeb3Input(parsedProposal);
+
+      const txHash = await client.writeContract(createProposal(proposalArgs));
+      return txHash;
     },
   );
 

@@ -16,7 +16,7 @@ import {
 } from '../../validation';
 import { useTokenMutationsWeb2Rsc } from './useTokenMutationWeb2.rsc';
 import { Config } from '@wagmi/core';
-import { appendDebugLogAction, updateTokenAction } from '../../server/actions';
+import { updateTokenAction } from '../../server/actions';
 import { ReferenceCurrency } from '../../types';
 import { getPriceCurrencyFeed } from '../../../common/web3/token-backing-vault';
 import { TokenType } from '../../../common';
@@ -193,183 +193,116 @@ export const useCreateIssueTokenOrchestrator = ({
     dispatch({ type: 'RESET' });
   }, []);
 
-  const debugLog = useCallback(
-    async (
-      hypothesisId: string,
-      location: string,
-      message: string,
-      data?: Record<string, unknown>,
-    ) => {
-      try {
-        await appendDebugLogAction({
-          hypothesisId,
-          location,
-          message,
-          data,
-          timestamp: Date.now(),
-        });
-      } catch {
-        // debug logs should never block proposal flow
-      }
-    },
-    [],
-  );
-
   const { trigger: createIssueToken } = useSWRMutation(
     'createIssueTokenOrchestration',
     async (_: string, { arg }: { arg: CreateIssueTokenArg }) => {
+      startTask('CREATE_WEB2_AGREEMENT');
+      const inputWeb2 = schemaCreateAgreementWeb2.parse(arg);
+      const createdAgreement = await web2.createAgreement(inputWeb2);
+      completeTask('CREATE_WEB2_AGREEMENT');
+
+      const web2Slug = createdAgreement?.slug;
+
+      let iconUrl: string | undefined;
+      if (arg.iconUrl instanceof File) {
+        startTask('UPLOAD_TOKEN_ICON');
+        const result = await tokenFiles.upload({ iconUrl: arg.iconUrl });
+        iconUrl = result.iconUrl;
+        console.log('iconUrl after upload:', iconUrl);
+        completeTask('UPLOAD_TOKEN_ICON');
+      } else {
+        iconUrl = arg.iconUrl;
+      }
+
+      startTask('CREATE_TOKEN');
+      const createdToken = await web2TokenMutations.createToken({
+        ...arg,
+        agreementId: createdAgreement.id,
+        iconUrl,
+        referencePrice: arg.referencePrice,
+        referenceCurrency: arg.referenceCurrency,
+      });
+      completeTask('CREATE_TOKEN');
+
       try {
-        // #region agent log
-        await debugLog(
-          'I1',
-          'useIssueNewTokenOrchestrator.ts:createIssueToken:entry',
-          'Issue new token orchestration started',
-          {
-            hasAuthToken: !!authToken,
-            hasConfig: !!config,
-            spaceId: arg.spaceId,
-            web3SpaceId: arg.web3SpaceId,
-            tokenType: arg.type,
-          },
-        );
-        // #endregion
-        startTask('CREATE_WEB2_AGREEMENT');
-        const inputWeb2 = schemaCreateAgreementWeb2.parse(arg);
-        const createdAgreement = await web2.createAgreement(inputWeb2);
-        completeTask('CREATE_WEB2_AGREEMENT');
+        if (config) {
+          startTask('CREATE_WEB3_AGREEMENT');
 
-        const web2Slug = createdAgreement?.slug;
+          const fixedMaxSupply =
+            arg.maxSupplyType?.value === 'immutable' ? true : false;
+          const autoMinting = arg.enableProposalAutoMinting ?? true;
+          const tokenPrice = arg.referencePrice
+            ? Math.round(arg.referencePrice * 1_000_000)
+            : 0;
+          const priceCurrencyFeed = getPriceCurrencyFeed(arg.referenceCurrency);
+          const useTransferWhitelist =
+            arg.enableAdvancedTransferControls &&
+            arg.transferWhitelist?.from &&
+            arg.transferWhitelist.from.length > 0
+              ? true
+              : false;
+          const useReceiveWhitelist =
+            arg.enableAdvancedTransferControls &&
+            arg.transferWhitelist?.to &&
+            arg.transferWhitelist.to.length > 0
+              ? true
+              : false;
 
-        let iconUrl: string | undefined;
-        if (arg.iconUrl instanceof File) {
-          startTask('UPLOAD_TOKEN_ICON');
-          const result = await tokenFiles.upload({ iconUrl: arg.iconUrl });
-          iconUrl = result.iconUrl;
-          console.log('iconUrl after upload:', iconUrl);
-          completeTask('UPLOAD_TOKEN_ICON');
-        } else {
-          iconUrl = arg.iconUrl;
-        }
+          const initialTransferWhitelist: `0x${string}`[] =
+            useTransferWhitelist && arg.transferWhitelist?.from
+              ? arg.transferWhitelist.from
+                  .map((entry) => entry.address as `0x${string}`)
+                  .filter((addr) => addr && addr.startsWith('0x'))
+              : [];
 
-        // #region agent log
-        await debugLog(
-          'I2',
-          'useIssueNewTokenOrchestrator.ts:createIssueToken:beforeCreateToken',
-          'About to persist token draft in Web2',
-          {
-            agreementId: createdAgreement?.id,
-            hasIconUrl: !!iconUrl,
-            referenceCurrency: arg.referenceCurrency,
+          const initialReceiveWhitelist: `0x${string}`[] =
+            useReceiveWhitelist && arg.transferWhitelist?.to
+              ? arg.transferWhitelist.to
+                  .map((entry) => entry.address as `0x${string}`)
+                  .filter((addr) => addr && addr.startsWith('0x'))
+              : [];
+
+          const web3Result = await web3.createIssueToken({
+            spaceId: arg.web3SpaceId,
+            name: arg.name,
+            symbol: arg.symbol,
             maxSupply: arg.maxSupply,
-          },
-        );
-        // #endregion
-        startTask('CREATE_TOKEN');
-        const createdToken = await web2TokenMutations.createToken({
-          ...arg,
-          agreementId: createdAgreement.id,
-          iconUrl,
-          referencePrice: arg.referencePrice,
-          referenceCurrency: arg.referenceCurrency,
-        });
-        completeTask('CREATE_TOKEN');
-
-        try {
-          if (config) {
-            startTask('CREATE_WEB3_AGREEMENT');
-
-            const fixedMaxSupply =
-              arg.maxSupplyType?.value === 'immutable' ? true : false;
-            const autoMinting = arg.enableProposalAutoMinting ?? true;
-            const tokenPrice = arg.referencePrice
-              ? Math.round(arg.referencePrice * 1_000_000)
-              : 0;
-            const priceCurrencyFeed = getPriceCurrencyFeed(
-              arg.referenceCurrency,
-            );
-            const useTransferWhitelist =
-              arg.enableAdvancedTransferControls &&
-              arg.transferWhitelist?.from &&
-              arg.transferWhitelist.from.length > 0
-                ? true
-                : false;
-            const useReceiveWhitelist =
-              arg.enableAdvancedTransferControls &&
-              arg.transferWhitelist?.to &&
-              arg.transferWhitelist.to.length > 0
-                ? true
-                : false;
-
-            const initialTransferWhitelist: `0x${string}`[] =
-              useTransferWhitelist && arg.transferWhitelist?.from
-                ? arg.transferWhitelist.from
-                    .map((entry) => entry.address as `0x${string}`)
-                    .filter((addr) => addr && addr.startsWith('0x'))
-                : [];
-
-            const initialReceiveWhitelist: `0x${string}`[] =
-              useReceiveWhitelist && arg.transferWhitelist?.to
-                ? arg.transferWhitelist.to
-                    .map((entry) => entry.address as `0x${string}`)
-                    .filter((addr) => addr && addr.startsWith('0x'))
-                : [];
-
-            const web3Result = await web3.createIssueToken({
-              spaceId: arg.web3SpaceId,
-              name: arg.name,
-              symbol: arg.symbol,
-              maxSupply: arg.maxSupply,
-              transferable: arg.transferable,
-              isVotingToken: arg.isVotingToken,
-              type: arg.type,
-              decayPercentage:
-                arg.type === 'voice'
-                  ? arg.decaySettings.decayPercentage
-                  : undefined,
-              decayInterval:
-                arg.type === 'voice'
-                  ? arg.decaySettings.decayInterval
-                  : undefined,
-              fixedMaxSupply,
-              autoMinting,
-              tokenPrice,
-              priceCurrencyFeed,
-              useTransferWhitelist,
-              useReceiveWhitelist,
-              initialTransferWhitelist,
-              initialReceiveWhitelist,
-            });
-            completeTask('CREATE_WEB3_AGREEMENT');
-          }
-          const files = schemaCreateAgreementFiles.parse(arg);
-          if (files.attachments?.length || files.leadImage) {
-            startTask('UPLOAD_FILES');
-            await agreementFiles.upload(files, web2Slug);
-            completeTask('UPLOAD_FILES');
-          } else {
-            startTask('UPLOAD_FILES');
-            completeTask('UPLOAD_FILES');
-          }
-        } catch (err) {
-          if (web2Slug) {
-            await web2.deleteAgreementBySlug({ slug: web2Slug });
-          }
-          throw err;
+            transferable: arg.transferable,
+            isVotingToken: arg.isVotingToken,
+            type: arg.type,
+            decayPercentage:
+              arg.type === 'voice'
+                ? arg.decaySettings.decayPercentage
+                : undefined,
+            decayInterval:
+              arg.type === 'voice'
+                ? arg.decaySettings.decayInterval
+                : undefined,
+            fixedMaxSupply,
+            autoMinting,
+            tokenPrice,
+            priceCurrencyFeed,
+            useTransferWhitelist,
+            useReceiveWhitelist,
+            initialTransferWhitelist,
+            initialReceiveWhitelist,
+          });
+          completeTask('CREATE_WEB3_AGREEMENT');
         }
-      } catch (error) {
-        // #region agent log
-        await debugLog(
-          'I3',
-          'useIssueNewTokenOrchestrator.ts:createIssueToken:error',
-          'Issue new token orchestration failed',
-          {
-            errorMessage:
-              error instanceof Error ? error.message : String(error),
-            errorName: error instanceof Error ? error.name : 'UnknownError',
-          },
-        );
-        // #endregion
-        throw error;
+        const files = schemaCreateAgreementFiles.parse(arg);
+        if (files.attachments?.length || files.leadImage) {
+          startTask('UPLOAD_FILES');
+          await agreementFiles.upload(files, web2Slug);
+          completeTask('UPLOAD_FILES');
+        } else {
+          startTask('UPLOAD_FILES');
+          completeTask('UPLOAD_FILES');
+        }
+      } catch (err) {
+        if (web2Slug) {
+          await web2.deleteAgreementBySlug({ slug: web2Slug });
+        }
+        throw err;
       }
     },
   );

@@ -4,7 +4,7 @@ import {
   tokens,
   tokenUpdates,
 } from '@hypha-platform/storage-postgres';
-import { eq } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
 import {
@@ -81,27 +81,77 @@ export const createToken = async (
   input: CreateTokenInput,
   { db }: { db: DatabaseInstance },
 ) => {
-  const [token] = await db
-    .insert(tokens)
-    .values({
-      agreementId: input.agreementId,
-      spaceId: input.spaceId,
-      name: input.name,
-      symbol: input.symbol,
-      maxSupply: input.maxSupply,
-      type: input.type,
-      iconUrl: input.iconUrl,
-      transferable: input.transferable,
-      isVotingToken: input.isVotingToken,
-      decayInterval: input.decaySettings?.decayInterval,
-      decayPercentage: input.decaySettings?.decayPercentage,
-      referencePrice: input.referencePrice
-        ? String(input.referencePrice)
-        : null,
-      referenceCurrency: input.referenceCurrency || null,
-    })
-    .returning();
-  return token;
+  const values = {
+    agreementId: input.agreementId,
+    spaceId: input.spaceId,
+    name: input.name,
+    symbol: input.symbol,
+    maxSupply: input.maxSupply,
+    type: input.type,
+    iconUrl: input.iconUrl,
+    transferable: input.transferable,
+    isVotingToken: input.isVotingToken,
+    decayInterval: input.decaySettings?.decayInterval,
+    decayPercentage: input.decaySettings?.decayPercentage,
+    referencePrice: input.referencePrice ? String(input.referencePrice) : null,
+    referenceCurrency: input.referenceCurrency || null,
+  };
+
+  const runQueryWithArchived = async () =>
+    await db.insert(tokens).values(values).returning();
+
+  const runQueryWithoutArchived = async () => {
+    await db.execute(
+      sql`insert into tokens (
+        agreement_id,
+        space_id,
+        name,
+        symbol,
+        max_supply,
+        type,
+        icon_url,
+        transferable,
+        is_voting_token,
+        decay_interval,
+        decay_percentage,
+        reference_price,
+        reference_currency
+      ) values (
+        ${values.agreementId ?? null},
+        ${values.spaceId ?? null},
+        ${values.name},
+        ${values.symbol},
+        ${values.maxSupply},
+        ${values.type},
+        ${values.iconUrl ?? null},
+        ${values.transferable},
+        ${values.isVotingToken},
+        ${values.decayInterval ?? null},
+        ${values.decayPercentage ?? null},
+        ${values.referencePrice ?? null},
+        ${values.referenceCurrency ?? null}
+      )`,
+    );
+    const [legacyToken] = await db
+      .select()
+      .from(tokens)
+      .where(eq(tokens.agreementId, values.agreementId ?? -1))
+      .orderBy(desc(tokens.id))
+      .limit(1);
+    return legacyToken ? [legacyToken] : [];
+  };
+
+  try {
+    const [token] = await runQueryWithArchived();
+    return token;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes('column tokens.archived does not exist')) {
+      const [legacyToken] = await runQueryWithoutArchived();
+      return { ...legacyToken, archived: false };
+    }
+    throw error;
+  }
 };
 
 export const updateToken = async (

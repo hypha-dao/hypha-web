@@ -16,7 +16,6 @@ import { useTokenMutationsWeb2Rsc } from './useTokenMutationWeb2.rsc';
 import { Config } from '@wagmi/core';
 import { ReferenceCurrency } from '../../types';
 import { getPriceCurrencyFeed, TokenType } from '../../../common';
-import { appendDebugLogAction } from '../../server/actions';
 import {
   type UpdateIssuedTokenInput,
   padUpdateIssuedTokenInputIfNoTxs,
@@ -293,162 +292,97 @@ export const useUpdateIssuedTokenOrchestrator = ({
     dispatch({ type: 'RESET' });
   }, []);
 
-  const debugLog = useCallback(
-    async (
-      hypothesisId: string,
-      location: string,
-      message: string,
-      data?: Record<string, unknown>,
-    ) => {
-      try {
-        await appendDebugLogAction({
-          hypothesisId,
-          location,
-          message,
-          data,
-          timestamp: Date.now(),
-        });
-      } catch {
-        // debug logs should never block proposal flow
-      }
-    },
-    [],
-  );
-
   const { trigger: updateIssuedToken } = useSWRMutation(
     'updateIssuedTokenOrchestration',
     async (_: string, { arg }: { arg: UpdateIssuedTokenArg }) => {
+      if (!arg.tokenAddress || !arg.web3SpaceId) {
+        throw new Error('Either tokenAddress and web3SpaceId must be provided');
+      }
+      startTask('CREATE_WEB2_AGREEMENT');
+      const inputWeb2 = schemaCreateAgreementWeb2.parse(arg);
+      const createdAgreement = await web2.createAgreement(inputWeb2);
+      completeTask('CREATE_WEB2_AGREEMENT');
+
+      const web2Slug = createdAgreement?.slug;
+
+      const changedTopLevel = new Set(arg.changedTopLevelKeys ?? []);
+      const iconTouched =
+        arg.iconUrl instanceof File || changedTopLevel.has('iconUrl');
+
+      let iconUrlForUpdate: string | undefined;
+      if (arg.iconUrl instanceof File) {
+        startTask('UPLOAD_TOKEN_ICON');
+        const result = await tokenFiles.upload({ iconUrl: arg.iconUrl });
+        iconUrlForUpdate = result.iconUrl;
+        completeTask('UPLOAD_TOKEN_ICON');
+      } else {
+        startTask('UPLOAD_TOKEN_ICON');
+        completeTask('UPLOAD_TOKEN_ICON');
+        if (iconTouched && typeof arg.iconUrl === 'string') {
+          iconUrlForUpdate = arg.iconUrl;
+        }
+      }
+
+      startTask('UPDATE_TOKEN');
+      // Save token update data to DB for deferred update after proposal execution
+      if (!createdAgreement?.id) {
+        throw new Error('Created agreement missing ID');
+      }
+      const effectiveMaxSupply =
+        arg.enableLimitedSupply === true ? arg.maxSupply ?? 0 : 0;
+      const tokenUpdateData: TokenUpdateData = {
+        name: arg.name,
+        symbol: arg.symbol,
+        maxSupply: effectiveMaxSupply,
+        type: arg.type,
+        ...(iconTouched && iconUrlForUpdate !== undefined
+          ? { iconUrl: iconUrlForUpdate }
+          : {}),
+        transferable: arg.transferable,
+        isVotingToken: arg.isVotingToken,
+        decayInterval: arg.decaySettings?.decayInterval,
+        decayPercentage: arg.decaySettings?.decayPercentage,
+        referencePrice: arg.referencePrice ?? arg.tokenPrice,
+        referenceCurrency: arg.referenceCurrency,
+        archiveToken: arg.archiveToken,
+      };
+      await web2TokenMutations.createTokenUpdate({
+        documentId: createdAgreement.id,
+        tokenAddress: arg.tokenAddress!,
+        data: tokenUpdateData,
+      });
+      completeTask('UPDATE_TOKEN');
+
       try {
-        // #region agent log
-        await debugLog(
-          'U1',
-          'useUpdateIssuedTokenOrchestrator.ts:updateIssuedToken:entry',
-          'Update issued token orchestration started',
-          {
-            hasAuthToken: !!authToken,
-            hasConfig: !!config,
-            hasTokenAddress: !!arg.tokenAddress,
-            web3SpaceId: arg.web3SpaceId,
-            changedTopLevelKeys: arg.changedTopLevelKeys ?? [],
-          },
-        );
-        // #endregion
-        if (!arg.tokenAddress || !arg.web3SpaceId) {
-          throw new Error(
-            'Either tokenAddress and web3SpaceId must be provided',
+        if (config) {
+          const partialWeb3 = buildPartialUpdateIssuedTokenWeb3Input(
+            arg,
+            changedTopLevel,
           );
+          const web3ProposalArg = padUpdateIssuedTokenInputIfNoTxs(
+            partialWeb3,
+            arg.name,
+          );
+
+          startTask('CREATE_WEB3_AGREEMENT');
+          await web3.updateIssuedToken(web3ProposalArg);
+          completeTask('CREATE_WEB3_AGREEMENT');
         }
-        startTask('CREATE_WEB2_AGREEMENT');
-        const inputWeb2 = schemaCreateAgreementWeb2.parse(arg);
-        const createdAgreement = await web2.createAgreement(inputWeb2);
-        completeTask('CREATE_WEB2_AGREEMENT');
 
-        const web2Slug = createdAgreement?.slug;
-
-        const changedTopLevel = new Set(arg.changedTopLevelKeys ?? []);
-        const iconTouched =
-          arg.iconUrl instanceof File || changedTopLevel.has('iconUrl');
-
-        let iconUrlForUpdate: string | undefined;
-        if (arg.iconUrl instanceof File) {
-          startTask('UPLOAD_TOKEN_ICON');
-          const result = await tokenFiles.upload({ iconUrl: arg.iconUrl });
-          iconUrlForUpdate = result.iconUrl;
-          completeTask('UPLOAD_TOKEN_ICON');
+        const files = schemaCreateAgreementFiles.parse(arg);
+        if (files.attachments?.length || files.leadImage) {
+          startTask('UPLOAD_FILES');
+          await agreementFiles.upload(files, web2Slug);
+          completeTask('UPLOAD_FILES');
         } else {
-          startTask('UPLOAD_TOKEN_ICON');
-          completeTask('UPLOAD_TOKEN_ICON');
-          if (iconTouched && typeof arg.iconUrl === 'string') {
-            iconUrlForUpdate = arg.iconUrl;
-          }
+          startTask('UPLOAD_FILES');
+          completeTask('UPLOAD_FILES');
         }
-
-        startTask('UPDATE_TOKEN');
-        // Save token update data to DB for deferred update after proposal execution
-        if (!createdAgreement?.id) {
-          throw new Error('Created agreement missing ID');
+      } catch (err) {
+        if (web2Slug) {
+          await web2.deleteAgreementBySlug({ slug: web2Slug });
         }
-        const effectiveMaxSupply =
-          arg.enableLimitedSupply === true ? arg.maxSupply ?? 0 : 0;
-        const tokenUpdateData: TokenUpdateData = {
-          name: arg.name,
-          symbol: arg.symbol,
-          maxSupply: effectiveMaxSupply,
-          type: arg.type,
-          ...(iconTouched && iconUrlForUpdate !== undefined
-            ? { iconUrl: iconUrlForUpdate }
-            : {}),
-          transferable: arg.transferable,
-          isVotingToken: arg.isVotingToken,
-          decayInterval: arg.decaySettings?.decayInterval,
-          decayPercentage: arg.decaySettings?.decayPercentage,
-          referencePrice: arg.referencePrice ?? arg.tokenPrice,
-          referenceCurrency: arg.referenceCurrency,
-          archiveToken: arg.archiveToken,
-        };
-        await web2TokenMutations.createTokenUpdate({
-          documentId: createdAgreement.id,
-          tokenAddress: arg.tokenAddress!,
-          data: tokenUpdateData,
-        });
-        completeTask('UPDATE_TOKEN');
-
-        try {
-          if (config) {
-            const partialWeb3 = buildPartialUpdateIssuedTokenWeb3Input(
-              arg,
-              changedTopLevel,
-            );
-            const web3ProposalArg = padUpdateIssuedTokenInputIfNoTxs(
-              partialWeb3,
-              arg.name,
-            );
-
-            // #region agent log
-            await debugLog(
-              'U2',
-              'useUpdateIssuedTokenOrchestrator.ts:updateIssuedToken:beforeWeb3',
-              'About to submit web3 update proposal',
-              {
-                web2Slug,
-                txFieldKeys: Object.keys(web3ProposalArg),
-              },
-            );
-            // #endregion
-            startTask('CREATE_WEB3_AGREEMENT');
-            await web3.updateIssuedToken(web3ProposalArg);
-            completeTask('CREATE_WEB3_AGREEMENT');
-          }
-
-          const files = schemaCreateAgreementFiles.parse(arg);
-          if (files.attachments?.length || files.leadImage) {
-            startTask('UPLOAD_FILES');
-            await agreementFiles.upload(files, web2Slug);
-            completeTask('UPLOAD_FILES');
-          } else {
-            startTask('UPLOAD_FILES');
-            completeTask('UPLOAD_FILES');
-          }
-        } catch (err) {
-          if (web2Slug) {
-            await web2.deleteAgreementBySlug({ slug: web2Slug });
-          }
-          throw err;
-        }
-      } catch (error) {
-        // #region agent log
-        await debugLog(
-          'U3',
-          'useUpdateIssuedTokenOrchestrator.ts:updateIssuedToken:error',
-          'Update issued token orchestration failed',
-          {
-            errorMessage:
-              error instanceof Error ? error.message : String(error),
-            errorName: error instanceof Error ? error.name : 'UnknownError',
-          },
-        );
-        // #endregion
-        throw error;
+        throw err;
       }
     },
   );
