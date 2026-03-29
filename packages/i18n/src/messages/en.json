@@ -980,7 +980,7 @@
       },
       "exchangeStakesAndTokens": {
         "errors": {
-          "sellerAmountExceedsBalance": "Seller row {row}: The amount is greater than the seller available balance.",
+          "sellerAmountExceedsBalance": "The entered amount is greater than the seller available balance.",
           "sellerTreasuryUnavailable": "Could not load the space treasury. Wait for chain data and try again.",
           "sellerBalanceCheckFailed": "Could not verify seller balance. Check your connection and try again."
         },

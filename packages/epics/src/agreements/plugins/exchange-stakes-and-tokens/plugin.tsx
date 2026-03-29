@@ -19,6 +19,7 @@ import React from 'react';
 import useSWR from 'swr';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { useParams } from 'next/navigation';
+import { useSellerLegBalanceValidation } from './use-seller-leg-balance-validation';
 
 const isEvmAddress = (value?: string): value is `0x${string}` =>
   typeof value === 'string' && /^0x[a-fA-F0-9]{40}$/.test(value);
@@ -33,6 +34,10 @@ export const ExchangeStakesAndTokensPlugin = ({
   spaces?: Space[];
 }) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const sellerAmountExceedsMessage = tAgreementFlow(
+    'plugins.exchangeStakesAndTokens.errors.sellerAmountExceedsBalance',
+  );
+  useSellerLegBalanceValidation(sellerAmountExceedsMessage);
   const { control, setValue } = useFormContext();
   const params = useParams();
   const currentSpaceSlug = params.id as string;
@@ -270,6 +275,7 @@ export const ExchangeStakesAndTokensPlugin = ({
           label={tAgreementFlow(
             'plugins.exchangeStakesAndTokens.sellerWillSend',
           )}
+          showAmountFieldError
         />
       </Skeleton>
       <Separator />

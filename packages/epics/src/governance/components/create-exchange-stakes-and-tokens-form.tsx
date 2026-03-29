@@ -115,12 +115,11 @@ export const CreateExchangeStakesAndTokensForm = ({
     } catch (e) {
       const err = e as Error & { legIndex?: number };
       if (err.message === EXCHANGE_SELLER_BALANCE_EXCEEDED) {
-        const row = (typeof err.legIndex === 'number' ? err.legIndex : 0) + 1;
-        form.setError('root', {
+        const idx = typeof err.legIndex === 'number' ? err.legIndex : 0;
+        form.setError(`sellerLeg.${idx}.amount` as const, {
           type: 'manual',
           message: tAgreementFlow(
             'plugins.exchangeStakesAndTokens.errors.sellerAmountExceedsBalance',
-            { row },
           ),
         });
         return;
@@ -233,11 +232,6 @@ export const CreateExchangeStakesAndTokensForm = ({
             label={tAgreementFlow('labels.exchange')}
             progress={progress}
           />
-          {form.formState.errors.root?.message ? (
-            <p className="text-sm text-destructive" role="alert">
-              {String(form.formState.errors.root.message)}
-            </p>
-          ) : null}
           {plugin}
           <Separator />
           <div className="flex justify-end w-full">

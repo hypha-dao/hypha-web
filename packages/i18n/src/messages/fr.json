@@ -984,7 +984,7 @@
       },
       "exchangeStakesAndTokens": {
         "errors": {
-          "sellerAmountExceedsBalance": "Ligne vendeur {row} : le montant dépasse le solde disponible du vendeur.",
+          "sellerAmountExceedsBalance": "Le montant saisi est supérieur au solde disponible du vendeur.",
           "sellerTreasuryUnavailable": "Impossible de charger la trésorerie de l'espace. Attendez les données on-chain et réessayez.",
           "sellerBalanceCheckFailed": "Impossible de vérifier le solde du vendeur. Vérifiez votre connexion et réessayez."
         },
