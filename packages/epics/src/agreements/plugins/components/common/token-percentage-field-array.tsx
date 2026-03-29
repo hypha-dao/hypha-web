@@ -1,6 +1,6 @@
 'use client';
 
-import { useFieldArray, useFormContext } from 'react-hook-form';
+import { useFieldArray, useFormContext, useWatch } from 'react-hook-form';
 import {
   Button,
   FormControl,
@@ -10,8 +10,10 @@ import {
   RequirementMark,
 } from '@hypha-platform/ui';
 import {
+  ConversionAssetDropdown,
+  ConversionFieldDetails,
+  ConversionPercentageInput,
   TokenPercentageAsset,
-  TokenPercentageField,
 } from './token-percentage-field';
 import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
 
@@ -43,9 +45,13 @@ export const TokenPercentageFieldArray = ({
     name,
   });
 
+  const watchedRows = useWatch({ control, name }) as
+    | Array<{ asset?: string; percentage?: string }>
+    | undefined;
+
   const handleAddField = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    append({ percentage: '0.00', asset: '' as `0x${string}` });
+    append({ percentage: '0.00', asset: '' });
   };
 
   const handleRemoveField = (
@@ -79,48 +85,82 @@ export const TokenPercentageFieldArray = ({
           {label} <RequirementMark />
         </label>
         <div className="flex flex-col gap-2 grow min-w-0">
-          {fields.map((field, index) => (
-            <div key={field.id} className="flex md:justify-end gap-2">
-              <div className="">
-                <FormField
-                  control={control}
-                  name={`${name}.${index}`}
-                  render={({ field: { value, onChange }, fieldState }) => (
-                    <FormItem>
-                      <FormControl>
-                        <TokenPercentageField
-                          value={value}
-                          onChange={(nextValue) => {
-                            onChange(nextValue);
-                            // Validate only this row — trigger(name) re-validates every
-                            // array item and flags empty rows from "Add" as invalid.
-                            void trigger(`${name}.${index}`);
-                          }}
-                          assets={assets}
-                          showFieldDetails={showFieldDetails}
-                        />
-                      </FormControl>
-                      <FormMessage
-                        custom={
-                          showEmptyFieldMessage
-                            ? fieldState.error?.message?.toString() ||
-                              'Please enter a percentage and select an asset.'
-                            : ''
-                        }
-                      />
-                    </FormItem>
-                  )}
-                />
+          {fields.map((field, index) => {
+            const rowAssetAddress = watchedRows?.[index]?.asset ?? '';
+            const selectedDetailAsset = assets.find(
+              (a) => a.address.toLowerCase() === rowAssetAddress.toLowerCase(),
+            );
+
+            return (
+              <div key={field.id} className="flex md:justify-end gap-2">
+                <div className="flex flex-col gap-1 grow min-w-0 max-w-full">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 md:justify-end items-end w-full min-w-0">
+                    <FormField
+                      control={control}
+                      name={`${name}.${index}.asset`}
+                      render={({ field: assetField, fieldState }) => (
+                        <FormItem className="flex-1 min-w-0 space-y-0">
+                          <FormControl>
+                            <ConversionAssetDropdown
+                              value={assetField.value ?? ''}
+                              onChange={(address) => {
+                                assetField.onChange(address);
+                                void trigger(`${name}.${index}.asset`);
+                              }}
+                              assets={assets}
+                            />
+                          </FormControl>
+                          <FormMessage
+                            custom={
+                              showEmptyFieldMessage && fieldState.error
+                                ? fieldState.error.message?.toString() ||
+                                  'Please select a collateral asset'
+                                : ''
+                            }
+                          />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={control}
+                      name={`${name}.${index}.percentage`}
+                      render={({ field: pctField, fieldState }) => (
+                        <FormItem className="flex-1 min-w-0 space-y-0 w-full sm:max-w-[12rem]">
+                          <FormControl>
+                            <ConversionPercentageInput
+                              value={pctField.value ?? ''}
+                              onChange={(percentage) => {
+                                pctField.onChange(percentage);
+                                void trigger(`${name}.${index}.percentage`);
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage
+                            custom={
+                              showEmptyFieldMessage && fieldState.error
+                                ? fieldState.error.message?.toString() ||
+                                  'Please enter a percentage'
+                                : ''
+                            }
+                          />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  {showFieldDetails ? (
+                    <ConversionFieldDetails asset={selectedDetailAsset} />
+                  ) : null}
+                </div>
+                <Button
+                  variant="ghost"
+                  onClick={(ev) => handleRemoveField(ev, index)}
+                  className="px-2 md:px-3 shrink-0 self-end"
+                >
+                  <Cross2Icon />
+                </Button>
               </div>
-              <Button
-                variant="ghost"
-                onClick={(ev) => handleRemoveField(ev, index)}
-                className="px-2 md:px-3"
-              >
-                <Cross2Icon />
-              </Button>
-            </div>
-          ))}
+            );
+          })}
           {(formErrors[name] as { root?: { message?: string } })?.root
             ?.message && (
             <FormMessage>
