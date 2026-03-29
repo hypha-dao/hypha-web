@@ -41,8 +41,9 @@ export const ExchangeStakesAndTokensPlugin = ({
     useSpaceDetailsWeb3Rpc({
       spaceId: activeSpace?.web3SpaceId ?? null,
     });
-  /** Wallet that acts for the space on-chain (token holder / approver), not the space contract address */
+  /** Executor holds tokens; proposal still stores space contract as seller (vote authorizes execution). */
   const spaceExecutorAddress = spaceDetails?.executor as string | undefined;
+  const currentSpaceAddress = activeSpace?.address ?? undefined;
   const { person: creator } = useMe();
   const [sellerRecipientType, setSellerRecipientType] =
     React.useState<RecipientType>('member');
@@ -53,6 +54,11 @@ export const ExchangeStakesAndTokensPlugin = ({
     | string
     | undefined;
   const { tokens, isLoading } = useTokens({ spaceSlug });
+
+  const sellerBalanceLookupAddress =
+    sellerRecipientType === 'space' && spaceExecutorAddress
+      ? spaceExecutorAddress
+      : sellerAddress;
 
   const sellerSpaces = React.useMemo(() => {
     if (!activeSpace?.address) return spaces;
@@ -70,13 +76,8 @@ export const ExchangeStakesAndTokensPlugin = ({
       members.find((member) => member.id === creator?.id)?.address;
 
     if (sellerRecipientType === 'space') {
-      /**
-       * Use the on-chain space executor wallet only. The space contract address is
-       * not a signer; the mutation requires sellerAddress === connected wallet.
-       */
-      if (!spaceExecutorAddress) return;
-      if (sellerAddress !== spaceExecutorAddress) {
-        setValue('sellerAddress', spaceExecutorAddress, {
+      if (currentSpaceAddress && sellerAddress !== currentSpaceAddress) {
+        setValue('sellerAddress', currentSpaceAddress, {
           shouldDirty: true,
           shouldValidate: true,
         });
@@ -93,7 +94,7 @@ export const ExchangeStakesAndTokensPlugin = ({
   }, [
     creator?.address,
     creator?.id,
-    spaceExecutorAddress,
+    currentSpaceAddress,
     members,
     sellerAddress,
     sellerRecipientType,
@@ -114,10 +115,11 @@ export const ExchangeStakesAndTokensPlugin = ({
 
   const { data: sellerOwnedTokenSet, isLoading: isLoadingSellerBalances } =
     useSWR(
-      isEvmAddress(sellerAddress) && sellerTokenCandidates.length
+      isEvmAddress(sellerBalanceLookupAddress) && sellerTokenCandidates.length
         ? [
             'exchangeSellerOwnedTokens',
-            sellerAddress,
+            sellerBalanceLookupAddress,
+            sellerRecipientType,
             ...sellerTokenCandidates.map((token: Token) =>
               token.address.toLowerCase(),
             ),
@@ -128,7 +130,7 @@ export const ExchangeStakesAndTokensPlugin = ({
           sellerTokenCandidates.map(async (token: Token) => {
             const { amount } = await getBalance(
               token.address as `0x${string}`,
-              sellerAddress as `0x${string}`,
+              sellerBalanceLookupAddress as `0x${string}`,
             );
             return { tokenAddress: token.address, amount };
           }),
@@ -179,11 +181,12 @@ export const ExchangeStakesAndTokensPlugin = ({
     );
 
   const sellerTokens = React.useMemo(() => {
-    if (!isEvmAddress(sellerAddress) || !sellerOwnedTokenSet) return [];
+    if (!isEvmAddress(sellerBalanceLookupAddress) || !sellerOwnedTokenSet)
+      return [];
     return sellerTokenCandidates.filter((token: Token) =>
       sellerOwnedTokenSet.has(token.address.toLowerCase()),
     );
-  }, [sellerAddress, sellerOwnedTokenSet, sellerTokenCandidates]);
+  }, [sellerBalanceLookupAddress, sellerOwnedTokenSet, sellerTokenCandidates]);
 
   const buyerTokens = React.useMemo(() => {
     if (!isEvmAddress(buyerAddress) || !buyerOwnedTokenSet) return [];
@@ -209,7 +212,7 @@ export const ExchangeStakesAndTokensPlugin = ({
         loading={
           isLoading ||
           (sellerRecipientType === 'space' && isLoadingActiveSpaceChain) ||
-          (isEvmAddress(sellerAddress) && isLoadingSellerBalances)
+          (isEvmAddress(sellerBalanceLookupAddress) && isLoadingSellerBalances)
         }
         width="100%"
         height={90}

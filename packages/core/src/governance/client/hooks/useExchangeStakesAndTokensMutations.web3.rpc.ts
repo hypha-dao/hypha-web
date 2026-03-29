@@ -4,7 +4,6 @@ import useSWR from 'swr';
 import useSWRMutation from 'swr/mutation';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 import { encodeFunctionData, erc20Abi, parseUnits } from 'viem';
-import { useAccount } from 'wagmi';
 
 import { getProposalFromLogs } from '../web3';
 import {
@@ -56,7 +55,6 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
   proposalSlug?: string | null;
 }) => {
   const chainId = getGovernanceChainId();
-  const { address } = useAccount();
   const { client } = useSmartWallets();
 
   const {
@@ -84,21 +82,6 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
       if (sellerRows.length !== buyerRows.length) {
         throw new Error(
           'Seller and buyer rows must have the same count to build exchange escrows',
-        );
-      }
-
-      const clientAccountAddress = (
-        client as { account?: { address?: `0x${string}` } }
-      ).account?.address;
-      const allowedExecutors = [address, clientAccountAddress]
-        .filter((value): value is `0x${string}` => Boolean(value))
-        .map((value) => value.toLowerCase());
-      if (allowedExecutors.length === 0) {
-        throw new Error('Wallet address not available');
-      }
-      if (!allowedExecutors.includes(arg.sellerAddress.toLowerCase())) {
-        throw new Error(
-          'Seller address must match the connected wallet executing this proposal',
         );
       }
 
