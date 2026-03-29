@@ -308,7 +308,8 @@ export const PeopleRedeemForm = ({
     selectedTokenVault?.redemptionCurrencyFeed
       ? ['redeem-currency-usd-rate', selectedTokenVault.redemptionCurrencyFeed]
       : null,
-    async ([, feed]) => {
+    async (key: readonly [string, string]) => {
+      const [, feed] = key;
       const feedAddress = feed.toLowerCase();
       if (feedAddress === USD_FEED_ADDRESS) {
         return 1;
