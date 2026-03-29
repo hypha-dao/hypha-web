@@ -965,6 +965,10 @@
       "migrateHyphaTokens": {
         "title": "Migrar tokens Hypha (Telos → Base)",
         "description": "Mova seus tokens Hypha do blockchain Telos para a rede Base. Inicia a experiência de migração."
+      },
+      "redeemTokens": {
+        "title": "Resgatar tokens",
+        "description": "Converta seus tokens no valor fiduciário equivalente mantido no cofre."
       }
     },
     "purchaseHypha": {
@@ -1029,6 +1033,33 @@
       "content": "Envie facilmente fundos da sua carteira para um membro ou espaço.",
       "form": {
         "amountLabel": "Quantia"
+      }
+    },
+    "redeemTokens": {
+      "title": "Resgatar tokens",
+      "content": "Converta seus tokens no valor fiduciário equivalente mantido no cofre.",
+      "form": {
+        "redemptionAmountLabel": "Valor do resgate",
+        "convertedIntoLabel": "Convertido em",
+        "redeem": "Resgatar",
+        "redeeming": "Resgatando",
+        "successMessage": "Seu resgate foi concluído com sucesso!",
+        "requestedExceedsBalance": "O valor solicitado ({amount}) excede o saldo disponível ({balance}).",
+        "collateralInsufficient": "O valor do resgate excede o valor das garantias; insira um valor menor.",
+        "insufficientFundsLead": "O saldo da sua carteira é insuficiente para concluir esta transação. Por favor",
+        "insufficientFundsTopUp": "adicione fundos à sua conta",
+        "insufficientFundsTrail": "para continuar.",
+        "selectCollateralAsset": "Selecione um ativo",
+        "noCollateralAssetsFound": "Nenhum ativo encontrado"
+      },
+      "conversionDetails": {
+        "vaultLine": "Cofre: {amount} {symbol}",
+        "priceLine": "Preço: {currency}{price}",
+        "requestedLine": "Solicitado: {currency}{amount}"
+      },
+      "diagnostics": {
+        "vaultAccess": "Não foi possível carregar os dados do cofre para alguns espaços: {details}. Talvez você não tenha acesso a esses espaços.",
+        "tokenDiscovery": "Diagnóstico de detecção de tokens: {reasons}."
       }
     },
     "errors": {

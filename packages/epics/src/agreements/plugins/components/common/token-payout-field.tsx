@@ -10,7 +10,6 @@ import {
   Image,
   Button,
 } from '@hypha-platform/ui';
-import { cn } from '@hypha-platform/ui-utils';
 import { TokenType } from '@hypha-platform/core/client';
 import { getTokenTypeLabel } from '../../../../treasury/components/common/token-type-field';
 import { useTranslations } from 'next-intl';
@@ -55,7 +54,9 @@ export const TokenPayoutField = ({
   selectedTokenPriceHint,
 }: TokenPayoutFieldProps) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
-  const selectedToken = tokens.find((t) => t.address === value.token);
+  const selectedToken = tokens.find(
+    (t) => t.address.toLowerCase() === value.token.toLowerCase(),
+  );
 
   const handleTokenChange = (token: Token) => {
     onChange({
@@ -178,14 +179,14 @@ export const TokenPayoutField = ({
       selectedToken &&
       typeof selectedToken.value === 'number' &&
       Number.isFinite(selectedToken.value) ? (
-        <div className="flex flex-col text-1 text-neutral-11 self-end">
-          <span>
+        <div className="text-1 text-neutral-11 w-full min-w-0 self-end overflow-x-auto">
+          <span className="whitespace-nowrap inline-block min-w-full text-right">
             Wallet balance: {selectedToken.value.toFixed(2)}{' '}
             {selectedToken.symbol}
+            {selectedTokenPriceHint
+              ? ` · Token redemption price: ${selectedTokenPriceHint}`
+              : ''}
           </span>
-          {selectedTokenPriceHint ? (
-            <span>Token redemption price: {selectedTokenPriceHint}</span>
-          ) : null}
         </div>
       ) : null}
     </div>
