@@ -108,7 +108,7 @@
       },
       "exchangeStakesAndTokens": {
         "errors": {
-          "sellerAmountExceedsBalance": "Fila vendedor {row}: el importe supera el saldo disponible (cartera del miembro o tesorería del espacio).",
+          "sellerAmountExceedsBalance": "Fila vendedor {row}: el importe supera el saldo disponible del vendedor.",
           "sellerTreasuryUnavailable": "No se pudo cargar la tesorería del espacio. Espere los datos on-chain e inténtelo de nuevo.",
           "sellerBalanceCheckFailed": "No se pudo verificar el saldo del vendedor. Compruebe la conexión e inténtelo de nuevo."
         },

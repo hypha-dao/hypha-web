@@ -108,7 +108,7 @@
       },
       "exchangeStakesAndTokens": {
         "errors": {
-          "sellerAmountExceedsBalance": "Linha vendedor {row}: o valor excede o saldo disponível (carteira do membro ou tesouraria do espaço).",
+          "sellerAmountExceedsBalance": "Linha vendedor {row}: o valor excede o saldo disponível do vendedor.",
           "sellerTreasuryUnavailable": "Não foi possível carregar a tesouraria do espaço. Aguarde os dados on-chain e tente novamente.",
           "sellerBalanceCheckFailed": "Não foi possível verificar o saldo do vendedor. Verifique a conexão e tente novamente."
         },

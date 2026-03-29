@@ -1359,7 +1359,7 @@
       },
       "exchangeStakesAndTokens": {
         "errors": {
-          "sellerAmountExceedsBalance": "Verkäufer Zeile {row}: Betrag übersteigt das verfügbare Guthaben (Mitglied-Wallet oder Space-Treasury).",
+          "sellerAmountExceedsBalance": "Verkäufer Zeile {row}: Der Betrag übersteigt das verfügbare Guthaben des Verkäufers.",
           "sellerTreasuryUnavailable": "Space-Treasury konnte nicht geladen werden. Warten Sie auf On-Chain-Daten und versuchen Sie es erneut.",
           "sellerBalanceCheckFailed": "Verkäufer-Guthaben konnte nicht geprüft werden. Verbindung prüfen und erneut versuchen."
         },
