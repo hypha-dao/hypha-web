@@ -11,6 +11,7 @@ import {
   getBalance,
   useMe,
   useSpaceBySlug,
+  useSpaceDetailsWeb3Rpc,
 } from '@hypha-platform/core/client';
 import { useTokens } from '../../../treasury';
 import { useTranslations } from 'next-intl';
@@ -36,10 +37,15 @@ export const ExchangeStakesAndTokensPlugin = ({
   const params = useParams();
   const currentSpaceSlug = params.id as string;
   const { space: activeSpace } = useSpaceBySlug(currentSpaceSlug);
+  const { spaceDetails, isLoading: isLoadingActiveSpaceChain } =
+    useSpaceDetailsWeb3Rpc({
+      spaceId: activeSpace?.web3SpaceId ?? null,
+    });
+  /** Wallet that acts for the space on-chain (token holder / approver), not the space contract address */
+  const spaceExecutorAddress = spaceDetails?.executor as string | undefined;
   const { person: creator } = useMe();
   const [sellerRecipientType, setSellerRecipientType] =
     React.useState<RecipientType>('member');
-  const currentSpaceAddress = activeSpace?.address ?? undefined;
   const sellerAddress = useWatch({ control, name: 'sellerAddress' }) as
     | string
     | undefined;
@@ -62,11 +68,24 @@ export const ExchangeStakesAndTokensPlugin = ({
     const creatorAddress =
       creator?.address ||
       members.find((member) => member.id === creator?.id)?.address;
-    const nextSellerAddress =
-      sellerRecipientType === 'space' ? currentSpaceAddress : creatorAddress;
 
-    if (nextSellerAddress && sellerAddress !== nextSellerAddress) {
-      setValue('sellerAddress', nextSellerAddress, {
+    if (sellerRecipientType === 'space') {
+      /**
+       * Use the on-chain space executor wallet only. The space contract address is
+       * not a signer; the mutation requires sellerAddress === connected wallet.
+       */
+      if (!spaceExecutorAddress) return;
+      if (sellerAddress !== spaceExecutorAddress) {
+        setValue('sellerAddress', spaceExecutorAddress, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+      }
+      return;
+    }
+
+    if (creatorAddress && sellerAddress !== creatorAddress) {
+      setValue('sellerAddress', creatorAddress, {
         shouldDirty: true,
         shouldValidate: true,
       });
@@ -74,7 +93,7 @@ export const ExchangeStakesAndTokensPlugin = ({
   }, [
     creator?.address,
     creator?.id,
-    currentSpaceAddress,
+    spaceExecutorAddress,
     members,
     sellerAddress,
     sellerRecipientType,
@@ -188,7 +207,9 @@ export const ExchangeStakesAndTokensPlugin = ({
       <Separator />
       <Skeleton
         loading={
-          isLoading || (isEvmAddress(sellerAddress) && isLoadingSellerBalances)
+          isLoading ||
+          (sellerRecipientType === 'space' && isLoadingActiveSpaceChain) ||
+          (isEvmAddress(sellerAddress) && isLoadingSellerBalances)
         }
         width="100%"
         height={90}
