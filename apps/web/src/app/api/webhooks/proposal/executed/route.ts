@@ -1,5 +1,6 @@
 import {
   Alchemy,
+  applyTokenUpdate,
   findDocumentsCreatorsForNotifications,
   findDocumentWithSpaceByIdRaw,
   findPeopleByWeb3Addresses,
@@ -93,6 +94,45 @@ export const POST = proposalExecutedSigningKey
               reason,
             ),
           );
+      },
+      async (events) => {
+        const safeProposalIds = events
+          .map(({ args }) => args.proposalId)
+          .filter(
+            (id) =>
+              id <= BigInt(Number.MAX_SAFE_INTEGER) &&
+              id >= BigInt(Number.MIN_SAFE_INTEGER),
+          )
+          .map((id) => Number(id));
+
+        if (safeProposalIds.length === 0) return;
+
+        const proposals = (
+          await Promise.allSettled(
+            safeProposalIds.map(async (id) => {
+              return await findDocumentWithSpaceByIdRaw({ id }, { db });
+            }),
+          )
+        )
+          .filter((res) => res.status === 'fulfilled')
+          .map(({ value }) => value)
+          .filter((proposal) => proposal?.document?.id != null);
+
+        const documentIds = Array.from(
+          new Set(proposals.map((proposal) => proposal!.document.id)),
+        );
+
+        for (const documentId of documentIds) {
+          try {
+            await applyTokenUpdate(documentId, { db });
+          } catch (error) {
+            // Not all executed proposals have pending token updates.
+            console.log(
+              `No token update to apply for document ${documentId}`,
+              error,
+            );
+          }
+        }
       },
       async (events) => {
         const safeProposalIds = events

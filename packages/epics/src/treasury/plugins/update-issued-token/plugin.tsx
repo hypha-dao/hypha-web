@@ -542,22 +542,24 @@ export const UpdateIssuedTokenPlugin = ({
               {tTreasury('tokenSupply')}
             </span>
             {tokenSupply === 0 ? (
-              <span className="text-2 text-neutral-11 text-nowrap">
+              <span className="text-2 text-neutral-11 text-nowrap text-right justify-self-end">
                 {tTreasury('unlimitedSupply')}
               </span>
             ) : (
-              <span className="text-2 text-neutral-11">
+              <span className="text-2 text-neutral-11 text-right justify-self-end">
                 {formatCurrencyValue(tokenSupply)}
               </span>
             )}
             <span className="text-2 text-neutral-11">
               {tTreasury('issuanceToDate')}
             </span>
-            <Skeleton width={120} height={32} loading={isLoadingSupply}>
-              <span className="text-2 text-neutral-11">
-                {formatCurrencyValue(supply)}
-              </span>
-            </Skeleton>
+            <div className="justify-self-end text-right">
+              <Skeleton width={120} height={32} loading={isLoadingSupply}>
+                <span className="text-2 text-neutral-11 text-right">
+                  {formatCurrencyValue(supply)}
+                </span>
+              </Skeleton>
+            </div>
           </div>
 
           <Separator />

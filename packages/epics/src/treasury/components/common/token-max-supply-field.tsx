@@ -6,12 +6,11 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
   Input,
   RequirementMark,
 } from '@hypha-platform/ui';
-import { handleNumberChange } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
+import type { ChangeEvent } from 'react';
 
 export function TokenMaxSupplyField() {
   const { setValue, control } = useFormContext();
@@ -29,7 +28,16 @@ export function TokenMaxSupplyField() {
     defaultValue: false,
   });
 
-  const handleMaxSupplyChange = handleNumberChange(setValue, 'maxSupply');
+  const handleMaxSupplyChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.value === '') {
+      setValue('maxSupply', '', { shouldDirty: true, shouldValidate: true });
+      return;
+    }
+
+    const val = Number(e.target.value);
+    const num = Number.isNaN(val) ? 0 : val;
+    setValue('maxSupply', num, { shouldDirty: true, shouldValidate: true });
+  };
 
   return (
     <FormField

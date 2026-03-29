@@ -205,8 +205,8 @@ export const useUpdateIssuedTokenMutationsWeb3Rpc = ({
     error: errorUpdateIssuedTokenMutation,
     data: updateIssuedTokenHash,
   } = useSWRMutation(
-    proposalSlug ? [proposalSlug, 'updateIssuedToken'] : null,
-    async ([proposalSlug], { arg }: { arg: UpdateIssuedTokenInput }) => {
+    `updateIssuedToken-${proposalSlug ?? 'pending'}`,
+    async (_key, { arg }: { arg: UpdateIssuedTokenInput }) => {
       if (!client) throw new Error('Smart wallet client not available');
 
       const duration = await publicClient.readContract(
@@ -214,7 +214,6 @@ export const useUpdateIssuedTokenMutationsWeb3Rpc = ({
       );
 
       const txData = buildUpdateIssuedTokenTxData(arg);
-
       const proposal: z.infer<typeof schemaCreateProposalWeb3> = {
         spaceId: BigInt(arg.spaceId),
         duration: duration && duration > 0 ? duration : getDuration(4),
@@ -223,7 +222,6 @@ export const useUpdateIssuedTokenMutationsWeb3Rpc = ({
       const parsedProposal = schemaCreateProposalWeb3.parse(proposal);
       const proposalArgs = mapToCreateProposalWeb3Input(parsedProposal);
       const txHash = await client.writeContract(createProposal(proposalArgs));
-
       return txHash;
     },
   );
