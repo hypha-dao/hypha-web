@@ -9,6 +9,7 @@ import {
 } from '@hypha-platform/epics';
 import { PeopleRedeemForm } from './people-redeem-form';
 import { Separator } from '@hypha-platform/ui';
+import { useTranslations } from 'next-intl';
 import {
   getSpaceDecayingTokens,
   getSpaceOwnershipTokens,
@@ -78,6 +79,8 @@ export const ProfileRedeemTokens = ({
   lang,
   personSlug,
 }: ProfileRedeemTokensProps) => {
+  const tRedeem = useTranslations('ProfileActions.redeemTokens');
+  const tActions = useTranslations('ProfileActions');
   const chainId = 8453 as keyof typeof tokenBackingVaultImplementationAddress;
   const vaultAddress = tokenBackingVaultImplementationAddress[chainId];
   const { assets: userAssets, manualUpdate } = useUserAssets({
@@ -576,32 +579,31 @@ export const ProfileRedeemTokens = ({
       <div className="flex flex-col gap-5">
         <div className="flex gap-5 justify-between">
           <h2 className="text-4 text-secondary-foreground justify-start items-center">
-            Redeem Tokens
+            {tRedeem('title')}
           </h2>
           <div className="flex gap-5 justify-end items-center">
             <ButtonBack
-              label="Back to actions"
+              label={tActions('backToActions')}
               backUrl={`/${lang}/profile/${personSlug}/actions`}
             />
             <ButtonClose closeUrl={`/${lang}/profile/${personSlug}`} />
           </div>
         </div>
-        <span className="text-2 text-neutral-11">
-          Convert your tokens into their equivalent fiat value held in the
-          vault.
-        </span>
+        <span className="text-2 text-neutral-11">{tRedeem('content')}</span>
         {hasVaultAccessIssues && (
           <div className="text-2 text-red-11">
-            Unable to load vault data for some spaces:{' '}
-            {vaultFetchDiagnostics
-              .map((entry) => `${entry.spaceSlug} (${entry.status})`)
-              .join(', ')}
-            . You may not have access to those spaces.
+            {tRedeem('diagnostics.vaultAccess', {
+              details: vaultFetchDiagnostics
+                .map((entry) => `${entry.spaceSlug} (${entry.status})`)
+                .join(', '),
+            })}
           </div>
         )}
         {!isCoreLoading && !hasTokens && emptyStateReasons.length > 0 && (
           <div className="text-2 text-yellow-11">
-            Token discovery diagnostics: {emptyStateReasons.join('; ')}.
+            {tRedeem('diagnostics.tokenDiscovery', {
+              reasons: emptyStateReasons.join('; '),
+            })}
           </div>
         )}
         <Separator />

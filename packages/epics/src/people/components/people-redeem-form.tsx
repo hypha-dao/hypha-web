@@ -24,6 +24,7 @@ import {
 import { useScrollToErrors } from '../../hooks';
 import { useFundWallet, useVaults } from '../../treasury/hooks';
 import useSWR from 'swr';
+import { useTranslations } from 'next-intl';
 
 const USD_FEED_ADDRESS = '0x0000000000000000000000000000000000000000';
 const CURRENCY_CODE_BY_FEED = Object.fromEntries(
@@ -112,6 +113,7 @@ export const PeopleRedeemForm = ({
   tokens,
   updateAssets,
 }: PeopleRedeemFormType) => {
+  const t = useTranslations('ProfileActions.redeemTokens');
   const PERCENT_SCALE = 100;
   const PERCENT_BASE = 100 * PERCENT_SCALE; // 100.00%
   const formatPercent = (value: number) => value.toFixed(2);
@@ -660,7 +662,7 @@ export const PeopleRedeemForm = ({
           className="flex flex-col gap-5"
         >
           <TokenPayoutFieldArray
-            label="Redemption Amount"
+            label={t('form.redemptionAmountLabel')}
             tokens={tokens}
             name="redemptions"
             allowAddOrRemove={false}
@@ -669,13 +671,15 @@ export const PeopleRedeemForm = ({
           />
           {isRequestedAmountExceedsBalance && (
             <div className="text-2 text-red-11 mt-1">
-              Requested amount ({redemptionAmount.toFixed(2)}) exceeds available
-              balance ({(selectedTokenAvailableBalance ?? 0).toFixed(2)}).
+              {t('form.requestedExceedsBalance', {
+                amount: redemptionAmount.toFixed(2),
+                balance: (selectedTokenAvailableBalance ?? 0).toFixed(2),
+              })}
             </div>
           )}
           {selectedRedemption?.token && (
             <TokenPercentageFieldArray
-              label="Converted into"
+              label={t('form.convertedIntoLabel')}
               assets={conversionAssetsWithDetails}
               name="conversions"
               showEmptyFieldMessage={shouldShowEmptyConversionFieldMessage}
@@ -692,8 +696,7 @@ export const PeopleRedeemForm = ({
           {(isSelectedCollateralInsufficient ||
             hasExceededCollateralAllocation) && (
             <div className="text-2 text-red-11">
-              The redemption value exceeds the collateral value, please enter a
-              smaller amount.
+              {t('form.collateralInsufficient')}
             </div>
           )}
           <Separator />
@@ -701,15 +704,15 @@ export const PeopleRedeemForm = ({
             {isRedeeming ? (
               <div className="flex items-center gap-2 text-sm text-neutral-10">
                 <Loader2 className="animate-spin w-4 h-4" />
-                Redeeming
+                {t('form.redeeming')}
               </div>
             ) : showSuccessMessage ? (
               <div className="text-green-600 text-sm font-medium">
-                Your redeem has been successfully completed!
+                {t('form.successMessage')}
               </div>
             ) : (
               <Button type="submit" disabled={isRedeeming}>
-                Redeem
+                {t('form.redeem')}
               </Button>
             )}
           </div>
@@ -717,15 +720,14 @@ export const PeopleRedeemForm = ({
             <div className="text-2 text-foreground">
               {form.formState.errors.root.message === 'insufficient_funds' ? (
                 <>
-                  Your wallet balance is insufficient to complete this
-                  transaction. Please{' '}
+                  {t('form.insufficientFundsLead')}{' '}
                   <span
                     onClick={fundWallet}
                     className="font-bold cursor-pointer text-accent-9 underline"
                   >
-                    top up your account
+                    {t('form.insufficientFundsTopUp')}
                   </span>{' '}
-                  to proceed.
+                  {t('form.insufficientFundsTrail')}
                 </>
               ) : (
                 form.formState.errors.root.message

@@ -452,6 +452,10 @@
       "migrateHyphaTokens": {
         "title": "Migrate Hypha Tokens (Telos → Base)",
         "description": "Move your Hypha tokens from the Telos blockchain to the Base network. Initiates the migration experience."
+      },
+      "redeemTokens": {
+        "title": "Redeem Tokens",
+        "description": "Convert your tokens into their equivalent fiat value held in the vault."
       }
     },
     "purchaseHypha": {
@@ -516,6 +520,33 @@
       "content": "Easily send funds from your wallet to a member or a space.",
       "form": {
         "amountLabel": "Amount"
+      }
+    },
+    "redeemTokens": {
+      "title": "Redeem Tokens",
+      "content": "Convert your tokens into their equivalent fiat value held in the vault.",
+      "form": {
+        "redemptionAmountLabel": "Redemption Amount",
+        "convertedIntoLabel": "Converted into",
+        "redeem": "Redeem",
+        "redeeming": "Redeeming",
+        "successMessage": "Your redeem has been successfully completed!",
+        "requestedExceedsBalance": "Requested amount ({amount}) exceeds available balance ({balance}).",
+        "collateralInsufficient": "The redemption value exceeds the collateral value, please enter a smaller amount.",
+        "insufficientFundsLead": "Your wallet balance is insufficient to complete this transaction. Please",
+        "insufficientFundsTopUp": "top up your account",
+        "insufficientFundsTrail": "to proceed.",
+        "selectCollateralAsset": "Select an asset",
+        "noCollateralAssetsFound": "No assets found"
+      },
+      "conversionDetails": {
+        "vaultLine": "Vault: {amount} {symbol}",
+        "priceLine": "Price: {currency}{price}",
+        "requestedLine": "Requested: {currency}{amount}"
+      },
+      "diagnostics": {
+        "vaultAccess": "Unable to load vault data for some spaces: {details}. You may not have access to those spaces.",
+        "tokenDiscovery": "Token discovery diagnostics: {reasons}."
       }
     },
     "errors": {
