@@ -18,17 +18,26 @@ export function getLocaleNumberSeparators(locale: string): {
 /** Linear-time shape check: optional digits, optional single '.', optional digits. */
 function isDecimalDigitString(s: string): boolean {
   let i = 0;
-  while (i < s.length && s[i] >= '0' && s[i] <= '9') i += 1;
-  if (i < s.length && s[i] === '.') {
+  while (i < s.length) {
+    const c = s.charAt(i);
+    if (c < '0' || c > '9') break;
     i += 1;
-    while (i < s.length && s[i] >= '0' && s[i] <= '9') i += 1;
+  }
+  if (i < s.length && s.charAt(i) === '.') {
+    i += 1;
+    while (i < s.length) {
+      const c = s.charAt(i);
+      if (c < '0' || c > '9') break;
+      i += 1;
+    }
   }
   return i === s.length;
 }
 
 function hasAsciiDigit(s: string): boolean {
   for (let i = 0; i < s.length; i += 1) {
-    if (s[i] >= '0' && s[i] <= '9') return true;
+    const c = s.charAt(i);
+    if (c >= '0' && c <= '9') return true;
   }
   return false;
 }
