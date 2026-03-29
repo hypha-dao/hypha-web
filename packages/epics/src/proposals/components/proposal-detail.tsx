@@ -409,20 +409,22 @@ export const ProposalDetail = ({
           }
         />
       ) : null}
+      {proposalDetails?.redeemTokensData.amount &&
+      proposalDetails?.redeemTokensData.token ? (
+        <ProposalRedeemTokensData
+          spaceSlug={spaceSlug}
+          dbTokens={dbTokens}
+          amount={proposalDetails.redeemTokensData.amount}
+          token={proposalDetails.redeemTokensData.token}
+          web3SpaceId={proposalDetails.redeemTokensData.web3SpaceId}
+          conversions={proposalDetails.redeemTokensData.conversions}
+        />
+      ) : null}
       {proposalDetails?.tokenBackingVaultData ? (
         <ProposalTokenBackingVaultData
           spaceSlug={spaceSlug}
           dbTokens={dbTokens}
           {...proposalDetails.tokenBackingVaultData}
-        />
-      ) : null}
-      {proposalDetails?.redeemTokensData.amount &&
-      proposalDetails?.redeemTokensData.token ? (
-        <ProposalRedeemTokensData
-          amount={proposalDetails.redeemTokensData.amount}
-          token={proposalDetails.redeemTokensData.token}
-          web3SpaceId={proposalDetails.redeemTokensData.web3SpaceId}
-          conversions={proposalDetails.redeemTokensData.conversions}
         />
       ) : null}
       <FormVoting
