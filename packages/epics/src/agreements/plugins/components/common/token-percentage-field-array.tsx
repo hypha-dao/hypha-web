@@ -1,7 +1,6 @@
 'use client';
 
 import { useFieldArray, useFormContext } from 'react-hook-form';
-import { AssetItem } from '../../../../treasury';
 import {
   Button,
   FormControl,
@@ -10,22 +9,33 @@ import {
   FormMessage,
   RequirementMark,
 } from '@hypha-platform/ui';
-import { TokenPercentageField } from './token-percentage-field';
+import {
+  TokenPercentageAsset,
+  TokenPercentageField,
+} from './token-percentage-field';
 import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
 
 export interface TokenPercentageFieldArrayProps {
-  assets: AssetItem[];
+  assets: TokenPercentageAsset[];
   name?: string;
   label?: string;
+  onRemoveRebalance?: (remainingAssets: TokenPercentageAsset[]) => void;
+  showEmptyFieldMessage?: boolean;
+  showFieldDetails?: boolean;
 }
 
 export const TokenPercentageFieldArray = ({
   assets,
   name = 'conversions',
   label = 'Converted into',
+  onRemoveRebalance,
+  showEmptyFieldMessage = false,
+  showFieldDetails = false,
 }: TokenPercentageFieldArrayProps) => {
   const {
     control,
+    getValues,
+    trigger,
     formState: { errors: formErrors },
   } = useFormContext();
   const { fields, append, remove } = useFieldArray({
@@ -44,7 +54,21 @@ export const TokenPercentageFieldArray = ({
   ) => {
     e.preventDefault();
     if (fields.length > 1) {
+      const currentRows = (getValues(name) as Array<{
+        asset: string;
+        percentage: string;
+      }>) ?? [{ asset: '', percentage: '100.00' }];
+      const remainingAssets = currentRows
+        .filter((_, rowIndex) => rowIndex !== index)
+        .map((row) =>
+          assets.find(
+            (asset) =>
+              asset.address.toLowerCase() === (row.asset ?? '').toLowerCase(),
+          ),
+        )
+        .filter((asset): asset is TokenPercentageAsset => !!asset);
       remove(index);
+      onRemoveRebalance?.(remainingAssets);
     }
   };
 
@@ -66,14 +90,20 @@ export const TokenPercentageFieldArray = ({
                       <FormControl>
                         <TokenPercentageField
                           value={value}
-                          onChange={onChange}
+                          onChange={(nextValue) => {
+                            onChange(nextValue);
+                            void trigger(name);
+                          }}
                           assets={assets}
+                          showFieldDetails={showFieldDetails}
                         />
                       </FormControl>
                       <FormMessage
                         custom={
-                          fieldState.error?.message?.toString() ||
-                          'Please enter a percentage and select an asset.'
+                          showEmptyFieldMessage
+                            ? fieldState.error?.message?.toString() ||
+                              'Please enter a percentage and select an asset.'
+                            : ''
                         }
                       />
                     </FormItem>

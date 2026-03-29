@@ -9,19 +9,40 @@ import {
   Image,
   Input,
 } from '@hypha-platform/ui';
-import { AssetItem, getTokenTypeLabel } from '../../../../treasury';
+import { getTokenTypeLabel } from '../../../../treasury';
 import { ChevronDownIcon } from '@radix-ui/themes';
+
+export interface TokenPercentageAsset {
+  address: string;
+  icon: string;
+  symbol: string;
+  value?: number;
+  usdEqual?: number;
+  tokenPrice?: number;
+  priceCurrencySymbol?: string;
+  requestedAmount?: number;
+  requestedCurrencySymbol?: string;
+  availableInRedemptionToken?: number;
+  redemptionTokenSymbol?: string;
+  type?: string | null;
+  space?: {
+    title: string;
+    slug?: string;
+  };
+}
 
 export interface TokenPercentageFieldProps {
   value: { asset: string; percentage: string };
   onChange: (val: { asset: string; percentage: string }) => void;
-  assets: AssetItem[];
+  assets: TokenPercentageAsset[];
+  showFieldDetails?: boolean;
 }
 
 export const TokenPercentageField = ({
   value,
   onChange,
   assets,
+  showFieldDetails = false,
 }: TokenPercentageFieldProps) => {
   const selectedAsset = assets.find((t) => t.address === value.asset);
 
@@ -42,93 +63,142 @@ export const TokenPercentageField = ({
     }
   };
 
-  const handleAssetChange = (asset: AssetItem) => {
-    onChange({ percentage: value.percentage, asset: asset.address ?? '' });
+  const handleAssetChange = (asset: TokenPercentageAsset) => {
+    onChange({ percentage: value.percentage, asset: asset.address });
   };
 
   return (
-    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 md:justify-end items-end">
-      <div className="flex top-0 m-0 p-0 flex-1 min-w-0">
-        <Input
-          value={value.percentage ?? ''}
-          type="text"
-          inputMode="decimal"
-          placeholder="Percentage"
-          rightIcon={<>%</>}
-          onChange={(e) => handlePercentageChange(e.target.value)}
-        />
-      </div>
-      <div className="flex top-0 w-full sm:w-60 shrink-0 min-w-0 m-0 p-0">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              colorVariant="neutral"
-              role="combobox"
-              className="w-full text-2 md:w-72 justify-between py-2 font-normal"
-            >
-              <div className="flex items-center gap-2">
-                {selectedAsset ? (
-                  <>
-                    <Image
-                      src={selectedAsset.icon}
-                      width={20}
-                      height={20}
-                      alt={selectedAsset.symbol}
-                      className="mr-2 rounded-full h-4 w-4"
-                    />
-                    <span className="text-2 text-neutral-11">
-                      {selectedAsset.symbol}
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-2 text-neutral-11 whitespace-nowrap">
-                    Select an asset
-                  </span>
-                )}
-              </div>
-              <ChevronDownIcon className="size-2" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-full max-h-[200px] overflow-y-scroll">
-            {assets.length > 0 ? (
-              assets.map((asset) => (
-                <DropdownMenuItem
-                  key={asset.address}
-                  onSelect={() => handleAssetChange(asset)}
-                >
-                  <Image
-                    src={asset.icon}
-                    width={24}
-                    height={24}
-                    alt={asset.symbol}
-                    className="mr-2 rounded-full h-5 w-5"
-                  />
-                  <div className="flex flex-col">
-                    <span className="flex gap-2 items-center">
+    <div className="flex flex-col gap-1 w-full">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 md:justify-end items-end">
+        <div className="flex top-0 m-0 p-0 flex-1 min-w-0">
+          <Input
+            value={value.percentage ?? ''}
+            type="text"
+            inputMode="decimal"
+            placeholder="Percentage"
+            rightIcon={<>%</>}
+            onChange={(e) => handlePercentageChange(e.target.value)}
+          />
+        </div>
+        <div className="flex top-0 w-full sm:w-60 shrink-0 min-w-0 m-0 p-0">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                colorVariant="neutral"
+                role="combobox"
+                className="w-full text-2 md:w-72 justify-between py-2 font-normal"
+              >
+                <div className="flex items-center gap-2">
+                  {selectedAsset ? (
+                    <>
+                      <Image
+                        src={selectedAsset.icon}
+                        width={20}
+                        height={20}
+                        alt={selectedAsset.symbol}
+                        className="mr-2 rounded-full h-4 w-4"
+                      />
                       <span className="text-2 text-neutral-11">
-                        {asset.symbol}
+                        {selectedAsset.symbol}
                       </span>
-                      {asset?.type && (
-                        <div className="rounded-lg text-[10px] text-accent-11 border-1 border-accent-11 px-2 py-0.75">
-                          {getTokenTypeLabel(asset.type)}
-                        </div>
-                      )}
+                    </>
+                  ) : (
+                    <span className="text-2 text-neutral-11 whitespace-nowrap">
+                      Select an asset
                     </span>
-                    {asset?.space?.title ? (
-                      <span className="text-1 text-accent-11">
-                        by {asset?.space?.title}
+                  )}
+                </div>
+                <ChevronDownIcon className="size-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-full max-h-[200px] overflow-y-scroll">
+              {assets.length > 0 ? (
+                assets.map((asset) => (
+                  <DropdownMenuItem
+                    key={asset.address}
+                    onSelect={() => handleAssetChange(asset)}
+                  >
+                    <Image
+                      src={asset.icon}
+                      width={24}
+                      height={24}
+                      alt={asset.symbol}
+                      className="mr-2 rounded-full h-5 w-5"
+                    />
+                    <div className="flex flex-col">
+                      <span className="flex gap-2 items-center">
+                        <span className="text-2 text-neutral-11">
+                          {asset.symbol}
+                        </span>
+                        {asset?.type && (
+                          <div className="rounded-lg text-[10px] text-accent-11 border-1 border-accent-11 px-2 py-0.75">
+                            {getTokenTypeLabel(asset.type)}
+                          </div>
+                        )}
                       </span>
-                    ) : null}
-                  </div>
-                </DropdownMenuItem>
-              ))
-            ) : (
-              <span className="text-2 text-neutral-11">No assets found</span>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+                      <div className="flex flex-col">
+                        {asset?.space?.title ? (
+                          <span className="text-1 text-accent-11">
+                            by {asset?.space?.title}
+                          </span>
+                        ) : null}
+                        {typeof asset.value === 'number' ? (
+                          <span className="text-1 text-neutral-11">
+                            Available amount: {asset.value.toFixed(2)}{' '}
+                            {asset.symbol}
+                          </span>
+                        ) : null}
+                        {typeof asset.tokenPrice === 'number' &&
+                        Number.isFinite(asset.tokenPrice) ? (
+                          <span className="text-1 text-neutral-11">
+                            Token price: {asset.priceCurrencySymbol ?? '$'}
+                            {asset.tokenPrice.toFixed(2)}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                  </DropdownMenuItem>
+                ))
+              ) : (
+                <span className="text-2 text-neutral-11">No assets found</span>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
+      {showFieldDetails && selectedAsset ? (
+        <div className="text-1 text-neutral-11 self-end">
+          {typeof selectedAsset.value === 'number'
+            ? `Available amount: ${selectedAsset.value.toFixed(2)} ${
+                selectedAsset.symbol
+              }`
+            : null}
+          {typeof selectedAsset.value === 'number' &&
+          typeof selectedAsset.tokenPrice === 'number' &&
+          Number.isFinite(selectedAsset.tokenPrice)
+            ? ' · '
+            : null}
+          {typeof selectedAsset.tokenPrice === 'number' &&
+          Number.isFinite(selectedAsset.tokenPrice)
+            ? `Token price: ${
+                selectedAsset.priceCurrencySymbol ?? '$'
+              }${selectedAsset.tokenPrice.toFixed(2)}`
+            : null}
+          {(typeof selectedAsset.value === 'number' ||
+            typeof selectedAsset.tokenPrice === 'number') &&
+          typeof selectedAsset.requestedAmount === 'number' &&
+          Number.isFinite(selectedAsset.requestedAmount)
+            ? ' · '
+            : null}
+          {typeof selectedAsset.requestedAmount === 'number' &&
+          Number.isFinite(selectedAsset.requestedAmount)
+            ? `Requested: ${
+                selectedAsset.requestedCurrencySymbol ?? '$'
+              }${selectedAsset.requestedAmount.toFixed(2)}`
+            : null}
+        </div>
+      ) : null}
     </div>
   );
 };
