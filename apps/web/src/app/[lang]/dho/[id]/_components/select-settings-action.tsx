@@ -142,19 +142,20 @@ export const SelectSettingsAction = ({
     },
     {
       group: t('groups.treasury'),
-      title: t('actions.buyHyphaTokensRewards.title'),
-      description: t('actions.buyHyphaTokensRewards.description'),
-      href: 'create/buy-hypha-tokens',
-      icon: <ArrowLeftIcon />,
-    },
-    {
-      group: 'Treasury',
       title: 'Redeem Tokens',
       description:
         'Convert tokens in the treasury into their equivalent fiat value held in the Space Token Issuer vault.',
       icon: <ArrowUpIcon />,
       href: 'create/redeem-tokens',
+      baseTab: 'agreements',
       disabled: isPaymentExpired,
+    },
+    {
+      group: t('groups.treasury'),
+      title: t('actions.buyHyphaTokensRewards.title'),
+      description: t('actions.buyHyphaTokensRewards.description'),
+      href: 'create/buy-hypha-tokens',
+      icon: <ArrowLeftIcon />,
     },
     {
       group: t('groups.treasury'),

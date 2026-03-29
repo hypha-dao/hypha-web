@@ -45,3 +45,35 @@ export function bigIntToPercentageString(value: bigint): string {
   // Ensure exactly two decimal places, strip trailing zeros? Keep two decimals.
   return percentage.toFixed(2);
 }
+
+/** Basis points for 0–100% with two decimals (10000 = 100.00%). */
+const MAX_BPS = 10000;
+
+/**
+ * Returns the percentage string for the last row so that all rows sum to 100.00%,
+ * using basis-point math to avoid float drift.
+ */
+export function remainderPercentStringForLastRow(
+  otherRowPercentages: string[],
+): string {
+  let sumBps = 0n;
+  for (const raw of otherRowPercentages) {
+    const trimmed = raw.trim();
+    if (trimmed === '') {
+      continue;
+    }
+    try {
+      sumBps += percentageStringToBigInt(trimmed);
+    } catch {
+      return bigIntToPercentageString(BigInt(MAX_BPS));
+    }
+  }
+  let rem = BigInt(MAX_BPS) - sumBps;
+  if (rem < 0n) {
+    rem = 0n;
+  }
+  if (rem > BigInt(MAX_BPS)) {
+    rem = BigInt(MAX_BPS);
+  }
+  return bigIntToPercentageString(rem);
+}

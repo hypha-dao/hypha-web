@@ -331,7 +331,20 @@
         "selectToken": "Seleccione un token",
         "noTokensFound": "No se encontraron tokens",
         "by": "por",
-        "bySpace": "de {space}"
+        "bySpace": "de {space}",
+        "treasuryBalanceLine": "Treasury balance: {amount} {symbol}",
+        "tokenRedemptionPriceSuffix": " · Token redemption price: {hint}"
+      },
+      "redeemTokensProposal": {
+        "selectCollateralAsset": "Select an asset",
+        "noCollateralAssetsFound": "No assets found",
+        "requestedExceedsTreasury": "Requested redemption amount exceeds treasury balance ({amount} requested vs {balance} {symbol} available).",
+        "collateralInsufficient": "The redemption value exceeds the collateral in the vault; enter a smaller amount.",
+        "conversionDetails": {
+          "vaultLine": "In vault: {amount} {symbol}",
+          "priceLine": "Price: {currency}{price}",
+          "requestedLine": "Requested: {currency}{amount}"
+        }
       },
       "spaceToSpaceMembership": {
         "space": "Espacio",
@@ -1208,6 +1221,13 @@
       "votingPeriod": "Período de votación",
       "votingPower": "Poder de voto",
       "tokenBackingVault": "Bóveda de respaldo de token",
+      "backingVaultPayout": "Backing Vault Payout",
+      "redeemTokens": "Redeem tokens",
+      "redeemToken": "Token to redeem",
+      "redeemAmount": "Redemption amount",
+      "redeemNotional": "Reference value",
+      "redeemApproxUsd": "≈ {value} USD",
+      "redeemCollateralUnitPrice": "{price} {currency} each",
       "spaceToken": "Token del espacio",
       "currentBackingCollaterals": "Colaterales actuales",
       "addCollaterals": "Agregar colaterales",
