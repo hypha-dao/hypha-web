@@ -55,6 +55,7 @@ type BuySpaceTokensInput = {
 };
 
 const BASE_TOKEN_UNIT = 10n ** 18n;
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
 export const useBuySpaceTokensMutation = ({
   tokenAddress,
@@ -107,11 +108,9 @@ export const useBuySpaceTokensMutation = ({
       const [salePaymentToken, salePricePerToken, tokensLeftToSell] =
         saleDetails;
 
-      const ZERO =
-        '0x0000000000000000000000000000000000000000' as `0x${string}`;
       if (
         !salePaymentToken ||
-        salePaymentToken.toLowerCase() === ZERO.toLowerCase()
+        salePaymentToken.toLowerCase() === ZERO_ADDRESS.toLowerCase()
       ) {
         return {
           salePaymentToken,

@@ -52,12 +52,6 @@ type PurchasableToken = {
   type: string;
 };
 
-type FormValues = {
-  tokenAddress: string;
-  amount: string;
-  buyerAddress?: string;
-  paymentRecipient?: string;
-};
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const spaceTokenPurchaseAbi = [
   {
@@ -103,12 +97,12 @@ export const PeopleBuySpaceTokens = ({
   const availableTokens = useMemo<PurchasableToken[]>(
     () =>
       (dbTokens as PurchasableToken[]).filter(
-        (t) => t.type !== 'voice' && Boolean(t.address),
+        (tok) => tok.type !== 'voice' && Boolean(tok.address),
       ),
     [dbTokens],
   );
   const tokenAddresses = useMemo(
-    () => availableTokens.map((t) => t.address as `0x${string}`),
+    () => availableTokens.map((tok) => tok.address as `0x${string}`),
     [availableTokens],
   );
 
@@ -205,6 +199,8 @@ export const PeopleBuySpaceTokens = ({
     [t],
   );
 
+  type FormValues = z.infer<typeof buySpaceTokensSchema>;
+
   const formRef = useRef<HTMLFormElement>(null);
   const resolver = useMemo(
     () => zodResolver(buySpaceTokensSchema),
@@ -231,7 +227,7 @@ export const PeopleBuySpaceTokens = ({
   const parsedAmount = Number(amount);
 
   const selectedToken = purchasableTokens.find(
-    (t) => t.address?.toLowerCase() === tokenAddress?.toLowerCase(),
+    (tok) => tok.address?.toLowerCase() === tokenAddress?.toLowerCase(),
   );
 
   const {
@@ -357,7 +353,6 @@ export const PeopleBuySpaceTokens = ({
       >
         <Separator />
 
-        {/* Token selector */}
         <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
           <div className="flex gap-1">
             <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
@@ -371,8 +366,8 @@ export const PeopleBuySpaceTokens = ({
               name="tokenAddress"
               render={({ field }) => {
                 const sel = purchasableTokens.find(
-                  (t) =>
-                    t.address?.toLowerCase() === field.value?.toLowerCase(),
+                  (tok) =>
+                    tok.address?.toLowerCase() === field.value?.toLowerCase(),
                 );
                 return (
                   <FormItem>
@@ -401,19 +396,22 @@ export const PeopleBuySpaceTokens = ({
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
-                          {purchasableTokens.map((t) => (
-                            <SelectItem key={t.address} value={t.address ?? ''}>
+                          {purchasableTokens.map((tok) => (
+                            <SelectItem
+                              key={tok.address}
+                              value={tok.address ?? ''}
+                            >
                               <div className="flex items-center gap-2">
                                 <Image
                                   src={
-                                    t.iconUrl || '/placeholder/token-icon.svg'
+                                    tok.iconUrl || '/placeholder/token-icon.svg'
                                   }
                                   width={20}
                                   height={20}
-                                  alt={t.symbol}
+                                  alt={tok.symbol}
                                   className="rounded-full h-5 w-5 shrink-0"
                                 />
-                                {t.name} ({t.symbol})
+                                {tok.name} ({tok.symbol})
                               </div>
                             </SelectItem>
                           ))}
@@ -428,7 +426,6 @@ export const PeopleBuySpaceTokens = ({
           </div>
         </div>
 
-        {/* Amount input */}
         <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
           <div className="flex gap-1">
             <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">

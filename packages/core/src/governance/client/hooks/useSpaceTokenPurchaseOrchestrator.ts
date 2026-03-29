@@ -179,6 +179,7 @@ export const useSpaceTokenPurchaseOrchestrator = ({
 
       let pendingTask: TaskName | null = null;
       try {
+        // Upload files before creating the irreversible on-chain proposal
         startTask('UPLOAD_FILES');
         pendingTask = 'UPLOAD_FILES';
         const files = schemaCreateAgreementFiles.parse(arg);
