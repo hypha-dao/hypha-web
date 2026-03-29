@@ -30,82 +30,10 @@ export interface ProposalRedeemTokensDataProps {
   dbTokens?: DbToken[];
 }
 
-function RedeemCollateralRow({
-  assetAddress,
-  percentageBps,
-  collateral,
-  spaceTokens,
-  dbTokens,
-}: {
-  assetAddress: `0x${string}`;
-  percentageBps: bigint;
-  collateral:
-    | {
-        icon: string;
-        symbol: string;
-        value: number;
-        usdEqual: number;
-      }
-    | undefined;
-  spaceTokens: { address?: string; symbol?: string; icon?: string }[];
-  dbTokens?: DbToken[];
-}) {
-  const pct = Number(percentageBps) / 10000;
-  if (!Number.isFinite(pct) || pct <= 0) return null;
-
-  const symbol = getTokenSymbol(assetAddress, dbTokens, spaceTokens);
-  const db = dbTokens?.find(
-    (d) => d.address?.toLowerCase() === assetAddress.toLowerCase(),
-  );
-  const st = spaceTokens.find(
-    (s) => s.address?.toLowerCase() === assetAddress.toLowerCase(),
-  );
-  const iconSrc = st?.icon ?? db?.iconUrl ?? collateral?.icon;
-
-  let payoutQty: number | undefined;
-  let payoutUsd: number | undefined;
-  if (collateral) {
-    payoutQty = collateral.value * pct;
-    payoutUsd = collateral.usdEqual > 0 ? collateral.usdEqual * pct : undefined;
-  }
-
-  return (
-    <div className="flex justify-between items-center text-1 gap-2">
-      <div className="flex items-center gap-2 min-w-0">
-        {iconSrc ? (
-          <img
-            src={iconSrc}
-            alt={symbol}
-            className="w-4 h-4 rounded-full shrink-0"
-          />
-        ) : null}
-        <span className="truncate">{symbol}</span>
-      </div>
-      <div className="text-nowrap text-right shrink-0">
-        {typeof payoutQty === 'number' && Number.isFinite(payoutQty) ? (
-          <>
-            {formatCurrencyValue(payoutQty)} {symbol}
-            {typeof payoutUsd === 'number' &&
-            Number.isFinite(payoutUsd) &&
-            payoutUsd > 0 ? (
-              <span className="text-neutral-9 ml-1">
-                (${formatCurrencyValue(payoutUsd)})
-              </span>
-            ) : null}
-          </>
-        ) : (
-          <span className="text-neutral-9">—</span>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export const ProposalRedeemTokensData = ({
   amount,
   token,
   web3SpaceId,
-  conversions,
   spaceSlug,
   dbTokens = [],
 }: ProposalRedeemTokensDataProps) => {
@@ -158,22 +86,6 @@ export const ProposalRedeemTokensData = ({
     return qty * redemptionPriceNum;
   }, [redeemedHuman, redemptionPriceNum]);
 
-  const collateralByAddress = React.useMemo(() => {
-    const map = new Map<
-      string,
-      { icon: string; symbol: string; value: number; usdEqual: number }
-    >();
-    for (const c of vaultForRedeem?.collaterals ?? []) {
-      map.set(c.address.toLowerCase(), {
-        icon: c.icon,
-        symbol: c.symbol,
-        value: c.value,
-        usdEqual: c.usdEqual,
-      });
-    }
-    return map;
-  }, [vaultForRedeem?.collaterals]);
-
   const redeemSymbol = token
     ? getTokenSymbol(token, dbTokens, spaceTokenList)
     : '';
@@ -210,31 +122,48 @@ export const ProposalRedeemTokensData = ({
           />
         ) : null}
 
-        {conversions.length > 0 ? (
+        {vaultForRedeem && vaultForRedeem.collaterals.length > 0 ? (
           <div className="flex flex-col gap-2">
-            <div className="flex flex-col gap-1">
-              <div className="text-1 text-neutral-11">
-                {t('redeemCollateralPayout')}
-              </div>
-              <p className="text-1 text-neutral-9 max-w-prose">
-                {t('redeemCollateralPayoutHelp')}
-              </p>
+            <div className="text-1 text-neutral-11">
+              {t('redeemVaultCollateralHeading')}
             </div>
-            {conversions.map((conversion, index) => {
-              const addr = conversion.asset;
-              if (!addr || conversion.percentage === undefined) return null;
-              const collateral = collateralByAddress.get(addr.toLowerCase());
-              return (
-                <RedeemCollateralRow
-                  key={`${addr}-${index}`}
-                  assetAddress={addr}
-                  percentageBps={conversion.percentage}
-                  collateral={collateral}
-                  spaceTokens={spaceTokenList}
-                  dbTokens={dbTokens}
-                />
-              );
-            })}
+            {vaultForRedeem.collaterals.map((collateral, i) => (
+              <div
+                key={`${collateral.address}-${i}`}
+                className="flex justify-between items-center text-1 gap-2"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  {collateral.icon ? (
+                    <img
+                      src={collateral.icon}
+                      alt={collateral.symbol}
+                      className="w-4 h-4 rounded-full shrink-0"
+                    />
+                  ) : null}
+                  <span className="truncate">{collateral.symbol}</span>
+                </div>
+                <div className="text-nowrap text-right shrink-0">
+                  <span>
+                    {formatCurrencyValue(collateral.value)} {collateral.symbol}
+                  </span>
+                  {collateral.usdEqual > 0 && (
+                    <span className="text-neutral-9 ml-1">
+                      (${formatCurrencyValue(collateral.usdEqual)})
+                    </span>
+                  )}
+                  {typeof collateral.tokenPrice === 'number' &&
+                  Number.isFinite(collateral.tokenPrice) ? (
+                    <span className="text-neutral-9 ml-1">
+                      ·{' '}
+                      {t('redeemCollateralUnitPrice', {
+                        price: formatCurrencyValue(collateral.tokenPrice),
+                        currency: currencyLabel ?? 'USD',
+                      })}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+            ))}
           </div>
         ) : null}
       </div>
