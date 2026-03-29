@@ -30,6 +30,29 @@ import {
   findTokenUpdateByDocumentId,
 } from './queries';
 
+export type DebugLogPayload = {
+  hypothesisId: string;
+  location: string;
+  message: string;
+  data?: Record<string, unknown>;
+  timestamp?: number;
+};
+
+export async function appendDebugLogAction(payload: DebugLogPayload) {
+  // #region agent log
+  require('fs').appendFileSync(
+    '/opt/cursor/logs/debug.log',
+    JSON.stringify({
+      hypothesisId: payload.hypothesisId,
+      location: payload.location,
+      message: payload.message,
+      data: payload.data ?? {},
+      timestamp: payload.timestamp ?? Date.now(),
+    }) + '\n',
+  );
+  // #endregion
+}
+
 export async function createAgreementAction(
   data: CreateAgreementInput,
   { authToken }: { authToken?: string },
