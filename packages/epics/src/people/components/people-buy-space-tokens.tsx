@@ -152,20 +152,27 @@ export const PeopleBuySpaceTokens = ({
         }),
       );
 
-      const rejected = settled.filter(
-        (r): r is PromiseRejectedResult => r.status === 'rejected',
-      );
-      if (rejected.length > 0) {
-        const first = rejected[0];
-        const reason = first?.reason;
-        throw reason instanceof Error ? reason : new Error(String(reason));
-      }
+      const results: { address: string; eligible: boolean }[] = [];
+      let firstRejection: unknown;
 
-      const results = settled.map(
-        (r) =>
-          (r as PromiseFulfilledResult<{ address: string; eligible: boolean }>)
-            .value,
-      );
+      settled.forEach((r, i) => {
+        const addr = tokenAddresses[i]?.toLowerCase() ?? '';
+        if (r.status === 'fulfilled') {
+          results.push(r.value);
+        } else {
+          if (firstRejection === undefined) firstRejection = r.reason;
+          results.push({ address: addr, eligible: false });
+        }
+      });
+
+      const rejectionCount = settled.filter(
+        (r) => r.status === 'rejected',
+      ).length;
+      if (rejectionCount > 0 && rejectionCount === settled.length) {
+        throw firstRejection instanceof Error
+          ? firstRejection
+          : new Error(String(firstRejection));
+      }
 
       return new Set(
         results.filter((item) => item.eligible).map((item) => item.address),
