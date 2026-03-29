@@ -15,8 +15,11 @@ type RecipientProps = {
   members?: Person[];
   value?: string;
   defaultRecipientType?: RecipientType;
+  recipientType?: RecipientType;
+  onRecipientTypeChange?: (value: RecipientType) => void;
   onChange?: (selected: Person | Space | { address: string }) => void;
   readOnly?: boolean;
+  readOnlyDropdown?: boolean;
   emptyMembersMessage?: string;
   emptySpacesMessage?: string;
   label?: string;
@@ -29,19 +32,24 @@ export const Recipient = ({
   onChange,
   value,
   defaultRecipientType = 'member',
+  recipientType: recipientTypeProp,
+  onRecipientTypeChange,
   readOnly,
+  readOnlyDropdown = false,
   emptyMembersMessage,
   emptySpacesMessage,
   label,
   showTabs = true,
 }: RecipientProps) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
-  const [recipientType, setRecipientType] =
+  const [internalRecipientType, setInternalRecipientType] =
     useState<RecipientType>(defaultRecipientType);
+  const recipientType = recipientTypeProp ?? internalRecipientType;
   const [selected, setSelected] = useState<
     Person | Space | { address: string } | null
   >(null);
   const [manualAddress, setManualAddress] = useState(value || '');
+  const isRecipientReadOnly = readOnly || readOnlyDropdown;
 
   const { filteredSpaces } = useFilterSpacesListWithDiscoverability({
     spaces,
@@ -92,7 +100,7 @@ export const Recipient = ({
 
   const handleChange = useCallback(
     (value: string) => {
-      if (readOnly) return;
+      if (isRecipientReadOnly) return;
       const found = currentOptions.find((option) => option.value === value);
 
       if (found) {
@@ -114,13 +122,13 @@ export const Recipient = ({
       filteredSpaces,
       recipientType,
       onChange,
-      readOnly,
+      isRecipientReadOnly,
     ],
   );
 
   const handleAddressChange = useCallback(
     (address: string) => {
-      if (readOnly) return;
+      if (isRecipientReadOnly) return;
       setManualAddress(address);
       const foundMember = members.find((r) => r.address === address);
       const foundSpace = filteredSpaces.find((s) => s.address === address);
@@ -133,7 +141,7 @@ export const Recipient = ({
         onChange?.({ address });
       }
     },
-    [members, filteredSpaces, onChange, readOnly],
+    [members, filteredSpaces, onChange, isRecipientReadOnly],
   );
 
   return (
@@ -145,7 +153,9 @@ export const Recipient = ({
             <Tabs
               value={recipientType}
               onValueChange={(value) =>
-                !readOnly && setRecipientType(value as 'member' | 'space')
+                !readOnly &&
+                (setInternalRecipientType(value as RecipientType),
+                onRecipientTypeChange?.(value as RecipientType))
               }
               disabled={readOnly}
             >
@@ -166,7 +176,7 @@ export const Recipient = ({
             placeholder={placeholder}
             onChange={handleChange}
             initialValue={value}
-            disabled={readOnly}
+            disabled={isRecipientReadOnly}
             emptyListMessage={
               recipientType === 'member'
                 ? emptyMembersMessage
@@ -214,7 +224,7 @@ export const Recipient = ({
       <WalletAddress
         address={manualAddress}
         onChange={handleAddressChange}
-        disabled={readOnly}
+        disabled={isRecipientReadOnly}
       />
     </div>
   );

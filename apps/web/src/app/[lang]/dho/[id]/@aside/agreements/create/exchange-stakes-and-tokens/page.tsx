@@ -41,6 +41,7 @@ export default async function CreateExchangeStakesAndTokensPage({
           <Plugin
             name="exchange-stakes-and-tokens"
             spaceSlug={spaceSlug}
+            currentSpaceAddress={spaceFromDb.address ?? undefined}
             spaces={spaces}
             members={members}
           />

@@ -51,6 +51,7 @@ type PluginProps = {
   /** Full space list (incl. current DHO) for mapping on-chain space ids → addresses */
   spacesForChainMapping?: Space[];
   members?: Person[];
+  currentSpaceAddress?: string;
 };
 
 export const Plugin = ({
@@ -61,6 +62,7 @@ export const Plugin = ({
   spaces,
   spacesForChainMapping,
   members,
+  currentSpaceAddress,
 }: PluginProps) => {
   const { persons, spaces: memberSpaces } = useMembers({
     spaceSlug,
@@ -74,6 +76,7 @@ export const Plugin = ({
     spaceId,
     members: members ?? persons?.data,
     spaces: spaces ?? memberSpaces?.data,
+    currentSpaceAddress,
   };
 
   /**

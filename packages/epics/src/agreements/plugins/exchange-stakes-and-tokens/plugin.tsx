@@ -1,9 +1,16 @@
 'use client';
 
 import { RecipientField } from '../components/common/recipient-field';
+import { RecipientType } from '../components/common/recipient';
 import { TokenPayoutFieldArray } from '../components/common/token-payout-field-array';
 import { Separator, Skeleton } from '@hypha-platform/ui';
-import { Person, Space, Token, getBalance } from '@hypha-platform/core/client';
+import {
+  Person,
+  Space,
+  Token,
+  getBalance,
+  useMe,
+} from '@hypha-platform/core/client';
 import { useTokens } from '../../../treasury';
 import { useTranslations } from 'next-intl';
 import React from 'react';
@@ -17,13 +24,18 @@ export const ExchangeStakesAndTokensPlugin = ({
   spaceSlug,
   members,
   spaces,
+  currentSpaceAddress,
 }: {
   spaceSlug: string;
   members: Person[];
   spaces?: Space[];
+  currentSpaceAddress?: string;
 }) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
-  const { control } = useFormContext();
+  const { control, setValue } = useFormContext();
+  const { person: creator } = useMe();
+  const [sellerRecipientType, setSellerRecipientType] =
+    React.useState<RecipientType>('member');
   const sellerAddress = useWatch({ control, name: 'sellerAddress' }) as
     | string
     | undefined;
@@ -31,6 +43,29 @@ export const ExchangeStakesAndTokensPlugin = ({
     | string
     | undefined;
   const { tokens, isLoading } = useTokens({ spaceSlug });
+
+  React.useEffect(() => {
+    const creatorAddress =
+      creator?.address ||
+      members.find((member) => member.id === creator?.id)?.address;
+    const nextSellerAddress =
+      sellerRecipientType === 'space' ? currentSpaceAddress : creatorAddress;
+
+    if (nextSellerAddress && sellerAddress !== nextSellerAddress) {
+      setValue('sellerAddress', nextSellerAddress, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  }, [
+    creator?.address,
+    creator?.id,
+    currentSpaceAddress,
+    members,
+    sellerAddress,
+    sellerRecipientType,
+    setValue,
+  ]);
 
   const sellerTokenCandidates = React.useMemo(
     () => tokens.filter((token: Token) => token.type !== null),
@@ -132,6 +167,9 @@ export const ExchangeStakesAndTokensPlugin = ({
         defaultRecipientType="member"
         label={tAgreementFlow('plugins.exchangeStakesAndTokens.seller')}
         name="sellerAddress"
+        recipientType={sellerRecipientType}
+        onRecipientTypeChange={setSellerRecipientType}
+        readOnlyDropdown={true}
       />
       <Separator />
       <Skeleton
