@@ -19,6 +19,10 @@ import { useConfig } from 'wagmi';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { schemaRedeemTokens } from '../../agreements/plugins/redeem-tokens/validation';
+import {
+  RedeemSubmitGuardProvider,
+  useRedeemSubmitGuard,
+} from '../../agreements/plugins/redeem-tokens/submit-guard-context';
 
 const fullSchemaCreateRedeemTokensForm = schemaCreateAgreementForm
   .extend(createAgreementFiles)
@@ -34,7 +38,7 @@ interface CreateRedeemTokensFormProps {
   plugin: React.ReactNode;
 }
 
-export const CreateRedeemTokensForm = ({
+const CreateRedeemTokensFormInner = ({
   successfulUrl,
   backUrl,
   spaceId,
@@ -42,6 +46,7 @@ export const CreateRedeemTokensForm = ({
   plugin,
 }: CreateRedeemTokensFormProps) => {
   const { person } = useMe();
+  const redeemGuard = useRedeemSubmitGuard();
   const { jwt } = useJwt();
   const config = useConfig();
   const {
@@ -88,6 +93,15 @@ export const CreateRedeemTokensForm = ({
   }, [person]);
 
   const handleCreate = async (data: FormValues) => {
+    if (!redeemGuard.canSubmit) {
+      form.setError('root', {
+        message:
+          redeemGuard.blockMessage ??
+          'Please fix the redemption amounts before publishing.',
+      });
+      return;
+    }
+
     if (!data.redemptions || data.redemptions.length === 0) {
       console.error('Redemptions are missing');
       return;
@@ -210,3 +224,9 @@ export const CreateRedeemTokensForm = ({
     </LoadingBackdrop>
   );
 };
+
+export const CreateRedeemTokensForm = (props: CreateRedeemTokensFormProps) => (
+  <RedeemSubmitGuardProvider>
+    <CreateRedeemTokensFormInner {...props} />
+  </RedeemSubmitGuardProvider>
+);

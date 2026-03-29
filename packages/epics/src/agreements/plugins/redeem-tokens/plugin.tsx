@@ -2,22 +2,64 @@
 
 import React from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
+import useSWR from 'swr';
 import { TokenPayoutFieldArray } from '../components/common/token-payout-field-array';
 import { TokenPercentageFieldArray } from '../components/common/token-percentage-field-array';
+import type { TokenPercentageAsset } from '../components/common/token-percentage-field';
 import { Skeleton } from '@hypha-platform/ui';
 import {
+  CURRENCY_FEED_OPTIONS,
   Person,
   Space,
   TokenType,
+  publicClient,
   validTokenTypes,
 } from '@hypha-platform/core/client';
-import {
-  useAssets,
-  useTokens,
-  useVaults,
-  type Vault,
-  type AssetItem,
-} from '../../../treasury';
+import { useAssets, useTokens, useVaults, type Vault } from '../../../treasury';
+import { useTranslations } from 'next-intl';
+import { useRedeemSubmitGuardSetter } from './submit-guard-context';
+
+const USD_FEED_ADDRESS = '0x0000000000000000000000000000000000000000';
+const CURRENCY_CODE_BY_FEED = Object.fromEntries(
+  CURRENCY_FEED_OPTIONS.map((option) => [
+    option.value.toLowerCase(),
+    option.label,
+  ]),
+);
+const CURRENCY_SYMBOL_BY_CODE: Record<string, string> = {
+  USD: '$',
+  EUR: '€',
+  GBP: '£',
+  CAD: 'C$',
+  CHF: 'CHF ',
+  AUD: 'A$',
+};
+
+const chainlinkPriceFeedAbi = [
+  {
+    type: 'function',
+    name: 'decimals',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint8' }],
+  },
+  {
+    type: 'function',
+    name: 'latestRoundData',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [
+      { name: 'roundId', type: 'uint80' },
+      { name: 'answer', type: 'int256' },
+      { name: 'startedAt', type: 'uint256' },
+      { name: 'updatedAt', type: 'uint256' },
+      { name: 'answeredInRound', type: 'uint80' },
+    ],
+  },
+] as const;
+
+const getCurrencySymbol = (currencyCode?: string) =>
+  CURRENCY_SYMBOL_BY_CODE[(currencyCode ?? 'USD').toUpperCase()] ?? '$';
 
 const PERCENT_SCALE = 100;
 const PERCENT_BASE = 100 * PERCENT_SCALE;
@@ -89,19 +131,32 @@ export const RedeemTokensPlugin = ({
   spaces?: Space[];
   web3SpaceId?: number | null;
 }) => {
+  const tProposal = useTranslations(
+    'AgreementFlow.plugins.redeemTokensProposal',
+  );
   const { control, setValue, getValues } = useFormContext();
+  const setSubmitGuard = useRedeemSubmitGuardSetter();
   const { vaults, isLoading: isVaultsLoading } = useVaults();
   const { assets: treasuryAssets, isLoading: isTreasuryAssetsLoading } =
     useAssets({});
   const { tokens: spaceTokensForTypes } = useTokens({ spaceSlug });
 
-  /** Space executor (treasury) token balances from the same source as the Treasury tab. */
   const treasuryBalanceByTokenAddress = React.useMemo(() => {
     const map = new Map<string, number>();
     for (const asset of treasuryAssets) {
       const addr = asset.address?.toLowerCase();
       if (!addr) continue;
       map.set(addr, asset.value ?? 0);
+    }
+    return map;
+  }, [treasuryAssets]);
+
+  const treasuryTypeByTokenAddress = React.useMemo(() => {
+    const map = new Map<string, string>();
+    for (const asset of treasuryAssets) {
+      const addr = asset.address?.toLowerCase();
+      if (!addr || !asset.type) continue;
+      map.set(addr, asset.type);
     }
     return map;
   }, [treasuryAssets]);
@@ -134,17 +189,23 @@ export const RedeemTokensPlugin = ({
           0;
         return balance > 0;
       })
-      .map((vault) => ({
-        icon: vault.tokenIcon || '/placeholder/token-icon.svg',
-        symbol: vault.tokenSymbol || 'UNKNOWN',
-        address: vault.spaceToken as `0x${string}`,
-        type:
-          tokenTypeByAddress.get(vault.spaceToken.toLowerCase()) ?? undefined,
-        space: {
-          title: spaceTitle,
-          slug: spaceSlug,
-        },
-      }));
+      .map((vault) => {
+        const bal =
+          treasuryBalanceByTokenAddress.get(vault.spaceToken.toLowerCase()) ??
+          0;
+        return {
+          icon: vault.tokenIcon || '/placeholder/token-icon.svg',
+          symbol: vault.tokenSymbol || 'UNKNOWN',
+          address: vault.spaceToken as `0x${string}`,
+          value: bal,
+          type:
+            tokenTypeByAddress.get(vault.spaceToken.toLowerCase()) ?? undefined,
+          space: {
+            title: spaceTitle,
+            slug: spaceSlug,
+          },
+        };
+      });
   }, [
     isTreasuryAssetsLoading,
     spaceSlug,
@@ -170,52 +231,57 @@ export const RedeemTokensPlugin = ({
     [vaults, selectedRedemption?.token],
   );
 
-  const conversionCollaterals = React.useMemo((): AssetItem[] => {
-    return (selectedTokenVault?.collaterals ?? []).map((collateral) => {
-      const createdAt =
-        collateral.createdAt instanceof Date
-          ? collateral.createdAt
-          : collateral.createdAt
-          ? new Date(collateral.createdAt)
-          : undefined;
-      return {
-        icon: collateral.icon,
-        name: collateral.name,
-        symbol: collateral.symbol,
-        value: collateral.value,
-        usdEqual: collateral.usdEqual,
-        tokenPrice: collateral.tokenPrice,
-        type: '',
-        chartData: [],
-        transactions: [],
-        closeUrl: '',
-        slug: collateral.address,
-        address: collateral.address,
-        space: collateral.space ?? {
-          title: spaceTitle,
-          slug: spaceSlug,
-        },
-        createdAt,
-      };
-    });
-  }, [selectedTokenVault?.collaterals, spaceSlug, spaceTitle]);
+  const conversionCollateralsBase =
+    React.useMemo((): TokenPercentageAsset[] => {
+      return (selectedTokenVault?.collaterals ?? []).map((collateral) => {
+        const addr = collateral.address.toLowerCase();
+        const availableInRedemptionToken =
+          typeof selectedTokenVault?.redemptionPrice === 'number' &&
+          selectedTokenVault.redemptionPrice > 0
+            ? collateral.usdEqual / selectedTokenVault.redemptionPrice
+            : undefined;
+        const collateralType = treasuryTypeByTokenAddress.get(addr);
+        return {
+          address: collateral.address,
+          icon: collateral.icon,
+          symbol: collateral.symbol,
+          value: collateral.value,
+          usdEqual: collateral.usdEqual,
+          tokenPrice: collateral.tokenPrice,
+          type: collateralType ?? '',
+          availableInRedemptionToken,
+          redemptionTokenSymbol: selectedTokenVault?.tokenSymbol,
+          space: collateral.space ?? {
+            title: spaceTitle,
+            slug: spaceSlug,
+          },
+        };
+      });
+    }, [
+      selectedTokenVault?.collaterals,
+      selectedTokenVault?.redemptionPrice,
+      selectedTokenVault?.tokenSymbol,
+      spaceSlug,
+      spaceTitle,
+      treasuryTypeByTokenAddress,
+    ]);
 
   const autoPopulateSignature = React.useMemo(
     () =>
-      `${selectedRedemption?.token ?? ''}|${conversionCollaterals
+      `${selectedRedemption?.token ?? ''}|${conversionCollateralsBase
         .map((c) => `${c.address}:${c.usdEqual ?? 0}`)
         .join(',')}`,
-    [selectedRedemption?.token, conversionCollaterals],
+    [selectedRedemption?.token, conversionCollateralsBase],
   );
 
   const lastAutoPopulateRef = React.useRef<string>('');
 
   React.useEffect(() => {
-    if (!selectedRedemption?.token || conversionCollaterals.length === 0)
+    if (!selectedRedemption?.token || conversionCollateralsBase.length === 0)
       return;
     if (lastAutoPopulateRef.current === autoPopulateSignature) return;
     const autoConversions = rebalanceByUsd(
-      conversionCollaterals.map((c) => ({
+      conversionCollateralsBase.map((c) => ({
         address: c.address ?? '',
         usdEqual: c.usdEqual,
       })),
@@ -228,19 +294,19 @@ export const RedeemTokensPlugin = ({
     lastAutoPopulateRef.current = autoPopulateSignature;
   }, [
     autoPopulateSignature,
-    conversionCollaterals,
+    conversionCollateralsBase,
     selectedRedemption?.token,
     setValue,
   ]);
 
   React.useEffect(() => {
-    if (conversionCollaterals.length === 0) return;
+    if (conversionCollateralsBase.length === 0) return;
 
     const currentConversions = getValues('conversions');
     if (!currentConversions?.length) return;
 
     const allowed = new Set(
-      conversionCollaterals.map((c) => (c.address ?? '').toLowerCase()),
+      conversionCollateralsBase.map((c) => (c.address ?? '').toLowerCase()),
     );
 
     let hasInvalid = false;
@@ -252,7 +318,7 @@ export const RedeemTokensPlugin = ({
         hasInvalid = true;
         return {
           ...conversion,
-          asset: index === 0 ? conversionCollaterals[0]?.address ?? '' : '',
+          asset: index === 0 ? conversionCollateralsBase[0]?.address ?? '' : '',
         };
       },
     );
@@ -263,7 +329,257 @@ export const RedeemTokensPlugin = ({
       shouldDirty: true,
       shouldValidate: true,
     });
-  }, [conversionCollaterals, getValues, setValue]);
+  }, [conversionCollateralsBase, getValues, setValue]);
+
+  const redemptionAmount = React.useMemo(() => {
+    const parsed = Number(selectedRedemption?.amount ?? 0);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  }, [selectedRedemption?.amount]);
+
+  const selectedTokenCurrencyCode = React.useMemo(() => {
+    const feedAddress = (
+      selectedTokenVault?.redemptionCurrencyFeed ?? USD_FEED_ADDRESS
+    ).toLowerCase();
+    return CURRENCY_CODE_BY_FEED[feedAddress];
+  }, [selectedTokenVault?.redemptionCurrencyFeed]);
+
+  const selectedTokenCurrencySymbol = React.useMemo(
+    () => getCurrencySymbol(selectedTokenCurrencyCode),
+    [selectedTokenCurrencyCode],
+  );
+
+  const { data: selectedCurrencyUsdRate = 1 } = useSWR<number>(
+    selectedTokenVault?.redemptionCurrencyFeed
+      ? ['redeem-currency-usd-rate', selectedTokenVault.redemptionCurrencyFeed]
+      : null,
+    async (key: readonly [string, string]) => {
+      const [, feed] = key;
+      const feedAddress = feed.toLowerCase();
+      if (feedAddress === USD_FEED_ADDRESS) {
+        return 1;
+      }
+      const [decimals, latestRoundData] = await Promise.all([
+        publicClient.readContract({
+          address: feed as `0x${string}`,
+          abi: chainlinkPriceFeedAbi,
+          functionName: 'decimals',
+        }),
+        publicClient.readContract({
+          address: feed as `0x${string}`,
+          abi: chainlinkPriceFeedAbi,
+          functionName: 'latestRoundData',
+        }),
+      ]);
+      const answer = latestRoundData[1];
+      if (answer <= 0n) {
+        return 1;
+      }
+      return Number(answer) / Math.pow(10, Number(decimals));
+    },
+  );
+
+  const selectedTokenPriceInUsd = React.useMemo(() => {
+    if (
+      !selectedTokenVault ||
+      typeof selectedTokenVault.redemptionPrice !== 'number' ||
+      !Number.isFinite(selectedTokenVault.redemptionPrice)
+    ) {
+      return undefined;
+    }
+    const currencyToUsdRate =
+      Number.isFinite(selectedCurrencyUsdRate) && selectedCurrencyUsdRate > 0
+        ? selectedCurrencyUsdRate
+        : 1;
+    return selectedTokenVault.redemptionPrice * currencyToUsdRate;
+  }, [selectedCurrencyUsdRate, selectedTokenVault]);
+
+  const selectedTokenPriceHint = React.useMemo(() => {
+    if (
+      !selectedTokenVault ||
+      typeof selectedTokenVault.redemptionPrice !== 'number' ||
+      !Number.isFinite(selectedTokenVault.redemptionPrice)
+    ) {
+      return undefined;
+    }
+    return `${selectedTokenCurrencySymbol}${selectedTokenVault.redemptionPrice.toFixed(
+      2,
+    )}`;
+  }, [selectedTokenCurrencySymbol, selectedTokenVault]);
+
+  const selectedTokenUsdValue = React.useMemo(() => {
+    if (
+      typeof selectedTokenPriceInUsd !== 'number' ||
+      !Number.isFinite(selectedTokenPriceInUsd)
+    ) {
+      return undefined;
+    }
+    return redemptionAmount * selectedTokenPriceInUsd;
+  }, [redemptionAmount, selectedTokenPriceInUsd]);
+
+  const selectedTreasuryBalance = React.useMemo(() => {
+    if (!selectedRedemption?.token) return undefined;
+    const bal = treasuryBalanceByTokenAddress.get(
+      selectedRedemption.token.toLowerCase(),
+    );
+    return typeof bal === 'number' && Number.isFinite(bal) ? bal : undefined;
+  }, [selectedRedemption?.token, treasuryBalanceByTokenAddress]);
+
+  const isRequestedAmountExceedsTreasury = React.useMemo(() => {
+    if (
+      typeof selectedTreasuryBalance !== 'number' ||
+      !Number.isFinite(selectedTreasuryBalance)
+    ) {
+      return false;
+    }
+    return redemptionAmount > selectedTreasuryBalance + 0.000001;
+  }, [redemptionAmount, selectedTreasuryBalance]);
+
+  const currentConversions = useWatch({
+    control,
+    name: 'conversions',
+  }) as Array<{ asset: string; percentage: string }> | undefined;
+
+  const selectedCollateralUsdTotal = React.useMemo(() => {
+    const conversions = currentConversions ?? [];
+    if (conversions.length === 0) return 0;
+    return conversions.reduce((sum, conversion) => {
+      const asset = conversionCollateralsBase.find(
+        (collateral) =>
+          collateral.address.toLowerCase() === conversion.asset.toLowerCase(),
+      );
+      if (!asset?.usdEqual) return sum;
+      const percentage = Number(conversion.percentage ?? 0);
+      if (!Number.isFinite(percentage) || percentage <= 0) return sum;
+      return sum + (asset.usdEqual * percentage) / 100;
+    }, 0);
+  }, [conversionCollateralsBase, currentConversions]);
+
+  const isSelectedCollateralInsufficient = React.useMemo(() => {
+    if (
+      typeof selectedTokenUsdValue !== 'number' ||
+      !Number.isFinite(selectedTokenUsdValue)
+    ) {
+      return false;
+    }
+    return selectedCollateralUsdTotal + 0.000001 < selectedTokenUsdValue;
+  }, [selectedCollateralUsdTotal, selectedTokenUsdValue]);
+
+  const exceededCollateralAllocations = React.useMemo(() => {
+    if (
+      typeof selectedTokenUsdValue !== 'number' ||
+      !Number.isFinite(selectedTokenUsdValue)
+    ) {
+      return [];
+    }
+    const conversions = currentConversions ?? [];
+    return conversions
+      .map((conversion) => {
+        const asset = conversionCollateralsBase.find(
+          (collateral) =>
+            collateral.address.toLowerCase() === conversion.asset.toLowerCase(),
+        );
+        if (!asset?.usdEqual) {
+          return null;
+        }
+        const percentage = Number(conversion.percentage ?? 0);
+        if (!Number.isFinite(percentage) || percentage <= 0) {
+          return null;
+        }
+        const requestedUsd = (selectedTokenUsdValue * percentage) / 100;
+        const availableUsd = asset.usdEqual;
+        if (requestedUsd <= availableUsd + 0.000001) {
+          return null;
+        }
+        return {
+          address: asset.address,
+          symbol: asset.symbol,
+          requestedUsd,
+          availableUsd,
+        };
+      })
+      .filter(
+        (
+          item,
+        ): item is {
+          address: string;
+          symbol: string;
+          requestedUsd: number;
+          availableUsd: number;
+        } => item !== null,
+      );
+  }, [conversionCollateralsBase, currentConversions, selectedTokenUsdValue]);
+  const hasExceededCollateralAllocation =
+    exceededCollateralAllocations.length > 0;
+
+  const conversionAssetsWithDetails =
+    React.useMemo((): TokenPercentageAsset[] => {
+      const requestedByAddress = new Map<string, number>();
+      for (const conversion of currentConversions ?? []) {
+        const percentage = Number(conversion.percentage ?? 0);
+        if (!Number.isFinite(percentage) || percentage <= 0) continue;
+        const assetKey = conversion.asset.toLowerCase();
+        const requestedInRedemptionCurrency =
+          (redemptionAmount * percentage) / 100;
+        requestedByAddress.set(
+          assetKey,
+          (requestedByAddress.get(assetKey) ?? 0) +
+            requestedInRedemptionCurrency,
+        );
+      }
+
+      return conversionCollateralsBase.map((asset) => ({
+        ...asset,
+        tokenPrice: asset.tokenPrice,
+        priceCurrencySymbol: '$',
+        requestedAmount: requestedByAddress.get(asset.address.toLowerCase()),
+        requestedCurrencySymbol: selectedTokenCurrencySymbol,
+      }));
+    }, [
+      conversionCollateralsBase,
+      currentConversions,
+      redemptionAmount,
+      selectedTokenCurrencySymbol,
+    ]);
+
+  const blockSubmit =
+    isRequestedAmountExceedsTreasury ||
+    hasExceededCollateralAllocation ||
+    isSelectedCollateralInsufficient;
+
+  const blockMessage = React.useMemo(() => {
+    if (isRequestedAmountExceedsTreasury && selectedRedemption?.token) {
+      return tProposal('requestedExceedsTreasury', {
+        amount: redemptionAmount.toFixed(2),
+        balance: (selectedTreasuryBalance ?? 0).toFixed(2),
+        symbol:
+          redeemableTokens.find(
+            (t) =>
+              t.address.toLowerCase() ===
+              selectedRedemption.token.toLowerCase(),
+          )?.symbol ?? '',
+      });
+    }
+    if (hasExceededCollateralAllocation || isSelectedCollateralInsufficient) {
+      return tProposal('collateralInsufficient');
+    }
+    return undefined;
+  }, [
+    hasExceededCollateralAllocation,
+    isRequestedAmountExceedsTreasury,
+    isSelectedCollateralInsufficient,
+    redeemableTokens,
+    redemptionAmount,
+    selectedRedemption?.token,
+    selectedTreasuryBalance,
+    tProposal,
+  ]);
+
+  React.useEffect(() => {
+    setSubmitGuard({
+      canSubmit: !blockSubmit,
+      blockMessage,
+    });
+  }, [blockMessage, blockSubmit, setSubmitGuard]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -277,17 +593,47 @@ export const RedeemTokensPlugin = ({
           name="redemptions"
           label="Redemption Amount"
           allowAddOrRemove={false}
+          showTreasuryBalanceHint
+          selectedTokenPriceHint={selectedTokenPriceHint}
         />
       </Skeleton>
+      {isRequestedAmountExceedsTreasury && selectedRedemption?.token ? (
+        <div className="text-2 text-red-11 mt-1">
+          {tProposal('requestedExceedsTreasury', {
+            amount: redemptionAmount.toFixed(2),
+            balance: (selectedTreasuryBalance ?? 0).toFixed(2),
+            symbol:
+              redeemableTokens.find(
+                (t) =>
+                  t.address.toLowerCase() ===
+                  selectedRedemption.token.toLowerCase(),
+              )?.symbol ?? '',
+          })}
+        </div>
+      ) : null}
       <Skeleton loading={isVaultsLoading} width={'100%'} height={90}>
         {selectedRedemption?.token ? (
           <TokenPercentageFieldArray
-            assets={conversionCollaterals}
+            assets={conversionAssetsWithDetails}
             name="conversions"
             label="Converted into"
+            showFieldDetails
+            onRemoveRebalance={(remainingAssets) => {
+              const rebalanced = rebalanceByUsd(remainingAssets);
+              setValue('conversions', rebalanced, {
+                shouldDirty: true,
+                shouldValidate: true,
+              });
+            }}
           />
         ) : null}
       </Skeleton>
+      {(isSelectedCollateralInsufficient ||
+        hasExceededCollateralAllocation) && (
+        <div className="text-2 text-red-11">
+          {tProposal('collateralInsufficient')}
+        </div>
+      )}
     </div>
   );
 };

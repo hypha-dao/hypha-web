@@ -18,6 +18,9 @@ export interface Token {
   icon: string;
   symbol: string;
   address: `0x${string}`;
+  /** Optional display name (e.g. Storybook fixtures) */
+  name?: string;
+  value?: number;
   space?: {
     title: string;
     slug: string;
@@ -30,6 +33,8 @@ interface TokenPayoutFieldArrayProps {
   name?: string;
   label?: string;
   allowAddOrRemove?: boolean;
+  showTreasuryBalanceHint?: boolean;
+  selectedTokenPriceHint?: string;
 }
 
 export const TokenPayoutFieldArray = ({
@@ -37,6 +42,8 @@ export const TokenPayoutFieldArray = ({
   name = 'payouts',
   label,
   allowAddOrRemove = true,
+  showTreasuryBalanceHint = false,
+  selectedTokenPriceHint,
 }: TokenPayoutFieldArrayProps) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const resolvedLabel =
@@ -82,6 +89,8 @@ export const TokenPayoutFieldArray = ({
                           value={value}
                           onChange={onChange}
                           tokens={tokens}
+                          showTreasuryBalanceHint={showTreasuryBalanceHint}
+                          selectedTokenPriceHint={selectedTokenPriceHint}
                         />
                       </FormControl>
                       <FormMessage
