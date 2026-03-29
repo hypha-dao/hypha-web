@@ -159,13 +159,12 @@ export const personRedeem = z.object({
       z.object({
         asset: z
           .string()
-          .refine(
-            (value): boolean =>
-              value.length > 0 && isAddress(value, { strict: false }),
-            {
-              message: 'Invalid Ethereum address',
-            },
-          ),
+          .refine((value) => value.trim().length > 0, {
+            message: 'Please select a collateral asset',
+          })
+          .refine((value): boolean => isAddress(value, { strict: false }), {
+            message: 'Invalid Ethereum address',
+          }),
         percentage: z
           .string()
           .refine(

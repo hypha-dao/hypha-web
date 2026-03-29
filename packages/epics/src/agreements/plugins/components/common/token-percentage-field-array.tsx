@@ -92,7 +92,9 @@ export const TokenPercentageFieldArray = ({
                           value={value}
                           onChange={(nextValue) => {
                             onChange(nextValue);
-                            void trigger(name);
+                            // Validate only this row — trigger(name) re-validates every
+                            // array item and flags empty rows from "Add" as invalid.
+                            void trigger(`${name}.${index}`);
                           }}
                           assets={assets}
                           showFieldDetails={showFieldDetails}
