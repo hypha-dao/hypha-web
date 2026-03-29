@@ -27,6 +27,8 @@ const formatCompactNumber = (value: string) => {
 interface ProposalTokenBackingVaultDataProps {
   spaceSlug: string;
   dbTokens?: DbToken[];
+  /** When set (e.g. redeem proposal above), hide space token + live vault collateral list as duplicates. */
+  suppressRedeemDuplicates?: boolean;
   spaceToken?: string;
   addCollaterals?: Array<{ token: string; amount: string; decimals: number }>;
   removeCollaterals?: Array<{ token: string; amount: string }>;
@@ -44,6 +46,7 @@ interface ProposalTokenBackingVaultDataProps {
 export function ProposalTokenBackingVaultData({
   spaceSlug,
   dbTokens = [],
+  suppressRedeemDuplicates = false,
   spaceToken,
   addCollaterals,
   removeCollaterals,
@@ -71,8 +74,12 @@ export function ProposalTokenBackingVaultData({
       )
     : undefined;
 
-  const hasData =
-    spaceToken ||
+  const showSpaceTokenRow = Boolean(spaceToken) && !suppressRedeemDuplicates;
+  const showCurrentBackingCollaterals =
+    Boolean(currentVault && currentVault.collaterals.length > 0) &&
+    !suppressRedeemDuplicates;
+
+  const hasVaultConfigRows =
     (addCollaterals?.length ?? 0) > 0 ||
     (removeCollaterals?.length ?? 0) > 0 ||
     enableRedemption !== undefined ||
@@ -83,7 +90,10 @@ export function ProposalTokenBackingVaultData({
     whitelistEnabled !== undefined ||
     (whitelistedAddresses?.length ?? 0) > 0;
 
-  if (!hasData) return null;
+  const hasVisibleContent =
+    showSpaceTokenRow || showCurrentBackingCollaterals || hasVaultConfigRows;
+
+  if (!hasVisibleContent) return null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -91,17 +101,17 @@ export function ProposalTokenBackingVaultData({
         {tProposalDetails('labels.tokenBackingVault')}
       </span>
       <div className="flex flex-col gap-5">
-        {spaceToken && (
+        {showSpaceTokenRow && (
           <TokenBackingVaultDetailRow
             label={tProposalDetails('labels.spaceToken')}
             value={
-              getTokenSymbol(spaceToken, dbTokens, spaceTokens) || (
-                <EthAddress address={spaceToken} />
+              getTokenSymbol(spaceToken!, dbTokens, spaceTokens) || (
+                <EthAddress address={spaceToken!} />
               )
             }
           />
         )}
-        {currentVault && currentVault.collaterals.length > 0 && (
+        {showCurrentBackingCollaterals && currentVault && (
           <div className="flex flex-col gap-2">
             <div className="text-1 text-neutral-11">
               {tProposalDetails('labels.currentBackingCollaterals')}

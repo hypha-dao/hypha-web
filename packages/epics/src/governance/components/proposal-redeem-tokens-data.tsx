@@ -189,10 +189,6 @@ export const ProposalRedeemTokensData = ({
       </span>
       <div className="flex flex-col gap-5">
         <TokenBackingVaultDetailRow
-          label={t('redeemToken')}
-          value={redeemSymbol || token}
-        />
-        <TokenBackingVaultDetailRow
           label={t('redeemAmount')}
           value={`${formatCurrencyValue(redeemedHuman)} ${redeemSymbol}`}
         />

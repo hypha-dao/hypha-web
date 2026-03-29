@@ -424,6 +424,10 @@ export const ProposalDetail = ({
         <ProposalTokenBackingVaultData
           spaceSlug={spaceSlug}
           dbTokens={dbTokens}
+          suppressRedeemDuplicates={Boolean(
+            proposalDetails?.redeemTokensData.amount &&
+              proposalDetails?.redeemTokensData.token,
+          )}
           {...proposalDetails.tokenBackingVaultData}
         />
       ) : null}
