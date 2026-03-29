@@ -6,7 +6,8 @@ import { Image } from '@hypha-platform/ui';
 import { useTokens, ExtendedToken } from '../../treasury';
 import { CopyIcon } from '@radix-ui/react-icons';
 import { copyToClipboard } from '@hypha-platform/ui-utils';
-import { useSpaceBySlug } from '@hypha-platform/core/client';
+import { useSpaceBySlug, Space } from '@hypha-platform/core/client';
+import { useDbSpaces } from '../../hooks';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
@@ -58,6 +59,7 @@ export const ProposalExchangeStakesAndTokensData = ({
   const tAgreementFlow = useTranslations('AgreementFlow');
   const { tokens } = useTokens({ spaceSlug });
   const { space } = useSpaceBySlug(spaceSlug);
+  const { spaces: dbSpaces } = useDbSpaces({ parentOnly: false });
   const resolvedSellerAddress = getPreferredAddress(
     sellerAddress,
     fallbackSellerAddress,
@@ -84,6 +86,46 @@ export const ProposalExchangeStakesAndTokensData = ({
   );
   const displaySellerPerson = sellerPerson ?? sellerMemberInSpace;
   const displayBuyerPerson = buyerPerson ?? buyerMemberInSpace;
+
+  const resolveSpaceForWallet = (addr?: string): Space | undefined => {
+    if (!addr) return undefined;
+    const lower = addr.toLowerCase();
+    if (space?.address && space.address.toLowerCase() === lower) {
+      return space;
+    }
+    return dbSpaces.find((s) => s.address?.toLowerCase() === lower);
+  };
+
+  /** Space executor / contract address: show space title + logo when no person record */
+  const sellerSpaceMatch = resolveSpaceForWallet(resolvedSellerAddress);
+  const buyerSpaceMatch = resolveSpaceForWallet(resolvedBuyerAddress);
+  const sellerResolvedAsSpace = !displaySellerPerson && !!sellerSpaceMatch;
+  const buyerResolvedAsSpace = !displayBuyerPerson && !!buyerSpaceMatch;
+
+  const personLabel = (p: NonNullable<typeof displaySellerPerson>) =>
+    [p.name, p.surname].filter(Boolean).join(' ') || undefined;
+
+  const sellerDisplayLabel = displaySellerPerson
+    ? personLabel(displaySellerPerson)
+    : sellerResolvedAsSpace
+    ? sellerSpaceMatch.title
+    : undefined;
+  const buyerDisplayLabel = displayBuyerPerson
+    ? personLabel(displayBuyerPerson)
+    : buyerResolvedAsSpace
+    ? buyerSpaceMatch.title
+    : undefined;
+
+  const sellerDisplayAvatarUrl = displaySellerPerson
+    ? displaySellerPerson.avatarUrl
+    : sellerResolvedAsSpace
+    ? sellerSpaceMatch.logoUrl ?? '/placeholder/space-avatar-image.svg'
+    : undefined;
+  const buyerDisplayAvatarUrl = displayBuyerPerson
+    ? displayBuyerPerson.avatarUrl
+    : buyerResolvedAsSpace
+    ? buyerSpaceMatch.logoUrl ?? '/placeholder/space-avatar-image.svg'
+    : undefined;
 
   const renderPartyValue = (
     address?: string,
@@ -173,11 +215,11 @@ export const ProposalExchangeStakesAndTokensData = ({
         </span>
         {renderPartyValue(
           resolvedSellerAddress,
-          displaySellerPerson
-            ? `${displaySellerPerson.name} ${displaySellerPerson.surname}`
-            : undefined,
-          displaySellerPerson?.avatarUrl,
-          `${displaySellerPerson?.nickname ?? 'seller'} avatar`,
+          sellerDisplayLabel,
+          sellerDisplayAvatarUrl,
+          sellerResolvedAsSpace
+            ? `${sellerSpaceMatch?.title ?? 'space'} logo`
+            : `${displaySellerPerson?.nickname ?? 'seller'} avatar`,
         )}
       </div>
       <div className="flex items-center justify-between">
@@ -194,11 +236,11 @@ export const ProposalExchangeStakesAndTokensData = ({
         </span>
         {renderPartyValue(
           resolvedBuyerAddress,
-          displayBuyerPerson
-            ? `${displayBuyerPerson.name} ${displayBuyerPerson.surname}`
-            : undefined,
-          displayBuyerPerson?.avatarUrl,
-          `${displayBuyerPerson?.nickname ?? 'buyer'} avatar`,
+          buyerDisplayLabel,
+          buyerDisplayAvatarUrl,
+          buyerResolvedAsSpace
+            ? `${buyerSpaceMatch?.title ?? 'space'} logo`
+            : `${displayBuyerPerson?.nickname ?? 'buyer'} avatar`,
         )}
       </div>
       <div className="flex items-center justify-between">
