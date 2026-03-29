@@ -50,9 +50,8 @@ export default function ProfileWallet() {
     },
     {
       id: 'redeemTokens',
-      title: 'Redeem Tokens',
-      description:
-        'Convert your tokens into their equivalent fiat value held in the vault.',
+      title: tActions('actions.redeemTokens.title'),
+      description: tActions('actions.redeemTokens.description'),
       href: 'redeem-tokens',
       icon: <ArrowUpIcon />,
     },

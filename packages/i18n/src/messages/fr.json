@@ -437,6 +437,10 @@
       "migrateHyphaTokens": {
         "title": "Migrer les tokens Hypha (Telos → Base)",
         "description": "Déplacez vos tokens Hypha de la blockchain Telos vers le réseau Base. Cela lance l'expérience de migration."
+      },
+      "redeemTokens": {
+        "title": "Échanger des tokens",
+        "description": "Convertissez vos tokens en valeur fiduciaire équivalente détenue dans le coffre."
       }
     },
     "purchaseHypha": {
@@ -501,6 +505,33 @@
       "content": "Envoyez facilement des fonds depuis votre portefeuille vers un membre ou un espace.",
       "form": {
         "amountLabel": "Montant"
+      }
+    },
+    "redeemTokens": {
+      "title": "Échanger des tokens",
+      "content": "Convertissez vos tokens en valeur fiduciaire équivalente détenue dans le coffre.",
+      "form": {
+        "redemptionAmountLabel": "Montant à échanger",
+        "convertedIntoLabel": "Converti en",
+        "redeem": "Échanger",
+        "redeeming": "Échange en cours",
+        "successMessage": "Votre échange a été effectué avec succès !",
+        "requestedExceedsBalance": "Le montant demandé ({amount}) dépasse le solde disponible ({balance}).",
+        "collateralInsufficient": "La valeur de l'échange dépasse la valeur des garanties ; veuillez saisir un montant plus petit.",
+        "insufficientFundsLead": "Le solde de votre portefeuille est insuffisant pour cette transaction. Veuillez",
+        "insufficientFundsTopUp": "recharger votre compte",
+        "insufficientFundsTrail": "pour continuer.",
+        "selectCollateralAsset": "Sélectionner un actif",
+        "noCollateralAssetsFound": "Aucun actif trouvé"
+      },
+      "conversionDetails": {
+        "vaultLine": "Coffre : {amount} {symbol}",
+        "priceLine": "Prix : {currency}{price}",
+        "requestedLine": "Demandé : {currency}{amount}"
+      },
+      "diagnostics": {
+        "vaultAccess": "Impossible de charger les données du coffre pour certains espaces : {details}. Vous n'y avez peut-être pas accès.",
+        "tokenDiscovery": "Diagnostics de détection des tokens : {reasons}."
       }
     },
     "errors": {

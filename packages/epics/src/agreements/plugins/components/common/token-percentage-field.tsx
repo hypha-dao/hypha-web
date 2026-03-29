@@ -11,6 +11,7 @@ import {
 } from '@hypha-platform/ui';
 import { getTokenTypeLabel } from '../../../../treasury';
 import { ChevronDownIcon } from '@radix-ui/themes';
+import { useTranslations } from 'next-intl';
 
 export interface TokenPercentageAsset {
   address: string;
@@ -42,8 +43,9 @@ export const ConversionAssetDropdown = ({
   onChange,
   assets,
 }: ConversionAssetDropdownProps) => {
+  const tRedeem = useTranslations('ProfileActions.redeemTokens');
   const selectedAsset = assets.find(
-    (t) => t.address.toLowerCase() === value.toLowerCase(),
+    (a) => a.address.toLowerCase() === value.toLowerCase(),
   );
 
   return (
@@ -72,7 +74,7 @@ export const ConversionAssetDropdown = ({
                 </>
               ) : (
                 <span className="text-2 text-neutral-11 whitespace-nowrap">
-                  Select an asset
+                  {tRedeem('form.selectCollateralAsset')}
                 </span>
               )}
             </div>
@@ -112,15 +114,19 @@ export const ConversionAssetDropdown = ({
                     ) : null}
                     {typeof asset.value === 'number' ? (
                       <span className="text-1 text-neutral-11">
-                        Available amount: {asset.value.toFixed(2)}{' '}
-                        {asset.symbol}
+                        {tRedeem('conversionDetails.vaultLine', {
+                          amount: asset.value.toFixed(2),
+                          symbol: asset.symbol,
+                        })}
                       </span>
                     ) : null}
                     {typeof asset.tokenPrice === 'number' &&
                     Number.isFinite(asset.tokenPrice) ? (
                       <span className="text-1 text-neutral-11">
-                        Token price: {asset.priceCurrencySymbol ?? '$'}
-                        {asset.tokenPrice.toFixed(2)}
+                        {tRedeem('conversionDetails.priceLine', {
+                          currency: asset.priceCurrencySymbol ?? '$',
+                          price: asset.tokenPrice.toFixed(2),
+                        })}
                       </span>
                     ) : null}
                   </div>
@@ -128,7 +134,9 @@ export const ConversionAssetDropdown = ({
               </DropdownMenuItem>
             ))
           ) : (
-            <span className="text-2 text-neutral-11">No assets found</span>
+            <span className="text-2 text-neutral-11">
+              {tRedeem('form.noCollateralAssetsFound')}
+            </span>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
@@ -189,20 +197,27 @@ export interface ConversionFieldDetailsProps {
 export const ConversionFieldDetails = ({
   asset,
 }: ConversionFieldDetailsProps) => {
+  const tRedeem = useTranslations('ProfileActions.redeemTokens');
   if (!asset) return null;
 
   const parts: string[] = [];
   if (typeof asset.value === 'number') {
-    parts.push(`Available amount: ${asset.value.toFixed(2)} ${asset.symbol}`);
+    parts.push(
+      tRedeem('conversionDetails.vaultLine', {
+        amount: asset.value.toFixed(2),
+        symbol: asset.symbol,
+      }),
+    );
   }
   if (
     typeof asset.tokenPrice === 'number' &&
     Number.isFinite(asset.tokenPrice)
   ) {
     parts.push(
-      `Token price: ${
-        asset.priceCurrencySymbol ?? '$'
-      }${asset.tokenPrice.toFixed(2)}`,
+      tRedeem('conversionDetails.priceLine', {
+        currency: asset.priceCurrencySymbol ?? '$',
+        price: asset.tokenPrice.toFixed(2),
+      }),
     );
   }
   if (
@@ -210,9 +225,10 @@ export const ConversionFieldDetails = ({
     Number.isFinite(asset.requestedAmount)
   ) {
     parts.push(
-      `Requested: ${
-        asset.requestedCurrencySymbol ?? '$'
-      }${asset.requestedAmount.toFixed(2)}`,
+      tRedeem('conversionDetails.requestedLine', {
+        currency: asset.requestedCurrencySymbol ?? '$',
+        amount: asset.requestedAmount.toFixed(2),
+      }),
     );
   }
 

@@ -437,6 +437,10 @@
       "migrateHyphaTokens": {
         "title": "Hypha-Tokens migrieren (Telos → Base)",
         "description": "Verschieben Sie Ihre Hypha-Tokens von der Telos-Blockchain in das Base-Netzwerk. Damit starten Sie die Migration."
+      },
+      "redeemTokens": {
+        "title": "Tokens einlösen",
+        "description": "Tauschen Sie Ihre Tokens in den entsprechenden Fiat-Wert ein, der im Vault verwahrt ist."
       }
     },
     "purchaseHypha": {
@@ -501,6 +505,33 @@
       "content": "Senden Sie ganz einfach Mittel aus Ihrer Wallet an ein Mitglied oder einen Space.",
       "form": {
         "amountLabel": "Betrag"
+      }
+    },
+    "redeemTokens": {
+      "title": "Tokens einlösen",
+      "content": "Tauschen Sie Ihre Tokens in den entsprechenden Fiat-Wert ein, der im Vault verwahrt ist.",
+      "form": {
+        "redemptionAmountLabel": "Einlösebetrag",
+        "convertedIntoLabel": "Umgewandelt in",
+        "redeem": "Einlösen",
+        "redeeming": "Wird eingelöst",
+        "successMessage": "Ihre Einlösung wurde erfolgreich abgeschlossen!",
+        "requestedExceedsBalance": "Angeforderter Betrag ({amount}) übersteigt das verfügbare Guthaben ({balance}).",
+        "collateralInsufficient": "Der Einlösewert übersteigt den Wert der Sicherheiten. Bitte geben Sie einen kleineren Betrag ein.",
+        "insufficientFundsLead": "Ihr Wallet-Guthaben reicht für diese Transaktion nicht aus. Bitte",
+        "insufficientFundsTopUp": "laden Sie Ihr Konto auf",
+        "insufficientFundsTrail": "um fortzufahren.",
+        "selectCollateralAsset": "Sicherheit auswählen",
+        "noCollateralAssetsFound": "Keine Assets gefunden"
+      },
+      "conversionDetails": {
+        "vaultLine": "Vault: {amount} {symbol}",
+        "priceLine": "Preis: {currency}{price}",
+        "requestedLine": "Angefordert: {currency}{amount}"
+      },
+      "diagnostics": {
+        "vaultAccess": "Vault-Daten für einige Spaces konnten nicht geladen werden: {details}. Möglicherweise haben Sie keinen Zugriff auf diese Spaces.",
+        "tokenDiscovery": "Diagnose zur Token-Erkennung: {reasons}."
       }
     },
     "errors": {
