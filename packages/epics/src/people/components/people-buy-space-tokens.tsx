@@ -1,11 +1,6 @@
 'use client';
 
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Form,
   FormField,
   FormItem,
@@ -15,7 +10,6 @@ import {
   Button,
   RequirementMark,
   Input,
-  Image,
 } from '@hypha-platform/ui';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -28,6 +22,7 @@ import {
   publicClient,
   useBuySpaceTokensMutation,
   useMe,
+  type TokenType,
 } from '@hypha-platform/core/client';
 import { useScrollToErrors } from '../../hooks';
 import { useDbTokens } from '../../hooks/use-db-tokens';
@@ -36,12 +31,14 @@ import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { Loader2 } from 'lucide-react';
 import { formatUnits } from 'viem';
 import { RecipientField } from '../../agreements/plugins/components/common/recipient-field';
+import { TokenSelectDropdown } from '../../agreements/plugins/components/common/token-select-dropdown';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 type PurchasableToken = {
   id: number;
+  spaceId: number;
   name: string;
   symbol: string;
   address?: string;
@@ -183,6 +180,35 @@ export const PeopleBuySpaceTokens = ({
     [availableTokens, eligibleTokenAddressSet],
   );
 
+  const { spaces } = useDbSpaces({
+    parentOnly: false,
+  });
+
+  const spaceById = useMemo(() => {
+    const m = new Map<number, { slug: string; title: string }>();
+    for (const s of spaces ?? []) {
+      m.set(s.id, { slug: s.slug, title: s.title });
+    }
+    return m;
+  }, [spaces]);
+
+  const purchasableDropdownTokens = useMemo(
+    () =>
+      purchasableTokens
+        .filter((tok) => tok.address)
+        .map((tok) => {
+          const sp = spaceById.get(tok.spaceId);
+          return {
+            address: tok.address as string,
+            symbol: tok.symbol,
+            iconUrl: tok.iconUrl || '/placeholder/token-icon.svg',
+            type: tok.type as TokenType,
+            spaceSubtitle: sp?.slug ?? sp?.title,
+          };
+        }),
+    [purchasableTokens, spaceById],
+  );
+
   const buySpaceTokensSchema = useMemo(
     () =>
       z.object({
@@ -273,9 +299,7 @@ export const PeopleBuySpaceTokens = ({
       formatUnits(sale.salePricePerToken, sale.paymentTokenDecimals),
     );
   }, [sale]);
-  const { spaces } = useDbSpaces({
-    parentOnly: false,
-  });
+
   const buyerMembers = useMemo(
     () => (person?.address ? [person] : []),
     [person],
@@ -364,64 +388,23 @@ export const PeopleBuySpaceTokens = ({
             <FormField
               control={form.control}
               name="tokenAddress"
-              render={({ field }) => {
-                const sel = purchasableTokens.find(
-                  (tok) =>
-                    tok.address?.toLowerCase() === field.value?.toLowerCase(),
-                );
-                return (
-                  <FormItem>
-                    <FormControl>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        disabled={isTokensLoading}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('selectPlaceholder')}>
-                            {sel && (
-                              <div className="flex items-center gap-2">
-                                <Image
-                                  src={
-                                    sel.iconUrl || '/placeholder/token-icon.svg'
-                                  }
-                                  width={20}
-                                  height={20}
-                                  alt={sel.symbol}
-                                  className="rounded-full h-5 w-5 shrink-0"
-                                />
-                                {sel.name} ({sel.symbol})
-                              </div>
-                            )}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {purchasableTokens.map((tok) => (
-                            <SelectItem
-                              key={tok.address}
-                              value={tok.address ?? ''}
-                            >
-                              <div className="flex items-center gap-2">
-                                <Image
-                                  src={
-                                    tok.iconUrl || '/placeholder/token-icon.svg'
-                                  }
-                                  width={20}
-                                  height={20}
-                                  alt={tok.symbol}
-                                  className="rounded-full h-5 w-5 shrink-0"
-                                />
-                                {tok.name} ({tok.symbol})
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                );
-              }}
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <TokenSelectDropdown
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      tokens={purchasableDropdownTokens}
+                      placeholder={t('selectPlaceholder')}
+                      disabled={
+                        isTokensLoading ||
+                        purchasableDropdownTokens.length === 0
+                      }
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
           </div>
         </div>
