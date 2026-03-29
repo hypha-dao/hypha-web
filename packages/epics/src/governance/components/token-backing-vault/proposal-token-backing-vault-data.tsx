@@ -104,7 +104,9 @@ export function ProposalTokenBackingVaultData({
   return (
     <div className="flex flex-col gap-4">
       <span className="text-neutral-11 text-2 font-medium">
-        {tProposalDetails('labels.tokenBackingVault')}
+        {suppressRedeemDuplicates
+          ? tProposalDetails('labels.vaultProposalFollowOn')
+          : tProposalDetails('labels.tokenBackingVault')}
       </span>
       <div className="flex flex-col gap-5">
         {showSpaceTokenRow && (

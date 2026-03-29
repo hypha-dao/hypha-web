@@ -121,16 +121,18 @@ export const ProposalRedeemTokensData = ({
             })}
           />
         ) : null}
+      </div>
 
-        {vaultForRedeem && vaultForRedeem.collaterals.length > 0 ? (
+      {vaultForRedeem && vaultForRedeem.collaterals.length > 0 ? (
+        <div className="flex flex-col gap-4">
+          <span className="text-neutral-11 text-2 font-medium">
+            {t('tokenBackingVault')}
+          </span>
           <div className="flex flex-col gap-2">
-            <div className="text-1 text-neutral-11">
-              {t('redeemVaultCollateralHeading')}
-            </div>
             {vaultForRedeem.collaterals.map((collateral, i) => (
               <div
                 key={`${collateral.address}-${i}`}
-                className="flex justify-between items-center text-1 gap-2"
+                className="flex justify-between items-center gap-3 text-1"
               >
                 <div className="flex items-center gap-2 min-w-0">
                   {collateral.icon ? (
@@ -140,17 +142,19 @@ export const ProposalRedeemTokensData = ({
                       className="w-4 h-4 rounded-full shrink-0"
                     />
                   ) : null}
-                  <span className="truncate">{collateral.symbol}</span>
+                  <span className="truncate text-foreground">
+                    {collateral.symbol}
+                  </span>
                 </div>
                 <div className="text-nowrap text-right shrink-0">
-                  <span>
+                  <span className="text-foreground">
                     {formatCurrencyValue(collateral.value)} {collateral.symbol}
                   </span>
-                  {collateral.usdEqual > 0 && (
+                  {collateral.usdEqual > 0 ? (
                     <span className="text-neutral-9 ml-1">
                       (${formatCurrencyValue(collateral.usdEqual)})
                     </span>
-                  )}
+                  ) : null}
                   {typeof collateral.tokenPrice === 'number' &&
                   Number.isFinite(collateral.tokenPrice) ? (
                     <span className="text-neutral-9 ml-1">
@@ -165,8 +169,8 @@ export const ProposalRedeemTokensData = ({
               </div>
             ))}
           </div>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </div>
   );
 };
