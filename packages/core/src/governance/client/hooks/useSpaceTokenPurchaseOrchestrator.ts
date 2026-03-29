@@ -204,7 +204,10 @@ export const useSpaceTokenPurchaseOrchestrator = ({
           ([, task]) => task.status === TaskStatus.IS_PENDING,
         );
         for (const [taskName] of activeTasks) {
-          errorTask(taskName as TaskName, err instanceof Error ? err.message : 'Unknown error');
+          errorTask(
+            taskName as TaskName,
+            err instanceof Error ? err.message : 'Unknown error',
+          );
         }
 
         if (web2Slug) {
@@ -214,8 +217,12 @@ export const useSpaceTokenPurchaseOrchestrator = ({
         // Dispatch error
         dispatch({
           type: 'SET_ERROR',
-          taskName: activeTasks[0]?.[0] as TaskName ?? 'CREATE_WEB2_AGREEMENT',
-          message: err instanceof Error ? err.message : 'An error occurred during agreement creation',
+          taskName:
+            (activeTasks[0]?.[0] as TaskName) ?? 'CREATE_WEB2_AGREEMENT',
+          message:
+            err instanceof Error
+              ? err.message
+              : 'An error occurred during agreement creation',
         });
 
         // Clear current action

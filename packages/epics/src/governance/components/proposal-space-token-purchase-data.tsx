@@ -61,7 +61,9 @@ export const ProposalSpaceTokenPurchaseData = ({
         </div>
       </div>
       <div className="flex justify-between items-center">
-        <div className="text-1 text-neutral-11 w-full">{t('purchaseStatus')}</div>
+        <div className="text-1 text-neutral-11 w-full">
+          {t('purchaseStatus')}
+        </div>
         <div className="text-1">{isActive ? t('enabled') : t('disabled')}</div>
       </div>
       <div className="flex justify-between items-center">
@@ -72,7 +74,9 @@ export const ProposalSpaceTokenPurchaseData = ({
       </div>
       {purchasePrice !== undefined && (
         <div className="flex justify-between items-center">
-          <div className="text-1 text-neutral-11 w-full">{t('purchasePrice')}</div>
+          <div className="text-1 text-neutral-11 w-full">
+            {t('purchasePrice')}
+          </div>
           <div className="text-1 whitespace-nowrap">
             {formatCurrencyValue(purchasePrice)}{' '}
             {paymentTokenMeta?.symbol ?? ''}
@@ -81,7 +85,9 @@ export const ProposalSpaceTokenPurchaseData = ({
       )}
       {tokenSaleAmount !== undefined && (
         <div className="flex justify-between items-center">
-          <div className="text-1 text-neutral-11 w-full">{t('tokensForSale')}</div>
+          <div className="text-1 text-neutral-11 w-full">
+            {t('tokensForSale')}
+          </div>
           <div className="text-1">{formatCurrencyValue(tokenSaleAmount)}</div>
         </div>
       )}

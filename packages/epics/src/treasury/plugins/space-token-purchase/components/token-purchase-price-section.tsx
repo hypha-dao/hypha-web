@@ -128,7 +128,9 @@ export const TokenPurchasePriceSection = ({
                     disabled={isCurrencyLocked}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={t('price.currencyPlaceholder')} />
+                      <SelectValue
+                        placeholder={t('price.currencyPlaceholder')}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {(isCurrencyLocked && selectedCurrency

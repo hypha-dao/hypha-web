@@ -306,11 +306,7 @@ export const PeopleBuySpaceTokens = ({
     !isLoadingEligibility &&
     purchasableTokens.length === 0
   ) {
-    return (
-      <div className="text-2 text-neutral-11">
-        {t('emptyState')}
-      </div>
-    );
+    return <div className="text-2 text-neutral-11">{t('emptyState')}</div>;
   }
 
   return (
@@ -348,7 +344,9 @@ export const PeopleBuySpaceTokens = ({
                         disabled={isTokensLoading}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder={t('selectTokenPlaceholder')}>
+                          <SelectValue
+                            placeholder={t('selectTokenPlaceholder')}
+                          >
                             {sel && (
                               <div className="flex items-center gap-2">
                                 <Image
@@ -437,9 +435,7 @@ export const PeopleBuySpaceTokens = ({
                 symbol: paymentTokenMeta?.symbol ?? '',
               })}
             </div>
-            <div>
-              {t('remainingInSale', { remaining: remainingForSale })}
-            </div>
+            <div>{t('remainingInSale', { remaining: remainingForSale })}</div>
           </div>
         )}
 
@@ -451,18 +447,14 @@ export const PeopleBuySpaceTokens = ({
         )}
 
         {selectedToken && !isLoadingSale && !sale && (
-          <div className="text-sm text-neutral-11">
-            {t('unableToReadSale')}
-          </div>
+          <div className="text-sm text-neutral-11">{t('unableToReadSale')}</div>
         )}
 
         {selectedToken &&
           sale &&
           sale.salePaymentToken ===
             '0x0000000000000000000000000000000000000000' && (
-            <div className="text-sm text-neutral-11">
-              {t('saleDisabled')}
-            </div>
+            <div className="text-sm text-neutral-11">{t('saleDisabled')}</div>
           )}
 
         <Separator />
@@ -479,7 +471,9 @@ export const PeopleBuySpaceTokens = ({
         <Separator />
 
         <RecipientField
-          label={t('paymentPaidTo', { symbol: paymentTokenMeta?.symbol ?? 'Payment' })}
+          label={t('paymentPaidTo', {
+            symbol: paymentTokenMeta?.symbol ?? 'Payment',
+          })}
           members={[]}
           spaces={recipientSpaces}
           defaultRecipientType="space"
@@ -532,8 +526,7 @@ export const PeopleBuySpaceTokens = ({
         )}
         {(approveError || buyError) && (
           <div className="text-2 text-foreground">
-            {(approveError || buyError)?.message ??
-              t('transactionFailed')}
+            {(approveError || buyError)?.message ?? t('transactionFailed')}
           </div>
         )}
       </form>

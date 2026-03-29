@@ -80,7 +80,8 @@ export const SpaceTokenPurchasePlugin = ({
     // (This prevents stale SWR data from being applied to the wrong token)
     if (
       saleDetailsFromChain.tokenAddress &&
-      saleDetailsFromChain.tokenAddress.toLowerCase() !== tokenAddressChecksum.toLowerCase()
+      saleDetailsFromChain.tokenAddress.toLowerCase() !==
+        tokenAddressChecksum.toLowerCase()
     ) {
       return;
     }

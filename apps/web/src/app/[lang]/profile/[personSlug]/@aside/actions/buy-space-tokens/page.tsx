@@ -33,9 +33,7 @@ export default async function BuySpaceTokensProfile(props: PageProps) {
             <ButtonClose closeUrl={closeUrl} />
           </div>
         </div>
-        <span className="text-2 text-neutral-11">
-          {t('description')}
-        </span>
+        <span className="text-2 text-neutral-11">{t('description')}</span>
         <PeopleBuySpaceTokens personSlug={personSlug} closeUrl={closeUrl} />
       </div>
     </SidePanel>

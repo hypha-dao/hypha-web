@@ -65,7 +65,9 @@ export const useSpaceTokenPurchaseMutationsWeb3Rpc = ({
       const paymentTokenAddress = (() => {
         if (!arg.activatePurchase) return ZERO_ADDRESS;
         if (!arg.purchaseCurrency) {
-          throw new Error('Purchase currency is required when activating purchase');
+          throw new Error(
+            'Purchase currency is required when activating purchase',
+          );
         }
         if (arg.purchaseCurrency === 'EUR') {
           return (EURC_TOKEN?.address as `0x${string}`) ?? ZERO_ADDRESS;
@@ -73,7 +75,9 @@ export const useSpaceTokenPurchaseMutationsWeb3Rpc = ({
         if (arg.purchaseCurrency === 'USD') {
           return (USDC_TOKEN?.address as `0x${string}`) ?? ZERO_ADDRESS;
         }
-        throw new Error(`Unsupported purchase currency: ${arg.purchaseCurrency}`);
+        throw new Error(
+          `Unsupported purchase currency: ${arg.purchaseCurrency}`,
+        );
       })();
       const paymentTokenDecimals =
         paymentTokenAddress !== ZERO_ADDRESS
