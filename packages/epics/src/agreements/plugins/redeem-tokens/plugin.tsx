@@ -89,7 +89,7 @@ export const RedeemTokensPlugin = ({
   spaces?: Space[];
   web3SpaceId?: number | null;
 }) => {
-  const form = useFormContext();
+  const { control, setValue, getValues } = useFormContext();
   const { vaults, isLoading: isVaultsLoading } = useVaults();
   const { assets: treasuryAssets, isLoading: isTreasuryAssetsLoading } =
     useAssets({});
@@ -155,7 +155,7 @@ export const RedeemTokensPlugin = ({
   ]);
 
   const redemptions = useWatch({
-    control: form.control,
+    control,
     name: 'redemptions',
   });
   const selectedRedemption = redemptions?.[0];
@@ -221,7 +221,7 @@ export const RedeemTokensPlugin = ({
       })),
     );
     if (autoConversions.length === 0) return;
-    form.setValue('conversions', autoConversions, {
+    setValue('conversions', autoConversions, {
       shouldDirty: true,
       shouldValidate: true,
     });
@@ -229,12 +229,14 @@ export const RedeemTokensPlugin = ({
   }, [
     autoPopulateSignature,
     conversionCollaterals,
-    form,
     selectedRedemption?.token,
+    setValue,
   ]);
 
   React.useEffect(() => {
-    const currentConversions = form.getValues('conversions');
+    if (conversionCollaterals.length === 0) return;
+
+    const currentConversions = getValues('conversions');
     if (!currentConversions?.length) return;
 
     const allowed = new Set(
@@ -257,11 +259,11 @@ export const RedeemTokensPlugin = ({
 
     if (!hasInvalid) return;
 
-    form.setValue('conversions', next, {
+    setValue('conversions', next, {
       shouldDirty: true,
       shouldValidate: true,
     });
-  }, [conversionCollaterals, form]);
+  }, [conversionCollaterals, getValues, setValue]);
 
   return (
     <div className="flex flex-col gap-4">
