@@ -170,7 +170,7 @@
         "description": "Kaufen Sie Hypha-Tokens, um am Netzwerk teilzunehmen und Belohnungen zu erhalten."
       },
       "spaceTokenPurchase": {
-        "title": "Space-Token-Kauf",
+        "title": "Space-Token-Kauf aktivieren",
         "description": "Ermöglichen Sie Ihren Mitgliedern, die nativen Tokens Ihres Spaces zu kaufen."
       },
       "depositFunds": {

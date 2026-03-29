@@ -170,7 +170,7 @@
         "description": "Purchase Hypha tokens to participate in the network and earn rewards."
       },
       "spaceTokenPurchase": {
-        "title": "Space Token Purchase",
+        "title": "Enable Space Token Purchase",
         "description": "Allow your members to purchase your space's native tokens."
       },
       "depositFunds": {
