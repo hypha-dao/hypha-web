@@ -597,6 +597,7 @@
     "eligibilityLoadError": "Verfügbare Tokens konnten nicht geprüft werden. Bitte versuchen Sie es erneut.",
     "selectToken": "Token auswählen",
     "selectPlaceholder": "Token auswählen",
+    "amountAndToken": "Betrag & Token",
     "amount": "Betrag",
     "pricePerToken": "Preis: {price} {currency} pro Token",
     "totalCost": "Gesamtkosten: {amount} {currency}",

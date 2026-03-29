@@ -1177,6 +1177,7 @@
     "eligibilityLoadError": "Não foi possível verificar quais tokens estão disponíveis. Tente novamente.",
     "selectToken": "Selecionar token",
     "selectPlaceholder": "Selecione um token",
+    "amountAndToken": "Quantidade e token",
     "amount": "Quantidade",
     "pricePerToken": "Preço: {price} {currency} por token",
     "totalCost": "Custo total: {amount} {currency}",

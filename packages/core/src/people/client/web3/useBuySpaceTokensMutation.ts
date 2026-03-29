@@ -240,6 +240,40 @@ export const useBuySpaceTokensMutation = ({
     },
   );
 
+  const waitForSufficientAllowance = useCallback(async () => {
+    const account = buyerAddress;
+    const contractAddress = tokenAddress;
+    const sale = data;
+    if (!account || !contractAddress || !sale || sale.paymentAmount <= 0n) {
+      return;
+    }
+    if (sale.salePaymentToken.toLowerCase() === ZERO_ADDRESS.toLowerCase()) {
+      return;
+    }
+
+    const required = sale.paymentAmount;
+    const maxAttempts = 45;
+    const delayMs = 1000;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const current = await publicClient.readContract({
+        address: sale.salePaymentToken,
+        abi: erc20Abi,
+        functionName: 'allowance',
+        args: [account, contractAddress],
+      });
+      if (current >= required) {
+        await mutate();
+        return;
+      }
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+
+    throw new Error(
+      'Payment token approval is still confirming. Please wait a moment and try Buy again.',
+    );
+  }, [buyerAddress, tokenAddress, data, mutate]);
+
   const reset = useCallback(() => {
     resetApprove();
     resetBuy();
@@ -255,6 +289,7 @@ export const useBuySpaceTokensMutation = ({
     hasEnoughBalance: Boolean(data && data.balance >= data.paymentAmount),
     approve,
     buy,
+    waitForSufficientAllowance,
     isApproving,
     isBuying,
     approveError,
