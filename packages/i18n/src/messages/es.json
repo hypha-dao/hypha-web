@@ -1225,7 +1225,6 @@
       "redeemToken": "Token to redeem",
       "redeemAmount": "Redemption amount",
       "redeemNotional": "Reference value",
-      "redeemCollateralUnitPrice": "{price} {currency} each",
       "redeemApproxUsd": "≈ {value} USD",
       "spaceToken": "Token del espacio",
       "currentBackingCollaterals": "Colaterales actuales",

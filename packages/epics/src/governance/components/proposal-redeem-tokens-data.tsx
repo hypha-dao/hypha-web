@@ -2,6 +2,7 @@
 
 import type { DbToken } from '@hypha-platform/core/client';
 import {
+  bigIntToPercentageString,
   useSpacesByWeb3Ids,
   useTokenDecimals,
 } from '@hypha-platform/core/client';
@@ -34,6 +35,7 @@ export const ProposalRedeemTokensData = ({
   amount,
   token,
   web3SpaceId,
+  conversions,
   spaceSlug,
   dbTokens = [],
 }: ProposalRedeemTokensDataProps) => {
@@ -58,6 +60,14 @@ export const ProposalRedeemTokensData = ({
       (v) => v.spaceToken.toLowerCase() === token.toLowerCase(),
     );
   }, [token, vaults]);
+
+  const collateralByAddress = React.useMemo(() => {
+    const map = new Map<string, { icon: string; symbol: string }>();
+    for (const c of vaultForRedeem?.collaterals ?? []) {
+      map.set(c.address.toLowerCase(), { icon: c.icon, symbol: c.symbol });
+    }
+    return map;
+  }, [vaultForRedeem?.collaterals]);
 
   const currencyLabel =
     vaultForRedeem?.redemptionCurrencyFeed &&
@@ -89,6 +99,44 @@ export const ProposalRedeemTokensData = ({
   const redeemSymbol = token
     ? getTokenSymbol(token, dbTokens, spaceTokenList)
     : '';
+
+  const conversionDisplayRows = React.useMemo(() => {
+    return conversions
+      .filter(
+        (c): c is { asset: `0x${string}`; percentage: bigint } =>
+          Boolean(c.asset) && c.percentage !== undefined,
+      )
+      .map((c) => {
+        const addr = c.asset.toLowerCase();
+        const vaultMeta = collateralByAddress.get(addr);
+        const st = spaceTokenList.find(
+          (s: { address?: string; symbol: string; icon?: string }) =>
+            s.address?.toLowerCase() === addr,
+        );
+        const icon = vaultMeta?.icon ?? st?.icon;
+        const symbol = getTokenSymbol(c.asset, dbTokens, spaceTokenList);
+        const pctStr = `${bigIntToPercentageString(c.percentage)}%`;
+        const share = Number(c.percentage) / 10000;
+        const requested =
+          typeof notionalValue === 'number' &&
+          Number.isFinite(notionalValue) &&
+          Number.isFinite(share)
+            ? notionalValue * share
+            : null;
+        const requestedDisplay =
+          requested !== null && Number.isFinite(requested)
+            ? `${formatCurrencyValue(requested)} ${currencyLabel ?? 'USD'}`
+            : '—';
+        return { asset: c.asset, icon, symbol, requestedDisplay, pctStr };
+      });
+  }, [
+    collateralByAddress,
+    conversions,
+    currencyLabel,
+    dbTokens,
+    notionalValue,
+    spaceTokenList,
+  ]);
 
   if (!amount || !token || !redeemedHuman) {
     return null;
@@ -123,49 +171,31 @@ export const ProposalRedeemTokensData = ({
         ) : null}
       </div>
 
-      {vaultForRedeem && vaultForRedeem.collaterals.length > 0 ? (
+      {conversionDisplayRows.length > 0 ? (
         <div className="flex flex-col gap-4">
           <span className="text-neutral-11 text-2 font-medium">
             {t('tokenBackingVault')}
           </span>
           <div className="flex flex-col gap-2">
-            {vaultForRedeem.collaterals.map((collateral, i) => (
+            {conversionDisplayRows.map((row, i) => (
               <div
-                key={`${collateral.address}-${i}`}
-                className="flex justify-between items-center gap-3 text-1"
+                key={`${row.asset}-${i}`}
+                className="flex items-center gap-2 min-w-0 text-1"
               >
-                <div className="flex items-center gap-2 min-w-0">
-                  {collateral.icon ? (
-                    <img
-                      src={collateral.icon}
-                      alt={collateral.symbol}
-                      className="w-4 h-4 rounded-full shrink-0"
-                    />
-                  ) : null}
-                  <span className="truncate text-foreground">
-                    {collateral.symbol}
+                {row.icon ? (
+                  <img
+                    src={row.icon}
+                    alt={row.symbol}
+                    className="w-4 h-4 rounded-full shrink-0"
+                  />
+                ) : null}
+                <span className="min-w-0 break-words text-foreground">
+                  {row.symbol}
+                  <span className="text-neutral-9">
+                    {' '}
+                    · {row.requestedDisplay} · {row.pctStr}
                   </span>
-                </div>
-                <div className="text-nowrap text-right shrink-0">
-                  <span className="text-foreground">
-                    {formatCurrencyValue(collateral.value)} {collateral.symbol}
-                  </span>
-                  {collateral.usdEqual > 0 ? (
-                    <span className="text-neutral-9 ml-1">
-                      (${formatCurrencyValue(collateral.usdEqual)})
-                    </span>
-                  ) : null}
-                  {typeof collateral.tokenPrice === 'number' &&
-                  Number.isFinite(collateral.tokenPrice) ? (
-                    <span className="text-neutral-9 ml-1">
-                      ·{' '}
-                      {t('redeemCollateralUnitPrice', {
-                        price: formatCurrencyValue(collateral.tokenPrice),
-                        currency: currencyLabel ?? 'USD',
-                      })}
-                    </span>
-                  ) : null}
-                </div>
+                </span>
               </div>
             ))}
           </div>
