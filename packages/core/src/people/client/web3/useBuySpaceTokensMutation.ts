@@ -55,6 +55,7 @@ type BuySpaceTokensInput = {
 };
 
 const BASE_TOKEN_UNIT = 10n ** 18n;
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
 export const useBuySpaceTokensMutation = ({
   tokenAddress,
@@ -106,6 +107,24 @@ export const useBuySpaceTokensMutation = ({
 
       const [salePaymentToken, salePricePerToken, tokensLeftToSell] =
         saleDetails;
+
+      // Short-circuit if sale is disabled (zero address)
+      if (salePaymentToken === ZERO_ADDRESS) {
+        return {
+          salePaymentToken,
+          salePricePerToken,
+          tokensLeftToSell,
+          purchaseEligibilityMode,
+          canPurchase,
+          executor,
+          paymentTokenDecimals: 6,
+          tokenAmount: 0n,
+          paymentAmount: 0n,
+          allowance: 0n,
+          balance: 0n,
+        };
+      }
+
       const paymentTokenDecimals = await getTokenDecimals(salePaymentToken);
 
       const tokenAmount =

@@ -2,7 +2,7 @@
 
 import useSWRMutation from 'swr/mutation';
 import useSWR from 'swr';
-import { encodeFunctionData, erc20Abi, maxUint256 } from 'viem';
+import { encodeFunctionData, erc20Abi, maxUint256, parseUnits } from 'viem';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 import {
   schemaCreateProposalWeb3,
@@ -64,10 +64,16 @@ export const useSpaceTokenPurchaseMutationsWeb3Rpc = ({
 
       const paymentTokenAddress = (() => {
         if (!arg.activatePurchase) return ZERO_ADDRESS;
+        if (!arg.purchaseCurrency) {
+          throw new Error('Purchase currency is required when activating purchase');
+        }
         if (arg.purchaseCurrency === 'EUR') {
           return (EURC_TOKEN?.address as `0x${string}`) ?? ZERO_ADDRESS;
         }
-        return (USDC_TOKEN?.address as `0x${string}`) ?? ZERO_ADDRESS;
+        if (arg.purchaseCurrency === 'USD') {
+          return (USDC_TOKEN?.address as `0x${string}`) ?? ZERO_ADDRESS;
+        }
+        throw new Error(`Unsupported purchase currency: ${arg.purchaseCurrency}`);
       })();
       const paymentTokenDecimals =
         paymentTokenAddress !== ZERO_ADDRESS
@@ -75,11 +81,11 @@ export const useSpaceTokenPurchaseMutationsWeb3Rpc = ({
           : 6;
       const paymentTokenPricePerToken =
         arg.activatePurchase && arg.purchasePrice
-          ? BigInt(Math.round(arg.purchasePrice * 10 ** paymentTokenDecimals))
+          ? parseUnits(arg.purchasePrice.toString(), paymentTokenDecimals)
           : 0n;
       const tokensForSale =
         arg.activatePurchase && arg.tokensAvailableForPurchase
-          ? BigInt(arg.tokensAvailableForPurchase) * 10n ** 18n
+          ? parseUnits(arg.tokensAvailableForPurchase.toString(), 18)
           : 0n;
 
       // Allow the token contract to move sale inventory from the space executor

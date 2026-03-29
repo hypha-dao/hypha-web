@@ -75,7 +75,15 @@ export const SpaceTokenPurchasePlugin = ({
     if (hydratedFromChainForToken.current === tokenAddressChecksum) {
       return;
     }
-    hydratedFromChainForToken.current = tokenAddressChecksum;
+
+    // Verify the sale details correspond to the current token before hydrating
+    // (This prevents stale SWR data from being applied to the wrong token)
+    if (
+      saleDetailsFromChain.tokenAddress &&
+      saleDetailsFromChain.tokenAddress.toLowerCase() !== tokenAddressChecksum.toLowerCase()
+    ) {
+      return;
+    }
 
     setValue('activatePurchase', saleDetailsFromChain.activatePurchase, {
       shouldDirty: true,
@@ -106,6 +114,9 @@ export const SpaceTokenPurchasePlugin = ({
         );
       }
     }
+
+    // Only mark as hydrated after successfully applying values
+    hydratedFromChainForToken.current = tokenAddressChecksum;
   }, [tokenAddressChecksum, saleDetailsFromChain, setValue]);
 
   const selectedToken = spaceTokens.find(

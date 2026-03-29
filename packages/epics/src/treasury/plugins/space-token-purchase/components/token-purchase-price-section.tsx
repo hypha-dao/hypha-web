@@ -37,7 +37,7 @@ export const TokenPurchasePriceSection = ({
   supply,
 }: TokenPurchasePriceSectionProps) => {
   const t = useTranslations('SpaceTokenPurchase');
-  const { control, setValue } = useFormContext();
+  const { control, setValue, getValues } = useFormContext();
   const tokensAvailableForPurchase = useWatch({
     control,
     name: 'tokensAvailableForPurchase',
@@ -61,12 +61,16 @@ export const TokenPurchasePriceSection = ({
 
   useEffect(() => {
     if (selectedToken?.referenceCurrency) {
-      setValue('purchaseCurrency', selectedToken.referenceCurrency, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
+      const currentCurrency = getValues('purchaseCurrency');
+      // Only set currency if it's unset or empty to avoid overwriting chain-hydrated values
+      if (!currentCurrency) {
+        setValue('purchaseCurrency', selectedToken.referenceCurrency, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+      }
     }
-  }, [selectedToken?.referenceCurrency, setValue]);
+  }, [selectedToken?.referenceCurrency, setValue, getValues]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -124,7 +128,7 @@ export const TokenPurchasePriceSection = ({
                     disabled={isCurrencyLocked}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Currency" />
+                      <SelectValue placeholder={t('price.currencyPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
                       {(isCurrencyLocked && selectedCurrency

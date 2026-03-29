@@ -17,6 +17,7 @@ import { useRouter } from 'next/navigation';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useConfig } from 'wagmi';
+import { useTranslations } from 'next-intl';
 
 const fullSchemaSpaceTokenPurchase = schemaSpaceTokenPurchaseObject
   .extend({ label: z.string().optional() })
@@ -41,6 +42,7 @@ export const SpaceTokenPurchaseForm = ({
   web3SpaceId,
   plugin,
 }: SpaceTokenPurchaseFormProps) => {
+  const t = useTranslations('governance.spaceTokenPurchase');
   const router = useRouter();
   const { person } = useMe();
   const { jwt } = useJwt();
@@ -90,7 +92,7 @@ export const SpaceTokenPurchaseForm = ({
       });
       router.push(successfulUrl);
     } catch {
-      setFormError('Something went wrong. Please try again.');
+      setFormError(t('error.generic'));
     }
   };
 

@@ -178,6 +178,14 @@ export const useSpaceTokenPurchaseOrchestrator = ({
       const web2Slug = createdAgreement?.slug ?? web2.createdAgreement?.slug;
 
       try {
+        // Upload files before creating the irreversible on-chain proposal
+        const files = schemaCreateAgreementFiles.parse(arg);
+        startTask('UPLOAD_FILES');
+        if (files.attachments?.length || files.leadImage) {
+          await agreementFiles.upload(files, web2Slug);
+        }
+        completeTask('UPLOAD_FILES');
+
         if (config) {
           startTask('CREATE_WEB3_PROPOSAL');
           await web3.createSpaceTokenPurchaseProposal({
@@ -190,17 +198,29 @@ export const useSpaceTokenPurchaseOrchestrator = ({
           });
           completeTask('CREATE_WEB3_PROPOSAL');
         }
-
-        const files = schemaCreateAgreementFiles.parse(arg);
-        startTask('UPLOAD_FILES');
-        if (files.attachments?.length || files.leadImage) {
-          await agreementFiles.upload(files, web2Slug);
-        }
-        completeTask('UPLOAD_FILES');
       } catch (err) {
+        // Complete/fail the active task
+        const activeTasks = Object.entries(taskState).filter(
+          ([, task]) => task.status === TaskStatus.IS_PENDING,
+        );
+        for (const [taskName] of activeTasks) {
+          errorTask(taskName as TaskName, err instanceof Error ? err.message : 'Unknown error');
+        }
+
         if (web2Slug) {
           await web2.deleteAgreementBySlug({ slug: web2Slug });
         }
+
+        // Dispatch error
+        dispatch({
+          type: 'SET_ERROR',
+          taskName: activeTasks[0]?.[0] as TaskName ?? 'CREATE_WEB2_AGREEMENT',
+          message: err instanceof Error ? err.message : 'An error occurred during agreement creation',
+        });
+
+        // Clear current action
+        setCurrentAction(undefined);
+
         throw err;
       }
     },
@@ -255,6 +275,13 @@ export const useSpaceTokenPurchaseOrchestrator = ({
     web3.resetCreateSpaceTokenPurchaseProposal();
   }, [resetTasks, web2, web3]);
 
+  const hasTaskError = Object.values(taskState).some(
+    (task) => task.status === TaskStatus.ERROR,
+  );
+  const hasTaskPending = Object.values(taskState).some(
+    (task) => task.status === TaskStatus.IS_PENDING,
+  );
+
   return {
     reset,
     createSpaceTokenPurchase,
@@ -265,8 +292,8 @@ export const useSpaceTokenPurchaseOrchestrator = ({
     taskState,
     currentAction,
     progress,
-    isPending: progress > 0 && progress < 100,
-    isError: errors.length > 0,
+    isPending: (progress > 0 && progress < 100) || hasTaskPending,
+    isError: errors.length > 0 || hasTaskError,
     errors,
   };
 };
