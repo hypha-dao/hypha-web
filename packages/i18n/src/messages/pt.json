@@ -478,6 +478,7 @@
       "tokenBurning": "Queima de tokens",
       "backingVault": "Cofre de lastro",
       "buyHyphaTokensRewards": "Compre tokens Hypha (recompensas)",
+      "spaceTokenPurchase": "Compra de tokens do espaço",
       "spaceTransparency": "Transparência Espacial",
       "collectiveAgreement": "Acordo Coletivo",
       "contribution": "Contribuição",
@@ -597,6 +598,7 @@
       "gettingUpdatedData": "Obtendo dados atualizados...",
       "voteProcessed": "Votação processada!",
       "somethingWentWrong": "Algo deu errado.",
+      "tryAgainGeneric": "Algo deu errado. Tente novamente.",
       "pleaseWait": "Por favor, aguarde...",
       "retry": "Tentar novamente",
       "transactionRevertedUnknownReason": "Transação revertida por motivo desconhecido.",
@@ -740,6 +742,10 @@
       "buyHyphaTokensRewards": {
         "title": "Compre tokens Hypha (recompensas)",
         "description": "Compre tokens Hypha para participar da rede e ganhar recompensas."
+      },
+      "spaceTokenPurchase": {
+        "title": "Ativar compra de tokens do espaço",
+        "description": "Permita que os membros comprem os tokens nativos do seu espaço."
       },
       "depositFunds": {
         "title": "Depositar fundos",
@@ -954,6 +960,7 @@
     "rewardValueMustBeGreaterThanZero": "O valor da recompensa deve ser maior que 0",
     "noRewardsFoundForUser": "Nenhuma recompensa encontrada para este usuário",
     "buyHypha": "Compre HYPHA",
+    "buySpaceTokens": "Comprar tokens do espaço",
     "actions": "Ações",
     "noAssetsFoundForUser": "Nenhum recurso encontrado para este usuário",
     "editForm": {
@@ -1006,6 +1013,11 @@
       "buyHyphaTokensRewards": {
         "title": "Compre tokens Hypha (recompensas)",
         "description": "Compre tokens Hypha para participar da rede e ganhar recompensas"
+      },
+      "buySpaceTokens": {
+        "title": "Comprar tokens do espaço",
+        "backLabel": "Voltar às ações",
+        "description": "Compre os tokens nativos do seu espaço com a moeda de pagamento configurada."
       },
       "activateSpaces": {
         "title": "Ativar espaço(s)",
@@ -1100,6 +1112,83 @@
   "Proposals": {
     "CreateNew": "Crie uma nova proposta",
     "Create": "Criar proposta"
+  },
+  "SpaceTokenPurchase": {
+    "selection": {
+      "sectionTitle": "Token",
+      "description": "Escolha um token disponível para compra neste espaço.",
+      "fieldLabel": "Token",
+      "placeholder": "Selecione um token",
+      "noTokenFound": "Nenhum token encontrado.",
+      "noTokenPrefix": "Seu espaço ainda não criou um token,",
+      "clickHere": "clique aqui",
+      "noTokenSuffix": "para emitir primeiro um token",
+      "tokenSupply": "Fornecimento de tokens",
+      "issuanceToDate": "Emissão até a data",
+      "unlimitedSupply": "Fornecimento ilimitado",
+      "availableLimit": "Limite de tokens disponíveis para compra"
+    },
+    "toggle": {
+      "sectionTitle": "Compra de tokens",
+      "description": "Ative esta opção para permitir que os membros comprem os tokens nativos do seu espaço. Desative a qualquer momento.",
+      "activateLabel": "Ativar compra de tokens",
+      "disabledHint": "Quando desativada, os membros não podem mais comprar este token."
+    },
+    "price": {
+      "sectionTitle": "Preço de compra do token",
+      "description": "Defina um preço de compra personalizado ou use o preço padrão da tesouraria.",
+      "currencyPlaceholder": "Moeda",
+      "currentPriceLabel": "Preço atual na tesouraria:",
+      "currentPriceSuffix": "— definido na configuração do token do seu espaço.",
+      "fieldLabel": "Preço de compra do token",
+      "availableAtThisPriceLabel": "Tokens disponíveis para compra a este preço",
+      "exceedsLimit": "A quantidade de tokens solicitada excede o limite de tokens disponíveis para compra. Insira um valor até {limit}."
+    },
+    "eligibility": {
+      "sectionTitle": "Elegibilidade de compra",
+      "description": "O botão «Comprar tokens do espaço» será exibido no perfil dos espaços ou membros que estiverem na lista branca nas configurações do token. Para rever esse acesso, você pode gerenciar listas brancas por meio de uma proposta de configuração do token.",
+      "whitelistInfo": "A lista branca é configurada nas definições originais de emissão do token. Todos os membros ou espaços na lista branca «Para» poderão ver e comprar tokens {tokenName}."
+    }
+  },
+  "ProposalSpaceTokenPurchase": {
+    "token": "Token",
+    "tokenAlt": "Token",
+    "purchase_status": "Estado da compra",
+    "enabled": "Ativado",
+    "disabled": "Desativado",
+    "payment_token": "Token de pagamento",
+    "not_configured": "Não configurado",
+    "purchase_price": "Preço de compra",
+    "tokens_for_sale": "Tokens à venda"
+  },
+  "PeopleBuySpaceTokens": {
+    "validation": {
+      "tokenRequired": "Selecione um token",
+      "amountRequired": "Insira uma quantidade",
+      "amountPositive": "A quantidade deve ser maior que 0"
+    },
+    "empty": "Não há tokens do espaço disponíveis para compra no momento.",
+    "eligibilityLoadError": "Não foi possível verificar quais tokens estão disponíveis. Tente novamente.",
+    "selectToken": "Selecionar token",
+    "selectPlaceholder": "Selecione um token",
+    "amount": "Quantidade",
+    "pricePerToken": "Preço: {price} {currency} por token",
+    "totalCost": "Custo total: {amount} {currency}",
+    "remainingInSale": "Restantes na venda: {amount}",
+    "loadingSale": "Carregando configuração da venda...",
+    "unableToReadSale": "Não foi possível ler a configuração de venda do token.",
+    "saleDisabled": "A venda deste token está desativada.",
+    "recipientTokenSent": "{symbol} enviado para",
+    "recipientPaymentPaid": "{symbol} pago a",
+    "fallbackTokenSymbol": "Token",
+    "fallbackPaymentSymbol": "Pagamento",
+    "statusApproving": "A aprovar",
+    "statusPurchasing": "A comprar",
+    "statusProcessing": "A processar",
+    "success": "A sua compra foi concluída com sucesso. Os tokens aparecerão na sua carteira em breve.",
+    "buy": "Comprar",
+    "transactionFailed": "A transação falhou. Tente novamente.",
+    "purchaseFailedGeneric": "Ocorreu um erro ao processar a sua compra. Tente novamente."
   },
   "Spaces": {
     "createSpace": "Criar espaço",
