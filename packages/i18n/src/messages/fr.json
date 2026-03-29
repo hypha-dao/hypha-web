@@ -867,6 +867,12 @@
     "loadingBackdrop": {
       "keepWindowOpen": "Veuillez laisser cette fenêtre ouverte jusqu’à la fin de la barre de progression."
     },
+    "spaceTokenPurchaseProgress": {
+      "CREATE_WEB2_AGREEMENT": "Création de l'accord...",
+      "CREATE_WEB3_PROPOSAL": "Création de la proposition Web3...",
+      "UPLOAD_FILES": "Téléversement des fichiers...",
+      "LINK_WEB2_AND_WEB3_AGREEMENT": "Liaison des accords Web2 et Web3"
+    },
     "proposalLoader": {
       "processingVote": "Traitement du vote...",
       "savingVote": "Enregistrement du vote...",

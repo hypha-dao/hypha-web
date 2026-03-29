@@ -26,11 +26,13 @@ type CreateSpaceTokenPurchaseArg = z.infer<typeof schemaCreateAgreement> & {
   web3SpaceId?: number;
 };
 
-type TaskName =
+export type SpaceTokenPurchaseTaskName =
   | 'CREATE_WEB2_AGREEMENT'
   | 'CREATE_WEB3_PROPOSAL'
   | 'UPLOAD_FILES'
   | 'LINK_WEB2_AND_WEB3_AGREEMENT';
+
+type TaskName = SpaceTokenPurchaseTaskName;
 
 type TaskState = {
   [K in TaskName]: {
@@ -45,13 +47,6 @@ enum TaskStatus {
   IS_DONE = 'isDone',
   ERROR = 'error',
 }
-
-const taskActionDescriptions: Record<TaskName, string> = {
-  CREATE_WEB2_AGREEMENT: 'Creating agreement...',
-  CREATE_WEB3_PROPOSAL: 'Creating Web3 proposal...',
-  UPLOAD_FILES: 'Uploading files...',
-  LINK_WEB2_AND_WEB3_AGREEMENT: 'Linking Web2 and Web3 agreements',
-};
 
 type ProgressAction =
   | { type: 'START_TASK'; taskName: TaskName; message?: string }
@@ -134,30 +129,27 @@ export const useSpaceTokenPurchaseOrchestrator = ({
     initialTaskState,
   );
   const progress = computeProgress(taskState);
-  const [currentAction, setCurrentAction] = React.useState<string>();
+  const [currentTask, setCurrentTask] = React.useState<TaskName | null>(null);
 
   const startTask = useCallback((taskName: TaskName) => {
-    const action = taskActionDescriptions[taskName];
-    setCurrentAction(action);
-    dispatch({ type: 'START_TASK', taskName, message: action });
+    setCurrentTask(taskName);
+    dispatch({ type: 'START_TASK', taskName });
   }, []);
 
   const completeTask = useCallback(
     (taskName: TaskName) => {
-      if (currentAction === taskActionDescriptions[taskName])
-        setCurrentAction(undefined);
+      if (currentTask === taskName) setCurrentTask(null);
       dispatch({ type: 'COMPLETE_TASK', taskName });
     },
-    [currentAction],
+    [currentTask],
   );
 
   const errorTask = useCallback(
     (taskName: TaskName, error: string) => {
-      if (currentAction === taskActionDescriptions[taskName])
-        setCurrentAction(undefined);
+      if (currentTask === taskName) setCurrentTask(null);
       dispatch({ type: 'SET_ERROR', taskName, message: error });
     },
-    [currentAction],
+    [currentTask],
   );
 
   const resetTasks = useCallback(() => {
@@ -210,7 +202,7 @@ export const useSpaceTokenPurchaseOrchestrator = ({
             err instanceof Error ? err.message : 'Something went wrong',
           );
         }
-        setCurrentAction(undefined);
+        setCurrentTask(null);
         if (web2Slug) {
           await web2.deleteAgreementBySlug({ slug: web2Slug });
         }
@@ -306,7 +298,8 @@ export const useSpaceTokenPurchaseOrchestrator = ({
       ...updatedWeb2Agreement,
     },
     taskState,
-    currentAction,
+    /** i18n: map with AgreementFlow.spaceTokenPurchaseProgress */
+    currentTask,
     progress,
     isPending:
       !hasTaskFailure && (hasTaskPending || (progress > 0 && progress < 100)),

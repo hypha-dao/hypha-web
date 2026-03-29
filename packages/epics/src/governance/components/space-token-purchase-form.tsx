@@ -51,11 +51,16 @@ export const SpaceTokenPurchaseForm = ({
   const {
     createSpaceTokenPurchase,
     reset,
-    currentAction,
+    currentTask,
     isError,
     isPending,
     progress,
   } = useSpaceTokenPurchaseOrchestrator({ authToken: jwt, config });
+
+  const progressMessage =
+    currentTask != null
+      ? tAgreementFlow(`spaceTokenPurchaseProgress.${currentTask}`)
+      : null;
 
   const [formError, setFormError] = React.useState<string | null>(null);
 
@@ -109,6 +114,7 @@ export const SpaceTokenPurchaseForm = ({
   return (
     <LoadingBackdrop
       showKeepWindowOpenMessage={true}
+      keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       fullHeight={true}
       progress={progress}
       isLoading={isPending}
@@ -119,7 +125,7 @@ export const SpaceTokenPurchaseForm = ({
             <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (
-          <div>{currentAction}</div>
+          <div>{progressMessage}</div>
         )
       }
     >
