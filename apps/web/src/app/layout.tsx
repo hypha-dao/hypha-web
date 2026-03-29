@@ -19,7 +19,7 @@ import {
 import { EvmProvider } from '@hypha-platform/evm';
 import { useMe } from '@hypha-platform/core/client';
 import { fileRouter } from '@hypha-platform/core/server';
-import { MenuTop } from '@hypha-platform/ui';
+import { MenuTop, TooltipProvider } from '@hypha-platform/ui';
 import { ROOT_URL } from './constants';
 import { enableAiChat } from '@hypha-platform/feature-flags';
 import { NotificationSubscriber } from '@hypha-platform/notifications/client';
@@ -117,57 +117,59 @@ export default async function RootLayout({
         >
           <EvmProvider>
             <NextIntlClientProvider messages={messages}>
-              <NotificationSubscriber
-                appId={notificationAppId}
-                safariWebId={safariWebId}
-                serviceWorkerPath={serviceWorkerPath}
-              >
-                <AiLeftPanelLayout enabled={aiChatEnabled}>
-                  <MenuTop
-                    logoHref={ROOT_URL}
-                    openMenuLabel={tNav('openMenu')}
-                    closeMenuLabel={tNav('closeMenu')}
-                    leadingAction={
-                      aiChatEnabled ? <AiSidebarTrigger /> : undefined
-                    }
-                  >
-                    <ConnectedButtonProfile
-                      useAuthentication={useAuthentication}
-                      useMe={useMe}
-                      newUserRedirectPath="/profile/signup"
-                      baseRedirectPath="/my-spaces"
-                      navItems={[
-                        {
-                          label: tNav('network'),
-                          href: `/${locale}/network`,
-                        },
-                        {
-                          label: tNav('mySpaces'),
-                          href: `/${locale}/my-spaces`,
-                        },
-                      ]}
+              <TooltipProvider>
+                <NotificationSubscriber
+                  appId={notificationAppId}
+                  safariWebId={safariWebId}
+                  serviceWorkerPath={serviceWorkerPath}
+                >
+                  <AiLeftPanelLayout enabled={aiChatEnabled}>
+                    <MenuTop
+                      logoHref={ROOT_URL}
+                      openMenuLabel={tNav('openMenu')}
+                      closeMenuLabel={tNav('closeMenu')}
+                      leadingAction={
+                        aiChatEnabled ? <AiSidebarTrigger /> : undefined
+                      }
+                    >
+                      <ConnectedButtonProfile
+                        useAuthentication={useAuthentication}
+                        useMe={useMe}
+                        newUserRedirectPath="/profile/signup"
+                        baseRedirectPath="/my-spaces"
+                        navItems={[
+                          {
+                            label: tNav('network'),
+                            href: `/${locale}/network`,
+                          },
+                          {
+                            label: tNav('mySpaces'),
+                            href: `/${locale}/my-spaces`,
+                          },
+                        ]}
+                      />
+                      {isLanguageSelectVisible && <ConnectedLanguageSelect />}
+                    </MenuTop>
+                    <NextSSRPlugin
+                      routerConfig={extractRouterConfig(fileRouter)}
                     />
-                    {isLanguageSelectVisible && <ConnectedLanguageSelect />}
-                  </MenuTop>
-                  <NextSSRPlugin
-                    routerConfig={extractRouterConfig(fileRouter)}
-                  />
-                  <div className="mb-auto pb-8">
-                    <div className="pt-9 h-full flex justify-normal">
-                      <div className="w-full h-full">{children}</div>
+                    <div className="mb-auto pb-8">
+                      <div className="pt-9 h-full flex justify-normal">
+                        <div className="w-full h-full">{children}</div>
+                      </div>
                     </div>
-                  </div>
-                  <Footer
-                    networkLabel={tFooter('network')}
-                    legalLabel={tFooter('legal')}
-                    hyphaServicesLabel={tFooter('hyphaServices')}
-                    hyphaTokenomicsLabel={tFooter('hyphaTokenomics')}
-                    licensingPolicyLabel={tFooter('licensingPolicy')}
-                    termsAndConditionsLabel={tFooter('termsAndConditions')}
-                    privacyPolicyLabel={tFooter('privacyPolicy')}
-                  />
-                </AiLeftPanelLayout>
-              </NotificationSubscriber>
+                    <Footer
+                      networkLabel={tFooter('network')}
+                      legalLabel={tFooter('legal')}
+                      hyphaServicesLabel={tFooter('hyphaServices')}
+                      hyphaTokenomicsLabel={tFooter('hyphaTokenomics')}
+                      licensingPolicyLabel={tFooter('licensingPolicy')}
+                      termsAndConditionsLabel={tFooter('termsAndConditions')}
+                      privacyPolicyLabel={tFooter('privacyPolicy')}
+                    />
+                  </AiLeftPanelLayout>
+                </NotificationSubscriber>
+              </TooltipProvider>
             </NextIntlClientProvider>
           </EvmProvider>
         </ThemeProvider>
