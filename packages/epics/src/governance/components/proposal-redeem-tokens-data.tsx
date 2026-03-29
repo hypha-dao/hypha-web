@@ -62,9 +62,24 @@ export const ProposalRedeemTokensData = ({
   }, [token, vaults]);
 
   const collateralByAddress = React.useMemo(() => {
-    const map = new Map<string, { icon: string; symbol: string }>();
+    const map = new Map<
+      string,
+      {
+        icon: string;
+        symbol: string;
+        value: number;
+        usdEqual: number;
+        tokenPrice?: number;
+      }
+    >();
     for (const c of vaultForRedeem?.collaterals ?? []) {
-      map.set(c.address.toLowerCase(), { icon: c.icon, symbol: c.symbol });
+      map.set(c.address.toLowerCase(), {
+        icon: c.icon,
+        symbol: c.symbol,
+        value: c.value,
+        usdEqual: c.usdEqual,
+        tokenPrice: c.tokenPrice,
+      });
     }
     return map;
   }, [vaultForRedeem?.collaterals]);
@@ -108,12 +123,12 @@ export const ProposalRedeemTokensData = ({
       )
       .map((c) => {
         const addr = c.asset.toLowerCase();
-        const vaultMeta = collateralByAddress.get(addr);
+        const collateral = collateralByAddress.get(addr);
         const st = spaceTokenList.find(
           (s: { address?: string; symbol: string; icon?: string }) =>
             s.address?.toLowerCase() === addr,
         );
-        const icon = vaultMeta?.icon ?? st?.icon;
+        const icon = collateral?.icon ?? st?.icon;
         const symbol = getTokenSymbol(c.asset, dbTokens, spaceTokenList);
         const pctStr = `${bigIntToPercentageString(c.percentage)}%`;
         const share = Number(c.percentage) / 10000;
@@ -127,7 +142,43 @@ export const ProposalRedeemTokensData = ({
           requested !== null && Number.isFinite(requested)
             ? `${formatCurrencyValue(requested)} ${currencyLabel ?? 'USD'}`
             : '—';
-        return { asset: c.asset, icon, symbol, requestedDisplay, pctStr };
+
+        const vaultRight =
+          collateral &&
+          typeof collateral.value === 'number' &&
+          Number.isFinite(collateral.value) ? (
+            <>
+              <span className="text-foreground">
+                {formatCurrencyValue(collateral.value)} {collateral.symbol}
+              </span>
+              {collateral.usdEqual > 0 ? (
+                <span className="text-neutral-9 ml-1">
+                  (${formatCurrencyValue(collateral.usdEqual)})
+                </span>
+              ) : null}
+              {typeof collateral.tokenPrice === 'number' &&
+              Number.isFinite(collateral.tokenPrice) ? (
+                <span className="text-neutral-9 ml-1">
+                  ·{' '}
+                  {t('redeemCollateralUnitPrice', {
+                    price: formatCurrencyValue(collateral.tokenPrice),
+                    currency: currencyLabel ?? 'USD',
+                  })}
+                </span>
+              ) : null}
+            </>
+          ) : (
+            <span className="text-neutral-9">—</span>
+          );
+
+        return {
+          asset: c.asset,
+          icon,
+          symbol,
+          requestedDisplay,
+          pctStr,
+          vaultRight,
+        };
       });
   }, [
     collateralByAddress,
@@ -136,6 +187,7 @@ export const ProposalRedeemTokensData = ({
     dbTokens,
     notionalValue,
     spaceTokenList,
+    t,
   ]);
 
   if (!amount || !token || !redeemedHuman) {
@@ -174,28 +226,35 @@ export const ProposalRedeemTokensData = ({
       {conversionDisplayRows.length > 0 ? (
         <div className="flex flex-col gap-4">
           <span className="text-neutral-11 text-2 font-medium">
-            {t('tokenBackingVault')}
+            {t('backingVaultPayout')}
           </span>
           <div className="flex flex-col gap-2">
             {conversionDisplayRows.map((row, i) => (
               <div
                 key={`${row.asset}-${i}`}
-                className="flex items-center gap-2 min-w-0 text-1"
+                className="flex justify-between items-center gap-3 text-1 min-w-0"
               >
-                {row.icon ? (
-                  <img
-                    src={row.icon}
-                    alt={row.symbol}
-                    className="w-4 h-4 rounded-full shrink-0"
-                  />
-                ) : null}
-                <span className="min-w-0 break-words text-foreground">
-                  {row.symbol}
-                  <span className="text-neutral-9">
-                    {' '}
-                    · {row.requestedDisplay} · {row.pctStr}
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  {row.icon ? (
+                    <img
+                      src={row.icon}
+                      alt={row.symbol}
+                      className="w-4 h-4 rounded-full shrink-0"
+                    />
+                  ) : null}
+                  <span className="min-w-0 break-words">
+                    <span className="font-medium text-foreground">
+                      {row.symbol}
+                    </span>
+                    <span className="text-neutral-9 font-normal">
+                      {' '}
+                      · {row.requestedDisplay} · {row.pctStr}
+                    </span>
                   </span>
-                </span>
+                </div>
+                <div className="text-nowrap text-right shrink-0 text-1">
+                  {row.vaultRight}
+                </div>
               </div>
             ))}
           </div>
