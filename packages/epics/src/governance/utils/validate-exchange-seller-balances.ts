@@ -113,6 +113,7 @@ export async function validateExchangeSellerLegBalances(
 
   for (let i = 0; i < sellerLeg.length; i++) {
     const leg = sellerLeg[i];
+    if (!leg) continue;
     const result = await checkSingleSellerLegBalance(owner, leg);
     if (result === 'rpc_error') {
       throw new Error('EXCHANGE_SELLER_BALANCE_CHECK_FAILED');
