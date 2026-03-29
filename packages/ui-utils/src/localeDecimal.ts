@@ -15,6 +15,24 @@ export function getLocaleNumberSeparators(locale: string): {
   return { group, decimal };
 }
 
+/** Linear-time shape check: optional digits, optional single '.', optional digits. */
+function isDecimalDigitString(s: string): boolean {
+  let i = 0;
+  while (i < s.length && s[i] >= '0' && s[i] <= '9') i += 1;
+  if (i < s.length && s[i] === '.') {
+    i += 1;
+    while (i < s.length && s[i] >= '0' && s[i] <= '9') i += 1;
+  }
+  return i === s.length;
+}
+
+function hasAsciiDigit(s: string): boolean {
+  for (let i = 0; i < s.length; i += 1) {
+    if (s[i] >= '0' && s[i] <= '9') return true;
+  }
+  return false;
+}
+
 /**
  * Parse user input that uses the locale's decimal and grouping separators
  * into a finite number. Returns undefined for empty input or unparseable values.
@@ -34,7 +52,7 @@ export function parseLocaleDecimal(
     s = decParts.join('.');
   }
 
-  if (!/^\d*\.?\d*$/.test(s) || s === '.' || !/\d/.test(s)) {
+  if (!isDecimalDigitString(s) || s === '.' || !hasAsciiDigit(s)) {
     return undefined;
   }
 
