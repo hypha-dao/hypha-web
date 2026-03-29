@@ -177,9 +177,20 @@ export const useSpaceTokenPurchaseOrchestrator = ({
 
       const web2Slug = createdAgreement?.slug ?? web2.createdAgreement?.slug;
 
+      let pendingTask: TaskName | null = null;
       try {
+        startTask('UPLOAD_FILES');
+        pendingTask = 'UPLOAD_FILES';
+        const files = schemaCreateAgreementFiles.parse(arg);
+        if (files.attachments?.length || files.leadImage) {
+          await agreementFiles.upload(files, web2Slug);
+        }
+        completeTask('UPLOAD_FILES');
+        pendingTask = null;
+
         if (config) {
           startTask('CREATE_WEB3_PROPOSAL');
+          pendingTask = 'CREATE_WEB3_PROPOSAL';
           await web3.createSpaceTokenPurchaseProposal({
             spaceId: arg.web3SpaceId ?? arg.spaceId,
             tokenAddress: arg.tokenAddress as `0x${string}`,
@@ -189,15 +200,16 @@ export const useSpaceTokenPurchaseOrchestrator = ({
             tokensAvailableForPurchase: arg.tokensAvailableForPurchase,
           });
           completeTask('CREATE_WEB3_PROPOSAL');
+          pendingTask = null;
         }
-
-        const files = schemaCreateAgreementFiles.parse(arg);
-        startTask('UPLOAD_FILES');
-        if (files.attachments?.length || files.leadImage) {
-          await agreementFiles.upload(files, web2Slug);
-        }
-        completeTask('UPLOAD_FILES');
       } catch (err) {
+        if (pendingTask) {
+          errorTask(
+            pendingTask,
+            err instanceof Error ? err.message : 'Something went wrong',
+          );
+        }
+        setCurrentAction(undefined);
         if (web2Slug) {
           await web2.deleteAgreementBySlug({ slug: web2Slug });
         }
@@ -239,14 +251,44 @@ export const useSpaceTokenPurchaseOrchestrator = ({
     },
   );
 
+  const taskErrorMessages = useMemo(
+    () =>
+      (
+        Object.values(taskState) as Array<{
+          status: TaskStatus;
+          message?: string;
+        }>
+      )
+        .filter((t) => t.status === TaskStatus.ERROR && t.message)
+        .map((t) => t.message as string),
+    [taskState],
+  );
+
+  const hasTaskFailure = useMemo(
+    () =>
+      (Object.values(taskState) as Array<{ status: TaskStatus }>).some(
+        (t) => t.status === TaskStatus.ERROR,
+      ),
+    [taskState],
+  );
+
+  const hasTaskPending = useMemo(
+    () =>
+      (Object.values(taskState) as Array<{ status: TaskStatus }>).some(
+        (t) => t.status === TaskStatus.IS_PENDING,
+      ),
+    [taskState],
+  );
+
   const errors = useMemo(
     () =>
       [
         web2.errorCreateAgreementMutation,
         web3.createSpaceTokenPurchaseError,
         web3.errorWaitCreatedSpaceTokenPurchaseProposal,
+        ...taskErrorMessages,
       ].filter(Boolean),
-    [web2, web3],
+    [web2, web3, taskErrorMessages],
   );
 
   const reset = useCallback(() => {
@@ -265,8 +307,9 @@ export const useSpaceTokenPurchaseOrchestrator = ({
     taskState,
     currentAction,
     progress,
-    isPending: progress > 0 && progress < 100,
-    isError: errors.length > 0,
+    isPending:
+      !hasTaskFailure && (hasTaskPending || (progress > 0 && progress < 100)),
+    isError: errors.length > 0 || hasTaskFailure,
     errors,
   };
 };

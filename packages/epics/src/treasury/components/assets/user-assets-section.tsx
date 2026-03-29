@@ -61,7 +61,7 @@ export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
           href={isMyProfile ? `${basePath}/actions/buy-space-tokens` : {}}
           scroll={false}
         >
-          <Button disabled={!isMyProfile}>Buy Space tokens</Button>
+          <Button disabled={!isMyProfile}>{tProfile('buySpaceTokens')}</Button>
         </Link>
         <Link
           className={!isMyProfile ? 'cursor-not-allowed' : ''}

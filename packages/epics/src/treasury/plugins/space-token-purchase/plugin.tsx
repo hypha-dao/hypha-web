@@ -72,10 +72,15 @@ export const SpaceTokenPurchasePlugin = ({
     if (!tokenAddressChecksum || saleDetailsFromChain === undefined) {
       return;
     }
+    if (
+      saleDetailsFromChain.queriedTokenAddress.toLowerCase() !==
+      tokenAddressChecksum.toLowerCase()
+    ) {
+      return;
+    }
     if (hydratedFromChainForToken.current === tokenAddressChecksum) {
       return;
     }
-    hydratedFromChainForToken.current = tokenAddressChecksum;
 
     setValue('activatePurchase', saleDetailsFromChain.activatePurchase, {
       shouldDirty: true,
@@ -106,6 +111,8 @@ export const SpaceTokenPurchasePlugin = ({
         );
       }
     }
+
+    hydratedFromChainForToken.current = tokenAddressChecksum;
   }, [tokenAddressChecksum, saleDetailsFromChain, setValue]);
 
   const selectedToken = spaceTokens.find(

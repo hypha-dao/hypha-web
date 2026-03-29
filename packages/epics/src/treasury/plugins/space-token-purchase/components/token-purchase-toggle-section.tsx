@@ -27,13 +27,14 @@ export const TokenPurchaseToggleSection = () => {
         render={({ field }) => (
           <FormItem>
             <div className="flex items-center justify-between gap-4">
-              <label className="text-2 text-neutral-11">
+              <span className="text-2 text-neutral-11">
                 {t('toggle.activateLabel')}
-              </label>
+              </span>
               <FormControl>
                 <Switch
                   checked={field.value ?? false}
                   onCheckedChange={field.onChange}
+                  aria-label={t('toggle.activateLabel')}
                 />
               </FormControl>
             </div>

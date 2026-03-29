@@ -14,6 +14,7 @@ import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useConfig } from 'wagmi';
@@ -42,6 +43,8 @@ export const SpaceTokenPurchaseForm = ({
   plugin,
 }: SpaceTokenPurchaseFormProps) => {
   const router = useRouter();
+  const tSpaces = useTranslations('Spaces');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
@@ -66,7 +69,7 @@ export const SpaceTokenPurchaseForm = ({
       attachments: undefined,
       spaceId: spaceId ?? undefined,
       creatorId: person?.id,
-      label: 'Token Purchase',
+      label: '',
       tokenAddress: '',
       activatePurchase: false,
       purchasePrice: undefined,
@@ -79,6 +82,11 @@ export const SpaceTokenPurchaseForm = ({
   useScrollToErrors(form, formRef);
   const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
 
+  React.useEffect(() => {
+    const proposalLabel = tAgreementFlow('labels.spaceTokenPurchase');
+    form.setValue('label', proposalLabel, { shouldDirty: false });
+  }, [form, tAgreementFlow]);
+
   const handleCreate = async (data: FormValues) => {
     setFormError(null);
     try {
@@ -86,11 +94,11 @@ export const SpaceTokenPurchaseForm = ({
         ...data,
         spaceId: spaceId as number,
         web3SpaceId: web3SpaceId ?? undefined,
-        label: 'Token Purchase',
+        label: tAgreementFlow('labels.spaceTokenPurchase'),
       });
       router.push(successfulUrl);
     } catch {
-      setFormError('Something went wrong. Please try again.');
+      setFormError(tAgreementFlow('proposalLoader.tryAgainGeneric'));
     }
   };
 
@@ -107,8 +115,8 @@ export const SpaceTokenPurchaseForm = ({
       message={
         isError ? (
           <div className="flex flex-col">
-            <div>Ouh Snap. There was an error</div>
-            <Button onClick={reset}>Reset</Button>
+            <div>{tSpaces('errorOhSnap')}</div>
+            <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (
           <div>{currentAction}</div>
@@ -131,9 +139,9 @@ export const SpaceTokenPurchaseForm = ({
             successfulUrl={successfulUrl}
             closeUrl={closeUrl || successfulUrl}
             backUrl={backUrl}
-            backLabel="Back to settings"
+            backLabel={tSpaces('backToSettings')}
             isLoading={false}
-            label="Token Purchase"
+            label={tAgreementFlow('labels.spaceTokenPurchase')}
             progress={progress}
           />
           {plugin}
@@ -145,7 +153,7 @@ export const SpaceTokenPurchaseForm = ({
               </div>
             )}
             <div className="flex justify-end w-full">
-              <Button type="submit">Publish</Button>
+              <Button type="submit">{tAgreementFlow('buttons.publish')}</Button>
             </div>
           </div>
         </form>

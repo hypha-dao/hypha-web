@@ -38,6 +38,7 @@ import { formatUnits } from 'viem';
 import { RecipientField } from '../../agreements/plugins/components/common/recipient-field';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 type PurchasableToken = {
   id: number;
@@ -51,19 +52,12 @@ type PurchasableToken = {
   type: string;
 };
 
-const buySpaceTokensSchema = z.object({
-  tokenAddress: z.string().min(1, 'Please select a token'),
-  amount: z
-    .string()
-    .min(1, 'Please enter an amount')
-    .refine((v) => parseFloat(v) > 0, {
-      message: 'Amount must be greater than 0',
-    }),
-  buyerAddress: z.string().optional(),
-  paymentRecipient: z.string().optional(),
-});
-
-type FormValues = z.infer<typeof buySpaceTokensSchema>;
+type FormValues = {
+  tokenAddress: string;
+  amount: string;
+  buyerAddress?: string;
+  paymentRecipient?: string;
+};
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const spaceTokenPurchaseAbi = [
   {
@@ -95,6 +89,7 @@ export const PeopleBuySpaceTokens = ({
   personSlug: _personSlug,
   closeUrl,
 }: PeopleBuySpaceTokensProps) => {
+  const t = useTranslations('PeopleBuySpaceTokens');
   const router = useRouter();
   const { person } = useMe();
   const { client } = useSmartWallets();
@@ -117,53 +112,67 @@ export const PeopleBuySpaceTokens = ({
     [availableTokens],
   );
 
-  const { data: eligibleTokenAddressSet, isLoading: isLoadingEligibility } =
-    useSWR(
-      eligibilityAddress && tokenAddresses.length > 0
-        ? ['eligibleSpaceTokens', eligibilityAddress, ...tokenAddresses]
-        : null,
-      async () => {
-        const results = await Promise.all(
-          tokenAddresses.map(async (address) => {
-            try {
-              const [
-                [salePaymentToken, salePricePerToken, tokensLeftToSell],
-                canBuy,
-              ] = await Promise.all([
-                publicClient.readContract({
-                  address,
-                  abi: spaceTokenPurchaseAbi,
-                  functionName: 'getTokenSaleDetails',
-                }),
-                publicClient.readContract({
-                  address,
-                  abi: spaceTokenPurchaseAbi,
-                  functionName: 'canAccountPurchase',
-                  args: [eligibilityAddress as `0x${string}`],
-                }),
-              ]);
+  const {
+    data: eligibleTokenAddressSet,
+    isLoading: isLoadingEligibility,
+    error: eligibilityError,
+  } = useSWR(
+    eligibilityAddress && tokenAddresses.length > 0
+      ? ['eligibleSpaceTokens', eligibilityAddress, ...tokenAddresses]
+      : null,
+    async () => {
+      const settled = await Promise.allSettled(
+        tokenAddresses.map(async (address) => {
+          const [
+            [salePaymentToken, salePricePerToken, tokensLeftToSell],
+            canBuy,
+          ] = await Promise.all([
+            publicClient.readContract({
+              address,
+              abi: spaceTokenPurchaseAbi,
+              functionName: 'getTokenSaleDetails',
+            }),
+            publicClient.readContract({
+              address,
+              abi: spaceTokenPurchaseAbi,
+              functionName: 'canAccountPurchase',
+              args: [eligibilityAddress as `0x${string}`],
+            }),
+          ]);
 
-              const isSaleActive =
-                salePaymentToken !== ZERO_ADDRESS &&
-                salePricePerToken > 0n &&
-                tokensLeftToSell > 0n;
+          const isSaleActive =
+            salePaymentToken !== ZERO_ADDRESS &&
+            salePricePerToken > 0n &&
+            tokensLeftToSell > 0n;
 
-              return {
-                address: address.toLowerCase(),
-                eligible: isSaleActive && canBuy,
-              };
-            } catch {
-              return { address: address.toLowerCase(), eligible: false };
-            }
-          }),
-        );
+          return {
+            address: address.toLowerCase(),
+            eligible: isSaleActive && canBuy,
+          };
+        }),
+      );
 
-        return new Set(
-          results.filter((item) => item.eligible).map((item) => item.address),
-        );
-      },
-      { revalidateOnFocus: true },
-    );
+      const rejected = settled.filter(
+        (r): r is PromiseRejectedResult => r.status === 'rejected',
+      );
+      if (rejected.length > 0) {
+        const first = rejected[0];
+        const reason = first?.reason;
+        throw reason instanceof Error ? reason : new Error(String(reason));
+      }
+
+      const results = settled.map(
+        (r) =>
+          (r as PromiseFulfilledResult<{ address: string; eligible: boolean }>)
+            .value,
+      );
+
+      return new Set(
+        results.filter((item) => item.eligible).map((item) => item.address),
+      );
+    },
+    { revalidateOnFocus: true },
+  );
 
   const purchasableTokens = useMemo<PurchasableToken[]>(
     () =>
@@ -173,9 +182,30 @@ export const PeopleBuySpaceTokens = ({
     [availableTokens, eligibleTokenAddressSet],
   );
 
+  const buySpaceTokensSchema = useMemo(
+    () =>
+      z.object({
+        tokenAddress: z.string().min(1, t('validation.tokenRequired')),
+        amount: z
+          .string()
+          .min(1, t('validation.amountRequired'))
+          .refine((v) => parseFloat(v) > 0, {
+            message: t('validation.amountPositive'),
+          }),
+        buyerAddress: z.string().optional(),
+        paymentRecipient: z.string().optional(),
+      }),
+    [t],
+  );
+
   const formRef = useRef<HTMLFormElement>(null);
+  const resolver = useMemo(
+    () => zodResolver(buySpaceTokensSchema),
+    [buySpaceTokensSchema],
+  );
+
   const form = useForm<FormValues>({
-    resolver: zodResolver(buySpaceTokensSchema),
+    resolver,
     defaultValues: {
       tokenAddress: '',
       amount: '',
@@ -288,9 +318,7 @@ export const PeopleBuySpaceTokens = ({
     } catch (error) {
       console.error('Purchase failed', error);
       const message =
-        error instanceof Error
-          ? error.message
-          : 'An error occurred while processing your purchase. Please try again.';
+        error instanceof Error ? error.message : t('purchaseFailedGeneric');
       form.setError('root', {
         message,
       });
@@ -299,16 +327,18 @@ export const PeopleBuySpaceTokens = ({
     }
   };
 
+  if (eligibilityError && !isLoadingEligibility) {
+    return (
+      <div className="text-2 text-neutral-11">{t('eligibilityLoadError')}</div>
+    );
+  }
+
   if (
     !isTokensLoading &&
     !isLoadingEligibility &&
     purchasableTokens.length === 0
   ) {
-    return (
-      <div className="text-2 text-neutral-11">
-        No space tokens are currently available for purchase.
-      </div>
-    );
+    return <div className="text-2 text-neutral-11">{t('empty')}</div>;
   }
 
   return (
@@ -324,7 +354,7 @@ export const PeopleBuySpaceTokens = ({
         <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
           <div className="flex gap-1">
             <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
-              Select Token
+              {t('selectToken')}
             </label>
             <RequirementMark className="text-2" />
           </div>
@@ -346,7 +376,7 @@ export const PeopleBuySpaceTokens = ({
                         disabled={isTokensLoading}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a token">
+                          <SelectValue placeholder={t('selectPlaceholder')}>
                             {sel && (
                               <div className="flex items-center gap-2">
                                 <Image
@@ -395,7 +425,7 @@ export const PeopleBuySpaceTokens = ({
         <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
           <div className="flex gap-1">
             <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
-              Amount
+              {t('amount')}
             </label>
             <RequirementMark className="text-2" />
           </div>
@@ -424,51 +454,46 @@ export const PeopleBuySpaceTokens = ({
         {selectedToken && !isNaN(parsedAmount) && parsedAmount > 0 && sale && (
           <div className="text-sm text-neutral-11">
             <div>
-              Price:{' '}
-              <strong>
-                {formatCurrencyValue(salePricePerToken)}{' '}
-                {paymentTokenMeta?.symbol ?? 'PAYMENT'} per token
-              </strong>
+              {t('pricePerToken', {
+                price: formatCurrencyValue(salePricePerToken),
+                currency:
+                  paymentTokenMeta?.symbol ?? t('fallbackPaymentSymbol'),
+              })}
             </div>
             <div>
-              Total cost:{' '}
-              <strong>
-                {formatCurrencyValue(totalCost)}{' '}
-                {paymentTokenMeta?.symbol ?? ''}
-              </strong>
+              {t('totalCost', {
+                amount: formatCurrencyValue(totalCost),
+                currency: paymentTokenMeta?.symbol ?? '',
+              })}
             </div>
-            <div>
-              Remaining in sale: <strong>{remainingForSale}</strong>
-            </div>
+            <div>{t('remainingInSale', { amount: remainingForSale })}</div>
           </div>
         )}
 
         {selectedToken && isLoadingSale && (
           <div className="text-sm text-neutral-11 flex items-center gap-2">
             <Loader2 className="animate-spin w-4 h-4" />
-            Loading sale config...
+            {t('loadingSale')}
           </div>
         )}
 
         {selectedToken && !isLoadingSale && !sale && (
-          <div className="text-sm text-neutral-11">
-            Unable to read token sale configuration.
-          </div>
+          <div className="text-sm text-neutral-11">{t('unableToReadSale')}</div>
         )}
 
         {selectedToken &&
           sale &&
           sale.salePaymentToken ===
             '0x0000000000000000000000000000000000000000' && (
-            <div className="text-sm text-neutral-11">
-              Sale is currently disabled for this token.
-            </div>
+            <div className="text-sm text-neutral-11">{t('saleDisabled')}</div>
           )}
 
         <Separator />
 
         <RecipientField
-          label={`${selectedToken?.symbol ?? 'Token'} sent to`}
+          label={t('recipientTokenSent', {
+            symbol: selectedToken?.symbol ?? t('fallbackTokenSymbol'),
+          })}
           members={buyerMembers}
           defaultRecipientType="member"
           readOnly={true}
@@ -479,7 +504,9 @@ export const PeopleBuySpaceTokens = ({
         <Separator />
 
         <RecipientField
-          label={`${paymentTokenMeta?.symbol ?? 'Payment'} paid to`}
+          label={t('recipientPaymentPaid', {
+            symbol: paymentTokenMeta?.symbol ?? t('fallbackPaymentSymbol'),
+          })}
           members={[]}
           spaces={recipientSpaces}
           defaultRecipientType="space"
@@ -495,15 +522,14 @@ export const PeopleBuySpaceTokens = ({
             <div className="flex items-center gap-2 text-sm text-neutral-10">
               <Loader2 className="animate-spin w-4 h-4" />
               {isApproving
-                ? 'Approving'
+                ? t('statusApproving')
                 : isBuying
-                ? 'Purchasing'
-                : 'Processing'}
+                ? t('statusPurchasing')
+                : t('statusProcessing')}
             </div>
           ) : showSuccessMessage ? (
             <div className="text-2 font-medium text-foreground">
-              Your purchase was successful. Tokens will appear in your wallet
-              shortly.
+              {t('success')}
             </div>
           ) : (
             <Button
@@ -521,7 +547,7 @@ export const PeopleBuySpaceTokens = ({
                 !hasEnoughBalance
               }
             >
-              Buy
+              {t('buy')}
             </Button>
           )}
         </div>
@@ -533,8 +559,7 @@ export const PeopleBuySpaceTokens = ({
         )}
         {(approveError || buyError) && (
           <div className="text-2 text-foreground">
-            {(approveError || buyError)?.message ??
-              'Transaction failed. Please retry.'}
+            {(approveError || buyError)?.message ?? t('transactionFailed')}
           </div>
         )}
       </form>

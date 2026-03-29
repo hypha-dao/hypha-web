@@ -106,6 +106,28 @@ export const useBuySpaceTokensMutation = ({
 
       const [salePaymentToken, salePricePerToken, tokensLeftToSell] =
         saleDetails;
+
+      const ZERO =
+        '0x0000000000000000000000000000000000000000' as `0x${string}`;
+      if (
+        !salePaymentToken ||
+        salePaymentToken.toLowerCase() === ZERO.toLowerCase()
+      ) {
+        return {
+          salePaymentToken,
+          salePricePerToken,
+          tokensLeftToSell,
+          purchaseEligibilityMode,
+          canPurchase,
+          executor,
+          paymentTokenDecimals: 6,
+          tokenAmount: 0n,
+          paymentAmount: 0n,
+          allowance: 0n,
+          balance: 0n,
+        };
+      }
+
       const paymentTokenDecimals = await getTokenDecimals(salePaymentToken);
 
       const tokenAmount =

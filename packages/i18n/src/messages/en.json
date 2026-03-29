@@ -386,6 +386,7 @@
     "rewardValueMustBeGreaterThanZero": "The reward value must be greater than 0",
     "noRewardsFoundForUser": "No rewards found for this user",
     "buyHypha": "Buy HYPHA",
+    "buySpaceTokens": "Buy Space tokens",
     "actions": "Actions",
     "noAssetsFoundForUser": "No assets found for this user",
     "editForm": {
@@ -438,6 +439,11 @@
       "buyHyphaTokensRewards": {
         "title": "Buy Hypha Tokens (Rewards)",
         "description": "Purchase Hypha tokens to participate in the network and earn rewards"
+      },
+      "buySpaceTokens": {
+        "title": "Buy Space Tokens",
+        "backLabel": "Back to actions",
+        "description": "Purchase your space's native tokens using the configured payment currency."
       },
       "activateSpaces": {
         "title": "Activate Space(s)",
@@ -557,6 +563,7 @@
     "price": {
       "sectionTitle": "Token Purchase Price",
       "description": "Set a custom purchase price, or use the default treasury price.",
+      "currencyPlaceholder": "Currency",
       "currentPriceLabel": "Current price in treasury:",
       "currentPriceSuffix": "\u2014 set in your space's token configuration.",
       "fieldLabel": "Token Purchase Price",
@@ -568,6 +575,46 @@
       "description": "The \"Buy Space tokens\" button will be shown on the profile of the spaces or members which are whitelisted in the token settings. If you'd like to review this access, you can manage whitelists by passing a token configuration proposal.",
       "whitelistInfo": "Whitelist is configured in the token's original issuance settings. All members or spaces in the \"To\" whitelist will be able to see and purchase {tokenName} tokens."
     }
+  },
+  "ProposalSpaceTokenPurchase": {
+    "token": "Token",
+    "tokenAlt": "Token",
+    "purchase_status": "Purchase Status",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "payment_token": "Payment Token",
+    "not_configured": "Not configured",
+    "purchase_price": "Purchase Price",
+    "tokens_for_sale": "Tokens For Sale"
+  },
+  "PeopleBuySpaceTokens": {
+    "validation": {
+      "tokenRequired": "Please select a token",
+      "amountRequired": "Please enter an amount",
+      "amountPositive": "Amount must be greater than 0"
+    },
+    "empty": "No space tokens are currently available for purchase.",
+    "eligibilityLoadError": "Unable to check which tokens are available. Please try again.",
+    "selectToken": "Select Token",
+    "selectPlaceholder": "Select a token",
+    "amount": "Amount",
+    "pricePerToken": "Price: {price} {currency} per token",
+    "totalCost": "Total cost: {amount} {currency}",
+    "remainingInSale": "Remaining in sale: {amount}",
+    "loadingSale": "Loading sale config...",
+    "unableToReadSale": "Unable to read token sale configuration.",
+    "saleDisabled": "Sale is currently disabled for this token.",
+    "recipientTokenSent": "{symbol} sent to",
+    "recipientPaymentPaid": "{symbol} paid to",
+    "fallbackTokenSymbol": "Token",
+    "fallbackPaymentSymbol": "Payment",
+    "statusApproving": "Approving",
+    "statusPurchasing": "Purchasing",
+    "statusProcessing": "Processing",
+    "success": "Your purchase was successful. Tokens will appear in your wallet shortly.",
+    "buy": "Buy",
+    "transactionFailed": "Transaction failed. Please retry.",
+    "purchaseFailedGeneric": "An error occurred while processing your purchase. Please try again."
   },
   "Spaces": {
     "createSpace": "Create Space",
@@ -670,6 +717,7 @@
       "tokenBurning": "Token Burning",
       "backingVault": "Backing Vault",
       "buyHyphaTokensRewards": "Buy Hypha Tokens (Rewards)",
+      "spaceTokenPurchase": "Token Purchase",
       "spaceTransparency": "Space Transparency",
       "collectiveAgreement": "Collective Agreement",
       "contribution": "Contribution",
@@ -825,6 +873,7 @@
       "gettingUpdatedData": "Getting updated data...",
       "voteProcessed": "Vote processed!",
       "somethingWentWrong": "Something went wrong.",
+      "tryAgainGeneric": "Something went wrong. Please try again.",
       "pleaseWait": "Please wait...",
       "retry": "Retry",
       "transactionRevertedUnknownReason": "Transaction reverted for unknown reason.",
