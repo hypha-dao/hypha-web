@@ -179,9 +179,7 @@ export const ProposalExchangeStakesAndTokensData = ({
         <span className="text-1 text-neutral-11">
           {tAgreementFlow('plugins.exchangeStakesAndTokens.buyerWillSend')}
         </span>
-        <div className="flex flex-col items-end">
-          {renderLegRows(buyerLeg)}
-        </div>
+        <div className="flex flex-col items-end">{renderLegRows(buyerLeg)}</div>
       </div>
     </div>
   );
