@@ -3,8 +3,8 @@
 import { useTranslations } from 'next-intl';
 import { EthAddress } from '../../people';
 import { usePersonByWeb3Address } from '../hooks';
-import { TokenLabel } from './token-label';
 import { Image } from '@hypha-platform/ui';
+import { useTokens, ExtendedToken } from '../../treasury';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
@@ -21,7 +21,7 @@ const getPreferredAddress = (
 };
 
 interface ProposalExchangeStakesAndTokensDataProps {
-  spaceSlug?: string;
+  spaceSlug: string;
   sellerAddress?: string;
   buyerAddress?: string;
   fallbackSellerAddress?: string;
@@ -49,6 +49,7 @@ export const ProposalExchangeStakesAndTokensData = ({
   buyerLeg,
 }: ProposalExchangeStakesAndTokensDataProps) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const { tokens } = useTokens({ spaceSlug });
   const resolvedSellerAddress = getPreferredAddress(
     sellerAddress,
     fallbackSellerAddress,
@@ -104,18 +105,38 @@ export const ProposalExchangeStakesAndTokensData = ({
       return <span className="text-2">-</span>;
     }
 
-    return rows.map((leg, index) => (
-      <div key={`${leg.tokenAddress}-${index}`} className="text-2">
-        {spaceSlug ? (
-          <TokenLabel
-            tokenAddress={leg.tokenAddress as `0x${string}`}
-            spaceSlug={spaceSlug}
+    return rows.map((leg, index) => {
+      const token = tokens.find(
+        (item: ExtendedToken) =>
+          item.address.toLowerCase() === leg.tokenAddress.toLowerCase(),
+      );
+      const parsedAmount = Number(leg.amount);
+      const formattedAmount = Number.isFinite(parsedAmount)
+        ? parsedAmount.toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 6,
+          })
+        : leg.amount;
+
+      return (
+        <div
+          key={`${leg.tokenAddress}-${index}`}
+          className="flex items-center gap-2 text-2"
+        >
+          <Image
+            src={token?.icon ?? '/placeholder/token-icon.svg'}
+            alt={token?.symbol ?? token?.name ?? 'token'}
+            width={20}
+            height={20}
+            className="rounded-full"
           />
-        ) : (
-          <EthAddress address={leg.tokenAddress} />
-        )}
-      </div>
-    ));
+          <span className="text-nowrap">
+            {formattedAmount}{' '}
+            {token?.name ?? token?.symbol ?? leg.tokenAddress.slice(0, 8)}
+          </span>
+        </div>
+      );
+    });
   };
 
   return (

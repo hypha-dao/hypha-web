@@ -678,6 +678,7 @@ export const ProposalDetail = ({
       {(parsedExchangeDetails ||
         proposalDetails?.exchangeEscrowData?.legs?.length) && (
         <ProposalExchangeStakesAndTokensData
+          spaceSlug={spaceSlug}
           sellerAddress={sellerAddressForDisplay}
           buyerAddress={buyerAddressForDisplay}
           sellerLeg={sellerLegForDisplay}
