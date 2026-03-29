@@ -724,6 +724,11 @@ export const schemaExchangeStakesAndTokens = z.object({
   ...createAgreementWeb2Props,
   ...createAgreementFiles,
   label: z.literal('Exchange'),
+  /** Set by exchange plugin; used only for client-side seller balance validation */
+  sellerRecipientType: z.enum(['member', 'space']).optional(),
+  buyerRecipientType: z.enum(['member', 'space']).optional(),
+  /** On-chain executor for the active space (treasury) when seller is space */
+  spaceExecutorAddress: z.string().optional(),
   sellerAddress: z
     .string()
     .min(1, { message: 'Please add a recipient or wallet address' })

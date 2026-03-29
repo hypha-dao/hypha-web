@@ -111,9 +111,11 @@ export const ExchangeStakesAndTokensPlugin = ({
           shouldValidate: true,
         });
       }
+      setValue('sellerRecipientType', 'space', { shouldDirty: true });
       return;
     }
 
+    setValue('sellerRecipientType', 'member', { shouldDirty: true });
     if (creatorAddress && sellerAddress !== creatorAddress) {
       setValue('sellerAddress', creatorAddress, {
         shouldDirty: true,
@@ -129,6 +131,20 @@ export const ExchangeStakesAndTokensPlugin = ({
     sellerRecipientType,
     setValue,
   ]);
+
+  React.useEffect(() => {
+    setValue('buyerRecipientType', buyerRecipientType, { shouldDirty: true });
+  }, [buyerRecipientType, setValue]);
+
+  React.useEffect(() => {
+    if (sellerRecipientType === 'space' && spaceExecutorAddress) {
+      setValue('spaceExecutorAddress', spaceExecutorAddress, {
+        shouldDirty: true,
+      });
+    } else {
+      setValue('spaceExecutorAddress', '', { shouldDirty: true });
+    }
+  }, [sellerRecipientType, spaceExecutorAddress, setValue]);
 
   const sellerTokenCandidates = React.useMemo(
     () => tokens.filter((token: Token) => token.type !== null),

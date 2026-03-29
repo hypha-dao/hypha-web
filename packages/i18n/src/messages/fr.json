@@ -983,6 +983,11 @@
         "usdcPaidTo": "USDC payé à"
       },
       "exchangeStakesAndTokens": {
+        "errors": {
+          "sellerAmountExceedsBalance": "Ligne vendeur {row} : le montant dépasse le solde disponible (portefeuille membre ou trésorerie de l'espace).",
+          "sellerTreasuryUnavailable": "Impossible de charger la trésorerie de l'espace. Attendez les données on-chain et réessayez.",
+          "sellerBalanceCheckFailed": "Impossible de vérifier le solde du vendeur. Vérifiez votre connexion et réessayez."
+        },
         "seller": "Vendeur (adresse du portefeuille)",
         "buyer": "Acheteur (adresse du portefeuille)",
         "sellerWillSend": "Le vendeur enverra",

@@ -979,6 +979,11 @@
         "usdcPaidTo": "USDC paid to"
       },
       "exchangeStakesAndTokens": {
+        "errors": {
+          "sellerAmountExceedsBalance": "Seller row {row}: amount is greater than the available balance (member wallet or space treasury).",
+          "sellerTreasuryUnavailable": "Could not load the space treasury. Wait for chain data and try again.",
+          "sellerBalanceCheckFailed": "Could not verify seller balance. Check your connection and try again."
+        },
         "seller": "Seller (Wallet Address)",
         "sellerWillSend": "Seller will send",
         "buyer": "Buyer (Wallet Address)",

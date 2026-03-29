@@ -107,6 +107,11 @@
         "usdcPaidTo": "USDC pago a"
       },
       "exchangeStakesAndTokens": {
+        "errors": {
+          "sellerAmountExceedsBalance": "Linha vendedor {row}: o valor excede o saldo disponível (carteira do membro ou tesouraria do espaço).",
+          "sellerTreasuryUnavailable": "Não foi possível carregar a tesouraria do espaço. Aguarde os dados on-chain e tente novamente.",
+          "sellerBalanceCheckFailed": "Não foi possível verificar o saldo do vendedor. Verifique a conexão e tente novamente."
+        },
         "seller": "Vendedor (endereço da carteira)",
         "buyer": "Comprador (endereço da carteira)",
         "sellerWillSend": "O vendedor enviará",

@@ -1358,6 +1358,11 @@
         "add": "Hinzufügen"
       },
       "exchangeStakesAndTokens": {
+        "errors": {
+          "sellerAmountExceedsBalance": "Verkäufer Zeile {row}: Betrag übersteigt das verfügbare Guthaben (Mitglied-Wallet oder Space-Treasury).",
+          "sellerTreasuryUnavailable": "Space-Treasury konnte nicht geladen werden. Warten Sie auf On-Chain-Daten und versuchen Sie es erneut.",
+          "sellerBalanceCheckFailed": "Verkäufer-Guthaben konnte nicht geprüft werden. Verbindung prüfen und erneut versuchen."
+        },
         "seller": "Verkäufer (Wallet-Adresse)",
         "buyer": "Käufer (Wallet-Adresse)",
         "sellerWillSend": "Verkäufer sendet",

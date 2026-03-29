@@ -16,6 +16,10 @@ import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
+import {
+  validateExchangeSellerLegBalances,
+  EXCHANGE_SELLER_BALANCE_EXCEEDED,
+} from '../utils/validate-exchange-seller-balances';
 
 const fullSchemaCreateExchangeStakesAndTokensForm =
   schemaExchangeStakesAndTokens;
@@ -87,6 +91,9 @@ export const CreateExchangeStakesAndTokensForm = ({
       sellerLeg: [{ amount: '', token: '' }],
       buyerLeg: [{ amount: '', token: '' }],
       label: 'Exchange',
+      sellerRecipientType: 'member',
+      buyerRecipientType: 'member',
+      spaceExecutorAddress: '',
     },
   });
 
@@ -97,6 +104,45 @@ export const CreateExchangeStakesAndTokensForm = ({
     if (typeof spaceId !== 'number') {
       throw new Error('Space ID is required to create this proposal');
     }
+
+    try {
+      await validateExchangeSellerLegBalances({
+        sellerRecipientType: data.sellerRecipientType,
+        sellerAddress: data.sellerAddress,
+        sellerLeg: data.sellerLeg,
+        spaceExecutorAddress: data.spaceExecutorAddress || undefined,
+      });
+    } catch (e) {
+      const err = e as Error & { legIndex?: number };
+      if (err.message === EXCHANGE_SELLER_BALANCE_EXCEEDED) {
+        const row = (typeof err.legIndex === 'number' ? err.legIndex : 0) + 1;
+        form.setError('root', {
+          type: 'manual',
+          message: tAgreementFlow(
+            'plugins.exchangeStakesAndTokens.errors.sellerAmountExceedsBalance',
+            { row },
+          ),
+        });
+        return;
+      }
+      if (err.message === 'EXCHANGE_SELLER_TREASURY_UNAVAILABLE') {
+        form.setError('root', {
+          type: 'manual',
+          message: tAgreementFlow(
+            'plugins.exchangeStakesAndTokens.errors.sellerTreasuryUnavailable',
+          ),
+        });
+        return;
+      }
+      form.setError('root', {
+        type: 'manual',
+        message: tAgreementFlow(
+          'plugins.exchangeStakesAndTokens.errors.sellerBalanceCheckFailed',
+        ),
+      });
+      return;
+    }
+
     const sellerLegLines = data.sellerLeg
       .map(
         (leg, index) =>
@@ -132,8 +178,13 @@ export const CreateExchangeStakesAndTokensForm = ({
       EXCHANGE_DETAILS_END,
     ].join('\n');
 
+    const createPayload = { ...data };
+    delete createPayload.sellerRecipientType;
+    delete createPayload.buyerRecipientType;
+    delete createPayload.spaceExecutorAddress;
+
     await createExchangeStakesAndTokens({
-      ...data,
+      ...createPayload,
       description: upsertExchangeDetailsSection(
         data.description,
         exchangeDetailsSection,
@@ -182,6 +233,11 @@ export const CreateExchangeStakesAndTokensForm = ({
             label={tAgreementFlow('labels.exchange')}
             progress={progress}
           />
+          {form.formState.errors.root?.message ? (
+            <p className="text-sm text-destructive" role="alert">
+              {String(form.formState.errors.root.message)}
+            </p>
+          ) : null}
           {plugin}
           <Separator />
           <div className="flex justify-end w-full">
