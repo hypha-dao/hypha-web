@@ -1,7 +1,6 @@
 'use client';
 
 import useSWRMutation from 'swr/mutation';
-import useSWR from 'swr';
 import { encodeFunctionData, erc20Abi, maxUint256, parseUnits } from 'viem';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 import {
@@ -11,11 +10,7 @@ import {
   TOKENS,
   getTokenDecimals,
 } from '@hypha-platform/core/client';
-import {
-  getProposalFromLogs,
-  mapToCreateProposalWeb3Input,
-  createProposal,
-} from '../web3';
+import { mapToCreateProposalWeb3Input, createProposal } from '../web3';
 import { decayingSpaceTokenAbi } from '@hypha-platform/core/generated';
 import { getDuration } from '@hypha-platform/ui-utils';
 
@@ -135,30 +130,11 @@ export const useSpaceTokenPurchaseMutationsWeb3Rpc = ({
     },
   );
 
-  const {
-    data: createdSpaceTokenPurchaseProposal,
-    isLoading: isLoadingCreatedSpaceTokenPurchaseProposal,
-    error: errorWaitCreatedSpaceTokenPurchaseProposal,
-  } = useSWR(
-    createSpaceTokenPurchaseHash
-      ? [createSpaceTokenPurchaseHash, 'waitForSpaceTokenPurchaseProposal']
-      : null,
-    async ([hash]) => {
-      const receipt = await publicClient.waitForTransactionReceipt({
-        hash: hash as `0x${string}`,
-      });
-      return getProposalFromLogs(receipt.logs);
-    },
-  );
-
   return {
     createSpaceTokenPurchaseProposal,
     resetCreateSpaceTokenPurchaseProposal,
     isCreatingSpaceTokenPurchaseProposal,
     createSpaceTokenPurchaseHash,
     createSpaceTokenPurchaseError,
-    createdSpaceTokenPurchaseProposal,
-    isLoadingCreatedSpaceTokenPurchaseProposal,
-    errorWaitCreatedSpaceTokenPurchaseProposal,
   };
 };

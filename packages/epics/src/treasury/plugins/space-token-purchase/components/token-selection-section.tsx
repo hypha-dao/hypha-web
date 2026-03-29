@@ -110,11 +110,23 @@ export const TokenSelectionSection = ({
                           (tok) =>
                             tok.address?.toLowerCase() === val.toLowerCase(),
                         );
+                        const opts = {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        } as const;
                         if (token?.referencePrice !== undefined) {
-                          setValue('purchasePrice', token.referencePrice);
+                          setValue('purchasePrice', token.referencePrice, opts);
+                        } else {
+                          setValue('purchasePrice', undefined, opts);
                         }
-                        if (token?.referenceCurrency) {
-                          setValue('purchaseCurrency', token.referenceCurrency);
+                        if (token?.referenceCurrency != null) {
+                          setValue(
+                            'purchaseCurrency',
+                            token.referenceCurrency,
+                            opts,
+                          );
+                        } else {
+                          setValue('purchaseCurrency', undefined, opts);
                         }
                       }}
                       tokens={dropdownTokens}

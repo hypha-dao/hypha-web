@@ -23,6 +23,7 @@ import {
   useBuySpaceTokensMutation,
   useMe,
   type TokenType,
+  spaceTokenPurchaseAbi,
 } from '@hypha-platform/core/client';
 import { useScrollToErrors } from '../../hooks';
 import { useDbTokens } from '../../hooks/use-db-tokens';
@@ -50,26 +51,6 @@ type PurchasableToken = {
 };
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-const spaceTokenPurchaseAbi = [
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getTokenSaleDetails',
-    outputs: [
-      { name: 'salePaymentToken', internalType: 'address', type: 'address' },
-      { name: 'salePricePerToken', internalType: 'uint256', type: 'uint256' },
-      { name: 'tokensLeftToSell', internalType: 'uint256', type: 'uint256' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
-    name: 'canAccountPurchase',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
-  },
-] as const;
 
 interface PeopleBuySpaceTokensProps {
   personSlug: string;
