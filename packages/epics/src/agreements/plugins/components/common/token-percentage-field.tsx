@@ -149,12 +149,14 @@ export interface ConversionPercentageInputProps {
   value: string;
   onChange: (percentage: string) => void;
   className?: string;
+  disabled?: boolean;
 }
 
 export const ConversionPercentageInput = ({
   value,
   onChange,
   className,
+  disabled = false,
 }: ConversionPercentageInputProps) => {
   const handlePercentageChange = (percentage: string) => {
     if (percentage === '') {
@@ -185,6 +187,7 @@ export const ConversionPercentageInput = ({
         placeholder="%"
         rightIcon={<>%</>}
         className="w-full min-w-0"
+        disabled={disabled}
         onChange={(e) => handlePercentageChange(e.target.value)}
       />
     </div>

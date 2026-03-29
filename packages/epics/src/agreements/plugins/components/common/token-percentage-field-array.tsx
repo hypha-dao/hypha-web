@@ -17,6 +17,7 @@ import {
   type TokenPercentageAsset,
 } from './token-percentage-field';
 import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
+import { remainderPercentStringForLastRow } from '@hypha-platform/core/client';
 
 export type { TokenPercentageAsset };
 
@@ -27,6 +28,11 @@ export interface TokenPercentageFieldArrayProps {
   onRemoveRebalance?: (remainingAssets: TokenPercentageAsset[]) => void;
   showEmptyFieldMessage?: boolean;
   showFieldDetails?: boolean;
+  /**
+   * When true and there are 2+ rows, the last row’s % is kept equal to the
+   * remainder so the total is 100.00%; the last percentage input is read-only.
+   */
+  autoBalanceLastRow?: boolean;
 }
 
 type ConversionRowErrors = Array<{
@@ -41,11 +47,13 @@ export const TokenPercentageFieldArray = ({
   onRemoveRebalance,
   showEmptyFieldMessage: _showEmptyFieldMessage = false,
   showFieldDetails = false,
+  autoBalanceLastRow = true,
 }: TokenPercentageFieldArrayProps) => {
   void _showEmptyFieldMessage;
   const {
     control,
     getValues,
+    setValue,
     trigger,
     clearErrors,
     formState: { errors },
@@ -72,6 +80,27 @@ export const TokenPercentageFieldArray = ({
       }
     });
   }, [watchedRows, assets, name, clearErrors]);
+
+  const lastIndex = fields.length > 0 ? fields.length - 1 : -1;
+
+  React.useEffect(() => {
+    if (
+      !autoBalanceLastRow ||
+      !watchedRows?.length ||
+      watchedRows.length < 2 ||
+      lastIndex < 1
+    ) {
+      return;
+    }
+    const others = watchedRows.slice(0, -1).map((r) => r?.percentage ?? '');
+    const rem = remainderPercentStringForLastRow(others);
+    const lastPct = watchedRows[lastIndex]?.percentage ?? '';
+    if (lastPct === rem) return;
+    setValue(`${name}.${lastIndex}.percentage`, rem, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  }, [autoBalanceLastRow, watchedRows, lastIndex, name, setValue]);
 
   const handleAddField = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -120,6 +149,8 @@ export const TokenPercentageFieldArray = ({
             const percentageFieldError = conversionErrors?.[index]?.percentage;
             const showRowMessages =
               Boolean(assetFieldError) || Boolean(percentageFieldError);
+            const lockLastPercentage =
+              autoBalanceLastRow && fields.length >= 2 && index === lastIndex;
 
             return (
               <div key={field.id} className="flex md:justify-end gap-2">
@@ -153,8 +184,43 @@ export const TokenPercentageFieldArray = ({
                               value={pctField.value ?? ''}
                               onChange={(percentage) => {
                                 pctField.onChange(percentage);
+                                if (
+                                  autoBalanceLastRow &&
+                                  fields.length >= 2 &&
+                                  index < lastIndex
+                                ) {
+                                  const prev = watchedRows ?? [];
+                                  const others: string[] = [];
+                                  for (let i = 0; i < lastIndex; i++) {
+                                    others.push(
+                                      i === index
+                                        ? percentage
+                                        : prev[i]?.percentage ?? '',
+                                    );
+                                  }
+                                  const rem =
+                                    remainderPercentStringForLastRow(others);
+                                  setValue(
+                                    `${name}.${lastIndex}.percentage`,
+                                    rem,
+                                    {
+                                      shouldValidate: true,
+                                      shouldDirty: true,
+                                    },
+                                  );
+                                }
                                 void trigger(`${name}.${index}.percentage`);
+                                if (
+                                  autoBalanceLastRow &&
+                                  fields.length >= 2 &&
+                                  index < lastIndex
+                                ) {
+                                  void trigger(
+                                    `${name}.${lastIndex}.percentage`,
+                                  );
+                                }
                               }}
+                              disabled={lockLastPercentage}
                               className="w-[6.75rem] shrink-0 max-w-[6.75rem]"
                             />
                           </FormControl>

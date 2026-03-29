@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   percentageStringToBigInt,
   bigIntToPercentageString,
+  remainderPercentStringForLastRow,
 } from '../percentage';
 
 describe('percentageStringToBigInt', () => {
@@ -105,5 +106,19 @@ describe('bigIntToPercentageString', () => {
     expect(() =>
       bigIntToPercentageString(123 as unknown as bigint),
     ).not.toThrow();
+  });
+});
+
+describe('remainderPercentStringForLastRow', () => {
+  it('returns complement to 100% for one other row', () => {
+    expect(remainderPercentStringForLastRow(['84.58'])).toBe('15.42');
+  });
+
+  it('returns 100.00 when others are empty', () => {
+    expect(remainderPercentStringForLastRow(['', ''])).toBe('100.00');
+  });
+
+  it('returns 0.00 when others already sum to 100', () => {
+    expect(remainderPercentStringForLastRow(['50.00', '50.00'])).toBe('0.00');
   });
 });
