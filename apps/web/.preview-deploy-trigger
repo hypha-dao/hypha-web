@@ -1,0 +1,3 @@
+# This file exists so pull requests with no other `apps/**` changes still match
+# `.github/actions/detect-changes` preview_deploy filters and run deploy-preview.yml.
+# Safe to delete once the PR includes real app changes.
