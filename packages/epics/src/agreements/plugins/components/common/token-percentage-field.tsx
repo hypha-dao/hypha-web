@@ -47,14 +47,14 @@ export const ConversionAssetDropdown = ({
   );
 
   return (
-    <div className="flex top-0 w-full sm:w-60 shrink-0 min-w-0 m-0 p-0">
+    <div className="flex top-0 min-w-0 flex-1 m-0 p-0 max-w-full">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
             variant="outline"
             colorVariant="neutral"
             role="combobox"
-            className="w-full text-2 md:w-72 justify-between py-2 font-normal"
+            className="w-full max-w-full min-w-0 text-2 justify-between py-2 font-normal"
           >
             <div className="flex items-center gap-2 min-w-0">
               {selectedAsset ? (
@@ -139,11 +139,13 @@ export const ConversionAssetDropdown = ({
 export interface ConversionPercentageInputProps {
   value: string;
   onChange: (percentage: string) => void;
+  className?: string;
 }
 
 export const ConversionPercentageInput = ({
   value,
   onChange,
+  className,
 }: ConversionPercentageInputProps) => {
   const handlePercentageChange = (percentage: string) => {
     if (percentage === '') {
@@ -162,13 +164,18 @@ export const ConversionPercentageInput = ({
   };
 
   return (
-    <div className="flex top-0 m-0 p-0 flex-1 min-w-0">
+    <div
+      className={
+        className ?? 'flex top-0 m-0 p-0 w-[6.75rem] shrink-0 max-w-[6.75rem]'
+      }
+    >
       <Input
         value={value ?? ''}
         type="text"
         inputMode="decimal"
-        placeholder="Percentage"
+        placeholder="%"
         rightIcon={<>%</>}
+        className="w-full min-w-0"
         onChange={(e) => handlePercentageChange(e.target.value)}
       />
     </div>
