@@ -29,6 +29,11 @@ import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { formatUnits } from 'viem';
+import {
+  RESUBMIT_FORM_DATA_KEY,
+  RESUBMIT_PROPOSAL_DATA_KEY,
+  getCreateRouteSegmentForProposalLabel,
+} from '../../utils/resubmit-proposal-template';
 
 function formatTimeRemaining(
   endTime: string,
@@ -57,32 +62,8 @@ function formatTimeRemaining(
     : tProposalDetails('voting.voteClosingSoon');
 }
 
-const getCreateRouteForLabel = (label: string | undefined): string => {
-  if (!label) return '';
-
-  const labelToRoute: Record<string, string> = {
-    Contribution: 'propose-contribution',
-    'Collective Agreement': '',
-    Expenses: 'pay-for-expenses',
-    Funding: 'deploy-funds',
-    'Voting Method': 'change-voting-method',
-    'Entry Method': 'change-entry-method',
-    'Issue New Token': 'issue-new-token',
-    'Buy Hypha Tokens': 'buy-hypha-tokens',
-    'Activate Spaces': 'activate-spaces',
-    'Space To Space': 'space-to-space-membership',
-    'Treasury Minting': 'mint-tokens-to-space-treasury',
-    'Redeem Tokens': 'redeem-tokens',
-    'Token Burning': 'token-burning',
-    'Membership Exit': 'membership-exit',
-    'Backing Vault': 'token-backing-vault',
-    'Update Token': 'update-issued-token',
-    'Token Purchase': 'space-token-purchase',
-    'Space Transparency': 'space-settings-transparency',
-  };
-
-  return labelToRoute[label] || '';
-};
+/** @deprecated use getCreateRouteSegmentForProposalLabel */
+const getCreateRouteForLabel = getCreateRouteSegmentForProposalLabel;
 
 const USDC_ADDRESS = TOKENS.find(
   (token) => token.symbol === 'USDC',
@@ -273,6 +254,7 @@ export const FormVoting = ({
       }
 
       const proposalData = {
+        resubmitTemplateSegment: getCreateRouteSegmentForProposalLabel(label),
         title: documentTitle || '',
         description: documentDescription || '',
         leadImage: documentLeadImage || undefined,
@@ -305,11 +287,11 @@ export const FormVoting = ({
       };
 
       sessionStorage.setItem(
-        'resubmitProposalData',
+        RESUBMIT_PROPOSAL_DATA_KEY,
         JSON.stringify(proposalData),
       );
 
-      const saved = sessionStorage.getItem('resubmitProposalData');
+      const saved = sessionStorage.getItem(RESUBMIT_PROPOSAL_DATA_KEY);
       if (!saved) {
         console.error('Failed to save resubmit data to sessionStorage');
         return;
@@ -337,8 +319,8 @@ export const FormVoting = ({
       }
     } catch (error) {
       console.error('Error resubmitting proposal:', error);
-      sessionStorage.removeItem('resubmitProposalData');
-      sessionStorage.removeItem('resubmitFormData');
+      sessionStorage.removeItem(RESUBMIT_PROPOSAL_DATA_KEY);
+      sessionStorage.removeItem(RESUBMIT_FORM_DATA_KEY);
     }
   };
 

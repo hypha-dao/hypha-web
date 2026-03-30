@@ -33,7 +33,7 @@ import {
   useMe,
   PostNotifyProposalCreatedInput,
 } from '@hypha-platform/core/client';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, usePathname, useRouter } from 'next/navigation';
 import { formatDuration } from '@hypha-platform/ui-utils';
 
 import { useTheme } from 'next-themes';
@@ -42,6 +42,11 @@ import { ButtonBack, ButtonClose } from '../../common';
 import { useProposalNotifications } from '../../governance/hooks';
 import React from 'react';
 import { useTranslations } from 'next-intl';
+import {
+  RESUBMIT_FORM_DATA_KEY,
+  getProposalTemplateSegmentFromPathname,
+  isLegacyGenericResubmitSegment,
+} from '../../utils/resubmit-proposal-template';
 
 type Creator = { avatar: string; name: string; surname: string };
 
@@ -92,6 +97,7 @@ export function CreateAgreementBaseFields({
     [tAgreementFlow],
   );
   const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
+  const pathname = usePathname();
   const { jwt: authToken } = useJwt();
   const router = useRouter();
 
@@ -121,10 +127,11 @@ export function CreateAgreementBaseFields({
     if (typeof window === 'undefined') return;
 
     try {
-      const data = sessionStorage.getItem('resubmitFormData');
+      const data = sessionStorage.getItem(RESUBMIT_FORM_DATA_KEY);
       if (!data) return;
 
       const parsed = JSON.parse(data) as {
+        resubmitTemplateSegment?: string;
         leadImage?: string;
         attachments?: (string | { name: string; url: string })[];
         applied?: boolean;
@@ -132,7 +139,18 @@ export function CreateAgreementBaseFields({
       };
 
       if (parsed.applied) {
-        sessionStorage.removeItem('resubmitFormData');
+        sessionStorage.removeItem(RESUBMIT_FORM_DATA_KEY);
+        return;
+      }
+
+      const currentSegment =
+        getProposalTemplateSegmentFromPathname(pathname) ?? '';
+      const storedSegment = parsed.resubmitTemplateSegment;
+      if (storedSegment === undefined) {
+        if (!isLegacyGenericResubmitSegment(currentSegment)) {
+          return;
+        }
+      } else if (storedSegment !== currentSegment) {
         return;
       }
 
@@ -142,17 +160,18 @@ export function CreateAgreementBaseFields({
       }
 
       sessionStorage.setItem(
-        'resubmitFormData',
+        RESUBMIT_FORM_DATA_KEY,
         JSON.stringify({
           ...parsed,
+          resubmitTemplateSegment: storedSegment ?? currentSegment,
           applied: true,
         }),
       );
     } catch (error) {
       console.error('Error reading resubmit form data:', error);
-      sessionStorage.removeItem('resubmitFormData');
+      sessionStorage.removeItem(RESUBMIT_FORM_DATA_KEY);
     }
-  }, []);
+  }, [pathname]);
 
   const { space } = useSpaceBySlug(spaceSlug as string);
 

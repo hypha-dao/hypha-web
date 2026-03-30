@@ -22,6 +22,8 @@ import { CreateAgreementBaseFields } from '../../agreements';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
 
+const MEMBERSHIP_EXIT_RESUBMIT_SEGMENT = 'membership-exit';
+
 const combinedSchemaMembershipExit =
   schemaMembershipExit.extend(createAgreementFiles);
 type FormValues = z.infer<typeof combinedSchemaMembershipExit>;
@@ -74,7 +76,12 @@ export const MembershipExitForm = ({
   }, [isPersonLoading, person, form]);
 
   useScrollToErrors(form, formRef);
-  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+  const { resubmitKey } = useResubmitProposalData(
+    form,
+    spaceId,
+    person?.id,
+    MEMBERSHIP_EXIT_RESUBMIT_SEGMENT,
+  );
 
   React.useEffect(() => {
     if (progress === 100 && !isError) {

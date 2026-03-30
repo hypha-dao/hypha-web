@@ -27,6 +27,8 @@ import {
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useTranslations } from 'next-intl';
 
+const ISSUE_TOKEN_RESUBMIT_SEGMENT = 'issue-new-token';
+
 const ISSUE_NEW_TOKEN_ERROR_KEYS: Record<string, string> = {
   'Please add a title for your proposal':
     'issueNewTokenForm.errors.titleRequired',
@@ -344,7 +346,12 @@ export const IssueNewTokenForm = ({
   });
 
   useScrollToErrors(form, formRef);
-  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+  const { resubmitKey } = useResubmitProposalData(
+    form,
+    spaceId,
+    person?.id,
+    ISSUE_TOKEN_RESUBMIT_SEGMENT,
+  );
 
   React.useEffect(() => {
     if (progress === 100 && !isError) {

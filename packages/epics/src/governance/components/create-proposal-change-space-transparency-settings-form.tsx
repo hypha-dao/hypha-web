@@ -22,6 +22,9 @@ import { TransparencyLevel } from '../../spaces/components/transparency-level';
 import { useSpaceDiscoverability } from '../../spaces/hooks/use-space-discoverability';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
+import { hasResubmitDataForTemplate } from '../../utils/resubmit-proposal-template';
+
+const TRANSPARENCY_RESUBMIT_SEGMENT = 'space-settings-transparency';
 
 type FormValues = z.infer<typeof schemaChangeSpaceTransparencySettings>;
 
@@ -69,23 +72,10 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
     spaceId: (web3SpaceId ?? spaceId ?? undefined) as number | undefined,
   });
 
-  const skipLiveTransparencySyncForResubmit = React.useMemo(() => {
-    if (typeof window === 'undefined') return false;
-    try {
-      const raw = sessionStorage.getItem('resubmitProposalData');
-      if (!raw) return false;
-      const parsed = JSON.parse(raw) as {
-        spaceDiscoverability?: unknown;
-        spaceActivityAccess?: unknown;
-      };
-      return (
-        parsed.spaceDiscoverability !== undefined ||
-        parsed.spaceActivityAccess !== undefined
-      );
-    } catch {
-      return false;
-    }
-  }, []);
+  const skipLiveTransparencySyncForResubmit = React.useMemo(
+    () => hasResubmitDataForTemplate(TRANSPARENCY_RESUBMIT_SEGMENT),
+    [],
+  );
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
@@ -126,7 +116,12 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
   ]);
 
   useScrollToErrors(form, formRef);
-  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+  const { resubmitKey } = useResubmitProposalData(
+    form,
+    spaceId,
+    person?.id,
+    TRANSPARENCY_RESUBMIT_SEGMENT,
+  );
 
   React.useEffect(() => {
     if (progress === 100 && !isError) {

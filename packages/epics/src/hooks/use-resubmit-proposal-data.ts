@@ -2,17 +2,26 @@
 
 import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
+import { usePathname } from 'next/navigation';
 import {
   RESUBMIT_UPDATE_ISSUED_TOKEN_EMBEDDED_FIELD,
   UPDATE_ISSUED_TOKEN_RESUBMIT_EVENT,
   type UpdateIssuedTokenResubmitPayload,
 } from '../proposals/update-issued-token-resubmit';
+import {
+  RESUBMIT_FORM_DATA_KEY,
+  RESUBMIT_PROPOSAL_DATA_KEY,
+  type ResubmitProposalTemplateSegment,
+  getProposalTemplateSegmentFromPathname,
+  inferResubmitTemplateSegmentFromPayload,
+  isLegacyGenericResubmitSegment,
+} from '../utils/resubmit-proposal-template';
 
 /** Clears resubmit hydration keys after a successful publish so the next visit shows an empty form. */
 export function clearResubmitProposalSessionStorage(): void {
   if (typeof window === 'undefined') return;
-  sessionStorage.removeItem('resubmitProposalData');
-  sessionStorage.removeItem('resubmitFormData');
+  sessionStorage.removeItem(RESUBMIT_PROPOSAL_DATA_KEY);
+  sessionStorage.removeItem(RESUBMIT_FORM_DATA_KEY);
 }
 
 export const useResubmitProposalData = <
@@ -34,20 +43,24 @@ export const useResubmitProposalData = <
   form: UseFormReturn<T>,
   spaceId?: number | null,
   creatorId?: number | null,
+  /** URL segment after `agreements/create/`; when omitted, derived from the current pathname. */
+  resubmitTemplateSegment?: ResubmitProposalTemplateSegment,
 ) => {
   const [resubmitKey, setResubmitKey] = React.useState(0);
+  const pathname = usePathname();
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const applyResubmitData = () => {
       try {
-        const stored = sessionStorage.getItem('resubmitProposalData');
+        const stored = sessionStorage.getItem(RESUBMIT_PROPOSAL_DATA_KEY);
         if (!stored) {
           return;
         }
 
         const parsed = JSON.parse(stored) as {
+          resubmitTemplateSegment?: string;
           title?: string;
           description?: string;
           leadImage?: any;
@@ -90,13 +103,33 @@ export const useResubmitProposalData = <
           [RESUBMIT_UPDATE_ISSUED_TOKEN_EMBEDDED_FIELD]?: UpdateIssuedTokenResubmitPayload;
         };
 
+        const currentSegment: ResubmitProposalTemplateSegment =
+          resubmitTemplateSegment ??
+          getProposalTemplateSegmentFromPathname(pathname) ??
+          '';
+
+        const storedSegment =
+          typeof parsed.resubmitTemplateSegment === 'string'
+            ? parsed.resubmitTemplateSegment
+            : inferResubmitTemplateSegmentFromPayload(parsed);
+
+        const templateMatches =
+          storedSegment === currentSegment ||
+          (storedSegment === undefined &&
+            isLegacyGenericResubmitSegment(currentSegment));
+
+        if (!templateMatches) {
+          return;
+        }
+
         // Re-apply whenever this data is present (including `applied: true`), so
         // navigating back to the create form after a resubmit still hydrates the form.
 
         if (parsed.leadImage || parsed.attachments) {
           sessionStorage.setItem(
-            'resubmitFormData',
+            RESUBMIT_FORM_DATA_KEY,
             JSON.stringify({
+              resubmitTemplateSegment: currentSegment,
               leadImage: parsed.leadImage,
               attachments: parsed.attachments,
               applied: false,
@@ -533,9 +566,13 @@ export const useResubmitProposalData = <
         form.trigger(fieldsToTrigger as any[]);
 
         sessionStorage.setItem(
-          'resubmitProposalData',
+          RESUBMIT_PROPOSAL_DATA_KEY,
           JSON.stringify({
             ...parsed,
+            resubmitTemplateSegment:
+              typeof parsed.resubmitTemplateSegment === 'string'
+                ? parsed.resubmitTemplateSegment
+                : currentSegment,
             applied: true,
           }),
         );
@@ -551,15 +588,15 @@ export const useResubmitProposalData = <
         setResubmitKey((prev) => prev + 1);
       } catch (error) {
         console.error('Error reading resubmit data:', error);
-        sessionStorage.removeItem('resubmitProposalData');
-        sessionStorage.removeItem('resubmitFormData');
+        sessionStorage.removeItem(RESUBMIT_PROPOSAL_DATA_KEY);
+        sessionStorage.removeItem(RESUBMIT_FORM_DATA_KEY);
       }
     };
 
     const timeoutId = setTimeout(applyResubmitData, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [form, spaceId, creatorId]);
+  }, [form, spaceId, creatorId, resubmitTemplateSegment, pathname]);
 
   return { resubmitKey };
 };

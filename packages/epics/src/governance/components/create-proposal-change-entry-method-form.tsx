@@ -26,6 +26,9 @@ import {
 } from '../../hooks';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
+import { hasResubmitDataForTemplate } from '../../utils/resubmit-proposal-template';
+
+const ENTRY_RESUBMIT_SEGMENT = 'change-entry-method';
 
 const schemaCreateProposalChangeEntryMethod =
   schemaChangeEntryMethod.extend(createAgreementFiles);
@@ -69,20 +72,10 @@ export const CreateProposalChangeEntryMethodForm = ({
     spaces,
   });
 
-  const skipLiveEntrySyncForResubmit = React.useMemo(() => {
-    if (typeof window === 'undefined') return false;
-    try {
-      const raw = sessionStorage.getItem('resubmitProposalData');
-      if (!raw) return false;
-      const parsed = JSON.parse(raw) as {
-        entryMethod?: unknown;
-        tokenBase?: unknown;
-      };
-      return typeof parsed.entryMethod === 'number' || parsed.tokenBase != null;
-    } catch {
-      return false;
-    }
-  }, []);
+  const skipLiveEntrySyncForResubmit = React.useMemo(
+    () => hasResubmitDataForTemplate(ENTRY_RESUBMIT_SEGMENT),
+    [],
+  );
 
   const {
     createChangeEntryMethod,
@@ -133,7 +126,12 @@ export const CreateProposalChangeEntryMethodForm = ({
   });
 
   useScrollToErrors(form, formRef);
-  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+  const { resubmitKey } = useResubmitProposalData(
+    form,
+    spaceId,
+    person?.id,
+    ENTRY_RESUBMIT_SEGMENT,
+  );
 
   React.useEffect(() => {
     if (progress === 100 && !isError) {

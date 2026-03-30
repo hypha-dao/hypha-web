@@ -23,6 +23,8 @@ import {
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
 
+const STS_RESUBMIT_SEGMENT = 'space-to-space-membership';
+
 interface SpaceToSpaceMembershipFormProps {
   successfulUrl: string;
   backUrl?: string;
@@ -70,7 +72,12 @@ export const SpaceToSpaceMembershipForm = ({
   });
 
   useScrollToErrors(form, formRef);
-  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+  const { resubmitKey } = useResubmitProposalData(
+    form,
+    spaceId,
+    person?.id,
+    STS_RESUBMIT_SEGMENT,
+  );
 
   React.useEffect(() => {
     if (progress === 100 && !isError) {

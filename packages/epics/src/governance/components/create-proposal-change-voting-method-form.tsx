@@ -23,6 +23,9 @@ import {
 } from '../../hooks';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
+import { hasResubmitDataForTemplate } from '../../utils/resubmit-proposal-template';
+
+const VOTING_RESUBMIT_SEGMENT = 'change-voting-method';
 
 type FormValues = z.infer<typeof schemaCreateProposalChangeVotingMethod>;
 
@@ -66,22 +69,10 @@ export const CreateProposalChangeVotingMethodForm = ({
     spaceId: BigInt(web3SpaceId as number),
   });
 
-  const skipLiveVotingSyncForResubmit = React.useMemo(() => {
-    if (typeof window === 'undefined') return false;
-    try {
-      const raw = sessionStorage.getItem('resubmitProposalData');
-      if (!raw) return false;
-      const parsed = JSON.parse(raw) as {
-        votingMethod?: unknown;
-        quorumAndUnity?: unknown;
-      };
-      return (
-        parsed.votingMethod !== undefined || parsed.quorumAndUnity !== undefined
-      );
-    } catch {
-      return false;
-    }
-  }, []);
+  const skipLiveVotingSyncForResubmit = React.useMemo(
+    () => hasResubmitDataForTemplate(VOTING_RESUBMIT_SEGMENT),
+    [],
+  );
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
@@ -108,7 +99,12 @@ export const CreateProposalChangeVotingMethodForm = ({
   });
 
   useScrollToErrors(form, formRef);
-  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+  const { resubmitKey } = useResubmitProposalData(
+    form,
+    spaceId,
+    person?.id,
+    VOTING_RESUBMIT_SEGMENT,
+  );
 
   React.useEffect(() => {
     if (progress === 100 && !isError) {

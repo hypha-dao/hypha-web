@@ -16,9 +16,15 @@ import { CreateAgreementBaseFields } from '../../agreements';
 import { useConfig } from 'wagmi';
 import { useAssets, useFundWallet } from '../../treasury';
 import React from 'react';
-import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
+import {
+  clearResubmitProposalSessionStorage,
+  useResubmitProposalData,
+  useScrollToErrors,
+} from '../../hooks';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
+
+const BUY_HYPHA_RESUBMIT_SEGMENT = 'buy-hypha-tokens';
 
 const RECIPIENT_SPACE_ADDRESS = '0x3dEf11d005F8C85c93e3374B28fcC69B25a650Af';
 const PAYMENT_TOKEN = TOKENS.find((t) => t.symbol === 'USDC');
@@ -87,7 +93,18 @@ export const BuyHyphaTokensForm = ({
   });
 
   useScrollToErrors(form, formRef);
-  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+  const { resubmitKey } = useResubmitProposalData(
+    form,
+    spaceId,
+    person?.id,
+    BUY_HYPHA_RESUBMIT_SEGMENT,
+  );
+
+  React.useEffect(() => {
+    if (progress === 100 && !isError) {
+      clearResubmitProposalSessionStorage();
+    }
+  }, [progress, isError]);
 
   React.useEffect(() => {
     if (spaceDetails?.executor && web3SpaceId) {

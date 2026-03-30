@@ -25,6 +25,8 @@ import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-re
 import { erc20Abi, isAddress, parseUnits } from 'viem';
 import { resolveTokenDecimals } from '../utils/token-decimals';
 
+const BURN_RESUBMIT_SEGMENT = 'token-burning';
+
 type FormValues = z.infer<typeof schemaTokenBurning>;
 
 const fullSchemaTokenBurning = schemaTokenBurning.extend(createAgreementFiles);
@@ -204,7 +206,12 @@ export const TokenBurningForm = ({
   };
 
   useScrollToErrors(form, formRef);
-  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+  const { resubmitKey } = useResubmitProposalData(
+    form,
+    spaceId,
+    person?.id,
+    BURN_RESUBMIT_SEGMENT,
+  );
 
   React.useEffect(() => {
     if (progress === 100 && !isError) {

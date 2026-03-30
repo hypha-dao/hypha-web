@@ -22,6 +22,8 @@ import { CreateAgreementBaseFields } from '../../agreements';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
 
+const MINT_RESUBMIT_SEGMENT = 'mint-tokens-to-space-treasury';
+
 type FormValues = z.infer<typeof schemaMintTokensToSpaceTreasury>;
 
 const fullSchemaMintTokensToSpaceTreasury = schemaMintTokensToSpaceTreasury
@@ -88,7 +90,12 @@ export const MintTokensToSpaceTreasuryForm = ({
   });
 
   useScrollToErrors(form, formRef);
-  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+  const { resubmitKey } = useResubmitProposalData(
+    form,
+    spaceId,
+    person?.id,
+    MINT_RESUBMIT_SEGMENT,
+  );
 
   React.useEffect(() => {
     if (progress === 100 && !isError) {

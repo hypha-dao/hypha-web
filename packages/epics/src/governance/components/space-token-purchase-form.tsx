@@ -15,9 +15,15 @@ import React from 'react';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
+import {
+  clearResubmitProposalSessionStorage,
+  useResubmitProposalData,
+  useScrollToErrors,
+} from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useConfig } from 'wagmi';
+
+const STP_RESUBMIT_SEGMENT = 'space-token-purchase';
 
 const fullSchemaSpaceTokenPurchase = schemaSpaceTokenPurchaseObject
   .extend({ label: z.string().optional() })
@@ -85,7 +91,18 @@ export const SpaceTokenPurchaseForm = ({
   });
 
   useScrollToErrors(form, formRef);
-  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+  const { resubmitKey } = useResubmitProposalData(
+    form,
+    spaceId,
+    person?.id,
+    STP_RESUBMIT_SEGMENT,
+  );
+
+  React.useEffect(() => {
+    if (progress === 100 && !isError) {
+      clearResubmitProposalSessionStorage();
+    }
+  }, [progress, isError]);
 
   React.useEffect(() => {
     const proposalLabel = tAgreementFlow('labels.spaceTokenPurchase');
