@@ -67,7 +67,9 @@ function buildRecipientPayoutsFromTransfers(
   | { recipient: string; payouts: { token: string; amount: string }[] }
   | undefined {
   if (!transfers?.length) return undefined;
-  const recipient = transfers[0].recipient;
+  const first = transfers[0];
+  if (!first) return undefined;
+  const recipient = first.recipient;
   const recipientLc = recipient.toLowerCase();
   if (!transfers.every((t) => t.recipient.toLowerCase() === recipientLc)) {
     return undefined;
