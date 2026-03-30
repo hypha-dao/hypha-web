@@ -740,7 +740,9 @@
         "blockchainAddressRequired": "Bitte geben Sie eine Blockchain-Adresse ein",
         "blockchainAddressInvalid": "Bitte geben Sie eine gültige Blockchain-Adresse ein",
         "referenceCurrencyRequired": "Bitte wählen Sie eine Referenzwährung aus",
-        "tokenPricePositive": "Bitte geben Sie einen Token-Preis größer als 0 ein"
+        "tokenPricePositive": "Bitte geben Sie einen Token-Preis größer als 0 ein",
+        "smartWalletInitializing": "Ihre Wallet wird noch vorbereitet. Schließen Sie alle Wallet-Hinweise ab, warten Sie ein paar Sekunden und tippen Sie erneut auf Veröffentlichen.",
+        "sessionNotReady": "Ihre Sitzung lädt noch. Warten Sie einen Moment und tippen Sie erneut auf Veröffentlichen."
       }
     },
     "createAgreementBaseFields": {

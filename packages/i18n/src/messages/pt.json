@@ -510,7 +510,9 @@
         "blockchainAddressRequired": "Por favor insira um endereço blockchain",
         "blockchainAddressInvalid": "Por favor insira um endereço blockchain válido",
         "referenceCurrencyRequired": "Selecione uma moeda de referência",
-        "tokenPricePositive": "Insira um preço de token maior que 0"
+        "tokenPricePositive": "Insira um preço de token maior que 0",
+        "smartWalletInitializing": "Sua carteira ainda está sendo preparada. Conclua qualquer solicitação da carteira, aguarde alguns segundos e toque em Publicar novamente.",
+        "sessionNotReady": "Sua sessão ainda está carregando. Aguarde um momento e toque em Publicar novamente."
       }
     },
     "createAgreementBaseFields": {

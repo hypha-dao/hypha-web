@@ -740,7 +740,9 @@
         "blockchainAddressRequired": "Veuillez saisir une adresse blockchain",
         "blockchainAddressInvalid": "Veuillez saisir une adresse blockchain valide",
         "referenceCurrencyRequired": "Veuillez sélectionner une devise de référence",
-        "tokenPricePositive": "Veuillez saisir un prix de token supérieur à 0"
+        "tokenPricePositive": "Veuillez saisir un prix de token supérieur à 0",
+        "smartWalletInitializing": "Votre portefeuille se prépare encore. Terminez toute invite du portefeuille, attendez quelques secondes, puis appuyez à nouveau sur Publier.",
+        "sessionNotReady": "Votre session se charge encore. Patientez un instant, puis appuyez à nouveau sur Publier."
       }
     },
     "createAgreementBaseFields": {

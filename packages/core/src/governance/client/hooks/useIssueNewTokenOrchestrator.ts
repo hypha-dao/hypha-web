@@ -2,7 +2,7 @@
 
 import useSWRMutation from 'swr/mutation';
 import useSWR from 'swr';
-import { useCallback, useMemo, useReducer, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import { z } from 'zod';
 import { produce } from 'immer';
 
@@ -97,6 +97,16 @@ const computeProgress = (tasks: TaskState): number => {
   return Math.round(((done + pending * 0.5) / all.length) * 100);
 };
 
+function mutationErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'string') return err;
+  try {
+    return JSON.stringify(err);
+  } catch {
+    return 'Unknown error';
+  }
+}
+
 type CreateIssueTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
   agreementId?: number;
   spaceId: number;
@@ -169,25 +179,17 @@ export const useCreateIssueTokenOrchestrator = ({
     dispatch({ type: 'START_TASK', taskName, message });
   }, []);
 
-  const completeTask = useCallback(
-    (taskName: TaskName) => {
-      if (currentAction === taskActionDescriptions[taskName]) {
-        setCurrentAction(undefined);
-      }
-      dispatch({ type: 'COMPLETE_TASK', taskName });
-    },
-    [currentAction],
-  );
+  const completeTask = useCallback((taskName: TaskName) => {
+    const message = taskActionDescriptions[taskName];
+    setCurrentAction((prev) => (prev === message ? undefined : prev));
+    dispatch({ type: 'COMPLETE_TASK', taskName });
+  }, []);
 
-  const errorTask = useCallback(
-    (taskName: TaskName, error: string) => {
-      if (currentAction === taskActionDescriptions[taskName]) {
-        setCurrentAction(undefined);
-      }
-      dispatch({ type: 'SET_ERROR', taskName, message: error });
-    },
-    [currentAction],
-  );
+  const errorTask = useCallback((taskName: TaskName, error: string) => {
+    const message = taskActionDescriptions[taskName];
+    setCurrentAction((prev) => (prev === message ? undefined : prev));
+    dispatch({ type: 'SET_ERROR', taskName, message: error });
+  }, []);
 
   const resetTasks = useCallback(() => {
     dispatch({ type: 'RESET' });
@@ -196,6 +198,11 @@ export const useCreateIssueTokenOrchestrator = ({
   const { trigger: createIssueToken } = useSWRMutation(
     'createIssueTokenOrchestration',
     async (_: string, { arg }: { arg: CreateIssueTokenArg }) => {
+      if (!authToken) {
+        throw new Error(
+          'Session not ready. Please wait a moment and try again.',
+        );
+      }
       startTask('CREATE_WEB2_AGREEMENT');
       const inputWeb2 = schemaCreateAgreementWeb2.parse(arg);
       const createdAgreement = await web2.createAgreement(inputWeb2);
@@ -208,10 +215,11 @@ export const useCreateIssueTokenOrchestrator = ({
         startTask('UPLOAD_TOKEN_ICON');
         const result = await tokenFiles.upload({ iconUrl: arg.iconUrl });
         iconUrl = result.iconUrl;
-        console.log('iconUrl after upload:', iconUrl);
         completeTask('UPLOAD_TOKEN_ICON');
       } else {
         iconUrl = arg.iconUrl;
+        startTask('UPLOAD_TOKEN_ICON');
+        completeTask('UPLOAD_TOKEN_ICON');
       }
 
       startTask('CREATE_TOKEN');
@@ -262,7 +270,7 @@ export const useCreateIssueTokenOrchestrator = ({
                   .filter((addr) => addr && addr.startsWith('0x'))
               : [];
 
-          const web3Result = await web3.createIssueToken({
+          await web3.createIssueToken({
             spaceId: arg.web3SpaceId,
             name: arg.name,
             symbol: arg.symbol,
@@ -288,6 +296,10 @@ export const useCreateIssueTokenOrchestrator = ({
             initialReceiveWhitelist,
           });
           completeTask('CREATE_WEB3_AGREEMENT');
+        } else {
+          completeTask('CREATE_WEB3_AGREEMENT');
+          startTask('LINK_WEB2_AND_WEB3_AGREEMENT');
+          completeTask('LINK_WEB2_AND_WEB3_AGREEMENT');
         }
         const files = schemaCreateAgreementFiles.parse(arg);
         if (files.attachments?.length || files.leadImage) {
@@ -306,6 +318,83 @@ export const useCreateIssueTokenOrchestrator = ({
       }
     },
   );
+
+  const errors = useMemo(
+    () =>
+      [
+        web2.errorCreateAgreementMutation,
+        web2TokenMutations.errorCreateTokenMutation,
+        web3.errorCreateToken,
+        web3.errorWaitTokenFromTx,
+      ].filter(Boolean),
+    [web2, web2TokenMutations, web3],
+  );
+
+  useEffect(() => {
+    if (
+      web2.errorCreateAgreementMutation &&
+      taskState.CREATE_WEB2_AGREEMENT.status === TaskStatus.IS_PENDING
+    ) {
+      errorTask(
+        'CREATE_WEB2_AGREEMENT',
+        mutationErrorMessage(web2.errorCreateAgreementMutation),
+      );
+    }
+  }, [
+    web2.errorCreateAgreementMutation,
+    taskState.CREATE_WEB2_AGREEMENT.status,
+    errorTask,
+  ]);
+
+  useEffect(() => {
+    if (
+      web2TokenMutations.errorCreateTokenMutation &&
+      taskState.CREATE_TOKEN.status === TaskStatus.IS_PENDING
+    ) {
+      errorTask(
+        'CREATE_TOKEN',
+        mutationErrorMessage(web2TokenMutations.errorCreateTokenMutation),
+      );
+    }
+  }, [
+    web2TokenMutations.errorCreateTokenMutation,
+    taskState.CREATE_TOKEN.status,
+    errorTask,
+  ]);
+
+  useEffect(() => {
+    if (
+      web3.errorCreateToken &&
+      taskState.CREATE_WEB3_AGREEMENT.status === TaskStatus.IS_PENDING
+    ) {
+      errorTask(
+        'CREATE_WEB3_AGREEMENT',
+        mutationErrorMessage(web3.errorCreateToken),
+      );
+    }
+  }, [
+    web3.errorCreateToken,
+    taskState.CREATE_WEB3_AGREEMENT.status,
+    errorTask,
+  ]);
+
+  useEffect(() => {
+    if (
+      web3.errorWaitTokenFromTx &&
+      taskState.CREATE_WEB3_AGREEMENT.status === TaskStatus.IS_DONE &&
+      taskState.LINK_WEB2_AND_WEB3_AGREEMENT.status === TaskStatus.IDLE
+    ) {
+      errorTask(
+        'LINK_WEB2_AND_WEB3_AGREEMENT',
+        mutationErrorMessage(web3.errorWaitTokenFromTx),
+      );
+    }
+  }, [
+    web3.errorWaitTokenFromTx,
+    taskState.CREATE_WEB3_AGREEMENT.status,
+    taskState.LINK_WEB2_AND_WEB3_AGREEMENT.status,
+    errorTask,
+  ]);
 
   const { data: updatedWeb2Agreement } = useSWR(
     web2.createdAgreement?.slug &&
@@ -326,7 +415,7 @@ export const useCreateIssueTokenOrchestrator = ({
           web3ProposalId: Number(web3ProposalId),
         });
 
-        const updatedToken = await updateTokenAction(
+        await updateTokenAction(
           {
             agreementId: web2.createdAgreement!.id,
             agreementWeb3IdUpdate: Number(web3ProposalId),
@@ -349,21 +438,12 @@ export const useCreateIssueTokenOrchestrator = ({
     },
   );
 
-  const errors = useMemo(
-    () =>
-      [
-        web2.errorCreateAgreementMutation,
-        web3.errorCreateToken,
-        web3.errorWaitTokenFromTx,
-      ].filter(Boolean),
-    [web2, web3],
-  );
-
   const reset = useCallback(() => {
     resetTasks();
     web2.resetCreateAgreementMutation();
+    web2TokenMutations.resetCreateTokenMutation();
     web3.resetCreateIssueToken();
-  }, [resetTasks, web2, web3]);
+  }, [resetTasks, web2, web2TokenMutations, web3]);
 
   return {
     reset,
@@ -376,7 +456,7 @@ export const useCreateIssueTokenOrchestrator = ({
     taskState,
     currentAction,
     progress,
-    isPending: progress > 0 && progress < 100,
+    isPending: errors.length === 0 && progress > 0 && progress < 100,
     isError: errors.length > 0,
     errors,
   };

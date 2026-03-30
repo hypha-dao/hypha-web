@@ -740,7 +740,9 @@
         "blockchainAddressRequired": "Please enter a blockchain address",
         "blockchainAddressInvalid": "Please enter a valid blockchain address",
         "referenceCurrencyRequired": "Please select a reference currency",
-        "tokenPricePositive": "Please enter a token price greater than 0"
+        "tokenPricePositive": "Please enter a token price greater than 0",
+        "smartWalletInitializing": "Your wallet is still getting ready. Finish any wallet prompt, wait a few seconds, then tap Publish again.",
+        "sessionNotReady": "Your session is still loading. Wait a moment, then tap Publish again."
       }
     },
     "createAgreementBaseFields": {

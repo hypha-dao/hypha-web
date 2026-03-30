@@ -1,9 +1,11 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import useSWRMutation from 'swr/mutation';
 import useSWR from 'swr';
 import { encodeFunctionData } from 'viem';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
+import { waitForSmartWalletClient } from './wait-for-smart-wallet-client';
 
 import {
   schemaCreateProposalWeb3,
@@ -67,6 +69,10 @@ export const useIssueTokenMutationsWeb3Rpc = ({
   proposalSlug?: string | null;
 }) => {
   const { client } = useSmartWallets();
+  const clientRef = useRef(client);
+  useEffect(() => {
+    clientRef.current = client;
+  }, [client]);
 
   const {
     trigger: createIssueToken,
@@ -77,7 +83,9 @@ export const useIssueTokenMutationsWeb3Rpc = ({
   } = useSWRMutation(
     `createIssueToken-${proposalSlug}`,
     async (_, { arg }: { arg: CreateTokenArgs }) => {
-      if (!client) throw new Error('Smart wallet client not available');
+      const walletClient = await waitForSmartWalletClient(
+        () => clientRef.current,
+      );
 
       const duration = await publicClient.readContract(
         getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
@@ -231,7 +239,9 @@ export const useIssueTokenMutationsWeb3Rpc = ({
 
       const proposalArgs = mapToCreateProposalWeb3Input(parsedProposal);
 
-      const txHash = await client.writeContract(createProposal(proposalArgs));
+      const txHash = await walletClient.writeContract(
+        createProposal(proposalArgs),
+      );
       return txHash;
     },
   );

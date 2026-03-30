@@ -251,10 +251,10 @@ export const UpdateIssuedTokenForm = ({
 
   return (
     <LoadingBackdrop
-      showKeepWindowOpenMessage={true}
+      showKeepWindowOpenMessage={!isError}
       fullHeight={true}
       progress={progress}
-      isLoading={isPending}
+      isLoading={isPending || isError}
       message={
         isError ? (
           <div className="flex flex-col">

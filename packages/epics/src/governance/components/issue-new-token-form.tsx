@@ -95,6 +95,10 @@ const ISSUE_NEW_TOKEN_ERROR_KEYS: Record<string, string> = {
     'issueNewTokenForm.errors.referenceCurrencyRequired',
   'Please enter a token price greater than 0':
     'issueNewTokenForm.errors.tokenPricePositive',
+  'Smart wallet is still initializing. Complete any wallet prompt in your browser, then try again.':
+    'issueNewTokenForm.errors.smartWalletInitializing',
+  'Session not ready. Please wait a moment and try again.':
+    'issueNewTokenForm.errors.sessionNotReady',
 };
 
 const extendedBaseSchema = baseSchemaIssueNewToken.merge(
@@ -388,11 +392,11 @@ export const IssueNewTokenForm = ({
 
   return (
     <LoadingBackdrop
-      showKeepWindowOpenMessage={true}
+      showKeepWindowOpenMessage={!isError}
       keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       fullHeight={true}
       progress={progress}
-      isLoading={isPending}
+      isLoading={isPending || isError}
       message={
         isError ? (
           <div className="flex flex-col">

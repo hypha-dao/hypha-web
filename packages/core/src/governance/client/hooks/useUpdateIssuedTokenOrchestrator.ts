@@ -1,7 +1,7 @@
 'use client';
 
 import useSWRMutation from 'swr/mutation';
-import { useCallback, useMemo, useReducer, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import { z } from 'zod';
 import { produce } from 'immer';
 
@@ -99,6 +99,16 @@ const computeProgress = (tasks: TaskState): number => {
   const pending = all.filter((t) => t.status === TaskStatus.IS_PENDING).length;
   return Math.round(((done + pending * 0.5) / all.length) * 100);
 };
+
+function mutationErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'string') return err;
+  try {
+    return JSON.stringify(err);
+  } catch {
+    return 'Unknown error';
+  }
+}
 
 type UpdateIssuedTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
   tokenAddress?: string;
@@ -268,25 +278,17 @@ export const useUpdateIssuedTokenOrchestrator = ({
     dispatch({ type: 'START_TASK', taskName, message });
   }, []);
 
-  const completeTask = useCallback(
-    (taskName: TaskName) => {
-      if (currentAction === taskActionDescriptions[taskName]) {
-        setCurrentAction(undefined);
-      }
-      dispatch({ type: 'COMPLETE_TASK', taskName });
-    },
-    [currentAction],
-  );
+  const completeTask = useCallback((taskName: TaskName) => {
+    const message = taskActionDescriptions[taskName];
+    setCurrentAction((prev) => (prev === message ? undefined : prev));
+    dispatch({ type: 'COMPLETE_TASK', taskName });
+  }, []);
 
-  const errorTask = useCallback(
-    (taskName: TaskName, error: string) => {
-      if (currentAction === taskActionDescriptions[taskName]) {
-        setCurrentAction(undefined);
-      }
-      dispatch({ type: 'SET_ERROR', taskName, message: error });
-    },
-    [currentAction],
-  );
+  const errorTask = useCallback((taskName: TaskName, error: string) => {
+    const message = taskActionDescriptions[taskName];
+    setCurrentAction((prev) => (prev === message ? undefined : prev));
+    dispatch({ type: 'SET_ERROR', taskName, message: error });
+  }, []);
 
   const resetTasks = useCallback(() => {
     dispatch({ type: 'RESET' });
@@ -297,6 +299,11 @@ export const useUpdateIssuedTokenOrchestrator = ({
     async (_: string, { arg }: { arg: UpdateIssuedTokenArg }) => {
       if (!arg.tokenAddress || !arg.web3SpaceId) {
         throw new Error('Either tokenAddress and web3SpaceId must be provided');
+      }
+      if (!authToken) {
+        throw new Error(
+          'Session not ready. Please wait a moment and try again.',
+        );
       }
       startTask('CREATE_WEB2_AGREEMENT');
       const inputWeb2 = schemaCreateAgreementWeb2.parse(arg);
@@ -367,6 +374,10 @@ export const useUpdateIssuedTokenOrchestrator = ({
           startTask('CREATE_WEB3_AGREEMENT');
           await web3.updateIssuedToken(web3ProposalArg);
           completeTask('CREATE_WEB3_AGREEMENT');
+        } else {
+          completeTask('CREATE_WEB3_AGREEMENT');
+          startTask('LINK_WEB2_AND_WEB3_AGREEMENT');
+          completeTask('LINK_WEB2_AND_WEB3_AGREEMENT');
         }
 
         const files = schemaCreateAgreementFiles.parse(arg);
@@ -387,6 +398,86 @@ export const useUpdateIssuedTokenOrchestrator = ({
     },
   );
 
+  const errors = useMemo(
+    () =>
+      [
+        web2.errorCreateAgreementMutation,
+        web3.errorUpdateIssuedToken,
+        web3.errorWaitTokenFromTx,
+        web2TokenMutations.errorUpdateTokenMutation,
+        web2TokenMutations.errorCreateTokenUpdateMutation,
+        web2TokenMutations.errorApplyTokenUpdateMutation,
+        web2TokenMutations.errorDeleteTokenUpdateMutation,
+      ].filter(Boolean),
+    [web2, web3, web2TokenMutations],
+  );
+
+  useEffect(() => {
+    if (
+      web2.errorCreateAgreementMutation &&
+      taskState.CREATE_WEB2_AGREEMENT.status === TaskStatus.IS_PENDING
+    ) {
+      errorTask(
+        'CREATE_WEB2_AGREEMENT',
+        mutationErrorMessage(web2.errorCreateAgreementMutation),
+      );
+    }
+  }, [
+    web2.errorCreateAgreementMutation,
+    taskState.CREATE_WEB2_AGREEMENT.status,
+    errorTask,
+  ]);
+
+  useEffect(() => {
+    if (
+      web2TokenMutations.errorCreateTokenUpdateMutation &&
+      taskState.UPDATE_TOKEN.status === TaskStatus.IS_PENDING
+    ) {
+      errorTask(
+        'UPDATE_TOKEN',
+        mutationErrorMessage(web2TokenMutations.errorCreateTokenUpdateMutation),
+      );
+    }
+  }, [
+    web2TokenMutations.errorCreateTokenUpdateMutation,
+    taskState.UPDATE_TOKEN.status,
+    errorTask,
+  ]);
+
+  useEffect(() => {
+    if (
+      web3.errorUpdateIssuedToken &&
+      taskState.CREATE_WEB3_AGREEMENT.status === TaskStatus.IS_PENDING
+    ) {
+      errorTask(
+        'CREATE_WEB3_AGREEMENT',
+        mutationErrorMessage(web3.errorUpdateIssuedToken),
+      );
+    }
+  }, [
+    web3.errorUpdateIssuedToken,
+    taskState.CREATE_WEB3_AGREEMENT.status,
+    errorTask,
+  ]);
+
+  useEffect(() => {
+    if (
+      web3.errorWaitTokenFromTx &&
+      taskState.CREATE_WEB3_AGREEMENT.status === TaskStatus.IS_DONE &&
+      taskState.LINK_WEB2_AND_WEB3_AGREEMENT.status === TaskStatus.IDLE
+    ) {
+      errorTask(
+        'LINK_WEB2_AND_WEB3_AGREEMENT',
+        mutationErrorMessage(web3.errorWaitTokenFromTx),
+      );
+    }
+  }, [
+    web3.errorWaitTokenFromTx,
+    taskState.CREATE_WEB3_AGREEMENT.status,
+    taskState.LINK_WEB2_AND_WEB3_AGREEMENT.status,
+    errorTask,
+  ]);
+
   const { data: updatedWeb2Agreement } = useSWR(
     web2.createdAgreement?.slug &&
       taskState.UPLOAD_FILES.status === TaskStatus.IS_DONE &&
@@ -401,8 +492,6 @@ export const useUpdateIssuedTokenOrchestrator = ({
     async ([slug, web3ProposalId]) => {
       try {
         startTask('LINK_WEB2_AND_WEB3_AGREEMENT');
-        console.log('slug', slug);
-        console.log('web3ProposalId', web3ProposalId);
         const result = await web2.updateAgreementBySlug({
           slug,
           web3ProposalId: Number(web3ProposalId),
@@ -420,20 +509,6 @@ export const useUpdateIssuedTokenOrchestrator = ({
       revalidateOnMount: true,
       shouldRetryOnError: false,
     },
-  );
-
-  const errors = useMemo(
-    () =>
-      [
-        web2.errorCreateAgreementMutation,
-        web3.errorUpdateIssuedToken,
-        web3.errorWaitTokenFromTx,
-        web2TokenMutations.errorUpdateTokenMutation,
-        web2TokenMutations.errorCreateTokenUpdateMutation,
-        web2TokenMutations.errorApplyTokenUpdateMutation,
-        web2TokenMutations.errorDeleteTokenUpdateMutation,
-      ].filter(Boolean),
-    [web2, web3, web2TokenMutations],
   );
 
   const reset = useCallback(() => {
@@ -457,7 +532,7 @@ export const useUpdateIssuedTokenOrchestrator = ({
     taskState,
     currentAction,
     progress,
-    isPending: progress > 0 && progress < 100,
+    isPending: errors.length === 0 && progress > 0 && progress < 100,
     isError: errors.length > 0,
     errors,
   };
