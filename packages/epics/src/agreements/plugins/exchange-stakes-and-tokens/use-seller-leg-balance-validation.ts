@@ -26,9 +26,22 @@ const DEBOUNCE_MS = 450;
 export function useSellerLegBalanceValidation(
   tSellerAmountExceedsBalance: string,
 ) {
-  const { control, setError, clearErrors } = useFormContext<FormSlice>();
+  const { control, setError, clearErrors, getFieldState, formState } =
+    useFormContext<FormSlice>();
   const { isSubmitting } = useFormState({ control });
   const runSeqRef = React.useRef(0);
+
+  /** Only clear balance (`manual`) errors — never strip Zod resolver errors on the same field. */
+  const clearManualSellerLegAmountError = React.useCallback(
+    (index: number) => {
+      const name = `sellerLeg.${index}.amount` as const;
+      const { error } = getFieldState(name, formState);
+      if (error?.type === 'manual') {
+        clearErrors(name);
+      }
+    },
+    [clearErrors, getFieldState, formState],
+  );
 
   const sellerLeg = useWatch({ control, name: 'sellerLeg' }) as
     | SellerLeg[]
@@ -74,7 +87,7 @@ export function useSellerLegBalanceValidation(
 
     if (owner === 'treasury_unavailable' || owner === null) {
       for (let i = 0; i < legs.length; i++) {
-        clearErrors(`sellerLeg.${i}.amount` as const);
+        clearManualSellerLegAmountError(i);
       }
       return;
     }
@@ -93,7 +106,7 @@ export function useSellerLegBalanceValidation(
             !!leg?.token && /^0x[a-fA-F0-9]{40}$/i.test(leg.token);
 
           if (!trimmed || !hasToken) {
-            clearErrors(`sellerLeg.${i}.amount` as const);
+            clearManualSellerLegAmountError(i);
             continue;
           }
 
@@ -107,7 +120,7 @@ export function useSellerLegBalanceValidation(
               message: msg,
             });
           } else {
-            clearErrors(`sellerLeg.${i}.amount` as const);
+            clearManualSellerLegAmountError(i);
           }
         }
       })();
@@ -120,7 +133,7 @@ export function useSellerLegBalanceValidation(
   }, [
     validationKey,
     isSubmitting,
-    clearErrors,
+    clearManualSellerLegAmountError,
     setError,
     sellerLeg,
     sellerRecipientType,
