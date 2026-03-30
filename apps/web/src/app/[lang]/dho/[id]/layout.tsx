@@ -229,7 +229,7 @@ export default async function DhoLayout({
                           lang,
                           space.slug,
                         )}/space-configuration`}
-                        createdAt={space.createdAt}
+                        createdAt={space.createdAt.toISOString()}
                       />
                     </Link>
                   </CarouselItem>

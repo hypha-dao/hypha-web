@@ -96,7 +96,7 @@ export default async function Index(props: PageProps) {
                       isDemo={space.flags?.includes('demo') ?? false}
                       isArchived={isSpaceArchived(space)}
                       web3SpaceId={space.web3SpaceId as number}
-                      createdAt={space.createdAt}
+                      createdAt={space.createdAt.toISOString()}
                       configPath={`${getDhoPathAgreements(
                         lang,
                         space.slug,

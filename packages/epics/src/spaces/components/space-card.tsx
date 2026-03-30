@@ -17,6 +17,7 @@ import { SpaceModeLabel } from './space-mode-label';
 import { cn } from '@hypha-platform/ui-utils';
 import { ExitSpace } from './exit-space';
 import { useFormatter, useTranslations } from 'next-intl';
+import { useMemo } from 'react';
 
 type SpaceCardProps = {
   description: string;
@@ -31,7 +32,8 @@ type SpaceCardProps = {
   isArchived?: boolean;
   configPath?: string;
   web3SpaceId?: number;
-  createdAt: Date;
+  /** Prefer ISO string from Server Components — raw Date can break RSC serialization */
+  createdAt: Date | string | number;
   className?: string;
   showExitButton?: boolean;
 };
@@ -60,6 +62,15 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
   const t = useTranslations('Spaces');
   const tCommon = useTranslations('Common');
   const format = useFormatter();
+
+  const createdAtDate = useMemo(() => {
+    if (createdAt instanceof Date) {
+      return Number.isNaN(createdAt.getTime()) ? null : createdAt;
+    }
+    const parsed = new Date(createdAt);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }, [createdAt]);
+
   return (
     <Card
       className={cn('group relative w-full h-full flex flex-col', className)}
@@ -151,23 +162,22 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
                 </div>
               </div>
               <div className="flex flex-row">
-                {createdAt instanceof Date &&
-                  !Number.isNaN(createdAt.getTime()) && (
-                    <Skeleton loading={isLoading} height="16px" width="80px">
-                      <div className="text-neutral-11 text-1">
-                        {tCommon('createdOn', {
-                          date: format.dateTime(createdAt, {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit',
-                          }),
-                        })}
-                      </div>
-                    </Skeleton>
-                  )}
+                {createdAtDate && (
+                  <Skeleton loading={isLoading} height="16px" width="80px">
+                    <div className="text-neutral-11 text-1">
+                      {tCommon('createdOn', {
+                        date: format.dateTime(createdAtDate, {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit',
+                        }),
+                      })}
+                    </div>
+                  </Skeleton>
+                )}
               </div>
             </div>
             <div className="flex grow"></div>
