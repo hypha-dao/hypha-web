@@ -637,7 +637,7 @@ export const PeopleRedeemForm = ({
       closePanelTimeoutRef.current = setTimeout(() => {
         router.replace(closePanelUrl, { scroll: false });
       }, 3000);
-      form.reset();
+      // Keep form values visible with the success message until the panel closes.
       try {
         await updateAssets();
       } catch (error) {
