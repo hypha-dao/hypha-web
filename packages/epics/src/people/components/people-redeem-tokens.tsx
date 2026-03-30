@@ -424,30 +424,31 @@ export const ProfileRedeemTokens = ({
           );
           diagnostics.checkedVaultTokenCount += activeVaultTokens.length;
 
-          const balances = await Promise.all(
-            activeVaultTokens.map(async (vaultToken) => {
-              try {
-                const balance = await publicClient.readContract({
-                  address: vaultToken.spaceToken as `0x${string}`,
-                  abi: erc20Abi,
-                  functionName: 'balanceOf',
-                  args: [memberAddress],
+          const balanceResults =
+            activeVaultTokens.length === 0
+              ? []
+              : await publicClient.multicall({
+                  allowFailure: true,
+                  contracts: activeVaultTokens.map((vaultToken) => ({
+                    address: vaultToken.spaceToken as `0x${string}`,
+                    abi: erc20Abi,
+                    functionName: 'balanceOf' as const,
+                    args: [memberAddress],
+                  })),
                 });
-                return {
-                  token: vaultToken,
-                  hasBalance: balance > 0n,
-                };
-              } catch {
-                diagnostics.balanceReadFailureCount += 1;
-                return {
-                  token: vaultToken,
-                  hasBalance: false,
-                };
-              }
-            }),
-          );
 
-          return balances
+          return balanceResults
+            .map((balanceResult, index) => {
+              const vaultToken = activeVaultTokens[index]!;
+              if (balanceResult.status !== 'success') {
+                diagnostics.balanceReadFailureCount += 1;
+                return { token: vaultToken, hasBalance: false };
+              }
+              return {
+                token: vaultToken,
+                hasBalance: balanceResult.result > 0n,
+              };
+            })
             .filter((entry) => entry.hasBalance)
             .map((entry) => ({
               icon: entry.token.tokenIcon || '/placeholder/token-icon.svg',
