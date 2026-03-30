@@ -55,13 +55,14 @@ function TokenPayoutFieldInner({
   selectedTokenPriceHint,
 }: TokenPayoutFieldProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
-  const selectedToken =
-    tokens.find(
-      (t) =>
-        t.address.toLowerCase() === value.token.toLowerCase() &&
-        (value.spaceSlug ? t.space?.slug === value.spaceSlug : true),
-    ) ??
-    tokens.find((t) => t.address.toLowerCase() === value.token.toLowerCase());
+  const selectedToken = value.token
+    ? tokens.find(
+        (t) =>
+          t.address.toLowerCase() === value.token.toLowerCase() &&
+          (value.spaceSlug ? t.space?.slug === value.spaceSlug : true),
+      ) ??
+      tokens.find((t) => t.address.toLowerCase() === value.token.toLowerCase())
+    : undefined;
 
   const handleTokenChange = (token: Token) => {
     onChange({
