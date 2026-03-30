@@ -122,7 +122,9 @@ describe('remainderPercentStringForLastRow', () => {
     expect(remainderPercentStringForLastRow(['50.00', '50.00'])).toBe('0.00');
   });
 
-  it('throws when a non-empty row has invalid percentage', () => {
-    expect(() => remainderPercentStringForLastRow(['not-a-number'])).toThrow();
+  it('treats invalid or incomplete percentages as 0 while typing', () => {
+    expect(remainderPercentStringForLastRow(['not-a-number'])).toBe('100.00');
+    expect(remainderPercentStringForLastRow(['50.', ''])).toBe('100.00');
+    expect(remainderPercentStringForLastRow(['84.58', '8.'])).toBe('15.42');
   });
 });
