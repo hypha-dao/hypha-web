@@ -94,6 +94,7 @@ export const useResubmitProposalData = <
           spaceToSpaceMemberAddress?: string;
           issueNewTokenForm?: Record<string, unknown>;
           tokenBackingVault?: Record<string, unknown>;
+          spaceTokenPurchaseForm?: Record<string, unknown>;
           applied?: boolean;
           redeemResubmit?: {
             token: string;
@@ -230,6 +231,10 @@ export const useResubmitProposalData = <
             ...(parsed.tokenBackingVault &&
             typeof parsed.tokenBackingVault === 'object'
               ? { tokenBackingVault: parsed.tokenBackingVault }
+              : {}),
+            ...(parsed.spaceTokenPurchaseForm &&
+            typeof parsed.spaceTokenPurchaseForm === 'object'
+              ? (parsed.spaceTokenPurchaseForm as Record<string, unknown>)
               : {}),
           } as T,
           {
@@ -464,6 +469,23 @@ export const useResubmitProposalData = <
           });
         }
 
+        const stpInj = parsed.spaceTokenPurchaseForm;
+        if (stpInj && typeof stpInj === 'object') {
+          const stp = stpInj as Record<string, unknown>;
+          const setStp = (key: string, val: unknown) => {
+            if (val === undefined) return;
+            form.setValue(key as any, val as any, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+          };
+          setStp('tokenAddress', stp.tokenAddress);
+          setStp('activatePurchase', stp.activatePurchase);
+          setStp('purchaseCurrency', stp.purchaseCurrency);
+          setStp('purchasePrice', stp.purchasePrice);
+          setStp('tokensAvailableForPurchase', stp.tokensAvailableForPurchase);
+        }
+
         if (issueInj && typeof issueInj === 'object') {
           const ink = issueInj as Record<string, unknown>;
           const setIssue = (key: string, val: unknown) => {
@@ -581,6 +603,18 @@ export const useResubmitProposalData = <
           typeof parsed.tokenBackingVault === 'object'
         ) {
           fieldsToTrigger.push('tokenBackingVault');
+        }
+        if (
+          parsed.spaceTokenPurchaseForm &&
+          typeof parsed.spaceTokenPurchaseForm === 'object'
+        ) {
+          fieldsToTrigger.push(
+            'tokenAddress',
+            'activatePurchase',
+            'purchasePrice',
+            'purchaseCurrency',
+            'tokensAvailableForPurchase',
+          );
         }
         form.trigger(fieldsToTrigger as any[]);
 

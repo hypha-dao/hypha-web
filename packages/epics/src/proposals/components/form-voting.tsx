@@ -28,7 +28,6 @@ import { useTheme } from 'next-themes';
 import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { formatUnits } from 'viem';
 import {
   RESUBMIT_FORM_DATA_KEY,
   RESUBMIT_PROPOSAL_DATA_KEY,
@@ -65,13 +64,6 @@ function formatTimeRemaining(
 /** @deprecated use getCreateRouteSegmentForProposalLabel */
 const getCreateRouteForLabel = getCreateRouteSegmentForProposalLabel;
 
-const USDC_ADDRESS = TOKENS.find(
-  (token) => token.symbol === 'USDC',
-)?.address?.toLowerCase();
-const EURC_ADDRESS = TOKENS.find(
-  (token) => token.symbol === 'EURC',
-)?.address?.toLowerCase();
-
 export const FormVoting = ({
   unity,
   quorum,
@@ -103,7 +95,6 @@ export const FormVoting = ({
   updateTokenProposalSnapshot,
   redeemResubmitPayload,
   proposalTemplateData,
-  spaceTokenPurchaseData,
 }: {
   unity: number;
   quorum: number;
@@ -139,13 +130,6 @@ export const FormVoting = ({
     conversions: { asset: string; percentage: string }[];
   };
   proposalTemplateData?: Record<string, unknown>;
-  spaceTokenPurchaseData?: {
-    tokenAddress?: string;
-    paymentToken?: string;
-    paymentTokenPricePerToken?: bigint;
-    tokensForSale?: bigint;
-    isActive?: boolean;
-  };
 }) => {
   const tCommon = useTranslations('Common');
   const tProposalDetails = useTranslations('ProposalDetails');

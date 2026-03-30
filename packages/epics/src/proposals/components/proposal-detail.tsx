@@ -20,6 +20,7 @@ import {
   getTokenDecimals,
   CURRENCY_FEEDS,
   REFERENCE_CURRENCIES,
+  TOKENS,
 } from '@hypha-platform/core/client';
 import {
   ProposalTransactionItem,
@@ -800,6 +801,54 @@ export const ProposalDetail = ({
       return vaultPayload;
     }
 
+    if (label === 'Token Purchase') {
+      const st = proposalDetails.spaceTokenPurchaseData;
+      if (!st?.tokenAddress) return undefined;
+
+      const paymentLc = st.paymentToken?.toLowerCase();
+      const usdcLc = TOKENS.find(
+        (t) => t.symbol === 'USDC',
+      )?.address?.toLowerCase();
+      const eurcLc = TOKENS.find(
+        (t) => t.symbol === 'EURC',
+      )?.address?.toLowerCase();
+      let purchaseCurrency: 'USD' | 'EUR' | undefined;
+      if (paymentLc && eurcLc && paymentLc === eurcLc) {
+        purchaseCurrency = 'EUR';
+      } else if (paymentLc && usdcLc && paymentLc === usdcLc) {
+        purchaseCurrency = 'USD';
+      }
+
+      const payDecimals = resolveTokenDecimals(st.paymentToken ?? '');
+      const saleDecimals = resolveTokenDecimals(st.tokenAddress);
+      const purchasePrice =
+        st.paymentTokenPricePerToken !== undefined
+          ? Number(formatUnits(st.paymentTokenPricePerToken, payDecimals))
+          : undefined;
+      const tokensAvailableForPurchase =
+        st.tokensForSale !== undefined
+          ? Number(formatUnits(st.tokensForSale, saleDecimals))
+          : undefined;
+
+      const canRestoreActiveToggle = Boolean(
+        st.isActive && purchaseCurrency !== undefined,
+      );
+
+      return {
+        spaceTokenPurchaseForm: {
+          tokenAddress: st.tokenAddress,
+          activatePurchase: canRestoreActiveToggle,
+          ...(canRestoreActiveToggle
+            ? {
+                purchaseCurrency,
+                purchasePrice,
+                tokensAvailableForPurchase,
+              }
+            : {}),
+        },
+      };
+    }
+
     return undefined;
   })();
 
@@ -1073,7 +1122,6 @@ export const ProposalDetail = ({
         }
         redeemResubmitPayload={redeemResubmitPayloadResolved}
         proposalTemplateData={resubmitTemplateData}
-        spaceTokenPurchaseData={proposalDetails?.spaceTokenPurchaseData}
       />
     </div>
   );

@@ -99,6 +99,12 @@ export function inferResubmitTemplateSegmentFromPayload(
     return 'token-backing-vault';
   }
   if (
+    parsed.spaceTokenPurchaseForm &&
+    typeof parsed.spaceTokenPurchaseForm === 'object'
+  ) {
+    return 'space-token-purchase';
+  }
+  if (
     parsed.tokenAddress !== undefined ||
     parsed.activatePurchase !== undefined
   ) {
