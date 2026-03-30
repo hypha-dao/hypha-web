@@ -524,21 +524,35 @@
     },
     "redeemTokens": {
       "title": "Redeem Tokens",
+      "loading": "Loading redemption data…",
       "content": "Convert your tokens into their equivalent fiat value held in the vault.",
       "form": {
         "redemptionAmountLabel": "Redemption Amount",
         "convertedIntoLabel": "Converted into",
         "redeem": "Redeem",
         "redeeming": "Redeeming",
-        "successMessage": "Your redeem has been successfully completed!",
+        "successMessage": "Your redemption has been successfully completed!",
         "requestedExceedsBalance": "Requested amount ({amount}) exceeds available balance ({balance}).",
         "collateralInsufficient": "The redemption value exceeds the collateral value, please enter a smaller amount.",
         "insufficientFundsLead": "Your wallet balance is insufficient to complete this transaction. Please",
         "insufficientFundsTopUp": "top up your account",
         "insufficientFundsTrail": "to proceed.",
         "selectCollateralAsset": "Select an asset",
-        "noCollateralAssetsFound": "No assets found"
+        "noCollateralAssetsFound": "No assets found",
+        "errors": {
+          "noRedemptionData": "No redemption data found. Please fill in the form.",
+          "selectSpace": "Please select a space for redemption.",
+          "spaceNotConfigured": "Selected space is not configured for redemption.",
+          "exceedsBalance": "Requested redemption amount exceeds your available token balance. Reduce the amount and try again.",
+          "collateralExceeded": "The redemption value exceeds the collateral value, please enter a smaller amount.",
+          "generic": "An error occurred while processing your redemption. Please try again.",
+          "smartWalletNotConnected": "Smart wallet is not connected. Please connect your wallet and try again.",
+          "contractFailed": "Contract execution failed.",
+          "transactionRejected": "Transaction was rejected. Please approve the transaction to proceed.",
+          "loadSpaces": "Failed to load space details. Please try again."
+        }
       },
+      "provenanceBySpace": "by {space}",
       "conversionDetails": {
         "vaultLine": "Vault: {amount} {symbol}",
         "priceLine": "Price: {currency}{price}",
@@ -546,7 +560,19 @@
       },
       "diagnostics": {
         "vaultAccess": "Unable to load vault data for some spaces: {details}. You may not have access to those spaces.",
-        "tokenDiscovery": "Token discovery diagnostics: {reasons}."
+        "tokenDiscovery": "Token discovery diagnostics: {reasons}.",
+        "reasons": {
+          "missingJwt": "Missing authenticated session token",
+          "profileLoadFailed": "Failed to load profile data",
+          "noWalletAddress": "Profile has no wallet address",
+          "spacesLoadFailed": "Failed to load member spaces",
+          "spacesFallback": "Membership spaces lookup returned no spaces; using wallet-token spaces fallback",
+          "noSpaces": "No spaces found for this member",
+          "balanceReadFailed": "Failed to read on-chain balances for {failed}/{total} vault token(s)",
+          "noVaultTokens": "No redemption-enabled vault tokens were found",
+          "restrictedFallback": "Used on-chain fallback for restricted spaces: {spaces}",
+          "restrictedFallbackFailed": "On-chain fallback failed for {count, plural, one {# restricted space} other {# restricted spaces}}"
+        }
       }
     },
     "errors": {
@@ -1162,7 +1188,14 @@
         "selectToken": "Select a token",
         "noTokensFound": "No tokens found",
         "by": "by",
-        "bySpace": "by {space}"
+        "bySpace": "by {space}",
+        "walletBalanceLine": "Wallet balance: {amount} {symbol}",
+        "redemptionPriceLine": "Token redemption price: {price}"
+      },
+      "tokenPercentageFieldArray": {
+        "convertedInto": "Converted into",
+        "add": "Add",
+        "emptyRowHint": "Select an asset and percentage for each conversion row."
       },
       "spaceToSpaceMembership": {
         "space": "Space",

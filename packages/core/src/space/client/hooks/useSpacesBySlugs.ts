@@ -24,17 +24,41 @@ export const useSpacesBySlugs = (
       : null;
   }, [slugs, parentOnly]);
 
-  const { data: spaces, isLoading } = useSWR(endpoint, (endpoint) =>
-    fetch(endpoint, {
-      headers: {
-        Accept: 'application/json',
-      },
-    }).then((res) => res.json()),
+  const { data, error, isLoading } = useSWR<Space[] | { error: string }, Error>(
+    endpoint,
+    async (url: string) => {
+      const res = await fetch(url, {
+        headers: {
+          Accept: 'application/json',
+        },
+      });
+      const body = (await res.json()) as Space[] | { error: string };
+      if (!res.ok) {
+        const message =
+          typeof body === 'object' &&
+          body !== null &&
+          'error' in body &&
+          typeof (body as { error?: string }).error === 'string'
+            ? (body as { error: string }).error
+            : `Request failed (${res.status})`;
+        throw new Error(message);
+      }
+      return body;
+    },
   );
 
-  if (spaces && 'error' in spaces) {
-    return { spaces: [], error: spaces, isLoading };
+  if (error) {
+    return { spaces: [], error, isLoading };
   }
 
-  return { spaces: spaces || [], isLoading };
+  if (
+    data &&
+    typeof data === 'object' &&
+    'error' in data &&
+    !Array.isArray(data)
+  ) {
+    return { spaces: [], error: data, isLoading };
+  }
+
+  return { spaces: (data as Space[] | undefined) ?? [], isLoading };
 };

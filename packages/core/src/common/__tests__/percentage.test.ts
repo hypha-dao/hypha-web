@@ -121,4 +121,8 @@ describe('remainderPercentStringForLastRow', () => {
   it('returns 0.00 when others already sum to 100', () => {
     expect(remainderPercentStringForLastRow(['50.00', '50.00'])).toBe('0.00');
   });
+
+  it('throws when a non-empty row has invalid percentage', () => {
+    expect(() => remainderPercentStringForLastRow(['not-a-number'])).toThrow();
+  });
 });

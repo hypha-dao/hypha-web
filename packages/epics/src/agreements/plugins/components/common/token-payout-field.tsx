@@ -55,9 +55,13 @@ function TokenPayoutFieldInner({
   selectedTokenPriceHint,
 }: TokenPayoutFieldProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
-  const selectedToken = tokens.find(
-    (t) => t.address.toLowerCase() === value.token.toLowerCase(),
-  );
+  const selectedToken =
+    tokens.find(
+      (t) =>
+        t.address.toLowerCase() === value.token.toLowerCase() &&
+        (value.spaceSlug ? t.space?.slug === value.spaceSlug : true),
+    ) ??
+    tokens.find((t) => t.address.toLowerCase() === value.token.toLowerCase());
 
   const handleTokenChange = (token: Token) => {
     onChange({
@@ -182,10 +186,17 @@ function TokenPayoutFieldInner({
       Number.isFinite(selectedToken.value) ? (
         <div className="text-1 text-neutral-11 w-full min-w-0 self-end overflow-x-auto">
           <span className="whitespace-nowrap inline-block min-w-full text-right">
-            Wallet balance: {selectedToken.value.toFixed(2)}{' '}
-            {selectedToken.symbol}
+            {tAgreementFlow('plugins.tokenPayoutField.walletBalanceLine', {
+              amount: selectedToken.value.toFixed(2),
+              symbol: selectedToken.symbol,
+            })}
             {selectedTokenPriceHint
-              ? ` · Token redemption price: ${selectedTokenPriceHint}`
+              ? ` · ${tAgreementFlow(
+                  'plugins.tokenPayoutField.redemptionPriceLine',
+                  {
+                    price: selectedTokenPriceHint,
+                  },
+                )}`
               : ''}
           </span>
         </div>

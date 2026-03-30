@@ -63,7 +63,9 @@ export const useRedeemTokensMutation = ({
     data: redeemHashes,
     error: redeemError,
   } = useSWRMutation(
-    'redeemTokens',
+    smartWalletAddress
+      ? ['redeemTokens', smartWalletAddress]
+      : ['redeemTokens', 'pending'],
     async (_, { arg }: { arg: RedeemTokensInput }) => {
       if (!client) {
         throw new Error('Smart wallet client not available');
@@ -72,9 +74,13 @@ export const useRedeemTokensMutation = ({
       const backingTokens: `0x${string}`[] = [];
       const proportions: bigint[] = [];
 
-      for (const conversion of arg.conversions ?? []) {
-        if (!conversion.asset || !conversion.percentage) {
-          continue;
+      const conversions = arg.conversions ?? [];
+      for (let i = 0; i < conversions.length; i++) {
+        const conversion = conversions[i]!;
+        if (!conversion.asset?.trim() || !conversion.percentage?.trim()) {
+          throw new Error(
+            `Incomplete conversion at index ${i}: asset and percentage are required.`,
+          );
         }
         backingTokens.push(conversion.asset as `0x${string}`);
         const percentage = percentageStringToBigInt(conversion.percentage);
@@ -82,6 +88,7 @@ export const useRedeemTokensMutation = ({
       }
 
       // Vault expects proportions that match a full split; a single collateral must be 100%.
+      // Kept as a safeguard when the form sends a remainder row that is not exactly 10000 bps.
       if (backingTokens.length === 1 && proportions.length === 1) {
         proportions[0] = 10000n;
       }
@@ -115,12 +122,28 @@ export const useRedeemTokensMutation = ({
           });
         }
       } else {
-        await client.writeContract({
+        const owner =
+          (client.account?.address as `0x${string}` | undefined) ??
+          smartWalletAddress;
+        if (!owner) {
+          throw new Error(
+            'Cannot approve redemption: wallet address is not available.',
+          );
+        }
+        const currentAllowance = await publicClient.readContract({
           address: spaceToken,
           abi: erc20Abi,
-          functionName: 'approve',
-          args: [vaultAddress, maxUint256],
+          functionName: 'allowance',
+          args: [owner, vaultAddress],
         });
+        if (currentAllowance < amount) {
+          await client.writeContract({
+            address: spaceToken,
+            abi: erc20Abi,
+            functionName: 'approve',
+            args: [vaultAddress, maxUint256],
+          });
+        }
       }
 
       const txHash: string = await client.writeContract({

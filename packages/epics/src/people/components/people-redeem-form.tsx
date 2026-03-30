@@ -1,6 +1,6 @@
 'use client';
 
-import { useForm, useWatch } from 'react-hook-form';
+import { type SubmitErrorHandler, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form } from '@hypha-platform/ui';
@@ -410,6 +410,12 @@ export const PeopleRedeemForm = ({
   }) as FormValues['conversions'] | undefined;
 
   const selectedCollateralUsdTotal = React.useMemo(() => {
+    if (
+      typeof selectedTokenUsdValue !== 'number' ||
+      !Number.isFinite(selectedTokenUsdValue)
+    ) {
+      return 0;
+    }
     const conversions = currentConversions ?? [];
     if (conversions.length === 0) return 0;
     return conversions.reduce((sum, conversion) => {
@@ -420,9 +426,10 @@ export const PeopleRedeemForm = ({
       if (!asset?.usdEqual) return sum;
       const percentage = Number(conversion.percentage ?? 0);
       if (!Number.isFinite(percentage) || percentage <= 0) return sum;
-      return sum + (asset.usdEqual * percentage) / 100;
+      const requiredUsd = (selectedTokenUsdValue * percentage) / 100;
+      return sum + Math.min(asset.usdEqual, requiredUsd);
     }, 0);
-  }, [conversionAssets, currentConversions]);
+  }, [conversionAssets, currentConversions, selectedTokenUsdValue]);
 
   const isSelectedCollateralInsufficient = React.useMemo(() => {
     if (
@@ -561,7 +568,7 @@ export const PeopleRedeemForm = ({
       .filter((token) => token.space?.slug)
       .map((token) => token.space?.slug!);
   }, [tokens]);
-  const { spaces } = useSpacesBySlugs(tokenSlugs);
+  const { spaces, error: spacesLoadError } = useSpacesBySlugs(tokenSlugs);
 
   useScrollToErrors(form, formRef);
 
@@ -582,35 +589,33 @@ export const PeopleRedeemForm = ({
       const [redemption] = data.redemptions;
       if (!redemption) {
         form.setError('root', {
-          message: 'No redemption data found. Please fill in the form.',
+          message: t('form.errors.noRedemptionData'),
         });
         return;
       }
       const spaceSlug = redemption.spaceSlug;
       if (!spaceSlug) {
         form.setError('root', {
-          message: 'Please select a space for redemption.',
+          message: t('form.errors.selectSpace'),
         });
         return;
       }
       const space = spaces?.find((space) => space.slug === spaceSlug);
       if (!space?.web3SpaceId) {
         form.setError('root', {
-          message: 'Selected space is not configured for redemption.',
+          message: t('form.errors.spaceNotConfigured'),
         });
         return;
       }
       if (isRequestedAmountExceedsBalance) {
         form.setError('root', {
-          message:
-            'Requested redemption amount exceeds your available token balance. Reduce the amount and try again.',
+          message: t('form.errors.exceedsBalance'),
         });
         return;
       }
       if (hasExceededCollateralAllocation || isSelectedCollateralInsufficient) {
         form.setError('root', {
-          message:
-            'The redemption value exceeds the collateral value, please enter a smaller amount.',
+          message: t('form.errors.collateralExceeded'),
         });
         return;
       }
@@ -640,13 +645,11 @@ export const PeopleRedeemForm = ({
       }
     } catch (error) {
       console.error('Redeem failed:', error);
-      let errorMessage: string =
-        'An error occurred while processing your redeem. Please try again.';
+      let errorMessage: string = t('form.errors.generic');
 
       if (error instanceof Error) {
         if (error.message.includes('Smart wallet client not available')) {
-          errorMessage =
-            'Smart wallet is not connected. Please connect your wallet and try again.';
+          errorMessage = t('form.errors.smartWalletNotConnected');
         } else if (
           error.message.includes('ERC20: transfer amount exceeds balance')
         ) {
@@ -658,17 +661,16 @@ export const PeopleRedeemForm = ({
           errorMessage =
             match && match[1]
               ? extractRevertReason(match[1])
-              : 'Contract execution failed.';
+              : t('form.errors.contractFailed');
         } else if (error.message.includes('user rejected')) {
-          errorMessage =
-            'Transaction was rejected. Please approve the transaction to proceed.';
+          errorMessage = t('form.errors.transactionRejected');
         }
       }
       form.setError('root', { message: errorMessage });
     }
   };
 
-  const handleInvalid = (error: any) => {
+  const handleInvalid: SubmitErrorHandler<FormValues> = (error) => {
     console.error(error);
   };
 
@@ -696,6 +698,11 @@ export const PeopleRedeemForm = ({
               })}
             </div>
           )}
+          {spacesLoadError ? (
+            <div className="text-2 text-red-11">
+              {t('form.errors.loadSpaces')}
+            </div>
+          ) : null}
           {selectedRedemption?.token && (
             <TokenPercentageFieldArray
               label={t('form.convertedIntoLabel')}
@@ -740,12 +747,13 @@ export const PeopleRedeemForm = ({
               {form.formState.errors.root.message === 'insufficient_funds' ? (
                 <>
                   {t('form.insufficientFundsLead')}{' '}
-                  <span
+                  <button
+                    type="button"
                     onClick={fundWallet}
-                    className="font-bold cursor-pointer text-accent-9 underline"
+                    className="font-bold cursor-pointer text-accent-9 underline bg-transparent border-0 p-0"
                   >
                     {t('form.insufficientFundsTopUp')}
-                  </span>{' '}
+                  </button>{' '}
                   {t('form.insufficientFundsTrail')}
                 </>
               ) : (

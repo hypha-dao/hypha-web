@@ -109,7 +109,9 @@ export const ConversionAssetDropdown = ({
                   <div className="flex flex-col">
                     {asset?.space?.title ? (
                       <span className="text-1 text-accent-11">
-                        by {asset?.space?.title}
+                        {tRedeem('provenanceBySpace', {
+                          space: asset.space.title,
+                        })}
                       </span>
                     ) : null}
                     {typeof asset.value === 'number' ? (

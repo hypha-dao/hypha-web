@@ -9,6 +9,7 @@ import {
 } from '@hypha-platform/epics';
 import { PeopleRedeemForm } from './people-redeem-form';
 import { Separator } from '@hypha-platform/ui';
+import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   getSpaceDecayingTokens,
@@ -112,11 +113,11 @@ export const ProfileRedeemTokens = ({
     error: spacesError,
     isLoading: spacesLoading,
   } = useSWR<SpaceSummary[]>(
-    jwt ? `/api/v1/people/${personSlug}/spaces` : null,
-    async (url: string) => {
-      const res = await fetch(url, {
+    jwt ? ['people-spaces', personSlug, jwt] : null,
+    async ([, slug, token]) => {
+      const res = await fetch(`/api/v1/people/${slug}/spaces`, {
         headers: {
-          Authorization: `Bearer ${jwt}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
@@ -146,7 +147,11 @@ export const ProfileRedeemTokens = ({
       spacesBySlug.set(space.slug, space);
     }
     for (const space of inferredSpacesFromAssets) {
-      spacesBySlug.set(space.slug, space);
+      const existing = spacesBySlug.get(space.slug);
+      spacesBySlug.set(
+        space.slug,
+        existing ? { ...space, ...existing } : space,
+      );
     }
     return Array.from(spacesBySlug.values());
   }, [spaces, inferredSpacesFromAssets]);
@@ -487,14 +492,28 @@ export const ProfileRedeemTokens = ({
 
   const tokens = React.useMemo(() => {
     const list = redeemableData?.tokens ?? [];
-    return list.map((token) => ({
-      ...token,
-      type:
-        tokenTypeByAddress.get(token.address.toLowerCase()) ??
-        token.type ??
-        null,
-    }));
-  }, [redeemableData?.tokens, tokenTypeByAddress]);
+    return list.map((token) => {
+      const meta = tokenMetadataByAddress.get(token.address.toLowerCase());
+      const liveValue = getTokenAvailableBalance(
+        token.address,
+        token.space?.slug,
+      );
+      return {
+        ...token,
+        ...(meta ?? {}),
+        value: typeof liveValue === 'number' ? liveValue : token.value,
+        type:
+          tokenTypeByAddress.get(token.address.toLowerCase()) ??
+          token.type ??
+          null,
+      };
+    });
+  }, [
+    getTokenAvailableBalance,
+    redeemableData?.tokens,
+    tokenMetadataByAddress,
+    tokenTypeByAddress,
+  ]);
   const diagnostics = redeemableData?.diagnostics;
   const vaultFetchDiagnostics = diagnostics?.vaultFetch ?? [];
   const hasVaultAccessIssues = vaultFetchDiagnostics.length > 0;
@@ -506,16 +525,16 @@ export const ProfileRedeemTokens = ({
   const emptyStateReasons = React.useMemo(() => {
     const reasons: string[] = [];
     if (!jwt) {
-      reasons.push('Missing authenticated session token');
+      reasons.push(tRedeem('diagnostics.reasons.missingJwt'));
     }
     if (personError) {
-      reasons.push('Failed to load profile data');
+      reasons.push(tRedeem('diagnostics.reasons.profileLoadFailed'));
     }
     if (!personLoading && !hasMemberAddress) {
-      reasons.push('Profile has no wallet address');
+      reasons.push(tRedeem('diagnostics.reasons.noWalletAddress'));
     }
     if (spacesError) {
-      reasons.push('Failed to load member spaces');
+      reasons.push(tRedeem('diagnostics.reasons.spacesLoadFailed'));
     }
     if (
       !spacesLoading &&
@@ -523,12 +542,10 @@ export const ProfileRedeemTokens = ({
       (spaces?.length ?? 0) === 0 &&
       inferredSpacesFromAssets.length > 0
     ) {
-      reasons.push(
-        'Membership spaces lookup returned no spaces; using wallet-token spaces fallback',
-      );
+      reasons.push(tRedeem('diagnostics.reasons.spacesFallback'));
     }
     if (!spacesLoading && jwt && !hasSpaces) {
-      reasons.push('No spaces found for this member');
+      reasons.push(tRedeem('diagnostics.reasons.noSpaces'));
     }
     if (
       diagnostics &&
@@ -536,7 +553,10 @@ export const ProfileRedeemTokens = ({
       diagnostics.balanceReadFailureCount > 0
     ) {
       reasons.push(
-        `Failed to read on-chain balances for ${diagnostics.balanceReadFailureCount}/${diagnostics.checkedVaultTokenCount} vault token(s)`,
+        tRedeem('diagnostics.reasons.balanceReadFailed', {
+          failed: diagnostics.balanceReadFailureCount,
+          total: diagnostics.checkedVaultTokenCount,
+        }),
       );
     }
     if (
@@ -546,18 +566,20 @@ export const ProfileRedeemTokens = ({
       !hasVaultAccessIssues &&
       diagnostics.restrictedFallbackSpaces.length === 0
     ) {
-      reasons.push('No redemption-enabled vault tokens were found');
+      reasons.push(tRedeem('diagnostics.reasons.noVaultTokens'));
     }
     if (diagnostics && diagnostics.restrictedFallbackSpaces.length > 0) {
       reasons.push(
-        `Used on-chain fallback for restricted spaces: ${diagnostics.restrictedFallbackSpaces.join(
-          ', ',
-        )}`,
+        tRedeem('diagnostics.reasons.restrictedFallback', {
+          spaces: diagnostics.restrictedFallbackSpaces.join(', '),
+        }),
       );
     }
     if (diagnostics && diagnostics.restrictedFallbackFailureCount > 0) {
       reasons.push(
-        `On-chain fallback failed for ${diagnostics.restrictedFallbackFailureCount} restricted space(s)`,
+        tRedeem('diagnostics.reasons.restrictedFallbackFailed', {
+          count: diagnostics.restrictedFallbackFailureCount,
+        }),
       );
     }
     return reasons;
@@ -608,7 +630,14 @@ export const ProfileRedeemTokens = ({
           </div>
         )}
         <Separator />
-        <PeopleRedeemForm tokens={tokens} updateAssets={manualUpdate} />
+        {isCoreLoading ? (
+          <div className="flex items-center gap-2 text-sm text-neutral-10 py-8">
+            <Loader2 className="animate-spin w-5 h-5" />
+            {tRedeem('loading')}
+          </div>
+        ) : (
+          <PeopleRedeemForm tokens={tokens} updateAssets={manualUpdate} />
+        )}
       </div>
     </SidePanel>
   );

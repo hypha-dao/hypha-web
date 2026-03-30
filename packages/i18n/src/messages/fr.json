@@ -524,21 +524,35 @@
     },
     "redeemTokens": {
       "title": "Échanger des tokens",
+      "loading": "Chargement des données d'échange…",
       "content": "Convertissez vos tokens en valeur fiduciaire équivalente détenue dans le coffre.",
       "form": {
         "redemptionAmountLabel": "Montant à échanger",
         "convertedIntoLabel": "Converti en",
         "redeem": "Échanger",
         "redeeming": "Échange en cours",
-        "successMessage": "Votre échange a été effectué avec succès !",
+        "successMessage": "Votre opération d'échange a été effectuée avec succès !",
         "requestedExceedsBalance": "Le montant demandé ({amount}) dépasse le solde disponible ({balance}).",
         "collateralInsufficient": "La valeur de l'échange dépasse la valeur des garanties ; veuillez saisir un montant plus petit.",
         "insufficientFundsLead": "Le solde de votre portefeuille est insuffisant pour cette transaction. Veuillez",
         "insufficientFundsTopUp": "recharger votre compte",
         "insufficientFundsTrail": "pour continuer.",
         "selectCollateralAsset": "Sélectionner un actif",
-        "noCollateralAssetsFound": "Aucun actif trouvé"
+        "noCollateralAssetsFound": "Aucun actif trouvé",
+        "errors": {
+          "noRedemptionData": "Aucune donnée d'échange trouvée. Veuillez remplir le formulaire.",
+          "selectSpace": "Veuillez sélectionner un espace pour l'échange.",
+          "spaceNotConfigured": "L'espace sélectionné n'est pas configuré pour l'échange.",
+          "exceedsBalance": "Le montant demandé dépasse le solde disponible de vos tokens. Réduisez le montant et réessayez.",
+          "collateralExceeded": "La valeur de l'échange dépasse la valeur des garanties ; veuillez saisir un montant plus petit.",
+          "generic": "Une erreur s'est produite lors du traitement de votre échange. Veuillez réessayer.",
+          "smartWalletNotConnected": "Le portefeuille intelligent n'est pas connecté. Connectez votre portefeuille et réessayez.",
+          "contractFailed": "L'exécution du contrat a échoué.",
+          "transactionRejected": "La transaction a été rejetée. Veuillez approuver la transaction pour continuer.",
+          "loadSpaces": "Impossible de charger les détails de l'espace. Veuillez réessayer."
+        }
       },
+      "provenanceBySpace": "de {space}",
       "conversionDetails": {
         "vaultLine": "Coffre : {amount} {symbol}",
         "priceLine": "Prix : {currency}{price}",
@@ -546,7 +560,19 @@
       },
       "diagnostics": {
         "vaultAccess": "Impossible de charger les données du coffre pour certains espaces : {details}. Vous n'y avez peut-être pas accès.",
-        "tokenDiscovery": "Diagnostics de détection des tokens : {reasons}."
+        "tokenDiscovery": "Diagnostics de détection des tokens : {reasons}.",
+        "reasons": {
+          "missingJwt": "Jeton de session authentifié manquant",
+          "profileLoadFailed": "Échec du chargement des données du profil",
+          "noWalletAddress": "Le profil n'a pas d'adresse de portefeuille",
+          "spacesLoadFailed": "Échec du chargement des espaces du membre",
+          "spacesFallback": "La recherche d'espaces de membre n'a renvoyé aucun espace ; utilisation des espaces dérivés des tokens du portefeuille",
+          "noSpaces": "Aucun espace trouvé pour ce membre",
+          "balanceReadFailed": "Échec de lecture des soldes on-chain pour {failed}/{total} token(s) du coffre",
+          "noVaultTokens": "Aucun token de coffre échangeable trouvé",
+          "restrictedFallback": "Repli on-chain utilisé pour les espaces restreints : {spaces}",
+          "restrictedFallbackFailed": "Échec du repli on-chain pour {count, plural, one {# espace restreint} other {# espaces restreints}}"
+        }
       }
     },
     "errors": {
@@ -1162,7 +1188,14 @@
         "selectToken": "Sélectionner un token",
         "noTokensFound": "Aucun token trouvé",
         "by": "par",
-        "bySpace": "de {space}"
+        "bySpace": "de {space}",
+        "walletBalanceLine": "Solde du portefeuille : {amount} {symbol}",
+        "redemptionPriceLine": "Prix de rachat du token : {price}"
+      },
+      "tokenPercentageFieldArray": {
+        "convertedInto": "Converti en",
+        "add": "Ajouter",
+        "emptyRowHint": "Sélectionnez un actif et un pourcentage pour chaque ligne de conversion."
       },
       "spaceToSpaceMembership": {
         "space": "Espace",
