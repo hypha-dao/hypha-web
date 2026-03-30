@@ -8,6 +8,7 @@ import { decodeFunctionData } from 'viem';
 import { decayingSpaceTokenAbi } from '../../../generated';
 import { decodeTransaction } from './decoders';
 import { decayBasisPointsToFormPercent } from '../../voice-decay-units';
+import { getEscrowImplementationAddress } from '../escrow';
 
 const formatRedemptionPrice = (rawPrice: unknown) => {
   const numeric = Number(rawPrice);
@@ -293,6 +294,17 @@ export const useProposalDetailsWeb3Rpc = ({
       tokensForSale?: bigint;
       isActive?: boolean;
     } = {};
+
+    let exchangeEscrowData: {
+      partyB?: string;
+      tokenA?: string;
+      tokenB?: string;
+      amountA?: bigint;
+      amountB?: bigint;
+      sendFundsNow?: boolean;
+    } = {};
+
+    const escrowContractAddress = getEscrowImplementationAddress();
 
     (transactions as ProposalTransaction[]).forEach((tx) => {
       const decoded = decodeTransaction(tx);
@@ -707,7 +719,7 @@ export const useProposalDetailsWeb3Rpc = ({
           break;
         }
 
-        case 'redeemTokens':
+        case 'redeemTokens': {
           redeemTokensData.amount = decoded.data.amount as bigint;
           redeemTokensData.token = decoded.data.token as `0x${string}`;
           redeemTokensData.web3SpaceId = decoded.data.web3SpaceId as bigint;
@@ -720,6 +732,7 @@ export const useProposalDetailsWeb3Rpc = ({
             redeemTokensData.conversions.push({ asset, percentage });
           }
           break;
+        }
 
         case 'spaceTokenPurchase': {
           const payload = decoded.data as {
@@ -733,6 +746,26 @@ export const useProposalDetailsWeb3Rpc = ({
             isActive:
               payload.paymentToken !==
               '0x0000000000000000000000000000000000000000',
+          };
+          break;
+        }
+
+        case 'exchangeEscrow': {
+          const d = decoded.data as {
+            partyB: string;
+            tokenA: string;
+            tokenB: string;
+            amountA: bigint;
+            amountB: bigint;
+            sendFundsNow: boolean;
+          };
+          exchangeEscrowData = {
+            partyB: d.partyB,
+            tokenA: d.tokenA,
+            tokenB: d.tokenB,
+            amountA: d.amountA,
+            amountB: d.amountB,
+            sendFundsNow: d.sendFundsNow,
           };
           break;
         }
@@ -771,6 +804,20 @@ export const useProposalDetailsWeb3Rpc = ({
       }
     }
 
+    if (
+      escrowContractAddress &&
+      exchangeEscrowData.tokenA &&
+      exchangeEscrowData.amountA !== undefined &&
+      exchangeEscrowData.sendFundsNow
+    ) {
+      transfers.push({
+        recipient: escrowContractAddress,
+        rawAmount: exchangeEscrowData.amountA,
+        token: exchangeEscrowData.tokenA,
+        value: 0n,
+      });
+    }
+
     return {
       creator,
       spaceId: Number(spaceId),
@@ -801,6 +848,7 @@ export const useProposalDetailsWeb3Rpc = ({
       updateTokenData,
       redeemTokensData,
       spaceTokenPurchaseData,
+      exchangeEscrowData,
     };
   }, [data]);
 

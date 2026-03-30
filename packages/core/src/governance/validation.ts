@@ -381,6 +381,53 @@ export const schemaMintTokensToSpaceTreasury = z.object({
   }),
 });
 
+const acceptInvestmentAmountRefine = (value: string) => {
+  const trimmed = value.trim();
+  if (!/^\d+(\.\d+)?$/.test(trimmed)) return false;
+  const n = Number(trimmed);
+  return Number.isFinite(n) && n > 0;
+};
+
+const acceptInvestmentTokenRow = z.object({
+  amount: z
+    .string({ message: 'Please enter amount' })
+    .min(1, 'Please enter amount')
+    .refine(acceptInvestmentAmountRefine, {
+      message: 'Amount must be greater than 0',
+    }),
+  token: z
+    .string({ message: 'Token is required' })
+    .min(1, 'Token is required')
+    .refine(isAddress, { message: 'Invalid Ethereum address' }),
+});
+
+/** v1: single escrow pair — exactly one send row and one receive row. */
+export const schemaAcceptInvestment = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  /** User-authored body; marker appended on submit must stay within API limits. */
+  description: z
+    .string()
+    .trim()
+    .min(1, { message: 'Please add content to your proposal' })
+    .max(3500),
+  label: z.literal('Investment'),
+  recipient: z
+    .string({ message: 'Please add a recipient or wallet address' })
+    .min(1, { message: 'Please add a recipient or wallet address' })
+    .refine(isAddress, { message: 'Invalid Ethereum address' }),
+  investorSendLegs: z
+    .array(acceptInvestmentTokenRow)
+    .length(1, { message: 'Add exactly one investing send row' }),
+  spaceReceiveLegs: z
+    .array(
+      acceptInvestmentTokenRow.extend({
+        source: z.enum(['mint', 'treasury']),
+      }),
+    )
+    .length(1, { message: 'Add exactly one receive row' }),
+});
+
 const schemaTokenBurningTarget = z
   .object({
     type: z.enum(['member', 'space']).default('member'),

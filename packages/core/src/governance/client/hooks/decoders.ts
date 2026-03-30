@@ -1,4 +1,5 @@
 import { decodeFunctionData, erc20Abi, type Abi } from 'viem';
+import { escrowImplementationAbi } from '../escrow';
 import {
   regularTokenFactoryAbi,
   ownershipTokenFactoryAbi,
@@ -363,6 +364,30 @@ export function decodeTransaction(tx: Tx) {
                 rawAmount: decoded.args[1],
                 token: tx.target,
                 value: tx.value,
+              },
+            }
+          : null,
+    },
+    {
+      abi: escrowImplementationAbi,
+      handler: (decoded) =>
+        decoded.functionName === 'createEscrow'
+          ? {
+              type: 'exchangeEscrow',
+              data: {
+                partyB: decoded.args[0],
+                tokenA: decoded.args[1],
+                tokenB: decoded.args[2],
+                amountA: decoded.args[3],
+                amountB: decoded.args[4],
+                sendFundsNow: decoded.args[5],
+              },
+            }
+          : decoded.functionName === 'receiveFunds'
+          ? {
+              type: 'exchangeEscrowReceive',
+              data: {
+                escrowId: decoded.args[0],
               },
             }
           : null,

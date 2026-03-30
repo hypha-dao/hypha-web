@@ -1,3 +1,4 @@
+export { getGovernanceChainId } from './governance-chain-id';
 export * from './useAddMemberOrchestrator';
 export * from './useAgreementFileUploads';
 export * from './useAgreementMutations.web2.rsc';
@@ -7,6 +8,8 @@ export * from './useChangeSpaceTransparencySettingsOrchestrator';
 export * from './useChangeVotingMethodOrchestrator';
 export * from './useCreateAgreementOrchestrator';
 export * from './useCreateDeployFundsOrchestrator';
+export * from './useAcceptInvestmentMutations.web3.rpc';
+export * from './useCreateAcceptInvestmentOrchestrator';
 export * from './useCreateRedeemTokensOrchestrator';
 export * from './useCreatePayForExpensesOrchestrator';
 export * from './useCreateProposeAContributionOrchestrator';
