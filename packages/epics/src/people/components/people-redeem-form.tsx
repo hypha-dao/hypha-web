@@ -173,6 +173,7 @@ export const PeopleRedeemForm = ({
   const { jwt: authToken } = useJwt();
   const { redeemTokens, isRedeeming } = useRedeemTokensMutation({
     authToken,
+    smartWalletAddress: person?.address as `0x${string}` | undefined,
   });
 
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);

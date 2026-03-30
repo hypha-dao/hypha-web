@@ -5,14 +5,12 @@ import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 import { erc20Abi, parseUnits } from 'viem';
 import {
   getTokenDecimals,
-  ERC20_TOKEN_TRANSFER_ADDRESSES,
   percentageStringToBigInt,
+  publicClient,
 } from '@hypha-platform/core/client';
 import {
   tokenBackingVaultImplementationAddress,
   tokenBackingVaultImplementationAbi,
-  transferHelperAbi,
-  transferHelperAddress,
 } from '../../../generated';
 import { CreateTransferInput } from '@hypha-platform/core/client';
 import { createTransferAction } from '../../../transaction/server/actions';
@@ -31,10 +29,15 @@ interface RedeemTokensInput {
 
 interface UseRedeemTokensProps {
   authToken?: string | null;
+  /** Smart wallet (token owner) — used to skip redundant approve after allowance is sufficient */
+  smartWalletAddress?: `0x${string}` | null;
 }
+
+const REDEEM_CHAIN_ID = 8453;
 
 export const useRedeemTokensMutation = ({
   authToken,
+  smartWalletAddress,
 }: UseRedeemTokensProps) => {
   const { client } = useSmartWallets();
 
@@ -78,13 +81,42 @@ export const useRedeemTokensMutation = ({
       const token = arg.redemption.token;
       const decimals = await getTokenDecimals(token);
       const amount = parseUnits(arg.redemption.amount, decimals);
+      const vaultAddress = tokenBackingVaultImplementationAddress[
+        REDEEM_CHAIN_ID
+      ] as `0x${string}`;
+      const spaceToken = token as `0x${string}`;
+
+      if (smartWalletAddress) {
+        const currentAllowance = await publicClient.readContract({
+          address: spaceToken,
+          abi: erc20Abi,
+          functionName: 'allowance',
+          args: [smartWalletAddress, vaultAddress],
+        });
+        if (currentAllowance < amount) {
+          await client.writeContract({
+            address: spaceToken,
+            abi: erc20Abi,
+            functionName: 'approve',
+            args: [vaultAddress, amount],
+          });
+        }
+      } else {
+        await client.writeContract({
+          address: spaceToken,
+          abi: erc20Abi,
+          functionName: 'approve',
+          args: [vaultAddress, amount],
+        });
+      }
+
       const txHash: string = await client.writeContract({
-        address: tokenBackingVaultImplementationAddress[8453],
+        address: vaultAddress,
         abi: tokenBackingVaultImplementationAbi,
         functionName: 'redeem',
         args: [
           BigInt(arg.redemption.web3SpaceId),
-          token as `0x${string}`,
+          spaceToken,
           amount,
           backingTokens,
           proportions,
