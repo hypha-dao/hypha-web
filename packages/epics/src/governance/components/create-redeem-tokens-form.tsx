@@ -87,6 +87,13 @@ const CreateRedeemTokensFormInner = ({
   const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
 
   React.useEffect(() => {
+    if (progress < 100 || isError) return;
+    if (typeof window === 'undefined') return;
+    sessionStorage.removeItem('resubmitProposalData');
+    sessionStorage.removeItem('resubmitFormData');
+  }, [progress, isError]);
+
+  React.useEffect(() => {
     if (person?.id) {
       form.setValue('creatorId', person.id);
     }
