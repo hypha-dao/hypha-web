@@ -67,6 +67,12 @@ export const useResubmitProposalData = <
           };
           spaceDiscoverability?: number;
           spaceActivityAccess?: number;
+          votingMethod?: '1m1v' | '1v1v' | '1t1v';
+          quorumAndUnity?: { quorum?: number; unity?: number };
+          token?: string;
+          members?: Array<{ member?: string; number?: number }>;
+          votingDuration?: number;
+          autoExecution?: boolean;
           applied?: boolean;
           redeemResubmit?: {
             token: string;
@@ -118,6 +124,22 @@ export const useResubmitProposalData = <
               : {}),
             ...(parsed.spaceActivityAccess !== undefined
               ? { spaceActivityAccess: parsed.spaceActivityAccess }
+              : {}),
+            ...(parsed.votingMethod !== undefined
+              ? { votingMethod: parsed.votingMethod }
+              : {}),
+            ...(parsed.quorumAndUnity
+              ? { quorumAndUnity: parsed.quorumAndUnity }
+              : {}),
+            ...(parsed.token !== undefined ? { token: parsed.token } : {}),
+            ...(parsed.members !== undefined
+              ? { members: parsed.members }
+              : {}),
+            ...(parsed.votingDuration !== undefined
+              ? { votingDuration: parsed.votingDuration }
+              : {}),
+            ...(typeof parsed.autoExecution === 'boolean'
+              ? { autoExecution: parsed.autoExecution }
               : {}),
             leadImage: undefined,
             attachments: undefined,
@@ -216,6 +238,58 @@ export const useResubmitProposalData = <
           });
         }
 
+        if (parsed.votingMethod !== undefined) {
+          form.setValue('votingMethod' as any, parsed.votingMethod as any, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+        }
+
+        if (parsed.quorumAndUnity !== undefined) {
+          if (parsed.quorumAndUnity.quorum !== undefined) {
+            form.setValue(
+              'quorumAndUnity.quorum' as any,
+              parsed.quorumAndUnity.quorum as any,
+              { shouldDirty: true, shouldValidate: true },
+            );
+          }
+          if (parsed.quorumAndUnity.unity !== undefined) {
+            form.setValue(
+              'quorumAndUnity.unity' as any,
+              parsed.quorumAndUnity.unity as any,
+              { shouldDirty: true, shouldValidate: true },
+            );
+          }
+        }
+
+        if (parsed.token !== undefined) {
+          form.setValue('token' as any, parsed.token as any, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+        }
+
+        if (parsed.members !== undefined) {
+          form.setValue('members' as any, parsed.members as any, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+        }
+
+        if (parsed.votingDuration !== undefined) {
+          form.setValue('votingDuration' as any, parsed.votingDuration as any, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+        }
+
+        if (typeof parsed.autoExecution === 'boolean') {
+          form.setValue('autoExecution' as any, parsed.autoExecution as any, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+        }
+
         if (!hasChosenToken) {
           if (resubmitTokenAddress) {
             form.setValue('tokenAddress' as any, resubmitTokenAddress as any, {
@@ -276,6 +350,16 @@ export const useResubmitProposalData = <
         }
         if (parsed.spaceActivityAccess !== undefined) {
           fieldsToTrigger.push('spaceActivityAccess');
+        }
+        if (parsed.votingMethod !== undefined) {
+          fieldsToTrigger.push(
+            'votingMethod',
+            'quorumAndUnity',
+            'votingDuration',
+            'autoExecution',
+            'members',
+            'token',
+          );
         }
         if (
           resubmitTokenAddress !== undefined ||

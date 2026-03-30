@@ -427,6 +427,65 @@ export const ProposalDetail = ({
       };
     }
 
+    if (label === 'Voting Method') {
+      const vm = proposalDetails.votingMethods?.[0];
+      if (!vm) return undefined;
+
+      const source = vm.votingPowerSource;
+      let votingMethod: '1m1v' | '1v1v' | '1t1v' | undefined;
+      if (source === 1n) votingMethod = '1t1v';
+      else if (source === 2n) votingMethod = '1m1v';
+      else if (source === 3n) votingMethod = '1v1v';
+      else return undefined;
+
+      const quorum = Number(vm.quorum);
+      const unity = Number(vm.unity);
+      const token =
+        proposalDetails.votingMethodsToken?.token &&
+        proposalDetails.votingMethodsToken.token.length > 0
+          ? proposalDetails.votingMethodsToken.token
+          : '';
+
+      const durationRaw = proposalDetails.minimumProposalDurationData?.duration;
+      const votingDuration =
+        durationRaw !== undefined ? Number(durationRaw) : undefined;
+      const autoExecution =
+        votingDuration !== undefined ? votingDuration === 0 : true;
+
+      let members: { member: string; number: number }[] = [];
+      if (votingMethod === '1t1v' || votingMethod === '1v1v') {
+        if (token) {
+          const tokenLc = token.toLowerCase();
+          members = proposalDetails.transfers
+            .filter((tx) => tx.token?.toLowerCase() === tokenLc)
+            .map((tx) => ({
+              member: tx.recipient,
+              number: Number(formatUnits(tx.rawAmount, 18)),
+            }))
+            .filter(
+              (m) => m.member && Number.isFinite(m.number) && m.number > 0,
+            );
+        }
+        if (members.length === 0) {
+          members = [
+            {
+              member: '',
+              number: 0,
+            },
+          ];
+        }
+      }
+
+      return {
+        votingMethod,
+        quorumAndUnity: { quorum, unity },
+        token,
+        members,
+        ...(votingDuration !== undefined ? { votingDuration } : {}),
+        autoExecution,
+      };
+    }
+
     return undefined;
   })();
 

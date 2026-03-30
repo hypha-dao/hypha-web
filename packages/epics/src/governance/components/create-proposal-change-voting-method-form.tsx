@@ -16,7 +16,11 @@ import React from 'react';
 import { useConfig } from 'wagmi';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { VOTING_METHOD_TYPES } from '../hooks';
-import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
+import {
+  clearResubmitProposalSessionStorage,
+  useResubmitProposalData,
+  useScrollToErrors,
+} from '../../hooks';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
 
@@ -62,6 +66,23 @@ export const CreateProposalChangeVotingMethodForm = ({
     spaceId: BigInt(web3SpaceId as number),
   });
 
+  const skipLiveVotingSyncForResubmit = React.useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const raw = sessionStorage.getItem('resubmitProposalData');
+      if (!raw) return false;
+      const parsed = JSON.parse(raw) as {
+        votingMethod?: unknown;
+        quorumAndUnity?: unknown;
+      };
+      return (
+        parsed.votingMethod !== undefined || parsed.quorumAndUnity !== undefined
+      );
+    } catch {
+      return false;
+    }
+  }, []);
+
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
     resolver,
@@ -81,12 +102,19 @@ export const CreateProposalChangeVotingMethodForm = ({
       votingMethod: undefined,
       label: 'Voting Method',
       votingDuration: undefined,
+      autoExecution: true,
     },
     mode: 'onChange',
   });
 
   useScrollToErrors(form, formRef);
   const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+
+  React.useEffect(() => {
+    if (progress === 100 && !isError) {
+      clearResubmitProposalSessionStorage();
+    }
+  }, [progress, isError]);
 
   const { quorum = 0, unity = 0 } = form.watch('quorumAndUnity') ?? {};
 
@@ -102,6 +130,9 @@ export const CreateProposalChangeVotingMethodForm = ({
   };
 
   React.useEffect(() => {
+    if (skipLiveVotingSyncForResubmit) {
+      return;
+    }
     if (spaceDetails && !isLoading) {
       const quorum = Number(spaceDetails.quorum ?? 0);
       const unity = Number(spaceDetails.unity ?? 0);
@@ -119,7 +150,14 @@ export const CreateProposalChangeVotingMethodForm = ({
         form.setValue('token', voicePowerToken);
       }
     }
-  }, [spaceDetails, isLoading, votingPowerToken, voicePowerToken]);
+  }, [
+    spaceDetails,
+    isLoading,
+    votingPowerToken,
+    voicePowerToken,
+    form,
+    skipLiveVotingSyncForResubmit,
+  ]);
 
   const handleCreate = async (data: FormValues) => {
     if (!web3SpaceId || !data.votingMethod) return;
