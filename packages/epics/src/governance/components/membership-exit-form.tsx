@@ -11,7 +11,11 @@ import {
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
+import {
+  clearResubmitProposalSessionStorage,
+  useResubmitProposalData,
+  useScrollToErrors,
+} from '../../hooks';
 import { useConfig } from 'wagmi';
 import { Button, Form, LoadingBackdrop, Separator } from '@hypha-platform/ui';
 import { CreateAgreementBaseFields } from '../../agreements';
@@ -71,6 +75,12 @@ export const MembershipExitForm = ({
 
   useScrollToErrors(form, formRef);
   const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+
+  React.useEffect(() => {
+    if (progress === 100 && !isError) {
+      clearResubmitProposalSessionStorage();
+    }
+  }, [progress, isError]);
 
   const { jwt } = useJwt();
   const config = useConfig();

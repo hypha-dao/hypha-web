@@ -513,6 +513,16 @@ export const ProposalDetail = ({
       };
     }
 
+    if (label === 'Membership Exit') {
+      const me = proposalDetails.membershipExitData;
+      if (!me?.member || me.space === undefined) return undefined;
+
+      return {
+        space: Number(me.space),
+        member: me.member,
+      };
+    }
+
     return undefined;
   })();
 

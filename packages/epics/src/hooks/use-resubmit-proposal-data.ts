@@ -75,6 +75,8 @@ export const useResubmitProposalData = <
           autoExecution?: boolean;
           entryMethod?: number;
           tokenBase?: { amount?: number; token?: string };
+          space?: number;
+          member?: string;
           applied?: boolean;
           redeemResubmit?: {
             token: string;
@@ -149,6 +151,10 @@ export const useResubmitProposalData = <
             ...(parsed.tokenBase !== undefined && parsed.tokenBase !== null
               ? { tokenBase: parsed.tokenBase }
               : {}),
+            ...(typeof parsed.space === 'number'
+              ? { space: parsed.space }
+              : {}),
+            ...(parsed.member !== undefined ? { member: parsed.member } : {}),
             leadImage: undefined,
             attachments: undefined,
             spaceId: spaceId ?? undefined,
@@ -312,6 +318,20 @@ export const useResubmitProposalData = <
           });
         }
 
+        if (typeof parsed.space === 'number') {
+          form.setValue('space' as any, parsed.space as any, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+        }
+
+        if (parsed.member !== undefined) {
+          form.setValue('member' as any, parsed.member as any, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+        }
+
         if (!hasChosenToken) {
           if (resubmitTokenAddress) {
             form.setValue('tokenAddress' as any, resubmitTokenAddress as any, {
@@ -388,6 +408,12 @@ export const useResubmitProposalData = <
         }
         if (parsed.tokenBase !== undefined && parsed.tokenBase !== null) {
           fieldsToTrigger.push('tokenBase');
+        }
+        if (typeof parsed.space === 'number') {
+          fieldsToTrigger.push('space');
+        }
+        if (parsed.member !== undefined) {
+          fieldsToTrigger.push('member');
         }
         if (
           resubmitTokenAddress !== undefined ||
