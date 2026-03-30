@@ -80,8 +80,19 @@ export const useRedeemTokensMutation = ({
       const token = arg.redemption.token;
       const decimals = await getTokenDecimals(token);
       const amount = parseUnits(arg.redemption.amount, decimals);
+      const vaultAddress = tokenBackingVaultImplementationAddress[
+        chainId
+      ] as `0x${string}`;
+
+      await client.writeContract({
+        address: token as `0x${string}`,
+        abi: erc20Abi,
+        functionName: 'approve',
+        args: [vaultAddress, amount],
+      });
+
       const txHash: string = await client.writeContract({
-        address: tokenBackingVaultImplementationAddress[chainId],
+        address: vaultAddress,
         abi: tokenBackingVaultImplementationAbi,
         functionName: 'redeem',
         args: [
