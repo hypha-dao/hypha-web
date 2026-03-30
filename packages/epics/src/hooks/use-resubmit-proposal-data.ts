@@ -8,6 +8,13 @@ import {
   type UpdateIssuedTokenResubmitPayload,
 } from '../proposals/update-issued-token-resubmit';
 
+/** Clears resubmit hydration keys after a successful publish so the next visit shows an empty form. */
+export function clearResubmitProposalSessionStorage(): void {
+  if (typeof window === 'undefined') return;
+  sessionStorage.removeItem('resubmitProposalData');
+  sessionStorage.removeItem('resubmitFormData');
+}
+
 export const useResubmitProposalData = <
   T extends {
     title?: string;

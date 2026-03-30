@@ -13,7 +13,11 @@ import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
 import { useConfig } from 'wagmi';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
-import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
+import {
+  clearResubmitProposalSessionStorage,
+  useResubmitProposalData,
+  useScrollToErrors,
+} from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
@@ -85,6 +89,12 @@ export const MintTokensToSpaceTreasuryForm = ({
 
   useScrollToErrors(form, formRef);
   const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+
+  React.useEffect(() => {
+    if (progress === 100 && !isError) {
+      clearResubmitProposalSessionStorage();
+    }
+  }, [progress, isError]);
 
   const handleCreate = async (data: FormValues) => {
     setFormError(null);
