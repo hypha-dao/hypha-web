@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useFormContext, useFieldArray } from 'react-hook-form';
 import { TokenPayoutField } from './token-payout-field';
 import {
@@ -18,9 +19,8 @@ export interface Token {
   icon: string;
   symbol: string;
   address: `0x${string}`;
-  /** Optional display name (e.g. Storybook fixtures) */
-  name?: string;
   value?: number;
+  tokenPrice?: number;
   space?: {
     title: string;
     slug: string;
@@ -33,18 +33,20 @@ interface TokenPayoutFieldArrayProps {
   name?: string;
   label?: string;
   allowAddOrRemove?: boolean;
+  showSelectedTokenBalanceHint?: boolean;
   showTreasuryBalanceHint?: boolean;
   selectedTokenPriceHint?: string;
 }
 
-export const TokenPayoutFieldArray = ({
+function TokenPayoutFieldArrayInner({
   tokens,
   name = 'payouts',
   label,
   allowAddOrRemove = true,
+  showSelectedTokenBalanceHint = false,
   showTreasuryBalanceHint = false,
   selectedTokenPriceHint,
-}: TokenPayoutFieldArrayProps) => {
+}: TokenPayoutFieldArrayProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const resolvedLabel =
     label ?? tAgreementFlow('plugins.tokenPayoutFieldArray.paymentRequest');
@@ -89,7 +91,11 @@ export const TokenPayoutFieldArray = ({
                           value={value}
                           onChange={onChange}
                           tokens={tokens}
-                          showTreasuryBalanceHint={showTreasuryBalanceHint}
+                          showSelectedTokenBalanceHint={
+                            showSelectedTokenBalanceHint ||
+                            showTreasuryBalanceHint
+                          }
+                          useTreasuryBalanceLine={showTreasuryBalanceHint}
                           selectedTokenPriceHint={selectedTokenPriceHint}
                         />
                       </FormControl>
@@ -125,4 +131,6 @@ export const TokenPayoutFieldArray = ({
       )}
     </div>
   );
-};
+}
+
+export const TokenPayoutFieldArray = React.memo(TokenPayoutFieldArrayInner);

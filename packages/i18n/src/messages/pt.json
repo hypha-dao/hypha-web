@@ -334,19 +334,26 @@
         "noTokensFound": "Nenhum token encontrado",
         "by": "por",
         "bySpace": "de {space}",
-        "treasuryBalanceLine": "Treasury balance: {amount} {symbol}",
-        "tokenRedemptionPriceSuffix": " · Token redemption price: {hint}"
+        "walletBalanceLine": "Saldo da carteira: {amount} {symbol}",
+        "redemptionPriceLine": "Preço de resgate do token: {price}",
+        "treasuryBalanceLine": "Saldo do tesouro: {amount} {symbol}",
+        "tokenRedemptionPriceSuffix": " · Preço de resgate do token: {hint}"
       },
       "redeemTokensProposal": {
-        "selectCollateralAsset": "Select an asset",
-        "noCollateralAssetsFound": "No assets found",
-        "requestedExceedsTreasury": "Requested redemption amount exceeds treasury balance ({amount} requested vs {balance} {symbol} available).",
-        "collateralInsufficient": "The redemption value exceeds the collateral in the vault; enter a smaller amount.",
+        "selectCollateralAsset": "Selecionar um ativo",
+        "noCollateralAssetsFound": "Nenhum ativo encontrado",
+        "requestedExceedsTreasury": "O valor de resgate solicitado excede o saldo do tesouro ({amount} solicitado vs {balance} {symbol} disponíveis).",
+        "collateralInsufficient": "O valor do resgate excede a garantia no cofre; insira um valor menor.",
         "conversionDetails": {
-          "vaultLine": "In vault: {amount} {symbol}",
-          "priceLine": "Price: {currency}{price}",
-          "requestedLine": "Requested: {currency}{amount}"
+          "vaultLine": "No cofre: {amount} {symbol}",
+          "priceLine": "Preço: {currency}{price}",
+          "requestedLine": "Solicitado: {currency}{amount}"
         }
+      },
+      "tokenPercentageFieldArray": {
+        "convertedInto": "Convertido em",
+        "add": "Adicionar",
+        "emptyRowHint": "Selecione um ativo e uma porcentagem para cada linha de conversão."
       },
       "spaceToSpaceMembership": {
         "space": "Espaço",
@@ -1049,6 +1056,10 @@
       "migrateHyphaTokens": {
         "title": "Migrar tokens Hypha (Telos → Base)",
         "description": "Mova seus tokens Hypha do blockchain Telos para a rede Base. Inicia a experiência de migração."
+      },
+      "redeemTokens": {
+        "title": "Resgatar tokens",
+        "description": "Converta seus tokens no valor fiduciário equivalente mantido no cofre."
       }
     },
     "purchaseHypha": {
@@ -1113,6 +1124,60 @@
       "content": "Envie facilmente fundos da sua carteira para um membro ou espaço.",
       "form": {
         "amountLabel": "Quantia"
+      }
+    },
+    "redeemTokens": {
+      "title": "Resgatar tokens",
+      "loading": "Carregando dados de resgate…",
+      "content": "Converta seus tokens no valor fiduciário equivalente mantido no cofre.",
+      "form": {
+        "redemptionAmountLabel": "Valor do resgate",
+        "convertedIntoLabel": "Convertido em",
+        "redeem": "Resgatar",
+        "redeeming": "Resgatando",
+        "loadingCollaterals": "Carregando ativos colaterais…",
+        "successMessage": "Seu resgate foi concluído com sucesso!",
+        "requestedExceedsBalance": "O valor solicitado ({amount}) excede o saldo disponível ({balance}).",
+        "collateralInsufficient": "O valor do resgate excede o valor das garantias; insira um valor menor.",
+        "insufficientFundsLead": "O saldo da sua carteira é insuficiente para concluir esta transação. Por favor",
+        "insufficientFundsTopUp": "adicione fundos à sua conta",
+        "insufficientFundsTrail": "para continuar.",
+        "selectCollateralAsset": "Selecione um ativo",
+        "noCollateralAssetsFound": "Nenhum ativo encontrado",
+        "errors": {
+          "noRedemptionData": "Nenhum dado de resgate encontrado. Preencha o formulário.",
+          "selectSpace": "Selecione um espaço para o resgate.",
+          "spaceNotConfigured": "O espaço selecionado não está configurado para resgate.",
+          "exceedsBalance": "O valor solicitado excede o saldo disponível dos seus tokens. Reduza o valor e tente novamente.",
+          "collateralExceeded": "O valor do resgate excede o valor das garantias; insira um valor menor.",
+          "generic": "Ocorreu um erro ao processar seu resgate. Tente novamente.",
+          "smartWalletNotConnected": "A carteira inteligente não está conectada. Conecte sua carteira e tente novamente.",
+          "contractFailed": "A execução do contrato falhou.",
+          "transactionRejected": "A transação foi rejeitada. Aprove a transação para continuar.",
+          "loadSpaces": "Não foi possível carregar os detalhes do espaço. Tente novamente."
+        }
+      },
+      "provenanceBySpace": "de {space}",
+      "conversionDetails": {
+        "vaultLine": "Cofre: {amount} {symbol}",
+        "priceLine": "Preço: {currency}{price}",
+        "requestedLine": "Solicitado: {currency}{amount}"
+      },
+      "diagnostics": {
+        "vaultAccess": "Não foi possível carregar os dados do cofre para alguns espaços: {details}. Talvez você não tenha acesso a esses espaços.",
+        "tokenDiscovery": "Diagnóstico de detecção de tokens: {reasons}.",
+        "reasons": {
+          "missingJwt": "Token de sessão autenticado ausente",
+          "profileLoadFailed": "Falha ao carregar dados do perfil",
+          "noWalletAddress": "O perfil não tem endereço de carteira",
+          "spacesLoadFailed": "Falha ao carregar espaços do membro",
+          "spacesFallback": "A busca de espaços de associação não retornou espaços; usando espaços inferidos dos tokens da carteira",
+          "noSpaces": "Nenhum espaço encontrado para este membro",
+          "balanceReadFailed": "Falha ao ler saldos on-chain para {failed}/{total} token(s) do cofre",
+          "noVaultTokens": "Nenhum token de cofre resgatável encontrado",
+          "restrictedFallback": "Fallback on-chain usado para espaços restritos: {spaces}",
+          "restrictedFallbackFailed": "Fallback on-chain falhou para {count, plural, one {# espaço restrito} other {# espaços restritos}}"
+        }
       }
     },
     "errors": {

@@ -2,17 +2,15 @@
 
 import useSWRMutation from 'swr/mutation';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
-import { erc20Abi, parseUnits } from 'viem';
+import { erc20Abi, maxUint256, parseUnits } from 'viem';
 import {
   getTokenDecimals,
-  ERC20_TOKEN_TRANSFER_ADDRESSES,
   percentageStringToBigInt,
+  publicClient,
 } from '@hypha-platform/core/client';
 import {
   tokenBackingVaultImplementationAddress,
   tokenBackingVaultImplementationAbi,
-  transferHelperAbi,
-  transferHelperAddress,
 } from '../../../generated';
 import { CreateTransferInput } from '@hypha-platform/core/client';
 import { createTransferAction } from '../../../transaction/server/actions';
@@ -31,12 +29,18 @@ interface RedeemTokensInput {
 
 interface UseRedeemTokensProps {
   authToken?: string | null;
+  /**
+   * Profile / member address (optional). Prefer resolving the allowance owner from
+   * the Privy smart wallet client when available — it may differ from `person.address`.
+   */
+  smartWalletAddress?: `0x${string}` | null;
 }
 
-const chainId: keyof typeof tokenBackingVaultImplementationAddress = 8453;
+const REDEEM_CHAIN_ID = 8453;
 
 export const useRedeemTokensMutation = ({
   authToken,
+  smartWalletAddress,
 }: UseRedeemTokensProps) => {
   const { client } = useSmartWallets();
 
@@ -59,7 +63,9 @@ export const useRedeemTokensMutation = ({
     data: redeemHashes,
     error: redeemError,
   } = useSWRMutation(
-    'redeemTokens',
+    smartWalletAddress
+      ? ['redeemTokens', smartWalletAddress]
+      : ['redeemTokens', 'pending'],
     async (_, { arg }: { arg: RedeemTokensInput }) => {
       if (!client) {
         throw new Error('Smart wallet client not available');
@@ -68,28 +74,77 @@ export const useRedeemTokensMutation = ({
       const backingTokens: `0x${string}`[] = [];
       const proportions: bigint[] = [];
 
-      for (const conversion of arg.conversions ?? []) {
-        if (!conversion.asset || !conversion.percentage) {
-          continue;
+      const conversions = arg.conversions ?? [];
+      for (let i = 0; i < conversions.length; i++) {
+        const conversion = conversions[i]!;
+        if (!conversion.asset?.trim() || !conversion.percentage?.trim()) {
+          throw new Error(
+            `Incomplete conversion at index ${i}: asset and percentage are required.`,
+          );
         }
         backingTokens.push(conversion.asset as `0x${string}`);
         const percentage = percentageStringToBigInt(conversion.percentage);
         proportions.push(percentage);
       }
 
+      // Vault expects proportions that match a full split; a single collateral must be 100%.
+      // Kept as a safeguard when the form sends a remainder row that is not exactly 10000 bps.
+      if (backingTokens.length === 1 && proportions.length === 1) {
+        proportions[0] = 10000n;
+      }
+
       const token = arg.redemption.token;
       const decimals = await getTokenDecimals(token);
       const amount = parseUnits(arg.redemption.amount, decimals);
       const vaultAddress = tokenBackingVaultImplementationAddress[
-        chainId
+        REDEEM_CHAIN_ID
       ] as `0x${string}`;
+      const spaceToken = token as `0x${string}`;
 
-      await client.writeContract({
-        address: token as `0x${string}`,
-        abi: erc20Abi,
-        functionName: 'approve',
-        args: [vaultAddress, amount],
-      });
+      const allowanceOwner =
+        (client.account?.address as `0x${string}` | undefined) ??
+        smartWalletAddress ??
+        undefined;
+
+      if (allowanceOwner) {
+        const currentAllowance = await publicClient.readContract({
+          address: spaceToken,
+          abi: erc20Abi,
+          functionName: 'allowance',
+          args: [allowanceOwner, vaultAddress],
+        });
+        if (currentAllowance < amount) {
+          await client.writeContract({
+            address: spaceToken,
+            abi: erc20Abi,
+            functionName: 'approve',
+            args: [vaultAddress, maxUint256],
+          });
+        }
+      } else {
+        const owner =
+          (client.account?.address as `0x${string}` | undefined) ??
+          smartWalletAddress;
+        if (!owner) {
+          throw new Error(
+            'Cannot approve redemption: wallet address is not available.',
+          );
+        }
+        const currentAllowance = await publicClient.readContract({
+          address: spaceToken,
+          abi: erc20Abi,
+          functionName: 'allowance',
+          args: [owner, vaultAddress],
+        });
+        if (currentAllowance < amount) {
+          await client.writeContract({
+            address: spaceToken,
+            abi: erc20Abi,
+            functionName: 'approve',
+            args: [vaultAddress, maxUint256],
+          });
+        }
+      }
 
       const txHash: string = await client.writeContract({
         address: vaultAddress,
@@ -97,7 +152,7 @@ export const useRedeemTokensMutation = ({
         functionName: 'redeem',
         args: [
           BigInt(arg.redemption.web3SpaceId),
-          token as `0x${string}`,
+          spaceToken,
           amount,
           backingTokens,
           proportions,

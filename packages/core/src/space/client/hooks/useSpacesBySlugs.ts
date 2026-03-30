@@ -24,30 +24,41 @@ export const useSpacesBySlugs = (
       : null;
   }, [slugs, parentOnly]);
 
-  const {
-    data: spaces,
-    error: swrError,
-    isLoading,
-  } = useSWR(endpoint, (endpoint) =>
-    fetch(endpoint, {
-      headers: {
-        Accept: 'application/json',
-      },
-    }).then((res) => {
+  const { data, error, isLoading } = useSWR<Space[] | { error: string }, Error>(
+    endpoint,
+    async (url: string) => {
+      const res = await fetch(url, {
+        headers: {
+          Accept: 'application/json',
+        },
+      });
+      const body = (await res.json()) as Space[] | { error: string };
       if (!res.ok) {
-        throw new Error(`Failed to fetch spaces: ${res.status}`);
+        const message =
+          typeof body === 'object' &&
+          body !== null &&
+          'error' in body &&
+          typeof (body as { error?: string }).error === 'string'
+            ? (body as { error: string }).error
+            : `Request failed (${res.status})`;
+        throw new Error(message);
       }
-      return res.json();
-    }),
+      return body;
+    },
   );
 
-  if (swrError) {
-    return { spaces: [], error: swrError, isLoading };
+  if (error) {
+    return { spaces: [], error, isLoading };
   }
 
-  if (spaces && 'error' in spaces) {
-    return { spaces: [], error: spaces.error, isLoading };
+  if (
+    data &&
+    typeof data === 'object' &&
+    'error' in data &&
+    !Array.isArray(data)
+  ) {
+    return { spaces: [], error: data, isLoading };
   }
 
-  return { spaces: spaces || [], isLoading };
+  return { spaces: (data as Space[] | undefined) ?? [], isLoading };
 };

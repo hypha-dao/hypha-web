@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { ChevronDownIcon } from '@radix-ui/themes';
 import {
   DropdownMenu,
@@ -18,9 +19,9 @@ interface Token {
   icon: string;
   symbol: string;
   address: `0x${string}`;
-  /** Optional display name (e.g. Storybook fixtures) */
-  name?: string;
   value?: number;
+  tokenPrice?: number;
+  tokenCurrencyLabel?: string;
   space?: {
     title: string;
     slug: string;
@@ -41,22 +42,30 @@ interface TokenPayoutFieldProps {
   }) => void;
   tokens: Token[];
   readOnlyDropdown?: boolean;
-  showTreasuryBalanceHint?: boolean;
+  showSelectedTokenBalanceHint?: boolean;
+  /** When true, use treasury balance copy (space redeem) instead of wallet balance. */
+  useTreasuryBalanceLine?: boolean;
   selectedTokenPriceHint?: string;
 }
 
-export const TokenPayoutField = ({
+function TokenPayoutFieldInner({
   value,
   onChange,
   tokens,
   readOnlyDropdown,
-  showTreasuryBalanceHint = false,
+  showSelectedTokenBalanceHint = false,
+  useTreasuryBalanceLine = false,
   selectedTokenPriceHint,
-}: TokenPayoutFieldProps) => {
+}: TokenPayoutFieldProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
-  const selectedToken =
-    value.token &&
-    tokens.find((t) => t.address.toLowerCase() === value.token.toLowerCase());
+  const selectedToken = value.token
+    ? tokens.find(
+        (t) =>
+          t.address.toLowerCase() === value.token.toLowerCase() &&
+          (value.spaceSlug ? t.space?.slug === value.spaceSlug : true),
+      ) ??
+      tokens.find((t) => t.address.toLowerCase() === value.token.toLowerCase())
+    : undefined;
 
   const handleTokenChange = (token: Token) => {
     onChange({
@@ -175,16 +184,21 @@ export const TokenPayoutField = ({
           </DropdownMenu>
         </div>
       </div>
-      {showTreasuryBalanceHint &&
+      {showSelectedTokenBalanceHint &&
       selectedToken &&
       typeof selectedToken.value === 'number' &&
       Number.isFinite(selectedToken.value) ? (
         <div className="text-1 text-neutral-11 w-full min-w-0 self-end overflow-x-auto">
           <span className="whitespace-nowrap inline-block min-w-full text-right">
-            {tAgreementFlow('plugins.tokenPayoutField.treasuryBalanceLine', {
-              amount: selectedToken.value.toFixed(2),
-              symbol: selectedToken.symbol,
-            })}
+            {tAgreementFlow(
+              useTreasuryBalanceLine
+                ? 'plugins.tokenPayoutField.treasuryBalanceLine'
+                : 'plugins.tokenPayoutField.walletBalanceLine',
+              {
+                amount: String(selectedToken.value),
+                symbol: selectedToken.symbol,
+              },
+            )}
             {selectedTokenPriceHint
               ? tAgreementFlow(
                   'plugins.tokenPayoutField.tokenRedemptionPriceSuffix',
@@ -196,4 +210,6 @@ export const TokenPayoutField = ({
       ) : null}
     </div>
   );
-};
+}
+
+export const TokenPayoutField = React.memo(TokenPayoutFieldInner);

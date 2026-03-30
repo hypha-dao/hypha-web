@@ -1,3 +1,6 @@
+/** Basis points for 0–100% with two decimals (10000 = 100.00%). */
+const MAX_BPS = 10000;
+
 /**
  * Converts a percentage string in the format `0.00`-`100.00` to a bigint.
  * The string can have up to two decimal places.
@@ -19,17 +22,24 @@ export function percentageStringToBigInt(value: string): bigint {
     );
   }
 
-  const num = parseFloat(trimmed);
-  if (isNaN(num) || num < 0 || num > 100) {
+  const parts = trimmed.split('.');
+  const intPartRaw = parts[0] ?? '';
+  const fracPartRaw = parts[1] ?? '';
+  const whole = BigInt(intPartRaw === '' ? '0' : intPartRaw);
+  const paddedFrac = (fracPartRaw + '00').slice(0, 2);
+  if (!/^\d{2}$/.test(paddedFrac)) {
+    throw new Error(
+      `Invalid percentage format: "${value}". Expected a number between 0 and 100 with up to two decimal places.`,
+    );
+  }
+  const fracBps = BigInt(paddedFrac);
+  const bps = whole * 100n + fracBps;
+  if (bps < 0n || bps > BigInt(MAX_BPS)) {
     throw new Error(
       `Percentage out of range: "${value}". Must be between 0 and 100 inclusive.`,
     );
   }
-
-  // Convert to integer representation with two decimal places
-  // Multiply by 100 and round to avoid floating point errors
-  const integer = Math.round(num * 100);
-  return BigInt(integer);
+  return bps;
 }
 
 /**
@@ -46,9 +56,6 @@ export function bigIntToPercentageString(value: bigint): string {
   return percentage.toFixed(2);
 }
 
-/** Basis points for 0–100% with two decimals (10000 = 100.00%). */
-const MAX_BPS = 10000;
-
 /**
  * Returns the percentage string for the last row so that all rows sum to 100.00%,
  * using basis-point math to avoid float drift.
@@ -64,8 +71,11 @@ export function remainderPercentStringForLastRow(
     }
     try {
       sumBps += percentageStringToBigInt(trimmed);
-    } catch {
-      return bigIntToPercentageString(BigInt(MAX_BPS));
+    } catch (err) {
+      throw new Error(
+        `Invalid percentage in remainder row inputs: "${trimmed}"`,
+        { cause: err },
+      );
     }
   }
   let rem = BigInt(MAX_BPS) - sumBps;

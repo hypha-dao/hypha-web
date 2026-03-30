@@ -43,8 +43,7 @@ export const ConversionAssetDropdown = ({
   onChange,
   assets,
 }: ConversionAssetDropdownProps) => {
-  const t = useTranslations('AgreementFlow.plugins.redeemTokensProposal');
-  const tAgreementFlow = useTranslations('AgreementFlow');
+  const tRedeem = useTranslations('ProfileActions.redeemTokens');
   const selectedAsset = assets.find(
     (a) => a.address.toLowerCase() === value.toLowerCase(),
   );
@@ -75,7 +74,7 @@ export const ConversionAssetDropdown = ({
                 </>
               ) : (
                 <span className="text-2 text-neutral-11 whitespace-nowrap">
-                  {t('selectCollateralAsset')}
+                  {tRedeem('form.selectCollateralAsset')}
                 </span>
               )}
             </div>
@@ -103,19 +102,21 @@ export const ConversionAssetDropdown = ({
                     </span>
                     {asset?.type && (
                       <div className="rounded-lg text-[10px] text-accent-11 border-1 border-accent-11 px-2 py-0.75">
-                        {getTokenTypeLabel(asset.type, tAgreementFlow)}
+                        {getTokenTypeLabel(asset.type)}
                       </div>
                     )}
                   </span>
                   <div className="flex flex-col">
                     {asset?.space?.title ? (
                       <span className="text-1 text-accent-11">
-                        by {asset?.space?.title}
+                        {tRedeem('provenanceBySpace', {
+                          space: asset.space.title,
+                        })}
                       </span>
                     ) : null}
                     {typeof asset.value === 'number' ? (
                       <span className="text-1 text-neutral-11">
-                        {t('conversionDetails.vaultLine', {
+                        {tRedeem('conversionDetails.vaultLine', {
                           amount: asset.value.toFixed(2),
                           symbol: asset.symbol,
                         })}
@@ -124,7 +125,7 @@ export const ConversionAssetDropdown = ({
                     {typeof asset.tokenPrice === 'number' &&
                     Number.isFinite(asset.tokenPrice) ? (
                       <span className="text-1 text-neutral-11">
-                        {t('conversionDetails.priceLine', {
+                        {tRedeem('conversionDetails.priceLine', {
                           currency: asset.priceCurrencySymbol ?? '$',
                           price: asset.tokenPrice.toFixed(2),
                         })}
@@ -136,7 +137,7 @@ export const ConversionAssetDropdown = ({
             ))
           ) : (
             <span className="text-2 text-neutral-11">
-              {t('noCollateralAssetsFound')}
+              {tRedeem('form.noCollateralAssetsFound')}
             </span>
           )}
         </DropdownMenuContent>
@@ -201,13 +202,13 @@ export interface ConversionFieldDetailsProps {
 export const ConversionFieldDetails = ({
   asset,
 }: ConversionFieldDetailsProps) => {
-  const t = useTranslations('AgreementFlow.plugins.redeemTokensProposal');
+  const tRedeem = useTranslations('ProfileActions.redeemTokens');
   if (!asset) return null;
 
   const parts: string[] = [];
   if (typeof asset.value === 'number') {
     parts.push(
-      t('conversionDetails.vaultLine', {
+      tRedeem('conversionDetails.vaultLine', {
         amount: asset.value.toFixed(2),
         symbol: asset.symbol,
       }),
@@ -218,7 +219,7 @@ export const ConversionFieldDetails = ({
     Number.isFinite(asset.tokenPrice)
   ) {
     parts.push(
-      t('conversionDetails.priceLine', {
+      tRedeem('conversionDetails.priceLine', {
         currency: asset.priceCurrencySymbol ?? '$',
         price: asset.tokenPrice.toFixed(2),
       }),
@@ -229,7 +230,7 @@ export const ConversionFieldDetails = ({
     Number.isFinite(asset.requestedAmount)
   ) {
     parts.push(
-      t('conversionDetails.requestedLine', {
+      tRedeem('conversionDetails.requestedLine', {
         currency: asset.requestedCurrencySymbol ?? '$',
         amount: asset.requestedAmount.toFixed(2),
       }),

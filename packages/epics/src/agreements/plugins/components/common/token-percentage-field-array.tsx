@@ -18,6 +18,7 @@ import {
 } from './token-percentage-field';
 import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
 import { remainderPercentStringForLastRow } from '@hypha-platform/core/client';
+import { useTranslations } from 'next-intl';
 
 export type { TokenPercentageAsset };
 
@@ -43,13 +44,16 @@ type ConversionRowErrors = Array<{
 export const TokenPercentageFieldArray = ({
   assets,
   name = 'conversions',
-  label = 'Converted into',
+  label: labelProp,
   onRemoveRebalance,
-  showEmptyFieldMessage: _showEmptyFieldMessage = false,
+  showEmptyFieldMessage = false,
   showFieldDetails = false,
   autoBalanceLastRow = true,
 }: TokenPercentageFieldArrayProps) => {
-  void _showEmptyFieldMessage;
+  const tAgreementFlow = useTranslations('AgreementFlow');
+  const label =
+    labelProp ??
+    tAgreementFlow('plugins.tokenPercentageFieldArray.convertedInto');
   const {
     control,
     getValues,
@@ -256,6 +260,11 @@ export const TokenPercentageFieldArray = ({
               </div>
             );
           })}
+          {showEmptyFieldMessage ? (
+            <p className="text-sm text-neutral-10">
+              {tAgreementFlow('plugins.tokenPercentageFieldArray.emptyRowHint')}
+            </p>
+          ) : null}
           {(errors[name] as { root?: { message?: string } })?.root?.message && (
             <FormMessage>
               {(
@@ -268,7 +277,7 @@ export const TokenPercentageFieldArray = ({
       <div className="flex justify-end w-full">
         <Button className="w-fit" onClick={handleAddField} variant="ghost">
           <PlusIcon />
-          Add
+          {tAgreementFlow('plugins.tokenPercentageFieldArray.add')}
         </Button>
       </div>
     </div>

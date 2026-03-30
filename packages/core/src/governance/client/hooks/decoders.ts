@@ -795,16 +795,8 @@ export function decodeTransaction(tx: Tx) {
                 accounts: decoded.args[2] as `0x${string}`[],
               },
             };
-          default:
-            return null;
-        }
-      },
-    },
-    {
-      abi: tokenBackingVaultImplementationAbi,
-      handler: (decoded) =>
-        decoded.functionName === 'redeem'
-          ? {
+          case 'redeem':
+            return {
               type: 'redeemTokens',
               data: {
                 web3SpaceId: decoded.args[0],
@@ -813,8 +805,11 @@ export function decodeTransaction(tx: Tx) {
                 backingTokens: decoded.args[3],
                 proportions: decoded.args[4],
               },
-            }
-          : null,
+            };
+          default:
+            return null;
+        }
+      },
     },
   ];
 

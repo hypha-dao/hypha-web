@@ -1,10 +1,7 @@
 'use server';
 
 import { db } from '@hypha-platform/storage-postgres';
-import {
-  findAllSpacesBySlugs,
-  findAllSpacesByWeb3SpaceIds,
-} from '@hypha-platform/core/server';
+import { findAllSpacesBySlugs } from '@hypha-platform/core/server';
 import { Space } from '@hypha-platform/core/client';
 import {
   fetchSpaceDetails,
@@ -28,8 +25,8 @@ export async function getSpacesBySlugs(
       BigInt(web3SpaceId!),
     );
     const [web3details, web3proposalsIds] = await Promise.all([
-      fetchSpaceDetails({ spaceIds: web3SpaceIds }),
-      fetchSpaceProposalsIds({ spaceIds: web3SpaceIds }),
+      fetchSpaceDetails({ spaceIds: web3SpaceIds, allowFailure: true }),
+      fetchSpaceProposalsIds({ spaceIds: web3SpaceIds, allowFailure: true }),
     ]);
 
     const details = formMap(web3details);
@@ -42,9 +39,11 @@ export async function getSpacesBySlugs(
 
       const spaceDetails = details.get(BigInt(space.web3SpaceId));
       const spaceProposals = proposalsIds.get(BigInt(space.web3SpaceId));
+      const onChainDataMissing = !spaceDetails || !spaceProposals;
 
       return {
         ...space,
+        onChainDataMissing,
         memberCount: spaceDetails?.members?.length ?? 0,
         documentCount: spaceProposals?.accepted.length ?? 0,
       };

@@ -456,6 +456,10 @@
       "migrateHyphaTokens": {
         "title": "Migrer les tokens Hypha (Telos → Base)",
         "description": "Déplacez vos tokens Hypha de la blockchain Telos vers le réseau Base. Cela lance l'expérience de migration."
+      },
+      "redeemTokens": {
+        "title": "Échanger des tokens",
+        "description": "Convertissez vos tokens en valeur fiduciaire équivalente détenue dans le coffre."
       }
     },
     "purchaseHypha": {
@@ -520,6 +524,60 @@
       "content": "Envoyez facilement des fonds depuis votre portefeuille vers un membre ou un espace.",
       "form": {
         "amountLabel": "Montant"
+      }
+    },
+    "redeemTokens": {
+      "title": "Échanger des tokens",
+      "loading": "Chargement des données d'échange…",
+      "content": "Convertissez vos tokens en valeur fiduciaire équivalente détenue dans le coffre.",
+      "form": {
+        "redemptionAmountLabel": "Montant à échanger",
+        "convertedIntoLabel": "Converti en",
+        "redeem": "Échanger",
+        "redeeming": "Échange en cours",
+        "loadingCollaterals": "Chargement des actifs de garantie…",
+        "successMessage": "Votre opération d'échange a été effectuée avec succès !",
+        "requestedExceedsBalance": "Le montant demandé ({amount}) dépasse le solde disponible ({balance}).",
+        "collateralInsufficient": "La valeur de l'échange dépasse la valeur des garanties ; veuillez saisir un montant plus petit.",
+        "insufficientFundsLead": "Le solde de votre portefeuille est insuffisant pour cette transaction. Veuillez",
+        "insufficientFundsTopUp": "recharger votre compte",
+        "insufficientFundsTrail": "pour continuer.",
+        "selectCollateralAsset": "Sélectionner un actif",
+        "noCollateralAssetsFound": "Aucun actif trouvé",
+        "errors": {
+          "noRedemptionData": "Aucune donnée d'échange trouvée. Veuillez remplir le formulaire.",
+          "selectSpace": "Veuillez sélectionner un espace pour l'échange.",
+          "spaceNotConfigured": "L'espace sélectionné n'est pas configuré pour l'échange.",
+          "exceedsBalance": "Le montant demandé dépasse le solde disponible de vos tokens. Réduisez le montant et réessayez.",
+          "collateralExceeded": "La valeur de l'échange dépasse la valeur des garanties ; veuillez saisir un montant plus petit.",
+          "generic": "Une erreur s'est produite lors du traitement de votre échange. Veuillez réessayer.",
+          "smartWalletNotConnected": "Le portefeuille intelligent n'est pas connecté. Connectez votre portefeuille et réessayez.",
+          "contractFailed": "L'exécution du contrat a échoué.",
+          "transactionRejected": "La transaction a été rejetée. Veuillez approuver la transaction pour continuer.",
+          "loadSpaces": "Impossible de charger les détails de l'espace. Veuillez réessayer."
+        }
+      },
+      "provenanceBySpace": "de {space}",
+      "conversionDetails": {
+        "vaultLine": "Coffre : {amount} {symbol}",
+        "priceLine": "Prix : {currency}{price}",
+        "requestedLine": "Demandé : {currency}{amount}"
+      },
+      "diagnostics": {
+        "vaultAccess": "Impossible de charger les données du coffre pour certains espaces : {details}. Vous n'y avez peut-être pas accès.",
+        "tokenDiscovery": "Diagnostics de détection des tokens : {reasons}.",
+        "reasons": {
+          "missingJwt": "Jeton de session authentifié manquant",
+          "profileLoadFailed": "Échec du chargement des données du profil",
+          "noWalletAddress": "Le profil n'a pas d'adresse de portefeuille",
+          "spacesLoadFailed": "Échec du chargement des espaces du membre",
+          "spacesFallback": "La recherche d'espaces de membre n'a renvoyé aucun espace ; utilisation des espaces dérivés des tokens du portefeuille",
+          "noSpaces": "Aucun espace trouvé pour ce membre",
+          "balanceReadFailed": "Échec de lecture des soldes on-chain pour {failed}/{total} token(s) du coffre",
+          "noVaultTokens": "Aucun token de coffre échangeable trouvé",
+          "restrictedFallback": "Repli on-chain utilisé pour les espaces restreints : {spaces}",
+          "restrictedFallbackFailed": "Échec du repli on-chain pour {count, plural, one {# espace restreint} other {# espaces restreints}}"
+        }
       }
     },
     "errors": {
@@ -1136,19 +1194,26 @@
         "noTokensFound": "Aucun token trouvé",
         "by": "par",
         "bySpace": "de {space}",
-        "treasuryBalanceLine": "Treasury balance: {amount} {symbol}",
-        "tokenRedemptionPriceSuffix": " · Token redemption price: {hint}"
+        "walletBalanceLine": "Solde du portefeuille : {amount} {symbol}",
+        "redemptionPriceLine": "Prix de rachat du token : {price}",
+        "treasuryBalanceLine": "Solde du trésor : {amount} {symbol}",
+        "tokenRedemptionPriceSuffix": " · Prix de rachat du token : {hint}"
       },
       "redeemTokensProposal": {
-        "selectCollateralAsset": "Select an asset",
-        "noCollateralAssetsFound": "No assets found",
-        "requestedExceedsTreasury": "Requested redemption amount exceeds treasury balance ({amount} requested vs {balance} {symbol} available).",
-        "collateralInsufficient": "The redemption value exceeds the collateral in the vault; enter a smaller amount.",
+        "selectCollateralAsset": "Sélectionner un actif",
+        "noCollateralAssetsFound": "Aucun actif trouvé",
+        "requestedExceedsTreasury": "Le montant de rachat demandé dépasse le solde du trésor ({amount} demandé vs {balance} {symbol} disponibles).",
+        "collateralInsufficient": "La valeur de rachat dépasse les garanties dans le coffre ; saisissez un montant plus petit.",
         "conversionDetails": {
-          "vaultLine": "In vault: {amount} {symbol}",
-          "priceLine": "Price: {currency}{price}",
-          "requestedLine": "Requested: {currency}{amount}"
+          "vaultLine": "Dans le coffre : {amount} {symbol}",
+          "priceLine": "Prix : {currency}{price}",
+          "requestedLine": "Demandé : {currency}{amount}"
         }
+      },
+      "tokenPercentageFieldArray": {
+        "convertedInto": "Converti en",
+        "add": "Ajouter",
+        "emptyRowHint": "Sélectionnez un actif et un pourcentage pour chaque ligne de conversion."
       },
       "spaceToSpaceMembership": {
         "space": "Espace",
