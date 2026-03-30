@@ -30,17 +30,20 @@ export function useSellerLegBalanceValidation(
     useFormContext<FormSlice>();
   const { isSubmitting } = useFormState({ control });
   const runSeqRef = React.useRef(0);
+  /** Latest formState for getFieldState without putting formState in useCallback deps (would retrigger the effect every render). */
+  const formStateRef = React.useRef(formState);
+  formStateRef.current = formState;
 
   /** Only clear balance (`manual`) errors — never strip Zod resolver errors on the same field. */
   const clearManualSellerLegAmountError = React.useCallback(
     (index: number) => {
       const name = `sellerLeg.${index}.amount` as const;
-      const { error } = getFieldState(name, formState);
+      const { error } = getFieldState(name, formStateRef.current);
       if (error?.type === 'manual') {
         clearErrors(name);
       }
     },
-    [clearErrors, getFieldState, formState],
+    [clearErrors, getFieldState],
   );
 
   const sellerLeg = useWatch({ control, name: 'sellerLeg' }) as
