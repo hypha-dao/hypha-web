@@ -523,6 +523,24 @@ export const ProposalDetail = ({
       };
     }
 
+    if (label === 'Space To Space') {
+      const dd = proposalDetails.delegatesData;
+      if (!dd?.member || dd.space === undefined) return undefined;
+
+      const targetWeb3Id = Number(dd.space);
+      if (!Number.isFinite(targetWeb3Id)) return undefined;
+
+      const targetSpaceAddress = dbSpaces.find(
+        (s) => s.web3SpaceId === targetWeb3Id,
+      )?.address;
+      if (!targetSpaceAddress) return undefined;
+
+      return {
+        spaceToSpaceTargetAddress: targetSpaceAddress,
+        spaceToSpaceMemberAddress: dd.member,
+      };
+    }
+
     return undefined;
   })();
 

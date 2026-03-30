@@ -77,6 +77,8 @@ export const useResubmitProposalData = <
           tokenBase?: { amount?: number; token?: string };
           space?: number;
           member?: string;
+          spaceToSpaceTargetAddress?: string;
+          spaceToSpaceMemberAddress?: string;
           applied?: boolean;
           redeemResubmit?: {
             token: string;
@@ -151,10 +153,16 @@ export const useResubmitProposalData = <
             ...(parsed.tokenBase !== undefined && parsed.tokenBase !== null
               ? { tokenBase: parsed.tokenBase }
               : {}),
-            ...(typeof parsed.space === 'number'
+            ...(parsed.spaceToSpaceTargetAddress !== undefined
+              ? { space: parsed.spaceToSpaceTargetAddress }
+              : typeof parsed.space === 'number'
               ? { space: parsed.space }
               : {}),
-            ...(parsed.member !== undefined ? { member: parsed.member } : {}),
+            ...(parsed.spaceToSpaceMemberAddress !== undefined
+              ? { member: parsed.spaceToSpaceMemberAddress }
+              : parsed.member !== undefined
+              ? { member: parsed.member }
+              : {}),
             leadImage: undefined,
             attachments: undefined,
             spaceId: spaceId ?? undefined,
@@ -318,14 +326,32 @@ export const useResubmitProposalData = <
           });
         }
 
-        if (typeof parsed.space === 'number') {
+        if (parsed.spaceToSpaceTargetAddress !== undefined) {
+          form.setValue(
+            'space' as any,
+            parsed.spaceToSpaceTargetAddress as any,
+            {
+              shouldDirty: true,
+              shouldValidate: true,
+            },
+          );
+        } else if (typeof parsed.space === 'number') {
           form.setValue('space' as any, parsed.space as any, {
             shouldDirty: true,
             shouldValidate: true,
           });
         }
 
-        if (parsed.member !== undefined) {
+        if (parsed.spaceToSpaceMemberAddress !== undefined) {
+          form.setValue(
+            'member' as any,
+            parsed.spaceToSpaceMemberAddress as any,
+            {
+              shouldDirty: true,
+              shouldValidate: true,
+            },
+          );
+        } else if (parsed.member !== undefined) {
           form.setValue('member' as any, parsed.member as any, {
             shouldDirty: true,
             shouldValidate: true,
@@ -409,11 +435,15 @@ export const useResubmitProposalData = <
         if (parsed.tokenBase !== undefined && parsed.tokenBase !== null) {
           fieldsToTrigger.push('tokenBase');
         }
-        if (typeof parsed.space === 'number') {
-          fieldsToTrigger.push('space');
-        }
-        if (parsed.member !== undefined) {
-          fieldsToTrigger.push('member');
+        if (parsed.spaceToSpaceTargetAddress !== undefined) {
+          fieldsToTrigger.push('space', 'member');
+        } else {
+          if (typeof parsed.space === 'number') {
+            fieldsToTrigger.push('space');
+          }
+          if (parsed.member !== undefined) {
+            fieldsToTrigger.push('member');
+          }
         }
         if (
           resubmitTokenAddress !== undefined ||
