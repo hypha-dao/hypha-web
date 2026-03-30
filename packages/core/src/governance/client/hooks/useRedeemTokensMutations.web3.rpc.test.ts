@@ -68,13 +68,17 @@ describe('prepareRedeemProposalParams', () => {
       ],
     });
 
-    expect(result.transactions).toHaveLength(2);
+    expect(result.transactions).toHaveLength(3);
 
     const addToWhitelistTx = result.transactions[0];
-    const redeemTx = result.transactions[1];
+    const approveTx = result.transactions[1];
+    const redeemTx = result.transactions[2];
 
     expect(addToWhitelistTx?.target).toBe(
       tokenBackingVaultImplementationAddress[8453],
+    );
+    expect(approveTx?.target).toBe(
+      '0x00000000000000000000000000000000000000c1',
     );
     expect(redeemTx?.target).toBe(tokenBackingVaultImplementationAddress[8453]);
 
@@ -89,5 +93,47 @@ describe('prepareRedeemProposalParams', () => {
       data: redeemTx!.data,
     });
     expect(redeemDecoded.functionName).toBe('redeem');
+  });
+
+  test('prepends ERC20 approve on space token before redeem when whitelist is disabled', async () => {
+    const { publicClient } = await import('@hypha-platform/core/client');
+    const { prepareRedeemProposalParams } = await import(
+      './useRedeemTokensMutations.web3.rpc'
+    );
+    const readContractMock = vi.mocked(publicClient.readContract);
+    readContractMock
+      .mockResolvedValueOnce(3600n) // getSpaceMinProposalDuration
+      .mockResolvedValueOnce(true) // vaultExists
+      .mockResolvedValueOnce([
+        '0x00000000000000000000000000000000000000b1',
+      ] as `0x${string}`[]) // getBackingTokens
+      .mockResolvedValueOnce({
+        redeemEnabled: true,
+        membersOnly: false,
+        whitelistEnabled: false,
+        minimumBackingBps: 0n,
+        redemptionStartDate: 0n,
+      }); // getVaultConfig — no whitelist branch
+
+    const spaceToken = '0x00000000000000000000000000000000000000c1' as const;
+    const result = await prepareRedeemProposalParams({
+      redemption: {
+        web3SpaceId: 123,
+        amount: '10',
+        token: spaceToken,
+      },
+      conversions: [
+        {
+          asset: '0x00000000000000000000000000000000000000b1',
+          percentage: '100.00',
+        },
+      ],
+    });
+
+    expect(result.transactions).toHaveLength(2);
+    expect(result.transactions[0]?.target).toBe(spaceToken);
+    expect(result.transactions[1]?.target).toBe(
+      tokenBackingVaultImplementationAddress[8453],
+    );
   });
 });

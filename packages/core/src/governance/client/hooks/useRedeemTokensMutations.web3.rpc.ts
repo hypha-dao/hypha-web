@@ -3,7 +3,7 @@
 import useSWRMutation from 'swr/mutation';
 import useSWR from 'swr';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
-import { encodeFunctionData, parseUnits } from 'viem';
+import { encodeFunctionData, erc20Abi, parseUnits } from 'viem';
 
 import { getProposalFromLogs } from '../web3';
 import {
@@ -149,6 +149,17 @@ export async function prepareRedeemProposalParams(
       });
     }
   }
+
+  // Redeem pulls space tokens from the executor via transferFrom; authorize the vault first.
+  transactions.push({
+    target: spaceToken,
+    value: 0n,
+    data: encodeFunctionData({
+      abi: erc20Abi,
+      functionName: 'approve',
+      args: [vaultAddress as `0x${string}`, amount],
+    }),
+  });
 
   transactions.push({
     target: vaultAddress,
