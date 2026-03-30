@@ -26,6 +26,10 @@ The proposal **SHALL** encode `createEscrow` such that `msg.sender` at execution
 
 **US-2** As a reviewer, I want proposal details to show **payment / transaction rows** clearly, including an **Escrow Account** label when the counterparty of a row is the escrow contract address, so I can distinguish treasury-to-escrow movements from end-recipient transfers.
 
+**US-3** As a reviewer, I want **Investment** proposal details to use the **same presentation model as other proposal types**: a **read-only list of labeled fields** that mirrors the **create** form structure (investing member, send legs, receive legs—including source when applicable—plus shared agreement fields), not only raw on-chain decoding.
+
+**US-4** As a reviewer, I want the **investing member** shown with **avatar (icon), display name** when resolvable from Hypha data, and **fallback to the formatted blockchain address** when no profile or space match exists—consistent with how other proposal detail rows resolve recipients (e.g. person / space / `EthAddress`).
+
 ---
 
 ## 3) Scope
@@ -35,7 +39,8 @@ The proposal **SHALL** encode `createEscrow` such that `msg.sender` at execution
 - Replace or extend the current **“Accept Investment (Coming Soon)”** create action with a real route, form, plugin, validation schema, and Web2/Web3 orchestration **aligned with the Exchange Stakes & Tokens implementation pattern** (orchestrator stages, `createProposal` batching, linkage via `web3ProposalId`).
 - On-chain proposal transactions that use **`EscrowImplementation`** for the investment agreement (including ERC-20 `approve` where required, and `createEscrow` / `receiveFunds` as designed for the product flow).
 - **Authority model:** The **active space** (proposal executor) **SHALL** be the on-chain actor that **sends the space’s leg** (`tokenA` / `amountA`) into escrow—i.e. `partyA` funding path—so the space must have the right to move those tokens (treasury balance + allowance, or mint-to-executor then approve/funding, per source selection below).
-- Proposal details: decode and present investment/escrow-specific summary (escrow id, legs, funding state) **in addition to** any generic transaction list.
+- Proposal details: decode and present investment/escrow-specific summary (escrow id, legs, funding state) **in addition to** any generic transaction list, and present **Investment** content as a **labeled field list** aligned with the create form (same section order and labels as other agreement-style proposals).
+- **Investor identity on details:** resolve and show **icon + name** from member/space/person data where available; otherwise show **`EthAddress`** (or equivalent) for the investor `0x` address.
 - **Transaction list:** Any row whose **recipient** (or logical “to” address) is the configured **escrow contract address** for the environment **SHALL** display the visible label **Escrow Account** (see FR-18, AC-5).
 - i18n for all new user-visible strings (parity across configured locales).
 - Document badge / resubmit label mapping for proposal label **Investment** (or the final canonical label agreed with product—default here: **Investment** per issue #742).
@@ -72,7 +77,11 @@ The proposal **SHALL** encode `createEscrow` such that `msg.sender` at execution
 
 **FR-11** The system SHALL decode proposal transactions for display: escrow creation, token movements, and derived **investment legs** (space → escrow, investor → escrow, completion state when queryable).
 
-**FR-12** The system SHALL render a dedicated proposal-details section for **Investment** proposals (card or panel) showing escrow identifier, status, per-leg funding guidance, and links to explorer where applicable—parity with the level of detail provided for Exchange proposals.
+**FR-12** The system SHALL render **Investment** proposal details **on the same model as other proposal types**: a **structured list of fields** that **maps 1:1 to the create form** (e.g. **Investing member**, **Investing member will Send** rows with amount/token, **Investing member will Receive** rows with amount/token/**Source**, then escrow/on-chain summary blocks such as escrow id, status, per-leg funding guidance, and explorer links as used for Exchange). Shared agreement fields (title, image, description, attachments) SHALL remain in their **standard** position relative to other proposals, not duplicated inside the investment block unless the product pattern already duplicates them elsewhere.
+
+**FR-12a** The system SHALL **retrieve** the investing member’s **display identity** for proposal details by resolving the stored investor address against **person** and **space** records (same hooks or services used elsewhere for address → avatar + name, e.g. patterns in `ProposalTransactionItem` / `usePersonByWeb3Address` and space-by-address lookup).
+
+**FR-12b** The system SHALL **display** the investing member with: **profile or space icon** (avatar/logo), **display name** (person name or space title) when resolution succeeds, and **SHALL fall back** to showing the **blockchain address** (formatted shortened or full per design system, e.g. `EthAddress`) when no person or space matches the investor address.
 
 **FR-13** The system SHALL map proposal label **Investment** to the accept-investment create route in the **resubmit** flow.
 
@@ -85,6 +94,8 @@ The proposal **SHALL** encode `createEscrow` such that `msg.sender` at execution
 **FR-17** The system SHALL NOT require the investor to sign space-side transactions; the investor fulfills **their** leg via normal wallet transfer / `receiveFunds` as defined by escrow UX and on-chain rules.
 
 **FR-18** In the **proposal details transaction list** (the section that lists decoded transfer-style rows, e.g. `ProposalTransactionItem` and equivalents), the system SHALL show the label **Escrow Account** for every row where the **recipient** (or displayed counterparty address) equals the configured **escrow contract address** for the deployment.
+
+**FR-19** The system SHALL persist or reconstruct **Investment** create-form field values (including investor address, send/receive legs, and **Source** per receive row) so that proposal details can render them **without relying solely on markdown**; markdown body MAY supplement but MUST NOT be the only source of structured investment fields.
 
 ---
 
@@ -109,6 +120,8 @@ Parameters to `createEscrow` SHALL satisfy:
 
 **PAR-3** Token approval patterns SHALL follow the same **safe allowance** strategy required for the exchange flow (e.g. `forceApprove`, reset-to-zero then approve, or `permit` when available—implementation picks one documented approach per token class).
 
+**PAR-4** The **Investment** proposal-details layout SHALL match the **field-list / section** conventions used by comparable flows (e.g. Exchange, mint, burn detail components): section headings, label/value rows, and token rows with **icon + formatted amount + symbol** where those flows do so.
+
 ---
 
 ## 7) Non-functional requirements
@@ -128,6 +141,14 @@ Parameters to `createEscrow` SHALL satisfy:
 **AC-2** Given valid form data, when the user submits, then a Web2 document is created, a Web3 proposal is submitted, and `web3ProposalId` is linked.
 
 **AC-3** Given an executed proposal on-chain, when proposal details load, then escrow summary shows escrow id (when derivable), tokens/amounts for both legs, and funding/completion state consistent with chain data.
+
+**AC-3a** Given an **Investment** proposal document, when proposal details render, then the UI shows a **labeled field list** that mirrors the **create** form sections and order (investing member, send legs, receive legs with **Source**), before or adjacent to escrow/transaction summaries per the pattern used for other proposal types.
+
+**AC-3b** Given an investor address that matches a **known member/person** in Hypha, when the investing member row renders, then **avatar and display name** are shown.
+
+**AC-3c** Given an investor address that matches a **known space** by treasury/contract address, when the investing member row renders, then **space logo and title** are shown.
+
+**AC-3d** Given an investor address with **no** matching person or space, when the investing member row renders, then the UI shows the **blockchain address** fallback (e.g. `EthAddress`) and does not show a broken or empty name.
 
 **AC-4** Given the space selected **Use available tokens in treasury** for the receive leg, when the proposal executes, then the space leg can be funded without manual off-proposal allowance steps beyond what the proposal batch performs.
 
@@ -161,7 +182,7 @@ Mirror the Exchange Stakes & Tokens PR structure; adjust names for **investment*
 - Orchestrator + Web3 mutations: `packages/core/src/governance/client/hooks/useCreateAcceptInvestmentOrchestrator.ts`, `useAcceptInvestmentMutations.web3.*.ts`
 - Validation: `packages/core/src/governance/validation.ts` (`schemaAcceptInvestment`)
 - Decoders + proposal aggregation: `packages/core/src/governance/client/hooks/decoders.ts`, `useProposalDetails.web3.rpc.ts`
-- Proposal detail UI + **transaction list label**: `packages/epics/src/proposals/components/proposal-detail.tsx`, `packages/epics/src/governance/components/proposal-transaction-item.tsx` (extend props/i18n for **Escrow Account**), new `proposal-accept-investment-data.tsx` (or equivalent)
+- Proposal detail UI + **transaction list label**: `packages/epics/src/proposals/components/proposal-detail.tsx`, `packages/epics/src/governance/components/proposal-transaction-item.tsx` (extend props/i18n for **Escrow Account**), new `proposal-accept-investment-data.tsx` (or equivalent) implementing **form-parity field list** + **investor row** (reuse `usePersonByWeb3Address`, `useDbSpaces` or shared “resolve address” helper for icon/name/`EthAddress` fallback)
 - i18n: `packages/i18n/src/messages/*.json`
 - Resubmit mapping: `packages/epics/src/proposals/components/form-voting.tsx`
 - Badges: `packages/epics/src/governance/hooks/use-space-documents-with-statuses.ts`
@@ -173,7 +194,7 @@ Mirror the Exchange Stakes & Tokens PR structure; adjust names for **investment*
 | Issue #742 checkbox | This spec |
 |---------------------|-----------|
 | Smart contract action "Investment" | Sections 1.1, 5, FR-9–FR-11, FR-16–FR-17 |
-| Proposal template | FR-1–FR-8, FR-12–FR-15 |
+| Proposal template | FR-1–FR-8, FR-12–FR-15, FR-12a–FR-12b, FR-19 |
 
 Additional stakeholder requirements from this task:
 
@@ -181,3 +202,4 @@ Additional stakeholder requirements from this task:
 |-----------------|-----------|
 | Active space authority to send tokens to escrow | FR-9, FR-16, Section 5 |
 | **Escrow Account** on transaction list | FR-18, AC-5, Section 10 |
+| Details mirror create form + investor icon/name/address fallback | FR-12, FR-12a–FR-12b, FR-19, PAR-4, AC-3a–AC-3d, Section 10 |
