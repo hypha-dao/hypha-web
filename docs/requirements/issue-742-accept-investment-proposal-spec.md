@@ -110,6 +110,8 @@ Parameters to `createEscrow` SHALL satisfy:
 
 **Encoding note (treasury-first, parity with other proposals):** Before approving and `createEscrow`, the proposal batch SHALL move `tokenA` to the executor by **`transferFrom(spaceTreasury, executor, min(treasuryBalance, amountA))`** when treasury balance is non-zero, then **`mint(executor, amountA - pulled)`** for any shortfall (zero mint tx if treasury covers the full amount). This matches the product rule: use treasury tokens first, mint only what is missing.
 
+**Proposer vs executor:** `createProposal` is called by a **space member or delegate** (their smart wallet signs). It MUST NOT require the **space executor wallet** to submit the proposal. **Executor-only** calls (`mint`, `transferFrom` from treasury when allowance exists, escrow funding) run when the proposal **executes after a successful vote** (multisig-style authorization), not at submit time.
+
 **Note:** Completion semantics in `EscrowImplementation` swap legs: `tokenA` → `partyB`, `tokenB` → `partyA`. That matches **investor receives tokenA** and **space receives tokenB**.
 
 ---

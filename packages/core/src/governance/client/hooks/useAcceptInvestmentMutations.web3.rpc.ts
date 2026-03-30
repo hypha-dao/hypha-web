@@ -89,25 +89,27 @@ export const useAcceptInvestmentMutationsWeb3Rpc = ({
         data: `0x${string}`;
       }[] = [];
 
-      if (!space?.address) {
-        throw new Error(
-          'Space treasury address is unavailable; cannot fund the investment proposal.',
-        );
+      // Treasury pull uses the space's on-chain treasury address when known.
+      // If missing (e.g. DB not synced), skip pull and mint the full amount — any
+      // member/delegate may sign createProposal; executor-only actions run at execution.
+      const treasuryAddress = space?.address as `0x${string}` | undefined;
+
+      let pullFromTreasury = 0n;
+      let mintShortfall = amountA;
+
+      if (treasuryAddress) {
+        const treasuryBalance = await publicClient.readContract({
+          address: arg.spaceReceive.token,
+          abi: erc20Abi,
+          functionName: 'balanceOf',
+          args: [treasuryAddress],
+        });
+        pullFromTreasury =
+          treasuryBalance >= amountA ? amountA : treasuryBalance;
+        mintShortfall = amountA - pullFromTreasury;
       }
 
-      const treasuryAddress = space.address as `0x${string}`;
-      const treasuryBalance = await publicClient.readContract({
-        address: arg.spaceReceive.token,
-        abi: erc20Abi,
-        functionName: 'balanceOf',
-        args: [treasuryAddress],
-      });
-
-      const pullFromTreasury =
-        treasuryBalance >= amountA ? amountA : treasuryBalance;
-      const mintShortfall = amountA - pullFromTreasury;
-
-      if (pullFromTreasury > 0n) {
+      if (pullFromTreasury > 0n && treasuryAddress) {
         transactions.push({
           target: arg.spaceReceive.token,
           value: 0n,
