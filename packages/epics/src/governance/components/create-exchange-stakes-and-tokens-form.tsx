@@ -6,7 +6,6 @@ import {
   useCreateExchangeStakesAndTokensOrchestrator,
   useJwt,
   useMe,
-  EXCHANGE_SPACE_EXECUTOR_WALLET_REQUIRED,
   EXCHANGE_SELLER_WALLET_MISMATCH,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
@@ -193,15 +192,6 @@ export const CreateExchangeStakesAndTokensForm = ({
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : '';
-      if (msg === EXCHANGE_SPACE_EXECUTOR_WALLET_REQUIRED) {
-        form.setError('root', {
-          type: 'manual',
-          message: tAgreementFlow(
-            'plugins.exchangeStakesAndTokens.errors.spaceExecutorWalletRequired',
-          ),
-        });
-        return;
-      }
       if (msg === EXCHANGE_SELLER_WALLET_MISMATCH) {
         form.setError('root', {
           type: 'manual',

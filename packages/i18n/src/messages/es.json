@@ -112,7 +112,6 @@
           "sellerAmountExceedsBalance": "El importe introducido supera el saldo disponible del vendedor.",
           "sellerTreasuryUnavailable": "No se pudo cargar la tesorería del espacio. Espere los datos on-chain e inténtelo de nuevo.",
           "sellerBalanceCheckFailed": "No se pudo verificar el saldo del vendedor. Compruebe la conexión e inténtelo de nuevo.",
-          "spaceExecutorWalletRequired": "Si el espacio es el vendedor, conecte la cartera que es la tesorería de este espacio (ejecutor de propuestas). Esa cartera aprobará los tokens y financiará el escrow al ejecutarse la propuesta.",
           "sellerWalletMismatch": "Conecte la cartera que coincide con la dirección del vendedor seleccionada."
         },
         "seller": "Vendedor (dirección de cartera)",

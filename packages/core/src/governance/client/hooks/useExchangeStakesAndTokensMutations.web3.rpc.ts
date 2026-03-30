@@ -9,8 +9,6 @@ import { getProposalFromLogs, parseEscrowCreatedIdsFromLogs } from '../web3';
 import {
   daoProposalsImplementationAbi,
   daoProposalsImplementationAddress,
-  daoSpaceFactoryImplementationAbi,
-  daoSpaceFactoryImplementationAddress,
 } from '@hypha-platform/core/generated';
 import {
   getTokenDecimals,
@@ -22,10 +20,6 @@ import { getGovernanceChainId } from './governance-chain-id';
 import { EXCHANGE_ESCROW_CONTRACT_BY_CHAIN } from './exchange-escrow-contract';
 
 const READ_TIMEOUT_MS = 30_000;
-
-/** Proposer wallet must be the space executor when seller is the space (treasury funds escrow). */
-export const EXCHANGE_SPACE_EXECUTOR_WALLET_REQUIRED =
-  'EXCHANGE_SPACE_EXECUTOR_WALLET_REQUIRED';
 
 /** Proposer wallet must match selected member seller address. */
 export const EXCHANGE_SELLER_WALLET_MISMATCH =
@@ -53,7 +47,7 @@ interface ExchangeLegInput {
 
 interface CreateExchangeStakesAndTokensInput {
   spaceId: number;
-  /** When `space`, proposal execution uses the space executor as party A for approve/fund. */
+  /** When `space`, any member may propose; treasury acts at vote/execution. */
   sellerRecipientType?: 'member' | 'space';
   sellerAddress: string;
   buyerAddress: string;
@@ -106,27 +100,9 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
         throw new Error('Could not read connected wallet address');
       }
 
-      if (arg.sellerRecipientType === 'space') {
-        const factoryAddress = daoSpaceFactoryImplementationAddress[chainId];
-        if (!factoryAddress) {
-          throw new Error(`Space factory not configured for chain ${chainId}`);
-        }
-        const executor = await withReadTimeout(
-          publicClient.readContract({
-            address: factoryAddress,
-            abi: daoSpaceFactoryImplementationAbi,
-            functionName: 'getSpaceExecutor',
-            args: [BigInt(arg.spaceId)],
-          }),
-          READ_TIMEOUT_MS,
-        );
-        if (
-          typeof executor !== 'string' ||
-          executor.toLowerCase() !== walletAddress.toLowerCase()
-        ) {
-          throw new Error(EXCHANGE_SPACE_EXECUTOR_WALLET_REQUIRED);
-        }
-      } else {
+      // Space-as-seller: authorisation is via governance vote → executor runs batched txs.
+      // Member-as-seller: proposer wallet must match the selected seller address.
+      if (arg.sellerRecipientType !== 'space') {
         if (arg.sellerAddress.toLowerCase() !== walletAddress.toLowerCase()) {
           throw new Error(EXCHANGE_SELLER_WALLET_MISMATCH);
         }
