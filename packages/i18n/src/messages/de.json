@@ -452,6 +452,10 @@
       "migrateHyphaTokens": {
         "title": "Hypha-Tokens migrieren (Telos → Base)",
         "description": "Verschieben Sie Ihre Hypha-Tokens von der Telos-Blockchain in das Base-Netzwerk. Damit starten Sie die Migration."
+      },
+      "redeemTokens": {
+        "title": "Tokens einlösen",
+        "description": "Tauschen Sie Ihre Tokens in den entsprechenden Fiat-Wert ein, der im Vault verwahrt ist."
       }
     },
     "purchaseHypha": {
@@ -516,6 +520,60 @@
       "content": "Senden Sie ganz einfach Mittel aus Ihrer Wallet an ein Mitglied oder einen Space.",
       "form": {
         "amountLabel": "Betrag"
+      }
+    },
+    "redeemTokens": {
+      "title": "Tokens einlösen",
+      "loading": "Einlösedaten werden geladen…",
+      "content": "Tauschen Sie Ihre Tokens in den entsprechenden Fiat-Wert ein, der im Vault verwahrt ist.",
+      "form": {
+        "redemptionAmountLabel": "Einlösebetrag",
+        "convertedIntoLabel": "Umgewandelt in",
+        "redeem": "Einlösen",
+        "redeeming": "Wird eingelöst",
+        "loadingCollaterals": "Sicherheiten werden geladen…",
+        "successMessage": "Ihre Einlösung wurde erfolgreich abgeschlossen!",
+        "requestedExceedsBalance": "Angeforderter Betrag ({amount}) übersteigt das verfügbare Guthaben ({balance}).",
+        "collateralInsufficient": "Der Einlösewert übersteigt den Wert der Sicherheiten. Bitte geben Sie einen kleineren Betrag ein.",
+        "insufficientFundsLead": "Ihr Wallet-Guthaben reicht für diese Transaktion nicht aus. Bitte",
+        "insufficientFundsTopUp": "laden Sie Ihr Konto auf",
+        "insufficientFundsTrail": "um fortzufahren.",
+        "selectCollateralAsset": "Sicherheit auswählen",
+        "noCollateralAssetsFound": "Keine Assets gefunden",
+        "errors": {
+          "noRedemptionData": "Keine Einlösedaten gefunden. Bitte füllen Sie das Formular aus.",
+          "selectSpace": "Bitte wählen Sie einen Space für die Einlösung.",
+          "spaceNotConfigured": "Der gewählte Space ist für die Einlösung nicht konfiguriert.",
+          "exceedsBalance": "Der angeforderte Einlösebetrag übersteigt Ihr verfügbares Token-Guthaben. Reduzieren Sie den Betrag und versuchen Sie es erneut.",
+          "collateralExceeded": "Der Einlösewert übersteigt den Wert der Sicherheiten. Bitte geben Sie einen kleineren Betrag ein.",
+          "generic": "Bei der Verarbeitung Ihrer Einlösung ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.",
+          "smartWalletNotConnected": "Smart Wallet ist nicht verbunden. Bitte verbinden Sie Ihre Wallet und versuchen Sie es erneut.",
+          "contractFailed": "Die Vertragsausführung ist fehlgeschlagen.",
+          "transactionRejected": "Die Transaktion wurde abgelehnt. Bitte genehmigen Sie die Transaktion, um fortzufahren.",
+          "loadSpaces": "Space-Details konnten nicht geladen werden. Bitte versuchen Sie es erneut."
+        }
+      },
+      "provenanceBySpace": "von {space}",
+      "conversionDetails": {
+        "vaultLine": "Vault: {amount} {symbol}",
+        "priceLine": "Preis: {currency}{price}",
+        "requestedLine": "Angefordert: {currency}{amount}"
+      },
+      "diagnostics": {
+        "vaultAccess": "Vault-Daten für einige Spaces konnten nicht geladen werden: {details}. Möglicherweise haben Sie keinen Zugriff auf diese Spaces.",
+        "tokenDiscovery": "Diagnose zur Token-Erkennung: {reasons}.",
+        "reasons": {
+          "missingJwt": "Authentifizierungs-Token der Sitzung fehlt",
+          "profileLoadFailed": "Profildaten konnten nicht geladen werden",
+          "noWalletAddress": "Profil hat keine Wallet-Adresse",
+          "spacesLoadFailed": "Mitglieds-Spaces konnten nicht geladen werden",
+          "spacesFallback": "Mitglieds-Spaces lieferten keine Spaces; Fallback über Wallet-Token-Spaces",
+          "noSpaces": "Keine Spaces für dieses Mitglied gefunden",
+          "balanceReadFailed": "On-Chain-Salden für {failed}/{total} Vault-Token(s) konnten nicht gelesen werden",
+          "noVaultTokens": "Keine einlösbaren Vault-Token gefunden",
+          "restrictedFallback": "On-Chain-Fallback für eingeschränkte Spaces verwendet: {spaces}",
+          "restrictedFallbackFailed": "On-Chain-Fallback für {count, plural, one {# eingeschränkten Space} other {# eingeschränkte Spaces}} fehlgeschlagen"
+        }
       }
     },
     "errors": {
@@ -1131,7 +1189,14 @@
         "selectToken": "Token auswählen",
         "noTokensFound": "Keine Token gefunden",
         "by": "von",
-        "bySpace": "von {space}"
+        "bySpace": "von {space}",
+        "walletBalanceLine": "Wallet-Guthaben: {amount} {symbol}",
+        "redemptionPriceLine": "Einlösepreis des Tokens: {price}"
+      },
+      "tokenPercentageFieldArray": {
+        "convertedInto": "Umgewandelt in",
+        "add": "Hinzufügen",
+        "emptyRowHint": "Wählen Sie für jede Zeile ein Asset und einen Prozentsatz."
       },
       "spaceToSpaceMembership": {
         "space": "Space",

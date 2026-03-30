@@ -18,9 +18,12 @@ export interface SpaceDetails {
 export const fetchSpaceDetails = async ({
   spaceIds,
   chain = 8453,
+  allowFailure = false,
 }: {
   spaceIds: bigint[];
   chain?: keyof typeof daoSpaceFactoryImplementationAddress;
+  /** When true, failed per-space reads are omitted instead of failing the whole batch. */
+  allowFailure?: boolean;
 }): Promise<SpaceDetails[]> => {
   if (spaceIds.length === 0) return [];
 
@@ -28,6 +31,51 @@ export const fetchSpaceDetails = async ({
     getSpaceDetails({ spaceId, chain }),
   );
   try {
+    if (allowFailure) {
+      const response = await publicClient.multicall({
+        allowFailure: true,
+        blockTag: 'safe',
+        contracts: multicallParams,
+      });
+      if (response.length !== spaceIds.length) {
+        throw new Error('Response length is different from input length');
+      }
+
+      const mapped: SpaceDetails[] = [];
+      for (let i = 0; i < response.length; i++) {
+        const res = response[i]!;
+        if (res.status !== 'success' || res.result === undefined) {
+          continue;
+        }
+        const [
+          unity,
+          quorum,
+          votingPowerSource,
+          tokenAddresses,
+          members,
+          exitMethod,
+          joinMethod,
+          createdAt,
+          creator,
+          executor,
+        ] = res.result;
+        mapped.push({
+          spaceId: spaceIds[i]!,
+          unity,
+          quorum,
+          votingPowerSource,
+          tokenAddresses,
+          members,
+          exitMethod,
+          joinMethod,
+          createdAt,
+          creator,
+          executor,
+        });
+      }
+      return mapped;
+    }
+
     const response = await publicClient.multicall({
       allowFailure: false,
       blockTag: 'safe',
@@ -52,7 +100,6 @@ export const fetchSpaceDetails = async ({
       ] = res;
 
       return {
-        // the element will always be there because their lengths are equal
         spaceId: spaceIds[i]!,
         unity,
         quorum,

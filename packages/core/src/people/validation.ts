@@ -1,6 +1,8 @@
 import { ALLOWED_IMAGE_FILE_SIZE, DEFAULT_IMAGE_ACCEPT } from '../assets';
 
 import { z } from 'zod';
+import { isAddress } from 'viem';
+import { percentageStringToBigInt } from '../common';
 
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
@@ -138,6 +140,52 @@ export const personTransfer = z.object({
     )
     .min(1, { message: 'At least one payout is required' }),
   memo: z.string().optional(),
+});
+
+export const personRedeem = z.object({
+  redemptions: z
+    .array(
+      z.object({
+        spaceSlug: z.string().min(1, { message: 'Space is required' }),
+        token: z.string().min(1, { message: 'Token is required' }),
+        amount: z.string().refine((value) => parseFloat(value) > 0, {
+          message: 'Amount must be greater than 0',
+        }),
+      }),
+    )
+    .length(1, { message: 'Only one redemption is required' }),
+  conversions: z
+    .array(
+      z.object({
+        asset: z
+          .string()
+          .refine((value) => value.trim().length > 0, {
+            message: 'Please select a collateral asset',
+          })
+          .refine((value): boolean => isAddress(value, { strict: false }), {
+            message: 'Invalid Ethereum address',
+          }),
+        percentage: z
+          .string()
+          .refine(
+            (value) => parseFloat(value) >= 0 && parseFloat(value) <= 100,
+            {
+              message: 'Percentage must be between 0 and 100',
+            },
+          ),
+      }),
+    )
+    .min(1, { message: 'At least one conversion is required' })
+    .refine(
+      (value) =>
+        value.reduce(
+          (acc, curr) => acc + percentageStringToBigInt(curr.percentage),
+          0n,
+        ) === 10000n,
+      {
+        message: 'Summary percentage must be 100%',
+      },
+    ),
 });
 
 export type PersonFiles = z.infer<typeof editPersonFiles>;

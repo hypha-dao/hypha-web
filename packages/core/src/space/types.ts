@@ -16,6 +16,8 @@ export interface Space {
   subspaces?: Space[];
   members?: Person[];
   memberCount?: number;
+  /** True when on-chain enrichment failed for this space (distinct from zero counts). */
+  onChainDataMissing?: boolean;
   memberAddresses?: `0x${string}`[];
   documentCount?: number;
   documents?: Document[];

@@ -333,7 +333,14 @@
         "selectToken": "Seleccione un token",
         "noTokensFound": "No se encontraron tokens",
         "by": "por",
-        "bySpace": "de {space}"
+        "bySpace": "de {space}",
+        "walletBalanceLine": "Saldo de la billetera: {amount} {symbol}",
+        "redemptionPriceLine": "Precio de canje del token: {price}"
+      },
+      "tokenPercentageFieldArray": {
+        "convertedInto": "Convertido en",
+        "add": "Añadir",
+        "emptyRowHint": "Selecciona un activo y un porcentaje para cada fila de conversión."
       },
       "spaceToSpaceMembership": {
         "space": "Espacio",
@@ -1032,6 +1039,10 @@
       "migrateHyphaTokens": {
         "title": "Migrar tokens Hypha (Telos → Base)",
         "description": "Mueve tus tokens Hypha de la cadena de bloques Telos a la red Base. Inicia la experiencia de migración."
+      },
+      "redeemTokens": {
+        "title": "Canjear tokens",
+        "description": "Convierte tus tokens en su valor fiduciario equivalente retenido en la bóveda."
       }
     },
     "purchaseHypha": {
@@ -1096,6 +1107,60 @@
       "content": "Envía fondos fácilmente desde tu billetera a un miembro o un espacio.",
       "form": {
         "amountLabel": "Cantidad"
+      }
+    },
+    "redeemTokens": {
+      "title": "Canjear tokens",
+      "loading": "Cargando datos de canje…",
+      "content": "Convierte tus tokens en su valor fiduciario equivalente retenido en la bóveda.",
+      "form": {
+        "redemptionAmountLabel": "Monto a canjear",
+        "convertedIntoLabel": "Convertido en",
+        "redeem": "Canjear",
+        "redeeming": "Canjeando",
+        "loadingCollaterals": "Cargando activos colaterales…",
+        "successMessage": "¡Tu canje se completó correctamente!",
+        "requestedExceedsBalance": "El monto solicitado ({amount}) supera el saldo disponible ({balance}).",
+        "collateralInsufficient": "El valor del canje supera el valor de las garantías; ingresa un monto menor.",
+        "insufficientFundsLead": "El saldo de tu billetera es insuficiente para completar esta transacción. Por favor",
+        "insufficientFundsTopUp": "recarga tu cuenta",
+        "insufficientFundsTrail": "para continuar.",
+        "selectCollateralAsset": "Selecciona un activo",
+        "noCollateralAssetsFound": "No se encontraron activos",
+        "errors": {
+          "noRedemptionData": "No se encontraron datos de canje. Completa el formulario.",
+          "selectSpace": "Selecciona un espacio para el canje.",
+          "spaceNotConfigured": "El espacio seleccionado no está configurado para el canje.",
+          "exceedsBalance": "El monto solicitado supera el saldo disponible de tus tokens. Reduce el monto e inténtalo de nuevo.",
+          "collateralExceeded": "El valor del canje supera el valor de las garantías; ingresa un monto menor.",
+          "generic": "Ocurrió un error al procesar tu canje. Inténtalo de nuevo.",
+          "smartWalletNotConnected": "La billetera inteligente no está conectada. Conecta tu billetera e inténtalo de nuevo.",
+          "contractFailed": "La ejecución del contrato falló.",
+          "transactionRejected": "La transacción fue rechazada. Aprueba la transacción para continuar.",
+          "loadSpaces": "No se pudieron cargar los detalles del espacio. Inténtalo de nuevo."
+        }
+      },
+      "provenanceBySpace": "de {space}",
+      "conversionDetails": {
+        "vaultLine": "Bóveda: {amount} {symbol}",
+        "priceLine": "Precio: {currency}{price}",
+        "requestedLine": "Solicitado: {currency}{amount}"
+      },
+      "diagnostics": {
+        "vaultAccess": "No se pudieron cargar los datos de la bóveda para algunos espacios: {details}. Es posible que no tengas acceso a esos espacios.",
+        "tokenDiscovery": "Diagnóstico de detección de tokens: {reasons}.",
+        "reasons": {
+          "missingJwt": "Falta el token de sesión autenticado",
+          "profileLoadFailed": "No se pudieron cargar los datos del perfil",
+          "noWalletAddress": "El perfil no tiene dirección de billetera",
+          "spacesLoadFailed": "No se pudieron cargar los espacios del miembro",
+          "spacesFallback": "La búsqueda de espacios de membresía no devolvió espacios; usando espacios inferidos de tokens de la billetera",
+          "noSpaces": "No se encontraron espacios para este miembro",
+          "balanceReadFailed": "No se pudieron leer saldos on-chain para {failed}/{total} token(s) de la bóveda",
+          "noVaultTokens": "No se encontraron tokens de bóveda canjeables",
+          "restrictedFallback": "Se usó respaldo on-chain para espacios restringidos: {spaces}",
+          "restrictedFallbackFailed": "El respaldo on-chain falló para {count, plural, one {# espacio restringido} other {# espacios restringidos}}"
+        }
       }
     },
     "errors": {

@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useFormContext, useFieldArray } from 'react-hook-form';
 import { TokenPayoutField } from './token-payout-field';
 import {
@@ -18,6 +19,8 @@ export interface Token {
   icon: string;
   symbol: string;
   address: `0x${string}`;
+  value?: number;
+  tokenPrice?: number;
   space?: {
     title: string;
     slug: string;
@@ -29,13 +32,19 @@ interface TokenPayoutFieldArrayProps {
   tokens: Token[];
   name?: string;
   label?: string;
+  allowAddOrRemove?: boolean;
+  showSelectedTokenBalanceHint?: boolean;
+  selectedTokenPriceHint?: string;
 }
 
-export const TokenPayoutFieldArray = ({
+function TokenPayoutFieldArrayInner({
   tokens,
   name = 'payouts',
   label,
-}: TokenPayoutFieldArrayProps) => {
+  allowAddOrRemove = true,
+  showSelectedTokenBalanceHint = false,
+  selectedTokenPriceHint,
+}: TokenPayoutFieldArrayProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const resolvedLabel =
     label ?? tAgreementFlow('plugins.tokenPayoutFieldArray.paymentRequest');
@@ -80,6 +89,10 @@ export const TokenPayoutFieldArray = ({
                           value={value}
                           onChange={onChange}
                           tokens={tokens}
+                          showSelectedTokenBalanceHint={
+                            showSelectedTokenBalanceHint
+                          }
+                          selectedTokenPriceHint={selectedTokenPriceHint}
                         />
                       </FormControl>
                       <FormMessage
@@ -91,23 +104,29 @@ export const TokenPayoutFieldArray = ({
                   )}
                 />
               </div>
-              <Button
-                variant="ghost"
-                onClick={(ev) => handleDeleteField(ev, index)}
-                className="px-2 md:px-3"
-              >
-                <Cross2Icon />
-              </Button>
+              {allowAddOrRemove && (
+                <Button
+                  variant="ghost"
+                  onClick={(ev) => handleDeleteField(ev, index)}
+                  className="px-2 md:px-3"
+                >
+                  <Cross2Icon />
+                </Button>
+              )}
             </div>
           ))}
         </div>
       </div>
-      <div className="flex justify-end w-full">
-        <Button className="w-fit" onClick={handleAddField} variant="ghost">
-          <PlusIcon />
-          {tAgreementFlow('plugins.tokenPayoutFieldArray.add')}
-        </Button>
-      </div>
+      {allowAddOrRemove && (
+        <div className="flex justify-end w-full">
+          <Button className="w-fit" onClick={handleAddField} variant="ghost">
+            <PlusIcon />
+            {tAgreementFlow('plugins.tokenPayoutFieldArray.add')}
+          </Button>
+        </div>
+      )}
     </div>
   );
-};
+}
+
+export const TokenPayoutFieldArray = React.memo(TokenPayoutFieldArrayInner);
