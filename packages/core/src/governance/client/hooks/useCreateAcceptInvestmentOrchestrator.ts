@@ -176,7 +176,6 @@ export const useCreateAcceptInvestmentOrchestrator = ({
         version: 1,
         investorAddress: arg.recipient,
         investorSendLegs: arg.investorSendLegs,
-        spaceReceiveLegs: arg.spaceReceiveLegs,
       };
       const descriptionWithMarker = appendHyphaInvestmentFormMarker(
         arg.description,
@@ -211,7 +210,6 @@ export const useCreateAcceptInvestmentOrchestrator = ({
             spaceReceive: {
               token: recv.token as `0x${string}`,
               amount: recv.amount,
-              source: recv.source,
             },
           });
           completeTask('CREATE_WEB3_AGREEMENT');

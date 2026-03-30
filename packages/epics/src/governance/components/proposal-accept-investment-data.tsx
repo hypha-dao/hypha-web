@@ -179,6 +179,22 @@ export function ProposalAcceptInvestmentData({
             </div>
           ))}
         </div>
+      ) : parsed?.investorSendLegs?.length ? (
+        <div className="flex flex-col gap-2">
+          <span className="text-neutral-11 text-1">
+            {t('spaceWillProvide')}
+          </span>
+          {parsed.investorSendLegs.map((leg, i) => (
+            <div key={i} className="flex flex-col gap-1 pl-2">
+              <TokenAmountRow
+                spaceSlug={spaceSlug}
+                tokenAddress={leg.token}
+                amountHuman={leg.amount}
+              />
+              <span className="text-1 text-neutral-11">{t('sourceMint')}</span>
+            </div>
+          ))}
+        </div>
       ) : exchangeEscrowData?.tokenA &&
         exchangeEscrowData.amountA !== undefined ? (
         <div className="flex flex-col gap-1">

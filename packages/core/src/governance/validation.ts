@@ -401,8 +401,8 @@ const acceptInvestmentTokenRow = z.object({
     .refine(isAddress, { message: 'Invalid Ethereum address' }),
 });
 
-/** v1: single escrow pair — exactly one send row and one receive row. */
-export const schemaAcceptInvestment = z.object({
+/** v1: single escrow pair; space leg mirrors investor send (minted into escrow). */
+const schemaAcceptInvestmentInput = z.object({
   ...createAgreementWeb2Props,
   ...createAgreementFiles,
   /** User-authored body; marker appended on submit must stay within API limits. */
@@ -419,14 +419,19 @@ export const schemaAcceptInvestment = z.object({
   investorSendLegs: z
     .array(acceptInvestmentTokenRow)
     .length(1, { message: 'Add exactly one investing send row' }),
-  spaceReceiveLegs: z
-    .array(
-      acceptInvestmentTokenRow.extend({
-        source: z.enum(['mint', 'treasury']),
-      }),
-    )
-    .length(1, { message: 'Add exactly one receive row' }),
 });
+
+export const schemaAcceptInvestment = schemaAcceptInvestmentInput.transform(
+  (data) => ({
+    ...data,
+    spaceReceiveLegs: [
+      {
+        ...data.investorSendLegs[0]!,
+        source: 'mint' as const,
+      },
+    ],
+  }),
+);
 
 const schemaTokenBurningTarget = z
   .object({

@@ -631,11 +631,7 @@ export const useResubmitProposalData = <
           setIssue('tokenPrice', ink.tokenPrice);
         }
 
-        if (
-          parsed.recipient &&
-          parsed.investorSendLegs &&
-          parsed.spaceReceiveLegs
-        ) {
+        if (parsed.recipient && parsed.investorSendLegs) {
           form.setValue('recipient' as any, parsed.recipient as any, {
             shouldDirty: true,
             shouldValidate: true,
@@ -643,14 +639,6 @@ export const useResubmitProposalData = <
           form.setValue(
             'investorSendLegs' as any,
             parsed.investorSendLegs as any,
-            {
-              shouldDirty: true,
-              shouldValidate: true,
-            },
-          );
-          form.setValue(
-            'spaceReceiveLegs' as any,
-            parsed.spaceReceiveLegs as any,
             {
               shouldDirty: true,
               shouldValidate: true,
@@ -778,16 +766,8 @@ export const useResubmitProposalData = <
         ) {
           fieldsToTrigger.push('recipient', 'payouts');
         }
-        if (
-          parsed.recipient &&
-          parsed.investorSendLegs &&
-          parsed.spaceReceiveLegs
-        ) {
-          fieldsToTrigger.push(
-            'recipient',
-            'investorSendLegs',
-            'spaceReceiveLegs',
-          );
+        if (parsed.recipient && parsed.investorSendLegs) {
+          fieldsToTrigger.push('recipient', 'investorSendLegs');
         }
         form.trigger(fieldsToTrigger as any[]);
 

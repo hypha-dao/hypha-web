@@ -16,9 +16,7 @@ import {
   getSpaceMinProposalDuration,
   publicClient,
   getSpaceDetails,
-  useSpaceBySlug,
 } from '@hypha-platform/core/client';
-import { useParams } from 'next/navigation';
 import { getDuration } from '@hypha-platform/ui-utils';
 import { getGovernanceChainId } from './governance-chain-id';
 import {
@@ -35,7 +33,6 @@ export interface AcceptInvestmentWeb3Input {
   spaceReceive: {
     token: `0x${string}`;
     amount: string;
-    source: 'mint' | 'treasury';
   };
 }
 
@@ -47,8 +44,6 @@ export const useAcceptInvestmentMutationsWeb3Rpc = ({
   proposalSlug?: string | null;
 }) => {
   const { client } = useSmartWallets();
-  const { id: spaceSlug } = useParams();
-  const { space } = useSpaceBySlug((spaceSlug as string) || '');
 
   const {
     trigger: createAcceptInvestment,
@@ -90,32 +85,15 @@ export const useAcceptInvestmentMutationsWeb3Rpc = ({
         data: `0x${string}`;
       }[] = [];
 
-      if (arg.spaceReceive.source === 'mint') {
-        transactions.push({
-          target: arg.spaceReceive.token,
-          value: 0n,
-          data: encodeFunctionData({
-            abi: decayingSpaceTokenAbi,
-            functionName: 'mint',
-            args: [executor, amountA],
-          }),
-        });
-      } else {
-        if (!space?.address) {
-          throw new Error(
-            'Space treasury address is unavailable; cannot pull tokens from treasury.',
-          );
-        }
-        transactions.push({
-          target: arg.spaceReceive.token,
-          value: 0n,
-          data: encodeFunctionData({
-            abi: erc20Abi,
-            functionName: 'transferFrom',
-            args: [space.address as `0x${string}`, executor, amountA],
-          }),
-        });
-      }
+      transactions.push({
+        target: arg.spaceReceive.token,
+        value: 0n,
+        data: encodeFunctionData({
+          abi: decayingSpaceTokenAbi,
+          functionName: 'mint',
+          args: [executor, amountA],
+        }),
+      });
 
       transactions.push({
         target: arg.spaceReceive.token,
