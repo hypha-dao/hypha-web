@@ -8,12 +8,14 @@ import { useTokens, usePersonByWeb3Address } from '@hypha-platform/epics';
 import { Token } from '@hypha-platform/core/client';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { useDbSpaces } from '@hypha-platform/epics';
+import { useTranslations } from 'next-intl';
 
 interface ProposalTransactionItemProps {
   recipient?: string;
   amount?: bigint;
   tokenAddress?: string;
   spaceSlug: string;
+  escrowContractAddress?: `0x${string}`;
 }
 
 export const ProposalTransactionItem = ({
@@ -21,7 +23,9 @@ export const ProposalTransactionItem = ({
   amount,
   tokenAddress,
   spaceSlug,
+  escrowContractAddress,
 }: ProposalTransactionItemProps) => {
+  const t = useTranslations('ProposalDetails.investment');
   if (!recipient) return null;
   const { spaces } = useDbSpaces({
     parentOnly: false,
@@ -49,6 +53,10 @@ export const ProposalTransactionItem = ({
   const space = spaces.find(
     (s) => s.address?.toLowerCase() === recipient.toLowerCase(),
   );
+
+  const isEscrowRecipient =
+    escrowContractAddress &&
+    recipient.toLowerCase() === escrowContractAddress.toLowerCase();
 
   return (
     <div className="w-full flex items-center justify-between gap-4">
@@ -88,6 +96,10 @@ export const ProposalTransactionItem = ({
               alt={`${space?.title} logo`}
             />
             <span className="text-nowrap">{space?.title}</span>
+          </span>
+        ) : isEscrowRecipient ? (
+          <span className="text-2 text-neutral-11 justify-end text-right block w-full">
+            {t('escrowAccount')}
           </span>
         ) : (
           <EthAddress address={recipient || ''} />

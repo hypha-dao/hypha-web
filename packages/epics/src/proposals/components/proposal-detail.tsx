@@ -23,6 +23,9 @@ import {
   TOKENS,
   type Person,
   type Space,
+  stripHyphaInvestmentFormMarker,
+  getEscrowImplementationAddress,
+  parseHyphaInvestmentFormFromDescription,
 } from '@hypha-platform/core/client';
 import {
   ProposalTransactionItem,
@@ -40,6 +43,7 @@ import {
   ProposalRedeemTokensData,
   ProposalSpaceTokenPurchaseData,
   ProposalUpdateToken,
+  ProposalAcceptInvestmentData,
 } from '../../governance';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
 import { ButtonClose, ExpireProposalBanner } from '@hypha-platform/epics';
@@ -984,6 +988,50 @@ export const ProposalDetail = ({
     return undefined;
   })();
 
+  const investmentResubmit = (() => {
+    if (label !== 'Investment') return undefined;
+    const fromMarker = parseHyphaInvestmentFormFromDescription(content);
+    if (fromMarker) {
+      return {
+        recipient: fromMarker.investorAddress,
+        investorSendLegs: fromMarker.investorSendLegs,
+        spaceReceiveLegs: fromMarker.spaceReceiveLegs,
+      };
+    }
+    const ex = proposalDetails?.exchangeEscrowData;
+    if (
+      !ex?.partyB ||
+      !ex.tokenA ||
+      !ex.tokenB ||
+      ex.amountA === undefined ||
+      ex.amountB === undefined
+    ) {
+      return undefined;
+    }
+    const da = resolveTokenDecimals(ex.tokenA);
+    const db = resolveTokenDecimals(ex.tokenB);
+    return {
+      recipient: ex.partyB,
+      investorSendLegs: [
+        { amount: formatUnits(ex.amountB, db), token: ex.tokenB },
+      ],
+      spaceReceiveLegs: [
+        {
+          amount: formatUnits(ex.amountA, da),
+          token: ex.tokenA,
+          source: 'mint' as const,
+        },
+      ],
+    };
+  })();
+
+  const resubmitTemplateDataMerged =
+    label === 'Investment' && investmentResubmit
+      ? { ...resubmitTemplateData, ...investmentResubmit }
+      : resubmitTemplateData;
+
+  const escrowAddr = getEscrowImplementationAddress();
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex gap-2 justify-between">
@@ -1029,8 +1077,19 @@ export const ProposalDetail = ({
         isExpiring={isExpiring}
         web3SpaceId={proposalDetails?.spaceId}
       />
-      <MarkdownSuspense>{content}</MarkdownSuspense>
+      <MarkdownSuspense>
+        {label === 'Investment'
+          ? stripHyphaInvestmentFormMarker(content ?? '')
+          : content}
+      </MarkdownSuspense>
       <AttachmentList attachments={attachments || []} />
+      {label === 'Investment' ? (
+        <ProposalAcceptInvestmentData
+          descriptionMarkdown={content}
+          spaceSlug={spaceSlug}
+          exchangeEscrowData={proposalDetails?.exchangeEscrowData}
+        />
+      ) : null}
       {proposalDetails?.votingMethods.map((method, idx) => (
         <ProposalVotingInfo
           key={idx}
@@ -1087,6 +1146,7 @@ export const ProposalDetail = ({
               amount={tx?.rawAmount}
               tokenAddress={tx?.token}
               spaceSlug={spaceSlug}
+              escrowContractAddress={escrowAddr}
             />
           ))}
         </div>
@@ -1275,7 +1335,8 @@ export const ProposalDetail = ({
           isUpdateTokenOwnershipForResubmit
         }
         redeemResubmitPayload={redeemResubmitPayloadResolved}
-        proposalTemplateData={resubmitTemplateData}
+        proposalTemplateData={resubmitTemplateDataMerged}
+        spaceTokenPurchaseData={proposalDetails?.spaceTokenPurchaseData}
       />
     </div>
   );

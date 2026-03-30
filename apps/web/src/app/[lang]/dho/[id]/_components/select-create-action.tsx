@@ -53,11 +53,11 @@ export const SelectCreateAction = ({
     },
     {
       defaultDurationDays: 7,
-      title: t('actions.acceptInvestmentComingSoon.title'),
-      description: t('actions.acceptInvestmentComingSoon.description'),
-      href: '#',
+      title: t('actions.acceptInvestment.title'),
+      description: t('actions.acceptInvestment.description'),
+      href: 'agreements/create/accept-investment',
       icon: <PlusCircledIcon />,
-      disabled: true,
+      disabled: isPaymentExpired,
     },
     {
       defaultDurationDays: 7,

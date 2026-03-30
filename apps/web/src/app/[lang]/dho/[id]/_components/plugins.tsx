@@ -17,6 +17,7 @@ import {
   SpaceTransparencySettingsPlugin,
   RedeemTokensPlugin,
   UpdateIssuedTokenPlugin,
+  AcceptInvestmentPlugin,
 } from '@hypha-platform/epics';
 import { useMembers } from '@web/hooks/use-members';
 import { Person, Space } from '@hypha-platform/core/client';
@@ -38,6 +39,7 @@ export const PLUGINS = {
   'space-transparency-settings': SpaceTransparencySettingsPlugin,
   'redeem-tokens': RedeemTokensPlugin,
   'update-issued-token': UpdateIssuedTokenPlugin,
+  'accept-investment': AcceptInvestmentPlugin,
 };
 
 type PluginProps = {

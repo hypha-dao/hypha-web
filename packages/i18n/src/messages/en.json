@@ -218,9 +218,9 @@
         "title": "Pay Expenses for Products or Services",
         "description": "Make payments for products and services by transferring funds from your space treasury to another space, entity, or individual wallet."
       },
-      "acceptInvestmentComingSoon": {
-        "title": "Accept Investment (Coming Soon)",
-        "description": "Receive capital from investors, members, or aligned spaces in exchange for native space tokens."
+      "acceptInvestment": {
+        "title": "Accept Investment",
+        "description": "Receive capital from investors, members, or aligned spaces in exchange for native space tokens, settled via escrow."
       },
       "exchangeOwnershipComingSoon": {
         "title": "Exchange Ownership (Coming Soon)",
@@ -798,7 +798,8 @@
       "collectiveAgreement": "Collective Agreement",
       "contribution": "Contribution",
       "expenses": "Expenses",
-      "funding": "Funding"
+      "funding": "Funding",
+      "investment": "Investment"
     },
     "documentBadges": {
       "invite": "Invite",
@@ -1365,6 +1366,15 @@
         "enterAmountAndToken": "Please enter an amount and select a token.",
         "add": "Add"
       },
+      "acceptInvestment": {
+        "investingMember": "Investing member",
+        "investorWillSend": "Investing member will send",
+        "spaceWillProvide": "Space will provide (investor receives)",
+        "source": "Source",
+        "sourcePlaceholder": "Select source",
+        "sourceMint": "Mint new tokens",
+        "sourceTreasury": "Use available tokens in treasury"
+      },
       "paymentSchedule": {
         "label": "Payment Schedule",
         "immediately": "Immediately",
@@ -1395,6 +1405,19 @@
     }
   },
   "ProposalDetails": {
+    "investment": {
+      "title": "Investment terms",
+      "investingMember": "Investing member",
+      "investorWillSend": "Investing member will send",
+      "spaceWillProvide": "Space will provide (investor receives)",
+      "sourceMint": "Mint new tokens",
+      "sourceTreasury": "Use available tokens in treasury",
+      "escrowOnChain": "Escrow (on-chain)",
+      "partyAFundedHint": "Space leg funded at proposal execution: {funded}",
+      "yes": "Yes",
+      "no": "No",
+      "escrowAccount": "Escrow Account"
+    },
     "status": {
       "accepted": "Accepted",
       "rejected": "Rejected",

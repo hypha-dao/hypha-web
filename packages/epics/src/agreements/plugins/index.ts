@@ -13,3 +13,4 @@ export * from './space-to-space-membership/plugin';
 export * from './membership-exit/plugin';
 export * from './space-transparency-settings/plugin';
 export * from './redeem-tokens/plugin';
+export * from './accept-investment/plugin';

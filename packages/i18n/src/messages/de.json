@@ -218,9 +218,9 @@
         "title": "Ausgaben für Produkte oder Dienstleistungen bezahlen",
         "description": "Leisten Sie Zahlungen für Produkte und Dienstleistungen, indem Sie Mittel aus der Schatzkammer Ihres Spaces an einen anderen Space, eine Organisation oder eine individuelle Wallet übertragen."
       },
-      "acceptInvestmentComingSoon": {
-        "title": "Investition annehmen (Bald verfügbar)",
-        "description": "Erhalten Sie Kapital von Investoren, Mitgliedern oder ausgerichteten Spaces im Austausch für native Space-Token."
+      "acceptInvestment": {
+        "title": "Investition annehmen",
+        "description": "Erhalten Sie Kapital von Investoren, Mitgliedern oder ausgerichteten Spaces im Austausch für native Space-Token, abgewickelt über Escrow."
       },
       "exchangeOwnershipComingSoon": {
         "title": "Eigentum austauschen (Bald verfügbar)",
@@ -798,7 +798,8 @@
       "collectiveAgreement": "Kollektive Vereinbarung",
       "contribution": "Beitrag",
       "expenses": "Ausgaben",
-      "funding": "Finanzierung"
+      "funding": "Finanzierung",
+      "investment": "Investition"
     },
     "documentBadges": {
       "invite": "Einladung",
@@ -1365,6 +1366,15 @@
         "enterAmountAndToken": "Bitte geben Sie einen Betrag ein und wählen Sie einen Token aus.",
         "add": "Hinzufügen"
       },
+      "acceptInvestment": {
+        "investingMember": "Investierendes Mitglied",
+        "investorWillSend": "Investierendes Mitglied sendet",
+        "spaceWillProvide": "Space stellt bereit (Investor erhält)",
+        "source": "Quelle",
+        "sourcePlaceholder": "Quelle wählen",
+        "sourceMint": "Neue Token prägen",
+        "sourceTreasury": "Verfügbare Token in der Treasury nutzen"
+      },
       "paymentSchedule": {
         "label": "Zahlungsplan",
         "immediately": "Sofort",
@@ -1395,6 +1405,19 @@
     }
   },
   "ProposalDetails": {
+    "investment": {
+      "title": "Investitionsbedingungen",
+      "investingMember": "Investierendes Mitglied",
+      "investorWillSend": "Investierendes Mitglied sendet",
+      "spaceWillProvide": "Space stellt bereit (Investor erhält)",
+      "sourceMint": "Neue Token prägen",
+      "sourceTreasury": "Verfügbare Token in der Treasury nutzen",
+      "escrowOnChain": "Escrow (On-Chain)",
+      "partyAFundedHint": "Space-Seite bei Proposalausführung finanziert: {funded}",
+      "yes": "Ja",
+      "no": "Nein",
+      "escrowAccount": "Escrow-Konto"
+    },
     "status": {
       "accepted": "Akzeptiert",
       "rejected": "Abgelehnt",

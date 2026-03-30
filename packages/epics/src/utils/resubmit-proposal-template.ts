@@ -32,6 +32,7 @@ export function getCreateRouteSegmentForProposalLabel(
     'Update Token': 'update-issued-token',
     'Token Purchase': 'space-token-purchase',
     'Space Transparency': 'space-settings-transparency',
+    Investment: 'accept-investment',
   };
 
   return labelToRoute[label] ?? '';

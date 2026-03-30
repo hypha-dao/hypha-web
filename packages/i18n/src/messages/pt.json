@@ -485,6 +485,15 @@
         "enterAmountAndToken": "Insira um valor e selecione um token.",
         "add": "Adicionar"
       },
+      "acceptInvestment": {
+        "investingMember": "Membro investidor",
+        "investorWillSend": "O membro investidor enviará",
+        "spaceWillProvide": "O espaço fornecerá (o investidor recebe)",
+        "source": "Origem",
+        "sourcePlaceholder": "Selecionar origem",
+        "sourceMint": "Cunhar novos tokens",
+        "sourceTreasury": "Usar tokens disponíveis no tesouro"
+      },
       "milestoneField": {
         "milestone": "Marco {index}",
         "percentageRequired": "A porcentagem é obrigatória",
@@ -509,7 +518,8 @@
       "collectiveAgreement": "Acordo Coletivo",
       "contribution": "Contribuição",
       "expenses": "Despesas",
-      "funding": "Financiamento"
+      "funding": "Financiamento",
+      "investment": "Investimento"
     },
     "documentBadges": {
       "invite": "Convite",
@@ -831,9 +841,9 @@
         "title": "Pagar despesas por produtos ou serviços",
         "description": "Faça pagamentos de produtos e serviços transferindo fundos do tesouro do seu espaço para outro espaço, entidade ou carteira individual."
       },
-      "acceptInvestmentComingSoon": {
-        "title": "Aceitar investimento (em breve)",
-        "description": "Receba capital de investidores, membros ou espaços alinhados em troca de tokens espaciais nativos."
+      "acceptInvestment": {
+        "title": "Aceitar investimento",
+        "description": "Receba capital de investidores, membros ou espaços alinhados em troca de tokens nativos do espaço, liquidado via escrow."
       },
       "exchangeOwnershipComingSoon": {
         "title": "Propriedade de troca (em breve)",
@@ -1395,6 +1405,19 @@
     "addYourUrl": "Adicione seu URL"
   },
   "ProposalDetails": {
+    "investment": {
+      "title": "Termos do investimento",
+      "investingMember": "Membro investidor",
+      "investorWillSend": "O membro investidor enviará",
+      "spaceWillProvide": "O espaço fornecerá (o investidor recebe)",
+      "sourceMint": "Cunhar novos tokens",
+      "sourceTreasury": "Usar tokens disponíveis no tesouro",
+      "escrowOnChain": "Escrow (on-chain)",
+      "partyAFundedHint": "Lado do espaço financiado na execução da proposta: {funded}",
+      "yes": "Sim",
+      "no": "Não",
+      "escrowAccount": "Conta de escrow"
+    },
     "status": {
       "accepted": "Aceito",
       "rejected": "Rejeitado",

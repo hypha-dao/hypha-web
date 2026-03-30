@@ -218,9 +218,9 @@
         "title": "Payer des dépenses pour des produits ou services",
         "description": "Effectuez des paiements pour des produits et services en transférant des fonds de la trésorerie de votre espace vers un autre espace, une entité ou un portefeuille individuel."
       },
-      "acceptInvestmentComingSoon": {
-        "title": "Accepter un investissement (bientôt disponible)",
-        "description": "Recevez du capital d'investisseurs, de membres ou d'espaces alignés en échange des tokens natifs de l'espace."
+      "acceptInvestment": {
+        "title": "Accepter un investissement",
+        "description": "Recevez du capital d'investisseurs, de membres ou d'espaces alignés en échange des tokens natifs de l'espace, réglé via séquestre."
       },
       "exchangeOwnershipComingSoon": {
         "title": "Échanger la propriété (bientôt disponible)",
@@ -798,7 +798,8 @@
       "collectiveAgreement": "Accord collectif",
       "contribution": "Contribution",
       "expenses": "Dépenses",
-      "funding": "Financement"
+      "funding": "Financement",
+      "investment": "Investissement"
     },
     "documentBadges": {
       "invite": "Invitation",
@@ -1365,6 +1366,15 @@
         "enterAmountAndToken": "Veuillez saisir un montant et sélectionner un token.",
         "add": "Ajouter"
       },
+      "acceptInvestment": {
+        "investingMember": "Membre investisseur",
+        "investorWillSend": "Le membre investisseur enverra",
+        "spaceWillProvide": "L'espace fournira (l'investisseur reçoit)",
+        "source": "Source",
+        "sourcePlaceholder": "Sélectionner la source",
+        "sourceMint": "Frapper de nouveaux tokens",
+        "sourceTreasury": "Utiliser les tokens disponibles en trésorerie"
+      },
       "paymentSchedule": {
         "label": "Calendrier de paiement",
         "immediately": "Immédiatement",
@@ -1395,6 +1405,19 @@
     }
   },
   "ProposalDetails": {
+    "investment": {
+      "title": "Conditions d'investissement",
+      "investingMember": "Membre investisseur",
+      "investorWillSend": "Le membre investisseur enverra",
+      "spaceWillProvide": "L'espace fournira (l'investisseur reçoit)",
+      "sourceMint": "Frapper de nouveaux tokens",
+      "sourceTreasury": "Utiliser les tokens disponibles en trésorerie",
+      "escrowOnChain": "Séquestre (on-chain)",
+      "partyAFundedHint": "Côté espace financé à l'exécution de la proposition : {funded}",
+      "yes": "Oui",
+      "no": "Non",
+      "escrowAccount": "Compte séquestre"
+    },
     "status": {
       "accepted": "Accepté",
       "rejected": "Rejeté",

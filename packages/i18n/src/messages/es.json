@@ -485,6 +485,15 @@
         "enterAmountAndToken": "Ingrese una cantidad y seleccione un token.",
         "add": "Agregar"
       },
+      "acceptInvestment": {
+        "investingMember": "Miembro inversor",
+        "investorWillSend": "El miembro inversor enviará",
+        "spaceWillProvide": "El espacio aportará (el inversor recibe)",
+        "source": "Origen",
+        "sourcePlaceholder": "Seleccionar origen",
+        "sourceMint": "Acuñar nuevos tokens",
+        "sourceTreasury": "Usar tokens disponibles en la tesorería"
+      },
       "milestoneField": {
         "milestone": "Hito {index}",
         "percentageRequired": "Se requiere porcentaje",
@@ -509,7 +518,8 @@
       "collectiveAgreement": "Convenio Colectivo",
       "contribution": "Contribución",
       "expenses": "Gastos",
-      "funding": "Fondos"
+      "funding": "Fondos",
+      "investment": "Inversión"
     },
     "documentBadges": {
       "invite": "Invitación",
@@ -831,9 +841,9 @@
         "title": "Pagar gastos de productos o servicios",
         "description": "Realice pagos de productos y servicios transfiriendo fondos de su tesorería espacial a otro espacio, entidad o billetera individual."
       },
-      "acceptInvestmentComingSoon": {
-        "title": "Aceptar inversión (próximamente)",
-        "description": "Reciba capital de inversores, miembros o espacios alineados a cambio de tokens espaciales nativos."
+      "acceptInvestment": {
+        "title": "Aceptar inversión",
+        "description": "Reciba capital de inversores, miembros o espacios alineados a cambio de tokens nativos del espacio, liquidado mediante depósito en garantía."
       },
       "exchangeOwnershipComingSoon": {
         "title": "Propiedad de Exchange (próximamente)",
@@ -1395,6 +1405,19 @@
     "addYourUrl": "Añade tu URL"
   },
   "ProposalDetails": {
+    "investment": {
+      "title": "Términos de inversión",
+      "investingMember": "Miembro inversor",
+      "investorWillSend": "El miembro inversor enviará",
+      "spaceWillProvide": "El espacio aportará (el inversor recibe)",
+      "sourceMint": "Acuñar nuevos tokens",
+      "sourceTreasury": "Usar tokens disponibles en la tesorería",
+      "escrowOnChain": "Depósito en garantía (on-chain)",
+      "partyAFundedHint": "Lado del espacio financiado al ejecutar la propuesta: {funded}",
+      "yes": "Sí",
+      "no": "No",
+      "escrowAccount": "Cuenta de depósito en garantía"
+    },
     "status": {
       "accepted": "Aceptado",
       "rejected": "Rechazado",
