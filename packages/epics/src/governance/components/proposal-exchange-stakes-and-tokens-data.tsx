@@ -6,15 +6,7 @@ import { Image } from '@hypha-platform/ui';
 import { useTokens, ExtendedToken } from '../../treasury';
 import { CopyIcon } from '@radix-ui/react-icons';
 import { copyToClipboard } from '@hypha-platform/ui-utils';
-import { useSpaceBySlug, Space } from '@hypha-platform/core/client';
-import {
-  useDbSpaces,
-  useSpaceMembersForPartyResolution,
-  useSpaceByContractAddress,
-  usePersonMemberProfileAnySpace,
-  findMemberPersonByAddress,
-  findMemberSpaceByAddress,
-} from '../../hooks';
+import { useDbSpaces } from '../../hooks';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
@@ -54,6 +46,11 @@ interface ProposalExchangeStakesAndTokensDataProps {
   cancelled?: boolean;
 }
 
+/**
+ * Party display matches pay-for-expenses / deploy-funds payment rows
+ * (`ProposalTransactionItem`): JWT-backed `usePersonByWeb3Address`, then
+ * `useDbSpaces` for space contract addresses.
+ */
 export const ProposalExchangeStakesAndTokensData = ({
   spaceSlug,
   sellerAddress,
@@ -65,10 +62,7 @@ export const ProposalExchangeStakesAndTokensData = ({
 }: ProposalExchangeStakesAndTokensDataProps) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const { tokens } = useTokens({ spaceSlug });
-  const { space } = useSpaceBySlug(spaceSlug);
   const { spaces: dbSpaces } = useDbSpaces({ parentOnly: false });
-  const { memberPersons, memberSpaces } =
-    useSpaceMembersForPartyResolution(spaceSlug);
   const resolvedSellerAddress = getPreferredAddress(
     sellerAddress,
     fallbackSellerAddress,
@@ -85,97 +79,44 @@ export const ProposalExchangeStakesAndTokensData = ({
   const { person: buyerPerson } = usePersonByWeb3Address(
     buyerLookupAddress ?? ZERO_ADDRESS,
   );
-  const { person: buyerMemberAnySpace } =
-    usePersonMemberProfileAnySpace(resolvedBuyerAddress);
-  const { person: sellerMemberAnySpace } = usePersonMemberProfileAnySpace(
-    resolvedSellerAddress,
-  );
-  const { space: sellerSpaceByContractAddress } = useSpaceByContractAddress(
-    resolvedSellerAddress,
-  );
-  const { space: buyerSpaceByContractAddress } =
-    useSpaceByContractAddress(resolvedBuyerAddress);
-  const sellerMemberInSpace = space?.members?.find(
-    (member) =>
-      member.address?.toLowerCase() === resolvedSellerAddress?.toLowerCase(),
-  );
-  const buyerMemberInSpace = space?.members?.find(
-    (member) =>
-      member.address?.toLowerCase() === resolvedBuyerAddress?.toLowerCase(),
-  );
-  const sellerFromMembersList = findMemberPersonByAddress(
-    resolvedSellerAddress,
-    memberPersons,
-  );
-  const buyerFromMembersList = findMemberPersonByAddress(
-    resolvedBuyerAddress,
-    memberPersons,
-  );
-  const displaySellerPerson =
-    sellerPerson ??
-    sellerFromMembersList ??
-    sellerMemberAnySpace ??
-    sellerMemberInSpace;
-  const displayBuyerPerson =
-    buyerPerson ??
-    buyerFromMembersList ??
-    buyerMemberAnySpace ??
-    buyerMemberInSpace;
 
-  const resolveSpaceForWallet = (addr?: string): Space | undefined => {
-    if (!addr) return undefined;
-    const fromMembers = findMemberSpaceByAddress(addr, memberSpaces);
-    if (fromMembers) return fromMembers;
-    const lower = addr.toLowerCase();
-    if (space?.address && space.address.toLowerCase() === lower) {
-      return space;
-    }
-    return dbSpaces.find((s) => s.address?.toLowerCase() === lower);
-  };
+  const sellerSpace = resolvedSellerAddress
+    ? dbSpaces.find(
+        (s) => s.address?.toLowerCase() === resolvedSellerAddress.toLowerCase(),
+      )
+    : undefined;
+  const buyerSpace = resolvedBuyerAddress
+    ? dbSpaces.find(
+        (s) => s.address?.toLowerCase() === resolvedBuyerAddress.toLowerCase(),
+      )
+    : undefined;
 
-  /** Space executor / contract address: show space title + logo when no person record */
-  const sellerSpaceMatch =
-    resolveSpaceForWallet(resolvedSellerAddress) ??
-    (sellerSpaceByContractAddress
-      ? {
-          title: sellerSpaceByContractAddress.title,
-          logoUrl: sellerSpaceByContractAddress.logoUrl,
-        }
-      : undefined);
-  const buyerSpaceMatch =
-    resolveSpaceForWallet(resolvedBuyerAddress) ??
-    (buyerSpaceByContractAddress
-      ? {
-          title: buyerSpaceByContractAddress.title,
-          logoUrl: buyerSpaceByContractAddress.logoUrl,
-        }
-      : undefined);
-  const sellerResolvedAsSpace = !displaySellerPerson && !!sellerSpaceMatch;
-  const buyerResolvedAsSpace = !displayBuyerPerson && !!buyerSpaceMatch;
+  const sellerResolvedAsSpace = !sellerPerson && !!sellerSpace;
+  const buyerResolvedAsSpace = !buyerPerson && !!buyerSpace;
 
-  const personLabel = (p: NonNullable<typeof displaySellerPerson>) =>
+  const personLabel = (p: NonNullable<typeof sellerPerson>) =>
     [p.name, p.surname].filter(Boolean).join(' ') || undefined;
 
-  const sellerDisplayLabel = displaySellerPerson
-    ? personLabel(displaySellerPerson)
+  const sellerDisplayLabel = sellerPerson
+    ? personLabel(sellerPerson)
     : sellerResolvedAsSpace
-    ? sellerSpaceMatch.title
+    ? sellerSpace.title
     : undefined;
-  const buyerDisplayLabel = displayBuyerPerson
-    ? personLabel(displayBuyerPerson)
+  const buyerDisplayLabel = buyerPerson
+    ? personLabel(buyerPerson)
     : buyerResolvedAsSpace
-    ? buyerSpaceMatch.title
+    ? buyerSpace.title
     : undefined;
 
-  const sellerDisplayAvatarUrl = displaySellerPerson
-    ? displaySellerPerson.avatarUrl
+  const sellerDisplayAvatarUrl = sellerPerson
+    ? sellerPerson.avatarUrl
     : sellerResolvedAsSpace
-    ? sellerSpaceMatch.logoUrl ?? '/placeholder/space-avatar-image.svg'
+    ? sellerSpace.logoUrl ?? '/placeholder/space-avatar-image.svg'
     : undefined;
-  const buyerDisplayAvatarUrl = displayBuyerPerson
-    ? displayBuyerPerson.avatarUrl
+  const buyerDisplayAvatarUrl = buyerPerson
+    ? buyerPerson.avatarUrl
     : buyerResolvedAsSpace
-    ? buyerSpaceMatch.logoUrl ?? '/placeholder/space-avatar-image.svg'
+    ? buyerSpace.logoUrl ?? '/placeholder/space-avatar-image.svg'
     : undefined;
 
   const renderPartyValue = (
@@ -269,8 +210,8 @@ export const ProposalExchangeStakesAndTokensData = ({
           sellerDisplayLabel,
           sellerDisplayAvatarUrl,
           sellerResolvedAsSpace
-            ? `${sellerSpaceMatch?.title ?? 'space'} logo`
-            : `${displaySellerPerson?.nickname ?? 'seller'} avatar`,
+            ? `${sellerSpace?.title ?? 'space'} logo`
+            : `${sellerPerson?.nickname ?? 'seller'} avatar`,
         )}
       </div>
       <div className="flex items-center justify-between">
@@ -290,8 +231,8 @@ export const ProposalExchangeStakesAndTokensData = ({
           buyerDisplayLabel,
           buyerDisplayAvatarUrl,
           buyerResolvedAsSpace
-            ? `${buyerSpaceMatch?.title ?? 'space'} logo`
-            : `${displayBuyerPerson?.nickname ?? 'buyer'} avatar`,
+            ? `${buyerSpace?.title ?? 'space'} logo`
+            : `${buyerPerson?.nickname ?? 'buyer'} avatar`,
         )}
       </div>
       <div className="flex items-center justify-between">
