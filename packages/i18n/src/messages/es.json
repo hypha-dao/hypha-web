@@ -1118,6 +1118,7 @@
         "convertedIntoLabel": "Convertido en",
         "redeem": "Canjear",
         "redeeming": "Canjeando",
+        "loadingCollaterals": "Cargando activos colaterales…",
         "successMessage": "¡Tu canje se completó correctamente!",
         "requestedExceedsBalance": "El monto solicitado ({amount}) supera el saldo disponible ({balance}).",
         "collateralInsufficient": "El valor del canje supera el valor de las garantías; ingresa un monto menor.",

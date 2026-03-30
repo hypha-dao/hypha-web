@@ -531,6 +531,7 @@
         "convertedIntoLabel": "Umgewandelt in",
         "redeem": "Einlösen",
         "redeeming": "Wird eingelöst",
+        "loadingCollaterals": "Sicherheiten werden geladen…",
         "successMessage": "Ihre Einlösung wurde erfolgreich abgeschlossen!",
         "requestedExceedsBalance": "Angeforderter Betrag ({amount}) übersteigt das verfügbare Guthaben ({balance}).",
         "collateralInsufficient": "Der Einlösewert übersteigt den Wert der Sicherheiten. Bitte geben Sie einen kleineren Betrag ein.",

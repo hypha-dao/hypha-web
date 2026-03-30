@@ -1118,6 +1118,7 @@
         "convertedIntoLabel": "Convertido em",
         "redeem": "Resgatar",
         "redeeming": "Resgatando",
+        "loadingCollaterals": "Carregando ativos colaterais…",
         "successMessage": "Seu resgate foi concluído com sucesso!",
         "requestedExceedsBalance": "O valor solicitado ({amount}) excede o saldo disponível ({balance}).",
         "collateralInsufficient": "O valor do resgate excede o valor das garantias; insira um valor menor.",

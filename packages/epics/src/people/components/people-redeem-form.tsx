@@ -214,9 +214,13 @@ export const PeopleRedeemForm = ({
   });
   const selectedRedemption = redemptions?.[0];
 
-  const { vaults } = useVaults({
+  const { vaults, isLoading: vaultsLoading } = useVaults({
     spaceSlug: selectedRedemption?.spaceSlug,
   });
+
+  const isCollateralsLoading = Boolean(
+    selectedRedemption?.token && selectedRedemption?.spaceSlug && vaultsLoading,
+  );
   const selectedTokenVault = React.useMemo(
     () =>
       vaults.find(
@@ -432,6 +436,9 @@ export const PeopleRedeemForm = ({
   }, [conversionAssets, currentConversions, selectedTokenUsdValue]);
 
   const isSelectedCollateralInsufficient = React.useMemo(() => {
+    if (isCollateralsLoading) {
+      return false;
+    }
     if (
       typeof selectedTokenUsdValue !== 'number' ||
       !Number.isFinite(selectedTokenUsdValue)
@@ -439,9 +446,12 @@ export const PeopleRedeemForm = ({
       return false;
     }
     return selectedCollateralUsdTotal + 0.000001 < selectedTokenUsdValue;
-  }, [selectedCollateralUsdTotal, selectedTokenUsdValue]);
+  }, [isCollateralsLoading, selectedCollateralUsdTotal, selectedTokenUsdValue]);
 
   const exceededCollateralAllocations = React.useMemo(() => {
+    if (isCollateralsLoading) {
+      return [];
+    }
     if (
       typeof selectedTokenUsdValue !== 'number' ||
       !Number.isFinite(selectedTokenUsdValue)
@@ -484,7 +494,12 @@ export const PeopleRedeemForm = ({
           availableUsd: number;
         } => item !== null,
       );
-  }, [conversionAssets, currentConversions, selectedTokenUsdValue]);
+  }, [
+    conversionAssets,
+    currentConversions,
+    isCollateralsLoading,
+    selectedTokenUsdValue,
+  ]);
   const hasExceededCollateralAllocation =
     exceededCollateralAllocations.length > 0;
 
@@ -539,6 +554,7 @@ export const PeopleRedeemForm = ({
   React.useEffect(() => {
     const currentConversions = form.getValues('conversions');
     if (!currentConversions?.length) return;
+    if (conversionAssets.length === 0) return;
 
     const allowedAssets = new Set(
       conversionAssets.map((asset) => asset.address.toLowerCase()),
@@ -585,6 +601,9 @@ export const PeopleRedeemForm = ({
 
   const handleRedeem = async (data: FormValues) => {
     setShowSuccessMessage(false);
+    if (isCollateralsLoading) {
+      return;
+    }
     try {
       const [redemption] = data.redemptions;
       if (!redemption) {
@@ -703,22 +722,28 @@ export const PeopleRedeemForm = ({
               {t('form.errors.loadSpaces')}
             </div>
           ) : null}
-          {selectedRedemption?.token && (
-            <TokenPercentageFieldArray
-              label={t('form.convertedIntoLabel')}
-              assets={conversionAssetsWithDetails}
-              name="conversions"
-              showEmptyFieldMessage={shouldShowEmptyConversionFieldMessage}
-              showFieldDetails
-              onRemoveRebalance={(remainingAssets) => {
-                const rebalanced = rebalanceByUsd(remainingAssets);
-                form.setValue('conversions', rebalanced, {
-                  shouldDirty: true,
-                  shouldValidate: true,
-                });
-              }}
-            />
-          )}
+          {selectedRedemption?.token &&
+            (isCollateralsLoading ? (
+              <div className="flex items-center gap-2 text-sm text-neutral-10 py-2">
+                <Loader2 className="animate-spin w-4 h-4 shrink-0" />
+                {t('form.loadingCollaterals')}
+              </div>
+            ) : (
+              <TokenPercentageFieldArray
+                label={t('form.convertedIntoLabel')}
+                assets={conversionAssetsWithDetails}
+                name="conversions"
+                showEmptyFieldMessage={shouldShowEmptyConversionFieldMessage}
+                showFieldDetails
+                onRemoveRebalance={(remainingAssets) => {
+                  const rebalanced = rebalanceByUsd(remainingAssets);
+                  form.setValue('conversions', rebalanced, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                }}
+              />
+            ))}
           {(isSelectedCollateralInsufficient ||
             hasExceededCollateralAllocation) && (
             <div className="text-2 text-red-11">
@@ -737,7 +762,10 @@ export const PeopleRedeemForm = ({
                 {t('form.successMessage')}
               </div>
             ) : (
-              <Button type="submit" disabled={isRedeeming}>
+              <Button
+                type="submit"
+                disabled={isRedeeming || isCollateralsLoading}
+              >
                 {t('form.redeem')}
               </Button>
             )}

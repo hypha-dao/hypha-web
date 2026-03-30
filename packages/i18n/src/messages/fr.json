@@ -531,6 +531,7 @@
         "convertedIntoLabel": "Converti en",
         "redeem": "Échanger",
         "redeeming": "Échange en cours",
+        "loadingCollaterals": "Chargement des actifs de garantie…",
         "successMessage": "Votre opération d'échange a été effectuée avec succès !",
         "requestedExceedsBalance": "Le montant demandé ({amount}) dépasse le solde disponible ({balance}).",
         "collateralInsufficient": "La valeur de l'échange dépasse la valeur des garanties ; veuillez saisir un montant plus petit.",

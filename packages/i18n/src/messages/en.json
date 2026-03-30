@@ -531,6 +531,7 @@
         "convertedIntoLabel": "Converted into",
         "redeem": "Redeem",
         "redeeming": "Redeeming",
+        "loadingCollaterals": "Loading collateral assets…",
         "successMessage": "Your redemption has been successfully completed!",
         "requestedExceedsBalance": "Requested amount ({amount}) exceeds available balance ({balance}).",
         "collateralInsufficient": "The redemption value exceeds the collateral value, please enter a smaller amount.",
