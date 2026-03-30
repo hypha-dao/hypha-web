@@ -105,6 +105,12 @@ export function inferResubmitTemplateSegmentFromPayload(
     return 'space-token-purchase';
   }
   if (
+    parsed.buyHyphaTokensForm &&
+    typeof parsed.buyHyphaTokensForm === 'object'
+  ) {
+    return 'buy-hypha-tokens';
+  }
+  if (
     parsed.tokenAddress !== undefined ||
     parsed.activatePurchase !== undefined
   ) {

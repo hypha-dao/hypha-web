@@ -95,6 +95,7 @@ export const useResubmitProposalData = <
           issueNewTokenForm?: Record<string, unknown>;
           tokenBackingVault?: Record<string, unknown>;
           spaceTokenPurchaseForm?: Record<string, unknown>;
+          buyHyphaTokensForm?: Record<string, unknown>;
           applied?: boolean;
           redeemResubmit?: {
             token: string;
@@ -235,6 +236,10 @@ export const useResubmitProposalData = <
             ...(parsed.spaceTokenPurchaseForm &&
             typeof parsed.spaceTokenPurchaseForm === 'object'
               ? (parsed.spaceTokenPurchaseForm as Record<string, unknown>)
+              : {}),
+            ...(parsed.buyHyphaTokensForm &&
+            typeof parsed.buyHyphaTokensForm === 'object'
+              ? (parsed.buyHyphaTokensForm as Record<string, unknown>)
               : {}),
           } as T,
           {
@@ -486,6 +491,30 @@ export const useResubmitProposalData = <
           setStp('tokensAvailableForPurchase', stp.tokensAvailableForPurchase);
         }
 
+        const bhtInj = parsed.buyHyphaTokensForm;
+        if (bhtInj && typeof bhtInj === 'object') {
+          const bht = bhtInj as Record<string, unknown>;
+          const payout = bht.payout as Record<string, unknown> | undefined;
+          if (payout?.amount !== undefined) {
+            form.setValue('payout.amount' as any, payout.amount as any, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+          }
+          if (payout?.token !== undefined) {
+            form.setValue('payout.token' as any, payout.token as any, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+          }
+          if (bht.recipient !== undefined) {
+            form.setValue('recipient' as any, bht.recipient as any, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+          }
+        }
+
         if (issueInj && typeof issueInj === 'object') {
           const ink = issueInj as Record<string, unknown>;
           const setIssue = (key: string, val: unknown) => {
@@ -615,6 +644,12 @@ export const useResubmitProposalData = <
             'purchaseCurrency',
             'tokensAvailableForPurchase',
           );
+        }
+        if (
+          parsed.buyHyphaTokensForm &&
+          typeof parsed.buyHyphaTokensForm === 'object'
+        ) {
+          fieldsToTrigger.push('payout', 'recipient');
         }
         form.trigger(fieldsToTrigger as any[]);
 

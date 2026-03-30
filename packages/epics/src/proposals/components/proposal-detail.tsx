@@ -801,6 +801,27 @@ export const ProposalDetail = ({
       return vaultPayload;
     }
 
+    if (label === 'Buy Hypha Tokens') {
+      const rawAmount = proposalDetails.buyHyphaTokensData?.amount;
+      if (rawAmount === undefined) return undefined;
+
+      const usdcMeta = TOKENS.find((t) => t.symbol === 'USDC');
+      const payDecimals = resolveTokenDecimals(usdcMeta?.address ?? '');
+      const amountStr = formatUnits(rawAmount, payDecimals);
+
+      const buyHyphaRecipient = '0x3dEf11d005F8C85c93e3374B28fcC69B25a650Af';
+
+      return {
+        buyHyphaTokensForm: {
+          payout: {
+            amount: amountStr,
+            token: usdcMeta?.address ?? '',
+          },
+          recipient: buyHyphaRecipient,
+        },
+      };
+    }
+
     if (label === 'Token Purchase') {
       const st = proposalDetails.spaceTokenPurchaseData;
       if (!st?.tokenAddress) return undefined;
