@@ -16,6 +16,7 @@ export * from './people-redeem-form';
 export * from './people-redeem-tokens';
 export * from './profile-member-spaces';
 export * from './people-purchase-hypha-tokens';
+export * from './people-buy-space-tokens';
 export * from './space-with-number-of-months';
 export * from './space-with-number-of-months-array';
 export * from './activate-spaces-form';

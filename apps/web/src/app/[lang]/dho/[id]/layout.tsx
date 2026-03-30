@@ -93,7 +93,6 @@ export default async function DhoLayout({
   })();
 
   const spaces = await getAllSpaces({ parentOnly: false, omitSandbox: true });
-
   return (
     <div className="flex max-w-container-2xl mx-auto">
       <Container className="flex-grow min-w-0">

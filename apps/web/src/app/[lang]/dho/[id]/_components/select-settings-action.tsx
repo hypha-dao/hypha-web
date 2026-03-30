@@ -131,6 +131,14 @@ export const SelectSettingsAction = ({
       disabled: isPaymentExpired,
     },
     {
+      group: t('groups.treasury'),
+      title: t('actions.tokenBurning.title'),
+      description: t('actions.tokenBurning.description'),
+      href: 'create/token-burning',
+      icon: <ArrowDownIcon />,
+      disabled: isPaymentExpired,
+    },
+    {
       defaultDurationDays: 4,
       group: t('groups.treasury'),
       title: t('actions.tokenBackingVault.title'),
@@ -142,12 +150,19 @@ export const SelectSettingsAction = ({
     },
     {
       group: t('groups.treasury'),
-      title: 'Redeem Tokens',
-      description:
-        'Convert tokens in the treasury into their equivalent fiat value held in the Space Token Issuer vault.',
+      title: t('actions.redeemTokens.title'),
+      description: t('actions.redeemTokens.description'),
       icon: <ArrowUpIcon />,
       href: 'create/redeem-tokens',
       baseTab: 'agreements',
+      disabled: isPaymentExpired,
+    },
+    {
+      group: t('groups.treasury'),
+      title: t('actions.spaceTokenPurchase.title'),
+      description: t('actions.spaceTokenPurchase.description'),
+      href: 'create/space-token-purchase',
+      icon: <ArrowLeftIcon />,
       disabled: isPaymentExpired,
     },
     {

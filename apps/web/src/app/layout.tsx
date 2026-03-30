@@ -11,12 +11,17 @@ import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import { Footer, Html, ThemeProvider } from '@hypha-platform/ui/server';
 import { AuthProvider } from '@hypha-platform/authentication';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { ConnectedButtonProfile } from '@hypha-platform/epics';
+import {
+  AiLeftPanelLayout,
+  AiSidebarTrigger,
+  ConnectedButtonProfile,
+} from '@hypha-platform/epics';
 import { EvmProvider } from '@hypha-platform/evm';
 import { useMe } from '@hypha-platform/core/client';
 import { fileRouter } from '@hypha-platform/core/server';
-import { MenuTop } from '@hypha-platform/ui';
+import { MenuTop, TooltipProvider } from '@hypha-platform/ui';
 import { ROOT_URL } from './constants';
+import { enableAiChat } from '@hypha-platform/feature-flags';
 import { NotificationSubscriber } from '@hypha-platform/notifications/client';
 
 import '@hypha-platform/ui-utils/global.css';
@@ -93,6 +98,7 @@ export default async function RootLayout({
   const notificationAppId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '';
   const safariWebId = process.env.NEXT_PUBLIC_ONESIGNAL_SAFARI_WEB_ID ?? '';
   const serviceWorkerPath = 'onesignal/OneSignalSDKWorker.js';
+  const aiChatEnabled = await enableAiChat();
 
   return (
     <Html lang={locale} className={clsx(lato.variable, sourceSans.variable)}>
@@ -111,50 +117,59 @@ export default async function RootLayout({
         >
           <EvmProvider>
             <NextIntlClientProvider messages={messages}>
-              <NotificationSubscriber
-                appId={notificationAppId}
-                safariWebId={safariWebId}
-                serviceWorkerPath={serviceWorkerPath}
-              >
-                <MenuTop
-                  logoHref={ROOT_URL}
-                  openMenuLabel={tNav('openMenu')}
-                  closeMenuLabel={tNav('closeMenu')}
+              <TooltipProvider>
+                <NotificationSubscriber
+                  appId={notificationAppId}
+                  safariWebId={safariWebId}
+                  serviceWorkerPath={serviceWorkerPath}
                 >
-                  <ConnectedButtonProfile
-                    useAuthentication={useAuthentication}
-                    useMe={useMe}
-                    newUserRedirectPath="/profile/signup"
-                    baseRedirectPath="/my-spaces"
-                    navItems={[
-                      {
-                        label: tNav('network'),
-                        href: `/${locale}/network`,
-                      },
-                      {
-                        label: tNav('mySpaces'),
-                        href: `/${locale}/my-spaces`,
-                      },
-                    ]}
-                  />
-                  {isLanguageSelectVisible && <ConnectedLanguageSelect />}
-                </MenuTop>
-                <NextSSRPlugin routerConfig={extractRouterConfig(fileRouter)} />
-                <div className="mb-auto pb-8">
-                  <div className="pt-9 h-full flex justify-normal">
-                    <div className="w-full h-full">{children}</div>
-                  </div>
-                </div>
-                <Footer
-                  networkLabel={tFooter('network')}
-                  legalLabel={tFooter('legal')}
-                  hyphaServicesLabel={tFooter('hyphaServices')}
-                  hyphaTokenomicsLabel={tFooter('hyphaTokenomics')}
-                  licensingPolicyLabel={tFooter('licensingPolicy')}
-                  termsAndConditionsLabel={tFooter('termsAndConditions')}
-                  privacyPolicyLabel={tFooter('privacyPolicy')}
-                />
-              </NotificationSubscriber>
+                  <AiLeftPanelLayout enabled={aiChatEnabled}>
+                    <MenuTop
+                      logoHref={ROOT_URL}
+                      openMenuLabel={tNav('openMenu')}
+                      closeMenuLabel={tNav('closeMenu')}
+                      leadingAction={
+                        aiChatEnabled ? <AiSidebarTrigger /> : undefined
+                      }
+                    >
+                      <ConnectedButtonProfile
+                        useAuthentication={useAuthentication}
+                        useMe={useMe}
+                        newUserRedirectPath="/profile/signup"
+                        baseRedirectPath="/my-spaces"
+                        navItems={[
+                          {
+                            label: tNav('network'),
+                            href: `/${locale}/network`,
+                          },
+                          {
+                            label: tNav('mySpaces'),
+                            href: `/${locale}/my-spaces`,
+                          },
+                        ]}
+                      />
+                      {isLanguageSelectVisible && <ConnectedLanguageSelect />}
+                    </MenuTop>
+                    <NextSSRPlugin
+                      routerConfig={extractRouterConfig(fileRouter)}
+                    />
+                    <div className="mb-auto pb-8">
+                      <div className="pt-9 h-full flex justify-normal">
+                        <div className="w-full h-full">{children}</div>
+                      </div>
+                    </div>
+                    <Footer
+                      networkLabel={tFooter('network')}
+                      legalLabel={tFooter('legal')}
+                      hyphaServicesLabel={tFooter('hyphaServices')}
+                      hyphaTokenomicsLabel={tFooter('hyphaTokenomics')}
+                      licensingPolicyLabel={tFooter('licensingPolicy')}
+                      termsAndConditionsLabel={tFooter('termsAndConditions')}
+                      privacyPolicyLabel={tFooter('privacyPolicy')}
+                    />
+                  </AiLeftPanelLayout>
+                </NotificationSubscriber>
+              </TooltipProvider>
             </NextIntlClientProvider>
           </EvmProvider>
         </ThemeProvider>

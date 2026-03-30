@@ -1,4 +1,4 @@
-import { decodeFunctionData, erc20Abi } from 'viem';
+import { decodeFunctionData, erc20Abi, type Abi } from 'viem';
 import {
   regularTokenFactoryAbi,
   ownershipTokenFactoryAbi,
@@ -206,17 +206,30 @@ import {
   tokenBackingVaultImplementationAbi,
 } from '@hypha-platform/core/generated';
 
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
+
 type Tx = {
   data: `0x${string}`;
   target: `0x${string}`;
   value: bigint;
 };
 
+type DecodedTransaction = ReturnType<typeof decodeFunctionData> & {
+  args: readonly unknown[];
+};
+
+type DecodedPayload = {
+  type: string;
+  data: Record<string, unknown>;
+};
+
+type TransactionDecoder = {
+  abi: Abi;
+  handler: (decoded: DecodedTransaction, tx: Tx) => DecodedPayload | null;
+};
+
 export function decodeTransaction(tx: Tx) {
-  const decoders: Array<{
-    abi: any;
-    handler: (decoded: any, tx: Tx) => { type: string; data: any } | null;
-  }> = [
+  const decoders: TransactionDecoder[] = [
     {
       abi: erc20Abi,
       handler: (decoded, tx) =>
@@ -504,6 +517,28 @@ export function decodeTransaction(tx: Tx) {
           : null,
     },
     {
+      abi: decayingSpaceTokenAbi,
+      handler: (decoded) => {
+        return decoded.functionName === 'burnFrom'
+          ? {
+              type: 'burn',
+              data: {
+                member: decoded.args[0],
+                number: decoded.args[1],
+              },
+            }
+          : decoded.functionName === 'burn'
+          ? {
+              type: 'burn',
+              data: {
+                member: ZERO_ADDRESS,
+                number: decoded.args[0],
+              },
+            }
+          : null;
+      },
+    },
+    {
       abi: tokenBalanceJoinImplementationAbi,
       handler: (decoded) =>
         decoded.functionName === 'setTokenRequirement'
@@ -788,7 +823,7 @@ export function decodeTransaction(tx: Tx) {
       const decoded = decodeFunctionData({
         abi,
         data: tx.data,
-      });
+      }) as DecodedTransaction;
       const result = handler(decoded, tx);
       if (result) return result;
     } catch (_) {

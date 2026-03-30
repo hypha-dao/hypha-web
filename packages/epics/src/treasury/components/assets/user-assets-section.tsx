@@ -58,6 +58,13 @@ export const UserAssetsSection: FC<UserAssetsSectionProps> = ({
       <div className="flex gap-2 justify-end">
         <Link
           className={!isMyProfile ? 'cursor-not-allowed' : ''}
+          href={isMyProfile ? `${basePath}/actions/buy-space-tokens` : {}}
+          scroll={false}
+        >
+          <Button disabled={!isMyProfile}>{tProfile('buySpaceTokens')}</Button>
+        </Link>
+        <Link
+          className={!isMyProfile ? 'cursor-not-allowed' : ''}
           href={isMyProfile ? `${basePath}/actions/purchase-hypha-tokens` : {}}
           scroll={false}
         >

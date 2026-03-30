@@ -4,7 +4,11 @@ import { useImageUpload, editPersonFiles } from '@hypha-platform/core/client';
 import { useCallback, useState } from 'react';
 import { z } from 'zod';
 
-export type PersonFiles = z.infer<typeof editPersonFiles>;
+// Type inference disabled due to TypeScript depth limits with complex zod schemas
+export type PersonFiles = {
+  avatarUrl?: string | File;
+  leadImageUrl?: string | File;
+};
 
 interface UsePeopleFileUploadsParams {
   authToken?: string | null;

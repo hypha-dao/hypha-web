@@ -1,5 +1,6 @@
 export * from './useTransferTokensMutation';
 export * from './useInvestInHyphaMutation';
+export * from './useBuySpaceTokensMutation';
 export * from './useActivateSpacesMutation';
 export * from './useRedeemTokensMutation';
 export * from './get-energy-balance';

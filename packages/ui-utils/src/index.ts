@@ -3,6 +3,7 @@ export * from './copyToClipboard';
 export * from './isAbsoluteUrl';
 export * from './strip-markdown';
 export * from './formatCurrencyValue';
+export * from './localeDecimal';
 export * from './formatDate';
 export * from './set-number-value';
 export * from './get-duration';

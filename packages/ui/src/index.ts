@@ -43,6 +43,9 @@ export * from './switch';
 export * from './text-with-links';
 export * from './textarea';
 export * from './tooltip';
+export * from './sidebar';
+export * from './sheet';
+export * from './hooks/use-mobile';
 
 export * from './organisms/editor';
 export * from './organisms/menu-top';

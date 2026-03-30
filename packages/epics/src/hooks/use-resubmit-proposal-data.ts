@@ -7,8 +7,15 @@ export const useResubmitProposalData = <
   T extends {
     title?: string;
     description?: string;
-    leadImage?: any;
-    attachments?: any;
+    leadImage?: string | File;
+    attachments?: Array<
+      | {
+          url?: string;
+          name?: string;
+        }
+      | File
+      | string
+    >;
   },
 >(
   form: UseFormReturn<T>,
@@ -32,6 +39,19 @@ export const useResubmitProposalData = <
           description?: string;
           leadImage?: any;
           attachments?: any;
+          mint?: {
+            amount?: string;
+            token?: string;
+          };
+          tokenBurning?: {
+            token?: string;
+            burns?: Array<{
+              type?: 'member' | 'space';
+              address?: string;
+              amount?: string;
+              allBalance?: boolean;
+            }>;
+          };
           applied?: boolean;
           redeemResubmit?: {
             token: string;
@@ -41,11 +61,8 @@ export const useResubmitProposalData = <
           [key: string]: any;
         };
 
-        if (parsed.applied) {
-          sessionStorage.removeItem('resubmitProposalData');
-          return;
-        }
-
+        // Re-apply whenever this data is present (including `applied: true`), so
+        // navigating back to the create form after a resubmit still hydrates the form.
         console.log('Resubmit data found:', parsed);
 
         if (parsed.leadImage || parsed.attachments) {
@@ -64,10 +81,31 @@ export const useResubmitProposalData = <
             ...form.getValues(),
             title: parsed.title || '',
             description: parsed.description || '',
+            ...(parsed.mint ? { mint: parsed.mint } : {}),
+            ...(parsed.tokenBurning
+              ? { tokenBurning: parsed.tokenBurning }
+              : {}),
             leadImage: undefined,
             attachments: undefined,
             spaceId: spaceId ?? undefined,
             creatorId: creatorId ?? undefined,
+            ...(parsed.tokenAddress !== undefined
+              ? { tokenAddress: parsed.tokenAddress }
+              : {}),
+            ...(typeof parsed.activatePurchase === 'boolean'
+              ? { activatePurchase: parsed.activatePurchase }
+              : {}),
+            ...(parsed.purchasePrice !== undefined
+              ? { purchasePrice: parsed.purchasePrice }
+              : {}),
+            ...(parsed.purchaseCurrency !== undefined
+              ? { purchaseCurrency: parsed.purchaseCurrency }
+              : {}),
+            ...(parsed.tokensAvailableForPurchase !== undefined
+              ? {
+                  tokensAvailableForPurchase: parsed.tokensAvailableForPurchase,
+                }
+              : {}),
           } as T,
           {
             keepDefaultValues: false,
@@ -118,10 +156,78 @@ export const useResubmitProposalData = <
           });
         }
 
-        form.trigger(['title', 'description'] as any[]);
-        if (redeem?.conversions?.length) {
-          form.trigger(['redemptions', 'conversions'] as any[]);
+        if (parsed.tokenAddress !== undefined) {
+          form.setValue('tokenAddress' as any, parsed.tokenAddress as any, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
         }
+
+        if (typeof parsed.activatePurchase === 'boolean') {
+          form.setValue(
+            'activatePurchase' as any,
+            parsed.activatePurchase as any,
+            {
+              shouldDirty: true,
+              shouldValidate: true,
+            },
+          );
+        }
+
+        if (parsed.purchasePrice !== undefined) {
+          form.setValue('purchasePrice' as any, parsed.purchasePrice as any, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+        }
+
+        if (parsed.purchaseCurrency !== undefined) {
+          form.setValue(
+            'purchaseCurrency' as any,
+            parsed.purchaseCurrency as any,
+            {
+              shouldDirty: true,
+              shouldValidate: true,
+            },
+          );
+        }
+
+        if (parsed.tokensAvailableForPurchase !== undefined) {
+          form.setValue(
+            'tokensAvailableForPurchase' as any,
+            parsed.tokensAvailableForPurchase as any,
+            {
+              shouldDirty: true,
+              shouldValidate: true,
+            },
+          );
+        }
+
+        const fieldsToTrigger: string[] = ['title', 'description'];
+        if (parsed.tokenAddress !== undefined) {
+          fieldsToTrigger.push('tokenAddress');
+        }
+        if (typeof parsed.activatePurchase === 'boolean') {
+          fieldsToTrigger.push('activatePurchase');
+        }
+        if (parsed.purchasePrice !== undefined) {
+          fieldsToTrigger.push('purchasePrice');
+        }
+        if (parsed.purchaseCurrency !== undefined) {
+          fieldsToTrigger.push('purchaseCurrency');
+        }
+        if (parsed.tokensAvailableForPurchase !== undefined) {
+          fieldsToTrigger.push('tokensAvailableForPurchase');
+        }
+        if (
+          redeem?.token &&
+          redeem.amount !== undefined &&
+          redeem.amount !== '' &&
+          redeem.conversions?.length
+        ) {
+          fieldsToTrigger.push('redemptions', 'conversions');
+        }
+        form.trigger(fieldsToTrigger as any[]);
 
         sessionStorage.setItem(
           'resubmitProposalData',

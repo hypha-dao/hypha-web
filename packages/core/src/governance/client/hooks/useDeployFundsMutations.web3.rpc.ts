@@ -16,6 +16,7 @@ import {
   publicClient,
 } from '@hypha-platform/core/client';
 import { getDuration } from '@hypha-platform/ui-utils';
+import { getGovernanceChainId } from './governance-chain-id';
 
 interface CreateDeployFundsInput {
   spaceId: number;
@@ -26,7 +27,7 @@ interface CreateDeployFundsInput {
   recipient: string;
 }
 
-const chainId = 8453;
+const chainId = getGovernanceChainId();
 
 export const useDeployFundsMutationsWeb3Rpc = ({
   proposalSlug,

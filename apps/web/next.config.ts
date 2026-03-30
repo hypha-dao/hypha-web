@@ -1,5 +1,6 @@
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
+import createWithVercelToolbar from '@vercel/toolbar/plugins/next';
 import { routing } from '../../packages/i18n/src/routing';
 
 const IMAGE_HOSTS = process.env.NEXT_PUBLIC_IMAGE_HOSTS?.split(', ') ?? [];
@@ -53,4 +54,6 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+const withVercelToolbar = createWithVercelToolbar();
+
+export default withVercelToolbar(withNextIntl(nextConfig));

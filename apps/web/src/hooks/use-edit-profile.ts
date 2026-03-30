@@ -11,6 +11,7 @@ import {
 import { usePeopleFileUploads } from './use-people-file-uploads';
 import { useAuthHeader } from './use-auth-header';
 import { produce } from 'immer';
+import type { ProfileFormData } from './profile-form-data';
 
 export enum TaskStatus {
   IDLE = 'idle',
@@ -87,7 +88,7 @@ export const useEditProfile = (endpoint = '/api/v1/people/edit-profile') => {
   const [lastStartedTask, setLastStartedTask] = useState<TaskName | null>(null);
 
   const editProfile = useCallback(
-    async (data: z.infer<typeof schemaEditPerson>) => {
+    async (data: ProfileFormData) => {
       if (!headers) {
         throw new Error('No auth headers available');
       }

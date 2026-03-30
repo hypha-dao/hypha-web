@@ -38,6 +38,7 @@
     "network": "Netzwerk",
     "mySpaces": "Meine Spaces",
     "openMenu": "Menü öffnen",
+    "openProfileMenu": "Profilmenü öffnen",
     "closeMenu": "Menü schließen",
     "selectLanguage": "Sprache auswählen",
     "myProfile": "Mein Profil",
@@ -156,6 +157,10 @@
         "title": "Tokens in die Space-Schatzkammer prägen",
         "description": "Prägen Sie Tokens in Ihre Space-Schatzkammer, um den Betrieb zu finanzieren, Belohnungen zu verteilen oder Liquidität bereitzustellen."
       },
+      "tokenBurning": {
+        "title": "Token in bestimmten Spaces oder Wallets verbrennen",
+        "description": "Entfernen (verbrennen) Sie Tokens von ausgewählten Spaces oder Wallet-Adressen. Diese Aktion reduziert das gesamte Token-Angebot und kann genutzt werden, um den Umlauf zu steuern oder Zuweisungen zu korrigieren."
+      },
       "tokenBackingVault": {
         "title": "Token-Sicherungsvault",
         "description": "Erstellen Sie einen Token-Sicherungsvault, definieren Sie Rücknahmeregeln und -beschränkungen, legen Sie das Startdatum und den Rücknahmepreis fest und autorisieren Sie die Hinzufügung oder den Abzug von Sicherheiten zum Vault."
@@ -163,6 +168,14 @@
       "buyHyphaTokensRewards": {
         "title": "Hypha-Tokens kaufen (Belohnungen)",
         "description": "Kaufen Sie Hypha-Tokens, um am Netzwerk teilzunehmen und Belohnungen zu erhalten."
+      },
+      "spaceTokenPurchase": {
+        "title": "Space-Token-Kauf aktivieren",
+        "description": "Ermöglichen Sie Ihren Mitgliedern, die nativen Tokens Ihres Spaces zu kaufen."
+      },
+      "redeemTokens": {
+        "title": "Tokens einlösen",
+        "description": "Wandeln Sie Tokens in der Schatzkasse in ihren äquivalenten Fiat-Wert um, der in der Vault des Space-Token-Emittenten gehalten wird."
       },
       "depositFunds": {
         "title": "Mittel einzahlen",
@@ -377,6 +390,7 @@
     "rewardValueMustBeGreaterThanZero": "Der Belohnungswert muss größer als 0 sein",
     "noRewardsFoundForUser": "Für diesen Benutzer wurden keine Belohnungen gefunden",
     "buyHypha": "HYPHA kaufen",
+    "buySpaceTokens": "Space-Tokens kaufen",
     "actions": "Aktionen",
     "noAssetsFoundForUser": "Keine Assets für diesen Benutzer gefunden",
     "editForm": {
@@ -429,6 +443,11 @@
       "buyHyphaTokensRewards": {
         "title": "Hypha-Tokens kaufen (Belohnungen)",
         "description": "Kaufen Sie Hypha-Tokens, um am Netzwerk teilzunehmen und Belohnungen zu erhalten"
+      },
+      "buySpaceTokens": {
+        "title": "Space-Tokens kaufen",
+        "backLabel": "Zurück zu den Aktionen",
+        "description": "Kaufen Sie die nativen Tokens Ihres Spaces mit der konfigurierten Zahlungswährung."
       },
       "activateSpaces": {
         "title": "Spaces aktivieren",
@@ -523,6 +542,84 @@
   "Proposals": {
     "CreateNew": "Neuen Vorschlag erstellen",
     "Create": "Neuer Vorschlag"
+  },
+  "SpaceTokenPurchase": {
+    "selection": {
+      "sectionTitle": "Token",
+      "description": "Wählen Sie einen Token aus, der in diesem Space gekauft werden kann.",
+      "fieldLabel": "Token",
+      "placeholder": "Token auswählen",
+      "noTokenFound": "Kein Token gefunden.",
+      "noTokenPrefix": "Ihr Space hat noch keinen Token erstellt,",
+      "clickHere": "hier klicken",
+      "noTokenSuffix": "um zuerst einen Token auszugeben",
+      "tokenSupply": "Token-Angebot",
+      "issuanceToDate": "Bisherige Ausgabe",
+      "unlimitedSupply": "Unbegrenztes Angebot",
+      "availableLimit": "Verfügbares Kauflimit für Tokens"
+    },
+    "toggle": {
+      "sectionTitle": "Token-Kauf",
+      "description": "Aktivieren Sie diese Option, damit Mitglieder die nativen Tokens Ihres Spaces kaufen können. Sie können dies jederzeit deaktivieren.",
+      "activateLabel": "Token-Kauf aktivieren",
+      "disabledHint": "Wenn deaktiviert, können Mitglieder diesen Token nicht mehr kaufen."
+    },
+    "price": {
+      "sectionTitle": "Token-Kaufpreis",
+      "description": "Legen Sie einen benutzerdefinierten Kaufpreis fest oder verwenden Sie den Standardpreis der Schatzkammer.",
+      "currencyPlaceholder": "Währung",
+      "currentPriceLabel": "Aktueller Preis in der Schatzkammer:",
+      "currentPriceSuffix": "— in der Token-Konfiguration Ihres Spaces festgelegt.",
+      "fieldLabel": "Token-Kaufpreis",
+      "availableAtThisPriceLabel": "Bei diesem Preis verfügbare Tokens",
+      "exceedsLimit": "Die angeforderte Token-Anzahl überschreitet das verfügbare Kauflimit. Bitte geben Sie einen Wert bis {limit} ein."
+    },
+    "eligibility": {
+      "sectionTitle": "Kaufberechtigung",
+      "description": "Die Schaltfläche \"Space-Tokens kaufen\" wird im Profil der Spaces oder Mitglieder angezeigt, die in den Token-Einstellungen auf der Whitelist stehen. Wenn Sie diesen Zugriff prüfen möchten, können Sie Whitelists über einen Token-Konfigurationsvorschlag verwalten.",
+      "whitelistInfo": "Die Whitelist ist in den ursprünglichen Ausgabeeinstellungen des Tokens konfiguriert. Alle Mitglieder oder Spaces in der \"To\"-Whitelist können {tokenName}-Tokens sehen und kaufen."
+    }
+  },
+  "ProposalSpaceTokenPurchase": {
+    "token": "Token",
+    "tokenAlt": "Token",
+    "purchase_status": "Kaufstatus",
+    "enabled": "Aktiviert",
+    "disabled": "Deaktiviert",
+    "payment_token": "Zahlungstoken",
+    "not_configured": "Nicht konfiguriert",
+    "purchase_price": "Kaufpreis",
+    "tokens_for_sale": "Tokens zum Verkauf"
+  },
+  "PeopleBuySpaceTokens": {
+    "validation": {
+      "tokenRequired": "Bitte wählen Sie einen Token",
+      "amountRequired": "Bitte geben Sie einen Betrag ein",
+      "amountPositive": "Der Betrag muss größer als 0 sein"
+    },
+    "empty": "Derzeit sind keine Space-Tokens zum Kauf verfügbar.",
+    "eligibilityLoadError": "Verfügbare Tokens konnten nicht geprüft werden. Bitte versuchen Sie es erneut.",
+    "selectToken": "Token auswählen",
+    "selectPlaceholder": "Token auswählen",
+    "amountAndToken": "Betrag & Token",
+    "amount": "Betrag",
+    "pricePerToken": "Preis: {price} {currency} pro Token",
+    "totalCost": "Gesamtkosten: {amount} {currency}",
+    "remainingInSale": "Verbleibend im Verkauf: {amount}",
+    "loadingSale": "Verkaufskonfiguration wird geladen...",
+    "unableToReadSale": "Token-Verkaufskonfiguration konnte nicht gelesen werden.",
+    "saleDisabled": "Der Verkauf ist für diesen Token derzeit deaktiviert.",
+    "recipientTokenSent": "{symbol} gesendet an",
+    "recipientPaymentPaid": "{symbol} gezahlt an",
+    "fallbackTokenSymbol": "Token",
+    "fallbackPaymentSymbol": "Zahlung",
+    "statusApproving": "Genehmigung läuft",
+    "statusPurchasing": "Kauf läuft",
+    "statusProcessing": "Wird verarbeitet",
+    "success": "Ihr Kauf war erfolgreich. Die Tokens erscheinen in Kürze in Ihrer Wallet.",
+    "buy": "Kaufen",
+    "transactionFailed": "Transaktion fehlgeschlagen. Bitte erneut versuchen.",
+    "purchaseFailedGeneric": "Beim Verarbeiten Ihres Kaufs ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut."
   },
   "Spaces": {
     "createSpace": "Space erstellen",
@@ -622,8 +719,10 @@
       "spaceToSpace": "Space-zu-Space",
       "issueNewToken": "Neuen Token ausgeben",
       "treasuryMinting": "Treasury Minting",
+      "tokenBurning": "Token-Verbrennung",
       "backingVault": "Sicherungsvault",
       "buyHyphaTokensRewards": "Hypha-Tokens kaufen (Belohnungen)",
+      "spaceTokenPurchase": "Token-Kauf",
       "spaceTransparency": "Space-Transparenz",
       "collectiveAgreement": "Kollektive Vereinbarung",
       "contribution": "Beitrag",
@@ -663,8 +762,10 @@
       "recipientRequired": "Bitte fügen Sie einen Empfänger oder eine Wallet-Adresse hinzu",
       "invalidEthereumAddress": "Ungültige Ethereum-Adresse",
       "amountGreaterThanZero": "Der Betrag muss größer als 0 sein",
-      "amountRequired": "Bitte geben Sie einen Betrag ein",
+      "amountRequired": "Geben Sie einen Betrag ein, um fortzufahren.",
       "tokenRequired": "Bitte wählen Sie einen Token aus",
+      "chooseTokenToBurn": "Bitte wählen Sie einen Token zum Verbrennen aus",
+      "atLeastOneBurnTargetRequired": "Mindestens ein Verbrennungsziel ist erforderlich",
       "atLeastOnePayoutRequired": "Mindestens eine Auszahlung ist erforderlich",
       "purchaseAmountRequired": "Bitte geben Sie einen Kaufbetrag ein.",
       "selectSpaceToActivate": "Bitte wählen Sie einen Space zur Aktivierung aus.",
@@ -681,7 +782,7 @@
       "autoExecutionVotingDurationRequired": "Die Auto-Ausführung ist deaktiviert. Bitte legen Sie eine Mindestabstimmungsdauer fest.",
       "selectVotingToken": "Bitte wählen Sie einen Token für diese Abstimmungsmethode aus.",
       "backingCollateralRequired": "Bitte wählen Sie eine Sicherheitenposition aus",
-      "enterAmount": "Bitte geben Sie einen Betrag ein",
+      "enterAmount": "Geben Sie einen Betrag ein, um fortzufahren.",
       "invalidTokenAddress": "Ungültige Token-Adresse",
       "invalidAddress": "Ungültige Adresse",
       "tokenAddressRequired": "Token-Adresse ist erforderlich",
@@ -771,12 +872,19 @@
     "loadingBackdrop": {
       "keepWindowOpen": "Bitte lassen Sie dieses Fenster geöffnet, bis der Fortschrittsbalken abgeschlossen ist."
     },
+    "spaceTokenPurchaseProgress": {
+      "CREATE_WEB2_AGREEMENT": "Vereinbarung wird erstellt...",
+      "CREATE_WEB3_PROPOSAL": "Web3-Vorschlag wird erstellt...",
+      "UPLOAD_FILES": "Dateien werden hochgeladen...",
+      "LINK_WEB2_AND_WEB3_AGREEMENT": "Web2- und Web3-Vereinbarungen werden verknüpft"
+    },
     "proposalLoader": {
       "processingVote": "Abstimmung wird verarbeitet...",
       "savingVote": "Abstimmung wird gespeichert...",
       "gettingUpdatedData": "Aktualisierte Daten werden geladen...",
       "voteProcessed": "Abstimmung verarbeitet!",
       "somethingWentWrong": "Etwas ist schiefgelaufen.",
+      "tryAgainGeneric": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
       "pleaseWait": "Bitte warten...",
       "retry": "Erneut versuchen",
       "transactionRevertedUnknownReason": "Transaktion wurde aus unbekanntem Grund zurückgesetzt.",
@@ -1107,6 +1215,47 @@
         "clickHere": "hier klicken",
         "noTokensSuffix": "um zuerst einen Token auszugeben"
       },
+      "tokenBurning": {
+        "selectTokenTitle": "Token auswählen",
+        "selectTokenDescription": "Wählen Sie einen Token zum Verbrennen aus",
+        "selectToken": "Token auswählen",
+        "tokenSupply": "Token-Angebot",
+        "unlimitedSupply": "Unbegrenztes Angebot",
+        "issuanceToDate": "Bisherige Ausgabe",
+        "tokenLabel": "Token",
+        "selectTokenPlaceholder": "Token auswählen",
+        "noTokenFound": "Kein Token gefunden.",
+        "noTokensPrefix": "Ihr Space hat noch keinen Token erstellt,",
+        "clickHere": "hier klicken",
+        "noTokensSuffix": "um zuerst einen Token auszugeben",
+        "tokenBurn": "Token-Verbrennung",
+        "tokenBurnDescription": "Entfernen (verbrennen) Sie Tokens von ausgewählten Spaces oder Wallet-Adressen. Diese Aktion reduziert das gesamte Token-Angebot und kann genutzt werden, um den Umlauf zu steuern oder Zuweisungen zu korrigieren.",
+        "burnTargetsLabel": "Token verbrennen",
+        "recipientTypeLabel": "Empfänger",
+        "member": "Mitglied",
+        "space": "Space",
+        "selectTarget": "Mitglied oder Space auswählen",
+        "selectMemberPlaceholder": "Mitglied auswählen...",
+        "selectSpacePlaceholder": "Space auswählen...",
+        "walletAddress": "Wallet-Adresse",
+        "walletAddressPlaceholder": "Wallet-Adresse eingeben",
+        "addressAutofillHint": "Adresse wird automatisch aus dem ausgewählten Mitglied oder Space übernommen.",
+        "amountLabel": "Betrag",
+        "amountPlaceholder": "Betrag eingeben",
+        "recipientBalance": "Empfänger-Token-Guthaben",
+        "recipientBalanceHint": "Aktuelles Guthaben: {balance}",
+        "recipientBalanceValue": "{value} {symbol}",
+        "burnAmountExceedsBalance": "Der Verbrennungsbetrag überschreitet das Token-Guthaben des Empfängers. Geben Sie einen kleineren Betrag ein, um fortzufahren.",
+        "recipientBalanceLoading": "Guthaben wird geladen...",
+        "recipientBalanceUnavailable": "Guthaben nicht verfügbar",
+        "currentSpaceTag": "Aktueller Space",
+        "allBalance": "Gesamtes Guthaben",
+        "noMembersFound": "Keine Mitglieder gefunden.",
+        "noSpacesFound": "Keine Spaces gefunden.",
+        "allBalanceWarning": "Wenn „Gesamtes Guthaben“ ausgewählt ist, wird das gesamte Token-Guthaben dieses Mitglieds oder Spaces dauerhaft verbrannt.",
+        "add": "Hinzufügen",
+        "remove": "Entfernen"
+      },
       "spaceWithMonths": {
         "spaces": "Spaces",
         "contribution": "Beitrag:",
@@ -1239,7 +1388,11 @@
       "maxRedemption": "Maximale Rücknahme",
       "maxRedemptionValue": "{percent}% über {days} Tage",
       "minimumBackingPercent": "Mindestdeckung in %",
-      "defaultAvatar": "Standard-Avatar"
+      "tokenBurning": "Token-Verbrennung",
+      "burnRecipient": "Verbrennungs-Empfänger",
+      "burnAmount": "Verbrennungsbetrag",
+      "defaultAvatar": "Standard-Avatar",
+      "selfBurn": "Selbstverbrennung"
     },
     "entryMethods": {
       "openAccess": "Open Access",
@@ -1325,5 +1478,37 @@
         }
       }
     }
+  },
+  "AiPanel": {
+    "title": "Hypha AI",
+    "suggestions": {
+      "aboutSpace": "Erzähl mir etwas über diesen Space",
+      "memberCount": "Wie viele Mitglieder hat dieser Space?",
+      "agreements": "Welche Vereinbarungen gibt es in diesem Space?",
+      "structure": "Beschreibe die Struktur dieses Spaces"
+    },
+    "welcome": "Hallo! Ich bin dein Hypha AI-Assistent. Ich kann Space-Details wie Mitgliederzahlen, Vereinbarungen und Strukturen nachschlagen. Frag mich alles über den Space, den du gerade ansiehst.",
+    "placeholder": "Frag Hypha AI etwas...",
+    "sendButton": "Senden",
+    "stopButton": "Stoppen",
+    "newlineHint": "Shift+Enter für neue Zeile",
+    "signIn": "Melde dich an, um Hypha AI zu verwenden",
+    "signInButton": "Anmelden",
+    "loading": "Laden...",
+    "openPanel": "Hypha AI öffnen",
+    "hidePanel": "AI-Panel ausblenden",
+    "resetChat": "Chat zurücksetzen",
+    "closePanel": "Panel schließen",
+    "copyButton": "Kopieren",
+    "copiedButton": "Kopiert!",
+    "toolLookingUp": "Space wird gesucht…",
+    "toolLookingUpSlug": "Space \"{slug}\" wird gesucht…",
+    "toolCompleted": "Tool-Aufruf abgeschlossen.",
+    "toolFoundSpace": "{title} ({slug}) gefunden - {memberCount} Mitglieder, {documentCount} Vereinbarungen",
+    "toolNoSpace": "Kein Space für Slug \"{slug}\" gefunden",
+    "toolTokens": "{count} Token(s) für Space \"{slug}\" abgerufen.",
+    "toolError": "Fehler: {message}",
+    "streamError": "Beim Generieren der Antwort ist ein Fehler aufgetreten.",
+    "attachment": "Anhang"
   }
 }

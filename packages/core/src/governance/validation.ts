@@ -312,6 +312,58 @@ export const schemaMintTokensToSpaceTreasury = z.object({
   }),
 });
 
+const schemaTokenBurningTarget = z
+  .object({
+    type: z.enum(['member', 'space']).default('member'),
+    address: z
+      .string({ message: 'Please add a recipient or wallet address' })
+      .trim()
+      .min(1, { message: 'Please add a recipient or wallet address' })
+      .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' }),
+    amount: z.string().optional(),
+    allBalance: z.boolean().default(false),
+  })
+  .superRefine((data, ctx) => {
+    if (data.allBalance) {
+      return;
+    }
+
+    if (!data.amount || data.amount.trim() === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Enter an amount to continue.',
+        path: ['amount'],
+      });
+      return;
+    }
+
+    const parsedAmount = Number(data.amount);
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Amount must be greater than 0',
+        path: ['amount'],
+      });
+    }
+  });
+
+export const schemaTokenBurning = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  label: z.literal('Token Burning').optional(),
+  tokenBurning: z.object({
+    token: z
+      .string({ message: 'Choose a token to burn' })
+      .min(1, 'Choose a token to burn')
+      .refine((value) => isAddress(value), {
+        message: 'Invalid token address',
+      }),
+    burns: z
+      .array(schemaTokenBurningTarget)
+      .min(1, 'At least one burn target is required'),
+  }),
+});
+
 export const baseSchemaIssueNewToken = z.object({
   ...createAgreementWeb2Props,
   ...createAgreementFiles,
@@ -761,3 +813,74 @@ export const schemaChangeSpaceTransparencySettings = z.object({
   spaceDiscoverability: z.number().int().min(0).max(3),
   spaceActivityAccess: z.number().int().min(0).max(3),
 });
+
+/** Plain object schema so consumers can `.extend()` before `.superRefine(refineSpaceTokenPurchaseWhenActive)`. */
+export const schemaSpaceTokenPurchaseObject = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  tokenAddress: z
+    .string({ message: 'Please select a token' })
+    .min(1, 'Please select a token'),
+  activatePurchase: z.boolean().default(false),
+  purchasePrice: z.preprocess(
+    (val) =>
+      val === '' || val === null || val === undefined ? undefined : Number(val),
+    z.number().positive('Purchase price must be greater than 0').optional(),
+  ),
+  /**
+   * Full set of reference currencies for UI selection (REFERENCE_CURRENCIES).
+   * On-chain hydration via useSpaceTokenSaleDetailsFromChain only yields USD/EUR.
+   */
+  purchaseCurrency: z.enum(REFERENCE_CURRENCIES).optional(),
+  tokensAvailableForPurchase: z.preprocess(
+    (val) =>
+      val === '' || val === null || val === undefined ? undefined : Number(val),
+    z.number().min(0, 'Available amount cannot be negative').optional(),
+  ),
+});
+
+export const refineSpaceTokenPurchaseWhenActive = (
+  data: {
+    activatePurchase: boolean;
+    purchasePrice?: number;
+    purchaseCurrency?: string;
+    tokensAvailableForPurchase?: number;
+  },
+  ctx: z.RefinementCtx,
+) => {
+  if (!data.activatePurchase) {
+    return;
+  }
+  if (data.purchasePrice === undefined || data.purchasePrice <= 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message:
+        'Purchase price must be greater than 0 when token purchase is active.',
+      path: ['purchasePrice'],
+    });
+  }
+  if (!data.purchaseCurrency) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message:
+        'Please select a payment currency when token purchase is active.',
+      path: ['purchaseCurrency'],
+    });
+  }
+  if (
+    data.tokensAvailableForPurchase === undefined ||
+    data.tokensAvailableForPurchase < 0
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message:
+        'Tokens available for purchase is required when token purchase is active (use 0 if none left).',
+      path: ['tokensAvailableForPurchase'],
+    });
+  }
+};
+
+export const schemaSpaceTokenPurchase =
+  schemaSpaceTokenPurchaseObject.superRefine(
+    refineSpaceTokenPurchaseWhenActive,
+  );

@@ -38,6 +38,7 @@
     "network": "Network",
     "mySpaces": "My Spaces",
     "openMenu": "Open menu",
+    "openProfileMenu": "Open profile menu",
     "closeMenu": "Close menu",
     "selectLanguage": "Select language",
     "myProfile": "My Profile",
@@ -156,6 +157,10 @@
         "title": "Mint Tokens to Space Treasury",
         "description": "Mint tokens into your space treasury to fund operations, distribute rewards, or provide liquidity."
       },
+      "tokenBurning": {
+        "title": "Burn Tokens on Specified Spaces or Wallets",
+        "description": "Remove (burn) tokens from chosen spaces or wallet addresses. This action reduces the total token supply and can be used to manage circulation or correct allocations."
+      },
       "tokenBackingVault": {
         "title": "Token Backing Vault",
         "description": "Create a token backing vault, define redemption rules and restrictions, set the start date and redemption price, and authorise the addition or withdrawal of collateral to the vault."
@@ -163,6 +168,14 @@
       "buyHyphaTokensRewards": {
         "title": "Buy Hypha Tokens (Rewards)",
         "description": "Purchase Hypha tokens to participate in the network and earn rewards."
+      },
+      "spaceTokenPurchase": {
+        "title": "Enable Space Token Purchase",
+        "description": "Allow your members to purchase your space's native tokens."
+      },
+      "redeemTokens": {
+        "title": "Redeem Tokens",
+        "description": "Convert tokens in the treasury into their equivalent fiat value held in the Space Token Issuer vault."
       },
       "depositFunds": {
         "title": "Deposit Funds",
@@ -377,6 +390,7 @@
     "rewardValueMustBeGreaterThanZero": "The reward value must be greater than 0",
     "noRewardsFoundForUser": "No rewards found for this user",
     "buyHypha": "Buy HYPHA",
+    "buySpaceTokens": "Buy Space tokens",
     "actions": "Actions",
     "noAssetsFoundForUser": "No assets found for this user",
     "editForm": {
@@ -429,6 +443,11 @@
       "buyHyphaTokensRewards": {
         "title": "Buy Hypha Tokens (Rewards)",
         "description": "Purchase Hypha tokens to participate in the network and earn rewards"
+      },
+      "buySpaceTokens": {
+        "title": "Buy Space Tokens",
+        "backLabel": "Back to actions",
+        "description": "Purchase your space's native tokens using the configured payment currency."
       },
       "activateSpaces": {
         "title": "Activate Space(s)",
@@ -523,6 +542,84 @@
   "Proposals": {
     "CreateNew": "Create a new Proposal",
     "Create": "Create Proposal"
+  },
+  "SpaceTokenPurchase": {
+    "selection": {
+      "sectionTitle": "Token",
+      "description": "Choose a token available for purchase in this space.",
+      "fieldLabel": "Token",
+      "placeholder": "Select a token",
+      "noTokenFound": "No token found.",
+      "noTokenPrefix": "Your space has not yet created a token,",
+      "clickHere": "click here",
+      "noTokenSuffix": "to first issue a token",
+      "tokenSupply": "Token Supply",
+      "issuanceToDate": "Issuance to Date",
+      "unlimitedSupply": "Unlimited Supply",
+      "availableLimit": "Tokens Available for Purchase Limit"
+    },
+    "toggle": {
+      "sectionTitle": "Token Purchase",
+      "description": "Activate this option to allow your members to purchase your space's native tokens. Disable at any time.",
+      "activateLabel": "Activate Token Purchase",
+      "disabledHint": "When disabled, members can no longer purchase this token."
+    },
+    "price": {
+      "sectionTitle": "Token Purchase Price",
+      "description": "Set a custom purchase price, or use the default treasury price.",
+      "currencyPlaceholder": "Currency",
+      "currentPriceLabel": "Current price in treasury:",
+      "currentPriceSuffix": "\u2014 set in your space's token configuration.",
+      "fieldLabel": "Token Purchase Price",
+      "availableAtThisPriceLabel": "Tokens Available for Purchase at this Price",
+      "exceedsLimit": "The number of tokens requested exceeds the Tokens Available for Purchase Limit. Please enter a value up to {limit}."
+    },
+    "eligibility": {
+      "sectionTitle": "Purchase Eligibility",
+      "description": "The \"Buy Space tokens\" button will be shown on the profile of the spaces or members which are whitelisted in the token settings. If you'd like to review this access, you can manage whitelists by passing a token configuration proposal.",
+      "whitelistInfo": "Whitelist is configured in the token's original issuance settings. All members or spaces in the \"To\" whitelist will be able to see and purchase {tokenName} tokens."
+    }
+  },
+  "ProposalSpaceTokenPurchase": {
+    "token": "Token",
+    "tokenAlt": "Token",
+    "purchase_status": "Purchase Status",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "payment_token": "Payment Token",
+    "not_configured": "Not configured",
+    "purchase_price": "Purchase Price",
+    "tokens_for_sale": "Tokens For Sale"
+  },
+  "PeopleBuySpaceTokens": {
+    "validation": {
+      "tokenRequired": "Please select a token",
+      "amountRequired": "Please enter an amount",
+      "amountPositive": "Amount must be greater than 0"
+    },
+    "empty": "No space tokens are currently available for purchase.",
+    "eligibilityLoadError": "Unable to check which tokens are available. Please try again.",
+    "selectToken": "Select Token",
+    "selectPlaceholder": "Select a token",
+    "amountAndToken": "Amount & token",
+    "amount": "Amount",
+    "pricePerToken": "Price: {price} {currency} per token",
+    "totalCost": "Total cost: {amount} {currency}",
+    "remainingInSale": "Remaining in sale: {amount}",
+    "loadingSale": "Loading sale config...",
+    "unableToReadSale": "Unable to read token sale configuration.",
+    "saleDisabled": "Sale is currently disabled for this token.",
+    "recipientTokenSent": "{symbol} sent to",
+    "recipientPaymentPaid": "{symbol} paid to",
+    "fallbackTokenSymbol": "Token",
+    "fallbackPaymentSymbol": "Payment",
+    "statusApproving": "Approving",
+    "statusPurchasing": "Purchasing",
+    "statusProcessing": "Processing",
+    "success": "Your purchase was successful. Tokens will appear in your wallet shortly.",
+    "buy": "Buy",
+    "transactionFailed": "Transaction failed. Please retry.",
+    "purchaseFailedGeneric": "An error occurred while processing your purchase. Please try again."
   },
   "Spaces": {
     "createSpace": "Create Space",
@@ -622,8 +719,10 @@
       "spaceToSpace": "Space to Space",
       "issueNewToken": "Issue New Token",
       "treasuryMinting": "Treasury Minting",
+      "tokenBurning": "Token Burning",
       "backingVault": "Backing Vault",
       "buyHyphaTokensRewards": "Buy Hypha Tokens (Rewards)",
+      "spaceTokenPurchase": "Token Purchase",
       "spaceTransparency": "Space Transparency",
       "collectiveAgreement": "Collective Agreement",
       "contribution": "Contribution",
@@ -663,7 +762,7 @@
       "recipientRequired": "Please add a recipient or wallet address",
       "invalidEthereumAddress": "Invalid Ethereum address",
       "amountGreaterThanZero": "Amount must be greater than 0",
-      "amountRequired": "Please enter amount",
+      "amountRequired": "Enter an amount to continue.",
       "tokenRequired": "Please select a token",
       "atLeastOnePayoutRequired": "At least one payout is required",
       "purchaseAmountRequired": "Please enter a purchase amount.",
@@ -681,12 +780,14 @@
       "autoExecutionVotingDurationRequired": "Auto-execution is disabled. Please set a minimum voting duration.",
       "selectVotingToken": "Please select a token to pursue with this voting method.",
       "backingCollateralRequired": "Please select a backing collateral",
-      "enterAmount": "Please enter amount",
+      "enterAmount": "Enter an amount to continue.",
       "invalidTokenAddress": "Invalid token address",
       "invalidAddress": "Invalid address",
       "tokenAddressRequired": "Token address is required",
       "integerRequired": "Should be integer",
       "chooseTokenToMint": "Choose a token to mint",
+      "chooseTokenToBurn": "Choose a token to burn",
+      "atLeastOneBurnTargetRequired": "At least one burn target is required",
       "redemptionTokenPriceRequired": "Token price is required when redemption is active. Enter a price greater than 0.",
       "redemptionReferenceCurrencyRequired": "Reference currency is required when redemption is active.",
       "redemptionMaxPercentRequired": "Maximum Redemption % is required when redemption is active. Enter 0 for no limit.",
@@ -771,12 +872,19 @@
     "loadingBackdrop": {
       "keepWindowOpen": "Please keep this window open until the progress bar completes."
     },
+    "spaceTokenPurchaseProgress": {
+      "CREATE_WEB2_AGREEMENT": "Creating agreement...",
+      "CREATE_WEB3_PROPOSAL": "Creating Web3 proposal...",
+      "UPLOAD_FILES": "Uploading files...",
+      "LINK_WEB2_AND_WEB3_AGREEMENT": "Linking Web2 and Web3 agreements"
+    },
     "proposalLoader": {
       "processingVote": "Processing vote...",
       "savingVote": "Saving vote...",
       "gettingUpdatedData": "Getting updated data...",
       "voteProcessed": "Vote processed!",
       "somethingWentWrong": "Something went wrong.",
+      "tryAgainGeneric": "Something went wrong. Please try again.",
       "pleaseWait": "Please wait...",
       "retry": "Retry",
       "transactionRevertedUnknownReason": "Transaction reverted for unknown reason.",
@@ -1107,6 +1215,47 @@
         "clickHere": "click here",
         "noTokensSuffix": "to first issue a token"
       },
+      "tokenBurning": {
+        "selectTokenTitle": "Select Token",
+        "selectTokenDescription": "Choose a token to burn",
+        "selectToken": "Select Token",
+        "tokenSupply": "Token Supply",
+        "unlimitedSupply": "Unlimited Supply",
+        "issuanceToDate": "Issuance to Date",
+        "tokenLabel": "Token",
+        "selectTokenPlaceholder": "Select a token",
+        "noTokenFound": "No token found.",
+        "noTokensPrefix": "Your space has not yet created a token,",
+        "clickHere": "click here",
+        "noTokensSuffix": "to first issue a token",
+        "tokenBurn": "Token Burn",
+        "tokenBurnDescription": "Remove (burn) tokens from chosen spaces or wallet addresses. This action reduces the total token supply and can be used to manage circulation or correct allocations.",
+        "burnTargetsLabel": "Burn Tokens",
+        "recipientTypeLabel": "Recipient",
+        "member": "Member",
+        "space": "Space",
+        "selectTarget": "Select member or space",
+        "selectMemberPlaceholder": "Select member...",
+        "selectSpacePlaceholder": "Select space...",
+        "walletAddress": "Wallet Address",
+        "walletAddressPlaceholder": "Enter wallet address",
+        "addressAutofillHint": "Address auto-populated from selected member or space.",
+        "amountLabel": "Amount",
+        "amountPlaceholder": "Enter amount",
+        "recipientBalance": "Recipient token balance",
+        "recipientBalanceHint": "Current balance: {balance}",
+        "recipientBalanceValue": "{value} {symbol}",
+        "burnAmountExceedsBalance": "The burn amount exceeds the recipient’s token balance. Enter a smaller amount to continue.",
+        "recipientBalanceLoading": "Loading balance...",
+        "recipientBalanceUnavailable": "Balance unavailable",
+        "currentSpaceTag": "Current space",
+        "allBalance": "All balance",
+        "noMembersFound": "No members found.",
+        "noSpacesFound": "No spaces found.",
+        "allBalanceWarning": "When 'All balance' is selected, the entire token balance for this member or space will be permanently burned.",
+        "add": "Add",
+        "remove": "Remove"
+      },
       "spaceWithMonths": {
         "spaces": "Space(s)",
         "contribution": "Contribution:",
@@ -1239,7 +1388,11 @@
       "maxRedemption": "Max Redemption",
       "maxRedemptionValue": "{percent}% over {days} days",
       "minimumBackingPercent": "Minimum Backing %",
-      "defaultAvatar": "Default avatar"
+      "tokenBurning": "Token Burning",
+      "burnRecipient": "Burn recipient",
+      "burnAmount": "Burn amount",
+      "defaultAvatar": "Default avatar",
+      "selfBurn": "Self burn"
     },
     "entryMethods": {
       "openAccess": "Open Access",
@@ -1325,5 +1478,37 @@
         }
       }
     }
+  },
+  "AiPanel": {
+    "title": "Hypha AI",
+    "suggestions": {
+      "aboutSpace": "Tell me about this space",
+      "memberCount": "How many members does this space have?",
+      "agreements": "What agreements exist in this space?",
+      "structure": "Describe the structure of this space"
+    },
+    "welcome": "Hello! I'm your Hypha AI assistant. I can look up space details like member counts, agreements, and structure. Ask me anything about the space you're viewing.",
+    "placeholder": "Ask Hypha AI anything...",
+    "sendButton": "Send",
+    "stopButton": "Stop",
+    "newlineHint": "Shift+Enter for newline",
+    "signIn": "Sign in to use Hypha AI",
+    "signInButton": "Sign In",
+    "loading": "Loading...",
+    "openPanel": "Open Hypha AI panel",
+    "hidePanel": "Hide AI panel",
+    "resetChat": "Reset chat",
+    "closePanel": "Close panel",
+    "copyButton": "Copy",
+    "copiedButton": "Copied!",
+    "toolLookingUp": "Looking up space…",
+    "toolLookingUpSlug": "Looking up space \"{slug}\"…",
+    "toolCompleted": "Tool call completed.",
+    "toolFoundSpace": "Found {title} ({slug}) - {memberCount} members, {documentCount} agreements",
+    "toolNoSpace": "No space found for slug \"{slug}\"",
+    "toolTokens": "Retrieved {count} token(s) for space \"{slug}\".",
+    "toolError": "Error: {message}",
+    "streamError": "An error occurred while generating the response.",
+    "attachment": "Attachment"
   }
 }

@@ -39,8 +39,10 @@
       "recipientRequired": "Adicione um destinatário ou endereço de carteira",
       "invalidEthereumAddress": "Endereço Ethereum inválido",
       "amountGreaterThanZero": "O valor deve ser maior que 0",
-      "amountRequired": "Digite um valor",
+      "amountRequired": "Insira um valor para continuar.",
       "tokenRequired": "Selecione um token",
+      "chooseTokenToBurn": "Escolha um token para queimar",
+      "atLeastOneBurnTargetRequired": "É necessário pelo menos um destino de queima",
       "atLeastOnePayoutRequired": "Pelo menos um pagamento é obrigatório",
       "purchaseAmountRequired": "Digite um valor de compra.",
       "selectSpaceToActivate": "Selecione um espaço para ativar.",
@@ -57,7 +59,7 @@
       "autoExecutionVotingDurationRequired": "A execução automática está desativada. Defina uma duração mínima de votação.",
       "selectVotingToken": "Selecione um token para este método de votação.",
       "backingCollateralRequired": "Selecione um colateral de lastro",
-      "enterAmount": "Digite um valor",
+      "enterAmount": "Insira um valor para continuar.",
       "invalidTokenAddress": "Endereço do token inválido",
       "invalidAddress": "Endereço inválido",
       "tokenAddressRequired": "O endereço do token é obrigatório",
@@ -411,6 +413,47 @@
         "clickHere": "Clique aqui",
         "noTokensSuffix": "primeiro emitir um token"
       },
+      "tokenBurning": {
+        "selectTokenTitle": "Selecionar token",
+        "selectTokenDescription": "Escolha um token para queimar",
+        "selectToken": "Selecionar token",
+        "tokenSupply": "Fornecimento de tokens",
+        "unlimitedSupply": "Fornecimento ilimitado",
+        "issuanceToDate": "Emissão até a data",
+        "tokenLabel": "Token",
+        "selectTokenPlaceholder": "Selecione um token",
+        "noTokenFound": "Nenhum token encontrado.",
+        "noTokensPrefix": "Seu espaço ainda não criou um token,",
+        "clickHere": "clique aqui",
+        "noTokensSuffix": "para emitir um token primeiro",
+        "tokenBurn": "Queima de tokens",
+        "tokenBurnDescription": "Remova (queime) tokens de espaços ou endereços de carteira selecionados. Esta ação reduz o fornecimento total de tokens e pode ser usada para gerenciar a circulação ou corrigir alocações.",
+        "burnTargetsLabel": "Queimar tokens",
+        "recipientTypeLabel": "Destinatário",
+        "member": "Membro",
+        "space": "Espaço",
+        "selectTarget": "Selecione membro ou espaço",
+        "selectMemberPlaceholder": "Selecione um membro...",
+        "selectSpacePlaceholder": "Selecione um espaço...",
+        "walletAddress": "Endereço da carteira",
+        "walletAddressPlaceholder": "Digite o endereço da carteira",
+        "addressAutofillHint": "Endereço preenchido automaticamente a partir do membro ou espaço selecionado.",
+        "amountLabel": "Valor",
+        "amountPlaceholder": "Insira o valor",
+        "recipientBalance": "Saldo de tokens do destinatário",
+        "recipientBalanceHint": "Saldo atual: {balance}",
+        "recipientBalanceValue": "{value} {symbol}",
+        "burnAmountExceedsBalance": "O valor da queima excede o saldo de tokens do destinatário. Insira um valor menor para continuar.",
+        "recipientBalanceLoading": "Carregando saldo...",
+        "recipientBalanceUnavailable": "Saldo indisponível",
+        "currentSpaceTag": "Espaço atual",
+        "allBalance": "Saldo total",
+        "noMembersFound": "Nenhum membro encontrado.",
+        "noSpacesFound": "Nenhum espaço encontrado.",
+        "allBalanceWarning": "Quando \"Saldo total\" estiver selecionado, todo o saldo de tokens deste membro ou espaço será queimado permanentemente.",
+        "add": "Adicionar",
+        "remove": "Remover"
+      },
       "spaceWithMonths": {
         "spaces": "Espaço(s)",
         "contribution": "Contribuição:",
@@ -445,8 +488,10 @@
       "spaceToSpace": "Espaço para Espaço",
       "issueNewToken": "Emitir novo token",
       "treasuryMinting": "Cunhagem de Tesouro",
+      "tokenBurning": "Queima de tokens",
       "backingVault": "Cofre de lastro",
       "buyHyphaTokensRewards": "Compre tokens Hypha (recompensas)",
+      "spaceTokenPurchase": "Compra de tokens do espaço",
       "spaceTransparency": "Transparência Espacial",
       "collectiveAgreement": "Acordo Coletivo",
       "contribution": "Contribuição",
@@ -560,12 +605,19 @@
     "loadingBackdrop": {
       "keepWindowOpen": "Por favor, mantenha esta janela aberta até que a barra de progresso seja concluída."
     },
+    "spaceTokenPurchaseProgress": {
+      "CREATE_WEB2_AGREEMENT": "A criar acordo...",
+      "CREATE_WEB3_PROPOSAL": "A criar proposta Web3...",
+      "UPLOAD_FILES": "A carregar ficheiros...",
+      "LINK_WEB2_AND_WEB3_AGREEMENT": "A ligar acordos Web2 e Web3"
+    },
     "proposalLoader": {
       "processingVote": "Processando voto...",
       "savingVote": "Salvando voto...",
       "gettingUpdatedData": "Obtendo dados atualizados...",
       "voteProcessed": "Votação processada!",
       "somethingWentWrong": "Algo deu errado.",
+      "tryAgainGeneric": "Algo deu errado. Tente novamente.",
       "pleaseWait": "Por favor, aguarde...",
       "retry": "Tentar novamente",
       "transactionRevertedUnknownReason": "Transação revertida por motivo desconhecido.",
@@ -579,6 +631,7 @@
     "network": "Rede",
     "mySpaces": "Meus espaços",
     "openMenu": "Abrir menu",
+    "openProfileMenu": "Abrir menu do perfil",
     "closeMenu": "Fechar menu",
     "selectLanguage": "Selecione o idioma",
     "myProfile": "Meu perfil",
@@ -697,6 +750,10 @@
         "title": "Mint Tokens para Tesouro Espacial",
         "description": "Crie tokens em seu tesouro espacial para financiar operações, distribuir recompensas ou fornecer liquidez."
       },
+      "tokenBurning": {
+        "title": "Queimar tokens em espaços ou carteiras específicas",
+        "description": "Remova (queime) tokens de espaços ou endereços de carteira selecionados. Essa ação reduz o fornecimento total de tokens e pode ser usada para gerenciar a circulação ou corrigir alocações."
+      },
       "tokenBackingVault": {
         "title": "Cofre de lastro de token",
         "description": "Crie um cofre de lastro de token, defina regras e restrições de resgate, configure a data de início e o preço de resgate e autorize a adição ou retirada de colaterais do cofre."
@@ -704,6 +761,14 @@
       "buyHyphaTokensRewards": {
         "title": "Compre tokens Hypha (recompensas)",
         "description": "Compre tokens Hypha para participar da rede e ganhar recompensas."
+      },
+      "spaceTokenPurchase": {
+        "title": "Ativar compra de tokens do espaço",
+        "description": "Permita que os membros comprem os tokens nativos do seu espaço."
+      },
+      "redeemTokens": {
+        "title": "Resgatar tokens",
+        "description": "Converta tokens no tesouro em seu valor fiat equivalente mantido no cofre do emissor de tokens do espaço."
       },
       "depositFunds": {
         "title": "Depositar fundos",
@@ -918,6 +983,7 @@
     "rewardValueMustBeGreaterThanZero": "O valor da recompensa deve ser maior que 0",
     "noRewardsFoundForUser": "Nenhuma recompensa encontrada para este usuário",
     "buyHypha": "Compre HYPHA",
+    "buySpaceTokens": "Comprar tokens do espaço",
     "actions": "Ações",
     "noAssetsFoundForUser": "Nenhum recurso encontrado para este usuário",
     "editForm": {
@@ -970,6 +1036,11 @@
       "buyHyphaTokensRewards": {
         "title": "Compre tokens Hypha (recompensas)",
         "description": "Compre tokens Hypha para participar da rede e ganhar recompensas"
+      },
+      "buySpaceTokens": {
+        "title": "Comprar tokens do espaço",
+        "backLabel": "Voltar às ações",
+        "description": "Compre os tokens nativos do seu espaço com a moeda de pagamento configurada."
       },
       "activateSpaces": {
         "title": "Ativar espaço(s)",
@@ -1064,6 +1135,84 @@
   "Proposals": {
     "CreateNew": "Crie uma nova proposta",
     "Create": "Criar proposta"
+  },
+  "SpaceTokenPurchase": {
+    "selection": {
+      "sectionTitle": "Token",
+      "description": "Escolha um token disponível para compra neste espaço.",
+      "fieldLabel": "Token",
+      "placeholder": "Selecione um token",
+      "noTokenFound": "Nenhum token encontrado.",
+      "noTokenPrefix": "Seu espaço ainda não criou um token,",
+      "clickHere": "clique aqui",
+      "noTokenSuffix": "para emitir primeiro um token",
+      "tokenSupply": "Fornecimento de tokens",
+      "issuanceToDate": "Emissão até a data",
+      "unlimitedSupply": "Fornecimento ilimitado",
+      "availableLimit": "Limite de tokens disponíveis para compra"
+    },
+    "toggle": {
+      "sectionTitle": "Compra de tokens",
+      "description": "Ative esta opção para permitir que os membros comprem os tokens nativos do seu espaço. Desative a qualquer momento.",
+      "activateLabel": "Ativar compra de tokens",
+      "disabledHint": "Quando desativada, os membros não podem mais comprar este token."
+    },
+    "price": {
+      "sectionTitle": "Preço de compra do token",
+      "description": "Defina um preço de compra personalizado ou use o preço padrão da tesouraria.",
+      "currencyPlaceholder": "Moeda",
+      "currentPriceLabel": "Preço atual na tesouraria:",
+      "currentPriceSuffix": "— definido na configuração do token do seu espaço.",
+      "fieldLabel": "Preço de compra do token",
+      "availableAtThisPriceLabel": "Tokens disponíveis para compra a este preço",
+      "exceedsLimit": "A quantidade de tokens solicitada excede o limite de tokens disponíveis para compra. Insira um valor até {limit}."
+    },
+    "eligibility": {
+      "sectionTitle": "Elegibilidade de compra",
+      "description": "O botão «Comprar tokens do espaço» será exibido no perfil dos espaços ou membros que estiverem na lista branca nas configurações do token. Para rever esse acesso, você pode gerenciar listas brancas por meio de uma proposta de configuração do token.",
+      "whitelistInfo": "A lista branca é configurada nas definições originais de emissão do token. Todos os membros ou espaços na lista branca «Para» poderão ver e comprar tokens {tokenName}."
+    }
+  },
+  "ProposalSpaceTokenPurchase": {
+    "token": "Token",
+    "tokenAlt": "Token",
+    "purchase_status": "Estado da compra",
+    "enabled": "Ativado",
+    "disabled": "Desativado",
+    "payment_token": "Token de pagamento",
+    "not_configured": "Não configurado",
+    "purchase_price": "Preço de compra",
+    "tokens_for_sale": "Tokens à venda"
+  },
+  "PeopleBuySpaceTokens": {
+    "validation": {
+      "tokenRequired": "Selecione um token",
+      "amountRequired": "Insira uma quantidade",
+      "amountPositive": "A quantidade deve ser maior que 0"
+    },
+    "empty": "Não há tokens do espaço disponíveis para compra no momento.",
+    "eligibilityLoadError": "Não foi possível verificar quais tokens estão disponíveis. Tente novamente.",
+    "selectToken": "Selecionar token",
+    "selectPlaceholder": "Selecione um token",
+    "amountAndToken": "Quantidade e token",
+    "amount": "Quantidade",
+    "pricePerToken": "Preço: {price} {currency} por token",
+    "totalCost": "Custo total: {amount} {currency}",
+    "remainingInSale": "Restantes na venda: {amount}",
+    "loadingSale": "Carregando configuração da venda...",
+    "unableToReadSale": "Não foi possível ler a configuração de venda do token.",
+    "saleDisabled": "A venda deste token está desativada.",
+    "recipientTokenSent": "{symbol} enviado para",
+    "recipientPaymentPaid": "{symbol} pago a",
+    "fallbackTokenSymbol": "Token",
+    "fallbackPaymentSymbol": "Pagamento",
+    "statusApproving": "A aprovar",
+    "statusPurchasing": "A comprar",
+    "statusProcessing": "A processar",
+    "success": "A sua compra foi concluída com sucesso. Os tokens aparecerão na sua carteira em breve.",
+    "buy": "Comprar",
+    "transactionFailed": "A transação falhou. Tente novamente.",
+    "purchaseFailedGeneric": "Ocorreu um erro ao processar a sua compra. Tente novamente."
   },
   "Spaces": {
     "createSpace": "Criar espaço",
@@ -1239,7 +1388,11 @@
       "maxRedemption": "Resgate máximo",
       "maxRedemptionValue": "{percent}% em {days} dias",
       "minimumBackingPercent": "Percentual mínimo de lastro",
-      "defaultAvatar": "Avatar padrão"
+      "tokenBurning": "Queima de tokens",
+      "burnRecipient": "Destinatário da queima",
+      "burnAmount": "Valor da queima",
+      "defaultAvatar": "Avatar padrão",
+      "selfBurn": "Autoqueima"
     },
     "entryMethods": {
       "openAccess": "Acesso aberto",
@@ -1325,5 +1478,37 @@
         }
       }
     }
+  },
+  "AiPanel": {
+    "title": "Hypha AI",
+    "suggestions": {
+      "aboutSpace": "Conte-me sobre este espaço",
+      "memberCount": "Quantos membros este espaço tem?",
+      "agreements": "Quais acordos existem neste espaço?",
+      "structure": "Descreva a estrutura deste espaço"
+    },
+    "welcome": "Olá! Sou seu assistente Hypha AI. Posso buscar detalhes do espaço como número de membros, acordos e estrutura. Pergunte-me qualquer coisa sobre o espaço que você está visualizando.",
+    "placeholder": "Pergunte ao Hypha AI...",
+    "sendButton": "Enviar",
+    "stopButton": "Parar",
+    "newlineHint": "Shift+Enter para nova linha",
+    "signIn": "Entre para usar o Hypha AI",
+    "signInButton": "Entrar",
+    "loading": "Carregando...",
+    "openPanel": "Abrir Hypha AI",
+    "hidePanel": "Ocultar painel AI",
+    "resetChat": "Reiniciar chat",
+    "closePanel": "Fechar painel",
+    "copyButton": "Copiar",
+    "copiedButton": "Copiado!",
+    "toolLookingUp": "Buscando espaço…",
+    "toolLookingUpSlug": "Buscando espaço \"{slug}\"…",
+    "toolCompleted": "Chamada de ferramenta concluída.",
+    "toolFoundSpace": "{title} ({slug}) encontrado - {memberCount} membros, {documentCount} acordos",
+    "toolNoSpace": "Nenhum espaço encontrado para o slug \"{slug}\"",
+    "toolTokens": "{count} token(s) obtido(s) para o espaço \"{slug}\".",
+    "toolError": "Erro: {message}",
+    "streamError": "Ocorreu um erro ao gerar a resposta.",
+    "attachment": "Anexo"
   }
 }

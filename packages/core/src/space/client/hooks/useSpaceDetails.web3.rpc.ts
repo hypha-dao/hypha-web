@@ -5,9 +5,13 @@ import useSWR from 'swr';
 import { getSpaceDetails } from '../web3';
 import React from 'react';
 
-export const useSpaceDetailsWeb3Rpc = ({ spaceId }: { spaceId: number }) => {
+export const useSpaceDetailsWeb3Rpc = ({
+  spaceId,
+}: {
+  spaceId?: number | null;
+}) => {
   const { data, isLoading, error } = useSWR(
-    [spaceId, 'spaceDetails'],
+    spaceId != null ? [spaceId, 'spaceDetails'] : null,
     async ([spaceId]) =>
       publicClient.readContract(getSpaceDetails({ spaceId: BigInt(spaceId) })),
     { revalidateOnFocus: true },
