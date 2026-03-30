@@ -174,7 +174,11 @@ export function ProposalAcceptInvestmentData({
                 amountHuman={leg.amount}
               />
               <span className="text-1 text-neutral-11">
-                {leg.source === 'mint' ? t('sourceMint') : t('sourceTreasury')}
+                {leg.source === 'treasury'
+                  ? t('sourceTreasury')
+                  : leg.source === 'mint'
+                  ? t('sourceMint')
+                  : t('fundingTreasuryThenMint')}
               </span>
             </div>
           ))}

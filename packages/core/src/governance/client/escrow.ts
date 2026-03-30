@@ -61,11 +61,11 @@ export type HyphaInvestmentFormPayloadV1 = {
   version: 1;
   investorAddress: string;
   investorSendLegs: { amount: string; token: string }[];
-  /** Omitted when identical to investor send + mint (current UI). */
+  /** Investor receive leg (amount + token); optional legacy source for older markers. */
   spaceReceiveLegs?: {
     amount: string;
     token: string;
-    source: 'mint' | 'treasury';
+    source?: 'mint' | 'treasury';
   }[];
 };
 

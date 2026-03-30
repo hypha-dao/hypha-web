@@ -176,6 +176,10 @@ export const useCreateAcceptInvestmentOrchestrator = ({
         version: 1,
         investorAddress: arg.recipient,
         investorSendLegs: arg.investorSendLegs,
+        spaceReceiveLegs: arg.spaceReceiveLegs.map(({ amount, token }) => ({
+          amount,
+          token,
+        })),
       };
       const descriptionWithMarker = appendHyphaInvestmentFormMarker(
         arg.description,

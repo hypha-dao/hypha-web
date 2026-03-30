@@ -645,6 +645,16 @@ export const useResubmitProposalData = <
             },
           );
         }
+        if (parsed.spaceReceiveLegs?.length) {
+          form.setValue(
+            'spaceReceiveLegs' as any,
+            parsed.spaceReceiveLegs as any,
+            {
+              shouldDirty: true,
+              shouldValidate: true,
+            },
+          );
+        }
 
         const fieldsToTrigger: string[] = ['title', 'description'];
         if (parsed.spaceDiscoverability !== undefined) {
@@ -768,6 +778,9 @@ export const useResubmitProposalData = <
         }
         if (parsed.recipient && parsed.investorSendLegs) {
           fieldsToTrigger.push('recipient', 'investorSendLegs');
+        }
+        if (parsed.spaceReceiveLegs?.length) {
+          fieldsToTrigger.push('spaceReceiveLegs');
         }
         form.trigger(fieldsToTrigger as any[]);
 

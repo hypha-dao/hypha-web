@@ -995,6 +995,9 @@ export const ProposalDetail = ({
       return {
         recipient: fromMarker.investorAddress,
         investorSendLegs: fromMarker.investorSendLegs,
+        ...(fromMarker.spaceReceiveLegs?.length
+          ? { spaceReceiveLegs: fromMarker.spaceReceiveLegs }
+          : {}),
       };
     }
     const ex = proposalDetails?.exchangeEscrowData;
@@ -1007,11 +1010,15 @@ export const ProposalDetail = ({
     ) {
       return undefined;
     }
+    const da = resolveTokenDecimals(ex.tokenA);
     const db = resolveTokenDecimals(ex.tokenB);
     return {
       recipient: ex.partyB,
       investorSendLegs: [
         { amount: formatUnits(ex.amountB, db), token: ex.tokenB },
+      ],
+      spaceReceiveLegs: [
+        { amount: formatUnits(ex.amountA, da), token: ex.tokenA },
       ],
     };
   })();

@@ -67,6 +67,7 @@ export const CreateAcceptInvestmentForm = ({
       label: 'Investment',
       recipient: '',
       investorSendLegs: [{ amount: '', token: '' as `0x${string}` }],
+      spaceReceiveLegs: [{ amount: '', token: '' as `0x${string}` }],
     },
   });
 
