@@ -2,7 +2,7 @@
 
 import useSWRMutation from 'swr/mutation';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
-import { erc20Abi, parseUnits } from 'viem';
+import { erc20Abi, maxUint256, parseUnits } from 'viem';
 import {
   getTokenDecimals,
   percentageStringToBigInt,
@@ -29,7 +29,10 @@ interface RedeemTokensInput {
 
 interface UseRedeemTokensProps {
   authToken?: string | null;
-  /** Smart wallet (token owner) — used to skip redundant approve after allowance is sufficient */
+  /**
+   * Profile / member address (optional). Prefer resolving the allowance owner from
+   * the Privy smart wallet client when available — it may differ from `person.address`.
+   */
   smartWalletAddress?: `0x${string}` | null;
 }
 
@@ -78,6 +81,11 @@ export const useRedeemTokensMutation = ({
         proportions.push(percentage);
       }
 
+      // Vault expects proportions that match a full split; a single collateral must be 100%.
+      if (backingTokens.length === 1 && proportions.length === 1) {
+        proportions[0] = 10000n;
+      }
+
       const token = arg.redemption.token;
       const decimals = await getTokenDecimals(token);
       const amount = parseUnits(arg.redemption.amount, decimals);
@@ -86,19 +94,24 @@ export const useRedeemTokensMutation = ({
       ] as `0x${string}`;
       const spaceToken = token as `0x${string}`;
 
-      if (smartWalletAddress) {
+      const allowanceOwner =
+        (client.account?.address as `0x${string}` | undefined) ??
+        smartWalletAddress ??
+        undefined;
+
+      if (allowanceOwner) {
         const currentAllowance = await publicClient.readContract({
           address: spaceToken,
           abi: erc20Abi,
           functionName: 'allowance',
-          args: [smartWalletAddress, vaultAddress],
+          args: [allowanceOwner, vaultAddress],
         });
         if (currentAllowance < amount) {
           await client.writeContract({
             address: spaceToken,
             abi: erc20Abi,
             functionName: 'approve',
-            args: [vaultAddress, amount],
+            args: [vaultAddress, maxUint256],
           });
         }
       } else {
@@ -106,7 +119,7 @@ export const useRedeemTokensMutation = ({
           address: spaceToken,
           abi: erc20Abi,
           functionName: 'approve',
-          args: [vaultAddress, amount],
+          args: [vaultAddress, maxUint256],
         });
       }
 
