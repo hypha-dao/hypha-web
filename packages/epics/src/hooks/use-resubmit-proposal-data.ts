@@ -33,6 +33,11 @@ export const useResubmitProposalData = <
           leadImage?: any;
           attachments?: any;
           applied?: boolean;
+          redeemResubmit?: {
+            token: string;
+            amount: string;
+            conversions: { asset: string; percentage: string }[];
+          };
           [key: string]: any;
         };
 
@@ -92,7 +97,31 @@ export const useResubmitProposalData = <
           });
         }
 
+        const redeem = parsed.redeemResubmit;
+        if (
+          redeem?.token &&
+          redeem.amount !== undefined &&
+          redeem.amount !== '' &&
+          redeem.conversions?.length
+        ) {
+          form.setValue(
+            'redemptions' as any,
+            [{ token: redeem.token, amount: redeem.amount }] as any,
+            {
+              shouldDirty: true,
+              shouldValidate: true,
+            },
+          );
+          form.setValue('conversions' as any, redeem.conversions as any, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+        }
+
         form.trigger(['title', 'description'] as any[]);
+        if (redeem?.conversions?.length) {
+          form.trigger(['redemptions', 'conversions'] as any[]);
+        }
 
         sessionStorage.setItem(
           'resubmitProposalData',

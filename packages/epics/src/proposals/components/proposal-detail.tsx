@@ -16,6 +16,8 @@ import {
   Document,
   useSpaceMinProposalDuration,
   useVote,
+  bigIntToPercentageString,
+  getTokenDecimals,
 } from '@hypha-platform/core/client';
 import {
   ProposalTransactionItem,
@@ -37,9 +39,10 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import { ProposalActivateSpacesData } from '../../governance/components/proposal-activate-spaces-data';
 import { useSpaceDocumentsWithStatuses } from '../../governance';
 import { isPast } from 'date-fns';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { TransparencyLevel } from '../../spaces/components/transparency-level';
 import { useTranslations } from 'next-intl';
+import { formatUnits } from 'viem';
 
 type ProposalDetailProps = ProposalHeadProps & {
   documentId?: number;
@@ -111,6 +114,65 @@ export const ProposalDetail = ({
   });
 
   const tokenSymbol = proposalDetails?.tokens?.[0]?.symbol;
+
+  const redeemChainDataForResubmit = useMemo(() => {
+    if (label !== 'Redeem Tokens') return null;
+    const r = proposalDetails?.redeemTokensData;
+    if (!r?.amount || !r?.token || !r.conversions?.length) {
+      return null;
+    }
+    return {
+      token: r.token,
+      amount: r.amount,
+      conversions: r.conversions.map((c) => ({
+        asset: c.asset,
+        percentage: bigIntToPercentageString(c.percentage),
+      })),
+    };
+  }, [
+    label,
+    proposalDetails?.redeemTokensData?.amount,
+    proposalDetails?.redeemTokensData?.token,
+    proposalDetails?.redeemTokensData?.conversions,
+  ]);
+
+  const [redeemResubmitPayloadResolved, setRedeemResubmitPayloadResolved] =
+    useState<
+      | {
+          token: string;
+          amount: string;
+          conversions: { asset: string; percentage: string }[];
+        }
+      | undefined
+    >(undefined);
+
+  useEffect(() => {
+    if (!redeemChainDataForResubmit) {
+      setRedeemResubmitPayloadResolved(undefined);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const decimals = await getTokenDecimals(
+          redeemChainDataForResubmit.token,
+        );
+        const amount = formatUnits(redeemChainDataForResubmit.amount, decimals);
+        if (!cancelled) {
+          setRedeemResubmitPayloadResolved({
+            token: redeemChainDataForResubmit.token,
+            amount,
+            conversions: redeemChainDataForResubmit.conversions,
+          });
+        }
+      } catch {
+        if (!cancelled) setRedeemResubmitPayloadResolved(undefined);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [redeemChainDataForResubmit]);
 
   const {
     handleAccept: internalHandleAccept,
@@ -458,6 +520,7 @@ export const ProposalDetail = ({
         closeUrl={closeUrl}
         onWithdrawSuccess={onWithdrawSuccess}
         label={label}
+        redeemResubmitPayload={redeemResubmitPayloadResolved}
       />
     </div>
   );

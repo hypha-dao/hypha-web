@@ -99,6 +99,7 @@ export const FormVoting = ({
   spaceSlug,
   closeUrl,
   label,
+  redeemResubmitPayload,
 }: {
   unity: number;
   quorum: number;
@@ -126,6 +127,11 @@ export const FormVoting = ({
   spaceSlug?: string;
   closeUrl?: string;
   label?: string;
+  redeemResubmitPayload?: {
+    token: string;
+    amount: string;
+    conversions: { asset: string; percentage: string }[];
+  };
 }) => {
   const tCommon = useTranslations('Common');
   const tProposalDetails = useTranslations('ProposalDetails');
@@ -191,6 +197,9 @@ export const FormVoting = ({
         description: documentDescription || '',
         leadImage: documentLeadImage || undefined,
         attachments: documentAttachments || undefined,
+        ...(redeemResubmitPayload
+          ? { redeemResubmit: redeemResubmitPayload }
+          : {}),
       };
 
       sessionStorage.setItem(
