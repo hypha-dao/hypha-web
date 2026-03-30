@@ -108,6 +108,8 @@ Parameters to `createEscrow` SHALL satisfy:
 - `_tokenB` / `_amountB`: token and amount the **investor** must pay (space **receives** this on completion).
 - `_sendFundsNow`: set per product/implementation choice; if true, the executor MUST already hold `tokenA` and have approved the escrow for `amountA` in the same execution batch.
 
+**Encoding note (treasury-first, parity with other proposals):** Before approving and `createEscrow`, the proposal batch SHALL move `tokenA` to the executor by **`transferFrom(spaceTreasury, executor, min(treasuryBalance, amountA))`** when treasury balance is non-zero, then **`mint(executor, amountA - pulled)`** for any shortfall (zero mint tx if treasury covers the full amount). This matches the product rule: use treasury tokens first, mint only what is missing.
+
 **Note:** Completion semantics in `EscrowImplementation` swap legs: `tokenA` → `partyB`, `tokenB` → `partyA`. That matches **investor receives tokenA** and **space receives tokenB**.
 
 ---

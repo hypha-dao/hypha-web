@@ -191,7 +191,9 @@ export function ProposalAcceptInvestmentData({
                 tokenAddress={leg.token}
                 amountHuman={leg.amount}
               />
-              <span className="text-1 text-neutral-11">{t('sourceMint')}</span>
+              <span className="text-1 text-neutral-11">
+                {t('fundingTreasuryThenMint')}
+              </span>
             </div>
           ))}
         </div>

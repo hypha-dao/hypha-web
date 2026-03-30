@@ -1410,6 +1410,7 @@
       "investingMember": "Miembro inversor",
       "investorWillSend": "El miembro inversor enviará",
       "investorWillReceive": "El miembro inversor recibirá:",
+      "fundingTreasuryThenMint": "Desde la tesorería si hay saldo; el resto se acuña.",
       "sourceMint": "Acuñar nuevos tokens",
       "sourceTreasury": "Usar tokens disponibles en la tesorería",
       "escrowOnChain": "Depósito en garantía (on-chain)",

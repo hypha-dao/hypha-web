@@ -1410,6 +1410,7 @@
       "investingMember": "Membre investisseur",
       "investorWillSend": "Le membre investisseur enverra",
       "investorWillReceive": "Le membre investisseur recevra :",
+      "fundingTreasuryThenMint": "Prélevé sur la trésorerie si disponible ; le reste est frappé.",
       "sourceMint": "Frapper de nouveaux tokens",
       "sourceTreasury": "Utiliser les tokens disponibles en trésorerie",
       "escrowOnChain": "Séquestre (on-chain)",

@@ -16,7 +16,9 @@ import {
   getSpaceMinProposalDuration,
   publicClient,
   getSpaceDetails,
+  useSpaceBySlug,
 } from '@hypha-platform/core/client';
+import { useParams } from 'next/navigation';
 import { getDuration } from '@hypha-platform/ui-utils';
 import { getGovernanceChainId } from './governance-chain-id';
 import {
@@ -44,6 +46,8 @@ export const useAcceptInvestmentMutationsWeb3Rpc = ({
   proposalSlug?: string | null;
 }) => {
   const { client } = useSmartWallets();
+  const { id: spaceSlug } = useParams();
+  const { space } = useSpaceBySlug((spaceSlug as string) || '');
 
   const {
     trigger: createAcceptInvestment,
@@ -85,15 +89,47 @@ export const useAcceptInvestmentMutationsWeb3Rpc = ({
         data: `0x${string}`;
       }[] = [];
 
-      transactions.push({
-        target: arg.spaceReceive.token,
-        value: 0n,
-        data: encodeFunctionData({
-          abi: decayingSpaceTokenAbi,
-          functionName: 'mint',
-          args: [executor, amountA],
-        }),
+      if (!space?.address) {
+        throw new Error(
+          'Space treasury address is unavailable; cannot fund the investment proposal.',
+        );
+      }
+
+      const treasuryAddress = space.address as `0x${string}`;
+      const treasuryBalance = await publicClient.readContract({
+        address: arg.spaceReceive.token,
+        abi: erc20Abi,
+        functionName: 'balanceOf',
+        args: [treasuryAddress],
       });
+
+      const pullFromTreasury =
+        treasuryBalance >= amountA ? amountA : treasuryBalance;
+      const mintShortfall = amountA - pullFromTreasury;
+
+      if (pullFromTreasury > 0n) {
+        transactions.push({
+          target: arg.spaceReceive.token,
+          value: 0n,
+          data: encodeFunctionData({
+            abi: erc20Abi,
+            functionName: 'transferFrom',
+            args: [treasuryAddress, executor, pullFromTreasury],
+          }),
+        });
+      }
+
+      if (mintShortfall > 0n) {
+        transactions.push({
+          target: arg.spaceReceive.token,
+          value: 0n,
+          data: encodeFunctionData({
+            abi: decayingSpaceTokenAbi,
+            functionName: 'mint',
+            args: [executor, mintShortfall],
+          }),
+        });
+      }
 
       transactions.push({
         target: arg.spaceReceive.token,

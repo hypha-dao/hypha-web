@@ -1410,6 +1410,7 @@
       "investingMember": "Membro investidor",
       "investorWillSend": "O membro investidor enviará",
       "investorWillReceive": "O membro investidor receberá:",
+      "fundingTreasuryThenMint": "Do tesouro quando houver saldo; o restante é cunhado.",
       "sourceMint": "Cunhar novos tokens",
       "sourceTreasury": "Usar tokens disponíveis no tesouro",
       "escrowOnChain": "Escrow (on-chain)",
