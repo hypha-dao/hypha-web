@@ -6,6 +6,8 @@ import {
   useCreateExchangeStakesAndTokensOrchestrator,
   useJwt,
   useMe,
+  EXCHANGE_SPACE_EXECUTOR_WALLET_REQUIRED,
+  EXCHANGE_SELLER_WALLET_MISMATCH,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
@@ -175,20 +177,42 @@ export const CreateExchangeStakesAndTokensForm = ({
     ].join('\n');
 
     const createPayload = { ...data };
-    delete createPayload.sellerRecipientType;
     delete createPayload.buyerRecipientType;
     delete createPayload.spaceExecutorAddress;
 
-    await createExchangeStakesAndTokens({
-      ...createPayload,
-      description: upsertExchangeDetailsSection(
-        data.description,
-        exchangeDetailsSection,
-      ),
-      spaceId,
-      web3SpaceId: typeof web3SpaceId === 'number' ? web3SpaceId : undefined,
-      label: 'Exchange',
-    });
+    try {
+      await createExchangeStakesAndTokens({
+        ...createPayload,
+        description: upsertExchangeDetailsSection(
+          data.description,
+          exchangeDetailsSection,
+        ),
+        spaceId,
+        web3SpaceId: typeof web3SpaceId === 'number' ? web3SpaceId : undefined,
+        label: 'Exchange',
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '';
+      if (msg === EXCHANGE_SPACE_EXECUTOR_WALLET_REQUIRED) {
+        form.setError('root', {
+          type: 'manual',
+          message: tAgreementFlow(
+            'plugins.exchangeStakesAndTokens.errors.spaceExecutorWalletRequired',
+          ),
+        });
+        return;
+      }
+      if (msg === EXCHANGE_SELLER_WALLET_MISMATCH) {
+        form.setError('root', {
+          type: 'manual',
+          message: tAgreementFlow(
+            'plugins.exchangeStakesAndTokens.errors.sellerWalletMismatch',
+          ),
+        });
+        return;
+      }
+      throw e;
+    }
   };
 
   return (
@@ -200,8 +224,13 @@ export const CreateExchangeStakesAndTokensForm = ({
       isLoading={isPending}
       message={
         isError ? (
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-2">
             <div>{tSpaces('errorOhSnap')}</div>
+            {form.formState.errors.root?.message ? (
+              <div className="text-destructive text-2">
+                {form.formState.errors.root.message}
+              </div>
+            ) : null}
             <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (

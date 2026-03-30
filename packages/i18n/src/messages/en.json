@@ -984,7 +984,9 @@
         "errors": {
           "sellerAmountExceedsBalance": "The entered amount is greater than the seller available balance.",
           "sellerTreasuryUnavailable": "Could not load the space treasury. Wait for chain data and try again.",
-          "sellerBalanceCheckFailed": "Could not verify seller balance. Check your connection and try again."
+          "sellerBalanceCheckFailed": "Could not verify seller balance. Check your connection and try again.",
+          "spaceExecutorWalletRequired": "When the space is the seller, connect the wallet that is this space’s treasury (proposal executor). That wallet will approve tokens and fund escrow when the proposal executes.",
+          "sellerWalletMismatch": "Connect the wallet that matches the selected seller address."
         },
         "seller": "Seller (Wallet Address)",
         "sellerWillSend": "Seller will send",

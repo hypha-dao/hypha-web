@@ -175,6 +175,7 @@ export const useCreateExchangeStakesAndTokensOrchestrator = ({
           startTask('CREATE_WEB3_AGREEMENT');
           await web3.createExchangeStakesAndTokens({
             spaceId: web3SpaceId,
+            sellerRecipientType: arg.sellerRecipientType,
             sellerAddress: arg.sellerAddress,
             sellerLeg: arg.sellerLeg,
             buyerAddress: arg.buyerAddress,

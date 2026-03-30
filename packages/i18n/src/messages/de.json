@@ -1364,7 +1364,9 @@
         "errors": {
           "sellerAmountExceedsBalance": "Der eingegebene Betrag übersteigt das verfügbare Guthaben des Verkäufers.",
           "sellerTreasuryUnavailable": "Space-Treasury konnte nicht geladen werden. Warten Sie auf On-Chain-Daten und versuchen Sie es erneut.",
-          "sellerBalanceCheckFailed": "Verkäufer-Guthaben konnte nicht geprüft werden. Verbindung prüfen und erneut versuchen."
+          "sellerBalanceCheckFailed": "Verkäufer-Guthaben konnte nicht geprüft werden. Verbindung prüfen und erneut versuchen.",
+          "spaceExecutorWalletRequired": "Wenn der Space der Verkäufer ist, verbinden Sie die Wallet, die die Treasury dieses Spaces ist (Proposal-Executor). Diese Wallet genehmigt Tokens und finanziert das Escrow bei Ausführung des Vorschlags.",
+          "sellerWalletMismatch": "Verbinden Sie die Wallet, die zur ausgewählten Verkäuferadresse passt."
         },
         "seller": "Verkäufer (Wallet-Adresse)",
         "buyer": "Käufer (Wallet-Adresse)",

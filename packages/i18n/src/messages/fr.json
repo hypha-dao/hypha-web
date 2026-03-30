@@ -988,7 +988,9 @@
         "errors": {
           "sellerAmountExceedsBalance": "Le montant saisi est supérieur au solde disponible du vendeur.",
           "sellerTreasuryUnavailable": "Impossible de charger la trésorerie de l'espace. Attendez les données on-chain et réessayez.",
-          "sellerBalanceCheckFailed": "Impossible de vérifier le solde du vendeur. Vérifiez votre connexion et réessayez."
+          "sellerBalanceCheckFailed": "Impossible de vérifier le solde du vendeur. Vérifiez votre connexion et réessayez.",
+          "spaceExecutorWalletRequired": "Lorsque l'espace est le vendeur, connectez le portefeuille qui est la trésorerie de cet espace (exécuteur des propositions). Ce portefeuille approuvera les jetons et financera l'escrow à l'exécution de la proposition.",
+          "sellerWalletMismatch": "Connectez le portefeuille qui correspond à l'adresse du vendeur sélectionnée."
         },
         "seller": "Vendeur (adresse du portefeuille)",
         "buyer": "Acheteur (adresse du portefeuille)",

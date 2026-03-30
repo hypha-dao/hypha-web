@@ -9,6 +9,8 @@ import { getProposalFromLogs, parseEscrowCreatedIdsFromLogs } from '../web3';
 import {
   daoProposalsImplementationAbi,
   daoProposalsImplementationAddress,
+  daoSpaceFactoryImplementationAbi,
+  daoSpaceFactoryImplementationAddress,
 } from '@hypha-platform/core/generated';
 import {
   getTokenDecimals,
@@ -20,6 +22,14 @@ import { getGovernanceChainId } from './governance-chain-id';
 import { EXCHANGE_ESCROW_CONTRACT_BY_CHAIN } from './exchange-escrow-contract';
 
 const READ_TIMEOUT_MS = 30_000;
+
+/** Proposer wallet must be the space executor when seller is the space (treasury funds escrow). */
+export const EXCHANGE_SPACE_EXECUTOR_WALLET_REQUIRED =
+  'EXCHANGE_SPACE_EXECUTOR_WALLET_REQUIRED';
+
+/** Proposer wallet must match selected member seller address. */
+export const EXCHANGE_SELLER_WALLET_MISMATCH =
+  'EXCHANGE_SELLER_WALLET_MISMATCH';
 
 async function withReadTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -43,6 +53,8 @@ interface ExchangeLegInput {
 
 interface CreateExchangeStakesAndTokensInput {
   spaceId: number;
+  /** When `space`, proposal execution uses the space executor as party A for approve/fund. */
+  sellerRecipientType?: 'member' | 'space';
   sellerAddress: string;
   buyerAddress: string;
   sellerLeg: ExchangeLegInput[];
@@ -85,6 +97,39 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
     async (_: string, { arg }: { arg: CreateExchangeStakesAndTokensInput }) => {
       if (!client) {
         throw new Error('Smart wallet client not available');
+      }
+
+      const walletAddress = (
+        client as { account?: { address?: `0x${string}` } }
+      ).account?.address;
+      if (!walletAddress) {
+        throw new Error('Could not read connected wallet address');
+      }
+
+      if (arg.sellerRecipientType === 'space') {
+        const factoryAddress = daoSpaceFactoryImplementationAddress[chainId];
+        if (!factoryAddress) {
+          throw new Error(`Space factory not configured for chain ${chainId}`);
+        }
+        const executor = await withReadTimeout(
+          publicClient.readContract({
+            address: factoryAddress,
+            abi: daoSpaceFactoryImplementationAbi,
+            functionName: 'getSpaceExecutor',
+            args: [BigInt(arg.spaceId)],
+          }),
+          READ_TIMEOUT_MS,
+        );
+        if (
+          typeof executor !== 'string' ||
+          executor.toLowerCase() !== walletAddress.toLowerCase()
+        ) {
+          throw new Error(EXCHANGE_SPACE_EXECUTOR_WALLET_REQUIRED);
+        }
+      } else {
+        if (arg.sellerAddress.toLowerCase() !== walletAddress.toLowerCase()) {
+          throw new Error(EXCHANGE_SELLER_WALLET_MISMATCH);
+        }
       }
 
       const sellerRows = arg.sellerLeg ?? [];
