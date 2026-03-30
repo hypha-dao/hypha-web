@@ -486,6 +486,33 @@ export const ProposalDetail = ({
       };
     }
 
+    if (label === 'Entry Method') {
+      const em = proposalDetails.entryMethods?.[0];
+      if (!em) return undefined;
+
+      const entryMethod = Number(em.joinMethod);
+      if (entryMethod < 0 || entryMethod > 2) return undefined;
+
+      let tokenBase: { token: string; amount: number } | undefined;
+      if (entryMethod === 1) {
+        const spaceIdBn = BigInt(proposalDetails.spaceId);
+        const tr = proposalDetails.tokenRequirements?.find(
+          (r) => r.spaceId === spaceIdBn,
+        );
+        if (tr) {
+          tokenBase = {
+            token: tr.token,
+            amount: Number(tr.amount),
+          };
+        }
+      }
+
+      return {
+        entryMethod,
+        ...(tokenBase ? { tokenBase } : {}),
+      };
+    }
+
     return undefined;
   })();
 

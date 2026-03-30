@@ -73,6 +73,8 @@ export const useResubmitProposalData = <
           members?: Array<{ member?: string; number?: number }>;
           votingDuration?: number;
           autoExecution?: boolean;
+          entryMethod?: number;
+          tokenBase?: { amount?: number; token?: string };
           applied?: boolean;
           redeemResubmit?: {
             token: string;
@@ -140,6 +142,12 @@ export const useResubmitProposalData = <
               : {}),
             ...(typeof parsed.autoExecution === 'boolean'
               ? { autoExecution: parsed.autoExecution }
+              : {}),
+            ...(typeof parsed.entryMethod === 'number'
+              ? { entryMethod: parsed.entryMethod }
+              : {}),
+            ...(parsed.tokenBase !== undefined && parsed.tokenBase !== null
+              ? { tokenBase: parsed.tokenBase }
               : {}),
             leadImage: undefined,
             attachments: undefined,
@@ -290,6 +298,20 @@ export const useResubmitProposalData = <
           });
         }
 
+        if (typeof parsed.entryMethod === 'number') {
+          form.setValue('entryMethod' as any, parsed.entryMethod as any, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+        }
+
+        if (parsed.tokenBase !== undefined && parsed.tokenBase !== null) {
+          form.setValue('tokenBase' as any, parsed.tokenBase as any, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+        }
+
         if (!hasChosenToken) {
           if (resubmitTokenAddress) {
             form.setValue('tokenAddress' as any, resubmitTokenAddress as any, {
@@ -360,6 +382,12 @@ export const useResubmitProposalData = <
             'members',
             'token',
           );
+        }
+        if (typeof parsed.entryMethod === 'number') {
+          fieldsToTrigger.push('entryMethod');
+        }
+        if (parsed.tokenBase !== undefined && parsed.tokenBase !== null) {
+          fieldsToTrigger.push('tokenBase');
         }
         if (
           resubmitTokenAddress !== undefined ||
