@@ -835,6 +835,7 @@
       "recipientRequired": "Bitte fügen Sie einen Empfänger oder eine Wallet-Adresse hinzu",
       "invalidEthereumAddress": "Ungültige Ethereum-Adresse",
       "amountGreaterThanZero": "Der Betrag muss größer als 0 sein",
+      "exchangeAmountRequired": "Bitte geben Sie einen Betrag ein.",
       "amountRequired": "Geben Sie einen Betrag ein, um fortzufahren.",
       "tokenRequired": "Bitte wählen Sie einen Token aus",
       "chooseTokenToBurn": "Bitte wählen Sie einen Token zum Verbrennen aus",

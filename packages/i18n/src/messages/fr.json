@@ -839,6 +839,7 @@
       "recipientRequired": "Veuillez ajouter un destinataire ou une adresse de portefeuille",
       "invalidEthereumAddress": "Adresse Ethereum invalide",
       "amountGreaterThanZero": "Le montant doit être supérieur à 0",
+      "exchangeAmountRequired": "Veuillez saisir un montant.",
       "amountRequired": "Saisissez un montant pour continuer.",
       "tokenRequired": "Veuillez sélectionner un token",
       "chooseTokenToBurn": "Choisissez un token à brûler",

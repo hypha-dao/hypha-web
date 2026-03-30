@@ -835,6 +835,7 @@
       "recipientRequired": "Please add a recipient or wallet address",
       "invalidEthereumAddress": "Invalid Ethereum address",
       "amountGreaterThanZero": "Amount must be greater than 0",
+      "exchangeAmountRequired": "Please enter an amount.",
       "amountRequired": "Enter an amount to continue.",
       "tokenRequired": "Please select a token",
       "atLeastOnePayoutRequired": "At least one payout is required",

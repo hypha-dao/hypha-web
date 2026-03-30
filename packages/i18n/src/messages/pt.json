@@ -42,6 +42,7 @@
       "recipientRequired": "Adicione um destinatário ou endereço de carteira",
       "invalidEthereumAddress": "Endereço Ethereum inválido",
       "amountGreaterThanZero": "O valor deve ser maior que 0",
+      "exchangeAmountRequired": "Insira um valor.",
       "amountRequired": "Insira um valor para continuar.",
       "tokenRequired": "Selecione um token",
       "chooseTokenToBurn": "Escolha um token para queimar",
