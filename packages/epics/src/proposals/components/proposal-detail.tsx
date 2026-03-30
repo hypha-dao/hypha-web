@@ -72,6 +72,83 @@ function referenceCurrencyFromPriceFeed(
   return undefined;
 }
 
+function referenceCurrencyFeedAddressFromChainData(
+  currencyFeed: string | undefined,
+): string | undefined {
+  if (!currencyFeed) return undefined;
+  const lower = currencyFeed.toLowerCase();
+  for (const addr of Object.values(CURRENCY_FEEDS)) {
+    if (typeof addr === 'string' && addr.toLowerCase() === lower) {
+      return addr;
+    }
+  }
+  return CURRENCY_FEEDS.USD;
+}
+
+type ProposalTokenBackingVaultFromDetails = {
+  spaceToken?: string;
+  addCollaterals?: Array<{
+    token: string;
+    amount: string;
+    decimals: number;
+  }>;
+  removeCollaterals?: Array<{ token: string; amount: string }>;
+  enableRedemption?: boolean;
+  redemptionStartDate?: Date;
+  redemptionPrice?: string;
+  currencyFeed?: string;
+  maxRedemptionPercent?: number;
+  maxRedemptionPeriodDays?: number;
+  minimumBackingPercent?: number;
+  whitelistEnabled?: boolean;
+  whitelistedAddresses?: string[];
+};
+
+function buildTokenBackingVaultResubmitPayload(
+  data: ProposalTokenBackingVaultFromDetails,
+): Record<string, unknown> | undefined {
+  if (!data.spaceToken) return undefined;
+
+  const addCollaterals = (data.addCollaterals ?? []).map((c) => ({
+    token: c.token,
+    amount: c.amount,
+  }));
+  const removeCollaterals = (data.removeCollaterals ?? []).map((c) => ({
+    token: c.token,
+    amount: c.amount,
+  }));
+
+  const enableRedemption = Boolean(data.enableRedemption);
+  const referenceCurrency = referenceCurrencyFeedAddressFromChainData(
+    data.currencyFeed,
+  );
+  const redemptionWhitelist = (data.whitelistedAddresses ?? []).map((addr) => ({
+    type: 'member' as const,
+    address: addr,
+  }));
+
+  return {
+    tokenBackingVault: {
+      spaceToken: data.spaceToken,
+      activateVault: true,
+      enableRedemption,
+      addCollaterals,
+      removeCollaterals,
+      referenceCurrency,
+      tokenPrice:
+        enableRedemption && data.redemptionPrice
+          ? data.redemptionPrice
+          : undefined,
+      minimumBackingPercent: data.minimumBackingPercent ?? 0,
+      maxRedemptionPercent: data.maxRedemptionPercent,
+      maxRedemptionPeriodDays: data.maxRedemptionPeriodDays,
+      redemptionStartDate: data.redemptionStartDate ?? null,
+      enableAdvancedRedemptionControls: Boolean(data.whitelistEnabled),
+      redemptionWhitelist,
+    },
+  };
+}
+
 type ProposalTokenFromProposalDetails = {
   tokenType: 'regular' | 'ownership' | 'voice';
   spaceId: bigint;
@@ -713,6 +790,14 @@ export const ProposalDetail = ({
           dbTokens ?? [],
         ),
       };
+    }
+
+    if (label === 'Backing Vault') {
+      const vaultPayload = buildTokenBackingVaultResubmitPayload(
+        proposalDetails.tokenBackingVaultData as ProposalTokenBackingVaultFromDetails,
+      );
+      if (!vaultPayload) return undefined;
+      return vaultPayload;
     }
 
     return undefined;

@@ -93,6 +93,12 @@ export function inferResubmitTemplateSegmentFromPayload(
     return 'issue-new-token';
   }
   if (
+    parsed.tokenBackingVault &&
+    typeof parsed.tokenBackingVault === 'object'
+  ) {
+    return 'token-backing-vault';
+  }
+  if (
     parsed.tokenAddress !== undefined ||
     parsed.activatePurchase !== undefined
   ) {

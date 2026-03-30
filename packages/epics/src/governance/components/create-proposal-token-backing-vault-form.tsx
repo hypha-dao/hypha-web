@@ -162,7 +162,12 @@ export const CreateProposalTokenBackingVaultForm = ({
             label={tAgreementFlow('labels.backingVault')}
             progress={progress}
           />
-          {plugin}
+          {React.isValidElement(plugin)
+            ? React.cloneElement(
+                plugin as React.ReactElement<{ resubmitKey?: number }>,
+                { resubmitKey },
+              )
+            : plugin}
           <Separator />
           <div className="flex flex-col gap-2">
             {formError && (

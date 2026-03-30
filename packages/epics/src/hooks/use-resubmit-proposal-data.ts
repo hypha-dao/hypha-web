@@ -93,6 +93,7 @@ export const useResubmitProposalData = <
           spaceToSpaceTargetAddress?: string;
           spaceToSpaceMemberAddress?: string;
           issueNewTokenForm?: Record<string, unknown>;
+          tokenBackingVault?: Record<string, unknown>;
           applied?: boolean;
           redeemResubmit?: {
             token: string;
@@ -225,6 +226,10 @@ export const useResubmitProposalData = <
             ...(parsed.issueNewTokenForm &&
             typeof parsed.issueNewTokenForm === 'object'
               ? (parsed.issueNewTokenForm as object)
+              : {}),
+            ...(parsed.tokenBackingVault &&
+            typeof parsed.tokenBackingVault === 'object'
+              ? { tokenBackingVault: parsed.tokenBackingVault }
               : {}),
           } as T,
           {
@@ -451,6 +456,14 @@ export const useResubmitProposalData = <
         }
 
         const issueInj = parsed.issueNewTokenForm;
+        const vaultInj = parsed.tokenBackingVault;
+        if (vaultInj && typeof vaultInj === 'object') {
+          form.setValue('tokenBackingVault' as any, vaultInj as any, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+        }
+
         if (issueInj && typeof issueInj === 'object') {
           const ink = issueInj as Record<string, unknown>;
           const setIssue = (key: string, val: unknown) => {
@@ -562,6 +575,12 @@ export const useResubmitProposalData = <
             'referenceCurrency',
             'tokenPrice',
           );
+        }
+        if (
+          parsed.tokenBackingVault &&
+          typeof parsed.tokenBackingVault === 'object'
+        ) {
+          fieldsToTrigger.push('tokenBackingVault');
         }
         form.trigger(fieldsToTrigger as any[]);
 

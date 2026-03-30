@@ -46,12 +46,15 @@ type TokenBackingVaultPluginProps = {
   spaceSlug: string;
   members?: Person[];
   spaces?: Space[];
+  /** After resubmit hydration, skip vault-based reset that would clear proposal fields. */
+  resubmitKey?: number;
 };
 
 export const TokenBackingVaultPlugin = ({
   spaceSlug,
   members = [],
   spaces = [],
+  resubmitKey,
 }: TokenBackingVaultPluginProps) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const { lang } = useParams();
@@ -90,6 +93,18 @@ export const TokenBackingVaultPlugin = ({
     : undefined;
   const prefilledTokenRef = React.useRef<string | undefined>(undefined);
 
+  const resubmitHydrationRef = React.useRef(false);
+  React.useEffect(() => {
+    if (resubmitKey === undefined) return;
+    resubmitHydrationRef.current = true;
+    const id = requestAnimationFrame(() => {
+      resubmitHydrationRef.current = false;
+    });
+    return () => cancelAnimationFrame(id);
+  }, [resubmitKey]);
+
+  const skipResubmitVaultEffect = () => resubmitHydrationRef.current;
+
   React.useEffect(() => {
     const requestedSpaceToken = searchParams.get('spaceToken');
     if (!requestedSpaceToken) return;
@@ -124,6 +139,7 @@ export const TokenBackingVaultPlugin = ({
   }, [searchParams, filteredTokens, spaceToken, setValue]);
 
   React.useEffect(() => {
+    if (skipResubmitVaultEffect()) return;
     if (!spaceToken) {
       prefilledTokenRef.current = undefined;
       return;
