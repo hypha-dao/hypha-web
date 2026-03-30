@@ -64,6 +64,7 @@ const getCreateRouteForLabel = (label: string | undefined): string => {
     'Activate Spaces': 'activate-spaces',
     'Space To Space': 'space-to-space-membership',
     'Treasury Minting': 'mint-tokens-to-space-treasury',
+    'Redeem Tokens': 'redeem-tokens',
     'Membership Exit': 'membership-exit',
     'Backing Vault': 'token-backing-vault',
   };
