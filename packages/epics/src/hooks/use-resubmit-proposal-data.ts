@@ -96,6 +96,7 @@ export const useResubmitProposalData = <
           tokenBackingVault?: Record<string, unknown>;
           spaceTokenPurchaseForm?: Record<string, unknown>;
           buyHyphaTokensForm?: Record<string, unknown>;
+          proposeContributionForm?: Record<string, unknown>;
           applied?: boolean;
           redeemResubmit?: {
             token: string;
@@ -240,6 +241,10 @@ export const useResubmitProposalData = <
             ...(parsed.buyHyphaTokensForm &&
             typeof parsed.buyHyphaTokensForm === 'object'
               ? (parsed.buyHyphaTokensForm as Record<string, unknown>)
+              : {}),
+            ...(parsed.proposeContributionForm &&
+            typeof parsed.proposeContributionForm === 'object'
+              ? (parsed.proposeContributionForm as Record<string, unknown>)
               : {}),
           } as T,
           {
@@ -515,6 +520,23 @@ export const useResubmitProposalData = <
           }
         }
 
+        const pcInj = parsed.proposeContributionForm;
+        if (pcInj && typeof pcInj === 'object') {
+          const pc = pcInj as Record<string, unknown>;
+          if (pc.recipient !== undefined) {
+            form.setValue('recipient' as any, pc.recipient as any, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+          }
+          if (Array.isArray(pc.payouts)) {
+            form.setValue('payouts' as any, pc.payouts as any, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+          }
+        }
+
         if (issueInj && typeof issueInj === 'object') {
           const ink = issueInj as Record<string, unknown>;
           const setIssue = (key: string, val: unknown) => {
@@ -650,6 +672,12 @@ export const useResubmitProposalData = <
           typeof parsed.buyHyphaTokensForm === 'object'
         ) {
           fieldsToTrigger.push('payout', 'recipient');
+        }
+        if (
+          parsed.proposeContributionForm &&
+          typeof parsed.proposeContributionForm === 'object'
+        ) {
+          fieldsToTrigger.push('recipient', 'payouts');
         }
         form.trigger(fieldsToTrigger as any[]);
 

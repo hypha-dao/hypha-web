@@ -111,6 +111,12 @@ export function inferResubmitTemplateSegmentFromPayload(
     return 'buy-hypha-tokens';
   }
   if (
+    parsed.proposeContributionForm &&
+    typeof parsed.proposeContributionForm === 'object'
+  ) {
+    return 'propose-contribution';
+  }
+  if (
     parsed.tokenAddress !== undefined ||
     parsed.activatePurchase !== undefined
   ) {

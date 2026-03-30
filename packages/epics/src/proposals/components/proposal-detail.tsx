@@ -801,6 +801,29 @@ export const ProposalDetail = ({
       return vaultPayload;
     }
 
+    if (label === 'Contribution') {
+      const transfers = proposalDetails.transfers ?? [];
+      if (transfers.length === 0) return undefined;
+
+      const recipient = transfers[0].recipient;
+      const recipientLc = recipient.toLowerCase();
+      if (!transfers.every((t) => t.recipient.toLowerCase() === recipientLc)) {
+        return undefined;
+      }
+
+      const payouts = transfers.map((tx) => ({
+        token: tx.token,
+        amount: formatUnits(tx.rawAmount, resolveTokenDecimals(tx.token)),
+      }));
+
+      return {
+        proposeContributionForm: {
+          recipient,
+          payouts,
+        },
+      };
+    }
+
     if (label === 'Buy Hypha Tokens') {
       const rawAmount = proposalDetails.buyHyphaTokensData?.amount;
       if (rawAmount === undefined) return undefined;
