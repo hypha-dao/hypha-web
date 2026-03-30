@@ -96,6 +96,7 @@ export const useProposalDetailsWeb3Rpc = ({
       fixedMaxSupply?: boolean;
       autoMinting?: boolean;
       priceInUSD?: bigint;
+      priceCurrencyFeed?: `0x${string}`;
       useTransferWhitelist?: boolean;
       useReceiveWhitelist?: boolean;
       initialTransferWhitelist?: `0x${string}`[];
@@ -303,9 +304,16 @@ export const useProposalDetailsWeb3Rpc = ({
           transfers.push(decoded.data as (typeof transfers)[number]);
           break;
 
-        case 'token':
-          tokens.push(decoded.data as (typeof tokens)[number]);
+        case 'token': {
+          const tokenPayload = decoded.data as (typeof tokens)[number] & {
+            address?: string;
+          };
+          tokens.push({
+            ...tokenPayload,
+            address: tokenPayload.address ?? tx.target,
+          });
           break;
+        }
 
         case 'votingMethod':
           votingMethods.push(decoded.data as (typeof votingMethods)[number]);

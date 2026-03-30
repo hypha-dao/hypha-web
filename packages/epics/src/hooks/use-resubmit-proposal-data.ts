@@ -79,6 +79,7 @@ export const useResubmitProposalData = <
           member?: string;
           spaceToSpaceTargetAddress?: string;
           spaceToSpaceMemberAddress?: string;
+          issueNewTokenForm?: Record<string, unknown>;
           applied?: boolean;
           redeemResubmit?: {
             token: string;
@@ -187,6 +188,10 @@ export const useResubmitProposalData = <
               ? {
                   tokensAvailableForPurchase: parsed.tokensAvailableForPurchase,
                 }
+              : {}),
+            ...(parsed.issueNewTokenForm &&
+            typeof parsed.issueNewTokenForm === 'object'
+              ? (parsed.issueNewTokenForm as object)
               : {}),
           } as T,
           {
@@ -412,6 +417,37 @@ export const useResubmitProposalData = <
           );
         }
 
+        const issueInj = parsed.issueNewTokenForm;
+        if (issueInj && typeof issueInj === 'object') {
+          const ink = issueInj as Record<string, unknown>;
+          const setIssue = (key: string, val: unknown) => {
+            if (val === undefined) return;
+            form.setValue(key as any, val as any, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+          };
+          setIssue('name', ink.name);
+          setIssue('symbol', ink.symbol);
+          setIssue('iconUrl', ink.iconUrl);
+          setIssue('type', ink.type);
+          setIssue('maxSupply', ink.maxSupply);
+          setIssue('maxSupplyType', ink.maxSupplyType);
+          setIssue('decaySettings', ink.decaySettings);
+          setIssue('isVotingToken', ink.isVotingToken);
+          setIssue('transferable', ink.transferable);
+          setIssue(
+            'enableAdvancedTransferControls',
+            ink.enableAdvancedTransferControls,
+          );
+          setIssue('transferWhitelist', ink.transferWhitelist);
+          setIssue('enableProposalAutoMinting', ink.enableProposalAutoMinting);
+          setIssue('enableLimitedSupply', ink.enableLimitedSupply);
+          setIssue('enableTokenPrice', ink.enableTokenPrice);
+          setIssue('referenceCurrency', ink.referenceCurrency);
+          setIssue('tokenPrice', ink.tokenPrice);
+        }
+
         const fieldsToTrigger: string[] = ['title', 'description'];
         if (parsed.spaceDiscoverability !== undefined) {
           fieldsToTrigger.push('spaceDiscoverability');
@@ -470,6 +506,29 @@ export const useResubmitProposalData = <
           redeem.conversions?.length
         ) {
           fieldsToTrigger.push('redemptions', 'conversions');
+        }
+        if (
+          parsed.issueNewTokenForm &&
+          typeof parsed.issueNewTokenForm === 'object'
+        ) {
+          fieldsToTrigger.push(
+            'name',
+            'symbol',
+            'iconUrl',
+            'type',
+            'maxSupply',
+            'maxSupplyType',
+            'decaySettings',
+            'isVotingToken',
+            'transferable',
+            'enableAdvancedTransferControls',
+            'transferWhitelist',
+            'enableProposalAutoMinting',
+            'enableLimitedSupply',
+            'enableTokenPrice',
+            'referenceCurrency',
+            'tokenPrice',
+          );
         }
         form.trigger(fieldsToTrigger as any[]);
 

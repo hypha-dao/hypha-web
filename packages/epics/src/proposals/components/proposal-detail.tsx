@@ -18,6 +18,8 @@ import {
   useVote,
   bigIntToPercentageString,
   getTokenDecimals,
+  CURRENCY_FEEDS,
+  REFERENCE_CURRENCIES,
 } from '@hypha-platform/core/client';
 import {
   ProposalTransactionItem,
@@ -51,6 +53,165 @@ import { useDbSpaces } from '../../hooks';
 import { hasUpdateTokenDataToDisplay } from '../utils/has-update-token-data-to-display';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
+
+function referenceCurrencyFromPriceFeed(
+  feed: string | undefined,
+): string | undefined {
+  if (!feed) return undefined;
+  const normalized = feed.toLowerCase();
+  for (const code of REFERENCE_CURRENCIES) {
+    const chainFeed = CURRENCY_FEEDS[code as keyof typeof CURRENCY_FEEDS];
+    if (!chainFeed) continue;
+    if (normalized === chainFeed.toLowerCase()) {
+      return code;
+    }
+  }
+  if (normalized === '0x0000000000000000000000000000000000000000') {
+    return 'USD';
+  }
+  return undefined;
+}
+
+type ProposalTokenFromProposalDetails = {
+  tokenType: 'regular' | 'ownership' | 'voice';
+  spaceId: bigint;
+  name: string;
+  symbol: string;
+  maxSupply: bigint;
+  isVotingToken?: boolean;
+  transferable?: boolean;
+  fixedMaxSupply?: boolean;
+  autoMinting?: boolean;
+  priceInUSD?: bigint;
+  priceCurrencyFeed?: `0x${string}`;
+  useTransferWhitelist?: boolean;
+  useReceiveWhitelist?: boolean;
+  initialTransferWhitelist?: `0x${string}`[];
+  initialReceiveWhitelist?: `0x${string}`[];
+  decayPercentage?: bigint;
+  decayInterval?: bigint;
+  address?: string;
+};
+
+function buildIssueNewTokenResubmitPayload(
+  token: ProposalTokenFromProposalDetails,
+  proposalSpaceId: number,
+  dbTokens: DbToken[],
+): Record<string, unknown> {
+  const humanSupply = Number(formatUnits(token.maxSupply, 18));
+  const enableLimitedSupply = humanSupply > 0;
+  const maxSupplyType = token.fixedMaxSupply
+    ? {
+        label: 'Forever Immutable',
+        value: 'immutable' as const,
+      }
+    : {
+        label: 'Updatable Over Time',
+        value: 'updatable' as const,
+      };
+
+  const enableProposalAutoMinting = token.autoMinting ?? true;
+  const transferable = token.transferable ?? true;
+  const enableAdvancedTransferControls = Boolean(
+    token.useTransferWhitelist || token.useReceiveWhitelist,
+  );
+
+  const fromList = token.initialTransferWhitelist ?? [];
+  const toList = token.initialReceiveWhitelist ?? [];
+  const transferWhitelist = enableAdvancedTransferControls
+    ? {
+        from: fromList.map((addr) => ({
+          type: 'member' as const,
+          address: addr,
+        })),
+        to: toList.map((addr) => ({
+          type: 'member' as const,
+          address: addr,
+        })),
+      }
+    : undefined;
+
+  const priceMicro =
+    token.priceInUSD !== undefined ? Number(token.priceInUSD) : 0;
+  const enableTokenPrice = priceMicro > 0;
+  const tokenPrice = enableTokenPrice ? priceMicro / 1_000_000 : undefined;
+
+  const feedAddr = token.priceCurrencyFeed as string | undefined;
+  const referenceCurrencyFromChain = referenceCurrencyFromPriceFeed(feedAddr);
+
+  const matchedDb =
+    (token.address
+      ? dbTokens.find(
+          (t) => t.address?.toLowerCase() === token.address?.toLowerCase(),
+        )
+      : undefined) ??
+    dbTokens.find(
+      (t) =>
+        t.spaceId === proposalSpaceId &&
+        t.symbol?.toUpperCase() === token.symbol.toUpperCase(),
+    );
+
+  let referenceCurrencyResolved = referenceCurrencyFromChain;
+  if (enableTokenPrice && matchedDb?.referenceCurrency) {
+    referenceCurrencyResolved = matchedDb.referenceCurrency;
+  } else if (enableTokenPrice && !referenceCurrencyResolved) {
+    referenceCurrencyResolved = 'USD';
+  }
+
+  const tokenPriceResolved =
+    enableTokenPrice && matchedDb?.referencePrice != null
+      ? matchedDb.referencePrice
+      : tokenPrice;
+
+  const formType =
+    matchedDb?.type ??
+    (token.tokenType === 'voice'
+      ? 'voice'
+      : token.tokenType === 'ownership'
+      ? 'ownership'
+      : 'utility');
+
+  const decaySettings =
+    formType === 'voice' &&
+    token.decayInterval !== undefined &&
+    token.decayPercentage !== undefined
+      ? {
+          decayInterval: Number(token.decayInterval),
+          decayPercentage: Number(token.decayPercentage),
+        }
+      : {
+          decayInterval: 2592000,
+          decayPercentage: 1,
+        };
+
+  const iconUrl =
+    typeof matchedDb?.iconUrl === 'string' && matchedDb.iconUrl.length > 0
+      ? matchedDb.iconUrl
+      : undefined;
+
+  return {
+    name: token.name,
+    symbol: token.symbol,
+    ...(iconUrl ? { iconUrl } : {}),
+    type: formType,
+    maxSupply: humanSupply,
+    ...(enableLimitedSupply ? { maxSupplyType } : {}),
+    decaySettings,
+    isVotingToken: formType === 'voice',
+    transferable,
+    enableAdvancedTransferControls,
+    ...(transferWhitelist ? { transferWhitelist } : {}),
+    enableProposalAutoMinting,
+    enableLimitedSupply,
+    enableTokenPrice,
+    ...(enableTokenPrice
+      ? {
+          referenceCurrency: referenceCurrencyResolved,
+          tokenPrice: tokenPriceResolved,
+        }
+      : {}),
+  };
+}
 
 type ProposalDetailProps = ProposalHeadProps & {
   documentId?: number;
@@ -538,6 +699,19 @@ export const ProposalDetail = ({
       return {
         spaceToSpaceTargetAddress: targetSpaceAddress,
         spaceToSpaceMemberAddress: dd.member,
+      };
+    }
+
+    if (label === 'Issue New Token') {
+      const tok = proposalDetails.tokens?.[0];
+      if (!tok?.name || !tok?.symbol) return undefined;
+
+      return {
+        issueNewTokenForm: buildIssueNewTokenResubmitPayload(
+          tok as ProposalTokenFromProposalDetails,
+          proposalDetails.spaceId,
+          dbTokens ?? [],
+        ),
       };
     }
 

@@ -19,9 +19,10 @@ import { useConfig } from 'wagmi';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useRouter } from 'next/navigation';
 import {
+  clearResubmitProposalSessionStorage,
   useDbTokens,
-  useScrollToErrors,
   useResubmitProposalData,
+  useScrollToErrors,
 } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useTranslations } from 'next-intl';
@@ -345,6 +346,12 @@ export const IssueNewTokenForm = ({
   useScrollToErrors(form, formRef);
   const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
 
+  React.useEffect(() => {
+    if (progress === 100 && !isError) {
+      clearResubmitProposalSessionStorage();
+    }
+  }, [progress, isError]);
+
   const { tokens: dbTokens, refetchDbTokens } = useDbTokens();
 
   const tokenType = form.watch('type');
@@ -428,7 +435,12 @@ export const IssueNewTokenForm = ({
             label={tAgreementFlow('labels.issueNewToken')}
             progress={progress}
           />
-          {plugin}
+          {React.isValidElement(plugin)
+            ? React.cloneElement(
+                plugin as React.ReactElement<{ resubmitKey?: number }>,
+                { resubmitKey },
+              )
+            : plugin}
           <Separator />
           <div className="flex flex-col gap-2">
             {formError && (

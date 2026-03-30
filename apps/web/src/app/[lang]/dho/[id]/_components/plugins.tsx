@@ -49,6 +49,7 @@ type PluginProps = {
   /** Full space list (incl. current DHO) for mapping on-chain space ids → addresses */
   spacesForChainMapping?: Space[];
   members?: Person[];
+  resubmitKey?: number;
 };
 
 export const Plugin = ({
@@ -59,6 +60,7 @@ export const Plugin = ({
   spaces,
   spacesForChainMapping,
   members,
+  resubmitKey,
 }: PluginProps) => {
   const { persons, spaces: memberSpaces } = useMembers({
     spaceSlug,
@@ -81,6 +83,8 @@ export const Plugin = ({
   const ownershipToWhitelistMembers = persons?.data ?? [];
   const ownershipToWhitelistSpaces = memberSpaces?.data ?? [];
 
+  const resubmitProps = resubmitKey !== undefined ? { resubmitKey } : {};
+
   if (name === 'update-issued-token') {
     return (
       <UpdateIssuedTokenPlugin
@@ -98,9 +102,10 @@ export const Plugin = ({
         {...commonProps}
         ownershipToWhitelistMembers={ownershipToWhitelistMembers}
         ownershipToWhitelistSpaces={ownershipToWhitelistSpaces}
+        {...resubmitProps}
       />
     );
   }
 
-  return <PluginCmp {...commonProps} />;
+  return <PluginCmp {...commonProps} {...resubmitProps} />;
 };
