@@ -71,11 +71,10 @@ export function remainderPercentStringForLastRow(
     }
     try {
       sumBps += percentageStringToBigInt(trimmed);
-    } catch (err) {
-      throw new Error(
-        `Invalid percentage in remainder row inputs: "${trimmed}"`,
-        { cause: err },
-      );
+    } catch {
+      // Incomplete input while typing (e.g. "8." after deleting decimals) must
+      // not throw — redeem forms call this from effects and onChange handlers.
+      continue;
     }
   }
   let rem = BigInt(MAX_BPS) - sumBps;

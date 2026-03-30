@@ -15,6 +15,7 @@ import {
   PlusCircledIcon,
   RadiobuttonIcon,
   Link2Icon,
+  ArrowUpIcon,
 } from '@radix-ui/react-icons';
 
 type SelectSettingsActionProps = {
@@ -144,6 +145,15 @@ export const SelectSettingsAction = ({
       description: t('actions.tokenBackingVault.description'),
       href: 'create/token-backing-vault',
       icon: <RadiobuttonIcon />,
+      baseTab: 'agreements',
+      disabled: isPaymentExpired,
+    },
+    {
+      group: t('groups.treasury'),
+      title: t('actions.redeemTokens.title'),
+      description: t('actions.redeemTokens.description'),
+      icon: <ArrowUpIcon />,
+      href: 'create/redeem-tokens',
       baseTab: 'agreements',
       disabled: isPaymentExpired,
     },

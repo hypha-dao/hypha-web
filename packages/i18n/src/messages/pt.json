@@ -335,7 +335,20 @@
         "by": "por",
         "bySpace": "de {space}",
         "walletBalanceLine": "Saldo da carteira: {amount} {symbol}",
-        "redemptionPriceLine": "Preço de resgate do token: {price}"
+        "redemptionPriceLine": "Preço de resgate do token: {price}",
+        "treasuryBalanceLine": "Saldo do tesouro: {amount} {symbol}",
+        "tokenRedemptionPriceSuffix": " · Preço de resgate do token: {hint}"
+      },
+      "redeemTokensProposal": {
+        "selectCollateralAsset": "Selecionar um ativo",
+        "noCollateralAssetsFound": "Nenhum ativo encontrado",
+        "requestedExceedsTreasury": "O valor de resgate solicitado excede o saldo do tesouro ({amount} solicitado vs {balance} {symbol} disponíveis).",
+        "collateralInsufficient": "O valor do resgate excede a garantia no cofre; insira um valor menor.",
+        "conversionDetails": {
+          "vaultLine": "No cofre: {amount} {symbol}",
+          "priceLine": "Preço: {currency}{price}",
+          "requestedLine": "Solicitado: {currency}{amount}"
+        }
       },
       "tokenPercentageFieldArray": {
         "convertedInto": "Convertido em",
@@ -759,6 +772,10 @@
       "spaceTokenPurchase": {
         "title": "Ativar compra de tokens do espaço",
         "description": "Permita que os membros comprem os tokens nativos do seu espaço."
+      },
+      "redeemTokens": {
+        "title": "Resgatar tokens",
+        "description": "Converta tokens no tesouro em seu valor fiat equivalente mantido no cofre do emissor de tokens do espaço."
       },
       "depositFunds": {
         "title": "Depositar fundos",
@@ -1418,6 +1435,13 @@
       "votingPeriod": "Período de votação",
       "votingPower": "Poder de voto",
       "tokenBackingVault": "Cofre de lastro de token",
+      "backingVaultPayout": "Backing Vault Payout",
+      "redeemTokens": "Redeem tokens",
+      "redeemToken": "Token to redeem",
+      "redeemAmount": "Redemption amount",
+      "redeemNotional": "Reference value",
+      "redeemApproxUsd": "≈ {value} USD",
+      "redeemCollateralUnitPrice": "{price} {currency} each",
       "spaceToken": "Token do espaço",
       "currentBackingCollaterals": "Colaterais atuais",
       "addCollaterals": "Adicionar colaterais",

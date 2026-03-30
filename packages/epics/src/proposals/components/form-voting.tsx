@@ -66,6 +66,7 @@ const getCreateRouteForLabel = (label: string | undefined): string => {
     'Activate Spaces': 'activate-spaces',
     'Space To Space': 'space-to-space-membership',
     'Treasury Minting': 'mint-tokens-to-space-treasury',
+    'Redeem Tokens': 'redeem-tokens',
     'Token Burning': 'token-burning',
     'Membership Exit': 'membership-exit',
     'Backing Vault': 'token-backing-vault',
@@ -109,6 +110,7 @@ export const FormVoting = ({
   spaceSlug,
   closeUrl,
   label,
+  redeemResubmitPayload,
   proposalTemplateData,
   spaceTokenPurchaseData,
 }: {
@@ -138,6 +140,11 @@ export const FormVoting = ({
   spaceSlug?: string;
   closeUrl?: string;
   label?: string;
+  redeemResubmitPayload?: {
+    token: string;
+    amount: string;
+    conversions: { asset: string; percentage: string }[];
+  };
   proposalTemplateData?: Record<string, unknown>;
   spaceTokenPurchaseData?: {
     tokenAddress?: string;
@@ -230,6 +237,9 @@ export const FormVoting = ({
         leadImage: documentLeadImage || undefined,
         attachments: documentAttachments || undefined,
         ...(proposalTemplateData ?? {}),
+        ...(redeemResubmitPayload
+          ? { redeemResubmit: redeemResubmitPayload }
+          : {}),
         ...(label === 'Token Purchase'
           ? {
               tokenAddress: spaceTokenPurchaseData?.tokenAddress || '',

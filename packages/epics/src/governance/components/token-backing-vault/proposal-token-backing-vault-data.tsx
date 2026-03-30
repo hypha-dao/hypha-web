@@ -71,19 +71,32 @@ export function ProposalTokenBackingVaultData({
       )
     : undefined;
 
-  const hasData =
-    spaceToken ||
+  const showSpaceTokenRow = Boolean(spaceToken);
+  const showCurrentBackingCollaterals = Boolean(
+    currentVault && currentVault.collaterals.length > 0,
+  );
+
+  const hasMeaningfulRedemptionPrice =
+    redemptionPrice !== undefined && String(redemptionPrice).trim() !== '';
+
+  const hasMaxRedemptionRow =
+    maxRedemptionPercent !== undefined && maxRedemptionPeriodDays !== undefined;
+
+  const hasVaultConfigRows =
     (addCollaterals?.length ?? 0) > 0 ||
     (removeCollaterals?.length ?? 0) > 0 ||
     enableRedemption !== undefined ||
-    redemptionStartDate ||
-    redemptionPrice !== undefined ||
-    maxRedemptionPercent !== undefined ||
+    Boolean(redemptionStartDate) ||
+    hasMeaningfulRedemptionPrice ||
+    hasMaxRedemptionRow ||
     minimumBackingPercent !== undefined ||
     whitelistEnabled !== undefined ||
     (whitelistedAddresses?.length ?? 0) > 0;
 
-  if (!hasData) return null;
+  const hasVisibleContent =
+    showSpaceTokenRow || showCurrentBackingCollaterals || hasVaultConfigRows;
+
+  if (!hasVisibleContent) return null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -91,17 +104,17 @@ export function ProposalTokenBackingVaultData({
         {tProposalDetails('labels.tokenBackingVault')}
       </span>
       <div className="flex flex-col gap-5">
-        {spaceToken && (
+        {showSpaceTokenRow && (
           <TokenBackingVaultDetailRow
             label={tProposalDetails('labels.spaceToken')}
             value={
-              getTokenSymbol(spaceToken, dbTokens, spaceTokens) || (
-                <EthAddress address={spaceToken} />
+              getTokenSymbol(spaceToken!, dbTokens, spaceTokens) || (
+                <EthAddress address={spaceToken!} />
               )
             }
           />
         )}
-        {currentVault && currentVault.collaterals.length > 0 && (
+        {showCurrentBackingCollaterals && currentVault && (
           <div className="flex flex-col gap-2">
             <div className="text-1 text-neutral-11">
               {tProposalDetails('labels.currentBackingCollaterals')}
@@ -167,24 +180,23 @@ export function ProposalTokenBackingVaultData({
             })}
           />
         )}
-        {redemptionPrice !== undefined && (
+        {hasMeaningfulRedemptionPrice && (
           <TokenBackingVaultDetailRow
             label={tProposalDetails('labels.redemptionPrice')}
-            value={`${formatCompactNumber(redemptionPrice)} ${
+            value={`${formatCompactNumber(String(redemptionPrice))} ${
               currencyLabel ?? 'USD'
             }`}
           />
         )}
-        {maxRedemptionPercent !== undefined &&
-          maxRedemptionPeriodDays !== undefined && (
-            <TokenBackingVaultDetailRow
-              label={tProposalDetails('labels.maxRedemption')}
-              value={tProposalDetails('labels.maxRedemptionValue', {
-                percent: maxRedemptionPercent,
-                days: maxRedemptionPeriodDays,
-              })}
-            />
-          )}
+        {hasMaxRedemptionRow && (
+          <TokenBackingVaultDetailRow
+            label={tProposalDetails('labels.maxRedemption')}
+            value={tProposalDetails('labels.maxRedemptionValue', {
+              percent: maxRedemptionPercent,
+              days: maxRedemptionPeriodDays,
+            })}
+          />
+        )}
         {minimumBackingPercent !== undefined && (
           <TokenBackingVaultDetailRow
             label={tProposalDetails('labels.minimumBackingPercent')}

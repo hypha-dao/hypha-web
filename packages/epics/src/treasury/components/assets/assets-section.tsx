@@ -55,7 +55,7 @@ export const AssetsSection: FC<AssetSectionProps> = ({
 
   const { isAuthenticated } = useAuthentication();
 
-  const isDisabled = !(isAuthenticated || isMember || isDelegate);
+  const isDisabled = !(isAuthenticated && (isMember || isDelegate));
   const tooltipMessage = !isAuthenticated
     ? tCommon('signIn')
     : !isMember && !isDelegate

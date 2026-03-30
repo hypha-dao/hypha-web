@@ -1,0 +1,239 @@
+'use client';
+
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  schemaCreateAgreementForm,
+  createAgreementFiles,
+  useJwt,
+  useMe,
+  extractRevertReason,
+} from '@hypha-platform/core/client';
+import { z } from 'zod';
+import { Button, Form, Separator } from '@hypha-platform/ui';
+import React from 'react';
+import { useCreateRedeemTokensOrchestrator } from '@hypha-platform/core/client';
+import { useRouter } from 'next/navigation';
+import { LoadingBackdrop } from '@hypha-platform/ui/server';
+import { useConfig } from 'wagmi';
+import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
+import { CreateAgreementBaseFields } from '../../agreements';
+import { schemaRedeemTokens } from '../../agreements/plugins/redeem-tokens/validation';
+import {
+  RedeemSubmitGuardProvider,
+  useRedeemSubmitGuard,
+} from '../../agreements/plugins/redeem-tokens/submit-guard-context';
+
+const fullSchemaCreateRedeemTokensForm = schemaCreateAgreementForm
+  .extend(createAgreementFiles)
+  .extend(schemaRedeemTokens.shape);
+
+type FormValues = z.infer<typeof fullSchemaCreateRedeemTokensForm>;
+
+interface CreateRedeemTokensFormProps {
+  spaceId: number | undefined | null;
+  web3SpaceId: number | undefined | null;
+  successfulUrl: string;
+  backUrl?: string;
+  plugin: React.ReactNode;
+}
+
+const CreateRedeemTokensFormInner = ({
+  successfulUrl,
+  backUrl,
+  spaceId,
+  web3SpaceId,
+  plugin,
+}: CreateRedeemTokensFormProps) => {
+  const { person } = useMe();
+  const redeemGuard = useRedeemSubmitGuard();
+  const { jwt } = useJwt();
+  const config = useConfig();
+  const {
+    createRedeemTokens,
+    reset,
+    currentAction,
+    isError,
+    isPending,
+    progress,
+  } = useCreateRedeemTokensOrchestrator({ authToken: jwt, config });
+
+  const formRef = React.useRef<HTMLFormElement>(null);
+  const form = useForm<FormValues>({
+    resolver: zodResolver(fullSchemaCreateRedeemTokensForm),
+    defaultValues: {
+      title: '',
+      description: '',
+      leadImage: undefined,
+      attachments: undefined,
+      spaceId: spaceId ?? undefined,
+      creatorId: person?.id,
+      redemptions: [
+        {
+          token: '',
+          amount: '',
+        },
+      ],
+      conversions: [
+        {
+          asset: '',
+          percentage: '100.00',
+        },
+      ],
+    },
+  });
+
+  useScrollToErrors(form, formRef);
+  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+
+  React.useEffect(() => {
+    if (progress < 100 || isError) return;
+    if (typeof window === 'undefined') return;
+    sessionStorage.removeItem('resubmitProposalData');
+    sessionStorage.removeItem('resubmitFormData');
+  }, [progress, isError]);
+
+  React.useEffect(() => {
+    if (person?.id) {
+      form.setValue('creatorId', person.id);
+    }
+  }, [person]);
+
+  const handleCreate = async (data: FormValues) => {
+    if (!redeemGuard.canSubmit) {
+      form.setError('root', {
+        message:
+          redeemGuard.blockMessage ??
+          'Please fix the redemption amounts before publishing.',
+      });
+      return;
+    }
+
+    if (!data.redemptions || data.redemptions.length === 0) {
+      console.error('Redemptions are missing');
+      return;
+    }
+
+    console.log('redeem-tokens data', {
+      ...data,
+      spaceId: spaceId as number,
+      web3SpaceId: typeof web3SpaceId === 'number' ? web3SpaceId : undefined,
+      redemptions: data.redemptions.map(({ amount, token }) => ({
+        amount: amount ?? '0',
+        token: token ?? '',
+      })),
+      conversions: data.conversions.map(({ asset, percentage }) => ({
+        asset: asset ?? '',
+        percentage: percentage ?? '0',
+      })),
+    });
+
+    if (web3SpaceId == null) {
+      console.error('Web3 space ID is missing');
+      return;
+    }
+
+    const [redemption] = data.redemptions;
+    if (!redemption) {
+      console.error('Redemption is missing');
+      return;
+    }
+
+    try {
+      await createRedeemTokens({
+        ...data,
+        spaceId: spaceId as number,
+        web3SpaceId: web3SpaceId as number,
+        redemption: {
+          amount: redemption.amount ?? '0',
+          token: redemption.token ?? '',
+        },
+        conversions: data.conversions.map(({ asset, percentage }) => ({
+          asset: asset ?? '',
+          percentage: percentage ?? '0',
+        })),
+        label: 'Redeem Tokens',
+      });
+    } catch (error) {
+      console.error('Redeem tokens failed:', error);
+      let errorMessage: string =
+        'An error occurred while processing your redeem tokens. Please try again.';
+
+      if (error instanceof Error) {
+        if (error.message.includes('Execution reverted with reason:')) {
+          const match = error.message.match(
+            /Execution reverted with reason: (.*?)\./,
+          );
+          errorMessage =
+            match && match[1]
+              ? extractRevertReason(match[1])
+              : 'Contract execution failed.';
+        }
+
+        console.error(errorMessage);
+      }
+
+      form.setError('root', { message: errorMessage });
+    }
+  };
+
+  console.log('form errors:', form.formState.errors);
+
+  return (
+    <LoadingBackdrop
+      showKeepWindowOpenMessage={true}
+      fullHeight={true}
+      progress={progress}
+      isLoading={isPending}
+      message={
+        isError ? (
+          <div className="flex flex-col">
+            <div>Ouh Snap. There was an error</div>
+            {form.formState.errors.root?.message && (
+              <div className="text-destructive">
+                {form.formState.errors.root.message}
+              </div>
+            )}
+            <Button onClick={reset}>Reset</Button>
+          </div>
+        ) : (
+          <div>{currentAction}</div>
+        )
+      }
+    >
+      <Form {...form}>
+        <form
+          ref={formRef}
+          onSubmit={form.handleSubmit(handleCreate)}
+          className="flex flex-col gap-5"
+        >
+          <CreateAgreementBaseFields
+            key={resubmitKey}
+            creator={{
+              avatar: person?.avatarUrl || '',
+              name: person?.name || '',
+              surname: person?.surname || '',
+            }}
+            successfulUrl={successfulUrl}
+            closeUrl={successfulUrl}
+            backUrl={backUrl}
+            isLoading={false}
+            label="Redeem Tokens"
+            progress={progress}
+          />
+          {plugin}
+          <Separator />
+          <div className="flex justify-end w-full">
+            <Button type="submit">Publish</Button>
+          </div>
+        </form>
+      </Form>
+    </LoadingBackdrop>
+  );
+};
+
+export const CreateRedeemTokensForm = (props: CreateRedeemTokensFormProps) => (
+  <RedeemSubmitGuardProvider>
+    <CreateRedeemTokensFormInner {...props} />
+  </RedeemSubmitGuardProvider>
+);

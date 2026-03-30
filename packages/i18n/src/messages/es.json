@@ -335,7 +335,20 @@
         "by": "por",
         "bySpace": "de {space}",
         "walletBalanceLine": "Saldo de la billetera: {amount} {symbol}",
-        "redemptionPriceLine": "Precio de canje del token: {price}"
+        "redemptionPriceLine": "Precio de canje del token: {price}",
+        "treasuryBalanceLine": "Saldo de la tesorería: {amount} {symbol}",
+        "tokenRedemptionPriceSuffix": " · Precio de canje del token: {hint}"
+      },
+      "redeemTokensProposal": {
+        "selectCollateralAsset": "Seleccionar un activo",
+        "noCollateralAssetsFound": "No se encontraron activos",
+        "requestedExceedsTreasury": "El monto de canje solicitado supera el saldo de la tesorería ({amount} solicitado frente a {balance} {symbol} disponibles).",
+        "collateralInsufficient": "El valor del canje supera la garantía en la bóveda; introduce un monto menor.",
+        "conversionDetails": {
+          "vaultLine": "En la bóveda: {amount} {symbol}",
+          "priceLine": "Precio: {currency}{price}",
+          "requestedLine": "Solicitado: {currency}{amount}"
+        }
       },
       "tokenPercentageFieldArray": {
         "convertedInto": "Convertido en",
@@ -759,6 +772,10 @@
       "spaceTokenPurchase": {
         "title": "Habilitar compra de tokens del espacio",
         "description": "Permita que sus miembros compren los tokens nativos de su espacio."
+      },
+      "redeemTokens": {
+        "title": "Canjear tokens",
+        "description": "Convierta los tokens de la tesorería en su valor fiat equivalente retenido en la bóveda del emisor de tokens del espacio."
       },
       "depositFunds": {
         "title": "Depositar fondos",
@@ -1418,6 +1435,13 @@
       "votingPeriod": "Período de votación",
       "votingPower": "Poder de voto",
       "tokenBackingVault": "Bóveda de respaldo de token",
+      "backingVaultPayout": "Backing Vault Payout",
+      "redeemTokens": "Redeem tokens",
+      "redeemToken": "Token to redeem",
+      "redeemAmount": "Redemption amount",
+      "redeemNotional": "Reference value",
+      "redeemApproxUsd": "≈ {value} USD",
+      "redeemCollateralUnitPrice": "{price} {currency} each",
       "spaceToken": "Token del espacio",
       "currentBackingCollaterals": "Colaterales actuales",
       "addCollaterals": "Agregar colaterales",

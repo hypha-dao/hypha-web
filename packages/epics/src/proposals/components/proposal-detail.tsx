@@ -16,6 +16,8 @@ import {
   Document,
   useSpaceMinProposalDuration,
   useVote,
+  bigIntToPercentageString,
+  getTokenDecimals,
 } from '@hypha-platform/core/client';
 import {
   ProposalTransactionItem,
@@ -30,6 +32,7 @@ import {
   MembershipExitData,
   ProposalTransparencySettingsInfo,
   ProposalTokenBackingVaultData,
+  ProposalRedeemTokensData,
   ProposalSpaceTokenPurchaseData,
 } from '../../governance';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
@@ -38,7 +41,7 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import { ProposalActivateSpacesData } from '../../governance/components/proposal-activate-spaces-data';
 import { useSpaceDocumentsWithStatuses } from '../../governance';
 import { isPast } from 'date-fns';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { TransparencyLevel } from '../../spaces/components/transparency-level';
 import { useTranslations } from 'next-intl';
 import { formatUnits } from 'viem';
@@ -118,6 +121,65 @@ export const ProposalDetail = ({
   const { spaces: dbSpaces } = useDbSpaces({ parentOnly: false });
 
   const tokenSymbol = proposalDetails?.tokens?.[0]?.symbol;
+
+  const redeemChainDataForResubmit = useMemo(() => {
+    if (label !== 'Redeem Tokens') return null;
+    const r = proposalDetails?.redeemTokensData;
+    if (!r?.amount || !r?.token || !r.conversions?.length) {
+      return null;
+    }
+    return {
+      token: r.token,
+      amount: r.amount,
+      conversions: r.conversions.map((c) => ({
+        asset: c.asset,
+        percentage: bigIntToPercentageString(c.percentage),
+      })),
+    };
+  }, [
+    label,
+    proposalDetails?.redeemTokensData?.amount,
+    proposalDetails?.redeemTokensData?.token,
+    proposalDetails?.redeemTokensData?.conversions,
+  ]);
+
+  const [redeemResubmitPayloadResolved, setRedeemResubmitPayloadResolved] =
+    useState<
+      | {
+          token: string;
+          amount: string;
+          conversions: { asset: string; percentage: string }[];
+        }
+      | undefined
+    >(undefined);
+
+  useEffect(() => {
+    if (!redeemChainDataForResubmit) {
+      setRedeemResubmitPayloadResolved(undefined);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const decimals = await getTokenDecimals(
+          redeemChainDataForResubmit.token,
+        );
+        const amount = formatUnits(redeemChainDataForResubmit.amount, decimals);
+        if (!cancelled) {
+          setRedeemResubmitPayloadResolved({
+            token: redeemChainDataForResubmit.token,
+            amount,
+            conversions: redeemChainDataForResubmit.conversions,
+          });
+        }
+      } catch {
+        if (!cancelled) setRedeemResubmitPayloadResolved(undefined);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [redeemChainDataForResubmit]);
 
   const {
     handleAccept: internalHandleAccept,
@@ -476,7 +538,22 @@ export const ProposalDetail = ({
           }
         />
       ) : null}
-      {proposalDetails?.tokenBackingVaultData ? (
+      {proposalDetails?.redeemTokensData.amount &&
+      proposalDetails?.redeemTokensData.token ? (
+        <ProposalRedeemTokensData
+          spaceSlug={spaceSlug}
+          dbTokens={dbTokens}
+          amount={proposalDetails.redeemTokensData.amount}
+          token={proposalDetails.redeemTokensData.token}
+          web3SpaceId={proposalDetails.redeemTokensData.web3SpaceId}
+          conversions={proposalDetails.redeemTokensData.conversions}
+        />
+      ) : null}
+      {proposalDetails?.tokenBackingVaultData &&
+      !(
+        proposalDetails?.redeemTokensData.amount &&
+        proposalDetails?.redeemTokensData.token
+      ) ? (
         <ProposalTokenBackingVaultData
           spaceSlug={spaceSlug}
           dbTokens={dbTokens}
@@ -516,6 +593,7 @@ export const ProposalDetail = ({
         closeUrl={closeUrl}
         onWithdrawSuccess={onWithdrawSuccess}
         label={label}
+        redeemResubmitPayload={redeemResubmitPayloadResolved}
         proposalTemplateData={resubmitTemplateData}
         spaceTokenPurchaseData={proposalDetails?.spaceTokenPurchaseData}
       />

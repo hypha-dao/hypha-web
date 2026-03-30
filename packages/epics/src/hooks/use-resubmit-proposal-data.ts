@@ -53,6 +53,11 @@ export const useResubmitProposalData = <
             }>;
           };
           applied?: boolean;
+          redeemResubmit?: {
+            token: string;
+            amount: string;
+            conversions: { asset: string; percentage: string }[];
+          };
           [key: string]: any;
         };
 
@@ -130,6 +135,27 @@ export const useResubmitProposalData = <
           });
         }
 
+        const redeem = parsed.redeemResubmit;
+        if (
+          redeem?.token &&
+          redeem.amount !== undefined &&
+          redeem.amount !== '' &&
+          redeem.conversions?.length
+        ) {
+          form.setValue(
+            'redemptions' as any,
+            [{ token: redeem.token, amount: redeem.amount }] as any,
+            {
+              shouldDirty: true,
+              shouldValidate: true,
+            },
+          );
+          form.setValue('conversions' as any, redeem.conversions as any, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+        }
+
         if (parsed.tokenAddress !== undefined) {
           form.setValue('tokenAddress' as any, parsed.tokenAddress as any, {
             shouldDirty: true,
@@ -192,6 +218,14 @@ export const useResubmitProposalData = <
         }
         if (parsed.tokensAvailableForPurchase !== undefined) {
           fieldsToTrigger.push('tokensAvailableForPurchase');
+        }
+        if (
+          redeem?.token &&
+          redeem.amount !== undefined &&
+          redeem.amount !== '' &&
+          redeem.conversions?.length
+        ) {
+          fieldsToTrigger.push('redemptions', 'conversions');
         }
         form.trigger(fieldsToTrigger as any[]);
 

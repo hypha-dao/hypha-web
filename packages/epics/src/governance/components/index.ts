@@ -1,5 +1,6 @@
 export * from './create-agreement-form';
 export * from './create-deploy-funds-form';
+export * from './create-redeem-tokens-form';
 export * from './create-pay-for-expenses-form';
 export * from './create-proposal-change-entry-method-form';
 export * from './create-proposal-change-voting-method-form';
@@ -9,6 +10,7 @@ export * from './issue-new-token-form';
 export * from './proposal-entry-info';
 export * from './proposal-mint-item';
 export * from './proposal-burn-item';
+export * from './proposal-redeem-tokens-data';
 export * from './proposal-token-items';
 export * from './proposal-token-requirements-info';
 export * from './proposal-transaction-item';

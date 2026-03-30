@@ -173,6 +173,10 @@
         "title": "Activer l'achat de tokens d'espace",
         "description": "Permettez à vos membres d'acheter les tokens natifs de votre espace."
       },
+      "redeemTokens": {
+        "title": "Échanger des tokens",
+        "description": "Convertissez les tokens du trésor en leur valeur fiat équivalente détenue dans le coffre de l'émetteur de tokens de l'espace."
+      },
       "depositFunds": {
         "title": "Déposer des fonds",
         "description": "Déposez des fonds dans votre trésorerie en copiant l'adresse de la trésorerie ou en scannant le QR code."
@@ -1191,7 +1195,20 @@
         "by": "par",
         "bySpace": "de {space}",
         "walletBalanceLine": "Solde du portefeuille : {amount} {symbol}",
-        "redemptionPriceLine": "Prix de rachat du token : {price}"
+        "redemptionPriceLine": "Prix de rachat du token : {price}",
+        "treasuryBalanceLine": "Solde du trésor : {amount} {symbol}",
+        "tokenRedemptionPriceSuffix": " · Prix de rachat du token : {hint}"
+      },
+      "redeemTokensProposal": {
+        "selectCollateralAsset": "Sélectionner un actif",
+        "noCollateralAssetsFound": "Aucun actif trouvé",
+        "requestedExceedsTreasury": "Le montant de rachat demandé dépasse le solde du trésor ({amount} demandé vs {balance} {symbol} disponibles).",
+        "collateralInsufficient": "La valeur de rachat dépasse les garanties dans le coffre ; saisissez un montant plus petit.",
+        "conversionDetails": {
+          "vaultLine": "Dans le coffre : {amount} {symbol}",
+          "priceLine": "Prix : {currency}{price}",
+          "requestedLine": "Demandé : {currency}{amount}"
+        }
       },
       "tokenPercentageFieldArray": {
         "convertedInto": "Converti en",
@@ -1418,6 +1435,13 @@
       "votingPeriod": "Période de vote",
       "votingPower": "Pouvoir de vote",
       "tokenBackingVault": "Coffre de garantie de token",
+      "backingVaultPayout": "Backing Vault Payout",
+      "redeemTokens": "Redeem tokens",
+      "redeemToken": "Token to redeem",
+      "redeemAmount": "Redemption amount",
+      "redeemNotional": "Reference value",
+      "redeemApproxUsd": "≈ {value} USD",
+      "redeemCollateralUnitPrice": "{price} {currency} each",
       "spaceToken": "Token de l’espace",
       "currentBackingCollaterals": "Garanties actuelles",
       "addCollaterals": "Ajouter des garanties",

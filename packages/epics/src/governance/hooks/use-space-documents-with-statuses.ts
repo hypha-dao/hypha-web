@@ -127,6 +127,14 @@ const getDocumentBadges = (document: Document) => {
         colorVariant: 'accent',
       });
       break;
+    case 'Redeem Tokens':
+      badges.push({
+        label: 'Redeem Tokens',
+        className: 'capitalize',
+        variant: 'solid',
+        colorVariant: 'accent',
+      });
+      break;
     case 'Token Purchase':
       badges.push({
         label: 'Token Purchase',

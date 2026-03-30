@@ -173,6 +173,10 @@
         "title": "Enable Space Token Purchase",
         "description": "Allow your members to purchase your space's native tokens."
       },
+      "redeemTokens": {
+        "title": "Redeem Tokens",
+        "description": "Convert tokens in the treasury into their equivalent fiat value held in the Space Token Issuer vault."
+      },
       "depositFunds": {
         "title": "Deposit Funds",
         "description": "Deposit funds into your treasury by copying the treasury address or scanning the QR code."
@@ -1191,7 +1195,20 @@
         "by": "by",
         "bySpace": "by {space}",
         "walletBalanceLine": "Wallet balance: {amount} {symbol}",
-        "redemptionPriceLine": "Token redemption price: {price}"
+        "redemptionPriceLine": "Token redemption price: {price}",
+        "treasuryBalanceLine": "Treasury balance: {amount} {symbol}",
+        "tokenRedemptionPriceSuffix": " · Token redemption price: {hint}"
+      },
+      "redeemTokensProposal": {
+        "selectCollateralAsset": "Select an asset",
+        "noCollateralAssetsFound": "No assets found",
+        "requestedExceedsTreasury": "Requested redemption amount exceeds treasury balance ({amount} requested vs {balance} {symbol} available).",
+        "collateralInsufficient": "The redemption value exceeds the collateral in the vault; enter a smaller amount.",
+        "conversionDetails": {
+          "vaultLine": "In vault: {amount} {symbol}",
+          "priceLine": "Price: {currency}{price}",
+          "requestedLine": "Requested: {currency}{amount}"
+        }
       },
       "tokenPercentageFieldArray": {
         "convertedInto": "Converted into",
@@ -1418,6 +1435,13 @@
       "votingPeriod": "Voting Period",
       "votingPower": "Voting Power",
       "tokenBackingVault": "Token Backing Vault",
+      "backingVaultPayout": "Backing Vault Payout",
+      "redeemTokens": "Redeem tokens",
+      "redeemToken": "Token to redeem",
+      "redeemAmount": "Redemption amount",
+      "redeemNotional": "Reference value",
+      "redeemApproxUsd": "≈ {value} USD",
+      "redeemCollateralUnitPrice": "{price} {currency} each",
       "spaceToken": "Space Token",
       "currentBackingCollaterals": "Current Backing Collaterals",
       "addCollaterals": "Add Collaterals",

@@ -795,6 +795,17 @@ export function decodeTransaction(tx: Tx) {
                 accounts: decoded.args[2] as `0x${string}`[],
               },
             };
+          case 'redeem':
+            return {
+              type: 'redeemTokens',
+              data: {
+                web3SpaceId: decoded.args[0],
+                token: decoded.args[1],
+                amount: decoded.args[2],
+                backingTokens: decoded.args[3],
+                proportions: decoded.args[4],
+              },
+            };
           default:
             return null;
         }

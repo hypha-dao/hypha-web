@@ -34,6 +34,7 @@ interface TokenPayoutFieldArrayProps {
   label?: string;
   allowAddOrRemove?: boolean;
   showSelectedTokenBalanceHint?: boolean;
+  showTreasuryBalanceHint?: boolean;
   selectedTokenPriceHint?: string;
 }
 
@@ -43,6 +44,7 @@ function TokenPayoutFieldArrayInner({
   label,
   allowAddOrRemove = true,
   showSelectedTokenBalanceHint = false,
+  showTreasuryBalanceHint = false,
   selectedTokenPriceHint,
 }: TokenPayoutFieldArrayProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
@@ -90,8 +92,10 @@ function TokenPayoutFieldArrayInner({
                           onChange={onChange}
                           tokens={tokens}
                           showSelectedTokenBalanceHint={
-                            showSelectedTokenBalanceHint
+                            showSelectedTokenBalanceHint ||
+                            showTreasuryBalanceHint
                           }
+                          useTreasuryBalanceLine={showTreasuryBalanceHint}
                           selectedTokenPriceHint={selectedTokenPriceHint}
                         />
                       </FormControl>

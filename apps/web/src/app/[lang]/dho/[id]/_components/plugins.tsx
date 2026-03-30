@@ -15,6 +15,7 @@ import {
   TokenBackingVaultPlugin,
   MembershipExitPlugin,
   SpaceTransparencySettingsPlugin,
+  RedeemTokensPlugin,
 } from '@hypha-platform/epics';
 import { useMembers } from '@web/hooks/use-members';
 import { Person, Space } from '@hypha-platform/core/client';
@@ -34,6 +35,7 @@ export const PLUGINS = {
   'token-backing-vault': TokenBackingVaultPlugin,
   'membership-exit': MembershipExitPlugin,
   'space-transparency-settings': SpaceTransparencySettingsPlugin,
+  'redeem-tokens': RedeemTokensPlugin,
 };
 
 type PluginProps = {

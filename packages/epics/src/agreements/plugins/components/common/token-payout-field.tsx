@@ -43,6 +43,8 @@ interface TokenPayoutFieldProps {
   tokens: Token[];
   readOnlyDropdown?: boolean;
   showSelectedTokenBalanceHint?: boolean;
+  /** When true, use treasury balance copy (space redeem) instead of wallet balance. */
+  useTreasuryBalanceLine?: boolean;
   selectedTokenPriceHint?: string;
 }
 
@@ -52,6 +54,7 @@ function TokenPayoutFieldInner({
   tokens,
   readOnlyDropdown,
   showSelectedTokenBalanceHint = false,
+  useTreasuryBalanceLine = false,
   selectedTokenPriceHint,
 }: TokenPayoutFieldProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
@@ -187,17 +190,20 @@ function TokenPayoutFieldInner({
       Number.isFinite(selectedToken.value) ? (
         <div className="text-1 text-neutral-11 w-full min-w-0 self-end overflow-x-auto">
           <span className="whitespace-nowrap inline-block min-w-full text-right">
-            {tAgreementFlow('plugins.tokenPayoutField.walletBalanceLine', {
-              amount: selectedToken.value.toFixed(2),
-              symbol: selectedToken.symbol,
-            })}
+            {tAgreementFlow(
+              useTreasuryBalanceLine
+                ? 'plugins.tokenPayoutField.treasuryBalanceLine'
+                : 'plugins.tokenPayoutField.walletBalanceLine',
+              {
+                amount: String(selectedToken.value),
+                symbol: selectedToken.symbol,
+              },
+            )}
             {selectedTokenPriceHint
-              ? ` · ${tAgreementFlow(
-                  'plugins.tokenPayoutField.redemptionPriceLine',
-                  {
-                    price: selectedTokenPriceHint,
-                  },
-                )}`
+              ? tAgreementFlow(
+                  'plugins.tokenPayoutField.tokenRedemptionPriceSuffix',
+                  { hint: selectedTokenPriceHint },
+                )
               : ''}
           </span>
         </div>
