@@ -825,6 +825,14 @@ export const ProposalDetail = ({
       return vaultPayload;
     }
 
+    if (label === 'Funding') {
+      const fromTransfers = buildRecipientPayoutsFromTransfers(
+        proposalDetails.transfers,
+      );
+      if (!fromTransfers) return undefined;
+      return { deployFundsForm: fromTransfers };
+    }
+
     if (label === 'Contribution') {
       const fromTransfers = buildRecipientPayoutsFromTransfers(
         proposalDetails.transfers,

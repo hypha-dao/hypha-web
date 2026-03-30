@@ -110,6 +110,9 @@ export function inferResubmitTemplateSegmentFromPayload(
   ) {
     return 'buy-hypha-tokens';
   }
+  if (parsed.deployFundsForm && typeof parsed.deployFundsForm === 'object') {
+    return 'deploy-funds';
+  }
   if (
     parsed.proposeContributionForm &&
     typeof parsed.proposeContributionForm === 'object'

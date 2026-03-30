@@ -96,6 +96,7 @@ export const useResubmitProposalData = <
           tokenBackingVault?: Record<string, unknown>;
           spaceTokenPurchaseForm?: Record<string, unknown>;
           buyHyphaTokensForm?: Record<string, unknown>;
+          deployFundsForm?: Record<string, unknown>;
           proposeContributionForm?: Record<string, unknown>;
           payForExpensesForm?: Record<string, unknown>;
           applied?: boolean;
@@ -242,6 +243,10 @@ export const useResubmitProposalData = <
             ...(parsed.buyHyphaTokensForm &&
             typeof parsed.buyHyphaTokensForm === 'object'
               ? (parsed.buyHyphaTokensForm as Record<string, unknown>)
+              : {}),
+            ...(parsed.deployFundsForm &&
+            typeof parsed.deployFundsForm === 'object'
+              ? (parsed.deployFundsForm as Record<string, unknown>)
               : {}),
             ...(parsed.proposeContributionForm &&
             typeof parsed.proposeContributionForm === 'object'
@@ -525,6 +530,23 @@ export const useResubmitProposalData = <
           }
         }
 
+        const deployFundsInj = parsed.deployFundsForm;
+        if (deployFundsInj && typeof deployFundsInj === 'object') {
+          const df = deployFundsInj as Record<string, unknown>;
+          if (df.recipient !== undefined) {
+            form.setValue('recipient' as any, df.recipient as any, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+          }
+          if (Array.isArray(df.payouts)) {
+            form.setValue('payouts' as any, df.payouts as any, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+          }
+        }
+
         const contributionLikeInj =
           parsed.proposeContributionForm ?? parsed.payForExpensesForm;
         if (contributionLikeInj && typeof contributionLikeInj === 'object') {
@@ -678,6 +700,12 @@ export const useResubmitProposalData = <
           typeof parsed.buyHyphaTokensForm === 'object'
         ) {
           fieldsToTrigger.push('payout', 'recipient');
+        }
+        if (
+          parsed.deployFundsForm &&
+          typeof parsed.deployFundsForm === 'object'
+        ) {
+          fieldsToTrigger.push('recipient', 'payouts');
         }
         if (
           (parsed.proposeContributionForm &&
