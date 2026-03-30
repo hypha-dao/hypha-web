@@ -65,6 +65,8 @@ export const useResubmitProposalData = <
               allBalance?: boolean;
             }>;
           };
+          spaceDiscoverability?: number;
+          spaceActivityAccess?: number;
           applied?: boolean;
           redeemResubmit?: {
             token: string;
@@ -110,6 +112,12 @@ export const useResubmitProposalData = <
             ...(parsed.mint ? { mint: parsed.mint } : {}),
             ...(parsed.tokenBurning
               ? { tokenBurning: parsed.tokenBurning }
+              : {}),
+            ...(parsed.spaceDiscoverability !== undefined
+              ? { spaceDiscoverability: parsed.spaceDiscoverability }
+              : {}),
+            ...(parsed.spaceActivityAccess !== undefined
+              ? { spaceActivityAccess: parsed.spaceActivityAccess }
               : {}),
             leadImage: undefined,
             attachments: undefined,
@@ -163,6 +171,28 @@ export const useResubmitProposalData = <
             shouldDirty: true,
             shouldValidate: false,
           });
+        }
+
+        if (parsed.spaceDiscoverability !== undefined) {
+          form.setValue(
+            'spaceDiscoverability' as any,
+            parsed.spaceDiscoverability as any,
+            {
+              shouldDirty: true,
+              shouldValidate: true,
+            },
+          );
+        }
+
+        if (parsed.spaceActivityAccess !== undefined) {
+          form.setValue(
+            'spaceActivityAccess' as any,
+            parsed.spaceActivityAccess as any,
+            {
+              shouldDirty: true,
+              shouldValidate: true,
+            },
+          );
         }
 
         const redeem = parsed.redeemResubmit;
@@ -241,6 +271,12 @@ export const useResubmitProposalData = <
         }
 
         const fieldsToTrigger: string[] = ['title', 'description'];
+        if (parsed.spaceDiscoverability !== undefined) {
+          fieldsToTrigger.push('spaceDiscoverability');
+        }
+        if (parsed.spaceActivityAccess !== undefined) {
+          fieldsToTrigger.push('spaceActivityAccess');
+        }
         if (
           resubmitTokenAddress !== undefined ||
           parsed.tokenAddress !== undefined

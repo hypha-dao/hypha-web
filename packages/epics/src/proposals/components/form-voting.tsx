@@ -78,6 +78,7 @@ const getCreateRouteForLabel = (label: string | undefined): string => {
     'Backing Vault': 'token-backing-vault',
     'Update Token': 'update-issued-token',
     'Token Purchase': 'space-token-purchase',
+    'Space Transparency': 'space-settings-transparency',
   };
 
   return labelToRoute[label] || '';

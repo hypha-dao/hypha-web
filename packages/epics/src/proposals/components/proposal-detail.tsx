@@ -399,6 +399,34 @@ export const ProposalDetail = ({
       };
     }
 
+    if (label === 'Space Transparency') {
+      const ts = proposalDetails.transparencySettingsData;
+      if (!ts) return undefined;
+
+      const spaceDiscoverability =
+        ts.spaceDiscoverability !== undefined &&
+        !Number.isNaN(Number(ts.spaceDiscoverability))
+          ? Number(ts.spaceDiscoverability)
+          : undefined;
+      const spaceActivityAccess =
+        ts.spaceActivityAccess !== undefined &&
+        !Number.isNaN(Number(ts.spaceActivityAccess))
+          ? Number(ts.spaceActivityAccess)
+          : undefined;
+
+      if (
+        spaceDiscoverability === undefined &&
+        spaceActivityAccess === undefined
+      ) {
+        return undefined;
+      }
+
+      return {
+        ...(spaceDiscoverability !== undefined ? { spaceDiscoverability } : {}),
+        ...(spaceActivityAccess !== undefined ? { spaceActivityAccess } : {}),
+      };
+    }
+
     return undefined;
   })();
 
