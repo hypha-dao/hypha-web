@@ -488,7 +488,7 @@
       "acceptInvestment": {
         "investingMember": "Membro investidor",
         "investorWillSend": "O membro investidor enviará",
-        "spaceWillProvide": "O espaço fornecerá (o investidor recebe)",
+        "investorWillReceive": "O membro investidor receberá:",
         "source": "Origem",
         "sourcePlaceholder": "Selecionar origem",
         "sourceMint": "Cunhar novos tokens",
@@ -1409,7 +1409,7 @@
       "title": "Termos do investimento",
       "investingMember": "Membro investidor",
       "investorWillSend": "O membro investidor enviará",
-      "spaceWillProvide": "O espaço fornecerá (o investidor recebe)",
+      "investorWillReceive": "O membro investidor receberá:",
       "sourceMint": "Cunhar novos tokens",
       "sourceTreasury": "Usar tokens disponíveis no tesouro",
       "escrowOnChain": "Escrow (on-chain)",

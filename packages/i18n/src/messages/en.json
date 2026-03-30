@@ -1369,7 +1369,7 @@
       "acceptInvestment": {
         "investingMember": "Investing member",
         "investorWillSend": "Investing member will send",
-        "spaceWillProvide": "Space will provide (investor receives)",
+        "investorWillReceive": "Investing Member will Receive:",
         "source": "Source",
         "sourcePlaceholder": "Select source",
         "sourceMint": "Mint new tokens",
@@ -1409,7 +1409,7 @@
       "title": "Investment terms",
       "investingMember": "Investing member",
       "investorWillSend": "Investing member will send",
-      "spaceWillProvide": "Space will provide (investor receives)",
+      "investorWillReceive": "Investing Member will Receive:",
       "sourceMint": "Mint new tokens",
       "sourceTreasury": "Use available tokens in treasury",
       "escrowOnChain": "Escrow (on-chain)",

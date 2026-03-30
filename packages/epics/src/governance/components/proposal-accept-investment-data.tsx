@@ -164,7 +164,7 @@ export function ProposalAcceptInvestmentData({
       {parsed?.spaceReceiveLegs?.length ? (
         <div className="flex flex-col gap-2">
           <span className="text-neutral-11 text-1">
-            {t('spaceWillProvide')}
+            {t('investorWillReceive')}
           </span>
           {parsed.spaceReceiveLegs.map((leg, i) => (
             <div key={i} className="flex flex-col gap-1 pl-2">
@@ -182,7 +182,7 @@ export function ProposalAcceptInvestmentData({
       ) : parsed?.investorSendLegs?.length ? (
         <div className="flex flex-col gap-2">
           <span className="text-neutral-11 text-1">
-            {t('spaceWillProvide')}
+            {t('investorWillReceive')}
           </span>
           {parsed.investorSendLegs.map((leg, i) => (
             <div key={i} className="flex flex-col gap-1 pl-2">
@@ -199,7 +199,7 @@ export function ProposalAcceptInvestmentData({
         exchangeEscrowData.amountA !== undefined ? (
         <div className="flex flex-col gap-1">
           <span className="text-neutral-11 text-1">
-            {t('spaceWillProvide')}
+            {t('investorWillReceive')}
           </span>
           <OnChainTokenRow
             spaceSlug={spaceSlug}

@@ -1369,7 +1369,7 @@
       "acceptInvestment": {
         "investingMember": "Investierendes Mitglied",
         "investorWillSend": "Investierendes Mitglied sendet",
-        "spaceWillProvide": "Space stellt bereit (Investor erhält)",
+        "investorWillReceive": "Investierendes Mitglied erhält:",
         "source": "Quelle",
         "sourcePlaceholder": "Quelle wählen",
         "sourceMint": "Neue Token prägen",
@@ -1409,7 +1409,7 @@
       "title": "Investitionsbedingungen",
       "investingMember": "Investierendes Mitglied",
       "investorWillSend": "Investierendes Mitglied sendet",
-      "spaceWillProvide": "Space stellt bereit (Investor erhält)",
+      "investorWillReceive": "Investierendes Mitglied erhält:",
       "sourceMint": "Neue Token prägen",
       "sourceTreasury": "Verfügbare Token in der Treasury nutzen",
       "escrowOnChain": "Escrow (On-Chain)",
