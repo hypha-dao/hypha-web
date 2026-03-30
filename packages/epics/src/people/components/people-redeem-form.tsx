@@ -6,7 +6,8 @@ import { z } from 'zod';
 import { Form } from '@hypha-platform/ui';
 import { Separator, Button } from '@hypha-platform/ui';
 import { Loader2 } from 'lucide-react';
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import {
   CURRENCY_FEED_OPTIONS,
   extractRevertReason,
@@ -167,6 +168,15 @@ export const PeopleRedeemForm = ({
   };
 
   const { person } = useMe();
+  const router = useRouter();
+  const { lang, personSlug } = useParams<{
+    lang: string;
+    personSlug: string;
+  }>();
+  const closePanelUrl = useMemo(
+    () => `/${lang}/profile/${personSlug}`,
+    [lang, personSlug],
+  );
   const { fundWallet } = useFundWallet({
     address: person?.address as `0x${string}`,
   });
@@ -555,14 +565,19 @@ export const PeopleRedeemForm = ({
 
   useScrollToErrors(form, formRef);
 
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const closePanelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   React.useEffect(() => {
     return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (closePanelTimeoutRef.current) {
+        clearTimeout(closePanelTimeoutRef.current);
+      }
     };
   }, []);
 
   const handleRedeem = async (data: FormValues) => {
+    setShowSuccessMessage(false);
     try {
       const [redemption] = data.redemptions;
       if (!redemption) {
@@ -611,8 +626,11 @@ export const PeopleRedeemForm = ({
       console.log('Redeem hashes:', result);
 
       setShowSuccessMessage(true);
-      timeoutRef.current = setTimeout(() => {
-        setShowSuccessMessage(false);
+      if (closePanelTimeoutRef.current) {
+        clearTimeout(closePanelTimeoutRef.current);
+      }
+      closePanelTimeoutRef.current = setTimeout(() => {
+        router.replace(closePanelUrl, { scroll: false });
       }, 3000);
       form.reset();
       try {
