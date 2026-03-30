@@ -10,6 +10,10 @@ import { db } from '@hypha-platform/storage-postgres';
 import { Person, Space } from '@hypha-platform/core/client';
 import { getAllSpaces } from '@hypha-platform/core/server';
 import { findAllPeopleWithoutPagination } from '@hypha-platform/core/server';
+import {
+  toClientPluginPeople,
+  toClientPluginSpaces,
+} from '../../../../lib/serialize-entities-for-client-plugin';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string; tab: string }>;
@@ -56,6 +60,8 @@ export default async function IssueNewTokenPage({
     (space) =>
       space?.address && space.address.trim() !== '' && space.id !== spaceId,
   );
+  const pluginMembers = toClientPluginPeople(filteredPeoples);
+  const pluginSpaces = toClientPluginSpaces(filteredSpaces ?? []);
   return (
     <SidePanel>
       <IssueNewTokenForm
@@ -68,8 +74,8 @@ export default async function IssueNewTokenPage({
           <Plugin
             name="issue-new-token"
             spaceSlug={id}
-            spaces={filteredSpaces}
-            members={filteredPeoples}
+            spaces={pluginSpaces}
+            members={pluginMembers}
           />
         }
       />
