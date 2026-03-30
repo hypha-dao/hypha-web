@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { UseFormReturn } from 'react-hook-form';
+import { UseFormReturn, type Path, type PathValue } from 'react-hook-form';
 import { usePathname } from 'next/navigation';
 import {
   RESUBMIT_UPDATE_ISSUED_TOKEN_EMBEDDED_FIELD,
@@ -16,6 +16,64 @@ import {
   inferResubmitTemplateSegmentFromPayload,
   isLegacyGenericResubmitSegment,
 } from '../utils/resubmit-proposal-template';
+
+/** Session payload written by resubmit / read by `useResubmitProposalData`. */
+export type ResubmitProposalSessionAttachment =
+  | { url?: string; name?: string }
+  | File
+  | string;
+
+export type ResubmitProposalSessionPayload = {
+  resubmitTemplateSegment?: string;
+  title?: string;
+  description?: string;
+  leadImage?: unknown;
+  attachments?: ResubmitProposalSessionAttachment[];
+  mint?: { amount?: string; token?: string };
+  tokenBurning?: {
+    token?: string;
+    burns?: Array<{
+      type?: 'member' | 'space';
+      address?: string;
+      amount?: string;
+      allBalance?: boolean;
+    }>;
+  };
+  spaceDiscoverability?: number;
+  spaceActivityAccess?: number;
+  votingMethod?: '1m1v' | '1v1v' | '1t1v';
+  quorumAndUnity?: { quorum?: number; unity?: number };
+  token?: string;
+  members?: Array<{ member?: string; number?: number }>;
+  votingDuration?: number;
+  autoExecution?: boolean;
+  entryMethod?: number;
+  tokenBase?: { amount?: number; token?: string };
+  space?: number;
+  member?: string;
+  spaceToSpaceTargetAddress?: string;
+  spaceToSpaceMemberAddress?: string;
+  issueNewTokenForm?: Record<string, unknown>;
+  tokenBackingVault?: Record<string, unknown>;
+  spaceTokenPurchaseForm?: Record<string, unknown>;
+  buyHyphaTokensForm?: Record<string, unknown>;
+  deployFundsForm?: Record<string, unknown>;
+  proposeContributionForm?: Record<string, unknown>;
+  payForExpensesForm?: Record<string, unknown>;
+  applied?: boolean;
+  redeemResubmit?: {
+    token: string;
+    amount: string;
+    conversions: { asset: string; percentage: string }[];
+  };
+  tokenAddress?: string;
+  activatePurchase?: boolean;
+  purchasePrice?: number;
+  purchaseCurrency?: string;
+  tokensAvailableForPurchase?: number;
+} & {
+  [K in typeof RESUBMIT_UPDATE_ISSUED_TOKEN_EMBEDDED_FIELD]?: UpdateIssuedTokenResubmitPayload;
+};
 
 /** Clears resubmit hydration keys after a successful publish so the next visit shows an empty form. */
 export function clearResubmitProposalSessionStorage(): void {
@@ -38,6 +96,8 @@ export const useResubmitProposalData = <
       | string
     >;
     tokenAddress?: string;
+    spaceDiscoverability?: number;
+    spaceActivityAccess?: number;
   },
 >(
   form: UseFormReturn<T>,
@@ -59,55 +119,7 @@ export const useResubmitProposalData = <
           return;
         }
 
-        const parsed = JSON.parse(stored) as {
-          resubmitTemplateSegment?: string;
-          title?: string;
-          description?: string;
-          leadImage?: any;
-          attachments?: any;
-          mint?: {
-            amount?: string;
-            token?: string;
-          };
-          tokenBurning?: {
-            token?: string;
-            burns?: Array<{
-              type?: 'member' | 'space';
-              address?: string;
-              amount?: string;
-              allBalance?: boolean;
-            }>;
-          };
-          spaceDiscoverability?: number;
-          spaceActivityAccess?: number;
-          votingMethod?: '1m1v' | '1v1v' | '1t1v';
-          quorumAndUnity?: { quorum?: number; unity?: number };
-          token?: string;
-          members?: Array<{ member?: string; number?: number }>;
-          votingDuration?: number;
-          autoExecution?: boolean;
-          entryMethod?: number;
-          tokenBase?: { amount?: number; token?: string };
-          space?: number;
-          member?: string;
-          spaceToSpaceTargetAddress?: string;
-          spaceToSpaceMemberAddress?: string;
-          issueNewTokenForm?: Record<string, unknown>;
-          tokenBackingVault?: Record<string, unknown>;
-          spaceTokenPurchaseForm?: Record<string, unknown>;
-          buyHyphaTokensForm?: Record<string, unknown>;
-          deployFundsForm?: Record<string, unknown>;
-          proposeContributionForm?: Record<string, unknown>;
-          payForExpensesForm?: Record<string, unknown>;
-          applied?: boolean;
-          redeemResubmit?: {
-            token: string;
-            amount: string;
-            conversions: { asset: string; percentage: string }[];
-          };
-          [key: string]: any;
-          [RESUBMIT_UPDATE_ISSUED_TOKEN_EMBEDDED_FIELD]?: UpdateIssuedTokenResubmitPayload;
-        };
+        const parsed = JSON.parse(stored) as ResubmitProposalSessionPayload;
 
         const currentSegment: ResubmitProposalTemplateSegment =
           resubmitTemplateSegment ??
@@ -117,7 +129,9 @@ export const useResubmitProposalData = <
         const storedSegment =
           typeof parsed.resubmitTemplateSegment === 'string'
             ? parsed.resubmitTemplateSegment
-            : inferResubmitTemplateSegmentFromPayload(parsed);
+            : inferResubmitTemplateSegmentFromPayload(
+                parsed as Record<string, unknown>,
+              );
 
         const templateMatches =
           storedSegment === currentSegment ||
@@ -286,9 +300,10 @@ export const useResubmitProposalData = <
         }
 
         if (parsed.spaceDiscoverability !== undefined) {
+          const path = 'spaceDiscoverability' as Path<T>;
           form.setValue(
-            'spaceDiscoverability' as any,
-            parsed.spaceDiscoverability as any,
+            path,
+            parsed.spaceDiscoverability as PathValue<T, typeof path>,
             {
               shouldDirty: true,
               shouldValidate: true,
@@ -297,9 +312,10 @@ export const useResubmitProposalData = <
         }
 
         if (parsed.spaceActivityAccess !== undefined) {
+          const path = 'spaceActivityAccess' as Path<T>;
           form.setValue(
-            'spaceActivityAccess' as any,
-            parsed.spaceActivityAccess as any,
+            path,
+            parsed.spaceActivityAccess as PathValue<T, typeof path>,
             {
               shouldDirty: true,
               shouldValidate: true,

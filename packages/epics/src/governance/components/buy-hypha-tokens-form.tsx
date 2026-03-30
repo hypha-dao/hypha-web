@@ -17,7 +17,7 @@ import { useConfig } from 'wagmi';
 import { useAssets, useFundWallet } from '../../treasury';
 import React from 'react';
 import {
-  clearResubmitProposalSessionStorage,
+  useClearResubmitOnSuccess,
   useResubmitProposalData,
   useScrollToErrors,
 } from '../../hooks';
@@ -100,11 +100,7 @@ export const BuyHyphaTokensForm = ({
     BUY_HYPHA_RESUBMIT_SEGMENT,
   );
 
-  React.useEffect(() => {
-    if (progress === 100 && !isError) {
-      clearResubmitProposalSessionStorage();
-    }
-  }, [progress, isError]);
+  useClearResubmitOnSuccess(progress, isError);
 
   React.useEffect(() => {
     if (spaceDetails?.executor && web3SpaceId) {

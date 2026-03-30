@@ -14,7 +14,7 @@ import React from 'react';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useConfig } from 'wagmi';
 import {
-  clearResubmitProposalSessionStorage,
+  useClearResubmitOnSuccess,
   useResubmitProposalData,
   useScrollToErrors,
 } from '../../hooks';
@@ -88,11 +88,7 @@ export const CreateAgreementForm = ({
     COLLECTIVE_AGREEMENT_RESUBMIT_SEGMENT,
   );
 
-  React.useEffect(() => {
-    if (progress === 100 && !isError) {
-      clearResubmitProposalSessionStorage();
-    }
-  }, [progress, isError]);
+  useClearResubmitOnSuccess(progress, isError);
 
   const handleCreate = async (data: FormValues) => {
     await createAgreement({

@@ -21,7 +21,7 @@ import Link from 'next/link';
 import { useActivateSpaces } from '../../people/hooks/use-activate-hypha-spaces';
 import { isAddress } from 'ethers';
 import {
-  clearResubmitProposalSessionStorage,
+  useClearResubmitOnSuccess,
   useResubmitProposalData,
   useScrollToErrors,
 } from '../../hooks';
@@ -113,11 +113,7 @@ export const ActivateSpacesFormSpace = ({
     ACTIVATE_SPACES_RESUBMIT_SEGMENT,
   );
 
-  React.useEffect(() => {
-    if (progress === 100 && !isError) {
-      clearResubmitProposalSessionStorage();
-    }
-  }, [progress, isError]);
+  useClearResubmitOnSuccess(progress, isError);
 
   React.useEffect(() => {
     if (spaceDetails?.executor && web3SpaceId) {

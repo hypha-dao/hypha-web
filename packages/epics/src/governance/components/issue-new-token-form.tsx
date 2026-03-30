@@ -20,6 +20,7 @@ import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useRouter } from 'next/navigation';
 import {
   clearResubmitProposalSessionStorage,
+  useClearResubmitOnSuccess,
   useDbTokens,
   useResubmitProposalData,
   useScrollToErrors,
@@ -353,11 +354,7 @@ export const IssueNewTokenForm = ({
     ISSUE_TOKEN_RESUBMIT_SEGMENT,
   );
 
-  React.useEffect(() => {
-    if (progress === 100 && !isError) {
-      clearResubmitProposalSessionStorage();
-    }
-  }, [progress, isError]);
+  useClearResubmitOnSuccess(progress, isError);
 
   const { tokens: dbTokens, refetchDbTokens } = useDbTokens();
 
@@ -369,6 +366,7 @@ export const IssueNewTokenForm = ({
 
   React.useEffect(() => {
     if (progress === 100 && agreementSlug) {
+      clearResubmitProposalSessionStorage();
       router.push(successfulUrl);
     }
   }, [progress, agreementSlug, router, successfulUrl]);

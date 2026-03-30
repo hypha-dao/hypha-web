@@ -12,7 +12,7 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import {
-  clearResubmitProposalSessionStorage,
+  useClearResubmitOnSuccess,
   useResubmitProposalData,
   useScrollToErrors,
 } from '../../hooks';
@@ -83,12 +83,6 @@ export const MembershipExitForm = ({
     MEMBERSHIP_EXIT_RESUBMIT_SEGMENT,
   );
 
-  React.useEffect(() => {
-    if (progress === 100 && !isError) {
-      clearResubmitProposalSessionStorage();
-    }
-  }, [progress, isError]);
-
   const { jwt } = useJwt();
   const config = useConfig();
   const {
@@ -99,6 +93,8 @@ export const MembershipExitForm = ({
     isPending,
     progress,
   } = useMembershipExitOrchestrator({ authToken: jwt, config });
+
+  useClearResubmitOnSuccess(progress, isError);
 
   const handleCreate = React.useCallback(
     async (data: FormValues) => {

@@ -20,7 +20,7 @@ import React from 'react';
 import { useSpaceTokenRequirementsByAddress } from '../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import {
-  clearResubmitProposalSessionStorage,
+  useClearResubmitOnSuccess,
   useResubmitProposalData,
   useScrollToErrors,
 } from '../../hooks';
@@ -133,11 +133,7 @@ export const CreateProposalChangeEntryMethodForm = ({
     ENTRY_RESUBMIT_SEGMENT,
   );
 
-  React.useEffect(() => {
-    if (progress === 100 && !isError) {
-      clearResubmitProposalSessionStorage();
-    }
-  }, [progress, isError]);
+  useClearResubmitOnSuccess(progress, isError);
 
   React.useEffect(() => {
     if (skipLiveEntrySyncForResubmit) {

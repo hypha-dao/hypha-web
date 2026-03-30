@@ -16,13 +16,19 @@ import { useCreateRedeemTokensOrchestrator } from '@hypha-platform/core/client';
 import { useRouter } from 'next/navigation';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useConfig } from 'wagmi';
-import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
+import {
+  useClearResubmitOnSuccess,
+  useResubmitProposalData,
+  useScrollToErrors,
+} from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { schemaRedeemTokens } from '../../agreements/plugins/redeem-tokens/validation';
 import {
   RedeemSubmitGuardProvider,
   useRedeemSubmitGuard,
 } from '../../agreements/plugins/redeem-tokens/submit-guard-context';
+
+const REDEEM_TOKENS_RESUBMIT_SEGMENT = 'redeem-tokens';
 
 const fullSchemaCreateRedeemTokensForm = schemaCreateAgreementForm
   .extend(createAgreementFiles)
@@ -84,14 +90,14 @@ const CreateRedeemTokensFormInner = ({
   });
 
   useScrollToErrors(form, formRef);
-  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+  const { resubmitKey } = useResubmitProposalData(
+    form,
+    spaceId,
+    person?.id,
+    REDEEM_TOKENS_RESUBMIT_SEGMENT,
+  );
 
-  React.useEffect(() => {
-    if (progress < 100 || isError) return;
-    if (typeof window === 'undefined') return;
-    sessionStorage.removeItem('resubmitProposalData');
-    sessionStorage.removeItem('resubmitFormData');
-  }, [progress, isError]);
+  useClearResubmitOnSuccess(progress, isError);
 
   React.useEffect(() => {
     if (person?.id) {
@@ -221,7 +227,12 @@ const CreateRedeemTokensFormInner = ({
             label="Redeem Tokens"
             progress={progress}
           />
-          {plugin}
+          {React.isValidElement(plugin)
+            ? React.cloneElement(
+                plugin as React.ReactElement<{ resubmitKey?: number }>,
+                { resubmitKey },
+              )
+            : plugin}
           <Separator />
           <div className="flex justify-end w-full">
             <Button type="submit">Publish</Button>

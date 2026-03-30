@@ -63,8 +63,8 @@ export function inferResubmitTemplateSegmentFromPayload(
   if (parsed.mint) return 'mint-tokens-to-space-treasury';
   if (parsed.tokenBurning) return 'token-burning';
   if (
-    parsed.updateIssuedTokenResubmitPayload &&
-    typeof parsed.updateIssuedTokenResubmitPayload === 'object'
+    parsed['updateIssuedTokenResubmitPayload'] &&
+    typeof parsed['updateIssuedTokenResubmitPayload'] === 'object'
   ) {
     return 'update-issued-token';
   }

@@ -17,6 +17,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   clearResubmitProposalSessionStorage,
+  useClearResubmitOnSuccess,
   useResubmitProposalData,
   useScrollToErrors,
 } from '../../hooks';
@@ -98,11 +99,7 @@ export const SpaceTokenPurchaseForm = ({
     STP_RESUBMIT_SEGMENT,
   );
 
-  React.useEffect(() => {
-    if (progress === 100 && !isError) {
-      clearResubmitProposalSessionStorage();
-    }
-  }, [progress, isError]);
+  useClearResubmitOnSuccess(progress, isError);
 
   React.useEffect(() => {
     const proposalLabel = tAgreementFlow('labels.spaceTokenPurchase');
@@ -118,6 +115,7 @@ export const SpaceTokenPurchaseForm = ({
         web3SpaceId: web3SpaceId ?? undefined,
         label: tAgreementFlow('labels.spaceTokenPurchase'),
       });
+      clearResubmitProposalSessionStorage();
       router.push(successfulUrl);
     } catch {
       setFormError(tAgreementFlow('proposalLoader.tryAgainGeneric'));

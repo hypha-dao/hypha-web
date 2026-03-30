@@ -16,7 +16,7 @@ import { useConfig } from 'wagmi';
 import React from 'react';
 import { useSpaceTokenRequirementsByAddress } from '../hooks';
 import {
-  clearResubmitProposalSessionStorage,
+  useClearResubmitOnSuccess,
   useResubmitProposalData,
   useScrollToErrors,
 } from '../../hooks';
@@ -79,12 +79,6 @@ export const SpaceToSpaceMembershipForm = ({
     STS_RESUBMIT_SEGMENT,
   );
 
-  React.useEffect(() => {
-    if (progress === 100 && !isError) {
-      clearResubmitProposalSessionStorage();
-    }
-  }, [progress, isError]);
-
   const { jwt } = useJwt();
   const config = useConfig();
   const {
@@ -95,6 +89,8 @@ export const SpaceToSpaceMembershipForm = ({
     isPending,
     progress,
   } = useSpaceToSpaceMembershipOrchestrator({ authToken: jwt, config, spaces });
+
+  useClearResubmitOnSuccess(progress, isError);
 
   const spaceAddress = form.watch('space');
 

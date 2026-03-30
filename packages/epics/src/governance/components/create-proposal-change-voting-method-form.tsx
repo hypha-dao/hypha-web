@@ -17,7 +17,7 @@ import { useConfig } from 'wagmi';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { VOTING_METHOD_TYPES } from '../hooks';
 import {
-  clearResubmitProposalSessionStorage,
+  useClearResubmitOnSuccess,
   useResubmitProposalData,
   useScrollToErrors,
 } from '../../hooks';
@@ -106,11 +106,7 @@ export const CreateProposalChangeVotingMethodForm = ({
     VOTING_RESUBMIT_SEGMENT,
   );
 
-  React.useEffect(() => {
-    if (progress === 100 && !isError) {
-      clearResubmitProposalSessionStorage();
-    }
-  }, [progress, isError]);
+  useClearResubmitOnSuccess(progress, isError);
 
   const { quorum = 0, unity = 0 } = form.watch('quorumAndUnity') ?? {};
 

@@ -50,6 +50,9 @@ export const IssueNewTokenPlugin = ({
   const resubmitHydrationRef = useRef(false);
   useEffect(() => {
     if (resubmitKey === undefined) return;
+    // `resubmitKey` bumps only after `useResubmitProposalData` finishes applying
+    // resubmit payload (reset + setValue). The requestAnimationFrame window skips
+    // clearing side-effects in the same paint so hydrated values are not wiped.
     resubmitHydrationRef.current = true;
     const id = requestAnimationFrame(() => {
       resubmitHydrationRef.current = false;

@@ -14,7 +14,7 @@ import React from 'react';
 import { useConfig } from 'wagmi';
 import { CreateAgreementBaseFields } from '../../agreements';
 import {
-  clearResubmitProposalSessionStorage,
+  useClearResubmitOnSuccess,
   useResubmitProposalData,
   useScrollToErrors,
 } from '../../hooks';
@@ -123,11 +123,7 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
     TRANSPARENCY_RESUBMIT_SEGMENT,
   );
 
-  React.useEffect(() => {
-    if (progress === 100 && !isError) {
-      clearResubmitProposalSessionStorage();
-    }
-  }, [progress, isError]);
+  useClearResubmitOnSuccess(progress, isError);
 
   const handleCreate = async (data: FormValues) => {
     await createChangeSpaceTransparencySettings({
