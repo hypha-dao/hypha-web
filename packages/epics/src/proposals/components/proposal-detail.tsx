@@ -55,6 +55,30 @@ import { hasUpdateTokenDataToDisplay } from '../utils/has-update-token-data-to-d
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
+type ProposalTransferRow = {
+  recipient: string;
+  rawAmount: bigint;
+  token: string;
+};
+
+function buildRecipientPayoutsFromTransfers(
+  transfers: ProposalTransferRow[] | undefined,
+):
+  | { recipient: string; payouts: { token: string; amount: string }[] }
+  | undefined {
+  if (!transfers?.length) return undefined;
+  const recipient = transfers[0].recipient;
+  const recipientLc = recipient.toLowerCase();
+  if (!transfers.every((t) => t.recipient.toLowerCase() === recipientLc)) {
+    return undefined;
+  }
+  const payouts = transfers.map((tx) => ({
+    token: tx.token,
+    amount: formatUnits(tx.rawAmount, resolveTokenDecimals(tx.token)),
+  }));
+  return { recipient, payouts };
+}
+
 function referenceCurrencyFromPriceFeed(
   feed: string | undefined,
 ): string | undefined {
@@ -802,26 +826,19 @@ export const ProposalDetail = ({
     }
 
     if (label === 'Contribution') {
-      const transfers = proposalDetails.transfers ?? [];
-      if (transfers.length === 0) return undefined;
+      const fromTransfers = buildRecipientPayoutsFromTransfers(
+        proposalDetails.transfers,
+      );
+      if (!fromTransfers) return undefined;
+      return { proposeContributionForm: fromTransfers };
+    }
 
-      const recipient = transfers[0].recipient;
-      const recipientLc = recipient.toLowerCase();
-      if (!transfers.every((t) => t.recipient.toLowerCase() === recipientLc)) {
-        return undefined;
-      }
-
-      const payouts = transfers.map((tx) => ({
-        token: tx.token,
-        amount: formatUnits(tx.rawAmount, resolveTokenDecimals(tx.token)),
-      }));
-
-      return {
-        proposeContributionForm: {
-          recipient,
-          payouts,
-        },
-      };
+    if (label === 'Expenses') {
+      const fromTransfers = buildRecipientPayoutsFromTransfers(
+        proposalDetails.transfers,
+      );
+      if (!fromTransfers) return undefined;
+      return { payForExpensesForm: fromTransfers };
     }
 
     if (label === 'Buy Hypha Tokens') {

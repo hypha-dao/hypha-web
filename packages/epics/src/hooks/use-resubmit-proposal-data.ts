@@ -97,6 +97,7 @@ export const useResubmitProposalData = <
           spaceTokenPurchaseForm?: Record<string, unknown>;
           buyHyphaTokensForm?: Record<string, unknown>;
           proposeContributionForm?: Record<string, unknown>;
+          payForExpensesForm?: Record<string, unknown>;
           applied?: boolean;
           redeemResubmit?: {
             token: string;
@@ -245,6 +246,10 @@ export const useResubmitProposalData = <
             ...(parsed.proposeContributionForm &&
             typeof parsed.proposeContributionForm === 'object'
               ? (parsed.proposeContributionForm as Record<string, unknown>)
+              : {}),
+            ...(parsed.payForExpensesForm &&
+            typeof parsed.payForExpensesForm === 'object'
+              ? (parsed.payForExpensesForm as Record<string, unknown>)
               : {}),
           } as T,
           {
@@ -520,17 +525,18 @@ export const useResubmitProposalData = <
           }
         }
 
-        const pcInj = parsed.proposeContributionForm;
-        if (pcInj && typeof pcInj === 'object') {
-          const pc = pcInj as Record<string, unknown>;
-          if (pc.recipient !== undefined) {
-            form.setValue('recipient' as any, pc.recipient as any, {
+        const contributionLikeInj =
+          parsed.proposeContributionForm ?? parsed.payForExpensesForm;
+        if (contributionLikeInj && typeof contributionLikeInj === 'object') {
+          const cl = contributionLikeInj as Record<string, unknown>;
+          if (cl.recipient !== undefined) {
+            form.setValue('recipient' as any, cl.recipient as any, {
               shouldDirty: true,
               shouldValidate: true,
             });
           }
-          if (Array.isArray(pc.payouts)) {
-            form.setValue('payouts' as any, pc.payouts as any, {
+          if (Array.isArray(cl.payouts)) {
+            form.setValue('payouts' as any, cl.payouts as any, {
               shouldDirty: true,
               shouldValidate: true,
             });
@@ -674,8 +680,10 @@ export const useResubmitProposalData = <
           fieldsToTrigger.push('payout', 'recipient');
         }
         if (
-          parsed.proposeContributionForm &&
-          typeof parsed.proposeContributionForm === 'object'
+          (parsed.proposeContributionForm &&
+            typeof parsed.proposeContributionForm === 'object') ||
+          (parsed.payForExpensesForm &&
+            typeof parsed.payForExpensesForm === 'object')
         ) {
           fieldsToTrigger.push('recipient', 'payouts');
         }

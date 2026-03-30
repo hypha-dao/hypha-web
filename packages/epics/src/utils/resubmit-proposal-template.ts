@@ -117,6 +117,12 @@ export function inferResubmitTemplateSegmentFromPayload(
     return 'propose-contribution';
   }
   if (
+    parsed.payForExpensesForm &&
+    typeof parsed.payForExpensesForm === 'object'
+  ) {
+    return 'pay-for-expenses';
+  }
+  if (
     parsed.tokenAddress !== undefined ||
     parsed.activatePurchase !== undefined
   ) {
