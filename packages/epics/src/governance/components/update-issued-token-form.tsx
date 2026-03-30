@@ -138,9 +138,18 @@ export const UpdateIssuedTokenForm = ({
     isPending,
     progress,
     agreement,
+    errors: orchestratorErrors,
   } = useUpdateIssuedTokenOrchestrator({ authToken: jwt, config });
 
   const agreementSlug = agreement?.slug;
+
+  const orchestratorErrorMessage = React.useMemo(() => {
+    const first = orchestratorErrors?.[0];
+    if (!first) return null;
+    if (first instanceof Error) return first.message;
+    if (typeof first === 'string') return first;
+    return null;
+  }, [orchestratorErrors]);
 
   const [formError, setFormError] = React.useState<string | null>(null);
 
@@ -257,8 +266,13 @@ export const UpdateIssuedTokenForm = ({
       isLoading={isPending || isError}
       message={
         isError ? (
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-2 max-w-md text-center">
             <div>{tSpaces('errorOhSnap')}</div>
+            {orchestratorErrorMessage && (
+              <div className="text-2 text-neutral-11 break-words">
+                {orchestratorErrorMessage}
+              </div>
+            )}
             <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (

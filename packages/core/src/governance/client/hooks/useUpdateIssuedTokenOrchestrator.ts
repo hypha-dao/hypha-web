@@ -305,6 +305,10 @@ export const useUpdateIssuedTokenOrchestrator = ({
           'Session not ready. Please wait a moment and try again.',
         );
       }
+      web2.resetCreateAgreementMutation();
+      web2TokenMutations.resetCreateTokenUpdateMutation();
+      web2TokenMutations.resetUpdateTokenMutation();
+      web3.resetUpdateIssuedToken();
       startTask('CREATE_WEB2_AGREEMENT');
       const inputWeb2 = schemaCreateAgreementWeb2.parse(arg);
       const createdAgreement = await web2.createAgreement(inputWeb2);
