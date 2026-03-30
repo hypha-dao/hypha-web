@@ -226,10 +226,21 @@ export const useCreateIssueTokenOrchestrator = ({
       }
 
       startTask('CREATE_TOKEN');
+      // Do not spread full form `arg` — it includes File fields (leadImage,
+      // attachments) and plugin-only keys that must not cross the Server
+      // Action boundary; that caused production "Server Components render" errors.
       const createdToken = await web2TokenMutations.createToken({
-        ...arg,
         agreementId: createdAgreement.id,
+        spaceId: arg.spaceId,
+        name: arg.name,
+        symbol: arg.symbol,
+        maxSupply: arg.maxSupply,
+        type: arg.type,
         iconUrl,
+        transferable: arg.transferable,
+        isVotingToken: arg.isVotingToken,
+        decaySettings: arg.decaySettings,
+        web3SpaceId: arg.web3SpaceId,
         referencePrice: arg.referencePrice,
         referenceCurrency: arg.referenceCurrency,
       });
