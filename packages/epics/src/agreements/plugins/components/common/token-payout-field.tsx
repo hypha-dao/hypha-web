@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { ChevronDownIcon } from '@radix-ui/themes';
 import {
   DropdownMenu,
@@ -45,14 +46,14 @@ interface TokenPayoutFieldProps {
   selectedTokenPriceHint?: string;
 }
 
-export const TokenPayoutField = ({
+function TokenPayoutFieldInner({
   value,
   onChange,
   tokens,
   readOnlyDropdown,
   showSelectedTokenBalanceHint = false,
   selectedTokenPriceHint,
-}: TokenPayoutFieldProps) => {
+}: TokenPayoutFieldProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const selectedToken = tokens.find(
     (t) => t.address.toLowerCase() === value.token.toLowerCase(),
@@ -191,4 +192,6 @@ export const TokenPayoutField = ({
       ) : null}
     </div>
   );
-};
+}
+
+export const TokenPayoutField = React.memo(TokenPayoutFieldInner);

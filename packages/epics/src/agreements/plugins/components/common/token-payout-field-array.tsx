@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useFormContext, useFieldArray } from 'react-hook-form';
 import { TokenPayoutField } from './token-payout-field';
 import {
@@ -36,14 +37,14 @@ interface TokenPayoutFieldArrayProps {
   selectedTokenPriceHint?: string;
 }
 
-export const TokenPayoutFieldArray = ({
+function TokenPayoutFieldArrayInner({
   tokens,
   name = 'payouts',
   label,
   allowAddOrRemove = true,
   showSelectedTokenBalanceHint = false,
   selectedTokenPriceHint,
-}: TokenPayoutFieldArrayProps) => {
+}: TokenPayoutFieldArrayProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const resolvedLabel =
     label ?? tAgreementFlow('plugins.tokenPayoutFieldArray.paymentRequest');
@@ -126,4 +127,6 @@ export const TokenPayoutFieldArray = ({
       )}
     </div>
   );
-};
+}
+
+export const TokenPayoutFieldArray = React.memo(TokenPayoutFieldArrayInner);
