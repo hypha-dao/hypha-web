@@ -75,7 +75,9 @@ export const CreateAcceptInvestmentForm = ({
   useScrollToErrors(form, formRef);
   const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
 
-  const tAcceptForm = useTranslations('AgreementFlow.acceptInvestmentForm');
+  const tAcceptForm = useTranslations(
+    'AgreementFlow.plugins.acceptInvestmentForm',
+  );
 
   const submitErrorMessage = useMemo(() => {
     const first = orchestratorErrors[0];
