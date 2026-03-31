@@ -166,9 +166,10 @@ export const useCreateAcceptInvestmentOrchestrator = ({
   const { trigger: createAcceptInvestment } = useSWRMutation(
     'createAcceptInvestmentOrchestration',
     async (_: string, { arg }: { arg: CreateAcceptInvestmentArg }) => {
-      const send = arg.investorSendLegs[0];
-      const recv = arg.spaceReceiveLegs[0];
-      if (!send || !recv) {
+      if (
+        arg.investorSendLegs.length === 0 ||
+        arg.spaceReceiveLegs.length === 0
+      ) {
         throw new Error('Investment legs are incomplete');
       }
 
@@ -207,14 +208,14 @@ export const useCreateAcceptInvestmentOrchestrator = ({
           await web3.createAcceptInvestment({
             spaceId: web3SpaceId,
             investorAddress: arg.recipient as `0x${string}`,
-            investorSend: {
-              token: send.token as `0x${string}`,
-              amount: send.amount,
-            },
-            spaceReceive: {
-              token: recv.token as `0x${string}`,
-              amount: recv.amount,
-            },
+            investorSendLegs: arg.investorSendLegs.map((leg) => ({
+              token: leg.token as `0x${string}`,
+              amount: leg.amount,
+            })),
+            spaceReceiveLegs: arg.spaceReceiveLegs.map((leg) => ({
+              token: leg.token as `0x${string}`,
+              amount: leg.amount,
+            })),
           });
           completeTask('CREATE_WEB3_AGREEMENT');
         }

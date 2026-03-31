@@ -875,8 +875,7 @@
       "redemptionPeriodDaysRequired": "Period (days) is required when Redemption is active. Select a redemption period.",
       "redemptionStartDateRequired": "Authorise Redemption from date is required when Redemption is active.",
       "acceptInvestmentMinSendRows": "Add at least one row under Investing member will send.",
-      "acceptInvestmentMinReceiveRows": "Add at least one row under Investing Member will Receive.",
-      "acceptInvestmentSameRowCount": "Investing member will send and Investing Member will Receive must have the same number of rows."
+      "acceptInvestmentMinReceiveRows": "Add at least one row under Investing Member will Receive."
     },
     "issueNewTokenForm": {
       "duplicateToken": "A token with the same name and symbol already exists in your space. Please modify either the name or symbol to proceed.",

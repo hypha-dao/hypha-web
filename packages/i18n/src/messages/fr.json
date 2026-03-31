@@ -875,8 +875,7 @@
       "redemptionPeriodDaysRequired": "La période (jours) est requise lorsque le rachat est activé. Sélectionnez une période de rachat.",
       "redemptionStartDateRequired": "La date \"Autoriser le rachat à partir du\" est requise lorsque le rachat est activé.",
       "acceptInvestmentMinSendRows": "Ajoutez au moins une ligne sous « Le membre investisseur enverra ».",
-      "acceptInvestmentMinReceiveRows": "Ajoutez au moins une ligne sous « Le membre investisseur recevra ».",
-      "acceptInvestmentSameRowCount": "« Le membre investisseur enverra » et « Le membre investisseur recevra » doivent avoir le même nombre de lignes."
+      "acceptInvestmentMinReceiveRows": "Ajoutez au moins une ligne sous « Le membre investisseur recevra »."
     },
     "issueNewTokenForm": {
       "duplicateToken": "Un token avec le même nom et symbole existe déjà dans votre espace. Veuillez modifier le nom ou le symbole pour continuer.",

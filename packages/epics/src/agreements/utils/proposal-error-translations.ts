@@ -91,8 +91,6 @@ const PROPOSAL_ERROR_KEY_MAP: Record<string, string> = {
     'proposalErrors.acceptInvestmentMinSendRows',
   'Add at least one investing member receive row':
     'proposalErrors.acceptInvestmentMinReceiveRows',
-  'Investing member will send and Investing Member will Receive must have the same number of rows':
-    'proposalErrors.acceptInvestmentSameRowCount',
 };
 
 export const resolveProposalErrorTranslation = (

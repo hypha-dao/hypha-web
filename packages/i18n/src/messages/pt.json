@@ -74,8 +74,7 @@
       "redemptionPeriodDaysRequired": "O período (dias) é obrigatório quando o resgate está ativo. Selecione um período de resgate.",
       "redemptionStartDateRequired": "A data \"Autorizar resgate desde\" é obrigatória quando o resgate está ativo.",
       "acceptInvestmentMinSendRows": "Adicione pelo menos uma linha em « O membro investidor enviará ».",
-      "acceptInvestmentMinReceiveRows": "Adicione pelo menos uma linha em « O membro investidor receberá ».",
-      "acceptInvestmentSameRowCount": "« O membro investidor enviará » e « O membro investidor receberá » devem ter o mesmo número de linhas."
+      "acceptInvestmentMinReceiveRows": "Adicione pelo menos uma linha em « O membro investidor receberá »."
     },
     "plugins": {
       "paymentSchedule": {
