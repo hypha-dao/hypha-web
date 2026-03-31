@@ -12,7 +12,11 @@ import { PersonLabel } from '../../people/components/person-label';
 import { type Creator } from '../../people/components/person-label';
 import { type BadgeItem, BadgesList } from '@hypha-platform/ui';
 import { stripMarkdown } from '@hypha-platform/ui-utils';
-import { DocumentStatus, useEvents } from '@hypha-platform/core/client';
+import {
+  DocumentStatus,
+  stripHyphaInvestmentFormMarker,
+  useEvents,
+} from '@hypha-platform/core/client';
 import React from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
 
@@ -49,7 +53,7 @@ function stripHtmlComments(text: string): string {
 
 function stripDescription(description: string): string {
   if (!description) return '';
-  return stripHtmlComments(description)
+  return stripHtmlComments(stripHyphaInvestmentFormMarker(description))
     .replace(/\\([\[\]\(\)\{\}])/g, '$1')
     .replace(/&#x([0-9A-Fa-f]+);/gi, (full, hex) => {
       const codePoint = Number.parseInt(hex, 16);
