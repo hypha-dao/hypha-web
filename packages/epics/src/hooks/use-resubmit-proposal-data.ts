@@ -110,8 +110,8 @@ export const useResubmitProposalData = <
             ...(resubmitTokenAddress
               ? { tokenAddress: resubmitTokenAddress }
               : parsed.tokenAddress !== undefined
-                ? { tokenAddress: parsed.tokenAddress }
-                : {}),
+              ? { tokenAddress: parsed.tokenAddress }
+              : {}),
             ...(typeof parsed.activatePurchase === 'boolean'
               ? { activatePurchase: parsed.activatePurchase }
               : {}),
