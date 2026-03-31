@@ -187,17 +187,24 @@ function buildPartialUpdateIssuedTokenWeb3Input(
     changed.has('enableTokenPrice') ||
     changed.has('tokenPrice') ||
     changed.has('referenceCurrency');
-  if (priceTouched && arg.enableTokenPrice) {
-    const refPrice = arg.referencePrice ?? arg.tokenPrice;
-    const tokenPriceMicro =
-      refPrice !== undefined ? Math.round(refPrice * 1_000_000) : undefined;
-    const priceCurrencyFeed =
-      refPrice !== undefined && arg.referenceCurrency !== undefined
-        ? getPriceCurrencyFeed(arg.referenceCurrency)
-        : undefined;
-    if (tokenPriceMicro !== undefined && priceCurrencyFeed !== undefined) {
-      base.tokenPrice = tokenPriceMicro;
-      base.priceCurrencyFeed = priceCurrencyFeed;
+  if (priceTouched) {
+    if (arg.enableTokenPrice) {
+      const refPrice = arg.referencePrice ?? arg.tokenPrice;
+      const tokenPriceMicro =
+        refPrice !== undefined ? Math.round(refPrice * 1_000_000) : undefined;
+      const priceCurrencyFeed =
+        refPrice !== undefined && arg.referenceCurrency !== undefined
+          ? getPriceCurrencyFeed(arg.referenceCurrency)
+          : undefined;
+      if (tokenPriceMicro !== undefined && priceCurrencyFeed !== undefined) {
+        base.tokenPrice = tokenPriceMicro;
+        base.priceCurrencyFeed = priceCurrencyFeed;
+      }
+    } else {
+      // Clear on-chain price when the user turns pricing off (micro-units + zero feed)
+      base.tokenPrice = 0;
+      base.priceCurrencyFeed =
+        '0x0000000000000000000000000000000000000000' as `0x${string}`;
     }
   }
 

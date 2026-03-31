@@ -373,7 +373,9 @@
     },
     "tokenSupply": "Token Supply",
     "issuanceToDate": "Issuance to Date",
-    "unlimitedSupply": "Unlimited Supply"
+    "unlimitedSupply": "Unlimited Supply",
+    "selectTokenPlaceholder": "Select a token",
+    "noTokensAvailable": "No tokens available"
   },
   "Footer": {
     "network": "NETWORK",

@@ -373,7 +373,9 @@
     },
     "tokenSupply": "Token-Angebot",
     "issuanceToDate": "Ausgabe bis heute",
-    "unlimitedSupply": "Unbegrenztes Angebot"
+    "unlimitedSupply": "Unbegrenztes Angebot",
+    "selectTokenPlaceholder": "Token auswählen",
+    "noTokensAvailable": "Keine Tokens verfügbar"
   },
   "Footer": {
     "network": "NETZWERK",

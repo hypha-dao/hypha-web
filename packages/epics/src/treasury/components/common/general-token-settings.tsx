@@ -22,12 +22,8 @@ export const GeneralTokenSettings = ({
   showChooseType?: boolean;
 }) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
-  const label = React.useMemo(() => {
-    return getTokenTypeLabel(tokenType, tAgreementFlow);
-  }, [tokenType, tAgreementFlow]);
-  const description = React.useMemo(() => {
-    return getTokenTypeDescription(tokenType, tAgreementFlow);
-  }, [tokenType, tAgreementFlow]);
+  const label = getTokenTypeLabel(tokenType, tAgreementFlow);
+  const description = getTokenTypeDescription(tokenType, tAgreementFlow);
 
   return (
     <>

@@ -145,10 +145,9 @@ export const UpdateIssuedTokenForm = ({
   const [formError, setFormError] = React.useState<string | null>(null);
 
   const formRef = React.useRef<HTMLFormElement>(null);
-  const form = useForm<FormValues>({
-    resolver: zodResolver(fullSchemaUpdateIssuedToken),
-    defaultValues: {
-      label: 'Update Token',
+  const formDefaultValues = React.useMemo(
+    (): FormValues => ({
+      label: tProposalDetails('updateTokenLabel'),
       title: '',
       description: '',
       leadImage: undefined,
@@ -176,7 +175,13 @@ export const UpdateIssuedTokenForm = ({
       tokenPrice: undefined,
       tokenAddress: undefined,
       archiveToken: false,
-    },
+    }),
+    [tProposalDetails, spaceId, person?.id],
+  );
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(fullSchemaUpdateIssuedToken),
+    defaultValues: formDefaultValues,
     mode: 'onChange',
   });
   const { dirtyFields } = form.formState;
@@ -284,7 +289,7 @@ export const UpdateIssuedTokenForm = ({
             backUrl={backUrl}
             backLabel={tSpaces('backToSettings')}
             isLoading={false}
-            label="Update Token"
+            label={tProposalDetails('updateTokenLabel')}
             progress={progress}
           />
           {plugin}

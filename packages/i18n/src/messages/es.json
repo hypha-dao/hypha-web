@@ -974,7 +974,9 @@
     },
     "tokenSupply": "Suministro del token",
     "issuanceToDate": "Emisión hasta la fecha",
-    "unlimitedSupply": "Suministro ilimitado"
+    "unlimitedSupply": "Suministro ilimitado",
+    "selectTokenPlaceholder": "Selecciona un token",
+    "noTokensAvailable": "No hay tokens disponibles"
   },
   "Footer": {
     "network": "RED",

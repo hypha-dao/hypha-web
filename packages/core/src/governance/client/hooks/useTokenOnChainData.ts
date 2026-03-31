@@ -6,6 +6,8 @@ import { decayingSpaceTokenAbi } from '../../../generated';
 import { UpdateIssuedTokenInput } from './useUpdateIssuedTokenMutations.web3.rpc';
 
 const DECIMALS = 18n;
+/** On-chain `tokenPrice` is stored in micro-units (1e6); UI uses human decimals */
+const TOKEN_PRICE_MICRO = 1_000_000;
 
 async function fetchTokenOnChainData(
   address: `0x${string}`,
@@ -114,7 +116,7 @@ async function fetchTokenOnChainData(
     autoMinting: autoMintingResult as boolean,
     tokenPrice:
       tokenPriceResult !== undefined
-        ? Number(tokenPriceResult as bigint)
+        ? Number(tokenPriceResult as bigint) / TOKEN_PRICE_MICRO
         : undefined,
     priceCurrencyFeed: priceCurrencyFeedResult as `0x${string}`,
     decayPercentage:

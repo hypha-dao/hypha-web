@@ -359,8 +359,7 @@ export const UpdateIssuedTokenPlugin = ({
       setValue('enableTokenPrice', false);
     }
     if (onChainData.tokenPrice !== undefined) {
-      const tokenPrice = Number(onChainData.tokenPrice) / 1_000_000;
-      setValue('tokenPrice', tokenPrice);
+      setValue('tokenPrice', onChainData.tokenPrice);
     }
     if (onChainData.priceCurrencyFeed !== undefined) {
       const referenceCurrency = getPriceCurrencyCode(
@@ -391,6 +390,11 @@ export const UpdateIssuedTokenPlugin = ({
         onChainData.useTransferWhitelist || onChainData.useReceiveWhitelist;
       enableAdvancedTransferControls =
         enableAdvancedTransferControls || (advanced ?? false);
+      setValue(
+        'enableAdvancedTransferControls',
+        !!(onChainData.useTransferWhitelist || onChainData.useReceiveWhitelist),
+        { shouldDirty: false, shouldValidate: false },
+      );
     }
     if (onChainData.archiveToken !== undefined) {
       setValue('archiveToken', onChainData.archiveToken);
@@ -515,6 +519,8 @@ export const UpdateIssuedTokenPlugin = ({
           address: t.address!,
           iconUrl: t.iconUrl!,
         }))}
+        placeholder={tTreasury('selectTokenPlaceholder')}
+        emptyListMessage={tTreasury('noTokenFound')}
         required
       />
 

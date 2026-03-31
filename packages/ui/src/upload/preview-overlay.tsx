@@ -17,7 +17,7 @@ export const PreviewOverlay = ({
         'group-hover:opacity-100',
         isVisible
           ? 'opacity-100 bg-background/20'
-          : 'pointer-events-none opacity-0',
+          : 'pointer-events-none opacity-0 group-hover:pointer-events-none',
       )}
     >
       {children}
