@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import { parseHyphaInvestmentFormFromDescription } from '@hypha-platform/core/client';
 import { Image } from '@hypha-platform/ui';
@@ -21,6 +22,30 @@ type ExchangeEscrowSummary = {
   sendFundsNow?: boolean;
 };
 
+/** Label | value on one row (same pattern as ProposalVotingInfo / ProposalEntryInfo). */
+function InvestmentFieldRow({
+  label,
+  children,
+  alignTop,
+}: {
+  label: ReactNode;
+  children: ReactNode;
+  alignTop?: boolean;
+}) {
+  return (
+    <div
+      className={`flex justify-between gap-4 ${
+        alignTop ? 'items-start' : 'items-center'
+      }`}
+    >
+      <div className="min-w-0 w-full text-1 text-neutral-11">{label}</div>
+      <div className="flex min-w-0 shrink flex-col items-end justify-center text-1 text-right">
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function InvestorIdentityRow({ address }: { address: string }) {
   const { spaces } = useDbSpaces({ parentOnly: false });
   const { person } = usePersonByWeb3Address(address as `0x${string}`);
@@ -31,7 +56,7 @@ function InvestorIdentityRow({ address }: { address: string }) {
 
   if (person) {
     return (
-      <span className="flex gap-2 text-2 text-neutral-11 items-center">
+      <span className="flex items-center gap-2 text-1 text-neutral-11">
         <Image
           className="rounded-lg w-[24px] h-[24px]"
           src={person?.avatarUrl ?? '/placeholder/default-profile.svg'}
@@ -48,7 +73,7 @@ function InvestorIdentityRow({ address }: { address: string }) {
 
   if (space) {
     return (
-      <span className="flex gap-2 text-2 text-neutral-11 items-center">
+      <span className="flex items-center gap-2 text-1 text-neutral-11">
         <Image
           className="rounded-lg w-[24px] h-[24px]"
           src={space?.logoUrl ?? '/placeholder/default-profile.svg'}
@@ -80,14 +105,16 @@ function TokenAmountRow({
 
   if (!token) {
     return (
-      <div className="text-2 text-neutral-9 pl-2">
-        {amountHuman} · <EthAddress address={tokenAddress} />
+      <div className="flex items-center justify-end gap-2 text-1 text-neutral-9">
+        <span>
+          {amountHuman} · <EthAddress address={tokenAddress} />
+        </span>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-3 pl-2">
+    <div className="flex items-center justify-end gap-3">
       <Image
         src={token.icon}
         alt={token.symbol}
@@ -95,7 +122,7 @@ function TokenAmountRow({
         height={24}
         className="rounded-full"
       />
-      <span className="text-2 text-neutral-9">
+      <span className="text-nowrap text-1 text-neutral-9">
         {formatCurrencyValue(Number(amountHuman))} {token.symbol}
       </span>
     </div>
@@ -122,96 +149,95 @@ export function ProposalAcceptInvestmentData({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       <span className="text-neutral-11 text-2 font-medium">{t('title')}</span>
 
       {investorAddress ? (
-        <div className="flex flex-col gap-1">
-          <span className="text-neutral-11 text-1">{t('investingMember')}</span>
+        <InvestmentFieldRow label={t('investingMember')}>
           <InvestorIdentityRow address={investorAddress} />
-        </div>
+        </InvestmentFieldRow>
       ) : null}
 
       {parsed?.investorSendLegs?.length ? (
-        <div className="flex flex-col gap-2">
-          <span className="text-neutral-11 text-1">
-            {t('investorWillSend')}
-          </span>
-          {parsed.investorSendLegs.map((leg, i) => (
-            <TokenAmountRow
-              key={i}
-              spaceSlug={spaceSlug}
-              tokenAddress={leg.token}
-              amountHuman={leg.amount}
-            />
-          ))}
-        </div>
+        <InvestmentFieldRow
+          alignTop={parsed.investorSendLegs.length > 1}
+          label={t('investorWillSend')}
+        >
+          <div className="flex flex-col items-end gap-2">
+            {parsed.investorSendLegs.map((leg, i) => (
+              <TokenAmountRow
+                key={i}
+                spaceSlug={spaceSlug}
+                tokenAddress={leg.token}
+                amountHuman={leg.amount}
+              />
+            ))}
+          </div>
+        </InvestmentFieldRow>
       ) : exchangeEscrowData?.tokenB &&
         exchangeEscrowData.amountB !== undefined ? (
-        <div className="flex flex-col gap-1">
-          <span className="text-neutral-11 text-1">
-            {t('investorWillSend')}
-          </span>
+        <InvestmentFieldRow label={t('investorWillSend')}>
           <OnChainTokenRow
             spaceSlug={spaceSlug}
             tokenAddress={exchangeEscrowData.tokenB}
             rawAmount={exchangeEscrowData.amountB}
           />
-        </div>
+        </InvestmentFieldRow>
       ) : null}
 
       {parsed?.spaceReceiveLegs?.length ? (
-        <div className="flex flex-col gap-2">
-          <span className="text-neutral-11 text-1">
-            {t('investorWillReceive')}
-          </span>
-          {parsed.spaceReceiveLegs.map((leg, i) => (
-            <div key={i} className="flex flex-col gap-1 pl-2">
-              <TokenAmountRow
-                spaceSlug={spaceSlug}
-                tokenAddress={leg.token}
-                amountHuman={leg.amount}
-              />
-              <span className="text-1 text-neutral-11">
-                {leg.source === 'treasury'
-                  ? t('sourceTreasury')
-                  : leg.source === 'mint'
-                  ? t('sourceMint')
-                  : t('fundingTreasuryThenMint')}
-              </span>
-            </div>
-          ))}
-        </div>
+        <InvestmentFieldRow
+          alignTop={parsed.spaceReceiveLegs.length > 1}
+          label={t('investorWillReceive')}
+        >
+          <div className="flex flex-col items-end gap-2">
+            {parsed.spaceReceiveLegs.map((leg, i) => (
+              <div key={i} className="flex flex-col items-end gap-0.5">
+                <TokenAmountRow
+                  spaceSlug={spaceSlug}
+                  tokenAddress={leg.token}
+                  amountHuman={leg.amount}
+                />
+                <span className="max-w-[min(100%,280px)] text-1 text-neutral-11">
+                  {leg.source === 'treasury'
+                    ? t('sourceTreasury')
+                    : leg.source === 'mint'
+                    ? t('sourceMint')
+                    : t('fundingTreasuryThenMint')}
+                </span>
+              </div>
+            ))}
+          </div>
+        </InvestmentFieldRow>
       ) : parsed?.investorSendLegs?.length ? (
-        <div className="flex flex-col gap-2">
-          <span className="text-neutral-11 text-1">
-            {t('investorWillReceive')}
-          </span>
-          {parsed.investorSendLegs.map((leg, i) => (
-            <div key={i} className="flex flex-col gap-1 pl-2">
-              <TokenAmountRow
-                spaceSlug={spaceSlug}
-                tokenAddress={leg.token}
-                amountHuman={leg.amount}
-              />
-              <span className="text-1 text-neutral-11">
-                {t('fundingTreasuryThenMint')}
-              </span>
-            </div>
-          ))}
-        </div>
+        <InvestmentFieldRow
+          alignTop={parsed.investorSendLegs.length > 1}
+          label={t('investorWillReceive')}
+        >
+          <div className="flex flex-col items-end gap-2">
+            {parsed.investorSendLegs.map((leg, i) => (
+              <div key={i} className="flex flex-col items-end gap-0.5">
+                <TokenAmountRow
+                  spaceSlug={spaceSlug}
+                  tokenAddress={leg.token}
+                  amountHuman={leg.amount}
+                />
+                <span className="max-w-[min(100%,280px)] text-1 text-neutral-11">
+                  {t('fundingTreasuryThenMint')}
+                </span>
+              </div>
+            ))}
+          </div>
+        </InvestmentFieldRow>
       ) : exchangeEscrowData?.tokenA &&
         exchangeEscrowData.amountA !== undefined ? (
-        <div className="flex flex-col gap-1">
-          <span className="text-neutral-11 text-1">
-            {t('investorWillReceive')}
-          </span>
+        <InvestmentFieldRow label={t('investorWillReceive')}>
           <OnChainTokenRow
             spaceSlug={spaceSlug}
             tokenAddress={exchangeEscrowData.tokenA}
             rawAmount={exchangeEscrowData.amountA}
           />
-        </div>
+        </InvestmentFieldRow>
       ) : null}
     </div>
   );

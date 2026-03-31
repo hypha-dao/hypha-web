@@ -1369,7 +1369,7 @@
       "acceptInvestment": {
         "investingMember": "Investierendes Mitglied",
         "investorWillSend": "Investierendes Mitglied sendet",
-        "investorWillReceive": "Investierendes Mitglied erhält:",
+        "investorWillReceive": "Investierendes Mitglied erhält",
         "source": "Quelle",
         "sourcePlaceholder": "Quelle wählen",
         "sourceMint": "Neue Token prägen",
@@ -1415,7 +1415,7 @@
       "title": "Investitionsbedingungen",
       "investingMember": "Investierendes Mitglied",
       "investorWillSend": "Investierendes Mitglied sendet",
-      "investorWillReceive": "Investierendes Mitglied erhält:",
+      "investorWillReceive": "Investierendes Mitglied erhält",
       "fundingTreasuryThenMint": "Zuerst aus der Treasury, fehlender Betrag wird geprägt.",
       "sourceMint": "Neue Token prägen",
       "sourceTreasury": "Verfügbare Token in der Treasury nutzen",

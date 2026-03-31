@@ -1369,7 +1369,7 @@
       "acceptInvestment": {
         "investingMember": "Membre investisseur",
         "investorWillSend": "Le membre investisseur enverra",
-        "investorWillReceive": "Le membre investisseur recevra :",
+        "investorWillReceive": "Le membre investisseur recevra",
         "source": "Source",
         "sourcePlaceholder": "Sélectionner la source",
         "sourceMint": "Frapper de nouveaux tokens",
@@ -1415,7 +1415,7 @@
       "title": "Conditions d'investissement",
       "investingMember": "Membre investisseur",
       "investorWillSend": "Le membre investisseur enverra",
-      "investorWillReceive": "Le membre investisseur recevra :",
+      "investorWillReceive": "Le membre investisseur recevra",
       "fundingTreasuryThenMint": "Prélevé sur la trésorerie si disponible ; le reste est frappé.",
       "sourceMint": "Frapper de nouveaux tokens",
       "sourceTreasury": "Utiliser les tokens disponibles en trésorerie",

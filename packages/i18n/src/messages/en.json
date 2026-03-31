@@ -1369,7 +1369,7 @@
       "acceptInvestment": {
         "investingMember": "Investing member",
         "investorWillSend": "Investing member will send",
-        "investorWillReceive": "Investing Member will Receive:",
+        "investorWillReceive": "Investing Member will Receive",
         "source": "Source",
         "sourcePlaceholder": "Select source",
         "sourceMint": "Mint new tokens",
@@ -1415,7 +1415,7 @@
       "title": "Investment terms",
       "investingMember": "Investing member",
       "investorWillSend": "Investing member will send",
-      "investorWillReceive": "Investing Member will Receive:",
+      "investorWillReceive": "Investing Member will Receive",
       "fundingTreasuryThenMint": "Taken from treasury when available; any remainder is minted.",
       "sourceMint": "Mint new tokens",
       "sourceTreasury": "Use available tokens in treasury",
