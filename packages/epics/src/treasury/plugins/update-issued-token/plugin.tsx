@@ -520,7 +520,7 @@ export const UpdateIssuedTokenPlugin = ({
           iconUrl: t.iconUrl!,
         }))}
         placeholder={tTreasury('selectTokenPlaceholder')}
-        emptyListMessage={tTreasury('noTokenFound')}
+        emptyListMessage={tTreasury('noTokensAvailable')}
         required
       />
 

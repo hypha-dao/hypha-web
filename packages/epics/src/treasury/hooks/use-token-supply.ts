@@ -3,14 +3,15 @@ import React from 'react';
 
 import useSWR from 'swr';
 
-export function useTokenSupply(token: `0x${string}` | undefined) {
+export function useTokenSupply(token: `0x${string}` | undefined | null) {
   const endpoint = React.useMemo(
-    () => `/api/v1/tokens/${token}/supply`,
+    () =>
+      token && token.startsWith('0x') ? `/api/v1/tokens/${token}/supply` : null,
     [token],
   );
   const { data, isLoading } = useSWR(
-    [endpoint],
-    ([endpoint]) => fetch(endpoint).then((res) => res.json()),
+    endpoint ? [endpoint] : null,
+    ([url]) => fetch(url).then((res) => res.json()),
     {
       revalidateOnFocus: true,
     },
