@@ -175,13 +175,14 @@ export const UpdateIssuedTokenPlugin = ({
     }
   }, [areGeneralFieldsFilled, showDecaySettings]);
 
-  const hasToggledAdvancedRef = useRef(false);
+  const prevShowAdvancedSettingsRef = useRef(showAdvancedSettings);
 
   useEffect(() => {
-    if (!showAdvancedSettings && hasToggledAdvancedRef.current) {
+    const prev = prevShowAdvancedSettingsRef.current;
+    if (prev === true && showAdvancedSettings === false) {
       clearAdvancedSettingsFields();
     }
-    hasToggledAdvancedRef.current = true;
+    prevShowAdvancedSettingsRef.current = showAdvancedSettings;
   }, [showAdvancedSettings, clearAdvancedSettingsFields]);
 
   const prevEnableLimitedSupplyRef = useRef(enableLimitedSupply);
