@@ -3,7 +3,7 @@ import {
   useJwt,
   useUpdateTokenByAddress,
 } from '@hypha-platform/core/client';
-import { Badge, Separator } from '@hypha-platform/ui';
+import { Separator } from '@hypha-platform/ui';
 import {
   formatCurrencyValue,
   formatDecayInterval,
@@ -28,8 +28,6 @@ export interface ProposalUpdateTokenProps {
   useTransferWhitelist?: boolean;
   useReceiveWhitelist?: boolean;
   archiveToken?: boolean;
-  /** Same document status as the proposal header (e.g. accepted → Accepted badge). */
-  proposalStatus?: string | null;
 }
 
 interface TokenUpdateDataInterface {
@@ -49,32 +47,9 @@ export const ProposalUpdateToken = ({
   useTransferWhitelist,
   useReceiveWhitelist,
   archiveToken,
-  proposalStatus,
 }: ProposalUpdateTokenProps) => {
   const tProposalDetails = useTranslations('ProposalDetails');
   const { jwt: authToken } = useJwt();
-
-  const statusBadge = React.useMemo(() => {
-    switch (proposalStatus) {
-      case 'accepted':
-        return {
-          text: tProposalDetails('status.accepted'),
-          colorVariant: 'success' as const,
-        };
-      case 'rejected':
-        return {
-          text: tProposalDetails('status.rejected'),
-          colorVariant: 'error' as const,
-        };
-      case 'onVoting':
-        return {
-          text: tProposalDetails('status.onVoting'),
-          colorVariant: 'warn' as const,
-        };
-      default:
-        return null;
-    }
-  }, [proposalStatus, tProposalDetails]);
   const { tokenUpdate, isLoading: isTokenUpdateLoading } =
     useUpdateTokenByAddress({
       address,
@@ -107,17 +82,6 @@ export const ProposalUpdateToken = ({
 
   return (
     <div className="flex flex-col gap-5">
-      {statusBadge && (
-        <div className="flex gap-2">
-          <Badge
-            variant="outline"
-            colorVariant={statusBadge.colorVariant}
-            isLoading={false}
-          >
-            {statusBadge.text}
-          </Badge>
-        </div>
-      )}
       {name !== undefined && (
         <div className="flex justify-between items-center">
           <div className="text-1 text-neutral-11 w-full">
