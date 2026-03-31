@@ -1,5 +1,9 @@
 import type { Abi } from 'viem';
 
+import { escrowImplementationAddress } from '@hypha-platform/core/generated';
+
+import { getGovernanceChainId } from './governance-chain-id';
+
 /** Minimal ABI for investment / escrow proposal encoding (EscrowImplementation). */
 export const escrowImplementationAbi = [
   {
@@ -46,12 +50,21 @@ export const escrowImplementationAbi = [
 
 const ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
 
-/** Resolves escrow contract from env; extend with a per-chain map when multiple networks are supported. */
+/**
+ * Resolves EscrowImplementation proxy: optional `NEXT_PUBLIC_ESCROW_IMPLEMENTATION_ADDRESS`
+ * override, otherwise the address for the active governance chain from `escrowImplementationAddress`
+ * (Base mainnet matches `packages/storage-evm/contracts/addresses.txt`).
+ */
 export function getEscrowImplementationAddress(): `0x${string}` | undefined {
   if (typeof process === 'undefined') return undefined;
   const v = process.env.NEXT_PUBLIC_ESCROW_IMPLEMENTATION_ADDRESS?.trim();
-  if (v && ADDR_RE.test(v)) return v as `0x${string}`;
-  return undefined;
+  if (v) {
+    if (ADDR_RE.test(v)) return v as `0x${string}`;
+    return undefined;
+  }
+  const chainId = getGovernanceChainId();
+  const mapped = escrowImplementationAddress[chainId];
+  return mapped as `0x${string}` | undefined;
 }
 
 export const HYPHA_INVESTMENT_FORM_START = '\n\n__hypha_investment__\n';
