@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
+import { RESUBMIT_UPDATE_ISSUED_TOKEN_FORM_KEY } from '../proposals/update-issued-token-resubmit';
 
 export const useResubmitProposalData = <
   T extends {
@@ -64,7 +65,6 @@ export const useResubmitProposalData = <
 
         // Re-apply whenever this data is present (including `applied: true`), so
         // navigating back to the create form after a resubmit still hydrates the form.
-        console.log('Resubmit data found:', parsed);
 
         if (parsed.leadImage || parsed.attachments) {
           sessionStorage.setItem(
@@ -80,18 +80,16 @@ export const useResubmitProposalData = <
         let resubmitTokenAddress: string | undefined;
         try {
           const tokenFormRaw = sessionStorage.getItem(
-            'resubmitUpdateIssuedTokenForm',
+            RESUBMIT_UPDATE_ISSUED_TOKEN_FORM_KEY,
           );
           if (tokenFormRaw) {
             const tf = JSON.parse(tokenFormRaw) as { tokenAddress?: string };
             if (tf?.tokenAddress) {
               resubmitTokenAddress = tf.tokenAddress;
             }
-            sessionStorage.removeItem('resubmitUpdateIssuedTokenForm');
           }
         } catch {
           // ignore invalid token resubmit payload
-          sessionStorage.removeItem('resubmitUpdateIssuedTokenForm');
         }
 
         form.reset(
@@ -266,11 +264,6 @@ export const useResubmitProposalData = <
         );
 
         setResubmitKey((prev) => prev + 1);
-
-        console.log('Form reset with resubmit data. Current values:', {
-          title: form.getValues('title' as any),
-          description: form.getValues('description' as any),
-        });
       } catch (error) {
         console.error('Error reading resubmit data:', error);
         sessionStorage.removeItem('resubmitProposalData');

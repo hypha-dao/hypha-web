@@ -31,7 +31,7 @@ export const tokens = pgTable('tokens', {
   agreementWeb3Id: integer('agreement_web3_id'),
   referencePrice: numeric('reference_price'),
   referenceCurrency: text('reference_currency'),
-  archived: boolean('archived').default(false),
+  archived: boolean('archived').notNull().default(false),
 });
 
 export const tokenRelations = relations(tokens, ({ one }) => ({

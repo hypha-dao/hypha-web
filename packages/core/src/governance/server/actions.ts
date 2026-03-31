@@ -2,6 +2,7 @@
 
 // TODO: #602 Define RLS Policies for Agreement Table
 // import { getDb } from '@hypha-platform/core/server';
+import { isAddress } from 'ethers';
 import {
   createAgreement,
   updateAgreementBySlug,
@@ -142,8 +143,6 @@ export async function deleteTokenUpdateAction(
     throw new Error('authToken is required to delete token update');
   return deleteTokenUpdate(documentId, { db });
 }
-
-import { isAddress } from 'ethers';
 
 export async function getTokenUpdateByAddressAction(
   address: string,

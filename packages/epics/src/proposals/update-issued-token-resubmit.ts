@@ -1,6 +1,10 @@
 import type { TokenUpdateData } from '@hypha-platform/core/client';
 import { getPriceCurrencyCode } from '@hypha-platform/core/client';
 
+/** sessionStorage key for resubmit payload (must match form-voting + plugin). */
+export const RESUBMIT_UPDATE_ISSUED_TOKEN_FORM_KEY =
+  'resubmitUpdateIssuedTokenForm';
+
 export type UpdateTokenProposalSnapshot = {
   address?: `0x${string}`;
   name?: string;

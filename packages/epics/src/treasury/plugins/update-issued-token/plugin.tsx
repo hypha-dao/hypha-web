@@ -11,7 +11,10 @@ import {
 } from '@hypha-platform/ui';
 import { useFormContext } from 'react-hook-form';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import type { UpdateIssuedTokenResubmitPayload } from '../../../proposals/update-issued-token-resubmit';
+import {
+  RESUBMIT_UPDATE_ISSUED_TOKEN_FORM_KEY,
+  type UpdateIssuedTokenResubmitPayload,
+} from '../../../proposals/update-issued-token-resubmit';
 import {
   getPriceCurrencyCode,
   type Person,
@@ -406,7 +409,7 @@ export const UpdateIssuedTokenPlugin = ({
       return;
     }
 
-    const raw = sessionStorage.getItem('resubmitUpdateIssuedTokenForm');
+    const raw = sessionStorage.getItem(RESUBMIT_UPDATE_ISSUED_TOKEN_FORM_KEY);
     if (!raw) {
       return;
     }
@@ -489,7 +492,7 @@ export const UpdateIssuedTokenPlugin = ({
     }
 
     resubmitOverlayAppliedRef.current = true;
-    sessionStorage.removeItem('resubmitUpdateIssuedTokenForm');
+    sessionStorage.removeItem(RESUBMIT_UPDATE_ISSUED_TOKEN_FORM_KEY);
   }, [selectedTokenAddress, isLoadingOnChainData, setValue]);
 
   const tokenSupply = selectedToken?.maxSupply ?? 0;

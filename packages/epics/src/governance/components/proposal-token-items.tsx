@@ -28,7 +28,6 @@ interface ProposalTokenItemProps {
   initialReceiveWhitelist?: `0x${string}`[];
   decayPercentage?: bigint;
   decayInterval?: bigint;
-  archived?: boolean;
 }
 
 interface WhitelistAddressItemProps {

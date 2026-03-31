@@ -47,9 +47,9 @@ export function buildUpdateIssuedTokenTxData(
 
   const tokenPriceWei =
     arg.tokenPrice !== undefined ? BigInt(arg.tokenPrice) : 0n;
-  const priceCurrencyFeed =
-    arg.priceCurrencyFeed ??
-    ('0x0000000000000000000000000000000000000000' as `0x${string}`);
+  const zeroFeed =
+    '0x0000000000000000000000000000000000000000' as `0x${string}`;
+  const priceCurrencyFeed = arg.priceCurrencyFeed ?? zeroFeed;
 
   if (arg.name !== undefined) {
     txData.push({
@@ -106,7 +106,7 @@ export function buildUpdateIssuedTokenTxData(
       }),
     });
   }
-  if (arg.tokenPrice !== undefined && arg.priceCurrencyFeed !== undefined) {
+  if (arg.tokenPrice !== undefined) {
     txData.push({
       target: arg.address,
       value: 0,
@@ -213,7 +213,11 @@ export const useUpdateIssuedTokenMutationsWeb3Rpc = ({
         getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
       );
 
-      const txData = buildUpdateIssuedTokenTxData(arg);
+      const effectiveArg = padUpdateIssuedTokenInputIfNoTxs(
+        arg,
+        arg.name ?? '',
+      );
+      const txData = buildUpdateIssuedTokenTxData(effectiveArg);
 
       const proposal: z.infer<typeof schemaCreateProposalWeb3> = {
         spaceId: BigInt(arg.spaceId),
@@ -235,7 +239,10 @@ export const useUpdateIssuedTokenMutationsWeb3Rpc = ({
   } = useSWR(
     updateIssuedTokenHash ? [updateIssuedTokenHash, 'waitFor'] : null,
     async ([hash]) => {
-      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash,
+        timeout: 300_000,
+      });
       return getProposalFromLogs(receipt.logs);
     },
   );

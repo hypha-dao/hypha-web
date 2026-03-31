@@ -5,6 +5,7 @@ import {
   tokenUpdates,
 } from '@hypha-platform/storage-postgres';
 import { eq } from 'drizzle-orm';
+import type { InferInsertModel } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
 import {
@@ -145,13 +146,13 @@ export const updateToken = async (
 
   // Map archiveToken to archived column
   const { archiveToken, ...restWithoutArchive } = rest;
-  const updateData: any = {
+  const updateData = {
     ...restWithoutArchive,
     ...(rest.agreementWeb3IdUpdate !== undefined && {
       agreementWeb3Id: rest.agreementWeb3IdUpdate,
     }),
     ...(archiveToken !== undefined && { archived: archiveToken }),
-  };
+  } as Partial<InferInsertModel<typeof tokens>>;
 
   // Convert referencePrice to string if present
   if (updateData.referencePrice !== undefined) {

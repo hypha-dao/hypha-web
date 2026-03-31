@@ -76,7 +76,7 @@ export function SelectTokenField({
                       const src =
                         iconUrl?.trim() || '/placeholder/token-icon.svg';
                       return (
-                        <SelectItem key={address} value={address!}>
+                        <SelectItem key={address} value={address}>
                           <div className="flex items-center gap-2 text-left text-sm leading-5">
                             <img
                               src={src}

@@ -245,8 +245,8 @@ export const UpdateIssuedTokenForm = ({
     });
   };
 
-  const handleInvalid = async (errors: FieldErrors<FormValues>) => {
-    console.log('Invalid form fields:', errors);
+  const handleInvalid = async (_errors: FieldErrors<FormValues>) => {
+    // Validation errors are shown inline on fields
   };
 
   return (

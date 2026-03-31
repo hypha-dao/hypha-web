@@ -19,7 +19,7 @@ import { Config } from '@wagmi/core';
 import { updateTokenAction } from '../../server/actions';
 import { ReferenceCurrency } from '../../types';
 import { getPriceCurrencyFeed } from '../../../common/web3/token-backing-vault';
-import { TokenType } from '../../../common';
+import type { TokenType } from '../../../common';
 
 type TaskName =
   | 'CREATE_WEB2_AGREEMENT'

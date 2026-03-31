@@ -302,6 +302,13 @@
       "when": 1774722000000,
       "tag": "0042_token_updates_archived",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1774985331236,
+      "tag": "0043_archived_not_null_token_updates_idx",
+      "breakpoints": true
     }
   ]
 }

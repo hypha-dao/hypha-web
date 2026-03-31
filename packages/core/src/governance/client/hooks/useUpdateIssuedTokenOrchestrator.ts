@@ -15,7 +15,7 @@ import {
 import { useTokenMutationsWeb2Rsc } from './useTokenMutationWeb2.rsc';
 import { Config } from '@wagmi/core';
 import { ReferenceCurrency } from '../../types';
-import { getPriceCurrencyFeed, TokenType } from '../../../common';
+import { getPriceCurrencyFeed, type TokenType } from '../../../common';
 import {
   type UpdateIssuedTokenInput,
   padUpdateIssuedTokenInputIfNoTxs,
@@ -401,8 +401,6 @@ export const useUpdateIssuedTokenOrchestrator = ({
     async ([slug, web3ProposalId]) => {
       try {
         startTask('LINK_WEB2_AND_WEB3_AGREEMENT');
-        console.log('slug', slug);
-        console.log('web3ProposalId', web3ProposalId);
         const result = await web2.updateAgreementBySlug({
           slug,
           web3ProposalId: Number(web3ProposalId),
@@ -422,18 +420,35 @@ export const useUpdateIssuedTokenOrchestrator = ({
     },
   );
 
+  const { errorCreateAgreementMutation } = web2;
+  const { errorUpdateIssuedToken, errorWaitTokenFromTx } = web3;
+  const {
+    errorUpdateTokenMutation,
+    errorCreateTokenUpdateMutation,
+    errorApplyTokenUpdateMutation,
+    errorDeleteTokenUpdateMutation,
+  } = web2TokenMutations;
+
   const errors = useMemo(
     () =>
       [
-        web2.errorCreateAgreementMutation,
-        web3.errorUpdateIssuedToken,
-        web3.errorWaitTokenFromTx,
-        web2TokenMutations.errorUpdateTokenMutation,
-        web2TokenMutations.errorCreateTokenUpdateMutation,
-        web2TokenMutations.errorApplyTokenUpdateMutation,
-        web2TokenMutations.errorDeleteTokenUpdateMutation,
+        errorCreateAgreementMutation,
+        errorUpdateIssuedToken,
+        errorWaitTokenFromTx,
+        errorUpdateTokenMutation,
+        errorCreateTokenUpdateMutation,
+        errorApplyTokenUpdateMutation,
+        errorDeleteTokenUpdateMutation,
       ].filter(Boolean),
-    [web2, web3, web2TokenMutations],
+    [
+      errorCreateAgreementMutation,
+      errorUpdateIssuedToken,
+      errorWaitTokenFromTx,
+      errorUpdateTokenMutation,
+      errorCreateTokenUpdateMutation,
+      errorApplyTokenUpdateMutation,
+      errorDeleteTokenUpdateMutation,
+    ],
   );
 
   const reset = useCallback(() => {

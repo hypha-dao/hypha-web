@@ -71,8 +71,13 @@ export const useProposalEvents = ({
             try {
               await applyTokenUpdateAction(documentId, { authToken });
             } catch (error) {
-              // Ignore if no token update record exists
-              console.log('No token update to apply', error);
+              const msg =
+                error instanceof Error ? error.message : String(error);
+              if (
+                /not found|no token update|does not exist/i.test(msg) === false
+              ) {
+                console.error('applyTokenUpdateAction failed:', error);
+              }
             }
           }
           return;
@@ -100,7 +105,13 @@ export const useProposalEvents = ({
             await applyTokenUpdateAction(documentId, { authToken });
           }
         } catch (receiptError) {
-          console.log('Error applying token update:', receiptError);
+          const msg =
+            receiptError instanceof Error
+              ? receiptError.message
+              : String(receiptError);
+          if (/not found|no token update|does not exist/i.test(msg) === false) {
+            console.error('Error applying token update:', receiptError);
+          }
         }
 
         await onProposalExecuted?.(transactionHash);
@@ -117,7 +128,6 @@ export const useProposalEvents = ({
       proposalId,
       documentId,
       authToken,
-      applyTokenUpdateAction,
       setupTokenDeployedWatcher,
     ],
   );
@@ -133,8 +143,12 @@ export const useProposalEvents = ({
           try {
             await deleteTokenUpdateAction(documentId, { authToken });
           } catch (error) {
-            // Ignore if no token update record exists
-            console.log('No token update to delete', error);
+            const msg = error instanceof Error ? error.message : String(error);
+            if (
+              /not found|no token update|does not exist/i.test(msg) === false
+            ) {
+              console.error('deleteTokenUpdateAction failed:', error);
+            }
           }
         }
         return;
@@ -164,7 +178,6 @@ export const useProposalEvents = ({
     tokenSymbol,
     documentId,
     authToken,
-    deleteTokenUpdateAction,
   ]);
 
   const handleProposalCreated = useCallback(
