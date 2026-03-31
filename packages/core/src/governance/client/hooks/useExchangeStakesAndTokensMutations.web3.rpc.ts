@@ -21,10 +21,6 @@ import { EXCHANGE_ESCROW_CONTRACT_BY_CHAIN } from './exchange-escrow-contract';
 
 const READ_TIMEOUT_MS = 30_000;
 
-/** Proposer wallet must match selected member seller address. */
-export const EXCHANGE_SELLER_WALLET_MISMATCH =
-  'EXCHANGE_SELLER_WALLET_MISMATCH';
-
 async function withReadTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
     const id = setTimeout(() => reject(new Error('RPC read timed out')), ms);
@@ -47,8 +43,6 @@ interface ExchangeLegInput {
 
 interface CreateExchangeStakesAndTokensInput {
   spaceId: number;
-  /** When `space`, any member may propose; treasury acts at vote/execution. */
-  sellerRecipientType?: 'member' | 'space';
   sellerAddress: string;
   buyerAddress: string;
   sellerLeg: ExchangeLegInput[];
@@ -91,21 +85,6 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
     async (_: string, { arg }: { arg: CreateExchangeStakesAndTokensInput }) => {
       if (!client) {
         throw new Error('Smart wallet client not available');
-      }
-
-      const walletAddress = (
-        client as { account?: { address?: `0x${string}` } }
-      ).account?.address;
-      if (!walletAddress) {
-        throw new Error('Could not read connected wallet address');
-      }
-
-      // Space-as-seller: authorisation is via governance vote → executor runs batched txs.
-      // Member-as-seller: proposer wallet must match the selected seller address.
-      if (arg.sellerRecipientType !== 'space') {
-        if (arg.sellerAddress.toLowerCase() !== walletAddress.toLowerCase()) {
-          throw new Error(EXCHANGE_SELLER_WALLET_MISMATCH);
-        }
       }
 
       const sellerRows = arg.sellerLeg ?? [];

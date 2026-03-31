@@ -6,7 +6,6 @@ import {
   useCreateExchangeStakesAndTokensOrchestrator,
   useJwt,
   useMe,
-  EXCHANGE_SELLER_WALLET_MISMATCH,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
@@ -179,30 +178,16 @@ export const CreateExchangeStakesAndTokensForm = ({
     delete createPayload.buyerRecipientType;
     delete createPayload.spaceExecutorAddress;
 
-    try {
-      await createExchangeStakesAndTokens({
-        ...createPayload,
-        description: upsertExchangeDetailsSection(
-          data.description,
-          exchangeDetailsSection,
-        ),
-        spaceId,
-        web3SpaceId: typeof web3SpaceId === 'number' ? web3SpaceId : undefined,
-        label: 'Exchange',
-      });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : '';
-      if (msg === EXCHANGE_SELLER_WALLET_MISMATCH) {
-        form.setError('root', {
-          type: 'manual',
-          message: tAgreementFlow(
-            'plugins.exchangeStakesAndTokens.errors.sellerWalletMismatch',
-          ),
-        });
-        return;
-      }
-      throw e;
-    }
+    await createExchangeStakesAndTokens({
+      ...createPayload,
+      description: upsertExchangeDetailsSection(
+        data.description,
+        exchangeDetailsSection,
+      ),
+      spaceId,
+      web3SpaceId: typeof web3SpaceId === 'number' ? web3SpaceId : undefined,
+      label: 'Exchange',
+    });
   };
 
   return (

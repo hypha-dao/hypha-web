@@ -46,7 +46,7 @@ export const ExchangeStakesAndTokensPlugin = ({
     useSpaceDetailsWeb3Rpc({
       spaceId: activeSpace?.web3SpaceId ?? null,
     });
-  /** Executor holds tokens; proposal still stores space contract as seller (vote authorizes execution). */
+  /** On execution, batched approve/escrow run as space executor — balance checks use this when available. */
   const spaceExecutorAddress = spaceDetails?.executor as string | undefined;
   const currentSpaceAddress = activeSpace?.address ?? undefined;
   const { person: creator } = useMe();

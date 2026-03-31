@@ -111,8 +111,7 @@
         "errors": {
           "sellerAmountExceedsBalance": "El importe introducido supera el saldo disponible del vendedor.",
           "sellerTreasuryUnavailable": "No se pudo cargar la tesorería del espacio. Espere los datos on-chain e inténtelo de nuevo.",
-          "sellerBalanceCheckFailed": "No se pudo verificar el saldo del vendedor. Compruebe la conexión e inténtelo de nuevo.",
-          "sellerWalletMismatch": "Conecte la cartera que coincide con la dirección del vendedor seleccionada."
+          "sellerBalanceCheckFailed": "No se pudo verificar el saldo del vendedor. Compruebe la conexión e inténtelo de nuevo."
         },
         "seller": "Vendedor (dirección de cartera)",
         "buyer": "Comprador (dirección de cartera)",
