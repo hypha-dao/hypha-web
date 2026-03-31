@@ -146,6 +146,8 @@ type UpdateIssuedTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
  * DecayingSpaceToken updates vs form fields:
  * — Sent on-chain when dirty: name, symbol, maxSupply (0 = unlimited), transferable, autoMinting,
  *   price+feed, decay interval/%, whitelist toggles, archived.
+ * — Whitelist toggles: when transferable is false, both flags are forced off (empty lists
+ *   previously encoded as true and could revert on execution).
  * — Not implemented here: whitelist address membership (e.g. batchSetTransferWhitelist),
  *   clearing on-chain price when disabling “token price”, token type (no setter on contract).
  * — DB / Web2 only: icon URL, token type label stored off-chain.
@@ -221,14 +223,24 @@ function buildPartialUpdateIssuedTokenWeb3Input(
     if (!arg.enableAdvancedTransferControls) {
       base.useTransferWhitelist = false;
       base.useReceiveWhitelist = false;
-    } else {
+    } else if (arg.transferable === true) {
       base.useTransferWhitelist = !!(
         arg.transferWhitelist?.from && arg.transferWhitelist.from.length > 0
       );
       base.useReceiveWhitelist = !!(
         arg.transferWhitelist?.to && arg.transferWhitelist.to.length > 0
       );
+    } else {
+      // Non-transferable tokens cannot use transfer/receive whitelists on-chain; enabling both
+      // with empty member lists produced setUse*Whitelist(true) and reverted at execution.
+      base.useTransferWhitelist = false;
+      base.useReceiveWhitelist = false;
     }
+  }
+
+  if (changed.has('transferable') && arg.transferable !== true) {
+    base.useTransferWhitelist = false;
+    base.useReceiveWhitelist = false;
   }
 
   if (changed.has('archiveToken')) {
