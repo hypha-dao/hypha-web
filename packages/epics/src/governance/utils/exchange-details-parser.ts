@@ -14,19 +14,49 @@ export type ParsedExchangeDetails = {
 };
 
 const parseAddressFromLine = (line: string): string | undefined => {
-  const match = line.match(/`(0x[a-fA-F0-9]{40})`/);
-  return match?.[1];
+  // Leg rows use backticks around the token; do not treat them as party wallets.
+  if (line.trimStart().startsWith('- ')) return undefined;
+  const open = line.indexOf('`0x');
+  if (open === -1) return undefined;
+  const addrStart = open + 1;
+  const close = line.indexOf('`', addrStart + 1);
+  if (close === -1) return undefined;
+  const inner = line.slice(addrStart, close);
+  return /^0x[a-fA-F0-9]{40}$/.test(inner) ? inner : undefined;
 };
 
+/**
+ * Parses `- [n.] amount | 0x...` lines without regex backtracking (ReDoS-safe).
+ */
 const parseLegLine = (line: string): ParsedExchangeLeg | null => {
-  const match = line.match(
-    /-\s*(?:\d+\.\s*)?(.+?)\s*\|\s*`?(0x[a-fA-F0-9]{40})`?/,
-  );
-  if (!match) return null;
+  const trimmed = line.trim();
+  if (!trimmed.startsWith('- ')) return null;
+
+  let rest = trimmed.slice(2).trim();
+  const numMatch = /^(\d+)\.\s+/.exec(rest);
+  if (numMatch) {
+    rest = rest.slice(numMatch[0].length);
+  }
+
+  const pipeIdx = rest.indexOf('|');
+  if (pipeIdx === -1) return null;
+
+  const amountPart = rest.slice(0, pipeIdx).trim();
+  let tokenPart = rest.slice(pipeIdx + 1).trim();
+  if (tokenPart.startsWith('`')) {
+    tokenPart = tokenPart.slice(1);
+  }
+  if (tokenPart.endsWith('`')) {
+    tokenPart = tokenPart.slice(0, -1);
+  }
+
+  if (!amountPart || !/^0x[a-fA-F0-9]{40}$/i.test(tokenPart)) {
+    return null;
+  }
 
   return {
-    amount: match[1]?.trim() ?? '',
-    tokenAddress: match[2] ?? '',
+    amount: amountPart,
+    tokenAddress: tokenPart,
   };
 };
 
