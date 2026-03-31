@@ -109,11 +109,7 @@ export const TransferWhitelistFieldArray = ({
           const currentEntry = entries?.[index];
           const currentType = (currentEntry?.type ?? 'space') as WhitelistType;
           const comboboxOptions =
-            currentType === 'member'
-              ? memberOptions
-              : spaceOptions.length
-              ? spaceOptions
-              : memberOptions;
+            currentType === 'member' ? memberOptions : spaceOptions;
           const placeholder =
             currentType === 'member'
               ? tAgreementFlow(

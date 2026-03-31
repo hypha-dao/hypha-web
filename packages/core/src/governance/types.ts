@@ -154,6 +154,18 @@ export type UpdateTokenInput = {
   archiveToken?: boolean;
 };
 
+/** Matches form `transferWhitelist` / issue-new-token shape; stored in pending token update JSON */
+export type TransferWhitelistEntry = {
+  type?: 'member' | 'space';
+  address: string;
+  includeSpaceMembers?: boolean;
+};
+
+export type TransferWhitelistFormValue = {
+  from?: TransferWhitelistEntry[];
+  to?: TransferWhitelistEntry[];
+};
+
 export type TokenUpdateData = {
   name?: string;
   symbol?: string;
@@ -169,6 +181,8 @@ export type TokenUpdateData = {
   referencePrice?: number;
   referenceCurrency?: ReferenceCurrency;
   archiveToken?: boolean;
+  /** Off-chain copy for proposal details + resubmit; on-chain uses address lists only */
+  transferWhitelist?: TransferWhitelistFormValue;
 };
 
 export type CreateTokenUpdateInput = {

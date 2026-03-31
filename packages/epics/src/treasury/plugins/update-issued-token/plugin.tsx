@@ -560,6 +560,11 @@ export const UpdateIssuedTokenPlugin = ({
       'enableAdvancedTransferControls',
       payload.enableAdvancedTransferControls,
     );
+    if (payload.transferWhitelist !== undefined) {
+      patch('transferWhitelist', payload.transferWhitelist, {
+        shouldDirty: false,
+      });
+    }
     patch('archiveToken', payload.archiveToken);
 
     const showAdv =

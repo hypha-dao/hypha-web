@@ -13,6 +13,8 @@ import React from 'react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { normalizeMaxSupplyHuman } from '../../treasury/utils/normalize-max-supply-human';
+import type { TransferWhitelistFormValue } from '@hypha-platform/core/client';
+import { WhitelistAddressItem } from './proposal-token-items';
 
 export interface ProposalUpdateTokenProps {
   address: `0x${string}`;
@@ -40,6 +42,7 @@ interface TokenUpdateDataInterface {
   name?: string;
   symbol?: string;
   maxSupply?: number;
+  transferWhitelist?: TransferWhitelistFormValue;
 }
 
 export const ProposalUpdateToken = ({
@@ -74,6 +77,17 @@ export const ProposalUpdateToken = ({
     resolvedTokenType === 'voice' &&
     decayPercentage !== undefined &&
     decayInterval !== undefined;
+
+  const transferWhitelistFromPending = pendingData?.transferWhitelist;
+  const fromWhitelistEntries = transferWhitelistFromPending?.from?.filter(
+    (e) => e?.address,
+  );
+  const toWhitelistEntries = transferWhitelistFromPending?.to?.filter(
+    (e) => e?.address,
+  );
+  const showTransferWhitelistDetails =
+    (fromWhitelistEntries?.length ?? 0) > 0 ||
+    (toWhitelistEntries?.length ?? 0) > 0;
   const tokenPrice = React.useMemo(() => {
     return priceWithCurrency?.tokenPrice
       ? Number(priceWithCurrency.tokenPrice) / 1_000_000
@@ -256,6 +270,46 @@ export const ProposalUpdateToken = ({
               : tProposalDetails('labels.no')}
           </div>
         </div>
+      )}
+      {showTransferWhitelistDetails && (
+        <>
+          <Separator />
+          <div className="flex flex-col gap-4">
+            <div className="text-1 text-neutral-11 font-medium">
+              {tProposalDetails('sections.transferWhitelists')}
+            </div>
+            {fromWhitelistEntries && fromWhitelistEntries.length > 0 && (
+              <div className="flex flex-col gap-4">
+                <div className="text-1 text-neutral-11 font-bold">
+                  {tProposalDetails('sections.fromWhitelist')}
+                </div>
+                <div className="flex flex-col gap-4">
+                  {fromWhitelistEntries.map((entry, idx) => (
+                    <WhitelistAddressItem
+                      key={`from-${idx}-${entry.address}`}
+                      address={entry.address as `0x${string}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            {toWhitelistEntries && toWhitelistEntries.length > 0 && (
+              <div className="flex flex-col gap-4">
+                <div className="text-1 text-neutral-11 font-bold">
+                  {tProposalDetails('sections.toWhitelist')}
+                </div>
+                <div className="flex flex-col gap-4">
+                  {toWhitelistEntries.map((entry, idx) => (
+                    <WhitelistAddressItem
+                      key={`to-${idx}-${entry.address}`}
+                      address={entry.address as `0x${string}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </>
       )}
     </div>
   );

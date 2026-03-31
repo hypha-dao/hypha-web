@@ -1,4 +1,7 @@
-import type { TokenUpdateData } from '@hypha-platform/core/client';
+import type {
+  TokenUpdateData,
+  TransferWhitelistFormValue,
+} from '@hypha-platform/core/client';
 import { getPriceCurrencyCode } from '@hypha-platform/core/client';
 
 /** sessionStorage key for resubmit payload (must match form-voting + plugin). */
@@ -48,6 +51,7 @@ export type UpdateIssuedTokenResubmitPayload = {
   referenceCurrency?: TokenUpdateData['referenceCurrency'];
   enableAdvancedTransferControls: boolean;
   archiveToken: boolean;
+  transferWhitelist?: TransferWhitelistFormValue;
 };
 
 export type TokenUpdateDbRow = {
@@ -107,9 +111,15 @@ export function buildUpdateIssuedTokenResubmitPayload({
       tokenPrice: data.referencePrice,
       referenceCurrency: data.referenceCurrency,
       enableAdvancedTransferControls: !!(
-        snapshot?.useTransferWhitelist || snapshot?.useReceiveWhitelist
+        data.transferWhitelist?.from?.length ||
+        data.transferWhitelist?.to?.length ||
+        snapshot?.useTransferWhitelist ||
+        snapshot?.useReceiveWhitelist
       ),
       archiveToken: data.archiveToken ?? false,
+      ...(data.transferWhitelist
+        ? { transferWhitelist: data.transferWhitelist }
+        : {}),
     };
   }
 

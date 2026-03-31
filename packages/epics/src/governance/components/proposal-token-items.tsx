@@ -34,7 +34,9 @@ interface WhitelistAddressItemProps {
   address: `0x${string}`;
 }
 
-const WhitelistAddressItem = ({ address }: WhitelistAddressItemProps) => {
+export const WhitelistAddressItem = ({
+  address,
+}: WhitelistAddressItemProps) => {
   const tProposalDetails = useTranslations('ProposalDetails');
   const { spaces: dbSpaces } = useDbSpaces({
     parentOnly: false,

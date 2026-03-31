@@ -368,6 +368,9 @@ export const useUpdateIssuedTokenOrchestrator = ({
         referencePrice: arg.referencePrice ?? arg.tokenPrice,
         referenceCurrency: arg.referenceCurrency,
         archiveToken: arg.archiveToken,
+        ...(arg.transferWhitelist !== undefined
+          ? { transferWhitelist: arg.transferWhitelist }
+          : {}),
       };
       await web2TokenMutations.createTokenUpdate({
         documentId: createdAgreement.id,
