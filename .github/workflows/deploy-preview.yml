@@ -129,7 +129,12 @@ jobs:
             const url = String('${{ steps.deploy.outputs.preview_url }}').trim();
             const body = `${marker}\n**Preview deployment:** ${url}`;
             const { owner, repo } = context.repo;
-            const issue_number = context.issue.number;
+            const issue_number =
+              context.payload.pull_request?.number ?? context.issue?.number;
+            if (!issue_number) {
+              core.setFailed('Could not resolve PR number from event payload');
+              return;
+            }
             const { data: comments } = await github.rest.issues.listComments({
               owner,
               repo,
