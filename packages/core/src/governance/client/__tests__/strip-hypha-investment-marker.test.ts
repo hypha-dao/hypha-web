@@ -14,10 +14,7 @@ describe('stripHyphaInvestmentFormMarker', () => {
       investorSendLegs: [],
     });
     const full =
-      user +
-      HYPHA_INVESTMENT_FORM_START +
-      payload +
-      HYPHA_INVESTMENT_FORM_END;
+      user + HYPHA_INVESTMENT_FORM_START + payload + HYPHA_INVESTMENT_FORM_END;
     expect(stripHyphaInvestmentFormMarker(full)).toBe(user);
   });
 

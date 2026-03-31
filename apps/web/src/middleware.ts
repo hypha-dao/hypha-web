@@ -44,10 +44,21 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
     ...(matrixImg ? [matrixImg] : []),
     ...IMAGE_HOSTS.map((host) => `https://${host}`),
   ].join(' ');
+
+  // Allow local Hardhat/Anvil (127.0.0.1:8545) — wagmi may use this when the wallet
+  // or chain config points at a local node; without it connect-src blocks voting/RPC.
+  const localChainRpc = [
+    'http://127.0.0.1:8545',
+    'http://localhost:8545',
+    'ws://127.0.0.1:8545',
+    'ws://localhost:8545',
+  ].join(' ');
+
   const connectSrc = [
     ...CONNECT_SOURCES,
     process.env.NEXT_PUBLIC_RPC_URL ?? '',
     process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL ?? '',
+    localChainRpc,
   ]
     .filter(Boolean)
     .join(' ');

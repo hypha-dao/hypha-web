@@ -153,9 +153,7 @@ export function stripHyphaInvestmentFormMarker(
     else {
       const looseHypha = before.search(/\bhypha_investment\b/);
       if (looseHypha !== -1) {
-        const afterWord = before.slice(
-          looseHypha + 'hypha_investment'.length,
-        );
+        const afterWord = before.slice(looseHypha + 'hypha_investment'.length);
         if (/^\s*\{/.test(afterWord)) blockStart = looseHypha;
       }
     }
