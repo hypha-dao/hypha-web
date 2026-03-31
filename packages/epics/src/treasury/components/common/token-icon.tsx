@@ -24,19 +24,32 @@ export const TokenIconUpload = ({
     typeof defaultImage === 'string' ? defaultImage || null : null,
   );
 
-  // Single source of truth: keep preview in sync with controlled value. When the
-  // form stores a File (react-hook-form), we must show an object URL — the
-  // previous effect cleared preview whenever value was not a string, which ran
-  // right after onDrop and removed the thumbnail.
+  // Sync preview with controlled value. For File values use readAsDataURL — not
+  // createObjectURL — because RHF can pass a new File reference on re-renders;
+  // revoking the previous blob URL in effect cleanup races the img and shows a
+  // broken image.
   React.useEffect(() => {
     if (typeof defaultImage === 'string') {
       setPreview(defaultImage || null);
       return;
     }
     if (defaultImage instanceof File) {
-      const url = URL.createObjectURL(defaultImage);
-      setPreview(url);
-      return () => URL.revokeObjectURL(url);
+      let cancelled = false;
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (!cancelled) {
+          setPreview(reader.result as string);
+        }
+      };
+      reader.onerror = () => {
+        if (!cancelled) {
+          setPreview(null);
+        }
+      };
+      reader.readAsDataURL(defaultImage);
+      return () => {
+        cancelled = true;
+      };
     }
     setPreview(null);
   }, [defaultImage]);
