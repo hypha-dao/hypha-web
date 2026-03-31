@@ -12,6 +12,7 @@ import {
 import React from 'react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import { normalizeMaxSupplyHuman } from '../../treasury/utils/normalize-max-supply-human';
 
 export interface ProposalUpdateTokenProps {
   address: `0x${string}`;
@@ -36,6 +37,9 @@ export interface ProposalUpdateTokenProps {
 interface TokenUpdateDataInterface {
   iconUrl?: string;
   type?: TokenType;
+  name?: string;
+  symbol?: string;
+  maxSupply?: number;
 }
 
 export const ProposalUpdateToken = ({
@@ -90,24 +94,74 @@ export const ProposalUpdateToken = ({
     return Number(maxSupply / 10n ** 18n);
   }, [maxSupply]);
 
+  const resolvedName = name ?? pendingData?.name;
+  const resolvedSymbol = symbol ?? pendingData?.symbol;
+  const resolvedMaxHuman = React.useMemo(() => {
+    if (maxSupplyHuman !== undefined) {
+      return maxSupplyHuman;
+    }
+    if (pendingData?.maxSupply !== undefined) {
+      return normalizeMaxSupplyHuman(pendingData.maxSupply);
+    }
+    return undefined;
+  }, [maxSupplyHuman, pendingData?.maxSupply]);
+
+  const showTokenPrice =
+    priceWithCurrency !== undefined &&
+    priceWithCurrency.tokenPrice !== undefined &&
+    priceCurrencyFeed !== undefined &&
+    tokenPrice !== undefined;
+
+  const maxSupplyDisplay =
+    resolvedMaxHuman === undefined
+      ? tProposalDetails('labels.unknown')
+      : resolvedMaxHuman === 0
+      ? tProposalDetails('labels.unlimited')
+      : formatCurrencyValue(resolvedMaxHuman);
+
   return (
     <div className="flex flex-col gap-5">
-      {name !== undefined && (
+      <div className="flex flex-col gap-5">
         <div className="flex justify-between items-center">
           <div className="text-1 text-neutral-11 w-full">
             {tProposalDetails('labels.tokenName')}
           </div>
-          <div className="text-1 text-nowrap">{name}</div>
+          <div className="text-1 text-nowrap">
+            {resolvedName !== undefined && resolvedName !== ''
+              ? resolvedName
+              : tProposalDetails('labels.unknown')}
+          </div>
         </div>
-      )}
-      {symbol !== undefined && (
         <div className="flex justify-between items-center">
           <div className="text-1 text-neutral-11 w-full">
             {tProposalDetails('labels.tokenSymbol')}
           </div>
-          <div className="text-1">{symbol}</div>
+          <div className="text-1 text-nowrap">
+            {resolvedSymbol !== undefined && resolvedSymbol !== ''
+              ? resolvedSymbol
+              : tProposalDetails('labels.unknown')}
+          </div>
         </div>
-      )}
+        <div className="flex justify-between items-center">
+          <div className="text-1 text-neutral-11 w-full">
+            {tProposalDetails('labels.maxSupply')}
+          </div>
+          <div className="text-1">{maxSupplyDisplay}</div>
+        </div>
+        {showTokenPrice && tokenPrice !== undefined && priceCurrencyFeed && (
+          <div className="flex justify-between items-center text-nowrap">
+            <div className="text-1 text-neutral-11 w-full">
+              {tProposalDetails('labels.tokenPrice')}
+            </div>
+            <div className="text-1">
+              {formatCurrencyValue(tokenPrice)} {priceCurrencyFeed}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <Separator />
+
       {tokenIcon && (
         <div className="flex justify-between items-center">
           <div className="text-1 text-neutral-11 w-full">
@@ -120,18 +174,6 @@ export const ProposalUpdateToken = ({
             src={tokenIcon}
             alt={tProposalDetails('labels.tokenIcon')}
           />
-        </div>
-      )}
-      {maxSupply !== undefined && maxSupplyHuman !== undefined && (
-        <div className="flex justify-between items-center">
-          <div className="text-1 text-neutral-11 w-full">
-            {tProposalDetails('labels.maxSupply')}
-          </div>
-          <div className="text-1">
-            {maxSupplyHuman === 0
-              ? tProposalDetails('labels.unlimited')
-              : formatCurrencyValue(maxSupplyHuman)}
-          </div>
         </div>
       )}
       {transferable !== undefined && (
@@ -170,39 +212,26 @@ export const ProposalUpdateToken = ({
           </div>
         </div>
       )}
-      {tokenPrice !== undefined && priceCurrencyFeed && (
-        <div className="flex justify-between items-center text-nowrap">
-          <div className="text-1 text-neutral-11 w-full">
-            {tProposalDetails('labels.tokenPrice')}
+      {showDecaySettings && (
+        <div className="flex flex-col gap-4">
+          <div className="text-1 text-neutral-11 font-medium">
+            {tProposalDetails('sections.decaySettings')}
           </div>
-          <div className="text-1">
-            {formatCurrencyValue(tokenPrice)} {priceCurrencyFeed}
+          <div className="flex justify-between items-center">
+            <div className="text-1 text-neutral-11 w-full">
+              {tProposalDetails('labels.decayPercentage')}
+            </div>
+            <div className="text-1">{Number(decayPercentage)}%</div>
+          </div>
+          <div className="flex justify-between items-center">
+            <div className="text-1 text-neutral-11 w-full">
+              {tProposalDetails('labels.decayInterval')}
+            </div>
+            <div className="text-1 text-nowrap">
+              {formatDecayInterval(decayInterval)}
+            </div>
           </div>
         </div>
-      )}
-      {showDecaySettings && (
-        <>
-          <Separator />
-          <div className="flex flex-col gap-4">
-            <div className="text-1 text-neutral-11 font-medium">
-              {tProposalDetails('sections.decaySettings')}
-            </div>
-            <div className="flex justify-between items-center">
-              <div className="text-1 text-neutral-11 w-full">
-                {tProposalDetails('labels.decayPercentage')}
-              </div>
-              <div className="text-1">{Number(decayPercentage)}%</div>
-            </div>
-            <div className="flex justify-between items-center">
-              <div className="text-1 text-neutral-11 w-full">
-                {tProposalDetails('labels.decayInterval')}
-              </div>
-              <div className="text-1 text-nowrap">
-                {formatDecayInterval(decayInterval)}
-              </div>
-            </div>
-          </div>
-        </>
       )}
       {useTransferWhitelist !== undefined && (
         <div className="flex justify-between items-center">
