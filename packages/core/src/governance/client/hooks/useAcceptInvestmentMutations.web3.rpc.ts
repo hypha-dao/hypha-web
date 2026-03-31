@@ -64,9 +64,7 @@ export const useAcceptInvestmentMutationsWeb3Rpc = ({
 
       const escrowAddress = getEscrowImplementationAddress();
       if (!escrowAddress) {
-        throw new Error(
-          'Escrow contract is not configured (NEXT_PUBLIC_ESCROW_IMPLEMENTATION_ADDRESS).',
-        );
+        throw new Error('HYPHA_ESCROW_ADDRESS_MISSING');
       }
 
       const duration = await publicClient.readContract(

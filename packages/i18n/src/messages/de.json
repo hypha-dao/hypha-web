@@ -1378,7 +1378,8 @@
       "acceptInvestmentForm": {
         "proposerHint": "Sie reichen mit Ihrer eigenen Wallet als Mitglied oder Delegierter ein. Treasury-Transfers und Minting laufen erst nach erfolgreicher Abstimmung und Ausführung — nicht beim Veröffentlichen.",
         "notMemberRevert": "Die Transaktion wurde abgelehnt: Die verbundene Wallet ist kein Mitglied oder Delegierter dieses Spaces. Verwenden Sie eine Wallet, die zum Space gehört, oder verbinden Sie sich als Delegierter.",
-        "walletRejected": "Die Transaktion wurde nicht signiert oder in der Wallet abgelehnt. Bitte erneut versuchen und bestätigen."
+        "walletRejected": "Die Transaktion wurde nicht signiert oder in der Wallet abgelehnt. Bitte erneut versuchen und bestätigen.",
+        "escrowNotConfigured": "Die Escrow-Vertragsadresse ist nicht konfiguriert. Setzen Sie NEXT_PUBLIC_ESCROW_IMPLEMENTATION_ADDRESS in apps/web/.env auf Ihren deployed EscrowImplementation-Proxy auf der Governance-Chain, starten Sie den Dev-Server neu oder deployen Sie die App erneut. Vertrag: packages/storage-evm (scripts/escrow-proxy.deploy.ts)."
       },
       "paymentSchedule": {
         "label": "Zahlungsplan",

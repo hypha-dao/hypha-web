@@ -1378,7 +1378,8 @@
       "acceptInvestmentForm": {
         "proposerHint": "You submit with your own wallet as a space member or delegate. Treasury moves and minting run only after the proposal passes and executes — not when you publish.",
         "notMemberRevert": "The chain rejected this transaction: the connected wallet is not a member or delegate of this space. Use a wallet that belongs to the space, or connect as a delegate.",
-        "walletRejected": "The transaction was not signed or was rejected in your wallet. Try again and approve the request."
+        "walletRejected": "The transaction was not signed or was rejected in your wallet. Try again and approve the request.",
+        "escrowNotConfigured": "The escrow contract address is not configured. Set NEXT_PUBLIC_ESCROW_IMPLEMENTATION_ADDRESS in apps/web/.env to your deployed EscrowImplementation proxy on the governance chain (Base mainnet in production), restart the dev server or redeploy the app, then try again. Deploy the contract from packages/storage-evm (see scripts/escrow-proxy.deploy.ts) if you do not have an address yet."
       },
       "paymentSchedule": {
         "label": "Payment Schedule",

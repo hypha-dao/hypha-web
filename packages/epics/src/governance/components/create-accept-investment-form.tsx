@@ -89,6 +89,13 @@ export const CreateAcceptInvestmentForm = ({
     if (/NotMember/i.test(raw)) return tAcceptForm('notMemberRevert');
     if (/rejected|denied|user rejected|cancelled/i.test(raw))
       return tAcceptForm('walletRejected');
+    if (
+      /HYPHA_ESCROW_ADDRESS_MISSING|NEXT_PUBLIC_ESCROW_IMPLEMENTATION_ADDRESS/i.test(
+        raw,
+      )
+    ) {
+      return tAcceptForm('escrowNotConfigured');
+    }
     return raw;
   }, [orchestratorErrors, tAcceptForm]);
 

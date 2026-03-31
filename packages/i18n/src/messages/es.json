@@ -497,7 +497,8 @@
       "acceptInvestmentForm": {
         "proposerHint": "Envías con tu propia cartera como miembro o delegado del espacio. Los movimientos de tesorería y el mint ocurren solo después de que la propuesta se apruebe y se ejecute, no al publicar.",
         "notMemberRevert": "La cadena rechazó la transacción: la cartera conectada no es miembro ni delegado de este espacio. Usa una cartera del espacio o conéctate como delegado.",
-        "walletRejected": "La transacción no se firmó o se rechazó en la cartera. Inténtalo de nuevo y aprueba la solicitud."
+        "walletRejected": "La transacción no se firmó o se rechazó en la cartera. Inténtalo de nuevo y aprueba la solicitud.",
+        "escrowNotConfigured": "Falta la dirección del contrato escrow. Configura NEXT_PUBLIC_ESCROW_IMPLEMENTATION_ADDRESS en apps/web/.env con el proxy EscrowImplementation en la cadena de gobernanza, reinicia el servidor o vuelve a desplegar la app. Despliegue: packages/storage-evm (scripts/escrow-proxy.deploy.ts)."
       },
       "milestoneField": {
         "milestone": "Hito {index}",
