@@ -99,6 +99,12 @@ export const ProposalUpdateToken = ({
     );
   }, [priceWithCurrency]);
 
+  // On-chain max supply uses 18 decimals (wei); match ProposalTokenItem scaling.
+  const maxSupplyHuman = React.useMemo(() => {
+    if (maxSupply === undefined) return undefined;
+    return Number(maxSupply / 10n ** 18n);
+  }, [maxSupply]);
+
   return (
     <div className="flex flex-col gap-5">
       {statusBadge && (
@@ -136,13 +142,13 @@ export const ProposalUpdateToken = ({
           />
         </div>
       )}
-      {maxSupply !== undefined && (
+      {maxSupply !== undefined && maxSupplyHuman !== undefined && (
         <div className="flex justify-between items-center">
           <div className="text-1 text-neutral-11 w-full">Max Supply</div>
           <div className="text-1">
-            {Number(maxSupply) === 0
-              ? 'Unlimited'
-              : formatCurrencyValue(Number(maxSupply))}
+            {maxSupplyHuman === 0
+              ? tProposalDetails('labels.unlimited')
+              : formatCurrencyValue(maxSupplyHuman)}
           </div>
         </div>
       )}
