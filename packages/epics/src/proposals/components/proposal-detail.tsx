@@ -121,6 +121,15 @@ export const ProposalDetail = ({
   });
   const { spaces: dbSpaces } = useDbSpaces({ parentOnly: false });
 
+  const updateTokenTypeFromDb = useMemo(() => {
+    const addr = proposalDetails?.updateTokenData?.address;
+    if (!addr || !dbTokens?.length) {
+      return undefined;
+    }
+    const normalized = addr.toLowerCase();
+    return dbTokens.find((t) => t.address?.toLowerCase() === normalized)?.type;
+  }, [proposalDetails?.updateTokenData?.address, dbTokens]);
+
   const tokenSymbol = proposalDetails?.tokens?.[0]?.symbol;
 
   const redeemChainDataForResubmit = useMemo(() => {
@@ -575,6 +584,7 @@ export const ProposalDetail = ({
         proposalDetails.updateTokenData.archiveToken !== undefined) ? (
         <ProposalUpdateToken
           address={proposalDetails.updateTokenData.address}
+          tokenType={updateTokenTypeFromDb}
           name={proposalDetails.updateTokenData.name}
           symbol={proposalDetails.updateTokenData.symbol}
           maxSupply={proposalDetails.updateTokenData.maxSupply}

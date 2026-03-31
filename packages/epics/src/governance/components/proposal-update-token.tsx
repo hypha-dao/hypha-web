@@ -2,6 +2,7 @@ import {
   getPriceCurrencyCode,
   useJwt,
   useUpdateTokenByAddress,
+  type TokenType,
 } from '@hypha-platform/core/client';
 import { Separator } from '@hypha-platform/ui';
 import {
@@ -14,6 +15,8 @@ import { useTranslations } from 'next-intl';
 
 export interface ProposalUpdateTokenProps {
   address: `0x${string}`;
+  /** From space token list when known; pending update JSON otherwise supplies type */
+  tokenType?: TokenType;
   name?: string;
   symbol?: string;
   maxSupply?: bigint;
@@ -32,10 +35,12 @@ export interface ProposalUpdateTokenProps {
 
 interface TokenUpdateDataInterface {
   iconUrl?: string;
+  type?: TokenType;
 }
 
 export const ProposalUpdateToken = ({
   address,
+  tokenType: tokenTypeProp,
   name,
   symbol,
   maxSupply,
@@ -55,11 +60,16 @@ export const ProposalUpdateToken = ({
       address,
       authToken: authToken ?? undefined,
     });
+  const pendingData = tokenUpdate?.data as TokenUpdateDataInterface | undefined;
   const tokenIcon = React.useMemo(() => {
-    return isTokenUpdateLoading
-      ? undefined
-      : (tokenUpdate?.data as TokenUpdateDataInterface)?.iconUrl;
-  }, [isTokenUpdateLoading, tokenUpdate]);
+    return isTokenUpdateLoading ? undefined : pendingData?.iconUrl;
+  }, [isTokenUpdateLoading, pendingData?.iconUrl]);
+
+  const resolvedTokenType = tokenTypeProp ?? pendingData?.type;
+  const showDecaySettings =
+    resolvedTokenType === 'voice' &&
+    decayPercentage !== undefined &&
+    decayInterval !== undefined;
   const tokenPrice = React.useMemo(() => {
     return priceWithCurrency?.tokenPrice
       ? Number(priceWithCurrency.tokenPrice) / 1_000_000
@@ -170,7 +180,7 @@ export const ProposalUpdateToken = ({
           </div>
         </div>
       )}
-      {decayPercentage !== undefined && decayInterval !== undefined && (
+      {showDecaySettings && (
         <>
           <Separator />
           <div className="flex flex-col gap-4">
