@@ -136,6 +136,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Must run before format:check — if format fails, later steps are skipped but
+      # Delete Neon Branch uses `if: always()` and needs this output for the branch name.
+      - name: Get branch name
+        if: needs.detect-changes.outputs.has_migrations == 'true'
+        id: branch-name
+        uses: tj-actions/branch-names@v8
+
       - name: Install pnpm
         uses: pnpm/action-setup@v4
 
@@ -147,11 +154,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm run format:check
-
-      - name: Get branch name
-        if: needs.detect-changes.outputs.has_migrations == 'true'
-        id: branch-name
-        uses: tj-actions/branch-names@v8
 
       - name: Create Neon Branch
         if: needs.detect-changes.outputs.has_migrations == 'true'
@@ -177,7 +179,7 @@ jobs:
           pnpm run migrate
 
       - name: Delete Neon Branch
-        if: always() && needs.detect-changes.outputs.has_migrations == 'true'
+        if: always() && needs.detect-changes.outputs.has_migrations == 'true' && steps.create-branch.outcome == 'success'
         uses: neondatabase/delete-branch-action@v3
         with:
           project_id: ${{ secrets.NEON_PROJECT_ID }}
