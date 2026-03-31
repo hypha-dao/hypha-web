@@ -272,10 +272,35 @@ export const UpdateIssuedTokenPlugin = ({
     return spaceTokens.find((t) => t.address === selectedTokenAddress);
   }, [spaceTokens, selectedTokenAddress]);
 
+  /** Stable across SWR reference churn so DB hydration effect does not re-fire every poll */
+  const selectedTokenFingerprint = useMemo(() => {
+    if (!selectedToken) return '';
+    return JSON.stringify({
+      address: selectedToken.address,
+      name: selectedToken.name,
+      symbol: selectedToken.symbol,
+      type: selectedToken.type,
+      maxSupply: selectedToken.maxSupply,
+      iconUrl: selectedToken.iconUrl,
+      transferable: selectedToken.transferable,
+      isVotingToken: selectedToken.isVotingToken,
+      decayInterval: selectedToken.decayInterval,
+      decayPercentage: selectedToken.decayPercentage,
+      archived: selectedToken.archived,
+      referenceCurrency: selectedToken.referenceCurrency,
+      referencePrice: selectedToken.referencePrice,
+    });
+  }, [selectedToken]);
+
   const { data: onChainData, isLoading: isLoadingOnChainData } =
     useTokenOnChainData(selectedTokenAddress as `0x${string}` | undefined);
 
   const lastHydratedTokenAddressRef = useRef<string | null>(null);
+  const lastOnChainFingerprintRef = useRef<string>('');
+
+  useEffect(() => {
+    lastOnChainFingerprintRef.current = '';
+  }, [selectedTokenAddress]);
 
   useEffect(() => {
     if (!selectedTokenAddress) {
@@ -290,7 +315,9 @@ export const UpdateIssuedTokenPlugin = ({
       lastHydratedTokenAddressRef.current !== selectedTokenAddress;
     lastHydratedTokenAddressRef.current = selectedTokenAddress;
 
-    let shouldShowAdvanced = showAdvancedSettings;
+    const shouldShowAdvancedFromDb =
+      selectedToken.referenceCurrency !== undefined &&
+      selectedToken.referencePrice !== undefined;
     const iconFromDb = selectedToken.iconUrl || '';
 
     setValue('name', selectedToken.name);
@@ -313,25 +340,27 @@ export const UpdateIssuedTokenPlugin = ({
     setValue('archiveToken', selectedToken.archived);
     setValue('referenceCurrency', selectedToken.referenceCurrency);
     setValue('tokenPrice', selectedToken.referencePrice);
-    if (
-      selectedToken.referenceCurrency !== undefined &&
-      selectedToken.referencePrice !== undefined
-    ) {
+    if (shouldShowAdvancedFromDb) {
       setValue('enableTokenPrice', true);
-      shouldShowAdvanced = true;
     } else {
       setValue('enableTokenPrice', false);
     }
     setTokenType(selectedToken.type);
-    setShowAdvancedSettings(shouldShowAdvanced);
-  }, [selectedToken, selectedTokenAddress, setValue, getValues]);
+    setShowAdvancedSettings((prev) => prev || shouldShowAdvancedFromDb);
+  }, [selectedTokenAddress, selectedTokenFingerprint, setValue, getValues]);
 
   useEffect(() => {
     if (isLoadingOnChainData || !onChainData) {
       return;
     }
 
-    let enableAdvancedTransferControls = showAdvancedSettings;
+    const fp = JSON.stringify(onChainData);
+    if (fp === lastOnChainFingerprintRef.current) {
+      return;
+    }
+    lastOnChainFingerprintRef.current = fp;
+
+    let enableAdvancedTransferControls = false;
     if (onChainData.name !== undefined) {
       setValue('name', onChainData.name);
     }
@@ -399,7 +428,7 @@ export const UpdateIssuedTokenPlugin = ({
     if (onChainData.archiveToken !== undefined) {
       setValue('archiveToken', onChainData.archiveToken);
     }
-    setShowAdvancedSettings(enableAdvancedTransferControls);
+    setShowAdvancedSettings((prev) => prev || enableAdvancedTransferControls);
   }, [isLoadingOnChainData, onChainData, setValue, getValues]);
 
   const resubmitOverlayAppliedRef = useRef(false);
