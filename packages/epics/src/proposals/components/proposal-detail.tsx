@@ -1132,23 +1132,24 @@ export const ProposalDetail = ({
           decayInterval={token.decayInterval}
         />
       ))}
-      {Boolean(proposalDetails?.transfers?.length) && (
-        <div className="flex flex-col gap-4">
-          <span className="text-neutral-11 text-2 font-medium">
-            {tProposalDetails('sections.payment')}
-          </span>
-          {proposalDetails?.transfers.map((tx, idx) => (
-            <ProposalTransactionItem
-              key={idx}
-              recipient={tx?.recipient}
-              amount={tx?.rawAmount}
-              tokenAddress={tx?.token}
-              spaceSlug={spaceSlug}
-              escrowContractAddress={escrowAddr}
-            />
-          ))}
-        </div>
-      )}
+      {Boolean(proposalDetails?.transfers?.length) &&
+        label !== 'Investment' && (
+          <div className="flex flex-col gap-4">
+            <span className="text-neutral-11 text-2 font-medium">
+              {tProposalDetails('sections.payment')}
+            </span>
+            {proposalDetails?.transfers.map((tx, idx) => (
+              <ProposalTransactionItem
+                key={idx}
+                recipient={tx?.recipient}
+                amount={tx?.rawAmount}
+                tokenAddress={tx?.token}
+                spaceSlug={spaceSlug}
+                escrowContractAddress={escrowAddr}
+              />
+            ))}
+          </div>
+        )}
       {proposalDetails?.mintings.map((mint, idx) => (
         <ProposalMintItem
           key={idx}

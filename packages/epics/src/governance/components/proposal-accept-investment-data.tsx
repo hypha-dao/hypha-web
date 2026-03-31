@@ -2,7 +2,6 @@
 
 import { useTranslations } from 'next-intl';
 import { parseHyphaInvestmentFormFromDescription } from '@hypha-platform/core/client';
-import { Separator } from '@hypha-platform/ui';
 import { Image } from '@hypha-platform/ui';
 import { EthAddress } from '../../people';
 import { usePersonByWeb3Address } from '../hooks';
@@ -213,20 +212,6 @@ export function ProposalAcceptInvestmentData({
             rawAmount={exchangeEscrowData.amountA}
           />
         </div>
-      ) : null}
-
-      {exchangeEscrowData?.sendFundsNow !== undefined ? (
-        <>
-          <Separator />
-          <div className="flex flex-col gap-1 text-1 text-neutral-11">
-            <span>{t('escrowOnChain')}</span>
-            <span className="text-neutral-9">
-              {t('partyAFundedHint', {
-                funded: exchangeEscrowData.sendFundsNow ? t('yes') : t('no'),
-              })}
-            </span>
-          </div>
-        </>
       ) : null}
     </div>
   );
