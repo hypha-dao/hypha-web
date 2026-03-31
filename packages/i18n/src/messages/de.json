@@ -873,7 +873,10 @@
       "redemptionReferenceCurrencyRequired": "Die Referenzwährung ist erforderlich, wenn die Rücknahme aktiv ist.",
       "redemptionMaxPercentRequired": "Der maximale Rücknahmeprozentsatz ist erforderlich, wenn die Rücknahme aktiv ist. Geben Sie 0 für kein Limit ein.",
       "redemptionPeriodDaysRequired": "Der Zeitraum (Tage) ist erforderlich, wenn die Rücknahme aktiv ist. Wählen Sie einen Rücknahmezeitraum aus.",
-      "redemptionStartDateRequired": "Das Datum „Rücknahme autorisieren ab“ ist erforderlich, wenn die Rücknahme aktiv ist."
+      "redemptionStartDateRequired": "Das Datum „Rücknahme autorisieren ab“ ist erforderlich, wenn die Rücknahme aktiv ist.",
+      "acceptInvestmentMinSendRows": "Fügen Sie mindestens eine Zeile unter „Investierendes Mitglied sendet“ hinzu.",
+      "acceptInvestmentMinReceiveRows": "Fügen Sie mindestens eine Zeile unter „Investierendes Mitglied erhält“ hinzu.",
+      "acceptInvestmentSameRowCount": "„Investierendes Mitglied sendet“ und „Investierendes Mitglied erhält“ müssen dieselbe Anzahl Zeilen haben."
     },
     "issueNewTokenForm": {
       "duplicateToken": "Ein Token mit demselben Namen und Symbol existiert bereits in Ihrem Space. Bitte ändern Sie entweder den Namen oder das Symbol, um fortzufahren.",

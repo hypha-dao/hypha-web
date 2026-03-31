@@ -72,7 +72,10 @@
       "redemptionReferenceCurrencyRequired": "A moeda de referência é obrigatória quando o resgate está ativo.",
       "redemptionMaxPercentRequired": "O percentual máximo de resgate é obrigatório quando o resgate está ativo. Insira 0 para sem limite.",
       "redemptionPeriodDaysRequired": "O período (dias) é obrigatório quando o resgate está ativo. Selecione um período de resgate.",
-      "redemptionStartDateRequired": "A data \"Autorizar resgate desde\" é obrigatória quando o resgate está ativo."
+      "redemptionStartDateRequired": "A data \"Autorizar resgate desde\" é obrigatória quando o resgate está ativo.",
+      "acceptInvestmentMinSendRows": "Adicione pelo menos uma linha em « O membro investidor enviará ».",
+      "acceptInvestmentMinReceiveRows": "Adicione pelo menos uma linha em « O membro investidor receberá ».",
+      "acceptInvestmentSameRowCount": "« O membro investidor enviará » e « O membro investidor receberá » devem ter o mesmo número de linhas."
     },
     "plugins": {
       "paymentSchedule": {

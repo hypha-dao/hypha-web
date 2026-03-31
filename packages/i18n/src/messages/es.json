@@ -72,7 +72,10 @@
       "redemptionReferenceCurrencyRequired": "La moneda de referencia es obligatoria cuando la redención está activa.",
       "redemptionMaxPercentRequired": "El % máximo de redención es obligatorio cuando la redención está activa. Ingresa 0 para no tener límite.",
       "redemptionPeriodDaysRequired": "El período (días) es obligatorio cuando la redención está activa. Selecciona un período de redención.",
-      "redemptionStartDateRequired": "La fecha \"Autorizar redención desde\" es obligatoria cuando la redención está activa."
+      "redemptionStartDateRequired": "La fecha \"Autorizar redención desde\" es obligatoria cuando la redención está activa.",
+      "acceptInvestmentMinSendRows": "Añade al menos una fila en « El miembro inversor enviará ».",
+      "acceptInvestmentMinReceiveRows": "Añade al menos una fila en « El miembro inversor recibirá ».",
+      "acceptInvestmentSameRowCount": "« El miembro inversor enviará » y « El miembro inversor recibirá » deben tener el mismo número de filas."
     },
     "plugins": {
       "paymentSchedule": {
