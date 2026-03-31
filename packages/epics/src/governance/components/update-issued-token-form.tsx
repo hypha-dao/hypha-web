@@ -1,6 +1,6 @@
 'use client';
 
-import { FieldErrors, useForm } from 'react-hook-form';
+import { FieldErrors, useForm, type DefaultValues } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   baseSchemaIssueNewToken,
@@ -146,7 +146,7 @@ export const UpdateIssuedTokenForm = ({
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const formDefaultValues = React.useMemo(
-    (): FormValues => ({
+    (): DefaultValues<FormValues> => ({
       label: tProposalDetails('updateTokenLabel'),
       title: '',
       description: '',
