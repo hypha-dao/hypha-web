@@ -144,28 +144,9 @@ export function buildUpdateIssuedTokenTxData(
       }),
     });
   }
-  if (arg.useTransferWhitelist !== undefined) {
-    txData.push({
-      target: arg.address,
-      value: 0,
-      data: encodeFunctionData({
-        abi: decayingSpaceTokenAbi,
-        functionName: 'setUseTransferWhitelist',
-        args: [arg.useTransferWhitelist],
-      }),
-    });
-  }
-  if (arg.useReceiveWhitelist !== undefined) {
-    txData.push({
-      target: arg.address,
-      value: 0,
-      data: encodeFunctionData({
-        abi: decayingSpaceTokenAbi,
-        functionName: 'setUseReceiveWhitelist',
-        args: [arg.useReceiveWhitelist],
-      }),
-    });
-  }
+  // Issue-token deploy applies initial whitelist arrays before use-* flags are meaningful.
+  // Same order here: seed addresses first, then toggle enforcement (avoids reverts if the
+  // contract rejects batch while enforcement is already on, or requires non-empty state).
   if (arg.batchTransferWhitelistAccounts?.length) {
     const accounts = arg.batchTransferWhitelistAccounts;
     txData.push({
@@ -187,6 +168,28 @@ export function buildUpdateIssuedTokenTxData(
         abi: decayingSpaceTokenAbi,
         functionName: 'batchSetReceiveWhitelist',
         args: [accounts, accounts.map(() => true)],
+      }),
+    });
+  }
+  if (arg.useTransferWhitelist !== undefined) {
+    txData.push({
+      target: arg.address,
+      value: 0,
+      data: encodeFunctionData({
+        abi: decayingSpaceTokenAbi,
+        functionName: 'setUseTransferWhitelist',
+        args: [arg.useTransferWhitelist],
+      }),
+    });
+  }
+  if (arg.useReceiveWhitelist !== undefined) {
+    txData.push({
+      target: arg.address,
+      value: 0,
+      data: encodeFunctionData({
+        abi: decayingSpaceTokenAbi,
+        functionName: 'setUseReceiveWhitelist',
+        args: [arg.useReceiveWhitelist],
       }),
     });
   }
