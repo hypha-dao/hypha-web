@@ -114,11 +114,62 @@ export function parseHyphaInvestmentFormFromDescription(
   }
 }
 
+/**
+ * Removes embedded investment JSON from proposal description for display.
+ * Handles canonical markers and mangled text (e.g. markdown stripping `__` or newlines).
+ */
 export function stripHyphaInvestmentFormMarker(
   description: string | undefined | null,
 ): string {
   if (!description) return '';
-  const start = description.indexOf(HYPHA_INVESTMENT_FORM_START);
-  if (start === -1) return description;
-  return description.slice(0, start).trimEnd();
+
+  const endMarker = '__end_hypha_investment__';
+  const endLen = endMarker.length;
+
+  // 1) Canonical block
+  const canonStart = description.indexOf(HYPHA_INVESTMENT_FORM_START);
+  if (canonStart !== -1) {
+    const canonEnd = description.indexOf(HYPHA_INVESTMENT_FORM_END, canonStart);
+    if (canonEnd !== -1) {
+      return (
+        description.slice(0, canonStart) +
+        description.slice(canonEnd + HYPHA_INVESTMENT_FORM_END.length)
+      ).trimEnd();
+    }
+    return description.slice(0, canonStart).trimEnd();
+  }
+
+  // 2) End marker present — strip from payload (prefer JSON start; avoids matching
+  //    "hypha_investment" inside user-authored description text)
+  const endIdx = description.lastIndexOf(endMarker);
+  if (endIdx !== -1) {
+    const before = description.slice(0, endIdx);
+    const jsonAt = before.search(/\{\s*"version"\s*:\s*1/);
+    const tagged = before.lastIndexOf('__hypha_investment__');
+
+    let blockStart = -1;
+    if (jsonAt !== -1) blockStart = jsonAt;
+    else if (tagged !== -1) blockStart = tagged;
+    else {
+      const looseHypha = before.search(/\bhypha_investment\b/);
+      if (looseHypha !== -1) {
+        const afterWord = before.slice(
+          looseHypha + 'hypha_investment'.length,
+        );
+        if (/^\s*\{/.test(afterWord)) blockStart = looseHypha;
+      }
+    }
+
+    if (blockStart !== -1) {
+      let userEnd = blockStart;
+      while (userEnd > 0 && /\s/.test(before[userEnd - 1]!)) {
+        userEnd -= 1;
+      }
+      return (
+        description.slice(0, userEnd) + description.slice(endIdx + endLen)
+      ).trimEnd();
+    }
+  }
+
+  return description;
 }

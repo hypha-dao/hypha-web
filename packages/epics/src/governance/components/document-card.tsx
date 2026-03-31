@@ -53,7 +53,9 @@ function stripHtmlComments(text: string): string {
 
 function stripDescription(description: string): string {
   if (!description) return '';
-  return stripHtmlComments(stripHyphaInvestmentFormMarker(description))
+  // Strip investment marker before markdown — markdown can mangle `__` delimiters.
+  const withoutInvestmentMarker = stripHyphaInvestmentFormMarker(description);
+  return stripHtmlComments(withoutInvestmentMarker)
     .replace(/\\([\[\]\(\)\{\}])/g, '$1')
     .replace(/&#x([0-9A-Fa-f]+);/gi, (full, hex) => {
       const codePoint = Number.parseInt(hex, 16);
@@ -155,12 +157,10 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
             loading={isLoading}
           >
             <div className="line-clamp-3 w-full">
-              {stripDescription(
-                stripMarkdown(description, {
-                  orderedListMarkers: false,
-                  unorderedListMarkers: false,
-                }),
-              )}
+              {stripMarkdown(stripDescription(description), {
+                orderedListMarkers: false,
+                unorderedListMarkers: false,
+              })}
             </div>
           </Skeleton>
         </div>
