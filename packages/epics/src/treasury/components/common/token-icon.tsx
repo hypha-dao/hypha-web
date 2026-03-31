@@ -24,39 +24,37 @@ export const TokenIconUpload = ({
     typeof defaultImage === 'string' ? defaultImage || null : null,
   );
 
+  // Single source of truth: keep preview in sync with controlled value. When the
+  // form stores a File (react-hook-form), we must show an object URL — the
+  // previous effect cleared preview whenever value was not a string, which ran
+  // right after onDrop and removed the thumbnail.
   React.useEffect(() => {
     if (typeof defaultImage === 'string') {
       setPreview(defaultImage || null);
-    } else {
-      setPreview(null);
+      return;
     }
+    if (defaultImage instanceof File) {
+      const url = URL.createObjectURL(defaultImage);
+      setPreview(url);
+      return () => URL.revokeObjectURL(url);
+    }
+    setPreview(null);
   }, [defaultImage]);
 
   const onDrop = React.useCallback(
     (acceptedFiles: File[]) => {
       if (!acceptedFiles.length) {
-        setPreview(
-          typeof defaultImage === 'string' ? defaultImage || null : null,
-        );
         onChange(null);
         return;
       }
-      const reader = new FileReader();
       try {
-        reader.onload = () => {
-          setPreview(reader.result as string);
-          onChange(acceptedFiles[0] ?? null);
-        };
-        reader.readAsDataURL(acceptedFiles[0] ?? new Blob());
+        onChange(acceptedFiles[0] ?? null);
       } catch (error) {
         console.error('Error reading file:', error);
-        setPreview(
-          typeof defaultImage === 'string' ? defaultImage || null : null,
-        );
         onChange(null);
       }
     },
-    [onChange, defaultImage],
+    [onChange],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
