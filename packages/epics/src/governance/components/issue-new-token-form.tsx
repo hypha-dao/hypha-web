@@ -95,10 +95,6 @@ const ISSUE_NEW_TOKEN_ERROR_KEYS: Record<string, string> = {
     'issueNewTokenForm.errors.referenceCurrencyRequired',
   'Please enter a token price greater than 0':
     'issueNewTokenForm.errors.tokenPricePositive',
-  'Smart wallet is still initializing. Complete any wallet prompt in your browser, then try again.':
-    'issueNewTokenForm.errors.smartWalletInitializing',
-  'Session not ready. Please wait a moment and try again.':
-    'issueNewTokenForm.errors.sessionNotReady',
 };
 
 const extendedBaseSchema = baseSchemaIssueNewToken.merge(
@@ -196,7 +192,6 @@ export const IssueNewTokenForm = ({
     isPending,
     progress,
     agreement,
-    errors: orchestratorErrors,
   } = useCreateIssueTokenOrchestrator({ authToken: jwt, config });
 
   const agreementSlug = agreement?.slug;
@@ -240,14 +235,6 @@ export const IssueNewTokenForm = ({
     },
     [tAgreementFlow],
   );
-
-  const orchestratorErrorMessage = React.useMemo(() => {
-    const first = orchestratorErrors?.[0];
-    if (!first) return null;
-    if (first instanceof Error) return first.message;
-    if (typeof first === 'string') return first;
-    return null;
-  }, [orchestratorErrors]);
 
   const localizeErrors = React.useCallback(
     (errors: unknown): unknown => {
@@ -401,20 +388,15 @@ export const IssueNewTokenForm = ({
 
   return (
     <LoadingBackdrop
-      showKeepWindowOpenMessage={!isError}
+      showKeepWindowOpenMessage={true}
       keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       fullHeight={true}
       progress={progress}
-      isLoading={isPending || isError}
+      isLoading={isPending}
       message={
         isError ? (
-          <div className="flex flex-col gap-2 max-w-md text-center">
+          <div className="flex flex-col">
             <div>{tSpaces('errorOhSnap')}</div>
-            {orchestratorErrorMessage && (
-              <div className="text-2 text-neutral-11 break-words">
-                {translateIssueNewTokenError(orchestratorErrorMessage)}
-              </div>
-            )}
             <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (

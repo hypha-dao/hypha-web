@@ -193,15 +193,10 @@ export const IssueNewTokenPlugin = ({
     }
   }, [showAdvancedSettings, clearAdvancedSettingsFields]);
 
-  const prevEnableLimitedSupplyRef = useRef(enableLimitedSupply);
   useEffect(() => {
-    if (
-      prevEnableLimitedSupplyRef.current === true &&
-      enableLimitedSupply === false
-    ) {
+    if (!enableLimitedSupply) {
       clearLimitedSupplyFields();
     }
-    prevEnableLimitedSupplyRef.current = enableLimitedSupply;
   }, [enableLimitedSupply, clearLimitedSupplyFields]);
 
   useEffect(() => {
