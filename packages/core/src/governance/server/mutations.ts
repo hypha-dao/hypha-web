@@ -99,6 +99,7 @@ export const createToken = async (
         ? String(input.referencePrice)
         : null,
       referenceCurrency: input.referenceCurrency || null,
+      archived: false,
     })
     .returning();
   return token;

@@ -208,14 +208,15 @@ export const useCreateIssueTokenOrchestrator = ({
         startTask('UPLOAD_TOKEN_ICON');
         const result = await tokenFiles.upload({ iconUrl: arg.iconUrl });
         iconUrl = result.iconUrl;
-        console.log('iconUrl after upload:', iconUrl);
         completeTask('UPLOAD_TOKEN_ICON');
       } else {
+        startTask('UPLOAD_TOKEN_ICON');
+        completeTask('UPLOAD_TOKEN_ICON');
         iconUrl = arg.iconUrl;
       }
 
       startTask('CREATE_TOKEN');
-      const createdToken = await web2TokenMutations.createToken({
+      await web2TokenMutations.createToken({
         ...arg,
         agreementId: createdAgreement.id,
         iconUrl,
@@ -262,7 +263,7 @@ export const useCreateIssueTokenOrchestrator = ({
                   .filter((addr) => addr && addr.startsWith('0x'))
               : [];
 
-          const web3Result = await web3.createIssueToken({
+          await web3.createIssueToken({
             spaceId: arg.web3SpaceId,
             name: arg.name,
             symbol: arg.symbol,
@@ -288,6 +289,9 @@ export const useCreateIssueTokenOrchestrator = ({
             initialReceiveWhitelist,
           });
           completeTask('CREATE_WEB3_AGREEMENT');
+        } else {
+          startTask('CREATE_WEB3_AGREEMENT');
+          completeTask('CREATE_WEB3_AGREEMENT');
         }
         const files = schemaCreateAgreementFiles.parse(arg);
         if (files.attachments?.length || files.leadImage) {
@@ -307,35 +311,46 @@ export const useCreateIssueTokenOrchestrator = ({
     },
   );
 
-  const { data: updatedWeb2Agreement } = useSWR(
+  const linkWeb2Web3Key =
     web2.createdAgreement?.slug &&
-      taskState.UPLOAD_FILES.status === TaskStatus.IS_DONE &&
-      taskState.CREATE_WEB3_AGREEMENT.status === TaskStatus.IS_DONE &&
-      web3.createdToken?.proposalId
-      ? [
-          web2.createdAgreement.slug,
-          web3.createdToken.proposalId,
-          'linkingWeb2AndWeb3',
-        ]
-      : null,
-    async ([slug, web3ProposalId]) => {
+    taskState.UPLOAD_FILES.status === TaskStatus.IS_DONE &&
+    taskState.CREATE_WEB3_AGREEMENT.status === TaskStatus.IS_DONE
+      ? web3.createdToken?.proposalId != null
+        ? ([
+            web2.createdAgreement.slug,
+            web3.createdToken.proposalId,
+            'linkingWeb2AndWeb3',
+          ] as const)
+        : ([web2.createdAgreement.slug, 'linkingWeb2Only'] as const)
+      : null;
+
+  const { data: updatedWeb2Agreement } = useSWR(
+    linkWeb2Web3Key,
+    async (key) => {
       try {
         startTask('LINK_WEB2_AND_WEB3_AGREEMENT');
-        const result = await web2.updateAgreementBySlug({
-          slug,
-          web3ProposalId: Number(web3ProposalId),
-        });
+        const slug = key[0];
+        if (key.length === 3) {
+          const web3ProposalId = key[1];
+          const result = await web2.updateAgreementBySlug({
+            slug,
+            web3ProposalId: Number(web3ProposalId),
+          });
 
-        const updatedToken = await updateTokenAction(
-          {
-            agreementId: web2.createdAgreement!.id,
-            agreementWeb3IdUpdate: Number(web3ProposalId),
-          },
-          { authToken: authToken! },
-        );
+          await updateTokenAction(
+            {
+              agreementId: web2.createdAgreement!.id,
+              agreementWeb3IdUpdate: Number(web3ProposalId),
+            },
+            { authToken: authToken! },
+          );
+
+          completeTask('LINK_WEB2_AND_WEB3_AGREEMENT');
+          return result;
+        }
 
         completeTask('LINK_WEB2_AND_WEB3_AGREEMENT');
-        return result;
+        return web2.createdAgreement;
       } catch (error) {
         if (error instanceof Error) {
           errorTask('LINK_WEB2_AND_WEB3_AGREEMENT', error.message);
