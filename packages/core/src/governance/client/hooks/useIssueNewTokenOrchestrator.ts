@@ -97,6 +97,14 @@ const computeProgress = (tasks: TaskState): number => {
   return Math.round(((done + pending * 0.5) / all.length) * 100);
 };
 
+type LinkWeb2Web3FetcherKey =
+  | readonly [
+      slug: string,
+      web3ProposalId: number | bigint,
+      'linkingWeb2AndWeb3',
+    ]
+  | readonly [slug: string, 'linkingWeb2Only'];
+
 type CreateIssueTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
   agreementId?: number;
   spaceId: number;
@@ -326,7 +334,7 @@ export const useCreateIssueTokenOrchestrator = ({
 
   const { data: updatedWeb2Agreement } = useSWR(
     linkWeb2Web3Key,
-    async (key) => {
+    async (key: LinkWeb2Web3FetcherKey) => {
       try {
         startTask('LINK_WEB2_AND_WEB3_AGREEMENT');
         const slug = key[0];
