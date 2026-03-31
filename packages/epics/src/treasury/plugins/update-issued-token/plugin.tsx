@@ -36,6 +36,28 @@ import { normalizeMaxSupplyHuman } from '../../utils/normalize-max-supply-human'
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
+const MAX_SUPPLY_TYPE_OPTIONS = {
+  immutable: {
+    label: 'Forever Immutable',
+    value: 'immutable' as const,
+  },
+  updatable: {
+    label: 'Updatable Over Time',
+    value: 'updatable' as const,
+  },
+} as const;
+
+function maxSupplyTypeFromFixedFlag(
+  fixed: boolean | undefined,
+): { label: string; value: 'immutable' | 'updatable' } | undefined {
+  if (fixed === undefined) {
+    return undefined;
+  }
+  return fixed
+    ? MAX_SUPPLY_TYPE_OPTIONS.immutable
+    : MAX_SUPPLY_TYPE_OPTIONS.updatable;
+}
+
 type UpdateIssuedTokenPluginProps = {
   members?: Person[];
   spaces?: Space[];
@@ -94,6 +116,10 @@ export const UpdateIssuedTokenPlugin = ({
 
   const clearLimitedSupplyFields = useCallback(() => {
     setValue('maxSupply', 0, { shouldDirty: true, shouldValidate: false });
+    setValue('maxSupplyType', undefined, {
+      shouldDirty: true,
+      shouldValidate: false,
+    });
   }, [setValue]);
 
   const clearTransferFields = useCallback(() => {
@@ -331,6 +357,12 @@ export const UpdateIssuedTokenPlugin = ({
     const max = normalizeMaxSupplyHuman(selectedToken.maxSupply ?? 0);
     setValue('enableLimitedSupply', max > 0, { shouldDirty: false });
     setValue('maxSupply', max, { shouldDirty: false });
+    if (max <= 0) {
+      setValue('maxSupplyType', undefined, {
+        shouldDirty: false,
+        shouldValidate: false,
+      });
+    }
     setValue('transferable', selectedToken.transferable);
     setValue('isVotingToken', selectedToken.isVotingToken);
     setValue('decaySettings', {
@@ -367,10 +399,27 @@ export const UpdateIssuedTokenPlugin = ({
     if (onChainData.symbol !== undefined) {
       setValue('symbol', onChainData.symbol);
     }
+    let normalizedMaxFromChain: number | undefined;
     if (onChainData.maxSupply !== undefined) {
       const max = normalizeMaxSupplyHuman(onChainData.maxSupply);
+      normalizedMaxFromChain = max;
       setValue('enableLimitedSupply', max > 0, { shouldDirty: false });
       setValue('maxSupply', max, { shouldDirty: false });
+    }
+    const chainType = maxSupplyTypeFromFixedFlag(onChainData.fixedMaxSupply);
+    const maxForType =
+      normalizedMaxFromChain ??
+      normalizeMaxSupplyHuman(Number(getValues('maxSupply')) || 0);
+    if (chainType && maxForType > 0) {
+      setValue('maxSupplyType', chainType, {
+        shouldDirty: false,
+        shouldValidate: false,
+      });
+    } else if (onChainData.fixedMaxSupply !== undefined && maxForType <= 0) {
+      setValue('maxSupplyType', undefined, {
+        shouldDirty: false,
+        shouldValidate: false,
+      });
     }
     if (onChainData.transferable !== undefined) {
       setValue('transferable', onChainData.transferable);
@@ -490,6 +539,9 @@ export const UpdateIssuedTokenPlugin = ({
     patch('maxSupply', normalizeMaxSupplyHuman(payload.maxSupply ?? 0), {
       shouldDirty: false,
     });
+    if (payload.maxSupplyType) {
+      patch('maxSupplyType', payload.maxSupplyType, { shouldDirty: false });
+    }
     if (payload.transferable !== undefined) {
       patch('transferable', payload.transferable);
     }

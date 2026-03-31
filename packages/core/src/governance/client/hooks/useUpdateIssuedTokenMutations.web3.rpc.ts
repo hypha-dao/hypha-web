@@ -22,6 +22,8 @@ export interface UpdateIssuedTokenInput {
   name?: string;
   symbol?: string;
   maxSupply?: number;
+  /** Read from `fixedMaxSupply()`; no setter in ABI — persisted only in Web2 token update data */
+  fixedMaxSupply?: boolean;
   transferable?: boolean;
   decayPercentage?: number;
   decayInterval?: number;

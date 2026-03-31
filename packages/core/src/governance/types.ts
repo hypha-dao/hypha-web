@@ -158,6 +158,8 @@ export type TokenUpdateData = {
   name?: string;
   symbol?: string;
   maxSupply?: number;
+  /** Persisted for form hydration; maps to on-chain `fixedMaxSupply` when limited supply is used */
+  maxSupplyTypeValue?: 'immutable' | 'updatable';
   type?: TokenType;
   iconUrl?: string;
   transferable?: boolean;

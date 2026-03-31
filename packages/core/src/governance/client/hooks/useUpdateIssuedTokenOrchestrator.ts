@@ -137,6 +137,7 @@ type UpdateIssuedTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
     }>;
   };
   archiveToken?: boolean;
+  maxSupplyType?: { label: string; value: 'immutable' | 'updatable' };
   /** Top-level react-hook-form dirty keys; drives partial on-chain updates */
   changedTopLevelKeys?: string[];
 };
@@ -341,6 +342,9 @@ export const useUpdateIssuedTokenOrchestrator = ({
         name: arg.name,
         symbol: arg.symbol,
         maxSupply: effectiveMaxSupply,
+        ...(arg.maxSupplyType?.value
+          ? { maxSupplyTypeValue: arg.maxSupplyType.value }
+          : {}),
         type: arg.type,
         ...(iconTouched && iconUrlForUpdate !== undefined
           ? { iconUrl: iconUrlForUpdate }

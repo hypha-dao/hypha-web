@@ -4,6 +4,8 @@ import { publicClient } from '@hypha-platform/core/client';
 import useSWR from 'swr';
 import { getProposalDetails } from '../web3';
 import React from 'react';
+import { decodeFunctionData } from 'viem';
+import { decayingSpaceTokenAbi } from '../../../generated';
 import { decodeTransaction } from './decoders';
 
 const formatRedemptionPrice = (rawPrice: unknown) => {
@@ -213,6 +215,8 @@ export const useProposalDetailsWeb3Rpc = ({
       name?: string;
       symbol?: string;
       maxSupply?: bigint;
+      /** From `initialize` calldata when present; used for resubmit max supply type */
+      fixedMaxSupply?: boolean;
       transferable?: boolean;
       autoMinting?: boolean;
       priceWithCurrency?: {
@@ -237,6 +241,7 @@ export const useProposalDetailsWeb3Rpc = ({
       useTransferWhitelist: undefined,
       useReceiveWhitelist: undefined,
       archiveToken: undefined,
+      fixedMaxSupply: undefined,
     };
 
     const redeemTokensData: {
@@ -638,6 +643,35 @@ export const useProposalDetailsWeb3Rpc = ({
           break;
       }
     });
+
+    if (
+      updateTokenData.address &&
+      transactions &&
+      Array.isArray(transactions)
+    ) {
+      for (const tx of transactions as ProposalTransaction[]) {
+        try {
+          const decoded = decodeFunctionData({
+            abi: decayingSpaceTokenAbi,
+            data: tx.data as `0x${string}`,
+          });
+          if (
+            decoded.functionName === 'initialize' &&
+            typeof tx.target === 'string' &&
+            tx.target.toLowerCase() === updateTokenData.address.toLowerCase()
+          ) {
+            const args = decoded.args as readonly unknown[];
+            const fixed = args[6] as boolean | undefined;
+            if (typeof fixed === 'boolean') {
+              updateTokenData.fixedMaxSupply = fixed;
+            }
+            break;
+          }
+        } catch {
+          // not a DecayingSpaceToken call
+        }
+      }
+    }
 
     return {
       creator,

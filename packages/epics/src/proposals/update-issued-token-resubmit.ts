@@ -10,6 +10,8 @@ export type UpdateTokenProposalSnapshot = {
   name?: string;
   symbol?: string;
   maxSupply?: bigint;
+  /** From token `initialize` calldata when decoded (immutable = true) */
+  fixedMaxSupply?: boolean;
   transferable?: boolean;
   autoMinting?: boolean;
   priceWithCurrency?: {
@@ -23,6 +25,11 @@ export type UpdateTokenProposalSnapshot = {
   archiveToken?: boolean;
 };
 
+const MAX_SUPPLY_TYPE_LABEL: Record<'immutable' | 'updatable', string> = {
+  immutable: 'Forever Immutable',
+  updatable: 'Updatable Over Time',
+};
+
 export type UpdateIssuedTokenResubmitPayload = {
   tokenAddress: string;
   name: string;
@@ -31,6 +38,7 @@ export type UpdateIssuedTokenResubmitPayload = {
   iconUrl?: string;
   maxSupply: number;
   enableLimitedSupply: boolean;
+  maxSupplyType?: { label: string; value: 'immutable' | 'updatable' };
   transferable?: boolean;
   isVotingToken: boolean;
   decaySettings: { decayInterval: number; decayPercentage: number };
@@ -64,6 +72,14 @@ export function buildUpdateIssuedTokenResubmitPayload({
   if (dbRow) {
     const data = dbRow.data as TokenUpdateData;
     const max = data.maxSupply ?? 0;
+    const fromDbType = data.maxSupplyTypeValue;
+    const fromSnapshot =
+      snapshot?.fixedMaxSupply !== undefined
+        ? snapshot.fixedMaxSupply
+          ? ('immutable' as const)
+          : ('updatable' as const)
+        : undefined;
+    const resolvedValue = fromDbType ?? fromSnapshot;
     return {
       tokenAddress: dbRow.tokenAddress,
       name: data.name ?? '',
@@ -72,6 +88,14 @@ export function buildUpdateIssuedTokenResubmitPayload({
       iconUrl: typeof data.iconUrl === 'string' ? data.iconUrl : undefined,
       maxSupply: max,
       enableLimitedSupply: max > 0,
+      ...(resolvedValue && max > 0
+        ? {
+            maxSupplyType: {
+              label: MAX_SUPPLY_TYPE_LABEL[resolvedValue],
+              value: resolvedValue,
+            },
+          }
+        : {}),
       transferable: data.transferable,
       isVotingToken: data.isVotingToken ?? data.type === 'voice',
       decaySettings: {
@@ -103,12 +127,27 @@ export function buildUpdateIssuedTokenResubmitPayload({
       )
     : undefined;
 
+  const snapshotType =
+    snapshot.fixedMaxSupply !== undefined && max > 0
+      ? snapshot.fixedMaxSupply
+        ? ('immutable' as const)
+        : ('updatable' as const)
+      : undefined;
+
   return {
     tokenAddress: snapshot.address,
     name: snapshot.name ?? '',
     symbol: snapshot.symbol ?? '',
     maxSupply: max,
     enableLimitedSupply: max > 0,
+    ...(snapshotType
+      ? {
+          maxSupplyType: {
+            label: MAX_SUPPLY_TYPE_LABEL[snapshotType],
+            value: snapshotType,
+          },
+        }
+      : {}),
     transferable: snapshot.transferable,
     isVotingToken: false,
     decaySettings: {

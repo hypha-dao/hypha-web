@@ -81,6 +81,11 @@ async function fetchTokenOnChainData(
         functionName: 'archived',
         args: [],
       },
+      {
+        ...contract,
+        functionName: 'fixedMaxSupply',
+        args: [],
+      },
     ],
   });
 
@@ -103,6 +108,7 @@ async function fetchTokenOnChainData(
     useTransferWhitelistResult,
     useReceiveWhitelistResult,
     archivedResult,
+    fixedMaxSupplyResult,
   ] = results.map(({ result }) => result);
 
   return {
@@ -130,6 +136,10 @@ async function fetchTokenOnChainData(
     useTransferWhitelist: useTransferWhitelistResult as boolean,
     useReceiveWhitelist: useReceiveWhitelistResult as boolean,
     archiveToken: archivedResult as boolean,
+    fixedMaxSupply:
+      fixedMaxSupplyResult !== undefined
+        ? (fixedMaxSupplyResult as boolean)
+        : undefined,
   };
 }
 

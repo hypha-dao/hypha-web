@@ -99,6 +99,15 @@ export const UpdateIssuedTokenForm = ({
             path: ['maxSupply'],
           });
         }
+        if (!data.maxSupplyType) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: tAgreementFlow(
+              'issueNewTokenForm.errors.maxSupplyTypeRequired',
+            ),
+            path: ['maxSupplyType'],
+          });
+        }
       }
 
       if (data.enableTokenPrice) {
@@ -123,7 +132,7 @@ export const UpdateIssuedTokenForm = ({
         }
       }
     });
-  }, [tProposalDetails]);
+  }, [tProposalDetails, tAgreementFlow]);
 
   type FormValues = z.infer<typeof fullSchemaUpdateIssuedToken>;
 
@@ -170,6 +179,7 @@ export const UpdateIssuedTokenForm = ({
       transferWhitelist: undefined,
       enableProposalAutoMinting: true,
       enableLimitedSupply: false,
+      maxSupplyType: undefined,
       enableTokenPrice: false,
       referenceCurrency: undefined,
       tokenPrice: undefined,
