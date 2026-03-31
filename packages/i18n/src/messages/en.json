@@ -1375,6 +1375,11 @@
         "sourceMint": "Mint new tokens",
         "sourceTreasury": "Use available tokens in treasury"
       },
+      "acceptInvestmentForm": {
+        "proposerHint": "You submit with your own wallet as a space member or delegate. Treasury moves and minting run only after the proposal passes and executes — not when you publish.",
+        "notMemberRevert": "The chain rejected this transaction: the connected wallet is not a member or delegate of this space. Use a wallet that belongs to the space, or connect as a delegate.",
+        "walletRejected": "The transaction was not signed or was rejected in your wallet. Try again and approve the request."
+      },
       "paymentSchedule": {
         "label": "Payment Schedule",
         "immediately": "Immediately",

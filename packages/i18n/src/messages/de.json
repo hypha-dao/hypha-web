@@ -1375,6 +1375,11 @@
         "sourceMint": "Neue Token prägen",
         "sourceTreasury": "Verfügbare Token in der Treasury nutzen"
       },
+      "acceptInvestmentForm": {
+        "proposerHint": "Sie reichen mit Ihrer eigenen Wallet als Mitglied oder Delegierter ein. Treasury-Transfers und Minting laufen erst nach erfolgreicher Abstimmung und Ausführung — nicht beim Veröffentlichen.",
+        "notMemberRevert": "Die Transaktion wurde abgelehnt: Die verbundene Wallet ist kein Mitglied oder Delegierter dieses Spaces. Verwenden Sie eine Wallet, die zum Space gehört, oder verbinden Sie sich als Delegierter.",
+        "walletRejected": "Die Transaktion wurde nicht signiert oder in der Wallet abgelehnt. Bitte erneut versuchen und bestätigen."
+      },
       "paymentSchedule": {
         "label": "Zahlungsplan",
         "immediately": "Sofort",

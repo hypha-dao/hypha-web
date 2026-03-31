@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import {
   schemaAcceptInvestment,
@@ -8,7 +9,6 @@ import {
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
-import React from 'react';
 import { useCreateAcceptInvestmentOrchestrator } from '@hypha-platform/core/client';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useConfig } from 'wagmi';
@@ -48,6 +48,7 @@ export const CreateAcceptInvestmentForm = ({
     isError,
     isPending,
     progress,
+    errors: orchestratorErrors,
   } = useCreateAcceptInvestmentOrchestrator({ authToken: jwt, config });
   const resolver = useLocalizedProposalResolver(
     fullSchemaCreateAcceptInvestmentForm,
@@ -74,6 +75,23 @@ export const CreateAcceptInvestmentForm = ({
   useScrollToErrors(form, formRef);
   const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
 
+  const tAcceptForm = useTranslations('AgreementFlow.acceptInvestmentForm');
+
+  const submitErrorMessage = useMemo(() => {
+    const first = orchestratorErrors[0];
+    const raw =
+      first instanceof Error
+        ? first.message
+        : typeof first === 'string'
+        ? first
+        : '';
+    if (!raw) return '';
+    if (/NotMember/i.test(raw)) return tAcceptForm('notMemberRevert');
+    if (/rejected|denied|user rejected|cancelled/i.test(raw))
+      return tAcceptForm('walletRejected');
+    return raw;
+  }, [orchestratorErrors, tAcceptForm]);
+
   const handleCreate = async (data: FormValues) => {
     await createAcceptInvestment({
       ...data,
@@ -92,8 +110,13 @@ export const CreateAcceptInvestmentForm = ({
       isLoading={isPending}
       message={
         isError ? (
-          <div className="flex flex-col">
-            <div>{tSpaces('errorOhSnap')}</div>
+          <div className="flex flex-col gap-3 items-stretch max-w-md mx-auto px-2">
+            <div className="text-center">{tSpaces('errorOhSnap')}</div>
+            {submitErrorMessage ? (
+              <div className="text-sm text-neutral-11 text-center break-words">
+                {submitErrorMessage}
+              </div>
+            ) : null}
             <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (
@@ -121,6 +144,9 @@ export const CreateAcceptInvestmentForm = ({
             label={tAgreementFlow('labels.investment')}
             progress={progress}
           />
+          <p className="text-2 text-neutral-11 px-1">
+            {tAcceptForm('proposerHint')}
+          </p>
           {plugin}
           <Separator />
           <div className="flex justify-end w-full">

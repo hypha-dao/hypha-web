@@ -1375,6 +1375,11 @@
         "sourceMint": "Frapper de nouveaux tokens",
         "sourceTreasury": "Utiliser les tokens disponibles en trésorerie"
       },
+      "acceptInvestmentForm": {
+        "proposerHint": "Vous soumettez avec votre propre portefeuille en tant que membre ou délégué de l’espace. Les mouvements de trésorerie et le mint n’ont lieu qu’après adoption et exécution de la proposition — pas à la publication.",
+        "notMemberRevert": "La chaîne a rejeté la transaction : le portefeuille connecté n’est pas membre ou délégué de cet espace. Utilisez un portefeuille du bon espace ou connectez-vous en tant que délégué.",
+        "walletRejected": "La transaction n’a pas été signée ou a été refusée dans le portefeuille. Réessayez et approuvez la demande."
+      },
       "paymentSchedule": {
         "label": "Calendrier de paiement",
         "immediately": "Immédiatement",

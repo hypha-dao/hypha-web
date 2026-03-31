@@ -494,6 +494,11 @@
         "sourceMint": "Cunhar novos tokens",
         "sourceTreasury": "Usar tokens disponíveis no tesouro"
       },
+      "acceptInvestmentForm": {
+        "proposerHint": "Submete com a sua própria carteira como membro ou delegado do espaço. Movimentos do tesouro e mint só ocorrem depois da proposta ser aprovada e executada — não ao publicar.",
+        "notMemberRevert": "A cadeia rejeitou a transação: a carteira ligada não é membro nem delegado deste espaço. Use uma carteira do espaço ou ligue-se como delegado.",
+        "walletRejected": "A transação não foi assinada ou foi recusada na carteira. Tente novamente e aprove o pedido."
+      },
       "milestoneField": {
         "milestone": "Marco {index}",
         "percentageRequired": "A porcentagem é obrigatória",
