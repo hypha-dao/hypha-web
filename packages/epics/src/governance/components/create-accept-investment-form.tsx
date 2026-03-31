@@ -153,9 +153,6 @@ export const CreateAcceptInvestmentForm = ({
             label={tAgreementFlow('labels.investment')}
             progress={progress}
           />
-          <p className="text-2 text-neutral-11 px-1">
-            {tAcceptForm('proposerHint')}
-          </p>
           {plugin}
           <Separator />
           <div className="flex justify-end w-full">

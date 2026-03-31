@@ -1376,7 +1376,6 @@
         "sourceTreasury": "Utiliser les tokens disponibles en trésorerie"
       },
       "acceptInvestmentForm": {
-        "proposerHint": "Vous soumettez avec votre propre portefeuille en tant que membre ou délégué de l’espace. Les mouvements de trésorerie et le mint n’ont lieu qu’après adoption et exécution de la proposition — pas à la publication.",
         "notMemberRevert": "La chaîne a rejeté la transaction : le portefeuille connecté n’est pas membre ou délégué de cet espace. Utilisez un portefeuille du bon espace ou connectez-vous en tant que délégué.",
         "walletRejected": "La transaction n’a pas été signée ou a été refusée dans le portefeuille. Réessayez et approuvez la demande.",
         "escrowNotConfigured": "L’adresse du contrat d’escrow n’est pas configurée. Définissez NEXT_PUBLIC_ESCROW_IMPLEMENTATION_ADDRESS dans apps/web/.env (proxy EscrowImplementation sur la chaîne de gouvernance), redémarrez le serveur de dev ou redéployez l’app. Déploiement : packages/storage-evm (scripts/escrow-proxy.deploy.ts)."
