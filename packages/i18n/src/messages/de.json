@@ -1371,7 +1371,11 @@
       "acceptInvestment": {
         "investingMember": "Investierendes Mitglied",
         "investorWillSend": "Investierendes Mitglied sendet",
+        "investorWillSendLine1": "Investierendes Mitglied",
+        "investorWillSendLine2": "sendet",
         "investorWillReceive": "Investierendes Mitglied erhält",
+        "investorWillReceiveLine1": "Investierendes Mitglied",
+        "investorWillReceiveLine2": "erhält",
         "source": "Quelle",
         "sourcePlaceholder": "Quelle wählen",
         "sourceMint": "Neue Token prägen",

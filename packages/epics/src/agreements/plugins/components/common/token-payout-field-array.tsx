@@ -31,7 +31,10 @@ export interface Token {
 interface TokenPayoutFieldArrayProps {
   tokens: Token[];
   name?: string;
+  /** Single-line label (default). Ignored if `labelLines` is set. */
   label?: string;
+  /** Two-line label, e.g. "Investing member" / "will send" — requirement mark follows line 2. */
+  labelLines?: readonly [string, string];
   allowAddOrRemove?: boolean;
   showSelectedTokenBalanceHint?: boolean;
   showTreasuryBalanceHint?: boolean;
@@ -42,6 +45,7 @@ function TokenPayoutFieldArrayInner({
   tokens,
   name = 'payouts',
   label,
+  labelLines,
   allowAddOrRemove = true,
   showSelectedTokenBalanceHint = false,
   showTreasuryBalanceHint = false,
@@ -50,6 +54,7 @@ function TokenPayoutFieldArrayInner({
   const tAgreementFlow = useTranslations('AgreementFlow');
   const resolvedLabel =
     label ?? tAgreementFlow('plugins.tokenPayoutFieldArray.paymentRequest');
+  const useTwoLineLabel = Boolean(labelLines?.[0] && labelLines?.[1]);
   const { control } = useFormContext();
   const { fields, append, remove } = useFieldArray({
     control,
@@ -74,8 +79,25 @@ function TokenPayoutFieldArrayInner({
   return (
     <div className="flex flex-col gap-2 w-full">
       <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
-        <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
-          {resolvedLabel} <RequirementMark />
+        <label
+          className={`text-2 text-neutral-11 items-start md:pt-1 ${
+            useTwoLineLabel
+              ? 'max-w-[12rem] shrink-0 leading-snug'
+              : 'whitespace-nowrap md:min-w-max'
+          }`}
+        >
+          {useTwoLineLabel ? (
+            <>
+              <span className="block">{labelLines![0]}</span>
+              <span className="block">
+                {labelLines![1]} <RequirementMark />
+              </span>
+            </>
+          ) : (
+            <>
+              {resolvedLabel} <RequirementMark />
+            </>
+          )}
         </label>
         <div className="flex flex-col gap-2 grow min-w-0">
           {fields.map((field, index) => (

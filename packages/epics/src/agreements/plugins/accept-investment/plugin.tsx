@@ -36,7 +36,7 @@ export const AcceptInvestmentPlugin = ({
         <TokenPayoutFieldArray
           tokens={tokens}
           name="investorSendLegs"
-          label={t('investorWillSend')}
+          labelLines={[t('investorWillSendLine1'), t('investorWillSendLine2')]}
           allowAddOrRemove
         />
       </Skeleton>
@@ -49,7 +49,10 @@ export const AcceptInvestmentPlugin = ({
         <TokenPayoutFieldArray
           tokens={tokens}
           name="spaceReceiveLegs"
-          label={t('investorWillReceive')}
+          labelLines={[
+            t('investorWillReceiveLine1'),
+            t('investorWillReceiveLine2'),
+          ]}
           allowAddOrRemove
         />
       </Skeleton>

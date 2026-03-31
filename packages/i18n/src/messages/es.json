@@ -490,7 +490,11 @@
       "acceptInvestment": {
         "investingMember": "Miembro inversor",
         "investorWillSend": "El miembro inversor enviará",
+        "investorWillSendLine1": "El miembro inversor",
+        "investorWillSendLine2": "enviará",
         "investorWillReceive": "El miembro inversor recibirá",
+        "investorWillReceiveLine1": "El miembro inversor",
+        "investorWillReceiveLine2": "recibirá",
         "source": "Origen",
         "sourcePlaceholder": "Seleccionar origen",
         "sourceMint": "Acuñar nuevos tokens",
