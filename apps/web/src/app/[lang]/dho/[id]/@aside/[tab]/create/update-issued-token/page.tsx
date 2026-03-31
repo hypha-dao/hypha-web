@@ -7,6 +7,9 @@ import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { UpdateIssuedTokenForm } from '@hypha-platform/epics';
 import { Plugin } from '../../../../_components/plugins';
+import { Person, Space } from '@hypha-platform/core/client';
+import { getAllSpaces } from '@hypha-platform/core/server';
+import { findAllPeopleWithoutPagination } from '@hypha-platform/core/server';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string; tab: string }>;
@@ -33,6 +36,26 @@ export default async function UpdateIssuedTokenPage({
     ? undefined
     : `${closeUrl}${PATH_SELECT_SETTINGS_ACTION}`;
 
+  let spaces = [] as Space[];
+  const peoples: Person[] = await findAllPeopleWithoutPagination({ db });
+  const filteredPeoples = peoples.filter(
+    (person) => person.address && person.address.trim() !== '',
+  );
+
+  try {
+    spaces = await getAllSpaces({
+      parentOnly: false,
+      omitSandbox: false,
+    });
+  } catch (err) {
+    console.error('Failed to fetch spaces:', err);
+  }
+
+  const filteredSpaces = spaces?.filter(
+    (space) =>
+      space?.address && space.address.trim() !== '' && space.id !== spaceId,
+  );
+
   return (
     <SidePanel>
       <UpdateIssuedTokenForm
@@ -42,7 +65,13 @@ export default async function UpdateIssuedTokenPage({
         closeUrl={closeUrl}
         backUrl={backUrl}
         plugin={
-          <Plugin name="update-issued-token" spaceSlug={id} spaceId={spaceId} />
+          <Plugin
+            name="update-issued-token"
+            spaceSlug={id}
+            spaceId={spaceId}
+            spaces={filteredSpaces}
+            members={filteredPeoples}
+          />
         }
       />
     </SidePanel>

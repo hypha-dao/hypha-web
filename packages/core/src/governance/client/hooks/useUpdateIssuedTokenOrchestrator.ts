@@ -21,6 +21,17 @@ import {
   padUpdateIssuedTokenInputIfNoTxs,
   useUpdateIssuedTokenMutationsWeb3Rpc,
 } from './useUpdateIssuedTokenMutations.web3.rpc';
+
+function whitelistAddressesFromForm(
+  entries: Array<{ address: string }> | undefined | null,
+): `0x${string}`[] {
+  if (!entries?.length) {
+    return [];
+  }
+  return entries
+    .map((e) => e.address as `0x${string}`)
+    .filter((addr) => typeof addr === 'string' && addr.startsWith('0x'));
+}
 import useSWR from 'swr';
 import { TokenUpdateData } from '../../types';
 
@@ -148,8 +159,9 @@ type UpdateIssuedTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
  *   price+feed, decay interval/%, whitelist toggles, archived.
  * — Whitelist toggles: when transferable is false, both flags are forced off (empty lists
  *   previously encoded as true and could revert on execution).
- * — Not implemented here: whitelist address membership (e.g. batchSetTransferWhitelist),
- *   clearing on-chain price when disabling “token price”, token type (no setter on contract).
+ * — When toggles are on and lists non-empty, `batchSetTransferWhitelist` / `batchSetReceiveWhitelist`
+ *   mirror issue-token `initialTransferWhitelist` / `initialReceiveWhitelist`.
+ * — Not implemented: clearing on-chain price when disabling “token price”, token type (no setter).
  * — DB / Web2 only: icon URL, token type label stored off-chain.
  * — If no calldata would be produced, the proposal still includes setTokenName(arg.name)
  *   so createProposal is never called with an empty transaction list (reverts).
@@ -224,12 +236,26 @@ function buildPartialUpdateIssuedTokenWeb3Input(
       base.useTransferWhitelist = false;
       base.useReceiveWhitelist = false;
     } else if (arg.transferable === true) {
-      base.useTransferWhitelist = !!(
+      const useTransferWhitelist = !!(
         arg.transferWhitelist?.from && arg.transferWhitelist.from.length > 0
       );
-      base.useReceiveWhitelist = !!(
+      const useReceiveWhitelist = !!(
         arg.transferWhitelist?.to && arg.transferWhitelist.to.length > 0
       );
+      base.useTransferWhitelist = useTransferWhitelist;
+      base.useReceiveWhitelist = useReceiveWhitelist;
+      if (useTransferWhitelist) {
+        const addrs = whitelistAddressesFromForm(arg.transferWhitelist?.from);
+        if (addrs.length > 0) {
+          base.batchTransferWhitelistAccounts = addrs;
+        }
+      }
+      if (useReceiveWhitelist) {
+        const addrs = whitelistAddressesFromForm(arg.transferWhitelist?.to);
+        if (addrs.length > 0) {
+          base.batchReceiveWhitelistAccounts = addrs;
+        }
+      }
     } else {
       // Non-transferable tokens cannot use transfer/receive whitelists on-chain; enabling both
       // with empty member lists produced setUse*Whitelist(true) and reverted at execution.

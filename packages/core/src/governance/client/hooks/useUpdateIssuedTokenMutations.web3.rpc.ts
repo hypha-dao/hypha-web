@@ -32,6 +32,9 @@ export interface UpdateIssuedTokenInput {
   priceCurrencyFeed?: `0x${string}`;
   useTransferWhitelist?: boolean;
   useReceiveWhitelist?: boolean;
+  /** Same semantics as issue-token `initialTransferWhitelist` — applied via batchSet after toggles */
+  batchTransferWhitelistAccounts?: `0x${string}`[];
+  batchReceiveWhitelistAccounts?: `0x${string}`[];
   archiveToken?: boolean;
 }
 
@@ -160,6 +163,30 @@ export function buildUpdateIssuedTokenTxData(
         abi: decayingSpaceTokenAbi,
         functionName: 'setUseReceiveWhitelist',
         args: [arg.useReceiveWhitelist],
+      }),
+    });
+  }
+  if (arg.batchTransferWhitelistAccounts?.length) {
+    const accounts = arg.batchTransferWhitelistAccounts;
+    txData.push({
+      target: arg.address,
+      value: 0,
+      data: encodeFunctionData({
+        abi: decayingSpaceTokenAbi,
+        functionName: 'batchSetTransferWhitelist',
+        args: [accounts, accounts.map(() => true)],
+      }),
+    });
+  }
+  if (arg.batchReceiveWhitelistAccounts?.length) {
+    const accounts = arg.batchReceiveWhitelistAccounts;
+    txData.push({
+      target: arg.address,
+      value: 0,
+      data: encodeFunctionData({
+        abi: decayingSpaceTokenAbi,
+        functionName: 'batchSetReceiveWhitelist',
+        args: [accounts, accounts.map(() => true)],
       }),
     });
   }
