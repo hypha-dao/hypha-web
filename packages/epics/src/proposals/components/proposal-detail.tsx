@@ -581,6 +581,9 @@ export const ProposalDetail = ({
         proposalDetails.updateTokenData.decayInterval !== undefined ||
         proposalDetails.updateTokenData.useTransferWhitelist !== undefined ||
         proposalDetails.updateTokenData.useReceiveWhitelist !== undefined ||
+        proposalDetails.updateTokenData.initialTransferWhitelist !==
+          undefined ||
+        proposalDetails.updateTokenData.initialReceiveWhitelist !== undefined ||
         proposalDetails.updateTokenData.archiveToken !== undefined) ? (
         <ProposalUpdateToken
           address={proposalDetails.updateTokenData.address}
@@ -598,6 +601,12 @@ export const ProposalDetail = ({
           }
           useReceiveWhitelist={
             proposalDetails.updateTokenData.useReceiveWhitelist
+          }
+          initialTransferWhitelist={
+            proposalDetails.updateTokenData.initialTransferWhitelist
+          }
+          initialReceiveWhitelist={
+            proposalDetails.updateTokenData.initialReceiveWhitelist
           }
           archiveToken={proposalDetails.updateTokenData.archiveToken}
         />

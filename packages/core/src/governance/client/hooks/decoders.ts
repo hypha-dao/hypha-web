@@ -946,6 +946,34 @@ export function decodeTransaction(tx: Tx) {
     {
       abi: decayingSpaceTokenAbi,
       handler: (decoded, tx) =>
+        decoded.functionName === 'batchSetTransferWhitelist'
+          ? {
+              type: 'setTokenBatchTransferWhitelist',
+              data: {
+                address: tx.target,
+                accounts: decoded.args[0] as `0x${string}`[],
+                allowed: decoded.args[1] as boolean[],
+              },
+            }
+          : null,
+    },
+    {
+      abi: decayingSpaceTokenAbi,
+      handler: (decoded, tx) =>
+        decoded.functionName === 'batchSetReceiveWhitelist'
+          ? {
+              type: 'setTokenBatchReceiveWhitelist',
+              data: {
+                address: tx.target,
+                accounts: decoded.args[0] as `0x${string}`[],
+                allowed: decoded.args[1] as boolean[],
+              },
+            }
+          : null,
+    },
+    {
+      abi: decayingSpaceTokenAbi,
+      handler: (decoded, tx) =>
         decoded.functionName === 'setArchived'
           ? {
               type: 'setTokenArchived',

@@ -227,6 +227,10 @@ export const useProposalDetailsWeb3Rpc = ({
       decayInterval?: bigint;
       useTransferWhitelist?: boolean;
       useReceiveWhitelist?: boolean;
+      /** From `batchSetTransferWhitelist` calldata (update-token proposals) */
+      initialTransferWhitelist?: `0x${string}`[];
+      /** From `batchSetReceiveWhitelist` calldata */
+      initialReceiveWhitelist?: `0x${string}`[];
       archiveToken?: boolean;
     } = {
       address: undefined,
@@ -240,6 +244,8 @@ export const useProposalDetailsWeb3Rpc = ({
       decayInterval: undefined,
       useTransferWhitelist: undefined,
       useReceiveWhitelist: undefined,
+      initialTransferWhitelist: undefined,
+      initialReceiveWhitelist: undefined,
       archiveToken: undefined,
       fixedMaxSupply: undefined,
     };
@@ -596,6 +602,40 @@ export const useProposalDetailsWeb3Rpc = ({
           };
           updateTokenData.address = d.address;
           updateTokenData.useReceiveWhitelist = d.useReceiveWhitelist;
+          break;
+        }
+
+        case 'setTokenBatchTransferWhitelist': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            accounts: `0x${string}`[];
+            allowed: boolean[];
+          };
+          updateTokenData.address = d.address;
+          const allowedAddrs = d.accounts.filter(
+            (_, i) => d.allowed[i] === true,
+          );
+          updateTokenData.initialTransferWhitelist = [
+            ...(updateTokenData.initialTransferWhitelist ?? []),
+            ...allowedAddrs,
+          ];
+          break;
+        }
+
+        case 'setTokenBatchReceiveWhitelist': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            accounts: `0x${string}`[];
+            allowed: boolean[];
+          };
+          updateTokenData.address = d.address;
+          const allowedAddrs = d.accounts.filter(
+            (_, i) => d.allowed[i] === true,
+          );
+          updateTokenData.initialReceiveWhitelist = [
+            ...(updateTokenData.initialReceiveWhitelist ?? []),
+            ...allowedAddrs,
+          ];
           break;
         }
 

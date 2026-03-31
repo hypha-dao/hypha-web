@@ -33,6 +33,9 @@ export interface ProposalUpdateTokenProps {
   decayInterval?: bigint;
   useTransferWhitelist?: boolean;
   useReceiveWhitelist?: boolean;
+  /** From proposal tx `batchSet*` (same as issue-token deploy lists) */
+  initialTransferWhitelist?: `0x${string}`[];
+  initialReceiveWhitelist?: `0x${string}`[];
   archiveToken?: boolean;
 }
 
@@ -58,6 +61,8 @@ export const ProposalUpdateToken = ({
   decayInterval,
   useTransferWhitelist,
   useReceiveWhitelist,
+  initialTransferWhitelist: initialTransferFromTx,
+  initialReceiveWhitelist: initialReceiveFromTx,
   archiveToken,
 }: ProposalUpdateTokenProps) => {
   const tProposalDetails = useTranslations('ProposalDetails');
@@ -79,15 +84,46 @@ export const ProposalUpdateToken = ({
     decayInterval !== undefined;
 
   const transferWhitelistFromPending = pendingData?.transferWhitelist;
-  const fromWhitelistEntries = transferWhitelistFromPending?.from?.filter(
+  const fromEntriesPending = transferWhitelistFromPending?.from?.filter(
     (e) => e?.address,
   );
-  const toWhitelistEntries = transferWhitelistFromPending?.to?.filter(
+  const toEntriesPending = transferWhitelistFromPending?.to?.filter(
     (e) => e?.address,
   );
+
+  const uniqueSorted = (addrs: `0x${string}`[]) => {
+    const seen = new Set<string>();
+    const out: `0x${string}`[] = [];
+    for (const a of addrs) {
+      const k = a.toLowerCase();
+      if (!seen.has(k)) {
+        seen.add(k);
+        out.push(a);
+      }
+    }
+    return out;
+  };
+
+  const fromAddressesForDisplay = React.useMemo(() => {
+    if (fromEntriesPending?.length) {
+      return uniqueSorted(
+        fromEntriesPending.map((e) => e.address as `0x${string}`),
+      );
+    }
+    return uniqueSorted(initialTransferFromTx?.filter(Boolean) ?? []);
+  }, [fromEntriesPending, initialTransferFromTx]);
+
+  const toAddressesForDisplay = React.useMemo(() => {
+    if (toEntriesPending?.length) {
+      return uniqueSorted(
+        toEntriesPending.map((e) => e.address as `0x${string}`),
+      );
+    }
+    return uniqueSorted(initialReceiveFromTx?.filter(Boolean) ?? []);
+  }, [toEntriesPending, initialReceiveFromTx]);
+
   const showTransferWhitelistDetails =
-    (fromWhitelistEntries?.length ?? 0) > 0 ||
-    (toWhitelistEntries?.length ?? 0) > 0;
+    fromAddressesForDisplay.length > 0 || toAddressesForDisplay.length > 0;
   const tokenPrice = React.useMemo(() => {
     return priceWithCurrency?.tokenPrice
       ? Number(priceWithCurrency.tokenPrice) / 1_000_000
@@ -278,31 +314,31 @@ export const ProposalUpdateToken = ({
             <div className="text-1 text-neutral-11 font-medium">
               {tProposalDetails('sections.transferWhitelists')}
             </div>
-            {fromWhitelistEntries && fromWhitelistEntries.length > 0 && (
+            {fromAddressesForDisplay.length > 0 && (
               <div className="flex flex-col gap-4">
                 <div className="text-1 text-neutral-11 font-bold">
                   {tProposalDetails('sections.fromWhitelist')}
                 </div>
                 <div className="flex flex-col gap-4">
-                  {fromWhitelistEntries.map((entry, idx) => (
+                  {fromAddressesForDisplay.map((addr, idx) => (
                     <WhitelistAddressItem
-                      key={`from-${idx}-${entry.address}`}
-                      address={entry.address as `0x${string}`}
+                      key={`from-${idx}-${addr}`}
+                      address={addr}
                     />
                   ))}
                 </div>
               </div>
             )}
-            {toWhitelistEntries && toWhitelistEntries.length > 0 && (
+            {toAddressesForDisplay.length > 0 && (
               <div className="flex flex-col gap-4">
                 <div className="text-1 text-neutral-11 font-bold">
                   {tProposalDetails('sections.toWhitelist')}
                 </div>
                 <div className="flex flex-col gap-4">
-                  {toWhitelistEntries.map((entry, idx) => (
+                  {toAddressesForDisplay.map((addr, idx) => (
                     <WhitelistAddressItem
-                      key={`to-${idx}-${entry.address}`}
-                      address={entry.address as `0x${string}`}
+                      key={`to-${idx}-${addr}`}
+                      address={addr}
                     />
                   ))}
                 </div>
