@@ -1112,26 +1112,27 @@ export const ProposalDetail = ({
           spaceSlug={spaceSlug}
         />
       ))}
-      {proposalDetails?.tokens.map((token, idx) => (
-        <ProposalTokenItem
-          key={idx}
-          name={token.name}
-          symbol={token.symbol}
-          address={token.address}
-          initialSupply={token.maxSupply}
-          dbTokens={dbTokens}
-          transferable={token.transferable}
-          fixedMaxSupply={token.fixedMaxSupply}
-          autoMinting={token.autoMinting}
-          priceInUSD={token.priceInUSD}
-          useTransferWhitelist={token.useTransferWhitelist}
-          useReceiveWhitelist={token.useReceiveWhitelist}
-          initialTransferWhitelist={token.initialTransferWhitelist}
-          initialReceiveWhitelist={token.initialReceiveWhitelist}
-          decayPercentage={token.decayPercentage}
-          decayInterval={token.decayInterval}
-        />
-      ))}
+      {label !== 'Investment' &&
+        proposalDetails?.tokens.map((token, idx) => (
+          <ProposalTokenItem
+            key={idx}
+            name={token.name}
+            symbol={token.symbol}
+            address={token.address}
+            initialSupply={token.maxSupply}
+            dbTokens={dbTokens}
+            transferable={token.transferable}
+            fixedMaxSupply={token.fixedMaxSupply}
+            autoMinting={token.autoMinting}
+            priceInUSD={token.priceInUSD}
+            useTransferWhitelist={token.useTransferWhitelist}
+            useReceiveWhitelist={token.useReceiveWhitelist}
+            initialTransferWhitelist={token.initialTransferWhitelist}
+            initialReceiveWhitelist={token.initialReceiveWhitelist}
+            decayPercentage={token.decayPercentage}
+            decayInterval={token.decayInterval}
+          />
+        ))}
       {Boolean(proposalDetails?.transfers?.length) &&
         label !== 'Investment' && (
           <div className="flex flex-col gap-4">
