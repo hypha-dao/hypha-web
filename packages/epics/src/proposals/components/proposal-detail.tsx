@@ -590,6 +590,7 @@ export const ProposalDetail = ({
             proposalDetails.updateTokenData.useReceiveWhitelist
           }
           archiveToken={proposalDetails.updateTokenData.archiveToken}
+          proposalStatus={proposalStatus}
         />
       ) : null}
       {label === 'Token Purchase' && proposalDetails?.spaceTokenPurchaseData ? (
