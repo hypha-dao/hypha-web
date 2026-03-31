@@ -32,6 +32,7 @@ import {
 import { useDbTokens } from '../../../hooks';
 import { useTokenSupply } from '../../hooks';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
+import { normalizeMaxSupplyHuman } from '../../utils/normalize-max-supply-human';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
@@ -299,7 +300,7 @@ export const UpdateIssuedTokenPlugin = ({
       setValue('initialIconUrl', iconFromDb, { shouldDirty: false });
     }
     setValue('type', selectedToken.type);
-    const max = selectedToken.maxSupply ?? 0;
+    const max = normalizeMaxSupplyHuman(selectedToken.maxSupply ?? 0);
     setValue('enableLimitedSupply', max > 0, { shouldDirty: false });
     setValue('maxSupply', max, { shouldDirty: false });
     setValue('transferable', selectedToken.transferable);
@@ -337,7 +338,7 @@ export const UpdateIssuedTokenPlugin = ({
       setValue('symbol', onChainData.symbol);
     }
     if (onChainData.maxSupply !== undefined) {
-      const max = onChainData.maxSupply;
+      const max = normalizeMaxSupplyHuman(onChainData.maxSupply);
       setValue('enableLimitedSupply', max > 0, { shouldDirty: false });
       setValue('maxSupply', max, { shouldDirty: false });
     }
@@ -452,7 +453,9 @@ export const UpdateIssuedTokenPlugin = ({
     patch('enableLimitedSupply', payload.enableLimitedSupply, {
       shouldDirty: false,
     });
-    patch('maxSupply', payload.maxSupply, { shouldDirty: false });
+    patch('maxSupply', normalizeMaxSupplyHuman(payload.maxSupply ?? 0), {
+      shouldDirty: false,
+    });
     if (payload.transferable !== undefined) {
       patch('transferable', payload.transferable);
     }
@@ -495,7 +498,7 @@ export const UpdateIssuedTokenPlugin = ({
     sessionStorage.removeItem(RESUBMIT_UPDATE_ISSUED_TOKEN_FORM_KEY);
   }, [selectedTokenAddress, isLoadingOnChainData, setValue]);
 
-  const tokenSupply = selectedToken?.maxSupply ?? 0;
+  const tokenSupply = normalizeMaxSupplyHuman(selectedToken?.maxSupply ?? 0);
   const { supply, isLoading: isLoadingSupply } = useTokenSupply(
     selectedToken?.address as `0x${string}`,
   );

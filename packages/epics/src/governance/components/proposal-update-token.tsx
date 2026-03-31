@@ -52,7 +52,6 @@ export const ProposalUpdateToken = ({
   proposalStatus,
 }: ProposalUpdateTokenProps) => {
   const tProposalDetails = useTranslations('ProposalDetails');
-  const tLabels = useTranslations('ProposalDetails.labels');
   const { jwt: authToken } = useJwt();
 
   const statusBadge = React.useMemo(() => {
@@ -122,7 +121,7 @@ export const ProposalUpdateToken = ({
       {name !== undefined && (
         <div className="flex justify-between items-center">
           <div className="text-1 text-neutral-11 w-full">
-            {tLabels('tokenName')}
+            {tProposalDetails('labels.tokenName')}
           </div>
           <div className="text-1 text-nowrap">{name}</div>
         </div>
@@ -130,7 +129,7 @@ export const ProposalUpdateToken = ({
       {symbol !== undefined && (
         <div className="flex justify-between items-center">
           <div className="text-1 text-neutral-11 w-full">
-            {tLabels('tokenSymbol')}
+            {tProposalDetails('labels.tokenSymbol')}
           </div>
           <div className="text-1">{symbol}</div>
         </div>
@@ -138,25 +137,25 @@ export const ProposalUpdateToken = ({
       {tokenIcon && (
         <div className="flex justify-between items-center">
           <div className="text-1 text-neutral-11 w-full">
-            {tLabels('tokenIcon')}
+            {tProposalDetails('labels.tokenIcon')}
           </div>
           <Image
             className="rounded-full w-8 h-8"
             width={32}
             height={32}
             src={tokenIcon}
-            alt={tLabels('tokenIcon')}
+            alt={tProposalDetails('labels.tokenIcon')}
           />
         </div>
       )}
       {maxSupply !== undefined && maxSupplyHuman !== undefined && (
         <div className="flex justify-between items-center">
           <div className="text-1 text-neutral-11 w-full">
-            {tLabels('maxSupply')}
+            {tProposalDetails('labels.maxSupply')}
           </div>
           <div className="text-1">
             {maxSupplyHuman === 0
-              ? tLabels('unlimited')
+              ? tProposalDetails('labels.unlimited')
               : formatCurrencyValue(maxSupplyHuman)}
           </div>
         </div>
@@ -164,37 +163,43 @@ export const ProposalUpdateToken = ({
       {transferable !== undefined && (
         <div className="flex justify-between items-center">
           <div className="text-1 text-neutral-11 w-full">
-            {tLabels('transferable')}
+            {tProposalDetails('labels.transferable')}
           </div>
           <div className="text-1">
-            {transferable ? tLabels('yes') : tLabels('no')}
+            {transferable
+              ? tProposalDetails('labels.yes')
+              : tProposalDetails('labels.no')}
           </div>
         </div>
       )}
       {autoMinting !== undefined && (
         <div className="flex justify-between items-center">
           <div className="text-1 text-neutral-11 w-full">
-            {tLabels('autoMinting')}
+            {tProposalDetails('labels.autoMinting')}
           </div>
           <div className="text-1">
-            {autoMinting ? tLabels('enabled') : tLabels('disabled')}
+            {autoMinting
+              ? tProposalDetails('labels.enabled')
+              : tProposalDetails('labels.disabled')}
           </div>
         </div>
       )}
       {archiveToken !== undefined && (
         <div className="flex justify-between items-center">
           <div className="text-1 text-neutral-11 w-full">
-            {tLabels('archived')}
+            {tProposalDetails('labels.archived')}
           </div>
           <div className="text-1">
-            {archiveToken ? tLabels('yes') : tLabels('no')}
+            {archiveToken
+              ? tProposalDetails('labels.yes')
+              : tProposalDetails('labels.no')}
           </div>
         </div>
       )}
       {tokenPrice !== undefined && priceCurrencyFeed && (
         <div className="flex justify-between items-center text-nowrap">
           <div className="text-1 text-neutral-11 w-full">
-            {tLabels('tokenPrice')}
+            {tProposalDetails('labels.tokenPrice')}
           </div>
           <div className="text-1">
             {formatCurrencyValue(tokenPrice)} {priceCurrencyFeed}
@@ -210,13 +215,13 @@ export const ProposalUpdateToken = ({
             </div>
             <div className="flex justify-between items-center">
               <div className="text-1 text-neutral-11 w-full">
-                {tLabels('decayPercentage')}
+                {tProposalDetails('labels.decayPercentage')}
               </div>
               <div className="text-1">{Number(decayPercentage)}%</div>
             </div>
             <div className="flex justify-between items-center">
               <div className="text-1 text-neutral-11 w-full">
-                {tLabels('decayInterval')}
+                {tProposalDetails('labels.decayInterval')}
               </div>
               <div className="text-1 text-nowrap">
                 {formatDecayInterval(decayInterval)}
@@ -228,20 +233,24 @@ export const ProposalUpdateToken = ({
       {useTransferWhitelist !== undefined && (
         <div className="flex justify-between items-center">
           <div className="text-1 text-neutral-11 w-full">
-            {tLabels('useTransferWhitelist')}
+            {tProposalDetails('labels.useTransferWhitelist')}
           </div>
           <div className="text-1">
-            {useTransferWhitelist ? tLabels('yes') : tLabels('no')}
+            {useTransferWhitelist
+              ? tProposalDetails('labels.yes')
+              : tProposalDetails('labels.no')}
           </div>
         </div>
       )}
       {useReceiveWhitelist !== undefined && (
         <div className="flex justify-between items-center">
           <div className="text-1 text-neutral-11 w-full">
-            {tLabels('useReceiveWhitelist')}
+            {tProposalDetails('labels.useReceiveWhitelist')}
           </div>
           <div className="text-1">
-            {useReceiveWhitelist ? tLabels('yes') : tLabels('no')}
+            {useReceiveWhitelist
+              ? tProposalDetails('labels.yes')
+              : tProposalDetails('labels.no')}
           </div>
         </div>
       )}
