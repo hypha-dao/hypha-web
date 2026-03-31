@@ -10,6 +10,7 @@ import {
 } from '@hypha-platform/ui-utils';
 import React from 'react';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 
 export interface ProposalUpdateTokenProps {
   address: `0x${string}`;
@@ -47,6 +48,7 @@ export const ProposalUpdateToken = ({
   useReceiveWhitelist,
   archiveToken,
 }: ProposalUpdateTokenProps) => {
+  const tProposalDetails = useTranslations('ProposalDetails');
   const { jwt: authToken } = useJwt();
   const { tokenUpdate, isLoading: isTokenUpdateLoading } =
     useUpdateTokenByAddress({
