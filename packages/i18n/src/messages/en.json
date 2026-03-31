@@ -1467,7 +1467,10 @@
       "burnRecipient": "Burn recipient",
       "burnAmount": "Burn amount",
       "defaultAvatar": "Default avatar",
-      "selfBurn": "Self burn"
+      "selfBurn": "Self burn",
+      "archived": "Archived",
+      "useTransferWhitelist": "Use Transfer Whitelist",
+      "useReceiveWhitelist": "Use Receive Whitelist"
     },
     "entryMethods": {
       "openAccess": "Open Access",

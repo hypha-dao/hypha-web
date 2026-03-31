@@ -52,6 +52,7 @@ export const ProposalUpdateToken = ({
   proposalStatus,
 }: ProposalUpdateTokenProps) => {
   const tProposalDetails = useTranslations('ProposalDetails');
+  const tLabels = useTranslations('ProposalDetails.labels');
   const { jwt: authToken } = useJwt();
 
   const statusBadge = React.useMemo(() => {
@@ -120,59 +121,81 @@ export const ProposalUpdateToken = ({
       )}
       {name !== undefined && (
         <div className="flex justify-between items-center">
-          <div className="text-1 text-neutral-11 w-full">Token Name</div>
+          <div className="text-1 text-neutral-11 w-full">
+            {tLabels('tokenName')}
+          </div>
           <div className="text-1 text-nowrap">{name}</div>
         </div>
       )}
       {symbol !== undefined && (
         <div className="flex justify-between items-center">
-          <div className="text-1 text-neutral-11 w-full">Token Symbol</div>
+          <div className="text-1 text-neutral-11 w-full">
+            {tLabels('tokenSymbol')}
+          </div>
           <div className="text-1">{symbol}</div>
         </div>
       )}
       {tokenIcon && (
         <div className="flex justify-between items-center">
-          <div className="text-1 text-neutral-11 w-full">Token Icon</div>
+          <div className="text-1 text-neutral-11 w-full">
+            {tLabels('tokenIcon')}
+          </div>
           <Image
             className="rounded-full w-8 h-8"
             width={32}
             height={32}
             src={tokenIcon}
-            alt="Token Icon"
+            alt={tLabels('tokenIcon')}
           />
         </div>
       )}
       {maxSupply !== undefined && maxSupplyHuman !== undefined && (
         <div className="flex justify-between items-center">
-          <div className="text-1 text-neutral-11 w-full">Max Supply</div>
+          <div className="text-1 text-neutral-11 w-full">
+            {tLabels('maxSupply')}
+          </div>
           <div className="text-1">
             {maxSupplyHuman === 0
-              ? tProposalDetails('labels.unlimited')
+              ? tLabels('unlimited')
               : formatCurrencyValue(maxSupplyHuman)}
           </div>
         </div>
       )}
       {transferable !== undefined && (
         <div className="flex justify-between items-center">
-          <div className="text-1 text-neutral-11 w-full">Transferable</div>
-          <div className="text-1">{transferable ? 'Yes' : 'No'}</div>
+          <div className="text-1 text-neutral-11 w-full">
+            {tLabels('transferable')}
+          </div>
+          <div className="text-1">
+            {transferable ? tLabels('yes') : tLabels('no')}
+          </div>
         </div>
       )}
       {autoMinting !== undefined && (
         <div className="flex justify-between items-center">
-          <div className="text-1 text-neutral-11 w-full">Auto Minting</div>
-          <div className="text-1">{autoMinting ? 'Enabled' : 'Disabled'}</div>
+          <div className="text-1 text-neutral-11 w-full">
+            {tLabels('autoMinting')}
+          </div>
+          <div className="text-1">
+            {autoMinting ? tLabels('enabled') : tLabels('disabled')}
+          </div>
         </div>
       )}
       {archiveToken !== undefined && (
         <div className="flex justify-between items-center">
-          <div className="text-1 text-neutral-11 w-full">Archived</div>
-          <div className="text-1">{archiveToken ? 'Yes' : 'No'}</div>
+          <div className="text-1 text-neutral-11 w-full">
+            {tLabels('archived')}
+          </div>
+          <div className="text-1">
+            {archiveToken ? tLabels('yes') : tLabels('no')}
+          </div>
         </div>
       )}
       {tokenPrice !== undefined && priceCurrencyFeed && (
         <div className="flex justify-between items-center text-nowrap">
-          <div className="text-1 text-neutral-11 w-full">Token Price</div>
+          <div className="text-1 text-neutral-11 w-full">
+            {tLabels('tokenPrice')}
+          </div>
           <div className="text-1">
             {formatCurrencyValue(tokenPrice)} {priceCurrencyFeed}
           </div>
@@ -183,17 +206,17 @@ export const ProposalUpdateToken = ({
           <Separator />
           <div className="flex flex-col gap-4">
             <div className="text-1 text-neutral-11 font-medium">
-              Decay Settings
+              {tProposalDetails('sections.decaySettings')}
             </div>
             <div className="flex justify-between items-center">
               <div className="text-1 text-neutral-11 w-full">
-                Decay Percentage
+                {tLabels('decayPercentage')}
               </div>
               <div className="text-1">{Number(decayPercentage)}%</div>
             </div>
             <div className="flex justify-between items-center">
               <div className="text-1 text-neutral-11 w-full">
-                Decay Interval
+                {tLabels('decayInterval')}
               </div>
               <div className="text-1 text-nowrap">
                 {formatDecayInterval(decayInterval)}
@@ -205,17 +228,21 @@ export const ProposalUpdateToken = ({
       {useTransferWhitelist !== undefined && (
         <div className="flex justify-between items-center">
           <div className="text-1 text-neutral-11 w-full">
-            Use Transfer Whitelist
+            {tLabels('useTransferWhitelist')}
           </div>
-          <div className="text-1">{useTransferWhitelist ? 'Yes' : 'No'}</div>
+          <div className="text-1">
+            {useTransferWhitelist ? tLabels('yes') : tLabels('no')}
+          </div>
         </div>
       )}
       {useReceiveWhitelist !== undefined && (
         <div className="flex justify-between items-center">
           <div className="text-1 text-neutral-11 w-full">
-            Use Receive Whitelist
+            {tLabels('useReceiveWhitelist')}
           </div>
-          <div className="text-1">{useReceiveWhitelist ? 'Yes' : 'No'}</div>
+          <div className="text-1">
+            {useReceiveWhitelist ? tLabels('yes') : tLabels('no')}
+          </div>
         </div>
       )}
     </div>

@@ -23,11 +23,11 @@ export const GeneralTokenSettings = ({
 }) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const label = React.useMemo(() => {
-    return getTokenTypeLabel(tokenType);
-  }, [tokenType]);
+    return getTokenTypeLabel(tokenType, tAgreementFlow);
+  }, [tokenType, tAgreementFlow]);
   const description = React.useMemo(() => {
-    return getTokenTypeDescription(tokenType);
-  }, [tokenType]);
+    return getTokenTypeDescription(tokenType, tAgreementFlow);
+  }, [tokenType, tAgreementFlow]);
 
   return (
     <>

@@ -1467,7 +1467,10 @@
       "burnRecipient": "Destinataire de la combustion",
       "burnAmount": "Montant à brûler",
       "defaultAvatar": "Avatar par défaut",
-      "selfBurn": "Auto-combustion"
+      "selfBurn": "Auto-combustion",
+      "archived": "Archivé",
+      "useTransferWhitelist": "Utiliser la liste blanche d'envoi",
+      "useReceiveWhitelist": "Utiliser la liste blanche de réception"
     },
     "entryMethods": {
       "openAccess": "Accès libre",
