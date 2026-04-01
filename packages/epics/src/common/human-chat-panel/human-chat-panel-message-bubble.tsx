@@ -1,10 +1,13 @@
 'use client';
 
-import { useCallback, useState, useRef, useEffect } from 'react';
-import { Copy, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-
+import { Smile, Reply, MoreHorizontal } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
+
+type Reaction = {
+  emoji: string;
+  count: number;
+};
 
 type UIMessagePart =
   | { type: 'text'; text: string }
@@ -16,89 +19,187 @@ type HumanChatPanelMessageBubbleProps = {
     role: 'user' | 'member';
     parts?: UIMessagePart[];
     senderName?: string;
+    timestamp?: Date;
+    reactions?: Reaction[];
   };
   isStreaming?: boolean;
 };
+
+/**
+ * Generate a deterministic hue from a string (for avatar background color).
+ */
+function stringToHue(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return Math.abs(hash) % 360;
+}
+
+/**
+ * Get initials from a name (up to 2 characters).
+ */
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0]?.charAt(0).toUpperCase() ?? '';
+  return (
+    (parts[0]?.charAt(0) ?? '') + (parts[1]?.charAt(0) ?? '')
+  ).toUpperCase();
+}
+
+/**
+ * Format a timestamp for display.
+ */
+function formatTimestamp(date: Date): string {
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  const timeStr = date.toLocaleTimeString([], {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+
+  if (isToday) return `Today at ${timeStr}`;
+
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (date.toDateString() === yesterday.toDateString()) {
+    return `Yesterday at ${timeStr}`;
+  }
+
+  return `${date.toLocaleDateString([], {
+    month: 'short',
+    day: 'numeric',
+  })} at ${timeStr}`;
+}
+
+/**
+ * Render text content with @mentions highlighted.
+ */
+function renderTextWithMentions(text: string): React.ReactNode[] {
+  const mentionRegex = /@([\w\s]+?)(?=\s|$|[.,!?;:])/g;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = mentionRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    parts.push(
+      <span
+        key={match.index}
+        className="bg-primary/20 text-primary rounded px-1 font-medium"
+      >
+        @{match[1]}
+      </span>,
+    );
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts;
+}
 
 export function HumanChatPanelMessageBubble({
   message,
   isStreaming,
 }: HumanChatPanelMessageBubbleProps) {
   const t = useTranslations('HumanChatPanel');
-  const [copied, setCopied] = useState(false);
-  const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    return () => {
-      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
-    };
-  }, []);
-
-  const isUser = message.role === 'user';
   const textParts =
     message.parts?.filter(
       (p): p is { type: 'text'; text: string } => p.type === 'text',
     ) ?? [];
   const textContent = textParts.map((p) => p.text).join('');
 
-  const handleCopy = useCallback(async () => {
-    if (!textContent) return;
-    try {
-      await navigator.clipboard.writeText(textContent);
-      setCopied(true);
-      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
-      copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // clipboard API not available
-    }
-  }, [textContent]);
+  const senderName = message.senderName ?? t('you');
+  const hue = stringToHue(senderName);
+  const initials = getInitials(senderName);
+  const timestamp = message.timestamp
+    ? formatTimestamp(message.timestamp)
+    : undefined;
+  const reactions = message.reactions ?? [];
 
   return (
-    <div className={cn('flex gap-2.5', isUser && 'flex-row-reverse')}>
-      {!isUser && (
-        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted">
-          <User className="h-3.5 w-3.5 text-muted-foreground" />
-        </div>
-      )}
+    <div className="group relative flex gap-3 px-1 py-1 hover:bg-muted/30 rounded-md transition-colors">
+      {/* Avatar */}
       <div
-        className={cn('group max-w-[85%]', isUser && 'flex flex-col items-end')}
+        className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white text-xs font-semibold"
+        style={{ backgroundColor: `hsl(${hue}, 55%, 45%)` }}
       >
-        {!isUser && message.senderName && (
-          <span className="mb-1 text-xs text-muted-foreground">
-            {message.senderName}
+        {initials}
+      </div>
+
+      {/* Content */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Name + Timestamp */}
+        <div className="flex items-baseline gap-2">
+          <span className="font-semibold text-sm text-foreground">
+            {senderName}
+          </span>
+          {timestamp && (
+            <span className="text-xs text-muted-foreground">{timestamp}</span>
+          )}
+        </div>
+
+        {/* Message text */}
+        {textContent && (
+          <p className="mt-0.5 text-sm leading-relaxed text-foreground">
+            {renderTextWithMentions(textContent)}
+          </p>
+        )}
+
+        {/* Streaming indicator */}
+        {isStreaming && (
+          <span className="mt-1 inline-flex items-center gap-0.5">
+            <span className="inline-block h-1 w-1 animate-pulse rounded-full bg-primary" />
+            <span className="inline-block h-1 w-1 animate-pulse rounded-full bg-primary [animation-delay:0.2s]" />
+            <span className="inline-block h-1 w-1 animate-pulse rounded-full bg-primary [animation-delay:0.4s]" />
           </span>
         )}
-        <div
-          className={cn(
-            'flex flex-col gap-2 rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed',
-            isUser
-              ? 'rounded-tr-sm border border-primary/20 bg-primary/10 text-foreground'
-              : 'rounded-tl-sm border border-border bg-muted text-foreground',
-          )}
-        >
-          {textContent && <span>{textContent}</span>}
-          {isStreaming && (
-            <span className="ml-1 inline-flex items-center gap-0.5">
-              <span className="inline-block h-1 w-1 animate-pulse rounded-full bg-primary" />
-              <span className="inline-block h-1 w-1 animate-pulse rounded-full bg-primary [animation-delay:0.2s]" />
-              <span className="inline-block h-1 w-1 animate-pulse rounded-full bg-primary [animation-delay:0.4s]" />
-            </span>
-          )}
-        </div>
-        {!isUser && !isStreaming && (
-          <div className="mt-1.5 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-            <button
-              type="button"
-              onClick={handleCopy}
-              disabled={!textContent}
-              className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
-              aria-label={copied ? t('copiedButton') : t('copyButton')}
-              title={copied ? t('copiedButton') : t('copyButton')}
-            >
-              <Copy className="h-3 w-3" />
-            </button>
+
+        {/* Reactions */}
+        {reactions.length > 0 && (
+          <div className="mt-1.5 flex flex-wrap items-center gap-1">
+            {reactions.map((reaction, idx) => (
+              <span
+                key={`${reaction.emoji}-${idx}`}
+                className="inline-flex items-center gap-1 rounded-full bg-secondary border border-border px-2 py-0.5 text-xs"
+              >
+                <span>{reaction.emoji}</span>
+                <span className="text-muted-foreground">{reaction.count}</span>
+              </span>
+            ))}
           </div>
         )}
+      </div>
+
+      {/* Hover action bar */}
+      <div className="absolute right-2 top-0 -translate-y-1/2 flex items-center gap-0.5 rounded-md border border-border bg-background-2 px-1 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
+        <button
+          type="button"
+          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          aria-label={t('reactButton')}
+        >
+          <Smile className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          aria-label={t('replyButton')}
+        >
+          <Reply className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          aria-label={t('moreButton')}
+        >
+          <MoreHorizontal className="h-3.5 w-3.5" />
+        </button>
       </div>
     </div>
   );

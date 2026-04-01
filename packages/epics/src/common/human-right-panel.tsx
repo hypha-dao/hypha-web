@@ -14,7 +14,10 @@ import {
   HumanChatPanelHeader,
   HumanChatPanelMessages,
   HumanChatPanelChatBar,
+  HumanChatPanelTabs,
+  HumanChatPanelMembers,
 } from './human-chat-panel';
+import type { ChatPanelTab } from './human-chat-panel';
 
 type UIMessage = {
   id: string;
@@ -72,8 +75,6 @@ export function HumanRightPanel() {
   } = matrix;
 
   // Store matrix methods in a ref to avoid infinite re-render loops.
-  // These callbacks change identity when `client` state updates in the provider,
-  // which would re-trigger useEffects that call setState, causing a cycle.
   const matrixRef = useRef(matrix);
   matrixRef.current = matrix;
 
@@ -82,7 +83,8 @@ export function HumanRightPanel() {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const joinedRef = useRef<string | null>(null); // tracks which space slug is joined
+  const [activeTab, setActiveTab] = useState<ChatPanelTab>('chat');
+  const joinedRef = useRef<string | null>(null);
 
   const currentUserId = client?.getUserId?.() ?? null;
   const currentUserIdRef = useRef(currentUserId);
@@ -90,9 +92,7 @@ export function HumanRightPanel() {
 
   // Reset chat state when space changes
   useEffect(() => {
-    // If we're already joined to a different space (or no space), reset
     if (joinedRef.current && joinedRef.current !== spaceSlug) {
-      // Unregister old listener
       if (roomId) {
         matrixRef.current.unregisterRoomListerner(roomId);
       }
@@ -121,21 +121,17 @@ export function HumanRightPanel() {
       setIsJoining(true);
       setError(null);
       try {
-        // Check if we have a stored room ID for this space
         let targetRoomId = getStoredRoomId(spaceSlug);
 
         if (targetRoomId) {
-          // Try to join the stored room
           try {
             await joinRoom(targetRoomId);
           } catch {
-            // Room no longer exists — clear and create new
             targetRoomId = null;
           }
         }
 
         if (!targetRoomId) {
-          // Create a new room for this space
           console.log('[HumanRightPanel] Creating room for space:', spaceSlug);
           const { roomId: newRoomId } = await createRoom(`space-${spaceSlug}`);
           targetRoomId = newRoomId;
@@ -146,7 +142,6 @@ export function HumanRightPanel() {
         joinedRef.current = spaceSlug;
         setRoomId(targetRoomId);
 
-        // Load existing messages
         const existing = getRoomMessages(targetRoomId);
         if (existing && !cancelled) {
           setMessages(
@@ -178,7 +173,6 @@ export function HumanRightPanel() {
 
     registerRoomListener(roomId, async (message: Message) => {
       setMessages((prev) => {
-        // Avoid duplicates
         if (prev.some((m) => m.id === message.id)) return prev;
         return [...prev, toUIMessage(message, currentUserIdRef.current)];
       });
@@ -197,7 +191,6 @@ export function HumanRightPanel() {
       await matrixRef.current.sendMessage({ roomId, message: text });
     } catch (err) {
       console.error('[HumanRightPanel] Failed to send message:', err);
-      // Restore input on failure
       setInput(text);
     }
   }, [input, roomId]);
@@ -206,31 +199,41 @@ export function HumanRightPanel() {
     <>
       <SidebarHeader className="bg-background-2 p-0">
         <HumanChatPanelHeader />
+        <HumanChatPanelTabs activeTab={activeTab} onTabChange={setActiveTab} />
       </SidebarHeader>
       <SidebarContent className="bg-background-2 min-h-0">
-        {error && (
-          <div
-            role="alert"
-            className="mx-3 mt-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
-          >
-            {error}
-          </div>
+        {activeTab === 'chat' && (
+          <>
+            {error && (
+              <div
+                role="alert"
+                className="mx-3 mt-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              >
+                {error}
+              </div>
+            )}
+            {isJoining ? (
+              <div className="flex flex-1 items-center justify-center">
+                <div className="text-sm text-muted-foreground">
+                  {t('loading')}
+                </div>
+              </div>
+            ) : (
+              <HumanChatPanelMessages messages={messages} />
+            )}
+          </>
         )}
-        {isJoining ? (
-          <div className="flex flex-1 items-center justify-center">
-            <div className="text-sm text-muted-foreground">{t('loading')}</div>
-          </div>
-        ) : (
-          <HumanChatPanelMessages messages={messages} />
-        )}
+        {activeTab === 'members' && <HumanChatPanelMembers />}
       </SidebarContent>
-      <SidebarFooter className="bg-background-2 p-0">
-        <HumanChatPanelChatBar
-          value={input}
-          onChange={setInput}
-          onSend={handleSend}
-        />
-      </SidebarFooter>
+      {activeTab === 'chat' && (
+        <SidebarFooter className="bg-background-2 p-0">
+          <HumanChatPanelChatBar
+            value={input}
+            onChange={setInput}
+            onSend={handleSend}
+          />
+        </SidebarFooter>
+      )}
     </>
   );
 }

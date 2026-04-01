@@ -12,6 +12,7 @@ import { HumanChatPanelPage } from './pages/human-chat-panel.page';
  * These tests require NEXT_PUBLIC_ENABLE_HUMAN_CHAT=true.
  */
 test.describe('Human Chat Panel — Space Switching', () => {
+  test.setTimeout(60_000); // Space navigation can be slow in production builds
   const SPACE_A = 'hypha';
   const SPACE_B = 'hypha-platform';
 

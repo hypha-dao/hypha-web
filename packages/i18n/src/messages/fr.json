@@ -1614,13 +1614,26 @@
     "title": "Chat",
     "welcome": "Bienvenue dans le chat ! Démarrez une conversation avec les autres membres de cet espace.",
     "placeholder": "Tapez un message...",
+    "placeholderChannel": "Message #{channel}",
     "sendButton": "Envoyer",
-    "newlineHint": "Shift+Entrée pour nouvelle ligne",
+    "newlineHint": "Entrée pour envoyer · Shift+Entrée pour nouvelle ligne · @ pour mentionner",
     "loading": "Chargement...",
     "openPanel": "Ouvrir le panneau de chat",
     "hidePanel": "Masquer le panneau de chat",
     "closePanel": "Fermer le panneau",
     "copyButton": "Copier",
-    "copiedButton": "Copié !"
+    "copiedButton": "Copié !",
+    "tabChat": "Chat",
+    "tabMembers": "Membres",
+    "membersCount": "{count} membres · {online} en ligne",
+    "you": "Vous",
+    "reactButton": "Réagir",
+    "replyButton": "Répondre",
+    "moreButton": "Plus",
+    "attachFile": "Joindre un fichier",
+    "attachImage": "Joindre une image",
+    "bold": "Gras",
+    "emoji": "Emoji",
+    "mention": "Mentionner"
   }
 }
