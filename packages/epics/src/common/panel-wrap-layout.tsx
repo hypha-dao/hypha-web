@@ -15,6 +15,7 @@ import {
   useAiPanel,
   useHumanChatPanel,
 } from './human-chat-panel-context';
+import { useIsSpaceContext } from './use-is-space-context';
 
 // ─── Panel Providers ─────────────────────────────────────────────────────────
 // Owns the open/close state for both panels and wraps children with the
@@ -44,8 +45,9 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
 export function AiSidebarTrigger() {
   const { open, toggle } = useAiPanel();
   const t = useTranslations('AiPanel');
+  const isSpace = useIsSpaceContext();
 
-  if (open) return null;
+  if (!isSpace || open) return null;
 
   return (
     <button
@@ -64,8 +66,9 @@ export function AiSidebarTrigger() {
 export function HumanSidebarTrigger() {
   const { open, toggle } = useHumanChatPanel();
   const t = useTranslations('HumanChatPanel');
+  const isSpace = useIsSpaceContext();
 
-  if (open) return null;
+  if (!isSpace || open) return null;
 
   return (
     <button
@@ -109,12 +112,17 @@ export function PanelWrapLayout({
 }: PanelWrapLayoutProps) {
   const { open: leftOpen, toggle: toggleLeft } = useAiPanel();
   const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
+  const isSpace = useIsSpaceContext();
+
+  // Panels are only available within a space context (/[lang]/dho/[id]/...)
+  const effectiveLeft = isSpace ? left : undefined;
+  const effectiveRight = isSpace ? right : undefined;
 
   // Core content that goes inside the innermost SidebarInset
   let content = <>{children}</>;
 
-  // Wrap with right panel if provided
-  if (right) {
+  // Wrap with right panel if provided and in space context
+  if (effectiveRight) {
     content = (
       <SidebarProvider
         open={rightOpen}
@@ -130,14 +138,14 @@ export function PanelWrapLayout({
         <SidebarInset className="overflow-y-auto">{content}</SidebarInset>
         <Sidebar side="right" variant="sidebar" collapsible="offcanvas">
           <SidebarResizeHandle />
-          {right.content}
+          {effectiveRight.content}
         </Sidebar>
       </SidebarProvider>
     );
   }
 
-  // Wrap with left panel if provided
-  if (left) {
+  // Wrap with left panel if provided and in space context
+  if (effectiveLeft) {
     content = (
       <SidebarProvider
         open={leftOpen}
@@ -151,7 +159,7 @@ export function PanelWrapLayout({
         }
       >
         <Sidebar side="left" variant="sidebar" collapsible="offcanvas">
-          {left.content}
+          {effectiveLeft.content}
           <SidebarResizeHandle />
         </Sidebar>
         <SidebarInset className="overflow-y-auto">{content}</SidebarInset>
@@ -163,8 +171,9 @@ export function PanelWrapLayout({
     <div
       style={
         {
-          '--sidebar-right-width': rightOpen ? '320px' : '0px',
-          '--sidebar-left-width': leftOpen ? '320px' : '0px',
+          '--sidebar-right-width':
+            rightOpen && effectiveRight ? '320px' : '0px',
+          '--sidebar-left-width': leftOpen && effectiveLeft ? '320px' : '0px',
         } as React.CSSProperties
       }
     >
