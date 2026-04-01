@@ -100,12 +100,15 @@ export class CoherencePage extends BasePage {
   }
 
   /**
-   * Navigate directly to the create-signal form URL.
+   * NOTE: Direct navigation to /coherence/new-signal does NOT work.
+   * The create-signal form lives in @aside/[tab]/new-signal (parallel route)
+   * and is only reachable via soft navigation (clicking "New Signal" button
+   * on the coherence page while authenticated).
+   *
+   * To access the form in tests: open coherence page (with auth), then click
+   * newSignalButton — this triggers Next.js soft navigation that resolves both
+   * @tab (coherence content) and @aside (CreateSignalForm SidePanel).
    */
-  async openNewSignalPage() {
-    await this.page.goto(`/en/dho/${this.spaceSlug}/coherence/new-signal`);
-    await this.waitForPageLoad();
-  }
 
   /**
    * Returns the current URL path.
