@@ -32,7 +32,8 @@
     "errorLoadOverviewTab": "Oops, something went wrong. Couldn't load overview tab.",
     "errorLoadMembersTab": "Oops, something went wrong. Couldn't load members tab.",
     "errorLoadAgreementsTab": "Oops, something went wrong. Couldn't load agreements tab.",
-    "errorLoadTreasuryTab": "Oops, something went wrong. Couldn't load treasury tab."
+    "errorLoadTreasuryTab": "Oops, something went wrong. Couldn't load treasury tab.",
+    "Coherence": "Coherence"
   },
   "Navigation": {
     "network": "Network",
@@ -1601,5 +1602,73 @@
     "bold": "Bold",
     "emoji": "Emoji",
     "mention": "Mention"
+  },
+  "CoherenceTab": {
+    "signals": "Signals",
+    "signInToSee": "Please, sign in to see signals and conversations",
+    "searchSignals": "Search signals...",
+    "improve": "Improve",
+    "newSignal": "New Signal",
+    "all": "All",
+    "listIsEmpty": "List is empty",
+    "mostViews": "Most Views",
+    "mostMessages": "Most Messages",
+    "mostRecent": "Most Recent",
+    "searchConversation": "Search conversation",
+    "hideArchived": "Hide archived",
+    "highUrgency": "High Urgency",
+    "mediumUrgency": "Medium Urgency",
+    "lowUrgency": "Low Urgency",
+    "mentions": "{count} mentions",
+    "unarchiveConversation": "Unarchive Conversation",
+    "unarchiveConfirm": "Do you really want to unarchive this conversation?",
+    "yesUnarchive": "Yes, unarchive",
+    "noLeave": "No, leave",
+    "unarchive": "Unarchive",
+    "openConversation": "Open conversation",
+    "saySomething": "Say something...",
+    "proposeAgreement": "Propose Agreement",
+    "errorOhSnap": "Ouh Snap. There was an error",
+    "reset": "Reset",
+    "creatingNewSignal": "Creating new signal",
+    "signalTitle": "Signal title...",
+    "type": "Type",
+    "priority": "Priority",
+    "tags": "Tags",
+    "selectOneOrMore": "Select one or more",
+    "description": "Description",
+    "descriptionPlaceholder": "Type your description here...",
+    "publish": "Publish",
+    "createdOn": "Created on {date}",
+    "archiveConversation": "Archive Conversation",
+    "archiveConfirm": "Do you really want to archive this conversation?",
+    "yesArchive": "Yes, archive",
+    "errorCoherenceTab": "Oops, something went wrong. Couldn't load coherence tab.",
+    "types": {
+      "Opportunity": "Opportunity",
+      "Risk": "Risk",
+      "Tension": "Tension",
+      "Insight": "Insight",
+      "Trend": "Trend",
+      "Proposal": "Proposal"
+    },
+    "typeDescriptions": {
+      "Opportunity": "Coordination window or positive opening",
+      "Risk": "Threat, concern or danger ahead",
+      "Tension": "Conflict or disagreement needing resolution",
+      "Insight": "Data-driven observation or discovery",
+      "Trend": "Emerging pattern across spaces",
+      "Proposal": "Governance action or vote needed"
+    },
+    "priorities": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "priorityDescriptions": {
+      "high": "Needs immediate attention",
+      "medium": "Monitor and act soon",
+      "low": "Informational, no rush"
+    }
   }
 }
