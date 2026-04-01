@@ -10,12 +10,17 @@ const HYPHA_ENABLE_HUMAN_CHAT = 'HYPHA_ENABLE_HUMAN_CHAT';
 export class HumanChatPanelPage extends BasePage {
   readonly openButton: Locator;
   readonly headerText: Locator;
+  readonly headerIcon: Locator;
   readonly closeButton: Locator;
   readonly chatInput: Locator;
   readonly sendButton: Locator;
   readonly sidebar: Locator;
   readonly sidebarWrapper: Locator;
   readonly resizeHandle: Locator;
+  readonly membersTab: Locator;
+  readonly chatTab: Locator;
+  readonly membersContainer: Locator;
+  readonly memberItems: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -26,6 +31,12 @@ export class HumanChatPanelPage extends BasePage {
     this.headerText = page
       .locator('[data-side="right"] [data-sidebar="header"] span')
       .filter({ hasText: 'Chat' })
+      .first();
+    // The chat icon container (rounded bg-primary div with MessageCircle SVG)
+    this.headerIcon = page
+      .locator(
+        '[data-side="right"] [data-sidebar="header"] .rounded-xl.bg-primary',
+      )
       .first();
     // The header close button has aria-label="Close panel" within the right sidebar.
     // We scope to the right-side sidebar group to avoid collision with AI panel's close button.
@@ -43,6 +54,14 @@ export class HumanChatPanelPage extends BasePage {
     this.resizeHandle = page.locator(
       '[data-side="right"] [data-sidebar="resize-handle"]',
     );
+    this.membersTab = page
+      .locator('[data-side="right"]')
+      .getByRole('button', { name: /members/i });
+    this.chatTab = page
+      .locator('[data-side="right"]')
+      .getByRole('button', { name: /^chat$/i });
+    this.membersContainer = page.getByTestId('chat-panel-members');
+    this.memberItems = page.getByTestId('chat-panel-member-item');
   }
 
   /**
