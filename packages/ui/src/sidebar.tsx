@@ -576,7 +576,9 @@ const SidebarResizeHandle = React.forwardRef<
         onKeyDown={handleKeyDown}
         className={cn(
           // Layout & hit target (12px wide, centered on edge)
-          'group/resize absolute inset-y-0 -right-1.5 z-20 w-3',
+          // Position on the outer edge: right for left-side panels, left for right-side panels
+          'group/resize absolute inset-y-0 z-20 w-3',
+          'group-data-[side=left]:-right-1.5 group-data-[side=right]:-left-1.5',
           'hidden sm:flex items-center justify-center',
           'cursor-col-resize select-none touch-none',
 

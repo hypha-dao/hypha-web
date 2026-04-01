@@ -34,11 +34,15 @@ export class HumanChatPanelPage extends BasePage {
       .getByRole('button', { name: 'Close panel' });
     this.chatInput = page.getByPlaceholder('Type a message...');
     this.sendButton = page.getByRole('button', { name: 'Send' });
-    this.sidebar = page.locator('[data-sidebar="sidebar"]');
-    this.sidebarWrapper = page.locator('[data-sidebar="wrapper"]');
-    this.resizeHandle = page.getByRole('separator', {
-      name: 'Resize sidebar',
-    });
+    this.sidebar = page.locator('[data-side="right"] [data-sidebar="sidebar"]');
+    // The wrapper is the SidebarProvider div that contains the right-side sidebar
+    this.sidebarWrapper = page.locator(
+      '[data-sidebar="wrapper"]:has([data-side="right"])',
+    );
+    // Scope resize handle to the right sidebar to avoid collision with AI panel's handle
+    this.resizeHandle = page.locator(
+      '[data-side="right"] [data-sidebar="resize-handle"]',
+    );
   }
 
   /**
