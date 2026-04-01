@@ -2,11 +2,17 @@
 
 import { useAuthentication } from '@hypha-platform/authentication';
 import { Empty } from '../../common/empty';
-import { useFindCoherences, useSpaceBySlug } from '@hypha-platform/core/client';
+import {
+  Coherence,
+  useFindCoherences,
+  useSpaceBySlug,
+} from '@hypha-platform/core/client';
+import { useSidebar } from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
 import React from 'react';
 import { CoherenceOrder } from '../types';
 import { SignalSection } from './signal-section';
+import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 
 type CoherenceBlockProps = {
   lang: Locale;
@@ -41,6 +47,18 @@ export function CoherenceBlock({
     [lang, spaceSlug],
   );
 
+  const { openCoherenceChat } = useHumanChatPanel();
+  const { setOpen } = useSidebar();
+
+  const handleSignalClick = React.useCallback(
+    (signal: Coherence) => {
+      if (!signal.roomId) return; // guard: room not created yet
+      openCoherenceChat(signal.roomId, signal.title, signal.slug);
+      setOpen(true);
+    },
+    [openCoherenceChat, setOpen],
+  );
+
   return (
     <div className="flex flex-col gap-6 py-4">
       {isAuthenticated ? (
@@ -54,6 +72,7 @@ export function CoherenceBlock({
             firstPageSize={6}
             pageSize={3}
             refresh={refresh}
+            onSignalClick={handleSignalClick}
           />
         </>
       ) : (
