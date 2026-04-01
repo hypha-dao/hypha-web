@@ -25,7 +25,7 @@ parent: docs/index.md
 
 ## Dependency Graph
 
-```
+```text
 Step 1: storage schema
    ↓
 Step 2: core types + validation
@@ -66,6 +66,7 @@ Step 16: navigation tab + layout.tsx cleanup
 ## Steps
 
 ### Step 1 — Storage: Coherence Schema
+
 **Commit:** `feat(storage): add coherence table schema`  
 **Files:**
 - `packages/storage-postgres/src/schema/coherence.ts` (new)
@@ -86,6 +87,7 @@ Step 16: navigation tab + layout.tsx cleanup
 ---
 
 ### Step 2 — Core: Types, Enums & Validation
+
 **Commit:** `feat(core/coherence): add types, enums and zod validation`  
 **Files:**
 - `packages/core/src/coherence/types.ts` (modify: add Coherence, CreateCoherenceInput, UpdateCoherenceInput types)
@@ -99,6 +101,7 @@ Step 16: navigation tab + layout.tsx cleanup
 ---
 
 ### Step 3 — Core: Server Queries & Mutations
+
 **Commit:** `feat(core/coherence): add server queries and mutations`  
 **Files:**
 - `packages/core/src/coherence/server/mutations.ts` (new)
@@ -114,6 +117,7 @@ Step 16: navigation tab + layout.tsx cleanup
 ---
 
 ### Step 4 — Core: Server Actions & Web3 Adapters
+
 **Commit:** `feat(core/coherence): add server actions and web3 adapters`  
 **Files:**
 - `packages/core/src/coherence/server/actions.ts` (new: `'use server'` wrappers)
@@ -132,6 +136,7 @@ Step 16: navigation tab + layout.tsx cleanup
 ---
 
 ### Step 5 — Core: Client Hooks
+
 **Commit:** `feat(core/coherence): add client SWR hooks`  
 **Files:**
 - `packages/core/src/coherence/client/hooks/useFindCoherences.ts` (new)
@@ -148,6 +153,7 @@ Step 16: navigation tab + layout.tsx cleanup
 ---
 
 ### Step 6 — Core: Wire Coherence into `client.ts` and `coherence/index.ts`
+
 **Commit:** `feat(core): export coherence module from client barrel`  
 **Files:**
 - `packages/core/src/client.ts` (modify: add `export * from './coherence'`)
@@ -158,6 +164,7 @@ Step 16: navigation tab + layout.tsx cleanup
 ---
 
 ### Step 7 — Epics: Types & Primitive Buttons
+
 **Commit:** `feat(epics/coherence): add types and primitive UI buttons`  
 **Files:**
 - `packages/epics/src/coherence/types.ts` (new: ChatCreatorType, COHERENCE_ORDERS, CoherenceOrder, ChatPageParams)
@@ -169,6 +176,7 @@ Step 16: navigation tab + layout.tsx cleanup
 ---
 
 ### Step 8 — Epics: Signal Components
+
 **Commit:** `feat(epics/coherence): add signal card, grid and section components`  
 **Files:**
 - `packages/epics/src/coherence/components/signal-card.tsx` (new)
@@ -187,6 +195,7 @@ Step 16: navigation tab + layout.tsx cleanup
 ---
 
 ### Step 9 — Epics: Conversation Components
+
 **Commit:** `feat(epics/coherence): add conversation card, grid and section components`  
 **Files:**
 - `packages/epics/src/coherence/components/conversation-card.tsx` (new)
@@ -204,6 +213,7 @@ Step 16: navigation tab + layout.tsx cleanup
 ---
 
 ### Step 10 — Epics: Chat Components
+
 **Commit:** `feat(epics/coherence): add chat room, message and detail components`  
 **Files:**
 - `packages/epics/src/coherence/components/chat-message.tsx` (new)
@@ -225,6 +235,7 @@ Step 16: navigation tab + layout.tsx cleanup
 ---
 
 ### Step 11 — Epics: Create Signal Form
+
 **Commit:** `feat(epics/coherence): add create signal form`  
 **Files:**
 - `packages/epics/src/coherence/components/create-signal-form.tsx` (new)
@@ -239,6 +250,7 @@ Step 16: navigation tab + layout.tsx cleanup
 ---
 
 ### Step 12 — Epics: CoherenceBlock (Top-Level)
+
 **Commit:** `feat(epics/coherence): add coherence-block top-level component`  
 **Files:**
 - `packages/epics/src/coherence/components/coherence-block.tsx` (new)
@@ -253,6 +265,7 @@ Step 16: navigation tab + layout.tsx cleanup
 ---
 
 ### Step 13 — Epics: Barrel Exports
+
 **Commit:** `feat(epics/coherence): wire coherence module into epics barrel`  
 **Files:**
 - `packages/epics/src/coherence/components/index.ts` (new: export all 14 components)
@@ -265,6 +278,7 @@ Step 16: navigation tab + layout.tsx cleanup
 ---
 
 ### Step 14 — i18n: Translations
+
 **Commit:** `feat(i18n): add CoherenceTab translations and Common.Coherence key`  
 **Files:**
 - `packages/i18n/src/messages/en.json` (modify: add CoherenceTab namespace + `"Coherence"` to Common)
@@ -280,6 +294,7 @@ Step 16: navigation tab + layout.tsx cleanup
 ---
 
 ### Step 15 — Routes: `@tab/coherence` and `@aside/coherence`
+
 **Commit:** `feat(web/coherence): add coherence tab and aside route files`  
 **Files:**
 - `apps/web/src/app/[lang]/dho/[id]/@tab/coherence/constants.ts` (new)
@@ -298,6 +313,7 @@ Step 16: navigation tab + layout.tsx cleanup
 ---
 
 ### Step 16 — Navigation & Layout Integration
+
 **Commit:** `feat(web/coherence): add coherence to navigation tabs`  
 **Files:**
 - `apps/web/src/app/[lang]/dho/[id]/_components/navigation-tabs.tsx` (modify: import getDhoPathCoherence, add tab)

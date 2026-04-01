@@ -106,7 +106,7 @@ This keeps the header component generic — it doesn't need to know about cohere
 
 ### Q4 — Should clicking a signal card prevent navigation and open the sidebar instead?
 
-**Decision: Yes — intercept at `SignalGrid` level.** 
+**Decision: Yes — intercept at `SignalGrid` level.**
 
 Current flow:  
 `SignalGrid` wraps each card in `<Link href={basePath}/{signal.slug}>` → navigation.
@@ -130,7 +130,7 @@ Alternative considered — remember the coherence room — was rejected because:
 
 ## 4. Current Data Flow (Before Change)
 
-```
+```text
 CoherenceBlock
   └─ SignalSection
        └─ SignalGrid
@@ -146,7 +146,7 @@ CoherenceBlock
 
 ## 5. Target Data Flow (After Change)
 
-```
+```text
 HumanChatPanelProvider (root layout)
   ├─ mode: 'space' | 'coherence'
   ├─ coherenceRoomId / coherenceTitle / coherenceSlug

@@ -24,7 +24,7 @@ parent: docs/index.md
 
 ## Dependency Graph
 
-```
+```text
 Step 1: Extend HumanChatPanelContext (mode + coherence state)
    ↓
 Step 2: Update HumanRightPanel (dual-mode room logic)

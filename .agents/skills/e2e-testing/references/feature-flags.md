@@ -53,7 +53,8 @@ test.beforeEach(async ({ context }) => {
 
 ### Multiple Flags
 
-Concatenate cookies with `; ` in the header:
+Concatenate cookies with `;` in the header:
+
 ```typescript
 test.use({
   extraHTTPHeaders: {
@@ -120,7 +121,8 @@ NEXT_PUBLIC_ENABLE_HUMAN_CHAT=true pnpm dev
 ```
 
 Or add to `apps/web/.env`:
-```
+
+```dotenv
 NEXT_PUBLIC_ENABLE_HUMAN_CHAT=true
 ```
 

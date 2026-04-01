@@ -61,3 +61,4 @@ vitest.config.*.timestamp*
 .firecrawl/
 .playwright-cli/
 test-results/
+playwright-report/

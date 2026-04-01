@@ -2,7 +2,7 @@
 
 ## Project Structure
 
-```
+```text
 apps/web-e2e/
 ├── playwright.config.ts          # CI config (starts production server)
 ├── playwright-local.config.ts    # Local dev config (no webServer)
