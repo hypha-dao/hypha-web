@@ -292,10 +292,26 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   );
 };
 
+const noopMatrixContext: MatrixContextType = {
+  client: null,
+  isMatrixAvailable: false,
+  isAuthenticated: false,
+  createRoom: async () => ({ roomId: '' }),
+  sendMessage: async () => {},
+  getRoomMessages: () => null,
+  getPinnedMessageIds: () => [],
+  togglePinnedMessage: async () => {},
+  getRoomMembers: async () => [],
+  joinRoom: async () => {},
+  registerRoomListener: () => {},
+  unregisterRoomListener: () => {},
+  registeredRoomListeners: [],
+};
+
 export const useMatrix = () => {
   const context = React.useContext(MatrixContext);
   if (!context) {
-    throw new Error('useMatrix must be used within MatrixProvider');
+    return noopMatrixContext;
   }
   return context;
 };
