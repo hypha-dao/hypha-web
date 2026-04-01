@@ -32,9 +32,11 @@ export interface UpdateIssuedTokenInput {
   priceCurrencyFeed?: `0x${string}`;
   useTransferWhitelist?: boolean;
   useReceiveWhitelist?: boolean;
-  /** Same semantics as issue-token `initialTransferWhitelist` — applied via batchSet after toggles */
+  /** `batchSetTransfer(accounts, allowed)` — add/remove in one call */
   batchTransferWhitelistAccounts?: `0x${string}`[];
+  batchTransferWhitelistAllowed?: boolean[];
   batchReceiveWhitelistAccounts?: `0x${string}`[];
+  batchReceiveWhitelistAllowed?: boolean[];
   archiveToken?: boolean;
 }
 
@@ -147,27 +149,39 @@ export function buildUpdateIssuedTokenTxData(
   // Issue-token deploy applies initial whitelist arrays before use-* flags are meaningful.
   // Same order here: seed addresses first, then toggle enforcement (avoids reverts if the
   // contract rejects batch while enforcement is already on, or requires non-empty state).
-  if (arg.batchTransferWhitelistAccounts?.length) {
-    const accounts = arg.batchTransferWhitelistAccounts;
+  if (
+    arg.batchTransferWhitelistAccounts?.length &&
+    arg.batchTransferWhitelistAllowed?.length ===
+      arg.batchTransferWhitelistAccounts.length
+  ) {
     txData.push({
       target: arg.address,
       value: 0,
       data: encodeFunctionData({
         abi: decayingSpaceTokenAbi,
         functionName: 'batchSetTransferWhitelist',
-        args: [accounts, accounts.map(() => true)],
+        args: [
+          arg.batchTransferWhitelistAccounts,
+          arg.batchTransferWhitelistAllowed,
+        ],
       }),
     });
   }
-  if (arg.batchReceiveWhitelistAccounts?.length) {
-    const accounts = arg.batchReceiveWhitelistAccounts;
+  if (
+    arg.batchReceiveWhitelistAccounts?.length &&
+    arg.batchReceiveWhitelistAllowed?.length ===
+      arg.batchReceiveWhitelistAccounts.length
+  ) {
     txData.push({
       target: arg.address,
       value: 0,
       data: encodeFunctionData({
         abi: decayingSpaceTokenAbi,
         functionName: 'batchSetReceiveWhitelist',
-        args: [accounts, accounts.map(() => true)],
+        args: [
+          arg.batchReceiveWhitelistAccounts,
+          arg.batchReceiveWhitelistAllowed,
+        ],
       }),
     });
   }

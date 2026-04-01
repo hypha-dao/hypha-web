@@ -46,6 +46,8 @@ type PluginProps = {
   web3SpaceId?: number | null;
   spaceId?: number;
   spaces?: Space[];
+  /** Full space list (incl. current DHO) for mapping on-chain space ids → addresses */
+  spacesForChainMapping?: Space[];
   members?: Person[];
 };
 
@@ -55,6 +57,7 @@ export const Plugin = ({
   web3SpaceId,
   spaceId,
   spaces,
+  spacesForChainMapping,
   members,
 }: PluginProps) => {
   const { persons, spaces: memberSpaces } = useMembers({
@@ -63,14 +66,22 @@ export const Plugin = ({
   });
 
   const PluginCmp = PLUGINS[name];
+  const commonProps = {
+    spaceSlug: spaceSlug || '',
+    web3SpaceId,
+    spaceId,
+    members: members ?? persons?.data,
+    spaces: spaces ?? memberSpaces?.data,
+  };
 
-  return (
-    <PluginCmp
-      spaceSlug={spaceSlug || ''}
-      web3SpaceId={web3SpaceId}
-      spaceId={spaceId}
-      members={members ?? persons?.data}
-      spaces={spaces ?? memberSpaces?.data}
-    />
-  );
+  if (name === 'update-issued-token') {
+    return (
+      <UpdateIssuedTokenPlugin
+        {...commonProps}
+        spacesForChainMapping={spacesForChainMapping}
+      />
+    );
+  }
+
+  return <PluginCmp {...commonProps} />;
 };

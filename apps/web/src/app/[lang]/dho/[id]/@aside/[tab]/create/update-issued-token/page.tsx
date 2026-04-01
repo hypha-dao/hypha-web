@@ -70,6 +70,7 @@ export default async function UpdateIssuedTokenPage({
             spaceSlug={id}
             spaceId={spaceId}
             spaces={filteredSpaces}
+            spacesForChainMapping={spaces}
             members={filteredPeoples}
           />
         }

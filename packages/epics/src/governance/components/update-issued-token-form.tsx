@@ -82,6 +82,9 @@ export const UpdateIssuedTokenForm = ({
         archiveToken: z.boolean().optional(),
         /** DB/chain icon URL when the token was loaded; not submitted to APIs */
         initialIconUrl: z.string().optional(),
+        /** Snapshot when the form loaded; used for on-chain whitelist diffs (not user-facing) */
+        whitelistBaselineFrom: z.array(z.string()).optional(),
+        whitelistBaselineTo: z.array(z.string()).optional(),
       }),
     );
 
@@ -185,6 +188,8 @@ export const UpdateIssuedTokenForm = ({
       tokenPrice: undefined,
       tokenAddress: undefined,
       archiveToken: false,
+      whitelistBaselineFrom: undefined,
+      whitelistBaselineTo: undefined,
     }),
     [tProposalDetails, spaceId, person?.id],
   );
@@ -257,6 +262,12 @@ export const UpdateIssuedTokenForm = ({
       referenceCurrency: submitData.enableTokenPrice
         ? submitData.referenceCurrency
         : undefined,
+      whitelistBaselineFrom: submitData.whitelistBaselineFrom as
+        | `0x${string}`[]
+        | undefined,
+      whitelistBaselineTo: submitData.whitelistBaselineTo as
+        | `0x${string}`[]
+        | undefined,
     });
   };
 

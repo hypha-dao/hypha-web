@@ -39,6 +39,7 @@ export * from './useMembershipExitMutations.web.rpc';
 export * from './useWithdrawProposal';
 export * from './useUpdateTokenByAddress';
 export * from './useTokenOnChainData';
+export * from './fetch-whitelist-baseline';
 export * from './useTokenDecimals';
 export * from './useSpaceTokenPurchaseOrchestrator';
 export * from './useSpaceTokenPurchaseMutations.web3.rsc';

@@ -1,6 +1,7 @@
 'use client';
 
 import useSWRMutation from 'swr/mutation';
+import useSWR from 'swr';
 import { useCallback, useMemo, useReducer, useState } from 'react';
 import { z } from 'zod';
 import { produce } from 'immer';
@@ -21,6 +22,11 @@ import {
   padUpdateIssuedTokenInputIfNoTxs,
   useUpdateIssuedTokenMutationsWeb3Rpc,
 } from './useUpdateIssuedTokenMutations.web3.rpc';
+import {
+  diffWhitelistForBatchSet,
+  normalizeWhitelistAddresses,
+} from './whitelist-address-diff';
+import { TokenUpdateData } from '../../types';
 
 function whitelistAddressesFromForm(
   entries: Array<{ address: string }> | undefined | null,
@@ -28,12 +34,11 @@ function whitelistAddressesFromForm(
   if (!entries?.length) {
     return [];
   }
-  return entries
+  const raw = entries
     .map((e) => e.address as `0x${string}`)
     .filter((addr) => typeof addr === 'string' && addr.startsWith('0x'));
+  return normalizeWhitelistAddresses(raw);
 }
-import useSWR from 'swr';
-import { TokenUpdateData } from '../../types';
 
 type TaskName =
   | 'CREATE_WEB2_AGREEMENT'
@@ -149,6 +154,9 @@ type UpdateIssuedTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
   };
   archiveToken?: boolean;
   maxSupplyType?: { label: string; value: 'immutable' | 'updatable' };
+  /** On-chain snapshot when the form loaded (for batchSet removals vs adds) */
+  whitelistBaselineFrom?: `0x${string}`[];
+  whitelistBaselineTo?: `0x${string}`[];
   /** Top-level react-hook-form dirty keys; drives partial on-chain updates */
   changedTopLevelKeys?: string[];
 };
@@ -235,26 +243,49 @@ function buildPartialUpdateIssuedTokenWeb3Input(
     if (!arg.enableAdvancedTransferControls) {
       base.useTransferWhitelist = false;
       base.useReceiveWhitelist = false;
+      const baselineFrom = normalizeWhitelistAddresses(
+        arg.whitelistBaselineFrom ?? [],
+      );
+      const baselineTo = normalizeWhitelistAddresses(
+        arg.whitelistBaselineTo ?? [],
+      );
+      const clearFrom = diffWhitelistForBatchSet(baselineFrom, []);
+      const clearTo = diffWhitelistForBatchSet(baselineTo, []);
+      if (clearFrom.accounts.length > 0) {
+        base.batchTransferWhitelistAccounts = clearFrom.accounts;
+        base.batchTransferWhitelistAllowed = clearFrom.allowed;
+      }
+      if (clearTo.accounts.length > 0) {
+        base.batchReceiveWhitelistAccounts = clearTo.accounts;
+        base.batchReceiveWhitelistAllowed = clearTo.allowed;
+      }
     } else if (arg.transferable === true) {
-      const useTransferWhitelist = !!(
-        arg.transferWhitelist?.from && arg.transferWhitelist.from.length > 0
+      const targetFrom = whitelistAddressesFromForm(
+        arg.transferWhitelist?.from,
       );
-      const useReceiveWhitelist = !!(
-        arg.transferWhitelist?.to && arg.transferWhitelist.to.length > 0
+      const targetTo = whitelistAddressesFromForm(arg.transferWhitelist?.to);
+      const baselineFrom = normalizeWhitelistAddresses(
+        arg.whitelistBaselineFrom ?? [],
       );
+      const baselineTo = normalizeWhitelistAddresses(
+        arg.whitelistBaselineTo ?? [],
+      );
+
+      const useTransferWhitelist = targetFrom.length > 0;
+      const useReceiveWhitelist = targetTo.length > 0;
       base.useTransferWhitelist = useTransferWhitelist;
       base.useReceiveWhitelist = useReceiveWhitelist;
-      if (useTransferWhitelist) {
-        const addrs = whitelistAddressesFromForm(arg.transferWhitelist?.from);
-        if (addrs.length > 0) {
-          base.batchTransferWhitelistAccounts = addrs;
-        }
+
+      const transferDiff = diffWhitelistForBatchSet(baselineFrom, targetFrom);
+      if (transferDiff.accounts.length > 0) {
+        base.batchTransferWhitelistAccounts = transferDiff.accounts;
+        base.batchTransferWhitelistAllowed = transferDiff.allowed;
       }
-      if (useReceiveWhitelist) {
-        const addrs = whitelistAddressesFromForm(arg.transferWhitelist?.to);
-        if (addrs.length > 0) {
-          base.batchReceiveWhitelistAccounts = addrs;
-        }
+
+      const receiveDiff = diffWhitelistForBatchSet(baselineTo, targetTo);
+      if (receiveDiff.accounts.length > 0) {
+        base.batchReceiveWhitelistAccounts = receiveDiff.accounts;
+        base.batchReceiveWhitelistAllowed = receiveDiff.allowed;
       }
     } else {
       // Non-transferable tokens cannot use transfer/receive whitelists on-chain; enabling both

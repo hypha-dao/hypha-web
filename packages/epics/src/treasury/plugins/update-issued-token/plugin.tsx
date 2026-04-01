@@ -16,6 +16,7 @@ import {
   type UpdateIssuedTokenResubmitPayload,
 } from '../../../proposals/update-issued-token-resubmit';
 import {
+  fetchWhitelistBaselineFromChain,
   getPriceCurrencyCode,
   type Person,
   type Space,
@@ -33,6 +34,7 @@ import { useDbTokens } from '../../../hooks';
 import { useTokenSupply } from '../../hooks';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { normalizeMaxSupplyHuman } from '../../utils/normalize-max-supply-human';
+import { buildTransferWhitelistFromBaselineAddresses } from '../../utils/whitelist-baseline-to-form';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
@@ -61,6 +63,8 @@ function maxSupplyTypeFromFixedFlag(
 type UpdateIssuedTokenPluginProps = {
   members?: Person[];
   spaces?: Space[];
+  /** Includes current DHO space; used to map on-chain space ids to addresses for whitelist baseline */
+  spacesForChainMapping?: Space[];
   spaceSlug?: string;
   spaceId?: number;
 };
@@ -68,6 +72,7 @@ type UpdateIssuedTokenPluginProps = {
 export const UpdateIssuedTokenPlugin = ({
   members = [],
   spaces = [],
+  spacesForChainMapping,
   spaceSlug,
   spaceId,
 }: UpdateIssuedTokenPluginProps) => {
@@ -290,6 +295,10 @@ export const UpdateIssuedTokenPlugin = ({
   ]);
 
   const { tokens: dbTokens, isLoading: isTokensLoading } = useDbTokens();
+  const chainMappingSpaces = useMemo(
+    () => spacesForChainMapping ?? spaces,
+    [spacesForChainMapping, spaces],
+  );
   const spaceTokens = useMemo(() => {
     return dbTokens.filter((t) => t.spaceId === spaceId);
   }, [dbTokens, spaceId]);
@@ -481,6 +490,14 @@ export const UpdateIssuedTokenPlugin = ({
   }, [isLoadingOnChainData, onChainData, setValue, getValues]);
 
   const resubmitOverlayAppliedRef = useRef(false);
+  const resubmitHydratedRef = useRef(false);
+  const baselineWhitelistAppliedForTokenRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    resubmitOverlayAppliedRef.current = false;
+    resubmitHydratedRef.current = false;
+    baselineWhitelistAppliedForTokenRef.current = null;
+  }, [selectedTokenAddress]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -586,8 +603,85 @@ export const UpdateIssuedTokenPlugin = ({
     }
 
     resubmitOverlayAppliedRef.current = true;
+    resubmitHydratedRef.current = true;
     sessionStorage.removeItem(RESUBMIT_UPDATE_ISSUED_TOKEN_FORM_KEY);
   }, [selectedTokenAddress, isLoadingOnChainData, setValue]);
+
+  useEffect(() => {
+    if (!selectedTokenAddress) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const { from, to } = await fetchWhitelistBaselineFromChain({
+          tokenAddress: selectedTokenAddress as `0x${string}`,
+          spaces: chainMappingSpaces,
+          members,
+        });
+        if (cancelled) {
+          return;
+        }
+
+        setValue('whitelistBaselineFrom', from, {
+          shouldDirty: false,
+          shouldValidate: false,
+        });
+        setValue('whitelistBaselineTo', to, {
+          shouldDirty: false,
+          shouldValidate: false,
+        });
+
+        if (resubmitHydratedRef.current) {
+          return;
+        }
+
+        if (
+          baselineWhitelistAppliedForTokenRef.current === selectedTokenAddress
+        ) {
+          return;
+        }
+
+        const isOwnershipToken = selectedToken?.type === 'ownership';
+        const wl = buildTransferWhitelistFromBaselineAddresses({
+          from,
+          to,
+          members,
+          spaces,
+          isOwnershipToken,
+        });
+
+        const hasAddresses = from.length > 0 || to.length > 0;
+        if (hasAddresses && wl) {
+          setValue('transferWhitelist', wl, {
+            shouldDirty: false,
+            shouldValidate: false,
+          });
+          setValue('enableAdvancedTransferControls', true, {
+            shouldDirty: false,
+            shouldValidate: false,
+          });
+        }
+
+        baselineWhitelistAppliedForTokenRef.current = selectedTokenAddress;
+      } catch {
+        // RPC/network: leave baseline fields unset; orchestrator falls back to []
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    selectedTokenAddress,
+    selectedToken?.type,
+    chainMappingSpaces,
+    members,
+    spaces,
+    setValue,
+  ]);
 
   const tokenSupply = normalizeMaxSupplyHuman(selectedToken?.maxSupply ?? 0);
   const { supply, isLoading: isLoadingSupply } = useTokenSupply(
