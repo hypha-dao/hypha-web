@@ -1640,7 +1640,8 @@
     "timestampYesterday": "Gestern um {time}",
     "timestampDate": "{date} um {time}",
     "systemSender": "System",
-    "noMembers": "Keine Mitglieder gefunden"
+    "noMembers": "Keine Mitglieder gefunden",
+    "backToSpaceChat": "Zurück zum Space-Chat"
   },
   "CoherenceTab": {
     "signals": "Signale",
