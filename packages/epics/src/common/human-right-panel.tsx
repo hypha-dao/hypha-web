@@ -173,12 +173,18 @@ export function HumanRightPanel() {
 
     const { registerRoomListener, unregisterRoomListener } = matrixRef.current;
 
-    registerRoomListener(roomId, async (message: Message) => {
-      setMessages((prev) => {
-        if (prev.some((m) => m.id === message.id)) return prev;
-        return [...prev, toUIMessage(message, currentUserIdRef.current)];
-      });
-    });
+    registerRoomListener(
+      roomId,
+      async (message: Message) => {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === message.id)) return prev;
+          return [...prev, toUIMessage(message, currentUserIdRef.current)];
+        });
+      },
+      async (_pinned: string[]) => {
+        // pinned messages not used in human chat panel
+      },
+    );
 
     return () => {
       unregisterRoomListener(roomId);
