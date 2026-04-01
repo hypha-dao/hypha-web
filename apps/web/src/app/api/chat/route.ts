@@ -12,8 +12,7 @@ import { createRemoteJWKSet, jwtVerify, errors as joseErrors } from 'jose';
 // fetches to the same deployment are blocked by Vercel's SSO deployment
 // protection (the server doesn't carry the _vercel_jwt cookie).
 // Using Privy's external JWKS endpoint avoids this entirely.
-const PRIVY_APP_ID =
-  process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? 'cm5y07p2z02napk1cutzzx7o6';
+const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID!;
 const PRIVY_JWKS_URL = new URL(
   `/api/v1/apps/${PRIVY_APP_ID}/jwks.json`,
   'https://auth.privy.io',

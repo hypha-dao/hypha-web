@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import type { JSONWebKeySet } from 'jose';
 
+const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID!;
+
 const JWKS_URLS = {
   Web3AuthSocial: 'https://api-auth.web3auth.io/jwks',
   Web3AuthWallet: 'https://authjs.web3auth.io/jwks',
-  Privy:
-    'https://auth.privy.io/api/v1/apps/cm5y07p2z02napk1cutzzx7o6/jwks.json',
+  Privy: `https://auth.privy.io/api/v1/apps/${PRIVY_APP_ID}/jwks.json`,
 };
 
 type JWKSResponse = JSONWebKeySet;
