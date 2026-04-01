@@ -10,6 +10,7 @@ import clsx from 'clsx';
 type MenuTopProps = {
   children?: React.ReactNode;
   leadingAction?: React.ReactNode;
+  trailingAction?: React.ReactNode;
   logoHref?: string;
   hrefTarget?: string;
   openMenuLabel?: string;
@@ -19,6 +20,7 @@ type MenuTopProps = {
 export const MenuTop = ({
   children,
   leadingAction,
+  trailingAction,
   logoHref,
   hrefTarget,
   openMenuLabel = 'Open menu',
@@ -61,10 +63,14 @@ export const MenuTop = ({
           )}
         </div>
 
-        {/* Desktop Nav */}
-        {children && (
-          <div id="menu-top-actions" className="hidden md:flex gap-2">
+        {/* Desktop Nav + Trailing action (right-aligned group) */}
+        {(children || trailingAction) && (
+          <div
+            id="menu-top-actions"
+            className="hidden md:flex items-center gap-2"
+          >
             {children}
+            {trailingAction}
           </div>
         )}
 

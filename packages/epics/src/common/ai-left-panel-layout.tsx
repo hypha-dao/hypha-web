@@ -1,38 +1,24 @@
 'use client';
 
-import { Sparkles } from 'lucide-react';
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarInset,
-  SidebarResizeHandle,
-  useSidebar,
-} from '@hypha-platform/ui';
-import { useTranslations } from 'next-intl';
+/**
+ * @deprecated Use `PanelWrapLayout` and `AiSidebarTrigger` from `./panel-wrap-layout` instead.
+ * This file is kept for backward compatibility.
+ */
+
+import React from 'react';
+import { AiSidebarTrigger, PanelWrapLayout } from './panel-wrap-layout';
 import { AiLeftPanel } from './ai-left-panel';
+
+export { AiSidebarTrigger };
 
 type AiLeftPanelLayoutProps = {
   children: React.ReactNode;
   enabled?: boolean;
 };
 
-export function AiSidebarTrigger() {
-  const { toggleSidebar, open } = useSidebar();
-  const t = useTranslations('AiPanel');
-
-  return (
-    <button
-      type="button"
-      onClick={toggleSidebar}
-      className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-      title={open ? t('hidePanel') : t('openPanel')}
-      aria-label={open ? t('hidePanel') : t('openPanel')}
-    >
-      <Sparkles className="h-4 w-4" />
-    </button>
-  );
-}
-
+/**
+ * @deprecated Use `PanelWrapLayout` with the `left` slot prop instead.
+ */
 export function AiLeftPanelLayout({
   children,
   enabled = false,
@@ -42,19 +28,8 @@ export function AiLeftPanelLayout({
   }
 
   return (
-    <SidebarProvider
-      defaultOpen={false}
-      style={
-        {
-          '--sidebar-width': '320px',
-        } as React.CSSProperties
-      }
-    >
-      <Sidebar side="left" variant="sidebar" collapsible="offcanvas">
-        <AiLeftPanel />
-        <SidebarResizeHandle />
-      </Sidebar>
-      <SidebarInset>{children}</SidebarInset>
-    </SidebarProvider>
+    <PanelWrapLayout left={{ content: <AiLeftPanel /> }}>
+      {children}
+    </PanelWrapLayout>
   );
 }

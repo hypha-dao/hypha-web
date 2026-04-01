@@ -2,6 +2,7 @@ import { flag } from 'flags/next';
 import {
   HYPHA_AUTH_PROVIDER,
   HYPHA_ENABLE_AI_CHAT,
+  HYPHA_ENABLE_HUMAN_CHAT,
   HYPHA_SHOW_LANGUAGE_SELECT,
 } from '@hypha-platform/cookie';
 
@@ -30,5 +31,16 @@ export const enableAiChat = flag<boolean>({
     const cookieValue = cookies.get(HYPHA_ENABLE_AI_CHAT)?.value;
     if (cookieValue !== undefined) return cookieValue === 'true';
     return process.env.NEXT_PUBLIC_ENABLE_AI_CHAT === 'true';
+  },
+});
+
+export const enableHumanChat = flag<boolean>({
+  key: 'enable-human-chat',
+  defaultValue: false,
+  description: 'Enable the Human Chat panel in space pages',
+  decide({ cookies }) {
+    const cookieValue = cookies.get(HYPHA_ENABLE_HUMAN_CHAT)?.value;
+    if (cookieValue !== undefined) return cookieValue === 'true';
+    return process.env.NEXT_PUBLIC_ENABLE_HUMAN_CHAT === 'true';
   },
 });
