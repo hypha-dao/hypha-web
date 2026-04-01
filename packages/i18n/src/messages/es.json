@@ -1609,5 +1609,17 @@
     "toolError": "Error: {message}",
     "streamError": "Ocurrió un error al generar la respuesta.",
     "attachment": "Adjunto"
+  },
+  "HumanChatPanel": {
+    "title": "Chat",
+    "welcome": "¡Bienvenido al chat! Inicia una conversación con otros miembros de este espacio.",
+    "placeholder": "Escribe un mensaje...",
+    "sendButton": "Enviar",
+    "newlineHint": "Shift+Enter para nueva línea",
+    "openPanel": "Abrir panel de chat",
+    "hidePanel": "Ocultar panel de chat",
+    "closePanel": "Cerrar panel",
+    "copyButton": "Copiar",
+    "copiedButton": "¡Copiado!"
   }
 }

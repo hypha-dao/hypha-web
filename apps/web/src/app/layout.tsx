@@ -12,17 +12,20 @@ import { Footer, Html, ThemeProvider } from '@hypha-platform/ui/server';
 import { AuthProvider } from '@hypha-platform/authentication';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
-  AiLeftPanelLayout,
+  AiLeftPanel,
+  PanelWrapLayout,
   AiSidebarTrigger,
+  HumanSidebarTrigger,
+  HumanRightPanel,
   ConnectedButtonProfile,
 } from '@hypha-platform/epics';
 import { EvmProvider } from '@hypha-platform/evm';
 import { useMe } from '@hypha-platform/core/client';
+import { ConditionalMatrixProvider } from '@web/components/conditional-matrix-provider';
 import { fileRouter } from '@hypha-platform/core/server';
 import { MenuTop, TooltipProvider } from '@hypha-platform/ui';
 import { ROOT_URL } from './constants';
 import { enableAiChat, enableHumanChat } from '@hypha-platform/feature-flags';
-import { ConditionalMatrixProvider } from '@web/components/conditional-matrix-provider';
 import { NotificationSubscriber } from '@hypha-platform/notifications/client';
 
 import '@hypha-platform/ui-utils/global.css';
@@ -126,13 +129,29 @@ export default async function RootLayout({
                   serviceWorkerPath={serviceWorkerPath}
                 >
                   <ConditionalMatrixProvider enabled={humanChatEnabled}>
-                    <AiLeftPanelLayout enabled={aiChatEnabled}>
+                    <PanelWrapLayout
+                      left={
+                        aiChatEnabled
+                          ? { content: <AiLeftPanel /> }
+                          : undefined
+                      }
+                      right={
+                        humanChatEnabled
+                          ? { content: <HumanRightPanel /> }
+                          : undefined
+                      }
+                    >
                       <MenuTop
                         logoHref={ROOT_URL}
                         openMenuLabel={tNav('openMenu')}
                         closeMenuLabel={tNav('closeMenu')}
                         leadingAction={
                           aiChatEnabled ? <AiSidebarTrigger /> : undefined
+                        }
+                        trailingAction={
+                          humanChatEnabled ? (
+                            <HumanSidebarTrigger />
+                          ) : undefined
                         }
                       >
                         <ConnectedButtonProfile
@@ -170,7 +189,7 @@ export default async function RootLayout({
                         termsAndConditionsLabel={tFooter('termsAndConditions')}
                         privacyPolicyLabel={tFooter('privacyPolicy')}
                       />
-                    </AiLeftPanelLayout>
+                    </PanelWrapLayout>
                   </ConditionalMatrixProvider>
                 </NotificationSubscriber>
               </TooltipProvider>
