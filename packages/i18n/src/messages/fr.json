@@ -1582,6 +1582,7 @@
     "placeholder": "Tapez un message...",
     "sendButton": "Envoyer",
     "newlineHint": "Shift+Entrée pour nouvelle ligne",
+    "loading": "Chargement...",
     "openPanel": "Ouvrir le panneau de chat",
     "hidePanel": "Masquer le panneau de chat",
     "closePanel": "Fermer le panneau",

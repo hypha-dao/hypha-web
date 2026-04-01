@@ -21,6 +21,7 @@ import {
 } from '@hypha-platform/epics';
 import { EvmProvider } from '@hypha-platform/evm';
 import { useMe } from '@hypha-platform/core/client';
+import { ConditionalMatrixProvider } from '@web/components/conditional-matrix-provider';
 import { fileRouter } from '@hypha-platform/core/server';
 import { MenuTop, TooltipProvider } from '@hypha-platform/ui';
 import { ROOT_URL } from './constants';
@@ -127,6 +128,7 @@ export default async function RootLayout({
                   safariWebId={safariWebId}
                   serviceWorkerPath={serviceWorkerPath}
                 >
+                  <ConditionalMatrixProvider enabled={humanChatEnabled}>
                   <PanelWrapLayout
                     left={
                       aiChatEnabled ? { content: <AiLeftPanel /> } : undefined
@@ -184,6 +186,7 @@ export default async function RootLayout({
                       privacyPolicyLabel={tFooter('privacyPolicy')}
                     />
                   </PanelWrapLayout>
+                  </ConditionalMatrixProvider>
                 </NotificationSubscriber>
               </TooltipProvider>
             </NextIntlClientProvider>
