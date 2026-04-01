@@ -143,16 +143,16 @@ export const CreateSignalForm = ({
   const handleCreate = React.useCallback(
     async (data: FormValues) => {
       console.log('Start Conversation');
-      if (!isMatrixAvailable) {
-        console.warn(
-          'Cannot create conversation since Matrix client is unavailable',
-        );
-        return;
-      }
       try {
         const coherence = await createCoherence({ ...data });
-        const { roomId } = await createRoom(coherence.title);
-        await updateCoherenceBySlug({ slug: coherence.slug!, roomId });
+        if (isMatrixAvailable) {
+          const { roomId } = await createRoom(coherence.title);
+          await updateCoherenceBySlug({ slug: coherence.slug!, roomId });
+        } else {
+          console.warn(
+            'Matrix client is unavailable — skipping room creation',
+          );
+        }
       } catch (error) {
         console.warn('Could not create conversation:', error);
       }
