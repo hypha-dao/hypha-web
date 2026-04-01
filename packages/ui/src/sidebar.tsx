@@ -577,7 +577,9 @@ const SidebarResizeHandle = React.forwardRef<
         className={cn(
           // Layout & hit target (12px wide, centered on edge)
           // Position on the outer edge: right for left-side panels, left for right-side panels
-          'group/resize absolute inset-y-0 z-20 w-3',
+          // Top is offset by --menu-top-height so the handle starts below the menu bar
+          'group/resize absolute bottom-0 z-20 w-3',
+          'top-[var(--menu-top-height,0px)]',
           'group-data-[side=left]:-right-1.5 group-data-[side=right]:-left-1.5',
           'hidden sm:flex items-center justify-center',
           'cursor-col-resize select-none touch-none',
@@ -591,13 +593,13 @@ const SidebarResizeHandle = React.forwardRef<
           // Hover: subtle border color
           'hover:after:bg-sidebar-border',
 
-          // Active/dragging: primary accent with slight width bump
-          'data-[resizing=true]:after:bg-primary',
+          // Active/dragging: accent-8 (Radix step 8: interactive borders & focus rings)
+          'data-[resizing=true]:after:bg-accent-8',
           'data-[resizing=true]:after:w-[4px]',
 
-          // Focus-visible: keyboard accessibility
+          // Focus-visible: keyboard accessibility (same accent step for consistency)
           'focus-visible:outline-none',
-          'focus-visible:after:bg-sidebar-ring',
+          'focus-visible:after:bg-accent-8',
 
           // Hide when sidebar is offcanvas-collapsed
           'group-data-[collapsible=offcanvas]:hidden',
