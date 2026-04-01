@@ -94,7 +94,7 @@ export function HumanRightPanel() {
   useEffect(() => {
     if (joinedRef.current && joinedRef.current !== spaceSlug) {
       if (roomId) {
-        matrixRef.current.unregisterRoomListerner(roomId);
+        matrixRef.current.unregisterRoomListener(roomId);
       }
       joinedRef.current = null;
       setRoomId(null);
@@ -169,17 +169,23 @@ export function HumanRightPanel() {
   useEffect(() => {
     if (!roomId || !isMatrixAvailable) return;
 
-    const { registerRoomListener, unregisterRoomListerner } = matrixRef.current;
+    const { registerRoomListener, unregisterRoomListener } = matrixRef.current;
 
-    registerRoomListener(roomId, async (message: Message) => {
-      setMessages((prev) => {
-        if (prev.some((m) => m.id === message.id)) return prev;
-        return [...prev, toUIMessage(message, currentUserIdRef.current)];
-      });
-    });
+    registerRoomListener(
+      roomId,
+      async (message: Message) => {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === message.id)) return prev;
+          return [...prev, toUIMessage(message, currentUserIdRef.current)];
+        });
+      },
+      async (_pinned: string[]) => {
+        // pinned messages not used in human chat panel
+      },
+    );
 
     return () => {
-      unregisterRoomListerner(roomId);
+      unregisterRoomListener(roomId);
     };
   }, [roomId, isMatrixAvailable]);
 
