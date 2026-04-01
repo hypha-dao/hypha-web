@@ -28,6 +28,7 @@ import {
 } from '@radix-ui/react-icons';
 import React from 'react';
 import type { BadgeProps } from '@hypha-platform/ui';
+import { useTranslations } from 'next-intl';
 import { Users } from 'lucide-react';
 
 type SignalCardProps = {
@@ -53,6 +54,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
 }) => {
   const { jwt: authToken } = useJwt();
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
+  const t = useTranslations('SignalCard');
 
   const coherenceType = React.useMemo(
     () => COHERENCE_TYPE_OPTIONS.find((option) => option.type === type),
@@ -189,11 +191,13 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               colorVariant="accent"
               disabled={isLoading || !roomId}
               onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                onOpenConversation?.();
+                if (onOpenConversation) {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  onOpenConversation();
+                }
               }}
-              title={!roomId ? 'No conversation room yet' : undefined}
+              title={!roomId ? t('noConversationRoom') : undefined}
             >
               <ChatBubbleIcon />
               Open conversation

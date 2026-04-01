@@ -242,8 +242,13 @@ export function HumanRightPanel() {
       try {
         let targetRoomId = coherenceRoomId;
 
-        // If no room exists yet, create one and link it to the coherence record
+        // If no room exists yet, only create one when we can link it back
         if (!targetRoomId) {
+          if (!coherenceSlug) {
+            // Cannot persist without a slug — skip room creation
+            setIsJoining(false);
+            return;
+          }
           console.log(
             '[HumanRightPanel] Creating Matrix room for coherence:',
             coherenceSlug,
@@ -254,21 +259,18 @@ export function HumanRightPanel() {
           if (cancelled) return;
           targetRoomId = newRoomId;
 
-          // Persist the room ID to the coherence record
-          if (coherenceSlug) {
-            try {
-              await updateCoherenceBySlug({
-                slug: coherenceSlug,
-                roomId: newRoomId,
-              });
-              // Update context so subsequent opens don't re-create
-              openCoherenceChat(newRoomId, coherenceTitle || '', coherenceSlug);
-            } catch (err) {
-              console.warn(
-                '[HumanRightPanel] Failed to persist roomId to coherence:',
-                err,
-              );
-            }
+          try {
+            await updateCoherenceBySlug({
+              slug: coherenceSlug,
+              roomId: newRoomId,
+            });
+            // Update context so subsequent opens don't re-create
+            openCoherenceChat(newRoomId, coherenceTitle || '', coherenceSlug);
+          } catch (err) {
+            console.warn(
+              '[HumanRightPanel] Failed to persist roomId to coherence:',
+              err,
+            );
           }
         } else {
           await matrixRef.current.joinRoom(targetRoomId);
@@ -288,7 +290,7 @@ export function HumanRightPanel() {
             '[HumanRightPanel] Failed to join coherence room:',
             err,
           );
-          setError('Failed to join conversation room');
+          setError(t('failedToJoinRoom'));
         }
       } finally {
         if (!cancelled) setIsJoining(false);
@@ -301,7 +303,7 @@ export function HumanRightPanel() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, coherenceRoomId, isMatrixAvailable, isMatrixAuthenticated]);
+  }, [mode, coherenceRoomId, coherenceTitle, coherenceSlug, isMatrixAvailable, isMatrixAuthenticated]);
 
   // Register listener for incoming messages
   useEffect(() => {

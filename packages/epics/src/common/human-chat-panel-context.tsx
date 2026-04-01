@@ -63,10 +63,12 @@ export function HumanChatPanelProvider({
   children,
   open,
   toggle,
+  setOpen,
 }: {
   children: React.ReactNode;
   open: boolean;
   toggle: () => void;
+  setOpen: (value: boolean) => void;
 }) {
   const [mode, setMode] = useState<'space' | 'coherence'>('space');
   const [coherenceRoomId, setCoherenceRoomId] = useState<string | null>(null);
@@ -79,12 +81,10 @@ export function HumanChatPanelProvider({
       setCoherenceTitle(title);
       setCoherenceSlug(slug);
       setMode('coherence');
-      // Also open the sidebar panel if it's closed
-      if (!open) {
-        toggle();
-      }
+      // Idempotently open the sidebar — avoids race condition with toggle()
+      setOpen(true);
     },
-    [open, toggle],
+    [setOpen],
   );
 
   const closeCoherenceChat = useCallback(() => {

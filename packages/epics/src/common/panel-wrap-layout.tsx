@@ -31,7 +31,7 @@ export function PanelProviders({ children }: { children: React.ReactNode }) {
 
   return (
     <AiPanelProvider value={{ open: leftOpen, toggle: toggleLeft }}>
-      <HumanChatPanelProvider value={{ open: rightOpen, toggle: toggleRight }}>
+      <HumanChatPanelProvider open={rightOpen} toggle={toggleRight} setOpen={setRightOpen}>
         {children}
       </HumanChatPanelProvider>
     </AiPanelProvider>

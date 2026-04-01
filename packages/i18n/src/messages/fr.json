@@ -1641,7 +1641,8 @@
     "timestampDate": "{date} à {time}",
     "systemSender": "Système",
     "noMembers": "Aucun membre trouvé",
-    "backToSpaceChat": "Retour au chat de l'espace"
+    "backToSpaceChat": "Retour au chat de l'espace",
+    "failedToJoinRoom": "Impossible de rejoindre la salle de conversation"
   },
   "CoherenceTab": {
     "signals": "Signaux",
@@ -1710,5 +1711,8 @@
       "medium": "Surveiller et agir bientôt",
       "low": "Informatif, pas urgent"
     }
+  },
+  "SignalCard": {
+    "noConversationRoom": "Pas encore de salle de conversation"
   }
 }
