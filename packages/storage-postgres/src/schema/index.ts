@@ -10,10 +10,12 @@ import { tokenRelations, tokens } from './tokens';
 import { eventRelations } from './event.relations';
 import { events } from './event';
 import { transfers } from './transfers';
+import { coherences } from './coherence';
 import { matrixUserLinks } from './matrix-user-link';
 
 export { SPACE_FLAGS } from './flags';
 export { CATEGORIES } from './categories';
+// export { COHERENCE_STATUSES } from './coherence-statuses';
 
 export * from './document';
 export * from './membership';
@@ -22,6 +24,7 @@ export * from './space';
 export * from './tokens';
 export * from './event';
 export * from './transfers';
+export * from './coherence';
 export * from './matrix-user-link';
 
 export const schema = {
@@ -38,5 +41,6 @@ export const schema = {
   events,
   eventRelations,
   transfers,
+  coherences,
   matrixUserLinks,
 };
