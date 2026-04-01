@@ -60,3 +60,4 @@ vitest.config.*.timestamp*
 .turbo
 .firecrawl/
 .playwright-cli/
+test-results/
