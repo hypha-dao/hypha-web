@@ -1616,6 +1616,7 @@
     "placeholder": "Nachricht eingeben...",
     "sendButton": "Senden",
     "newlineHint": "Shift+Enter für neue Zeile",
+    "loading": "Laden...",
     "openPanel": "Chat-Panel öffnen",
     "hidePanel": "Chat-Panel ausblenden",
     "closePanel": "Panel schließen",

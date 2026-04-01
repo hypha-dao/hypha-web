@@ -1616,6 +1616,7 @@
     "placeholder": "Digite uma mensagem...",
     "sendButton": "Enviar",
     "newlineHint": "Shift+Enter para nova linha",
+    "loading": "Carregando...",
     "openPanel": "Abrir painel de chat",
     "hidePanel": "Ocultar painel de chat",
     "closePanel": "Fechar painel",

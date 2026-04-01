@@ -1616,6 +1616,7 @@
     "placeholder": "Escribe un mensaje...",
     "sendButton": "Enviar",
     "newlineHint": "Shift+Enter para nueva línea",
+    "loading": "Cargando...",
     "openPanel": "Abrir panel de chat",
     "hidePanel": "Ocultar panel de chat",
     "closePanel": "Cerrar panel",
