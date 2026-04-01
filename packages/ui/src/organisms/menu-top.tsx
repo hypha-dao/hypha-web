@@ -40,10 +40,12 @@ export const MenuTop = ({
     const observer = new ResizeObserver(() => {
       const rect = headerRef.current?.getBoundingClientRect();
       if (rect) {
-        setHeaderHeight(rect.height);
+        // Round to prevent subpixel drift when toggle icons appear/disappear
+        const h = Math.round(rect.height);
+        setHeaderHeight(h);
         document.documentElement.style.setProperty(
           '--menu-top-height',
-          `${rect.height}px`,
+          `${h}px`,
         );
       }
     });
@@ -57,7 +59,7 @@ export const MenuTop = ({
   return (
     <header
       ref={headerRef}
-      className="flex min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background-2 px-4 py-3 z-30"
+      className="flex min-h-[65px] min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background-2 px-4 py-3 z-30"
     >
       <div
         className={clsx(
