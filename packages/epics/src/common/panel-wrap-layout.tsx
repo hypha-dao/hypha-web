@@ -94,7 +94,7 @@ export function PanelWrapLayout({
   // Wrap with right panel if provided
   if (right) {
     content = (
-      <HumanChatPanelProvider value={{ open: rightOpen, toggle: toggleRight }}>
+      <HumanChatPanelProvider open={rightOpen} toggle={toggleRight}>
         <SidebarProvider
           open={rightOpen}
           onOpenChange={setRightOpen}
