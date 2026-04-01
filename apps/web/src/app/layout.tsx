@@ -17,9 +17,9 @@ import {
   PanelWrapLayout,
   AiSidebarTrigger,
   HumanSidebarTrigger,
-  HumanRightPanel,
   ConnectedButtonProfile,
 } from '@hypha-platform/epics';
+import { ConnectedHumanRightPanel } from '@web/components/connected-human-right-panel';
 import { EvmProvider } from '@hypha-platform/evm';
 import { useMe } from '@hypha-platform/core/client';
 import { ConditionalMatrixProvider } from '@web/components/conditional-matrix-provider';
@@ -139,7 +139,7 @@ export default async function RootLayout({
                         }
                         right={
                           humanChatEnabled
-                            ? { content: <HumanRightPanel /> }
+                            ? { content: <ConnectedHumanRightPanel /> }
                             : undefined
                         }
                       >

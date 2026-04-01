@@ -1,66 +1,79 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { stringToHue, getInitials } from './utils';
-
-export type Member = {
-  id: string;
-  name: string;
-  isOnline?: boolean;
-};
+import { Skeleton } from '@hypha-platform/ui';
+import { PersonAvatar } from '../../people/components/person-avatar';
+import { UseMembers } from '../../spaces';
 
 type HumanChatPanelMembersProps = {
-  members?: Member[];
+  useMembers: UseMembers;
+  spaceSlug?: string;
 };
 
-export function HumanChatPanelMembers({ members }: HumanChatPanelMembersProps) {
+export function HumanChatPanelMembers({
+  useMembers,
+  spaceSlug,
+}: HumanChatPanelMembersProps) {
   const t = useTranslations('HumanChatPanel');
-  const displayMembers = members ?? [];
 
-  const onlineCount = displayMembers.filter((m) => m.isOnline).length;
+  const { persons, isLoading } = useMembers({
+    spaceSlug,
+    paginationDisabled: true,
+  });
+
+  const members = persons?.data ?? [];
+  const totalCount = persons?.pagination?.total ?? members.length;
 
   return (
-    <div className="flex flex-col gap-1 px-3 py-3">
+    <div
+      className="flex flex-col gap-1 px-3 py-3"
+      data-testid="chat-panel-members"
+    >
       <div className="px-1 pb-2 text-xs font-medium text-muted-foreground">
         {t('membersCount', {
-          count: displayMembers.length,
-          online: onlineCount,
+          count: totalCount,
+          online: 0,
         })}
       </div>
-      {displayMembers.length === 0 && (
+      {isLoading && members.length === 0 && (
+        <div className="flex flex-col gap-1">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-3 rounded-md px-2 py-1.5"
+            >
+              <PersonAvatar isLoading size="md" />
+              <Skeleton width="120px" height="16px" loading>
+                <div />
+              </Skeleton>
+            </div>
+          ))}
+        </div>
+      )}
+      {!isLoading && members.length === 0 && (
         <div className="px-2 py-4 text-center text-sm text-muted-foreground">
           {t('noMembers')}
         </div>
       )}
-      {displayMembers.map((member) => {
-        const hue = stringToHue(member.name);
-        const initials = getInitials(member.name);
+      {members.map((member) => {
+        const displayName =
+          [member.name, member.surname].filter(Boolean).join(' ') ||
+          member.nickname ||
+          'Unknown';
 
         return (
           <div
-            key={member.id}
+            key={member.slug ?? member.id}
             className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-muted/50 transition-colors"
+            data-testid="chat-panel-member-item"
           >
-            {/* Avatar with online indicator */}
-            <div className="relative shrink-0">
-              <div
-                className="flex h-8 w-8 items-center justify-center rounded-full text-white text-xs font-semibold"
-                style={{ backgroundColor: `hsl(${hue}, 55%, 45%)` }}
-              >
-                {initials}
-              </div>
-              {member.isOnline !== undefined && (
-                <div
-                  className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background-2 ${
-                    member.isOnline ? 'bg-green-500' : 'bg-muted-foreground/40'
-                  }`}
-                />
-              )}
-            </div>
-
-            {/* Name */}
+            <PersonAvatar
+              avatarSrc={member.avatarUrl}
+              userName={displayName}
+              size="md"
+            />
             <span className="text-sm text-foreground truncate">
-              {member.name}
+              {displayName}
             </span>
           </div>
         );

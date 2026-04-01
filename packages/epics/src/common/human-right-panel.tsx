@@ -16,6 +16,7 @@ import {
   useMe,
   Message,
 } from '@hypha-platform/core/client';
+import { UseMembers } from '../spaces';
 
 import {
   HumanChatPanelHeader,
@@ -76,7 +77,11 @@ function toUIMessage(
   };
 }
 
-export function HumanRightPanel() {
+type HumanRightPanelProps = {
+  useMembers: UseMembers;
+};
+
+export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const t = useTranslations('HumanChatPanel');
   const params = useParams<{ id?: string }>();
   const spaceSlug = params?.id;
@@ -410,7 +415,12 @@ export function HumanRightPanel() {
             )}
           </>
         )}
-        {activeTab === 'members' && <HumanChatPanelMembers />}
+        {activeTab === 'members' && (
+          <HumanChatPanelMembers
+            useMembers={useMembers}
+            spaceSlug={spaceSlug}
+          />
+        )}
       </SidebarContent>
       {activeTab === 'chat' && (
         <SidebarFooter className="bg-background-2 p-0">
