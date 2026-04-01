@@ -37,18 +37,27 @@ export const MenuTop = ({
 
   useEffect(() => {
     if (!headerRef.current) return;
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry) setHeaderHeight(entry.contentRect.height);
+    const observer = new ResizeObserver(() => {
+      const rect = headerRef.current?.getBoundingClientRect();
+      if (rect) {
+        setHeaderHeight(rect.height);
+        document.documentElement.style.setProperty(
+          '--menu-top-height',
+          `${rect.height}px`,
+        );
+      }
     });
     observer.observe(headerRef.current);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.removeProperty('--menu-top-height');
+    };
   }, []);
 
   return (
     <header
       ref={headerRef}
-      className="sticky top-0 flex min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background-2 px-4 py-3 z-20"
+      className="flex min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background-2 px-4 py-3 z-30"
     >
       <div
         className={clsx(
