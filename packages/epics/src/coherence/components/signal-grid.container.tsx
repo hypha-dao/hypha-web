@@ -12,6 +12,7 @@ type SignalGridContainerProps = {
   };
   signals: Coherence[];
   refresh: () => Promise<void>;
+  onSignalClick?: (signal: Coherence) => void;
 };
 
 export const SignalGridContainer = ({
@@ -19,6 +20,7 @@ export const SignalGridContainer = ({
   pagination,
   signals,
   refresh,
+  onSignalClick,
 }: SignalGridContainerProps) => {
   const { page, firstPageSize, pageSize } = pagination;
   const startIndex = page <= 1 ? 0 : firstPageSize + (page - 2) * pageSize;
@@ -36,6 +38,7 @@ export const SignalGridContainer = ({
         ...signal,
       }))}
       refresh={refresh}
+      onSignalClick={onSignalClick}
     />
   );
 };

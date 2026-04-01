@@ -41,6 +41,7 @@ type SignalSectionProps = {
   pageSize?: number;
   order?: string;
   refresh: () => Promise<void>;
+  onSignalClick?: (signal: Coherence) => void;
 };
 
 export const SignalSection: FC<SignalSectionProps> = ({
@@ -52,6 +53,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
   firstPageSize = 3,
   pageSize = 3,
   refresh,
+  onSignalClick,
 }) => {
   const { lang, id } = useParams<{ lang: Locale; id: string }>();
   const pathname = usePathname();
@@ -212,6 +214,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
               }}
               signals={filteredSignals}
               refresh={refresh}
+              onSignalClick={onSignalClick}
             />
           ))}
         </div>
