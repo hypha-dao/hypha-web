@@ -121,6 +121,7 @@ export function HumanRightPanel() {
 
   // Join space room when Matrix is ready (space mode)
   useEffect(() => {
+    if (mode !== 'space') return;
     if (
       !isMatrixAvailable ||
       !isMatrixAuthenticated ||
@@ -178,12 +179,19 @@ export function HumanRightPanel() {
     return () => {
       cancelled = true;
     };
-  }, [isMatrixAvailable, isMatrixAuthenticated, spaceSlug]);
+  }, [mode, isMatrixAvailable, isMatrixAuthenticated, spaceSlug]);
 
-  // Clear messages and unregister listener when switching modes
+  // Track previous mode to detect actual transitions (not initial mount)
+  const prevModeRef = useRef(mode);
   useEffect(() => {
+    const prevMode = prevModeRef.current;
+    prevModeRef.current = mode;
+
+    // Only act on actual mode transitions, not initial mount
+    if (prevMode === mode) return;
+
     if (mode === 'coherence') {
-      // Leaving space mode — unregister space room listener and clear state
+      // Switching FROM space TO coherence — unregister space listener, clear state
       if (roomId) {
         matrixRef.current.unregisterRoomListener(roomId);
       }
@@ -192,8 +200,12 @@ export function HumanRightPanel() {
       setRoomId(null);
       setError(null);
     }
-    if (mode === 'space') {
-      // Returning to space mode — clear coherence messages so space init takes over
+
+    if (mode === 'space' && prevMode === 'coherence') {
+      // Switching FROM coherence TO space — clear state, space init will re-run
+      if (roomId) {
+        matrixRef.current.unregisterRoomListener(roomId);
+      }
       setMessages([]);
       setRoomId(null);
       setError(null);
@@ -210,11 +222,6 @@ export function HumanRightPanel() {
       !isMatrixAuthenticated
     )
       return;
-
-    // Unregister any existing space room listener before switching
-    if (roomId && roomId !== coherenceRoomId) {
-      matrixRef.current.unregisterRoomListener(roomId);
-    }
 
     let cancelled = false;
 
