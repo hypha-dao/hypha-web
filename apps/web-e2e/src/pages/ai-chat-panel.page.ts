@@ -24,7 +24,9 @@ export class AiChatPanelPage extends BasePage {
     super(page);
     this.openButton = page.getByRole('button', { name: 'Open Hypha AI' });
     this.headerText = page.getByText('Hypha AI', { exact: true });
-    this.closeButton = page.getByRole('button', { name: /close/i });
+    this.closeButton = page
+      .locator('[data-side="left"] [data-sidebar="sidebar"]')
+      .getByRole('button', { name: 'Close panel' });
     this.resetButton = page.getByRole('button', { name: /reset chat/i });
     this.signInPrompt = page.getByText('Sign in to use Hypha AI');
     this.signInButton = page.getByRole('button', {
@@ -33,11 +35,14 @@ export class AiChatPanelPage extends BasePage {
     });
     this.chatInput = page.getByPlaceholder('Ask Hypha AI anything...');
     this.sendButton = page.getByRole('button', { name: 'Send' });
-    this.resizeHandle = page.getByRole('separator', {
-      name: 'Resize sidebar',
-    });
-    this.sidebar = page.locator('[data-sidebar="sidebar"]');
-    this.sidebarWrapper = page.locator('[data-sidebar="wrapper"]');
+    // Scope to the left sidebar to avoid collision with Human Chat panel
+    this.resizeHandle = page.locator(
+      '[data-side="left"] [data-sidebar="resize-handle"]',
+    );
+    this.sidebar = page.locator('[data-side="left"] [data-sidebar="sidebar"]');
+    this.sidebarWrapper = page.locator(
+      '[data-sidebar="wrapper"]:has([data-side="left"])',
+    );
   }
 
   /**
