@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { Smile, Reply, MoreHorizontal } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
+import { PersonAvatar } from '../../people/components/person-avatar';
 
 type Reaction = {
   emoji: string;
@@ -19,33 +20,12 @@ type HumanChatPanelMessageBubbleProps = {
     role: 'user' | 'member';
     parts?: UIMessagePart[];
     senderName?: string;
+    avatarUrl?: string;
     timestamp?: Date;
     reactions?: Reaction[];
   };
   isStreaming?: boolean;
 };
-
-/**
- * Generate a deterministic hue from a string (for avatar background color).
- */
-function stringToHue(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return Math.abs(hash) % 360;
-}
-
-/**
- * Get initials from a name (up to 2 characters).
- */
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0]?.charAt(0).toUpperCase() ?? '';
-  return (
-    (parts[0]?.charAt(0) ?? '') + (parts[1]?.charAt(0) ?? '')
-  ).toUpperCase();
-}
 
 /**
  * Format a timestamp for display.
@@ -116,8 +96,6 @@ export function HumanChatPanelMessageBubble({
   const textContent = textParts.map((p) => p.text).join('');
 
   const senderName = message.senderName ?? t('you');
-  const hue = stringToHue(senderName);
-  const initials = getInitials(senderName);
   const timestamp = message.timestamp
     ? formatTimestamp(message.timestamp)
     : undefined;
@@ -126,11 +104,12 @@ export function HumanChatPanelMessageBubble({
   return (
     <div className="group relative flex gap-3 px-1 py-1 hover:bg-muted/30 rounded-md transition-colors">
       {/* Avatar */}
-      <div
-        className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white text-xs font-semibold"
-        style={{ backgroundColor: `hsl(${hue}, 55%, 45%)` }}
-      >
-        {initials}
+      <div className="mt-0.5 shrink-0" data-testid="chat-message-avatar">
+        <PersonAvatar
+          size="sm"
+          avatarSrc={message.avatarUrl}
+          userName={senderName}
+        />
       </div>
 
       {/* Content */}

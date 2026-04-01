@@ -13,6 +13,7 @@ import {
   useMatrix,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
+  useMe,
   Message,
 } from '@hypha-platform/core/client';
 
@@ -33,6 +34,7 @@ type UIMessage = {
     { type: 'text'; text: string } | { type: string; [k: string]: unknown }
   >;
   senderName?: string;
+  avatarUrl?: string;
 };
 
 const ROOM_STORAGE_KEY = 'hypha-chat-room-';
@@ -59,13 +61,18 @@ function storeRoomId(spaceSlug: string, roomId: string): void {
 /**
  * Convert a Matrix Message to the UIMessage format expected by panel components.
  */
-function toUIMessage(msg: Message, currentUserId?: string | null): UIMessage {
+function toUIMessage(
+  msg: Message,
+  currentUserId?: string | null,
+  currentUserAvatarUrl?: string,
+): UIMessage {
   const isCurrentUser = currentUserId ? msg.sender === currentUserId : false;
   return {
     id: msg.id,
     role: isCurrentUser ? 'user' : 'member',
     parts: [{ type: 'text', text: msg.content }],
     senderName: isCurrentUser ? undefined : msg.sender,
+    avatarUrl: isCurrentUser ? currentUserAvatarUrl : undefined,
   };
 }
 
@@ -94,8 +101,13 @@ export function HumanRightPanel() {
     openCoherenceChat,
   } = useHumanChatPanel();
   const { jwt: authToken } = useJwt();
+  const { person: me } = useMe();
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
   const { open: sidebarOpen } = useSidebar();
+
+  const currentUserAvatarUrl = me?.avatarUrl;
+  const currentUserAvatarUrlRef = useRef(currentUserAvatarUrl);
+  currentUserAvatarUrlRef.current = currentUserAvatarUrl;
 
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<UIMessage[]>([]);
@@ -174,7 +186,13 @@ export function HumanRightPanel() {
         const existing = getRoomMessages(targetRoomId);
         if (existing && !cancelled) {
           setMessages(
-            existing.map((m) => toUIMessage(m, currentUserIdRef.current)),
+            existing.map((m) =>
+              toUIMessage(
+                m,
+                currentUserIdRef.current,
+                currentUserAvatarUrlRef.current,
+              ),
+            ),
           );
         }
       } catch (err) {
@@ -277,7 +295,13 @@ export function HumanRightPanel() {
         const existing = matrixRef.current.getRoomMessages(targetRoomId);
         if (existing) {
           setMessages(
-            existing.map((m) => toUIMessage(m, currentUserIdRef.current)),
+            existing.map((m) =>
+              toUIMessage(
+                m,
+                currentUserIdRef.current,
+                currentUserAvatarUrlRef.current,
+              ),
+            ),
           );
         }
       } catch (err) {
@@ -312,7 +336,14 @@ export function HumanRightPanel() {
       async (message: Message) => {
         setMessages((prev) => {
           if (prev.some((m) => m.id === message.id)) return prev;
-          return [...prev, toUIMessage(message, currentUserIdRef.current)];
+          return [
+            ...prev,
+            toUIMessage(
+              message,
+              currentUserIdRef.current,
+              currentUserAvatarUrlRef.current,
+            ),
+          ];
         });
       },
       async (_pinned: string[]) => {

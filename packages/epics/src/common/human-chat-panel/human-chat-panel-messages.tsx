@@ -11,6 +11,7 @@ type UIMessage = {
     { type: 'text'; text: string } | { type: string; [k: string]: unknown }
   >;
   senderName?: string;
+  avatarUrl?: string;
 };
 
 type HumanChatPanelMessagesProps = {
