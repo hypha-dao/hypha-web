@@ -50,8 +50,7 @@ export function CoherenceBlock({
 
   const handleSignalClick = React.useCallback(
     (signal: Coherence) => {
-      if (!signal.roomId) return; // guard: room not created yet
-      openCoherenceChat(signal.roomId, signal.title, signal.slug!);
+      openCoherenceChat(signal.roomId ?? null, signal.title, signal.slug!);
     },
     [openCoherenceChat],
   );
