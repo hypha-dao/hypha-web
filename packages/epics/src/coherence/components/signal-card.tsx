@@ -30,7 +30,11 @@ import React from 'react';
 import type { BadgeProps } from '@hypha-platform/ui';
 import { Users } from 'lucide-react';
 
-type SignalCardProps = { isLoading: boolean; refresh: () => Promise<void> };
+type SignalCardProps = {
+  isLoading: boolean;
+  refresh: () => Promise<void>;
+  onOpenConversation?: () => void;
+};
 
 export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   isLoading,
@@ -43,7 +47,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   tags,
   archived,
   messages = 0,
+  roomId,
   refresh,
+  onOpenConversation,
 }) => {
   const { jwt: authToken } = useJwt();
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
@@ -181,11 +187,13 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             <Button
               variant="outline"
               colorVariant="accent"
-              disabled={isLoading}
+              disabled={isLoading || !roomId}
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
+                onOpenConversation?.();
               }}
+              title={!roomId ? 'No conversation room yet' : undefined}
             >
               <ChatBubbleIcon />
               Open conversation
