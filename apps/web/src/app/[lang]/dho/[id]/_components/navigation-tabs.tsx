@@ -13,7 +13,15 @@ import { ScrollArea, ScrollBar } from '@hypha-platform/ui';
 import { getActiveTabFromPath } from '@hypha-platform/epics';
 import { getDhoPathCoherence } from '../@tab/coherence/constants';
 
-export function NavigationTabs({ lang, id }: { lang: Locale; id: string }) {
+export function NavigationTabs({
+  lang,
+  id,
+  coherenceEnabled = false,
+}: {
+  lang: Locale;
+  id: string;
+  coherenceEnabled?: boolean;
+}) {
   const t = useTranslations('Common');
   const pathname = usePathname();
   const activeTab = getActiveTabFromPath(pathname);
@@ -25,11 +33,15 @@ export function NavigationTabs({ lang, id }: { lang: Locale; id: string }) {
     //   name: 'overview',
     //   href: getDhoPathOverview(lang, id),
     // },
-    {
-      title: t('Coherence'),
-      name: 'coherence',
-      href: getDhoPathCoherence(lang, id),
-    },
+    ...(coherenceEnabled
+      ? [
+          {
+            title: t('Coherence'),
+            name: 'coherence',
+            href: getDhoPathCoherence(lang, id),
+          },
+        ]
+      : []),
     {
       title: t('Agreements'),
       name: 'agreements',
