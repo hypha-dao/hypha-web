@@ -35,7 +35,11 @@ export type HumanChatPanelContextValue = {
   coherenceRoomId: string | null;
   coherenceTitle: string | null;
   coherenceSlug: string | null;
-  openCoherenceChat: (roomId: string, title: string, slug: string) => void;
+  openCoherenceChat: (
+    roomId: string | null,
+    title: string,
+    slug: string,
+  ) => void;
   closeCoherenceChat: () => void;
 };
 
@@ -70,7 +74,7 @@ export function HumanChatPanelProvider({
   const [coherenceSlug, setCoherenceSlug] = useState<string | null>(null);
 
   const openCoherenceChat = useCallback(
-    (roomId: string, title: string, slug: string) => {
+    (roomId: string | null, title: string, slug: string) => {
       setCoherenceRoomId(roomId);
       setCoherenceTitle(title);
       setCoherenceSlug(slug);
