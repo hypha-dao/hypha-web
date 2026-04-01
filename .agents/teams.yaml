@@ -43,7 +43,9 @@ teams:
           Implement the UI. The fullstack Next.js engineer builds components,
           pages, layouts, server/client boundaries, and data fetching. The
           i18n engineer adds translation keys and ensures locale coverage.
-        agents: [fullstack-nextjs, i18n-eng]
+          The Matrix SDK engineer handles real-time chat features, room/thread
+          management, and Matrix protocol integration.
+        agents: [fullstack-nextjs, i18n-eng, matrix-sdk]
       - phase: reviewing
         description: >
           Validate quality and security. The QA/test engineer runs Playwright
@@ -79,6 +81,9 @@ teams:
         model: anthropic/claude-sonnet-4
       - name: i18n-eng
         role: roles/i18n-engineer.md
+        model: anthropic/claude-sonnet-4
+      - name: matrix-sdk
+        role: roles/senior-matrix-sdk-engineer.base.md
         model: anthropic/claude-sonnet-4
       - name: qa-test
         role: roles/senior-qa-test-engineer.base.md
@@ -127,6 +132,9 @@ teams:
         model: anthropic/claude-sonnet-4
       - name: i18n-eng
         role: roles/i18n-engineer.md
+        model: anthropic/claude-sonnet-4
+      - name: matrix-sdk
+        role: roles/senior-matrix-sdk-engineer.base.md
         model: anthropic/claude-sonnet-4
       - name: meta-cognition
         role: roles/meta-cognitive-reasoning-expert.base.md
