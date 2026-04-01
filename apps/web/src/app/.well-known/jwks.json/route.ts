@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import type { JSONWebKeySet } from 'jose';
 
-const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID!;
+const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
+if (!PRIVY_APP_ID) {
+  throw new Error('Missing required env var: NEXT_PUBLIC_PRIVY_APP_ID');
+}
 
 const JWKS_URLS = {
   Web3AuthSocial: 'https://api-auth.web3auth.io/jwks',
