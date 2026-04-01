@@ -2,7 +2,7 @@
 
 import React from 'react';
 import useSWR from 'swr';
-import { getCoherenceBySlug } from '@hypha-platform/core/server';
+import { getCoherenceBySlug } from '@hypha-platform/core/coherence/server/web3';
 
 type UseConversationProps = {
   chatId: string;
