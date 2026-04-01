@@ -1,15 +1,9 @@
 'use client';
 
 import { Text } from '@radix-ui/themes';
-import {
-  Card,
-  StatusBadge,
-  Skeleton,
-  Image,
-  Button,
-  Badge,
-} from '@hypha-platform/ui';
+import { Card, StatusBadge, Skeleton, Button, Badge } from '@hypha-platform/ui';
 import { SewingPinFilledIcon } from '@radix-ui/react-icons';
+import { PersonAvatar } from './person-avatar';
 import { useEvents } from '@hypha-platform/core/client';
 import React from 'react';
 import { useParams } from 'next/navigation';
@@ -106,20 +100,13 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   return (
     <Card className="w-full h-full p-5 mb-2 flex gap-3 flex-col">
       <div className="flex items-center">
-        <Skeleton
-          width={minimize ? '40px' : '64px'}
-          height={minimize ? '40px' : '64px'}
-          loading={isLoading}
-          className="rounded-lg mr-3"
-        >
-          <Image
-            className="rounded-lg mr-3 h-[64px]"
-            src={avatarUrl || '/placeholder/default-profile.svg'}
-            height={minimize ? 40 : 64}
-            width={minimize ? 40 : 64}
-            alt={nickname ?? ''}
-          />
-        </Skeleton>
+        <PersonAvatar
+          avatarSrc={avatarUrl || '/placeholder/default-profile.svg'}
+          userName={nickname}
+          size={minimize ? 'sm' : 'lg'}
+          isLoading={isLoading}
+          className="mr-3"
+        />
 
         <div className="flex justify-between items-center w-full">
           <div className="flex flex-col">
