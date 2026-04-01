@@ -14,6 +14,7 @@ export * from './ai-panel';
 export { AiLeftPanel } from './ai-left-panel';
 export { AiLeftPanelLayout } from './ai-left-panel-layout';
 export {
+  PanelProviders,
   PanelWrapLayout,
   AiSidebarTrigger,
   HumanSidebarTrigger,
