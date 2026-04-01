@@ -9,7 +9,12 @@ import {
   SidebarFooter,
   useSidebar,
 } from '@hypha-platform/ui';
-import { useMatrix, Message } from '@hypha-platform/core/client';
+import {
+  useMatrix,
+  useCoherenceMutationsWeb2Rsc,
+  useJwt,
+  Message,
+} from '@hypha-platform/core/client';
 
 import {
   HumanChatPanelHeader,
@@ -80,8 +85,16 @@ export function HumanRightPanel() {
   const matrixRef = useRef(matrix);
   matrixRef.current = matrix;
 
-  const { mode, coherenceRoomId, coherenceTitle, closeCoherenceChat } =
-    useHumanChatPanel();
+  const {
+    mode,
+    coherenceRoomId,
+    coherenceTitle,
+    coherenceSlug,
+    closeCoherenceChat,
+    openCoherenceChat,
+  } = useHumanChatPanel();
+  const { jwt: authToken } = useJwt();
+  const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
   const { open: sidebarOpen } = useSidebar();
 
   const [input, setInput] = useState('');
@@ -215,14 +228,9 @@ export function HumanRightPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
 
-  // Join coherence room when mode switches to 'coherence'
+  // Join (or create) coherence room when mode switches to 'coherence'
   useEffect(() => {
-    if (
-      mode !== 'coherence' ||
-      !coherenceRoomId ||
-      !isMatrixAvailable ||
-      !isMatrixAuthenticated
-    )
+    if (mode !== 'coherence' || !isMatrixAvailable || !isMatrixAuthenticated)
       return;
 
     let cancelled = false;
@@ -232,10 +240,43 @@ export function HumanRightPanel() {
       setError(null);
       setMessages([]);
       try {
-        await matrixRef.current.joinRoom(coherenceRoomId);
+        let targetRoomId = coherenceRoomId;
+
+        // If no room exists yet, create one and link it to the coherence record
+        if (!targetRoomId) {
+          console.log(
+            '[HumanRightPanel] Creating Matrix room for coherence:',
+            coherenceSlug,
+          );
+          const { roomId: newRoomId } = await matrixRef.current.createRoom(
+            coherenceTitle || 'Conversation',
+          );
+          if (cancelled) return;
+          targetRoomId = newRoomId;
+
+          // Persist the room ID to the coherence record
+          if (coherenceSlug) {
+            try {
+              await updateCoherenceBySlug({
+                slug: coherenceSlug,
+                roomId: newRoomId,
+              });
+              // Update context so subsequent opens don't re-create
+              openCoherenceChat(newRoomId, coherenceTitle || '', coherenceSlug);
+            } catch (err) {
+              console.warn(
+                '[HumanRightPanel] Failed to persist roomId to coherence:',
+                err,
+              );
+            }
+          }
+        } else {
+          await matrixRef.current.joinRoom(targetRoomId);
+        }
+
         if (cancelled) return;
-        setRoomId(coherenceRoomId);
-        const existing = matrixRef.current.getRoomMessages(coherenceRoomId);
+        setRoomId(targetRoomId);
+        const existing = matrixRef.current.getRoomMessages(targetRoomId);
         if (existing) {
           setMessages(
             existing.map((m) => toUIMessage(m, currentUserIdRef.current)),
@@ -259,6 +300,7 @@ export function HumanRightPanel() {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, coherenceRoomId, isMatrixAvailable, isMatrixAuthenticated]);
 
   // Register listener for incoming messages
