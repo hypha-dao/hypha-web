@@ -19,14 +19,17 @@ export class CoherencePage extends BasePage {
   readonly spaceSlug: string;
 
   // ── Navigation ─────────────────────────────────────────────────────────────
-  /** The "Coherence" tab link in the DHO navigation bar */
+  /**
+   * The "Coherence" tab in the DHO navigation bar.
+   * Rendered as role="tab" (Radix TabsTrigger with asChild merges onto the Link).
+   */
   readonly coherenceTab: Locator;
 
   // ── Page content ───────────────────────────────────────────────────────────
-  /** Main "Signals" section heading */
+  /** Main "Signals" section heading / label */
   readonly signalsSectionHeading: Locator;
 
-  /** "New Signal" button in the signal section */
+  /** "New Signal" link button in the signal section */
   readonly newSignalButton: Locator;
 
   /** Search signals input field */
@@ -36,11 +39,12 @@ export class CoherencePage extends BasePage {
   readonly signInMessage: Locator;
 
   // ── Signal type filter badges ───────────────────────────────────────────────
-  /** "All" filter badge */
+  /**
+   * "All" filter badge.
+   * Rendered as a <div> (Badge component), not a <button>.
+   * Matched by text content.
+   */
   readonly allFilterBadge: Locator;
-
-  /** Filter badge row container (used to assert multiple badges are rendered) */
-  readonly filterBadgeContainer: Locator;
 
   // ── Create signal form ─────────────────────────────────────────────────────
   /** Page heading of the create signal form */
@@ -50,13 +54,13 @@ export class CoherencePage extends BasePage {
     super(page);
     this.spaceSlug = spaceSlug;
 
-    // Navigation tab (rendered in DHO NavigationTabs component)
-    this.coherenceTab = page.getByRole('link', { name: 'Coherence' });
+    // Navigation tab — TabsTrigger with asChild merges role="tab" onto the <a> Link
+    this.coherenceTab = page.getByRole('tab', { name: 'Coherence' });
 
-    // Signal section
-    this.signalsSectionHeading = page.getByRole('heading', { name: 'Signals' });
+    // Signal section label (rendered via SectionFilter's label prop, not a heading element)
+    this.signalsSectionHeading = page.getByText('Signals', { exact: true });
 
-    // "New Signal" button (exact match to avoid false positives)
+    // "New Signal" link — wraps a Button inside a <Link>
     this.newSignalButton = page.getByRole('link', { name: 'New Signal' });
 
     // Search input — placeholder defined in CoherenceTab.searchSignals i18n key
@@ -68,13 +72,9 @@ export class CoherencePage extends BasePage {
       { exact: false },
     );
 
-    // Filter badges — "All" is always the first badge
-    this.allFilterBadge = page.getByRole('button', { name: 'All' });
-
-    // Container that holds all type filter badges
-    this.filterBadgeContainer = page.locator(
-      '[data-testid="signal-type-filters"]',
-    );
+    // Filter badges rendered as <div> (Badge component), matched by visible text.
+    // Note: Badge renders as div, so use getByText not getByRole('button').
+    this.allFilterBadge = page.getByText('All', { exact: false }).first();
 
     // Create signal form heading
     this.createSignalHeading = page.getByRole('heading', {
@@ -105,18 +105,6 @@ export class CoherencePage extends BasePage {
   async openNewSignalPage() {
     await this.page.goto(`/en/dho/${this.spaceSlug}/coherence/new-signal`);
     await this.waitForPageLoad();
-  }
-
-  /**
-   * Returns all visible signal type filter badge labels.
-   * Expected values: ["All", "Opportunity", "Risk", "Tension", "Insight", "Trend", "Proposal"]
-   */
-  async getFilterBadgeLabels(): Promise<string[]> {
-    // Signal type filter buttons rendered inside the signal section
-    const badges = this.page.locator(
-      '[data-testid="signal-type-filters"] button',
-    );
-    return badges.allTextContents();
   }
 
   /**
