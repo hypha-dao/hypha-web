@@ -180,6 +180,27 @@ export function HumanRightPanel() {
     };
   }, [isMatrixAvailable, isMatrixAuthenticated, spaceSlug]);
 
+  // Clear messages and unregister listener when switching modes
+  useEffect(() => {
+    if (mode === 'coherence') {
+      // Leaving space mode — unregister space room listener and clear state
+      if (roomId) {
+        matrixRef.current.unregisterRoomListener(roomId);
+      }
+      joinedRef.current = null; // allow space room to re-init when returning
+      setMessages([]);
+      setRoomId(null);
+      setError(null);
+    }
+    if (mode === 'space') {
+      // Returning to space mode — clear coherence messages so space init takes over
+      setMessages([]);
+      setRoomId(null);
+      setError(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+
   // Join coherence room when mode switches to 'coherence'
   useEffect(() => {
     if (
