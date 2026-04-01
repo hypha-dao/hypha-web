@@ -22,7 +22,11 @@ export class HumanChatPanelPage extends BasePage {
     this.openButton = page.getByRole('button', {
       name: /open chat panel/i,
     });
-    this.headerText = page.getByText('Chat', { exact: true });
+    // Header title is a span (not a button) in the sidebar header
+    this.headerText = page
+      .locator('[data-side="right"] [data-sidebar="header"] span')
+      .filter({ hasText: 'Chat' })
+      .first();
     // The header close button has aria-label="Close panel" within the right sidebar.
     // We scope to the right-side sidebar group to avoid collision with AI panel's close button.
     this.closeButton = page

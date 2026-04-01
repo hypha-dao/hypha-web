@@ -1580,13 +1580,26 @@
     "title": "Chat",
     "welcome": "Welcome to the chat! Start a conversation with other members of this space.",
     "placeholder": "Type a message...",
+    "placeholderChannel": "Message #{channel}",
     "sendButton": "Send",
-    "newlineHint": "Shift+Enter for newline",
+    "newlineHint": "Enter to send · Shift+Enter for newline · @ to mention",
     "loading": "Loading...",
     "openPanel": "Open chat panel",
     "hidePanel": "Hide chat panel",
     "closePanel": "Close panel",
     "copyButton": "Copy",
-    "copiedButton": "Copied!"
+    "copiedButton": "Copied!",
+    "tabChat": "Chat",
+    "tabMembers": "Members",
+    "membersCount": "{count} members · {online} online",
+    "you": "You",
+    "reactButton": "React",
+    "replyButton": "Reply",
+    "moreButton": "More",
+    "attachFile": "Attach file",
+    "attachImage": "Attach image",
+    "bold": "Bold",
+    "emoji": "Emoji",
+    "mention": "Mention"
   }
 }

@@ -1580,13 +1580,26 @@
     "title": "Chat",
     "welcome": "Bem-vindo ao chat! Inicie uma conversa com outros membros deste espaço.",
     "placeholder": "Digite uma mensagem...",
+    "placeholderChannel": "Mensagem #{channel}",
     "sendButton": "Enviar",
-    "newlineHint": "Shift+Enter para nova linha",
+    "newlineHint": "Enter para enviar · Shift+Enter para nova linha · @ para mencionar",
     "loading": "Carregando...",
     "openPanel": "Abrir painel de chat",
     "hidePanel": "Ocultar painel de chat",
     "closePanel": "Fechar painel",
     "copyButton": "Copiar",
-    "copiedButton": "Copiado!"
+    "copiedButton": "Copiado!",
+    "tabChat": "Chat",
+    "tabMembers": "Membros",
+    "membersCount": "{count} membros · {online} online",
+    "you": "Você",
+    "reactButton": "Reagir",
+    "replyButton": "Responder",
+    "moreButton": "Mais",
+    "attachFile": "Anexar arquivo",
+    "attachImage": "Anexar imagem",
+    "bold": "Negrito",
+    "emoji": "Emoji",
+    "mention": "Mencionar"
   }
 }
