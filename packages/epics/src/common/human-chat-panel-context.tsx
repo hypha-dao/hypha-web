@@ -75,8 +75,12 @@ export function HumanChatPanelProvider({
       setCoherenceTitle(title);
       setCoherenceSlug(slug);
       setMode('coherence');
+      // Also open the sidebar panel if it's closed
+      if (!open) {
+        toggle();
+      }
     },
-    [],
+    [open, toggle],
   );
 
   const closeCoherenceChat = useCallback(() => {

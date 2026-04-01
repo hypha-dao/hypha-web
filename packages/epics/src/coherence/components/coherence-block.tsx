@@ -7,7 +7,6 @@ import {
   useFindCoherences,
   useSpaceBySlug,
 } from '@hypha-platform/core/client';
-import { useSidebar } from '@hypha-platform/ui';
 import { Locale } from '@hypha-platform/i18n';
 import React from 'react';
 import { CoherenceOrder } from '../types';
@@ -48,15 +47,13 @@ export function CoherenceBlock({
   );
 
   const { openCoherenceChat } = useHumanChatPanel();
-  const { setOpen } = useSidebar();
 
   const handleSignalClick = React.useCallback(
     (signal: Coherence) => {
       if (!signal.roomId) return; // guard: room not created yet
-      openCoherenceChat(signal.roomId, signal.title, signal.slug);
-      setOpen(true);
+      openCoherenceChat(signal.roomId, signal.title, signal.slug!);
     },
-    [openCoherenceChat, setOpen],
+    [openCoherenceChat],
   );
 
   return (
