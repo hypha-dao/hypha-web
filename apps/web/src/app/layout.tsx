@@ -12,16 +12,21 @@ import { Footer, Html, ThemeProvider } from '@hypha-platform/ui/server';
 import { AuthProvider } from '@hypha-platform/authentication';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
-  AiLeftPanelLayout,
+  AiLeftPanel,
+  PanelProviders,
+  PanelWrapLayout,
   AiSidebarTrigger,
+  HumanSidebarTrigger,
   ConnectedButtonProfile,
 } from '@hypha-platform/epics';
+import { ConnectedHumanRightPanel } from '@web/components/connected-human-right-panel';
 import { EvmProvider } from '@hypha-platform/evm';
 import { useMe } from '@hypha-platform/core/client';
+import { ConditionalMatrixProvider } from '@web/components/conditional-matrix-provider';
 import { fileRouter } from '@hypha-platform/core/server';
 import { MenuTop, TooltipProvider } from '@hypha-platform/ui';
 import { ROOT_URL } from './constants';
-import { enableAiChat } from '@hypha-platform/feature-flags';
+import { enableAiChat, enableHumanChat } from '@hypha-platform/feature-flags';
 import { NotificationSubscriber } from '@hypha-platform/notifications/client';
 
 import '@hypha-platform/ui-utils/global.css';
@@ -99,6 +104,7 @@ export default async function RootLayout({
   const safariWebId = process.env.NEXT_PUBLIC_ONESIGNAL_SAFARI_WEB_ID ?? '';
   const serviceWorkerPath = 'onesignal/OneSignalSDKWorker.js';
   const aiChatEnabled = await enableAiChat();
+  const humanChatEnabled = await enableHumanChat();
 
   return (
     <Html lang={locale} className={clsx(lato.variable, sourceSans.variable)}>
@@ -123,51 +129,79 @@ export default async function RootLayout({
                   safariWebId={safariWebId}
                   serviceWorkerPath={serviceWorkerPath}
                 >
-                  <AiLeftPanelLayout enabled={aiChatEnabled}>
-                    <MenuTop
-                      logoHref={ROOT_URL}
-                      openMenuLabel={tNav('openMenu')}
-                      closeMenuLabel={tNav('closeMenu')}
-                      leadingAction={
-                        aiChatEnabled ? <AiSidebarTrigger /> : undefined
-                      }
-                    >
-                      <ConnectedButtonProfile
-                        useAuthentication={useAuthentication}
-                        useMe={useMe}
-                        newUserRedirectPath="/profile/signup"
-                        baseRedirectPath="/my-spaces"
-                        navItems={[
-                          {
-                            label: tNav('network'),
-                            href: `/${locale}/network`,
-                          },
-                          {
-                            label: tNav('mySpaces'),
-                            href: `/${locale}/my-spaces`,
-                          },
-                        ]}
-                      />
-                      {isLanguageSelectVisible && <ConnectedLanguageSelect />}
-                    </MenuTop>
-                    <NextSSRPlugin
-                      routerConfig={extractRouterConfig(fileRouter)}
-                    />
-                    <div className="mb-auto pb-8">
-                      <div className="pt-9 h-full flex justify-normal">
-                        <div className="w-full h-full">{children}</div>
-                      </div>
-                    </div>
-                    <Footer
-                      networkLabel={tFooter('network')}
-                      legalLabel={tFooter('legal')}
-                      hyphaServicesLabel={tFooter('hyphaServices')}
-                      hyphaTokenomicsLabel={tFooter('hyphaTokenomics')}
-                      licensingPolicyLabel={tFooter('licensingPolicy')}
-                      termsAndConditionsLabel={tFooter('termsAndConditions')}
-                      privacyPolicyLabel={tFooter('privacyPolicy')}
-                    />
-                  </AiLeftPanelLayout>
+                  <ConditionalMatrixProvider enabled={humanChatEnabled}>
+                    <PanelProviders>
+                      <PanelWrapLayout
+                        left={
+                          aiChatEnabled
+                            ? { content: <AiLeftPanel /> }
+                            : undefined
+                        }
+                        right={
+                          humanChatEnabled
+                            ? { content: <ConnectedHumanRightPanel /> }
+                            : undefined
+                        }
+                      >
+                        {/* Fixed menu bar — clamped to center column by SidebarInset */}
+                        <div className="sticky top-0 z-30 shrink-0">
+                          <MenuTop
+                            logoHref={ROOT_URL}
+                            openMenuLabel={tNav('openMenu')}
+                            closeMenuLabel={tNav('closeMenu')}
+                            leadingAction={
+                              aiChatEnabled ? <AiSidebarTrigger /> : undefined
+                            }
+                            trailingAction={
+                              humanChatEnabled ? (
+                                <HumanSidebarTrigger />
+                              ) : undefined
+                            }
+                          >
+                            <ConnectedButtonProfile
+                              useAuthentication={useAuthentication}
+                              useMe={useMe}
+                              newUserRedirectPath="/profile/signup"
+                              baseRedirectPath="/my-spaces"
+                              navItems={[
+                                {
+                                  label: tNav('network'),
+                                  href: `/${locale}/network`,
+                                },
+                                {
+                                  label: tNav('mySpaces'),
+                                  href: `/${locale}/my-spaces`,
+                                },
+                              ]}
+                            />
+                            {isLanguageSelectVisible && (
+                              <ConnectedLanguageSelect />
+                            )}
+                          </MenuTop>
+                        </div>
+                        {/* Scrollable content area */}
+                        <NextSSRPlugin
+                          routerConfig={extractRouterConfig(fileRouter)}
+                        />
+                        <div className="mb-auto pb-8">
+                          <div className="pt-9 h-full flex justify-normal">
+                            <div className="w-full h-full">{children}</div>
+                          </div>
+                        </div>
+                        <Footer
+                          networkLabel={tFooter('network')}
+                          legalLabel={tFooter('legal')}
+                          hyphaServicesLabel={tFooter('hyphaServices')}
+                          hyphaTokenomicsLabel={tFooter('hyphaTokenomics')}
+                          licensingPolicyLabel={tFooter('licensingPolicy')}
+                          termsAndConditionsLabel={tFooter(
+                            'termsAndConditions',
+                          )}
+                          privacyPolicyLabel={tFooter('privacyPolicy')}
+                        />
+                      </PanelWrapLayout>
+                    </PanelProviders>
+                  </ConditionalMatrixProvider>
                 </NotificationSubscriber>
               </TooltipProvider>
             </NextIntlClientProvider>

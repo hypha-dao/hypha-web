@@ -165,7 +165,7 @@ const SidebarProvider = React.forwardRef<HTMLDivElement, SidebarProviderProps>(
               } as React.CSSProperties
             }
             className={cn(
-              'group/sidebar-wrapper flex min-h-svh w-full has-[[data-variant=inset]]:bg-sidebar',
+              'group/sidebar-wrapper flex h-svh w-full has-[[data-variant=inset]]:bg-sidebar',
               className,
             )}
             ref={ref}
@@ -576,7 +576,11 @@ const SidebarResizeHandle = React.forwardRef<
         onKeyDown={handleKeyDown}
         className={cn(
           // Layout & hit target (12px wide, centered on edge)
-          'group/resize absolute inset-y-0 -right-1.5 z-20 w-3',
+          // Position on the outer edge: right for left-side panels, left for right-side panels
+          // Top is offset by --menu-top-height so the handle starts below the menu bar
+          'group/resize absolute bottom-0 z-20 w-3',
+          'top-[var(--menu-top-height,0px)]',
+          'group-data-[side=left]:-right-1.5 group-data-[side=right]:-left-1.5',
           'hidden sm:flex items-center justify-center',
           'cursor-col-resize select-none touch-none',
 
@@ -589,13 +593,13 @@ const SidebarResizeHandle = React.forwardRef<
           // Hover: subtle border color
           'hover:after:bg-sidebar-border',
 
-          // Active/dragging: primary accent with slight width bump
-          'data-[resizing=true]:after:bg-primary',
+          // Active/dragging: accent-8 (Radix step 8: interactive borders & focus rings)
+          'data-[resizing=true]:after:bg-accent-8',
           'data-[resizing=true]:after:w-[4px]',
 
-          // Focus-visible: keyboard accessibility
+          // Focus-visible: keyboard accessibility (same accent step for consistency)
           'focus-visible:outline-none',
-          'focus-visible:after:bg-sidebar-ring',
+          'focus-visible:after:bg-accent-8',
 
           // Hide when sidebar is offcanvas-collapsed
           'group-data-[collapsible=offcanvas]:hidden',
@@ -631,7 +635,7 @@ const SidebarInset = React.forwardRef<
     <main
       ref={ref}
       className={cn(
-        'relative flex w-full flex-1 flex-col bg-background',
+        'relative flex w-full flex-1 flex-col overflow-x-hidden min-w-0 bg-background',
         'md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow',
         className,
       )}
@@ -667,7 +671,7 @@ const SidebarHeader = React.forwardRef<
     <div
       ref={ref}
       data-sidebar="header"
-      className={cn('flex flex-col gap-2 p-2', className)}
+      className={cn('flex shrink-0 flex-col gap-2 p-2', className)}
       {...props}
     />
   );
@@ -682,7 +686,7 @@ const SidebarFooter = React.forwardRef<
     <div
       ref={ref}
       data-sidebar="footer"
-      className={cn('flex flex-col gap-2 p-2', className)}
+      className={cn('flex shrink-0 flex-col gap-2 p-2', className)}
       {...props}
     />
   );

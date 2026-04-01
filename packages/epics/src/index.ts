@@ -7,3 +7,5 @@ export * from './spaces';
 export * from './treasury';
 export * from './notifications';
 export * from './hooks';
+
+export * from './coherence';

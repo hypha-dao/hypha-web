@@ -425,3 +425,20 @@ export const findDocumentsCreatorsForNotifications = async (
     .where(inArray(documents.web3ProposalId, proposalIds))
     .groupBy(documents.id, people.slug, spaces.slug, spaces.title);
 };
+
+export type FindPersonBySubInput = {
+  sub: string;
+};
+export const findPersonBySub = async (
+  { sub }: FindPersonBySubInput,
+  { db }: DbConfig,
+) => {
+  const [person] = await db
+    .select()
+    .from(people)
+    .where(eq(people.sub, sub))
+    .limit(1);
+  if (!person) return null;
+
+  return mapToDomainPerson(person);
+};

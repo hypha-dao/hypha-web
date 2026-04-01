@@ -36,8 +36,26 @@ jobs:
         id: detect
         uses: ./.github/actions/detect-changes
 
+  check-types:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm turbo run check-types --filter=web
+
   deploy-preview:
-    needs: detect-changes
+    needs: [detect-changes, check-types]
     if: github.event_name == 'pull_request' && needs.detect-changes.outputs.has_preview_deploy_changes == 'true'
     runs-on: blacksmith-4vcpu-ubuntu-2404
 

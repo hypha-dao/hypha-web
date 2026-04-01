@@ -10,6 +10,7 @@ import clsx from 'clsx';
 type MenuTopProps = {
   children?: React.ReactNode;
   leadingAction?: React.ReactNode;
+  trailingAction?: React.ReactNode;
   logoHref?: string;
   hrefTarget?: string;
   openMenuLabel?: string;
@@ -19,6 +20,7 @@ type MenuTopProps = {
 export const MenuTop = ({
   children,
   leadingAction,
+  trailingAction,
   logoHref,
   hrefTarget,
   openMenuLabel = 'Open menu',
@@ -35,18 +37,29 @@ export const MenuTop = ({
 
   useEffect(() => {
     if (!headerRef.current) return;
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry) setHeaderHeight(entry.contentRect.height);
+    const observer = new ResizeObserver(() => {
+      const rect = headerRef.current?.getBoundingClientRect();
+      if (rect) {
+        // Round to prevent subpixel drift when toggle icons appear/disappear
+        const h = Math.round(rect.height);
+        setHeaderHeight(h);
+        document.documentElement.style.setProperty(
+          '--menu-top-height',
+          `${h}px`,
+        );
+      }
     });
     observer.observe(headerRef.current);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.removeProperty('--menu-top-height');
+    };
   }, []);
 
   return (
     <header
       ref={headerRef}
-      className="sticky top-0 flex min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background-2 px-4 py-3 z-20"
+      className="flex min-h-[65px] min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background-2 px-4 py-3 z-30"
     >
       <div
         className={clsx(
@@ -61,10 +74,14 @@ export const MenuTop = ({
           )}
         </div>
 
-        {/* Desktop Nav */}
-        {children && (
-          <div id="menu-top-actions" className="hidden md:flex gap-2">
+        {/* Desktop Nav + Trailing action (right-aligned group) */}
+        {(children || trailingAction) && (
+          <div
+            id="menu-top-actions"
+            className="hidden md:flex items-center gap-2"
+          >
             {children}
+            {trailingAction}
           </div>
         )}
 
