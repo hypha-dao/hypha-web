@@ -1,17 +1,19 @@
 'use client';
 
-import { Hash, PanelRightClose } from 'lucide-react';
+import { ArrowLeft, Hash, PanelRightClose } from 'lucide-react';
 import { useSidebar } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 
 type HumanChatPanelHeaderProps = {
   title?: string;
   description?: string;
+  onBack?: () => void;
 };
 
 export function HumanChatPanelHeader({
   title,
   description,
+  onBack,
 }: HumanChatPanelHeaderProps) {
   const { toggleSidebar } = useSidebar();
   const t = useTranslations('HumanChatPanel');
@@ -23,7 +25,18 @@ export function HumanChatPanelHeader({
     <div className="flex min-w-0 flex-shrink-0 items-start justify-between gap-2 border-b border-border bg-background-2 px-4 py-3">
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex items-center gap-1.5">
-          <Hash className="h-4 w-4 shrink-0 text-muted-foreground" />
+          {onBack ? (
+            <button
+              type="button"
+              onClick={onBack}
+              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:text-foreground"
+              aria-label={t('backToSpaceChat')}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+          ) : (
+            <Hash className="h-4 w-4 shrink-0 text-muted-foreground" />
+          )}
           <span className="font-semibold text-sm text-foreground truncate">
             {displayTitle}
           </span>

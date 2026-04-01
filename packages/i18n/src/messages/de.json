@@ -1601,7 +1601,8 @@
     "attachImage": "Bild anhängen",
     "bold": "Fett",
     "emoji": "Emoji",
-    "mention": "Erwähnen"
+    "mention": "Erwähnen",
+    "backToSpaceChat": "Zurück zum Space-Chat"
   },
   "CoherenceTab": {
     "signals": "Signals",

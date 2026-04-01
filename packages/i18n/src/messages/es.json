@@ -1601,7 +1601,8 @@
     "attachImage": "Adjuntar imagen",
     "bold": "Negrita",
     "emoji": "Emoji",
-    "mention": "Mencionar"
+    "mention": "Mencionar",
+    "backToSpaceChat": "Volver al chat del espacio"
   },
   "CoherenceTab": {
     "signals": "Signals",
