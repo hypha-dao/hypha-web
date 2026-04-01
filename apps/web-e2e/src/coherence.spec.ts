@@ -200,15 +200,26 @@ test.describe('Coherence Screen', () => {
 
   // ---------------------------------------------------------------------------
   // Create Signal Form
-  // NOTE: The /coherence/new-signal route is not yet implemented as part of
-  // the 16-step plan. It is listed as post-implementation cleanup in the plan.
-  // These tests are marked fixme until the route is created.
-  // TODO: Create @tab/coherence/new-signal/ route and remove fixme.
+  //
+  // ROUTING NOTE: The form lives in @aside/[tab]/new-signal/page.tsx and is
+  // rendered in a SidePanel overlay on top of the coherence page content.
+  // It is only accessible via SOFT navigation (clicking "New Signal" from
+  // within the app), NOT direct/hard URL navigation. Direct navigation to
+  // /coherence/new-signal 404s because the @tab parallel route has no
+  // coherence/new-signal sub-route.
+  //
+  // All tests here require authentication to:
+  //   1. See the SignalSection (CoherenceBlock gates content behind auth)
+  //   2. Click "New Signal" to trigger the soft navigation
+  //
+  // TODO: Add an auth fixture (JWT/cookie) and remove fixme.
   // ---------------------------------------------------------------------------
   test.describe('Create Signal Form', () => {
     test.fixme(
-      '"New Signal" button links to create-signal form (requires auth + new-signal route)',
+      '"New Signal" button navigates to aside form panel (requires auth)',
       async ({ page }) => {
+        // With auth: click "New Signal" → soft navigation to /coherence/new-signal
+        // → @tab shows coherence content, @aside renders CreateSignalForm in SidePanel
         const coherencePage = new CoherencePage(page, SPACE_SLUG);
         await coherencePage.openCoherencePage();
 
@@ -220,10 +231,14 @@ test.describe('Coherence Screen', () => {
     );
 
     test.fixme(
-      'create-signal form renders on direct navigation (requires new-signal route)',
+      'create-signal form is visible after clicking New Signal (requires auth)',
       async ({ page }) => {
+        // Form is rendered in the @aside SidePanel slot after soft navigation.
+        // Direct URL navigation (/coherence/new-signal) 404s — test via click.
         const coherencePage = new CoherencePage(page, SPACE_SLUG);
-        await coherencePage.openNewSignalPage();
+        await coherencePage.openCoherencePage();
+
+        await coherencePage.newSignalButton.click();
 
         // Form heading from CoherenceTab.creatingNewSignal i18n key
         await expect(coherencePage.createSignalHeading).toBeVisible();
@@ -231,10 +246,11 @@ test.describe('Coherence Screen', () => {
     );
 
     test.fixme(
-      'create-signal form has type selection buttons (requires new-signal route)',
+      'create-signal form has type selection buttons (requires auth)',
       async ({ page }) => {
         const coherencePage = new CoherencePage(page, SPACE_SLUG);
-        await coherencePage.openNewSignalPage();
+        await coherencePage.openCoherencePage();
+        await coherencePage.newSignalButton.click();
 
         // COHERENCE_TYPE_OPTIONS renders CoherenceTypeButton for each type
         const typeButtons = page.getByRole('button', {
@@ -245,10 +261,11 @@ test.describe('Coherence Screen', () => {
     );
 
     test.fixme(
-      'create-signal form has title input (requires new-signal route)',
+      'create-signal form has title input (requires auth)',
       async ({ page }) => {
         const coherencePage = new CoherencePage(page, SPACE_SLUG);
-        await coherencePage.openNewSignalPage();
+        await coherencePage.openCoherencePage();
+        await coherencePage.newSignalButton.click();
 
         // Signal title placeholder from CoherenceTab.signalTitle i18n key
         const titleInput = page.getByPlaceholder('Signal title...');
@@ -257,10 +274,11 @@ test.describe('Coherence Screen', () => {
     );
 
     test.fixme(
-      'create-signal form has publish button (requires new-signal route)',
+      'create-signal form has publish button (requires auth)',
       async ({ page }) => {
         const coherencePage = new CoherencePage(page, SPACE_SLUG);
-        await coherencePage.openNewSignalPage();
+        await coherencePage.openCoherencePage();
+        await coherencePage.newSignalButton.click();
 
         // Publish button from CoherenceTab.publish i18n key
         const publishButton = page.getByRole('button', { name: /publish/i });
