@@ -34,9 +34,7 @@ export const useMatrixToken = () => {
           },
         });
         if (!response.ok) {
-          const errorText = await response
-            .text()
-            .catch(() => 'Unknown error');
+          const errorText = await response.text().catch(() => 'Unknown error');
           console.warn(
             `Matrix token request failed: ${response.status} - ${errorText}`,
           );

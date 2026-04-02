@@ -1,8 +1,6 @@
 import { Environment } from '../types';
 
-export function determineEnvironment(
-  url: string,
-): Environment | undefined {
+export function determineEnvironment(url: string): Environment | undefined {
   if (!url) {
     return undefined;
   }

@@ -4,13 +4,8 @@ const algorithm = 'aes-256-cbc';
 const ivLength = 16;
 
 function validateAesKey(secretKey: string): void {
-  if (
-    typeof secretKey !== 'string' ||
-    !/^[0-9a-fA-F]{64}$/.test(secretKey)
-  ) {
-    throw new Error(
-      'Invalid AES-256 key: expected 64 hex chars (32 bytes)',
-    );
+  if (typeof secretKey !== 'string' || !/^[0-9a-fA-F]{64}$/.test(secretKey)) {
+    throw new Error('Invalid AES-256 key: expected 64 hex chars (32 bytes)');
   }
 }
 

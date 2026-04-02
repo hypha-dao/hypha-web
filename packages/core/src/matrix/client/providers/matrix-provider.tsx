@@ -102,7 +102,12 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       return;
     }
     initializeMatrixClient(matrixToken);
-  }, [matrixToken, isMatrixTokenLoading, matrixTokenError, initializeMatrixClient]);
+  }, [
+    matrixToken,
+    isMatrixTokenLoading,
+    matrixTokenError,
+    initializeMatrixClient,
+  ]);
 
   React.useEffect(() => {
     return () => {

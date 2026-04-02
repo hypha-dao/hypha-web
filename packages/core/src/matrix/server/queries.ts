@@ -17,7 +17,10 @@ function escapeLikePattern(value: string): string {
 }
 
 export const findLinkByPrivyUserId = async (
-  { privyUserId, environment }: { privyUserId: string; environment: Environment },
+  {
+    privyUserId,
+    environment,
+  }: { privyUserId: string; environment: Environment },
   { db }: DbConfig,
 ): Promise<MatrixUserLink | null> => {
   const response = await db.query.matrixUserLinks.findFirst({
@@ -36,7 +39,10 @@ export const findLinkByPrivyUserId = async (
 };
 
 export const findLinkByMatrixUserId = async (
-  { matrixUserId, environment }: { matrixUserId: string; environment: Environment },
+  {
+    matrixUserId,
+    environment,
+  }: { matrixUserId: string; environment: Environment },
   { db }: DbConfig,
 ): Promise<MatrixUserLink | null> => {
   const response = await db.query.matrixUserLinks.findFirst({

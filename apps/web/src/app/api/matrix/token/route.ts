@@ -35,8 +35,10 @@ async function verifyPrivyToken(
 ): Promise<string | null> {
   try {
     const privy = new PrivyClient({ appId, appSecret });
-    const { user_id: userId } =
-      await privy.utils().auth().verifyAuthToken(token);
+    const { user_id: userId } = await privy
+      .utils()
+      .auth()
+      .verifyAuthToken(token);
     return userId;
   } catch (error) {
     console.warn(

@@ -225,7 +225,9 @@ export class MatrixSharedSecret {
     const data = await response.json();
     if (!response.ok) {
       throw new Error(
-        `Failed to reset password for ${username}: ${response.status} - ${data?.errcode ?? data?.error ?? 'unknown'}`,
+        `Failed to reset password for ${username}: ${response.status} - ${
+          data?.errcode ?? data?.error ?? 'unknown'
+        }`,
       );
     }
     return { ok: data.password_updated, password };
@@ -248,7 +250,9 @@ export class MatrixSharedSecret {
     const data = await response.json();
     if (!response.ok) {
       throw new Error(
-        `Failed to remove user ${username}: ${response.status} - ${data?.errcode ?? data?.error ?? 'unknown'}`,
+        `Failed to remove user ${username}: ${response.status} - ${
+          data?.errcode ?? data?.error ?? 'unknown'
+        }`,
       );
     }
     return { ok: true };
@@ -339,7 +343,9 @@ export class MatrixSharedSecret {
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
       throw new Error(
-        `Failed to change password: ${response.status} - ${data?.errcode ?? data?.error ?? response.statusText}`,
+        `Failed to change password: ${response.status} - ${
+          data?.errcode ?? data?.error ?? response.statusText
+        }`,
       );
     }
     const data = await response.json();
