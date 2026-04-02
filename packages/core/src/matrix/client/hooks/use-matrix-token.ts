@@ -34,7 +34,13 @@ export const useMatrixToken = () => {
           },
         });
         if (!response.ok) {
-          return undefined;
+          const errorText = await response
+            .text()
+            .catch(() => 'Unknown error');
+          console.warn(
+            `Matrix token request failed: ${response.status} - ${errorText}`,
+          );
+          throw new Error(`Request failed: ${response.status}`);
         }
         const data = await response.json();
         if (
@@ -49,12 +55,14 @@ export const useMatrixToken = () => {
         return data as MatrixTokenData;
       } catch (err) {
         console.warn('Cannot get Matrix token:', err);
-        setError(err instanceof Error ? err.message : `${err}`);
-        return undefined;
+        throw err;
       }
     },
     {
       errorRetryInterval: 2000,
+      onError: (err: unknown) => {
+        setError(err instanceof Error ? err.message : `${err}`);
+      },
     },
   );
 

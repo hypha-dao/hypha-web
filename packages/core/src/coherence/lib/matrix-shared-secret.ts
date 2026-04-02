@@ -13,6 +13,31 @@ type RegisterResponse = {
   deviceId: string;
 };
 
+const DEFAULT_TIMEOUT_MS = 30_000;
+
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit = {},
+  timeoutMs: number = DEFAULT_TIMEOUT_MS,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return response;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error(`Request to ${url} timed out after ${timeoutMs}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export class MatrixSharedSecret {
   private registrationSharedSecret: string;
   private matrixHomeserverUrl: string;
@@ -42,7 +67,7 @@ export class MatrixSharedSecret {
 
   private async getVersions(): Promise<VersionsResponse> {
     if (this.versions.versions.length === 0) {
-      const response = await fetch(
+      const response = await fetchWithTimeout(
         `${this.matrixHomeserverUrl}/_matrix/client/versions`,
       );
       if (response.ok) {
@@ -54,19 +79,17 @@ export class MatrixSharedSecret {
 
   private async getEffectiveVersion() {
     const versions = await this.getVersions();
-    const useV3 = versions.versions?.includes('v1.3') || false;
-    const result = useV3 ? 'v3' : 'r0';
-    return result;
+    const useV3 =
+      versions.versions?.some((v) => {
+        const match = v.match(/^v1\.(\d+)$/);
+        return match?.[1] != null && parseInt(match[1], 10) >= 1;
+      }) || false;
+    return useV3 ? 'v3' : 'r0';
   }
 
   private async getNonce(): Promise<string> {
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `${this.matrixHomeserverUrl}/_synapse/admin/v1/register`,
-      {
-        headers: {
-          Authorization: `Bearer ${this.registrationSharedSecret}`,
-        },
-      },
     );
     if (!response.ok) {
       return '';
@@ -79,7 +102,7 @@ export class MatrixSharedSecret {
     const version = await this.getEffectiveVersion();
     const endpoint = `/_matrix/client/${version}/register/available`;
 
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `${this.matrixHomeserverUrl}${endpoint}?username=${username}`,
     );
     if (!response.ok) {
@@ -93,11 +116,14 @@ export class MatrixSharedSecret {
     const version = await this.getEffectiveVersion();
     const matrixUserName = `@${userName}:${this.matrixDomain}`;
     const endpoint = `/_matrix/client/${version}/admin/whois/${matrixUserName}`;
-    const response = await fetch(`${this.matrixHomeserverUrl}${endpoint}`, {
-      headers: {
-        Authorization: `Bearer ${adminAccessToken}`,
+    const response = await fetchWithTimeout(
+      `${this.matrixHomeserverUrl}${endpoint}`,
+      {
+        headers: {
+          Authorization: `Bearer ${adminAccessToken}`,
+        },
       },
-    });
+    );
     const result = await response.json();
     return {
       userId: result.user_id,
@@ -116,7 +142,6 @@ export class MatrixSharedSecret {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.registrationSharedSecret}`,
       },
       body: JSON.stringify({
         nonce,
@@ -126,7 +151,7 @@ export class MatrixSharedSecret {
         mac,
       }),
     } as const;
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `${this.matrixHomeserverUrl}${endpoint}`,
       registerBody,
     );
@@ -174,7 +199,7 @@ export class MatrixSharedSecret {
 
   async resetPassword(username: string, adminAccessToken: string) {
     const password = crypto.randomBytes(32).toString('hex');
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `${this.matrixHomeserverUrl}/_dendrite/admin/resetPassword/${username}`,
       {
         method: 'POST',
@@ -195,14 +220,14 @@ export class MatrixSharedSecret {
     return { ok: data.password_updated, password };
   }
 
-  async removeUser(username: string) {
-    const response = await fetch(
+  async removeUser(username: string, adminAccessToken: string) {
+    const response = await fetchWithTimeout(
       `${this.matrixHomeserverUrl}/_dendrite/admin/deactivate/${username}`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.registrationSharedSecret}`,
+          Authorization: `Bearer ${adminAccessToken}`,
         },
         body: JSON.stringify({
           erase: true,
@@ -219,7 +244,7 @@ export class MatrixSharedSecret {
   async validateToken(accessToken: string) {
     try {
       const version = await this.getEffectiveVersion();
-      const response = await fetch(
+      const response = await fetchWithTimeout(
         `${this.matrixHomeserverUrl}/_matrix/client/${version}/account/whoami`,
         {
           method: 'GET',
@@ -247,24 +272,31 @@ export class MatrixSharedSecret {
     const version = await this.getEffectiveVersion();
     const endpoint = `/_matrix/client/${version}/login`;
 
-    const response = await fetch(`${this.matrixHomeserverUrl}${endpoint}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        identifier: {
-          type: 'm.id.user',
-          user: username,
+    const response = await fetchWithTimeout(
+      `${this.matrixHomeserverUrl}${endpoint}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        initial_device_display_name: `device_${Date.now()}`,
-        password,
-        type: 'm.login.password',
-      }),
-    });
+        body: JSON.stringify({
+          identifier: {
+            type: 'm.id.user',
+            user: username,
+          },
+          initial_device_display_name: `device_${Date.now()}`,
+          password,
+          type: 'm.login.password',
+        }),
+      },
+    );
     const data = await response.json();
     if (!response.ok) {
-      console.warn('Cannot login user', data);
+      console.warn('Cannot login user', {
+        status: response.status,
+        errcode: data.errcode,
+      });
+      throw new Error(data.error ?? 'Cannot login user');
     }
     return {
       accessToken: encryptMatrixToken(data.access_token),
@@ -277,17 +309,20 @@ export class MatrixSharedSecret {
     const version = await this.getEffectiveVersion();
     const endpoint = `/_matrix/client/${version}/account/password`;
 
-    const response = await fetch(`${this.matrixHomeserverUrl}${endpoint}`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+    const response = await fetchWithTimeout(
+      `${this.matrixHomeserverUrl}${endpoint}`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          new_password: newPassword,
+          logout_devices: true,
+        }),
       },
-      body: JSON.stringify({
-        new_password: newPassword,
-        logout_devices: true,
-      }),
-    });
+    );
     const data = await response.json();
     return data;
   }

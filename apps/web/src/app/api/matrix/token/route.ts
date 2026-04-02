@@ -28,6 +28,25 @@ function validateEnvVars() {
   return { PRIVY_APP_ID, PRIVY_APP_SECRET, MATRIX_HOMESERVER_URL };
 }
 
+async function verifyPrivyToken(
+  token: string,
+  appId: string,
+  appSecret: string,
+): Promise<string | null> {
+  try {
+    const privy = new PrivyClient({ appId, appSecret });
+    const { user_id: userId } =
+      await privy.utils().auth().verifyAuthToken(token);
+    return userId;
+  } catch (error) {
+    console.warn(
+      'Auth error:',
+      error instanceof Error ? error.message : 'Unknown auth error',
+    );
+    return null;
+  }
+}
+
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) {
@@ -43,23 +62,11 @@ export async function GET(request: NextRequest) {
 
   const authToken = authHeader.replace('Bearer ', '');
   const env = validateEnvVars();
-  const privyUserId = await (async (token: string) => {
-    try {
-      const privy = new PrivyClient({
-        appId: env.PRIVY_APP_ID,
-        appSecret: env.PRIVY_APP_SECRET,
-      });
-      const { user_id: userId } =
-        await privy.utils().auth().verifyAuthToken(token);
-      return userId;
-    } catch (error) {
-      console.warn(
-        'Auth error:',
-        error instanceof Error ? error.message : 'Unknown auth error',
-      );
-      return null;
-    }
-  })(authToken);
+  const privyUserId = await verifyPrivyToken(
+    authToken,
+    env.PRIVY_APP_ID,
+    env.PRIVY_APP_SECRET,
+  );
 
   if (!privyUserId) {
     return NextResponse.json(
@@ -102,7 +109,7 @@ export async function GET(request: NextRequest) {
       deviceId,
       userId: matrixUserId,
     } = await matrixAuthClient.registerUser(adminUsername, true);
-    return (await createMatrixUserLinkAction(
+    const newRecord = await createMatrixUserLinkAction(
       {
         environment,
         encryptedAccessToken,
@@ -111,7 +118,11 @@ export async function GET(request: NextRequest) {
         privyUserId: adminUsername,
       },
       { authToken },
-    )) as MatrixUserLink;
+    );
+    if (!newRecord) {
+      throw new Error('Failed to create admin Matrix user link');
+    }
+    return newRecord;
   };
 
   try {
@@ -123,7 +134,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const existing = await getLinkByPrivyUserId({ privyUserId, environment });
+    const decoratedPrivyUserId = getDecoratedPrivyId(privyUserId, environment);
+
+    const existing = await getLinkByPrivyUserId({
+      privyUserId: decoratedPrivyUserId,
+      environment,
+    });
     if (existing) {
       const accessToken = decryptMatrixToken(existing.encryptedAccessToken);
       if (await matrixAuthClient.validateToken(accessToken)) {
@@ -133,7 +149,6 @@ export async function GET(request: NextRequest) {
           homeserverUrl: MATRIX_HOMESERVER_URL,
           deviceId: existing.deviceId,
           elementConfig: {
-            // defaultRoomId: DEFAULT_ROOM_ID,
             theme: 'dark',
           },
         });
@@ -164,7 +179,7 @@ export async function GET(request: NextRequest) {
 
             await updateEncryptedAccessTokenAction(
               {
-                privyUserId,
+                privyUserId: decoratedPrivyUserId,
                 environment,
                 encryptedAccessToken,
               },
@@ -177,7 +192,6 @@ export async function GET(request: NextRequest) {
               homeserverUrl: MATRIX_HOMESERVER_URL,
               deviceId,
               elementConfig: {
-                // defaultRoomId: DEFAULT_ROOM_ID,
                 theme: 'dark',
               },
             });
@@ -188,7 +202,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const matrixUsername = getDecoratedPrivyId(privyUserId, environment);
+    const matrixUsername = decoratedPrivyUserId;
     const {
       accessToken: encryptedAccessToken,
       deviceId,
@@ -230,7 +244,7 @@ export async function GET(request: NextRequest) {
             encryptedAccessToken,
             deviceId,
             matrixUserId: userId,
-            privyUserId,
+            privyUserId: decoratedPrivyUserId,
           },
           { authToken },
         );
@@ -241,7 +255,6 @@ export async function GET(request: NextRequest) {
           homeserverUrl: MATRIX_HOMESERVER_URL,
           deviceId,
           elementConfig: {
-            // defaultRoomId: DEFAULT_ROOM_ID,
             theme: 'dark',
           },
         });
@@ -256,7 +269,7 @@ export async function GET(request: NextRequest) {
         encryptedAccessToken,
         deviceId,
         matrixUserId,
-        privyUserId,
+        privyUserId: decoratedPrivyUserId,
       },
       { authToken },
     );
@@ -267,7 +280,6 @@ export async function GET(request: NextRequest) {
       homeserverUrl: MATRIX_HOMESERVER_URL,
       deviceId,
       elementConfig: {
-        // defaultRoomId: DEFAULT_ROOM_ID,
         theme: 'dark',
       },
     });

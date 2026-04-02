@@ -59,7 +59,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     error: matrixTokenError,
   } = useMatrixToken();
 
-  const initalizeMatrixClient = React.useCallback(
+  const initializeMatrixClient = React.useCallback(
     async (matrixToken: MatrixTokenData) => {
       if (!matrixToken) {
         return;
@@ -101,8 +101,16 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     if (!matrixToken) {
       return;
     }
-    initalizeMatrixClient(matrixToken);
-  }, [user, matrixToken, isMatrixTokenLoading, matrixTokenError, initalizeMatrixClient]);
+    initializeMatrixClient(matrixToken);
+  }, [user, matrixToken, isMatrixTokenLoading, matrixTokenError, initializeMatrixClient]);
+
+  React.useEffect(() => {
+    return () => {
+      if (client) {
+        client.stopClient();
+      }
+    };
+  }, [client]);
 
   const createRoom = React.useCallback(
     async (title: string) => {

@@ -1,3 +1,5 @@
+import { Environment } from '../coherence/types';
+
 export type MatrixUserLink = {
   id: number;
   privyUserId: string;
@@ -11,7 +13,7 @@ export type MatrixUserLink = {
 };
 
 export interface CreateMatrixUserLinkInput {
-  environment: string;
+  environment: Environment;
   privyUserId: string;
   matrixUserId: string;
   encryptedAccessToken: string;
@@ -21,17 +23,17 @@ export interface CreateMatrixUserLinkInput {
 export interface UpdateEncryptedAccessTokenInput {
   privyUserId: string;
   encryptedAccessToken: string;
-  environment: string;
+  environment: Environment;
 }
 
 export interface GetMatrixUserLinkActionInput {
-  environment: string;
+  environment: Environment;
   privyUserId: string;
 }
 
 export interface GetAdminUserNameActionInput {
   baseName: string;
-  environment: string;
+  environment: Environment;
 }
 
 export interface Message {

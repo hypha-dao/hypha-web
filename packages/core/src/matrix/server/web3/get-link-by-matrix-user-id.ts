@@ -1,12 +1,14 @@
-'use server';
+import 'server-only';
 
 import { db } from '@hypha-platform/storage-postgres';
 import { MatrixUserLink } from '../../types';
 import { findLinkByMatrixUserId } from '../queries';
 
+import { Environment } from '../../../coherence/types';
+
 interface GetLinkByMatrixUserIdInput {
   matrixUserId: string;
-  environment: string;
+  environment: Environment;
 }
 
 export async function getLinkByMatrixUserId({
@@ -26,11 +28,12 @@ export async function getLinkByMatrixUserId({
       return null;
     }
 
-    const { deviceId, refreshToken, tokenExpiresAt, ...rest } = userLink;
+    const { deviceId, encryptedRefreshToken, tokenExpiresAt, ...rest } =
+      userLink;
 
     return {
       deviceId: deviceId ?? undefined,
-      encryptedRefreshToken: refreshToken ?? undefined,
+      encryptedRefreshToken: encryptedRefreshToken ?? undefined,
       tokenExpiresAt: tokenExpiresAt ?? undefined,
       ...rest,
     };

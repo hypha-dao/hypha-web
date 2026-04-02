@@ -1,4 +1,5 @@
 import { MatrixUserLink } from '@hypha-platform/storage-postgres';
+import { Environment } from '../../coherence/types';
 import { DbConfig } from '../../server';
 
 function escapeLikePattern(value: string): string {
@@ -6,7 +7,7 @@ function escapeLikePattern(value: string): string {
 }
 
 export const findLinkByPrivyUserId = async (
-  { privyUserId, environment }: { privyUserId: string; environment: string },
+  { privyUserId, environment }: { privyUserId: string; environment: Environment },
   { db }: DbConfig,
 ): Promise<MatrixUserLink | null> => {
   const response = await db.query.matrixUserLinks.findFirst({
@@ -25,7 +26,7 @@ export const findLinkByPrivyUserId = async (
 };
 
 export const findLinkByMatrixUserId = async (
-  { matrixUserId, environment }: { matrixUserId: string; environment: string },
+  { matrixUserId, environment }: { matrixUserId: string; environment: Environment },
   { db }: DbConfig,
 ): Promise<MatrixUserLink | null> => {
   const response = await db.query.matrixUserLinks.findFirst({
@@ -44,7 +45,7 @@ export const findLinkByMatrixUserId = async (
 };
 
 export const findAdminUserName = async (
-  { baseName, environment }: { baseName: string; environment: string },
+  { baseName, environment }: { baseName: string; environment: Environment },
   { db }: DbConfig,
 ): Promise<string | null> => {
   const response = await db.query.matrixUserLinks.findFirst({

@@ -878,8 +878,8 @@
           "notNull": true,
           "default": "now()"
         },
-        "refresh_token": {
-          "name": "refresh_token",
+        "encrypted_refresh_token": {
+          "name": "encrypted_refresh_token",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -903,6 +903,27 @@
             },
             {
               "expression": "privy_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "matrix_user_links_env_matrix_unique": {
+          "name": "matrix_user_links_env_matrix_unique",
+          "columns": [
+            {
+              "expression": "environment",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "matrix_user_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

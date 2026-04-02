@@ -14,15 +14,15 @@ export function determineEnvironment(
     return undefined;
   }
 
-  if (hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
     return Environment.DEVELOPMENT;
   }
-  if (hostname.includes('.vercel.app')) {
+  if (hostname.endsWith('.vercel.app')) {
     return Environment.PREVIEW;
   }
-  if (hostname.includes('hypha.earth')) {
+  if (hostname === 'hypha.earth' || hostname.endsWith('.hypha.earth')) {
     return Environment.PRODUCTION;
   }
 
-  return Environment.PRODUCTION;
+  return undefined;
 }

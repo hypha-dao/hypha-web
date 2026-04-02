@@ -3,7 +3,7 @@ import { getPrefixByEnvironment } from './get-prefix-by-environment';
 
 function getDecoratedPrivyId(privyUserId: string, environment: Environment) {
   if (!privyUserId) {
-    return '';
+    throw new Error('Missing privyUserId');
   }
   const prefix = getPrefixByEnvironment(environment);
   const matrixUsername = `${prefix}_privy_${privyUserId

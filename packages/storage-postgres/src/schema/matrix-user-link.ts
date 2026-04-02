@@ -19,13 +19,17 @@ export const matrixUserLinks = pgTable(
     encryptedAccessToken: text('encrypted_access_token').notNull(),
     deviceId: text('device_id'),
     ...commonDateFields,
-    refreshToken: text('refresh_token'),
+    encryptedRefreshToken: text('encrypted_refresh_token'),
     tokenExpiresAt: timestamp('token_expires_at'),
   },
   (table) => [
     uniqueIndex('matrix_user_links_env_privy_unique').on(
       table.environment,
       table.privyUserId,
+    ),
+    uniqueIndex('matrix_user_links_env_matrix_unique').on(
+      table.environment,
+      table.matrixUserId,
     ),
     index('search_environment').on(table.environment),
     index('search_privy_user_id').on(table.privyUserId),

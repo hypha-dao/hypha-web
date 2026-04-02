@@ -1,5 +1,13 @@
 'use server';
 
+/**
+ * Server actions for Matrix user link management.
+ * These actions must only be called from pre-authenticated API routes
+ * that have already verified the auth token (e.g., via PrivyClient).
+ * The authToken parameter serves as a guard to ensure callers are
+ * authentication-aware, not as a verification mechanism.
+ */
+
 import { db } from '@hypha-platform/storage-postgres';
 import {
   CreateMatrixUserLinkInput,
