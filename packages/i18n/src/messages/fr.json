@@ -990,7 +990,8 @@
         "errors": {
           "sellerAmountExceedsBalance": "Le montant saisi est supérieur au solde disponible du vendeur.",
           "sellerTreasuryUnavailable": "Impossible de charger la trésorerie de l'espace. Attendez les données on-chain et réessayez.",
-          "sellerBalanceCheckFailed": "Impossible de vérifier le solde du vendeur. Vérifiez votre connexion et réessayez."
+          "sellerBalanceCheckFailed": "Impossible de vérifier le solde du vendeur. Vérifiez votre connexion et réessayez.",
+          "memberSellerWalletMismatch": "Le financement de l’échange utilise votre portefeuille connecté. Connectez le même portefeuille que l’adresse vendeur, ou choisissez le membre vendeur dont l’adresse correspond à votre portefeuille."
         },
         "seller": "Vendeur (adresse du portefeuille)",
         "buyer": "Acheteur (adresse du portefeuille)",

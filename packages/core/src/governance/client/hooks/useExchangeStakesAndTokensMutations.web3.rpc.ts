@@ -216,8 +216,21 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
           args: [proposalParams],
         });
       } else {
-        /** Member seller: Party A must fund from `sellerAddress` (personal wallet), not the space executor. */
-        const sellerAccount = arg.sellerAddress as `0x${string}`;
+        /**
+         * Member seller: Party A funds from the **connected smart wallet** (same as `sellerAddress`
+         * in the form). Privy's `client.writeContract` always sends as that wallet — passing
+         * `account: sellerAddress` is invalid here and breaks execution when it differs from the
+         * client's signer.
+         */
+        const smartWalletAddress = (
+          client as { account?: { address?: `0x${string}` } } | null
+        )?.account?.address;
+        if (
+          smartWalletAddress &&
+          arg.sellerAddress.toLowerCase() !== smartWalletAddress.toLowerCase()
+        ) {
+          throw new Error('EXCHANGE_MEMBER_SELLER_WALLET_MISMATCH');
+        }
 
         for (let index = 0; index < sellerRows.length; index++) {
           const sellerRow = sellerRows[index];
@@ -244,8 +257,6 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
           const sellerToken = sellerRow.token as `0x${string}`;
 
           let hash = await client.writeContract({
-            account: sellerAccount,
-            chain: client.chain,
             address: sellerToken,
             abi: erc20Abi,
             functionName: 'approve',
@@ -254,8 +265,6 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
           await publicClient.waitForTransactionReceipt({ hash });
 
           hash = await client.writeContract({
-            account: sellerAccount,
-            chain: client.chain,
             address: sellerToken,
             abi: erc20Abi,
             functionName: 'approve',
@@ -264,8 +273,6 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
           await publicClient.waitForTransactionReceipt({ hash });
 
           hash = await client.writeContract({
-            account: sellerAccount,
-            chain: client.chain,
             address: escrowAddress,
             abi: escrowCreateAbi,
             functionName: 'createEscrow',

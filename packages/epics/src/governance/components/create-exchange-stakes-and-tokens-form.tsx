@@ -190,16 +190,30 @@ export const CreateExchangeStakesAndTokensForm = ({
     delete createPayload.buyerRecipientType;
     delete createPayload.spaceExecutorAddress;
 
-    await createExchangeStakesAndTokens({
-      ...createPayload,
-      description: upsertExchangeDetailsSection(
-        data.description,
-        exchangeDetailsSection,
-      ),
-      spaceId,
-      web3SpaceId: typeof web3SpaceId === 'number' ? web3SpaceId : undefined,
-      label: 'Exchange',
-    });
+    try {
+      await createExchangeStakesAndTokens({
+        ...createPayload,
+        description: upsertExchangeDetailsSection(
+          data.description,
+          exchangeDetailsSection,
+        ),
+        spaceId,
+        web3SpaceId: typeof web3SpaceId === 'number' ? web3SpaceId : undefined,
+        label: 'Exchange',
+      });
+    } catch (e) {
+      const err = e as Error;
+      if (err.message === 'EXCHANGE_MEMBER_SELLER_WALLET_MISMATCH') {
+        form.setError('root', {
+          type: 'manual',
+          message: tAgreementFlow(
+            'plugins.exchangeStakesAndTokens.errors.memberSellerWalletMismatch',
+          ),
+        });
+        return;
+      }
+      throw e;
+    }
   };
 
   return (

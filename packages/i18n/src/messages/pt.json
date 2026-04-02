@@ -113,7 +113,8 @@
         "errors": {
           "sellerAmountExceedsBalance": "O valor inserido é superior ao saldo disponível do vendedor.",
           "sellerTreasuryUnavailable": "Não foi possível carregar a tesouraria do espaço. Aguarde os dados on-chain e tente novamente.",
-          "sellerBalanceCheckFailed": "Não foi possível verificar o saldo do vendedor. Verifique a conexão e tente novamente."
+          "sellerBalanceCheckFailed": "Não foi possível verificar o saldo do vendedor. Verifique a conexão e tente novamente.",
+          "memberSellerWalletMismatch": "O financiamento da troca usa a sua carteira ligada. Ligue a mesma carteira que o endereço do vendedor ou escolha o membro vendedor cujo endereço corresponda à sua carteira."
         },
         "seller": "Vendedor (endereço da carteira)",
         "buyer": "Comprador (endereço da carteira)",

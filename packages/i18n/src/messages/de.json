@@ -1366,7 +1366,8 @@
         "errors": {
           "sellerAmountExceedsBalance": "Der eingegebene Betrag übersteigt das verfügbare Guthaben des Verkäufers.",
           "sellerTreasuryUnavailable": "Space-Treasury konnte nicht geladen werden. Warten Sie auf On-Chain-Daten und versuchen Sie es erneut.",
-          "sellerBalanceCheckFailed": "Verkäufer-Guthaben konnte nicht geprüft werden. Verbindung prüfen und erneut versuchen."
+          "sellerBalanceCheckFailed": "Verkäufer-Guthaben konnte nicht geprüft werden. Verbindung prüfen und erneut versuchen.",
+          "memberSellerWalletMismatch": "Der Tausch nutzt Ihre verbundene Wallet. Verbinden Sie dieselbe Wallet wie die Verkäuferadresse, oder wählen Sie den Mitglied-Verkäufer, dessen Adresse zu Ihrer Wallet passt."
         },
         "seller": "Verkäufer (Wallet-Adresse)",
         "buyer": "Käufer (Wallet-Adresse)",
