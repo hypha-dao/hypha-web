@@ -29,9 +29,9 @@ import {
 export interface AcceptInvestmentWeb3Input {
   spaceId: number;
   investorAddress: `0x${string}`;
-  /** What the investor pays into escrow per leg (tokenB / amountB). */
+  /** What the investor pays into escrow (tokenB / amountB). Single leg — contract supports one swap. */
   investorSendLegs: { token: `0x${string}`; amount: string }[];
-  /** What the space pays into escrow per leg (tokenA / amountA); investor receives on completion. */
+  /** What the space pays into escrow (tokenA / amountA); investor receives on completion. */
   spaceReceiveLegs: { token: `0x${string}`; amount: string }[];
 }
 
@@ -73,9 +73,9 @@ export const useAcceptInvestmentMutationsWeb3Rpc = ({
       );
       const executor = spaceDetails[9] as `0x${string}`;
 
-      const sendLegs = arg.investorSendLegs;
-      const recvLegs = arg.spaceReceiveLegs;
-      if (sendLegs.length === 0 || recvLegs.length === 0) {
+      const investorSend = arg.investorSendLegs[0];
+      const spaceReceive = arg.spaceReceiveLegs[0];
+      if (!investorSend || !spaceReceive) {
         throw new Error('Investment legs are incomplete');
       }
 
@@ -90,89 +90,85 @@ export const useAcceptInvestmentMutationsWeb3Rpc = ({
       // member/delegate may sign createProposal; executor-only actions run at execution.
       const treasuryAddress = space?.address as `0x${string}` | undefined;
 
-      for (const investorSend of sendLegs) {
-        for (const spaceReceive of recvLegs) {
-          const decimalsA = await getTokenDecimals(spaceReceive.token);
-          const decimalsB = await getTokenDecimals(investorSend.token);
-          const amountA = parseUnits(spaceReceive.amount, decimalsA);
-          const amountB = parseUnits(investorSend.amount, decimalsB);
+      const decimalsA = await getTokenDecimals(spaceReceive.token);
+      const decimalsB = await getTokenDecimals(investorSend.token);
+      const amountA = parseUnits(spaceReceive.amount, decimalsA);
+      const amountB = parseUnits(investorSend.amount, decimalsB);
 
-          let pullFromTreasury = 0n;
-          let mintShortfall = amountA;
+      let pullFromTreasury = 0n;
+      let mintShortfall = amountA;
 
-          if (treasuryAddress) {
-            const treasuryBalance = await publicClient.readContract({
-              address: spaceReceive.token,
-              abi: erc20Abi,
-              functionName: 'balanceOf',
-              args: [treasuryAddress],
-            });
-            pullFromTreasury =
-              treasuryBalance >= amountA ? amountA : treasuryBalance;
-            mintShortfall = amountA - pullFromTreasury;
-          }
-
-          if (pullFromTreasury > 0n && treasuryAddress) {
-            transactions.push({
-              target: spaceReceive.token,
-              value: 0n,
-              data: encodeFunctionData({
-                abi: erc20Abi,
-                functionName: 'transferFrom',
-                args: [treasuryAddress, executor, pullFromTreasury],
-              }),
-            });
-          }
-
-          if (mintShortfall > 0n) {
-            transactions.push({
-              target: spaceReceive.token,
-              value: 0n,
-              data: encodeFunctionData({
-                abi: decayingSpaceTokenAbi,
-                functionName: 'mint',
-                args: [executor, mintShortfall],
-              }),
-            });
-          }
-
-          transactions.push({
-            target: spaceReceive.token,
-            value: 0n,
-            data: encodeFunctionData({
-              abi: erc20Abi,
-              functionName: 'approve',
-              args: [escrowAddress, 0n],
-            }),
-          });
-          transactions.push({
-            target: spaceReceive.token,
-            value: 0n,
-            data: encodeFunctionData({
-              abi: erc20Abi,
-              functionName: 'approve',
-              args: [escrowAddress, amountA],
-            }),
-          });
-
-          transactions.push({
-            target: escrowAddress,
-            value: 0n,
-            data: encodeFunctionData({
-              abi: escrowImplementationAbi,
-              functionName: 'createEscrow',
-              args: [
-                arg.investorAddress,
-                spaceReceive.token,
-                investorSend.token,
-                amountA,
-                amountB,
-                true,
-              ],
-            }),
-          });
-        }
+      if (treasuryAddress) {
+        const treasuryBalance = await publicClient.readContract({
+          address: spaceReceive.token,
+          abi: erc20Abi,
+          functionName: 'balanceOf',
+          args: [treasuryAddress],
+        });
+        pullFromTreasury =
+          treasuryBalance >= amountA ? amountA : treasuryBalance;
+        mintShortfall = amountA - pullFromTreasury;
       }
+
+      if (pullFromTreasury > 0n && treasuryAddress) {
+        transactions.push({
+          target: spaceReceive.token,
+          value: 0n,
+          data: encodeFunctionData({
+            abi: erc20Abi,
+            functionName: 'transferFrom',
+            args: [treasuryAddress, executor, pullFromTreasury],
+          }),
+        });
+      }
+
+      if (mintShortfall > 0n) {
+        transactions.push({
+          target: spaceReceive.token,
+          value: 0n,
+          data: encodeFunctionData({
+            abi: decayingSpaceTokenAbi,
+            functionName: 'mint',
+            args: [executor, mintShortfall],
+          }),
+        });
+      }
+
+      transactions.push({
+        target: spaceReceive.token,
+        value: 0n,
+        data: encodeFunctionData({
+          abi: erc20Abi,
+          functionName: 'approve',
+          args: [escrowAddress, 0n],
+        }),
+      });
+      transactions.push({
+        target: spaceReceive.token,
+        value: 0n,
+        data: encodeFunctionData({
+          abi: erc20Abi,
+          functionName: 'approve',
+          args: [escrowAddress, amountA],
+        }),
+      });
+
+      transactions.push({
+        target: escrowAddress,
+        value: 0n,
+        data: encodeFunctionData({
+          abi: escrowImplementationAbi,
+          functionName: 'createEscrow',
+          args: [
+            arg.investorAddress,
+            spaceReceive.token,
+            investorSend.token,
+            amountA,
+            amountB,
+            true,
+          ],
+        }),
+      });
 
       const proposalParams = {
         spaceId: BigInt(arg.spaceId),

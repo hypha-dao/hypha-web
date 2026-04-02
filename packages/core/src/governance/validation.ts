@@ -401,7 +401,7 @@ const acceptInvestmentTokenRow = z.object({
     .refine(isAddress, { message: 'Invalid Ethereum address' }),
 });
 
-/** v1: independent send/receive rows; on-chain encoding pairs each send leg with each receive leg. */
+/** v1: escrow contract supports a single token pair (one send leg, one receive leg). */
 export const schemaAcceptInvestment = z.object({
   ...createAgreementWeb2Props,
   ...createAgreementFiles,
@@ -416,12 +416,14 @@ export const schemaAcceptInvestment = z.object({
     .string({ message: 'Please add a recipient or wallet address' })
     .min(1, { message: 'Please add a recipient or wallet address' })
     .refine(isAddress, { message: 'Invalid Ethereum address' }),
-  investorSendLegs: z
-    .array(acceptInvestmentTokenRow)
-    .min(1, { message: 'Add at least one investing send row' }),
-  spaceReceiveLegs: z
-    .array(acceptInvestmentTokenRow)
-    .min(1, { message: 'Add at least one investing member receive row' }),
+  investorSendLegs: z.array(acceptInvestmentTokenRow).length(1, {
+    message:
+      'Exactly one token row is required under Investing member will send',
+  }),
+  spaceReceiveLegs: z.array(acceptInvestmentTokenRow).length(1, {
+    message:
+      'Exactly one token row is required under Investing Member will Receive',
+  }),
 });
 
 const schemaTokenBurningTarget = z

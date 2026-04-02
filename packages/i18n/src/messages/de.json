@@ -874,8 +874,8 @@
       "redemptionMaxPercentRequired": "Der maximale Rücknahmeprozentsatz ist erforderlich, wenn die Rücknahme aktiv ist. Geben Sie 0 für kein Limit ein.",
       "redemptionPeriodDaysRequired": "Der Zeitraum (Tage) ist erforderlich, wenn die Rücknahme aktiv ist. Wählen Sie einen Rücknahmezeitraum aus.",
       "redemptionStartDateRequired": "Das Datum „Rücknahme autorisieren ab“ ist erforderlich, wenn die Rücknahme aktiv ist.",
-      "acceptInvestmentMinSendRows": "Fügen Sie mindestens eine Zeile unter „Investierendes Mitglied sendet“ hinzu.",
-      "acceptInvestmentMinReceiveRows": "Fügen Sie mindestens eine Zeile unter „Investierendes Mitglied erhält“ hinzu."
+      "acceptInvestmentExactSendRows": "Unter „Investierendes Mitglied sendet“ ist genau eine Token-Zeile erforderlich.",
+      "acceptInvestmentExactReceiveRows": "Unter „Investierendes Mitglied erhält“ ist genau eine Token-Zeile erforderlich."
     },
     "issueNewTokenForm": {
       "duplicateToken": "Ein Token mit demselben Namen und Symbol existiert bereits in Ihrem Space. Bitte ändern Sie entweder den Namen oder das Symbol, um fortzufahren.",

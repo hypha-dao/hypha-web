@@ -87,10 +87,10 @@ const PROPOSAL_ERROR_KEY_MAP: Record<string, string> = {
     'proposalErrors.redemptionPeriodDaysRequired',
   'Authorise Redemption from date is required when Redemption is active.':
     'proposalErrors.redemptionStartDateRequired',
-  'Add at least one investing send row':
-    'proposalErrors.acceptInvestmentMinSendRows',
-  'Add at least one investing member receive row':
-    'proposalErrors.acceptInvestmentMinReceiveRows',
+  'Exactly one token row is required under Investing member will send':
+    'proposalErrors.acceptInvestmentExactSendRows',
+  'Exactly one token row is required under Investing Member will Receive':
+    'proposalErrors.acceptInvestmentExactReceiveRows',
 };
 
 export const resolveProposalErrorTranslation = (

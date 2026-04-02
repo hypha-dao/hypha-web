@@ -167,8 +167,8 @@ export const useCreateAcceptInvestmentOrchestrator = ({
     'createAcceptInvestmentOrchestration',
     async (_: string, { arg }: { arg: CreateAcceptInvestmentArg }) => {
       if (
-        arg.investorSendLegs.length === 0 ||
-        arg.spaceReceiveLegs.length === 0
+        arg.investorSendLegs.length !== 1 ||
+        arg.spaceReceiveLegs.length !== 1
       ) {
         throw new Error('Investment legs are incomplete');
       }

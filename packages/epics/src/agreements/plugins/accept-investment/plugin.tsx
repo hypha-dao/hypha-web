@@ -37,7 +37,7 @@ export const AcceptInvestmentPlugin = ({
           tokens={tokens}
           name="investorSendLegs"
           labelLines={[t('investorWillSendLine1'), t('investorWillSendLine2')]}
-          allowAddOrRemove
+          allowAddOrRemove={false}
         />
       </Skeleton>
       <Separator />
@@ -53,7 +53,7 @@ export const AcceptInvestmentPlugin = ({
             t('investorWillReceiveLine1'),
             t('investorWillReceiveLine2'),
           ]}
-          allowAddOrRemove
+          allowAddOrRemove={false}
         />
       </Skeleton>
     </div>

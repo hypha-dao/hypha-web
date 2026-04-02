@@ -73,8 +73,8 @@
       "redemptionMaxPercentRequired": "El % máximo de redención es obligatorio cuando la redención está activa. Ingresa 0 para no tener límite.",
       "redemptionPeriodDaysRequired": "El período (días) es obligatorio cuando la redención está activa. Selecciona un período de redención.",
       "redemptionStartDateRequired": "La fecha \"Autorizar redención desde\" es obligatoria cuando la redención está activa.",
-      "acceptInvestmentMinSendRows": "Añade al menos una fila en « El miembro inversor enviará ».",
-      "acceptInvestmentMinReceiveRows": "Añade al menos una fila en « El miembro inversor recibirá »."
+      "acceptInvestmentExactSendRows": "Se requiere exactamente una fila de token en « El miembro inversor enviará ».",
+      "acceptInvestmentExactReceiveRows": "Se requiere exactamente una fila de token en « El miembro inversor recibirá »."
     },
     "plugins": {
       "paymentSchedule": {

@@ -73,8 +73,8 @@
       "redemptionMaxPercentRequired": "O percentual máximo de resgate é obrigatório quando o resgate está ativo. Insira 0 para sem limite.",
       "redemptionPeriodDaysRequired": "O período (dias) é obrigatório quando o resgate está ativo. Selecione um período de resgate.",
       "redemptionStartDateRequired": "A data \"Autorizar resgate desde\" é obrigatória quando o resgate está ativo.",
-      "acceptInvestmentMinSendRows": "Adicione pelo menos uma linha em « O membro investidor enviará ».",
-      "acceptInvestmentMinReceiveRows": "Adicione pelo menos uma linha em « O membro investidor receberá »."
+      "acceptInvestmentExactSendRows": "É necessária exatamente uma linha de token em « O membro investidor enviará ».",
+      "acceptInvestmentExactReceiveRows": "É necessária exatamente uma linha de token em « O membro investidor receberá »."
     },
     "plugins": {
       "paymentSchedule": {

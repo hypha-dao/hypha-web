@@ -874,8 +874,8 @@
       "redemptionMaxPercentRequired": "Maximum Redemption % is required when redemption is active. Enter 0 for no limit.",
       "redemptionPeriodDaysRequired": "Period (days) is required when Redemption is active. Select a redemption period.",
       "redemptionStartDateRequired": "Authorise Redemption from date is required when Redemption is active.",
-      "acceptInvestmentMinSendRows": "Add at least one row under Investing member will send.",
-      "acceptInvestmentMinReceiveRows": "Add at least one row under Investing Member will Receive."
+      "acceptInvestmentExactSendRows": "Exactly one token row is required under Investing member will send.",
+      "acceptInvestmentExactReceiveRows": "Exactly one token row is required under Investing Member will Receive."
     },
     "issueNewTokenForm": {
       "duplicateToken": "A token with the same name and symbol already exists in your space. Please modify either the name or symbol to proceed.",
