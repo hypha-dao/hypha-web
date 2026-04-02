@@ -29,19 +29,49 @@ const STATIC_JWKS_URLS = [
 
 type JWKSResponse = JSONWebKeySet;
 
+async function fetchJwks(url: string): Promise<JWKSResponse> {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`JWKS fetch failed for ${url}: ${res.status}`);
+  }
+  return (await res.json()) as JWKSResponse;
+}
+
+const CACHE_HEADERS = {
+  'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+};
+
 export async function GET() {
   try {
-    const allUrls = [...STATIC_JWKS_URLS, ...getPrivyJwksUrls()];
+    const [primaryPrivyUrl, ...optionalPrivyUrls] = getPrivyJwksUrls();
 
-    const results = (await Promise.all(
-      allUrls.map((url) => fetch(url).then((res) => res.json())),
-    )) as JWKSResponse[];
+    const required = await Promise.all([
+      ...STATIC_JWKS_URLS.map(fetchJwks),
+      fetchJwks(primaryPrivyUrl),
+    ]);
+
+    const optional = await Promise.allSettled(optionalPrivyUrls.map(fetchJwks));
+    for (const result of optional) {
+      if (result.status === 'rejected') {
+        console.warn('Optional JWKS fetch failed:', result.reason);
+      }
+    }
+
+    const results = [
+      ...required,
+      ...optional
+        .filter(
+          (r): r is PromiseFulfilledResult<JWKSResponse> =>
+            r.status === 'fulfilled',
+        )
+        .map((r) => r.value),
+    ];
 
     const combinedJwks: JWKSResponse = {
       keys: results.flatMap((r) => r.keys || []),
     };
 
-    return NextResponse.json(combinedJwks);
+    return NextResponse.json(combinedJwks, { headers: CACHE_HEADERS });
   } catch (error) {
     console.error('Error fetching JWKS:', error);
     return NextResponse.json(
