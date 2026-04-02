@@ -47,10 +47,14 @@ export const useMatrixToken = () => {
           !data ||
           typeof data.accessToken !== 'string' ||
           typeof data.userId !== 'string' ||
-          typeof data.homeserverUrl !== 'string'
+          typeof data.homeserverUrl !== 'string' ||
+          !data.elementConfig ||
+          typeof data.elementConfig !== 'object' ||
+          typeof data.elementConfig.theme !== 'string'
         ) {
-          setError('Invalid Matrix token response: missing required fields');
-          return undefined;
+          throw new Error(
+            'Invalid Matrix token response: missing required fields or elementConfig',
+          );
         }
         return data as MatrixTokenData;
       } catch (err) {

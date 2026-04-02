@@ -1,6 +1,5 @@
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import {
-  index,
   pgTable,
   serial,
   text,
@@ -31,9 +30,6 @@ export const matrixUserLinks = pgTable(
       table.environment,
       table.matrixUserId,
     ),
-    index('search_environment').on(table.environment),
-    index('search_privy_user_id').on(table.privyUserId),
-    index('search_matrix_user_id').on(table.matrixUserId),
   ],
 );
 

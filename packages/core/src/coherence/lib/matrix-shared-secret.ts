@@ -92,7 +92,10 @@ export class MatrixSharedSecret {
       `${this.matrixHomeserverUrl}/_synapse/admin/v1/register`,
     );
     if (!response.ok) {
-      return '';
+      const body = await response.text().catch(() => 'unknown');
+      throw new Error(
+        `Failed to get nonce: ${response.status} ${response.statusText} - ${body}`,
+      );
     }
     const data = await response.json();
     return data.nonce;
@@ -124,6 +127,12 @@ export class MatrixSharedSecret {
         },
       },
     );
+    if (!response.ok) {
+      const body = await response.text().catch(() => 'unknown');
+      throw new Error(
+        `Failed to get user ${matrixUserName}: ${response.status} ${response.statusText} - ${body}`,
+      );
+    }
     const result = await response.json();
     return {
       userId: result.user_id,
@@ -215,7 +224,9 @@ export class MatrixSharedSecret {
     );
     const data = await response.json();
     if (!response.ok) {
-      console.warn('Cannot reset password', data);
+      throw new Error(
+        `Failed to reset password for ${username}: ${response.status} - ${data?.errcode ?? data?.error ?? 'unknown'}`,
+      );
     }
     return { ok: data.password_updated, password };
   }
@@ -236,9 +247,11 @@ export class MatrixSharedSecret {
     );
     const data = await response.json();
     if (!response.ok) {
-      console.warn('Cannot remove user', data);
+      throw new Error(
+        `Failed to remove user ${username}: ${response.status} - ${data?.errcode ?? data?.error ?? 'unknown'}`,
+      );
     }
-    return response;
+    return { ok: true };
   }
 
   async validateToken(accessToken: string) {
@@ -323,6 +336,12 @@ export class MatrixSharedSecret {
         }),
       },
     );
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(
+        `Failed to change password: ${response.status} - ${data?.errcode ?? data?.error ?? response.statusText}`,
+      );
+    }
     const data = await response.json();
     return data;
   }

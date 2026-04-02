@@ -102,7 +102,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       return;
     }
     initializeMatrixClient(matrixToken);
-  }, [user, matrixToken, isMatrixTokenLoading, matrixTokenError, initializeMatrixClient]);
+  }, [matrixToken, isMatrixTokenLoading, matrixTokenError, initializeMatrixClient]);
 
   React.useEffect(() => {
     return () => {
@@ -119,6 +119,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       }
       const { room_id: roomId } = await client.createRoom({
         preset: RoomPreset.PublicChat,
+        name: title,
         topic: title,
       });
       return { roomId };
@@ -134,13 +135,14 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       if (!message.trim()) {
         return;
       }
-
-      if (roomId) {
-        await client.sendEvent(roomId, EventType.RoomMessage, {
-          msgtype: MsgType.Text,
-          body: message,
-        });
+      if (!roomId?.trim()) {
+        return;
       }
+
+      await client.sendEvent(roomId, EventType.RoomMessage, {
+        msgtype: MsgType.Text,
+        body: message,
+      });
     },
     [client],
   );

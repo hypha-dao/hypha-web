@@ -3,7 +3,7 @@ import { Environment } from '../../coherence/types';
 import { DbConfig } from '../../server';
 
 function escapeLikePattern(value: string): string {
-  return value.replace(/%/g, '\%').replace(/_/g, '\_');
+  return value.replace(/%/g, '\\%').replace(/_/g, '\\_');
 }
 
 export const findLinkByPrivyUserId = async (

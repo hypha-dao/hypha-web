@@ -934,51 +934,6 @@
           "method": "btree",
           "with": {}
         },
-        "search_environment": {
-          "name": "search_environment",
-          "columns": [
-            {
-              "expression": "environment",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "search_privy_user_id": {
-          "name": "search_privy_user_id",
-          "columns": [
-            {
-              "expression": "privy_user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "search_matrix_user_id": {
-          "name": "search_matrix_user_id",
-          "columns": [
-            {
-              "expression": "matrix_user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {},

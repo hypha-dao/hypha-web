@@ -284,10 +284,16 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.warn('Token generation failed:', error);
+    const correlationId =
+      request.headers.get('x-correlation-id') ?? randomUUID();
+    console.warn(
+      `Token generation failed [correlationId: ${correlationId}]:`,
+      error instanceof Error ? error.message : error,
+    );
     return NextResponse.json(
       {
         error: 'Token generation failed',
+        correlationId,
       },
       {
         status: 500,

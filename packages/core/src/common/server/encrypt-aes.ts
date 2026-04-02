@@ -3,10 +3,19 @@ import crypto from 'node:crypto';
 const algorithm = 'aes-256-cbc';
 const ivLength = 16;
 
-function encryptAes256(text: string, secretKey: string): string {
-  if (!secretKey) {
-    throw new Error('Secret key is incorrect');
+function validateAesKey(secretKey: string): void {
+  if (
+    typeof secretKey !== 'string' ||
+    !/^[0-9a-fA-F]{64}$/.test(secretKey)
+  ) {
+    throw new Error(
+      'Invalid AES-256 key: expected 64 hex chars (32 bytes)',
+    );
   }
+}
+
+function encryptAes256(text: string, secretKey: string): string {
+  validateAesKey(secretKey);
   // Generate a random IV for each encryption
   const iv = crypto.randomBytes(ivLength);
   const cipher = crypto.createCipheriv(
@@ -21,9 +30,7 @@ function encryptAes256(text: string, secretKey: string): string {
 }
 
 function decryptAes256(encryptedText: string, secretKey: string): string {
-  if (!secretKey) {
-    throw new Error('Secret key is incorrect');
-  }
+  validateAesKey(secretKey);
   // Split the combined string to retrieve the IV and actual data
   const parts = encryptedText.split(':');
   const ivRaw = parts.shift();
