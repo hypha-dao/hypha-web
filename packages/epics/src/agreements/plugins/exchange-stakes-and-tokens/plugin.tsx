@@ -4,6 +4,7 @@ import { RecipientField } from '../components/common/recipient-field';
 import { RecipientType } from '../components/common/recipient';
 import { TokenPayoutFieldArray } from '../components/common/token-payout-field-array';
 import { Separator, Skeleton } from '@hypha-platform/ui';
+import { Loader2 } from 'lucide-react';
 import {
   Person,
   Space,
@@ -368,6 +369,13 @@ export const ExchangeStakesAndTokensPlugin = ({
     escrowContractAddress,
   ]);
 
+  /** Buyer leg only — do not use seller `useTokens` `isLoading` here (it hid buyer loading behind an empty panel). */
+  const isBuyerLegLoading =
+    isLoadingBuyerTokenList ||
+    (buyerRecipientType === 'space' && isLoadingBuyerSpaceChain) ||
+    (isEvmAddress(buyerBalanceLookupAddress) && isLoadingBuyerBalances) ||
+    (buyerTokensBeforeWhitelist.length > 0 && isLoadingBuyerWhitelist);
+
   return (
     <div className="flex flex-col gap-4">
       <RecipientField
@@ -411,17 +419,16 @@ export const ExchangeStakesAndTokensPlugin = ({
         onRecipientTypeChange={setBuyerRecipientType}
       />
       <Separator />
-      <Skeleton
-        loading={
-          isLoading ||
-          isLoadingBuyerTokenList ||
-          (buyerRecipientType === 'space' && isLoadingBuyerSpaceChain) ||
-          (isEvmAddress(buyerBalanceLookupAddress) && isLoadingBuyerBalances) ||
-          (buyerTokensBeforeWhitelist.length > 0 && isLoadingBuyerWhitelist)
-        }
-        width="100%"
-        height={90}
-      >
+      {isBuyerLegLoading ? (
+        <div
+          className="flex items-center gap-2 text-sm text-neutral-10 py-8 min-h-[90px]"
+          aria-busy="true"
+          aria-live="polite"
+        >
+          <Loader2 className="animate-spin w-5 h-5 shrink-0" aria-hidden />
+          {tAgreementFlow('plugins.exchangeStakesAndTokens.loadingTokens')}
+        </div>
+      ) : (
         <TokenPayoutFieldArray
           tokens={buyerTokens}
           name="buyerLeg"
@@ -429,7 +436,7 @@ export const ExchangeStakesAndTokensPlugin = ({
             'plugins.exchangeStakesAndTokens.buyerWillSend',
           )}
         />
-      </Skeleton>
+      )}
       <div
         className="rounded-[8px] p-5 border border-accent-6 bg-accent-surface max-w-full"
         role="note"

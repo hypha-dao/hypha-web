@@ -119,6 +119,7 @@
         "buyer": "Comprador (endereço da carteira)",
         "sellerWillSend": "O vendedor envia",
         "buyerWillSend": "O comprador enviará",
+        "loadingTokens": "A carregar tokens...",
         "escrowNotice": "Esta proposta envia os tokens do vendedor para uma conta de escrow. O acordo só é finalizado quando o comprador transferir o montante acordado para essa mesma conta de escrow. Os detalhes serão fornecidos automaticamente ao comprador.",
         "escrowAccountAddress": "Endereço da conta de escrow",
         "escrowFunding": "Financiamento de escrow",
