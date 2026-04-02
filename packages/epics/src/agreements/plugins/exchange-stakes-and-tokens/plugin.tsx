@@ -7,13 +7,17 @@ import { Separator, Skeleton } from '@hypha-platform/ui';
 import {
   Person,
   Space,
-  Token,
   getBalance,
   useMe,
   useSpaceBySlug,
   useSpaceDetailsWeb3Rpc,
 } from '@hypha-platform/core/client';
-import { useTokens } from '../../../treasury';
+import {
+  useTokens,
+  useWalletTransferableTokens,
+  type ExtendedToken,
+} from '../../../treasury';
+import type { Token as PayoutToken } from '../components/common/token-payout-field-array';
 import { useTranslations } from 'next-intl';
 import React from 'react';
 import useSWR from 'swr';
@@ -23,6 +27,16 @@ import { useSellerLegBalanceValidation } from './use-seller-leg-balance-validati
 
 const isEvmAddress = (value?: string): value is `0x${string}` =>
   typeof value === 'string' && /^0x[a-fA-F0-9]{40}$/.test(value);
+
+function toPayoutTokens(tokens: ExtendedToken[]): PayoutToken[] {
+  return tokens.map((token) => ({
+    address: token.address,
+    icon: token.icon,
+    symbol: token.symbol,
+    space: token.space,
+    type: token.type === 'liquid' ? null : token.type,
+  }));
+}
 
 export const ExchangeStakesAndTokensPlugin = ({
   spaceSlug,
@@ -61,6 +75,7 @@ export const ExchangeStakesAndTokensPlugin = ({
     | string
     | undefined;
   const { tokens, isLoading } = useTokens({ spaceSlug });
+  const activeSpaceCatalogueSlug = activeSpace?.slug ?? currentSpaceSlug;
 
   const sellerBalanceLookupAddress =
     sellerRecipientType === 'space' && spaceExecutorAddress
@@ -152,16 +167,20 @@ export const ExchangeStakesAndTokensPlugin = ({
   }, [sellerRecipientType, spaceExecutorAddress, setValue]);
 
   const sellerTokenCandidates = React.useMemo(
-    () => tokens.filter((token: Token) => token.type !== null),
-    [tokens],
-  );
-  const buyerTokenCandidates = React.useMemo(
     () =>
-      tokens.filter(
-        (token: Token) => token.type === null || token.type === 'utility',
+      (tokens as ExtendedToken[]).filter(
+        (token) =>
+          token.transferable === true &&
+          token.space?.slug === activeSpaceCatalogueSlug,
       ),
-    [tokens],
+    [tokens, activeSpaceCatalogueSlug],
   );
+
+  const { tokens: buyerTokenCandidates, isLoading: isLoadingBuyerTokenList } =
+    useWalletTransferableTokens({
+      spaceSlug,
+      walletAddress: buyerBalanceLookupAddress,
+    });
 
   const { data: sellerOwnedTokenSet, isLoading: isLoadingSellerBalances } =
     useSWR(
@@ -170,14 +189,14 @@ export const ExchangeStakesAndTokensPlugin = ({
             'exchangeSellerOwnedTokens',
             sellerBalanceLookupAddress,
             sellerRecipientType,
-            ...sellerTokenCandidates.map((token: Token) =>
+            ...sellerTokenCandidates.map((token) =>
               token.address.toLowerCase(),
             ),
           ]
         : null,
       async () => {
         const balances = await Promise.allSettled(
-          sellerTokenCandidates.map(async (token: Token) => {
+          sellerTokenCandidates.map(async (token) => {
             const { amount } = await getBalance(
               token.address as `0x${string}`,
               sellerBalanceLookupAddress as `0x${string}`,
@@ -204,14 +223,12 @@ export const ExchangeStakesAndTokensPlugin = ({
             'exchangeBuyerOwnedTokens',
             buyerBalanceLookupAddress,
             buyerRecipientType,
-            ...buyerTokenCandidates.map((token: Token) =>
-              token.address.toLowerCase(),
-            ),
+            ...buyerTokenCandidates.map((token) => token.address.toLowerCase()),
           ]
         : null,
       async () => {
         const balances = await Promise.allSettled(
-          buyerTokenCandidates.map(async (token: Token) => {
+          buyerTokenCandidates.map(async (token) => {
             const { amount } = await getBalance(
               token.address as `0x${string}`,
               buyerBalanceLookupAddress as `0x${string}`,
@@ -234,17 +251,19 @@ export const ExchangeStakesAndTokensPlugin = ({
   const sellerTokens = React.useMemo(() => {
     if (!isEvmAddress(sellerBalanceLookupAddress) || !sellerOwnedTokenSet)
       return [];
-    return sellerTokenCandidates.filter((token: Token) =>
+    const matched = sellerTokenCandidates.filter((token) =>
       sellerOwnedTokenSet.has(token.address.toLowerCase()),
     );
+    return toPayoutTokens(matched);
   }, [sellerBalanceLookupAddress, sellerOwnedTokenSet, sellerTokenCandidates]);
 
   const buyerTokens = React.useMemo(() => {
     if (!isEvmAddress(buyerBalanceLookupAddress) || !buyerOwnedTokenSet)
       return [];
-    return buyerTokenCandidates.filter((token: Token) =>
+    const matched = buyerTokenCandidates.filter((token) =>
       buyerOwnedTokenSet.has(token.address.toLowerCase()),
     );
+    return toPayoutTokens(matched);
   }, [buyerBalanceLookupAddress, buyerOwnedTokenSet, buyerTokenCandidates]);
 
   return (
@@ -291,6 +310,7 @@ export const ExchangeStakesAndTokensPlugin = ({
       <Skeleton
         loading={
           isLoading ||
+          isLoadingBuyerTokenList ||
           (buyerRecipientType === 'space' && isLoadingBuyerSpaceChain) ||
           (isEvmAddress(buyerBalanceLookupAddress) && isLoadingBuyerBalances)
         }

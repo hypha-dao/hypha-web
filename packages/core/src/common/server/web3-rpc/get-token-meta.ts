@@ -64,6 +64,7 @@ export async function getTokenMeta(
       name,
       type,
       icon,
+      transferable: dbToken?.transferable ?? stable.transferable,
       ...(space && { space: { slug: space.slug, title: space.title } }),
       ...(createdAt && { createdAt }),
     };
@@ -126,6 +127,7 @@ export async function getTokenMeta(
       name,
       icon,
       type: hyphaTokenType || dbToken?.type || null,
+      ...(dbToken && { transferable: dbToken.transferable }),
       ...(space && { space: { slug: space.slug, title: space.title } }),
       ...(createdAt && { createdAt }),
     };
