@@ -35,7 +35,9 @@
     "errorLoadTreasuryTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet trésorerie.",
     "publish": "Publier",
     "invalidTransactions": "Transactions invalides",
-    "Coherence": "Cohérence"
+    "Coherence": "Cohérence",
+    "copyEscrowAddress": "Copier l’adresse du séquestre",
+    "copiedToClipboard": "Copié !"
   },
   "Navigation": {
     "network": "Réseau",

@@ -35,7 +35,9 @@
     "errorLoadTreasuryTab": "Ops, algo deu errado. Não foi possível carregar a aba de tesouraria.",
     "publish": "Publicar",
     "invalidTransactions": "Transações inválidas",
-    "Coherence": "Coerência"
+    "Coherence": "Coerência",
+    "copyEscrowAddress": "Copiar endereço do escrow",
+    "copiedToClipboard": "Copiado!"
   },
   "AgreementFlow": {
     "proposalErrors": {

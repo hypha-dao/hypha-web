@@ -35,7 +35,9 @@
     "errorLoadTreasuryTab": "Oops, something went wrong. Couldn't load treasury tab.",
     "publish": "Publish",
     "invalidTransactions": "Invalid transactions",
-    "Coherence": "Coherence"
+    "Coherence": "Coherence",
+    "copyEscrowAddress": "Copy escrow address",
+    "copiedToClipboard": "Copied!"
   },
   "Navigation": {
     "network": "Network",

@@ -1,11 +1,12 @@
 'use client';
 
+import React from 'react';
 import { useTranslations } from 'next-intl';
 import { useChainId } from 'wagmi';
 import { usePersonByWeb3Address } from '../hooks';
 import { Image } from '@hypha-platform/ui';
 import { useTokens, ExtendedToken } from '../../treasury';
-import { CopyIcon } from '@radix-ui/react-icons';
+import { CheckIcon, CopyIcon } from '@radix-ui/react-icons';
 import { copyToClipboard } from '@hypha-platform/ui-utils';
 import { useDbSpaces } from '../../hooks';
 import { EXCHANGE_ESCROW_CONTRACT_BY_CHAIN } from '@hypha-platform/core/client';
@@ -28,6 +29,60 @@ const getLookupAddress = (address?: string): `0x${string}` | undefined => {
   if (!isEvmAddress(address)) return undefined;
   return address.toLowerCase() as `0x${string}`;
 };
+
+function EscrowAddressCopyRow({
+  address,
+  labelCopied,
+  labelCopy,
+}: {
+  address: `0x${string}`;
+  labelCopied: string;
+  labelCopy: string;
+}) {
+  const [copied, setCopied] = React.useState(false);
+  const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
+
+  React.useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
+  const handleCopy = () => {
+    copyToClipboard(address);
+    setCopied(true);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="flex items-center gap-2 text-neutral-11 max-w-full min-w-0"
+      aria-label={copied ? labelCopied : labelCopy}
+    >
+      <span className="truncate">{`${address.slice(0, 6)}…${address.slice(
+        -4,
+      )}`}</span>
+      {copied ? (
+        <CheckIcon className="icon-sm shrink-0 text-success-11" aria-hidden />
+      ) : (
+        <CopyIcon className="icon-sm shrink-0" aria-hidden />
+      )}
+      {copied ? (
+        <span
+          className="text-1 text-success-11 whitespace-nowrap"
+          role="status"
+        >
+          {labelCopied}
+        </span>
+      ) : null}
+    </button>
+  );
+}
 
 interface ProposalExchangeStakesAndTokensDataProps {
   spaceSlug: string;
@@ -63,6 +118,7 @@ export const ProposalExchangeStakesAndTokensData = ({
   buyerLeg,
 }: ProposalExchangeStakesAndTokensDataProps) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const tCommon = useTranslations('Common');
   const chainId = useChainId();
   const escrowContractAddress =
     EXCHANGE_ESCROW_CONTRACT_BY_CHAIN[
@@ -250,10 +306,20 @@ export const ProposalExchangeStakesAndTokensData = ({
       </div>
       <div className="flex items-center justify-between gap-4">
         <span className="text-1 text-neutral-11 shrink-0">
-          {tAgreementFlow('plugins.exchangeStakesAndTokens.escrowAccountAddress')}
+          {tAgreementFlow(
+            'plugins.exchangeStakesAndTokens.escrowAccountAddress',
+          )}
         </span>
         <div className="flex flex-col items-end min-w-0">
-          {renderPartyValue(escrowContractAddress)}
+          {escrowContractAddress && isEvmAddress(escrowContractAddress) ? (
+            <EscrowAddressCopyRow
+              address={escrowContractAddress}
+              labelCopied={tCommon('copiedToClipboard')}
+              labelCopy={tCommon('copyEscrowAddress')}
+            />
+          ) : (
+            renderPartyValue(escrowContractAddress)
+          )}
         </div>
       </div>
     </div>

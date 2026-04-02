@@ -35,7 +35,9 @@
     "errorLoadTreasuryTab": "Ups, etwas ist schiefgelaufen. Der Treasury-Tab konnte nicht geladen werden.",
     "publish": "Veröffentlichen",
     "invalidTransactions": "Ungültige Transaktionen",
-    "Coherence": "Kohärenz"
+    "Coherence": "Kohärenz",
+    "copyEscrowAddress": "Treuhandadresse kopieren",
+    "copiedToClipboard": "Kopiert!"
   },
   "Navigation": {
     "network": "Netzwerk",
