@@ -20,7 +20,10 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
   const connectSrc = [
     ...CONNECT_SOURCES,
     process.env.NEXT_PUBLIC_RPC_URL ?? '',
-  ].join(' ');
+    process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL ?? '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   const enableUnsafeScripts = "'unsafe-inline' 'unsafe-eval'";
   const cspHeaderValue =
