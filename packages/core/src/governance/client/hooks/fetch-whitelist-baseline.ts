@@ -4,7 +4,14 @@ import { publicClient } from '../../../client';
 import { decayingSpaceTokenAbi } from '../../../generated';
 import { normalizeWhitelistAddresses } from './whitelist-address-diff';
 
-type Baseline = {
+export type WhitelistBaselineFromChain = {
+  /** Member wallet addresses only (for `batchSet*Whitelist`) */
+  transferMemberAddresses: `0x${string}`[];
+  receiveMemberAddresses: `0x${string}`[];
+  /** On-chain space ids (for `batchAdd/Remove*WhitelistSpaces`) */
+  transferSpaceIds: number[];
+  receiveSpaceIds: number[];
+  /** Space contract + member addresses flattened (for UI hydration) */
   from: `0x${string}`[];
   to: `0x${string}`[];
 };
@@ -22,7 +29,7 @@ export async function fetchWhitelistBaselineFromChain({
   tokenAddress: `0x${string}`;
   spaces: Space[];
   members: Person[];
-}): Promise<Baseline> {
+}): Promise<WhitelistBaselineFromChain> {
   const contract = {
     address: tokenAddress,
     abi: decayingSpaceTokenAbi,
@@ -121,6 +128,14 @@ export async function fetchWhitelistBaselineFromChain({
   }
 
   return {
+    transferMemberAddresses: normalizeWhitelistAddresses(fromMemberAddrs),
+    receiveMemberAddresses: normalizeWhitelistAddresses(toMemberAddrs),
+    transferSpaceIds: [...new Set(transferSpaceIds)].filter((n) =>
+      Number.isFinite(n),
+    ),
+    receiveSpaceIds: [...new Set(receiveSpaceIds)].filter((n) =>
+      Number.isFinite(n),
+    ),
     from: normalizeWhitelistAddresses([...fromSpaceAddrs, ...fromMemberAddrs]),
     to: normalizeWhitelistAddresses([...toSpaceAddrs, ...toMemberAddrs]),
   };

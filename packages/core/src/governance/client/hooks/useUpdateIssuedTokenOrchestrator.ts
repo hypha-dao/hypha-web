@@ -25,20 +25,11 @@ import { useUpdateIssuedTokenMutationsWeb3Rpc } from './useUpdateIssuedTokenMuta
 import {
   diffWhitelistForBatchSet,
   normalizeWhitelistAddresses,
+  splitWhitelistFormToTargets,
 } from './whitelist-address-diff';
+import { diffWhitelistSpaceIds } from './whitelist-space-diff';
 import { TokenUpdateData } from '../../types';
-
-function whitelistAddressesFromForm(
-  entries: Array<{ address: string }> | undefined | null,
-): `0x${string}`[] {
-  if (!entries?.length) {
-    return [];
-  }
-  const raw = entries
-    .map((e) => e.address as `0x${string}`)
-    .filter((addr) => typeof addr === 'string' && addr.startsWith('0x'));
-  return normalizeWhitelistAddresses(raw);
-}
+import type { Space } from '../../../space/types';
 
 type TaskName =
   | 'CREATE_WEB2_AGREEMENT'
@@ -157,6 +148,13 @@ type UpdateIssuedTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
   /** On-chain snapshot when the form loaded (for batchSet removals vs adds) */
   whitelistBaselineFrom?: `0x${string}`[];
   whitelistBaselineTo?: `0x${string}`[];
+  /** Member-only + space-id baselines (space whitelist uses `batchAdd/Remove*Spaces`, not `batchSet`) */
+  whitelistBaselineFromMembers?: `0x${string}`[];
+  whitelistBaselineToMembers?: `0x${string}`[];
+  whitelistBaselineFromSpaceIds?: number[];
+  whitelistBaselineToSpaceIds?: number[];
+  /** Resolves form space rows → web3 space ids */
+  spacesForWhitelistResolution?: Space[];
   /** Top-level react-hook-form dirty keys; drives partial on-chain updates */
   changedTopLevelKeys?: string[];
 };
@@ -167,8 +165,9 @@ type UpdateIssuedTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
  *   price+feed, decay interval/%, whitelist toggles, archived.
  * — Whitelist toggles: when transferable is false, both flags are forced off (empty lists
  *   previously encoded as true and could revert on execution).
- * — When toggles are on and lists non-empty, `batchSetTransferWhitelist` / `batchSetReceiveWhitelist`
- *   mirror issue-token `initialTransferWhitelist` / `initialReceiveWhitelist`.
+ * — Member rows: `batchSetTransferWhitelist` / `batchSetReceiveWhitelist`.
+ * — Space rows: `batchAdd/RemoveTransferWhitelistSpaces` / `batchAdd/RemoveReceiveWhitelistSpaces`
+ *   (space contract addresses must not be passed to `batchSet*`).
  * — Not implemented: clearing on-chain price when disabling “token price”, token type (no setter).
  * — DB / Web2 only: icon URL, token type label stored off-chain.
  * — If no calldata would be produced, the proposal still includes setTokenName(arg.name)
@@ -240,52 +239,102 @@ function buildPartialUpdateIssuedTokenWeb3Input(
     changed.has('enableAdvancedTransferControls') ||
     changed.has('transferWhitelist');
   if (whitelistTouched) {
+    const spaces = arg.spacesForWhitelistResolution ?? [];
     if (!arg.enableAdvancedTransferControls) {
       base.useTransferWhitelist = false;
       base.useReceiveWhitelist = false;
-      const baselineFrom = normalizeWhitelistAddresses(
-        arg.whitelistBaselineFrom ?? [],
+      const baselineFromMembers = normalizeWhitelistAddresses(
+        arg.whitelistBaselineFromMembers ?? [],
       );
-      const baselineTo = normalizeWhitelistAddresses(
-        arg.whitelistBaselineTo ?? [],
+      const baselineToMembers = normalizeWhitelistAddresses(
+        arg.whitelistBaselineToMembers ?? [],
       );
-      const clearFrom = diffWhitelistForBatchSet(baselineFrom, []);
-      const clearTo = diffWhitelistForBatchSet(baselineTo, []);
-      if (clearFrom.accounts.length > 0) {
-        base.batchTransferWhitelistAccounts = clearFrom.accounts;
-        base.batchTransferWhitelistAllowed = clearFrom.allowed;
+      const baselineFromSpaceIds = arg.whitelistBaselineFromSpaceIds ?? [];
+      const baselineToSpaceIds = arg.whitelistBaselineToSpaceIds ?? [];
+      const clearFromMembers = diffWhitelistForBatchSet(
+        baselineFromMembers,
+        [],
+      );
+      const clearToMembers = diffWhitelistForBatchSet(baselineToMembers, []);
+      if (clearFromMembers.accounts.length > 0) {
+        base.batchTransferWhitelistAccounts = clearFromMembers.accounts;
+        base.batchTransferWhitelistAllowed = clearFromMembers.allowed;
       }
-      if (clearTo.accounts.length > 0) {
-        base.batchReceiveWhitelistAccounts = clearTo.accounts;
-        base.batchReceiveWhitelistAllowed = clearTo.allowed;
+      if (clearToMembers.accounts.length > 0) {
+        base.batchReceiveWhitelistAccounts = clearToMembers.accounts;
+        base.batchReceiveWhitelistAllowed = clearToMembers.allowed;
+      }
+      const clearFromSpaces = diffWhitelistSpaceIds(baselineFromSpaceIds, []);
+      if (clearFromSpaces.remove.length > 0) {
+        base.batchRemoveTransferWhitelistSpaceIds = clearFromSpaces.remove;
+      }
+      const clearToSpaces = diffWhitelistSpaceIds(baselineToSpaceIds, []);
+      if (clearToSpaces.remove.length > 0) {
+        base.batchRemoveReceiveWhitelistSpaceIds = clearToSpaces.remove;
       }
     } else if (arg.transferable === true) {
-      const targetFrom = whitelistAddressesFromForm(
+      const targetFrom = splitWhitelistFormToTargets(
         arg.transferWhitelist?.from,
+        spaces,
       );
-      const targetTo = whitelistAddressesFromForm(arg.transferWhitelist?.to);
-      const baselineFrom = normalizeWhitelistAddresses(
-        arg.whitelistBaselineFrom ?? [],
+      const targetTo = splitWhitelistFormToTargets(
+        arg.transferWhitelist?.to,
+        spaces,
       );
-      const baselineTo = normalizeWhitelistAddresses(
-        arg.whitelistBaselineTo ?? [],
+      const baselineFromMembers = normalizeWhitelistAddresses(
+        arg.whitelistBaselineFromMembers ?? [],
       );
+      const baselineToMembers = normalizeWhitelistAddresses(
+        arg.whitelistBaselineToMembers ?? [],
+      );
+      const baselineFromSpaceIds = arg.whitelistBaselineFromSpaceIds ?? [];
+      const baselineToSpaceIds = arg.whitelistBaselineToSpaceIds ?? [];
 
-      const useTransferWhitelist = targetFrom.length > 0;
-      const useReceiveWhitelist = targetTo.length > 0;
+      const useTransferWhitelist =
+        targetFrom.memberAddresses.length > 0 || targetFrom.spaceIds.length > 0;
+      const useReceiveWhitelist =
+        targetTo.memberAddresses.length > 0 || targetTo.spaceIds.length > 0;
       base.useTransferWhitelist = useTransferWhitelist;
       base.useReceiveWhitelist = useReceiveWhitelist;
 
-      const transferDiff = diffWhitelistForBatchSet(baselineFrom, targetFrom);
-      if (transferDiff.accounts.length > 0) {
-        base.batchTransferWhitelistAccounts = transferDiff.accounts;
-        base.batchTransferWhitelistAllowed = transferDiff.allowed;
+      const transferMemberDiff = diffWhitelistForBatchSet(
+        baselineFromMembers,
+        targetFrom.memberAddresses,
+      );
+      if (transferMemberDiff.accounts.length > 0) {
+        base.batchTransferWhitelistAccounts = transferMemberDiff.accounts;
+        base.batchTransferWhitelistAllowed = transferMemberDiff.allowed;
       }
 
-      const receiveDiff = diffWhitelistForBatchSet(baselineTo, targetTo);
-      if (receiveDiff.accounts.length > 0) {
-        base.batchReceiveWhitelistAccounts = receiveDiff.accounts;
-        base.batchReceiveWhitelistAllowed = receiveDiff.allowed;
+      const transferSpaceDiff = diffWhitelistSpaceIds(
+        baselineFromSpaceIds,
+        targetFrom.spaceIds,
+      );
+      if (transferSpaceDiff.add.length > 0) {
+        base.batchAddTransferWhitelistSpaceIds = transferSpaceDiff.add;
+      }
+      if (transferSpaceDiff.remove.length > 0) {
+        base.batchRemoveTransferWhitelistSpaceIds = transferSpaceDiff.remove;
+      }
+
+      const receiveMemberDiff = diffWhitelistForBatchSet(
+        baselineToMembers,
+        targetTo.memberAddresses,
+      );
+      if (receiveMemberDiff.accounts.length > 0) {
+        base.batchReceiveWhitelistAccounts = receiveMemberDiff.accounts;
+        base.batchReceiveWhitelistAllowed = receiveMemberDiff.allowed;
+      }
+
+      const receiveSpaceDiff = diffWhitelistSpaceIds(
+        baselineToSpaceIds,
+        targetTo.spaceIds,
+      );
+      if (receiveSpaceDiff.add.length > 0) {
+        base.batchAddReceiveWhitelistSpaceIds = receiveSpaceDiff.add;
+      }
+      if (receiveSpaceDiff.remove.length > 0) {
+        base.batchRemoveReceiveWhitelistSpaceIds = receiveSpaceDiff.remove;
       }
     } else {
       // Non-transferable tokens cannot use transfer/receive whitelists on-chain; enabling both

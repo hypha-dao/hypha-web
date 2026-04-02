@@ -1,12 +1,18 @@
 'use client';
 
-import { FieldErrors, useForm, type DefaultValues } from 'react-hook-form';
+import {
+  FieldErrors,
+  FormProvider,
+  useForm,
+  type DefaultValues,
+} from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   baseSchemaIssueNewToken,
   useMe,
   useUpdateIssuedTokenOrchestrator,
   useJwt,
+  type Space,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
@@ -85,6 +91,12 @@ export const UpdateIssuedTokenForm = ({
         /** Snapshot when the form loaded; used for on-chain whitelist diffs (not user-facing) */
         whitelistBaselineFrom: z.array(z.string()).optional(),
         whitelistBaselineTo: z.array(z.string()).optional(),
+        whitelistBaselineFromMembers: z.array(z.string()).optional(),
+        whitelistBaselineToMembers: z.array(z.string()).optional(),
+        whitelistBaselineFromSpaceIds: z.array(z.number()).optional(),
+        whitelistBaselineToSpaceIds: z.array(z.number()).optional(),
+        /** Passed from plugin for resolving space rows → web3 ids in orchestrator */
+        spacesForWhitelistResolution: z.array(z.unknown()).optional(),
       }),
     );
 
@@ -190,6 +202,11 @@ export const UpdateIssuedTokenForm = ({
       archiveToken: false,
       whitelistBaselineFrom: undefined,
       whitelistBaselineTo: undefined,
+      whitelistBaselineFromMembers: undefined,
+      whitelistBaselineToMembers: undefined,
+      whitelistBaselineFromSpaceIds: undefined,
+      whitelistBaselineToSpaceIds: undefined,
+      spacesForWhitelistResolution: undefined,
     }),
     [tProposalDetails, spaceId, person?.id],
   );
@@ -268,6 +285,17 @@ export const UpdateIssuedTokenForm = ({
       whitelistBaselineTo: submitData.whitelistBaselineTo as
         | `0x${string}`[]
         | undefined,
+      whitelistBaselineFromMembers: submitData.whitelistBaselineFromMembers as
+        | `0x${string}`[]
+        | undefined,
+      whitelistBaselineToMembers: submitData.whitelistBaselineToMembers as
+        | `0x${string}`[]
+        | undefined,
+      whitelistBaselineFromSpaceIds: submitData.whitelistBaselineFromSpaceIds,
+      whitelistBaselineToSpaceIds: submitData.whitelistBaselineToSpaceIds,
+      spacesForWhitelistResolution: submitData.spacesForWhitelistResolution as
+        | Space[]
+        | undefined,
     });
   };
 
@@ -313,7 +341,7 @@ export const UpdateIssuedTokenForm = ({
             label={tProposalDetails('updateTokenLabel')}
             progress={progress}
           />
-          {plugin}
+          <FormProvider {...form}>{plugin}</FormProvider>
           <Separator />
           <div className="flex flex-col gap-2">
             {formError && (

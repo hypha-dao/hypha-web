@@ -309,6 +309,16 @@ export const UpdateIssuedTokenPlugin = ({
     () => spacesForChainMapping ?? spaces,
     [spacesForChainMapping, spaces],
   );
+
+  useEffect(() => {
+    if (chainMappingSpaces.length === 0) {
+      return;
+    }
+    setValue('spacesForWhitelistResolution', chainMappingSpaces, {
+      shouldDirty: false,
+      shouldValidate: false,
+    });
+  }, [chainMappingSpaces, setValue]);
   const spaceTokens = useMemo(() => {
     return dbTokens.filter((t) => t.spaceId === spaceId);
   }, [dbTokens, spaceId]);
@@ -658,7 +668,7 @@ export const UpdateIssuedTokenPlugin = ({
 
     void (async () => {
       try {
-        const { from, to } = await fetchWhitelistBaselineFromChain({
+        const baseline = await fetchWhitelistBaselineFromChain({
           tokenAddress: selectedTokenAddress as `0x${string}`,
           spaces: chainMappingSpaces,
           members,
@@ -667,11 +677,36 @@ export const UpdateIssuedTokenPlugin = ({
           return;
         }
 
+        const { from, to } = baseline;
         setValue('whitelistBaselineFrom', from, {
           shouldDirty: false,
           shouldValidate: false,
         });
         setValue('whitelistBaselineTo', to, {
+          shouldDirty: false,
+          shouldValidate: false,
+        });
+        setValue(
+          'whitelistBaselineFromMembers',
+          baseline.transferMemberAddresses,
+          {
+            shouldDirty: false,
+            shouldValidate: false,
+          },
+        );
+        setValue(
+          'whitelistBaselineToMembers',
+          baseline.receiveMemberAddresses,
+          {
+            shouldDirty: false,
+            shouldValidate: false,
+          },
+        );
+        setValue('whitelistBaselineFromSpaceIds', baseline.transferSpaceIds, {
+          shouldDirty: false,
+          shouldValidate: false,
+        });
+        setValue('whitelistBaselineToSpaceIds', baseline.receiveSpaceIds, {
           shouldDirty: false,
           shouldValidate: false,
         });

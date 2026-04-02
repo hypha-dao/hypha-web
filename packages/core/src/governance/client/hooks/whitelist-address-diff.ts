@@ -1,4 +1,5 @@
 import { getAddress } from 'viem';
+import type { Space } from '../../../space/types';
 
 function norm(a: string): string {
   return a.toLowerCase();
@@ -54,4 +55,65 @@ export function diffWhitelistForBatchSet(
   }
 
   return { accounts, allowed };
+}
+
+/**
+ * Split form whitelist rows into member addresses (for `batchSet*Whitelist`) and
+ * web3 space ids (for `batchAdd/Remove*WhitelistSpaces`). Space rows must resolve
+ * via `spaces[]` (address + web3SpaceId).
+ */
+export function splitWhitelistFormToTargets(
+  entries:
+    | Array<{
+        type?: 'member' | 'space';
+        address: string;
+      }>
+    | undefined
+    | null,
+  spaces: Space[],
+): { memberAddresses: `0x${string}`[]; spaceIds: number[] } {
+  const memberAddresses: `0x${string}`[] = [];
+  const spaceIds: number[] = [];
+  if (!entries?.length) {
+    return { memberAddresses, spaceIds };
+  }
+
+  const spaceByAddress = new Map<string, Space>();
+  for (const s of spaces) {
+    if (!s.address?.startsWith('0x') || s.web3SpaceId == null) {
+      continue;
+    }
+    try {
+      spaceByAddress.set(norm(getAddress(s.address as `0x${string}`)), s);
+    } catch {
+      // skip invalid
+    }
+  }
+
+  for (const e of entries) {
+    if (!e.address?.startsWith('0x')) {
+      continue;
+    }
+    try {
+      const addr = getAddress(e.address as `0x${string}`);
+      if (e.type === 'space') {
+        const sp = spaceByAddress.get(norm(addr));
+        const wid = sp?.web3SpaceId;
+        if (wid != null && Number.isFinite(Number(wid))) {
+          spaceIds.push(Number(wid));
+        }
+        continue;
+      }
+      memberAddresses.push(addr as `0x${string}`);
+    } catch {
+      // skip invalid
+    }
+  }
+
+  return {
+    memberAddresses: normalizeWhitelistAddresses(memberAddresses),
+    spaceIds: [...new Set(spaceIds)].filter(
+      (n) => Number.isFinite(n) && n >= 0,
+    ),
+  };
 }

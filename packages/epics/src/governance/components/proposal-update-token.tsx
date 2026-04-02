@@ -3,9 +3,11 @@ import {
   isTokenUpdateData,
   useJwt,
   useUpdateTokenByAddress,
+  type Space,
   type TokenType,
   type TransferWhitelistFormValue,
 } from '@hypha-platform/core/client';
+import { getAddress } from 'viem';
 import { Separator } from '@hypha-platform/ui';
 import {
   formatCurrencyValue,
@@ -34,9 +36,14 @@ export interface ProposalUpdateTokenProps {
   decayInterval?: bigint;
   useTransferWhitelist?: boolean;
   useReceiveWhitelist?: boolean;
-  /** From proposal tx `batchSet*` (same as issue-token deploy lists) */
+  /** From proposal tx `batchSet*` (member wallets) */
   initialTransferWhitelist?: `0x${string}`[];
   initialReceiveWhitelist?: `0x${string}`[];
+  /** From `batchAdd*WhitelistSpaces` calldata */
+  initialTransferWhitelistSpaceIds?: number[];
+  initialReceiveWhitelistSpaceIds?: number[];
+  /** DB spaces (map web3 id → contract address for whitelist display) */
+  spacesForWhitelistDisplay?: Space[];
   archiveToken?: boolean;
   /** From proposal txs / chain; when set with maxSupply 0, shows cap type in UI */
   fixedMaxSupply?: boolean;
@@ -67,6 +74,9 @@ export const ProposalUpdateToken = ({
   useReceiveWhitelist,
   initialTransferWhitelist: initialTransferFromTx,
   initialReceiveWhitelist: initialReceiveFromTx,
+  initialTransferWhitelistSpaceIds,
+  initialReceiveWhitelistSpaceIds,
+  spacesForWhitelistDisplay = [],
   archiveToken,
   fixedMaxSupply: fixedMaxSupplyProp,
 }: ProposalUpdateTokenProps) => {
@@ -113,14 +123,48 @@ export const ProposalUpdateToken = ({
     return out;
   };
 
+  const addressesFromSpaceIds = React.useCallback(
+    (ids: number[] | undefined) => {
+      if (!ids?.length) {
+        return [] as `0x${string}`[];
+      }
+      const want = new Set(ids);
+      const addrs: `0x${string}`[] = [];
+      for (const s of spacesForWhitelistDisplay) {
+        if (
+          s.web3SpaceId == null ||
+          !want.has(Number(s.web3SpaceId)) ||
+          !s.address?.startsWith('0x')
+        ) {
+          continue;
+        }
+        try {
+          addrs.push(getAddress(s.address as `0x${string}`));
+        } catch {
+          // skip
+        }
+      }
+      return addrs;
+    },
+    [spacesForWhitelistDisplay],
+  );
+
   const fromAddressesForDisplay = React.useMemo(() => {
     if (fromEntriesPending?.length) {
       return uniqueSorted(
         fromEntriesPending.map((e) => e.address as `0x${string}`),
       );
     }
-    return uniqueSorted(initialTransferFromTx?.filter(Boolean) ?? []);
-  }, [fromEntriesPending, initialTransferFromTx]);
+    return uniqueSorted([
+      ...(initialTransferFromTx?.filter(Boolean) ?? []),
+      ...addressesFromSpaceIds(initialTransferWhitelistSpaceIds),
+    ]);
+  }, [
+    fromEntriesPending,
+    initialTransferFromTx,
+    initialTransferWhitelistSpaceIds,
+    addressesFromSpaceIds,
+  ]);
 
   const toAddressesForDisplay = React.useMemo(() => {
     if (toEntriesPending?.length) {
@@ -128,8 +172,16 @@ export const ProposalUpdateToken = ({
         toEntriesPending.map((e) => e.address as `0x${string}`),
       );
     }
-    return uniqueSorted(initialReceiveFromTx?.filter(Boolean) ?? []);
-  }, [toEntriesPending, initialReceiveFromTx]);
+    return uniqueSorted([
+      ...(initialReceiveFromTx?.filter(Boolean) ?? []),
+      ...addressesFromSpaceIds(initialReceiveWhitelistSpaceIds),
+    ]);
+  }, [
+    toEntriesPending,
+    initialReceiveFromTx,
+    initialReceiveWhitelistSpaceIds,
+    addressesFromSpaceIds,
+  ]);
 
   const showTransferWhitelistDetails =
     fromAddressesForDisplay.length > 0 || toAddressesForDisplay.length > 0;

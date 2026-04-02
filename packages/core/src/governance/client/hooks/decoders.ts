@@ -974,6 +974,58 @@ export function decodeTransaction(tx: Tx) {
     {
       abi: decayingSpaceTokenAbi,
       handler: (decoded, tx) =>
+        decoded.functionName === 'batchAddTransferWhitelistSpaces'
+          ? {
+              type: 'setTokenBatchAddTransferWhitelistSpaces',
+              data: {
+                address: tx.target,
+                spaceIds: decoded.args[0] as readonly bigint[],
+              },
+            }
+          : null,
+    },
+    {
+      abi: decayingSpaceTokenAbi,
+      handler: (decoded, tx) =>
+        decoded.functionName === 'batchRemoveTransferWhitelistSpaces'
+          ? {
+              type: 'setTokenBatchRemoveTransferWhitelistSpaces',
+              data: {
+                address: tx.target,
+                spaceIds: decoded.args[0] as readonly bigint[],
+              },
+            }
+          : null,
+    },
+    {
+      abi: decayingSpaceTokenAbi,
+      handler: (decoded, tx) =>
+        decoded.functionName === 'batchAddReceiveWhitelistSpaces'
+          ? {
+              type: 'setTokenBatchAddReceiveWhitelistSpaces',
+              data: {
+                address: tx.target,
+                spaceIds: decoded.args[0] as readonly bigint[],
+              },
+            }
+          : null,
+    },
+    {
+      abi: decayingSpaceTokenAbi,
+      handler: (decoded, tx) =>
+        decoded.functionName === 'batchRemoveReceiveWhitelistSpaces'
+          ? {
+              type: 'setTokenBatchRemoveReceiveWhitelistSpaces',
+              data: {
+                address: tx.target,
+                spaceIds: decoded.args[0] as readonly bigint[],
+              },
+            }
+          : null,
+    },
+    {
+      abi: decayingSpaceTokenAbi,
+      handler: (decoded, tx) =>
         decoded.functionName === 'setArchived'
           ? {
               type: 'setTokenArchived',

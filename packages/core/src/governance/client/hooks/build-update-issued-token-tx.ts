@@ -17,11 +17,16 @@ export interface UpdateIssuedTokenInput {
   priceCurrencyFeed?: `0x${string}`;
   useTransferWhitelist?: boolean;
   useReceiveWhitelist?: boolean;
-  /** `batchSetTransfer(accounts, allowed)` — add/remove in one call */
+  /** `batchSetTransfer(accounts, allowed)` — member wallets only */
   batchTransferWhitelistAccounts?: `0x${string}`[];
   batchTransferWhitelistAllowed?: boolean[];
   batchReceiveWhitelistAccounts?: `0x${string}`[];
   batchReceiveWhitelistAllowed?: boolean[];
+  /** Space ids for `batchAddTransferWhitelistSpaces` / `batchRemoveTransferWhitelistSpaces` */
+  batchAddTransferWhitelistSpaceIds?: bigint[];
+  batchRemoveTransferWhitelistSpaceIds?: bigint[];
+  batchAddReceiveWhitelistSpaceIds?: bigint[];
+  batchRemoveReceiveWhitelistSpaceIds?: bigint[];
   archiveToken?: boolean;
 }
 
@@ -164,6 +169,50 @@ export function buildUpdateIssuedTokenTxData(
           arg.batchReceiveWhitelistAccounts,
           arg.batchReceiveWhitelistAllowed,
         ],
+      }),
+    });
+  }
+  if (arg.batchAddTransferWhitelistSpaceIds?.length) {
+    txData.push({
+      target: arg.address,
+      value: 0,
+      data: encodeFunctionData({
+        abi: decayingSpaceTokenAbi,
+        functionName: 'batchAddTransferWhitelistSpaces',
+        args: [arg.batchAddTransferWhitelistSpaceIds],
+      }),
+    });
+  }
+  if (arg.batchRemoveTransferWhitelistSpaceIds?.length) {
+    txData.push({
+      target: arg.address,
+      value: 0,
+      data: encodeFunctionData({
+        abi: decayingSpaceTokenAbi,
+        functionName: 'batchRemoveTransferWhitelistSpaces',
+        args: [arg.batchRemoveTransferWhitelistSpaceIds],
+      }),
+    });
+  }
+  if (arg.batchAddReceiveWhitelistSpaceIds?.length) {
+    txData.push({
+      target: arg.address,
+      value: 0,
+      data: encodeFunctionData({
+        abi: decayingSpaceTokenAbi,
+        functionName: 'batchAddReceiveWhitelistSpaces',
+        args: [arg.batchAddReceiveWhitelistSpaceIds],
+      }),
+    });
+  }
+  if (arg.batchRemoveReceiveWhitelistSpaceIds?.length) {
+    txData.push({
+      target: arg.address,
+      value: 0,
+      data: encodeFunctionData({
+        abi: decayingSpaceTokenAbi,
+        functionName: 'batchRemoveReceiveWhitelistSpaces',
+        args: [arg.batchRemoveReceiveWhitelistSpaceIds],
       }),
     });
   }

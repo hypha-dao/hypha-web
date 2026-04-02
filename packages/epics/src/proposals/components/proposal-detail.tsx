@@ -130,6 +130,28 @@ export const ProposalDetail = ({
     return dbTokens.find((t) => t.address?.toLowerCase() === normalized)?.type;
   }, [proposalDetails?.updateTokenData?.address, dbTokens]);
 
+  const spacesForWhitelistDisplay = useMemo(() => {
+    const u = proposalDetails?.updateTokenData;
+    if (!u || !dbSpaces?.length) {
+      return [];
+    }
+    const a = u.initialTransferWhitelistSpaceIds ?? [];
+    const b = u.initialReceiveWhitelistSpaceIds ?? [];
+    const want = new Set(
+      [...new Set([...a, ...b])].filter((n) => Number.isFinite(n)),
+    );
+    if (want.size === 0) {
+      return [];
+    }
+    return dbSpaces.filter(
+      (s) => s.web3SpaceId != null && want.has(Number(s.web3SpaceId)),
+    );
+  }, [
+    dbSpaces,
+    proposalDetails?.updateTokenData?.initialTransferWhitelistSpaceIds,
+    proposalDetails?.updateTokenData?.initialReceiveWhitelistSpaceIds,
+  ]);
+
   const tokenSymbol = proposalDetails?.tokens?.[0]?.symbol;
 
   const redeemChainDataForResubmit = useMemo(() => {
@@ -584,6 +606,10 @@ export const ProposalDetail = ({
         proposalDetails.updateTokenData.initialTransferWhitelist !==
           undefined ||
         proposalDetails.updateTokenData.initialReceiveWhitelist !== undefined ||
+        proposalDetails.updateTokenData.initialTransferWhitelistSpaceIds !==
+          undefined ||
+        proposalDetails.updateTokenData.initialReceiveWhitelistSpaceIds !==
+          undefined ||
         proposalDetails.updateTokenData.archiveToken !== undefined) ? (
         <ProposalUpdateToken
           address={proposalDetails.updateTokenData.address}
@@ -608,6 +634,13 @@ export const ProposalDetail = ({
           initialReceiveWhitelist={
             proposalDetails.updateTokenData.initialReceiveWhitelist
           }
+          initialTransferWhitelistSpaceIds={
+            proposalDetails.updateTokenData.initialTransferWhitelistSpaceIds
+          }
+          initialReceiveWhitelistSpaceIds={
+            proposalDetails.updateTokenData.initialReceiveWhitelistSpaceIds
+          }
+          spacesForWhitelistDisplay={spacesForWhitelistDisplay}
           archiveToken={proposalDetails.updateTokenData.archiveToken}
           fixedMaxSupply={proposalDetails.updateTokenData.fixedMaxSupply}
         />

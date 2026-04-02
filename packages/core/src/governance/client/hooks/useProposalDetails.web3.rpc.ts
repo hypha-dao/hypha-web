@@ -229,8 +229,11 @@ export const useProposalDetailsWeb3Rpc = ({
       useReceiveWhitelist?: boolean;
       /** From `batchSetTransferWhitelist` calldata (update-token proposals) */
       initialTransferWhitelist?: `0x${string}`[];
+      /** From `batchAddTransferWhitelistSpaces` (resolved to addresses in UI) */
+      initialTransferWhitelistSpaceIds?: number[];
       /** From `batchSetReceiveWhitelist` calldata */
       initialReceiveWhitelist?: `0x${string}`[];
+      initialReceiveWhitelistSpaceIds?: number[];
       archiveToken?: boolean;
     } = {
       address: undefined,
@@ -245,7 +248,9 @@ export const useProposalDetailsWeb3Rpc = ({
       useTransferWhitelist: undefined,
       useReceiveWhitelist: undefined,
       initialTransferWhitelist: undefined,
+      initialTransferWhitelistSpaceIds: undefined,
       initialReceiveWhitelist: undefined,
+      initialReceiveWhitelistSpaceIds: undefined,
       archiveToken: undefined,
       fixedMaxSupply: undefined,
     };
@@ -635,6 +640,34 @@ export const useProposalDetailsWeb3Rpc = ({
           updateTokenData.initialReceiveWhitelist = [
             ...(updateTokenData.initialReceiveWhitelist ?? []),
             ...allowedAddrs,
+          ];
+          break;
+        }
+
+        case 'setTokenBatchAddTransferWhitelistSpaces': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            spaceIds: readonly bigint[];
+          };
+          updateTokenData.address = d.address;
+          const ids = d.spaceIds.map((x) => Number(x));
+          updateTokenData.initialTransferWhitelistSpaceIds = [
+            ...(updateTokenData.initialTransferWhitelistSpaceIds ?? []),
+            ...ids,
+          ];
+          break;
+        }
+
+        case 'setTokenBatchAddReceiveWhitelistSpaces': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            spaceIds: readonly bigint[];
+          };
+          updateTokenData.address = d.address;
+          const ids = d.spaceIds.map((x) => Number(x));
+          updateTokenData.initialReceiveWhitelistSpaceIds = [
+            ...(updateTokenData.initialReceiveWhitelistSpaceIds ?? []),
+            ...ids,
           ];
           break;
         }
