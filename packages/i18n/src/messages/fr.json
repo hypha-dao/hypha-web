@@ -1426,6 +1426,7 @@
       "tokenIcon": "Icône de jeton",
       "tokenIconFor": "Icône de jeton pour {symbol}",
       "maxSupply": "Approvisionnement maximum",
+      "unlimitedSupply": "Approvisionnement illimité",
       "unlimited": "Illimité",
       "transferable": "Transférable",
       "yes": "Oui",

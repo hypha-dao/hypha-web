@@ -1426,6 +1426,7 @@
       "tokenIcon": "Token Icon",
       "tokenIconFor": "Token icon for {symbol}",
       "maxSupply": "Max Supply",
+      "unlimitedSupply": "Unlimited Supply",
       "unlimited": "Unlimited",
       "transferable": "Transferable",
       "yes": "Yes",

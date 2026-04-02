@@ -168,7 +168,7 @@ export const ProposalUpdateToken = ({
 
   const maxSupplyDisplay =
     resolvedMaxHuman === undefined
-      ? tProposalDetails('labels.unknown')
+      ? tProposalDetails('labels.unlimitedSupply')
       : resolvedMaxHuman === 0
       ? tProposalDetails('labels.unlimited')
       : formatCurrencyValue(resolvedMaxHuman);

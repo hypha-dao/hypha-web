@@ -1426,6 +1426,7 @@
       "tokenIcon": "Token-Symbol",
       "tokenIconFor": "Token-Symbol für {symbol}",
       "maxSupply": "Maximales Angebot",
+      "unlimitedSupply": "Unbegrenztes Angebot",
       "unlimited": "Unbegrenzt",
       "transferable": "Übertragbar",
       "yes": "Ja",
