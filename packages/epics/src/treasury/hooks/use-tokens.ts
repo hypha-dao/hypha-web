@@ -58,8 +58,8 @@ const isEvmAddressParam = (value?: string): value is `0x${string}` =>
   typeof value === 'string' && /^0x[a-fA-F0-9]{40}$/i.test(value);
 
 /**
- * ERC-20 tokens with positive balance for a wallet, excluding DB rows with
- * `transferable: false`. Used for exchange buyer leg (catalogue-independent).
+ * ERC-20 tokens with positive balance for a wallet, only when DB marks
+ * `transferable: true`. Used for exchange buyer leg (catalogue-independent).
  */
 export function useWalletTransferableTokens({
   spaceSlug,
@@ -94,15 +94,17 @@ export function useWalletTransferableTokens({
 
   const tokens = React.useMemo(() => {
     if (!data?.assets) return [];
-    return (data.assets as ExtendedToken[]).map((asset) => ({
-      address: asset.address,
-      icon: asset.icon,
-      name: asset.name,
-      type: asset.type,
-      symbol: asset.symbol,
-      space: asset.space,
-      transferable: asset.transferable,
-    }));
+    return (data.assets as ExtendedToken[])
+      .filter((asset) => asset.transferable === true)
+      .map((asset) => ({
+        address: asset.address,
+        icon: asset.icon,
+        name: asset.name,
+        type: asset.type,
+        symbol: asset.symbol,
+        space: asset.space,
+        transferable: asset.transferable,
+      }));
   }, [data]);
 
   return {

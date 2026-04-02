@@ -105,7 +105,8 @@ export async function GET(
       allTokens.map(async (token) => {
         try {
           const meta = await getTokenMeta(token.address, dbTokens);
-          if (meta.transferable === false) {
+          // Only list tokens explicitly marked transferable in DB (same rule as seller leg).
+          if (meta.transferable !== true) {
             return null;
           }
           if (hasEmojiOrLink(meta.name) || hasEmojiOrLink(meta.symbol)) {
