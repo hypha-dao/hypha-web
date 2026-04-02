@@ -11,7 +11,11 @@ import {
   useMe,
   useSpaceBySlug,
   useSpaceDetailsWeb3Rpc,
+  EXCHANGE_ESCROW_CONTRACT_BY_CHAIN,
+  canBuyerSendToEscrowForExchange,
+  canExecutorSendToEscrowForExchange,
 } from '@hypha-platform/core/client';
+import { useChainId } from 'wagmi';
 import {
   useTokens,
   useWalletTransferableTokens,
@@ -75,6 +79,10 @@ export const ExchangeStakesAndTokensPlugin = ({
     | string
     | undefined;
   const { tokens, isLoading } = useTokens({ spaceSlug });
+  const chainId = useChainId();
+  const escrowContractAddress = EXCHANGE_ESCROW_CONTRACT_BY_CHAIN[
+    chainId as keyof typeof EXCHANGE_ESCROW_CONTRACT_BY_CHAIN
+  ] as `0x${string}` | undefined;
   const activeSpaceCatalogueSlug = activeSpace?.slug ?? currentSpaceSlug;
 
   const sellerBalanceLookupAddress =
@@ -248,23 +256,117 @@ export const ExchangeStakesAndTokensPlugin = ({
       { revalidateOnFocus: true, revalidateOnReconnect: true },
     );
 
-  const sellerTokens = React.useMemo(() => {
+  const sellerTokensBeforeWhitelist = React.useMemo(() => {
     if (!isEvmAddress(sellerBalanceLookupAddress) || !sellerOwnedTokenSet)
       return [];
-    const matched = sellerTokenCandidates.filter((token) =>
+    return sellerTokenCandidates.filter((token) =>
       sellerOwnedTokenSet.has(token.address.toLowerCase()),
     );
-    return toPayoutTokens(matched);
   }, [sellerBalanceLookupAddress, sellerOwnedTokenSet, sellerTokenCandidates]);
 
-  const buyerTokens = React.useMemo(() => {
+  const buyerTokensBeforeWhitelist = React.useMemo(() => {
     if (!isEvmAddress(buyerBalanceLookupAddress) || !buyerOwnedTokenSet)
       return [];
-    const matched = buyerTokenCandidates.filter((token) =>
+    return buyerTokenCandidates.filter((token) =>
       buyerOwnedTokenSet.has(token.address.toLowerCase()),
     );
-    return toPayoutTokens(matched);
   }, [buyerBalanceLookupAddress, buyerOwnedTokenSet, buyerTokenCandidates]);
+
+  const { data: sellerEscrowWhitelistOk, isLoading: isLoadingSellerWhitelist } =
+    useSWR(
+      escrowContractAddress &&
+        isEvmAddress(sellerBalanceLookupAddress) &&
+        sellerTokensBeforeWhitelist.length > 0
+        ? [
+            'exchangeSellerEscrowWhitelist',
+            chainId,
+            escrowContractAddress,
+            sellerBalanceLookupAddress,
+            ...sellerTokensBeforeWhitelist.map((t) => t.address.toLowerCase()),
+          ]
+        : null,
+      async () => {
+        const allowed = new Set<string>();
+        await Promise.all(
+          sellerTokensBeforeWhitelist.map(async (token) => {
+            const ok = await canExecutorSendToEscrowForExchange({
+              tokenAddress: token.address as `0x${string}`,
+              executorAddress: sellerBalanceLookupAddress as `0x${string}`,
+              escrowAddress: escrowContractAddress as `0x${string}`,
+            });
+            if (ok) {
+              allowed.add(token.address.toLowerCase());
+            }
+          }),
+        );
+        return allowed;
+      },
+      { revalidateOnFocus: false },
+    );
+
+  const { data: buyerEscrowWhitelistOk, isLoading: isLoadingBuyerWhitelist } =
+    useSWR(
+      escrowContractAddress &&
+        isEvmAddress(buyerBalanceLookupAddress) &&
+        buyerTokensBeforeWhitelist.length > 0
+        ? [
+            'exchangeBuyerEscrowWhitelist',
+            chainId,
+            escrowContractAddress,
+            buyerBalanceLookupAddress,
+            ...buyerTokensBeforeWhitelist.map((t) => t.address.toLowerCase()),
+          ]
+        : null,
+      async () => {
+        const allowed = new Set<string>();
+        await Promise.all(
+          buyerTokensBeforeWhitelist.map(async (token) => {
+            const ok = await canBuyerSendToEscrowForExchange({
+              tokenAddress: token.address as `0x${string}`,
+              buyerAddress: buyerBalanceLookupAddress as `0x${string}`,
+              escrowAddress: escrowContractAddress as `0x${string}`,
+            });
+            if (ok) {
+              allowed.add(token.address.toLowerCase());
+            }
+          }),
+        );
+        return allowed;
+      },
+      { revalidateOnFocus: false },
+    );
+
+  const sellerTokens = React.useMemo(() => {
+    if (!sellerTokensBeforeWhitelist.length) return [];
+    if (!escrowContractAddress) {
+      return toPayoutTokens(sellerTokensBeforeWhitelist);
+    }
+    if (!sellerEscrowWhitelistOk) return [];
+    const matched = sellerTokensBeforeWhitelist.filter((token) =>
+      sellerEscrowWhitelistOk.has(token.address.toLowerCase()),
+    );
+    return toPayoutTokens(matched);
+  }, [
+    sellerTokensBeforeWhitelist,
+    sellerEscrowWhitelistOk,
+    escrowContractAddress,
+  ]);
+
+  const buyerTokens = React.useMemo(() => {
+    if (!buyerTokensBeforeWhitelist.length) return [];
+    if (!escrowContractAddress) {
+      return toPayoutTokens(buyerTokensBeforeWhitelist);
+    }
+    if (!buyerEscrowWhitelistOk) return [];
+    const matched = buyerTokensBeforeWhitelist.filter((token) =>
+      buyerEscrowWhitelistOk.has(token.address.toLowerCase()),
+    );
+    return toPayoutTokens(matched);
+  }, [
+    buyerTokensBeforeWhitelist,
+    buyerEscrowWhitelistOk,
+    escrowContractAddress,
+  ]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -283,7 +385,9 @@ export const ExchangeStakesAndTokensPlugin = ({
         loading={
           isLoading ||
           (sellerRecipientType === 'space' && isLoadingActiveSpaceChain) ||
-          (isEvmAddress(sellerBalanceLookupAddress) && isLoadingSellerBalances)
+          (isEvmAddress(sellerBalanceLookupAddress) &&
+            isLoadingSellerBalances) ||
+          (sellerTokensBeforeWhitelist.length > 0 && isLoadingSellerWhitelist)
         }
         width="100%"
         height={90}
@@ -312,7 +416,8 @@ export const ExchangeStakesAndTokensPlugin = ({
           isLoading ||
           isLoadingBuyerTokenList ||
           (buyerRecipientType === 'space' && isLoadingBuyerSpaceChain) ||
-          (isEvmAddress(buyerBalanceLookupAddress) && isLoadingBuyerBalances)
+          (isEvmAddress(buyerBalanceLookupAddress) && isLoadingBuyerBalances) ||
+          (buyerTokensBeforeWhitelist.length > 0 && isLoadingBuyerWhitelist)
         }
         width="100%"
         height={90}
