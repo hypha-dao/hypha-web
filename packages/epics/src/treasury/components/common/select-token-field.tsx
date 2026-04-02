@@ -55,62 +55,81 @@ export function SelectTokenField({
     <FormField
       control={control}
       name={name}
-      render={({ field }) => (
-        <FormItem>
-          <div className="flex justify-between items-center">
-            <FormLabel className="text-2 text-neutral-11 w-full gap-1">
-              {label} {required && <RequirementMark className="text-2" />}
-            </FormLabel>
-            <FormControl>
-              {isEmpty ? (
-                <div className="text-2 text-neutral-11 italic">{emptyText}</div>
-              ) : (
-                <Select
-                  value={field.value}
-                  onValueChange={(value: string) => {
-                    field.onChange(value);
-                    onValueChange?.(value);
-                  }}
-                >
-                  <SelectTrigger className="h-auto">
-                    <SelectValue placeholder={placeholderText} />
-                  </SelectTrigger>
-                  <SelectContent className="p-2">
-                    {tokens.map(({ name, symbol, address, iconUrl }) => {
-                      const fallback = '/placeholder/token-icon.svg';
-                      const raw = iconUrl?.trim();
-                      const src = brokenIcons[address] || !raw ? fallback : raw;
-                      return (
-                        <SelectItem key={address} value={address}>
-                          <div className="flex items-center gap-2 text-left text-sm leading-5">
-                            <img
-                              src={src}
-                              alt=""
-                              className="h-5 w-5 shrink-0 rounded-full object-cover"
-                              loading="lazy"
-                              draggable={false}
-                              onError={() =>
-                                setBrokenIcons((prev) => ({
-                                  ...prev,
-                                  [address]: true,
-                                }))
-                              }
-                            />
-                            <span className="font-medium">
-                              {symbol ?? 'Unknown'} - {name ?? 'Unknown Token'}
-                            </span>
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              )}
-            </FormControl>
-          </div>
-          <FormMessage />
-        </FormItem>
-      )}
+      render={({ field }) => {
+        /** Radix Select matches value to Item value exactly; normalize to lowercase so checksummed DB/session values still match. */
+        const rawVal =
+          typeof field.value === 'string' ? field.value.trim() : '';
+        const selectValue =
+          rawVal && rawVal.startsWith('0x')
+            ? rawVal.toLowerCase()
+            : rawVal || undefined;
+
+        return (
+          <FormItem>
+            <div className="flex justify-between items-center">
+              <FormLabel className="text-2 text-neutral-11 w-full gap-1">
+                {label} {required && <RequirementMark className="text-2" />}
+              </FormLabel>
+              <FormControl>
+                {isEmpty ? (
+                  <div className="text-2 text-neutral-11 italic">
+                    {emptyText}
+                  </div>
+                ) : (
+                  <Select
+                    value={selectValue}
+                    onValueChange={(value: string) => {
+                      field.onChange(value);
+                      onValueChange?.(value);
+                    }}
+                  >
+                    <SelectTrigger className="h-auto">
+                      <SelectValue placeholder={placeholderText} />
+                    </SelectTrigger>
+                    <SelectContent className="p-2">
+                      {tokens.map(({ name, symbol, address, iconUrl }) => {
+                        const fallback = '/placeholder/token-icon.svg';
+                        const raw = iconUrl?.trim();
+                        const itemValue =
+                          typeof address === 'string' &&
+                          address.startsWith('0x')
+                            ? address.toLowerCase()
+                            : address;
+                        const src =
+                          brokenIcons[itemValue] || !raw ? fallback : raw;
+                        return (
+                          <SelectItem key={itemValue} value={itemValue}>
+                            <div className="flex items-center gap-2 text-left text-sm leading-5">
+                              <img
+                                src={src}
+                                alt=""
+                                className="h-5 w-5 shrink-0 rounded-full object-cover"
+                                loading="lazy"
+                                draggable={false}
+                                onError={() =>
+                                  setBrokenIcons((prev) => ({
+                                    ...prev,
+                                    [itemValue]: true,
+                                  }))
+                                }
+                              />
+                              <span className="font-medium">
+                                {symbol ?? 'Unknown'} -{' '}
+                                {name ?? 'Unknown Token'}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                )}
+              </FormControl>
+            </div>
+            <FormMessage />
+          </FormItem>
+        );
+      }}
     />
   );
 }

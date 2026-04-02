@@ -312,7 +312,13 @@ export const UpdateIssuedTokenPlugin = ({
   }, [dbTokens, spaceId]);
 
   const selectedToken = useMemo(() => {
-    return spaceTokens.find((t) => t.address === selectedTokenAddress);
+    if (!selectedTokenAddress) {
+      return undefined;
+    }
+    const want = selectedTokenAddress.toLowerCase();
+    return spaceTokens.find(
+      (t) => typeof t.address === 'string' && t.address.toLowerCase() === want,
+    );
   }, [spaceTokens, selectedTokenAddress]);
 
   /** Stable across SWR reference churn so DB hydration effect does not re-fire every poll */
