@@ -27,6 +27,9 @@ export const createMatrixUserLink = async (
       'encryptedAccessToken is required to create Matrix user link',
     );
   }
+  if (!environment) {
+    throw new Error('environment is required to create Matrix user link');
+  }
   const [newRecord] = await db
     .insert(matrixUserLinks)
     .values({
@@ -53,9 +56,20 @@ export const updateMatrixUserLink = async (
   }: UpdateEncryptedAccessTokenInput,
   { db }: { db: DatabaseInstance },
 ) => {
+  if (!privyUserId) {
+    throw new Error('privyUserId is required to update Matrix user link');
+  }
+  if (!environment) {
+    throw new Error('environment is required to update Matrix user link');
+  }
+  if (!encryptedAccessToken) {
+    throw new Error(
+      'encryptedAccessToken is required to update Matrix user link',
+    );
+  }
   const [updatedMatrixUserLink] = await db
     .update(matrixUserLinks)
-    .set({ privyUserId, encryptedAccessToken })
+    .set({ encryptedAccessToken })
     .where(
       and(
         eq(matrixUserLinks.environment, environment),

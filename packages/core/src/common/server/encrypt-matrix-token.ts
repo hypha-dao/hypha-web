@@ -1,7 +1,15 @@
 import { encryptAes256 } from './encrypt-aes';
 
-const MATRIX_PASSWORD_SECRET = process.env.MATRIX_PASSWORD_SECRET ?? '';
+function getMatrixPasswordSecret(): string {
+  const secret = process.env.MATRIX_PASSWORD_SECRET;
+  if (!secret) {
+    throw new Error(
+      'MATRIX_PASSWORD_SECRET is not set. Please set this environment variable.',
+    );
+  }
+  return secret;
+}
 
 export function encryptMatrixToken(token: string) {
-  return encryptAes256(token, MATRIX_PASSWORD_SECRET);
+  return encryptAes256(token, getMatrixPasswordSecret());
 }

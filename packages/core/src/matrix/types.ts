@@ -6,7 +6,7 @@ export type MatrixUserLink = {
   deviceId?: string;
   createdAt: Date;
   updatedAt: Date;
-  refreshToken?: string;
+  encryptedRefreshToken?: string;
   tokenExpiresAt?: Date;
 };
 

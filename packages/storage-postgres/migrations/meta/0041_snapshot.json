@@ -892,6 +892,27 @@
         }
       },
       "indexes": {
+        "matrix_user_links_env_privy_unique": {
+          "name": "matrix_user_links_env_privy_unique",
+          "columns": [
+            {
+              "expression": "environment",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "privy_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "search_environment": {
           "name": "search_environment",
           "columns": [
@@ -927,66 +948,6 @@
           "columns": [
             {
               "expression": "matrix_user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "search_encrypted_access_token": {
-          "name": "search_encrypted_access_token",
-          "columns": [
-            {
-              "expression": "encrypted_access_token",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "search_device_id": {
-          "name": "search_device_id",
-          "columns": [
-            {
-              "expression": "device_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "search_refresh_token": {
-          "name": "search_refresh_token",
-          "columns": [
-            {
-              "expression": "refresh_token",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "search_token_expires_at": {
-          "name": "search_token_expires_at",
-          "columns": [
-            {
-              "expression": "token_expires_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

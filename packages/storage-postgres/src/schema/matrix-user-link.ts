@@ -1,5 +1,12 @@
-import { InferInsertModel, InferSelectModel, sql } from 'drizzle-orm';
-import { index, pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
+import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
+import {
+  index,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core';
 import { commonDateFields } from './shared';
 
 export const matrixUserLinks = pgTable(
@@ -16,13 +23,13 @@ export const matrixUserLinks = pgTable(
     tokenExpiresAt: timestamp('token_expires_at'),
   },
   (table) => [
+    uniqueIndex('matrix_user_links_env_privy_unique').on(
+      table.environment,
+      table.privyUserId,
+    ),
     index('search_environment').on(table.environment),
     index('search_privy_user_id').on(table.privyUserId),
     index('search_matrix_user_id').on(table.matrixUserId),
-    index('search_encrypted_access_token').on(table.encryptedAccessToken),
-    index('search_device_id').on(table.deviceId),
-    index('search_refresh_token').on(table.refreshToken),
-    index('search_token_expires_at').on(table.tokenExpiresAt),
   ],
 );
 

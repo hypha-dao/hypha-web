@@ -14,10 +14,30 @@ type RegisterResponse = {
 };
 
 export class MatrixSharedSecret {
-  private registrationSharedSecret =
-    process.env.MATRIX_REGISTRATION_SHARED_SECRET!;
-  private matrixHomeserverUrl = process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL!;
-  private matrixDomain = process.env.MATRIX_DOMAIN!;
+  private registrationSharedSecret: string;
+  private matrixHomeserverUrl: string;
+  private matrixDomain: string;
+
+  constructor() {
+    const registrationSharedSecret =
+      process.env.MATRIX_REGISTRATION_SHARED_SECRET;
+    const matrixHomeserverUrl = process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL;
+    const matrixDomain = process.env.MATRIX_DOMAIN;
+
+    if (!registrationSharedSecret) {
+      throw new Error('MATRIX_REGISTRATION_SHARED_SECRET is not set');
+    }
+    if (!matrixHomeserverUrl) {
+      throw new Error('NEXT_PUBLIC_MATRIX_HOMESERVER_URL is not set');
+    }
+    if (!matrixDomain) {
+      throw new Error('MATRIX_DOMAIN is not set');
+    }
+
+    this.registrationSharedSecret = registrationSharedSecret;
+    this.matrixHomeserverUrl = matrixHomeserverUrl;
+    this.matrixDomain = matrixDomain;
+  }
   private versions: VersionsResponse = { versions: [], unstable_features: {} };
 
   private async getVersions(): Promise<VersionsResponse> {
@@ -121,7 +141,7 @@ export class MatrixSharedSecret {
     const data = await response.json();
 
     if (!response.ok) {
-      console.warn('Cannot register user:', data);
+      console.warn('Cannot register user:', data?.errcode ?? 'unknown error');
 
       if (data.errcode === 'M_USER_IN_USE') {
         return {
@@ -130,6 +150,14 @@ export class MatrixSharedSecret {
           deviceId: '',
         };
       }
+
+      throw new Error(
+        `Failed to register user: ${data?.errcode ?? response.statusText}`,
+      );
+    }
+
+    if (!data.access_token) {
+      throw new Error('Registration succeeded but no access_token returned');
     }
 
     await this.changePassword(
@@ -172,7 +200,10 @@ export class MatrixSharedSecret {
       `${this.matrixHomeserverUrl}/_dendrite/admin/deactivate/${username}`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.registrationSharedSecret}`,
+        },
         body: JSON.stringify({
           erase: true,
         }),
@@ -235,7 +266,6 @@ export class MatrixSharedSecret {
     if (!response.ok) {
       console.warn('Cannot login user', data);
     }
-    console.log('Login data response:', data);
     return {
       accessToken: encryptMatrixToken(data.access_token),
       userId: data.user_id,

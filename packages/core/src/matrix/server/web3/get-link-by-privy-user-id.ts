@@ -1,3 +1,5 @@
+'use server';
+
 import { db } from '@hypha-platform/storage-postgres';
 import { MatrixUserLink } from '../../types';
 import { findLinkByPrivyUserId } from '../queries';
@@ -28,7 +30,7 @@ export async function getLinkByPrivyUserId({
 
     return {
       deviceId: deviceId ?? undefined,
-      refreshToken: refreshToken ?? undefined,
+      encryptedRefreshToken: refreshToken ?? undefined,
       tokenExpiresAt: tokenExpiresAt ?? undefined,
       ...rest,
     };

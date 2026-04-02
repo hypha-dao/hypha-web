@@ -27,8 +27,8 @@ function decryptAes256(encryptedText: string, secretKey: string): string {
   // Split the combined string to retrieve the IV and actual data
   const parts = encryptedText.split(':');
   const ivRaw = parts.shift();
-  if (ivRaw === undefined) {
-    return '';
+  if (!ivRaw) {
+    throw new Error('Malformed encrypted text: missing IV');
   }
   const iv = Buffer.from(ivRaw, 'hex');
   const encrypted = parts.join(':');

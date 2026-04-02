@@ -1,5 +1,9 @@
 import { Environment } from '../types';
 
+function assertUnreachable(value: never): never {
+  throw new Error(`Unhandled environment value: ${value}`);
+}
+
 export function getPrefixByEnvironment(environment: Environment) {
   switch (environment) {
     case Environment.DEVELOPMENT:
@@ -8,7 +12,6 @@ export function getPrefixByEnvironment(environment: Environment) {
       return 'prev';
     case Environment.PRODUCTION:
       return 'prod';
-    default:
-      return 'prod';
   }
+  return assertUnreachable(environment);
 }

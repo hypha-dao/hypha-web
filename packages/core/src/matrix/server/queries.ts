@@ -1,6 +1,10 @@
 import { MatrixUserLink } from '@hypha-platform/storage-postgres';
 import { DbConfig } from '../../server';
 
+function escapeLikePattern(value: string): string {
+  return value.replace(/%/g, '\%').replace(/_/g, '\_');
+}
+
 export const findLinkByPrivyUserId = async (
   { privyUserId, environment }: { privyUserId: string; environment: string },
   { db }: DbConfig,
@@ -17,9 +21,7 @@ export const findLinkByPrivyUserId = async (
     return null;
   }
 
-  return {
-    ...response,
-  };
+  return response;
 };
 
 export const findLinkByMatrixUserId = async (
@@ -38,9 +40,7 @@ export const findLinkByMatrixUserId = async (
     return null;
   }
 
-  return {
-    ...response,
-  };
+  return response;
 };
 
 export const findAdminUserName = async (
@@ -51,7 +51,7 @@ export const findAdminUserName = async (
     where: (matrixUserLinks, { eq, and, like }) =>
       and(
         eq(matrixUserLinks.environment, environment),
-        like(matrixUserLinks.privyUserId, `%${baseName}%`),
+        like(matrixUserLinks.privyUserId, `%${escapeLikePattern(baseName)}%`),
       ),
   });
 

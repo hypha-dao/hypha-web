@@ -1,7 +1,18 @@
 import { Environment } from '../types';
 
-export function determineEnvironment(url: string) {
-  const hostname = new URL(url).hostname;
+export function determineEnvironment(
+  url: string,
+): Environment | undefined {
+  if (!url) {
+    return undefined;
+  }
+
+  let hostname: string;
+  try {
+    hostname = new URL(url).hostname;
+  } catch {
+    return undefined;
+  }
 
   if (hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
     return Environment.DEVELOPMENT;

@@ -30,7 +30,7 @@ interface MatrixContextType {
   getRoomMessages: (roomId: string) => Message[] | null;
   joinRoom: (roomId: string) => Promise<void>;
   registerRoomListener: (roomId: string, listener: RoomMessageListener) => void;
-  unregisterRoomListerner: (roomId: string) => void;
+  unregisterRoomListener: (roomId: string) => void;
   registeredRoomListeners: RoomMessageListenerRecord[];
 }
 
@@ -47,6 +47,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   );
   const [isMatrixAvailable, setIsMatrixAvailable] = React.useState(false);
   const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+  const registeredRoomListenersRef = React.useRef<RoomMessageListenerRecord[]>(
+    [],
+  );
   const [registeredRoomListeners, setRegisteredRoomListeners] = React.useState<
     RoomMessageListenerRecord[]
   >([]);
@@ -95,8 +98,11 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       console.warn('Cannot initialize client due error:', matrixTokenError);
       return;
     }
-    initalizeMatrixClient(matrixToken!);
-  }, [user, matrixToken, isMatrixTokenLoading, matrixTokenError]);
+    if (!matrixToken) {
+      return;
+    }
+    initalizeMatrixClient(matrixToken);
+  }, [user, matrixToken, isMatrixTokenLoading, matrixTokenError, initalizeMatrixClient]);
 
   const createRoom = React.useCallback(
     async (title: string) => {
@@ -143,6 +149,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             .getLiveTimeline()
             .getEvents()
             .filter((event) => event.getType() === EventType.RoomMessage)
+            .filter((event) => event.getId() && event.getSender())
             .map((event) => ({
               id: event.getId()!,
               sender: event.getSender()!,
@@ -166,46 +173,14 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     [client],
   );
 
-  const registerRoomListener = React.useCallback(
-    (roomId: string, listener: RoomMessageListener) => {
-      if (!client) {
-        console.warn('Matrix client is not initialized');
-        return;
-      }
-      unregisterRoomListerner(roomId);
-      const eventListener: MatrixEventListener = async (
-        event: MatrixSdk.MatrixEvent,
-      ) => {
-        if (
-          event.getRoomId() === roomId &&
-          event.getType() === EventType.RoomMessage
-        ) {
-          const message: Message = {
-            id: event.getId()!,
-            sender: event.getSender()!,
-            content: event.getContent().body,
-            timestamp: new Date(event.getTs()),
-          };
-          await listener(message);
-        }
-      };
-      client.addListener(RoomEvent.Timeline, eventListener);
-      setRegisteredRoomListeners((prev) => [
-        ...prev,
-        { roomId, listener: eventListener },
-      ]);
-    },
-    [client],
-  );
-
-  const unregisterRoomListerner = React.useCallback(
+  const unregisterRoomListener = React.useCallback(
     (roomId: string) => {
       if (!client) {
         console.warn('Matrix client is not initialized');
         return;
       }
       type Records = RoomMessageListenerRecord[];
-      const { found, rest } = registeredRoomListeners.reduce(
+      const { found, rest } = registeredRoomListenersRef.current.reduce(
         (acc, item) => {
           if (item.roomId === roomId) {
             acc.found.push(item);
@@ -221,9 +196,47 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           client.removeListener(RoomEvent.Timeline, item.listener);
         }
       }
+      registeredRoomListenersRef.current = rest;
       setRegisteredRoomListeners(rest);
     },
-    [registeredRoomListeners, client],
+    [client],
+  );
+
+  const registerRoomListener = React.useCallback(
+    (roomId: string, listener: RoomMessageListener) => {
+      if (!client) {
+        console.warn('Matrix client is not initialized');
+        return;
+      }
+      unregisterRoomListener(roomId);
+      const eventListener: MatrixEventListener = async (
+        event: MatrixSdk.MatrixEvent,
+      ) => {
+        if (
+          event.getRoomId() === roomId &&
+          event.getType() === EventType.RoomMessage
+        ) {
+          const eventId = event.getId();
+          const sender = event.getSender();
+          if (!eventId || !sender) return;
+          const message: Message = {
+            id: eventId,
+            sender,
+            content: event.getContent().body,
+            timestamp: new Date(event.getTs()),
+          };
+          await listener(message);
+        }
+      };
+      client.addListener(RoomEvent.Timeline, eventListener);
+      const newRecord = { roomId, listener: eventListener };
+      registeredRoomListenersRef.current = [
+        ...registeredRoomListenersRef.current,
+        newRecord,
+      ];
+      setRegisteredRoomListeners([...registeredRoomListenersRef.current]);
+    },
+    [client, unregisterRoomListener],
   );
 
   const value: MatrixContextType = {
@@ -235,7 +248,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     getRoomMessages,
     joinRoom,
     registerRoomListener,
-    unregisterRoomListerner,
+    unregisterRoomListener,
     registeredRoomListeners,
   };
   return (

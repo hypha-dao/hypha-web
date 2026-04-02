@@ -30,7 +30,7 @@ export async function getLinkByMatrixUserId({
 
     return {
       deviceId: deviceId ?? undefined,
-      refreshToken: refreshToken ?? undefined,
+      encryptedRefreshToken: refreshToken ?? undefined,
       tokenExpiresAt: tokenExpiresAt ?? undefined,
       ...rest,
     };

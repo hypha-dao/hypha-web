@@ -37,6 +37,15 @@ export const useMatrixToken = () => {
           return undefined;
         }
         const data = await response.json();
+        if (
+          !data ||
+          typeof data.accessToken !== 'string' ||
+          typeof data.userId !== 'string' ||
+          typeof data.homeserverUrl !== 'string'
+        ) {
+          setError('Invalid Matrix token response: missing required fields');
+          return undefined;
+        }
         return data as MatrixTokenData;
       } catch (err) {
         console.warn('Cannot get Matrix token:', err);
@@ -50,7 +59,7 @@ export const useMatrixToken = () => {
   );
 
   return {
-    isLoading,
+    isLoading: isLoading || isLoadingJwt,
     matrixToken,
     error,
   };

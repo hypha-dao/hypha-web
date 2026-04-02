@@ -10,16 +10,23 @@ import {
   MatrixUserLink,
   updateEncryptedAccessTokenAction,
 } from '@hypha-platform/core/server';
-import { PrivyClient } from '@privy-io/server-auth';
+import { PrivyClient } from '@privy-io/node';
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 
-const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? '';
-const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET ?? '';
-const MATRIX_HOMESERVER_URL =
-  process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL ?? '';
-const DEFAULT_ROOM_ID = process.env.DEFAULT_ROOM_ID ?? '';
+const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
+const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET;
+const MATRIX_HOMESERVER_URL = process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL;
 const ADMIN_BASE_NAME = 'hypha_admin';
+
+function validateEnvVars() {
+  if (!PRIVY_APP_ID || !PRIVY_APP_SECRET || !MATRIX_HOMESERVER_URL) {
+    throw new Error(
+      'Missing required environment variables: NEXT_PUBLIC_PRIVY_APP_ID, PRIVY_APP_SECRET, NEXT_PUBLIC_MATRIX_HOMESERVER_URL',
+    );
+  }
+  return { PRIVY_APP_ID, PRIVY_APP_SECRET, MATRIX_HOMESERVER_URL };
+}
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('Authorization');
@@ -35,13 +42,21 @@ export async function GET(request: NextRequest) {
   }
 
   const authToken = authHeader.replace('Bearer ', '');
+  const env = validateEnvVars();
   const privyUserId = await (async (token: string) => {
     try {
-      const privy = new PrivyClient(PRIVY_APP_ID, PRIVY_APP_SECRET);
-      const { userId } = await privy.verifyAuthToken(token);
+      const privy = new PrivyClient({
+        appId: env.PRIVY_APP_ID,
+        appSecret: env.PRIVY_APP_SECRET,
+      });
+      const { user_id: userId } =
+        await privy.utils().auth().verifyAuthToken(token);
       return userId;
     } catch (error) {
-      console.warn('Auth error:', error);
+      console.warn(
+        'Auth error:',
+        error instanceof Error ? error.message : 'Unknown auth error',
+      );
       return null;
     }
   })(authToken);
@@ -101,6 +116,12 @@ export async function GET(request: NextRequest) {
 
   try {
     const environment = determineEnvironment(request.url);
+    if (!environment) {
+      return NextResponse.json(
+        { error: 'Unable to determine environment from request URL' },
+        { status: 400 },
+      );
+    }
 
     const existing = await getLinkByPrivyUserId({ privyUserId, environment });
     if (existing) {
@@ -123,7 +144,7 @@ export async function GET(request: NextRequest) {
           environment,
           authToken,
         );
-        if (admin) {
+        if (admin?.encryptedAccessToken) {
           const adminAccessToken = decryptMatrixToken(
             admin.encryptedAccessToken,
           );
@@ -181,6 +202,11 @@ export async function GET(request: NextRequest) {
         environment,
         authToken,
       );
+      if (!admin?.encryptedAccessToken) {
+        throw new Error(
+          'Admin record missing or has no encrypted access token',
+        );
+      }
       const adminAccessToken = decryptMatrixToken(admin.encryptedAccessToken);
       const userInfo = await matrixAuthClient.getUser(
         matrixUsername,
