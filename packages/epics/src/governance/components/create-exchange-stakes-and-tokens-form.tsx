@@ -94,6 +94,18 @@ export const CreateExchangeStakesAndTokensForm = ({
     },
   });
 
+  React.useEffect(() => {
+    if (person?.id) {
+      form.setValue('creatorId', person.id);
+    }
+  }, [person?.id, form]);
+
+  React.useEffect(() => {
+    if (typeof spaceId === 'number') {
+      form.setValue('spaceId', spaceId);
+    }
+  }, [spaceId, form]);
+
   useScrollToErrors(form, formRef);
   const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
 
@@ -236,7 +248,9 @@ export const CreateExchangeStakesAndTokensForm = ({
           {plugin}
           <Separator />
           <div className="flex justify-end w-full">
-            <Button type="submit">{tAgreementFlow('buttons.publish')}</Button>
+            <Button type="submit" disabled={!person?.id || isPending}>
+              {tAgreementFlow('buttons.publish')}
+            </Button>
           </div>
         </form>
       </Form>
