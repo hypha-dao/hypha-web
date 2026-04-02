@@ -5,6 +5,7 @@ import { RecipientType } from '../components/common/recipient';
 import { TokenPayoutFieldArray } from '../components/common/token-payout-field-array';
 import { Separator, Skeleton } from '@hypha-platform/ui';
 import { Loader2 } from 'lucide-react';
+import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import {
   Person,
   Space,
@@ -438,10 +439,16 @@ export const ExchangeStakesAndTokensPlugin = ({
         />
       )}
       <div
-        className="rounded-[8px] p-5 border border-accent-6 bg-accent-surface max-w-full"
+        className="rounded-[8px] p-5 border border-accent-6 bg-accent-surface max-w-full flex gap-3 md:gap-5 items-start"
         role="note"
       >
-        <p className="text-2 text-foreground">
+        <ExclamationTriangleIcon
+          width={16}
+          height={16}
+          className="text-foreground flex-shrink-0 mt-0.5"
+          aria-hidden
+        />
+        <p className="text-2 text-foreground flex-1 min-w-0">
           {tAgreementFlow('plugins.exchangeStakesAndTokens.escrowNotice')}
         </p>
       </div>
