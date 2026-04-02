@@ -1370,6 +1370,7 @@
         "buyer": "Käufer (Wallet-Adresse)",
         "sellerWillSend": "Der Verkäufer sendet",
         "buyerWillSend": "Käufer sendet",
+        "escrowNotice": "Dieser Vorschlag sendet die Token des Verkäufers an ein Treuhandkonto. Die Vereinbarung ist erst abgeschlossen, wenn der Käufer den vereinbarten Tokenbetrag auf dasselbe Treuhandkonto überwiesen hat. Details werden dem Käufer automatisch bereitgestellt.",
         "escrowFunding": "Escrow-Finanzierung",
         "escrowStatus": "Escrow-Status",
         "escrowPendingBuyerFunding": "Warten auf Käuferfinanzierung",

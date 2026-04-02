@@ -325,6 +325,9 @@ export const ExchangeStakesAndTokensPlugin = ({
           )}
         />
       </Skeleton>
+      <p className="text-2 text-neutral-11 max-w-full">
+        {tAgreementFlow('plugins.exchangeStakesAndTokens.escrowNotice')}
+      </p>
     </div>
   );
 };

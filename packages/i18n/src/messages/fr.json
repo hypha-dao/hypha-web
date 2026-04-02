@@ -994,6 +994,7 @@
         "buyer": "Acheteur (adresse du portefeuille)",
         "sellerWillSend": "Le vendeur envoie",
         "buyerWillSend": "L’acheteur enverra",
+        "escrowNotice": "Cette proposition envoie les jetons du vendeur vers un compte séquestre. L’accord n’est finalisé que lorsque l’acheteur a transféré le montant convenu vers ce même compte séquestre. Les détails seront fournis automatiquement à l’acheteur.",
         "escrowFunding": "Financement de l'escrow",
         "escrowStatus": "Statut de l'escrow",
         "escrowPendingBuyerFunding": "En attente du financement de l'acheteur",
