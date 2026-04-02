@@ -67,8 +67,8 @@ export type HumanChatPanelContextValue = {
 };
 ```
 
-3. Update `HumanChatPanelContext` default value and type to `HumanChatPanelContextValue`.
-4. Update `HumanChatPanelProvider` to accept and provide the full shape — the provider will now need to hold state internally (use `useState` inside a wrapper component) rather than a raw `Context.Provider`:
+1. Update `HumanChatPanelContext` default value and type to `HumanChatPanelContextValue`.
+2. Update `HumanChatPanelProvider` to accept and provide the full shape — the provider will now need to hold state internally (use `useState` inside a wrapper component) rather than a raw `Context.Provider`:
 
 ```tsx
 // New: stateful provider wrapper
@@ -113,7 +113,7 @@ export function HumanChatPanelProvider({
 }
 ```
 
-5. Update `useHumanChatPanel()` return type to `HumanChatPanelContextValue`.
+1. Update `useHumanChatPanel()` return type to `HumanChatPanelContextValue`.
 
 **Verify:** `pnpm nx run epics:build` passes. Existing consumers of `useHumanChatPanel()` only use `{ open, toggle }` — no breaking change to call sites.
 
@@ -159,7 +159,7 @@ useEffect(() => {
 }, [mode, coherenceRoomId, isMatrixAvailable, isMatrixAuthenticated]);
 ```
 
-4. Reset mode when sidebar closes — listen to `useSidebar().open`:
+1. Reset mode when sidebar closes — listen to `useSidebar().open`:
 
 ```ts
 const { open: sidebarOpen } = useSidebar();
@@ -172,7 +172,7 @@ useEffect(() => {
 }, [sidebarOpen, mode, closeCoherenceChat]);
 ```
 
-5. Pass `title` and `onBack` to `HumanChatPanelHeader`:
+1. Pass `title` and `onBack` to `HumanChatPanelHeader`:
 
 ```tsx
 <HumanChatPanelHeader
@@ -226,7 +226,7 @@ type HumanChatPanelHeaderProps = {
 </div>
 ```
 
-4. Add `backToSpaceChat` key to `HumanChatPanel` i18n namespace (en.json + other locales).
+1. Add `backToSpaceChat` key to `HumanChatPanel` i18n namespace (en.json + other locales).
 
 **Verify:** Header shows back arrow when `onBack` is set. Hash icon shows otherwise. Back button returns panel to space chat.
 
@@ -258,7 +258,7 @@ onClick={(e) => {
 }}
 ```
 
-3. Disable the button (and show visual hint) when `!roomId` — the room hasn't been created yet for this signal.
+1. Disable the button (and show visual hint) when `!roomId` — the room hasn't been created yet for this signal.
 
 **Verify:** Button calls callback when clicked. Does nothing (gracefully) when `roomId` is null.
 
@@ -342,8 +342,8 @@ const handleSignalClick = React.useCallback(
 );
 ```
 
-4. Pass `onSignalClick={handleSignalClick}` to `SignalSection`.
-5. Keep `chatBasePath` prop on `SignalSection` (used as `<Link>` fallback in signal-grid when `onSignalClick` absent).
+1. Pass `onSignalClick={handleSignalClick}` to `SignalSection`.
+2. Keep `chatBasePath` prop on `SignalSection` (used as `<Link>` fallback in signal-grid when `onSignalClick` absent).
 
 **Verify:** Clicking a signal card (with `roomId`) opens the right panel and loads that room. Panel header shows the conversation title. Back button returns to space chat. Closing the panel resets to space chat.
 
