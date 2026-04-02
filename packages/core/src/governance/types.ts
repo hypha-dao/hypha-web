@@ -115,6 +115,35 @@ export const REFERENCE_CURRENCIES = [
 
 export type ReferenceCurrency = (typeof REFERENCE_CURRENCIES)[number];
 
+/** Token price / Chainlink feed — only currencies with a dedicated feed (see CURRENCY_FEEDS) */
+export const TOKEN_PRICE_REFERENCE_CURRENCIES = [
+  'USD',
+  'EUR',
+  'GBP',
+  'CAD',
+  'CHF',
+  'AUD',
+] as const;
+
+export type TokenPriceReferenceCurrency =
+  (typeof TOKEN_PRICE_REFERENCE_CURRENCIES)[number];
+
+const TOKEN_PRICE_REFERENCE_SET = new Set<string>(
+  TOKEN_PRICE_REFERENCE_CURRENCIES,
+);
+
+/** Drop legacy/invalid values (e.g. CNY with no feed) so forms stay valid */
+export function sanitizeTokenPriceReferenceCurrency(
+  c: string | null | undefined,
+): TokenPriceReferenceCurrency | undefined {
+  if (c == null || c === '') {
+    return undefined;
+  }
+  return TOKEN_PRICE_REFERENCE_SET.has(c)
+    ? (c as TokenPriceReferenceCurrency)
+    : undefined;
+}
+
 export type CreateTokenInput = {
   agreementId?: number;
   spaceId: number;

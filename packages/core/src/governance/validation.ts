@@ -5,7 +5,11 @@ import {
   DEFAULT_IMAGE_ACCEPT,
 } from '../assets/constant';
 import { isBefore } from 'date-fns';
-import { EntryMethodType, REFERENCE_CURRENCIES } from './types';
+import {
+  EntryMethodType,
+  REFERENCE_CURRENCIES,
+  TOKEN_PRICE_REFERENCE_CURRENCIES,
+} from './types';
 import { isAddress } from 'ethers';
 
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
@@ -449,7 +453,7 @@ export const baseSchemaIssueNewToken = z.object({
   enableProposalAutoMinting: z.boolean(),
   enableLimitedSupply: z.boolean().optional(),
   enableTokenPrice: z.boolean(),
-  referenceCurrency: z.enum(REFERENCE_CURRENCIES).optional(),
+  referenceCurrency: z.enum(TOKEN_PRICE_REFERENCE_CURRENCIES).optional(),
   tokenPrice: z.preprocess((val) => {
     if (val === '' || val === null || val === undefined) {
       return undefined;

@@ -20,6 +20,7 @@ import {
 import {
   fetchWhitelistBaselineFromChain,
   getPriceCurrencyCode,
+  sanitizeTokenPriceReferenceCurrency,
   type Person,
   type Space,
   useTokenOnChainData,
@@ -364,9 +365,11 @@ export const UpdateIssuedTokenPlugin = ({
       lastHydratedTokenAddressRef.current !== selectedTokenAddress;
     lastHydratedTokenAddressRef.current = selectedTokenAddress;
 
+    const safeRefFromDb = sanitizeTokenPriceReferenceCurrency(
+      selectedToken.referenceCurrency,
+    );
     const shouldShowAdvancedFromDb =
-      selectedToken.referenceCurrency !== undefined &&
-      selectedToken.referencePrice !== undefined;
+      safeRefFromDb !== undefined && selectedToken.referencePrice !== undefined;
     const iconFromDb = selectedToken.iconUrl || '';
 
     const setIfClean = (
@@ -409,8 +412,11 @@ export const UpdateIssuedTokenPlugin = ({
       decayPercentage: selectedToken.decayPercentage || 1,
     });
     setIfClean('archiveToken', selectedToken.archived);
-    setIfClean('referenceCurrency', selectedToken.referenceCurrency);
-    setIfClean('tokenPrice', selectedToken.referencePrice);
+    setIfClean('referenceCurrency', safeRefFromDb);
+    setIfClean(
+      'tokenPrice',
+      safeRefFromDb !== undefined ? selectedToken.referencePrice : undefined,
+    );
     if (!(dirtyFields as Record<string, unknown>)?.enableTokenPrice) {
       if (shouldShowAdvancedFromDb) {
         setValue('enableTokenPrice', true, { shouldDirty: false });
@@ -492,10 +498,17 @@ export const UpdateIssuedTokenPlugin = ({
         shouldDirty: false,
       });
     }
-    if (
-      onChainData.tokenPrice !== undefined &&
+    const chainPriceRef = sanitizeTokenPriceReferenceCurrency(
       onChainData.priceCurrencyFeed !== undefined
-    ) {
+        ? getPriceCurrencyCode(onChainData.priceCurrencyFeed)
+        : undefined,
+    );
+    const hasValidChainPrice =
+      onChainData.tokenPrice !== undefined &&
+      onChainData.priceCurrencyFeed !== undefined &&
+      chainPriceRef !== undefined;
+
+    if (hasValidChainPrice) {
       if (!isDirty('enableTokenPrice')) {
         setValue('enableTokenPrice', true, { shouldDirty: false });
       }
@@ -504,16 +517,14 @@ export const UpdateIssuedTokenPlugin = ({
       setValue('enableTokenPrice', false, { shouldDirty: false });
     }
     if (onChainData.tokenPrice !== undefined && !isDirty('tokenPrice')) {
-      setValue('tokenPrice', onChainData.tokenPrice, { shouldDirty: false });
-    }
-    if (
-      onChainData.priceCurrencyFeed !== undefined &&
-      !isDirty('referenceCurrency')
-    ) {
-      const referenceCurrency = getPriceCurrencyCode(
-        onChainData.priceCurrencyFeed,
+      setValue(
+        'tokenPrice',
+        chainPriceRef !== undefined ? onChainData.tokenPrice : undefined,
+        { shouldDirty: false },
       );
-      setValue('referenceCurrency', referenceCurrency, { shouldDirty: false });
+    }
+    if (!isDirty('referenceCurrency')) {
+      setValue('referenceCurrency', chainPriceRef, { shouldDirty: false });
     }
     const currentDecaySettings = getValues('decaySettings') || {};
     const newDecaySettings = { ...currentDecaySettings };

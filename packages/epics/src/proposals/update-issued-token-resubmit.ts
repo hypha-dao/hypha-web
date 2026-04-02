@@ -3,6 +3,7 @@ import {
   type TokenUpdateData,
   type TransferWhitelistFormValue,
   isTokenUpdateData,
+  sanitizeTokenPriceReferenceCurrency,
 } from '@hypha-platform/core/client';
 import type { Dispatch, SetStateAction } from 'react';
 import type { UseFormSetValue, FieldValues } from 'react-hook-form';
@@ -79,11 +80,15 @@ export function applyUpdateIssuedTokenResubmitPayloadToForm<
   patch('isVotingToken', payload.isVotingToken);
   patch('decaySettings', payload.decaySettings);
   patch('enableProposalAutoMinting', payload.enableProposalAutoMinting);
-  patch('enableTokenPrice', payload.enableTokenPrice);
-  if (payload.enableTokenPrice) {
+  const safeRef = sanitizeTokenPriceReferenceCurrency(
+    payload.referenceCurrency,
+  );
+  if (payload.enableTokenPrice && safeRef) {
+    patch('enableTokenPrice', true);
     patch('tokenPrice', payload.tokenPrice);
-    patch('referenceCurrency', payload.referenceCurrency);
+    patch('referenceCurrency', safeRef);
   } else {
+    patch('enableTokenPrice', false);
     patch('tokenPrice', undefined);
     patch('referenceCurrency', undefined);
   }
@@ -184,6 +189,9 @@ export function buildUpdateIssuedTokenResubmitPayload({
 }): UpdateIssuedTokenResubmitPayload | null {
   if (dbRow && isTokenUpdateData(dbRow.data)) {
     const data = dbRow.data;
+    const priceRef = sanitizeTokenPriceReferenceCurrency(
+      data.referenceCurrency,
+    );
     const max = data.maxSupply ?? 0;
     const fromDbType = data.maxSupplyTypeValue;
     const fromSnapshot =
@@ -217,9 +225,9 @@ export function buildUpdateIssuedTokenResubmitPayload({
       },
       enableProposalAutoMinting:
         data.enableProposalAutoMinting ?? snapshot?.autoMinting ?? true,
-      enableTokenPrice: !!(data.referencePrice && data.referenceCurrency),
+      enableTokenPrice: !!(data.referencePrice && priceRef),
       tokenPrice: data.referencePrice,
-      referenceCurrency: data.referenceCurrency,
+      referenceCurrency: priceRef,
       enableAdvancedTransferControls: !!(
         data.transferWhitelist?.from?.length ||
         data.transferWhitelist?.to?.length ||
@@ -243,11 +251,13 @@ export function buildUpdateIssuedTokenResubmitPayload({
   const tokenPrice = snapshot.priceWithCurrency
     ? Number(snapshot.priceWithCurrency.tokenPrice) / 1_000_000
     : undefined;
-  const referenceCurrency = snapshot.priceWithCurrency
-    ? getPriceCurrencyCode(
-        snapshot.priceWithCurrency.priceCurrencyFeed as `0x${string}`,
-      )
-    : undefined;
+  const referenceCurrency = sanitizeTokenPriceReferenceCurrency(
+    snapshot.priceWithCurrency
+      ? getPriceCurrencyCode(
+          snapshot.priceWithCurrency.priceCurrencyFeed as `0x${string}`,
+        )
+      : undefined,
+  );
 
   const snapshotType =
     snapshot.fixedMaxSupply !== undefined && max > 0
@@ -277,7 +287,7 @@ export function buildUpdateIssuedTokenResubmitPayload({
       decayPercentage: bigintToNumber(snapshot.decayPercentage) ?? 1,
     },
     enableProposalAutoMinting: snapshot.autoMinting ?? true,
-    enableTokenPrice: !!snapshot.priceWithCurrency,
+    enableTokenPrice: !!snapshot.priceWithCurrency && !!referenceCurrency,
     tokenPrice,
     referenceCurrency,
     enableAdvancedTransferControls: !!(
