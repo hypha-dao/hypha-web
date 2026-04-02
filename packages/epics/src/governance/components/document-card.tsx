@@ -157,7 +157,7 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
             loading={isLoading}
           >
             <div className="line-clamp-3 w-full">
-              {stripMarkdown(stripDescription(description), {
+              {stripMarkdown(stripDescription(description ?? ''), {
                 orderedListMarkers: false,
                 unorderedListMarkers: false,
               })}
