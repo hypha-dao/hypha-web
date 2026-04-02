@@ -439,13 +439,13 @@ export const ExchangeStakesAndTokensPlugin = ({
         />
       )}
       <div
-        className="rounded-[8px] p-5 border border-accent-6 bg-accent-surface max-w-full flex gap-3 md:gap-5 items-start"
+        className="rounded-[8px] p-5 border border-accent-6 bg-accent-surface max-w-full flex gap-3 md:gap-5 items-center"
         role="note"
       >
         <ExclamationTriangleIcon
           width={16}
           height={16}
-          className="text-foreground flex-shrink-0 mt-0.5"
+          className="text-foreground flex-shrink-0"
           aria-hidden
         />
         <p className="text-2 text-foreground flex-1 min-w-0">
