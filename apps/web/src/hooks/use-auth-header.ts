@@ -6,6 +6,7 @@ export const useAuthHeader = () => {
     headers: jwt
       ? {
           Authorization: `Bearer ${jwt}`,
+          'Content-Type': 'application/json',
         }
       : undefined,
     isLoading: isLoadingJwt,

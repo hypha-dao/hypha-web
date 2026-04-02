@@ -61,6 +61,10 @@ export const useCreateProfile = (
 
         if (!response.ok) {
           const errorData = await response.json();
+          console.error(
+            'Validation details:',
+            JSON.stringify(errorData.details, null, 2),
+          );
           throw new Error(errorData.error || 'Failed to create profile');
         }
 

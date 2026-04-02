@@ -129,12 +129,18 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
               </CardTitle>
             </Skeleton>
           </div>
-          <Skeleton loading={isLoading} className="mb-4" width="100%" height="26px">
+          <Skeleton
+            loading={isLoading}
+            className="mb-4"
+            width="100%"
+            height="26px"
+          >
             <div
               className="text-1 text-neutral-11 mb-0 line-clamp-2"
               style={{
                 lineHeight: 'calc(var(--text-1--line-height) * var(--text-1))',
-                minHeight: 'calc(var(--text-1--line-height) * var(--text-1) * 2)',
+                minHeight:
+                  'calc(var(--text-1--line-height) * var(--text-1) * 2)',
               }}
               title={description}
             >
