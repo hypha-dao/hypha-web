@@ -82,6 +82,7 @@ export const UpdateIssuedTokenPlugin = ({
   const { lang } = useParams();
   const tTreasury = useTranslations('TreasuryTab');
   const tProposalDetails = useTranslations('ProposalDetails');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const {
     control,
     getValues,
@@ -724,7 +725,59 @@ export const UpdateIssuedTokenPlugin = ({
     setValue,
   ]);
 
-  const tokenSupply = normalizeMaxSupplyHuman(selectedToken?.maxSupply ?? 0);
+  /** Cap from chain (authoritative); DB maxSupply is often 0 when unlimited on-chain */
+  const maxCapHumanFromChain = useMemo(() => {
+    if (onChainData?.maxSupply === undefined) {
+      return undefined;
+    }
+    return onChainData.maxSupply;
+  }, [onChainData?.maxSupply]);
+
+  const tokenSupplyMetricsLabel = useMemo(() => {
+    if (isLoadingOnChainData && selectedTokenAddress) {
+      return null;
+    }
+    if (maxCapHumanFromChain === undefined) {
+      return (
+        <span className="text-2 text-neutral-11 text-nowrap">
+          {tTreasury('unlimitedSupply')}
+        </span>
+      );
+    }
+    if (maxCapHumanFromChain === 0) {
+      return (
+        <span className="text-2 text-neutral-11 text-nowrap">
+          {tTreasury('unlimitedSupply')}
+        </span>
+      );
+    }
+    const typeSuffix =
+      onChainData?.fixedMaxSupply === true
+        ? tAgreementFlow(
+            'plugins.issueNewToken.general.maxSupplyTypeOptions.immutable',
+          )
+        : onChainData?.fixedMaxSupply === false
+        ? tAgreementFlow(
+            'plugins.issueNewToken.general.maxSupplyTypeOptions.updatable',
+          )
+        : null;
+    return (
+      <span className="text-2 text-neutral-11">
+        {formatCurrencyValue(maxCapHumanFromChain)}
+        {typeSuffix ? (
+          <span className="text-neutral-11"> ({typeSuffix})</span>
+        ) : null}
+      </span>
+    );
+  }, [
+    isLoadingOnChainData,
+    selectedTokenAddress,
+    maxCapHumanFromChain,
+    onChainData?.fixedMaxSupply,
+    tTreasury,
+    tAgreementFlow,
+  ]);
+
   const { supply, isLoading: isLoadingSupply } = useTokenSupply(
     selectedToken?.address as `0x${string}`,
   );
@@ -776,15 +829,13 @@ export const UpdateIssuedTokenPlugin = ({
             <span className="text-2 text-neutral-11">
               {tTreasury('tokenSupply')}
             </span>
-            {tokenSupply === 0 ? (
-              <span className="text-2 text-neutral-11 text-nowrap">
-                {tTreasury('unlimitedSupply')}
-              </span>
-            ) : (
-              <span className="text-2 text-neutral-11">
-                {formatCurrencyValue(tokenSupply)}
-              </span>
-            )}
+            <Skeleton
+              width={200}
+              height={24}
+              loading={Boolean(selectedTokenAddress && isLoadingOnChainData)}
+            >
+              {tokenSupplyMetricsLabel}
+            </Skeleton>
             <span className="text-2 text-neutral-11">
               {tTreasury('issuanceToDate')}
             </span>

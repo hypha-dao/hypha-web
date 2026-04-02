@@ -609,6 +609,7 @@ export const ProposalDetail = ({
             proposalDetails.updateTokenData.initialReceiveWhitelist
           }
           archiveToken={proposalDetails.updateTokenData.archiveToken}
+          fixedMaxSupply={proposalDetails.updateTokenData.fixedMaxSupply}
         />
       ) : null}
       {label === 'Token Purchase' && proposalDetails?.spaceTokenPurchaseData ? (

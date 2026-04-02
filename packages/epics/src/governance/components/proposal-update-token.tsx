@@ -38,6 +38,8 @@ export interface ProposalUpdateTokenProps {
   initialTransferWhitelist?: `0x${string}`[];
   initialReceiveWhitelist?: `0x${string}`[];
   archiveToken?: boolean;
+  /** From proposal txs / chain; when set with maxSupply 0, shows cap type in UI */
+  fixedMaxSupply?: boolean;
 }
 
 interface TokenUpdateDataInterface {
@@ -46,6 +48,7 @@ interface TokenUpdateDataInterface {
   name?: string;
   symbol?: string;
   maxSupply?: number;
+  maxSupplyTypeValue?: 'immutable' | 'updatable';
   transferWhitelist?: TransferWhitelistFormValue;
 }
 
@@ -65,8 +68,10 @@ export const ProposalUpdateToken = ({
   initialTransferWhitelist: initialTransferFromTx,
   initialReceiveWhitelist: initialReceiveFromTx,
   archiveToken,
+  fixedMaxSupply: fixedMaxSupplyProp,
 }: ProposalUpdateTokenProps) => {
   const tProposalDetails = useTranslations('ProposalDetails');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { jwt: authToken } = useJwt();
   const { tokenUpdate, isLoading: isTokenUpdateLoading } =
     useUpdateTokenByAddress({
@@ -166,12 +171,54 @@ export const ProposalUpdateToken = ({
     priceCurrencyFeed !== undefined &&
     tokenPrice !== undefined;
 
+  const maxSupplyTypeBracket = React.useMemo(() => {
+    const fromPending = pendingData?.maxSupplyTypeValue;
+    if (fromPending === 'immutable') {
+      return tAgreementFlow(
+        'plugins.issueNewToken.general.maxSupplyTypeOptions.immutable',
+      );
+    }
+    if (fromPending === 'updatable') {
+      return tAgreementFlow(
+        'plugins.issueNewToken.general.maxSupplyTypeOptions.updatable',
+      );
+    }
+    if (fixedMaxSupplyProp === true) {
+      return tAgreementFlow(
+        'plugins.issueNewToken.general.maxSupplyTypeOptions.immutable',
+      );
+    }
+    if (fixedMaxSupplyProp === false) {
+      return tAgreementFlow(
+        'plugins.issueNewToken.general.maxSupplyTypeOptions.updatable',
+      );
+    }
+    return null;
+  }, [pendingData?.maxSupplyTypeValue, fixedMaxSupplyProp, tAgreementFlow]);
+
   const maxSupplyDisplay =
-    resolvedMaxHuman === undefined
-      ? tProposalDetails('labels.unlimitedSupply')
-      : resolvedMaxHuman === 0
-      ? tProposalDetails('labels.unlimited')
-      : formatCurrencyValue(resolvedMaxHuman);
+    resolvedMaxHuman === undefined ? (
+      <>
+        {tProposalDetails('labels.unlimitedSupply')}
+        {maxSupplyTypeBracket ? (
+          <span className="text-neutral-11"> ({maxSupplyTypeBracket})</span>
+        ) : null}
+      </>
+    ) : resolvedMaxHuman === 0 ? (
+      <>
+        {tProposalDetails('labels.unlimitedSupply')}
+        {maxSupplyTypeBracket ? (
+          <span className="text-neutral-11"> ({maxSupplyTypeBracket})</span>
+        ) : null}
+      </>
+    ) : (
+      <>
+        {formatCurrencyValue(resolvedMaxHuman)}
+        {maxSupplyTypeBracket ? (
+          <span className="text-neutral-11"> ({maxSupplyTypeBracket})</span>
+        ) : null}
+      </>
+    );
 
   return (
     <div className="flex flex-col gap-5">
