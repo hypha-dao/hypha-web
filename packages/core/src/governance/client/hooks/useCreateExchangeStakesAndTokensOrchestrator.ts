@@ -179,6 +179,7 @@ export const useCreateExchangeStakesAndTokensOrchestrator = ({
             sellerLeg: arg.sellerLeg,
             buyerAddress: arg.buyerAddress,
             buyerLeg: arg.buyerLeg,
+            sellerRecipientType: arg.sellerRecipientType,
           });
           completeTask('CREATE_WEB3_AGREEMENT');
         }

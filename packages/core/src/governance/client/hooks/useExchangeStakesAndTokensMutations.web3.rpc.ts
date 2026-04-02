@@ -46,6 +46,8 @@ interface CreateExchangeStakesAndTokensInput {
   buyerAddress: string;
   sellerLeg: ExchangeLegInput[];
   buyerLeg: ExchangeLegInput[];
+  /** Member: seller funds escrow from their wallet (before proposal). Space: treasury funds via proposal execution. */
+  sellerRecipientType?: 'member' | 'space';
 }
 
 const escrowCreateAbi = [
@@ -119,32 +121,31 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
         READ_TIMEOUT_MS,
       );
 
-      const transactionGroups = await Promise.all(
-        sellerRows.map(async (sellerRow, index) => {
-          const buyerRow = buyerRows[index];
-          if (!buyerRow) {
-            throw new Error(
-              `Missing buyer row ${
-                index + 1
-              }. Seller and buyer rows must be paired.`,
-            );
-          }
-          const sellerTokenDecimals = await withReadTimeout(
-            getTokenDecimals(sellerRow.token),
-            READ_TIMEOUT_MS,
-          );
-          const buyerTokenDecimals = await withReadTimeout(
-            getTokenDecimals(buyerRow.token),
-            READ_TIMEOUT_MS,
-          );
+      const isSpaceSeller = arg.sellerRecipientType === 'space';
 
-          const sellerAmount = parseUnits(
-            sellerRow.amount,
-            sellerTokenDecimals,
-          );
-          const buyerAmount = parseUnits(buyerRow.amount, buyerTokenDecimals);
+      const buildLegEncoded = async (
+        sellerRow: ExchangeLegInput,
+        buyerRow: ExchangeLegInput,
+      ) => {
+        const sellerTokenDecimals = await withReadTimeout(
+          getTokenDecimals(sellerRow.token),
+          READ_TIMEOUT_MS,
+        );
+        const buyerTokenDecimals = await withReadTimeout(
+          getTokenDecimals(buyerRow.token),
+          READ_TIMEOUT_MS,
+        );
 
-          return [
+        const sellerAmount = parseUnits(
+          sellerRow.amount,
+          sellerTokenDecimals,
+        );
+        const buyerAmount = parseUnits(buyerRow.amount, buyerTokenDecimals);
+
+        return {
+          sellerAmount,
+          buyerAmount,
+          calls: [
             {
               target: sellerRow.token as `0x${string}`,
               value: BigInt(0),
@@ -179,30 +180,151 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
                 ],
               }),
             },
-          ] as const;
-        }),
-      );
-
-      const transactions = transactionGroups.flat();
-
-      const proposalParams = {
-        spaceId: BigInt(arg.spaceId),
-        duration: duration && duration > 0 ? duration : getDuration(7),
-        transactions,
+          ] as const,
+        };
       };
 
-      const txHash = await client.writeContract({
-        address: proposalAddress,
-        abi: daoProposalsImplementationAbi,
-        functionName: 'createProposal',
-        args: [proposalParams],
-      });
+      let txHash: `0x${string}`;
+      /** Member-seller escrows are created before `createProposal`; space-seller escrows appear in the proposal tx logs. */
+      let escrowIdsFromMemberFunding: bigint[] = [];
+
+      if (isSpaceSeller) {
+        const transactionGroups = await Promise.all(
+          sellerRows.map(async (sellerRow, index) => {
+            const buyerRow = buyerRows[index];
+            if (!buyerRow) {
+              throw new Error(
+                `Missing buyer row ${
+                  index + 1
+                }. Seller and buyer rows must be paired.`,
+              );
+            }
+            const { calls } = await buildLegEncoded(sellerRow, buyerRow);
+            return calls;
+          }),
+        );
+
+        const transactions = transactionGroups.flat();
+
+        const proposalParams = {
+          spaceId: BigInt(arg.spaceId),
+          duration: duration && duration > 0 ? duration : getDuration(7),
+          transactions,
+        };
+
+        txHash = await client.writeContract({
+          address: proposalAddress,
+          abi: daoProposalsImplementationAbi,
+          functionName: 'createProposal',
+          args: [proposalParams],
+        });
+      } else {
+        /** Member seller: Party A must fund from `sellerAddress` (personal wallet), not the space executor. */
+        const sellerAccount = arg.sellerAddress as `0x${string}`;
+
+        for (let index = 0; index < sellerRows.length; index++) {
+          const sellerRow = sellerRows[index];
+          const buyerRow = buyerRows[index];
+          if (!sellerRow || !buyerRow) {
+            throw new Error(
+              `Missing seller/buyer row ${index + 1}. Rows must be paired.`,
+            );
+          }
+
+          const sellerTokenDecimals = await withReadTimeout(
+            getTokenDecimals(sellerRow.token),
+            READ_TIMEOUT_MS,
+          );
+          const buyerTokenDecimals = await withReadTimeout(
+            getTokenDecimals(buyerRow.token),
+            READ_TIMEOUT_MS,
+          );
+          const sellerAmount = parseUnits(
+            sellerRow.amount,
+            sellerTokenDecimals,
+          );
+          const buyerAmount = parseUnits(buyerRow.amount, buyerTokenDecimals);
+          const sellerToken = sellerRow.token as `0x${string}`;
+
+          let hash = await client.writeContract({
+            account: sellerAccount,
+            chain: client.chain,
+            address: sellerToken,
+            abi: erc20Abi,
+            functionName: 'approve',
+            args: [escrowAddress, BigInt(0)],
+          });
+          await publicClient.waitForTransactionReceipt({ hash });
+
+          hash = await client.writeContract({
+            account: sellerAccount,
+            chain: client.chain,
+            address: sellerToken,
+            abi: erc20Abi,
+            functionName: 'approve',
+            args: [escrowAddress, sellerAmount],
+          });
+          await publicClient.waitForTransactionReceipt({ hash });
+
+          hash = await client.writeContract({
+            account: sellerAccount,
+            chain: client.chain,
+            address: escrowAddress,
+            abi: escrowCreateAbi,
+            functionName: 'createEscrow',
+            args: [
+              arg.buyerAddress as `0x${string}`,
+              sellerToken,
+              buyerRow.token as `0x${string}`,
+              sellerAmount,
+              buyerAmount,
+              true,
+            ],
+          });
+          const escrowReceipt = await publicClient.waitForTransactionReceipt({
+            hash,
+          });
+          escrowIdsFromMemberFunding.push(
+            ...parseEscrowCreatedIdsFromLogs(escrowReceipt.logs),
+          );
+        }
+
+        const firstSellerToken = sellerRows[0]?.token as `0x${string}`;
+        const dummyTransactions = [
+          {
+            target: firstSellerToken,
+            value: BigInt(0),
+            data: encodeFunctionData({
+              abi: erc20Abi,
+              functionName: 'approve',
+              args: [escrowAddress, BigInt(0)],
+            }),
+          },
+        ];
+
+        const proposalParams = {
+          spaceId: BigInt(arg.spaceId),
+          duration: duration && duration > 0 ? duration : getDuration(7),
+          transactions: dummyTransactions,
+        };
+
+        txHash = await client.writeContract({
+          address: proposalAddress,
+          abi: daoProposalsImplementationAbi,
+          functionName: 'createProposal',
+          args: [proposalParams],
+        });
+      }
 
       const { logs } = await publicClient.waitForTransactionReceipt({
         hash: txHash,
       });
       const proposal = getProposalFromLogs(logs);
-      const escrowIds = parseEscrowCreatedIdsFromLogs(logs);
+      const escrowIds = isSpaceSeller
+        ? parseEscrowCreatedIdsFromLogs(logs)
+        : escrowIdsFromMemberFunding.length > 0
+          ? escrowIdsFromMemberFunding
+          : parseEscrowCreatedIdsFromLogs(logs);
       if (!proposal) {
         throw new Error(
           'Failed to read ProposalCreated from createProposal transaction',

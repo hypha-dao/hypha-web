@@ -35,16 +35,22 @@ export type ValidateExchangeSellerBalancesInput = {
 };
 
 /**
- * Returns whose ERC-20 balance to check for seller legs.
+ * Returns whose ERC-20 balance to check for seller legs (matches on-chain funding).
  *
- * Accepted proposals execute batched txs as the space executor (`msg.sender`),
- * so escrow `approve` / party A funding always use the treasury wallet — for
- * both "member" and "space" seller UX. Prefer executor whenever chain data is available.
+ * - **Member seller:** Party A funds from the **seller's personal wallet** (not treasury).
+ * - **Space seller:** Party A funds from the **space executor (treasury)** when the proposal executes.
  */
 export function resolveSellerBalanceOwner(
   input: ValidateExchangeSellerBalancesInput,
 ): `0x${string}` | null | 'treasury_unavailable' {
   const { sellerRecipientType, sellerAddress, spaceExecutorAddress } = input;
+
+  if (sellerRecipientType === 'member') {
+    if (!sellerAddress || !isEvmAddress(sellerAddress)) {
+      return null;
+    }
+    return sellerAddress;
+  }
 
   if (spaceExecutorAddress && isEvmAddress(spaceExecutorAddress)) {
     return spaceExecutorAddress;
