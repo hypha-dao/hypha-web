@@ -118,6 +118,7 @@
         "sellerWillSend": "El vendedor envía",
         "buyerWillSend": "El comprador enviará",
         "escrowNotice": "Esta propuesta envía los tokens del vendedor a una cuenta de depósito en garantía. El acuerdo solo se finaliza cuando el comprador haya transferido el importe acordado a esa misma cuenta de depósito. Los detalles se proporcionarán automáticamente al comprador.",
+        "escrowAccountAddress": "Dirección de la cuenta de depósito en garantía",
         "escrowFunding": "Financiación de escrow",
         "escrowStatus": "Estado del escrow",
         "escrowPendingBuyerFunding": "Esperando financiación del comprador",

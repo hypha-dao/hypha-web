@@ -991,6 +991,7 @@
         "buyer": "Buyer (Wallet Address)",
         "buyerWillSend": "Buyer will send",
         "escrowNotice": "This proposal sends the seller's tokens to an escrow account. The agreement is only finalised once the buyer has transferred the agreed token amount to that same escrow account. Details will be automatically provided to the buyer.",
+        "escrowAccountAddress": "Escrow account address",
         "escrowFunding": "Escrow Funding",
         "escrowStatus": "Escrow Status",
         "escrowPendingBuyerFunding": "Waiting for buyer funding",

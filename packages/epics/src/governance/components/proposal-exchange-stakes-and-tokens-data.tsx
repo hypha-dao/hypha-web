@@ -1,12 +1,14 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { useChainId } from 'wagmi';
 import { usePersonByWeb3Address } from '../hooks';
 import { Image } from '@hypha-platform/ui';
 import { useTokens, ExtendedToken } from '../../treasury';
 import { CopyIcon } from '@radix-ui/react-icons';
 import { copyToClipboard } from '@hypha-platform/ui-utils';
 import { useDbSpaces } from '../../hooks';
+import { EXCHANGE_ESCROW_CONTRACT_BY_CHAIN } from '@hypha-platform/core/client';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
@@ -61,6 +63,11 @@ export const ProposalExchangeStakesAndTokensData = ({
   buyerLeg,
 }: ProposalExchangeStakesAndTokensDataProps) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const chainId = useChainId();
+  const escrowContractAddress =
+    EXCHANGE_ESCROW_CONTRACT_BY_CHAIN[
+      chainId as keyof typeof EXCHANGE_ESCROW_CONTRACT_BY_CHAIN
+    ];
   const { tokens } = useTokens({ spaceSlug });
   const { spaces: dbSpaces } = useDbSpaces({ parentOnly: false });
   const resolvedSellerAddress = getPreferredAddress(
@@ -240,6 +247,14 @@ export const ProposalExchangeStakesAndTokensData = ({
           {tAgreementFlow('plugins.exchangeStakesAndTokens.buyerWillSend')}
         </span>
         <div className="flex flex-col items-end">{renderLegRows(buyerLeg)}</div>
+      </div>
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-1 text-neutral-11 shrink-0">
+          {tAgreementFlow('plugins.exchangeStakesAndTokens.escrowAccountAddress')}
+        </span>
+        <div className="flex flex-col items-end min-w-0">
+          {renderPartyValue(escrowContractAddress)}
+        </div>
       </div>
     </div>
   );
