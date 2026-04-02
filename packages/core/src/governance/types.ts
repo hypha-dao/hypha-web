@@ -181,9 +181,29 @@ export type TokenUpdateData = {
   referencePrice?: number;
   referenceCurrency?: ReferenceCurrency;
   archiveToken?: boolean;
+  /** Persisted for withdraw/resubmit hydration */
+  enableProposalAutoMinting?: boolean;
+  useTransferWhitelist?: boolean;
+  useReceiveWhitelist?: boolean;
   /** Off-chain copy for proposal details + resubmit; on-chain uses address lists only */
   transferWhitelist?: TransferWhitelistFormValue;
 };
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
+/** Runtime check for token update JSON stored in DB / session */
+export function isTokenUpdateData(data: unknown): data is TokenUpdateData {
+  if (!isRecord(data)) {
+    return false;
+  }
+  const t = data.type;
+  if (t !== undefined && typeof t !== 'string') {
+    return false;
+  }
+  return true;
+}
 
 export type CreateTokenUpdateInput = {
   documentId: number;

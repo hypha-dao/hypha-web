@@ -216,8 +216,9 @@ export const ProposalRedeemTokensData = ({
         {typeof notionalValue === 'number' && Number.isFinite(notionalValue) ? (
           <TokenBackingVaultDetailRow
             label={t('labels.redeemNotional')}
-            value={t('labels.redeemApproxUsd', {
+            value={t('labels.redeemApproxNotional', {
               value: formatCurrencyValue(notionalValue),
+              currency: currencyLabel ?? 'USD',
             })}
           />
         ) : null}

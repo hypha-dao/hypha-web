@@ -13,6 +13,8 @@ import { useFormContext } from 'react-hook-form';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   RESUBMIT_UPDATE_ISSUED_TOKEN_FORM_KEY,
+  UPDATE_ISSUED_TOKEN_RESUBMIT_EVENT,
+  applyUpdateIssuedTokenResubmitPayloadToForm,
   type UpdateIssuedTokenResubmitPayload,
 } from '../../../proposals/update-issued-token-resubmit';
 import {
@@ -79,7 +81,13 @@ export const UpdateIssuedTokenPlugin = ({
   const { lang } = useParams();
   const tTreasury = useTranslations('TreasuryTab');
   const tProposalDetails = useTranslations('ProposalDetails');
-  const { control, getValues, setValue, watch } = useFormContext();
+  const {
+    control,
+    getValues,
+    setValue,
+    watch,
+    formState: { dirtyFields },
+  } = useFormContext();
   const [tokenType, setTokenType] = useState<string>('');
   const [showDecaySettings, setShowDecaySettings] = useState<boolean>(false);
   const [showAdvancedSettings, setShowAdvancedSettings] =
@@ -355,40 +363,64 @@ export const UpdateIssuedTokenPlugin = ({
       selectedToken.referencePrice !== undefined;
     const iconFromDb = selectedToken.iconUrl || '';
 
-    setValue('name', selectedToken.name);
-    setValue('symbol', selectedToken.symbol);
+    const setIfClean = (
+      name: string,
+      value: unknown,
+      opts?: { shouldDirty?: boolean; shouldValidate?: boolean },
+    ) => {
+      if ((dirtyFields as Record<string, unknown>)?.[name]) {
+        return;
+      }
+      setValue(name as never, value as never, {
+        shouldDirty: opts?.shouldDirty ?? false,
+        shouldValidate: opts?.shouldValidate ?? false,
+      });
+    };
+
+    setIfClean('name', selectedToken.name);
+    setIfClean('symbol', selectedToken.symbol);
     const currentIcon = getValues('iconUrl');
     if (tokenAddressChanged || !(currentIcon instanceof File)) {
-      setValue('iconUrl', iconFromDb, { shouldDirty: false });
-      setValue('initialIconUrl', iconFromDb, { shouldDirty: false });
+      if (!(dirtyFields as Record<string, unknown>)?.iconUrl) {
+        setValue('iconUrl', iconFromDb, { shouldDirty: false });
+        setValue('initialIconUrl', iconFromDb, { shouldDirty: false });
+      }
     }
-    setValue('type', selectedToken.type);
+    setIfClean('type', selectedToken.type);
     const max = normalizeMaxSupplyHuman(selectedToken.maxSupply ?? 0);
-    setValue('enableLimitedSupply', max > 0, { shouldDirty: false });
-    setValue('maxSupply', max, { shouldDirty: false });
-    if (max <= 0) {
+    setIfClean('enableLimitedSupply', max > 0, { shouldDirty: false });
+    setIfClean('maxSupply', max, { shouldDirty: false });
+    if (max <= 0 && !(dirtyFields as Record<string, unknown>)?.maxSupplyType) {
       setValue('maxSupplyType', undefined, {
         shouldDirty: false,
         shouldValidate: false,
       });
     }
-    setValue('transferable', selectedToken.transferable);
-    setValue('isVotingToken', selectedToken.isVotingToken);
-    setValue('decaySettings', {
+    setIfClean('transferable', selectedToken.transferable);
+    setIfClean('isVotingToken', selectedToken.isVotingToken);
+    setIfClean('decaySettings', {
       decayInterval: selectedToken.decayInterval || 2592000,
       decayPercentage: selectedToken.decayPercentage || 1,
     });
-    setValue('archiveToken', selectedToken.archived);
-    setValue('referenceCurrency', selectedToken.referenceCurrency);
-    setValue('tokenPrice', selectedToken.referencePrice);
-    if (shouldShowAdvancedFromDb) {
-      setValue('enableTokenPrice', true);
-    } else {
-      setValue('enableTokenPrice', false);
+    setIfClean('archiveToken', selectedToken.archived);
+    setIfClean('referenceCurrency', selectedToken.referenceCurrency);
+    setIfClean('tokenPrice', selectedToken.referencePrice);
+    if (!(dirtyFields as Record<string, unknown>)?.enableTokenPrice) {
+      if (shouldShowAdvancedFromDb) {
+        setValue('enableTokenPrice', true, { shouldDirty: false });
+      } else {
+        setValue('enableTokenPrice', false, { shouldDirty: false });
+      }
     }
     setTokenType(selectedToken.type);
     setShowAdvancedSettings((prev) => prev || shouldShowAdvancedFromDb);
-  }, [selectedTokenAddress, selectedTokenFingerprint, setValue, getValues]);
+  }, [
+    selectedTokenAddress,
+    selectedTokenFingerprint,
+    setValue,
+    getValues,
+    dirtyFields,
+  ]);
 
   useEffect(() => {
     if (isLoadingOnChainData || !onChainData) {
@@ -401,58 +433,81 @@ export const UpdateIssuedTokenPlugin = ({
     }
     lastOnChainFingerprintRef.current = fp;
 
+    const df = dirtyFields as Record<string, unknown>;
+    const isDirty = (k: string) => Boolean(df?.[k]);
+
     let enableAdvancedTransferControls = false;
-    if (onChainData.name !== undefined) {
-      setValue('name', onChainData.name);
+    if (onChainData.name !== undefined && !isDirty('name')) {
+      setValue('name', onChainData.name, { shouldDirty: false });
     }
-    if (onChainData.symbol !== undefined) {
-      setValue('symbol', onChainData.symbol);
+    if (onChainData.symbol !== undefined && !isDirty('symbol')) {
+      setValue('symbol', onChainData.symbol, { shouldDirty: false });
     }
     let normalizedMaxFromChain: number | undefined;
     if (onChainData.maxSupply !== undefined) {
       const max = normalizeMaxSupplyHuman(onChainData.maxSupply);
       normalizedMaxFromChain = max;
-      setValue('enableLimitedSupply', max > 0, { shouldDirty: false });
-      setValue('maxSupply', max, { shouldDirty: false });
+      if (!isDirty('enableLimitedSupply')) {
+        setValue('enableLimitedSupply', max > 0, { shouldDirty: false });
+      }
+      if (!isDirty('maxSupply')) {
+        setValue('maxSupply', max, { shouldDirty: false });
+      }
     }
     const chainType = maxSupplyTypeFromFixedFlag(onChainData.fixedMaxSupply);
     const maxForType =
       normalizedMaxFromChain ??
       normalizeMaxSupplyHuman(Number(getValues('maxSupply')) || 0);
-    if (chainType && maxForType > 0) {
+    if (chainType && maxForType > 0 && !isDirty('maxSupplyType')) {
       setValue('maxSupplyType', chainType, {
         shouldDirty: false,
         shouldValidate: false,
       });
-    } else if (onChainData.fixedMaxSupply !== undefined && maxForType <= 0) {
+    } else if (
+      onChainData.fixedMaxSupply !== undefined &&
+      maxForType <= 0 &&
+      !isDirty('maxSupplyType')
+    ) {
       setValue('maxSupplyType', undefined, {
         shouldDirty: false,
         shouldValidate: false,
       });
     }
-    if (onChainData.transferable !== undefined) {
-      setValue('transferable', onChainData.transferable);
+    if (onChainData.transferable !== undefined && !isDirty('transferable')) {
+      setValue('transferable', onChainData.transferable, {
+        shouldDirty: false,
+      });
     }
-    if (onChainData.autoMinting !== undefined) {
-      setValue('enableProposalAutoMinting', onChainData.autoMinting);
+    if (
+      onChainData.autoMinting !== undefined &&
+      !isDirty('enableProposalAutoMinting')
+    ) {
+      setValue('enableProposalAutoMinting', onChainData.autoMinting, {
+        shouldDirty: false,
+      });
     }
     if (
       onChainData.tokenPrice !== undefined &&
       onChainData.priceCurrencyFeed !== undefined
     ) {
-      setValue('enableTokenPrice', true);
+      if (!isDirty('enableTokenPrice')) {
+        setValue('enableTokenPrice', true, { shouldDirty: false });
+      }
       enableAdvancedTransferControls = true;
-    } else {
-      setValue('enableTokenPrice', false);
+    } else if (!isDirty('enableTokenPrice')) {
+      setValue('enableTokenPrice', false, { shouldDirty: false });
     }
-    if (onChainData.tokenPrice !== undefined) {
-      setValue('tokenPrice', onChainData.tokenPrice);
+    if (onChainData.tokenPrice !== undefined && !isDirty('tokenPrice')) {
+      setValue('tokenPrice', onChainData.tokenPrice, { shouldDirty: false });
     }
-    if (onChainData.priceCurrencyFeed !== undefined) {
+    if (
+      onChainData.priceCurrencyFeed !== undefined &&
+      !isDirty('referenceCurrency')
+    ) {
       const referenceCurrency = getPriceCurrencyCode(
         onChainData.priceCurrencyFeed,
       );
-      setValue('referenceCurrency', referenceCurrency);
+      setValue('referenceCurrency', referenceCurrency, { shouldDirty: false });
     }
     const currentDecaySettings = getValues('decaySettings') || {};
     const newDecaySettings = { ...currentDecaySettings };
@@ -463,15 +518,17 @@ export const UpdateIssuedTokenPlugin = ({
       newDecaySettings.decayInterval = onChainData.decayInterval;
     }
     if (
-      onChainData.decayPercentage !== undefined ||
-      onChainData.decayInterval !== undefined
+      (onChainData.decayPercentage !== undefined ||
+        onChainData.decayInterval !== undefined) &&
+      !isDirty('decaySettings')
     ) {
-      setValue('decaySettings', newDecaySettings);
+      setValue('decaySettings', newDecaySettings, { shouldDirty: false });
       enableAdvancedTransferControls = true;
     }
     if (
-      onChainData.useTransferWhitelist !== undefined ||
-      onChainData.useReceiveWhitelist !== undefined
+      (onChainData.useTransferWhitelist !== undefined ||
+        onChainData.useReceiveWhitelist !== undefined) &&
+      !isDirty('enableAdvancedTransferControls')
     ) {
       const advanced =
         onChainData.useTransferWhitelist || onChainData.useReceiveWhitelist;
@@ -483,11 +540,13 @@ export const UpdateIssuedTokenPlugin = ({
         { shouldDirty: false, shouldValidate: false },
       );
     }
-    if (onChainData.archiveToken !== undefined) {
-      setValue('archiveToken', onChainData.archiveToken);
+    if (onChainData.archiveToken !== undefined && !isDirty('archiveToken')) {
+      setValue('archiveToken', onChainData.archiveToken, {
+        shouldDirty: false,
+      });
     }
     setShowAdvancedSettings((prev) => prev || enableAdvancedTransferControls);
-  }, [isLoadingOnChainData, onChainData, setValue, getValues]);
+  }, [isLoadingOnChainData, onChainData, setValue, getValues, dirtyFields]);
 
   const resubmitOverlayAppliedRef = useRef(false);
   const resubmitHydratedRef = useRef(false);
@@ -498,6 +557,40 @@ export const UpdateIssuedTokenPlugin = ({
     resubmitHydratedRef.current = false;
     baselineWhitelistAppliedForTokenRef.current = null;
   }, [selectedTokenAddress]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const handler = (ev: Event) => {
+      const detail = (ev as CustomEvent<UpdateIssuedTokenResubmitPayload>)
+        .detail;
+      if (!detail?.tokenAddress) {
+        return;
+      }
+      const addr = getValues('tokenAddress') as string | undefined;
+      if (!addr || detail.tokenAddress !== addr) {
+        return;
+      }
+      applyUpdateIssuedTokenResubmitPayloadToForm(detail, {
+        setValue,
+        setTokenType,
+        setShowAdvancedSettings,
+        setShowDecaySettings,
+      });
+      resubmitOverlayAppliedRef.current = true;
+      resubmitHydratedRef.current = true;
+    };
+    window.addEventListener(UPDATE_ISSUED_TOKEN_RESUBMIT_EVENT, handler);
+    return () =>
+      window.removeEventListener(UPDATE_ISSUED_TOKEN_RESUBMIT_EVENT, handler);
+  }, [
+    getValues,
+    setValue,
+    setTokenType,
+    setShowAdvancedSettings,
+    setShowDecaySettings,
+  ]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -526,81 +619,12 @@ export const UpdateIssuedTokenPlugin = ({
       return;
     }
 
-    const patch = (
-      name: string,
-      value: unknown,
-      options?: { shouldDirty?: boolean; shouldValidate?: boolean },
-    ) =>
-      setValue(name as never, value as never, {
-        shouldDirty: options?.shouldDirty ?? true,
-        shouldValidate: options?.shouldValidate ?? false,
-        ...options,
-      });
-
-    patch('name', payload.name);
-    patch('symbol', payload.symbol);
-    if (payload.type) {
-      patch('type', payload.type);
-      setTokenType(payload.type);
-    }
-    if (payload.iconUrl !== undefined) {
-      patch('iconUrl', payload.iconUrl);
-      setValue('initialIconUrl', payload.iconUrl, {
-        shouldDirty: false,
-        shouldValidate: false,
-      });
-    }
-    patch('enableLimitedSupply', payload.enableLimitedSupply, {
-      shouldDirty: false,
+    applyUpdateIssuedTokenResubmitPayloadToForm(payload, {
+      setValue,
+      setTokenType,
+      setShowAdvancedSettings,
+      setShowDecaySettings,
     });
-    patch('maxSupply', normalizeMaxSupplyHuman(payload.maxSupply ?? 0), {
-      shouldDirty: false,
-    });
-    if (payload.maxSupplyType) {
-      patch('maxSupplyType', payload.maxSupplyType, { shouldDirty: false });
-    }
-    if (payload.transferable !== undefined) {
-      patch('transferable', payload.transferable);
-    }
-    patch('isVotingToken', payload.isVotingToken);
-    patch('decaySettings', payload.decaySettings);
-    patch('enableProposalAutoMinting', payload.enableProposalAutoMinting);
-    patch('enableTokenPrice', payload.enableTokenPrice);
-    if (payload.enableTokenPrice) {
-      patch('tokenPrice', payload.tokenPrice);
-      patch('referenceCurrency', payload.referenceCurrency);
-    } else {
-      patch('tokenPrice', undefined);
-      patch('referenceCurrency', undefined);
-    }
-    patch(
-      'enableAdvancedTransferControls',
-      payload.enableAdvancedTransferControls,
-    );
-    if (payload.transferWhitelist !== undefined) {
-      patch('transferWhitelist', payload.transferWhitelist, {
-        shouldDirty: false,
-      });
-    }
-    patch('archiveToken', payload.archiveToken);
-
-    const showAdv =
-      payload.enableLimitedSupply ||
-      payload.enableTokenPrice ||
-      payload.enableAdvancedTransferControls ||
-      !payload.enableProposalAutoMinting ||
-      (payload.type === 'voice' &&
-        (payload.decaySettings.decayInterval !== 2592000 ||
-          payload.decaySettings.decayPercentage !== 1));
-    setShowAdvancedSettings(showAdv);
-
-    if (
-      payload.type === 'voice' &&
-      (payload.decaySettings.decayInterval !== 2592000 ||
-        payload.decaySettings.decayPercentage !== 1)
-    ) {
-      setShowDecaySettings(true);
-    }
 
     resubmitOverlayAppliedRef.current = true;
     resubmitHydratedRef.current = true;

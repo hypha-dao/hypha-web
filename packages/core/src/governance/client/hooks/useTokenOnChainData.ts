@@ -3,7 +3,7 @@
 import useSWR from 'swr';
 import { publicClient } from '../../../client';
 import { decayingSpaceTokenAbi } from '../../../generated';
-import { UpdateIssuedTokenInput } from './useUpdateIssuedTokenMutations.web3.rpc';
+import type { UpdateIssuedTokenInput } from './build-update-issued-token-tx';
 
 const DECIMALS = 18n;
 /** On-chain `tokenPrice` is stored in micro-units (1e6); UI uses human decimals */

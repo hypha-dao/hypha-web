@@ -1453,6 +1453,7 @@
       "redeemAmount": "Redemption amount",
       "redeemNotional": "Reference value",
       "redeemApproxUsd": "≈ {value} USD",
+      "redeemApproxNotional": "≈ {value} {currency}",
       "redeemCollateralUnitPrice": "{price} {currency} each",
       "spaceToken": "Token de l’espace",
       "currentBackingCollaterals": "Garanties actuelles",

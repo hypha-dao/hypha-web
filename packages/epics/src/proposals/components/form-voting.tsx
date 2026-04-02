@@ -19,6 +19,7 @@ import {
 import { getTokenUpdateByDocumentIdAction } from '@hypha-platform/core/governance/server/actions';
 import {
   buildUpdateIssuedTokenResubmitPayload,
+  RESUBMIT_UPDATE_ISSUED_TOKEN_EMBEDDED_FIELD,
   RESUBMIT_UPDATE_ISSUED_TOKEN_FORM_KEY,
   type UpdateTokenProposalSnapshot,
 } from '../update-issued-token-resubmit';
@@ -242,6 +243,35 @@ export const FormVoting = ({
         spaceTokenPurchaseData?.tokensForSale !== undefined
           ? Number(formatUnits(spaceTokenPurchaseData.tokensForSale, 18))
           : undefined;
+      let updateIssuedTokenResubmitPayload: ReturnType<
+        typeof buildUpdateIssuedTokenResubmitPayload
+      > = null;
+
+      if (label === 'Update Token') {
+        let dbRow: Awaited<
+          ReturnType<typeof getTokenUpdateByDocumentIdAction>
+        > | null = null;
+        if (documentId != null && jwt) {
+          try {
+            dbRow = await getTokenUpdateByDocumentIdAction(documentId, {
+              authToken: jwt,
+            });
+          } catch {
+            dbRow = null;
+          }
+        }
+        updateIssuedTokenResubmitPayload =
+          buildUpdateIssuedTokenResubmitPayload({
+            dbRow: dbRow
+              ? {
+                  tokenAddress: dbRow.tokenAddress,
+                  data: dbRow.data,
+                }
+              : null,
+            snapshot: updateTokenProposalSnapshot ?? null,
+          });
+      }
+
       const proposalData = {
         title: documentTitle || '',
         description: documentDescription || '',
@@ -266,6 +296,12 @@ export const FormVoting = ({
                 : undefined,
             }
           : {}),
+        ...(label === 'Update Token' && updateIssuedTokenResubmitPayload
+          ? {
+              [RESUBMIT_UPDATE_ISSUED_TOKEN_EMBEDDED_FIELD]:
+                updateIssuedTokenResubmitPayload,
+            }
+          : {}),
       };
 
       sessionStorage.setItem(
@@ -274,31 +310,10 @@ export const FormVoting = ({
       );
 
       if (label === 'Update Token') {
-        let dbRow: Awaited<
-          ReturnType<typeof getTokenUpdateByDocumentIdAction>
-        > | null = null;
-        if (documentId != null && jwt) {
-          try {
-            dbRow = await getTokenUpdateByDocumentIdAction(documentId, {
-              authToken: jwt,
-            });
-          } catch {
-            dbRow = null;
-          }
-        }
-        const updatePayload = buildUpdateIssuedTokenResubmitPayload({
-          dbRow: dbRow
-            ? {
-                tokenAddress: dbRow.tokenAddress,
-                data: dbRow.data,
-              }
-            : null,
-          snapshot: updateTokenProposalSnapshot ?? null,
-        });
-        if (updatePayload) {
+        if (updateIssuedTokenResubmitPayload) {
           sessionStorage.setItem(
             RESUBMIT_UPDATE_ISSUED_TOKEN_FORM_KEY,
-            JSON.stringify(updatePayload),
+            JSON.stringify(updateIssuedTokenResubmitPayload),
           );
         } else {
           sessionStorage.removeItem(RESUBMIT_UPDATE_ISSUED_TOKEN_FORM_KEY);

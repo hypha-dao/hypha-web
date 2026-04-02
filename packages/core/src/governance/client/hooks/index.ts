@@ -16,6 +16,7 @@ export * from './useProposalDetails.web3.rpc';
 export * from './useProposalVoters';
 export * from './useIssueNewTokenOrchestrator';
 export * from './useUpdateIssuedTokenOrchestrator';
+export * from './build-update-issued-token-tx';
 export * from './useUpdateIssuedTokenMutations.web3.rpc';
 export * from './useProposeAContributionMutations.web3.rsc';
 export * from './useVote';

@@ -1,8 +1,10 @@
 import {
   getPriceCurrencyCode,
+  isTokenUpdateData,
   useJwt,
   useUpdateTokenByAddress,
   type TokenType,
+  type TransferWhitelistFormValue,
 } from '@hypha-platform/core/client';
 import { Separator } from '@hypha-platform/ui';
 import {
@@ -13,7 +15,6 @@ import React from 'react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { normalizeMaxSupplyHuman } from '../../treasury/utils/normalize-max-supply-human';
-import type { TransferWhitelistFormValue } from '@hypha-platform/core/client';
 import { WhitelistAddressItem } from './proposal-token-items';
 
 export interface ProposalUpdateTokenProps {
@@ -72,7 +73,10 @@ export const ProposalUpdateToken = ({
       address,
       authToken: authToken ?? undefined,
     });
-  const pendingData = tokenUpdate?.data as TokenUpdateDataInterface | undefined;
+  const pendingData: TokenUpdateDataInterface | undefined =
+    tokenUpdate?.data && isTokenUpdateData(tokenUpdate.data)
+      ? (tokenUpdate.data as TokenUpdateDataInterface)
+      : undefined;
   const tokenIcon = React.useMemo(() => {
     return isTokenUpdateLoading ? undefined : pendingData?.iconUrl;
   }, [isTokenUpdateLoading, pendingData?.iconUrl]);

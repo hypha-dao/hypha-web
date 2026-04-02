@@ -20,8 +20,8 @@ import { getPriceCurrencyFeed, type TokenType } from '../../../common';
 import {
   type UpdateIssuedTokenInput,
   padUpdateIssuedTokenInputIfNoTxs,
-  useUpdateIssuedTokenMutationsWeb3Rpc,
-} from './useUpdateIssuedTokenMutations.web3.rpc';
+} from './build-update-issued-token-tx';
+import { useUpdateIssuedTokenMutationsWeb3Rpc } from './useUpdateIssuedTokenMutations.web3.rpc';
 import {
   diffWhitelistForBatchSet,
   normalizeWhitelistAddresses,
@@ -405,6 +405,7 @@ export const useUpdateIssuedTokenOrchestrator = ({
       if (!createdAgreement?.id) {
         throw new Error('Created agreement missing ID');
       }
+      let createdDocumentId: number | undefined;
       const effectiveMaxSupply =
         arg.enableLimitedSupply === true ? arg.maxSupply ?? 0 : 0;
       const tokenUpdateData: TokenUpdateData = {
@@ -425,6 +426,15 @@ export const useUpdateIssuedTokenOrchestrator = ({
         referencePrice: arg.referencePrice ?? arg.tokenPrice,
         referenceCurrency: arg.referenceCurrency,
         archiveToken: arg.archiveToken,
+        enableProposalAutoMinting: arg.enableProposalAutoMinting,
+        ...(arg.enableAdvancedTransferControls === true &&
+        arg.transferable === true
+          ? {
+              useTransferWhitelist:
+                (arg.transferWhitelist?.from?.length ?? 0) > 0,
+              useReceiveWhitelist: (arg.transferWhitelist?.to?.length ?? 0) > 0,
+            }
+          : {}),
         ...(arg.transferWhitelist !== undefined
           ? { transferWhitelist: arg.transferWhitelist }
           : {}),
@@ -434,6 +444,7 @@ export const useUpdateIssuedTokenOrchestrator = ({
         tokenAddress: arg.tokenAddress!,
         data: tokenUpdateData,
       });
+      createdDocumentId = createdAgreement.id;
       completeTask('UPDATE_TOKEN');
 
       try {
@@ -462,6 +473,13 @@ export const useUpdateIssuedTokenOrchestrator = ({
           completeTask('UPLOAD_FILES');
         }
       } catch (err) {
+        if (createdDocumentId !== undefined) {
+          try {
+            await web2TokenMutations.deleteTokenUpdate(createdDocumentId);
+          } catch {
+            // best-effort cleanup
+          }
+        }
         if (web2Slug) {
           await web2.deleteAgreementBySlug({ slug: web2Slug });
         }
@@ -503,7 +521,7 @@ export const useUpdateIssuedTokenOrchestrator = ({
     },
   );
 
-  const { errorCreateAgreementMutation } = web2;
+  const { errorCreateAgreementMutation, isCreatingAgreement } = web2;
   const { errorUpdateIssuedToken, errorWaitTokenFromTx } = web3;
   const {
     errorUpdateTokenMutation,
@@ -534,6 +552,11 @@ export const useUpdateIssuedTokenOrchestrator = ({
     ],
   );
 
+  const hasBlockingError = errors.length > 0;
+  const anyTaskFailed = Object.values(taskState).some(
+    (t) => t.status === TaskStatus.ERROR,
+  );
+
   const reset = useCallback(() => {
     resetTasks();
     web2.resetCreateAgreementMutation();
@@ -555,8 +578,10 @@ export const useUpdateIssuedTokenOrchestrator = ({
     taskState,
     currentAction,
     progress,
-    isPending: progress > 0 && progress < 100,
-    isError: errors.length > 0,
+    isPending:
+      (progress > 0 && progress < 100 && !hasBlockingError && !anyTaskFailed) ||
+      (isCreatingAgreement && !hasBlockingError && !anyTaskFailed),
+    isError: hasBlockingError || anyTaskFailed,
     errors,
   };
 };

@@ -2,7 +2,11 @@
 
 import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { RESUBMIT_UPDATE_ISSUED_TOKEN_FORM_KEY } from '../proposals/update-issued-token-resubmit';
+import {
+  RESUBMIT_UPDATE_ISSUED_TOKEN_EMBEDDED_FIELD,
+  UPDATE_ISSUED_TOKEN_RESUBMIT_EVENT,
+  type UpdateIssuedTokenResubmitPayload,
+} from '../proposals/update-issued-token-resubmit';
 
 export const useResubmitProposalData = <
   T extends {
@@ -61,6 +65,7 @@ export const useResubmitProposalData = <
             conversions: { asset: string; percentage: string }[];
           };
           [key: string]: any;
+          [RESUBMIT_UPDATE_ISSUED_TOKEN_EMBEDDED_FIELD]?: UpdateIssuedTokenResubmitPayload;
         };
 
         // Re-apply whenever this data is present (including `applied: true`), so
@@ -77,20 +82,12 @@ export const useResubmitProposalData = <
           );
         }
 
-        let resubmitTokenAddress: string | undefined;
-        try {
-          const tokenFormRaw = sessionStorage.getItem(
-            RESUBMIT_UPDATE_ISSUED_TOKEN_FORM_KEY,
-          );
-          if (tokenFormRaw) {
-            const tf = JSON.parse(tokenFormRaw) as { tokenAddress?: string };
-            if (tf?.tokenAddress) {
-              resubmitTokenAddress = tf.tokenAddress;
-            }
-          }
-        } catch {
-          // ignore invalid token resubmit payload
-        }
+        const embeddedUpdateToken =
+          parsed[RESUBMIT_UPDATE_ISSUED_TOKEN_EMBEDDED_FIELD];
+        const resubmitTokenAddress =
+          embeddedUpdateToken?.tokenAddress !== undefined
+            ? embeddedUpdateToken.tokenAddress
+            : undefined;
 
         form.reset(
           {
@@ -262,6 +259,14 @@ export const useResubmitProposalData = <
             applied: true,
           }),
         );
+
+        if (embeddedUpdateToken && typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent(UPDATE_ISSUED_TOKEN_RESUBMIT_EVENT, {
+              detail: embeddedUpdateToken,
+            }),
+          );
+        }
 
         setResubmitKey((prev) => prev + 1);
       } catch (error) {

@@ -1,12 +1,121 @@
-import type {
-  TokenUpdateData,
-  TransferWhitelistFormValue,
+import {
+  getPriceCurrencyCode,
+  type TokenUpdateData,
+  type TransferWhitelistFormValue,
+  isTokenUpdateData,
 } from '@hypha-platform/core/client';
-import { getPriceCurrencyCode } from '@hypha-platform/core/client';
+import type { Dispatch, SetStateAction } from 'react';
+import type { UseFormSetValue, FieldValues } from 'react-hook-form';
+import { normalizeMaxSupplyHuman } from '../treasury/utils/normalize-max-supply-human';
 
 /** sessionStorage key for resubmit payload (must match form-voting + plugin). */
 export const RESUBMIT_UPDATE_ISSUED_TOKEN_FORM_KEY =
   'resubmitUpdateIssuedTokenForm';
+
+/** Field on `resubmitProposalData` JSON — avoids a second sessionStorage key race with the plugin. */
+export const RESUBMIT_UPDATE_ISSUED_TOKEN_EMBEDDED_FIELD =
+  'updateIssuedTokenResubmitPayload' as const;
+
+export const UPDATE_ISSUED_TOKEN_RESUBMIT_EVENT =
+  'hypha:apply-update-token-resubmit' as const;
+
+type ApplyUpdateIssuedTokenResubmitCtx<T extends FieldValues> = {
+  setValue: UseFormSetValue<T>;
+  setTokenType: (type: string) => void;
+  setShowAdvancedSettings: Dispatch<SetStateAction<boolean>>;
+  setShowDecaySettings: Dispatch<SetStateAction<boolean>>;
+};
+
+/**
+ * Applies withdraw/resubmit payload to the update-issued-token form (shared by plugin + resubmit hook).
+ */
+export function applyUpdateIssuedTokenResubmitPayloadToForm<
+  T extends FieldValues,
+>(
+  payload: UpdateIssuedTokenResubmitPayload,
+  {
+    setValue,
+    setTokenType,
+    setShowAdvancedSettings,
+    setShowDecaySettings,
+  }: ApplyUpdateIssuedTokenResubmitCtx<T>,
+): void {
+  const patch = (
+    name: string,
+    value: unknown,
+    options?: { shouldDirty?: boolean; shouldValidate?: boolean },
+  ) =>
+    setValue(name as never, value as never, {
+      shouldDirty: options?.shouldDirty ?? true,
+      shouldValidate: options?.shouldValidate ?? false,
+      ...options,
+    });
+
+  patch('name', payload.name);
+  patch('symbol', payload.symbol);
+  if (payload.type) {
+    patch('type', payload.type);
+    setTokenType(payload.type);
+  }
+  if (payload.iconUrl !== undefined) {
+    patch('iconUrl', payload.iconUrl);
+    setValue('initialIconUrl' as never, payload.iconUrl as never, {
+      shouldDirty: false,
+      shouldValidate: false,
+    });
+  }
+  patch('enableLimitedSupply', payload.enableLimitedSupply, {
+    shouldDirty: false,
+  });
+  patch('maxSupply', normalizeMaxSupplyHuman(payload.maxSupply ?? 0), {
+    shouldDirty: false,
+  });
+  if (payload.maxSupplyType) {
+    patch('maxSupplyType', payload.maxSupplyType, { shouldDirty: false });
+  }
+  if (payload.transferable !== undefined) {
+    patch('transferable', payload.transferable);
+  }
+  patch('isVotingToken', payload.isVotingToken);
+  patch('decaySettings', payload.decaySettings);
+  patch('enableProposalAutoMinting', payload.enableProposalAutoMinting);
+  patch('enableTokenPrice', payload.enableTokenPrice);
+  if (payload.enableTokenPrice) {
+    patch('tokenPrice', payload.tokenPrice);
+    patch('referenceCurrency', payload.referenceCurrency);
+  } else {
+    patch('tokenPrice', undefined);
+    patch('referenceCurrency', undefined);
+  }
+  patch(
+    'enableAdvancedTransferControls',
+    payload.enableAdvancedTransferControls,
+  );
+  if (payload.transferWhitelist !== undefined) {
+    patch('transferWhitelist', payload.transferWhitelist, {
+      shouldDirty: false,
+    });
+  }
+  patch('archiveToken', payload.archiveToken);
+
+  const showAdv =
+    payload.enableLimitedSupply ||
+    payload.enableTokenPrice ||
+    payload.enableAdvancedTransferControls ||
+    !payload.enableProposalAutoMinting ||
+    (payload.type === 'voice' &&
+      (payload.decaySettings.decayInterval !== 2592000 ||
+        payload.decaySettings.decayPercentage !== 1));
+  setShowAdvancedSettings(showAdv);
+
+  if (
+    payload.type === 'voice' &&
+    (payload.decaySettings.decayInterval !== 2592000 ||
+      payload.decaySettings.decayPercentage !== 1)
+  ) {
+    setShowDecaySettings(true);
+  }
+}
 
 export type UpdateTokenProposalSnapshot = {
   address?: `0x${string}`;
@@ -73,8 +182,8 @@ export function buildUpdateIssuedTokenResubmitPayload({
   dbRow: TokenUpdateDbRow | null;
   snapshot?: UpdateTokenProposalSnapshot | null;
 }): UpdateIssuedTokenResubmitPayload | null {
-  if (dbRow) {
-    const data = dbRow.data as TokenUpdateData;
+  if (dbRow && isTokenUpdateData(dbRow.data)) {
+    const data = dbRow.data;
     const max = data.maxSupply ?? 0;
     const fromDbType = data.maxSupplyTypeValue;
     const fromSnapshot =
@@ -106,13 +215,16 @@ export function buildUpdateIssuedTokenResubmitPayload({
         decayInterval: data.decayInterval ?? 2592000,
         decayPercentage: data.decayPercentage ?? 1,
       },
-      enableProposalAutoMinting: snapshot?.autoMinting ?? true,
+      enableProposalAutoMinting:
+        data.enableProposalAutoMinting ?? snapshot?.autoMinting ?? true,
       enableTokenPrice: !!(data.referencePrice && data.referenceCurrency),
       tokenPrice: data.referencePrice,
       referenceCurrency: data.referenceCurrency,
       enableAdvancedTransferControls: !!(
         data.transferWhitelist?.from?.length ||
         data.transferWhitelist?.to?.length ||
+        data.useTransferWhitelist ||
+        data.useReceiveWhitelist ||
         snapshot?.useTransferWhitelist ||
         snapshot?.useReceiveWhitelist
       ),
@@ -145,7 +257,7 @@ export function buildUpdateIssuedTokenResubmitPayload({
       : undefined;
 
   return {
-    tokenAddress: snapshot.address,
+    tokenAddress: snapshot.address as string,
     name: snapshot.name ?? '',
     symbol: snapshot.symbol ?? '',
     maxSupply: max,
