@@ -128,7 +128,13 @@
         "escrowPendingBuyerFunding": "Esperando financiación del comprador",
         "escrowCompleted": "Completado",
         "escrowCancelled": "Cancelado",
-        "approveAndFundPrompt": "El comprador debe aprobar el token y llamar a receiveFunds({escrowId}) para completar el intercambio."
+        "approveAndFundPrompt": "El comprador debe aprobar el token y llamar a receiveFunds({escrowId}) para completar el intercambio.",
+        "memberEscrowPendingVote": "Los tokens del vendedor se envían al depósito en garantía solo después de que se acepte esta propuesta. Cuando pase la votación, el vendedor podrá financiar el depósito desde su cartera.",
+        "memberEscrowFundPrompt": "Esta propuesta ha sido aceptada. Como vendedor, envíe sus tokens al contrato de depósito en garantía para abrir el intercambio.",
+        "memberEscrowFundCta": "Enviar tokens al depósito",
+        "memberEscrowFunding": "Enviando…",
+        "memberEscrowFunded": "Depósito #{escrowId} financiado. El comprador puede completar su parte cuando esté listo.",
+        "connectSellerWallet": "Conecte la cartera del vendedor para financiar el depósito."
       },
       "tokenBackingVault": {
         "title": "Bóveda de respaldo de token",

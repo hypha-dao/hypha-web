@@ -115,12 +115,15 @@ export const CreateExchangeStakesAndTokensForm = ({
     }
 
     try {
-      await validateExchangeSellerLegBalances({
-        sellerRecipientType: data.sellerRecipientType,
-        sellerAddress: data.sellerAddress,
-        sellerLeg: data.sellerLeg,
-        spaceExecutorAddress: data.spaceExecutorAddress || undefined,
-      });
+      /** Member seller funds escrow only after the proposal passes; skip balance check at submit. */
+      if (data.sellerRecipientType !== 'member') {
+        await validateExchangeSellerLegBalances({
+          sellerRecipientType: data.sellerRecipientType,
+          sellerAddress: data.sellerAddress,
+          sellerLeg: data.sellerLeg,
+          spaceExecutorAddress: data.spaceExecutorAddress || undefined,
+        });
+      }
     } catch (e) {
       const err = e as Error & { legIndex?: number };
       if (err.message === EXCHANGE_SELLER_BALANCE_EXCEEDED) {
@@ -166,6 +169,9 @@ export const CreateExchangeStakesAndTokensForm = ({
 
     const exchangeDetailsSection = [
       EXCHANGE_DETAILS_START,
+      ...(data.sellerRecipientType === 'member'
+        ? ['<!-- exchange-funding:deferred -->', '']
+        : []),
       `### ${tAgreementFlow('labels.exchange')}`,
       '',
       `**${tAgreementFlow('plugins.exchangeStakesAndTokens.seller')}:** \`${

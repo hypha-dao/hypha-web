@@ -1381,7 +1381,13 @@
         "escrowPendingBuyerFunding": "Warten auf Käuferfinanzierung",
         "escrowCompleted": "Abgeschlossen",
         "escrowCancelled": "Abgebrochen",
-        "approveAndFundPrompt": "Käufer sollte den Token freigeben und receiveFunds({escrowId}) aufrufen, um den Tausch abzuschließen."
+        "approveAndFundPrompt": "Käufer sollte den Token freigeben und receiveFunds({escrowId}) aufrufen, um den Tausch abzuschließen.",
+        "memberEscrowPendingVote": "Verkäufer-Tokens gehen erst nach Annahme dieses Vorschlags ins Escrow. Nach erfolgreicher Abstimmung kann der Verkäufer das Escrow von seiner Wallet aus finanzieren.",
+        "memberEscrowFundPrompt": "Dieser Vorschlag wurde angenommen. Als Verkäufer senden Sie Ihre Tokens an den Escrow-Vertrag, um den Tausch zu eröffnen.",
+        "memberEscrowFundCta": "Tokens ans Escrow senden",
+        "memberEscrowFunding": "Wird gesendet…",
+        "memberEscrowFunded": "Escrow #{escrowId} ist finanziert. Der Käufer kann seine Seite abschließen, wenn er bereit ist.",
+        "connectSellerWallet": "Verkäufer-Wallet verbinden, um das Escrow zu finanzieren."
       },
       "paymentSchedule": {
         "label": "Zahlungsplan",

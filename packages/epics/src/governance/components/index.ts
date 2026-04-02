@@ -20,6 +20,7 @@ export * from './full-voter-list';
 export * from './buy-hypha-tokens-form';
 export * from './proposal-buy-hypha-tokens-data';
 export * from './proposal-exchange-stakes-and-tokens-data';
+export * from './member-exchange-escrow-funding';
 export * from './activate-spaces-form-space';
 export * from './space-to-space-membership-form';
 export * from './proposal-delegates-data';

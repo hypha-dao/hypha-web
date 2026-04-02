@@ -1001,7 +1001,13 @@
         "escrowPendingBuyerFunding": "Waiting for buyer funding",
         "escrowCompleted": "Completed",
         "escrowCancelled": "Cancelled",
-        "approveAndFundPrompt": "Buyer should approve token and call receiveFunds({escrowId}) to complete the exchange."
+        "approveAndFundPrompt": "Buyer should approve token and call receiveFunds({escrowId}) to complete the exchange.",
+        "memberEscrowPendingVote": "Seller tokens are sent to escrow only after this proposal is accepted. Once voting passes, the seller can fund the escrow from their wallet.",
+        "memberEscrowFundPrompt": "This proposal has passed. As the seller, send your tokens to the escrow contract to open the exchange.",
+        "memberEscrowFundCta": "Send tokens to escrow",
+        "memberEscrowFunding": "Sending…",
+        "memberEscrowFunded": "Escrow #{escrowId} is funded. The buyer can complete their side when ready.",
+        "connectSellerWallet": "Connect the seller wallet to fund escrow."
       },
       "tokenBackingVault": {
         "title": "Token Backing Vault",

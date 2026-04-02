@@ -52,8 +52,10 @@ import { useDbSpaces } from '../../hooks';
 import { hasUpdateTokenDataToDisplay } from '../utils/has-update-token-data-to-display';
 import {
   parseExchangeDetailsFromDescription,
+  parseExchangeEscrowIdFromDescription,
   stripExchangeDetailsBlock,
 } from '../../governance/utils';
+import { MemberExchangeEscrowFunding } from '../../governance/components/member-exchange-escrow-funding';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
@@ -408,6 +410,8 @@ export const ProposalDetail = ({
   })();
 
   const parsedExchangeDetails = parseExchangeDetailsFromDescription(content);
+  const documentExchangeEscrowId =
+    parseExchangeEscrowIdFromDescription(content);
   const contentWithoutExchangeDetails = useMemo(() => {
     if (!content) return content;
     return stripExchangeDetailsBlock(content);
@@ -684,7 +688,10 @@ export const ProposalDetail = ({
           buyerAddress={buyerAddressForDisplay}
           sellerLeg={sellerLegForDisplay}
           buyerLeg={buyerLegForDisplay}
-          escrowId={proposalDetails?.exchangeEscrowData?.escrowId}
+          escrowId={
+            proposalDetails?.exchangeEscrowData?.escrowId ??
+            documentExchangeEscrowId
+          }
           completed={
             proposalDetails?.exchangeEscrowData?.status === 'completed'
           }
@@ -693,6 +700,14 @@ export const ProposalDetail = ({
           }
         />
       )}
+      {label === 'Exchange' ? (
+        <MemberExchangeEscrowFunding
+          documentSlug={documentSlug}
+          description={content}
+          executed={Boolean(proposalDetails?.executed)}
+          parsedExchange={parsedExchangeDetails}
+        />
+      ) : null}
       {label === 'Token Purchase' && proposalDetails?.spaceTokenPurchaseData ? (
         <ProposalSpaceTokenPurchaseData
           dbTokens={dbTokens}

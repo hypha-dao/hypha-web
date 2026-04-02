@@ -1005,7 +1005,13 @@
         "escrowPendingBuyerFunding": "En attente du financement de l'acheteur",
         "escrowCompleted": "Terminé",
         "escrowCancelled": "Annulé",
-        "approveAndFundPrompt": "L’acheteur doit approuver le token puis appeler receiveFunds({escrowId}) pour terminer l’échange."
+        "approveAndFundPrompt": "L’acheteur doit approuver le token puis appeler receiveFunds({escrowId}) pour terminer l’échange.",
+        "memberEscrowPendingVote": "Les jetons du vendeur sont envoyés vers l’escrow seulement après l’acceptation de cette proposition. Une fois le vote réussi, le vendeur peut alimenter l’escrow depuis son portefeuille.",
+        "memberEscrowFundPrompt": "Cette proposition est acceptée. En tant que vendeur, envoyez vos jetons vers le contrat d’escrow pour ouvrir l’échange.",
+        "memberEscrowFundCta": "Envoyer les jetons vers l’escrow",
+        "memberEscrowFunding": "Envoi…",
+        "memberEscrowFunded": "Escrow n°{escrowId} alimenté. L’acheteur peut compléter son côté quand il est prêt.",
+        "connectSellerWallet": "Connectez le portefeuille du vendeur pour alimenter l’escrow."
       },
       "tokenBackingVault": {
         "title": "Coffre de garantie de token",
