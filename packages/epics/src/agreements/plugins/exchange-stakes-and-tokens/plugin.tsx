@@ -151,33 +151,24 @@ export const ExchangeStakesAndTokensPlugin = ({
     }
   }, [sellerRecipientType, spaceExecutorAddress, setValue]);
 
-  const sellerTokenCandidates = React.useMemo(
-    () => tokens.filter((token: Token) => token.type !== null),
-    [tokens],
-  );
-  const buyerTokenCandidates = React.useMemo(
-    () =>
-      tokens.filter(
-        (token: Token) => token.type === null || token.type === 'utility',
-      ),
-    [tokens],
-  );
+  /** All space catalog tokens; both legs filter by on-chain balance > 0 (no type split). */
+  const tokenCandidates = tokens;
 
   const { data: sellerOwnedTokenSet, isLoading: isLoadingSellerBalances } =
     useSWR(
-      isEvmAddress(sellerBalanceLookupAddress) && sellerTokenCandidates.length
+      isEvmAddress(sellerBalanceLookupAddress) && tokenCandidates.length
         ? [
             'exchangeSellerOwnedTokens',
             sellerBalanceLookupAddress,
             sellerRecipientType,
-            ...sellerTokenCandidates.map((token: Token) =>
+            ...tokenCandidates.map((token: Token) =>
               token.address.toLowerCase(),
             ),
           ]
         : null,
       async () => {
         const balances = await Promise.allSettled(
-          sellerTokenCandidates.map(async (token: Token) => {
+          tokenCandidates.map(async (token: Token) => {
             const { amount } = await getBalance(
               token.address as `0x${string}`,
               sellerBalanceLookupAddress as `0x${string}`,
@@ -199,19 +190,19 @@ export const ExchangeStakesAndTokensPlugin = ({
 
   const { data: buyerOwnedTokenSet, isLoading: isLoadingBuyerBalances } =
     useSWR(
-      isEvmAddress(buyerBalanceLookupAddress) && buyerTokenCandidates.length
+      isEvmAddress(buyerBalanceLookupAddress) && tokenCandidates.length
         ? [
             'exchangeBuyerOwnedTokens',
             buyerBalanceLookupAddress,
             buyerRecipientType,
-            ...buyerTokenCandidates.map((token: Token) =>
+            ...tokenCandidates.map((token: Token) =>
               token.address.toLowerCase(),
             ),
           ]
         : null,
       async () => {
         const balances = await Promise.allSettled(
-          buyerTokenCandidates.map(async (token: Token) => {
+          tokenCandidates.map(async (token: Token) => {
             const { amount } = await getBalance(
               token.address as `0x${string}`,
               buyerBalanceLookupAddress as `0x${string}`,
@@ -234,18 +225,18 @@ export const ExchangeStakesAndTokensPlugin = ({
   const sellerTokens = React.useMemo(() => {
     if (!isEvmAddress(sellerBalanceLookupAddress) || !sellerOwnedTokenSet)
       return [];
-    return sellerTokenCandidates.filter((token: Token) =>
+    return tokenCandidates.filter((token: Token) =>
       sellerOwnedTokenSet.has(token.address.toLowerCase()),
     );
-  }, [sellerBalanceLookupAddress, sellerOwnedTokenSet, sellerTokenCandidates]);
+  }, [sellerBalanceLookupAddress, sellerOwnedTokenSet, tokenCandidates]);
 
   const buyerTokens = React.useMemo(() => {
     if (!isEvmAddress(buyerBalanceLookupAddress) || !buyerOwnedTokenSet)
       return [];
-    return buyerTokenCandidates.filter((token: Token) =>
+    return tokenCandidates.filter((token: Token) =>
       buyerOwnedTokenSet.has(token.address.toLowerCase()),
     );
-  }, [buyerBalanceLookupAddress, buyerOwnedTokenSet, buyerTokenCandidates]);
+  }, [buyerBalanceLookupAddress, buyerOwnedTokenSet, tokenCandidates]);
 
   return (
     <div className="flex flex-col gap-4">
