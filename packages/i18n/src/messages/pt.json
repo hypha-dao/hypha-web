@@ -129,12 +129,10 @@
         "escrowCompleted": "Concluído",
         "escrowCancelled": "Cancelado",
         "approveAndFundPrompt": "O comprador deve aprovar o token e chamar receiveFunds({escrowId}) para concluir a troca.",
-        "memberEscrowPendingVote": "Os tokens do vendedor só vão para o escrow depois desta proposta ser aceite. Quando a votação passar, o vendedor pode financiar o escrow a partir da sua carteira.",
-        "memberEscrowFundPrompt": "Esta proposta foi aceite. Como vendedor, envie os seus tokens para o contrato de escrow para abrir a troca.",
-        "memberEscrowFundCta": "Enviar tokens para o escrow",
-        "memberEscrowFunding": "A enviar…",
+        "memberEscrowPendingVote": "Os tokens do vendedor só vão para o escrow depois desta proposta ser aceite. Quando for aprovada, são enviados automaticamente se a carteira do vendedor estiver ligada.",
+        "memberEscrowFundingAuto": "A transferir tokens do vendedor para o escrow…",
         "memberEscrowFunded": "Escrow #{escrowId} financiado. O comprador pode completar a sua parte quando estiver pronto.",
-        "connectSellerWallet": "Ligue a carteira do vendedor para financiar o escrow."
+        "connectSellerWalletAuto": "Ligue a carteira do vendedor neste dispositivo para concluir a transferência para o escrow."
       },
       "tokenBackingVault": {
         "title": "Cofre de lastro de token",

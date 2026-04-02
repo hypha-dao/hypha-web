@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { useTranslations } from 'next-intl';
-import { Button } from '@hypha-platform/ui';
 import {
   useAgreementMutationsWeb2Rsc,
   useFundMemberExchangeEscrowWeb3Rpc,
@@ -25,7 +24,11 @@ function toFundingLeg(legs: Leg[]) {
   }));
 }
 
-export function MemberExchangeEscrowFunding({
+/**
+ * No UI button: when the deferred member-exchange proposal is executed and the seller
+ * wallet is connected, funds escrow automatically (embedded in voting flow).
+ */
+export function MemberExchangeEscrowAutoFund({
   documentSlug,
   description,
   executed,
@@ -41,11 +44,8 @@ export function MemberExchangeEscrowFunding({
   const router = useRouter();
   const web2 = useAgreementMutationsWeb2Rsc(jwt);
   const { client } = useSmartWallets();
-  const {
-    fundMemberExchangeEscrow,
-    isFundingMemberExchangeEscrow,
-    errorFundMemberExchangeEscrow,
-  } = useFundMemberExchangeEscrowWeb3Rpc();
+  const { fundMemberExchangeEscrow } = useFundMemberExchangeEscrowWeb3Rpc();
+  const runRef = React.useRef(false);
 
   const deferred =
     typeof description === 'string' &&
@@ -60,33 +60,55 @@ export function MemberExchangeEscrowFunding({
     smartAddress && sellerAddr && smartAddress === sellerAddr,
   );
 
-  const canFund =
+  const canAutoFund =
     deferred &&
     executed &&
     !persistedEscrowId &&
+    isSellerWallet &&
     parsedExchange?.sellerLeg?.length &&
     parsedExchange?.buyerLeg?.length &&
     parsedExchange.sellerLeg.length === parsedExchange.buyerLeg.length &&
     parsedExchange.sellerAddress &&
     parsedExchange.buyerAddress;
 
-  const handleFund = async () => {
-    if (!canFund || !parsedExchange) return;
-    const escrowIds = await fundMemberExchangeEscrow({
-      sellerAddress: parsedExchange.sellerAddress!,
-      buyerAddress: parsedExchange.buyerAddress!,
-      sellerLeg: toFundingLeg(parsedExchange.sellerLeg),
-      buyerLeg: toFundingLeg(parsedExchange.buyerLeg),
-    });
-    const first = escrowIds[0];
-    if (first === undefined || !description) return;
-    const nextDesc = upsertExchangeEscrowIdInDescription(description, first);
-    await web2.updateAgreementBySlug({
-      slug: documentSlug,
-      description: nextDesc,
-    });
-    router.refresh();
-  };
+  React.useEffect(() => {
+    if (!canAutoFund || !parsedExchange || !description || runRef.current) {
+      return;
+    }
+    runRef.current = true;
+
+    void (async () => {
+      try {
+        const escrowIds = await fundMemberExchangeEscrow({
+          sellerAddress: parsedExchange.sellerAddress!,
+          buyerAddress: parsedExchange.buyerAddress!,
+          sellerLeg: toFundingLeg(parsedExchange.sellerLeg),
+          buyerLeg: toFundingLeg(parsedExchange.buyerLeg),
+        });
+        const first = escrowIds[0];
+        if (first === undefined) return;
+        const nextDesc = upsertExchangeEscrowIdInDescription(
+          description,
+          first,
+        );
+        await web2.updateAgreementBySlug({
+          slug: documentSlug,
+          description: nextDesc,
+        });
+        router.refresh();
+      } catch {
+        runRef.current = false;
+      }
+    })();
+  }, [
+    canAutoFund,
+    description,
+    documentSlug,
+    fundMemberExchangeEscrow,
+    parsedExchange,
+    router,
+    web2,
+  ]);
 
   if (!deferred) return null;
 
@@ -112,32 +134,28 @@ export function MemberExchangeEscrowFunding({
     );
   }
 
-  if (!canFund) return null;
-
-  return (
-    <div className="rounded-[8px] p-4 border border-accent-6 bg-accent-surface flex flex-col gap-3">
-      <p className="text-2 text-foreground">{t('memberEscrowFundPrompt')}</p>
-      {!isSellerWallet ? (
-        <p className="text-2 text-destructive">{t('connectSellerWallet')}</p>
-      ) : null}
-      {errorFundMemberExchangeEscrow ? (
-        <p className="text-2 text-destructive">
-          {(errorFundMemberExchangeEscrow as Error).message}
-        </p>
-      ) : null}
-      <Button
-        type="button"
-        onClick={() => void handleFund()}
-        disabled={
-          !isSellerWallet ||
-          isFundingMemberExchangeEscrow ||
-          web2.isUpdatingAgreement
-        }
+  if (deferred && executed && !isSellerWallet) {
+    return (
+      <div
+        className="rounded-[8px] p-4 border border-accent-6 bg-accent-surface text-2 text-destructive"
+        role="alert"
       >
-        {isFundingMemberExchangeEscrow || web2.isUpdatingAgreement
-          ? t('memberEscrowFunding')
-          : t('memberEscrowFundCta')}
-      </Button>
-    </div>
-  );
+        {t('connectSellerWalletAuto')}
+      </div>
+    );
+  }
+
+  if (canAutoFund) {
+    return (
+      <div
+        className="rounded-[8px] p-4 border border-accent-6 bg-accent-surface text-2 text-foreground"
+        role="status"
+        aria-live="polite"
+      >
+        {t('memberEscrowFundingAuto')}
+      </div>
+    );
+  }
+
+  return null;
 }

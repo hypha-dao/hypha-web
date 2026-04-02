@@ -29,6 +29,8 @@ import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { formatUnits } from 'viem';
+import { MemberExchangeEscrowAutoFund } from '../../governance/components/member-exchange-escrow-auto-fund';
+import type { ParsedExchangeDetails } from '../../governance/utils/exchange-details-parser';
 
 function formatTimeRemaining(
   endTime: string,
@@ -123,6 +125,7 @@ export const FormVoting = ({
   redeemResubmitPayload,
   proposalTemplateData,
   spaceTokenPurchaseData,
+  memberExchangeEscrow,
 }: {
   unity: number;
   quorum: number;
@@ -164,6 +167,13 @@ export const FormVoting = ({
     paymentTokenPricePerToken?: bigint;
     tokensForSale?: bigint;
     isActive?: boolean;
+  };
+  /** Deferred member-seller exchange: auto-fund escrow when proposal executes (no button). */
+  memberExchangeEscrow?: {
+    documentSlug: string;
+    description?: string | null;
+    executed: boolean;
+    parsedExchange: ParsedExchangeDetails | null;
   };
 }) => {
   const tCommon = useTranslations('Common');
@@ -421,6 +431,14 @@ export const FormVoting = ({
 
   return (
     <div className="flex flex-col gap-7 text-neutral-11">
+      {memberExchangeEscrow ? (
+        <MemberExchangeEscrowAutoFund
+          documentSlug={memberExchangeEscrow.documentSlug}
+          description={memberExchangeEscrow.description}
+          executed={memberExchangeEscrow.executed}
+          parsedExchange={memberExchangeEscrow.parsedExchange}
+        />
+      ) : null}
       <VoterList documentSlug={documentSlug} />
       <div className="flex flex-col gap-6">
         <Skeleton

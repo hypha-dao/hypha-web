@@ -55,7 +55,6 @@ import {
   parseExchangeEscrowIdFromDescription,
   stripExchangeDetailsBlock,
 } from '../../governance/utils';
-import { MemberExchangeEscrowFunding } from '../../governance/components/member-exchange-escrow-funding';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
@@ -700,14 +699,6 @@ export const ProposalDetail = ({
           }
         />
       )}
-      {label === 'Exchange' ? (
-        <MemberExchangeEscrowFunding
-          documentSlug={documentSlug}
-          description={content}
-          executed={Boolean(proposalDetails?.executed)}
-          parsedExchange={parsedExchangeDetails}
-        />
-      ) : null}
       {label === 'Token Purchase' && proposalDetails?.spaceTokenPurchaseData ? (
         <ProposalSpaceTokenPurchaseData
           dbTokens={dbTokens}
@@ -750,6 +741,16 @@ export const ProposalDetail = ({
         redeemResubmitPayload={redeemResubmitPayloadResolved}
         proposalTemplateData={resubmitTemplateData}
         spaceTokenPurchaseData={proposalDetails?.spaceTokenPurchaseData}
+        memberExchangeEscrow={
+          label === 'Exchange'
+            ? {
+                documentSlug,
+                description: content,
+                executed: Boolean(proposalDetails?.executed),
+                parsedExchange: parsedExchangeDetails,
+              }
+            : undefined
+        }
       />
     </div>
   );

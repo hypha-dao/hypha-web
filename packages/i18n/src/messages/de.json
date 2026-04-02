@@ -1382,12 +1382,10 @@
         "escrowCompleted": "Abgeschlossen",
         "escrowCancelled": "Abgebrochen",
         "approveAndFundPrompt": "Käufer sollte den Token freigeben und receiveFunds({escrowId}) aufrufen, um den Tausch abzuschließen.",
-        "memberEscrowPendingVote": "Verkäufer-Tokens gehen erst nach Annahme dieses Vorschlags ins Escrow. Nach erfolgreicher Abstimmung kann der Verkäufer das Escrow von seiner Wallet aus finanzieren.",
-        "memberEscrowFundPrompt": "Dieser Vorschlag wurde angenommen. Als Verkäufer senden Sie Ihre Tokens an den Escrow-Vertrag, um den Tausch zu eröffnen.",
-        "memberEscrowFundCta": "Tokens ans Escrow senden",
-        "memberEscrowFunding": "Wird gesendet…",
+        "memberEscrowPendingVote": "Verkäufer-Tokens gehen erst nach Annahme dieses Vorschlags ins Escrow. Bei Annahme werden sie automatisch gesendet, wenn die Verkäufer-Wallet verbunden ist.",
+        "memberEscrowFundingAuto": "Verkäufer-Tokens werden ans Escrow übertragen…",
         "memberEscrowFunded": "Escrow #{escrowId} ist finanziert. Der Käufer kann seine Seite abschließen, wenn er bereit ist.",
-        "connectSellerWallet": "Verkäufer-Wallet verbinden, um das Escrow zu finanzieren."
+        "connectSellerWalletAuto": "Verbinden Sie die Verkäufer-Wallet auf diesem Gerät, um die Überweisung ans Escrow abzuschließen."
       },
       "paymentSchedule": {
         "label": "Zahlungsplan",
