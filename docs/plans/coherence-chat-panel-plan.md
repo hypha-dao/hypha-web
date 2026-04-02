@@ -283,11 +283,18 @@ onClick={(e) => {
   signal.archived ? (
     <SignalCard key={...} {...signal} isLoading={isLoading} refresh={refresh} />
   ) : onSignalClick ? (
-    <button
+    <div
       key={...}
-      type="button"
+      role="button"
+      tabIndex={0}
       className="text-left w-full"
       onClick={() => onSignalClick(signal)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSignalClick(signal);
+        }
+      }}
     >
       <SignalCard
         key={...}
@@ -296,7 +303,7 @@ onClick={(e) => {
         refresh={refresh}
         onOpenConversation={() => onSignalClick(signal)}
       />
-    </button>
+    </div>
   ) : (
     <Link key={...} href={`${basePath}/${signal.slug}`}>
       <SignalCard key={...} {...signal} isLoading={isLoading} refresh={refresh} />
