@@ -739,6 +739,7 @@ export const UpdateIssuedTokenPlugin = ({
           symbol: t.symbol!,
           address: t.address!,
           iconUrl: t.iconUrl!,
+          type: t.type,
         }))}
         placeholder={tTreasury('selectTokenPlaceholder')}
         emptyListMessage={tTreasury('noTokensAvailable')}

@@ -89,6 +89,12 @@ export const useResubmitProposalData = <
             ? embeddedUpdateToken.tokenAddress
             : undefined;
 
+        const currentTokenRaw = form.getValues('tokenAddress' as never) as
+          | string
+          | undefined;
+        const hasChosenToken =
+          typeof currentTokenRaw === 'string' && currentTokenRaw.trim() !== '';
+
         form.reset(
           {
             ...form.getValues(),
@@ -102,7 +108,9 @@ export const useResubmitProposalData = <
             attachments: undefined,
             spaceId: spaceId ?? undefined,
             creatorId: creatorId ?? undefined,
-            ...(resubmitTokenAddress
+            ...(hasChosenToken
+              ? {}
+              : resubmitTokenAddress
               ? { tokenAddress: resubmitTokenAddress }
               : parsed.tokenAddress !== undefined
               ? { tokenAddress: parsed.tokenAddress }
@@ -171,16 +179,18 @@ export const useResubmitProposalData = <
           });
         }
 
-        if (resubmitTokenAddress) {
-          form.setValue('tokenAddress' as any, resubmitTokenAddress as any, {
-            shouldDirty: true,
-            shouldValidate: true,
-          });
-        } else if (parsed.tokenAddress !== undefined) {
-          form.setValue('tokenAddress' as any, parsed.tokenAddress as any, {
-            shouldDirty: true,
-            shouldValidate: true,
-          });
+        if (!hasChosenToken) {
+          if (resubmitTokenAddress) {
+            form.setValue('tokenAddress' as any, resubmitTokenAddress as any, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+          } else if (parsed.tokenAddress !== undefined) {
+            form.setValue('tokenAddress' as any, parsed.tokenAddress as any, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+          }
         }
 
         if (typeof parsed.activatePurchase === 'boolean') {
