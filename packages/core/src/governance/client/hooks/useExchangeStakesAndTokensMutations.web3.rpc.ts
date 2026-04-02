@@ -136,10 +136,7 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
           READ_TIMEOUT_MS,
         );
 
-        const sellerAmount = parseUnits(
-          sellerRow.amount,
-          sellerTokenDecimals,
-        );
+        const sellerAmount = parseUnits(sellerRow.amount, sellerTokenDecimals);
         const buyerAmount = parseUnits(buyerRow.amount, buyerTokenDecimals);
 
         return {
@@ -323,8 +320,8 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
       const escrowIds = isSpaceSeller
         ? parseEscrowCreatedIdsFromLogs(logs)
         : escrowIdsFromMemberFunding.length > 0
-          ? escrowIdsFromMemberFunding
-          : parseEscrowCreatedIdsFromLogs(logs);
+        ? escrowIdsFromMemberFunding
+        : parseEscrowCreatedIdsFromLogs(logs);
       if (!proposal) {
         throw new Error(
           'Failed to read ProposalCreated from createProposal transaction',
