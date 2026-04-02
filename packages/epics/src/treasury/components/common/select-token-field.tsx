@@ -66,11 +66,11 @@ export function SelectTokenField({
 
         return (
           <FormItem>
-            <div className="flex justify-between items-center">
-              <FormLabel className="text-2 text-neutral-11 w-full gap-1">
+            <div className="flex w-full justify-between items-start gap-2">
+              <FormLabel className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max md:pt-1">
                 {label} {required && <RequirementMark className="text-2" />}
               </FormLabel>
-              <FormControl>
+              <FormControl className="min-w-0 flex-1 max-w-[min(100%,20rem)]">
                 {isEmpty ? (
                   <div className="text-2 text-neutral-11 italic">
                     {emptyText}
@@ -83,10 +83,11 @@ export function SelectTokenField({
                       onValueChange?.(value);
                     }}
                   >
-                    <SelectTrigger className="h-auto">
+                    <SelectTrigger className="h-auto min-h-6 w-full">
                       <SelectValue placeholder={placeholderText} />
                     </SelectTrigger>
-                    <SelectContent className="p-2">
+                    {/* item-aligned: avoid popper viewport height = trigger (fixes cramped list + extra scroll chevrons) */}
+                    <SelectContent position="item-aligned">
                       {tokens.map(({ name, symbol, address, iconUrl }) => {
                         const fallback = '/placeholder/token-icon.svg';
                         const raw = iconUrl?.trim();
@@ -99,7 +100,7 @@ export function SelectTokenField({
                           brokenIcons[itemValue] || !raw ? fallback : raw;
                         return (
                           <SelectItem key={itemValue} value={itemValue}>
-                            <div className="flex items-center gap-2 text-left text-sm leading-5">
+                            <div className="flex items-center gap-2 text-left text-sm font-normal leading-normal">
                               <img
                                 src={src}
                                 alt=""
@@ -113,7 +114,7 @@ export function SelectTokenField({
                                   }))
                                 }
                               />
-                              <span className="font-medium">
+                              <span>
                                 {symbol ?? 'Unknown'} -{' '}
                                 {name ?? 'Unknown Token'}
                               </span>
