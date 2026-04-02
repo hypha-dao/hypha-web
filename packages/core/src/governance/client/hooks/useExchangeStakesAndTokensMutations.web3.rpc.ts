@@ -1,6 +1,5 @@
 'use client';
 
-import useSWR from 'swr';
 import useSWRMutation from 'swr/mutation';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 import { encodeFunctionData, erc20Abi, parseUnits } from 'viem';
@@ -78,7 +77,7 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
     trigger: createExchangeStakesAndTokens,
     reset: resetCreateExchangeStakesAndTokensMutation,
     isMutating: isCreatingExchangeStakesAndTokens,
-    data: createExchangeStakesAndTokensHash,
+    data: createdExchangeStakesAndTokens,
     error: errorCreateExchangeStakesAndTokens,
   } = useSWRMutation(
     `createExchangeStakesAndTokens-${proposalSlug}`,
@@ -199,24 +198,15 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
         args: [proposalParams],
       });
 
-      return txHash;
-    },
-  );
-
-  const {
-    data: createdExchangeStakesAndTokens,
-    isLoading: isLoadingExchangeStakesAndTokensFromTransaction,
-    error: errorWaitExchangeStakesAndTokensFromTransaction,
-  } = useSWR(
-    createExchangeStakesAndTokensHash
-      ? [createExchangeStakesAndTokensHash, 'waitForExchangeStakesAndTokens']
-      : null,
-    async ([hash]) => {
-      const { logs } = await publicClient.waitForTransactionReceipt({ hash });
+      const { logs } = await publicClient.waitForTransactionReceipt({
+        hash: txHash,
+      });
       const proposal = getProposalFromLogs(logs);
       const escrowIds = parseEscrowCreatedIdsFromLogs(logs);
       if (!proposal) {
-        return proposal;
+        throw new Error(
+          'Failed to read ProposalCreated from createProposal transaction',
+        );
       }
       return {
         ...proposal,
@@ -230,10 +220,7 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
     createExchangeStakesAndTokens,
     resetCreateExchangeStakesAndTokensMutation,
     isCreatingExchangeStakesAndTokens,
-    createExchangeStakesAndTokensHash,
     errorCreateExchangeStakesAndTokens,
     createdExchangeStakesAndTokens,
-    isLoadingExchangeStakesAndTokensFromTransaction,
-    errorWaitExchangeStakesAndTokensFromTransaction,
   };
 };

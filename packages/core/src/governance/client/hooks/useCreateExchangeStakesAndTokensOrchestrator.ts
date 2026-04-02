@@ -237,7 +237,6 @@ export const useCreateExchangeStakesAndTokensOrchestrator = ({
       [
         web2.errorCreateAgreementMutation,
         web3.errorCreateExchangeStakesAndTokens,
-        web3.errorWaitExchangeStakesAndTokensFromTransaction,
       ].filter(Boolean),
     [web2, web3],
   );
