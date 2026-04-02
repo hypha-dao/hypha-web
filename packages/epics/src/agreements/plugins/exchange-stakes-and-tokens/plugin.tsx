@@ -213,7 +213,7 @@ export const ExchangeStakesAndTokensPlugin = ({
           ),
         );
       },
-      { revalidateOnFocus: true },
+      { revalidateOnFocus: true, revalidateOnReconnect: true },
     );
 
   const { data: buyerOwnedTokenSet, isLoading: isLoadingBuyerBalances } =
@@ -245,7 +245,7 @@ export const ExchangeStakesAndTokensPlugin = ({
           ),
         );
       },
-      { revalidateOnFocus: true },
+      { revalidateOnFocus: true, revalidateOnReconnect: true },
     );
 
   const sellerTokens = React.useMemo(() => {

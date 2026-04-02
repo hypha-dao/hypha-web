@@ -139,4 +139,4 @@ function TokenPayoutFieldArrayInner({
   );
 }
 
-export const TokenPayoutFieldArray = React.memo(TokenPayoutFieldArrayInner);
+export const TokenPayoutFieldArray = TokenPayoutFieldArrayInner;
