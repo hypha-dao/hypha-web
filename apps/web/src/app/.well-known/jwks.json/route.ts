@@ -6,31 +6,39 @@ if (!PRIVY_APP_ID) {
   throw new Error('Missing required env var: NEXT_PUBLIC_PRIVY_APP_ID');
 }
 
-const JWKS_URLS = {
-  Web3AuthSocial: 'https://api-auth.web3auth.io/jwks',
-  Web3AuthWallet: 'https://authjs.web3auth.io/jwks',
-  Privy: `https://auth.privy.io/api/v1/apps/${PRIVY_APP_ID}/jwks.json`,
-};
+const PRIVY_JWKS_BASE = 'https://auth.privy.io/api/v1/apps';
+
+function getPrivyJwksUrls(): string[] {
+  const urls = [`${PRIVY_JWKS_BASE}/${PRIVY_APP_ID}/jwks.json`];
+  const extraIds = process.env.PRIVY_EXTRA_JWKS_APP_IDS;
+  if (extraIds) {
+    for (const id of extraIds.split(',')) {
+      const trimmed = id.trim();
+      if (trimmed && trimmed !== PRIVY_APP_ID) {
+        urls.push(`${PRIVY_JWKS_BASE}/${trimmed}/jwks.json`);
+      }
+    }
+  }
+  return urls;
+}
+
+const STATIC_JWKS_URLS = [
+  'https://api-auth.web3auth.io/jwks',
+  'https://authjs.web3auth.io/jwks',
+];
 
 type JWKSResponse = JSONWebKeySet;
 
-// This function handles GET requests to /.well-known/jwks.json
 export async function GET() {
   try {
-    // Fetch both JWKS in parallel
-    const [socialJwks, walletJwks, privyJwks] = (await Promise.all([
-      fetch(JWKS_URLS.Web3AuthSocial).then((res) => res.json()),
-      fetch(JWKS_URLS.Web3AuthWallet).then((res) => res.json()),
-      fetch(JWKS_URLS.Privy).then((res) => res.json()),
-    ])) as [JWKSResponse, JWKSResponse, JWKSResponse];
+    const allUrls = [...STATIC_JWKS_URLS, ...getPrivyJwksUrls()];
 
-    // Combine the keys from both JWKS
+    const results = (await Promise.all(
+      allUrls.map((url) => fetch(url).then((res) => res.json())),
+    )) as JWKSResponse[];
+
     const combinedJwks: JWKSResponse = {
-      keys: [
-        ...(socialJwks.keys || []),
-        ...(walletJwks.keys || []),
-        ...(privyJwks.keys || []),
-      ],
+      keys: results.flatMap((r) => r.keys || []),
     };
 
     return NextResponse.json(combinedJwks);
