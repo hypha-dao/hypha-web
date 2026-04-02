@@ -73,7 +73,8 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
   proposalSlug?: string | null;
 }) => {
   const chainId = getGovernanceChainId();
-  const { client } = useSmartWallets();
+  /** Must use client for the governance chain; default `client` may be on another chain → broken UO / missing `encodeCalls`. */
+  const { getClientForChain } = useSmartWallets();
 
   const {
     trigger: createExchangeStakesAndTokens,
@@ -84,8 +85,11 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
   } = useSWRMutation(
     `createExchangeStakesAndTokens-${proposalSlug}`,
     async (_: string, { arg }: { arg: CreateExchangeStakesAndTokensInput }) => {
+      const client = await getClientForChain({ id: chainId });
       if (!client) {
-        throw new Error('Smart wallet client not available');
+        throw new Error(
+          `Smart wallet client not available for chain ${chainId}. Switch network in your wallet and try again.`,
+        );
       }
 
       const sellerRows = arg.sellerLeg ?? [];
