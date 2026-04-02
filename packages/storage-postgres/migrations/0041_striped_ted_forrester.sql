@@ -1,6 +1,8 @@
+CREATE TYPE "public"."matrix_environment" AS ENUM('development', 'preview', 'production');
+--> statement-breakpoint
 CREATE TABLE "matrix_user_links" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"environment" text NOT NULL CHECK ("environment" IN ('development', 'preview', 'production')),
+	"environment" "public"."matrix_environment" NOT NULL,
 	"privy_user_id" text NOT NULL,
 	"matrix_user_id" text NOT NULL,
 	"encrypted_access_token" text NOT NULL,

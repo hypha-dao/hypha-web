@@ -39,6 +39,14 @@ export const createMatrixUserLink = async (
       deviceId,
       environment,
     })
+    .onConflictDoUpdate({
+      target: [matrixUserLinks.environment, matrixUserLinks.privyUserId],
+      set: {
+        encryptedAccessToken,
+        matrixUserId,
+        deviceId,
+      },
+    })
     .returning();
 
   if (!newRecord) {

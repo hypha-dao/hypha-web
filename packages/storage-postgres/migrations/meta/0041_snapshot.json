@@ -836,7 +836,8 @@
         },
         "environment": {
           "name": "environment",
-          "type": "text",
+          "type": "matrix_environment",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -944,6 +945,15 @@
     }
   },
   "enums": {
+    "public.matrix_environment": {
+      "name": "matrix_environment",
+      "schema": "public",
+      "values": [
+        "development",
+        "preview",
+        "production"
+      ]
+    },
     "public.document_state": {
       "name": "document_state",
       "schema": "public",

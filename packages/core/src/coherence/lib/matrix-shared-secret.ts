@@ -106,7 +106,7 @@ export class MatrixSharedSecret {
     const endpoint = `/_matrix/client/${version}/register/available`;
 
     const response = await fetchWithTimeout(
-      `${this.matrixHomeserverUrl}${endpoint}?username=${username}`,
+      `${this.matrixHomeserverUrl}${endpoint}?username=${encodeURIComponent(username)}`,
     );
     if (!response.ok) {
       return false;
@@ -118,7 +118,7 @@ export class MatrixSharedSecret {
   async getUser(userName: string, adminAccessToken: string) {
     const version = await this.getEffectiveVersion();
     const matrixUserName = `@${userName}:${this.matrixDomain}`;
-    const endpoint = `/_matrix/client/${version}/admin/whois/${matrixUserName}`;
+    const endpoint = `/_matrix/client/${version}/admin/whois/${encodeURIComponent(matrixUserName)}`;
     const response = await fetchWithTimeout(
       `${this.matrixHomeserverUrl}${endpoint}`,
       {
@@ -172,7 +172,16 @@ export class MatrixSharedSecret {
     isAdmin: boolean = false,
   ): Promise<RegisterResponse> {
     const response = await this.registerUserNonce(username, isAdmin);
-    const data = await response.json();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let data: any;
+    try {
+      data = await response.json();
+    } catch {
+      const text = await response.text().catch(() => '');
+      throw new Error(
+        `Failed to register user: ${response.status} ${response.statusText} - non-JSON response: ${text}`,
+      );
+    }
 
     if (!response.ok) {
       console.warn('Cannot register user:', data?.errcode ?? 'unknown error');
@@ -209,7 +218,7 @@ export class MatrixSharedSecret {
   async resetPassword(username: string, adminAccessToken: string) {
     const password = crypto.randomBytes(32).toString('hex');
     const response = await fetchWithTimeout(
-      `${this.matrixHomeserverUrl}/_dendrite/admin/resetPassword/${username}`,
+      `${this.matrixHomeserverUrl}/_dendrite/admin/resetPassword/${encodeURIComponent(username)}`,
       {
         method: 'POST',
         headers: {
@@ -222,7 +231,7 @@ export class MatrixSharedSecret {
         }),
       },
     );
-    const data = await response.json();
+    const data = await response.json().catch(() => null);
     if (!response.ok) {
       throw new Error(
         `Failed to reset password for ${username}: ${response.status} - ${
@@ -230,12 +239,12 @@ export class MatrixSharedSecret {
         }`,
       );
     }
-    return { ok: data.password_updated, password };
+    return { ok: data?.password_updated, password };
   }
 
   async removeUser(username: string, adminAccessToken: string) {
     const response = await fetchWithTimeout(
-      `${this.matrixHomeserverUrl}/_dendrite/admin/deactivate/${username}`,
+      `${this.matrixHomeserverUrl}/_dendrite/admin/deactivate/${encodeURIComponent(username)}`,
       {
         method: 'POST',
         headers: {
@@ -247,7 +256,7 @@ export class MatrixSharedSecret {
         }),
       },
     );
-    const data = await response.json();
+    const data = await response.json().catch(() => null);
     if (!response.ok) {
       throw new Error(
         `Failed to remove user ${username}: ${response.status} - ${
@@ -307,13 +316,16 @@ export class MatrixSharedSecret {
         }),
       },
     );
-    const data = await response.json();
+    const data = await response.json().catch(() => null);
     if (!response.ok) {
       console.warn('Cannot login user', {
         status: response.status,
-        errcode: data.errcode,
+        errcode: data?.errcode,
       });
-      throw new Error(data.error ?? 'Cannot login user');
+      throw new Error(data?.error ?? `Cannot login user: ${response.status}`);
+    }
+    if (!data?.access_token) {
+      throw new Error('Login succeeded but no access_token returned');
     }
     return {
       accessToken: encryptMatrixToken(data.access_token),

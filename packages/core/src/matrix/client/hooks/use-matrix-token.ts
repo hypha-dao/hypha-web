@@ -62,6 +62,9 @@ export const useMatrixToken = () => {
     },
     {
       errorRetryInterval: 2000,
+      onSuccess: () => {
+        setError(null);
+      },
       onError: (err: unknown) => {
         setError(err instanceof Error ? err.message : `${err}`);
       },

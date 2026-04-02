@@ -1,18 +1,25 @@
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import {
+  pgEnum,
   pgTable,
   serial,
   text,
   timestamp,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
+
+export const matrixEnvironmentEnum = pgEnum('matrix_environment', [
+  'development',
+  'preview',
+  'production',
+]);
 import { commonDateFields } from './shared';
 
 export const matrixUserLinks = pgTable(
   'matrix_user_links',
   {
     id: serial('id').primaryKey(),
-    environment: text('environment').notNull(),
+    environment: matrixEnvironmentEnum('environment').notNull(),
     privyUserId: text('privy_user_id').notNull(),
     matrixUserId: text('matrix_user_id').notNull(),
     encryptedAccessToken: text('encrypted_access_token').notNull(),
