@@ -115,7 +115,7 @@
         },
         "seller": "Vendedor (endereço da carteira)",
         "buyer": "Comprador (endereço da carteira)",
-        "sellerWillSend": "O vendedor enviará",
+        "sellerWillSend": "O vendedor envia",
         "buyerWillSend": "O comprador enviará",
         "escrowFunding": "Financiamento de escrow",
         "escrowStatus": "Status do escrow",

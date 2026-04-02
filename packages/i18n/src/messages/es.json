@@ -115,7 +115,7 @@
         },
         "seller": "Vendedor (dirección de cartera)",
         "buyer": "Comprador (dirección de cartera)",
-        "sellerWillSend": "El vendedor enviará",
+        "sellerWillSend": "El vendedor envía",
         "buyerWillSend": "El comprador enviará",
         "escrowFunding": "Financiación de escrow",
         "escrowStatus": "Estado del escrow",

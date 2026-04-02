@@ -1368,7 +1368,7 @@
         },
         "seller": "Verkäufer (Wallet-Adresse)",
         "buyer": "Käufer (Wallet-Adresse)",
-        "sellerWillSend": "Verkäufer sendet",
+        "sellerWillSend": "Der Verkäufer sendet",
         "buyerWillSend": "Käufer sendet",
         "escrowFunding": "Escrow-Finanzierung",
         "escrowStatus": "Escrow-Status",

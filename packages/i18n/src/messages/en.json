@@ -987,7 +987,7 @@
           "sellerBalanceCheckFailed": "Could not verify seller balance. Check your connection and try again."
         },
         "seller": "Seller (Wallet Address)",
-        "sellerWillSend": "Seller will send",
+        "sellerWillSend": "Seller sends",
         "buyer": "Buyer (Wallet Address)",
         "buyerWillSend": "Buyer will send",
         "escrowFunding": "Escrow Funding",
