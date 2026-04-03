@@ -1,5 +1,5 @@
 import { DbConfig } from '@hypha-platform/core/server';
-import { eq, sql, and, asc, desc, SQL } from 'drizzle-orm';
+import { eq, sql, and, asc, desc, SQL, isNotNull } from 'drizzle-orm';
 
 import {
   documents,
@@ -419,6 +419,27 @@ export const findAllDocumentsBySpaceSlugWithoutPagination = async (
       result.spaceCreator ?? undefined,
     ),
   );
+};
+
+/** Issue-token rows waiting for on-chain address backfill */
+export const findTokensMissingAddressWithWeb3ProposalId = async (
+  { limit }: { limit: number },
+  { db }: DbConfig,
+) => {
+  return await db
+    .select({
+      id: tokens.id,
+      agreementWeb3Id: tokens.agreementWeb3Id,
+    })
+    .from(tokens)
+    .where(
+      and(
+        isNotNull(tokens.agreementWeb3Id),
+        sql`(${tokens.address} is null or btrim(${tokens.address}) = '')`,
+      ),
+    )
+    .orderBy(asc(tokens.id))
+    .limit(limit);
 };
 
 export const findTokenUpdateByDocumentId = async (
