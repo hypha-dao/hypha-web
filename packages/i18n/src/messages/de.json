@@ -1369,7 +1369,9 @@
           "sellerBalanceCheckFailed": "Verkäufer-Guthaben konnte nicht geprüft werden. Verbindung prüfen und erneut versuchen.",
           "memberSellerWalletMismatch": "Der Tausch nutzt Ihre verbundene Wallet. Verbinden Sie dieselbe Wallet wie die Verkäuferadresse, oder wählen Sie den Mitglied-Verkäufer, dessen Adresse zu Ihrer Wallet passt.",
           "escrowTokenInvalid": "Eine Token-Zeile verwendet die Escrow-Vertragsadresse. Verwenden Sie den ERC-20-Token-Vertrag für Verkäufer und Käufer.",
-          "insufficientSellerBalance": "Die verbundene Wallet hat nicht genug Verkäufer-Tokens. Laden Sie die Smart Wallet auf, die zur Verkäuferadresse passt."
+          "insufficientSellerBalance": "Die verbundene Wallet hat nicht genug Verkäufer-Tokens. Laden Sie die Smart Wallet auf, die zur Verkäuferadresse passt.",
+          "tokenWhitelistBlocked": "Die On-Chain-Regeln dieses Tokens blockieren die Überweisung ans Escrow (Whitelist). Wählen Sie einen anderen Token oder passen Sie die Whitelist an.",
+          "safeErc20TransferFailed": "Der Token-Vertrag hat die Überweisung ans Escrow abgelehnt (Saldo, Allowance oder Nicht-übertragbarkeit). Prüfen Sie Guthaben und ob Transfers ans Escrow erlaubt sind."
         },
         "seller": "Verkäufer (Wallet-Adresse)",
         "buyer": "Käufer (Wallet-Adresse)",

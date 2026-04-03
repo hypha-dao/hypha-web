@@ -989,7 +989,9 @@
           "sellerBalanceCheckFailed": "Could not verify seller balance. Check your connection and try again.",
           "memberSellerWalletMismatch": "Exchange funding uses your connected wallet. Connect the same wallet as the seller address, or choose the member seller whose address matches your wallet.",
           "escrowTokenInvalid": "A token row uses the escrow contract address. Use the ERC-20 token contract for seller and buyer tokens.",
-          "insufficientSellerBalance": "The connected wallet does not hold enough seller tokens. Fund the smart wallet that matches the seller address."
+          "insufficientSellerBalance": "The connected wallet does not hold enough seller tokens. Fund the smart wallet that matches the seller address.",
+          "tokenWhitelistBlocked": "This token’s on-chain rules block sending it to escrow (e.g. transfer/receive whitelist). Choose another token or update the token’s whitelist settings.",
+          "safeErc20TransferFailed": "The token contract rejected the transfer to escrow (often balance, allowance, or non-transferable rules). Check that your smart wallet holds enough tokens and that the token allows transfers to the escrow."
         },
         "seller": "Seller (Wallet Address)",
         "sellerWillSend": "Seller sends",

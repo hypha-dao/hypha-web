@@ -116,7 +116,9 @@
           "sellerBalanceCheckFailed": "Não foi possível verificar o saldo do vendedor. Verifique a conexão e tente novamente.",
           "memberSellerWalletMismatch": "O financiamento da troca usa a sua carteira ligada. Ligue a mesma carteira que o endereço do vendedor ou escolha o membro vendedor cujo endereço corresponda à sua carteira.",
           "escrowTokenInvalid": "Uma linha de token usa o endereço do contrato de escrow. Use o contrato ERC-20 do token para vendedor e comprador.",
-          "insufficientSellerBalance": "A carteira ligada não tem tokens suficientes do vendedor. Envie fundos para a smart wallet que corresponde ao endereço do vendedor."
+          "insufficientSellerBalance": "A carteira ligada não tem tokens suficientes do vendedor. Envie fundos para a smart wallet que corresponde ao endereço do vendedor.",
+          "tokenWhitelistBlocked": "As regras on-chain deste token impedem o envio para o escrow (ex.: lista de permissão de transferência/receção). Escolha outro token ou atualize as permissões do token.",
+          "safeErc20TransferFailed": "O contrato do token rejeitou a transferência para o escrow (saldo, permissão ou regras de não transferibilidade). Verifique se a smart wallet tem tokens suficientes e se o token permite transferências para o escrow."
         },
         "seller": "Vendedor (endereço da carteira)",
         "buyer": "Comprador (endereço da carteira)",

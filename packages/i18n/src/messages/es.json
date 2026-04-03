@@ -116,7 +116,9 @@
           "sellerBalanceCheckFailed": "No se pudo verificar el saldo del vendedor. Compruebe la conexión e inténtelo de nuevo.",
           "memberSellerWalletMismatch": "El intercambio usa su cartera conectada. Conecte la misma cartera que la dirección del vendedor o elija como vendedor al miembro cuya dirección coincida con su cartera.",
           "escrowTokenInvalid": "Una fila de token usa la dirección del contrato de depósito en garantía. Use el contrato ERC-20 del token para vendedor y comprador.",
-          "insufficientSellerBalance": "La cartera conectada no tiene suficientes tokens del vendedor. Envíe fondos a la smart wallet que coincide con la dirección del vendedor."
+          "insufficientSellerBalance": "La cartera conectada no tiene suficientes tokens del vendedor. Envíe fondos a la smart wallet que coincide con la dirección del vendedor.",
+          "tokenWhitelistBlocked": "Las reglas on-chain de este token impiden enviarlo al depósito en garantía (p. ej. lista blanca de transferencia/recepción). Elija otro token o actualice la lista blanca del token.",
+          "safeErc20TransferFailed": "El contrato del token rechazó la transferencia al depósito (a menudo saldo, permiso o reglas de no transferibilidad). Compruebe que su smart wallet tenga suficientes tokens y que el token permita transferencias al depósito."
         },
         "seller": "Vendedor (dirección de cartera)",
         "buyer": "Comprador (dirección de cartera)",

@@ -993,7 +993,9 @@
           "sellerBalanceCheckFailed": "Impossible de vérifier le solde du vendeur. Vérifiez votre connexion et réessayez.",
           "memberSellerWalletMismatch": "Le financement de l’échange utilise votre portefeuille connecté. Connectez le même portefeuille que l’adresse vendeur, ou choisissez le membre vendeur dont l’adresse correspond à votre portefeuille.",
           "escrowTokenInvalid": "Une ligne de jeton utilise l’adresse du contrat d’escrow. Utilisez le contrat ERC-20 du jeton pour le vendeur et l’acheteur.",
-          "insufficientSellerBalance": "Le portefeuille connecté n’a pas assez de jetons vendeur. Alimentez le smart wallet qui correspond à l’adresse vendeur."
+          "insufficientSellerBalance": "Le portefeuille connecté n’a pas assez de jetons vendeur. Alimentez le smart wallet qui correspond à l’adresse vendeur.",
+          "tokenWhitelistBlocked": "Les règles on-chain de ce jeton bloquent l’envoi vers l’escrow (liste blanche transfert/réception). Choisissez un autre jeton ou mettez à jour la liste blanche.",
+          "safeErc20TransferFailed": "Le contrat du jeton a rejeté le transfert vers l’escrow (solde, allowance ou règles de non-transférabilité). Vérifiez le solde sur le smart wallet et les transferts vers l’escrow."
         },
         "seller": "Vendeur (adresse du portefeuille)",
         "buyer": "Acheteur (adresse du portefeuille)",

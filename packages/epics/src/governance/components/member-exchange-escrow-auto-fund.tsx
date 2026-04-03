@@ -129,8 +129,15 @@ export function MemberExchangeEscrowAutoFund({
           msg = t('errors.escrowTokenInvalid');
         } else if (raw.includes('EXCHANGE_INSUFFICIENT_SELLER_BALANCE')) {
           msg = t('errors.insufficientSellerBalance');
+        } else if (raw.includes('EXCHANGE_TOKEN_WHITELIST_BLOCKED')) {
+          msg = t('errors.tokenWhitelistBlocked');
         } else if (raw.includes('EXCHANGE_MEMBER_SELLER_WALLET_MISMATCH')) {
           msg = t('errors.memberSellerWalletMismatch');
+        } else if (
+          raw.includes('0xfb8f41b2') ||
+          raw.includes('SafeERC20FailedOperation')
+        ) {
+          msg = t('errors.safeErc20TransferFailed');
         }
         setFundError(msg);
         console.error('Member exchange auto-fund failed:', e);

@@ -10,6 +10,7 @@ import {
   EXCHANGE_ESCROW_CONTRACT_BY_CHAIN,
   isExchangeEscrowContractAddress,
 } from './exchange-escrow-contract';
+import { canExecutorSendToEscrowForExchange } from './exchange-token-whitelist-eligibility';
 import { parseEscrowCreatedIdsFromLogs } from '../web3';
 
 const READ_TIMEOUT_MS = 30_000;
@@ -29,6 +30,13 @@ async function withReadTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   });
 }
 
+/** OpenZeppelin SafeERC20 — raised when token transferFrom fails inside escrow. */
+const safeErc20FailedOperationError = {
+  type: 'error',
+  name: 'SafeERC20FailedOperation',
+  inputs: [{ name: 'token', type: 'address', internalType: 'address' }],
+} as const;
+
 const escrowCreateAbi = [
   {
     type: 'function',
@@ -44,6 +52,7 @@ const escrowCreateAbi = [
     ],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
   },
+  safeErc20FailedOperationError,
 ] as const;
 
 export type FundMemberExchangeEscrowInput = {
@@ -152,6 +161,17 @@ export const useFundMemberExchangeEscrowWeb3Rpc = () => {
         if (balanceWei < sellerAmount) {
           throw new Error(
             'EXCHANGE_INSUFFICIENT_SELLER_BALANCE: The connected wallet does not hold enough of the seller token. Tokens must be on the smart wallet that signs this transaction.',
+          );
+        }
+
+        const sellerOk = await canExecutorSendToEscrowForExchange({
+          tokenAddress: sellerToken,
+          executorAddress: fromAccount,
+          escrowAddress,
+        });
+        if (!sellerOk) {
+          throw new Error(
+            'EXCHANGE_TOKEN_WHITELIST_BLOCKED: This space token blocks the seller transfer to escrow (whitelist). Pick a token that allows your wallet to send and the escrow to receive.',
           );
         }
 
