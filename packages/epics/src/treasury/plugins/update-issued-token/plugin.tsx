@@ -326,6 +326,20 @@ export const UpdateIssuedTokenPlugin = ({
     return dbTokens.filter((t) => t.spaceId === spaceId);
   }, [dbTokens, spaceId]);
 
+  /** Token list for dropdown; live name/symbol/icon overlay is applied inside `SelectTokenField` via useWatch. */
+  const tokensForSelect = useMemo(
+    () =>
+      spaceTokens.map((t) => ({
+        id: t.id,
+        name: t.name,
+        symbol: t.symbol,
+        address: typeof t.address === 'string' ? t.address : '',
+        iconUrl: t.iconUrl,
+        type: t.type,
+      })),
+    [spaceTokens],
+  );
+
   const selectedToken = useMemo(() => {
     if (!selectedTokenAddress) {
       return undefined;
@@ -866,14 +880,7 @@ export const UpdateIssuedTokenPlugin = ({
       <SelectTokenField
         label={tProposalDetails('labels.token')}
         name="tokenAddress"
-        tokens={spaceTokens.map((t) => ({
-          id: t.id,
-          name: t.name!,
-          symbol: t.symbol!,
-          address: t.address ?? '',
-          iconUrl: t.iconUrl!,
-          type: t.type,
-        }))}
+        tokens={tokensForSelect}
         placeholder={tTreasury('selectTokenPlaceholder')}
         emptyListMessage={tTreasury('noTokensAvailable')}
         required
