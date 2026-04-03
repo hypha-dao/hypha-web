@@ -369,7 +369,8 @@
       },
       "counterparty": {
         "from": "Von {name}",
-        "to": "An {name}"
+        "to": "An {name}",
+        "escrowAccount": "Escrow-Konto"
       }
     },
     "tokenSupply": "Token-Angebot",
@@ -1370,7 +1371,6 @@
       },
       "acceptInvestment": {
         "investingMember": "Investierendes Mitglied",
-        "escrowAccountAddress": "Escrow-Kontoadresse",
         "investorWillSend": "Investierendes Mitglied sendet",
         "investorWillSendLine1": "Investierendes Mitglied",
         "investorWillSendLine2": "sendet",
@@ -1426,6 +1426,7 @@
       "investorWillReceive": "Investierendes Mitglied erhält",
       "investorWillReceiveLine1": "Investierendes Mitglied",
       "investorWillReceiveLine2": "erhält",
+      "escrowAccountAddress": "Escrow-Kontoadresse",
       "fundingTreasuryThenMint": "Zuerst aus der Treasury, fehlender Betrag wird geprägt.",
       "sourceMint": "Neue Token prägen",
       "sourceTreasury": "Verfügbare Token in der Treasury nutzen",

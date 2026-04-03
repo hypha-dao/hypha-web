@@ -489,7 +489,6 @@
       },
       "acceptInvestment": {
         "investingMember": "Miembro inversor",
-        "escrowAccountAddress": "Dirección de la cuenta de depósito en garantía",
         "investorWillSend": "El miembro inversor enviará",
         "investorWillSendLine1": "El miembro inversor",
         "investorWillSendLine2": "enviará",
@@ -1004,7 +1003,8 @@
       },
       "counterparty": {
         "from": "Desde {name}",
-        "to": "A {name}"
+        "to": "A {name}",
+        "escrowAccount": "Cuenta de depósito en garantía"
       }
     },
     "tokenSupply": "Suministro del token",
@@ -1426,6 +1426,7 @@
       "investorWillReceive": "El miembro inversor recibirá",
       "investorWillReceiveLine1": "El miembro inversor",
       "investorWillReceiveLine2": "recibirá",
+      "escrowAccountAddress": "Dirección de la cuenta de depósito en garantía",
       "fundingTreasuryThenMint": "Desde la tesorería si hay saldo; el resto se acuña.",
       "sourceMint": "Acuñar nuevos tokens",
       "sourceTreasury": "Usar tokens disponibles en la tesorería",

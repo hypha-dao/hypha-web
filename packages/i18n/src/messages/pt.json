@@ -489,7 +489,6 @@
       },
       "acceptInvestment": {
         "investingMember": "Membro investidor",
-        "escrowAccountAddress": "Endereço da conta de custódia (escrow)",
         "investorWillSend": "O membro investidor enviará",
         "investorWillSendLine1": "O membro investidor",
         "investorWillSendLine2": "enviará",
@@ -1004,7 +1003,8 @@
       },
       "counterparty": {
         "from": "De {name}",
-        "to": "Para {name}"
+        "to": "Para {name}",
+        "escrowAccount": "Conta de custódia (escrow)"
       }
     },
     "tokenSupply": "Fornecimento do token",
@@ -1426,6 +1426,7 @@
       "investorWillReceive": "O membro investidor receberá",
       "investorWillReceiveLine1": "O membro investidor",
       "investorWillReceiveLine2": "receberá",
+      "escrowAccountAddress": "Endereço da conta de custódia (escrow)",
       "fundingTreasuryThenMint": "Do tesouro quando houver saldo; o restante é cunhado.",
       "sourceMint": "Cunhar novos tokens",
       "sourceTreasury": "Usar tokens disponíveis no tesouro",

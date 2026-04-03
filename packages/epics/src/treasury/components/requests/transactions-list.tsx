@@ -1,10 +1,14 @@
+'use client';
+
 import { FC } from 'react';
 import { TransferCard } from './transfer-card';
 import { TransferWithEntity } from '../../hooks';
 import { ZeroAddress } from 'ethers';
 import { tokenBackingVaultImplementationAddress } from '@hypha-platform/core/generated';
+import { getEscrowImplementationAddress } from '@hypha-platform/core/client';
 import { useVaults } from '../../hooks/use-vaults';
 import { useChainId } from 'wagmi';
+import { useTranslations } from 'next-intl';
 
 type TransactionsListProps = {
   transfers: TransferWithEntity[];
@@ -14,11 +18,14 @@ type TransactionsListProps = {
 
 export const TransactionsList: FC<TransactionsListProps> = ({
   transfers,
-  activeSort,
+  activeSort: _activeSort,
   isLoading,
 }) => {
+  const tTreasury = useTranslations('TreasuryTab');
   const { vaults } = useVaults();
   const chainId = useChainId();
+  const escrowImpl = getEscrowImplementationAddress();
+  const escrowLower = escrowImpl?.toLowerCase();
   const vaultAddress =
     tokenBackingVaultImplementationAddress[
       Number(
@@ -52,6 +59,8 @@ export const TransactionsList: FC<TransactionsListProps> = ({
           !!vaultAddress &&
           counterpartyAddress?.toLowerCase() === vaultAddress &&
           !transfer.space?.title;
+        const isEscrowCounterparty =
+          !!escrowLower && counterpartyAddress?.toLowerCase() === escrowLower;
         const vaultDisplayName = matchedVault
           ? `${matchedVault.tokenSymbol} Backing Vault`
           : singleVaultName ?? 'Token Backing Vault';
@@ -63,6 +72,9 @@ export const TransactionsList: FC<TransactionsListProps> = ({
             surname={transfer.person?.surname}
             title={
               transfer.space?.title ||
+              (isEscrowCounterparty
+                ? tTreasury('transactionCard.counterparty.escrowAccount')
+                : undefined) ||
               (isVaultCounterparty ? vaultDisplayName : undefined)
             }
             avatar={transfer.person?.avatarUrl || transfer.space?.avatarUrl}

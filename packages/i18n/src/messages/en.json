@@ -369,7 +369,8 @@
       },
       "counterparty": {
         "from": "From {name}",
-        "to": "To {name}"
+        "to": "To {name}",
+        "escrowAccount": "Escrow Account"
       }
     },
     "tokenSupply": "Token Supply",
@@ -1370,7 +1371,6 @@
       },
       "acceptInvestment": {
         "investingMember": "Investing member",
-        "escrowAccountAddress": "Escrow account address",
         "investorWillSend": "Investing member will send",
         "investorWillSendLine1": "Investing member",
         "investorWillSendLine2": "will send",
@@ -1426,6 +1426,7 @@
       "investorWillReceive": "Investing Member will Receive",
       "investorWillReceiveLine1": "Investing Member",
       "investorWillReceiveLine2": "will Receive",
+      "escrowAccountAddress": "Escrow account address",
       "fundingTreasuryThenMint": "Taken from treasury when available; any remainder is minted.",
       "sourceMint": "Mint new tokens",
       "sourceTreasury": "Use available tokens in treasury",

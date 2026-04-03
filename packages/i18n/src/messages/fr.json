@@ -369,7 +369,8 @@
       },
       "counterparty": {
         "from": "De {name}",
-        "to": "À {name}"
+        "to": "À {name}",
+        "escrowAccount": "Compte séquestre"
       }
     },
     "tokenSupply": "Offre de tokens",
@@ -1370,7 +1371,6 @@
       },
       "acceptInvestment": {
         "investingMember": "Membre investisseur",
-        "escrowAccountAddress": "Adresse du compte séquestre",
         "investorWillSend": "Le membre investisseur enverra",
         "investorWillSendLine1": "Le membre investisseur",
         "investorWillSendLine2": "enverra",
@@ -1426,6 +1426,7 @@
       "investorWillReceive": "Le membre investisseur recevra",
       "investorWillReceiveLine1": "Le membre investisseur",
       "investorWillReceiveLine2": "recevra",
+      "escrowAccountAddress": "Adresse du compte séquestre",
       "fundingTreasuryThenMint": "Prélevé sur la trésorerie si disponible ; le reste est frappé.",
       "sourceMint": "Frapper de nouveaux tokens",
       "sourceTreasury": "Utiliser les tokens disponibles en trésorerie",

@@ -2,7 +2,10 @@
 
 import type { ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
-import { parseHyphaInvestmentFormFromDescription } from '@hypha-platform/core/client';
+import {
+  getEscrowImplementationAddress,
+  parseHyphaInvestmentFormFromDescription,
+} from '@hypha-platform/core/client';
 import { Image, Separator } from '@hypha-platform/ui';
 import { EthAddress } from '../../people';
 import { useTokens } from '../../treasury';
@@ -145,10 +148,22 @@ export function ProposalAcceptInvestmentData({
   }
 
   const showBothSections = Boolean(sendFromMarker && receiveFromMarker);
+  const escrowAddr = getEscrowImplementationAddress();
 
   return (
     <div className="flex flex-col gap-5">
       <span className="text-neutral-11 text-2 font-medium">{t('title')}</span>
+
+      {escrowAddr ? (
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between w-full gap-x-4">
+          <span className="text-1 text-neutral-11 shrink-0">
+            {t('escrowAccountAddress')}
+          </span>
+          <div className="min-w-0 sm:max-w-[min(100%,20rem)] sm:ml-auto">
+            <EthAddress address={escrowAddr} />
+          </div>
+        </div>
+      ) : null}
 
       {sendFromMarker ? (
         <InvestmentSection label={sendLabel}>
