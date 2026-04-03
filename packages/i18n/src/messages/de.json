@@ -1625,7 +1625,7 @@
     "copiedButton": "Kopiert!",
     "tabChat": "Chat",
     "tabMembers": "Mitglieder",
-    "membersCount": "{count} Mitglieder · {online} online",
+    "membersCount": "{count, plural, one {# Mitglied} other {# Mitglieder}} · {online} online",
     "you": "Du",
     "reactButton": "Reagieren",
     "replyButton": "Antworten",
@@ -1635,9 +1635,10 @@
     "bold": "Fett",
     "emoji": "Emoji",
     "mention": "Erwähnen",
-    "timestampToday": "Today at {time}",
-    "timestampYesterday": "Yesterday at {time}",
-    "timestampDate": "{date} at {time}",
-    "systemSender": "System"
+    "timestampToday": "Heute um {time}",
+    "timestampYesterday": "Gestern um {time}",
+    "timestampDate": "{date} um {time}",
+    "systemSender": "System",
+    "noMembers": "Keine Mitglieder gefunden"
   }
 }

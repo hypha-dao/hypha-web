@@ -1638,6 +1638,7 @@
     "timestampToday": "Today at {time}",
     "timestampYesterday": "Yesterday at {time}",
     "timestampDate": "{date} at {time}",
-    "systemSender": "System"
+    "systemSender": "System",
+    "noMembers": "No members found"
   }
 }

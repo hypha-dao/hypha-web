@@ -81,7 +81,6 @@ export function HumanChatPanelChatBar({
             'bg-transparent px-3 pt-3 pb-1 text-sm leading-relaxed text-foreground',
             'placeholder:text-muted-foreground focus:outline-none',
           )}
-          style={{ minHeight: '36px', maxHeight: '160px' }}
         />
 
         <div className="flex min-w-0 items-center justify-between px-2 pb-2">

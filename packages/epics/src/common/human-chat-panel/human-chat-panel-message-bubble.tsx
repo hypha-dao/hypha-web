@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { Smile, Reply, MoreHorizontal } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
+import { stringToHue, getInitials } from './utils';
 
 type Reaction = {
   emoji: string;
@@ -24,28 +25,6 @@ type HumanChatPanelMessageBubbleProps = {
   };
   isStreaming?: boolean;
 };
-
-/**
- * Generate a deterministic hue from a string (for avatar background color).
- */
-function stringToHue(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return Math.abs(hash) % 360;
-}
-
-/**
- * Get initials from a name (up to 2 characters).
- */
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0]?.charAt(0).toUpperCase() ?? '';
-  return (
-    (parts[0]?.charAt(0) ?? '') + (parts[1]?.charAt(0) ?? '')
-  ).toUpperCase();
-}
 
 /**
  * Format a timestamp for display.
@@ -113,6 +92,7 @@ export function HumanChatPanelMessageBubble({
 }: HumanChatPanelMessageBubbleProps) {
   const t = useTranslations('HumanChatPanel');
 
+  // TODO: Handle non-text parts (file attachments, tool results, etc.)
   const textParts =
     message.parts?.filter(
       (p): p is { type: 'text'; text: string } => p.type === 'text',

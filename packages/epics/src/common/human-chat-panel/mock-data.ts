@@ -1,8 +1,8 @@
 export type HumanChatMessage = {
   id: string;
   role: 'user' | 'member';
-  content: string;
-  timestamp: Date;
+  parts?: { type: 'text'; text: string }[];
+  timestamp?: Date;
   senderName?: string;
   isStreaming?: boolean;
 };
@@ -14,7 +14,7 @@ export function createMockWelcomeMessage(
   return {
     id: 'welcome',
     role: 'member',
-    content,
+    parts: [{ type: 'text', text: content }],
     timestamp: new Date(),
     senderName,
   };
