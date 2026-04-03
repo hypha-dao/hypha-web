@@ -47,6 +47,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   );
   const [isMatrixAvailable, setIsMatrixAvailable] = React.useState(false);
   const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+  const [activeMatrixUserId, setActiveMatrixUserId] = React.useState<
+    string | null
+  >(null);
   const registeredRoomListenersRef = React.useRef<RoomMessageListenerRecord[]>(
     [],
   );
@@ -76,6 +79,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         await matrixClient.startClient();
 
         setClient(matrixClient);
+        setActiveMatrixUserId(userId);
         setIsMatrixAvailable(matrixClient !== null);
         setIsAuthenticated(true);
         console.log('Matrix client initialized');
@@ -85,6 +89,23 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     },
     [],
   );
+
+  React.useEffect(() => {
+    if (!client) {
+      return;
+    }
+    if (matrixToken && activeMatrixUserId === matrixToken.userId) {
+      return;
+    }
+
+    client.stopClient();
+    registeredRoomListenersRef.current = [];
+    setRegisteredRoomListeners([]);
+    setClient(null);
+    setActiveMatrixUserId(null);
+    setIsAuthenticated(false);
+    setIsMatrixAvailable(false);
+  }, [activeMatrixUserId, client, matrixToken]);
 
   React.useEffect(() => {
     if (client) {

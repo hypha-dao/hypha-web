@@ -63,7 +63,23 @@ export async function GET(request: NextRequest) {
   }
 
   const authToken = authHeader.replace('Bearer ', '');
-  const env = validateEnvVars();
+
+  let env: ReturnType<typeof validateEnvVars>;
+  try {
+    env = validateEnvVars();
+  } catch (error) {
+    const correlationId =
+      request.headers.get('x-correlation-id') ?? randomUUID();
+    console.warn(
+      `Config validation failed [correlationId: ${correlationId}]:`,
+      error instanceof Error ? error.message : error,
+    );
+    return NextResponse.json(
+      { error: 'Server configuration error', correlationId },
+      { status: 500 },
+    );
+  }
+
   const privyUserId = await verifyPrivyToken(
     authToken,
     env.PRIVY_APP_ID,
@@ -81,7 +97,21 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const matrixAuthClient = new MatrixSharedSecret();
+  let matrixAuthClient: MatrixSharedSecret;
+  try {
+    matrixAuthClient = new MatrixSharedSecret();
+  } catch (error) {
+    const correlationId =
+      request.headers.get('x-correlation-id') ?? randomUUID();
+    console.warn(
+      `Matrix client init failed [correlationId: ${correlationId}]:`,
+      error instanceof Error ? error.message : error,
+    );
+    return NextResponse.json(
+      { error: 'Server configuration error', correlationId },
+      { status: 500 },
+    );
+  }
 
   const getAdminMatrixUserName = async (
     environment: Environment,
@@ -184,6 +214,7 @@ export async function GET(request: NextRequest) {
                 privyUserId: decoratedPrivyUserId,
                 environment,
                 encryptedAccessToken,
+                deviceId,
               },
               { authToken },
             );

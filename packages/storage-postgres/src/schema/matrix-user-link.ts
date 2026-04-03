@@ -7,13 +7,13 @@ import {
   timestamp,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
+import { commonDateFields } from './shared';
 
 export const matrixEnvironmentEnum = pgEnum('matrix_environment', [
   'development',
   'preview',
   'production',
 ]);
-import { commonDateFields } from './shared';
 
 export const matrixUserLinks = pgTable(
   'matrix_user_links',

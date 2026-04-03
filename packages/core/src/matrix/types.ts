@@ -2,14 +2,15 @@ import { Environment } from '../coherence/types';
 
 export type MatrixUserLink = {
   id: number;
+  environment: Environment;
   privyUserId: string;
   matrixUserId: string;
   encryptedAccessToken: string;
-  deviceId?: string;
+  deviceId: string | null;
   createdAt: Date;
   updatedAt: Date;
-  encryptedRefreshToken?: string;
-  tokenExpiresAt?: Date;
+  encryptedRefreshToken: string | null;
+  tokenExpiresAt: Date | null;
 };
 
 export interface CreateMatrixUserLinkInput {
@@ -23,6 +24,7 @@ export interface CreateMatrixUserLinkInput {
 export interface UpdateEncryptedAccessTokenInput {
   privyUserId: string;
   encryptedAccessToken: string;
+  deviceId?: string | null;
   environment: Environment;
 }
 

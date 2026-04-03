@@ -1,4 +1,4 @@
-'use server';
+import 'server-only';
 
 import { db } from '@hypha-platform/storage-postgres';
 import { MatrixUserLink } from '../../types';
@@ -28,14 +28,9 @@ export async function getLinkByMatrixUserId({
       return null;
     }
 
-    const { deviceId, encryptedRefreshToken, tokenExpiresAt, ...rest } =
-      userLink;
-
     return {
-      deviceId: deviceId ?? undefined,
-      encryptedRefreshToken: encryptedRefreshToken ?? undefined,
-      tokenExpiresAt: tokenExpiresAt ?? undefined,
-      ...rest,
+      ...userLink,
+      environment: userLink.environment as Environment,
     };
   } catch (error) {
     throw new Error('Failed to get Matrix user ID from Matrix user link', {

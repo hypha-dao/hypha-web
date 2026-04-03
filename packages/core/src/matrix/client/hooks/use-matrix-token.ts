@@ -22,13 +22,15 @@ export const useMatrixToken = () => {
   const endpoint = isLoadingJwt ? null : '/api/matrix/token';
 
   const { data: matrixToken, isLoading } = useSWR(
-    [endpoint, jwt, 'getMatrixToken'],
-    async ([endpoint, authToken]) => {
+    [endpoint, !!jwt, 'getMatrixToken'],
+    async ([endpoint]) => {
+      const authToken = jwt;
       if (!endpoint || !authToken) {
         return undefined;
       }
       try {
         const response = await fetch(endpoint, {
+          cache: 'no-store',
           headers: {
             Authorization: `Bearer ${authToken}`,
           },
@@ -38,7 +40,9 @@ export const useMatrixToken = () => {
           console.warn(
             `Matrix token request failed: ${response.status} - ${errorText}`,
           );
-          throw new Error(`Request failed: ${response.status}`);
+          throw new Error(
+            `Request failed: ${response.status} ${response.statusText} - ${errorText.slice(0, 300)}`,
+          );
         }
         const data = await response.json();
         if (

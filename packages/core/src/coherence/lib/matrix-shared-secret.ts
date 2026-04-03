@@ -111,7 +111,10 @@ export class MatrixSharedSecret {
       )}`,
     );
     if (!response.ok) {
-      return false;
+      const body = await response.text().catch(() => 'unknown');
+      throw new Error(
+        `Failed to check username availability for ${username}: ${response.status} ${response.statusText} - ${body}`,
+      );
     }
     const available = await response.json();
     return available.available;
@@ -176,8 +179,7 @@ export class MatrixSharedSecret {
     isAdmin: boolean = false,
   ): Promise<RegisterResponse> {
     const response = await this.registerUserNonce(username, isAdmin);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let data: any;
+    let data: unknown;
     try {
       data = await response.json();
     } catch {
@@ -187,10 +189,20 @@ export class MatrixSharedSecret {
       );
     }
 
-    if (!response.ok) {
-      console.warn('Cannot register user:', data?.errcode ?? 'unknown error');
+    const errorData = data as { errcode?: string; error?: string } | null;
+    const successData = data as {
+      access_token?: string;
+      user_id?: string;
+      device_id?: string;
+    } | null;
 
-      if (data.errcode === 'M_USER_IN_USE') {
+    if (!response.ok) {
+      console.warn(
+        'Cannot register user:',
+        errorData?.errcode ?? 'unknown error',
+      );
+
+      if (errorData?.errcode === 'M_USER_IN_USE') {
         return {
           accessToken: '',
           userId: '',
@@ -199,23 +211,23 @@ export class MatrixSharedSecret {
       }
 
       throw new Error(
-        `Failed to register user: ${data?.errcode ?? response.statusText}`,
+        `Failed to register user: ${errorData?.errcode ?? response.statusText}`,
       );
     }
 
-    if (!data.access_token) {
+    if (!successData?.access_token) {
       throw new Error('Registration succeeded but no access_token returned');
     }
 
     await this.changePassword(
-      data.access_token,
+      successData.access_token,
       crypto.randomBytes(32).toString('hex'),
     );
 
     return {
-      accessToken: encryptMatrixToken(data.access_token),
-      userId: data.user_id,
-      deviceId: data.device_id,
+      accessToken: encryptMatrixToken(successData.access_token),
+      userId: successData.user_id ?? '',
+      deviceId: successData.device_id ?? '',
     };
   }
 
@@ -245,7 +257,10 @@ export class MatrixSharedSecret {
         }`,
       );
     }
-    return { ok: data?.password_updated, password };
+    if (data?.password_updated === false) {
+      throw new Error(`Password reset for ${username} was not applied`);
+    }
+    return { ok: true, password };
   }
 
   async removeUser(username: string, adminAccessToken: string) {

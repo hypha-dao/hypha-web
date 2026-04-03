@@ -6,9 +6,15 @@ function getDecoratedPrivyId(privyUserId: string, environment: Environment) {
     throw new Error('Missing privyUserId');
   }
   const prefix = getPrefixByEnvironment(environment);
-  const matrixUsername = `${prefix}_privy_${privyUserId
+  const sanitizedPrivyUserId = privyUserId
     .replace(/[^a-z0-9]/gi, '_')
-    .toLowerCase()}`;
+    .toLowerCase();
+  const matrixUsername = `${prefix}_privy_${sanitizedPrivyUserId}`;
+  if (matrixUsername.length > 255) {
+    throw new Error(
+      `Decorated Privy ID exceeds Matrix username length limit (${matrixUsername.length} > 255)`,
+    );
+  }
   return matrixUsername;
 }
 
