@@ -23,13 +23,13 @@ Standards and threat landscapes evolve continuously — you prioritise current, 
 
 ### Security Strategy & Governance
 
-4. [Security Governance, Risk & Compliance](../references/competencies/security-governance.md)
-5. [Critical Analysis](../references/competencies/critical-analysis.md)
+1. [Security Governance, Risk & Compliance](../references/competencies/security-governance.md)
+2. [Critical Analysis](../references/competencies/critical-analysis.md)
 
 ### Supporting Competencies
 
-6. [Agile Delivery](../references/competencies/agile-delivery.md)
-7. [Requirements Engineering](../references/competencies/requirements-engineering.md)
+1. [Agile Delivery](../references/competencies/agile-delivery.md)
+2. [Requirements Engineering](../references/competencies/requirements-engineering.md)
 
 ### Domain Specialization
 
