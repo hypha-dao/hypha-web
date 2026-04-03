@@ -777,12 +777,16 @@ export const UpdateIssuedTokenPlugin = ({
           )
         : null;
     return (
-      <span className="text-2 text-neutral-11">
-        {formatCurrencyValue(maxCapHumanFromChain)}
+      <div className="flex flex-col items-end gap-0.5 text-right text-2 text-neutral-11">
+        <span className="text-nowrap">
+          {formatCurrencyValue(maxCapHumanFromChain)}
+        </span>
         {typeSuffix ? (
-          <span className="text-neutral-11"> ({typeSuffix})</span>
+          <span className="text-xs text-neutral-11 leading-tight text-nowrap">
+            ({typeSuffix})
+          </span>
         ) : null}
-      </span>
+      </div>
     );
   }, [
     isLoadingOnChainData,

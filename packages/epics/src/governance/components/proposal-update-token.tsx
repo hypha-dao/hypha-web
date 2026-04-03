@@ -269,29 +269,21 @@ export const ProposalUpdateToken = ({
     return null;
   }, [pendingData?.maxSupplyTypeValue, fixedMaxSupplyProp, tAgreementFlow]);
 
-  const maxSupplyDisplay =
-    resolvedMaxHuman === undefined ? (
-      <>
-        {tProposalDetails('labels.unlimitedSupply')}
-        {maxSupplyTypeBracket ? (
-          <span className="text-neutral-11"> ({maxSupplyTypeBracket})</span>
-        ) : null}
-      </>
-    ) : resolvedMaxHuman === 0 ? (
-      <>
-        {tProposalDetails('labels.unlimitedSupply')}
-        {maxSupplyTypeBracket ? (
-          <span className="text-neutral-11"> ({maxSupplyTypeBracket})</span>
-        ) : null}
-      </>
-    ) : (
-      <>
-        {formatCurrencyValue(resolvedMaxHuman)}
-        {maxSupplyTypeBracket ? (
-          <span className="text-neutral-11"> ({maxSupplyTypeBracket})</span>
-        ) : null}
-      </>
-    );
+  const maxSupplyMainLine =
+    resolvedMaxHuman === undefined || resolvedMaxHuman === 0
+      ? tProposalDetails('labels.unlimitedSupply')
+      : formatCurrencyValue(resolvedMaxHuman);
+
+  const maxSupplyDisplay = (
+    <div className="flex flex-col items-end gap-0.5 text-right">
+      <span>{maxSupplyMainLine}</span>
+      {maxSupplyTypeBracket ? (
+        <span className="text-xs text-neutral-11 leading-tight">
+          ({maxSupplyTypeBracket})
+        </span>
+      ) : null}
+    </div>
+  );
 
   return (
     <div className="flex flex-col gap-5">
@@ -316,11 +308,11 @@ export const ProposalUpdateToken = ({
               : tProposalDetails('labels.unknown')}
           </div>
         </div>
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-start gap-2">
           <div className="text-1 text-neutral-11 w-full">
             {tProposalDetails('labels.maxSupply')}
           </div>
-          <div className="text-1">{maxSupplyDisplay}</div>
+          <div className="text-1 shrink-0">{maxSupplyDisplay}</div>
         </div>
         {showTokenPrice && tokenPrice !== undefined && priceCurrencyFeed && (
           <div className="flex justify-between items-center text-nowrap">
