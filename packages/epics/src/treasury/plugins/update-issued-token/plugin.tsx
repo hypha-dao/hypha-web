@@ -86,6 +86,7 @@ export const UpdateIssuedTokenPlugin = ({
     control,
     getValues,
     setValue,
+    resetField,
     watch,
     formState: { dirtyFields },
   } = useFormContext();
@@ -371,9 +372,13 @@ export const UpdateIssuedTokenPlugin = ({
       return;
     }
 
-    const tokenAddressChanged =
-      lastHydratedTokenAddressRef.current !== selectedTokenAddress;
+    const prevTokenAddress = lastHydratedTokenAddressRef.current;
     lastHydratedTokenAddressRef.current = selectedTokenAddress;
+    /** User changed the token dropdown (not first paint / initial address). */
+    const isTokenSwitch =
+      prevTokenAddress !== null &&
+      prevTokenAddress !== selectedTokenAddress &&
+      selectedTokenAddress !== '';
 
     const safeRefFromDb = sanitizeTokenPriceReferenceCurrency(
       selectedToken.referenceCurrency,
@@ -396,13 +401,21 @@ export const UpdateIssuedTokenPlugin = ({
       });
     };
 
-    setIfClean('name', selectedToken.name);
-    setIfClean('symbol', selectedToken.symbol);
-    const currentIcon = getValues('iconUrl');
-    if (tokenAddressChanged || !(currentIcon instanceof File)) {
-      if (!(dirtyFields as Record<string, unknown>)?.iconUrl) {
-        setValue('iconUrl', iconFromDb, { shouldDirty: false });
-        setValue('initialIconUrl', iconFromDb, { shouldDirty: false });
+    if (isTokenSwitch) {
+      resetField('name', { defaultValue: selectedToken.name });
+      resetField('symbol', { defaultValue: selectedToken.symbol });
+      resetField('iconUrl', { defaultValue: iconFromDb });
+      resetField('initialIconUrl', { defaultValue: iconFromDb });
+    } else {
+      setIfClean('name', selectedToken.name);
+      setIfClean('symbol', selectedToken.symbol);
+      const currentIcon = getValues('iconUrl');
+      const tokenAddressChanged = prevTokenAddress !== selectedTokenAddress;
+      if (tokenAddressChanged || !(currentIcon instanceof File)) {
+        if (!(dirtyFields as Record<string, unknown>)?.iconUrl) {
+          setValue('iconUrl', iconFromDb, { shouldDirty: false });
+          setValue('initialIconUrl', iconFromDb, { shouldDirty: false });
+        }
       }
     }
     setIfClean('type', selectedToken.type);
@@ -440,6 +453,7 @@ export const UpdateIssuedTokenPlugin = ({
     selectedTokenAddress,
     selectedTokenFingerprint,
     setValue,
+    resetField,
     getValues,
     dirtyFields,
   ]);
