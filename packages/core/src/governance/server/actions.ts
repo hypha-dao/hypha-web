@@ -29,6 +29,7 @@ import { db } from '@hypha-platform/storage-postgres';
 import {
   findTokenUpdateByAddress,
   findTokenUpdateByDocumentId,
+  findTokenUpdateForSpaceTokenAddress,
 } from './queries';
 
 export async function createAgreementAction(
@@ -164,4 +165,19 @@ export async function getTokenUpdateByDocumentIdAction(
     throw new Error('Invalid document id');
   }
   return findTokenUpdateByDocumentId(documentId, { db });
+}
+
+export async function getTokenUpdateForSpaceTokenAddressAction(
+  spaceId: number,
+  tokenAddress: string,
+  { authToken }: { authToken: string },
+) {
+  if (!authToken) throw new Error('authToken is required to get token update');
+  if (!Number.isFinite(spaceId) || spaceId < 1) {
+    throw new Error('Invalid space id');
+  }
+  if (!tokenAddress || !isAddress(tokenAddress)) {
+    throw new Error('Invalid address format');
+  }
+  return findTokenUpdateForSpaceTokenAddress(spaceId, tokenAddress, { db });
 }

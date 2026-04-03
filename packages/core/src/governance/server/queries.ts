@@ -9,6 +9,7 @@ import {
   Person as DbPerson,
   Space as DbSpace,
   tokenUpdates,
+  tokens,
 } from '@hypha-platform/storage-postgres';
 
 import { DocumentState } from '../types';
@@ -443,4 +444,26 @@ export const findTokenUpdateByAddress = async (
     .where(sql`lower(${tokenUpdates.tokenAddress}) = ${normalized}`)
     .limit(1);
   return tokenUpdate || null;
+};
+
+/** Pending token update for a space + contract (avoids wrong row when same address exists elsewhere). */
+export const findTokenUpdateForSpaceTokenAddress = async (
+  spaceId: number,
+  tokenAddress: string,
+  { db }: DbConfig,
+) => {
+  const normalized = tokenAddress.trim().toLowerCase();
+  const [row] = await db
+    .select({ tokenUpdate: tokenUpdates })
+    .from(tokenUpdates)
+    .innerJoin(
+      tokens,
+      and(
+        eq(tokens.spaceId, spaceId),
+        sql`lower(${tokens.address}) = lower(${tokenUpdates.tokenAddress})`,
+      ),
+    )
+    .where(sql`lower(${tokenUpdates.tokenAddress}) = ${normalized}`)
+    .limit(1);
+  return row?.tokenUpdate ?? null;
 };

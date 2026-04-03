@@ -230,14 +230,16 @@ export function buildUpdateIssuedTokenResubmitPayload({
       enableTokenPrice: !!(data.referencePrice && priceRef),
       tokenPrice: data.referencePrice,
       referenceCurrency: priceRef,
-      enableAdvancedTransferControls: !!(
-        data.transferWhitelist?.from?.length ||
-        data.transferWhitelist?.to?.length ||
-        data.useTransferWhitelist ||
-        data.useReceiveWhitelist ||
-        snapshot?.useTransferWhitelist ||
-        snapshot?.useReceiveWhitelist
-      ),
+      enableAdvancedTransferControls:
+        data.enableAdvancedTransferControls ??
+        !!(
+          data.transferWhitelist?.from?.length ||
+          data.transferWhitelist?.to?.length ||
+          data.useTransferWhitelist ||
+          data.useReceiveWhitelist ||
+          snapshot?.useTransferWhitelist ||
+          snapshot?.useReceiveWhitelist
+        ),
       archiveToken: data.archiveToken ?? false,
       ...(data.transferWhitelist
         ? { transferWhitelist: data.transferWhitelist }

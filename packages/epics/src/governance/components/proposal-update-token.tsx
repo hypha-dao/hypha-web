@@ -2,6 +2,7 @@ import {
   getPriceCurrencyCode,
   isTokenUpdateData,
   useJwt,
+  useTokenUpdateByDocumentId,
   useUpdateTokenByAddress,
   type DbToken,
   type Space,
@@ -50,6 +51,8 @@ export interface ProposalUpdateTokenProps {
   archiveToken?: boolean;
   /** From proposal txs / chain; when set with maxSupply 0, shows cap type in UI */
   fixedMaxSupply?: boolean;
+  /** Prefer pending `token_updates` row for this agreement (correct when multiple spaces share an address). */
+  documentId?: number;
 }
 
 interface TokenUpdateDataInterface {
@@ -59,6 +62,10 @@ interface TokenUpdateDataInterface {
   symbol?: string;
   maxSupply?: number;
   maxSupplyTypeValue?: 'immutable' | 'updatable';
+  transferable?: boolean;
+  enableAdvancedTransferControls?: boolean;
+  useTransferWhitelist?: boolean;
+  useReceiveWhitelist?: boolean;
   transferWhitelist?: TransferWhitelistFormValue;
 }
 
@@ -83,15 +90,24 @@ export const ProposalUpdateToken = ({
   dbTokens,
   archiveToken,
   fixedMaxSupply: fixedMaxSupplyProp,
+  documentId,
 }: ProposalUpdateTokenProps) => {
   const tProposalDetails = useTranslations('ProposalDetails');
   const tAgreementFlow = useTranslations('AgreementFlow');
   const { jwt: authToken } = useJwt();
-  const { tokenUpdate, isLoading: isTokenUpdateLoading } =
-    useUpdateTokenByAddress({
-      address,
+  const { tokenUpdate: tokenUpdateByDoc, isLoading: isLoadingDoc } =
+    useTokenUpdateByDocumentId({
+      documentId: documentId ?? undefined,
       authToken: authToken ?? undefined,
     });
+  const { tokenUpdate: tokenUpdateByAddr, isLoading: isLoadingAddr } =
+    useUpdateTokenByAddress({
+      address: documentId ? undefined : address,
+      authToken: authToken ?? undefined,
+    });
+  const tokenUpdate = tokenUpdateByDoc ?? tokenUpdateByAddr;
+  const isTokenUpdateLoading =
+    documentId != null ? isLoadingDoc : isLoadingAddr;
   const pendingData: TokenUpdateDataInterface | undefined =
     tokenUpdate?.data && isTokenUpdateData(tokenUpdate.data)
       ? (tokenUpdate.data as TokenUpdateDataInterface)
@@ -225,6 +241,11 @@ export const ProposalUpdateToken = ({
 
   const resolvedName = name ?? pendingData?.name ?? dbTokenMatch?.name;
   const resolvedSymbol = symbol ?? pendingData?.symbol ?? dbTokenMatch?.symbol;
+  const resolvedTransferable = pendingData?.transferable ?? transferable;
+  const resolvedUseTransferWhitelist =
+    pendingData?.useTransferWhitelist ?? useTransferWhitelist;
+  const resolvedUseReceiveWhitelist =
+    pendingData?.useReceiveWhitelist ?? useReceiveWhitelist;
   const resolvedMaxHuman = React.useMemo(() => {
     if (maxSupplyHuman !== undefined) {
       return maxSupplyHuman;
@@ -342,13 +363,25 @@ export const ProposalUpdateToken = ({
           />
         </div>
       )}
-      {transferable !== undefined && (
+      {resolvedTransferable !== undefined && (
         <div className="flex justify-between items-center">
           <div className="text-1 text-neutral-11 w-full">
             {tProposalDetails('labels.transferable')}
           </div>
           <div className="text-1">
-            {transferable
+            {resolvedTransferable
+              ? tProposalDetails('labels.yes')
+              : tProposalDetails('labels.no')}
+          </div>
+        </div>
+      )}
+      {pendingData?.enableAdvancedTransferControls !== undefined && (
+        <div className="flex justify-between items-center">
+          <div className="text-1 text-neutral-11 w-full">
+            {tAgreementFlow('plugins.issueNewToken.transfer.advancedControls')}
+          </div>
+          <div className="text-1">
+            {pendingData.enableAdvancedTransferControls
               ? tProposalDetails('labels.yes')
               : tProposalDetails('labels.no')}
           </div>
@@ -399,25 +432,25 @@ export const ProposalUpdateToken = ({
           </div>
         </div>
       )}
-      {useTransferWhitelist !== undefined && (
+      {resolvedUseTransferWhitelist !== undefined && (
         <div className="flex justify-between items-center">
           <div className="text-1 text-neutral-11 w-full">
             {tProposalDetails('labels.useTransferWhitelist')}
           </div>
           <div className="text-1">
-            {useTransferWhitelist
+            {resolvedUseTransferWhitelist
               ? tProposalDetails('labels.yes')
               : tProposalDetails('labels.no')}
           </div>
         </div>
       )}
-      {useReceiveWhitelist !== undefined && (
+      {resolvedUseReceiveWhitelist !== undefined && (
         <div className="flex justify-between items-center">
           <div className="text-1 text-neutral-11 w-full">
             {tProposalDetails('labels.useReceiveWhitelist')}
           </div>
           <div className="text-1">
-            {useReceiveWhitelist
+            {resolvedUseReceiveWhitelist
               ? tProposalDetails('labels.yes')
               : tProposalDetails('labels.no')}
           </div>

@@ -596,6 +596,7 @@ export const ProposalDetail = ({
       {proposalDetails &&
       hasUpdateTokenDataToDisplay(proposalDetails.updateTokenData) ? (
         <ProposalUpdateToken
+          documentId={documentId}
           address={proposalDetails.updateTokenData.address as `0x${string}`}
           tokenType={updateTokenTypeFromDb}
           name={proposalDetails.updateTokenData.name}

@@ -212,6 +212,8 @@ export type TokenUpdateData = {
   archiveToken?: boolean;
   /** Persisted for withdraw/resubmit hydration */
   enableProposalAutoMinting?: boolean;
+  /** UI toggle — persisted so reopening the form matches the saved proposal */
+  enableAdvancedTransferControls?: boolean;
   useTransferWhitelist?: boolean;
   useReceiveWhitelist?: boolean;
   /** Off-chain copy for proposal details + resubmit; on-chain uses address lists only */

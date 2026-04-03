@@ -499,14 +499,23 @@ export const useUpdateIssuedTokenOrchestrator = ({
         referenceCurrency: arg.referenceCurrency,
         archiveToken: arg.archiveToken,
         enableProposalAutoMinting: arg.enableProposalAutoMinting,
-        ...(arg.enableAdvancedTransferControls === true &&
-        arg.transferable === true
+        enableAdvancedTransferControls:
+          arg.enableAdvancedTransferControls === true,
+        ...(arg.transferable === true
           ? {
               useTransferWhitelist:
-                (arg.transferWhitelist?.from?.length ?? 0) > 0,
-              useReceiveWhitelist: (arg.transferWhitelist?.to?.length ?? 0) > 0,
+                arg.enableAdvancedTransferControls === true
+                  ? (arg.transferWhitelist?.from?.length ?? 0) > 0
+                  : false,
+              useReceiveWhitelist:
+                arg.enableAdvancedTransferControls === true
+                  ? (arg.transferWhitelist?.to?.length ?? 0) > 0
+                  : false,
             }
-          : {}),
+          : {
+              useTransferWhitelist: false,
+              useReceiveWhitelist: false,
+            }),
         ...(arg.transferWhitelist !== undefined
           ? { transferWhitelist: arg.transferWhitelist }
           : {}),

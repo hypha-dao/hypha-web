@@ -29,6 +29,7 @@ export type TokenUpdateDataJson = {
   referenceCurrency?: string;
   archiveToken?: boolean;
   enableProposalAutoMinting?: boolean;
+  enableAdvancedTransferControls?: boolean;
   useTransferWhitelist?: boolean;
   useReceiveWhitelist?: boolean;
   transferWhitelist?: unknown;

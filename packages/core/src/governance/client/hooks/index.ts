@@ -39,6 +39,8 @@ export * from './useMembershipExitOrchestrator';
 export * from './useMembershipExitMutations.web.rpc';
 export * from './useWithdrawProposal';
 export * from './useUpdateTokenByAddress';
+export * from './useTokenUpdateByDocumentId';
+export * from './useTokenUpdateForSpaceTokenAddress';
 export * from './useTokenOnChainData';
 export * from './fetch-whitelist-baseline';
 export * from './useTokenDecimals';

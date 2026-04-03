@@ -20,10 +20,13 @@ import {
 import {
   fetchWhitelistBaselineFromChain,
   getPriceCurrencyCode,
+  isTokenUpdateData,
   sanitizeTokenPriceReferenceCurrency,
   type Person,
   type Space,
+  useJwt,
   useTokenOnChainData,
+  useTokenUpdateForSpaceTokenAddress,
 } from '@hypha-platform/core/client';
 import {
   GeneralTokenSettings,
@@ -83,6 +86,7 @@ export const UpdateIssuedTokenPlugin = ({
   const tTreasury = useTranslations('TreasuryTab');
   const tProposalDetails = useTranslations('ProposalDetails');
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const { jwt } = useJwt();
   const {
     control,
     getValues,
@@ -354,6 +358,62 @@ export const UpdateIssuedTokenPlugin = ({
 
   const { data: onChainData, isLoading: isLoadingOnChainData } =
     useTokenOnChainData(selectedTokenAddress as `0x${string}` | undefined);
+
+  const { tokenUpdate: pendingTokenUpdateForSpace } =
+    useTokenUpdateForSpaceTokenAddress({
+      spaceId: spaceId ?? undefined,
+      tokenAddress: selectedTokenAddress,
+      authToken: jwt ?? undefined,
+    });
+
+  /**
+   * Pending `token_updates` row for this space + token (draft proposal). Hydrates
+   * transferable / advanced transfer toggles when reopening the form — DB token row is stale.
+   */
+  useEffect(() => {
+    if (!selectedTokenAddress || !pendingTokenUpdateForSpace?.data) {
+      return;
+    }
+    if (!isTokenUpdateData(pendingTokenUpdateForSpace.data)) {
+      return;
+    }
+    const d = pendingTokenUpdateForSpace.data;
+    if (d.transferable !== undefined) {
+      setValue('transferable', d.transferable, {
+        shouldDirty: false,
+        shouldValidate: false,
+      });
+    }
+    if (d.enableAdvancedTransferControls !== undefined) {
+      setValue(
+        'enableAdvancedTransferControls',
+        d.enableAdvancedTransferControls,
+        {
+          shouldDirty: false,
+          shouldValidate: false,
+        },
+      );
+    }
+    if (d.transferWhitelist !== undefined) {
+      setValue(
+        'transferWhitelist',
+        d.transferWhitelist as UpdateIssuedTokenFormValues['transferWhitelist'],
+        {
+          shouldDirty: false,
+          shouldValidate: false,
+        },
+      );
+    }
+    const showAdv =
+      d.enableAdvancedTransferControls === true ||
+      d.useTransferWhitelist === true ||
+      d.useReceiveWhitelist === true ||
+      (d.transferWhitelist?.from?.length ?? 0) > 0 ||
+      (d.transferWhitelist?.to?.length ?? 0) > 0;
+    if (showAdv) {
+      setShowAdvancedSettings(true);
+    }
+  }, [selectedTokenAddress, pendingTokenUpdateForSpace, setValue]);
 
   const lastHydratedTokenAddressRef = useRef<string | null>(null);
   const lastOnChainFingerprintRef = useRef<string>('');
