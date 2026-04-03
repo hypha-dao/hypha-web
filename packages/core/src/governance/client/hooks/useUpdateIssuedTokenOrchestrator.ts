@@ -157,6 +157,9 @@ type UpdateIssuedTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
   spacesForWhitelistResolution?: Space[];
   /** Top-level react-hook-form dirty keys; drives partial on-chain updates */
   changedTopLevelKeys?: string[];
+  /** Sub-field dirty flags for voice-token decay (omit setter if subfield not dirty) */
+  decayIntervalDirty?: boolean;
+  decayPercentageDirty?: boolean;
 };
 
 /**
@@ -238,9 +241,21 @@ function buildPartialUpdateIssuedTokenWeb3Input(
     }
   }
 
-  if (changed.has('decaySettings')) {
-    base.decayInterval = arg.decaySettings?.decayInterval;
-    base.decayPercentage = arg.decaySettings?.decayPercentage;
+  if (changed.has('decaySettings') && arg.type === 'voice') {
+    const hasSubFlags =
+      arg.decayIntervalDirty !== undefined ||
+      arg.decayPercentageDirty !== undefined;
+    if (hasSubFlags) {
+      if (arg.decayIntervalDirty === true) {
+        base.decayInterval = arg.decaySettings?.decayInterval;
+      }
+      if (arg.decayPercentageDirty === true) {
+        base.decayPercentage = arg.decaySettings?.decayPercentage;
+      }
+    } else {
+      base.decayInterval = arg.decaySettings?.decayInterval;
+      base.decayPercentage = arg.decaySettings?.decayPercentage;
+    }
   }
 
   const whitelistTouched =

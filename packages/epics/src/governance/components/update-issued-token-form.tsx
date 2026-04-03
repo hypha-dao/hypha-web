@@ -43,6 +43,82 @@ function collectChangedTopLevelKeys(
   }, []);
 }
 
+/** Keys that drive on-chain whitelist encoding — strip if user did not edit whitelist UI */
+const WHITELIST_WEB3_RELATED_KEYS = new Set([
+  'enableAdvancedTransferControls',
+  'transferWhitelist',
+  'spacesForWhitelistResolution',
+  'whitelistBaselineFrom',
+  'whitelistBaselineTo',
+  'whitelistBaselineFromMembers',
+  'whitelistBaselineToMembers',
+  'whitelistBaselineFromSpaceIds',
+  'whitelistBaselineToSpaceIds',
+]);
+
+function shouldIncludeWhitelistInWeb3Payload(
+  dirty: Partial<Readonly<Record<string, unknown>>>,
+): boolean {
+  if (dirty.enableAdvancedTransferControls === true) {
+    return true;
+  }
+  const tw = dirty.transferWhitelist;
+  if (tw === true) {
+    return true;
+  }
+  if (tw && typeof tw === 'object' && Object.keys(tw as object).length > 0) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Avoid encoding whitelist / decay calldata when only unrelated fields were dirtied
+ * (e.g. hydration or field-array sync marking transferWhitelist dirty).
+ */
+export function filterUpdateTokenChangedKeysForWeb3(
+  changedKeys: string[],
+  dirty: Partial<Readonly<Record<string, unknown>>>,
+  tokenType: string | undefined,
+): string[] {
+  let keys = [...changedKeys];
+
+  if (!shouldIncludeWhitelistInWeb3Payload(dirty)) {
+    keys = keys.filter((k) => !WHITELIST_WEB3_RELATED_KEYS.has(k));
+  }
+
+  if (tokenType !== 'voice') {
+    keys = keys.filter((k) => k !== 'decaySettings');
+  }
+
+  return keys;
+}
+
+/** Voice-token decay: which nested fields RHF marked dirty (for partial setDecay* calldata). */
+export function getDecaySubfieldDirtyFlags(
+  dirty: Partial<Readonly<Record<string, unknown>>>,
+): {
+  decayIntervalDirty?: boolean;
+  decayPercentageDirty?: boolean;
+} {
+  const ds = dirty.decaySettings;
+  if (!ds || typeof ds !== 'object') {
+    return {};
+  }
+  const o = ds as Record<string, unknown>;
+  const out: {
+    decayIntervalDirty?: boolean;
+    decayPercentageDirty?: boolean;
+  } = {};
+  if (o.decayInterval === true) {
+    out.decayIntervalDirty = true;
+  }
+  if (o.decayPercentage === true) {
+    out.decayPercentageDirty = true;
+  }
+  return out;
+}
+
 /** Compare current icon to baseline; RHF often marks `iconUrl` dirty after hydration. */
 function iconUrlEffectivelyUnchanged(
   iconUrl: unknown,
@@ -216,8 +292,6 @@ export const UpdateIssuedTokenForm = ({
     defaultValues: formDefaultValues,
     mode: 'onChange',
   });
-  const { dirtyFields } = form.formState;
-
   const { refetchDbTokens } = useDbTokens();
 
   React.useEffect(() => {
@@ -256,7 +330,9 @@ export const UpdateIssuedTokenForm = ({
     }
 
     const { initialIconUrl, ...submitData } = data;
-    let changedTopLevelKeys = collectChangedTopLevelKeys(dirtyFields);
+    /** Read at submit time — avoids stale closure from render-only `dirtyFields` */
+    const dirtyAtSubmit = form.formState.dirtyFields;
+    let changedTopLevelKeys = collectChangedTopLevelKeys(dirtyAtSubmit);
     if (
       !(submitData.iconUrl instanceof File) &&
       iconUrlEffectivelyUnchanged(submitData.iconUrl, initialIconUrl) &&
@@ -264,9 +340,17 @@ export const UpdateIssuedTokenForm = ({
     ) {
       changedTopLevelKeys = changedTopLevelKeys.filter((k) => k !== 'iconUrl');
     }
+    changedTopLevelKeys = filterUpdateTokenChangedKeysForWeb3(
+      changedTopLevelKeys,
+      dirtyAtSubmit,
+      submitData.type,
+    );
+
+    const decayFlags = getDecaySubfieldDirtyFlags(dirtyAtSubmit);
 
     await updateIssuedToken({
       ...submitData,
+      ...decayFlags,
       changedTopLevelKeys,
       label: 'Update Token',
       spaceId,
