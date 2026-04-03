@@ -558,15 +558,20 @@ export const UpdateIssuedTokenPlugin = ({
         onChainData.useReceiveWhitelist !== undefined) &&
       !isDirty('enableAdvancedTransferControls')
     ) {
+      const baselineHasLists =
+        (getValues('whitelistBaselineFrom') as `0x${string}`[] | undefined)
+          ?.length ||
+        (getValues('whitelistBaselineTo') as `0x${string}`[] | undefined)
+          ?.length;
       const advanced =
         onChainData.useTransferWhitelist || onChainData.useReceiveWhitelist;
+      const shouldEnableTransfer = !!(advanced ?? false) || !!baselineHasLists;
       enableAdvancedTransferControls =
-        enableAdvancedTransferControls || (advanced ?? false);
-      setValue(
-        'enableAdvancedTransferControls',
-        !!(onChainData.useTransferWhitelist || onChainData.useReceiveWhitelist),
-        { shouldDirty: false, shouldValidate: false },
-      );
+        enableAdvancedTransferControls || shouldEnableTransfer;
+      setValue('enableAdvancedTransferControls', shouldEnableTransfer, {
+        shouldDirty: false,
+        shouldValidate: false,
+      });
     }
     if (onChainData.archiveToken !== undefined && !isDirty('archiveToken')) {
       setValue('archiveToken', onChainData.archiveToken, {
@@ -726,7 +731,7 @@ export const UpdateIssuedTokenPlugin = ({
           from,
           to,
           members,
-          spaces,
+          spaces: chainMappingSpaces,
           isOwnershipToken,
         });
 
@@ -740,6 +745,7 @@ export const UpdateIssuedTokenPlugin = ({
             shouldDirty: false,
             shouldValidate: false,
           });
+          setShowAdvancedSettings(true);
         }
 
         baselineWhitelistAppliedForTokenRef.current = selectedTokenAddress;
@@ -758,6 +764,7 @@ export const UpdateIssuedTokenPlugin = ({
     members,
     spaces,
     setValue,
+    setShowAdvancedSettings,
   ]);
 
   /** Cap from chain (authoritative); DB maxSupply is often 0 when unlimited on-chain */

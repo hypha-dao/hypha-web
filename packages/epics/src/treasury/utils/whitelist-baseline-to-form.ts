@@ -74,6 +74,10 @@ export function buildTransferWhitelistFromBaselineAddresses({
 
   const toEntries = to.map(mapAddr);
   if (isOwnershipToken) {
+    /** Receive-only in UI; if chain only has transfer-side entries, surface them as `to` rows */
+    if (toEntries.length === 0 && from.length > 0) {
+      return { to: from.map(mapAddr) };
+    }
     if (toEntries.length === 0) {
       return undefined;
     }
