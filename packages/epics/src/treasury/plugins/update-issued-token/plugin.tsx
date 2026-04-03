@@ -320,12 +320,7 @@ export const UpdateIssuedTokenPlugin = ({
     });
   }, [chainMappingSpaces, setValue]);
   const spaceTokens = useMemo(() => {
-    return dbTokens.filter(
-      (t) =>
-        t.spaceId === spaceId &&
-        typeof t.address === 'string' &&
-        t.address.trim().startsWith('0x'),
-    );
+    return dbTokens.filter((t) => t.spaceId === spaceId);
   }, [dbTokens, spaceId]);
 
   const selectedToken = useMemo(() => {
@@ -835,9 +830,10 @@ export const UpdateIssuedTokenPlugin = ({
         label={tProposalDetails('labels.token')}
         name="tokenAddress"
         tokens={spaceTokens.map((t) => ({
+          id: t.id,
           name: t.name!,
           symbol: t.symbol!,
-          address: t.address!,
+          address: t.address ?? '',
           iconUrl: t.iconUrl!,
           type: t.type,
         }))}

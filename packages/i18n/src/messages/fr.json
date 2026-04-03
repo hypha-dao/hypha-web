@@ -375,7 +375,8 @@
     "issuanceToDate": "Émission à ce jour",
     "unlimitedSupply": "Offre illimitée",
     "selectTokenPlaceholder": "Sélectionner un token",
-    "noTokensAvailable": "Aucun token disponible"
+    "noTokensAvailable": "Aucun token disponible",
+    "tokenPendingContractAddress": "Adresse on-chain en attente (exécutez d'abord la proposition d'émission de token)"
   },
   "Footer": {
     "network": "RÉSEAU",

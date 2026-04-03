@@ -976,7 +976,8 @@
     "issuanceToDate": "Emisión hasta la fecha",
     "unlimitedSupply": "Suministro ilimitado",
     "selectTokenPlaceholder": "Selecciona un token",
-    "noTokensAvailable": "No hay tokens disponibles"
+    "noTokensAvailable": "No hay tokens disponibles",
+    "tokenPendingContractAddress": "Dirección on-chain pendiente (ejecuta primero la propuesta de emisión de token)"
   },
   "Footer": {
     "network": "RED",

@@ -22,6 +22,8 @@ import { flushSync } from 'react-dom';
 import { getTokenTypeLabel } from './token-type-field';
 
 interface TokenItem {
+  /** DB id — used when `address` is not yet deployed */
+  id?: number;
   name?: string;
   symbol?: string;
   address: string;
@@ -81,17 +83,21 @@ export function SelectTokenField({
             )
           : undefined;
 
-        const handleSelect = (token: TokenItem) => {
+        const isSelectable = (token: TokenItem) => {
           const raw =
             typeof token.address === 'string' ? token.address.trim() : '';
-          if (!raw.startsWith('0x')) {
+          return raw.startsWith('0x');
+        };
+
+        const handleSelect = (token: TokenItem) => {
+          if (!isSelectable(token)) {
             return;
           }
-          const addr = raw.toLowerCase();
+          const raw = token.address.trim().toLowerCase();
           flushSync(() => {
-            field.onChange(addr);
+            field.onChange(raw);
           });
-          onValueChange?.(addr);
+          onValueChange?.(raw);
         };
 
         return (
@@ -155,11 +161,10 @@ export function SelectTokenField({
                       align="start"
                     >
                       {tokens.map((token) => {
-                        const key =
-                          typeof token.address === 'string' &&
-                          token.address.startsWith('0x')
-                            ? token.address.toLowerCase()
-                            : token.address;
+                        const selectable = isSelectable(token);
+                        const key = selectable
+                          ? token.address.trim().toLowerCase()
+                          : `no-${token.id ?? token.symbol ?? 'token'}`;
                         const rawIcon = token.iconUrl?.trim();
                         const showFallback = brokenIcons[key] || !rawIcon;
                         const src = showFallback
@@ -168,6 +173,10 @@ export function SelectTokenField({
                         return (
                           <DropdownMenuItem
                             key={key}
+                            disabled={!selectable}
+                            className={
+                              !selectable ? 'opacity-60 cursor-not-allowed' : ''
+                            }
                             onSelect={() => handleSelect(token)}
                           >
                             <Image
@@ -201,6 +210,11 @@ export function SelectTokenField({
                               {token?.name ? (
                                 <span className="text-1 text-accent-11 truncate">
                                   {token.name}
+                                </span>
+                              ) : null}
+                              {!selectable ? (
+                                <span className="text-1 text-neutral-10">
+                                  {tTreasury('tokenPendingContractAddress')}
                                 </span>
                               ) : null}
                             </div>

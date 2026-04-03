@@ -375,7 +375,8 @@
     "issuanceToDate": "Issuance to Date",
     "unlimitedSupply": "Unlimited Supply",
     "selectTokenPlaceholder": "Select a token",
-    "noTokensAvailable": "No tokens available"
+    "noTokensAvailable": "No tokens available",
+    "tokenPendingContractAddress": "Awaiting on-chain address (execute the issue-token proposal first)"
   },
   "Footer": {
     "network": "NETWORK",
