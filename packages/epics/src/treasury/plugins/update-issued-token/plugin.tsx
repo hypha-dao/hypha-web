@@ -789,11 +789,11 @@ export const UpdateIssuedTokenPlugin = ({
     const typeSuffix =
       onChainData?.fixedMaxSupply === true
         ? tAgreementFlow(
-            'plugins.issueNewToken.general.maxSupplyTypeOptions.immutable',
+            'plugins.issueNewToken.supply.maxSupplyTypeOptions.immutable',
           )
         : onChainData?.fixedMaxSupply === false
         ? tAgreementFlow(
-            'plugins.issueNewToken.general.maxSupplyTypeOptions.updatable',
+            'plugins.issueNewToken.supply.maxSupplyTypeOptions.updatable',
           )
         : null;
     return (

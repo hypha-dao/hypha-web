@@ -227,22 +227,22 @@ export const ProposalUpdateToken = ({
     const fromPending = pendingData?.maxSupplyTypeValue;
     if (fromPending === 'immutable') {
       return tAgreementFlow(
-        'plugins.issueNewToken.general.maxSupplyTypeOptions.immutable',
+        'plugins.issueNewToken.supply.maxSupplyTypeOptions.immutable',
       );
     }
     if (fromPending === 'updatable') {
       return tAgreementFlow(
-        'plugins.issueNewToken.general.maxSupplyTypeOptions.updatable',
+        'plugins.issueNewToken.supply.maxSupplyTypeOptions.updatable',
       );
     }
     if (fixedMaxSupplyProp === true) {
       return tAgreementFlow(
-        'plugins.issueNewToken.general.maxSupplyTypeOptions.immutable',
+        'plugins.issueNewToken.supply.maxSupplyTypeOptions.immutable',
       );
     }
     if (fixedMaxSupplyProp === false) {
       return tAgreementFlow(
-        'plugins.issueNewToken.general.maxSupplyTypeOptions.updatable',
+        'plugins.issueNewToken.supply.maxSupplyTypeOptions.updatable',
       );
     }
     return null;
