@@ -1063,6 +1063,7 @@
           "enableLimited": "Activer l'offre limitée",
           "maxSupplyLabel": "Offre maximale",
           "maxSupplyPlaceholder": "Saisissez un montant",
+          "maxSupplyReadOnlyWhenImmutable": "L'offre maximale est fixe tant que « Pour toujours immuable » est sélectionné",
           "maxSupplyTypeLabel": "Type d'offre maximale",
           "maxSupplyTypePlaceholder": "Sélectionnez le type d'offre maximale",
           "maxSupplyTypeOptions": {

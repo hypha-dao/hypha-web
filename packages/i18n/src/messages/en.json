@@ -1063,6 +1063,7 @@
           "enableLimited": "Enable Limited Supply",
           "maxSupplyLabel": "Max Supply",
           "maxSupplyPlaceholder": "Type an amount",
+          "maxSupplyReadOnlyWhenImmutable": "Max supply is fixed while Forever Immutable is selected",
           "maxSupplyTypeLabel": "Max Supply Type",
           "maxSupplyTypePlaceholder": "Select max supply type",
           "maxSupplyTypeOptions": {

@@ -193,6 +193,7 @@
           "enableLimited": "Habilitar suministro limitado",
           "maxSupplyLabel": "Suministro máximo",
           "maxSupplyPlaceholder": "Escribe una cantidad",
+          "maxSupplyReadOnlyWhenImmutable": "El suministro máximo es fijo mientras esté seleccionado «Para siempre inmutable»",
           "maxSupplyTypeLabel": "Tipo de suministro máximo",
           "maxSupplyTypePlaceholder": "Seleccione el tipo de suministro máximo",
           "maxSupplyTypeOptions": {
