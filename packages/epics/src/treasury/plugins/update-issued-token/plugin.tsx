@@ -307,7 +307,11 @@ export const UpdateIssuedTokenPlugin = ({
     currentTokenType,
   ]);
 
-  const { tokens: dbTokens, isLoading: isTokensLoading } = useDbTokens();
+  const {
+    tokens: dbTokens,
+    isLoading: isTokensLoading,
+    refetchDbTokens,
+  } = useDbTokens();
   const chainMappingSpaces = useMemo(
     () => spacesForChainMapping ?? spaces,
     [spacesForChainMapping, spaces],
@@ -326,18 +330,28 @@ export const UpdateIssuedTokenPlugin = ({
     return dbTokens.filter((t) => t.spaceId === spaceId);
   }, [dbTokens, spaceId]);
 
+  /** Only tokens with a deployed contract — update flow cannot configure pending rows; avoids a long disabled list. */
+  const spaceTokensWithDeployedAddress = useMemo(
+    () =>
+      spaceTokens.filter(
+        (t) =>
+          typeof t.address === 'string' && t.address.trim().startsWith('0x'),
+      ),
+    [spaceTokens],
+  );
+
   /** Token list for dropdown; live name/symbol/icon overlay is applied inside `SelectTokenField` via useWatch. */
   const tokensForSelect = useMemo(
     () =>
-      spaceTokens.map((t) => ({
+      spaceTokensWithDeployedAddress.map((t) => ({
         id: t.id,
         name: t.name,
         symbol: t.symbol,
-        address: typeof t.address === 'string' ? t.address : '',
+        address: (t.address as string).trim().toLowerCase(),
         iconUrl: t.iconUrl,
         type: t.type,
       })),
-    [spaceTokens],
+    [spaceTokensWithDeployedAddress],
   );
 
   const selectedToken = useMemo(() => {
@@ -883,10 +897,15 @@ export const UpdateIssuedTokenPlugin = ({
         tokens={tokensForSelect}
         placeholder={tTreasury('selectTokenPlaceholder')}
         emptyListMessage={tTreasury('noTokensAvailable')}
+        onMenuOpenChange={(open) => {
+          if (open) {
+            void refetchDbTokens();
+          }
+        }}
         required
       />
 
-      {(isTokensLoading || spaceTokens.length === 0) && (
+      {(isTokensLoading || spaceTokensWithDeployedAddress.length === 0) && (
         <div className="text-2 text-neutral-11">
           {(() => {
             const clickHereText = tProposalDetails('clickHere');

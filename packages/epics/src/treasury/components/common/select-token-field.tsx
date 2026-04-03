@@ -43,6 +43,8 @@ type SelectTokenFieldProps = {
   tokens: TokenItem[];
   required?: boolean;
   onValueChange?: (value: string) => void;
+  /** Called when the menu opens or closes — e.g. refetch tokens so the list is not stale SWR data. */
+  onMenuOpenChange?: (open: boolean) => void;
   placeholder?: string;
   emptyListMessage?: string;
 };
@@ -53,6 +55,7 @@ export function SelectTokenField({
   tokens,
   required = false,
   onValueChange,
+  onMenuOpenChange,
   placeholder,
   emptyListMessage,
 }: SelectTokenFieldProps) {
@@ -177,7 +180,12 @@ export function SelectTokenField({
                     {emptyText}
                   </div>
                 ) : (
-                  <DropdownMenu modal={false}>
+                  <DropdownMenu
+                    modal={false}
+                    onOpenChange={(open) => {
+                      onMenuOpenChange?.(open);
+                    }}
+                  >
                     <DropdownMenuTrigger asChild>
                       <Button
                         type="button"
