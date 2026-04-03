@@ -14,16 +14,25 @@ This document is a quick walkthrough of the new energy settlement system for non
 
 ```
          Alice   Bob   Carol  Dave   Eve   Solar Park   Battery
-         (30%)  (30%)  (10%)  (20%)  (10%)
 ```
 
 - **Alice, Bob, Carol, Dave** — households that consume electricity.
-- **Eve** — investor. Owns 10%, doesn't consume. Earns revenue.
+- **Eve** — investor. Doesn't consume. Earns revenue from ownership.
 - **Solar park** — produces electricity for the community.
 - **Battery** — stores excess solar for later. Controlled by the EMS.
 - **Grid** — fallback when solar + battery aren't enough.
 
-Ownership % determines your share of cheap energy and your share of revenue.
+Each source has its own ownership structure:
+
+| Member | Solar Park | Battery |
+|--------|-----------|---------|
+| Alice  | 30%       | 25%     |
+| Bob    | 30%       | 25%     |
+| Carol  | 10%       | —       |
+| Dave   | 20%       | 25%     |
+| Eve    | 10%       | 25%     |
+
+Your ownership % in a source determines your share of cheap energy from that source and your share of its revenue. Carol invested only in solar, not the battery.
 
 ---
 
@@ -55,7 +64,7 @@ The **EMS** (Energy Management System) reads the interval summaries and runs the
 | Input | Source |
 |---|---|
 | Consumption & production | `interval_readings` in TimescaleDB |
-| Ownership percentages | Blockchain smart contract |
+| Ownership percentages (per source) | Blockchain smart contract |
 | Solar & battery prices | Blockchain — set when community created PPAs |
 | Grid import/export prices | External APIs (retailer tariffs, spot market) |
 
@@ -68,22 +77,20 @@ The EMS sends one transaction to the smart contract:
 ```
 settleInterval([
   { device: Alice,  amount: 2.00 kWh, price:  8 ct, source: LOCAL   },
-  { device: Bob,    amount: 3.12 kWh, price:  8 ct, source: LOCAL   },
-  { device: Bob,    amount: 1.08 kWh, price: 15 ct, source: BATTERY },
-  { device: Bob,    amount: 0.80 kWh, price: 25 ct, source: IMPORT  },
-  { device: Carol,  amount: 0.80 kWh, price:  8 ct, source: LOCAL   },
-  { device: Carol,  amount: 0.20 kWh, price: 15 ct, source: BATTERY },
-  { device: Dave,   amount: 2.08 kWh, price:  8 ct, source: LOCAL   },
-  { device: Dave,   amount: 0.72 kWh, price: 15 ct, source: BATTERY },
-  { device: Dave,   amount: 0.20 kWh, price: 25 ct, source: IMPORT  },
+  { device: Bob,    amount: 3.00 kWh, price:  8 ct, source: LOCAL   },
+  { device: Bob,    amount: 1.00 kWh, price: 15 ct, source: BATTERY },
+  { device: Bob,    amount: 1.00 kWh, price: 25 ct, source: IMPORT  },
+  { device: Carol,  amount: 1.00 kWh, price:  8 ct, source: LOCAL   },
+  { device: Dave,   amount: 2.00 kWh, price:  8 ct, source: LOCAL   },
+  { device: Dave,   amount: 1.00 kWh, price: 15 ct, source: BATTERY },
 ])
 ```
 
-Sources: LOCAL (solar), BATTERY, IMPORT (grid). LOCAL + BATTERY charges go into a revenue pot. IMPORT goes to the import balance (community's grid bill).
+Sources: LOCAL (solar), BATTERY, IMPORT (grid). Revenue from each source goes to that source's owners. IMPORT goes to the import balance (community's grid bill).
 
 The contract does two things:
 1. **Charge consumers** — amount × price, debit each member.
-2. **Split the revenue pot** — community fee % → aggregator fee % → remainder to all owners by ownership %.
+2. **Split revenue per source** — community fee % → aggregator fee % → remainder to that source's owners by their ownership %.
 
 If the math doesn't sum to zero, the transaction is rejected. Positive balances become **Energy Credits** (ERC-20 token). Negative balances are debt, settled later with EURC stablecoin.
 
@@ -114,44 +121,54 @@ The EMS also **controls the battery** (charge/discharge commands via MQTT).
 Solar: 8 kWh at 8 ct   │   Battery: 2 kWh at 15 ct   │   Grid import: 25 ct
 Alice: 2 kWh  │  Bob: 5 kWh  │  Carol: 1 kWh  │  Dave: 3 kWh  │  Eve: 0 kWh
 Total consumed: 11 kWh  │  Total local: 10 kWh  │  Shortfall: 1 kWh from grid
+
+Solar ownership:   Alice 30% │ Bob 30% │ Carol 10% │ Dave 20% │ Eve 10%
+Battery ownership: Alice 25% │ Bob 25% │ Carol  0% │ Dave 25% │ Eve 25%
 ```
 
 ### Step 1 — Ownership share
 
-Each member gets their % of solar and battery. Consume cheapest first.
+Each member gets their % of each source (different ownership per source). Consume cheapest first (solar before battery).
 
 ```
            Solar share   Battery share   Total    Needs    Result
-Alice 30%: 2.4 kWh       0.6 kWh         3.0      2.0     Surplus 1.0
-Bob   30%: 2.4           0.6             3.0      5.0     Deficit 2.0
-Carol 10%: 0.8           0.2             1.0      1.0     Perfect fit
-Dave  20%: 1.6           0.4             2.0      3.0     Deficit 1.0
-Eve   10%: 0.8           0.2             1.0      0.0     Surplus 1.0
+Alice:     2.4 kWh       0.5 kWh         2.9      2.0     Surplus 0.9
+Bob:       2.4           0.5             2.9      5.0     Deficit 2.1
+Carol:     0.8           —               0.8      1.0     Deficit 0.2
+Dave:      1.6           0.5             2.1      3.0     Deficit 0.9
+Eve:       0.8           0.5             1.3      0.0     Surplus 1.3
 ```
 
-Alice uses 2.0 solar, surplus = 0.4 solar + 0.6 battery. Eve uses nothing, surplus = 0.8 solar + 0.2 battery.
+Alice uses 2.0 solar, surplus = 0.4 solar + 0.5 battery. Eve uses nothing, surplus = 0.8 solar + 0.5 battery. Carol has no battery share (0% battery ownership).
 
-### Step 2 — Redistribute surplus proportionally by ownership
+### Step 2 — Redistribute surplus by source ownership
 
-Deficit members: Bob (30%) + Dave (20%) = 50% combined.
+Each source's surplus is redistributed among deficit members proportional to their ownership of *that* source.
 
 **Solar surplus (0.4 + 0.8 = 1.2 kWh at 8 ct):**
 
-```
-Bob:  1.2 × 30/50 = 0.72 kWh    Dave: 1.2 × 20/50 = 0.48 kWh
-```
-
-**Battery surplus (0.6 + 0.2 = 0.8 kWh at 15 ct):**
+Deficit members with solar ownership: Bob (30%) + Carol (10%) + Dave (20%) = 60%.
 
 ```
-Bob:  0.8 × 30/50 = 0.48 kWh    Dave: 0.8 × 20/50 = 0.32 kWh
+Bob:   1.2 × 30/60 = 0.60 kWh
+Carol: 1.2 × 10/60 = 0.20 kWh  ← exactly covers Carol
+Dave:  1.2 × 20/60 = 0.40 kWh
 ```
 
-Each source keeps its price. Bob still needs 0.8 kWh, Dave still needs 0.2 kWh.
+**Battery surplus (0.5 + 0.5 = 1.0 kWh at 15 ct):**
+
+Deficit members with battery ownership: Bob (25%) + Dave (25%) = 50%. Carol has 0% battery ownership — no battery surplus for her.
+
+```
+Bob:  1.0 × 25/50 = 0.50 kWh
+Dave: 1.0 × 25/50 = 0.50 kWh  ← exactly covers Dave
+```
+
+Each source keeps its price. Bob still needs 1.0 kWh.
 
 ### Step 3 — Remaining deficit = grid import
 
-Bob: 0.8 kWh at 25 ct. Dave: 0.2 kWh at 25 ct. Total: 1.0 kWh.
+Bob: 1.0 kWh at 25 ct. Total: 1.0 kWh.
 
 ### Final bill
 
@@ -159,33 +176,46 @@ Bob: 0.8 kWh at 25 ct. Dave: 0.2 kWh at 25 ct. Total: 1.0 kWh.
              Solar          Battery         Grid          Total
              kWh    cost    kWh    cost     kWh   cost
 Alice:       2.00   16.0    —       —       —      —      16.00 ct
-Bob:         3.12   25.0    1.08   16.2     0.8   20.0    61.16 ct
-Carol:       0.80    6.4    0.20    3.0     —      —       9.40 ct
-Dave:        2.08   16.6    0.72   10.8     0.2    5.0    32.44 ct
+Bob:         3.00   24.0    1.00   15.0     1.0   25.0    64.00 ct
+Carol:       1.00    8.0    —       —       —      —       8.00 ct
+Dave:        2.00   16.0    1.00   15.0     —      —      31.00 ct
 Eve:         —       —      —       —       —      —       0.00 ct
-Total:       8.00          2.00            1.00           119.00 ct
+Total:       8.00   64.0    2.00   30.0     1.00  25.0   119.00 ct
 ```
 
 ### On-chain settlement
 
-Revenue pot (LOCAL + BATTERY): 94.00 ct. Import balance: 25.00 ct.
+Revenue is split per source — each source's revenue goes to its owners.
+
+**Solar revenue (LOCAL): 64.00 ct**
 
 ```
-Community fee (5%):    4.70 ct    Aggregator fee (3%):  2.82 ct
-Remaining for owners: 86.48 ct
+Community fee (5%):    3.20 ct    Aggregator fee (3%):  1.92 ct
+Remaining for solar owners: 58.88 ct
 
-Alice 30%: 25.94    Bob 30%: 25.94    Carol 10%: 8.65    Dave 20%: 17.30    Eve 10%: 8.65
+Alice 30%: 17.66    Bob 30%: 17.66    Carol 10%: 5.89    Dave 20%: 11.78    Eve 10%: 5.89
 ```
+
+**Battery revenue (BATTERY): 30.00 ct**
+
+```
+Community fee (5%):    1.50 ct    Aggregator fee (3%):  0.90 ct
+Remaining for battery owners: 27.60 ct
+
+Alice 25%: 6.90    Bob 25%: 6.90    Dave 25%: 6.90    Eve 25%: 6.90
+```
+
+Carol earns nothing from battery — she has 0% battery ownership. Import balance: 25.00 ct.
 
 ### Energy Credit balances
 
 ```
                Charged     Earned      Balance
-Alice:         -16.00      +25.94      +9.94 ct    ← credit (under-consumed)
-Bob:           -61.16      +25.94      -35.22 ct   ← debt (over-consumed)
-Carol:          -9.40       +8.65      -0.75 ct    ← small debt
-Dave:          -32.44      +17.30      -15.14 ct   ← debt
-Eve:             0.00       +8.65      +8.65 ct    ← credit (investor)
+Alice:         -16.00      +24.56      +8.56 ct    ← credit (under-consumed)
+Bob:           -64.00      +24.56      -39.44 ct   ← debt (over-consumed)
+Carol:          -8.00       +5.89      -2.11 ct    ← small debt
+Dave:          -31.00      +18.68      -12.32 ct   ← debt
+Eve:             0.00      +12.79      +12.79 ct   ← credit (investor)
 Community:        —         +4.70      +4.70 ct
 Aggregator:       —         +2.82      +2.82 ct
 Import:           —           —        +25.00 ct
@@ -199,14 +229,14 @@ Import:           —           —        +25.00 ct
 
 ## Export Example
 
-Sunny afternoon, low consumption. Solar: 10 kWh at 8 ct. Battery idle.
+Sunny afternoon, low consumption. Solar: 10 kWh at 8 ct. Battery idle (no battery revenue this interval).
 
 ```
 Alice: 2 kWh │ Bob: 2 kWh │ Carol: 1 kWh │ Dave: 1 kWh │ Eve: 0 kWh
 Total: 6 kWh │ Surplus: 4 kWh → exported at 5 ct/kWh (feed-in tariff from API)
 ```
 
-Everyone has more than they need. No deficits, no redistribution. 4 kWh exported.
+Everyone has more than their solar share. No deficits, no redistribution. 4 kWh exported.
 
 ```
 settleInterval([
@@ -218,10 +248,10 @@ settleInterval([
 ])
 ```
 
-Export is just another entry. Revenue pot: 48 (consumption) + 20 (export) = 68 ct.
+Export is just another entry. Solar revenue pot: 48 (consumption) + 20 (export) = 68 ct. Battery idle — no battery revenue.
 
 ```
-Community (5%): 3.40    Aggregator (3%): 2.04    Owners: 62.56
+Community (5%): 3.40    Aggregator (3%): 2.04    Solar owners: 62.56
 
 Alice 30%: 18.77    Bob 30%: 18.77    Carol 10%: 6.26    Dave 20%: 12.51    Eve 10%: 6.26
 ```
@@ -242,4 +272,4 @@ Export:           —           —        -20.00 ct   ← grid owes community
                                Zero-sum: 0.00 ✓
 ```
 
-When production exceeds consumption, almost everyone earns. Carol has a small debt because her 10% ownership earns less than what she paid for her 1 kWh.
+When production exceeds consumption, almost everyone earns. Carol has a small debt because her 10% solar ownership earns less than what she paid for her 1 kWh (and she has no battery ownership to supplement).
