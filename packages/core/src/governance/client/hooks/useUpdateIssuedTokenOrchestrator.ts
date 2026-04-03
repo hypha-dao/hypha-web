@@ -161,8 +161,9 @@ type UpdateIssuedTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
 
 /**
  * DecayingSpaceToken updates vs form fields:
- * — Sent on-chain when dirty: name, symbol, maxSupply (0 = unlimited), transferable, autoMinting,
- *   price+feed, decay interval/%, whitelist toggles, archived.
+ * — Sent on-chain when dirty: name, symbol, maxSupply (0 = unlimited; omitted when limited supply
+ *   + Forever Immutable — fixed cap on-chain), transferable, autoMinting, price+feed, decay
+ *   interval/%, whitelist toggles, archived.
  * — Whitelist toggles: when transferable is false, both flags are forced off (empty lists
  *   previously encoded as true and could revert on execution).
  * — Member rows: `batchSetTransferWhitelist` / `batchSetReceiveWhitelist`.
@@ -194,7 +195,14 @@ function buildPartialUpdateIssuedTokenWeb3Input(
     changed.has('enableLimitedSupply') ||
     changed.has('maxSupplyType')
   ) {
-    base.maxSupply = arg.enableLimitedSupply === true ? arg.maxSupply ?? 0 : 0;
+    if (arg.enableLimitedSupply !== true) {
+      base.maxSupply = 0;
+    } else if (arg.maxSupplyType?.value === 'immutable') {
+      // Forever Immutable: cap is fixed on-chain at deploy / factory; omit setMaxSupply
+      // so the proposal does not emit a redundant or reverting setMaxSupply call.
+    } else {
+      base.maxSupply = arg.maxSupply ?? 0;
+    }
   }
 
   if (changed.has('transferable')) {
