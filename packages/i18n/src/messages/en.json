@@ -1370,6 +1370,7 @@
       },
       "acceptInvestment": {
         "investingMember": "Investing member",
+        "escrowAccountAddress": "Escrow account address",
         "investorWillSend": "Investing member will send",
         "investorWillSendLine1": "Investing member",
         "investorWillSendLine2": "will send",

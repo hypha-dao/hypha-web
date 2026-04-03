@@ -489,6 +489,7 @@
       },
       "acceptInvestment": {
         "investingMember": "Membro investidor",
+        "escrowAccountAddress": "Endereço da conta de custódia (escrow)",
         "investorWillSend": "O membro investidor enviará",
         "investorWillSendLine1": "O membro investidor",
         "investorWillSendLine2": "enviará",

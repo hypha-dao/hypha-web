@@ -489,6 +489,7 @@
       },
       "acceptInvestment": {
         "investingMember": "Miembro inversor",
+        "escrowAccountAddress": "Dirección de la cuenta de depósito en garantía",
         "investorWillSend": "El miembro inversor enviará",
         "investorWillSendLine1": "El miembro inversor",
         "investorWillSendLine2": "enviará",

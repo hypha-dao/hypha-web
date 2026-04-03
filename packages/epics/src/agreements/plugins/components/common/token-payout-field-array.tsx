@@ -76,14 +76,55 @@ function TokenPayoutFieldArrayInner({
     }
   };
 
+  const fieldRows = fields.map((field, index) => (
+    <div key={field.id} className="flex md:justify-end gap-2">
+      <div className="">
+        <FormField
+          control={control}
+          name={`${name}.${index}`}
+          render={({ field: { value, onChange } }) => (
+            <FormItem>
+              <FormControl>
+                <TokenPayoutField
+                  value={value}
+                  onChange={onChange}
+                  tokens={tokens}
+                  showSelectedTokenBalanceHint={
+                    showSelectedTokenBalanceHint || showTreasuryBalanceHint
+                  }
+                  useTreasuryBalanceLine={showTreasuryBalanceHint}
+                  selectedTokenPriceHint={selectedTokenPriceHint}
+                />
+              </FormControl>
+              <FormMessage
+                custom={tAgreementFlow(
+                  'plugins.tokenPayoutFieldArray.enterAmountAndToken',
+                )}
+              />
+            </FormItem>
+          )}
+        />
+      </div>
+      {allowAddOrRemove && (
+        <Button
+          variant="ghost"
+          onClick={(ev) => handleDeleteField(ev, index)}
+          className="px-2 md:px-3"
+        >
+          <Cross2Icon />
+        </Button>
+      )}
+    </div>
+  ));
+
   return (
     <div className="flex flex-col gap-2 w-full">
       <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
         <label
-          className={`text-2 text-neutral-11 items-start md:pt-1 ${
+          className={`text-2 text-neutral-11 shrink-0 leading-snug ${
             useTwoLineLabel
-              ? 'max-w-[12rem] shrink-0 leading-snug'
-              : 'whitespace-nowrap md:min-w-max'
+              ? 'max-w-[12rem] pt-0.5'
+              : 'whitespace-nowrap md:min-w-max md:pt-1'
           }`}
         >
           {useTwoLineLabel ? (
@@ -99,48 +140,8 @@ function TokenPayoutFieldArrayInner({
             </>
           )}
         </label>
-        <div className="flex flex-col gap-2 grow min-w-0">
-          {fields.map((field, index) => (
-            <div key={field.id} className="flex md:justify-end gap-2">
-              <div className="">
-                <FormField
-                  control={control}
-                  name={`${name}.${index}`}
-                  render={({ field: { value, onChange } }) => (
-                    <FormItem>
-                      <FormControl>
-                        <TokenPayoutField
-                          value={value}
-                          onChange={onChange}
-                          tokens={tokens}
-                          showSelectedTokenBalanceHint={
-                            showSelectedTokenBalanceHint ||
-                            showTreasuryBalanceHint
-                          }
-                          useTreasuryBalanceLine={showTreasuryBalanceHint}
-                          selectedTokenPriceHint={selectedTokenPriceHint}
-                        />
-                      </FormControl>
-                      <FormMessage
-                        custom={tAgreementFlow(
-                          'plugins.tokenPayoutFieldArray.enterAmountAndToken',
-                        )}
-                      />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              {allowAddOrRemove && (
-                <Button
-                  variant="ghost"
-                  onClick={(ev) => handleDeleteField(ev, index)}
-                  className="px-2 md:px-3"
-                >
-                  <Cross2Icon />
-                </Button>
-              )}
-            </div>
-          ))}
+        <div className="flex flex-col gap-2 grow min-w-0 self-stretch md:self-start">
+          {fieldRows}
         </div>
       </div>
       {allowAddOrRemove && (

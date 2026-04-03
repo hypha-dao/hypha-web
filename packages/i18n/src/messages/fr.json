@@ -1370,6 +1370,7 @@
       },
       "acceptInvestment": {
         "investingMember": "Membre investisseur",
+        "escrowAccountAddress": "Adresse du compte séquestre",
         "investorWillSend": "Le membre investisseur enverra",
         "investorWillSendLine1": "Le membre investisseur",
         "investorWillSendLine2": "enverra",
