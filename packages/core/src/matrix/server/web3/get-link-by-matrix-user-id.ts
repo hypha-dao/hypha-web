@@ -1,4 +1,4 @@
-import 'server-only';
+'use server';
 
 import { db } from '@hypha-platform/storage-postgres';
 import { MatrixUserLink } from '../../types';

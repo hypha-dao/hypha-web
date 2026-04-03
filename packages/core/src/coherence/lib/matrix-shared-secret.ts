@@ -106,7 +106,9 @@ export class MatrixSharedSecret {
     const endpoint = `/_matrix/client/${version}/register/available`;
 
     const response = await fetchWithTimeout(
-      `${this.matrixHomeserverUrl}${endpoint}?username=${encodeURIComponent(username)}`,
+      `${this.matrixHomeserverUrl}${endpoint}?username=${encodeURIComponent(
+        username,
+      )}`,
     );
     if (!response.ok) {
       return false;
@@ -118,7 +120,9 @@ export class MatrixSharedSecret {
   async getUser(userName: string, adminAccessToken: string) {
     const version = await this.getEffectiveVersion();
     const matrixUserName = `@${userName}:${this.matrixDomain}`;
-    const endpoint = `/_matrix/client/${version}/admin/whois/${encodeURIComponent(matrixUserName)}`;
+    const endpoint = `/_matrix/client/${version}/admin/whois/${encodeURIComponent(
+      matrixUserName,
+    )}`;
     const response = await fetchWithTimeout(
       `${this.matrixHomeserverUrl}${endpoint}`,
       {
@@ -218,7 +222,9 @@ export class MatrixSharedSecret {
   async resetPassword(username: string, adminAccessToken: string) {
     const password = crypto.randomBytes(32).toString('hex');
     const response = await fetchWithTimeout(
-      `${this.matrixHomeserverUrl}/_dendrite/admin/resetPassword/${encodeURIComponent(username)}`,
+      `${
+        this.matrixHomeserverUrl
+      }/_dendrite/admin/resetPassword/${encodeURIComponent(username)}`,
       {
         method: 'POST',
         headers: {
@@ -244,7 +250,9 @@ export class MatrixSharedSecret {
 
   async removeUser(username: string, adminAccessToken: string) {
     const response = await fetchWithTimeout(
-      `${this.matrixHomeserverUrl}/_dendrite/admin/deactivate/${encodeURIComponent(username)}`,
+      `${
+        this.matrixHomeserverUrl
+      }/_dendrite/admin/deactivate/${encodeURIComponent(username)}`,
       {
         method: 'POST',
         headers: {
