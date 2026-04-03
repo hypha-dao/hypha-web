@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   Button,
   Combobox,
@@ -78,10 +78,24 @@ export const TransferWhitelistFieldArray = ({
 
   const entries = watch(name) ?? [];
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, replace } = useFieldArray({
     control,
     name,
   });
+
+  /**
+   * External hydration (e.g. update-token baseline via setValue) updates form values but
+   * does not always sync useFieldArray's internal `fields` — rows stay empty until append.
+   * We only replace when lengths differ so user edits (same length) do not reset rows per keystroke.
+   */
+  const listForSync = Array.isArray(entries) ? entries : [];
+
+  useEffect(() => {
+    if (fields.length === listForSync.length) {
+      return;
+    }
+    replace(listForSync);
+  }, [fields.length, listForSync, replace]);
 
   const handleAddField = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
