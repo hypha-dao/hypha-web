@@ -14,6 +14,7 @@ import {
   UpdateTokenInput,
   CreateTokenUpdateInput,
   TokenUpdateData,
+  isTokenUpdateData,
 } from '../types';
 import { DatabaseInstance, findTokenUpdateByDocumentId } from '../../server';
 import { CreateTokenInput, DeleteTokenInput } from '../types';
@@ -219,7 +220,12 @@ export const applyTokenUpdate = async (
   }
 
   const { tokenAddress, data } = tokenUpdate;
-  const tokenUpdateData = data as TokenUpdateData;
+  if (!isTokenUpdateData(data)) {
+    throw new Error(
+      `Invalid token update JSON for document ${documentId}: data failed validation`,
+    );
+  }
+  const tokenUpdateData: TokenUpdateData = data;
 
   // Prepare update input, including archiveToken. Omit iconUrl when the pending
   // update did not change the icon so the existing DB value is preserved.

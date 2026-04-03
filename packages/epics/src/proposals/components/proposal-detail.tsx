@@ -48,6 +48,7 @@ import { useTranslations } from 'next-intl';
 import { formatUnits } from 'viem';
 import { resolveTokenDecimals } from '../../governance/utils/token-decimals';
 import { useDbSpaces } from '../../hooks';
+import { hasUpdateTokenDataToDisplay } from '../utils/has-update-token-data-to-display';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
@@ -592,27 +593,10 @@ export const ProposalDetail = ({
           {...proposalDetails.tokenBackingVaultData}
         />
       ) : null}
-      {proposalDetails?.updateTokenData?.address !== undefined &&
-      (proposalDetails.updateTokenData.name !== undefined ||
-        proposalDetails.updateTokenData.symbol !== undefined ||
-        proposalDetails.updateTokenData.maxSupply !== undefined ||
-        proposalDetails.updateTokenData.transferable !== undefined ||
-        proposalDetails.updateTokenData.autoMinting !== undefined ||
-        proposalDetails.updateTokenData.priceWithCurrency !== undefined ||
-        proposalDetails.updateTokenData.decayPercentage !== undefined ||
-        proposalDetails.updateTokenData.decayInterval !== undefined ||
-        proposalDetails.updateTokenData.useTransferWhitelist !== undefined ||
-        proposalDetails.updateTokenData.useReceiveWhitelist !== undefined ||
-        proposalDetails.updateTokenData.initialTransferWhitelist !==
-          undefined ||
-        proposalDetails.updateTokenData.initialReceiveWhitelist !== undefined ||
-        proposalDetails.updateTokenData.initialTransferWhitelistSpaceIds !==
-          undefined ||
-        proposalDetails.updateTokenData.initialReceiveWhitelistSpaceIds !==
-          undefined ||
-        proposalDetails.updateTokenData.archiveToken !== undefined) ? (
+      {proposalDetails &&
+      hasUpdateTokenDataToDisplay(proposalDetails.updateTokenData) ? (
         <ProposalUpdateToken
-          address={proposalDetails.updateTokenData.address}
+          address={proposalDetails.updateTokenData.address as `0x${string}`}
           tokenType={updateTokenTypeFromDb}
           name={proposalDetails.updateTokenData.name}
           symbol={proposalDetails.updateTokenData.symbol}

@@ -36,6 +36,14 @@ type ProposalTx = {
   data: `0x${string}`;
 };
 
+/** Safe integer → bigint for on-chain args (avoids BigInt(1.5) throws). */
+function integerBigInt(n: number, label: string): bigint {
+  if (!Number.isFinite(n) || !Number.isInteger(n)) {
+    throw new RangeError(`${label} must be a finite integer`);
+  }
+  return BigInt(n);
+}
+
 /** Encodes DecayingSpaceToken admin calls for a multisig proposal (no network I/O). */
 export function buildUpdateIssuedTokenTxData(
   arg: UpdateIssuedTokenInput,
@@ -43,7 +51,9 @@ export function buildUpdateIssuedTokenTxData(
   const txData: ProposalTx[] = [];
 
   const tokenPriceWei =
-    arg.tokenPrice !== undefined ? BigInt(arg.tokenPrice) : 0n;
+    arg.tokenPrice !== undefined
+      ? integerBigInt(arg.tokenPrice, 'tokenPrice')
+      : 0n;
   const zeroFeed =
     '0x0000000000000000000000000000000000000000' as `0x${string}`;
   const priceCurrencyFeed = arg.priceCurrencyFeed ?? zeroFeed;
@@ -77,7 +87,7 @@ export function buildUpdateIssuedTokenTxData(
       data: encodeFunctionData({
         abi: decayingSpaceTokenAbi,
         functionName: 'setMaxSupply',
-        args: [BigInt(arg.maxSupply) * 10n ** 18n],
+        args: [integerBigInt(arg.maxSupply, 'maxSupply') * 10n ** 18n],
       }),
     });
   }
@@ -121,7 +131,7 @@ export function buildUpdateIssuedTokenTxData(
       data: encodeFunctionData({
         abi: decayingSpaceTokenAbi,
         functionName: 'setDecayPercentage',
-        args: [BigInt(arg.decayPercentage)],
+        args: [integerBigInt(arg.decayPercentage, 'decayPercentage')],
       }),
     });
   }
@@ -132,7 +142,7 @@ export function buildUpdateIssuedTokenTxData(
       data: encodeFunctionData({
         abi: decayingSpaceTokenAbi,
         functionName: 'setDecayInterval',
-        args: [BigInt(arg.decayInterval)],
+        args: [integerBigInt(arg.decayInterval, 'decayInterval')],
       }),
     });
   }

@@ -141,6 +141,88 @@ interface UpdateIssuedTokenFormProps {
   plugin: React.ReactNode;
 }
 
+type TProposalDetails = (key: string) => string;
+type TAgreementFlow = (key: string) => string;
+
+/** Exported for `useFormContext` typing in update-token plugin (same schema as the form). */
+export function buildFullSchemaUpdateIssuedToken(
+  tProposalDetails: TProposalDetails,
+  tAgreementFlow: TAgreementFlow,
+) {
+  const extendedBaseSchema = baseSchemaIssueNewToken.merge(
+    z.object({
+      label: z.string().optional(),
+      tokenAddress: z.string({
+        message: tProposalDetails('tokenShouldBeChosen'),
+      }),
+      archiveToken: z.boolean().optional(),
+      /** DB/chain icon URL when the token was loaded; not submitted to APIs */
+      initialIconUrl: z.string().optional(),
+      /** Snapshot when the form loaded; used for on-chain whitelist diffs (not user-facing) */
+      whitelistBaselineFrom: z.array(z.string()).optional(),
+      whitelistBaselineTo: z.array(z.string()).optional(),
+      whitelistBaselineFromMembers: z.array(z.string()).optional(),
+      whitelistBaselineToMembers: z.array(z.string()).optional(),
+      whitelistBaselineFromSpaceIds: z.array(z.number()).optional(),
+      whitelistBaselineToSpaceIds: z.array(z.number()).optional(),
+      /** Passed from plugin for resolving space rows → web3 ids in orchestrator */
+      spacesForWhitelistResolution: z.array(z.unknown()).optional(),
+    }),
+  );
+
+  return extendedBaseSchema.superRefine((data, ctx) => {
+    if (data.enableLimitedSupply === true) {
+      if (
+        data.maxSupply === undefined ||
+        data.maxSupply === null ||
+        isNaN(data.maxSupply) ||
+        data.maxSupply <= 0
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: tProposalDetails('maxSupplyValidation'),
+          path: ['maxSupply'],
+        });
+      }
+      if (!data.maxSupplyType) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: tAgreementFlow(
+            'issueNewTokenForm.errors.maxSupplyTypeRequired',
+          ),
+          path: ['maxSupplyType'],
+        });
+      }
+    }
+
+    if (data.enableTokenPrice) {
+      if (!data.referenceCurrency) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: tProposalDetails('selectReferenceCurrency'),
+          path: ['referenceCurrency'],
+        });
+      }
+      if (
+        data.tokenPrice === undefined ||
+        data.tokenPrice === null ||
+        isNaN(data.tokenPrice) ||
+        data.tokenPrice <= 0
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: tProposalDetails('tokenPriceGreaterThanZero'),
+          path: ['tokenPrice'],
+        });
+      }
+    }
+  });
+}
+
+export type UpdateIssuedTokenFormValues = z.infer<
+  ReturnType<typeof buildFullSchemaUpdateIssuedToken>
+>;
+
 export const UpdateIssuedTokenForm = ({
   successfulUrl,
   backUrl,
@@ -154,78 +236,12 @@ export const UpdateIssuedTokenForm = ({
   const tAgreementFlow = useTranslations('AgreementFlow');
   const tProposalDetails = useTranslations('ProposalDetails');
 
-  const fullSchemaUpdateIssuedToken = React.useMemo(() => {
-    const extendedBaseSchema = baseSchemaIssueNewToken.merge(
-      z.object({
-        label: z.string().optional(),
-        tokenAddress: z.string({
-          message: tProposalDetails('tokenShouldBeChosen'),
-        }),
-        archiveToken: z.boolean().optional(),
-        /** DB/chain icon URL when the token was loaded; not submitted to APIs */
-        initialIconUrl: z.string().optional(),
-        /** Snapshot when the form loaded; used for on-chain whitelist diffs (not user-facing) */
-        whitelistBaselineFrom: z.array(z.string()).optional(),
-        whitelistBaselineTo: z.array(z.string()).optional(),
-        whitelistBaselineFromMembers: z.array(z.string()).optional(),
-        whitelistBaselineToMembers: z.array(z.string()).optional(),
-        whitelistBaselineFromSpaceIds: z.array(z.number()).optional(),
-        whitelistBaselineToSpaceIds: z.array(z.number()).optional(),
-        /** Passed from plugin for resolving space rows → web3 ids in orchestrator */
-        spacesForWhitelistResolution: z.array(z.unknown()).optional(),
-      }),
-    );
+  const fullSchemaUpdateIssuedToken = React.useMemo(
+    () => buildFullSchemaUpdateIssuedToken(tProposalDetails, tAgreementFlow),
+    [tProposalDetails, tAgreementFlow],
+  );
 
-    return extendedBaseSchema.superRefine((data, ctx) => {
-      if (data.enableLimitedSupply === true) {
-        if (
-          data.maxSupply === undefined ||
-          data.maxSupply === null ||
-          isNaN(data.maxSupply) ||
-          data.maxSupply <= 0
-        ) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: tProposalDetails('maxSupplyValidation'),
-            path: ['maxSupply'],
-          });
-        }
-        if (!data.maxSupplyType) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: tAgreementFlow(
-              'issueNewTokenForm.errors.maxSupplyTypeRequired',
-            ),
-            path: ['maxSupplyType'],
-          });
-        }
-      }
-
-      if (data.enableTokenPrice) {
-        if (!data.referenceCurrency) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: tProposalDetails('selectReferenceCurrency'),
-            path: ['referenceCurrency'],
-          });
-        }
-        if (
-          data.tokenPrice === undefined ||
-          data.tokenPrice === null ||
-          isNaN(data.tokenPrice) ||
-          data.tokenPrice <= 0
-        ) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: tProposalDetails('tokenPriceGreaterThanZero'),
-            path: ['tokenPrice'],
-          });
-        }
-      }
-    });
-  }, [tProposalDetails, tAgreementFlow]);
-
-  type FormValues = z.infer<typeof fullSchemaUpdateIssuedToken>;
+  type FormValues = UpdateIssuedTokenFormValues;
 
   const { person } = useMe();
   const { jwt } = useJwt();

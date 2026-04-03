@@ -10,6 +10,7 @@ import {
   Switch,
 } from '@hypha-platform/ui';
 import { useFormContext } from 'react-hook-form';
+import type { UpdateIssuedTokenFormValues } from '../../../governance/components/update-issued-token-form';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   UPDATE_ISSUED_TOKEN_RESUBMIT_EVENT,
@@ -89,7 +90,7 @@ export const UpdateIssuedTokenPlugin = ({
     resetField,
     watch,
     formState: { dirtyFields },
-  } = useFormContext();
+  } = useFormContext<UpdateIssuedTokenFormValues>();
   const [tokenType, setTokenType] = useState<string>('');
   const [showDecaySettings, setShowDecaySettings] = useState<boolean>(false);
   const [showAdvancedSettings, setShowAdvancedSettings] =
@@ -186,17 +187,15 @@ export const UpdateIssuedTokenPlugin = ({
 
   useEffect(() => {
     const currentType = currentTokenType;
-    const defaults = {
-      enableProposalAutoMinting: true,
-      transferable: currentType !== 'voice',
-      enableTokenPrice: false,
-    };
-
-    Object.entries(defaults).forEach(([key, value]) => {
-      if (getValues(key) === undefined) {
-        setValue(key, value);
-      }
-    });
+    if (getValues('enableProposalAutoMinting') === undefined) {
+      setValue('enableProposalAutoMinting', true);
+    }
+    if (getValues('transferable') === undefined) {
+      setValue('transferable', currentType !== 'voice');
+    }
+    if (getValues('enableTokenPrice') === undefined) {
+      setValue('enableTokenPrice', false);
+    }
   }, [getValues, setValue, currentTokenType]);
 
   useEffect(() => {
@@ -884,10 +883,12 @@ export const UpdateIssuedTokenPlugin = ({
             <AdvancedTokenSettings
               enableLimitedSupply={enableLimitedSupply}
               setEnableLimitedSupply={setEnableLimitedSupply}
-              enableProposalAutoMinting={enableProposalAutoMinting}
-              transferable={transferable}
-              enableAdvancedTransferControls={enableAdvancedTransferControls}
-              enableTokenPrice={enableTokenPrice}
+              enableProposalAutoMinting={enableProposalAutoMinting ?? true}
+              transferable={transferable ?? currentTokenType !== 'voice'}
+              enableAdvancedTransferControls={
+                enableAdvancedTransferControls ?? false
+              }
+              enableTokenPrice={enableTokenPrice ?? false}
               members={members}
               spaces={spaces}
               tokenType={currentTokenType}

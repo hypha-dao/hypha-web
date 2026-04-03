@@ -173,6 +173,12 @@ function bigintToNumber(v: bigint | undefined): number | undefined {
   if (v === undefined) {
     return undefined;
   }
+  if (v > BigInt(Number.MAX_SAFE_INTEGER)) {
+    return undefined;
+  }
+  if (v < BigInt(Number.MIN_SAFE_INTEGER)) {
+    return undefined;
+  }
   return Number(v);
 }
 
