@@ -124,7 +124,10 @@ export function HumanChatPanelMessageBubble({
   const reactions = message.reactions ?? [];
 
   return (
-    <div className="group relative flex gap-3 px-1 py-1 hover:bg-muted/30 rounded-md transition-colors">
+    <div
+      data-testid="chat-message"
+      className="group relative flex gap-3 px-1 py-1 hover:bg-muted/30 rounded-md transition-colors"
+    >
       {/* Avatar */}
       <div
         className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white text-xs font-semibold"

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { HumanChatPanelMessageBubble } from './human-chat-panel-message-bubble';
 
@@ -18,22 +19,18 @@ type HumanChatPanelMessagesProps = {
   isStreaming?: boolean;
 };
 
-const WELCOME_MESSAGE: UIMessage = {
-  id: 'welcome',
-  role: 'member',
-  parts: [
-    {
-      type: 'text',
-      text: 'Welcome to the chat! Start a conversation with other members of this space.',
-    },
-  ],
-  senderName: 'System',
-};
-
 export function HumanChatPanelMessages({
   messages,
   isStreaming = false,
 }: HumanChatPanelMessagesProps) {
+  const t = useTranslations('HumanChatPanel');
+
+  const welcomeMessage: UIMessage = {
+    id: 'welcome',
+    role: 'member',
+    parts: [{ type: 'text', text: t('welcome') }],
+    senderName: 'System',
+  };
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -43,7 +40,7 @@ export function HumanChatPanelMessages({
     }
   }, [messages, isStreaming]);
 
-  const displayMessages = messages.length > 0 ? messages : [WELCOME_MESSAGE];
+  const displayMessages = messages.length > 0 ? messages : [welcomeMessage];
 
   return (
     <div

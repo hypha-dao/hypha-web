@@ -17,7 +17,7 @@ export function HumanChatPanelHeader({
   const t = useTranslations('HumanChatPanel');
 
   const displayTitle = title ?? t('title');
-  const displayDescription = description ?? undefined;
+  const displayDescription = description;
 
   return (
     <div className="flex min-w-0 flex-shrink-0 items-start justify-between gap-2 border-b border-border bg-background-2 px-4 py-3">

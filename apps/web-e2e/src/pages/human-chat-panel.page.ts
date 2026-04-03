@@ -22,11 +22,9 @@ export class HumanChatPanelPage extends BasePage {
     this.openButton = page.getByRole('button', {
       name: /open chat panel/i,
     });
-    // Header title is a span (not a button) in the sidebar header
-    this.headerText = page
-      .locator('[data-side="right"] [data-sidebar="header"] span')
-      .filter({ hasText: 'Chat' })
-      .first();
+    // Header title scoped to the right sidebar
+    const rightSidebar = page.locator('[data-side="right"] [data-sidebar="sidebar"]');
+    this.headerText = rightSidebar.getByText('Chat').first();
     // The header close button has aria-label="Close panel" within the right sidebar.
     // We scope to the right-side sidebar group to avoid collision with AI panel's close button.
     this.closeButton = page
@@ -34,8 +32,8 @@ export class HumanChatPanelPage extends BasePage {
       .getByRole('button', { name: 'Close panel' });
     this.chatInput = page.getByPlaceholder('Type a message...');
     this.sendButton = page.getByRole('button', { name: 'Send' });
-    this.sidebar = page.locator('[data-sidebar="sidebar"]');
-    this.sidebarWrapper = page.locator('[data-sidebar="wrapper"]');
+    this.sidebar = page.getByTestId('sidebar').or(page.locator('[data-sidebar="sidebar"]'));
+    this.sidebarWrapper = page.getByTestId('sidebar-wrapper').or(page.locator('[data-sidebar="wrapper"]'));
     this.resizeHandle = page.getByRole('separator', {
       name: 'Resize sidebar',
     });
@@ -73,18 +71,19 @@ export class HumanChatPanelPage extends BasePage {
 
   /** Get all visible message texts from the panel. */
   async getMessageTexts(): Promise<string[]> {
-    const sidebar = this.page.locator(
+    const rightPanel = this.page.locator(
       '[data-side="right"] [data-sidebar="sidebar"]',
     );
-    const bubbles = sidebar.locator('[class*="rounded-2xl"] span');
+    const bubbles = rightPanel.getByTestId('chat-message');
     return bubbles.allTextContents();
   }
 
   /** Get the welcome message text if present. */
   get welcomeMessage(): Locator {
-    return this.page
-      .locator('[data-side="right"] [data-sidebar="sidebar"]')
-      .getByText('Welcome to the chat', { exact: false });
+    const rightPanel = this.page.locator(
+      '[data-side="right"] [data-sidebar="sidebar"]',
+    );
+    return rightPanel.getByText('Welcome to the chat', { exact: false });
   }
 
   async openPanel() {
