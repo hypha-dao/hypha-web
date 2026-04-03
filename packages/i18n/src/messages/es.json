@@ -132,7 +132,8 @@
         "memberEscrowPendingVote": "Los tokens del vendedor pasan al depósito en garantía solo después de aceptar esta propuesta. Al aprobarse, se envían automáticamente si la cartera del vendedor está conectada.",
         "memberEscrowFundingAuto": "Transfiriendo tokens del vendedor al depósito…",
         "memberEscrowFunded": "Depósito #{escrowId} financiado. El comprador puede completar su parte cuando esté listo.",
-        "connectSellerWalletAuto": "Conecte la cartera del vendedor en este dispositivo para completar la transferencia al depósito."
+        "connectSellerWalletAuto": "Conecte la cartera del vendedor en este dispositivo para completar la transferencia al depósito.",
+        "memberEscrowFundError": "No se pudieron enviar los tokens al depósito: {message}"
       },
       "tokenBackingVault": {
         "title": "Bóveda de respaldo de token",

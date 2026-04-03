@@ -56,7 +56,8 @@ export type FundMemberExchangeEscrowInput = {
  */
 export const useFundMemberExchangeEscrowWeb3Rpc = () => {
   const chainId = getGovernanceChainId();
-  const { getClientForChain } = useSmartWallets();
+  /** Same as contribution proposals: use default smart wallet client (no getClientForChain). */
+  const { client } = useSmartWallets();
 
   const {
     trigger: fundMemberExchangeEscrow,
@@ -70,11 +71,8 @@ export const useFundMemberExchangeEscrowWeb3Rpc = () => {
       _: string,
       { arg }: { arg: FundMemberExchangeEscrowInput },
     ): Promise<bigint[]> => {
-      const client = await getClientForChain({ id: chainId });
       if (!client) {
-        throw new Error(
-          `Smart wallet client not available for chain ${chainId}. Switch network and try again.`,
-        );
+        throw new Error('Smart wallet client not available');
       }
 
       const smartWalletAddress = (

@@ -1005,7 +1005,8 @@
         "memberEscrowPendingVote": "Seller tokens move to escrow only after this proposal is accepted. When it passes, they are sent automatically if the seller wallet is connected.",
         "memberEscrowFundingAuto": "Transferring seller tokens to escrow…",
         "memberEscrowFunded": "Escrow #{escrowId} is funded. The buyer can complete their side when ready.",
-        "connectSellerWalletAuto": "Connect the seller wallet on this device to complete the transfer to escrow."
+        "connectSellerWalletAuto": "Connect the seller wallet on this device to complete the transfer to escrow.",
+        "memberEscrowFundError": "Could not send tokens to escrow: {message}"
       },
       "tokenBackingVault": {
         "title": "Token Backing Vault",

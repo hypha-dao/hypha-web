@@ -132,7 +132,8 @@
         "memberEscrowPendingVote": "Os tokens do vendedor só vão para o escrow depois desta proposta ser aceite. Quando for aprovada, são enviados automaticamente se a carteira do vendedor estiver ligada.",
         "memberEscrowFundingAuto": "A transferir tokens do vendedor para o escrow…",
         "memberEscrowFunded": "Escrow #{escrowId} financiado. O comprador pode completar a sua parte quando estiver pronto.",
-        "connectSellerWalletAuto": "Ligue a carteira do vendedor neste dispositivo para concluir a transferência para o escrow."
+        "connectSellerWalletAuto": "Ligue a carteira do vendedor neste dispositivo para concluir a transferência para o escrow.",
+        "memberEscrowFundError": "Não foi possível enviar tokens para o escrow: {message}"
       },
       "tokenBackingVault": {
         "title": "Cofre de lastro de token",

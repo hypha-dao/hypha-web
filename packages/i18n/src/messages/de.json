@@ -1385,7 +1385,8 @@
         "memberEscrowPendingVote": "Verkäufer-Tokens gehen erst nach Annahme dieses Vorschlags ins Escrow. Bei Annahme werden sie automatisch gesendet, wenn die Verkäufer-Wallet verbunden ist.",
         "memberEscrowFundingAuto": "Verkäufer-Tokens werden ans Escrow übertragen…",
         "memberEscrowFunded": "Escrow #{escrowId} ist finanziert. Der Käufer kann seine Seite abschließen, wenn er bereit ist.",
-        "connectSellerWalletAuto": "Verbinden Sie die Verkäufer-Wallet auf diesem Gerät, um die Überweisung ans Escrow abzuschließen."
+        "connectSellerWalletAuto": "Verbinden Sie die Verkäufer-Wallet auf diesem Gerät, um die Überweisung ans Escrow abzuschließen.",
+        "memberEscrowFundError": "Tokens konnten nicht ans Escrow gesendet werden: {message}"
       },
       "paymentSchedule": {
         "label": "Zahlungsplan",

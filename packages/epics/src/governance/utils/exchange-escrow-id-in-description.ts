@@ -8,7 +8,7 @@ export function upsertExchangeEscrowIdInDescription(
   escrowId: bigint,
 ): string {
   const token = `<!-- exchange-escrow-id:${escrowId.toString()} -->`;
-  if (ESCROW_ID_COMMENT.test(description)) {
+  if (ESCROW_ID_COMMENT.exec(description)) {
     return description.replace(ESCROW_ID_COMMENT, token);
   }
   return `${description.trimEnd()}\n\n${token}`;

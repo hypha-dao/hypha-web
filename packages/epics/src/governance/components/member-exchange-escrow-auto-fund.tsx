@@ -24,9 +24,19 @@ function toFundingLeg(legs: Leg[]) {
   }));
 }
 
+function legsKey(parsed: ParsedExchangeDetails | null): string {
+  if (!parsed?.sellerLeg?.length || !parsed?.buyerLeg?.length) return '';
+  return JSON.stringify({
+    s: parsed.sellerLeg,
+    b: parsed.buyerLeg,
+    seller: parsed.sellerAddress,
+    buyer: parsed.buyerAddress,
+  });
+}
+
 /**
- * No UI button: when the deferred member-exchange proposal is executed and the seller
- * wallet is connected, funds escrow automatically (embedded in voting flow).
+ * No button: when the deferred member-exchange proposal is executed and the seller
+ * wallet matches, fund escrow once (same wallet pattern as contribution proposals).
  */
 export function MemberExchangeEscrowAutoFund({
   documentSlug,
@@ -43,9 +53,16 @@ export function MemberExchangeEscrowAutoFund({
   const { jwt } = useJwt();
   const router = useRouter();
   const web2 = useAgreementMutationsWeb2Rsc(jwt);
+  const updateAgreementRef = React.useRef(web2.updateAgreementBySlug);
+  updateAgreementRef.current = web2.updateAgreementBySlug;
+
   const { client } = useSmartWallets();
   const { fundMemberExchangeEscrow } = useFundMemberExchangeEscrowWeb3Rpc();
-  const runRef = React.useRef(false);
+  const fundRef = React.useRef(fundMemberExchangeEscrow);
+  fundRef.current = fundMemberExchangeEscrow;
+
+  const attemptedRef = React.useRef(false);
+  const [fundError, setFundError] = React.useState<string | null>(null);
 
   const deferred =
     typeof description === 'string' &&
@@ -60,10 +77,12 @@ export function MemberExchangeEscrowAutoFund({
     smartAddress && sellerAddr && smartAddress === sellerAddr,
   );
 
+  const legsStable = legsKey(parsedExchange);
+
   const canAutoFund =
     deferred &&
     executed &&
-    !persistedEscrowId &&
+    persistedEscrowId === undefined &&
     isSellerWallet &&
     parsedExchange?.sellerLeg?.length &&
     parsedExchange?.buyerLeg?.length &&
@@ -72,14 +91,20 @@ export function MemberExchangeEscrowAutoFund({
     parsedExchange.buyerAddress;
 
   React.useEffect(() => {
-    if (!canAutoFund || !parsedExchange || !description || runRef.current) {
+    if (
+      !canAutoFund ||
+      !parsedExchange ||
+      typeof description !== 'string' ||
+      attemptedRef.current
+    ) {
       return;
     }
-    runRef.current = true;
+    attemptedRef.current = true;
+    setFundError(null);
 
     void (async () => {
       try {
-        const escrowIds = await fundMemberExchangeEscrow({
+        const escrowIds = await fundRef.current({
           sellerAddress: parsedExchange.sellerAddress!,
           buyerAddress: parsedExchange.buyerAddress!,
           sellerLeg: toFundingLeg(parsedExchange.sellerLeg),
@@ -91,23 +116,25 @@ export function MemberExchangeEscrowAutoFund({
           description,
           first,
         );
-        await web2.updateAgreementBySlug({
+        await updateAgreementRef.current({
           slug: documentSlug,
           description: nextDesc,
         });
         router.refresh();
-      } catch {
-        runRef.current = false;
+      } catch (e) {
+        attemptedRef.current = false;
+        const msg = e instanceof Error ? e.message : String(e);
+        setFundError(msg);
+        console.error('Member exchange auto-fund failed:', e);
       }
     })();
   }, [
     canAutoFund,
     description,
     documentSlug,
-    fundMemberExchangeEscrow,
+    legsStable,
     parsedExchange,
     router,
-    web2,
   ]);
 
   if (!deferred) return null;
@@ -141,6 +168,17 @@ export function MemberExchangeEscrowAutoFund({
         role="alert"
       >
         {t('connectSellerWalletAuto')}
+      </div>
+    );
+  }
+
+  if (fundError) {
+    return (
+      <div
+        className="rounded-[8px] p-4 border border-destructive-6 bg-destructive-surface text-2 text-destructive"
+        role="alert"
+      >
+        {t('memberEscrowFundError', { message: fundError })}
       </div>
     );
   }

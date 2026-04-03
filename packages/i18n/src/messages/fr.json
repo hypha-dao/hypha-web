@@ -1009,7 +1009,8 @@
         "memberEscrowPendingVote": "Les jetons du vendeur vont à l’escrow seulement après acceptation de cette proposition. Une fois adoptée, ils sont envoyés automatiquement si le portefeuille vendeur est connecté.",
         "memberEscrowFundingAuto": "Transfert des jetons du vendeur vers l’escrow…",
         "memberEscrowFunded": "Escrow n°{escrowId} alimenté. L’acheteur peut compléter son côté quand il est prêt.",
-        "connectSellerWalletAuto": "Connectez le portefeuille vendeur sur cet appareil pour finaliser le transfert vers l’escrow."
+        "connectSellerWalletAuto": "Connectez le portefeuille vendeur sur cet appareil pour finaliser le transfert vers l’escrow.",
+        "memberEscrowFundError": "Impossible d’envoyer les jetons vers l’escrow : {message}"
       },
       "tokenBackingVault": {
         "title": "Coffre de garantie de token",
