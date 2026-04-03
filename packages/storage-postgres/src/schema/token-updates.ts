@@ -33,6 +33,11 @@ export type TokenUpdateDataJson = {
   useTransferWhitelist?: boolean;
   useReceiveWhitelist?: boolean;
   transferWhitelist?: unknown;
+  /** Proposal-details diff only; mirrors core `TokenUpdateData` */
+  whitelistSnapshotBeforeProposal?: {
+    transferAddresses: string[];
+    receiveAddresses: string[];
+  };
 };
 
 export const tokenUpdates = pgTable(

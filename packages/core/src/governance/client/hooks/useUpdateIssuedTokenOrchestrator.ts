@@ -519,6 +519,19 @@ export const useUpdateIssuedTokenOrchestrator = ({
         ...(arg.transferWhitelist !== undefined
           ? { transferWhitelist: arg.transferWhitelist }
           : {}),
+        ...(arg.whitelistBaselineFrom !== undefined ||
+        arg.whitelistBaselineTo !== undefined
+          ? {
+              whitelistSnapshotBeforeProposal: {
+                transferAddresses: normalizeWhitelistAddresses(
+                  arg.whitelistBaselineFrom ?? [],
+                ),
+                receiveAddresses: normalizeWhitelistAddresses(
+                  arg.whitelistBaselineTo ?? [],
+                ),
+              },
+            }
+          : {}),
       };
       await web2TokenMutations.createTokenUpdate({
         documentId: createdAgreement.id,

@@ -218,6 +218,14 @@ export type TokenUpdateData = {
   useReceiveWhitelist?: boolean;
   /** Off-chain copy for proposal details + resubmit; on-chain uses address lists only */
   transferWhitelist?: TransferWhitelistFormValue;
+  /**
+   * Flattened on-chain whitelist (space + member addresses) captured at submit time.
+   * Used only for proposal-details diff UI (+/−/=); not sent to the contract.
+   */
+  whitelistSnapshotBeforeProposal?: {
+    transferAddresses: `0x${string}`[];
+    receiveAddresses: `0x${string}`[];
+  };
 };
 
 function isRecord(v: unknown): v is Record<string, unknown> {

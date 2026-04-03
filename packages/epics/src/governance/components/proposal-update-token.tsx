@@ -1,6 +1,8 @@
 import {
   getPriceCurrencyCode,
   isTokenUpdateData,
+  normalizeWhitelistAddresses,
+  splitWhitelistFormToTargets,
   useJwt,
   useTokenUpdateByDocumentId,
   useUpdateTokenByAddress,
@@ -20,6 +22,7 @@ import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { normalizeMaxSupplyHuman } from '../../treasury/utils/normalize-max-supply-human';
 import { WhitelistAddressItem } from './proposal-token-items';
+import { buildWhitelistDiffRows } from '../utils/whitelist-proposal-diff';
 
 export interface ProposalUpdateTokenProps {
   address: `0x${string}`;
@@ -67,6 +70,10 @@ interface TokenUpdateDataInterface {
   useTransferWhitelist?: boolean;
   useReceiveWhitelist?: boolean;
   transferWhitelist?: TransferWhitelistFormValue;
+  whitelistSnapshotBeforeProposal?: {
+    transferAddresses: `0x${string}`[];
+    receiveAddresses: `0x${string}`[];
+  };
 }
 
 export const ProposalUpdateToken = ({
@@ -217,8 +224,109 @@ export const ProposalUpdateToken = ({
     addressesFromSpaceIds,
   ]);
 
+  const hasWhitelistSnapshot =
+    pendingData?.whitelistSnapshotBeforeProposal !== undefined;
+
+  const targetFromForDiff = React.useMemo(() => {
+    if (!pendingData?.transferWhitelist?.from?.length) {
+      return [] as `0x${string}`[];
+    }
+    const split = splitWhitelistFormToTargets(
+      pendingData.transferWhitelist.from,
+      spacesForWhitelistDisplay,
+    );
+    const spaceAddrs = addressesFromSpaceIds(split.spaceIds);
+    return normalizeWhitelistAddresses([
+      ...split.memberAddresses,
+      ...spaceAddrs,
+    ]);
+  }, [
+    pendingData?.transferWhitelist?.from,
+    spacesForWhitelistDisplay,
+    addressesFromSpaceIds,
+  ]);
+
+  const targetToForDiff = React.useMemo(() => {
+    if (!pendingData?.transferWhitelist?.to?.length) {
+      return [] as `0x${string}`[];
+    }
+    const split = splitWhitelistFormToTargets(
+      pendingData.transferWhitelist.to,
+      spacesForWhitelistDisplay,
+    );
+    const spaceAddrs = addressesFromSpaceIds(split.spaceIds);
+    return normalizeWhitelistAddresses([
+      ...split.memberAddresses,
+      ...spaceAddrs,
+    ]);
+  }, [
+    pendingData?.transferWhitelist?.to,
+    spacesForWhitelistDisplay,
+    addressesFromSpaceIds,
+  ]);
+
+  const fromWhitelistDiffRows = React.useMemo(() => {
+    if (
+      !hasWhitelistSnapshot ||
+      !pendingData?.whitelistSnapshotBeforeProposal
+    ) {
+      return null;
+    }
+    return buildWhitelistDiffRows(
+      pendingData.whitelistSnapshotBeforeProposal.transferAddresses,
+      targetFromForDiff,
+    );
+  }, [
+    hasWhitelistSnapshot,
+    pendingData?.whitelistSnapshotBeforeProposal,
+    targetFromForDiff,
+  ]);
+
+  const toWhitelistDiffRows = React.useMemo(() => {
+    if (
+      !hasWhitelistSnapshot ||
+      !pendingData?.whitelistSnapshotBeforeProposal
+    ) {
+      return null;
+    }
+    return buildWhitelistDiffRows(
+      pendingData.whitelistSnapshotBeforeProposal.receiveAddresses,
+      targetToForDiff,
+    );
+  }, [
+    hasWhitelistSnapshot,
+    pendingData?.whitelistSnapshotBeforeProposal,
+    targetToForDiff,
+  ]);
+
+  const fromWhitelistRender = React.useMemo(() => {
+    if (fromWhitelistDiffRows !== null) {
+      return { showDiff: true, rows: fromWhitelistDiffRows };
+    }
+    return {
+      showDiff: false,
+      rows: fromAddressesForDisplay.map((addr) => ({
+        address: addr,
+        status: 'unchanged' as const,
+      })),
+    };
+  }, [fromWhitelistDiffRows, fromAddressesForDisplay]);
+
+  const toWhitelistRender = React.useMemo(() => {
+    if (toWhitelistDiffRows !== null) {
+      return { showDiff: true, rows: toWhitelistDiffRows };
+    }
+    return {
+      showDiff: false,
+      rows: toAddressesForDisplay.map((addr) => ({
+        address: addr,
+        status: 'unchanged' as const,
+      })),
+    };
+  }, [toWhitelistDiffRows, toAddressesForDisplay]);
+
   const showTransferWhitelistDetails =
-    fromAddressesForDisplay.length > 0 || toAddressesForDisplay.length > 0;
+    fromWhitelistRender.rows.length > 0 || toWhitelistRender.rows.length > 0;
   const tokenPrice = React.useMemo(() => {
     return priceWithCurrency?.tokenPrice
       ? Number(priceWithCurrency.tokenPrice) / 1_000_000
@@ -463,31 +571,37 @@ export const ProposalUpdateToken = ({
             <div className="text-1 text-neutral-11 font-medium">
               {tProposalDetails('sections.transferWhitelists')}
             </div>
-            {fromAddressesForDisplay.length > 0 && (
+            {fromWhitelistRender.rows.length > 0 && (
               <div className="flex flex-col gap-4">
                 <div className="text-1 text-neutral-11 font-bold">
                   {tProposalDetails('sections.fromWhitelist')}
                 </div>
                 <div className="flex flex-col gap-4">
-                  {fromAddressesForDisplay.map((addr, idx) => (
+                  {fromWhitelistRender.rows.map((row, idx) => (
                     <WhitelistAddressItem
-                      key={`from-${idx}-${addr}`}
-                      address={addr}
+                      key={`from-${idx}-${row.address}`}
+                      address={row.address}
+                      diffStatus={
+                        fromWhitelistRender.showDiff ? row.status : undefined
+                      }
                     />
                   ))}
                 </div>
               </div>
             )}
-            {toAddressesForDisplay.length > 0 && (
+            {toWhitelistRender.rows.length > 0 && (
               <div className="flex flex-col gap-4">
                 <div className="text-1 text-neutral-11 font-bold">
                   {tProposalDetails('sections.toWhitelist')}
                 </div>
                 <div className="flex flex-col gap-4">
-                  {toAddressesForDisplay.map((addr, idx) => (
+                  {toWhitelistRender.rows.map((row, idx) => (
                     <WhitelistAddressItem
-                      key={`to-${idx}-${addr}`}
-                      address={addr}
+                      key={`to-${idx}-${row.address}`}
+                      address={row.address}
+                      diffStatus={
+                        toWhitelistRender.showDiff ? row.status : undefined
+                      }
                     />
                   ))}
                 </div>

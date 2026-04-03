@@ -32,10 +32,13 @@ interface ProposalTokenItemProps {
 
 interface WhitelistAddressItemProps {
   address: `0x${string}`;
+  /** When set, shows + / − / = for proposal whitelist diff (light/dark safe). */
+  diffStatus?: 'added' | 'removed' | 'unchanged';
 }
 
 export const WhitelistAddressItem = ({
   address,
+  diffStatus,
 }: WhitelistAddressItemProps) => {
   const tProposalDetails = useTranslations('ProposalDetails');
   const { spaces: dbSpaces } = useDbSpaces({
@@ -47,9 +50,34 @@ export const WhitelistAddressItem = ({
     (s) => s.address?.toLowerCase() === address.toLowerCase(),
   );
 
+  const diffIcon =
+    diffStatus === 'added' ? (
+      <span
+        className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded border border-success-8 bg-success-2 text-[11px] font-semibold leading-none text-success-11"
+        aria-hidden
+      >
+        +
+      </span>
+    ) : diffStatus === 'removed' ? (
+      <span
+        className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded border border-error-8 bg-error-2 text-[11px] font-semibold leading-none text-error-11"
+        aria-hidden
+      >
+        −
+      </span>
+    ) : diffStatus === 'unchanged' ? (
+      <span
+        className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded border border-neutral-6 bg-neutral-3 text-[11px] font-semibold leading-none text-neutral-11"
+        aria-hidden
+      >
+        =
+      </span>
+    ) : null;
+
   return (
     <Skeleton loading={isLoading} className="h-6 w-full">
       <div className="flex items-center gap-2">
+        {diffIcon}
         {person ? (
           <>
             <PersonAvatar avatarSrc={person?.avatarUrl} size="sm" />

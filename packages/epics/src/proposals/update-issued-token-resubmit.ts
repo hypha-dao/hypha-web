@@ -97,6 +97,13 @@ export function applyUpdateIssuedTokenResubmitPayloadToForm<
       shouldDirty: false,
     });
   }
+  if (payload.whitelistSnapshotBeforeProposal !== undefined) {
+    patch(
+      'whitelistSnapshotBeforeProposal',
+      payload.whitelistSnapshotBeforeProposal,
+      { shouldDirty: false },
+    );
+  }
   patch('archiveToken', payload.archiveToken);
 
   const showAdv =
@@ -162,6 +169,7 @@ export type UpdateIssuedTokenResubmitPayload = {
   enableAdvancedTransferControls: boolean;
   archiveToken: boolean;
   transferWhitelist?: TransferWhitelistFormValue;
+  whitelistSnapshotBeforeProposal?: TokenUpdateData['whitelistSnapshotBeforeProposal'];
 };
 
 export type TokenUpdateDbRow = {
@@ -243,6 +251,12 @@ export function buildUpdateIssuedTokenResubmitPayload({
       archiveToken: data.archiveToken ?? false,
       ...(data.transferWhitelist
         ? { transferWhitelist: data.transferWhitelist }
+        : {}),
+      ...(data.whitelistSnapshotBeforeProposal
+        ? {
+            whitelistSnapshotBeforeProposal:
+              data.whitelistSnapshotBeforeProposal,
+          }
         : {}),
     };
   }

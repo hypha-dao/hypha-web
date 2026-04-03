@@ -43,6 +43,7 @@ export * from './useTokenUpdateByDocumentId';
 export * from './useTokenUpdateForSpaceTokenAddress';
 export * from './useTokenOnChainData';
 export * from './fetch-whitelist-baseline';
+export * from './whitelist-address-diff';
 export * from './useTokenDecimals';
 export * from './useSpaceTokenPurchaseOrchestrator';
 export * from './useSpaceTokenPurchaseMutations.web3.rsc';
