@@ -18,6 +18,7 @@ import {
 } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { flushSync } from 'react-dom';
 import { getTokenTypeLabel } from './token-type-field';
 
 interface TokenItem {
@@ -81,10 +82,15 @@ export function SelectTokenField({
           : undefined;
 
         const handleSelect = (token: TokenItem) => {
-          const addr = token.address.startsWith('0x')
-            ? token.address.toLowerCase()
-            : token.address;
-          field.onChange(addr);
+          const raw =
+            typeof token.address === 'string' ? token.address.trim() : '';
+          if (!raw.startsWith('0x')) {
+            return;
+          }
+          const addr = raw.toLowerCase();
+          flushSync(() => {
+            field.onChange(addr);
+          });
           onValueChange?.(addr);
         };
 

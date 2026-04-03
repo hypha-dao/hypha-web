@@ -320,7 +320,12 @@ export const UpdateIssuedTokenPlugin = ({
     });
   }, [chainMappingSpaces, setValue]);
   const spaceTokens = useMemo(() => {
-    return dbTokens.filter((t) => t.spaceId === spaceId);
+    return dbTokens.filter(
+      (t) =>
+        t.spaceId === spaceId &&
+        typeof t.address === 'string' &&
+        t.address.trim().startsWith('0x'),
+    );
   }, [dbTokens, spaceId]);
 
   const selectedToken = useMemo(() => {
