@@ -131,9 +131,7 @@ export default async function RootLayout({
                   <ConditionalMatrixProvider enabled={humanChatEnabled}>
                     <PanelWrapLayout
                       left={
-                        aiChatEnabled
-                          ? { content: <AiLeftPanel /> }
-                          : undefined
+                        aiChatEnabled ? { content: <AiLeftPanel /> } : undefined
                       }
                       right={
                         humanChatEnabled
@@ -149,9 +147,7 @@ export default async function RootLayout({
                           aiChatEnabled ? <AiSidebarTrigger /> : undefined
                         }
                         trailingAction={
-                          humanChatEnabled ? (
-                            <HumanSidebarTrigger />
-                          ) : undefined
+                          humanChatEnabled ? <HumanSidebarTrigger /> : undefined
                         }
                       >
                         <ConnectedButtonProfile
