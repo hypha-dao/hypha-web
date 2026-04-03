@@ -94,7 +94,7 @@ export function HumanRightPanel() {
   useEffect(() => {
     if (joinedRef.current && joinedRef.current !== spaceSlug) {
       if (roomId) {
-        matrixRef.current.unregisterRoomListerner(roomId);
+        matrixRef.current.unregisterRoomListener(roomId);
       }
       joinedRef.current = null;
       setRoomId(null);
@@ -169,7 +169,7 @@ export function HumanRightPanel() {
   useEffect(() => {
     if (!roomId || !isMatrixAvailable) return;
 
-    const { registerRoomListener, unregisterRoomListerner } = matrixRef.current;
+    const { registerRoomListener, unregisterRoomListener } = matrixRef.current;
 
     registerRoomListener(roomId, async (message: Message) => {
       setMessages((prev) => {
@@ -179,7 +179,7 @@ export function HumanRightPanel() {
     });
 
     return () => {
-      unregisterRoomListerner(roomId);
+      unregisterRoomListener(roomId);
     };
   }, [roomId, isMatrixAvailable]);
 
