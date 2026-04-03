@@ -12,7 +12,7 @@ import {
 import { useTranslations } from 'next-intl';
 
 export const TokenPriceField = () => {
-  const { control, formState } = useFormContext();
+  const { control, formState, setValue } = useFormContext();
   const tAgreementFlow = useTranslations('AgreementFlow');
   const enableTokenPrice = useWatch({
     control,
@@ -43,7 +43,17 @@ export const TokenPriceField = () => {
                 value={field.value ?? ''}
                 onChange={(e) => {
                   const value = e.target.value;
-                  field.onChange(value === '' ? undefined : value);
+                  if (value === '') {
+                    // Clearing must mark dirty; otherwise RHF treats undefined as default
+                    // and update-token hydration re-applies chain tokenPrice while the input still shows stale text.
+                    setValue('tokenPrice', undefined, {
+                      shouldDirty: true,
+                      shouldTouch: true,
+                      shouldValidate: true,
+                    });
+                    return;
+                  }
+                  field.onChange(value);
                 }}
               />
             </FormControl>
