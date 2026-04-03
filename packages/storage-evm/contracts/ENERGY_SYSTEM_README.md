@@ -4,7 +4,7 @@ This document is a quick walkthrough of the new energy settlement system for non
 
 **Part 1** is a quick technical walkthrough of the data pipeline: how meter readings travel from hardware to databases to the blockchain, and what happens at each step.
 
-**Part 2** is about the algorithm that fairly determines who has to pay what. This is the core of the EMS (Energy Management System) and replaces the previous on-chain settlement logic.
+**Part 2** is about the algorithm that fairly determines who has to pay what. This is the core of the **VPP** (Virtual Power Plant) and replaces the previous on-chain settlement logic.
 
 **Why the rearchitecture?** The previous system processed members one by one in a loop. Whoever was processed first in the array got the cheapest energy; whoever was last got stuck with expensive grid imports. Just reordering the array could swing a member's bill by over 100% — same production, same consumption, different outcome depending on array position. The system was also inflexible with pricing: all local energy had a single price, making it hard to differentiate between solar, battery, and other sources that have different real-world costs. The new system solves both problems — fair proportional distribution regardless of ordering, and per-source pricing.
 
@@ -203,15 +203,15 @@ GROUP BY 1, 2, 3, 5;
 ]
 ```
 
-### Step 4: The EMS calculates who pays what
+### Step 4: The VPP calculates who pays what
 
-This is the brain of the system. The **EMS** (Energy Management System) is a backend program that does two things:
+This is the brain of the system. Two backend components work together:
 
-1. **Controls the battery** — it sends charge/discharge commands to the battery over MQTT. This is the only physical action the software takes. Everything else is just accounting.
+- The **VPP** (Virtual Power Plant) — runs the fair-split algorithm. It takes the 15-minute summaries, looks up the community's rules, and calculates exactly how much energy each member should be attributed and at what price. (Part 2 of this document explains this algorithm in detail.)
 
-2. **Runs the fair-split algorithm** — it takes the 15-minute summaries, looks up the community's rules, and calculates exactly how much energy each member should be attributed and at what price. (Part 2 of this document explains this algorithm in detail.)
+- The **EMS** (Energy Management System) — controls the battery. It sends charge/discharge commands over MQTT. This is the only physical action the software takes. Everything else is accounting handled by the VPP.
 
-**What the EMS reads:**
+**What the VPP reads:**
 
 | Data | Where it comes from |
 |---|---|
@@ -223,7 +223,7 @@ This is the brain of the system. The **EMS** (Energy Management System) is a bac
 
 **Input from blockchain — per-source ownership configuration:**
 
-The EMS reads ownership and fee config from the smart contract. Each source has its own set of owners with ownership expressed in **basis points** (bps): 10000 bps = 100%.
+The VPP reads ownership and fee config from the smart contract. Each source has its own set of owners with ownership expressed in **basis points** (bps): 10000 bps = 100%.
 
 ```json
 {
@@ -261,9 +261,9 @@ The EMS reads ownership and fee config from the smart contract. Each source has 
 
 Each source's `ownershipBps` values must sum to 10000.
 
-**How the EMS transforms interval readings into settlement entries:**
+**How the VPP transforms interval readings into settlement entries:**
 
-The EMS takes the raw interval readings from Step 3 and the ownership config above, then runs the three-pass algorithm. Here is the exact math for this interval:
+The VPP takes the raw interval readings from Step 3 and the ownership config above, then runs the three-pass algorithm. Here is the exact math for this interval:
 
 ```
 INPUT (from interval_readings):
@@ -318,9 +318,9 @@ CHECK: solar 2000+3000+1000+2000 = 8000 ✓  battery 1000+1000 = 2000 ✓  grid 
 
 Each (member, source, amount) tuple becomes one settlement entry with the source's price attached.
 
-**What the EMS produces:** A list of readings — one per member per energy source — that says who consumed how much, from what source, at what price. This is the input for the blockchain.
+**What the VPP produces:** A list of readings — one per member per energy source — that says who consumed how much, from what source, at what price. This is the input for the blockchain.
 
-**Database:** The EMS saves its calculation to **PostgreSQL**, table called `settlement_batches`. This is the receipt — a record of exactly what was sent to the blockchain and why. Kept forever.
+**Database:** The VPP saves its calculation to **PostgreSQL**, table called `settlement_batches`. This is the receipt — a record of exactly what was sent to the blockchain and why. Kept forever.
 
 **Output — settlement entries (saved to PostgreSQL, then sent to blockchain):**
 
@@ -367,7 +367,7 @@ Status transitions: `pending` → `submitted` (tx sent) → `confirmed` (tx mine
 
 ### Step 5: The blockchain records the settlement
 
-The EMS sends its list of readings to a **smart contract** on the blockchain in a single transaction. Here is what that data looks like for the interval above:
+The VPP sends its list of readings to a **smart contract** on the blockchain in a single transaction. Here is what that data looks like for the interval above:
 
 ```
 settleInterval([
@@ -538,11 +538,11 @@ TimescaleDB: "raw_readings" (kept 90 days)
   ▼
 TimescaleDB: "interval_readings" (kept forever)
   │
-  │  EMS reads summaries + prices
+  │  VPP reads summaries + prices, EMS controls battery
   ▼
-EMS Backend (runs the fair-split algorithm, controls battery)
+VPP Backend (runs the fair-split algorithm) + EMS (battery control)
   │
-  │  Saves its calculation
+  │  VPP saves its calculation
   ▼
 PostgreSQL: "settlement_batches" (kept forever)
   │
@@ -550,20 +550,20 @@ PostgreSQL: "settlement_batches" (kept forever)
   ▼
 Blockchain Smart Contract (permanent, tamper-proof)
   │
-  │  Charges consumers, distributes revenue per source, verifies zero-sum
+  │  Charges consumers, distributes revenue per source, verifies zero‑sum
   ▼
 Member balances (on-chain), settled with EURC stablecoin
 ```
 
 ---
 
-## Part 2 — Inside the EMS: How Energy Is Fairly Divided
+## Part 2 — Inside the VPP: How Energy Is Fairly Divided
 
-The EMS runs a three-step algorithm every 15 minutes. The goal: give each member their fair share of cheap energy — based on how much of each source they own — before anyone has to buy expensive grid electricity.
+The VPP runs a three-step algorithm every 15 minutes. The goal: give each member their fair share of cheap energy — based on how much of each source they own — before anyone has to buy expensive grid electricity.
 
 ### Where prices come from
 
-The EMS needs to know the price of each energy source. These come from two places:
+The VPP needs to know the price of each energy source. These come from two places:
 
 | Price | Where it comes from |
 |---|---|
@@ -577,7 +577,7 @@ In short: internal community prices live on the blockchain (transparent, agreed 
 
 ### The battery
 
-The EMS is the part that **controls the battery**. Throughout the day, it decides when to charge (store excess solar) and when to discharge (release stored energy during high demand or high prices). These charge/discharge commands are sent over MQTT, just like meter readings but in reverse. This is the only physical action the software takes — everything else is accounting.
+The **EMS** (Energy Management System) is the separate component that **controls the battery**. Throughout the day, it decides when to charge (store excess solar) and when to discharge (release stored energy during high demand or high prices). These charge/discharge commands are sent over MQTT, just like meter readings but in reverse. This is the only physical action the software takes — everything else is accounting handled by the VPP.
 
 ### Formal algorithm definitions
 
@@ -758,7 +758,7 @@ Alice pays only for solar because she consumed less than her share. Carol pays o
 
 ### What happens on-chain: the settlement
 
-The EMS sends the readings above to the smart contract. The contract does two things:
+The VPP sends the readings above to the smart contract. The contract does two things:
 
 **1. Charge each consumer.** Every reading gets multiplied out: amount × price.
 
@@ -894,9 +894,9 @@ No redistribution needed — nobody needs more energy. Skip.
 
 Total surplus: 1.0 + 1.0 + 1.0 + 1.0 = 4.0 kWh. This is sold to the grid at 5 ct/kWh.
 
-### What the EMS sends to the blockchain
+### What the VPP sends to the blockchain
 
-The EMS builds a list of readings, including the export as its own entry:
+The VPP builds a list of readings, including the export as its own entry:
 
 ```
 settleInterval([
@@ -987,15 +987,18 @@ This section maps every function and data store to a concrete service, with reco
 │   │  (retailer/spot)  │         │                          │                │
 │   └──────────────────┘         ▼                          ▼                │
 │                          ┌──────────────────────────────────────┐           │
-│                          │           EMS Backend                │           │
+│                          │       VPP + EMS Backend              │           │
 │                          │  (Node.js / Docker on Railway/Fly)   │           │
 │                          │                                      │           │
+│                          │  VPP (Virtual Power Plant):          │           │
 │                          │  • Reads interval_readings           │           │
 │                          │  • Reads ownership from blockchain   │           │
-│                          │  • Runs 3-pass algorithm             │           │
-│                          │  • Controls battery via MQTT         │           │
+│                          │  • Runs 3-pass fair-split algorithm  │           │
 │                          │  • Writes settlement_batches         │           │
 │                          │  • Sends tx to blockchain            │           │
+│                          │                                      │           │
+│                          │  EMS (Energy Management System):     │           │
+│                          │  • Controls battery via MQTT         │           │
 │                          └──────────────┬───────────────────────┘           │
 │                                         │                                   │
 │                   ┌─────────────────────┼────────────────────┐              │
@@ -1045,16 +1048,16 @@ This section maps every function and data store to a concrete service, with reco
 
 **Cost:** Timescale Cloud ~€30/month (Starter). Self-hosted PostgreSQL+TimescaleDB on a €10/month VPS.
 
-#### Step 4 — EMS backend (the algorithm)
+#### Step 4 — VPP backend (the algorithm) + EMS (battery control)
 
 | Concern | Recommendation | Alternative | Notes |
 |---|---|---|---|
 | **Runtime** | **Node.js** (TypeScript) in a Docker container | Python | Same language as the ingestion service for shared libraries and types. |
 | **Hosting** | **Railway** or **Fly.io** | AWS Lambda (triggered every 15 min), Google Cloud Functions | Can be a cron-triggered job or a long-running service that sleeps between intervals. Lambda works if execution stays under 15 min (it will — the algorithm takes milliseconds). |
-| **Trigger** | pg_cron calls `pg_notify()` after aggregation → EMS listens via `LISTEN/NOTIFY` | Poll `interval_readings` every minute, or use a message queue | `LISTEN/NOTIFY` gives sub-second trigger latency with zero infrastructure. The EMS holds a PostgreSQL connection and gets a push notification when new interval data is ready. |
+| **Trigger** | pg_cron calls `pg_notify()` after aggregation → VPP listens via `LISTEN/NOTIFY` | Poll `interval_readings` every minute, or use a message queue | `LISTEN/NOTIFY` gives sub-second trigger latency with zero infrastructure. The VPP holds a PostgreSQL connection and gets a push notification when new interval data is ready. |
 | **Blockchain reads** | **ethers.js** or **viem** — read ownership config from `EnergyPPAImplementation` contract | TheGraph subgraph for indexed queries | Direct RPC reads are fine for small communities. For 100+ members, consider caching ownership in PostgreSQL and syncing on changes (listen to `MemberAdded`/`MemberRemoved` events). |
 | **Price APIs** | Fetch grid import/export prices from retailer API or spot market API at the start of each interval | Cache prices with a 15-min TTL | Specific API depends on the country and energy retailer. |
-| **Battery control** | Publish MQTT commands: `community/{id}/battery/command` with `{ "action": "charge", "powerW": 5000 }` | — | The EMS is the only writer to the battery command topic. |
+| **Battery control (EMS)** | Publish MQTT commands: `community/{id}/battery/command` with `{ "action": "charge", "powerW": 5000 }` | — | The EMS is the only writer to the battery command topic. Runs alongside the VPP in the same backend service. |
 
 **Cost:** Same container as ingestion service (combine into one) → no additional cost. Or separate at ~€5/month.
 
@@ -1101,7 +1104,7 @@ This section maps every function and data store to a concrete service, with reco
 | Ingestion service | Node.js on Railway / Fly.io | €5 |
 | Time-series database | Timescale Cloud (Starter) | €30 |
 | Aggregation scheduler | pg_cron (inside TimescaleDB) | €0 (included) |
-| EMS backend | Node.js on Railway / Fly.io (same container or separate) | €0 – €5 |
+| VPP + EMS backend | Node.js on Railway / Fly.io (same container or separate) | €0 – €5 |
 | Settlement database | PostgreSQL (included in Timescale Cloud or separate) | €0 – €10 |
 | Blockchain | Base | €3 (gas) |
 | RPC provider | Alchemy / public RPC | €0 |
@@ -1116,6 +1119,6 @@ This section maps every function and data store to a concrete service, with reco
 ### Scaling notes
 
 - **10–50 members:** The stack above handles this without changes. TimescaleDB Starter is more than sufficient.
-- **50–500 members:** Move to Timescale Cloud Pro (~€100/month). Consider splitting the ingestion service and EMS into separate containers. Add a Redis cache for ownership config.
+- **50–500 members:** Move to Timescale Cloud Pro (~€100/month). Consider splitting the ingestion service and VPP into separate containers. Add a Redis cache for ownership config.
 - **500+ members / multiple communities:** Add a message queue (NATS or RabbitMQ) between MQTT and ingestion. Shard TimescaleDB by community_id. Move to a dedicated PostgreSQL for settlement_batches. Consider batch settlement transactions (one tx per community per interval, but multiple communities per block).
-- **Battery optimization:** For advanced battery scheduling (day-ahead forecasting, market arbitrage), add a separate **optimization service** that runs ML models and writes charge/discharge schedules. The EMS reads the schedule and sends commands. This can be a Python service with access to weather APIs and spot market data.
+- **Battery optimization:** For advanced battery scheduling (day-ahead forecasting, market arbitrage), add a separate **optimization service** that runs ML models and writes charge/discharge schedules. The EMS reads the schedule and sends battery commands. This can be a Python service with access to weather APIs and spot market data.
