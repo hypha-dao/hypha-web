@@ -436,10 +436,11 @@ export const findTokenUpdateByAddress = async (
   tokenAddress: string,
   { db }: DbConfig,
 ) => {
+  const normalized = tokenAddress.trim().toLowerCase();
   const [tokenUpdate] = await db
     .select()
     .from(tokenUpdates)
-    .where(eq(tokenUpdates.tokenAddress, tokenAddress))
+    .where(sql`lower(${tokenUpdates.tokenAddress}) = ${normalized}`)
     .limit(1);
   return tokenUpdate || null;
 };

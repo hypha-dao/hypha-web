@@ -641,6 +641,7 @@ export const ProposalDetail = ({
             proposalDetails.updateTokenData.initialReceiveWhitelistSpaceIds
           }
           spacesForWhitelistDisplay={spacesForWhitelistDisplay}
+          dbTokens={dbTokens}
           archiveToken={proposalDetails.updateTokenData.archiveToken}
           fixedMaxSupply={proposalDetails.updateTokenData.fixedMaxSupply}
         />

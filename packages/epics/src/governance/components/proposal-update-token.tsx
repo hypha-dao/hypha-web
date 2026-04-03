@@ -3,6 +3,7 @@ import {
   isTokenUpdateData,
   useJwt,
   useUpdateTokenByAddress,
+  type DbToken,
   type Space,
   type TokenType,
   type TransferWhitelistFormValue,
@@ -44,6 +45,8 @@ export interface ProposalUpdateTokenProps {
   initialReceiveWhitelistSpaceIds?: number[];
   /** DB spaces (map web3 id → contract address for whitelist display) */
   spacesForWhitelistDisplay?: Space[];
+  /** Space tokens from DB — fallback when RPC decode or pending row lacks name/symbol/supply */
+  dbTokens?: DbToken[];
   archiveToken?: boolean;
   /** From proposal txs / chain; when set with maxSupply 0, shows cap type in UI */
   fixedMaxSupply?: boolean;
@@ -77,6 +80,7 @@ export const ProposalUpdateToken = ({
   initialTransferWhitelistSpaceIds,
   initialReceiveWhitelistSpaceIds,
   spacesForWhitelistDisplay = [],
+  dbTokens,
   archiveToken,
   fixedMaxSupply: fixedMaxSupplyProp,
 }: ProposalUpdateTokenProps) => {
@@ -92,9 +96,23 @@ export const ProposalUpdateToken = ({
     tokenUpdate?.data && isTokenUpdateData(tokenUpdate.data)
       ? (tokenUpdate.data as TokenUpdateDataInterface)
       : undefined;
+
+  const dbTokenMatch = React.useMemo(() => {
+    if (!dbTokens?.length || !address) {
+      return undefined;
+    }
+    const want = address.toLowerCase();
+    return dbTokens.find(
+      (t) => typeof t.address === 'string' && t.address.toLowerCase() === want,
+    );
+  }, [dbTokens, address]);
+
   const tokenIcon = React.useMemo(() => {
-    return isTokenUpdateLoading ? undefined : pendingData?.iconUrl;
-  }, [isTokenUpdateLoading, pendingData?.iconUrl]);
+    if (isTokenUpdateLoading) {
+      return undefined;
+    }
+    return pendingData?.iconUrl ?? dbTokenMatch?.iconUrl;
+  }, [isTokenUpdateLoading, pendingData?.iconUrl, dbTokenMatch?.iconUrl]);
 
   const resolvedTokenType = tokenTypeProp ?? pendingData?.type;
   const showDecaySettings =
@@ -205,8 +223,8 @@ export const ProposalUpdateToken = ({
     return Number(maxSupply / 10n ** 18n);
   }, [maxSupply]);
 
-  const resolvedName = name ?? pendingData?.name;
-  const resolvedSymbol = symbol ?? pendingData?.symbol;
+  const resolvedName = name ?? pendingData?.name ?? dbTokenMatch?.name;
+  const resolvedSymbol = symbol ?? pendingData?.symbol ?? dbTokenMatch?.symbol;
   const resolvedMaxHuman = React.useMemo(() => {
     if (maxSupplyHuman !== undefined) {
       return maxSupplyHuman;
@@ -214,8 +232,11 @@ export const ProposalUpdateToken = ({
     if (pendingData?.maxSupply !== undefined) {
       return normalizeMaxSupplyHuman(pendingData.maxSupply);
     }
+    if (dbTokenMatch?.maxSupply !== undefined) {
+      return normalizeMaxSupplyHuman(dbTokenMatch.maxSupply);
+    }
     return undefined;
-  }, [maxSupplyHuman, pendingData?.maxSupply]);
+  }, [maxSupplyHuman, pendingData?.maxSupply, dbTokenMatch?.maxSupply]);
 
   const showTokenPrice =
     priceWithCurrency !== undefined &&
