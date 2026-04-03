@@ -3,6 +3,7 @@ import {
   findDocumentsCreatorsForNotifications,
   findDocumentWithSpaceByIdRaw,
   findPeopleByWeb3Addresses,
+  runProposalExecutedSideEffects,
   web3Client,
 } from '@hypha-platform/core/server';
 import { getSpaceDetails } from '@hypha-platform/core/client';
@@ -27,6 +28,9 @@ export const POST = proposalExecutedSigningKey
         signingKey: proposalExecutedSigningKey,
         abi: daoProposalsImplementationAbi,
         event: 'ProposalExecuted',
+      },
+      async (events) => {
+        await runProposalExecutedSideEffects(events, { db });
       },
       async (events) => {
         const proposalIds = events
