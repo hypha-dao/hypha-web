@@ -23,7 +23,9 @@ export class HumanChatPanelPage extends BasePage {
       name: /open chat panel/i,
     });
     // Header title scoped to the right sidebar
-    const rightSidebar = page.locator('[data-side="right"] [data-sidebar="sidebar"]');
+    const rightSidebar = page.locator(
+      '[data-side="right"] [data-sidebar="sidebar"]',
+    );
     this.headerText = rightSidebar.getByText('Chat').first();
     // The header close button has aria-label="Close panel" within the right sidebar.
     // We scope to the right-side sidebar group to avoid collision with AI panel's close button.
@@ -32,8 +34,12 @@ export class HumanChatPanelPage extends BasePage {
       .getByRole('button', { name: 'Close panel' });
     this.chatInput = page.getByPlaceholder('Type a message...');
     this.sendButton = page.getByRole('button', { name: 'Send' });
-    this.sidebar = page.getByTestId('sidebar').or(page.locator('[data-sidebar="sidebar"]'));
-    this.sidebarWrapper = page.getByTestId('sidebar-wrapper').or(page.locator('[data-sidebar="wrapper"]'));
+    this.sidebar = page
+      .getByTestId('sidebar')
+      .or(page.locator('[data-sidebar="sidebar"]'));
+    this.sidebarWrapper = page
+      .getByTestId('sidebar-wrapper')
+      .or(page.locator('[data-sidebar="wrapper"]'));
     this.resizeHandle = page.getByRole('separator', {
       name: 'Resize sidebar',
     });
