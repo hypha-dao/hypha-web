@@ -34,16 +34,9 @@ function getInitials(name: string): string {
   ).toUpperCase();
 }
 
-const MOCK_MEMBERS: Member[] = [
-  { id: '1', name: 'Alex Prate', isOnline: true },
-  { id: '2', name: 'Maria Chen', isOnline: true },
-  { id: '3', name: 'James Wright', isOnline: false },
-  { id: '4', name: 'Sarah Liu', isOnline: true },
-];
-
 export function HumanChatPanelMembers({ members }: HumanChatPanelMembersProps) {
   const t = useTranslations('HumanChatPanel');
-  const displayMembers = members ?? MOCK_MEMBERS;
+  const displayMembers = members ?? [];
 
   const onlineCount = displayMembers.filter((m) => m.isOnline).length;
 

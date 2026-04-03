@@ -7,12 +7,15 @@ export type HumanChatMessage = {
   isStreaming?: boolean;
 };
 
-export function createMockWelcomeMessage(content: string): HumanChatMessage {
+export function createMockWelcomeMessage(
+  content: string,
+  senderName = 'System',
+): HumanChatMessage {
   return {
     id: 'welcome',
     role: 'member',
     content,
     timestamp: new Date(),
-    senderName: 'System',
+    senderName,
   };
 }

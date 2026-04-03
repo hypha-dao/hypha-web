@@ -50,7 +50,10 @@ function getInitials(name: string): string {
 /**
  * Format a timestamp for display.
  */
-function formatTimestamp(date: Date): string {
+function formatTimestamp(
+  date: Date,
+  t: (key: string, values?: Record<string, string>) => string,
+): string {
   const now = new Date();
   const isToday = date.toDateString() === now.toDateString();
   const timeStr = date.toLocaleTimeString([], {
@@ -58,18 +61,19 @@ function formatTimestamp(date: Date): string {
     minute: '2-digit',
   });
 
-  if (isToday) return `Today at ${timeStr}`;
+  if (isToday) return t('timestampToday', { time: timeStr });
 
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
   if (date.toDateString() === yesterday.toDateString()) {
-    return `Yesterday at ${timeStr}`;
+    return t('timestampYesterday', { time: timeStr });
   }
 
-  return `${date.toLocaleDateString([], {
+  const dateStr = date.toLocaleDateString([], {
     month: 'short',
     day: 'numeric',
-  })} at ${timeStr}`;
+  });
+  return t('timestampDate', { date: dateStr, time: timeStr });
 }
 
 /**
@@ -119,7 +123,7 @@ export function HumanChatPanelMessageBubble({
   const hue = stringToHue(senderName);
   const initials = getInitials(senderName);
   const timestamp = message.timestamp
-    ? formatTimestamp(message.timestamp)
+    ? formatTimestamp(message.timestamp, t)
     : undefined;
   const reactions = message.reactions ?? [];
 
@@ -150,7 +154,10 @@ export function HumanChatPanelMessageBubble({
 
         {/* Message text */}
         {textContent && (
-          <p className="mt-0.5 text-sm leading-relaxed text-foreground">
+          <p
+            data-testid="chat-message-body"
+            className="mt-0.5 text-sm leading-relaxed text-foreground"
+          >
             {renderTextWithMentions(textContent)}
           </p>
         )}
@@ -186,6 +193,8 @@ export function HumanChatPanelMessageBubble({
           type="button"
           className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           aria-label={t('reactButton')}
+          disabled
+          aria-disabled
         >
           <Smile className="h-3.5 w-3.5" />
         </button>
@@ -193,6 +202,8 @@ export function HumanChatPanelMessageBubble({
           type="button"
           className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           aria-label={t('replyButton')}
+          disabled
+          aria-disabled
         >
           <Reply className="h-3.5 w-3.5" />
         </button>
@@ -200,6 +211,8 @@ export function HumanChatPanelMessageBubble({
           type="button"
           className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           aria-label={t('moreButton')}
+          disabled
+          aria-disabled
         >
           <MoreHorizontal className="h-3.5 w-3.5" />
         </button>

@@ -132,8 +132,10 @@ export function HumanRightPanel() {
         }
 
         if (!targetRoomId) {
-          console.log('[HumanRightPanel] Creating room for space:', spaceSlug);
           const { roomId: newRoomId } = await createRoom(`space-${spaceSlug}`);
+          if (!newRoomId) {
+            throw new Error('Failed to create room: empty roomId returned');
+          }
           targetRoomId = newRoomId;
           storeRoomId(spaceSlug, newRoomId);
         }

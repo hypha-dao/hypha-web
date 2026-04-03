@@ -28,6 +28,7 @@ export function AiSidebarTrigger() {
     <button
       type="button"
       onClick={toggle}
+      aria-expanded={open}
       className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
       title={open ? t('hidePanel') : t('openPanel')}
       aria-label={open ? t('hidePanel') : t('openPanel')}
@@ -45,6 +46,7 @@ export function HumanSidebarTrigger() {
     <button
       type="button"
       onClick={toggle}
+      aria-expanded={open}
       className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
       title={open ? t('hidePanel') : t('openPanel')}
       aria-label={open ? t('hidePanel') : t('openPanel')}

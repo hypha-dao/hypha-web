@@ -1625,7 +1625,7 @@
     "copiedButton": "Copied!",
     "tabChat": "Chat",
     "tabMembers": "Members",
-    "membersCount": "{count} members · {online} online",
+    "membersCount": "{count, plural, one {# member} other {# members}} · {online} online",
     "you": "You",
     "reactButton": "React",
     "replyButton": "Reply",
@@ -1634,6 +1634,10 @@
     "attachImage": "Attach image",
     "bold": "Bold",
     "emoji": "Emoji",
-    "mention": "Mention"
+    "mention": "Mention",
+    "timestampToday": "Today at {time}",
+    "timestampYesterday": "Yesterday at {time}",
+    "timestampDate": "{date} at {time}",
+    "systemSender": "System"
   }
 }

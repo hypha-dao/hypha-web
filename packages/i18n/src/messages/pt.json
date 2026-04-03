@@ -1634,6 +1634,10 @@
     "attachImage": "Anexar imagem",
     "bold": "Negrito",
     "emoji": "Emoji",
-    "mention": "Mencionar"
+    "mention": "Mencionar",
+    "timestampToday": "Today at {time}",
+    "timestampYesterday": "Yesterday at {time}",
+    "timestampDate": "{date} at {time}",
+    "systemSender": "System"
   }
 }

@@ -1634,6 +1634,10 @@
     "attachImage": "Joindre une image",
     "bold": "Gras",
     "emoji": "Emoji",
-    "mention": "Mentionner"
+    "mention": "Mentionner",
+    "timestampToday": "Today at {time}",
+    "timestampYesterday": "Yesterday at {time}",
+    "timestampDate": "{date} at {time}",
+    "systemSender": "System"
   }
 }

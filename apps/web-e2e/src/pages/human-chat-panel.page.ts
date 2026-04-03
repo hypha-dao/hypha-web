@@ -58,21 +58,22 @@ export class HumanChatPanelPage extends BasePage {
       {
         name: HYPHA_ENABLE_HUMAN_CHAT,
         value: 'true',
-        domain: '127.0.0.1',
+        domain: new URL(process.env.BASE_URL || 'http://127.0.0.1:4200')
+          .hostname,
         path: '/',
       },
     ]);
   }
 
-  async open(spaceSlug = 'hypha') {
+  /** Navigate to a space's agreements page. Defaults to 'hypha'. */
+  async navigateToSpace(spaceSlug = 'hypha') {
     await this.page.goto(`/en/dho/${spaceSlug}/agreements`);
     await this.waitForPageLoad();
   }
 
-  /** Navigate to a different space (without full page reload). */
-  async navigateToSpace(spaceSlug: string) {
-    await this.page.goto(`/en/dho/${spaceSlug}/agreements`);
-    await this.waitForPageLoad();
+  /** Alias for navigateToSpace with default slug. */
+  async open(spaceSlug = 'hypha') {
+    return this.navigateToSpace(spaceSlug);
   }
 
   /** Get all visible message texts from the panel. */
@@ -80,8 +81,8 @@ export class HumanChatPanelPage extends BasePage {
     const rightPanel = this.page.locator(
       '[data-side="right"] [data-sidebar="sidebar"]',
     );
-    const bubbles = rightPanel.getByTestId('chat-message');
-    return bubbles.allTextContents();
+    const bodies = rightPanel.getByTestId('chat-message-body');
+    return bodies.allTextContents();
   }
 
   /** Get the welcome message text if present. */

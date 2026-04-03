@@ -47,6 +47,13 @@ export function HumanChatPanelChatBar({
     ? t('placeholderChannel', { channel: channelName })
     : t('placeholder');
 
+  // TODO: Implement handlers for attachment/formatting buttons
+  const handleAttachFile = () => {};
+  const handleAttachImage = () => {};
+  const handleBold = () => {};
+  const handleEmoji = () => {};
+  const handleMention = () => {};
+
   const iconButtonClass =
     'flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors';
 
@@ -85,6 +92,7 @@ export function HumanChatPanelChatBar({
               className={iconButtonClass}
               aria-label={t('attachFile')}
               title={t('attachFile')}
+              onClick={handleAttachFile}
             >
               <Paperclip className="h-4 w-4" />
             </button>
@@ -93,6 +101,7 @@ export function HumanChatPanelChatBar({
               className={iconButtonClass}
               aria-label={t('attachImage')}
               title={t('attachImage')}
+              onClick={handleAttachImage}
             >
               <Image className="h-4 w-4" />
             </button>
@@ -105,6 +114,7 @@ export function HumanChatPanelChatBar({
               className={iconButtonClass}
               aria-label={t('bold')}
               title={t('bold')}
+              onClick={handleBold}
             >
               <Bold className="h-4 w-4" />
             </button>
@@ -113,6 +123,7 @@ export function HumanChatPanelChatBar({
               className={iconButtonClass}
               aria-label={t('emoji')}
               title={t('emoji')}
+              onClick={handleEmoji}
             >
               <Smile className="h-4 w-4" />
             </button>
@@ -121,6 +132,7 @@ export function HumanChatPanelChatBar({
               className={iconButtonClass}
               aria-label={t('mention')}
               title={t('mention')}
+              onClick={handleMention}
             >
               <AtSign className="h-4 w-4" />
             </button>

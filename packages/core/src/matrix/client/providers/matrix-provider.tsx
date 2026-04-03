@@ -296,10 +296,16 @@ const noopMatrixContext: MatrixContextType = {
   client: null,
   isMatrixAvailable: false,
   isAuthenticated: false,
-  createRoom: async () => ({ roomId: '' }),
-  sendMessage: async () => {},
+  createRoom: async () => {
+    throw new Error('Matrix unavailable');
+  },
+  sendMessage: async () => {
+    throw new Error('Matrix unavailable');
+  },
   getRoomMessages: () => null,
-  joinRoom: async () => {},
+  joinRoom: async () => {
+    throw new Error('Matrix unavailable');
+  },
   registerRoomListener: () => {},
   unregisterRoomListener: () => {},
   registeredRoomListeners: [],

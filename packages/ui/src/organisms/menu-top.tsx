@@ -74,6 +74,11 @@ export const MenuTop = ({
           </div>
         )}
 
+        {/* Mobile trailing action (always visible on small screens) */}
+        {trailingAction && (
+          <div className="flex md:hidden items-center">{trailingAction}</div>
+        )}
+
         {/* Mobile Burger */}
         {children && (
           <button
