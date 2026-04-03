@@ -987,7 +987,9 @@
           "sellerAmountExceedsBalance": "The entered amount is greater than the seller available balance.",
           "sellerTreasuryUnavailable": "Could not load the space treasury. Wait for chain data and try again.",
           "sellerBalanceCheckFailed": "Could not verify seller balance. Check your connection and try again.",
-          "memberSellerWalletMismatch": "Exchange funding uses your connected wallet. Connect the same wallet as the seller address, or choose the member seller whose address matches your wallet."
+          "memberSellerWalletMismatch": "Exchange funding uses your connected wallet. Connect the same wallet as the seller address, or choose the member seller whose address matches your wallet.",
+          "escrowTokenInvalid": "A token row uses the escrow contract address. Use the ERC-20 token contract for seller and buyer tokens.",
+          "insufficientSellerBalance": "The connected wallet does not hold enough seller tokens. Fund the smart wallet that matches the seller address."
         },
         "seller": "Seller (Wallet Address)",
         "sellerWillSend": "Seller sends",

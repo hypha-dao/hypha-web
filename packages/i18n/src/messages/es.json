@@ -114,7 +114,9 @@
           "sellerAmountExceedsBalance": "El importe introducido supera el saldo disponible del vendedor.",
           "sellerTreasuryUnavailable": "No se pudo cargar la tesorería del espacio. Espere los datos on-chain e inténtelo de nuevo.",
           "sellerBalanceCheckFailed": "No se pudo verificar el saldo del vendedor. Compruebe la conexión e inténtelo de nuevo.",
-          "memberSellerWalletMismatch": "El intercambio usa su cartera conectada. Conecte la misma cartera que la dirección del vendedor o elija como vendedor al miembro cuya dirección coincida con su cartera."
+          "memberSellerWalletMismatch": "El intercambio usa su cartera conectada. Conecte la misma cartera que la dirección del vendedor o elija como vendedor al miembro cuya dirección coincida con su cartera.",
+          "escrowTokenInvalid": "Una fila de token usa la dirección del contrato de depósito en garantía. Use el contrato ERC-20 del token para vendedor y comprador.",
+          "insufficientSellerBalance": "La cartera conectada no tiene suficientes tokens del vendedor. Envíe fondos a la smart wallet que coincide con la dirección del vendedor."
         },
         "seller": "Vendedor (dirección de cartera)",
         "buyer": "Comprador (dirección de cartera)",

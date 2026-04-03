@@ -123,7 +123,15 @@ export function MemberExchangeEscrowAutoFund({
         router.refresh();
       } catch (e) {
         attemptedRef.current = false;
-        const msg = e instanceof Error ? e.message : String(e);
+        const raw = e instanceof Error ? e.message : String(e);
+        let msg = raw;
+        if (raw.includes('EXCHANGE_ESCROW_TOKEN_INVALID')) {
+          msg = t('errors.escrowTokenInvalid');
+        } else if (raw.includes('EXCHANGE_INSUFFICIENT_SELLER_BALANCE')) {
+          msg = t('errors.insufficientSellerBalance');
+        } else if (raw.includes('EXCHANGE_MEMBER_SELLER_WALLET_MISMATCH')) {
+          msg = t('errors.memberSellerWalletMismatch');
+        }
         setFundError(msg);
         console.error('Member exchange auto-fund failed:', e);
       }

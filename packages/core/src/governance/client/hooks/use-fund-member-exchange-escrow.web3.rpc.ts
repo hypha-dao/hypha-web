@@ -6,7 +6,10 @@ import { erc20Abi, parseUnits } from 'viem';
 
 import { getTokenDecimals, publicClient } from '@hypha-platform/core/client';
 import { getGovernanceChainId } from './governance-chain-id';
-import { EXCHANGE_ESCROW_CONTRACT_BY_CHAIN } from './exchange-escrow-contract';
+import {
+  EXCHANGE_ESCROW_CONTRACT_BY_CHAIN,
+  isExchangeEscrowContractAddress,
+} from './exchange-escrow-contract';
 import { parseEscrowCreatedIdsFromLogs } from '../web3';
 
 const READ_TIMEOUT_MS = 30_000;
@@ -90,6 +93,13 @@ export const useFundMemberExchangeEscrowWeb3Rpc = () => {
         throw new Error(`Escrow contract not configured for chain ${chainId}`);
       }
 
+      const fromAccount = (smartWalletAddress ??
+        (client as { account?: { address?: `0x${string}` } }).account
+          ?.address) as `0x${string}` | undefined;
+      if (!fromAccount) {
+        throw new Error('Smart wallet address not available');
+      }
+
       const sellerRows = arg.sellerLeg ?? [];
       const buyerRows = arg.buyerLeg ?? [];
       if (
@@ -98,6 +108,17 @@ export const useFundMemberExchangeEscrowWeb3Rpc = () => {
         sellerRows.length !== buyerRows.length
       ) {
         throw new Error('Invalid seller/buyer legs');
+      }
+
+      for (const row of [...sellerRows, ...buyerRows]) {
+        if (
+          isExchangeEscrowContractAddress(row.token) ||
+          row.token.toLowerCase() === escrowAddress.toLowerCase()
+        ) {
+          throw new Error(
+            'EXCHANGE_ESCROW_TOKEN_INVALID: A token row points to the escrow contract. Use the ERC-20 token contract address, not the escrow.',
+          );
+        }
       }
 
       const escrowIds: bigint[] = [];
@@ -119,6 +140,21 @@ export const useFundMemberExchangeEscrowWeb3Rpc = () => {
         const buyerAmount = parseUnits(buyerRow.amount, buyerTokenDecimals);
         const sellerToken = sellerRow.token as `0x${string}`;
 
+        const balanceWei = await withReadTimeout(
+          publicClient.readContract({
+            address: sellerToken,
+            abi: erc20Abi,
+            functionName: 'balanceOf',
+            args: [fromAccount],
+          }),
+          READ_TIMEOUT_MS,
+        );
+        if (balanceWei < sellerAmount) {
+          throw new Error(
+            'EXCHANGE_INSUFFICIENT_SELLER_BALANCE: The connected wallet does not hold enough of the seller token. Tokens must be on the smart wallet that signs this transaction.',
+          );
+        }
+
         let hash = await client.writeContract({
           address: sellerToken,
           abi: erc20Abi,
@@ -134,6 +170,21 @@ export const useFundMemberExchangeEscrowWeb3Rpc = () => {
           args: [escrowAddress, sellerAmount],
         });
         await publicClient.waitForTransactionReceipt({ hash });
+
+        await publicClient.simulateContract({
+          address: escrowAddress,
+          abi: escrowCreateAbi,
+          functionName: 'createEscrow',
+          args: [
+            arg.buyerAddress as `0x${string}`,
+            sellerToken,
+            buyerRow.token as `0x${string}`,
+            sellerAmount,
+            buyerAmount,
+            true,
+          ],
+          account: fromAccount,
+        });
 
         hash = await client.writeContract({
           address: escrowAddress,
