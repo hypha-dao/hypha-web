@@ -21,7 +21,8 @@ import { useMe } from '@hypha-platform/core/client';
 import { fileRouter } from '@hypha-platform/core/server';
 import { MenuTop, TooltipProvider } from '@hypha-platform/ui';
 import { ROOT_URL } from './constants';
-import { enableAiChat } from '@hypha-platform/feature-flags';
+import { enableAiChat, enableHumanChat } from '@hypha-platform/feature-flags';
+import { ConditionalMatrixProvider } from '@web/components/conditional-matrix-provider';
 import { NotificationSubscriber } from '@hypha-platform/notifications/client';
 
 import '@hypha-platform/ui-utils/global.css';
@@ -99,6 +100,7 @@ export default async function RootLayout({
   const safariWebId = process.env.NEXT_PUBLIC_ONESIGNAL_SAFARI_WEB_ID ?? '';
   const serviceWorkerPath = 'onesignal/OneSignalSDKWorker.js';
   const aiChatEnabled = await enableAiChat();
+  const humanChatEnabled = await enableHumanChat();
 
   return (
     <Html lang={locale} className={clsx(lato.variable, sourceSans.variable)}>
@@ -123,51 +125,53 @@ export default async function RootLayout({
                   safariWebId={safariWebId}
                   serviceWorkerPath={serviceWorkerPath}
                 >
-                  <AiLeftPanelLayout enabled={aiChatEnabled}>
-                    <MenuTop
-                      logoHref={ROOT_URL}
-                      openMenuLabel={tNav('openMenu')}
-                      closeMenuLabel={tNav('closeMenu')}
-                      leadingAction={
-                        aiChatEnabled ? <AiSidebarTrigger /> : undefined
-                      }
-                    >
-                      <ConnectedButtonProfile
-                        useAuthentication={useAuthentication}
-                        useMe={useMe}
-                        newUserRedirectPath="/profile/signup"
-                        baseRedirectPath="/my-spaces"
-                        navItems={[
-                          {
-                            label: tNav('network'),
-                            href: `/${locale}/network`,
-                          },
-                          {
-                            label: tNav('mySpaces'),
-                            href: `/${locale}/my-spaces`,
-                          },
-                        ]}
+                  <ConditionalMatrixProvider enabled={humanChatEnabled}>
+                    <AiLeftPanelLayout enabled={aiChatEnabled}>
+                      <MenuTop
+                        logoHref={ROOT_URL}
+                        openMenuLabel={tNav('openMenu')}
+                        closeMenuLabel={tNav('closeMenu')}
+                        leadingAction={
+                          aiChatEnabled ? <AiSidebarTrigger /> : undefined
+                        }
+                      >
+                        <ConnectedButtonProfile
+                          useAuthentication={useAuthentication}
+                          useMe={useMe}
+                          newUserRedirectPath="/profile/signup"
+                          baseRedirectPath="/my-spaces"
+                          navItems={[
+                            {
+                              label: tNav('network'),
+                              href: `/${locale}/network`,
+                            },
+                            {
+                              label: tNav('mySpaces'),
+                              href: `/${locale}/my-spaces`,
+                            },
+                          ]}
+                        />
+                        {isLanguageSelectVisible && <ConnectedLanguageSelect />}
+                      </MenuTop>
+                      <NextSSRPlugin
+                        routerConfig={extractRouterConfig(fileRouter)}
                       />
-                      {isLanguageSelectVisible && <ConnectedLanguageSelect />}
-                    </MenuTop>
-                    <NextSSRPlugin
-                      routerConfig={extractRouterConfig(fileRouter)}
-                    />
-                    <div className="mb-auto pb-8">
-                      <div className="pt-9 h-full flex justify-normal">
-                        <div className="w-full h-full">{children}</div>
+                      <div className="mb-auto pb-8">
+                        <div className="pt-9 h-full flex justify-normal">
+                          <div className="w-full h-full">{children}</div>
+                        </div>
                       </div>
-                    </div>
-                    <Footer
-                      networkLabel={tFooter('network')}
-                      legalLabel={tFooter('legal')}
-                      hyphaServicesLabel={tFooter('hyphaServices')}
-                      hyphaTokenomicsLabel={tFooter('hyphaTokenomics')}
-                      licensingPolicyLabel={tFooter('licensingPolicy')}
-                      termsAndConditionsLabel={tFooter('termsAndConditions')}
-                      privacyPolicyLabel={tFooter('privacyPolicy')}
-                    />
-                  </AiLeftPanelLayout>
+                      <Footer
+                        networkLabel={tFooter('network')}
+                        legalLabel={tFooter('legal')}
+                        hyphaServicesLabel={tFooter('hyphaServices')}
+                        hyphaTokenomicsLabel={tFooter('hyphaTokenomics')}
+                        licensingPolicyLabel={tFooter('licensingPolicy')}
+                        termsAndConditionsLabel={tFooter('termsAndConditions')}
+                        privacyPolicyLabel={tFooter('privacyPolicy')}
+                      />
+                    </AiLeftPanelLayout>
+                  </ConditionalMatrixProvider>
                 </NotificationSubscriber>
               </TooltipProvider>
             </NextIntlClientProvider>

@@ -41,7 +41,9 @@ export const useMatrixToken = () => {
             `Matrix token request failed: ${response.status} - ${errorText}`,
           );
           throw new Error(
-            `Request failed: ${response.status} ${response.statusText} - ${errorText.slice(0, 300)}`,
+            `Request failed: ${response.status} ${
+              response.statusText
+            } - ${errorText.slice(0, 300)}`,
           );
         }
         const data = await response.json();

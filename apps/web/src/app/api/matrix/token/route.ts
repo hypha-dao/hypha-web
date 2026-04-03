@@ -13,6 +13,7 @@ import {
 import { PrivyClient } from '@privy-io/node';
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
+import { enableHumanChat } from '@hypha-platform/feature-flags';
 
 const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
 const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET;
@@ -50,16 +51,10 @@ async function verifyPrivyToken(
 }
 
 export async function GET(request: NextRequest) {
+  const humanChatEnabled = await enableHumanChat();
   const authHeader = request.headers.get('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
-    return NextResponse.json(
-      {
-        error: 'Unauthorized',
-      },
-      {
-        status: 401,
-      },
-    );
+  if (!humanChatEnabled || !authHeader?.startsWith('Bearer ')) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const authToken = authHeader.replace('Bearer ', '');
