@@ -9,10 +9,6 @@ import type { Dispatch, SetStateAction } from 'react';
 import type { UseFormSetValue, FieldValues } from 'react-hook-form';
 import { normalizeMaxSupplyHuman } from '../treasury/utils/normalize-max-supply-human';
 
-/** sessionStorage key for resubmit payload (must match form-voting + plugin). */
-export const RESUBMIT_UPDATE_ISSUED_TOKEN_FORM_KEY =
-  'resubmitUpdateIssuedTokenForm';
-
 /** Field on `resubmitProposalData` JSON — avoids a second sessionStorage key race with the plugin. */
 export const RESUBMIT_UPDATE_ISSUED_TOKEN_EMBEDDED_FIELD =
   'updateIssuedTokenResubmitPayload' as const;

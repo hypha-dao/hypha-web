@@ -12,7 +12,6 @@ import {
 import { useFormContext } from 'react-hook-form';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
-  RESUBMIT_UPDATE_ISSUED_TOKEN_FORM_KEY,
   UPDATE_ISSUED_TOKEN_RESUBMIT_EVENT,
   applyUpdateIssuedTokenResubmitPayloadToForm,
   type UpdateIssuedTokenResubmitPayload,
@@ -624,45 +623,6 @@ export const UpdateIssuedTokenPlugin = ({
     setShowAdvancedSettings,
     setShowDecaySettings,
   ]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    if (!selectedTokenAddress || isLoadingOnChainData) {
-      return;
-    }
-    if (resubmitOverlayAppliedRef.current) {
-      return;
-    }
-
-    const raw = sessionStorage.getItem(RESUBMIT_UPDATE_ISSUED_TOKEN_FORM_KEY);
-    if (!raw) {
-      return;
-    }
-
-    let payload: UpdateIssuedTokenResubmitPayload;
-    try {
-      payload = JSON.parse(raw) as UpdateIssuedTokenResubmitPayload;
-    } catch {
-      return;
-    }
-
-    if (payload.tokenAddress !== selectedTokenAddress) {
-      return;
-    }
-
-    applyUpdateIssuedTokenResubmitPayloadToForm(payload, {
-      setValue,
-      setTokenType,
-      setShowAdvancedSettings,
-      setShowDecaySettings,
-    });
-
-    resubmitOverlayAppliedRef.current = true;
-    resubmitHydratedRef.current = true;
-    sessionStorage.removeItem(RESUBMIT_UPDATE_ISSUED_TOKEN_FORM_KEY);
-  }, [selectedTokenAddress, isLoadingOnChainData, setValue]);
 
   useEffect(() => {
     if (!selectedTokenAddress) {

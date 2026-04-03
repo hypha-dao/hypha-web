@@ -20,7 +20,6 @@ import { getTokenUpdateByDocumentIdAction } from '@hypha-platform/core/governanc
 import {
   buildUpdateIssuedTokenResubmitPayload,
   RESUBMIT_UPDATE_ISSUED_TOKEN_EMBEDDED_FIELD,
-  RESUBMIT_UPDATE_ISSUED_TOKEN_FORM_KEY,
   type UpdateTokenProposalSnapshot,
 } from '../update-issued-token-resubmit';
 import { useSpaceMember } from '../../spaces';
@@ -309,19 +308,6 @@ export const FormVoting = ({
         JSON.stringify(proposalData),
       );
 
-      if (label === 'Update Token') {
-        if (updateIssuedTokenResubmitPayload) {
-          sessionStorage.setItem(
-            RESUBMIT_UPDATE_ISSUED_TOKEN_FORM_KEY,
-            JSON.stringify(updateIssuedTokenResubmitPayload),
-          );
-        } else {
-          sessionStorage.removeItem(RESUBMIT_UPDATE_ISSUED_TOKEN_FORM_KEY);
-        }
-      } else {
-        sessionStorage.removeItem(RESUBMIT_UPDATE_ISSUED_TOKEN_FORM_KEY);
-      }
-
       const saved = sessionStorage.getItem('resubmitProposalData');
       if (!saved) {
         console.error('Failed to save resubmit data to sessionStorage');
@@ -352,7 +338,6 @@ export const FormVoting = ({
       console.error('Error resubmitting proposal:', error);
       sessionStorage.removeItem('resubmitProposalData');
       sessionStorage.removeItem('resubmitFormData');
-      sessionStorage.removeItem(RESUBMIT_UPDATE_ISSUED_TOKEN_FORM_KEY);
     }
   };
 

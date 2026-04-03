@@ -10,6 +10,30 @@ import {
 import { documents } from './document';
 import { relations } from 'drizzle-orm';
 
+/**
+ * Mirrors `TokenUpdateData` in `@hypha-platform/core` — keep fields aligned for DB JSON.
+ * (Declared locally to avoid a workspace package cycle: core → storage-postgres → core.)
+ */
+export type TokenUpdateDataJson = {
+  name?: string;
+  symbol?: string;
+  maxSupply?: number;
+  maxSupplyTypeValue?: 'immutable' | 'updatable';
+  type?: string;
+  iconUrl?: string;
+  transferable?: boolean;
+  isVotingToken?: boolean;
+  decayInterval?: number;
+  decayPercentage?: number;
+  referencePrice?: number;
+  referenceCurrency?: string;
+  archiveToken?: boolean;
+  enableProposalAutoMinting?: boolean;
+  useTransferWhitelist?: boolean;
+  useReceiveWhitelist?: boolean;
+  transferWhitelist?: unknown;
+};
+
 export const tokenUpdates = pgTable(
   'token_updates',
   {
@@ -20,7 +44,7 @@ export const tokenUpdates = pgTable(
         onDelete: 'cascade',
       }),
     tokenAddress: text('token_address').notNull(),
-    data: jsonb('data').notNull(),
+    data: jsonb('data').$type<TokenUpdateDataJson>().notNull(),
     createdAt: timestamp('created_at').defaultNow(),
   },
   (table) => [

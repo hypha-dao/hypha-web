@@ -255,6 +255,20 @@ export const useProposalDetailsWeb3Rpc = ({
       fixedMaxSupply: undefined,
     };
 
+    const assignUpdateTokenAddress = (addr: `0x${string}`) => {
+      const next = addr.toLowerCase() as `0x${string}`;
+      if (
+        updateTokenData.address &&
+        updateTokenData.address.toLowerCase() !== next
+      ) {
+        console.warn(
+          '[useProposalDetails] Inconsistent token addresses in update-token proposal transactions',
+          { existing: updateTokenData.address, next: addr },
+        );
+      }
+      updateTokenData.address = addr;
+    };
+
     const redeemTokensData: {
       token?: `0x${string}`;
       amount?: bigint;
@@ -511,7 +525,7 @@ export const useProposalDetailsWeb3Rpc = ({
             address: `0x${string}`;
             name: string;
           };
-          updateTokenData.address = d.address;
+          assignUpdateTokenAddress(d.address);
           updateTokenData.name = d.name;
           break;
         }
@@ -521,7 +535,7 @@ export const useProposalDetailsWeb3Rpc = ({
             address: `0x${string}`;
             symbol: string;
           };
-          updateTokenData.address = d.address;
+          assignUpdateTokenAddress(d.address);
           updateTokenData.symbol = d.symbol;
           break;
         }
@@ -531,7 +545,7 @@ export const useProposalDetailsWeb3Rpc = ({
             address: `0x${string}`;
             maxSupply: bigint;
           };
-          updateTokenData.address = d.address;
+          assignUpdateTokenAddress(d.address);
           updateTokenData.maxSupply = d.maxSupply;
           break;
         }
@@ -541,7 +555,7 @@ export const useProposalDetailsWeb3Rpc = ({
             address: `0x${string}`;
             transferable: boolean;
           };
-          updateTokenData.address = d.address;
+          assignUpdateTokenAddress(d.address);
           updateTokenData.transferable = d.transferable;
           break;
         }
@@ -551,7 +565,7 @@ export const useProposalDetailsWeb3Rpc = ({
             address: `0x${string}`;
             autoMinting: boolean;
           };
-          updateTokenData.address = d.address;
+          assignUpdateTokenAddress(d.address);
           updateTokenData.autoMinting = d.autoMinting;
           break;
         }
@@ -562,7 +576,7 @@ export const useProposalDetailsWeb3Rpc = ({
             tokenPrice: bigint;
             priceCurrencyFeed: string;
           };
-          updateTokenData.address = d.address;
+          assignUpdateTokenAddress(d.address);
           updateTokenData.priceWithCurrency = {
             tokenPrice: d.tokenPrice,
             priceCurrencyFeed: d.priceCurrencyFeed,
@@ -575,7 +589,7 @@ export const useProposalDetailsWeb3Rpc = ({
             address: `0x${string}`;
             decayPercentage: bigint;
           };
-          updateTokenData.address = d.address;
+          assignUpdateTokenAddress(d.address);
           updateTokenData.decayPercentage = d.decayPercentage;
           break;
         }
@@ -585,7 +599,7 @@ export const useProposalDetailsWeb3Rpc = ({
             address: `0x${string}`;
             decayInterval: bigint;
           };
-          updateTokenData.address = d.address;
+          assignUpdateTokenAddress(d.address);
           updateTokenData.decayInterval = d.decayInterval;
           break;
         }
@@ -595,7 +609,7 @@ export const useProposalDetailsWeb3Rpc = ({
             address: `0x${string}`;
             useTransferWhitelist: boolean;
           };
-          updateTokenData.address = d.address;
+          assignUpdateTokenAddress(d.address);
           updateTokenData.useTransferWhitelist = d.useTransferWhitelist;
           break;
         }
@@ -605,7 +619,7 @@ export const useProposalDetailsWeb3Rpc = ({
             address: `0x${string}`;
             useReceiveWhitelist: boolean;
           };
-          updateTokenData.address = d.address;
+          assignUpdateTokenAddress(d.address);
           updateTokenData.useReceiveWhitelist = d.useReceiveWhitelist;
           break;
         }
@@ -616,7 +630,7 @@ export const useProposalDetailsWeb3Rpc = ({
             accounts: `0x${string}`[];
             allowed: boolean[];
           };
-          updateTokenData.address = d.address;
+          assignUpdateTokenAddress(d.address);
           const allowedAddrs = d.accounts.filter(
             (_, i) => d.allowed[i] === true,
           );
@@ -633,7 +647,7 @@ export const useProposalDetailsWeb3Rpc = ({
             accounts: `0x${string}`[];
             allowed: boolean[];
           };
-          updateTokenData.address = d.address;
+          assignUpdateTokenAddress(d.address);
           const allowedAddrs = d.accounts.filter(
             (_, i) => d.allowed[i] === true,
           );
@@ -649,7 +663,7 @@ export const useProposalDetailsWeb3Rpc = ({
             address: `0x${string}`;
             spaceIds: readonly bigint[];
           };
-          updateTokenData.address = d.address;
+          assignUpdateTokenAddress(d.address);
           const ids = d.spaceIds.map((x) => Number(x));
           updateTokenData.initialTransferWhitelistSpaceIds = [
             ...(updateTokenData.initialTransferWhitelistSpaceIds ?? []),
@@ -663,7 +677,7 @@ export const useProposalDetailsWeb3Rpc = ({
             address: `0x${string}`;
             spaceIds: readonly bigint[];
           };
-          updateTokenData.address = d.address;
+          assignUpdateTokenAddress(d.address);
           const ids = d.spaceIds.map((x) => Number(x));
           updateTokenData.initialReceiveWhitelistSpaceIds = [
             ...(updateTokenData.initialReceiveWhitelistSpaceIds ?? []),
@@ -677,7 +691,7 @@ export const useProposalDetailsWeb3Rpc = ({
             address: `0x${string}`;
             archiveToken: boolean;
           };
-          updateTokenData.address = d.address;
+          assignUpdateTokenAddress(d.address);
           updateTokenData.archiveToken = d.archiveToken;
           break;
         }
