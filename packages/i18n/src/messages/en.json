@@ -152,7 +152,7 @@
         "description": "Allow your space to join another space as a member, gaining the ability to participate in governance and vote on proposals."
       },
       "issueNewToken": {
-        "title": "Issue New Token (Under Maintenance)",
+        "title": "Issue New Token",
         "description": "Create a new token for utility, ownership, impact, cash credits, voice, or community currency within your space."
       },
       "updateIssuedToken": {
