@@ -251,13 +251,6 @@ export const useIssueTokenMutationsWeb3Rpc = ({
     },
   );
 
-  const waitForCreateIssueTokenReceipt = useCallback(
-    async (hash: `0x${string}`) => {
-      return publicClient.waitForTransactionReceipt({ hash });
-    },
-    [],
-  );
-
   return {
     createIssueToken,
     resetCreateIssueToken,
@@ -267,6 +260,5 @@ export const useIssueTokenMutationsWeb3Rpc = ({
     createdToken,
     isLoadingTokenFromTx,
     errorWaitTokenFromTx,
-    waitForCreateIssueTokenReceipt,
   };
 };

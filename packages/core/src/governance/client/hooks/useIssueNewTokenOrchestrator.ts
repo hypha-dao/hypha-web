@@ -15,11 +15,10 @@ import {
 } from '../../validation';
 import { useTokenMutationsWeb2Rsc } from './useTokenMutationWeb2.rsc';
 import { Config } from '@wagmi/core';
-import { linkIssueTokenProposalToAgreementAction } from '../../server/actions';
+import { linkIssueTokenProposalFromIssueTokenTxAction } from '../../server/actions';
 import { ReferenceCurrency } from '../../types';
 import { getPriceCurrencyFeed } from '../../../common/web3/token-backing-vault';
 import type { TokenType } from '../../../common';
-import { getProposalFromLogs, web3ProposalIdForDb } from '../web3';
 
 type TaskName =
   | 'CREATE_WEB2_AGREEMENT'
@@ -274,21 +273,12 @@ export const useCreateIssueTokenOrchestrator = ({
             initialTransferWhitelist,
             initialReceiveWhitelist,
           });
-          const receipt = await web3.waitForCreateIssueTokenReceipt(txHash);
-          const proposalArgs = getProposalFromLogs(receipt.logs);
-          const rawProposalId = proposalArgs?.proposalId;
-          const web3ProposalId = web3ProposalIdForDb(rawProposalId);
-          if (web3ProposalId == null) {
-            throw new Error(
-              'Could not read proposal id from chain after creating issue-token proposal',
-            );
-          }
 
-          await linkIssueTokenProposalToAgreementAction(
+          await linkIssueTokenProposalFromIssueTokenTxAction(
             {
               slug: web2Slug!,
-              web3ProposalId,
               agreementId: createdAgreement.id,
+              txHash,
             },
             { authToken: authToken! },
           );

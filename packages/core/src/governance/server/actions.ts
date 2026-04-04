@@ -32,6 +32,7 @@ import {
   findTokenUpdateByDocumentId,
   findTokenUpdateForSpaceTokenAddress,
 } from './queries';
+import { getIssueTokenWeb3ProposalIdFromTxHash } from './link-issue-token-proposal-from-tx';
 
 export async function createAgreementAction(
   data: CreateAgreementInput,
@@ -123,6 +124,34 @@ export async function linkIssueTokenProposalToAgreementAction(
     throw new Error('authToken is required');
   }
   return linkIssueTokenProposalToAgreement(input, { db });
+}
+
+/**
+ * Parses `ProposalCreated` from the issue-token tx using the server RPC (`RPC_URL`),
+ * then links `documents.web3_proposal_id` and `tokens.agreement_web3_id`.
+ */
+export async function linkIssueTokenProposalFromIssueTokenTxAction(
+  input: {
+    slug: string;
+    agreementId: number;
+    txHash: `0x${string}`;
+  },
+  { authToken }: { authToken: string },
+) {
+  if (!authToken) {
+    throw new Error('authToken is required');
+  }
+  const web3ProposalId = await getIssueTokenWeb3ProposalIdFromTxHash(
+    input.txHash,
+  );
+  return linkIssueTokenProposalToAgreement(
+    {
+      slug: input.slug,
+      web3ProposalId,
+      agreementId: input.agreementId,
+    },
+    { db },
+  );
 }
 
 export async function deleteTokenAction(
