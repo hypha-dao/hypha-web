@@ -200,7 +200,8 @@ export async function backfillStaleIssueTokenAddresses({
   const results: BackfillIssueTokenAddressResult[] = [];
 
   for (const row of rows) {
-    const proposalId = row.agreementWeb3Id;
+    const proposalId =
+      row.agreementWeb3Id ?? row.documentWeb3ProposalId ?? null;
     if (proposalId == null) {
       continue;
     }

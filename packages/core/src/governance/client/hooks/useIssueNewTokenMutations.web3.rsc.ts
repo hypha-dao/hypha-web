@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback } from 'react';
 import useSWRMutation from 'swr/mutation';
 import useSWR from 'swr';
 import { encodeFunctionData } from 'viem';
@@ -250,6 +251,13 @@ export const useIssueTokenMutationsWeb3Rpc = ({
     },
   );
 
+  const waitForCreateIssueTokenReceipt = useCallback(
+    async (hash: `0x${string}`) => {
+      return publicClient.waitForTransactionReceipt({ hash });
+    },
+    [],
+  );
+
   return {
     createIssueToken,
     resetCreateIssueToken,
@@ -259,5 +267,6 @@ export const useIssueTokenMutationsWeb3Rpc = ({
     createdToken,
     isLoadingTokenFromTx,
     errorWaitTokenFromTx,
+    waitForCreateIssueTokenReceipt,
   };
 };

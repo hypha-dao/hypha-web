@@ -1,5 +1,5 @@
 import { DbConfig } from '@hypha-platform/core/server';
-import { eq, sql, and, asc, desc, SQL, isNotNull } from 'drizzle-orm';
+import { eq, sql, and, or, asc, desc, SQL, isNotNull } from 'drizzle-orm';
 
 import {
   documents,
@@ -430,11 +430,16 @@ export const findTokensMissingAddressWithWeb3ProposalId = async (
     .select({
       id: tokens.id,
       agreementWeb3Id: tokens.agreementWeb3Id,
+      documentWeb3ProposalId: documents.web3ProposalId,
     })
     .from(tokens)
+    .leftJoin(documents, eq(tokens.agreementId, documents.id))
     .where(
       and(
-        isNotNull(tokens.agreementWeb3Id),
+        or(
+          isNotNull(tokens.agreementWeb3Id),
+          isNotNull(documents.web3ProposalId),
+        ),
         sql`(${tokens.address} is null or btrim(${tokens.address}) = '')`,
       ),
     )
