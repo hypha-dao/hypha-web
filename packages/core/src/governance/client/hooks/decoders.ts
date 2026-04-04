@@ -5,6 +5,7 @@ import {
   decayingTokenFactoryAbi,
   daoSpaceFactoryImplementationAbi,
 } from '@hypha-platform/core/generated';
+import { decayBasisPointsToFormPercent } from '../../voice-decay-units';
 
 /** Pre-purchase deploy ABIs (tokenPrice + priceCurrencyFeed, no purchase params). */
 const regularTokenFactoryDeployPrePurchaseAbi = [
@@ -436,7 +437,11 @@ export function decodeTransaction(tx: Tx) {
                 useReceiveWhitelist: decoded.args[10],
                 initialTransferWhitelist: decoded.args[11],
                 initialReceiveWhitelist: decoded.args[12],
-                decayPercentage: decoded.args[13],
+                decayPercentage: BigInt(
+                  decayBasisPointsToFormPercent(
+                    Number(decoded.args[13] as bigint),
+                  ),
+                ),
                 decayInterval: decoded.args[14],
               },
             }
@@ -512,7 +517,11 @@ export function decodeTransaction(tx: Tx) {
                 useReceiveWhitelist: decoded.args[10],
                 initialTransferWhitelist: decoded.args[11],
                 initialReceiveWhitelist: decoded.args[12],
-                decayPercentage: decoded.args[13],
+                decayPercentage: BigInt(
+                  decayBasisPointsToFormPercent(
+                    Number(decoded.args[13] as bigint),
+                  ),
+                ),
                 decayInterval: decoded.args[14],
               },
             }
@@ -585,7 +594,11 @@ export function decodeTransaction(tx: Tx) {
                 useReceiveWhitelist: decoded.args[9],
                 initialTransferWhitelist: decoded.args[10],
                 initialReceiveWhitelist: decoded.args[11],
-                decayPercentage: decoded.args[12],
+                decayPercentage: BigInt(
+                  decayBasisPointsToFormPercent(
+                    Number(decoded.args[12] as bigint),
+                  ),
+                ),
                 decayInterval: decoded.args[13],
               },
             }

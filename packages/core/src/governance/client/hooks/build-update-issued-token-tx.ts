@@ -1,5 +1,6 @@
 import { encodeFunctionData } from 'viem';
 import { decayingSpaceTokenAbi } from '../../../generated';
+import { decayPercentToBasisPoints } from '../../voice-decay-units';
 
 export interface UpdateIssuedTokenInput {
   address: `0x${string}`;
@@ -125,13 +126,14 @@ export function buildUpdateIssuedTokenTxData(
     });
   }
   if (arg.decayPercentage !== undefined) {
+    const decayBp = decayPercentToBasisPoints(arg.decayPercentage);
     txData.push({
       target: arg.address,
       value: 0,
       data: encodeFunctionData({
         abi: decayingSpaceTokenAbi,
         functionName: 'setDecayPercentage',
-        args: [integerBigInt(arg.decayPercentage, 'decayPercentage')],
+        args: [integerBigInt(decayBp, 'decayPercentage')],
       }),
     });
   }

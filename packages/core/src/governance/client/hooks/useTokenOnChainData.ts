@@ -4,6 +4,7 @@ import useSWR from 'swr';
 import { publicClient } from '../../../client';
 import { decayingSpaceTokenAbi } from '../../../generated';
 import type { UpdateIssuedTokenInput } from './build-update-issued-token-tx';
+import { decayBasisPointsToFormPercent } from '../../voice-decay-units';
 
 const DECIMALS = 18n;
 /** On-chain `tokenPrice` is stored in micro-units (1e6); UI uses human decimals */
@@ -127,7 +128,7 @@ async function fetchTokenOnChainData(
     priceCurrencyFeed: priceCurrencyFeedResult as `0x${string}`,
     decayPercentage:
       decayPercentageResult !== undefined
-        ? Number(decayPercentageResult as bigint)
+        ? decayBasisPointsToFormPercent(Number(decayPercentageResult as bigint))
         : undefined,
     decayInterval:
       decayRateResult !== undefined

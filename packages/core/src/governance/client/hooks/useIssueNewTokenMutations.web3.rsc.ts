@@ -23,6 +23,7 @@ import {
   decayingTokenFactoryAbi,
   decayingTokenFactoryAddress,
 } from '@hypha-platform/core/generated';
+import { decayPercentToBasisPoints } from '../../voice-decay-units';
 import { getDuration } from '@hypha-platform/ui-utils';
 import { getGovernanceChainId } from './governance-chain-id';
 
@@ -211,7 +212,7 @@ export const useIssueTokenMutationsWeb3Rpc = ({
                 useReceiveWhitelist,
                 initialTransferWhitelist,
                 initialReceiveWhitelist,
-                BigInt(arg.decayPercentage),
+                BigInt(decayPercentToBasisPoints(arg.decayPercentage)),
                 BigInt(arg.decayInterval),
                 salePaymentToken,
                 salePaymentTokenPricePerToken,

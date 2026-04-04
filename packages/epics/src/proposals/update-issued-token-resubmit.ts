@@ -4,6 +4,7 @@ import {
   type TransferWhitelistFormValue,
   isTokenUpdateData,
   sanitizeTokenPriceReferenceCurrency,
+  decayBasisPointsToFormPercent,
 } from '@hypha-platform/core/client';
 import type { Dispatch, SetStateAction } from 'react';
 import type { UseFormSetValue, FieldValues } from 'react-hook-form';
@@ -302,7 +303,12 @@ export function buildUpdateIssuedTokenResubmitPayload({
     isVotingToken: false,
     decaySettings: {
       decayInterval: bigintToNumber(snapshot.decayInterval) ?? 2592000,
-      decayPercentage: bigintToNumber(snapshot.decayPercentage) ?? 1,
+      decayPercentage:
+        snapshot.decayPercentage !== undefined
+          ? decayBasisPointsToFormPercent(
+              bigintToNumber(snapshot.decayPercentage) ?? 1,
+            )
+          : 1,
     },
     enableProposalAutoMinting: snapshot.autoMinting ?? true,
     enableTokenPrice: !!snapshot.priceWithCurrency && !!referenceCurrency,

@@ -7,6 +7,7 @@ import React from 'react';
 import { decodeFunctionData } from 'viem';
 import { decayingSpaceTokenAbi } from '../../../generated';
 import { decodeTransaction } from './decoders';
+import { decayBasisPointsToFormPercent } from '../../voice-decay-units';
 
 const formatRedemptionPrice = (rawPrice: unknown) => {
   const numeric = Number(rawPrice);
@@ -590,7 +591,9 @@ export const useProposalDetailsWeb3Rpc = ({
             decayPercentage: bigint;
           };
           assignUpdateTokenAddress(d.address);
-          updateTokenData.decayPercentage = d.decayPercentage;
+          updateTokenData.decayPercentage = BigInt(
+            decayBasisPointsToFormPercent(Number(d.decayPercentage)),
+          );
           break;
         }
 
