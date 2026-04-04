@@ -3,7 +3,7 @@
   "crons": [
     {
       "path": "/api/cron/backfill-token-addresses",
-      "schedule": "* * * * *"
+      "schedule": "*/5 * * * *"
     }
   ]
 }

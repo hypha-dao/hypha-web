@@ -15,7 +15,7 @@ import {
 } from '../../validation';
 import { useTokenMutationsWeb2Rsc } from './useTokenMutationWeb2.rsc';
 import { Config } from '@wagmi/core';
-import { updateTokenAction } from '../../server/actions';
+import { linkIssueTokenProposalToAgreementAction } from '../../server/actions';
 import { ReferenceCurrency } from '../../types';
 import { getPriceCurrencyFeed } from '../../../common/web3/token-backing-vault';
 import type { TokenType } from '../../../common';
@@ -284,14 +284,11 @@ export const useCreateIssueTokenOrchestrator = ({
             );
           }
 
-          await web2.updateAgreementBySlug({
-            slug: web2Slug!,
-            web3ProposalId,
-          });
-          await updateTokenAction(
+          await linkIssueTokenProposalToAgreementAction(
             {
+              slug: web2Slug!,
+              web3ProposalId,
               agreementId: createdAgreement.id,
-              agreementWeb3IdUpdate: web3ProposalId,
             },
             { authToken: authToken! },
           );

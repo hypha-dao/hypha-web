@@ -25,6 +25,30 @@ function resolveGovernanceChainId(): keyof typeof daoProposalsImplementationAddr
 const proposalsAddress =
   daoProposalsImplementationAddress[resolveGovernanceChainId()];
 
+function safeProposalIdFromBigInt(
+  rawId: bigint,
+): { ok: true; value: number } | { ok: false } {
+  if (
+    rawId > BigInt(Number.MAX_SAFE_INTEGER) ||
+    rawId < BigInt(Number.MIN_SAFE_INTEGER)
+  ) {
+    return { ok: false };
+  }
+  return { ok: true, value: Number(rawId) };
+}
+
+function proposalExecutedLogsFromBlock(): bigint {
+  const raw = process.env.PROPOSALS_PROPOSAL_EXECUTED_FROM_BLOCK;
+  if (raw == null || raw.trim() === '') {
+    return 0n;
+  }
+  try {
+    return BigInt(raw.trim());
+  } catch {
+    return 0n;
+  }
+}
+
 export type BackfillIssueTokenAddressResult = {
   proposalId: number;
   status: 'updated' | 'skipped' | 'error';
@@ -50,10 +74,8 @@ export async function backfillIssueTokenAddressFromProposalExecutedLogs(
 
   for (const ev of events) {
     const rawId = ev.args.proposalId;
-    if (
-      rawId > BigInt(Number.MAX_SAFE_INTEGER) ||
-      rawId < BigInt(Number.MIN_SAFE_INTEGER)
-    ) {
+    const parsed = safeProposalIdFromBigInt(rawId);
+    if (!parsed.ok) {
       results.push({
         proposalId: -1,
         status: 'skipped',
@@ -61,7 +83,7 @@ export async function backfillIssueTokenAddressFromProposalExecutedLogs(
       });
       continue;
     }
-    const proposalId = Number(rawId);
+    const proposalId = parsed.value;
     if (!ev.args.passed) {
       results.push({
         proposalId,
@@ -104,20 +126,26 @@ export async function runProposalExecutedSideEffects(
   }>,
   { db }: { db: DatabaseInstance },
 ): Promise<void> {
-  await backfillIssueTokenAddressFromProposalExecutedLogs(events, { db });
+  const backfillResults =
+    await backfillIssueTokenAddressFromProposalExecutedLogs(events, { db });
+  const backfillErrors = backfillResults.filter((r) => r.status === 'error');
+  if (backfillErrors.length > 0) {
+    console.warn(
+      '[proposal-executed] backfillIssueTokenAddress errors:',
+      backfillErrors,
+    );
+  }
 
   for (const ev of events) {
     if (!ev.args.passed) {
       continue;
     }
     const rawId = ev.args.proposalId;
-    if (
-      rawId > BigInt(Number.MAX_SAFE_INTEGER) ||
-      rawId < BigInt(Number.MIN_SAFE_INTEGER)
-    ) {
+    const parsed = safeProposalIdFromBigInt(rawId);
+    if (!parsed.ok) {
       continue;
     }
-    const proposalId = Number(rawId);
+    const proposalId = parsed.value;
     const doc = await findDocumentWithSpaceByIdRaw({ id: proposalId }, { db });
     if (!doc) {
       continue;
@@ -171,7 +199,7 @@ export async function backfillIssueTokenAddressForExecutionTx(
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    if (/No token found|not found/i.test(msg)) {
+    if (/^No token found with/i.test(msg)) {
       return {
         proposalId,
         status: 'skipped',
@@ -245,7 +273,7 @@ async function findLatestProposalExecutedTxHash(
     args: {
       proposalId: BigInt(proposalId),
     },
-    fromBlock: 0n,
+    fromBlock: proposalExecutedLogsFromBlock(),
     toBlock: 'latest',
   });
 
