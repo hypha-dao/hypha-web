@@ -376,7 +376,10 @@
     "unlimitedSupply": "Offre illimitée",
     "selectTokenPlaceholder": "Sélectionner un token",
     "noTokensAvailable": "Aucun token disponible",
-    "tokenPendingContractAddress": "Adresse on-chain en attente (exécutez d'abord la proposition d'émission de token)"
+    "tokenPendingContractAddress": "Pas encore d’adresse de contrat",
+    "tokenPendingContractExplanation": "Le contrat du jeton est créé lorsque la proposition « Émettre un nouveau jeton » est exécutée on-chain. Votez et exécutez d’abord cette proposition — l’adresse sera alors renseignée automatiquement.",
+    "tokenPendingContractProposalId": "Id de proposition d’émission : {id}",
+    "openSpaceAgreementsForIssueToken": "Ouvrir les accords — retrouver la proposition d’émission"
   },
   "Footer": {
     "network": "RÉSEAU",

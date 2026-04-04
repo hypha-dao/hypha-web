@@ -376,7 +376,10 @@
     "unlimitedSupply": "Unlimited Supply",
     "selectTokenPlaceholder": "Select a token",
     "noTokensAvailable": "No tokens available",
-    "tokenPendingContractAddress": "Awaiting on-chain address (execute the issue-token proposal first)"
+    "tokenPendingContractAddress": "No contract address yet",
+    "tokenPendingContractExplanation": "The token contract is created when the Issue new token proposal is executed on-chain. Vote and execute that proposal first — then this address fills in automatically.",
+    "tokenPendingContractProposalId": "Issue-token proposal id: {id}",
+    "openSpaceAgreementsForIssueToken": "Open agreements — find your issue-token proposal"
   },
   "Footer": {
     "network": "NETWORK",

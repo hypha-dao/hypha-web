@@ -376,7 +376,10 @@
     "unlimitedSupply": "Unbegrenztes Angebot",
     "selectTokenPlaceholder": "Token auswählen",
     "noTokensAvailable": "Keine Tokens verfügbar",
-    "tokenPendingContractAddress": "On-Chain-Adresse ausstehend (Issue-Token-Vorschlag zuerst ausführen)"
+    "tokenPendingContractAddress": "Noch keine Vertragsadresse",
+    "tokenPendingContractExplanation": "Der Token-Vertrag entsteht, wenn der Issue-new-token-Vorschlag on-chain ausgeführt wird. Stimmen Sie ab und führen Sie diesen Vorschlag zuerst aus — dann wird die Adresse automatisch eingetragen.",
+    "tokenPendingContractProposalId": "Issue-Token-Vorschlags-ID: {id}",
+    "openSpaceAgreementsForIssueToken": "Vereinbarungen öffnen — Issue-Token-Vorschlag finden"
   },
   "Footer": {
     "network": "NETZWERK",

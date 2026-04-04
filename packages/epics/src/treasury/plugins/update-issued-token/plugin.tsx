@@ -42,7 +42,10 @@ import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { normalizeMaxSupplyHuman } from '../../utils/normalize-max-supply-human';
 import { buildTransferWhitelistFromBaselineAddresses } from '../../utils/whitelist-baseline-to-form';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { getDhoPathAgreements } from '../../../common/get-path-function';
+import type { Locale } from '@hypha-platform/i18n';
 
 const PENDING_TOKEN_FORM_PREFIX = 'db:' as const;
 
@@ -945,10 +948,29 @@ export const UpdateIssuedTokenPlugin = ({
 
   const tokenSupplyMetricsLabel = useMemo(() => {
     if (!chainTokenAddress && selectedTokenAddress) {
+      const web3Id = selectedToken?.agreementWeb3Id;
       return (
-        <span className="text-2 text-neutral-11 text-nowrap">
-          {tTreasury('tokenPendingContractAddress')}
-        </span>
+        <div className="flex flex-col gap-1 items-end text-right max-w-[min(100%,18rem)]">
+          <span className="text-2 text-neutral-11">
+            {tTreasury('tokenPendingContractAddress')}
+          </span>
+          <span className="text-1 text-neutral-10 leading-snug">
+            {tTreasury('tokenPendingContractExplanation')}
+          </span>
+          {web3Id != null ? (
+            <span className="text-1 text-neutral-10">
+              {tTreasury('tokenPendingContractProposalId', { id: web3Id })}
+            </span>
+          ) : null}
+          {spaceSlug ? (
+            <Link
+              href={getDhoPathAgreements(lang as Locale, spaceSlug)}
+              className="text-1 text-accent-11 underline"
+            >
+              {tTreasury('openSpaceAgreementsForIssueToken')}
+            </Link>
+          ) : null}
+        </div>
       );
     }
     if (isLoadingOnChainData && chainTokenAddress) {
@@ -994,6 +1016,9 @@ export const UpdateIssuedTokenPlugin = ({
     isLoadingOnChainData,
     chainTokenAddress,
     selectedTokenAddress,
+    selectedToken?.agreementWeb3Id,
+    spaceSlug,
+    lang,
     maxCapHumanFromChain,
     onChainData?.fixedMaxSupply,
     tTreasury,

@@ -980,7 +980,10 @@
     "unlimitedSupply": "Fornecimento ilimitado",
     "selectTokenPlaceholder": "Selecione um token",
     "noTokensAvailable": "Nenhum token disponível",
-    "tokenPendingContractAddress": "Endereço on-chain pendente (execute primeiro a proposta de emissão do token)"
+    "tokenPendingContractAddress": "Ainda sem endereço de contrato",
+    "tokenPendingContractExplanation": "O contrato do token é criado quando a proposta «Emitir novo token» é executada on-chain. Vote e execute essa proposta primeiro — o endereço será preenchido automaticamente.",
+    "tokenPendingContractProposalId": "Id da proposta de emissão: {id}",
+    "openSpaceAgreementsForIssueToken": "Abrir acordos — encontrar a proposta de emissão"
   },
   "Footer": {
     "network": "REDE",

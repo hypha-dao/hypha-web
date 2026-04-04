@@ -25,6 +25,8 @@ type Token = {
   createdAt: Date;
   documentCount: number;
   address?: string;
+  /** On-chain proposal id for the issue-token agreement — address is set after execution */
+  agreementWeb3Id?: number | null;
   referenceCurrency?: string | null;
   referencePrice?: number | null;
   archived: boolean;
