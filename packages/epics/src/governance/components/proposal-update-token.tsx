@@ -568,9 +568,6 @@ export const ProposalUpdateToken = ({
         <>
           <Separator />
           <div className="flex flex-col gap-4">
-            <div className="text-1 text-neutral-11 font-medium">
-              {tProposalDetails('sections.transferWhitelists')}
-            </div>
             {fromWhitelistRender.rows.length > 0 && (
               <div className="flex flex-col gap-4">
                 <div className="text-1 text-neutral-11 font-bold">

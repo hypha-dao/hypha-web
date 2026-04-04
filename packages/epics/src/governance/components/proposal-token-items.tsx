@@ -34,11 +34,14 @@ interface WhitelistAddressItemProps {
   address: `0x${string}`;
   /** When set, shows + / − / = for proposal whitelist diff (light/dark safe). */
   diffStatus?: 'added' | 'removed' | 'unchanged';
+  /** Space row: append (Space & Members) vs (Space only) from saved proposal data. */
+  spaceScope?: 'members' | 'only';
 }
 
 export const WhitelistAddressItem = ({
   address,
   diffStatus,
+  spaceScope,
 }: WhitelistAddressItemProps) => {
   const tProposalDetails = useTranslations('ProposalDetails');
   const { spaces: dbSpaces } = useDbSpaces({
@@ -94,7 +97,14 @@ export const WhitelistAddressItem = ({
               height={24}
               alt={`${space?.title} logo`}
             />
-            <div className="text-1">{space?.title}</div>
+            <div className="text-1">
+              {space?.title}
+              {spaceScope === 'members'
+                ? ` ${tProposalDetails('labels.spaceWhitelistMembersSuffix')}`
+                : spaceScope === 'only'
+                ? ` ${tProposalDetails('labels.spaceWhitelistOnlySuffix')}`
+                : ''}
+            </div>
           </>
         ) : (
           <>
@@ -291,9 +301,6 @@ export const ProposalTokenItem = ({
         <>
           <Separator />
           <div className="flex flex-col gap-4">
-            <div className="text-1 text-neutral-11 font-medium">
-              {tProposalDetails('sections.transferWhitelists')}
-            </div>
             {initialTransferWhitelist &&
               initialTransferWhitelist.length > 0 && (
                 <div className="flex flex-col gap-4">
