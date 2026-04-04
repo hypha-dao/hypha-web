@@ -37,7 +37,7 @@ import {
   DecaySettingsField,
 } from '../../components';
 import { useDbTokens } from '../../../hooks';
-import { useTokenSupply } from '../../hooks';
+import { useTokenSupply, useTokens, type ExtendedToken } from '../../hooks';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { normalizeMaxSupplyHuman } from '../../utils/normalize-max-supply-human';
 import { buildTransferWhitelistFromBaselineAddresses } from '../../utils/whitelist-baseline-to-form';
@@ -61,6 +61,23 @@ function parsePendingTokenFormValue(
   }
   const n = Number.parseInt(value.slice(PENDING_TOKEN_FORM_PREFIX.length), 10);
   return Number.isFinite(n) ? n : undefined;
+}
+
+/** API `Token.type` includes null/liquid; SelectTokenField only shows governance types. */
+function tokenItemTypeFromApi(
+  type: ExtendedToken['type'],
+):
+  | 'utility'
+  | 'credits'
+  | 'ownership'
+  | 'voice'
+  | 'impact'
+  | 'community_currency'
+  | undefined {
+  if (type == null || type === 'liquid') {
+    return undefined;
+  }
+  return type;
 }
 
 const MAX_SUPPLY_TYPE_OPTIONS = {
@@ -335,6 +352,22 @@ export const UpdateIssuedTokenPlugin = ({
     isLoading: isTokensLoading,
     refetchDbTokens,
   } = useDbTokens();
+  /** Same source + filter as mint-tokens-to-space-treasury (space assets API, not global TOKENS). */
+  const {
+    tokens: apiTokens,
+    isLoading: isApiTokensLoading,
+    revalidateTokens,
+  } = useTokens({
+    spaceSlug: spaceSlug ?? '',
+    includeDefaultTokens: false,
+  });
+  const filteredApiTokens = useMemo(
+    () =>
+      (apiTokens as ExtendedToken[]).filter(
+        (t) => Boolean(spaceSlug) && t.space?.slug === spaceSlug,
+      ),
+    [apiTokens, spaceSlug],
+  );
   const chainMappingSpaces = useMemo(
     () => spacesForChainMapping ?? spaces,
     [spacesForChainMapping, spaces],
@@ -353,34 +386,45 @@ export const UpdateIssuedTokenPlugin = ({
     return dbTokens.filter((t) => t.spaceId === spaceId);
   }, [dbTokens, spaceId]);
 
-  const spaceTokensWithDeployedAddress = useMemo(
-    () =>
-      spaceTokens.filter(
-        (t) =>
-          typeof t.address === 'string' && t.address.trim().startsWith('0x'),
-      ),
-    [spaceTokens],
-  );
-
   /**
-   * Deployed tokens first (selectable), then rows still waiting on `tokens.address`
-   * (shown disabled — user sees new tokens before backfill/cron completes).
+   * Deployed tokens from the same list as mint proposal (`useTokens` + space slug filter),
+   * then DB rows still waiting on `tokens.address` (pending sentinel until backfill).
    */
   const tokensForSelect = useMemo(() => {
-    const deployed = spaceTokensWithDeployedAddress.map((t) => ({
-      id: t.id,
-      name: t.name,
-      symbol: t.symbol,
-      address: (t.address as string).trim().toLowerCase(),
-      iconUrl: t.iconUrl,
-      type: t.type,
-    }));
+    const deployed = filteredApiTokens
+      .filter(
+        (t) =>
+          typeof t.address === 'string' &&
+          t.address.trim().toLowerCase().startsWith('0x'),
+      )
+      .map((t) => {
+        const addr = t.address.trim().toLowerCase();
+        const dbRow = spaceTokens.find(
+          (row) =>
+            typeof row.address === 'string' &&
+            row.address.trim().toLowerCase() === addr,
+        );
+        return {
+          id: dbRow?.id,
+          name: t.name,
+          symbol: t.symbol,
+          address: addr,
+          iconUrl: t.icon,
+          type: tokenItemTypeFromApi(t.type),
+        };
+      });
+    const deployedIds = new Set(
+      deployed
+        .map((d) => d.id)
+        .filter((id): id is number => typeof id === 'number'),
+    );
     const pending = spaceTokens
       .filter(
         (t) =>
           !t.archived &&
           (!t.address || !String(t.address).trim().startsWith('0x')),
       )
+      .filter((t) => !deployedIds.has(t.id))
       .map((t) => ({
         id: t.id,
         name: t.name,
@@ -390,7 +434,7 @@ export const UpdateIssuedTokenPlugin = ({
         type: t.type,
       }));
     return [...deployed, ...pending];
-  }, [spaceTokens, spaceTokensWithDeployedAddress]);
+  }, [filteredApiTokens, spaceTokens]);
 
   const selectedToken = useMemo(() => {
     if (!selectedTokenAddress) {
@@ -1040,12 +1084,15 @@ export const UpdateIssuedTokenPlugin = ({
         onMenuOpenChange={(open) => {
           if (open) {
             void refetchDbTokens();
+            void revalidateTokens();
           }
         }}
         required
       />
 
-      {(isTokensLoading || tokensForSelect.length === 0) && (
+      {(isTokensLoading ||
+        isApiTokensLoading ||
+        tokensForSelect.length === 0) && (
         <div className="text-2 text-neutral-11">
           {(() => {
             const clickHereText = tProposalDetails('clickHere');
