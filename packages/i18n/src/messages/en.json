@@ -1065,6 +1065,7 @@
           "maxSupplyLabel": "Max Supply",
           "maxSupplyPlaceholder": "Type an amount",
           "maxSupplyReadOnlyWhenImmutable": "Max supply is fixed while Forever Immutable is selected",
+          "maxSupplyTypeReadOnlyWhenImmutableOnChain": "Max supply type is fixed on-chain and cannot be changed",
           "maxSupplyTypeLabel": "Max Supply Type",
           "maxSupplyTypePlaceholder": "Select max supply type",
           "maxSupplyTypeOptions": {

@@ -30,7 +30,14 @@ const OPTIONS = [
   },
 ];
 
-export function TokenMaxSupplyTypeField() {
+type TokenMaxSupplyTypeFieldProps = {
+  /** Voice/update flow: cap type is fixed on-chain and cannot be changed via proposal */
+  readOnly?: boolean;
+};
+
+export function TokenMaxSupplyTypeField({
+  readOnly = false,
+}: TokenMaxSupplyTypeFieldProps) {
   const { control, trigger, formState } = useFormContext();
   const tAgreementFlow = useTranslations('AgreementFlow');
   const maxSupply = useWatch({
@@ -65,6 +72,12 @@ export function TokenMaxSupplyTypeField() {
               'plugins.issueNewToken.supply.maxSupplyTypePlaceholder',
             );
 
+        const readOnlyTitle = readOnly
+          ? tAgreementFlow(
+              'plugins.issueNewToken.supply.maxSupplyTypeReadOnlyWhenImmutableOnChain',
+            )
+          : undefined;
+
         return (
           <FormItem>
             <div className="flex justify-between items-center w-full">
@@ -78,40 +91,53 @@ export function TokenMaxSupplyTypeField() {
               </div>
 
               <FormControl>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      colorVariant="neutral"
-                      role="combobox"
-                      className="w-full md:w-72 justify-between py-2 font-normal"
-                    >
-                      <span className="text-2 text-neutral-11">
-                        {selectedLabel}
-                      </span>
-                      <ChevronDownIcon className="size-2" />
-                    </Button>
-                  </DropdownMenuTrigger>
-
-                  <DropdownMenuContent className="w-full">
-                    {OPTIONS.map((opt) => (
-                      <DropdownMenuItem
-                        key={opt.value}
-                        onSelect={() => {
-                          field.onChange({
-                            label: opt.label,
-                            value: opt.value,
-                          });
-                          trigger('maxSupply');
-                        }}
+                {readOnly ? (
+                  <div
+                    className="flex w-full md:w-72 items-center justify-between rounded-md border border-neutral-6 bg-neutral-2 px-3 py-2 text-left cursor-not-allowed"
+                    title={readOnlyTitle}
+                  >
+                    <span className="text-2 text-neutral-11">
+                      {selectedLabel}
+                    </span>
+                  </div>
+                ) : (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        colorVariant="neutral"
+                        role="combobox"
+                        className="w-full md:w-72 justify-between py-2 font-normal"
                       >
-                        {tAgreementFlow(
-                          opt.labelKey as Parameters<typeof tAgreementFlow>[0],
-                        )}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                        <span className="text-2 text-neutral-11">
+                          {selectedLabel}
+                        </span>
+                        <ChevronDownIcon className="size-2" />
+                      </Button>
+                    </DropdownMenuTrigger>
+
+                    <DropdownMenuContent className="w-full">
+                      {OPTIONS.map((opt) => (
+                        <DropdownMenuItem
+                          key={opt.value}
+                          onSelect={() => {
+                            field.onChange({
+                              label: opt.label,
+                              value: opt.value,
+                            });
+                            trigger('maxSupply');
+                          }}
+                        >
+                          {tAgreementFlow(
+                            opt.labelKey as Parameters<
+                              typeof tAgreementFlow
+                            >[0],
+                          )}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </FormControl>
             </div>
             <FormMessage />

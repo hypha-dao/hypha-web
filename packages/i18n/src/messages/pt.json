@@ -194,6 +194,7 @@
           "maxSupplyLabel": "Fornecimento máximo",
           "maxSupplyPlaceholder": "Digite um valor",
           "maxSupplyReadOnlyWhenImmutable": "O fornecimento máximo é fixo enquanto «Para sempre imutável» estiver selecionado",
+          "maxSupplyTypeReadOnlyWhenImmutableOnChain": "O tipo de fornecimento máximo está fixado na cadeia e não pode ser alterado",
           "maxSupplyTypeLabel": "Tipo de fornecimento máximo",
           "maxSupplyTypePlaceholder": "Selecione o tipo de suprimento máximo",
           "maxSupplyTypeOptions": {

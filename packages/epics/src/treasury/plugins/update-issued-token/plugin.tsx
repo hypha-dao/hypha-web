@@ -983,6 +983,7 @@ export const UpdateIssuedTokenPlugin = ({
               spaces={spaces}
               tokenType={currentTokenType}
               spaceSlug={spaceSlug}
+              maxSupplyTypeReadOnly={onChainData?.fixedMaxSupply === true}
             />
           )}
           {tokenType === 'voice' && areGeneralFieldsFilled && (

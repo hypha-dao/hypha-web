@@ -194,6 +194,7 @@
           "maxSupplyLabel": "Suministro máximo",
           "maxSupplyPlaceholder": "Escribe una cantidad",
           "maxSupplyReadOnlyWhenImmutable": "El suministro máximo es fijo mientras esté seleccionado «Para siempre inmutable»",
+          "maxSupplyTypeReadOnlyWhenImmutableOnChain": "El tipo de suministro máximo está fijado en cadena y no se puede cambiar",
           "maxSupplyTypeLabel": "Tipo de suministro máximo",
           "maxSupplyTypePlaceholder": "Seleccione el tipo de suministro máximo",
           "maxSupplyTypeOptions": {

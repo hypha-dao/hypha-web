@@ -8,9 +8,12 @@ import { useTranslations } from 'next-intl';
 export const TokenSupplySection = ({
   enableLimitedSupply,
   setEnableLimitedSupply,
+  maxSupplyTypeReadOnly = false,
 }: {
   enableLimitedSupply: boolean;
   setEnableLimitedSupply: (value: boolean) => void;
+  /** Update-token: max supply type is immutable on-chain */
+  maxSupplyTypeReadOnly?: boolean;
 }) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
 
@@ -35,7 +38,7 @@ export const TokenSupplySection = ({
       {enableLimitedSupply && (
         <>
           <TokenMaxSupplyField />
-          <TokenMaxSupplyTypeField />
+          <TokenMaxSupplyTypeField readOnly={maxSupplyTypeReadOnly} />
         </>
       )}
     </div>

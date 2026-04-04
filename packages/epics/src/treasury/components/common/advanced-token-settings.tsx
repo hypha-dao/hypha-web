@@ -18,6 +18,7 @@ export const AdvancedTokenSettings = ({
   spaces,
   tokenType,
   spaceSlug,
+  maxSupplyTypeReadOnly = false,
 }: {
   enableLimitedSupply: boolean;
   setEnableLimitedSupply: (value: boolean) => void;
@@ -29,6 +30,7 @@ export const AdvancedTokenSettings = ({
   spaces: Space[];
   tokenType?: string;
   spaceSlug?: string;
+  maxSupplyTypeReadOnly?: boolean;
 }) => {
   return (
     <>
@@ -36,6 +38,7 @@ export const AdvancedTokenSettings = ({
       <TokenSupplySection
         enableLimitedSupply={enableLimitedSupply}
         setEnableLimitedSupply={setEnableLimitedSupply}
+        maxSupplyTypeReadOnly={maxSupplyTypeReadOnly}
       />
       <Separator />
       <AutoMintSection enableProposalAutoMinting={enableProposalAutoMinting} />

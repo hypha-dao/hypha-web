@@ -1065,6 +1065,7 @@
           "maxSupplyLabel": "Offre maximale",
           "maxSupplyPlaceholder": "Saisissez un montant",
           "maxSupplyReadOnlyWhenImmutable": "L'offre maximale est fixe tant que « Pour toujours immuable » est sélectionné",
+          "maxSupplyTypeReadOnlyWhenImmutableOnChain": "Le type d'offre maximale est fixé on-chain et ne peut pas être modifié",
           "maxSupplyTypeLabel": "Type d'offre maximale",
           "maxSupplyTypePlaceholder": "Sélectionnez le type d'offre maximale",
           "maxSupplyTypeOptions": {
