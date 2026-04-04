@@ -157,13 +157,14 @@ export const updateToken = async (
     throw new Error(`No token found with ${lookup}`);
   }
 
-  // Map archiveToken to archived column
-  const { archiveToken, ...restWithoutArchive } = rest;
+  // Map archiveToken to archived column; omit derived fields not in DB schema
+  const { archiveToken, agreementWeb3IdUpdate, ...restWithoutDerivedFields } =
+    rest;
   const updateData = {
-    ...restWithoutArchive,
+    ...restWithoutDerivedFields,
     ...(address !== undefined && { address }),
-    ...(rest.agreementWeb3IdUpdate !== undefined && {
-      agreementWeb3Id: rest.agreementWeb3IdUpdate,
+    ...(agreementWeb3IdUpdate !== undefined && {
+      agreementWeb3Id: agreementWeb3IdUpdate,
     }),
     ...(archiveToken !== undefined && { archived: archiveToken }),
   } as Partial<InferInsertModel<typeof tokens>>;
