@@ -144,11 +144,16 @@ export const TransferWhitelistFieldArray = ({
           const currentEntry = entries?.[index];
           const currentType = (currentEntry?.type ?? 'space') as WhitelistType;
           const taken = usedKeysByOtherRows[index] ?? new Set<string>();
+          const currentRowKey = currentEntry?.address
+            ? transferWhitelistEntryDedupeKey(currentType, currentEntry.address)
+            : undefined;
           const baseOptions =
             currentType === 'member' ? memberOptions : spaceOptions;
+          /** Hide options picked on *other* rows, but always keep this row's value so the combobox is not blank (e.g. duplicate hydration). */
           const comboboxOptions = baseOptions.filter((opt) => {
             const k = transferWhitelistEntryDedupeKey(currentType, opt.value);
             if (!k) return true;
+            if (currentRowKey && k === currentRowKey) return true;
             return !taken.has(k);
           });
           const placeholder =
