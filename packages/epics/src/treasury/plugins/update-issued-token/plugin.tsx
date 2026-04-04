@@ -524,7 +524,7 @@ export const UpdateIssuedTokenPlugin = ({
           referenceCurrency: safeRefFromDb,
           tokenPrice:
             safeRefFromDb !== undefined
-              ? selectedToken.referencePrice
+              ? (selectedToken.referencePrice ?? undefined)
               : undefined,
           enableTokenPrice: shouldShowAdvancedFromDb,
           enableProposalAutoMinting: true,
