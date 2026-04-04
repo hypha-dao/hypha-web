@@ -95,7 +95,7 @@ export const UpdateIssuedTokenPlugin = ({
     control,
     getValues,
     setValue,
-    resetField,
+    reset,
     watch,
     formState: { dirtyFields },
   } = useFormContext<UpdateIssuedTokenFormValues>();
@@ -492,25 +492,70 @@ export const UpdateIssuedTokenPlugin = ({
       });
     };
 
+    const max = normalizeMaxSupplyHuman(selectedToken.maxSupply ?? 0);
+
+    /**
+     * After the user edits fields, `dirtyFields` stays set. `setIfClean` then skips
+     * hydration so switching the token dropdown left stale name/symbol/advanced values.
+     * On token switch, re-apply the full DB snapshot for the newly selected token while
+     * keeping proposal document fields (title, description, attachments, …).
+     */
     if (isTokenSwitch) {
-      resetField('name', { defaultValue: selectedToken.name });
-      resetField('symbol', { defaultValue: selectedToken.symbol });
-      resetField('iconUrl', { defaultValue: iconFromDb });
-      resetField('initialIconUrl', { defaultValue: iconFromDb });
-    } else {
-      setIfClean('name', selectedToken.name);
-      setIfClean('symbol', selectedToken.symbol);
-      const currentIcon = getValues('iconUrl');
-      const tokenAddressChanged = prevTokenAddress !== selectedTokenAddress;
-      if (tokenAddressChanged || !(currentIcon instanceof File)) {
-        if (!(dirtyFields as Record<string, unknown>)?.iconUrl) {
-          setValue('iconUrl', iconFromDb, { shouldDirty: false });
-          setValue('initialIconUrl', iconFromDb, { shouldDirty: false });
-        }
+      const cur = getValues();
+      reset(
+        {
+          ...cur,
+          tokenAddress: selectedTokenAddress ?? undefined,
+          name: selectedToken.name,
+          symbol: selectedToken.symbol,
+          iconUrl: iconFromDb,
+          initialIconUrl: iconFromDb,
+          type: selectedToken.type,
+          enableLimitedSupply: max > 0,
+          maxSupply: max,
+          maxSupplyType: undefined,
+          transferable: selectedToken.transferable,
+          isVotingToken: selectedToken.isVotingToken,
+          decaySettings: {
+            decayInterval: selectedToken.decayInterval || 2592000,
+            decayPercentage: selectedToken.decayPercentage || 1,
+          },
+          archiveToken: selectedToken.archived,
+          referenceCurrency: safeRefFromDb,
+          tokenPrice:
+            safeRefFromDb !== undefined
+              ? selectedToken.referencePrice
+              : undefined,
+          enableTokenPrice: shouldShowAdvancedFromDb,
+          enableProposalAutoMinting: true,
+          enableAdvancedTransferControls: false,
+          transferWhitelist: undefined,
+          whitelistBaselineFrom: undefined,
+          whitelistBaselineTo: undefined,
+          whitelistBaselineFromMembers: undefined,
+          whitelistBaselineToMembers: undefined,
+          whitelistBaselineFromSpaceIds: undefined,
+          whitelistBaselineToSpaceIds: undefined,
+        },
+        { keepDirty: false, keepTouched: false },
+      );
+      setTokenType(selectedToken.type);
+      setShowAdvancedSettings(shouldShowAdvancedFromDb);
+      setShowDecaySettings(false);
+      return;
+    }
+
+    setIfClean('name', selectedToken.name);
+    setIfClean('symbol', selectedToken.symbol);
+    const currentIcon = getValues('iconUrl');
+    const tokenAddressChanged = prevTokenAddress !== selectedTokenAddress;
+    if (tokenAddressChanged || !(currentIcon instanceof File)) {
+      if (!(dirtyFields as Record<string, unknown>)?.iconUrl) {
+        setValue('iconUrl', iconFromDb, { shouldDirty: false });
+        setValue('initialIconUrl', iconFromDb, { shouldDirty: false });
       }
     }
     setIfClean('type', selectedToken.type);
-    const max = normalizeMaxSupplyHuman(selectedToken.maxSupply ?? 0);
     setIfClean('enableLimitedSupply', max > 0, { shouldDirty: false });
     setIfClean('maxSupply', max, { shouldDirty: false });
     if (max <= 0 && !(dirtyFields as Record<string, unknown>)?.maxSupplyType) {
@@ -544,7 +589,7 @@ export const UpdateIssuedTokenPlugin = ({
     selectedTokenAddress,
     selectedTokenFingerprint,
     setValue,
-    resetField,
+    reset,
     getValues,
     dirtyFields,
   ]);
