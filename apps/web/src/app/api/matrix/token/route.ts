@@ -134,7 +134,9 @@ export async function GET(request: NextRequest) {
         return record;
       }
       // Admin token expired — register a new admin to recover
-      console.warn('Admin Matrix token expired, creating new admin to recover');
+      console.warn(
+        'Admin Matrix token expired, creating new admin to recover',
+      );
       const newAdminUsername = `${ADMIN_BASE_NAME}_${randomUUID()}`;
       const {
         accessToken: newEncryptedAccessToken,
