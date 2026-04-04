@@ -121,7 +121,7 @@ export const SelectSettingsAction = ({
       description: t('actions.issueNewToken.description'),
       href: 'create/issue-new-token',
       icon: <RadiobuttonIcon />,
-      disabled: true,
+      disabled: isPaymentExpired,
     },
     {
       defaultDurationDays: 4,
