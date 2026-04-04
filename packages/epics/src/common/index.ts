@@ -11,4 +11,16 @@ export * from './get-active-tab-from-path';
 export * from './get-path-function';
 export * from './ai-panel';
 export { AiLeftPanel } from './ai-left-panel';
-export { AiLeftPanelLayout, AiSidebarTrigger } from './ai-left-panel-layout';
+export { AiLeftPanelLayout } from './ai-left-panel-layout';
+export {
+  PanelWrapLayout,
+  AiSidebarTrigger,
+  HumanSidebarTrigger,
+} from './panel-wrap-layout';
+export {
+  HumanChatPanelHeader,
+  HumanChatPanelMessageBubble,
+  HumanChatPanelChatBar,
+  HumanChatPanelMessages,
+} from './human-chat-panel';
+export { HumanRightPanel } from './human-right-panel';

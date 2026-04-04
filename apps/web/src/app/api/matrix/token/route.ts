@@ -129,7 +129,39 @@ export async function GET(request: NextRequest) {
       environment,
     });
     if (record) {
-      return record;
+      const adminAccessToken = decryptMatrixToken(record.encryptedAccessToken);
+      if (await matrixAuthClient.validateToken(adminAccessToken)) {
+        return record;
+      }
+      // Admin token expired — register a new admin to recover
+      console.warn('Admin Matrix token expired, creating new admin to recover');
+      const newAdminUsername = `${ADMIN_BASE_NAME}_${randomUUID()}`;
+      const {
+        accessToken: newEncryptedAccessToken,
+        deviceId: newDeviceId,
+        userId: newMatrixUserId,
+      } = await matrixAuthClient.registerUser(newAdminUsername, true);
+      if (!newEncryptedAccessToken) {
+        throw new Error(
+          'Admin token expired and new admin registration failed',
+        );
+      }
+      // Update the existing admin record with the new admin's credentials
+      await updateEncryptedAccessTokenAction(
+        {
+          privyUserId: adminUsername,
+          environment,
+          encryptedAccessToken: newEncryptedAccessToken,
+          deviceId: newDeviceId,
+        },
+        { authToken },
+      );
+      return {
+        ...record,
+        encryptedAccessToken: newEncryptedAccessToken,
+        deviceId: newDeviceId,
+        matrixUserId: newMatrixUserId,
+      };
     }
     const {
       accessToken: encryptedAccessToken,

@@ -219,10 +219,19 @@ export class MatrixSharedSecret {
       throw new Error('Registration succeeded but no access_token returned');
     }
 
-    await this.changePassword(
-      successData.access_token,
-      crypto.randomBytes(32).toString('hex'),
-    );
+    // Attempt to change password to invalidate the registration password.
+    // Non-fatal: some Matrix servers require UIA for password changes.
+    try {
+      await this.changePassword(
+        successData.access_token,
+        crypto.randomBytes(32).toString('hex'),
+      );
+    } catch (error) {
+      console.warn(
+        'Post-registration password change failed (non-fatal):',
+        error instanceof Error ? error.message : error,
+      );
+    }
 
     return {
       accessToken: encryptMatrixToken(successData.access_token),
