@@ -229,6 +229,52 @@ export const findAllSpacesBySlugs = async (
   return results;
 };
 
+/**
+ * Active space + all descendant spaces (child subspaces). Used when a "space"
+ * can be a member of another space — whitelist options are limited to this tree.
+ */
+export const findSpaceSubtreeForRootId = async (
+  { rootSpaceId }: { rootSpaceId: number },
+  { db }: DbConfig,
+): Promise<Space[]> => {
+  if (!rootSpaceId) {
+    return [];
+  }
+
+  const columns = getTableColumns(spaces);
+  const columnEntires = Object.entries(columns);
+  const recordNames = columnEntires.map(([_, v]) => v.name);
+
+  const columnsSql = sql.raw(recordNames.join(', '));
+  const columnsWithAliasSql = sql.raw(
+    recordNames.map((name) => `i.${name}`).join(', '),
+  );
+  const query = sql`
+WITH RECURSIVE subtree AS (
+  SELECT ${columnsSql}, 0 as level
+  FROM ${spaces}
+  WHERE ${spaces.id} = ${rootSpaceId}
+  UNION ALL
+  SELECT ${columnsWithAliasSql}, st.level + 1
+  FROM ${spaces} i
+  INNER JOIN subtree st ON i.parent_id = st.id
+)
+SELECT * FROM subtree
+ORDER BY level, id;
+`;
+  const results = await db.execute(query);
+
+  const mapped = results.rows.map((record) => {
+    const space: Partial<Space> = {};
+    for (const [name, column] of columnEntires) {
+      space[name as keyof Space] = record[column.name] as any;
+    }
+    return space as Space;
+  });
+
+  return mapped.filter((s) => !s.isArchived);
+};
+
 type FindAllOrganizationSpacesForNodeByIdInput = {
   id?: number | null;
 };
