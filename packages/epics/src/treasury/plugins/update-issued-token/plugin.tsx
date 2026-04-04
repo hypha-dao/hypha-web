@@ -44,6 +44,22 @@ import { buildTransferWhitelistFromBaselineAddresses } from '../../utils/whiteli
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
+const PENDING_TOKEN_FORM_PREFIX = 'db:' as const;
+
+function pendingTokenFormValue(id: number): string {
+  return `${PENDING_TOKEN_FORM_PREFIX}${id}`;
+}
+
+function parsePendingTokenFormValue(
+  value: string | null | undefined,
+): number | undefined {
+  if (!value || !value.startsWith(PENDING_TOKEN_FORM_PREFIX)) {
+    return undefined;
+  }
+  const n = Number.parseInt(value.slice(PENDING_TOKEN_FORM_PREFIX.length), 10);
+  return Number.isFinite(n) ? n : undefined;
+}
+
 const MAX_SUPPLY_TYPE_OPTIONS = {
   immutable: {
     label: 'Forever Immutable',
@@ -334,7 +350,6 @@ export const UpdateIssuedTokenPlugin = ({
     return dbTokens.filter((t) => t.spaceId === spaceId);
   }, [dbTokens, spaceId]);
 
-  /** Only tokens with a deployed contract — update flow cannot configure pending rows; avoids a long disabled list. */
   const spaceTokensWithDeployedAddress = useMemo(
     () =>
       spaceTokens.filter(
@@ -344,29 +359,74 @@ export const UpdateIssuedTokenPlugin = ({
     [spaceTokens],
   );
 
-  /** Token list for dropdown; live name/symbol/icon overlay is applied inside `SelectTokenField` via useWatch. */
-  const tokensForSelect = useMemo(
-    () =>
-      spaceTokensWithDeployedAddress.map((t) => ({
+  /**
+   * Deployed tokens first (selectable), then rows still waiting on `tokens.address`
+   * (shown disabled — user sees new tokens before backfill/cron completes).
+   */
+  const tokensForSelect = useMemo(() => {
+    const deployed = spaceTokensWithDeployedAddress.map((t) => ({
+      id: t.id,
+      name: t.name,
+      symbol: t.symbol,
+      address: (t.address as string).trim().toLowerCase(),
+      iconUrl: t.iconUrl,
+      type: t.type,
+    }));
+    const pending = spaceTokens
+      .filter(
+        (t) =>
+          !t.archived &&
+          (!t.address || !String(t.address).trim().startsWith('0x')),
+      )
+      .map((t) => ({
         id: t.id,
         name: t.name,
         symbol: t.symbol,
-        address: (t.address as string).trim().toLowerCase(),
+        address: pendingTokenFormValue(t.id),
         iconUrl: t.iconUrl,
         type: t.type,
-      })),
-    [spaceTokensWithDeployedAddress],
-  );
+      }));
+    return [...deployed, ...pending];
+  }, [spaceTokens, spaceTokensWithDeployedAddress]);
 
   const selectedToken = useMemo(() => {
     if (!selectedTokenAddress) {
       return undefined;
+    }
+    const pendingId = parsePendingTokenFormValue(selectedTokenAddress);
+    if (pendingId !== undefined) {
+      return spaceTokens.find((t) => t.id === pendingId);
     }
     const want = selectedTokenAddress.toLowerCase();
     return spaceTokens.find(
       (t) => typeof t.address === 'string' && t.address.toLowerCase() === want,
     );
   }, [spaceTokens, selectedTokenAddress]);
+
+  /** `0x…` only — pending DB rows use `db:{id}` in the form and have no chain calls yet. */
+  const chainTokenAddress = useMemo((): `0x${string}` | null => {
+    const a = selectedToken?.address?.trim();
+    if (!a || !a.startsWith('0x')) {
+      return null;
+    }
+    return a as `0x${string}`;
+  }, [selectedToken]);
+
+  /** After backfill, migrate `db:{id}` → lowercase `0x…` so the row becomes selectable. */
+  useEffect(() => {
+    const pendingId = parsePendingTokenFormValue(selectedTokenAddress);
+    if (pendingId === undefined) {
+      return;
+    }
+    const row = spaceTokens.find((t) => t.id === pendingId);
+    const addr = row?.address?.trim();
+    if (addr?.startsWith('0x')) {
+      setValue('tokenAddress', addr.toLowerCase(), {
+        shouldDirty: false,
+        shouldValidate: true,
+      });
+    }
+  }, [spaceTokens, selectedTokenAddress, setValue]);
 
   /** Stable across SWR reference churn so DB hydration effect does not re-fire every poll */
   const selectedTokenFingerprint = useMemo(() => {
@@ -389,12 +449,12 @@ export const UpdateIssuedTokenPlugin = ({
   }, [selectedToken]);
 
   const { data: onChainData, isLoading: isLoadingOnChainData } =
-    useTokenOnChainData(selectedTokenAddress as `0x${string}` | undefined);
+    useTokenOnChainData(chainTokenAddress ?? undefined);
 
   const { tokenUpdate: pendingTokenUpdateForSpace } =
     useTokenUpdateForSpaceTokenAddress({
       spaceId: spaceId ?? undefined,
-      tokenAddress: selectedTokenAddress,
+      tokenAddress: chainTokenAddress ?? undefined,
       authToken: jwt ?? undefined,
     });
 
@@ -775,7 +835,7 @@ export const UpdateIssuedTokenPlugin = ({
   ]);
 
   useEffect(() => {
-    if (!selectedTokenAddress) {
+    if (!chainTokenAddress) {
       return;
     }
 
@@ -784,7 +844,7 @@ export const UpdateIssuedTokenPlugin = ({
     void (async () => {
       try {
         const baseline = await fetchWhitelistBaselineFromChain({
-          tokenAddress: selectedTokenAddress as `0x${string}`,
+          tokenAddress: chainTokenAddress,
           spaces: chainMappingSpaces,
           members,
         });
@@ -830,9 +890,7 @@ export const UpdateIssuedTokenPlugin = ({
           return;
         }
 
-        if (
-          baselineWhitelistAppliedForTokenRef.current === selectedTokenAddress
-        ) {
+        if (baselineWhitelistAppliedForTokenRef.current === chainTokenAddress) {
           return;
         }
 
@@ -858,7 +916,7 @@ export const UpdateIssuedTokenPlugin = ({
           setShowAdvancedSettings(true);
         }
 
-        baselineWhitelistAppliedForTokenRef.current = selectedTokenAddress;
+        baselineWhitelistAppliedForTokenRef.current = chainTokenAddress;
       } catch {
         // RPC/network: leave baseline fields unset; orchestrator falls back to []
       }
@@ -868,7 +926,7 @@ export const UpdateIssuedTokenPlugin = ({
       cancelled = true;
     };
   }, [
-    selectedTokenAddress,
+    chainTokenAddress,
     selectedToken?.type,
     chainMappingSpaces,
     members,
@@ -886,7 +944,14 @@ export const UpdateIssuedTokenPlugin = ({
   }, [onChainData?.maxSupply]);
 
   const tokenSupplyMetricsLabel = useMemo(() => {
-    if (isLoadingOnChainData && selectedTokenAddress) {
+    if (!chainTokenAddress && selectedTokenAddress) {
+      return (
+        <span className="text-2 text-neutral-11 text-nowrap">
+          {tTreasury('tokenPendingContractAddress')}
+        </span>
+      );
+    }
+    if (isLoadingOnChainData && chainTokenAddress) {
       return null;
     }
     if (maxCapHumanFromChain === undefined) {
@@ -927,6 +992,7 @@ export const UpdateIssuedTokenPlugin = ({
     );
   }, [
     isLoadingOnChainData,
+    chainTokenAddress,
     selectedTokenAddress,
     maxCapHumanFromChain,
     onChainData?.fixedMaxSupply,
@@ -935,7 +1001,7 @@ export const UpdateIssuedTokenPlugin = ({
   ]);
 
   const { supply, isLoading: isLoadingSupply } = useTokenSupply(
-    selectedToken?.address as `0x${string}`,
+    chainTokenAddress ?? undefined,
   );
 
   return (
@@ -954,7 +1020,7 @@ export const UpdateIssuedTokenPlugin = ({
         required
       />
 
-      {(isTokensLoading || spaceTokensWithDeployedAddress.length === 0) && (
+      {(isTokensLoading || tokensForSelect.length === 0) && (
         <div className="text-2 text-neutral-11">
           {(() => {
             const clickHereText = tProposalDetails('clickHere');
