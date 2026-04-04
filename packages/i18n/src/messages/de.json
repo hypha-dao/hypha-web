@@ -1572,6 +1572,7 @@
     "clickHere": "hier klicken",
     "noTokenCreated": "Ihr Space hat noch keinen Token erstellt, {clickHere}, um zuerst einen Token auszugeben.",
     "tokenShouldBeChosen": "Token sollte ausgewählt werden",
+    "updateTokenRequiresDeployedContract": "Für dieses Token liegt noch keine On-Chain-Vertragsadresse vor. Führen Sie zuerst den Issue-Token-Vorschlag aus und lassen Sie ihn bestehen, und versuchen Sie es erneut.",
     "maxSupplyValidation": "Geben Sie eine maximale Angebotsmenge größer als 0 ein oder deaktivieren Sie das begrenzte Angebot, wenn Sie unbegrenztes Angebot wünschen.",
     "selectReferenceCurrency": "Bitte wählen Sie eine Referenzwährung",
     "tokenPriceGreaterThanZero": "Bitte geben Sie einen Token-Preis größer als 0 ein",
