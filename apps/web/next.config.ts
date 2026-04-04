@@ -9,6 +9,15 @@ const LOCALES = routing.locales;
 const withNextIntl = createNextIntlPlugin('../../packages/i18n/src/request.ts');
 
 const nextConfig: NextConfig = {
+  webpack: (config) => {
+    // Prevent matrix-js-sdk from being bundled via multiple entrypoints,
+    // which causes the "Multiple matrix-js-sdk entrypoints detected!" error.
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'matrix-js-sdk': require.resolve('matrix-js-sdk'),
+    };
+    return config;
+  },
   headers: async () => {
     return [
       {
