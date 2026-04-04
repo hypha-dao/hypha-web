@@ -135,15 +135,24 @@ export const updateToken = async (
     );
   }
 
+  const lookup =
+    agreementId !== undefined
+      ? `agreementId: ${agreementId}`
+      : agreementWeb3Id !== undefined
+      ? `agreementWeb3Id: ${agreementWeb3Id}`
+      : `address: ${address}`;
+
   if (existingToken.length === 0) {
-    const lookup =
-      agreementId !== undefined
-        ? `agreementId: ${agreementId}`
-        : agreementWeb3Id !== undefined
-        ? `agreementWeb3Id: ${agreementWeb3Id}`
-        : `address: ${address}`;
     throw new Error(`No token found with ${lookup}`);
   }
+
+  if (existingToken.length > 1) {
+    throw new Error(
+      `Multiple tokens found with ${lookup}; refusing ambiguous update`,
+    );
+  }
+
+  const tokenToUpdate = existingToken[0];
 
   // Map archiveToken to archived column
   const { archiveToken, ...restWithoutArchive } = rest;
@@ -161,21 +170,10 @@ export const updateToken = async (
     updateData.referencePrice = String(updateData.referencePrice);
   }
 
-  const findTokenCondition =
-    agreementId !== undefined
-      ? eq(tokens.agreementId, agreementId)
-      : agreementWeb3Id !== undefined
-      ? eq(tokens.agreementWeb3Id, agreementWeb3Id)
-      : address !== undefined
-      ? eq(tokens.address, address)
-      : (() => {
-          throw new Error('Unreachable');
-        })();
-
   const [updated] = await db
     .update(tokens)
     .set(updateData)
-    .where(findTokenCondition)
+    .where(eq(tokens.id, tokenToUpdate.id))
     .returning();
 
   if (!updated) {
