@@ -8,10 +8,7 @@ import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { Person, Space } from '@hypha-platform/core/client';
-import {
-  getAllSpaces,
-  findSpaceSubtreeForRootId,
-} from '@hypha-platform/core/server';
+import { getAllSpaces } from '@hypha-platform/core/server';
 import {
   findAllPeopleWithoutPagination,
   findPeopleBySpaceIdWithoutPagination,
@@ -66,11 +63,6 @@ export default async function IssueNewTokenPage({
   const membersForOwnershipWhitelist =
     await findPeopleBySpaceIdWithoutPagination({ spaceId }, { db });
 
-  const spacesForOwnershipWhitelist = await findSpaceSubtreeForRootId(
-    { rootSpaceId: spaceId },
-    { db },
-  );
-
   return (
     <SidePanel>
       <IssueNewTokenForm
@@ -85,8 +77,8 @@ export default async function IssueNewTokenPage({
             spaceSlug={id}
             spaces={filteredSpaces}
             members={filteredPeoples}
+            activeSpace={spaceFromDb}
             membersForOwnershipWhitelist={membersForOwnershipWhitelist}
-            spacesForOwnershipWhitelist={spacesForOwnershipWhitelist}
           />
         }
       />

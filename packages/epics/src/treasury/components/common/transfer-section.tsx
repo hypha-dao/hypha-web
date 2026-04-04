@@ -15,8 +15,8 @@ export const TransferSection = ({
   spaces,
   tokenType,
   spaceSlug,
+  activeSpace,
   membersForOwnershipWhitelist,
-  spacesForOwnershipWhitelist,
 }: {
   transferable: boolean;
   enableAdvancedTransferControls: boolean;
@@ -24,10 +24,10 @@ export const TransferSection = ({
   spaces: Space[];
   tokenType?: string;
   spaceSlug?: string;
-  /** Members of the active DHO — used for ownership-token member whitelist options */
+  /** Current DHO space — only this space appears in the space whitelist for ownership tokens */
+  activeSpace?: Space;
+  /** Members of `activeSpace` — used for ownership-token member whitelist options */
   membersForOwnershipWhitelist?: Person[];
-  /** Active space + descendant subspaces — ownership-token space whitelist options */
-  spacesForOwnershipWhitelist?: Space[];
 }) => {
   const isOwnershipToken = tokenType === 'ownership';
   const { space } = useSpaceBySlug(spaceSlug || '');
@@ -46,11 +46,11 @@ export const TransferSection = ({
     if (!isOwnershipToken) {
       return spaces;
     }
-    const list = spacesForOwnershipWhitelist ?? [];
-    return list.filter(
-      (s) => s.address && s.address.trim() !== '' && s.address.startsWith('0x'),
-    );
-  }, [isOwnershipToken, spaces, spacesForOwnershipWhitelist]);
+    if (!activeSpace?.address || activeSpace.address.trim() === '') {
+      return [];
+    }
+    return [activeSpace];
+  }, [isOwnershipToken, spaces, activeSpace]);
 
   return (
     <div className="flex flex-col gap-4">

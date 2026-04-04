@@ -8,10 +8,7 @@ import { db } from '@hypha-platform/storage-postgres';
 import { UpdateIssuedTokenForm } from '@hypha-platform/epics';
 import { Plugin } from '../../../../_components/plugins';
 import { Person, Space } from '@hypha-platform/core/client';
-import {
-  getAllSpaces,
-  findSpaceSubtreeForRootId,
-} from '@hypha-platform/core/server';
+import { getAllSpaces } from '@hypha-platform/core/server';
 import {
   findAllPeopleWithoutPagination,
   findPeopleBySpaceIdWithoutPagination,
@@ -65,11 +62,6 @@ export default async function UpdateIssuedTokenPage({
   const membersForOwnershipWhitelist =
     await findPeopleBySpaceIdWithoutPagination({ spaceId }, { db });
 
-  const spacesForOwnershipWhitelist = await findSpaceSubtreeForRootId(
-    { rootSpaceId: spaceId },
-    { db },
-  );
-
   return (
     <SidePanel>
       <UpdateIssuedTokenForm
@@ -86,8 +78,8 @@ export default async function UpdateIssuedTokenPage({
             spaces={filteredSpaces}
             spacesForChainMapping={spaces}
             members={filteredPeoples}
+            activeSpace={spaceFromDb}
             membersForOwnershipWhitelist={membersForOwnershipWhitelist}
-            spacesForOwnershipWhitelist={spacesForOwnershipWhitelist}
           />
         }
       />
