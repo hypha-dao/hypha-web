@@ -310,7 +310,10 @@ export function transferWhitelistEntryDedupeKey(
   const trimmed = address.trim();
   if (!trimmed) return undefined;
   if (!isAddress(trimmed)) {
-    return `${type === 'space' ? 's' : 'm'}:raw:${trimmed.toLowerCase()}`;
+    // Avoid `trimmed` after `!isAddress`: ethers’ type guard narrows to `never` here in strict TS.
+    return `${type === 'space' ? 's' : 'm'}:raw:${address
+      .trim()
+      .toLowerCase()}`;
   }
   try {
     const norm = getAddress(trimmed).toLowerCase();
