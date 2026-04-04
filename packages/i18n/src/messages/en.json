@@ -1474,8 +1474,10 @@
       "defaultAvatar": "Default avatar",
       "selfBurn": "Self burn",
       "archived": "Archived",
-      "useTransferWhitelist": "Use Transfer Whitelist",
-      "useReceiveWhitelist": "Use Receive Whitelist"
+      "transferFromWhitelist": "Transfer (From:) Whitelist",
+      "receiveToWhitelist": "Receive (To:) Whitelist",
+      "whitelistEnforcementActive": "Active",
+      "whitelistEnforcementInactive": "Inactive"
     },
     "entryMethods": {
       "openAccess": "Open Access",

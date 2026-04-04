@@ -1474,8 +1474,10 @@
       "defaultAvatar": "Avatar predeterminado",
       "selfBurn": "Autoquema",
       "archived": "Archivado",
-      "useTransferWhitelist": "Usar lista blanca de transferencias",
-      "useReceiveWhitelist": "Usar lista blanca de recepción"
+      "transferFromWhitelist": "Transferencia (From:) lista blanca",
+      "receiveToWhitelist": "Recepción (To:) lista blanca",
+      "whitelistEnforcementActive": "Activo",
+      "whitelistEnforcementInactive": "Inactivo"
     },
     "entryMethods": {
       "openAccess": "Acceso abierto",

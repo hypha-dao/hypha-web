@@ -1474,8 +1474,10 @@
       "defaultAvatar": "Avatar par défaut",
       "selfBurn": "Auto-combustion",
       "archived": "Archivé",
-      "useTransferWhitelist": "Utiliser la liste blanche d'envoi",
-      "useReceiveWhitelist": "Utiliser la liste blanche de réception"
+      "transferFromWhitelist": "Transfert (From:) liste blanche",
+      "receiveToWhitelist": "Réception (To:) liste blanche",
+      "whitelistEnforcementActive": "Actif",
+      "whitelistEnforcementInactive": "Inactif"
     },
     "entryMethods": {
       "openAccess": "Accès libre",

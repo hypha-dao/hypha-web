@@ -540,27 +540,27 @@ export const ProposalUpdateToken = ({
           </div>
         </div>
       )}
-      {resolvedUseTransferWhitelist !== undefined && (
-        <div className="flex justify-between items-center">
-          <div className="text-1 text-neutral-11 w-full">
-            {tProposalDetails('labels.useTransferWhitelist')}
-          </div>
-          <div className="text-1">
-            {resolvedUseTransferWhitelist
-              ? tProposalDetails('labels.yes')
-              : tProposalDetails('labels.no')}
-          </div>
-        </div>
-      )}
       {resolvedUseReceiveWhitelist !== undefined && (
         <div className="flex justify-between items-center">
           <div className="text-1 text-neutral-11 w-full">
-            {tProposalDetails('labels.useReceiveWhitelist')}
+            {tProposalDetails('labels.receiveToWhitelist')}
           </div>
           <div className="text-1">
             {resolvedUseReceiveWhitelist
-              ? tProposalDetails('labels.yes')
-              : tProposalDetails('labels.no')}
+              ? tProposalDetails('labels.whitelistEnforcementActive')
+              : tProposalDetails('labels.whitelistEnforcementInactive')}
+          </div>
+        </div>
+      )}
+      {resolvedUseTransferWhitelist !== undefined && (
+        <div className="flex justify-between items-center">
+          <div className="text-1 text-neutral-11 w-full">
+            {tProposalDetails('labels.transferFromWhitelist')}
+          </div>
+          <div className="text-1">
+            {resolvedUseTransferWhitelist
+              ? tProposalDetails('labels.whitelistEnforcementActive')
+              : tProposalDetails('labels.whitelistEnforcementInactive')}
           </div>
         </div>
       )}
@@ -568,24 +568,6 @@ export const ProposalUpdateToken = ({
         <>
           <Separator />
           <div className="flex flex-col gap-4">
-            {fromWhitelistRender.rows.length > 0 && (
-              <div className="flex flex-col gap-4">
-                <div className="text-1 text-neutral-11 font-bold">
-                  {tProposalDetails('sections.fromWhitelist')}
-                </div>
-                <div className="flex flex-col gap-4">
-                  {fromWhitelistRender.rows.map((row, idx) => (
-                    <WhitelistAddressItem
-                      key={`from-${idx}-${row.address}`}
-                      address={row.address}
-                      diffStatus={
-                        fromWhitelistRender.showDiff ? row.status : undefined
-                      }
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
             {toWhitelistRender.rows.length > 0 && (
               <div className="flex flex-col gap-4">
                 <div className="text-1 text-neutral-11 font-bold">
@@ -598,6 +580,24 @@ export const ProposalUpdateToken = ({
                       address={row.address}
                       diffStatus={
                         toWhitelistRender.showDiff ? row.status : undefined
+                      }
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            {fromWhitelistRender.rows.length > 0 && (
+              <div className="flex flex-col gap-4">
+                <div className="text-1 text-neutral-11 font-bold">
+                  {tProposalDetails('sections.fromWhitelist')}
+                </div>
+                <div className="flex flex-col gap-4">
+                  {fromWhitelistRender.rows.map((row, idx) => (
+                    <WhitelistAddressItem
+                      key={`from-${idx}-${row.address}`}
+                      address={row.address}
+                      diffStatus={
+                        fromWhitelistRender.showDiff ? row.status : undefined
                       }
                     />
                   ))}
