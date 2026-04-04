@@ -153,6 +153,9 @@ export const updateToken = async (
   }
 
   const tokenToUpdate = existingToken[0];
+  if (tokenToUpdate === undefined) {
+    throw new Error(`No token found with ${lookup}`);
+  }
 
   // Map archiveToken to archived column
   const { archiveToken, ...restWithoutArchive } = rest;
