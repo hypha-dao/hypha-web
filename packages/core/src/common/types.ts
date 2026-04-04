@@ -53,7 +53,7 @@ export type DbToken = {
   transferable: boolean;
   isVotingToken: boolean;
   address?: string;
-  agreementWeb3Id?: number;
+  agreementWeb3Id?: number | null;
   createdAt?: Date;
   referencePrice?: number | null;
   referenceCurrency?: string | null;
