@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   Button,
   Combobox,
@@ -19,6 +19,7 @@ import {
   DEFAULT_SPACE_AVATAR_IMAGE,
   Person,
   Space,
+  transferWhitelistEntryDedupeKey,
 } from '@hypha-platform/core/client';
 import { useFilterSpacesListWithDiscoverability } from '@hypha-platform/epics';
 import { useTranslations } from 'next-intl';
@@ -46,7 +47,7 @@ export const TransferWhitelistFieldArray = ({
   members = [],
   spaces = [],
 }: TransferWhitelistFieldArrayProps) => {
-  const { control, setValue, watch } = useFormContext();
+  const { control, setValue, watch, trigger } = useFormContext();
   const tAgreementFlow = useTranslations('AgreementFlow');
 
   const { filteredSpaces } = useFilterSpacesListWithDiscoverability({
@@ -78,10 +79,44 @@ export const TransferWhitelistFieldArray = ({
 
   const entries = watch(name) ?? [];
 
-  const { fields, append, remove } = useFieldArray({
+  const usedKeysByOtherRows = useMemo(() => {
+    const list = Array.isArray(entries) ? entries : [];
+    return list.map((_entry, selfIdx) => {
+      const keys = new Set<string>();
+      for (let j = 0; j < list.length; j++) {
+        if (j === selfIdx) continue;
+        const e = list[j] as {
+          type?: WhitelistType;
+          address?: string;
+        };
+        const t = e?.type === 'space' ? 'space' : 'member';
+        const k = e?.address
+          ? transferWhitelistEntryDedupeKey(t, e.address)
+          : undefined;
+        if (k) keys.add(k);
+      }
+      return keys;
+    });
+  }, [entries]);
+
+  const { fields, append, remove, replace } = useFieldArray({
     control,
     name,
   });
+
+  /**
+   * External hydration (e.g. update-token baseline via setValue) updates form values but
+   * does not always sync useFieldArray's internal `fields` — rows stay empty until append.
+   * We only replace when lengths differ so user edits (same length) do not reset rows per keystroke.
+   */
+  const listForSync = Array.isArray(entries) ? entries : [];
+
+  useEffect(() => {
+    if (fields.length === listForSync.length) {
+      return;
+    }
+    replace(listForSync);
+  }, [fields.length, listForSync, replace]);
 
   const handleAddField = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -108,12 +143,19 @@ export const TransferWhitelistFieldArray = ({
         {fields.map((field, index) => {
           const currentEntry = entries?.[index];
           const currentType = (currentEntry?.type ?? 'space') as WhitelistType;
-          const comboboxOptions =
-            currentType === 'member'
-              ? memberOptions
-              : spaceOptions.length
-              ? spaceOptions
-              : memberOptions;
+          const taken = usedKeysByOtherRows[index] ?? new Set<string>();
+          const currentRowKey = currentEntry?.address
+            ? transferWhitelistEntryDedupeKey(currentType, currentEntry.address)
+            : undefined;
+          const baseOptions =
+            currentType === 'member' ? memberOptions : spaceOptions;
+          /** Hide options picked on *other* rows, but always keep this row's value so the combobox is not blank (e.g. duplicate hydration). */
+          const comboboxOptions = baseOptions.filter((opt) => {
+            const k = transferWhitelistEntryDedupeKey(currentType, opt.value);
+            if (!k) return true;
+            if (currentRowKey && k === currentRowKey) return true;
+            return !taken.has(k);
+          });
           const placeholder =
             currentType === 'member'
               ? tAgreementFlow(
@@ -150,6 +192,7 @@ export const TransferWhitelistFieldArray = ({
                       onValueChange={(value) => {
                         field.onChange(value as WhitelistType);
                         setValue(`${name}.${index}.address`, '');
+                        void trigger(`${name}.${index}.address`);
                       }}
                     >
                       <TabsList triggerVariant="switch">
@@ -186,9 +229,11 @@ export const TransferWhitelistFieldArray = ({
                   options={comboboxOptions}
                   placeholder={placeholder}
                   initialValue={currentEntry?.address ?? ''}
-                  onChange={(value) =>
-                    setValue(`${name}.${index}.address`, value)
-                  }
+                  onChange={(value) => {
+                    setValue(`${name}.${index}.address`, value, {
+                      shouldValidate: true,
+                    });
+                  }}
                   emptyListMessage={
                     currentType === 'member'
                       ? tAgreementFlow(
@@ -256,7 +301,10 @@ export const TransferWhitelistFieldArray = ({
                     <Input
                       placeholder="0x..."
                       value={field.value ?? ''}
-                      onChange={field.onChange}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        void trigger(`${name}.${index}.address`);
+                      }}
                     />
                     <FormMessage />
                   </FormItem>

@@ -16,6 +16,10 @@ import { useProposalActions } from './useProposalActions';
 import { useTokenManagement } from './useTokenManagement';
 import { useTokenDeploymentWatcher } from './useTokenDeploymentWatcher';
 import { extractTokenAddressFromReceipt } from './extractTokenAddressFromReceipt';
+import {
+  applyTokenUpdateAction,
+  deleteTokenUpdateAction,
+} from '../../server/actions';
 
 const chainId = getGovernanceChainId();
 
@@ -62,6 +66,20 @@ export const useProposalEvents = ({
 
         if (!isValidProposalAction(actions)) {
           await onProposalExecuted?.(transactionHash);
+          // Apply token update if exists (for update token proposals)
+          if (documentId && authToken) {
+            try {
+              await applyTokenUpdateAction(documentId, { authToken });
+            } catch (error) {
+              const msg =
+                error instanceof Error ? error.message : String(error);
+              if (
+                /not found|no token update|does not exist/i.test(msg) === false
+              ) {
+                console.error('applyTokenUpdateAction failed:', error);
+              }
+            }
+          }
           return;
         }
 
@@ -82,6 +100,20 @@ export const useProposalEvents = ({
           console.log('Error extracting token address:', receiptError);
         }
 
+        try {
+          if (documentId && authToken) {
+            await applyTokenUpdateAction(documentId, { authToken });
+          }
+        } catch (receiptError) {
+          const msg =
+            receiptError instanceof Error
+              ? receiptError.message
+              : String(receiptError);
+          if (/not found|no token update|does not exist/i.test(msg) === false) {
+            console.error('Error applying token update:', receiptError);
+          }
+        }
+
         await onProposalExecuted?.(transactionHash);
       } catch (error) {
         console.error('Error handling proposal execution:', error);
@@ -94,6 +126,9 @@ export const useProposalEvents = ({
       extractTokenAddressFromReceipt,
       updateToken,
       proposalId,
+      documentId,
+      authToken,
+      setupTokenDeployedWatcher,
     ],
   );
 
@@ -103,6 +138,19 @@ export const useProposalEvents = ({
 
       if (!isValidProposalAction(actions)) {
         await onProposalRejected?.();
+        // Delete token update if exists (for update token proposals)
+        if (documentId && authToken) {
+          try {
+            await deleteTokenUpdateAction(documentId, { authToken });
+          } catch (error) {
+            const msg = error instanceof Error ? error.message : String(error);
+            if (
+              /not found|no token update|does not exist/i.test(msg) === false
+            ) {
+              console.error('deleteTokenUpdateAction failed:', error);
+            }
+          }
+        }
         return;
       }
 
@@ -128,6 +176,8 @@ export const useProposalEvents = ({
     deleteToken,
     proposalId,
     tokenSymbol,
+    documentId,
+    authToken,
   ]);
 
   const handleProposalCreated = useCallback(

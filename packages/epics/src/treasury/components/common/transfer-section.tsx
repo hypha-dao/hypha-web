@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Person, Space, useSpaceBySlug } from '@hypha-platform/core/client';
 import { FormLabel } from '@hypha-platform/ui';
 import { TransferableField } from './transferable-field';
@@ -12,6 +13,8 @@ export const TransferSection = ({
   enableAdvancedTransferControls,
   members,
   spaces,
+  ownershipToWhitelistMembers,
+  ownershipToWhitelistSpaces,
   tokenType,
   spaceSlug,
 }: {
@@ -19,6 +22,8 @@ export const TransferSection = ({
   enableAdvancedTransferControls: boolean;
   members: Person[];
   spaces: Space[];
+  ownershipToWhitelistMembers?: Person[];
+  ownershipToWhitelistSpaces?: Space[];
   tokenType?: string;
   spaceSlug?: string;
 }) => {
@@ -26,6 +31,30 @@ export const TransferSection = ({
   const { space } = useSpaceBySlug(spaceSlug || '');
   const spaceName = space?.title ?? '';
   const tAgreementFlow = useTranslations('AgreementFlow');
+
+  const toWhitelistMembers = useMemo(() => {
+    if (!isOwnershipToken) {
+      return members;
+    }
+    const list =
+      ownershipToWhitelistMembers !== undefined
+        ? ownershipToWhitelistMembers
+        : members;
+    return list.filter((p) => p.address && p.address.trim() !== '');
+  }, [isOwnershipToken, members, ownershipToWhitelistMembers]);
+
+  const toWhitelistSpaces = useMemo(() => {
+    if (!isOwnershipToken) {
+      return spaces;
+    }
+    const list =
+      ownershipToWhitelistSpaces !== undefined
+        ? ownershipToWhitelistSpaces
+        : [];
+    return list.filter(
+      (s) => s.address && s.address.trim() !== '' && s.address.startsWith('0x'),
+    );
+  }, [isOwnershipToken, ownershipToWhitelistSpaces]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -64,8 +93,8 @@ export const TransferSection = ({
                 description={tAgreementFlow(
                   'plugins.issueNewToken.transfer.toWhitelistDescription',
                 )}
-                members={members}
-                spaces={spaces}
+                members={toWhitelistMembers}
+                spaces={toWhitelistSpaces}
               />
               {!isOwnershipToken && (
                 <TransferWhitelistFieldArray

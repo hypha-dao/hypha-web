@@ -19,6 +19,7 @@ import { Config } from '@wagmi/core';
 import { updateTokenAction } from '../../server/actions';
 import { ReferenceCurrency } from '../../types';
 import { getPriceCurrencyFeed } from '../../../common/web3/token-backing-vault';
+import type { TokenType } from '../../../common';
 
 type TaskName =
   | 'CREATE_WEB2_AGREEMENT'
@@ -102,13 +103,7 @@ type CreateIssueTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
   name: string;
   symbol: string;
   maxSupply: number;
-  type:
-    | 'utility'
-    | 'credits'
-    | 'ownership'
-    | 'voice'
-    | 'impact'
-    | 'community_currency';
+  type: TokenType;
   iconUrl?: string | File;
   transferable: boolean;
   isVotingToken: boolean;

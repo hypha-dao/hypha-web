@@ -8,6 +8,8 @@ import {
   people,
   Person as DbPerson,
   Space as DbSpace,
+  tokenUpdates,
+  tokens,
 } from '@hypha-platform/storage-postgres';
 
 import { DocumentState } from '../types';
@@ -417,4 +419,51 @@ export const findAllDocumentsBySpaceSlugWithoutPagination = async (
       result.spaceCreator ?? undefined,
     ),
   );
+};
+
+export const findTokenUpdateByDocumentId = async (
+  documentId: number,
+  { db }: DbConfig,
+) => {
+  const [tokenUpdate] = await db
+    .select()
+    .from(tokenUpdates)
+    .where(eq(tokenUpdates.documentId, documentId))
+    .limit(1);
+  return tokenUpdate || null;
+};
+
+export const findTokenUpdateByAddress = async (
+  tokenAddress: string,
+  { db }: DbConfig,
+) => {
+  const normalized = tokenAddress.trim().toLowerCase();
+  const [tokenUpdate] = await db
+    .select()
+    .from(tokenUpdates)
+    .where(sql`lower(${tokenUpdates.tokenAddress}) = ${normalized}`)
+    .limit(1);
+  return tokenUpdate || null;
+};
+
+/** Pending token update for a space + contract (avoids wrong row when same address exists elsewhere). */
+export const findTokenUpdateForSpaceTokenAddress = async (
+  spaceId: number,
+  tokenAddress: string,
+  { db }: DbConfig,
+) => {
+  const normalized = tokenAddress.trim().toLowerCase();
+  const [row] = await db
+    .select({ tokenUpdate: tokenUpdates })
+    .from(tokenUpdates)
+    .innerJoin(
+      tokens,
+      and(
+        eq(tokens.spaceId, spaceId),
+        sql`lower(${tokens.address}) = lower(${tokenUpdates.tokenAddress})`,
+      ),
+    )
+    .where(sql`lower(${tokenUpdates.tokenAddress}) = ${normalized}`)
+    .limit(1);
+  return row?.tokenUpdate ?? null;
 };

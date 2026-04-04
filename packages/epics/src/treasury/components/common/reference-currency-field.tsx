@@ -15,16 +15,14 @@ import {
 } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 
+/** Match TOKEN_PRICE_REFERENCE_CURRENCIES — no Chainlink X/USD feed for CNY, JPY, HKD on Base */
 const CURRENCY_OPTIONS = [
   { value: 'USD', key: 'usd' },
   { value: 'GBP', key: 'gbp' },
   { value: 'CAD', key: 'cad' },
   { value: 'EUR', key: 'eur' },
-  { value: 'CNY', key: 'cny' },
   { value: 'CHF', key: 'chf' },
-  { value: 'JPY', key: 'jpy' },
   { value: 'AUD', key: 'aud' },
-  { value: 'HKD', key: 'hkd' },
 ] as const;
 
 export const ReferenceCurrencyField = () => {

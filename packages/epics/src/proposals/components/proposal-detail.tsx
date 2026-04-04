@@ -34,6 +34,7 @@ import {
   ProposalTokenBackingVaultData,
   ProposalRedeemTokensData,
   ProposalSpaceTokenPurchaseData,
+  ProposalUpdateToken,
 } from '../../governance';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
 import { ButtonClose, ExpireProposalBanner } from '@hypha-platform/epics';
@@ -47,6 +48,7 @@ import { useTranslations } from 'next-intl';
 import { formatUnits } from 'viem';
 import { resolveTokenDecimals } from '../../governance/utils/token-decimals';
 import { useDbSpaces } from '../../hooks';
+import { hasUpdateTokenDataToDisplay } from '../utils/has-update-token-data-to-display';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
@@ -119,6 +121,37 @@ export const ProposalDetail = ({
     ],
   });
   const { spaces: dbSpaces } = useDbSpaces({ parentOnly: false });
+
+  const updateTokenTypeFromDb = useMemo(() => {
+    const addr = proposalDetails?.updateTokenData?.address;
+    if (!addr || !dbTokens?.length) {
+      return undefined;
+    }
+    const normalized = addr.toLowerCase();
+    return dbTokens.find((t) => t.address?.toLowerCase() === normalized)?.type;
+  }, [proposalDetails?.updateTokenData?.address, dbTokens]);
+
+  const spacesForWhitelistDisplay = useMemo(() => {
+    const u = proposalDetails?.updateTokenData;
+    if (!u || !dbSpaces?.length) {
+      return [];
+    }
+    const a = u.initialTransferWhitelistSpaceIds ?? [];
+    const b = u.initialReceiveWhitelistSpaceIds ?? [];
+    const want = new Set(
+      [...new Set([...a, ...b])].filter((n) => Number.isFinite(n)),
+    );
+    if (want.size === 0) {
+      return [];
+    }
+    return dbSpaces.filter(
+      (s) => s.web3SpaceId != null && want.has(Number(s.web3SpaceId)),
+    );
+  }, [
+    dbSpaces,
+    proposalDetails?.updateTokenData?.initialTransferWhitelistSpaceIds,
+    proposalDetails?.updateTokenData?.initialReceiveWhitelistSpaceIds,
+  ]);
 
   const tokenSymbol = proposalDetails?.tokens?.[0]?.symbol;
 
@@ -560,6 +593,44 @@ export const ProposalDetail = ({
           {...proposalDetails.tokenBackingVaultData}
         />
       ) : null}
+      {proposalDetails &&
+      hasUpdateTokenDataToDisplay(proposalDetails.updateTokenData) ? (
+        <ProposalUpdateToken
+          documentId={documentId}
+          address={proposalDetails.updateTokenData.address as `0x${string}`}
+          tokenType={updateTokenTypeFromDb}
+          name={proposalDetails.updateTokenData.name}
+          symbol={proposalDetails.updateTokenData.symbol}
+          maxSupply={proposalDetails.updateTokenData.maxSupply}
+          transferable={proposalDetails.updateTokenData.transferable}
+          autoMinting={proposalDetails.updateTokenData.autoMinting}
+          priceWithCurrency={proposalDetails.updateTokenData.priceWithCurrency}
+          decayPercentage={proposalDetails.updateTokenData.decayPercentage}
+          decayInterval={proposalDetails.updateTokenData.decayInterval}
+          useTransferWhitelist={
+            proposalDetails.updateTokenData.useTransferWhitelist
+          }
+          useReceiveWhitelist={
+            proposalDetails.updateTokenData.useReceiveWhitelist
+          }
+          initialTransferWhitelist={
+            proposalDetails.updateTokenData.initialTransferWhitelist
+          }
+          initialReceiveWhitelist={
+            proposalDetails.updateTokenData.initialReceiveWhitelist
+          }
+          initialTransferWhitelistSpaceIds={
+            proposalDetails.updateTokenData.initialTransferWhitelistSpaceIds
+          }
+          initialReceiveWhitelistSpaceIds={
+            proposalDetails.updateTokenData.initialReceiveWhitelistSpaceIds
+          }
+          spacesForWhitelistDisplay={spacesForWhitelistDisplay}
+          dbTokens={dbTokens}
+          archiveToken={proposalDetails.updateTokenData.archiveToken}
+          fixedMaxSupply={proposalDetails.updateTokenData.fixedMaxSupply}
+        />
+      ) : null}
       {label === 'Token Purchase' && proposalDetails?.spaceTokenPurchaseData ? (
         <ProposalSpaceTokenPurchaseData
           dbTokens={dbTokens}
@@ -593,6 +664,12 @@ export const ProposalDetail = ({
         closeUrl={closeUrl}
         onWithdrawSuccess={onWithdrawSuccess}
         label={label}
+        documentId={documentId}
+        updateTokenProposalSnapshot={
+          label === 'Update Token'
+            ? proposalDetails?.updateTokenData ?? null
+            : undefined
+        }
         redeemResubmitPayload={redeemResubmitPayloadResolved}
         proposalTemplateData={resubmitTemplateData}
         spaceTokenPurchaseData={proposalDetails?.spaceTokenPurchaseData}

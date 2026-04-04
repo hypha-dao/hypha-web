@@ -1,3 +1,5 @@
+import { TokenType } from '../common/web3/tokens';
+
 export type Creator = {
   avatarUrl?: string;
   name?: string;
@@ -113,19 +115,42 @@ export const REFERENCE_CURRENCIES = [
 
 export type ReferenceCurrency = (typeof REFERENCE_CURRENCIES)[number];
 
+/** Token price / Chainlink feed — only currencies with a dedicated feed (see CURRENCY_FEEDS) */
+export const TOKEN_PRICE_REFERENCE_CURRENCIES = [
+  'USD',
+  'EUR',
+  'GBP',
+  'CAD',
+  'CHF',
+  'AUD',
+] as const;
+
+export type TokenPriceReferenceCurrency =
+  (typeof TOKEN_PRICE_REFERENCE_CURRENCIES)[number];
+
+const TOKEN_PRICE_REFERENCE_SET = new Set<string>(
+  TOKEN_PRICE_REFERENCE_CURRENCIES,
+);
+
+/** Drop legacy/invalid values (e.g. CNY with no feed) so forms stay valid */
+export function sanitizeTokenPriceReferenceCurrency(
+  c: string | null | undefined,
+): TokenPriceReferenceCurrency | undefined {
+  if (c == null || c === '') {
+    return undefined;
+  }
+  return TOKEN_PRICE_REFERENCE_SET.has(c)
+    ? (c as TokenPriceReferenceCurrency)
+    : undefined;
+}
+
 export type CreateTokenInput = {
   agreementId?: number;
   spaceId: number;
   name: string;
   symbol: string;
   maxSupply: number;
-  type:
-    | 'utility'
-    | 'credits'
-    | 'ownership'
-    | 'voice'
-    | 'impact'
-    | 'community_currency';
+  type: TokenType;
   iconUrl?: string;
   transferable: boolean;
   isVotingToken: boolean;
@@ -144,6 +169,85 @@ export type UpdateTokenInput = {
   agreementWeb3Id?: number;
   address?: string;
   agreementWeb3IdUpdate?: number;
+  iconUrl?: string;
+  name?: string;
+  symbol?: string;
+  maxSupply?: number;
+  type?: TokenType;
+  transferable?: boolean;
+  isVotingToken?: boolean;
+  decayInterval?: number;
+  decayPercentage?: number;
+  referencePrice?: number;
+  referenceCurrency?: ReferenceCurrency;
+  archiveToken?: boolean;
+};
+
+/** Matches form `transferWhitelist` / issue-new-token shape; stored in pending token update JSON */
+export type TransferWhitelistEntry = {
+  type?: 'member' | 'space';
+  address: string;
+  includeSpaceMembers?: boolean;
+};
+
+export type TransferWhitelistFormValue = {
+  from?: TransferWhitelistEntry[];
+  to?: TransferWhitelistEntry[];
+};
+
+export type TokenUpdateData = {
+  name?: string;
+  symbol?: string;
+  maxSupply?: number;
+  /** Persisted for form hydration; maps to on-chain `fixedMaxSupply` when limited supply is used */
+  maxSupplyTypeValue?: 'immutable' | 'updatable';
+  type?: TokenType;
+  iconUrl?: string;
+  transferable?: boolean;
+  isVotingToken?: boolean;
+  decayInterval?: number;
+  decayPercentage?: number;
+  referencePrice?: number;
+  referenceCurrency?: ReferenceCurrency;
+  archiveToken?: boolean;
+  /** Persisted for withdraw/resubmit hydration */
+  enableProposalAutoMinting?: boolean;
+  /** UI toggle — persisted so reopening the form matches the saved proposal */
+  enableAdvancedTransferControls?: boolean;
+  useTransferWhitelist?: boolean;
+  useReceiveWhitelist?: boolean;
+  /** Off-chain copy for proposal details + resubmit; on-chain uses address lists only */
+  transferWhitelist?: TransferWhitelistFormValue;
+  /**
+   * Flattened on-chain whitelist (space + member addresses) captured at submit time.
+   * Used only for proposal-details diff UI (+/−/=); not sent to the contract.
+   */
+  whitelistSnapshotBeforeProposal?: {
+    transferAddresses: `0x${string}`[];
+    receiveAddresses: `0x${string}`[];
+  };
+};
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
+/** Runtime check for token update JSON stored in DB / session */
+export function isTokenUpdateData(data: unknown): data is TokenUpdateData {
+  if (!isRecord(data)) {
+    return false;
+  }
+  const t = data.type;
+  if (t !== undefined && typeof t !== 'string') {
+    return false;
+  }
+  return true;
+}
+
+export type CreateTokenUpdateInput = {
+  documentId: number;
+  tokenAddress: string;
+  data: TokenUpdateData;
 };
 
 export type DeleteTokenInput = {

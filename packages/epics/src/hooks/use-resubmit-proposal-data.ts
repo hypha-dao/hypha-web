@@ -2,6 +2,11 @@
 
 import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
+import {
+  RESUBMIT_UPDATE_ISSUED_TOKEN_EMBEDDED_FIELD,
+  UPDATE_ISSUED_TOKEN_RESUBMIT_EVENT,
+  type UpdateIssuedTokenResubmitPayload,
+} from '../proposals/update-issued-token-resubmit';
 
 export const useResubmitProposalData = <
   T extends {
@@ -16,6 +21,7 @@ export const useResubmitProposalData = <
       | File
       | string
     >;
+    tokenAddress?: string;
   },
 >(
   form: UseFormReturn<T>,
@@ -59,11 +65,11 @@ export const useResubmitProposalData = <
             conversions: { asset: string; percentage: string }[];
           };
           [key: string]: any;
+          [RESUBMIT_UPDATE_ISSUED_TOKEN_EMBEDDED_FIELD]?: UpdateIssuedTokenResubmitPayload;
         };
 
         // Re-apply whenever this data is present (including `applied: true`), so
         // navigating back to the create form after a resubmit still hydrates the form.
-        console.log('Resubmit data found:', parsed);
 
         if (parsed.leadImage || parsed.attachments) {
           sessionStorage.setItem(
@@ -75,6 +81,19 @@ export const useResubmitProposalData = <
             }),
           );
         }
+
+        const embeddedUpdateToken =
+          parsed[RESUBMIT_UPDATE_ISSUED_TOKEN_EMBEDDED_FIELD];
+        const resubmitTokenAddress =
+          embeddedUpdateToken?.tokenAddress !== undefined
+            ? embeddedUpdateToken.tokenAddress
+            : undefined;
+
+        const currentTokenRaw = form.getValues('tokenAddress' as never) as
+          | string
+          | undefined;
+        const hasChosenToken =
+          typeof currentTokenRaw === 'string' && currentTokenRaw.trim() !== '';
 
         form.reset(
           {
@@ -89,7 +108,11 @@ export const useResubmitProposalData = <
             attachments: undefined,
             spaceId: spaceId ?? undefined,
             creatorId: creatorId ?? undefined,
-            ...(parsed.tokenAddress !== undefined
+            ...(hasChosenToken
+              ? {}
+              : resubmitTokenAddress
+              ? { tokenAddress: resubmitTokenAddress }
+              : parsed.tokenAddress !== undefined
               ? { tokenAddress: parsed.tokenAddress }
               : {}),
             ...(typeof parsed.activatePurchase === 'boolean'
@@ -156,11 +179,18 @@ export const useResubmitProposalData = <
           });
         }
 
-        if (parsed.tokenAddress !== undefined) {
-          form.setValue('tokenAddress' as any, parsed.tokenAddress as any, {
-            shouldDirty: true,
-            shouldValidate: true,
-          });
+        if (!hasChosenToken) {
+          if (resubmitTokenAddress) {
+            form.setValue('tokenAddress' as any, resubmitTokenAddress as any, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+          } else if (parsed.tokenAddress !== undefined) {
+            form.setValue('tokenAddress' as any, parsed.tokenAddress as any, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+          }
         }
 
         if (typeof parsed.activatePurchase === 'boolean') {
@@ -204,7 +234,10 @@ export const useResubmitProposalData = <
         }
 
         const fieldsToTrigger: string[] = ['title', 'description'];
-        if (parsed.tokenAddress !== undefined) {
+        if (
+          resubmitTokenAddress !== undefined ||
+          parsed.tokenAddress !== undefined
+        ) {
           fieldsToTrigger.push('tokenAddress');
         }
         if (typeof parsed.activatePurchase === 'boolean') {
@@ -237,12 +270,15 @@ export const useResubmitProposalData = <
           }),
         );
 
-        setResubmitKey((prev) => prev + 1);
+        if (embeddedUpdateToken && typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent(UPDATE_ISSUED_TOKEN_RESUBMIT_EVENT, {
+              detail: embeddedUpdateToken,
+            }),
+          );
+        }
 
-        console.log('Form reset with resubmit data. Current values:', {
-          title: form.getValues('title' as any),
-          description: form.getValues('description' as any),
-        });
+        setResubmitKey((prev) => prev + 1);
       } catch (error) {
         console.error('Error reading resubmit data:', error);
         sessionStorage.removeItem('resubmitProposalData');

@@ -16,8 +16,11 @@ export const AdvancedTokenSettings = ({
   enableTokenPrice,
   members,
   spaces,
+  ownershipToWhitelistMembers,
+  ownershipToWhitelistSpaces,
   tokenType,
   spaceSlug,
+  maxSupplyTypeReadOnly = false,
 }: {
   enableLimitedSupply: boolean;
   setEnableLimitedSupply: (value: boolean) => void;
@@ -27,8 +30,13 @@ export const AdvancedTokenSettings = ({
   enableTokenPrice: boolean;
   members: Person[];
   spaces: Space[];
+  /** Ownership token To whitelist: active space members (people) */
+  ownershipToWhitelistMembers?: Person[];
+  /** Ownership token To whitelist: spaces that are members of the active space */
+  ownershipToWhitelistSpaces?: Space[];
   tokenType?: string;
   spaceSlug?: string;
+  maxSupplyTypeReadOnly?: boolean;
 }) => {
   return (
     <>
@@ -36,6 +44,7 @@ export const AdvancedTokenSettings = ({
       <TokenSupplySection
         enableLimitedSupply={enableLimitedSupply}
         setEnableLimitedSupply={setEnableLimitedSupply}
+        maxSupplyTypeReadOnly={maxSupplyTypeReadOnly}
       />
       <Separator />
       <AutoMintSection enableProposalAutoMinting={enableProposalAutoMinting} />
@@ -45,6 +54,8 @@ export const AdvancedTokenSettings = ({
         enableAdvancedTransferControls={enableAdvancedTransferControls}
         members={members}
         spaces={spaces}
+        ownershipToWhitelistMembers={ownershipToWhitelistMembers}
+        ownershipToWhitelistSpaces={ownershipToWhitelistSpaces}
         tokenType={tokenType}
         spaceSlug={spaceSlug}
       />

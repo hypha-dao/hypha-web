@@ -27,6 +27,7 @@ type Token = {
   address?: string;
   referenceCurrency?: string | null;
   referencePrice?: number | null;
+  archived: boolean;
 };
 
 type UseDbTokensReturn = {
@@ -60,5 +61,10 @@ export const useDbTokens = ({
     }),
   );
 
-  return { tokens: tokens || [], isLoading, refetchDbTokens: mutate };
+  const normalized = (tokens || []).map((token: Token) => ({
+    ...token,
+    archived: token.archived ?? false,
+  }));
+
+  return { tokens: normalized, isLoading, refetchDbTokens: mutate };
 };

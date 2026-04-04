@@ -9,7 +9,7 @@ export type TokenIconUploadProps = {
   EditIcon?: React.ElementType;
   DropIcon?: React.ElementType;
   onChange: (acceptedFile: File | null) => void;
-  defaultImage?: string;
+  defaultImage?: string | File;
   maxFileSize?: number;
 };
 
@@ -20,31 +20,54 @@ export const TokenIconUpload = ({
   defaultImage,
   maxFileSize,
 }: TokenIconUploadProps) => {
-  const [preview, setPreview] = React.useState<string | null>(
-    defaultImage || null,
+  const [preview, setPreview] = React.useState<string | null>(() =>
+    typeof defaultImage === 'string' ? defaultImage || null : null,
   );
+
+  // Sync preview with controlled value. For File values use readAsDataURL — not
+  // createObjectURL — because RHF can pass a new File reference on re-renders;
+  // revoking the previous blob URL in effect cleanup races the img and shows a
+  // broken image.
+  React.useEffect(() => {
+    if (typeof defaultImage === 'string') {
+      setPreview(defaultImage || null);
+      return;
+    }
+    if (defaultImage instanceof File) {
+      let cancelled = false;
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (!cancelled) {
+          setPreview(reader.result as string);
+        }
+      };
+      reader.onerror = () => {
+        if (!cancelled) {
+          setPreview(null);
+        }
+      };
+      reader.readAsDataURL(defaultImage);
+      return () => {
+        cancelled = true;
+      };
+    }
+    setPreview(null);
+  }, [defaultImage]);
 
   const onDrop = React.useCallback(
     (acceptedFiles: File[]) => {
       if (!acceptedFiles.length) {
-        setPreview(defaultImage || null);
         onChange(null);
         return;
       }
-      const reader = new FileReader();
       try {
-        reader.onload = () => {
-          setPreview(reader.result as string);
-          onChange(acceptedFiles[0] ?? null);
-        };
-        reader.readAsDataURL(acceptedFiles[0] ?? new Blob());
+        onChange(acceptedFiles[0] ?? null);
       } catch (error) {
         console.error('Error reading file:', error);
-        setPreview(defaultImage || null);
         onChange(null);
       }
     },
-    [onChange, defaultImage],
+    [onChange],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({

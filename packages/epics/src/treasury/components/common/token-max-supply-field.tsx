@@ -10,7 +10,7 @@ import {
   Input,
   RequirementMark,
 } from '@hypha-platform/ui';
-import { handleNumberChange } from '@hypha-platform/ui-utils';
+import { cn, handleNumberChange } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 
 export function TokenMaxSupplyField() {
@@ -28,6 +28,17 @@ export function TokenMaxSupplyField() {
     name: 'enableLimitedSupply',
     defaultValue: false,
   });
+
+  const maxSupplyType = useWatch({
+    control,
+    name: 'maxSupplyType',
+  });
+
+  const isForeverImmutable =
+    typeof maxSupplyType === 'object' &&
+    maxSupplyType != null &&
+    'value' in maxSupplyType &&
+    (maxSupplyType as { value?: string }).value === 'immutable';
 
   const handleMaxSupplyChange = handleNumberChange(setValue, 'maxSupply');
 
@@ -47,6 +58,15 @@ export function TokenMaxSupplyField() {
             <FormControl>
               <Input
                 type="number"
+                readOnly={isForeverImmutable}
+                aria-readonly={isForeverImmutable}
+                title={
+                  isForeverImmutable
+                    ? tAgreementFlow(
+                        'plugins.issueNewToken.supply.maxSupplyReadOnlyWhenImmutable',
+                      )
+                    : undefined
+                }
                 placeholder={tAgreementFlow(
                   'plugins.issueNewToken.supply.maxSupplyPlaceholder',
                 )}
@@ -55,6 +75,10 @@ export function TokenMaxSupplyField() {
                 name={field.name}
                 onBlur={field.onBlur}
                 ref={field.ref}
+                className={cn(
+                  isForeverImmutable &&
+                    'cursor-not-allowed bg-neutral-2 text-neutral-11',
+                )}
               />
             </FormControl>
           </div>

@@ -5,6 +5,7 @@ import {
   decayingTokenFactoryAbi,
   daoSpaceFactoryImplementationAbi,
 } from '@hypha-platform/core/generated';
+import { decayBasisPointsToFormPercent } from '../../voice-decay-units';
 
 /** Pre-purchase deploy ABIs (tokenPrice + priceCurrencyFeed, no purchase params). */
 const regularTokenFactoryDeployPrePurchaseAbi = [
@@ -228,6 +229,127 @@ type TransactionDecoder = {
   handler: (decoded: DecodedTransaction, tx: Tx) => DecodedPayload | null;
 };
 
+/** DecayingSpaceToken admin calls used in update-token proposals (single switch vs many ABI entries). */
+function decodeDecayingSpaceTokenAdminProposal(
+  decoded: DecodedTransaction,
+  tx: Tx,
+): DecodedPayload | null {
+  const address = tx.target;
+  switch (decoded.functionName) {
+    case 'setTokenName':
+      return {
+        type: 'setTokenName',
+        data: { address, name: decoded.args[0] },
+      };
+    case 'setTokenSymbol':
+      return {
+        type: 'setTokenSymbol',
+        data: { address, symbol: decoded.args[0] },
+      };
+    case 'setMaxSupply':
+      return {
+        type: 'setTokenMaxSupply',
+        data: { address, maxSupply: decoded.args[0] },
+      };
+    case 'setTransferable':
+      return {
+        type: 'setTokenTransferable',
+        data: { address, transferable: decoded.args[0] },
+      };
+    case 'setAutoMinting':
+      return {
+        type: 'setTokenAutoMinting',
+        data: { address, autoMinting: decoded.args[0] },
+      };
+    case 'setPriceWithCurrency':
+      return {
+        type: 'setTokenPriceWithCurrency',
+        data: {
+          address,
+          tokenPrice: decoded.args[0],
+          priceCurrencyFeed: decoded.args[1],
+        },
+      };
+    case 'setDecayPercentage':
+      return {
+        type: 'setTokenDecayPercentage',
+        data: { address, decayPercentage: decoded.args[0] },
+      };
+    case 'setDecayInterval':
+      return {
+        type: 'setTokenDecayInterval',
+        data: { address, decayInterval: decoded.args[0] },
+      };
+    case 'setUseTransferWhitelist':
+      return {
+        type: 'setTokenUseTransferWhitelist',
+        data: { address, useTransferWhitelist: decoded.args[0] },
+      };
+    case 'setUseReceiveWhitelist':
+      return {
+        type: 'setTokenUseReceiveWhitelist',
+        data: { address, useReceiveWhitelist: decoded.args[0] },
+      };
+    case 'batchSetTransferWhitelist':
+      return {
+        type: 'setTokenBatchTransferWhitelist',
+        data: {
+          address,
+          accounts: decoded.args[0] as `0x${string}`[],
+          allowed: decoded.args[1] as boolean[],
+        },
+      };
+    case 'batchSetReceiveWhitelist':
+      return {
+        type: 'setTokenBatchReceiveWhitelist',
+        data: {
+          address,
+          accounts: decoded.args[0] as `0x${string}`[],
+          allowed: decoded.args[1] as boolean[],
+        },
+      };
+    case 'batchAddTransferWhitelistSpaces':
+      return {
+        type: 'setTokenBatchAddTransferWhitelistSpaces',
+        data: {
+          address,
+          spaceIds: decoded.args[0] as readonly bigint[],
+        },
+      };
+    case 'batchRemoveTransferWhitelistSpaces':
+      return {
+        type: 'setTokenBatchRemoveTransferWhitelistSpaces',
+        data: {
+          address,
+          spaceIds: decoded.args[0] as readonly bigint[],
+        },
+      };
+    case 'batchAddReceiveWhitelistSpaces':
+      return {
+        type: 'setTokenBatchAddReceiveWhitelistSpaces',
+        data: {
+          address,
+          spaceIds: decoded.args[0] as readonly bigint[],
+        },
+      };
+    case 'batchRemoveReceiveWhitelistSpaces':
+      return {
+        type: 'setTokenBatchRemoveReceiveWhitelistSpaces',
+        data: {
+          address,
+          spaceIds: decoded.args[0] as readonly bigint[],
+        },
+      };
+    case 'setArchived':
+      return {
+        type: 'setTokenArchived',
+        data: { address, archiveToken: decoded.args[0] },
+      };
+    default:
+      return null;
+  }
+}
+
 export function decodeTransaction(tx: Tx) {
   const decoders: TransactionDecoder[] = [
     {
@@ -315,7 +437,11 @@ export function decodeTransaction(tx: Tx) {
                 useReceiveWhitelist: decoded.args[10],
                 initialTransferWhitelist: decoded.args[11],
                 initialReceiveWhitelist: decoded.args[12],
-                decayPercentage: decoded.args[13],
+                decayPercentage: BigInt(
+                  decayBasisPointsToFormPercent(
+                    Number(decoded.args[13] as bigint),
+                  ),
+                ),
                 decayInterval: decoded.args[14],
               },
             }
@@ -391,7 +517,11 @@ export function decodeTransaction(tx: Tx) {
                 useReceiveWhitelist: decoded.args[10],
                 initialTransferWhitelist: decoded.args[11],
                 initialReceiveWhitelist: decoded.args[12],
-                decayPercentage: decoded.args[13],
+                decayPercentage: BigInt(
+                  decayBasisPointsToFormPercent(
+                    Number(decoded.args[13] as bigint),
+                  ),
+                ),
                 decayInterval: decoded.args[14],
               },
             }
@@ -464,7 +594,11 @@ export function decodeTransaction(tx: Tx) {
                 useReceiveWhitelist: decoded.args[9],
                 initialTransferWhitelist: decoded.args[10],
                 initialReceiveWhitelist: decoded.args[11],
-                decayPercentage: decoded.args[12],
+                decayPercentage: BigInt(
+                  decayBasisPointsToFormPercent(
+                    Number(decoded.args[12] as bigint),
+                  ),
+                ),
                 decayInterval: decoded.args[13],
               },
             }
@@ -811,6 +945,11 @@ export function decodeTransaction(tx: Tx) {
         }
       },
     },
+    {
+      abi: decayingSpaceTokenAbi,
+      handler: (decoded, tx) =>
+        decodeDecayingSpaceTokenAdminProposal(decoded, tx),
+    },
   ];
 
   for (const { abi, handler } of decoders) {
@@ -821,7 +960,7 @@ export function decodeTransaction(tx: Tx) {
       }) as DecodedTransaction;
       const result = handler(decoded, tx);
       if (result) return result;
-    } catch (_) {
+    } catch {
       continue;
     }
   }

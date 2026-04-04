@@ -99,6 +99,19 @@ export function getTokenTypeLabel(type: string, tAgreementFlow?: any): string {
   return TOKEN_TYPE_OPTIONS.find((o) => o.value === type)?.label ?? type;
 }
 
+export function getTokenTypeDescription(
+  type: string,
+  tAgreementFlow?: (key: string) => string,
+): string {
+  const keys = TOKEN_TYPE_I18N_KEYS[type as keyof typeof TOKEN_TYPE_I18N_KEYS];
+  if (keys?.description && tAgreementFlow) {
+    return tAgreementFlow(
+      keys.description as Parameters<typeof tAgreementFlow>[0],
+    );
+  }
+  return TOKEN_TYPE_OPTIONS.find((o) => o.value === type)?.description ?? '';
+}
+
 type TokenTypeFieldProps = {
   onValueChange?: (value: string) => void;
 };

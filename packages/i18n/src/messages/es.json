@@ -32,7 +32,9 @@
     "errorLoadOverviewTab": "Ups, algo salió mal. No se pudo cargar la pestaña de resumen.",
     "errorLoadMembersTab": "Ups, algo salió mal. No se pudo cargar la pestaña de miembros.",
     "errorLoadAgreementsTab": "Ups, algo salió mal. No se pudo cargar la pestaña de acuerdos.",
-    "errorLoadTreasuryTab": "Ups, algo salió mal. No se pudo cargar la pestaña de tesorería."
+    "errorLoadTreasuryTab": "Ups, algo salió mal. No se pudo cargar la pestaña de tesorería.",
+    "publish": "Publicar",
+    "invalidTransactions": "Transacciones inválidas"
   },
   "AgreementFlow": {
     "proposalErrors": {
@@ -145,6 +147,7 @@
         "general": {
           "title": "General",
           "description": "Seleccione su tipo de token y personalice su nombre, símbolo e ícono para una identificación clara.",
+          "customizeIdentityDescription": "Personalice el nombre, el símbolo y el ícono del token para una identificación clara.",
           "tokenTypeLabel": "Tipo de token",
           "tokenTypePlaceholder": "Seleccione un tipo de token",
           "tokenTypeOptions": {
@@ -190,6 +193,8 @@
           "enableLimited": "Habilitar suministro limitado",
           "maxSupplyLabel": "Suministro máximo",
           "maxSupplyPlaceholder": "Escribe una cantidad",
+          "maxSupplyReadOnlyWhenImmutable": "El suministro máximo es fijo mientras esté seleccionado «Para siempre inmutable»",
+          "maxSupplyTypeReadOnlyWhenImmutableOnChain": "El tipo de suministro máximo está fijado en cadena y no se puede cambiar",
           "maxSupplyTypeLabel": "Tipo de suministro máximo",
           "maxSupplyTypePlaceholder": "Seleccione el tipo de suministro máximo",
           "maxSupplyTypeOptions": {
@@ -572,7 +577,8 @@
         "blockchainAddressRequired": "Por favor ingrese una dirección de blockchain",
         "blockchainAddressInvalid": "Por favor ingresa una dirección blockchain válida",
         "referenceCurrencyRequired": "Por favor seleccione una moneda de referencia",
-        "tokenPricePositive": "Por favor ingrese un precio de token mayor que 0"
+        "tokenPricePositive": "Por favor ingrese un precio de token mayor que 0",
+        "duplicateWhitelistEntry": "Este miembro o espacio ya está en esta lista blanca. Elimina el duplicado o elige otra entrada."
       }
     },
     "createAgreementBaseFields": {
@@ -752,6 +758,10 @@
       "issueNewToken": {
         "title": "Emitir nuevo token",
         "description": "Cree un nuevo token de utilidad, propiedad, impacto, créditos en efectivo, voz o moneda comunitaria dentro de su espacio."
+      },
+      "updateIssuedToken": {
+        "title": "Actualizar token emitido",
+        "description": "Actualice la configuración avanzada del token, incluidos el nombre, el símbolo y el ícono del token, el suministro total, las opciones de acuñación automática, los controles de transferencia, los parámetros de decadencia de voz y el valor del token mostrado en la tesorería."
       },
       "mintTokensToSpaceTreasury": {
         "title": "Fichas de acuñación para la tesorería espacial",
@@ -964,7 +974,13 @@
         "from": "Desde {name}",
         "to": "A {name}"
       }
-    }
+    },
+    "tokenSupply": "Suministro del token",
+    "issuanceToDate": "Emisión hasta la fecha",
+    "unlimitedSupply": "Suministro ilimitado",
+    "selectTokenPlaceholder": "Selecciona un token",
+    "noTokensAvailable": "No hay tokens disponibles",
+    "tokenPendingContractAddress": "Dirección on-chain pendiente (ejecuta primero la propuesta de emisión de token)"
   },
   "Footer": {
     "network": "RED",
@@ -1384,7 +1400,6 @@
       "payment": "Pago",
       "transparencySettings": "Configuración de transparencia",
       "decaySettings": "Configuración de decadencia",
-      "transferWhitelists": "Transferir listas blancas",
       "fromWhitelist": "De la lista blanca",
       "toWhitelist": "A la lista blanca"
     },
@@ -1414,6 +1429,7 @@
       "tokenIcon": "Icono de token",
       "tokenIconFor": "Icono de token para {symbol}",
       "maxSupply": "Suministro máximo",
+      "unlimitedSupply": "Suministro ilimitado",
       "unlimited": "Ilimitado",
       "transferable": "Transferible",
       "yes": "Sí",
@@ -1441,6 +1457,7 @@
       "redeemAmount": "Redemption amount",
       "redeemNotional": "Reference value",
       "redeemApproxUsd": "≈ {value} USD",
+      "redeemApproxNotional": "≈ {value} {currency}",
       "redeemCollateralUnitPrice": "{price} {currency} each",
       "spaceToken": "Token del espacio",
       "currentBackingCollaterals": "Colaterales actuales",
@@ -1457,7 +1474,14 @@
       "burnRecipient": "Destinatario de la quema",
       "burnAmount": "Cantidad a quemar",
       "defaultAvatar": "Avatar predeterminado",
-      "selfBurn": "Autoquema"
+      "selfBurn": "Autoquema",
+      "archived": "Archivado",
+      "transferFromWhitelist": "Lista blanca de envío",
+      "receiveToWhitelist": "Lista blanca de recepción",
+      "whitelistEnforcementActive": "Activo",
+      "whitelistEnforcementInactive": "Inactivo",
+      "spaceWhitelistMembersSuffix": "(Space y miembros)",
+      "spaceWhitelistOnlySuffix": "(Solo space)"
     },
     "entryMethods": {
       "openAccess": "Acceso abierto",
@@ -1542,7 +1566,17 @@
           "completedMessage": "Decisión registrada: Propuesta rechazada por insuficiente participación y falta de alineación."
         }
       }
-    }
+    },
+    "archiveToken": "Archivar token",
+    "archiveTokenDescription": "Archivar un token desactivará su uso en nuevas propuestas y transferencias.",
+    "clickHere": "haz clic aquí",
+    "noTokenCreated": "Tu espacio aún no ha creado un token, {clickHere} para emitir un token primero.",
+    "tokenShouldBeChosen": "Debe elegirse un token",
+    "maxSupplyValidation": "Introduce un suministro máximo mayor que 0 o desactiva el suministro limitado si quieres suministro ilimitado.",
+    "selectReferenceCurrency": "Selecciona una moneda de referencia",
+    "tokenPriceGreaterThanZero": "Introduce un precio de token mayor que 0",
+    "updateTokenLabel": "Actualizar token",
+    "spaceInformationMissing": "Falta información del espacio. Inténtalo de nuevo."
   },
   "AiPanel": {
     "title": "Hypha AI",

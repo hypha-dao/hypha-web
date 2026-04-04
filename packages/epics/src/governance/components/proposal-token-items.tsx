@@ -32,9 +32,17 @@ interface ProposalTokenItemProps {
 
 interface WhitelistAddressItemProps {
   address: `0x${string}`;
+  /** When set, shows + / − / = for proposal whitelist diff (light/dark safe). */
+  diffStatus?: 'added' | 'removed' | 'unchanged';
+  /** Space row: append (Space & Members) vs (Space only) from saved proposal data. */
+  spaceScope?: 'members' | 'only';
 }
 
-const WhitelistAddressItem = ({ address }: WhitelistAddressItemProps) => {
+export const WhitelistAddressItem = ({
+  address,
+  diffStatus,
+  spaceScope,
+}: WhitelistAddressItemProps) => {
   const tProposalDetails = useTranslations('ProposalDetails');
   const { spaces: dbSpaces } = useDbSpaces({
     parentOnly: false,
@@ -45,9 +53,34 @@ const WhitelistAddressItem = ({ address }: WhitelistAddressItemProps) => {
     (s) => s.address?.toLowerCase() === address.toLowerCase(),
   );
 
+  const diffIcon =
+    diffStatus === 'added' ? (
+      <span
+        className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded border border-success-8 bg-success-2 text-[11px] font-semibold leading-none text-success-11"
+        aria-hidden
+      >
+        +
+      </span>
+    ) : diffStatus === 'removed' ? (
+      <span
+        className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded border border-error-8 bg-error-2 text-[11px] font-semibold leading-none text-error-11"
+        aria-hidden
+      >
+        −
+      </span>
+    ) : diffStatus === 'unchanged' ? (
+      <span
+        className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded border border-neutral-6 bg-neutral-3 text-[11px] font-semibold leading-none text-neutral-11"
+        aria-hidden
+      >
+        =
+      </span>
+    ) : null;
+
   return (
     <Skeleton loading={isLoading} className="h-6 w-full">
       <div className="flex items-center gap-2">
+        {diffIcon}
         {person ? (
           <>
             <PersonAvatar avatarSrc={person?.avatarUrl} size="sm" />
@@ -64,7 +97,14 @@ const WhitelistAddressItem = ({ address }: WhitelistAddressItemProps) => {
               height={24}
               alt={`${space?.title} logo`}
             />
-            <div className="text-1">{space?.title}</div>
+            <div className="text-1">
+              {space?.title}
+              {spaceScope === 'members'
+                ? ` ${tProposalDetails('labels.spaceWhitelistMembersSuffix')}`
+                : spaceScope === 'only'
+                ? ` ${tProposalDetails('labels.spaceWhitelistOnlySuffix')}`
+                : ''}
+            </div>
           </>
         ) : (
           <>
@@ -104,6 +144,7 @@ export const ProposalTokenItem = ({
 }: ProposalTokenItemProps) => {
   const tProposalDetails = useTranslations('ProposalDetails');
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const tSpaces = useTranslations('Spaces');
   const originalSupply = initialSupply ? Number(initialSupply / 10n ** 18n) : 0;
   const { id } = useParams();
   const { space } = useSpaceBySlug(id as string);
@@ -208,6 +249,18 @@ export const ProposalTokenItem = ({
           </div>
         </div>
       )}
+      {dbToken?.archived !== undefined && (
+        <div className="flex justify-between items-center">
+          <div className="text-1 text-neutral-11 w-full">
+            {tSpaces('archived')}
+          </div>
+          <div className="text-1">
+            {dbToken.archived
+              ? tProposalDetails('labels.yes')
+              : tProposalDetails('labels.no')}
+          </div>
+        </div>
+      )}
       {referencePrice && (
         <div className="flex justify-between items-center text-nowrap">
           <div className="text-1 text-neutral-11 w-full">
@@ -248,9 +301,18 @@ export const ProposalTokenItem = ({
         <>
           <Separator />
           <div className="flex flex-col gap-4">
-            <div className="text-1 text-neutral-11 font-medium">
-              {tProposalDetails('sections.transferWhitelists')}
-            </div>
+            {initialReceiveWhitelist && initialReceiveWhitelist.length > 0 && (
+              <div className="flex flex-col gap-4">
+                <div className="text-1 text-neutral-11 font-bold">
+                  {tProposalDetails('sections.toWhitelist')}
+                </div>
+                <div className="flex flex-col gap-4">
+                  {initialReceiveWhitelist.map((addr, idx) => (
+                    <WhitelistAddressItem key={idx} address={addr} />
+                  ))}
+                </div>
+              </div>
+            )}
             {initialTransferWhitelist &&
               initialTransferWhitelist.length > 0 && (
                 <div className="flex flex-col gap-4">
@@ -264,18 +326,6 @@ export const ProposalTokenItem = ({
                   </div>
                 </div>
               )}
-            {initialReceiveWhitelist && initialReceiveWhitelist.length > 0 && (
-              <div className="flex flex-col gap-4">
-                <div className="text-1 text-neutral-11 font-bold">
-                  {tProposalDetails('sections.toWhitelist')}
-                </div>
-                <div className="flex flex-col gap-4">
-                  {initialReceiveWhitelist.map((addr, idx) => (
-                    <WhitelistAddressItem key={idx} address={addr} />
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </>
       )}

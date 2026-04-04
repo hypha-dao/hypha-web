@@ -4,7 +4,10 @@ import { publicClient } from '@hypha-platform/core/client';
 import useSWR from 'swr';
 import { getProposalDetails } from '../web3';
 import React from 'react';
+import { decodeFunctionData } from 'viem';
+import { decayingSpaceTokenAbi } from '../../../generated';
 import { decodeTransaction } from './decoders';
+import { decayBasisPointsToFormPercent } from '../../voice-decay-units';
 
 const formatRedemptionPrice = (rawPrice: unknown) => {
   const numeric = Number(rawPrice);
@@ -207,6 +210,65 @@ export const useProposalDetailsWeb3Rpc = ({
       whitelistEnabled?: boolean;
       whitelistedAddresses?: string[];
     } = {};
+
+    const updateTokenData: {
+      address?: `0x${string}`;
+      name?: string;
+      symbol?: string;
+      maxSupply?: bigint;
+      /** From `initialize` calldata when present; used for resubmit max supply type */
+      fixedMaxSupply?: boolean;
+      transferable?: boolean;
+      autoMinting?: boolean;
+      priceWithCurrency?: {
+        tokenPrice: bigint;
+        priceCurrencyFeed: string;
+      };
+      decayPercentage?: bigint;
+      decayInterval?: bigint;
+      useTransferWhitelist?: boolean;
+      useReceiveWhitelist?: boolean;
+      /** From `batchSetTransferWhitelist` calldata (update-token proposals) */
+      initialTransferWhitelist?: `0x${string}`[];
+      /** From `batchAddTransferWhitelistSpaces` (resolved to addresses in UI) */
+      initialTransferWhitelistSpaceIds?: number[];
+      /** From `batchSetReceiveWhitelist` calldata */
+      initialReceiveWhitelist?: `0x${string}`[];
+      initialReceiveWhitelistSpaceIds?: number[];
+      archiveToken?: boolean;
+    } = {
+      address: undefined,
+      name: undefined,
+      symbol: undefined,
+      maxSupply: undefined,
+      transferable: undefined,
+      autoMinting: undefined,
+      priceWithCurrency: undefined,
+      decayPercentage: undefined,
+      decayInterval: undefined,
+      useTransferWhitelist: undefined,
+      useReceiveWhitelist: undefined,
+      initialTransferWhitelist: undefined,
+      initialTransferWhitelistSpaceIds: undefined,
+      initialReceiveWhitelist: undefined,
+      initialReceiveWhitelistSpaceIds: undefined,
+      archiveToken: undefined,
+      fixedMaxSupply: undefined,
+    };
+
+    const assignUpdateTokenAddress = (addr: `0x${string}`) => {
+      const next = addr.toLowerCase() as `0x${string}`;
+      if (
+        updateTokenData.address &&
+        updateTokenData.address.toLowerCase() !== next
+      ) {
+        console.warn(
+          '[useProposalDetails] Inconsistent token addresses in update-token proposal transactions',
+          { existing: updateTokenData.address, next: addr },
+        );
+      }
+      updateTokenData.address = addr;
+    };
 
     const redeemTokensData: {
       token?: `0x${string}`;
@@ -459,6 +521,183 @@ export const useProposalDetailsWeb3Rpc = ({
           }
           break;
         }
+        case 'setTokenName': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            name: string;
+          };
+          assignUpdateTokenAddress(d.address);
+          updateTokenData.name = d.name;
+          break;
+        }
+
+        case 'setTokenSymbol': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            symbol: string;
+          };
+          assignUpdateTokenAddress(d.address);
+          updateTokenData.symbol = d.symbol;
+          break;
+        }
+
+        case 'setTokenMaxSupply': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            maxSupply: bigint;
+          };
+          assignUpdateTokenAddress(d.address);
+          updateTokenData.maxSupply = d.maxSupply;
+          break;
+        }
+
+        case 'setTokenTransferable': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            transferable: boolean;
+          };
+          assignUpdateTokenAddress(d.address);
+          updateTokenData.transferable = d.transferable;
+          break;
+        }
+
+        case 'setTokenAutoMinting': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            autoMinting: boolean;
+          };
+          assignUpdateTokenAddress(d.address);
+          updateTokenData.autoMinting = d.autoMinting;
+          break;
+        }
+
+        case 'setTokenPriceWithCurrency': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            tokenPrice: bigint;
+            priceCurrencyFeed: string;
+          };
+          assignUpdateTokenAddress(d.address);
+          updateTokenData.priceWithCurrency = {
+            tokenPrice: d.tokenPrice,
+            priceCurrencyFeed: d.priceCurrencyFeed,
+          };
+          break;
+        }
+
+        case 'setTokenDecayPercentage': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            decayPercentage: bigint;
+          };
+          assignUpdateTokenAddress(d.address);
+          updateTokenData.decayPercentage = BigInt(
+            decayBasisPointsToFormPercent(Number(d.decayPercentage)),
+          );
+          break;
+        }
+
+        case 'setTokenDecayInterval': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            decayInterval: bigint;
+          };
+          assignUpdateTokenAddress(d.address);
+          updateTokenData.decayInterval = d.decayInterval;
+          break;
+        }
+
+        case 'setTokenUseTransferWhitelist': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            useTransferWhitelist: boolean;
+          };
+          assignUpdateTokenAddress(d.address);
+          updateTokenData.useTransferWhitelist = d.useTransferWhitelist;
+          break;
+        }
+
+        case 'setTokenUseReceiveWhitelist': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            useReceiveWhitelist: boolean;
+          };
+          assignUpdateTokenAddress(d.address);
+          updateTokenData.useReceiveWhitelist = d.useReceiveWhitelist;
+          break;
+        }
+
+        case 'setTokenBatchTransferWhitelist': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            accounts: `0x${string}`[];
+            allowed: boolean[];
+          };
+          assignUpdateTokenAddress(d.address);
+          const allowedAddrs = d.accounts.filter(
+            (_, i) => d.allowed[i] === true,
+          );
+          updateTokenData.initialTransferWhitelist = [
+            ...(updateTokenData.initialTransferWhitelist ?? []),
+            ...allowedAddrs,
+          ];
+          break;
+        }
+
+        case 'setTokenBatchReceiveWhitelist': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            accounts: `0x${string}`[];
+            allowed: boolean[];
+          };
+          assignUpdateTokenAddress(d.address);
+          const allowedAddrs = d.accounts.filter(
+            (_, i) => d.allowed[i] === true,
+          );
+          updateTokenData.initialReceiveWhitelist = [
+            ...(updateTokenData.initialReceiveWhitelist ?? []),
+            ...allowedAddrs,
+          ];
+          break;
+        }
+
+        case 'setTokenBatchAddTransferWhitelistSpaces': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            spaceIds: readonly bigint[];
+          };
+          assignUpdateTokenAddress(d.address);
+          const ids = d.spaceIds.map((x) => Number(x));
+          updateTokenData.initialTransferWhitelistSpaceIds = [
+            ...(updateTokenData.initialTransferWhitelistSpaceIds ?? []),
+            ...ids,
+          ];
+          break;
+        }
+
+        case 'setTokenBatchAddReceiveWhitelistSpaces': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            spaceIds: readonly bigint[];
+          };
+          assignUpdateTokenAddress(d.address);
+          const ids = d.spaceIds.map((x) => Number(x));
+          updateTokenData.initialReceiveWhitelistSpaceIds = [
+            ...(updateTokenData.initialReceiveWhitelistSpaceIds ?? []),
+            ...ids,
+          ];
+          break;
+        }
+
+        case 'setTokenArchived': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            archiveToken: boolean;
+          };
+          assignUpdateTokenAddress(d.address);
+          updateTokenData.archiveToken = d.archiveToken;
+          break;
+        }
 
         case 'redeemTokens':
           redeemTokensData.amount = decoded.data.amount as bigint;
@@ -495,6 +734,35 @@ export const useProposalDetailsWeb3Rpc = ({
       }
     });
 
+    if (
+      updateTokenData.address &&
+      transactions &&
+      Array.isArray(transactions)
+    ) {
+      for (const tx of transactions as ProposalTransaction[]) {
+        try {
+          const decoded = decodeFunctionData({
+            abi: decayingSpaceTokenAbi,
+            data: tx.data as `0x${string}`,
+          });
+          if (
+            decoded.functionName === 'initialize' &&
+            typeof tx.target === 'string' &&
+            tx.target.toLowerCase() === updateTokenData.address.toLowerCase()
+          ) {
+            const args = decoded.args as readonly unknown[];
+            const fixed = args[6] as boolean | undefined;
+            if (typeof fixed === 'boolean') {
+              updateTokenData.fixedMaxSupply = fixed;
+            }
+            break;
+          }
+        } catch {
+          // not a DecayingSpaceToken call
+        }
+      }
+    }
+
     return {
       creator,
       spaceId: Number(spaceId),
@@ -522,6 +790,7 @@ export const useProposalDetailsWeb3Rpc = ({
       membershipExitData,
       transparencySettingsData,
       tokenBackingVaultData,
+      updateTokenData,
       redeemTokensData,
       spaceTokenPurchaseData,
     };

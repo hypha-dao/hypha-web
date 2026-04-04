@@ -934,7 +934,7 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
+        }
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {},

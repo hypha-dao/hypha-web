@@ -32,7 +32,9 @@
     "errorLoadOverviewTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet aperçu.",
     "errorLoadMembersTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet membres.",
     "errorLoadAgreementsTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet accords.",
-    "errorLoadTreasuryTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet trésorerie."
+    "errorLoadTreasuryTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet trésorerie.",
+    "publish": "Publier",
+    "invalidTransactions": "Transactions invalides"
   },
   "Navigation": {
     "network": "Réseau",
@@ -152,6 +154,10 @@
       "issueNewToken": {
         "title": "Émettre un nouveau token",
         "description": "Créez un nouveau token pour l'utilité, la propriété, l'impact, les crédits, la voix ou la monnaie communautaire au sein de votre espace."
+      },
+      "updateIssuedToken": {
+        "title": "Mettre à jour le token émis",
+        "description": "Mettez à jour les paramètres avancés du token, y compris le nom, le symbole et l'icône du token, l'offre totale, les options de frappe automatique, les contrôles de transfert, les paramètres de décroissance de la voix et la valeur du token affichée dans la trésorerie."
       },
       "mintTokensToSpaceTreasury": {
         "title": "Frapper des tokens pour la trésorerie de l'espace",
@@ -364,7 +370,13 @@
         "from": "De {name}",
         "to": "À {name}"
       }
-    }
+    },
+    "tokenSupply": "Offre de tokens",
+    "issuanceToDate": "Émission à ce jour",
+    "unlimitedSupply": "Offre illimitée",
+    "selectTokenPlaceholder": "Sélectionner un token",
+    "noTokensAvailable": "Aucun token disponible",
+    "tokenPendingContractAddress": "Adresse on-chain en attente (exécutez d'abord la proposition d'émission de token)"
   },
   "Footer": {
     "network": "RÉSEAU",
@@ -890,7 +902,8 @@
         "blockchainAddressRequired": "Veuillez saisir une adresse blockchain",
         "blockchainAddressInvalid": "Veuillez saisir une adresse blockchain valide",
         "referenceCurrencyRequired": "Veuillez sélectionner une devise de référence",
-        "tokenPricePositive": "Veuillez saisir un prix de token supérieur à 0"
+        "tokenPricePositive": "Veuillez saisir un prix de token supérieur à 0",
+        "duplicateWhitelistEntry": "Ce membre ou cet espace figure déjà dans cette liste blanche. Supprimez le doublon ou choisissez une autre entrée."
       }
     },
     "createAgreementBaseFields": {
@@ -1005,6 +1018,7 @@
         "general": {
           "title": "Général",
           "description": "Sélectionnez le type de token et personnalisez son nom, son symbole et son icône pour une identification claire.",
+          "customizeIdentityDescription": "Personnalisez le nom, le symbole et l’icône du token pour une identification claire.",
           "tokenTypeLabel": "Type de token",
           "tokenTypePlaceholder": "Sélectionnez un type de token",
           "tokenTypeOptions": {
@@ -1050,6 +1064,8 @@
           "enableLimited": "Activer l'offre limitée",
           "maxSupplyLabel": "Offre maximale",
           "maxSupplyPlaceholder": "Saisissez un montant",
+          "maxSupplyReadOnlyWhenImmutable": "L'offre maximale est fixe tant que « Pour toujours immuable » est sélectionné",
+          "maxSupplyTypeReadOnlyWhenImmutableOnChain": "Le type d'offre maximale est fixé on-chain et ne peut pas être modifié",
           "maxSupplyTypeLabel": "Type d'offre maximale",
           "maxSupplyTypePlaceholder": "Sélectionnez le type d'offre maximale",
           "maxSupplyTypeOptions": {
@@ -1384,7 +1400,6 @@
       "payment": "Paiement",
       "transparencySettings": "Paramètres de transparence",
       "decaySettings": "Paramètres de décroissance",
-      "transferWhitelists": "Transférer les listes blanches",
       "fromWhitelist": "À partir de la liste blanche",
       "toWhitelist": "Vers la liste blanche"
     },
@@ -1414,6 +1429,7 @@
       "tokenIcon": "Icône de jeton",
       "tokenIconFor": "Icône de jeton pour {symbol}",
       "maxSupply": "Approvisionnement maximum",
+      "unlimitedSupply": "Approvisionnement illimité",
       "unlimited": "Illimité",
       "transferable": "Transférable",
       "yes": "Oui",
@@ -1441,6 +1457,7 @@
       "redeemAmount": "Redemption amount",
       "redeemNotional": "Reference value",
       "redeemApproxUsd": "≈ {value} USD",
+      "redeemApproxNotional": "≈ {value} {currency}",
       "redeemCollateralUnitPrice": "{price} {currency} each",
       "spaceToken": "Token de l’espace",
       "currentBackingCollaterals": "Garanties actuelles",
@@ -1457,7 +1474,14 @@
       "burnRecipient": "Destinataire de la combustion",
       "burnAmount": "Montant à brûler",
       "defaultAvatar": "Avatar par défaut",
-      "selfBurn": "Auto-combustion"
+      "selfBurn": "Auto-combustion",
+      "archived": "Archivé",
+      "transferFromWhitelist": "Liste blanche expéditeur",
+      "receiveToWhitelist": "Liste blanche destinataire",
+      "whitelistEnforcementActive": "Actif",
+      "whitelistEnforcementInactive": "Inactif",
+      "spaceWhitelistMembersSuffix": "(Space et membres)",
+      "spaceWhitelistOnlySuffix": "(Space uniquement)"
     },
     "entryMethods": {
       "openAccess": "Accès libre",
@@ -1542,7 +1566,17 @@
           "completedMessage": "Décision enregistrée : Proposition rejetée en raison d'une participation insuffisante et d'un manque d'alignement."
         }
       }
-    }
+    },
+    "archiveToken": "Archiver le token",
+    "archiveTokenDescription": "L'archivage d'un token désactivera son utilisation dans les nouvelles propositions et transferts.",
+    "clickHere": "cliquez ici",
+    "noTokenCreated": "Votre espace n'a pas encore créé de token, {clickHere} pour d'abord émettre un token.",
+    "tokenShouldBeChosen": "Le token doit être choisi",
+    "maxSupplyValidation": "Veuillez saisir une quantité d'offre maximale supérieure à 0 ou désactiver l'offre limitée si vous souhaitez une offre illimitée.",
+    "selectReferenceCurrency": "Veuillez sélectionner une devise de référence",
+    "tokenPriceGreaterThanZero": "Veuillez saisir un prix de token supérieur à 0",
+    "updateTokenLabel": "Mettre à jour le token",
+    "spaceInformationMissing": "Les informations de l'espace sont manquantes. Veuillez réessayer."
   },
   "AiPanel": {
     "title": "Hypha AI",

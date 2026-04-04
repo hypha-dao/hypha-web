@@ -39,7 +39,7 @@ export const ProposalRedeemTokensData = ({
   spaceSlug,
   dbTokens = [],
 }: ProposalRedeemTokensDataProps) => {
-  const t = useTranslations('ProposalDetails.labels');
+  const t = useTranslations('ProposalDetails');
   const { spaces } = useSpacesByWeb3Ids(web3SpaceId ? [web3SpaceId] : []);
   const resolvedSlug = spaces?.[0]?.slug ?? spaceSlug;
   const { tokens: spaceTokens } = useTokens({ spaceSlug: resolvedSlug });
@@ -160,7 +160,7 @@ export const ProposalRedeemTokensData = ({
               Number.isFinite(collateral.tokenPrice) ? (
                 <span className="text-neutral-9 ml-1">
                   ·{' '}
-                  {t('redeemCollateralUnitPrice', {
+                  {t('labels.redeemCollateralUnitPrice', {
                     price: formatCurrencyValue(collateral.tokenPrice),
                     currency: currencyLabel ?? 'USD',
                   })}
@@ -197,17 +197,17 @@ export const ProposalRedeemTokensData = ({
   return (
     <div className="flex flex-col gap-4">
       <span className="text-neutral-11 text-2 font-medium">
-        {t('redeemTokens')}
+        {t('labels.redeemTokens')}
       </span>
       <div className="flex flex-col gap-5">
         <TokenBackingVaultDetailRow
-          label={t('redeemAmount')}
+          label={t('labels.redeemAmount')}
           value={`${formatCurrencyValue(redeemedHuman)} ${redeemSymbol}`}
         />
         {typeof redemptionPriceNum === 'number' &&
         Number.isFinite(redemptionPriceNum) ? (
           <TokenBackingVaultDetailRow
-            label={t('redemptionPrice')}
+            label={t('labels.redemptionPrice')}
             value={`${redemptionPriceNum.toFixed(2)} ${
               currencyLabel ?? 'USD'
             } / ${redeemSymbol}`}
@@ -215,9 +215,10 @@ export const ProposalRedeemTokensData = ({
         ) : null}
         {typeof notionalValue === 'number' && Number.isFinite(notionalValue) ? (
           <TokenBackingVaultDetailRow
-            label={t('redeemNotional')}
-            value={t('redeemApproxUsd', {
+            label={t('labels.redeemNotional')}
+            value={t('labels.redeemApproxNotional', {
               value: formatCurrencyValue(notionalValue),
+              currency: currencyLabel ?? 'USD',
             })}
           />
         ) : null}
@@ -226,7 +227,7 @@ export const ProposalRedeemTokensData = ({
       {conversionDisplayRows.length > 0 ? (
         <div className="flex flex-col gap-4">
           <span className="text-neutral-11 text-2 font-medium">
-            {t('backingVaultPayout')}
+            {t('labels.backingVaultPayout')}
           </span>
           <div className="flex flex-col gap-2">
             {conversionDisplayRows.map((row, i) => (

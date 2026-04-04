@@ -5,11 +5,13 @@ import { IssueNewTokenForm } from '@hypha-platform/epics';
 import { Plugin } from '../../../../_components/plugins';
 import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
-import { findSpaceBySlug } from '@hypha-platform/core/server';
+import {
+  findSpaceBySlug,
+  getAllSpaces,
+  findAllPeopleWithoutPagination,
+} from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { Person, Space } from '@hypha-platform/core/client';
-import { getAllSpaces } from '@hypha-platform/core/server';
-import { findAllPeopleWithoutPagination } from '@hypha-platform/core/server';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string; tab: string }>;
@@ -56,6 +58,7 @@ export default async function IssueNewTokenPage({
     (space) =>
       space?.address && space.address.trim() !== '' && space.id !== spaceId,
   );
+
   return (
     <SidePanel>
       <IssueNewTokenForm

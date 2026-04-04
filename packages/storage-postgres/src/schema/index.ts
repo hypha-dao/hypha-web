@@ -11,6 +11,7 @@ import { eventRelations } from './event.relations';
 import { events } from './event';
 import { transfers } from './transfers';
 import { matrixUserLinks } from './matrix-user-link';
+import { tokenUpdates, tokenUpdateRelations } from './token-updates';
 
 export { SPACE_FLAGS } from './flags';
 export { CATEGORIES } from './categories';
@@ -23,6 +24,7 @@ export * from './tokens';
 export * from './event';
 export * from './transfers';
 export * from './matrix-user-link';
+export * from './token-updates';
 
 export const schema = {
   documents,
@@ -39,4 +41,6 @@ export const schema = {
   eventRelations,
   transfers,
   matrixUserLinks,
+  tokenUpdates,
+  tokenUpdateRelations,
 };

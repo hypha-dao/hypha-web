@@ -14,9 +14,15 @@ import {
   useJwt,
   useAgreementMutationsWeb2Rsc,
   TOKENS,
+  useSpaceMinProposalDuration,
 } from '@hypha-platform/core/client';
+import { getTokenUpdateByDocumentIdAction } from '@hypha-platform/core/governance/server/actions';
+import {
+  buildUpdateIssuedTokenResubmitPayload,
+  RESUBMIT_UPDATE_ISSUED_TOKEN_EMBEDDED_FIELD,
+  type UpdateTokenProposalSnapshot,
+} from '../update-issued-token-resubmit';
 import { useSpaceMember } from '../../spaces';
-import { useSpaceMinProposalDuration } from '@hypha-platform/core/client';
 import { formatDuration } from '@hypha-platform/ui-utils';
 import { useTheme } from 'next-themes';
 import { useState } from 'react';
@@ -70,6 +76,7 @@ const getCreateRouteForLabel = (label: string | undefined): string => {
     'Token Burning': 'token-burning',
     'Membership Exit': 'membership-exit',
     'Backing Vault': 'token-backing-vault',
+    'Update Token': 'update-issued-token',
     'Token Purchase': 'space-token-purchase',
   };
 
@@ -110,6 +117,8 @@ export const FormVoting = ({
   spaceSlug,
   closeUrl,
   label,
+  documentId,
+  updateTokenProposalSnapshot,
   redeemResubmitPayload,
   proposalTemplateData,
   spaceTokenPurchaseData,
@@ -140,6 +149,8 @@ export const FormVoting = ({
   spaceSlug?: string;
   closeUrl?: string;
   label?: string;
+  documentId?: number;
+  updateTokenProposalSnapshot?: UpdateTokenProposalSnapshot | null;
   redeemResubmitPayload?: {
     token: string;
     amount: string;
@@ -231,6 +242,35 @@ export const FormVoting = ({
         spaceTokenPurchaseData?.tokensForSale !== undefined
           ? Number(formatUnits(spaceTokenPurchaseData.tokensForSale, 18))
           : undefined;
+      let updateIssuedTokenResubmitPayload: ReturnType<
+        typeof buildUpdateIssuedTokenResubmitPayload
+      > = null;
+
+      if (label === 'Update Token') {
+        let dbRow: Awaited<
+          ReturnType<typeof getTokenUpdateByDocumentIdAction>
+        > | null = null;
+        if (documentId != null && jwt) {
+          try {
+            dbRow = await getTokenUpdateByDocumentIdAction(documentId, {
+              authToken: jwt,
+            });
+          } catch {
+            dbRow = null;
+          }
+        }
+        updateIssuedTokenResubmitPayload =
+          buildUpdateIssuedTokenResubmitPayload({
+            dbRow: dbRow
+              ? {
+                  tokenAddress: dbRow.tokenAddress,
+                  data: dbRow.data,
+                }
+              : null,
+            snapshot: updateTokenProposalSnapshot ?? null,
+          });
+      }
+
       const proposalData = {
         title: documentTitle || '',
         description: documentDescription || '',
@@ -253,6 +293,12 @@ export const FormVoting = ({
               )
                 ? tokensAvailableForPurchase
                 : undefined,
+            }
+          : {}),
+        ...(label === 'Update Token' && updateIssuedTokenResubmitPayload
+          ? {
+              [RESUBMIT_UPDATE_ISSUED_TOKEN_EMBEDDED_FIELD]:
+                updateIssuedTokenResubmitPayload,
             }
           : {}),
       };
