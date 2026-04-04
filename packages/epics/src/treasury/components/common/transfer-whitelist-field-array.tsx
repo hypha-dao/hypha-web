@@ -19,6 +19,7 @@ import {
   DEFAULT_SPACE_AVATAR_IMAGE,
   Person,
   Space,
+  transferWhitelistEntryDedupeKey,
 } from '@hypha-platform/core/client';
 import { useFilterSpacesListWithDiscoverability } from '@hypha-platform/epics';
 import { useTranslations } from 'next-intl';
@@ -46,7 +47,7 @@ export const TransferWhitelistFieldArray = ({
   members = [],
   spaces = [],
 }: TransferWhitelistFieldArrayProps) => {
-  const { control, setValue, watch } = useFormContext();
+  const { control, setValue, watch, trigger } = useFormContext();
   const tAgreementFlow = useTranslations('AgreementFlow');
 
   const { filteredSpaces } = useFilterSpacesListWithDiscoverability({
@@ -77,6 +78,26 @@ export const TransferWhitelistFieldArray = ({
   );
 
   const entries = watch(name) ?? [];
+
+  const usedKeysByOtherRows = useMemo(() => {
+    const list = Array.isArray(entries) ? entries : [];
+    return list.map((_entry, selfIdx) => {
+      const keys = new Set<string>();
+      for (let j = 0; j < list.length; j++) {
+        if (j === selfIdx) continue;
+        const e = list[j] as {
+          type?: WhitelistType;
+          address?: string;
+        };
+        const t = e?.type === 'space' ? 'space' : 'member';
+        const k = e?.address
+          ? transferWhitelistEntryDedupeKey(t, e.address)
+          : undefined;
+        if (k) keys.add(k);
+      }
+      return keys;
+    });
+  }, [entries]);
 
   const { fields, append, remove, replace } = useFieldArray({
     control,
@@ -122,8 +143,14 @@ export const TransferWhitelistFieldArray = ({
         {fields.map((field, index) => {
           const currentEntry = entries?.[index];
           const currentType = (currentEntry?.type ?? 'space') as WhitelistType;
-          const comboboxOptions =
+          const taken = usedKeysByOtherRows[index] ?? new Set<string>();
+          const baseOptions =
             currentType === 'member' ? memberOptions : spaceOptions;
+          const comboboxOptions = baseOptions.filter((opt) => {
+            const k = transferWhitelistEntryDedupeKey(currentType, opt.value);
+            if (!k) return true;
+            return !taken.has(k);
+          });
           const placeholder =
             currentType === 'member'
               ? tAgreementFlow(
@@ -160,6 +187,7 @@ export const TransferWhitelistFieldArray = ({
                       onValueChange={(value) => {
                         field.onChange(value as WhitelistType);
                         setValue(`${name}.${index}.address`, '');
+                        void trigger(`${name}.${index}.address`);
                       }}
                     >
                       <TabsList triggerVariant="switch">
@@ -196,9 +224,11 @@ export const TransferWhitelistFieldArray = ({
                   options={comboboxOptions}
                   placeholder={placeholder}
                   initialValue={currentEntry?.address ?? ''}
-                  onChange={(value) =>
-                    setValue(`${name}.${index}.address`, value)
-                  }
+                  onChange={(value) => {
+                    setValue(`${name}.${index}.address`, value, {
+                      shouldValidate: true,
+                    });
+                  }}
                   emptyListMessage={
                     currentType === 'member'
                       ? tAgreementFlow(
@@ -266,7 +296,10 @@ export const TransferWhitelistFieldArray = ({
                     <Input
                       placeholder="0x..."
                       value={field.value ?? ''}
-                      onChange={field.onChange}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        void trigger(`${name}.${index}.address`);
+                      }}
                     />
                     <FormMessage />
                   </FormItem>

@@ -10,7 +10,7 @@ import {
   REFERENCE_CURRENCIES,
   TOKEN_PRICE_REFERENCE_CURRENCIES,
 } from './types';
-import { isAddress } from 'ethers';
+import { getAddress, isAddress } from 'ethers';
 
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
@@ -298,10 +298,72 @@ const transferWhitelistEntrySchema = z.object({
   includeSpaceMembers: z.boolean().optional(),
 });
 
-const transferWhitelistSchema = z.object({
-  to: z.array(transferWhitelistEntrySchema).optional(),
-  from: z.array(transferWhitelistEntrySchema).optional(),
-});
+/** Stable message token for i18n mapping in issue/update token forms */
+export const WHITELIST_DUPLICATE_ENTRY_MESSAGE =
+  '__WHITELIST_DUPLICATE_ENTRY__';
+
+/** Same member/space key used for Zod duplicate checks and whitelist combobox filtering */
+export function transferWhitelistEntryDedupeKey(
+  type: 'member' | 'space',
+  address: string,
+): string | undefined {
+  const trimmed = address.trim();
+  if (!trimmed) return undefined;
+  if (!isAddress(trimmed)) {
+    return `${type === 'space' ? 's' : 'm'}:raw:${trimmed.toLowerCase()}`;
+  }
+  try {
+    const norm = getAddress(trimmed).toLowerCase();
+    return `${type === 'space' ? 's' : 'm'}:${norm}`;
+  } catch {
+    return undefined;
+  }
+}
+
+function refineTransferWhitelistNoDuplicates(
+  data: { to?: unknown[]; from?: unknown[] },
+  ctx: z.RefinementCtx,
+) {
+  const checkSide = (side: 'to' | 'from') => {
+    const arr = data[side] as
+      | Array<{ type?: string; address?: string }>
+      | undefined;
+    if (!arr?.length) return;
+    const keyToIndices = new Map<string, number[]>();
+    for (let i = 0; i < arr.length; i++) {
+      const e = arr[i];
+      const t = e?.type === 'space' ? 'space' : 'member';
+      const key = e?.address
+        ? transferWhitelistEntryDedupeKey(t, e.address)
+        : undefined;
+      if (!key) continue;
+      const list = keyToIndices.get(key) ?? [];
+      list.push(i);
+      keyToIndices.set(key, list);
+    }
+    for (const indices of keyToIndices.values()) {
+      if (indices.length < 2) continue;
+      for (const idx of indices) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: WHITELIST_DUPLICATE_ENTRY_MESSAGE,
+          path: [side, idx, 'address'],
+        });
+      }
+    }
+  };
+  checkSide('to');
+  checkSide('from');
+}
+
+const transferWhitelistSchema = z
+  .object({
+    to: z.array(transferWhitelistEntrySchema).optional(),
+    from: z.array(transferWhitelistEntrySchema).optional(),
+  })
+  .superRefine((data, ctx) => {
+    refineTransferWhitelistNoDuplicates(data, ctx);
+  });
 
 export const schemaMintTokensToSpaceTreasury = z.object({
   ...createAgreementWeb2Props,

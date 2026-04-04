@@ -902,7 +902,8 @@
         "blockchainAddressRequired": "Bitte geben Sie eine Blockchain-Adresse ein",
         "blockchainAddressInvalid": "Bitte geben Sie eine gültige Blockchain-Adresse ein",
         "referenceCurrencyRequired": "Bitte wählen Sie eine Referenzwährung aus",
-        "tokenPricePositive": "Bitte geben Sie einen Token-Preis größer als 0 ein"
+        "tokenPricePositive": "Bitte geben Sie einen Token-Preis größer als 0 ein",
+        "duplicateWhitelistEntry": "Dieses Mitglied oder dieser Space steht bereits in dieser Whitelist. Entfernen Sie das Duplikat oder wählen Sie einen anderen Eintrag."
       }
     },
     "createAgreementBaseFields": {

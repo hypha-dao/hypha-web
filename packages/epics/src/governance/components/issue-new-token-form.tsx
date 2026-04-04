@@ -10,6 +10,7 @@ import {
   useCreateIssueTokenOrchestrator,
   DbToken,
   useJwt,
+  WHITELIST_DUPLICATE_ENTRY_MESSAGE,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
@@ -95,6 +96,8 @@ const ISSUE_NEW_TOKEN_ERROR_KEYS: Record<string, string> = {
     'issueNewTokenForm.errors.referenceCurrencyRequired',
   'Please enter a token price greater than 0':
     'issueNewTokenForm.errors.tokenPricePositive',
+  [WHITELIST_DUPLICATE_ENTRY_MESSAGE]:
+    'issueNewTokenForm.errors.duplicateWhitelistEntry',
 };
 
 const extendedBaseSchema = baseSchemaIssueNewToken.merge(

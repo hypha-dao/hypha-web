@@ -12,6 +12,7 @@ import {
   useMe,
   useUpdateIssuedTokenOrchestrator,
   useJwt,
+  WHITELIST_DUPLICATE_ENTRY_MESSAGE,
   type Space,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
@@ -241,6 +242,89 @@ export const UpdateIssuedTokenForm = ({
     [tProposalDetails, tAgreementFlow],
   );
 
+  const translateUpdateTokenError = React.useCallback(
+    (message: string) => {
+      if (message === WHITELIST_DUPLICATE_ENTRY_MESSAGE) {
+        return tAgreementFlow(
+          'issueNewTokenForm.errors.duplicateWhitelistEntry',
+        );
+      }
+      return message;
+    },
+    [tAgreementFlow],
+  );
+
+  const localizeUpdateTokenErrors = React.useCallback(
+    (errors: unknown): unknown => {
+      if (!errors || typeof errors !== 'object') return errors;
+      if (Array.isArray(errors)) {
+        const localizedArray = errors.map((e) => localizeUpdateTokenErrors(e));
+        const localizedArrayWithMeta = localizedArray as unknown as Record<
+          string,
+          unknown
+        >;
+
+        for (const [key, value] of Object.entries(errors)) {
+          if (!/^\d+$/.test(key)) {
+            localizedArrayWithMeta[key] =
+              value && typeof value === 'object'
+                ? localizeUpdateTokenErrors(value)
+                : value;
+          }
+        }
+
+        return localizedArray;
+      }
+
+      const localized = { ...(errors as Record<string, unknown>) };
+
+      if (typeof localized.message === 'string') {
+        localized.message = translateUpdateTokenError(localized.message);
+      }
+
+      if (localized.types && typeof localized.types === 'object') {
+        const localizedTypes: Record<string, unknown> = { ...localized.types };
+        for (const [typeKey, typeValue] of Object.entries(localizedTypes)) {
+          if (typeof typeValue === 'string') {
+            localizedTypes[typeKey] = translateUpdateTokenError(typeValue);
+          }
+        }
+        localized.types = localizedTypes;
+      }
+
+      for (const [key, value] of Object.entries(localized)) {
+        if (
+          key === 'message' ||
+          key === 'type' ||
+          key === 'ref' ||
+          key === 'types'
+        ) {
+          continue;
+        }
+        if (value && typeof value === 'object') {
+          localized[key] = localizeUpdateTokenErrors(value);
+        }
+      }
+
+      return localized;
+    },
+    [translateUpdateTokenError],
+  );
+
+  const resolver = React.useMemo(() => {
+    const baseResolver = zodResolver(fullSchemaUpdateIssuedToken);
+
+    return async (...args: Parameters<typeof baseResolver>) => {
+      const result = await baseResolver(...args);
+      return {
+        ...result,
+        errors: localizeUpdateTokenErrors(
+          result.errors,
+        ) as typeof result.errors,
+      };
+    };
+  }, [fullSchemaUpdateIssuedToken, localizeUpdateTokenErrors]);
+
   type FormValues = UpdateIssuedTokenFormValues;
 
   const { person } = useMe();
@@ -304,7 +388,7 @@ export const UpdateIssuedTokenForm = ({
   );
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(fullSchemaUpdateIssuedToken),
+    resolver,
     defaultValues: formDefaultValues,
     mode: 'onChange',
   });

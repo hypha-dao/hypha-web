@@ -902,7 +902,8 @@
         "blockchainAddressRequired": "Please enter a blockchain address",
         "blockchainAddressInvalid": "Please enter a valid blockchain address",
         "referenceCurrencyRequired": "Please select a reference currency",
-        "tokenPricePositive": "Please enter a token price greater than 0"
+        "tokenPricePositive": "Please enter a token price greater than 0",
+        "duplicateWhitelistEntry": "This member or space is already listed in this whitelist. Remove the duplicate or choose a different entry."
       }
     },
     "createAgreementBaseFields": {
