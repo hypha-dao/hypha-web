@@ -49,10 +49,6 @@ type PluginProps = {
   /** Full space list (incl. current DHO) for mapping on-chain space ids → addresses */
   spacesForChainMapping?: Space[];
   members?: Person[];
-  /** From server: active space on-chain members → people (ownership To whitelist member tab) */
-  ownershipToWhitelistMembers?: Person[];
-  /** From server: active space on-chain members → spaces-as-members (ownership To whitelist space tab) */
-  ownershipToWhitelistSpaces?: Space[];
 };
 
 export const Plugin = ({
@@ -63,8 +59,6 @@ export const Plugin = ({
   spaces,
   spacesForChainMapping,
   members,
-  ownershipToWhitelistMembers: ownershipMembersFromServer,
-  ownershipToWhitelistSpaces: ownershipSpacesFromServer,
 }: PluginProps) => {
   const { persons, spaces: memberSpaces } = useMembers({
     spaceSlug,
@@ -81,19 +75,11 @@ export const Plugin = ({
   };
 
   /**
-   * Server-side resolution uses `findSpaceByAddresses` for on-chain member addresses.
-   * Space-as-member rows sometimes have no matching `spaces.address` yet → empty array.
-   * The Members tab uses the same `/api/v1/spaces/.../members` data as `useMembers`;
-   * fall back when the server list is empty so ownership To whitelist space dropdown works.
+   * Ownership-token To whitelist (member + space tabs): same source as propose-contribution
+   * `RecipientField` — `useMembers` → `/api/v1/spaces/[slug]/members` (persons + spaces arrays).
    */
-  const ownershipToWhitelistMembers =
-    ownershipMembersFromServer && ownershipMembersFromServer.length > 0
-      ? ownershipMembersFromServer
-      : (persons?.data ?? []);
-  const ownershipToWhitelistSpaces =
-    ownershipSpacesFromServer && ownershipSpacesFromServer.length > 0
-      ? ownershipSpacesFromServer
-      : (memberSpaces?.data ?? []);
+  const ownershipToWhitelistMembers = persons?.data ?? [];
+  const ownershipToWhitelistSpaces = memberSpaces?.data ?? [];
 
   if (name === 'update-issued-token') {
     return (

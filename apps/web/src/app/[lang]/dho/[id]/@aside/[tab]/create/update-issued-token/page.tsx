@@ -7,7 +7,6 @@ import {
   findSpaceBySlug,
   getAllSpaces,
   findAllPeopleWithoutPagination,
-  getActiveSpaceMembersForOwnershipToWhitelist,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { UpdateIssuedTokenForm } from '@hypha-platform/epics';
@@ -59,14 +58,6 @@ export default async function UpdateIssuedTokenPage({
       space?.address && space.address.trim() !== '' && space.id !== spaceId,
   );
 
-  const {
-    persons: ownershipToWhitelistMembers,
-    spaces: ownershipToWhitelistSpaces,
-  } = await getActiveSpaceMembersForOwnershipToWhitelist(
-    { web3SpaceId },
-    { db },
-  );
-
   return (
     <SidePanel>
       <UpdateIssuedTokenForm
@@ -83,8 +74,6 @@ export default async function UpdateIssuedTokenPage({
             spaces={filteredSpaces}
             spacesForChainMapping={spaces}
             members={filteredPeoples}
-            ownershipToWhitelistMembers={ownershipToWhitelistMembers}
-            ownershipToWhitelistSpaces={ownershipToWhitelistSpaces}
           />
         }
       />
