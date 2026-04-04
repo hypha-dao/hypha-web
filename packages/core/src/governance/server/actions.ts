@@ -13,6 +13,7 @@ import {
   createTokenUpdate,
   applyTokenUpdate,
   deleteTokenUpdate,
+  linkIssueTokenProposalToAgreement,
 } from './mutations';
 import {
   CreateAgreementInput,
@@ -108,6 +109,20 @@ export async function updateTokenAction(
     console.error('updateTokenAction failed:', error);
     throw error;
   }
+}
+
+export async function linkIssueTokenProposalToAgreementAction(
+  input: {
+    slug: string;
+    web3ProposalId: number;
+    agreementId: number;
+  },
+  { authToken }: { authToken: string },
+) {
+  if (!authToken) {
+    throw new Error('authToken is required');
+  }
+  return linkIssueTokenProposalToAgreement(input, { db });
 }
 
 export async function deleteTokenAction(

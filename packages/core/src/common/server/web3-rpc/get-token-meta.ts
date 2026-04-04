@@ -55,40 +55,12 @@ function findDbTokenForMetadata(
   if (!sym) {
     return undefined;
   }
-  const candidates = dbTokens.filter(
+  const unresolvedBySymbol = dbTokens.filter(
     (t) =>
       (!t.address || t.address.trim() === '') &&
       t.symbol?.trim().toUpperCase() === sym,
   );
-  if (candidates.length === 0) {
-    return undefined;
-  }
-  if (candidates.length === 1) {
-    return candidates[0];
-  }
-  return candidates.sort((a, b) => {
-    const aHasIcon = a.iconUrl?.trim() ? 1 : 0;
-    const bHasIcon = b.iconUrl?.trim() ? 1 : 0;
-    if (bHasIcon !== aHasIcon) {
-      return bHasIcon - aHasIcon;
-    }
-    const aT =
-      a.createdAt instanceof Date
-        ? a.createdAt.getTime()
-        : typeof a.createdAt === 'string'
-        ? Date.parse(a.createdAt)
-        : 0;
-    const bT =
-      b.createdAt instanceof Date
-        ? b.createdAt.getTime()
-        : typeof b.createdAt === 'string'
-        ? Date.parse(b.createdAt)
-        : 0;
-    if (bT !== aT) {
-      return bT - aT;
-    }
-    return (b.id ?? 0) - (a.id ?? 0);
-  })[0];
+  return unresolvedBySymbol.length === 1 ? unresolvedBySymbol[0] : undefined;
 }
 
 export type GetTokenMetaOptions = {

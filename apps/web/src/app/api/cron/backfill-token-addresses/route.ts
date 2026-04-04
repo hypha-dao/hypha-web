@@ -28,6 +28,12 @@ export async function GET(request: Request) {
     ),
   );
 
-  const results = await backfillStaleIssueTokenAddresses({ db, limit });
-  return NextResponse.json({ ok: true, results });
+  try {
+    const results = await backfillStaleIssueTokenAddresses({ db, limit });
+    return NextResponse.json({ ok: true, results });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    console.error('[cron/backfill-token-addresses]', e);
+    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+  }
 }

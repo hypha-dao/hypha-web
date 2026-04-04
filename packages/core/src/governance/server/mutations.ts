@@ -63,6 +63,44 @@ export const updateAgreementBySlug = async (
   return updatedAgreement;
 };
 
+/** Atomically link Web3 proposal id to the agreement document and token row (issue-new-token flow). */
+export const linkIssueTokenProposalToAgreement = async (
+  {
+    slug,
+    web3ProposalId,
+    agreementId,
+  }: {
+    slug: string;
+    web3ProposalId: number;
+    agreementId: number;
+  },
+  { db }: { db: DatabaseInstance },
+) => {
+  return await db.transaction(async (tx) => {
+    const [updatedAgreement] = await tx
+      .update(documents)
+      .set({ web3ProposalId })
+      .where(eq(documents.slug, slug))
+      .returning();
+
+    if (!updatedAgreement) {
+      throw new Error('Failed to update document');
+    }
+
+    const [updatedToken] = await tx
+      .update(tokens)
+      .set({ agreementWeb3Id: web3ProposalId })
+      .where(eq(tokens.agreementId, agreementId))
+      .returning();
+
+    if (!updatedToken) {
+      throw new Error(`No token found with agreementId: ${agreementId}`);
+    }
+
+    return { document: updatedAgreement, token: updatedToken };
+  });
+};
+
 export const deleteAgreementBySlug = async (
   { slug }: { slug: string },
   { db }: { db: DatabaseInstance },
