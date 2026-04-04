@@ -136,19 +136,20 @@ export const updateToken = async (
   }
 
   if (existingToken.length === 0) {
-    throw new Error(
-      `No token found with ${
-        agreementId !== undefined
-          ? `agreementId: ${agreementId}`
-          : `agreementWeb3Id: ${agreementWeb3Id}`
-      }`,
-    );
+    const lookup =
+      agreementId !== undefined
+        ? `agreementId: ${agreementId}`
+        : agreementWeb3Id !== undefined
+        ? `agreementWeb3Id: ${agreementWeb3Id}`
+        : `address: ${address}`;
+    throw new Error(`No token found with ${lookup}`);
   }
 
   // Map archiveToken to archived column
   const { archiveToken, ...restWithoutArchive } = rest;
   const updateData = {
     ...restWithoutArchive,
+    ...(address !== undefined && { address }),
     ...(rest.agreementWeb3IdUpdate !== undefined && {
       agreementWeb3Id: rest.agreementWeb3IdUpdate,
     }),
