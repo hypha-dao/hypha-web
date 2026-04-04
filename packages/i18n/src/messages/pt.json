@@ -1572,6 +1572,7 @@
     "clickHere": "clique aqui",
     "noTokenCreated": "Seu espaço ainda não criou um token, {clickHere} para primeiro emitir um token.",
     "tokenShouldBeChosen": "Um token deve ser escolhido",
+    "updateTokenRequiresDeployedContract": "Este token ainda não tem um endereço de contrato on-chain. Execute e aprove primeiro a proposta de emitir token e tente novamente.",
     "maxSupplyValidation": "Digite um fornecimento máximo maior que 0 ou desative o fornecimento limitado se quiser fornecimento ilimitado.",
     "selectReferenceCurrency": "Selecione uma moeda de referência",
     "tokenPriceGreaterThanZero": "Digite um preço de token maior que 0",

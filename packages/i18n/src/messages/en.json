@@ -1572,6 +1572,7 @@
     "clickHere": "click here",
     "noTokenCreated": "Your space has not yet created a token, {clickHere} to first issue a token.",
     "tokenShouldBeChosen": "Token should be chosen",
+    "updateTokenRequiresDeployedContract": "This token does not have an on-chain contract address yet. Execute and pass the issue-token proposal first, then try again.",
     "maxSupplyValidation": "Enter a maximum supply greater than 0, or disable limited supply if you want unlimited supply.",
     "selectReferenceCurrency": "Please select a reference currency",
     "tokenPriceGreaterThanZero": "Please enter a token price greater than 0",

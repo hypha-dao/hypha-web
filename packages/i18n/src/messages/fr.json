@@ -1572,6 +1572,7 @@
     "clickHere": "cliquez ici",
     "noTokenCreated": "Votre espace n'a pas encore créé de token, {clickHere} pour d'abord émettre un token.",
     "tokenShouldBeChosen": "Le token doit être choisi",
+    "updateTokenRequiresDeployedContract": "Ce jeton n’a pas encore d’adresse de contrat on-chain. Exécutez et faites adopter la proposition d’émission de jeton, puis réessayez.",
     "maxSupplyValidation": "Veuillez saisir une quantité d'offre maximale supérieure à 0 ou désactiver l'offre limitée si vous souhaitez une offre illimitée.",
     "selectReferenceCurrency": "Veuillez sélectionner une devise de référence",
     "tokenPriceGreaterThanZero": "Veuillez saisir un prix de token supérieur à 0",

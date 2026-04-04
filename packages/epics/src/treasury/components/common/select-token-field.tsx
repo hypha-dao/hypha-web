@@ -109,8 +109,9 @@ export function SelectTokenField({
     const addr = typeof token.address === 'string' ? token.address.trim() : '';
     const isSelected =
       Boolean(selectedNorm) &&
-      addr.startsWith('0x') &&
-      addr.toLowerCase() === selectedNorm;
+      (addr.startsWith('0x')
+        ? addr.toLowerCase() === selectedNorm
+        : addr.toLowerCase() === selectedNorm.toLowerCase());
     if (!isSelected) {
       return token;
     }
@@ -157,14 +158,21 @@ export function SelectTokenField({
         const rawVal =
           typeof field.value === 'string' ? field.value.trim() : '';
         const normalized =
-          rawVal && rawVal.startsWith('0x') ? rawVal.toLowerCase() : rawVal;
+          rawVal.startsWith('0x') || rawVal.startsWith('db:')
+            ? rawVal.toLowerCase()
+            : rawVal;
 
         const selectedRaw = normalized
-          ? tokens.find(
-              (t) =>
-                typeof t.address === 'string' &&
-                t.address.toLowerCase() === normalized,
-            )
+          ? tokens.find((t) => {
+              const a = typeof t.address === 'string' ? t.address.trim() : '';
+              if (!a) {
+                return false;
+              }
+              if (a.startsWith('0x')) {
+                return a.toLowerCase() === normalized;
+              }
+              return a.toLowerCase() === normalized.toLowerCase();
+            })
           : undefined;
         const selectedToken = selectedRaw
           ? overlayTokenWithLiveEdits(selectedRaw, normalized)
@@ -173,18 +181,19 @@ export function SelectTokenField({
         const isSelectable = (token: TokenItem) => {
           const raw =
             typeof token.address === 'string' ? token.address.trim() : '';
-          return raw.startsWith('0x');
+          return raw.startsWith('0x') || raw.startsWith('db:');
         };
 
         const handleSelect = (token: TokenItem) => {
           if (!isSelectable(token)) {
             return;
           }
-          const raw = token.address.trim().toLowerCase();
+          const raw = token.address.trim();
+          const value = raw.startsWith('0x') ? raw.toLowerCase() : raw;
           flushSync(() => {
-            field.onChange(raw);
+            field.onChange(value);
           });
-          onValueChange?.(raw);
+          onValueChange?.(value);
         };
 
         return (
@@ -257,8 +266,9 @@ export function SelectTokenField({
                           ? overlayTokenWithLiveEdits(token, normalized)
                           : token;
                         const selectable = isSelectable(token);
+                        const addrKey = token.address.trim();
                         const key = selectable
-                          ? token.address.trim().toLowerCase()
+                          ? addrKey.toLowerCase()
                           : `no-${token.id ?? token.symbol ?? 'token'}`;
                         const rawIcon = displayToken.iconUrl?.trim();
                         const showFallback = brokenIcons[key] || !rawIcon;
@@ -306,11 +316,6 @@ export function SelectTokenField({
                               {subLabel ? (
                                 <span className="text-1 text-accent-11 truncate">
                                   {subLabel}
-                                </span>
-                              ) : null}
-                              {!selectable ? (
-                                <span className="text-1 text-neutral-10">
-                                  {tTreasury('tokenPendingContractAddress')}
                                 </span>
                               ) : null}
                             </div>

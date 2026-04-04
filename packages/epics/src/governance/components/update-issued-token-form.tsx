@@ -392,7 +392,7 @@ export const UpdateIssuedTokenForm = ({
     defaultValues: formDefaultValues,
     mode: 'onChange',
   });
-  const { refetchDbTokens } = useDbTokens();
+  const { tokens: dbTokensForSubmit, refetchDbTokens } = useDbTokens();
 
   React.useEffect(() => {
     if (progress === 100 && agreementSlug) {
@@ -448,8 +448,21 @@ export const UpdateIssuedTokenForm = ({
 
     const decayFlags = getDecaySubfieldDirtyFlags(dirtyAtSubmit);
 
+    let tokenAddress = submitData.tokenAddress?.trim() ?? '';
+    if (tokenAddress.startsWith('db:')) {
+      const id = Number.parseInt(tokenAddress.slice(3), 10);
+      const row = dbTokensForSubmit.find((t) => t.id === id);
+      const addr = row?.address?.trim();
+      if (!addr?.startsWith('0x')) {
+        setFormError(tProposalDetails('updateTokenRequiresDeployedContract'));
+        return;
+      }
+      tokenAddress = addr.toLowerCase();
+    }
+
     await updateIssuedToken({
       ...submitData,
+      tokenAddress,
       ...decayFlags,
       changedTopLevelKeys,
       label: 'Update Token',
