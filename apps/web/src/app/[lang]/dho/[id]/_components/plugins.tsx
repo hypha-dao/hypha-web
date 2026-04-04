@@ -49,6 +49,10 @@ type PluginProps = {
   /** Full space list (incl. current DHO) for mapping on-chain space ids → addresses */
   spacesForChainMapping?: Space[];
   members?: Person[];
+  /** Current DHO space — ownership-token whitelists only allow this space */
+  activeSpace?: Space | null;
+  /** Members of `activeSpace` only — used when token type is ownership */
+  membersForOwnershipWhitelist?: Person[];
 };
 
 export const Plugin = ({
@@ -59,6 +63,8 @@ export const Plugin = ({
   spaces,
   spacesForChainMapping,
   members,
+  activeSpace,
+  membersForOwnershipWhitelist,
 }: PluginProps) => {
   const { persons, spaces: memberSpaces } = useMembers({
     spaceSlug,
@@ -72,6 +78,8 @@ export const Plugin = ({
     spaceId,
     members: members ?? persons?.data,
     spaces: spaces ?? memberSpaces?.data,
+    activeSpace: activeSpace ?? undefined,
+    membersForOwnershipWhitelist: membersForOwnershipWhitelist ?? undefined,
   };
 
   if (name === 'update-issued-token') {
