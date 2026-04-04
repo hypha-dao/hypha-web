@@ -32,6 +32,36 @@ function getHyphaTokensType(symbol: string): TokenType | null {
   }
 }
 
+/**
+ * Prefer DB row matched by contract address; if `tokens.address` is still null
+ * (link/backfill pending), fall back to symbol so icon/name from Postgres still apply.
+ */
+function findDbTokenForMetadata(
+  tokenAddress: `0x${string}`,
+  chainSymbol: string,
+  dbTokens?: DbToken[],
+): DbToken | undefined {
+  if (!dbTokens?.length) {
+    return undefined;
+  }
+  const addrLower = tokenAddress.toLowerCase();
+  const byAddress = dbTokens.find(
+    (t) => t.address && t.address.toLowerCase() === addrLower,
+  );
+  if (byAddress) {
+    return byAddress;
+  }
+  const sym = chainSymbol.trim().toUpperCase();
+  if (!sym) {
+    return undefined;
+  }
+  return dbTokens.find(
+    (t) =>
+      (!t.address || t.address.trim() === '') &&
+      t.symbol?.trim().toUpperCase() === sym,
+  );
+}
+
 export async function getTokenMeta(
   tokenAddress: `0x${string}`,
   dbTokens?: DbToken[],
@@ -77,7 +107,6 @@ export async function getTokenMeta(
   try {
     const results = await web3Client.multicall({
       allowFailure: true,
-      blockTag: 'safe',
       contracts: [
         {
           ...contract,
@@ -101,11 +130,16 @@ export async function getTokenMeta(
       ({ result }) => result as string,
     );
 
-    const symbol = symbolResult || 'MISSING SYMBOL';
-    const name = nameResult || 'MISSING NAME';
-    const dbToken = dbTokens?.find(
-      (t) => t.address?.toUpperCase() === tokenAddress.toUpperCase(),
+    const chainSymbol = symbolResult?.trim() || '';
+    const chainName = nameResult?.trim() || '';
+    const dbToken = findDbTokenForMetadata(
+      tokenAddress,
+      chainSymbol || 'MISSING SYMBOL',
+      dbTokens,
     );
+
+    const symbol = dbToken?.symbol?.trim() || chainSymbol || 'MISSING SYMBOL';
+    const name = dbToken?.name?.trim() || chainName || 'MISSING NAME';
 
     const icon = getIconForHyphaTokens(
       symbol,
