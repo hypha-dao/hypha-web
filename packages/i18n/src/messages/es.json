@@ -1477,7 +1477,9 @@
       "transferFromWhitelist": "Transferencia (From:) lista blanca",
       "receiveToWhitelist": "Recepción (To:) lista blanca",
       "whitelistEnforcementActive": "Activo",
-      "whitelistEnforcementInactive": "Inactivo"
+      "whitelistEnforcementInactive": "Inactivo",
+      "spaceWhitelistMembersSuffix": "(Space y miembros)",
+      "spaceWhitelistOnlySuffix": "(Solo space)"
     },
     "entryMethods": {
       "openAccess": "Acceso abierto",

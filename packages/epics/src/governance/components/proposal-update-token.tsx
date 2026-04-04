@@ -24,6 +24,33 @@ import { normalizeMaxSupplyHuman } from '../../treasury/utils/normalize-max-supp
 import { WhitelistAddressItem } from './proposal-token-items';
 import { buildWhitelistDiffRows } from '../utils/whitelist-proposal-diff';
 
+function buildSpaceScopeMapFromEntries(
+  entries:
+    | Array<{
+        address?: string;
+        type?: 'member' | 'space';
+        includeSpaceMembers?: boolean;
+      }>
+    | undefined,
+): Map<string, 'members' | 'only'> {
+  const m = new Map<string, 'members' | 'only'>();
+  if (!entries?.length) {
+    return m;
+  }
+  for (const e of entries) {
+    if (e?.type !== 'space' || !e?.address?.startsWith('0x')) {
+      continue;
+    }
+    try {
+      const k = getAddress(e.address as `0x${string}`).toLowerCase();
+      m.set(k, e.includeSpaceMembers === false ? 'only' : 'members');
+    } catch {
+      // skip invalid
+    }
+  }
+  return m;
+}
+
 export interface ProposalUpdateTokenProps {
   address: `0x${string}`;
   /** From space token list when known; pending update JSON otherwise supplies type */
@@ -325,6 +352,15 @@ export const ProposalUpdateToken = ({
     };
   }, [toWhitelistDiffRows, toAddressesForDisplay]);
 
+  const spaceScopeFromPending = React.useMemo(
+    () => buildSpaceScopeMapFromEntries(fromEntriesPending),
+    [fromEntriesPending],
+  );
+  const spaceScopeToPending = React.useMemo(
+    () => buildSpaceScopeMapFromEntries(toEntriesPending),
+    [toEntriesPending],
+  );
+
   const showTransferWhitelistDetails =
     fromWhitelistRender.rows.length > 0 || toWhitelistRender.rows.length > 0;
   const tokenPrice = React.useMemo(() => {
@@ -581,6 +617,9 @@ export const ProposalUpdateToken = ({
                       diffStatus={
                         toWhitelistRender.showDiff ? row.status : undefined
                       }
+                      spaceScope={spaceScopeToPending.get(
+                        row.address.toLowerCase(),
+                      )}
                     />
                   ))}
                 </div>
@@ -599,6 +638,9 @@ export const ProposalUpdateToken = ({
                       diffStatus={
                         fromWhitelistRender.showDiff ? row.status : undefined
                       }
+                      spaceScope={spaceScopeFromPending.get(
+                        row.address.toLowerCase(),
+                      )}
                     />
                   ))}
                 </div>

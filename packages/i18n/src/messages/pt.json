@@ -1477,7 +1477,9 @@
       "transferFromWhitelist": "Transferência (From:) lista de permissões",
       "receiveToWhitelist": "Receção (To:) lista de permissões",
       "whitelistEnforcementActive": "Ativo",
-      "whitelistEnforcementInactive": "Inativo"
+      "whitelistEnforcementInactive": "Inativo",
+      "spaceWhitelistMembersSuffix": "(Space e membros)",
+      "spaceWhitelistOnlySuffix": "(Apenas space)"
     },
     "entryMethods": {
       "openAccess": "Acesso aberto",
