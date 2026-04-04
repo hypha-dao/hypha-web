@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Person, Space, useSpaceBySlug } from '@hypha-platform/core/client';
 import { FormLabel } from '@hypha-platform/ui';
 import { TransferableField } from './transferable-field';
@@ -31,7 +32,7 @@ export const TransferSection = ({
   const spaceName = space?.title ?? '';
   const tAgreementFlow = useTranslations('AgreementFlow');
 
-  const toWhitelistMembers = React.useMemo(() => {
+  const toWhitelistMembers = useMemo(() => {
     if (!isOwnershipToken) {
       return members;
     }
@@ -42,7 +43,7 @@ export const TransferSection = ({
     return list.filter((p) => p.address && p.address.trim() !== '');
   }, [isOwnershipToken, members, ownershipToWhitelistMembers]);
 
-  const toWhitelistSpaces = React.useMemo(() => {
+  const toWhitelistSpaces = useMemo(() => {
     if (!isOwnershipToken) {
       return spaces;
     }
