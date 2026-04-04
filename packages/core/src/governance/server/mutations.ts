@@ -135,22 +135,36 @@ export const updateToken = async (
     );
   }
 
+  const lookup =
+    agreementId !== undefined
+      ? `agreementId: ${agreementId}`
+      : agreementWeb3Id !== undefined
+      ? `agreementWeb3Id: ${agreementWeb3Id}`
+      : `address: ${address}`;
+
   if (existingToken.length === 0) {
+    throw new Error(`No token found with ${lookup}`);
+  }
+
+  if (existingToken.length > 1) {
     throw new Error(
-      `No token found with ${
-        agreementId !== undefined
-          ? `agreementId: ${agreementId}`
-          : `agreementWeb3Id: ${agreementWeb3Id}`
-      }`,
+      `Multiple tokens found with ${lookup}; refusing ambiguous update`,
     );
   }
 
-  // Map archiveToken to archived column
-  const { archiveToken, ...restWithoutArchive } = rest;
+  const tokenToUpdate = existingToken[0];
+  if (tokenToUpdate === undefined) {
+    throw new Error(`No token found with ${lookup}`);
+  }
+
+  // Map archiveToken to archived column; omit derived fields not in DB schema
+  const { archiveToken, agreementWeb3IdUpdate, ...restWithoutDerivedFields } =
+    rest;
   const updateData = {
-    ...restWithoutArchive,
-    ...(rest.agreementWeb3IdUpdate !== undefined && {
-      agreementWeb3Id: rest.agreementWeb3IdUpdate,
+    ...restWithoutDerivedFields,
+    ...(address !== undefined && { address }),
+    ...(agreementWeb3IdUpdate !== undefined && {
+      agreementWeb3Id: agreementWeb3IdUpdate,
     }),
     ...(archiveToken !== undefined && { archived: archiveToken }),
   } as Partial<InferInsertModel<typeof tokens>>;
@@ -160,21 +174,10 @@ export const updateToken = async (
     updateData.referencePrice = String(updateData.referencePrice);
   }
 
-  const findTokenCondition =
-    agreementId !== undefined
-      ? eq(tokens.agreementId, agreementId)
-      : agreementWeb3Id !== undefined
-      ? eq(tokens.agreementWeb3Id, agreementWeb3Id)
-      : address !== undefined
-      ? eq(tokens.address, address)
-      : (() => {
-          throw new Error('Unreachable');
-        })();
-
   const [updated] = await db
     .update(tokens)
     .set(updateData)
-    .where(findTokenCondition)
+    .where(eq(tokens.id, tokenToUpdate.id))
     .returning();
 
   if (!updated) {

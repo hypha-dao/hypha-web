@@ -121,7 +121,7 @@ export const SelectSettingsAction = ({
       description: t('actions.issueNewToken.description'),
       href: 'create/issue-new-token',
       icon: <RadiobuttonIcon />,
-      disabled: true,
+      disabled: isPaymentExpired,
     },
     {
       defaultDurationDays: 4,
@@ -130,7 +130,7 @@ export const SelectSettingsAction = ({
       description: t('actions.updateIssuedToken.description'),
       href: 'create/update-issued-token',
       icon: <Pencil2Icon />,
-      disabled: isPaymentExpired,
+      disabled: true,
     },
     {
       group: t('groups.treasury'),
