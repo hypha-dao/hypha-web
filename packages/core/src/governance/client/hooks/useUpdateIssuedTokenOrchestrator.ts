@@ -242,20 +242,11 @@ function buildPartialUpdateIssuedTokenWeb3Input(
   }
 
   if (changed.has('decaySettings') && arg.type === 'voice') {
-    const hasSubFlags =
-      arg.decayIntervalDirty !== undefined ||
-      arg.decayPercentageDirty !== undefined;
-    if (hasSubFlags) {
-      if (arg.decayIntervalDirty === true) {
-        base.decayInterval = arg.decaySettings?.decayInterval;
-      }
-      if (arg.decayPercentageDirty === true) {
-        base.decayPercentage = arg.decaySettings?.decayPercentage;
-      }
-    } else {
-      base.decayInterval = arg.decaySettings?.decayInterval;
-      base.decayPercentage = arg.decaySettings?.decayPercentage;
-    }
+    // Always encode both decay calls together. Sending only setDecayPercentage or only
+    // setDecayInterval (when the other subfield was not marked dirty) can revert on-chain
+    // depending on implementation; the form always has the full pair from hydration.
+    base.decayInterval = arg.decaySettings?.decayInterval;
+    base.decayPercentage = arg.decaySettings?.decayPercentage;
   }
 
   const whitelistTouched =
