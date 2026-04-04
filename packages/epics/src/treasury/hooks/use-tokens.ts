@@ -13,27 +13,42 @@ export interface ExtendedToken extends Token {
   };
 }
 
-export function useTokens({ spaceSlug }: { spaceSlug: string }) {
+export function useTokens({
+  spaceSlug,
+  /** When false, return [] if the API has no assets (do not fall back to global TOKENS). */
+  includeDefaultTokens = true,
+}: {
+  spaceSlug: string;
+  includeDefaultTokens?: boolean;
+}) {
   const { getAccessToken } = useAuthentication();
 
   const endpoint = React.useMemo(
-    () => `/api/v1/spaces/${spaceSlug}/assets-without-balances`,
+    () =>
+      spaceSlug.trim() !== ''
+        ? `/api/v1/spaces/${spaceSlug}/assets-without-balances`
+        : null,
     [spaceSlug],
   );
 
-  const { data, isLoading, mutate } = useSWR([endpoint], async ([endpoint]) => {
-    const token = await getAccessToken();
-    const headers: HeadersInit = {};
+  const { data, isLoading, mutate } = useSWR(
+    endpoint ? [endpoint, includeDefaultTokens] : null,
+    async ([url]) => {
+      const token = await getAccessToken();
+      const headers: HeadersInit = {};
 
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
 
-    return fetch(endpoint, { headers }).then((res) => res.json());
-  });
+      return fetch(url as string, { headers }).then((res) => res.json());
+    },
+  );
 
   const tokens = React.useMemo(() => {
-    if (!data?.assets) return TOKENS;
+    if (!data?.assets) {
+      return includeDefaultTokens ? TOKENS : [];
+    }
     const formattedAssets = data.assets.map((asset: ExtendedToken) => ({
       address: asset.address,
       icon: asset.icon,
@@ -43,7 +58,7 @@ export function useTokens({ spaceSlug }: { spaceSlug: string }) {
       space: asset.space,
     }));
     return formattedAssets;
-  }, [data]);
+  }, [data, includeDefaultTokens]);
 
   return {
     tokens,
