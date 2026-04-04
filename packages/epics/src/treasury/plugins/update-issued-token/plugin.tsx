@@ -73,6 +73,8 @@ type UpdateIssuedTokenPluginProps = {
   spacesForChainMapping?: Space[];
   spaceSlug?: string;
   spaceId?: number;
+  ownershipToWhitelistMembers?: Person[];
+  ownershipToWhitelistSpaces?: Space[];
 };
 
 export const UpdateIssuedTokenPlugin = ({
@@ -81,6 +83,8 @@ export const UpdateIssuedTokenPlugin = ({
   spacesForChainMapping,
   spaceSlug,
   spaceId,
+  ownershipToWhitelistMembers,
+  ownershipToWhitelistSpaces,
 }: UpdateIssuedTokenPluginProps) => {
   const { lang } = useParams();
   const tTreasury = useTranslations('TreasuryTab');
@@ -981,6 +985,8 @@ export const UpdateIssuedTokenPlugin = ({
               enableTokenPrice={enableTokenPrice ?? false}
               members={members}
               spaces={spaces}
+              ownershipToWhitelistMembers={ownershipToWhitelistMembers}
+              ownershipToWhitelistSpaces={ownershipToWhitelistSpaces}
               tokenType={currentTokenType}
               spaceSlug={spaceSlug}
               maxSupplyTypeReadOnly={onChainData?.fixedMaxSupply === true}

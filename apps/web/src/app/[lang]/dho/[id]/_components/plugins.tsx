@@ -49,6 +49,10 @@ type PluginProps = {
   /** Full space list (incl. current DHO) for mapping on-chain space ids → addresses */
   spacesForChainMapping?: Space[];
   members?: Person[];
+  /** From server: active space on-chain members → people (ownership To whitelist member tab) */
+  ownershipToWhitelistMembers?: Person[];
+  /** From server: active space on-chain members → spaces-as-members (ownership To whitelist space tab) */
+  ownershipToWhitelistSpaces?: Space[];
 };
 
 export const Plugin = ({
@@ -59,6 +63,8 @@ export const Plugin = ({
   spaces,
   spacesForChainMapping,
   members,
+  ownershipToWhitelistMembers: ownershipMembersFromServer,
+  ownershipToWhitelistSpaces: ownershipSpacesFromServer,
 }: PluginProps) => {
   const { persons, spaces: memberSpaces } = useMembers({
     spaceSlug,
@@ -74,11 +80,28 @@ export const Plugin = ({
     spaces: spaces ?? memberSpaces?.data,
   };
 
+  const ownershipToWhitelistMembers =
+    ownershipMembersFromServer ?? persons?.data ?? [];
+  const ownershipToWhitelistSpaces =
+    ownershipSpacesFromServer ?? memberSpaces?.data ?? [];
+
   if (name === 'update-issued-token') {
     return (
       <UpdateIssuedTokenPlugin
         {...commonProps}
         spacesForChainMapping={spacesForChainMapping}
+        ownershipToWhitelistMembers={ownershipToWhitelistMembers}
+        ownershipToWhitelistSpaces={ownershipToWhitelistSpaces}
+      />
+    );
+  }
+
+  if (name === 'issue-new-token') {
+    return (
+      <IssueNewTokenPlugin
+        {...commonProps}
+        ownershipToWhitelistMembers={ownershipToWhitelistMembers}
+        ownershipToWhitelistSpaces={ownershipToWhitelistSpaces}
       />
     );
   }

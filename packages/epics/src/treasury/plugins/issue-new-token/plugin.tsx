@@ -16,12 +16,16 @@ type IssueNewTokenPluginProps = {
   members?: Person[];
   spaces?: Space[];
   spaceSlug?: string;
+  ownershipToWhitelistMembers?: Person[];
+  ownershipToWhitelistSpaces?: Space[];
 };
 
 export const IssueNewTokenPlugin = ({
   members = [],
   spaces = [],
   spaceSlug,
+  ownershipToWhitelistMembers,
+  ownershipToWhitelistSpaces,
 }: IssueNewTokenPluginProps) => {
   const { getValues, setValue, watch } = useFormContext();
   const values = getValues();
@@ -297,6 +301,8 @@ export const IssueNewTokenPlugin = ({
           enableTokenPrice={enableTokenPrice}
           members={members}
           spaces={spaces}
+          ownershipToWhitelistMembers={ownershipToWhitelistMembers}
+          ownershipToWhitelistSpaces={ownershipToWhitelistSpaces}
           tokenType={currentTokenType}
           spaceSlug={spaceSlug}
         />
