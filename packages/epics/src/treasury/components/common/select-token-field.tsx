@@ -126,6 +126,25 @@ export function SelectTokenField({
     return { ...token, name: n, symbol: s, iconUrl: icon };
   };
 
+  /** One human-facing title: prefer name, then symbol (matches trigger + avoids name/symbol line swap confusion). */
+  const tokenPrimaryLabel = (t: TokenItem) => {
+    const name = t.name?.trim();
+    const sym = t.symbol?.trim();
+    return name || sym || '';
+  };
+
+  const tokenSecondaryLabel = (t: TokenItem) => {
+    const name = t.name?.trim();
+    const sym = t.symbol?.trim();
+    if (!sym) {
+      return null;
+    }
+    if (!name) {
+      return null;
+    }
+    return name.toLowerCase() === sym.toLowerCase() ? null : sym;
+  };
+
   const isEmpty = tokens.length === 0;
   const placeholderText = placeholder ?? tTreasury('selectTokenPlaceholder');
   const emptyText = emptyListMessage ?? tTreasury('noTokensAvailable');
@@ -206,7 +225,7 @@ export function SelectTokenField({
                                 }
                                 width={20}
                                 height={20}
-                                alt={selectedToken.symbol ?? ''}
+                                alt={tokenPrimaryLabel(selectedToken)}
                                 className="mr-2 h-4 w-4 shrink-0 rounded-full"
                                 unoptimized
                                 onError={() =>
@@ -217,7 +236,7 @@ export function SelectTokenField({
                                 }
                               />
                               <span className="text-2 text-neutral-11 truncate">
-                                {selectedToken.symbol}
+                                {tokenPrimaryLabel(selectedToken)}
                               </span>
                             </>
                           ) : (
@@ -246,6 +265,7 @@ export function SelectTokenField({
                         const src = showFallback
                           ? '/placeholder/token-icon.svg'
                           : rawIcon;
+                        const subLabel = tokenSecondaryLabel(displayToken);
                         return (
                           <DropdownMenuItem
                             key={key}
@@ -259,7 +279,7 @@ export function SelectTokenField({
                               src={src}
                               width={24}
                               height={24}
-                              alt={displayToken.symbol ?? ''}
+                              alt={tokenPrimaryLabel(displayToken)}
                               className="mr-2 h-5 w-5 shrink-0 rounded-full"
                               unoptimized
                               onError={() =>
@@ -272,7 +292,7 @@ export function SelectTokenField({
                             <div className="flex min-w-0 flex-col">
                               <span className="flex flex-wrap items-center gap-2">
                                 <span className="text-2 text-neutral-11">
-                                  {displayToken.symbol}
+                                  {tokenPrimaryLabel(displayToken)}
                                 </span>
                                 {token?.type ? (
                                   <span className="rounded-lg border border-accent-11 px-2 py-0.75 text-[10px] text-accent-11">
@@ -283,9 +303,9 @@ export function SelectTokenField({
                                   </span>
                                 ) : null}
                               </span>
-                              {displayToken?.name ? (
+                              {subLabel ? (
                                 <span className="text-1 text-accent-11 truncate">
-                                  {displayToken.name}
+                                  {subLabel}
                                 </span>
                               ) : null}
                               {!selectable ? (
