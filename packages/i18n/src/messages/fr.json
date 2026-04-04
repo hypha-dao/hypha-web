@@ -1398,7 +1398,6 @@
       "payment": "Paiement",
       "transparencySettings": "Paramètres de transparence",
       "decaySettings": "Paramètres de décroissance",
-      "transferWhitelists": "Transférer les listes blanches",
       "fromWhitelist": "À partir de la liste blanche",
       "toWhitelist": "Vers la liste blanche"
     },

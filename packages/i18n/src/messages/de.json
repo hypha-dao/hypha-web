@@ -1398,7 +1398,6 @@
       "payment": "Zahlung",
       "transparencySettings": "Transparenzeinstellungen",
       "decaySettings": "Decay-Einstellungen",
-      "transferWhitelists": "Whitelists übertragen",
       "fromWhitelist": "Von der Whitelist",
       "toWhitelist": "Zur Whitelist"
     },

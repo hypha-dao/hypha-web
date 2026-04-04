@@ -1398,7 +1398,6 @@
       "payment": "Pagamento",
       "transparencySettings": "Configurações de transparência",
       "decaySettings": "Configurações de deterioração",
-      "transferWhitelists": "Transferir listas brancas",
       "fromWhitelist": "Da lista branca",
       "toWhitelist": "Para colocar na lista de permissões"
     },
