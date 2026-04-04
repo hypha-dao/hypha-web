@@ -80,10 +80,20 @@ export const Plugin = ({
     spaces: spaces ?? memberSpaces?.data,
   };
 
+  /**
+   * Server-side resolution uses `findSpaceByAddresses` for on-chain member addresses.
+   * Space-as-member rows sometimes have no matching `spaces.address` yet → empty array.
+   * The Members tab uses the same `/api/v1/spaces/.../members` data as `useMembers`;
+   * fall back when the server list is empty so ownership To whitelist space dropdown works.
+   */
   const ownershipToWhitelistMembers =
-    ownershipMembersFromServer ?? persons?.data ?? [];
+    ownershipMembersFromServer && ownershipMembersFromServer.length > 0
+      ? ownershipMembersFromServer
+      : (persons?.data ?? []);
   const ownershipToWhitelistSpaces =
-    ownershipSpacesFromServer ?? memberSpaces?.data ?? [];
+    ownershipSpacesFromServer && ownershipSpacesFromServer.length > 0
+      ? ownershipSpacesFromServer
+      : (memberSpaces?.data ?? []);
 
   if (name === 'update-issued-token') {
     return (
