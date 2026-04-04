@@ -73,8 +73,6 @@ type UpdateIssuedTokenPluginProps = {
   spacesForChainMapping?: Space[];
   spaceSlug?: string;
   spaceId?: number;
-  activeSpace?: Space;
-  membersForOwnershipWhitelist?: Person[];
 };
 
 export const UpdateIssuedTokenPlugin = ({
@@ -83,8 +81,6 @@ export const UpdateIssuedTokenPlugin = ({
   spacesForChainMapping,
   spaceSlug,
   spaceId,
-  activeSpace,
-  membersForOwnershipWhitelist,
 }: UpdateIssuedTokenPluginProps) => {
   const { lang } = useParams();
   const tTreasury = useTranslations('TreasuryTab');
@@ -988,8 +984,6 @@ export const UpdateIssuedTokenPlugin = ({
               tokenType={currentTokenType}
               spaceSlug={spaceSlug}
               maxSupplyTypeReadOnly={onChainData?.fixedMaxSupply === true}
-              activeSpace={activeSpace}
-              membersForOwnershipWhitelist={membersForOwnershipWhitelist}
             />
           )}
           {tokenType === 'voice' && areGeneralFieldsFilled && (

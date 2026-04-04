@@ -16,16 +16,12 @@ type IssueNewTokenPluginProps = {
   members?: Person[];
   spaces?: Space[];
   spaceSlug?: string;
-  activeSpace?: Space;
-  membersForOwnershipWhitelist?: Person[];
 };
 
 export const IssueNewTokenPlugin = ({
   members = [],
   spaces = [],
   spaceSlug,
-  activeSpace,
-  membersForOwnershipWhitelist,
 }: IssueNewTokenPluginProps) => {
   const { getValues, setValue, watch } = useFormContext();
   const values = getValues();
@@ -303,8 +299,6 @@ export const IssueNewTokenPlugin = ({
           spaces={spaces}
           tokenType={currentTokenType}
           spaceSlug={spaceSlug}
-          activeSpace={activeSpace}
-          membersForOwnershipWhitelist={membersForOwnershipWhitelist}
         />
       )}
       {tokenType === 'voice' && areGeneralFieldsFilled && (

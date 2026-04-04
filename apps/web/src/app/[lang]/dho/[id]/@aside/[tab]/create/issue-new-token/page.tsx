@@ -9,10 +9,7 @@ import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { Person, Space } from '@hypha-platform/core/client';
 import { getAllSpaces } from '@hypha-platform/core/server';
-import {
-  findAllPeopleWithoutPagination,
-  findPeopleBySpaceIdWithoutPagination,
-} from '@hypha-platform/core/server';
+import { findAllPeopleWithoutPagination } from '@hypha-platform/core/server';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string; tab: string }>;
@@ -59,10 +56,6 @@ export default async function IssueNewTokenPage({
     (space) =>
       space?.address && space.address.trim() !== '' && space.id !== spaceId,
   );
-
-  const membersForOwnershipWhitelist =
-    await findPeopleBySpaceIdWithoutPagination({ spaceId }, { db });
-
   return (
     <SidePanel>
       <IssueNewTokenForm
@@ -77,8 +70,6 @@ export default async function IssueNewTokenPage({
             spaceSlug={id}
             spaces={filteredSpaces}
             members={filteredPeoples}
-            activeSpace={spaceFromDb}
-            membersForOwnershipWhitelist={membersForOwnershipWhitelist}
           />
         }
       />

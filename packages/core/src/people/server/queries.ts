@@ -125,27 +125,6 @@ export const findAllPeopleWithoutPagination = async ({
   return dbPeople.map(mapToDomainPerson);
 };
 
-/** All people with a membership in the space (for ownership-token whitelist UI). */
-export const findPeopleBySpaceIdWithoutPagination = async (
-  { spaceId }: { spaceId: number },
-  { db }: DbConfig,
-): Promise<Person[]> => {
-  type ResultRow = Partial<DbPerson>;
-  const rows = (await db
-    .select(getDefaultFields())
-    .from(people)
-    .innerJoin(memberships, eq(memberships.personId, people.id))
-    .where(eq(memberships.spaceId, spaceId))) as ResultRow[];
-
-  const mapped = rows.map(mapToDomainPerson);
-  const seen = new Set<number>();
-  return mapped.filter((p) => {
-    if (seen.has(p.id)) return false;
-    seen.add(p.id);
-    return true;
-  });
-};
-
 export type FindPersonByIdInput = {
   id: number;
 };

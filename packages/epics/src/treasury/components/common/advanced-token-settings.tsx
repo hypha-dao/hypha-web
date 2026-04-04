@@ -19,8 +19,6 @@ export const AdvancedTokenSettings = ({
   tokenType,
   spaceSlug,
   maxSupplyTypeReadOnly = false,
-  activeSpace,
-  membersForOwnershipWhitelist,
 }: {
   enableLimitedSupply: boolean;
   setEnableLimitedSupply: (value: boolean) => void;
@@ -33,8 +31,6 @@ export const AdvancedTokenSettings = ({
   tokenType?: string;
   spaceSlug?: string;
   maxSupplyTypeReadOnly?: boolean;
-  activeSpace?: Space;
-  membersForOwnershipWhitelist?: Person[];
 }) => {
   return (
     <>
@@ -54,8 +50,6 @@ export const AdvancedTokenSettings = ({
         spaces={spaces}
         tokenType={tokenType}
         spaceSlug={spaceSlug}
-        activeSpace={activeSpace}
-        membersForOwnershipWhitelist={membersForOwnershipWhitelist}
       />
       <Separator />
       <TokenValueSection enableTokenPrice={enableTokenPrice} />
