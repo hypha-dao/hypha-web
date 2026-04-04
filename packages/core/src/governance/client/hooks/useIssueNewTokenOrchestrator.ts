@@ -1,7 +1,6 @@
 'use client';
 
 import useSWRMutation from 'swr/mutation';
-import useSWR from 'swr';
 import { useCallback, useMemo, useReducer, useState } from 'react';
 import { z } from 'zod';
 import { produce } from 'immer';
@@ -20,14 +19,14 @@ import { updateTokenAction } from '../../server/actions';
 import { ReferenceCurrency } from '../../types';
 import { getPriceCurrencyFeed } from '../../../common/web3/token-backing-vault';
 import type { TokenType } from '../../../common';
+import { getProposalFromLogs, web3ProposalIdForDb } from '../web3';
 
 type TaskName =
   | 'CREATE_WEB2_AGREEMENT'
   | 'CREATE_WEB3_AGREEMENT'
   | 'UPLOAD_FILES'
   | 'UPLOAD_TOKEN_ICON'
-  | 'CREATE_TOKEN'
-  | 'LINK_WEB2_AND_WEB3_AGREEMENT';
+  | 'CREATE_TOKEN';
 
 type TaskState = {
   [K in TaskName]: {
@@ -49,7 +48,6 @@ const taskActionDescriptions: Record<TaskName, string> = {
   UPLOAD_FILES: 'Uploading files...',
   UPLOAD_TOKEN_ICON: 'Uploading token icon...',
   CREATE_TOKEN: 'Creating token...',
-  LINK_WEB2_AND_WEB3_AGREEMENT: 'Linking Web2 and Web3 agreements...',
 };
 
 const initialTaskState: TaskState = {
@@ -58,7 +56,6 @@ const initialTaskState: TaskState = {
   UPLOAD_FILES: { status: TaskStatus.IDLE },
   UPLOAD_TOKEN_ICON: { status: TaskStatus.IDLE },
   CREATE_TOKEN: { status: TaskStatus.IDLE },
-  LINK_WEB2_AND_WEB3_AGREEMENT: { status: TaskStatus.IDLE },
 };
 
 type ProgressAction =
@@ -179,16 +176,6 @@ export const useCreateIssueTokenOrchestrator = ({
     [currentAction],
   );
 
-  const errorTask = useCallback(
-    (taskName: TaskName, error: string) => {
-      if (currentAction === taskActionDescriptions[taskName]) {
-        setCurrentAction(undefined);
-      }
-      dispatch({ type: 'SET_ERROR', taskName, message: error });
-    },
-    [currentAction],
-  );
-
   const resetTasks = useCallback(() => {
     dispatch({ type: 'RESET' });
   }, []);
@@ -215,7 +202,7 @@ export const useCreateIssueTokenOrchestrator = ({
       }
 
       startTask('CREATE_TOKEN');
-      const createdToken = await web2TokenMutations.createToken({
+      await web2TokenMutations.createToken({
         ...arg,
         agreementId: createdAgreement.id,
         iconUrl,
@@ -262,7 +249,7 @@ export const useCreateIssueTokenOrchestrator = ({
                   .filter((addr) => addr && addr.startsWith('0x'))
               : [];
 
-          const web3Result = await web3.createIssueToken({
+          const txHash = await web3.createIssueToken({
             spaceId: arg.web3SpaceId,
             name: arg.name,
             symbol: arg.symbol,
@@ -287,6 +274,27 @@ export const useCreateIssueTokenOrchestrator = ({
             initialTransferWhitelist,
             initialReceiveWhitelist,
           });
+          const receipt = await web3.waitForCreateIssueTokenReceipt(txHash);
+          const proposalArgs = getProposalFromLogs(receipt.logs);
+          const rawProposalId = proposalArgs?.proposalId;
+          const web3ProposalId = web3ProposalIdForDb(rawProposalId);
+          if (web3ProposalId == null) {
+            throw new Error(
+              'Could not read proposal id from chain after creating issue-token proposal',
+            );
+          }
+
+          await web2.updateAgreementBySlug({
+            slug: web2Slug!,
+            web3ProposalId,
+          });
+          await updateTokenAction(
+            {
+              agreementId: createdAgreement.id,
+              agreementWeb3IdUpdate: web3ProposalId,
+            },
+            { authToken: authToken! },
+          );
           completeTask('CREATE_WEB3_AGREEMENT');
         }
         const files = schemaCreateAgreementFiles.parse(arg);
@@ -304,48 +312,6 @@ export const useCreateIssueTokenOrchestrator = ({
         }
         throw err;
       }
-    },
-  );
-
-  const { data: updatedWeb2Agreement } = useSWR(
-    web2.createdAgreement?.slug &&
-      taskState.UPLOAD_FILES.status === TaskStatus.IS_DONE &&
-      taskState.CREATE_WEB3_AGREEMENT.status === TaskStatus.IS_DONE &&
-      web3.createdToken?.proposalId
-      ? [
-          web2.createdAgreement.slug,
-          web3.createdToken.proposalId,
-          'linkingWeb2AndWeb3',
-        ]
-      : null,
-    async ([slug, web3ProposalId]) => {
-      try {
-        startTask('LINK_WEB2_AND_WEB3_AGREEMENT');
-        const result = await web2.updateAgreementBySlug({
-          slug,
-          web3ProposalId: Number(web3ProposalId),
-        });
-
-        const updatedToken = await updateTokenAction(
-          {
-            agreementId: web2.createdAgreement!.id,
-            agreementWeb3IdUpdate: Number(web3ProposalId),
-          },
-          { authToken: authToken! },
-        );
-
-        completeTask('LINK_WEB2_AND_WEB3_AGREEMENT');
-        return result;
-      } catch (error) {
-        if (error instanceof Error) {
-          errorTask('LINK_WEB2_AND_WEB3_AGREEMENT', error.message);
-        }
-        throw error;
-      }
-    },
-    {
-      revalidateOnMount: true,
-      shouldRetryOnError: false,
     },
   );
 
@@ -371,7 +337,6 @@ export const useCreateIssueTokenOrchestrator = ({
     agreement: {
       ...web2.createdAgreement,
       ...web3.createdToken,
-      ...updatedWeb2Agreement,
     },
     taskState,
     currentAction,
