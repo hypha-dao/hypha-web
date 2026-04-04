@@ -158,6 +158,7 @@ export async function GET(
       { search: undefined },
     );
     const dbTokens = rawDbTokens.map((token) => ({
+      id: token.id,
       agreementId: token.agreementId ?? undefined,
       spaceId: token.spaceId ?? undefined,
       name: token.name,
@@ -170,6 +171,7 @@ export async function GET(
       transferable: token.transferable,
       isVotingToken: token.isVotingToken,
       address: token.address ?? undefined,
+      createdAt: token.createdAt ?? undefined,
     }));
 
     const referencePriceByAddress: Record<string, number> = {};
@@ -185,7 +187,15 @@ export async function GET(
     const assets = await Promise.all(
       allTokens.map(async (token) => {
         try {
-          const meta = await getTokenMeta(token.address, dbTokens);
+          const indexerIconUrl =
+            token.icon &&
+            (token.icon.startsWith('http://') ||
+              token.icon.startsWith('https://'))
+              ? token.icon
+              : undefined;
+          const meta = await getTokenMeta(token.address, dbTokens, {
+            indexerIconUrl,
+          });
           const isEnergyToken =
             token.address.toLowerCase() === energyTokenAddress?.toLowerCase();
           let amount: number;

@@ -59,6 +59,7 @@ export async function GET(
         .map((token) => [token.address!.toLowerCase(), token]),
     );
     const dbTokens = rawDbTokens.map((token) => ({
+      id: token.id,
       agreementId: token.agreementId ?? undefined,
       spaceId: token.spaceId ?? undefined,
       name: token.name,

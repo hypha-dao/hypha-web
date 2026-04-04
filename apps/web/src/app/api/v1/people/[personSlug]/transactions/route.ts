@@ -91,6 +91,7 @@ export async function GET(
       { search: undefined },
     );
     const dbTokens = rawDbTokens.map((token) => ({
+      id: token.id,
       agreementId: token.agreementId ?? undefined,
       spaceId: token.spaceId ?? undefined,
       name: token.name,
@@ -103,6 +104,7 @@ export async function GET(
       transferable: token.transferable,
       isVotingToken: token.isVotingToken,
       address: token.address ?? undefined,
+      createdAt: token.createdAt ?? undefined,
     }));
 
     const transfersWithEntityInfo = await Promise.all(
