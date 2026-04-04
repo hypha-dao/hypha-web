@@ -55,16 +55,51 @@ function findDbTokenForMetadata(
   if (!sym) {
     return undefined;
   }
-  return dbTokens.find(
+  const candidates = dbTokens.filter(
     (t) =>
       (!t.address || t.address.trim() === '') &&
       t.symbol?.trim().toUpperCase() === sym,
   );
+  if (candidates.length === 0) {
+    return undefined;
+  }
+  if (candidates.length === 1) {
+    return candidates[0];
+  }
+  return candidates.sort((a, b) => {
+    const aHasIcon = a.iconUrl?.trim() ? 1 : 0;
+    const bHasIcon = b.iconUrl?.trim() ? 1 : 0;
+    if (bHasIcon !== aHasIcon) {
+      return bHasIcon - aHasIcon;
+    }
+    const aT =
+      a.createdAt instanceof Date
+        ? a.createdAt.getTime()
+        : typeof a.createdAt === 'string'
+        ? Date.parse(a.createdAt)
+        : 0;
+    const bT =
+      b.createdAt instanceof Date
+        ? b.createdAt.getTime()
+        : typeof b.createdAt === 'string'
+        ? Date.parse(b.createdAt)
+        : 0;
+    if (bT !== aT) {
+      return bT - aT;
+    }
+    return (b.id ?? 0) - (a.id ?? 0);
+  })[0];
 }
+
+export type GetTokenMetaOptions = {
+  /** Logo URL from indexer / wallet API when DB `icon_url` is empty */
+  indexerIconUrl?: string;
+};
 
 export async function getTokenMeta(
   tokenAddress: `0x${string}`,
   dbTokens?: DbToken[],
+  options?: GetTokenMetaOptions,
 ): Promise<
   Omit<Token, 'address'> & {
     space?: { slug: string; title: string };
@@ -141,9 +176,12 @@ export async function getTokenMeta(
     const symbol = dbToken?.symbol?.trim() || chainSymbol || 'MISSING SYMBOL';
     const name = dbToken?.name?.trim() || chainName || 'MISSING NAME';
 
+    const indexerIcon = options?.indexerIconUrl?.trim();
     const icon = getIconForHyphaTokens(
       symbol,
-      dbToken?.iconUrl ?? '/placeholder/neutral-token-icon.svg',
+      (dbToken?.iconUrl?.trim() ||
+        (indexerIcon && indexerIcon.length > 0 ? indexerIcon : undefined)) ??
+        '/placeholder/neutral-token-icon.svg',
     );
 
     const hyphaTokenType = getHyphaTokensType(symbol);

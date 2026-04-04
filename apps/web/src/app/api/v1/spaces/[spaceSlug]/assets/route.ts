@@ -50,6 +50,7 @@ export async function GET(
 
     const rawDbTokens = await findAllTokens({ db }, { search: undefined });
     const dbTokens = rawDbTokens.map((token) => ({
+      id: token.id,
       agreementId: token.agreementId ?? undefined,
       spaceId: token.spaceId ?? undefined,
       name: token.name,
@@ -193,7 +194,15 @@ export async function GET(
     const assets = await Promise.all(
       allTokens.map(async (token) => {
         try {
-          const meta = await getTokenMeta(token.address, dbTokens);
+          const indexerIconUrl =
+            token.icon &&
+            (token.icon.startsWith('http://') ||
+              token.icon.startsWith('https://'))
+              ? token.icon
+              : undefined;
+          const meta = await getTokenMeta(token.address, dbTokens, {
+            indexerIconUrl,
+          });
           if (hasEmojiOrLink(meta.name) || hasEmojiOrLink(meta.symbol)) {
             return null;
           }
