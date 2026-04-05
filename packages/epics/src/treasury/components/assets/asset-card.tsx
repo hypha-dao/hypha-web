@@ -16,6 +16,8 @@ type AssetCardProps = {
   /** Override value display (e.g. for small reward amounts) */
   valueDisplay?: string;
   tokenPrice?: number;
+  /** Fiat / reference label from DB when token price is set (e.g. EUR, USD) */
+  referenceCurrency?: string | null;
   usdEqual?: number;
   type?: string;
   isLoading?: boolean;
@@ -37,6 +39,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   value,
   valueDisplay,
   tokenPrice,
+  referenceCurrency,
   usdEqual,
   isLoading,
   supply,
@@ -124,7 +127,9 @@ export const AssetCard: React.FC<AssetCardProps> = ({
         <Text className="text-1">{name}</Text>
         {tokenPrice !== undefined && tokenPrice > 0 && (
           <Text className="text-1 text-neutral-11">
-            {`${formatCurrencyValue(tokenPrice)} USD`}
+            {`${formatCurrencyValue(tokenPrice)} ${
+              referenceCurrency?.trim() || 'USD'
+            }`}
           </Text>
         )}
         {supply?.total !== undefined && (

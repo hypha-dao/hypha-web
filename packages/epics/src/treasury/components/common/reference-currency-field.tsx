@@ -50,7 +50,7 @@ export const ReferenceCurrencyField = () => {
               {enableTokenPrice && <RequirementMark className="text-2" />}
             </div>
             <FormControl>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select value={field.value} onValueChange={field.onChange}>
                 <SelectTrigger>
                   <SelectValue
                     placeholder={tAgreementFlow(
