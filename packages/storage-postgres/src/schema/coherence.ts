@@ -46,7 +46,6 @@ export const coherences = pgTable(
     ),
     index('search_type').on(table.type),
     index('search_priority').on(table.priority),
-    index('search_slug').on(table.slug),
     uniqueIndex('unique_slug').on(table.slug),
     index('search_room_id').on(table.roomId),
     index('search_archived').on(table.archived),

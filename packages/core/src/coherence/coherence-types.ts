@@ -1,12 +1,5 @@
-export const COHERENCE_TYPES = [
-  'Opportunity',
-  'Risk',
-  'Tension',
-  'Insight',
-  'Trend',
-  'Proposal',
-] as const;
-
+export { COHERENCE_TYPES } from '@hypha-platform/storage-postgres';
+import { COHERENCE_TYPES } from '@hypha-platform/storage-postgres';
 export type CoherenceType = (typeof COHERENCE_TYPES)[number];
 
 export const COHERENCE_TYPE_OPTIONS: {

@@ -74,7 +74,7 @@ export const findAllCoherences = async (
   return results;
 };
 
-export const findCoherencesById = async (
+export const findCoherenceById = async (
   { id }: { id: number },
   { db }: DbConfig,
 ): Promise<Coherence | null> => {
