@@ -10,14 +10,13 @@ export const SidePanel = ({ children, className }: SidePanelProps) => {
   return (
     <div
       className={cn(
-        'fixed top-9 bottom-0 right-0 bg-background-2 overflow-y-auto w-full md:w-container-sm',
+        'fixed bottom-0 bg-background-2 overflow-y-auto w-full md:w-container-sm',
         className,
       )}
-      // if we want to keep the sidebar centralized over the main content
-      // we need to calculate its position
-      // style={{
-      //   right: `calc((100vw - var(--spacing-container-2xl)) / 2)`,
-      // }}
+      style={{
+        top: 'var(--menu-top-height, 65px)',
+        right: 'var(--sidebar-right-width, 0px)',
+      }}
     >
       <div className="p-4 lg:p-7">{children}</div>
     </div>

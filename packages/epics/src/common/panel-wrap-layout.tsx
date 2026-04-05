@@ -15,6 +15,28 @@ import {
   useAiPanel,
   useHumanChatPanel,
 } from './human-chat-panel-context';
+import { useIsSpaceContext } from './use-is-space-context';
+
+// ─── Panel Providers ─────────────────────────────────────────────────────────
+// Owns the open/close state for both panels and wraps children with the
+// context providers. This allows components outside PanelWrapLayout (like
+// MenuTop) to access panel state via useAiPanel() and useHumanChatPanel().
+
+export function PanelProviders({ children }: { children: React.ReactNode }) {
+  const [leftOpen, setLeftOpen] = useState(false);
+  const [rightOpen, setRightOpen] = useState(false);
+
+  const toggleLeft = useCallback(() => setLeftOpen((prev) => !prev), []);
+  const toggleRight = useCallback(() => setRightOpen((prev) => !prev), []);
+
+  return (
+    <AiPanelProvider value={{ open: leftOpen, toggle: toggleLeft }}>
+      <HumanChatPanelProvider value={{ open: rightOpen, toggle: toggleRight }}>
+        {children}
+      </HumanChatPanelProvider>
+    </AiPanelProvider>
+  );
+}
 
 // ─── Trigger Buttons ─────────────────────────────────────────────────────────
 // Both triggers use custom contexts (not useSidebar()) so they work correctly
@@ -23,6 +45,9 @@ import {
 export function AiSidebarTrigger() {
   const { open, toggle } = useAiPanel();
   const t = useTranslations('AiPanel');
+  const isSpace = useIsSpaceContext();
+
+  if (!isSpace || open) return null;
 
   return (
     <button
@@ -30,8 +55,8 @@ export function AiSidebarTrigger() {
       onClick={toggle}
       aria-expanded={open}
       className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-      title={open ? t('hidePanel') : t('openPanel')}
-      aria-label={open ? t('hidePanel') : t('openPanel')}
+      title={t('openPanel')}
+      aria-label={t('openPanel')}
     >
       <Sparkles className="h-4 w-4" />
     </button>
@@ -41,6 +66,9 @@ export function AiSidebarTrigger() {
 export function HumanSidebarTrigger() {
   const { open, toggle } = useHumanChatPanel();
   const t = useTranslations('HumanChatPanel');
+  const isSpace = useIsSpaceContext();
+
+  if (!isSpace || open) return null;
 
   return (
     <button
@@ -48,8 +76,8 @@ export function HumanSidebarTrigger() {
       onClick={toggle}
       aria-expanded={open}
       className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-      title={open ? t('hidePanel') : t('openPanel')}
-      aria-label={open ? t('hidePanel') : t('openPanel')}
+      title={t('openPanel')}
+      aria-label={t('openPanel')}
     >
       <MessageCircle className="h-4 w-4" />
     </button>
@@ -69,75 +97,87 @@ type PanelWrapLayoutProps = {
 };
 
 // ─── Main Layout ─────────────────────────────────────────────────────────────
-// Uses two nested SidebarProviders in controlled mode. Custom contexts ensure
-// that AiSidebarTrigger and HumanSidebarTrigger always toggle the correct panel
-// regardless of where they are rendered in the tree.
+// Reads panel open/close state from PanelProviders contexts. Creates
+// SidebarProvider wrappers for each side to drive sidebar animations.
+// Sets CSS variables --sidebar-right-width and --sidebar-left-width
+// on its outermost div so other components (e.g. SidePanel) can position
+// themselves relative to the sidebars.
 //
-// Nesting order (outer → inner):
-//   AiPanelProvider → LEFT SidebarProvider → HumanChatPanelProvider → RIGHT SidebarProvider
-//
-// Children live inside the innermost SidebarInset and can use either custom
-// context via the exported trigger components.
+// Must be rendered inside <PanelProviders>.
 
 export function PanelWrapLayout({
   children,
   left,
   right,
 }: PanelWrapLayoutProps) {
-  const [leftOpen, setLeftOpen] = useState(false);
-  const [rightOpen, setRightOpen] = useState(false);
+  const { open: leftOpen, toggle: toggleLeft } = useAiPanel();
+  const { open: rightOpen, toggle: toggleRight } = useHumanChatPanel();
+  const isSpace = useIsSpaceContext();
 
-  const toggleLeft = useCallback(() => setLeftOpen((prev) => !prev), []);
-  const toggleRight = useCallback(() => setRightOpen((prev) => !prev), []);
+  // Panels are only available within a space context (/[lang]/dho/[id]/...)
+  const effectiveLeft = isSpace ? left : undefined;
+  const effectiveRight = isSpace ? right : undefined;
 
   // Core content that goes inside the innermost SidebarInset
   let content = <>{children}</>;
 
-  // Wrap with right panel if provided
-  if (right) {
+  // Wrap with right panel if provided and in space context
+  if (effectiveRight) {
     content = (
-      <HumanChatPanelProvider value={{ open: rightOpen, toggle: toggleRight }}>
-        <SidebarProvider
-          open={rightOpen}
-          onOpenChange={setRightOpen}
-          style={
-            {
-              '--sidebar-width': '320px',
-            } as React.CSSProperties
-          }
-        >
-          <SidebarInset>{content}</SidebarInset>
-          <Sidebar side="right" variant="sidebar" collapsible="offcanvas">
-            <SidebarResizeHandle />
-            {right.content}
-          </Sidebar>
-        </SidebarProvider>
-      </HumanChatPanelProvider>
+      <SidebarProvider
+        open={rightOpen}
+        onOpenChange={(open) => {
+          if (open !== rightOpen) toggleRight();
+        }}
+        style={
+          {
+            '--sidebar-width': '320px',
+          } as React.CSSProperties
+        }
+      >
+        <SidebarInset className="overflow-y-auto">{content}</SidebarInset>
+        <Sidebar side="right" variant="sidebar" collapsible="offcanvas">
+          <SidebarResizeHandle />
+          {effectiveRight.content}
+        </Sidebar>
+      </SidebarProvider>
     );
   }
 
-  // Wrap with left panel if provided
-  if (left) {
+  // Wrap with left panel if provided and in space context
+  if (effectiveLeft) {
     content = (
-      <AiPanelProvider value={{ open: leftOpen, toggle: toggleLeft }}>
-        <SidebarProvider
-          open={leftOpen}
-          onOpenChange={setLeftOpen}
-          style={
-            {
-              '--sidebar-width': '320px',
-            } as React.CSSProperties
-          }
-        >
-          <Sidebar side="left" variant="sidebar" collapsible="offcanvas">
-            {left.content}
-            <SidebarResizeHandle />
-          </Sidebar>
-          <SidebarInset>{content}</SidebarInset>
-        </SidebarProvider>
-      </AiPanelProvider>
+      <SidebarProvider
+        open={leftOpen}
+        onOpenChange={(open) => {
+          if (open !== leftOpen) toggleLeft();
+        }}
+        style={
+          {
+            '--sidebar-width': '320px',
+          } as React.CSSProperties
+        }
+      >
+        <Sidebar side="left" variant="sidebar" collapsible="offcanvas">
+          {effectiveLeft.content}
+          <SidebarResizeHandle />
+        </Sidebar>
+        <SidebarInset className="overflow-y-auto">{content}</SidebarInset>
+      </SidebarProvider>
     );
   }
 
-  return content;
+  return (
+    <div
+      style={
+        {
+          '--sidebar-right-width':
+            rightOpen && effectiveRight ? '320px' : '0px',
+          '--sidebar-left-width': leftOpen && effectiveLeft ? '320px' : '0px',
+        } as React.CSSProperties
+      }
+    >
+      {content}
+    </div>
+  );
 }

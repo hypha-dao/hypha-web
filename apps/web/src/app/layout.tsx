@@ -13,6 +13,7 @@ import { AuthProvider } from '@hypha-platform/authentication';
 import { useAuthentication } from '@hypha-platform/authentication';
 import {
   AiLeftPanel,
+  PanelProviders,
   PanelWrapLayout,
   AiSidebarTrigger,
   HumanSidebarTrigger,
@@ -129,63 +130,77 @@ export default async function RootLayout({
                   serviceWorkerPath={serviceWorkerPath}
                 >
                   <ConditionalMatrixProvider enabled={humanChatEnabled}>
-                    <PanelWrapLayout
-                      left={
-                        aiChatEnabled ? { content: <AiLeftPanel /> } : undefined
-                      }
-                      right={
-                        humanChatEnabled
-                          ? { content: <HumanRightPanel /> }
-                          : undefined
-                      }
-                    >
-                      <MenuTop
-                        logoHref={ROOT_URL}
-                        openMenuLabel={tNav('openMenu')}
-                        closeMenuLabel={tNav('closeMenu')}
-                        leadingAction={
-                          aiChatEnabled ? <AiSidebarTrigger /> : undefined
+                    <PanelProviders>
+                      <PanelWrapLayout
+                        left={
+                          aiChatEnabled
+                            ? { content: <AiLeftPanel /> }
+                            : undefined
                         }
-                        trailingAction={
-                          humanChatEnabled ? <HumanSidebarTrigger /> : undefined
+                        right={
+                          humanChatEnabled
+                            ? { content: <HumanRightPanel /> }
+                            : undefined
                         }
                       >
-                        <ConnectedButtonProfile
-                          useAuthentication={useAuthentication}
-                          useMe={useMe}
-                          newUserRedirectPath="/profile/signup"
-                          baseRedirectPath="/my-spaces"
-                          navItems={[
-                            {
-                              label: tNav('network'),
-                              href: `/${locale}/network`,
-                            },
-                            {
-                              label: tNav('mySpaces'),
-                              href: `/${locale}/my-spaces`,
-                            },
-                          ]}
-                        />
-                        {isLanguageSelectVisible && <ConnectedLanguageSelect />}
-                      </MenuTop>
-                      <NextSSRPlugin
-                        routerConfig={extractRouterConfig(fileRouter)}
-                      />
-                      <div className="mb-auto pb-8">
-                        <div className="pt-9 h-full flex justify-normal">
-                          <div className="w-full h-full">{children}</div>
+                        {/* Fixed menu bar — clamped to center column by SidebarInset */}
+                        <div className="sticky top-0 z-30 shrink-0">
+                          <MenuTop
+                            logoHref={ROOT_URL}
+                            openMenuLabel={tNav('openMenu')}
+                            closeMenuLabel={tNav('closeMenu')}
+                            leadingAction={
+                              aiChatEnabled ? <AiSidebarTrigger /> : undefined
+                            }
+                            trailingAction={
+                              humanChatEnabled ? (
+                                <HumanSidebarTrigger />
+                              ) : undefined
+                            }
+                          >
+                            <ConnectedButtonProfile
+                              useAuthentication={useAuthentication}
+                              useMe={useMe}
+                              newUserRedirectPath="/profile/signup"
+                              baseRedirectPath="/my-spaces"
+                              navItems={[
+                                {
+                                  label: tNav('network'),
+                                  href: `/${locale}/network`,
+                                },
+                                {
+                                  label: tNav('mySpaces'),
+                                  href: `/${locale}/my-spaces`,
+                                },
+                              ]}
+                            />
+                            {isLanguageSelectVisible && (
+                              <ConnectedLanguageSelect />
+                            )}
+                          </MenuTop>
                         </div>
-                      </div>
-                      <Footer
-                        networkLabel={tFooter('network')}
-                        legalLabel={tFooter('legal')}
-                        hyphaServicesLabel={tFooter('hyphaServices')}
-                        hyphaTokenomicsLabel={tFooter('hyphaTokenomics')}
-                        licensingPolicyLabel={tFooter('licensingPolicy')}
-                        termsAndConditionsLabel={tFooter('termsAndConditions')}
-                        privacyPolicyLabel={tFooter('privacyPolicy')}
-                      />
-                    </PanelWrapLayout>
+                        {/* Scrollable content area */}
+                        <NextSSRPlugin
+                          routerConfig={extractRouterConfig(fileRouter)}
+                        />
+                        <div className="mb-auto pb-8">
+                          <div className="pt-9 h-full flex justify-normal">
+                            <div className="w-full h-full">{children}</div>
+                          </div>
+                        </div>
+                        <Footer
+                          networkLabel={tFooter('network')}
+                          legalLabel={tFooter('legal')}
+                          hyphaServicesLabel={tFooter('hyphaServices')}
+                          hyphaTokenomicsLabel={tFooter('hyphaTokenomics')}
+                          licensingPolicyLabel={tFooter('licensingPolicy')}
+                          termsAndConditionsLabel={tFooter(
+                            'termsAndConditions',
+                          )}
+                          privacyPolicyLabel={tFooter('privacyPolicy')}
+                        />
+                      </PanelWrapLayout>
+                    </PanelProviders>
                   </ConditionalMatrixProvider>
                 </NotificationSubscriber>
               </TooltipProvider>
