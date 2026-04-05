@@ -103,14 +103,8 @@ export const UpdateIssuedTokenPlugin = ({
   const [showDecaySettings, setShowDecaySettings] = useState<boolean>(false);
   const [showAdvancedSettings, setShowAdvancedSettings] =
     useState<boolean>(false);
-  /** Avoid clearing price fields on first paint when default `enableTokenPrice` is false. */
-  const skipInitialTokenPriceClearRef = useRef(true);
   const selectedTokenAddress = watch('tokenAddress') || null;
   const watchedType = watch('type');
-
-  useEffect(() => {
-    skipInitialTokenPriceClearRef.current = true;
-  }, [selectedTokenAddress]);
 
   useEffect(() => {
     if (watchedType) {
@@ -266,10 +260,6 @@ export const UpdateIssuedTokenPlugin = ({
   }, [enableAdvancedTransferControls, setValue]);
 
   useEffect(() => {
-    if (skipInitialTokenPriceClearRef.current) {
-      skipInitialTokenPriceClearRef.current = false;
-      return;
-    }
     if (!enableTokenPrice) {
       clearTokenPriceFields();
     }
@@ -536,7 +526,7 @@ export const UpdateIssuedTokenPlugin = ({
             safeRefFromDb !== undefined
               ? selectedToken.referencePrice ?? undefined
               : undefined,
-          enableTokenPrice: false,
+          enableTokenPrice: shouldShowAdvancedFromDb,
           enableProposalAutoMinting: true,
           enableAdvancedTransferControls: false,
           transferWhitelist: undefined,
@@ -587,7 +577,11 @@ export const UpdateIssuedTokenPlugin = ({
       safeRefFromDb !== undefined ? selectedToken.referencePrice : undefined,
     );
     if (!(dirtyFields as Record<string, unknown>)?.enableTokenPrice) {
-      setValue('enableTokenPrice', false, { shouldDirty: false });
+      if (shouldShowAdvancedFromDb) {
+        setValue('enableTokenPrice', true, { shouldDirty: false });
+      } else {
+        setValue('enableTokenPrice', false, { shouldDirty: false });
+      }
     }
     setTokenType(selectedToken.type);
     setShowAdvancedSettings((prev) => prev || shouldShowAdvancedFromDb);
@@ -675,6 +669,9 @@ export const UpdateIssuedTokenPlugin = ({
       chainPriceRef !== undefined;
 
     if (hasValidChainPrice) {
+      if (!isDirty('enableTokenPrice')) {
+        setValue('enableTokenPrice', true, { shouldDirty: false });
+      }
       enableAdvancedTransferControls = true;
     } else if (!isDirty('enableTokenPrice')) {
       setValue('enableTokenPrice', false, { shouldDirty: false });
