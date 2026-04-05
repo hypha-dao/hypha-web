@@ -210,10 +210,9 @@ export const IssueNewTokenPlugin = ({
     }
     const ds = dirtyFields.decaySettings;
     const decayDirty =
-      ds === true ||
-      (typeof ds === 'object' &&
-        ds !== null &&
-        Object.keys(ds as object).length > 0);
+      typeof ds === 'object' &&
+      ds !== null &&
+      Object.keys(ds as object).length > 0;
     if (decayDirty && !prevVoiceDecayDirtyRef.current) {
       setShowDecaySettings(true);
     }
