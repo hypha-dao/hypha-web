@@ -5,13 +5,11 @@ import clsx from 'clsx';
 import Link from 'next/link';
 import React from 'react';
 
-export type ActionProps = {
+type ActionProps = {
   title: string;
   description: string;
   group?: string;
   href?: string;
-  /** Agreements vs treasury tab segment for relative links */
-  baseTab?: string;
   icon: React.ReactNode;
   disabled?: boolean;
   target?: string;

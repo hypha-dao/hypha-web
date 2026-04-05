@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  SelectAction,
-  useActionGating,
-  type ActionProps,
-} from '@hypha-platform/epics';
+import { SelectAction, useActionGating } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { isAbsoluteUrl } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
@@ -230,7 +226,7 @@ export const SelectSettingsAction = ({
     },
   ];
 
-  const computeHref = (action: ActionProps) => {
+  const computeHref = (action: any) => {
     if (!action?.href) {
       return '';
     }

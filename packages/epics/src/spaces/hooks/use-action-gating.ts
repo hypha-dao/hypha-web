@@ -13,9 +13,7 @@ export const useActionGating = (spaceSlug: string) => {
     address: space?.address as `0x${string}`,
   });
 
-  /** Treat unknown/null status as gated — do not enable actions until status is known. */
-  const isPaymentExpired =
-    isStatusLoading || status == null || status === 'expired';
+  const isPaymentExpired = isStatusLoading ? true : status === 'expired';
 
   return { space, isPaymentExpired, fundWallet, isStatusLoading };
 };
