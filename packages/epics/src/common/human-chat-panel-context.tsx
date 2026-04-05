@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext } from 'react';
+import { createContext, useCallback, useContext, useState } from 'react';
 
 /**
  * Shared panel context type used by both AI and Human panel triggers.
@@ -27,13 +27,91 @@ export function useAiPanel() {
 
 // ─── Human Chat Panel Context ────────────────────────────────────────────────
 
-const HumanChatPanelContext = createContext<PanelContextValue>({
+export type HumanChatPanelContextValue = {
+  open: boolean;
+  toggle: () => void;
+  // Coherence mode
+  mode: 'space' | 'coherence';
+  coherenceRoomId: string | null;
+  coherenceTitle: string | null;
+  coherenceSlug: string | null;
+  openCoherenceChat: (
+    roomId: string | null,
+    title: string,
+    slug: string,
+  ) => void;
+  closeCoherenceChat: () => void;
+};
+
+const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
   open: false,
   toggle: () => {},
+  mode: 'space',
+  coherenceRoomId: null,
+  coherenceTitle: null,
+  coherenceSlug: null,
+  openCoherenceChat: () => {},
+  closeCoherenceChat: () => {},
 });
 
-export const HumanChatPanelProvider = HumanChatPanelContext.Provider;
+/**
+ * Stateful provider for the Human Chat Panel.
+ * Accepts `open` and `toggle` from the parent (sidebar state),
+ * and manages coherence mode state internally.
+ */
+export function HumanChatPanelProvider({
+  children,
+  open,
+  toggle,
+  setOpen,
+}: {
+  children: React.ReactNode;
+  open: boolean;
+  toggle: () => void;
+  setOpen: (value: boolean) => void;
+}) {
+  const [mode, setMode] = useState<'space' | 'coherence'>('space');
+  const [coherenceRoomId, setCoherenceRoomId] = useState<string | null>(null);
+  const [coherenceTitle, setCoherenceTitle] = useState<string | null>(null);
+  const [coherenceSlug, setCoherenceSlug] = useState<string | null>(null);
 
-export function useHumanChatPanel() {
+  const openCoherenceChat = useCallback(
+    (roomId: string | null, title: string, slug: string) => {
+      setCoherenceRoomId(roomId);
+      setCoherenceTitle(title);
+      setCoherenceSlug(slug);
+      setMode('coherence');
+      // Idempotently open the sidebar — avoids race condition with toggle()
+      setOpen(true);
+    },
+    [setOpen],
+  );
+
+  const closeCoherenceChat = useCallback(() => {
+    setMode('space');
+    setCoherenceRoomId(null);
+    setCoherenceTitle(null);
+    setCoherenceSlug(null);
+  }, []);
+
+  return (
+    <HumanChatPanelContext.Provider
+      value={{
+        open,
+        toggle,
+        mode,
+        coherenceRoomId,
+        coherenceTitle,
+        coherenceSlug,
+        openCoherenceChat,
+        closeCoherenceChat,
+      }}
+    >
+      {children}
+    </HumanChatPanelContext.Provider>
+  );
+}
+
+export function useHumanChatPanel(): HumanChatPanelContextValue {
   return useContext(HumanChatPanelContext);
 }

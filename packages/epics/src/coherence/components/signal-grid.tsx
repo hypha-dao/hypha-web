@@ -32,6 +32,7 @@ export function SignalGrid({
             key={signal.id}
             role="button"
             tabIndex={0}
+            className="text-left w-full cursor-pointer"
             onClick={() => onSignalClick(signal)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
@@ -39,9 +40,13 @@ export function SignalGrid({
                 onSignalClick(signal);
               }
             }}
-            className="cursor-pointer"
           >
-            <SignalCard {...signal} isLoading={isLoading} refresh={refresh} />
+            <SignalCard
+              {...signal}
+              isLoading={isLoading}
+              refresh={refresh}
+              onOpenConversation={() => onSignalClick(signal)}
+            />
           </div>
         ) : (
           <Link key={signal.id} href={`${basePath}/${signal.slug}`}>

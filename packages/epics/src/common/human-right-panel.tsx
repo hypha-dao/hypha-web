@@ -7,8 +7,14 @@ import {
   SidebarHeader,
   SidebarContent,
   SidebarFooter,
+  useSidebar,
 } from '@hypha-platform/ui';
-import { useMatrix, Message } from '@hypha-platform/core/client';
+import {
+  useMatrix,
+  useCoherenceMutationsWeb2Rsc,
+  useJwt,
+  Message,
+} from '@hypha-platform/core/client';
 
 import {
   HumanChatPanelHeader,
@@ -18,6 +24,7 @@ import {
   HumanChatPanelMembers,
 } from './human-chat-panel';
 import type { ChatPanelTab } from './human-chat-panel';
+import { useHumanChatPanel } from './human-chat-panel-context';
 
 type UIMessage = {
   id: string;
@@ -78,6 +85,18 @@ export function HumanRightPanel() {
   const matrixRef = useRef(matrix);
   matrixRef.current = matrix;
 
+  const {
+    mode,
+    coherenceRoomId,
+    coherenceTitle,
+    coherenceSlug,
+    closeCoherenceChat,
+    openCoherenceChat,
+  } = useHumanChatPanel();
+  const { jwt: authToken } = useJwt();
+  const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
+  const { open: sidebarOpen } = useSidebar();
+
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<UIMessage[]>([]);
   const [roomId, setRoomId] = useState<string | null>(null);
@@ -89,6 +108,15 @@ export function HumanRightPanel() {
   const currentUserId = client?.getUserId?.() ?? null;
   const currentUserIdRef = useRef(currentUserId);
   currentUserIdRef.current = currentUserId;
+
+  // Track previous sidebar open state to detect close events
+  const prevSidebarOpenRef = useRef(sidebarOpen);
+  useEffect(() => {
+    if (prevSidebarOpenRef.current && !sidebarOpen && mode === 'coherence') {
+      closeCoherenceChat();
+    }
+    prevSidebarOpenRef.current = sidebarOpen;
+  }, [sidebarOpen, mode, closeCoherenceChat]);
 
   // Reset chat state when space changes
   useEffect(() => {
@@ -104,8 +132,9 @@ export function HumanRightPanel() {
     }
   }, [spaceSlug, roomId]);
 
-  // Join room and load initial messages when Matrix is ready
+  // Join space room when Matrix is ready (space mode)
   useEffect(() => {
+    if (mode !== 'space') return;
     if (
       !isMatrixAvailable ||
       !isMatrixAuthenticated ||
@@ -165,7 +194,123 @@ export function HumanRightPanel() {
     return () => {
       cancelled = true;
     };
-  }, [isMatrixAvailable, isMatrixAuthenticated, spaceSlug]);
+  }, [mode, isMatrixAvailable, isMatrixAuthenticated, spaceSlug]);
+
+  // Track previous mode to detect actual transitions (not initial mount)
+  const prevModeRef = useRef(mode);
+  useEffect(() => {
+    const prevMode = prevModeRef.current;
+    prevModeRef.current = mode;
+
+    // Only act on actual mode transitions, not initial mount
+    if (prevMode === mode) return;
+
+    if (mode === 'coherence') {
+      // Switching FROM space TO coherence — unregister space listener, clear state
+      if (roomId) {
+        matrixRef.current.unregisterRoomListener(roomId);
+      }
+      joinedRef.current = null; // allow space room to re-init when returning
+      setMessages([]);
+      setRoomId(null);
+      setError(null);
+    }
+
+    if (mode === 'space' && prevMode === 'coherence') {
+      // Switching FROM coherence TO space — clear state, space init will re-run
+      if (roomId) {
+        matrixRef.current.unregisterRoomListener(roomId);
+      }
+      setMessages([]);
+      setRoomId(null);
+      setError(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+
+  // Join (or create) coherence room when mode switches to 'coherence'
+  useEffect(() => {
+    if (mode !== 'coherence' || !isMatrixAvailable || !isMatrixAuthenticated)
+      return;
+
+    let cancelled = false;
+
+    const init = async () => {
+      setIsJoining(true);
+      setError(null);
+      setMessages([]);
+      try {
+        let targetRoomId = coherenceRoomId;
+
+        // If no room exists yet, only create one when we can link it back
+        if (!targetRoomId) {
+          if (!coherenceSlug) {
+            // Cannot persist without a slug — skip room creation
+            setIsJoining(false);
+            return;
+          }
+          console.log(
+            '[HumanRightPanel] Creating Matrix room for coherence:',
+            coherenceSlug,
+          );
+          const { roomId: newRoomId } = await matrixRef.current.createRoom(
+            coherenceTitle || 'Conversation',
+          );
+          if (cancelled) return;
+          targetRoomId = newRoomId;
+
+          try {
+            await updateCoherenceBySlug({
+              slug: coherenceSlug,
+              roomId: newRoomId,
+            });
+            // Update context so subsequent opens don't re-create
+            openCoherenceChat(newRoomId, coherenceTitle || '', coherenceSlug);
+          } catch (err) {
+            console.warn(
+              '[HumanRightPanel] Failed to persist roomId to coherence:',
+              err,
+            );
+          }
+        } else {
+          await matrixRef.current.joinRoom(targetRoomId);
+        }
+
+        if (cancelled) return;
+        setRoomId(targetRoomId);
+        const existing = matrixRef.current.getRoomMessages(targetRoomId);
+        if (existing) {
+          setMessages(
+            existing.map((m) => toUIMessage(m, currentUserIdRef.current)),
+          );
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error(
+            '[HumanRightPanel] Failed to join coherence room:',
+            err,
+          );
+          setError(t('failedToJoinRoom'));
+        }
+      } finally {
+        if (!cancelled) setIsJoining(false);
+      }
+    };
+
+    init();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    mode,
+    coherenceRoomId,
+    coherenceTitle,
+    coherenceSlug,
+    isMatrixAvailable,
+    isMatrixAuthenticated,
+  ]);
 
   // Register listener for incoming messages
   useEffect(() => {
@@ -206,7 +351,10 @@ export function HumanRightPanel() {
   return (
     <>
       <SidebarHeader className="bg-background-2 p-0">
-        <HumanChatPanelHeader />
+        <HumanChatPanelHeader
+          title={mode === 'coherence' ? coherenceTitle ?? undefined : undefined}
+          onBack={mode === 'coherence' ? closeCoherenceChat : undefined}
+        />
         <HumanChatPanelTabs activeTab={activeTab} onTabChange={setActiveTab} />
       </SidebarHeader>
       <SidebarContent className="bg-background-2 min-h-0">

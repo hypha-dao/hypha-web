@@ -640,7 +640,7 @@
       "description": "Set a custom purchase price, or use the default treasury price.",
       "currencyPlaceholder": "Currency",
       "currentPriceLabel": "Current price in treasury:",
-      "currentPriceSuffix": "\u2014 set in your space's token configuration.",
+      "currentPriceSuffix": "— set in your space's token configuration.",
       "fieldLabel": "Token Purchase Price",
       "availableAtThisPriceLabel": "Tokens Available for Purchase at this Price",
       "exceedsLimit": "The number of tokens requested exceeds the Tokens Available for Purchase Limit. Please enter a value up to {limit}."
@@ -1622,6 +1622,7 @@
     "openPanel": "Open chat panel",
     "hidePanel": "Hide chat panel",
     "closePanel": "Close panel",
+    "backToSpaceChat": "Back to space chat",
     "copyButton": "Copy",
     "copiedButton": "Copied!",
     "tabChat": "Chat",
@@ -1640,7 +1641,8 @@
     "timestampYesterday": "Yesterday at {time}",
     "timestampDate": "{date} at {time}",
     "systemSender": "System",
-    "noMembers": "No members found"
+    "noMembers": "No members found",
+    "failedToJoinRoom": "Failed to join conversation room"
   },
   "CoherenceTab": {
     "signals": "Signals",
@@ -1709,5 +1711,8 @@
       "medium": "Monitor and act soon",
       "low": "Informational, no rush"
     }
+  },
+  "SignalCard": {
+    "noConversationRoom": "No conversation room yet"
   }
 }
