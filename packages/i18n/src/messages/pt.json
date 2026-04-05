@@ -34,7 +34,8 @@
     "errorLoadAgreementsTab": "Ops, algo deu errado. Não foi possível carregar a aba de acordos.",
     "errorLoadTreasuryTab": "Ops, algo deu errado. Não foi possível carregar a aba de tesouraria.",
     "publish": "Publicar",
-    "invalidTransactions": "Transações inválidas"
+    "invalidTransactions": "Transações inválidas",
+    "Coherence": "Coerência"
   },
   "AgreementFlow": {
     "proposalErrors": {
@@ -1640,5 +1641,73 @@
     "timestampDate": "{date} às {time}",
     "systemSender": "Sistema",
     "noMembers": "Nenhum membro encontrado"
+  },
+  "CoherenceTab": {
+    "signals": "Sinais",
+    "signInToSee": "Por favor, faça login para ver sinais e conversas",
+    "searchSignals": "Pesquisar sinais...",
+    "improve": "Melhorar",
+    "newSignal": "Novo sinal",
+    "all": "Todos",
+    "listIsEmpty": "A lista está vazia",
+    "mostViews": "Mais visualizações",
+    "mostMessages": "Mais mensagens",
+    "mostRecent": "Mais recentes",
+    "searchConversation": "Pesquisar conversa",
+    "hideArchived": "Ocultar arquivados",
+    "highUrgency": "Urgência alta",
+    "mediumUrgency": "Urgência média",
+    "lowUrgency": "Urgência baixa",
+    "mentions": "{count, plural, one {# menção} other {# menções}}",
+    "unarchiveConversation": "Desarquivar conversa",
+    "unarchiveConfirm": "Deseja realmente desarquivar esta conversa?",
+    "yesUnarchive": "Sim, desarquivar",
+    "noLeave": "Não, deixar",
+    "unarchive": "Desarquivar",
+    "openConversation": "Abrir conversa",
+    "saySomething": "Diga algo...",
+    "proposeAgreement": "Propor acordo",
+    "errorOhSnap": "Ops! Ocorreu um erro",
+    "reset": "Redefinir",
+    "creatingNewSignal": "Criando novo sinal",
+    "signalTitle": "Título do sinal...",
+    "type": "Tipo",
+    "priority": "Prioridade",
+    "tags": "Tags",
+    "selectOneOrMore": "Selecione um ou mais",
+    "description": "Descrição",
+    "descriptionPlaceholder": "Digite sua descrição aqui...",
+    "publish": "Publicar",
+    "createdOn": "Criado em {date}",
+    "archiveConversation": "Arquivar conversa",
+    "archiveConfirm": "Deseja realmente arquivar esta conversa?",
+    "yesArchive": "Sim, arquivar",
+    "errorCoherenceTab": "Ops, algo deu errado. Não foi possível carregar a aba de coerência.",
+    "types": {
+      "Opportunity": "Oportunidade",
+      "Risk": "Risco",
+      "Tension": "Tensão",
+      "Insight": "Perspetiva",
+      "Trend": "Tendência",
+      "Proposal": "Proposta"
+    },
+    "typeDescriptions": {
+      "Opportunity": "Janela de coordenação ou abertura positiva",
+      "Risk": "Ameaça, preocupação ou perigo",
+      "Tension": "Conflito ou desacordo que precisa de resolução",
+      "Insight": "Observação ou descoberta baseada em dados",
+      "Trend": "Padrão emergente entre espaços",
+      "Proposal": "Ação de governança ou voto necessário"
+    },
+    "priorities": {
+      "high": "Alta",
+      "medium": "Média",
+      "low": "Baixa"
+    },
+    "priorityDescriptions": {
+      "high": "Necessita atenção imediata",
+      "medium": "Monitorar e agir em breve",
+      "low": "Informativo, sem pressa"
+    }
   }
 }

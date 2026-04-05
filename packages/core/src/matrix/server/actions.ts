@@ -17,6 +17,8 @@ import {
 } from '../types';
 import { createMatrixUserLink, updateMatrixUserLink } from './mutations';
 import { findLinkByPrivyUserId, findAdminUserName } from './queries';
+import { getLinkByMatrixUserId } from './web3/get-link-by-matrix-user-id';
+import { Environment } from '../../coherence/types';
 
 export async function createMatrixUserLinkAction(
   data: CreateMatrixUserLinkInput,
@@ -58,4 +60,20 @@ export async function getAdminUserNameAction(
     throw new Error('authToken is required to get admin user name');
   }
   return await findAdminUserName(data, { db });
+}
+
+export async function getLinkByMatrixUserIdAction(
+  {
+    matrixUserId,
+    environment,
+  }: {
+    matrixUserId: string;
+    environment: Environment;
+  },
+  { authToken }: { authToken?: string } = {},
+) {
+  if (!authToken) {
+    throw new Error('authToken is required to get Matrix user link by ID');
+  }
+  return getLinkByMatrixUserId({ matrixUserId, environment });
 }

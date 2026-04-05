@@ -50,3 +50,5 @@ export * from './hooks/use-mobile';
 export * from './organisms/editor';
 export * from './organisms/menu-top';
 export * from './molecules/badges-list';
+
+export * from './dynamic-icon';

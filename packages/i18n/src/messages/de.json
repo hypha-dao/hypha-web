@@ -34,7 +34,8 @@
     "errorLoadAgreementsTab": "Ups, etwas ist schiefgelaufen. Der Vereinbarungen-Tab konnte nicht geladen werden.",
     "errorLoadTreasuryTab": "Ups, etwas ist schiefgelaufen. Der Treasury-Tab konnte nicht geladen werden.",
     "publish": "Veröffentlichen",
-    "invalidTransactions": "Ungültige Transaktionen"
+    "invalidTransactions": "Ungültige Transaktionen",
+    "Coherence": "Coherence"
   },
   "Navigation": {
     "network": "Netzwerk",
@@ -1640,5 +1641,73 @@
     "timestampDate": "{date} um {time}",
     "systemSender": "System",
     "noMembers": "Keine Mitglieder gefunden"
+  },
+  "CoherenceTab": {
+    "signals": "Signale",
+    "signInToSee": "Bitte melden Sie sich an, um Signale und Gespräche zu sehen",
+    "searchSignals": "Signale suchen...",
+    "improve": "Verbessern",
+    "newSignal": "Neues Signal",
+    "all": "Alle",
+    "listIsEmpty": "Liste ist leer",
+    "mostViews": "Meiste Aufrufe",
+    "mostMessages": "Meiste Nachrichten",
+    "mostRecent": "Neueste",
+    "searchConversation": "Gespräch suchen",
+    "hideArchived": "Archivierte ausblenden",
+    "highUrgency": "Hohe Dringlichkeit",
+    "mediumUrgency": "Mittlere Dringlichkeit",
+    "lowUrgency": "Niedrige Dringlichkeit",
+    "mentions": "{count, plural, one {# Erwähnung} other {# Erwähnungen}}",
+    "unarchiveConversation": "Gespräch wiederherstellen",
+    "unarchiveConfirm": "Möchten Sie dieses Gespräch wirklich wiederherstellen?",
+    "yesUnarchive": "Ja, wiederherstellen",
+    "noLeave": "Nein, belassen",
+    "unarchive": "Wiederherstellen",
+    "openConversation": "Gespräch öffnen",
+    "saySomething": "Schreiben Sie etwas...",
+    "proposeAgreement": "Vereinbarung vorschlagen",
+    "errorOhSnap": "Hoppla! Ein Fehler ist aufgetreten",
+    "reset": "Zurücksetzen",
+    "creatingNewSignal": "Neues Signal wird erstellt",
+    "signalTitle": "Signaltitel...",
+    "type": "Typ",
+    "priority": "Priorität",
+    "tags": "Tags",
+    "selectOneOrMore": "Eines oder mehrere auswählen",
+    "description": "Beschreibung",
+    "descriptionPlaceholder": "Geben Sie hier Ihre Beschreibung ein...",
+    "publish": "Veröffentlichen",
+    "createdOn": "Erstellt am {date}",
+    "archiveConversation": "Gespräch archivieren",
+    "archiveConfirm": "Möchten Sie dieses Gespräch wirklich archivieren?",
+    "yesArchive": "Ja, archivieren",
+    "errorCoherenceTab": "Hoppla, etwas ist schiefgelaufen. Kohärenz-Tab konnte nicht geladen werden.",
+    "types": {
+      "Opportunity": "Chance",
+      "Risk": "Risiko",
+      "Tension": "Spannung",
+      "Insight": "Erkenntnis",
+      "Trend": "Trend",
+      "Proposal": "Vorschlag"
+    },
+    "typeDescriptions": {
+      "Opportunity": "Koordinationsfenster oder positive Öffnung",
+      "Risk": "Bedrohung, Sorge oder Gefahr",
+      "Tension": "Konflikt oder Meinungsverschiedenheit, die gelöst werden muss",
+      "Insight": "Datengetriebene Beobachtung oder Entdeckung",
+      "Trend": "Aufkommendes Muster über Räume hinweg",
+      "Proposal": "Governance-Aktion oder Abstimmung erforderlich"
+    },
+    "priorities": {
+      "high": "Hoch",
+      "medium": "Mittel",
+      "low": "Niedrig"
+    },
+    "priorityDescriptions": {
+      "high": "Erfordert sofortige Aufmerksamkeit",
+      "medium": "Beobachten und bald handeln",
+      "low": "Informativ, keine Eile"
+    }
   }
 }

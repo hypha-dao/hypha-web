@@ -15,10 +15,16 @@ export type MatrixEventListener = (
   event: MatrixSdk.MatrixEvent,
 ) => Promise<void>;
 export type RoomMessageListener = (message: Message) => Promise<void>;
+export type RoomMessagePinnedListener = (pinned: string[]) => Promise<void>;
 
 interface RoomMessageListenerRecord {
   roomId: string;
   listener: MatrixEventListener;
+}
+
+export interface ChatMember {
+  userId: string;
+  presence: boolean;
 }
 
 interface MatrixContextType {
@@ -28,8 +34,15 @@ interface MatrixContextType {
   createRoom: (title: string) => Promise<{ roomId: string }>;
   sendMessage: (params: SendMessageInput) => Promise<void>;
   getRoomMessages: (roomId: string) => Message[] | null;
+  getPinnedMessageIds: (roomId: string) => string[];
+  togglePinnedMessage: (roomId: string, messageId: string) => Promise<void>;
+  getRoomMembers: (roomId: string) => Promise<ChatMember[]>;
   joinRoom: (roomId: string) => Promise<void>;
-  registerRoomListener: (roomId: string, listener: RoomMessageListener) => void;
+  registerRoomListener: (
+    roomId: string,
+    messageListener: RoomMessageListener,
+    pinnedListener: RoomMessagePinnedListener,
+  ) => void;
   unregisterRoomListener: (roomId: string) => void;
   registeredRoomListeners: RoomMessageListenerRecord[];
 }
@@ -78,6 +91,8 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
 
         await matrixClient.startClient();
 
+        await matrixClient.setPresence({ presence: 'online' });
+
         setClient(matrixClient);
         setActiveMatrixUserId(userId);
         setIsMatrixAvailable(matrixClient !== null);
@@ -85,6 +100,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         console.log('Matrix client initialized');
       } catch (error) {
         console.error('Failed to initialize Matrix client:', error);
+        setClient(null);
       }
     },
     [],
@@ -133,7 +149,10 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   React.useEffect(() => {
     return () => {
       if (client) {
-        client.stopClient();
+        const matrixClient = client as MatrixSdk.MatrixClient;
+        matrixClient.setPresence({ presence: 'offline' });
+        matrixClient.stopClient();
+        setClient(null);
       }
     };
   }, [client]);
@@ -173,6 +192,31 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     [client],
   );
 
+  const getPinnedMessageIds = React.useCallback(
+    (roomId: string): string[] => {
+      if (!client) {
+        throw new Error('Client should be specified');
+      }
+
+      const room = client.getRoom(roomId);
+      if (!room) {
+        throw new Error('Room not found');
+      }
+
+      const state = room
+        .getLiveTimeline()
+        .getState(MatrixSdk.EventTimeline.FORWARDS);
+
+      if (!state) {
+        return [];
+      }
+
+      const pinnedEvent = state.getStateEvents(EventType.RoomPinnedEvents, '');
+      return pinnedEvent?.getContent()?.pinned ?? [];
+    },
+    [client],
+  );
+
   const getRoomMessages = React.useCallback(
     (roomId: string): Message[] | null => {
       if (!client) {
@@ -180,6 +224,11 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       }
 
       const room = client.getRoom(roomId);
+      if (!room) {
+        throw new Error('Room not found');
+      }
+
+      const pinned = getPinnedMessageIds(roomId);
       const messages = room
         ? room
             .getLiveTimeline()
@@ -191,9 +240,64 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
               sender: event.getSender()!,
               content: event.getContent().body,
               timestamp: new Date(event.getTs()),
+              pinned: pinned.includes(event.getId()!),
             }))
         : null;
       return messages;
+    },
+    [client],
+  );
+
+  const togglePinnedMessage = React.useCallback(
+    async (roomId: string, messageId: string) => {
+      if (!client) {
+        throw new Error('Client should be specified');
+      }
+
+      const room = client.getRoom(roomId);
+      if (!room) {
+        throw new Error('Room not found');
+      }
+
+      try {
+        const pinnedInitial = getPinnedMessageIds(roomId);
+        const pinned = pinnedInitial.includes(messageId)
+          ? pinnedInitial.filter((pinnedId: string) => pinnedId !== messageId)
+          : [...pinnedInitial, messageId];
+        await client.sendStateEvent(roomId, EventType.RoomPinnedEvents, {
+          pinned,
+        });
+      } catch (error) {
+        console.error('Cannot update pinned message:', error);
+      }
+    },
+    [client],
+  );
+
+  const getRoomMembers = React.useCallback(
+    async (roomId: string): Promise<ChatMember[]> => {
+      if (!client) {
+        throw new Error('Client should be specified');
+      }
+
+      const room = client.getRoom(roomId);
+      const members = room ? room.getJoinedMembers() : null;
+      const memberObjects =
+        members?.map(async (member) => {
+          try {
+            const presence = await client.getPresence(member.userId);
+            return {
+              userId: member.userId,
+              presence: presence.currently_active ?? false,
+            } as ChatMember;
+          } catch {
+            return {
+              userId: member.userId,
+              presence: false,
+            } as ChatMember;
+          }
+        }) ?? null;
+      return memberObjects ? await Promise.all(memberObjects) : [];
     },
     [client],
   );
@@ -204,7 +308,11 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         throw new Error('Client should be specified');
       }
 
-      await client.joinRoom(roomId);
+      try {
+        await client.joinRoom(roomId);
+      } catch (error) {
+        console.warn('Cannot join to room:', error);
+      }
     },
     [client],
   );
@@ -239,7 +347,11 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   );
 
   const registerRoomListener = React.useCallback(
-    (roomId: string, listener: RoomMessageListener) => {
+    (
+      roomId: string,
+      messageListener: RoomMessageListener,
+      messagePinnedListener: RoomMessagePinnedListener,
+    ) => {
       if (!client) {
         console.warn('Matrix client is not initialized');
         return;
@@ -248,10 +360,10 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       const eventListener: MatrixEventListener = async (
         event: MatrixSdk.MatrixEvent,
       ) => {
-        if (
-          event.getRoomId() === roomId &&
-          event.getType() === EventType.RoomMessage
-        ) {
+        if (event.getRoomId() !== roomId) {
+          return;
+        }
+        if (event.getType() === EventType.RoomMessage) {
           const eventId = event.getId();
           const sender = event.getSender();
           if (!eventId || !sender) return;
@@ -261,7 +373,10 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             content: event.getContent().body,
             timestamp: new Date(event.getTs()),
           };
-          await listener(message);
+          await messageListener(message);
+        } else if (event.getType() === EventType.RoomPinnedEvents) {
+          const pinned = event.getContent().pinned;
+          await messagePinnedListener(pinned);
         }
       };
       client.addListener(RoomEvent.Timeline, eventListener);
@@ -282,6 +397,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     createRoom,
     sendMessage,
     getRoomMessages,
+    getPinnedMessageIds,
+    togglePinnedMessage,
+    getRoomMembers,
     joinRoom,
     registerRoomListener,
     unregisterRoomListener,
@@ -309,6 +427,9 @@ const noopMatrixContext: MatrixContextType = {
   registerRoomListener: () => {},
   unregisterRoomListener: () => {},
   registeredRoomListeners: [],
+  getPinnedMessageIds: () => [],
+  togglePinnedMessage: async () => {},
+  getRoomMembers: async () => [],
 };
 
 export const useMatrix = () => {
