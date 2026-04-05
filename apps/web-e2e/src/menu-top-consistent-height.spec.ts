@@ -86,5 +86,4 @@ test.describe('MenuTop consistent height', () => {
     // Value should be an integer (no fractional pixels)
     expect(value.trim()).toBe(`${px}px`);
   });
-
 });
