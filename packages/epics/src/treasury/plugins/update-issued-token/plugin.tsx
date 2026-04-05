@@ -239,9 +239,10 @@ export const UpdateIssuedTokenPlugin = ({
     }
     const ds = dirtyFields.decaySettings;
     const decayDirty =
-      typeof ds === 'object' &&
-      ds !== null &&
-      Object.keys(ds as object).length > 0;
+      ds === true ||
+      (typeof ds === 'object' &&
+        ds !== null &&
+        Object.keys(ds as object).length > 0);
     if (decayDirty && !prevVoiceDecayDirtyRef.current) {
       setShowDecaySettings(true);
     }
