@@ -27,13 +27,33 @@ export const stripMarkdown = (
   if (config.inlineCode !== false) {
     output = output.replace(/`([^`]+)`/g, '$1');
   }
-  // Remove images ![alt](url)
-  if (config.images !== false) {
-    output = output.replace(/!\[([^\[\]]*)\]\([^)]*\)/g, '$1');
-  }
-  // Remove links [text](url)
-  if (config.links !== false) {
-    output = output.replace(/\[([^\[\]]*)\]\([^)]*\)/g, '$1');
+  // Remove images ![alt](url) and links [text](url)
+  if (config.images !== false || config.links !== false) {
+    const tokens: string[] = [];
+    let i = 0;
+    while (i < output.length) {
+      const isImage = output[i] === '!' && output[i + 1] === '[';
+      const isLink = output[i] === '[';
+      if (isImage || isLink) {
+        const start = isImage ? i + 2 : i + 1;
+        const closeBracket = output.indexOf(']', start);
+        if (closeBracket !== -1 && output[closeBracket + 1] === '(') {
+          const closeParen = output.indexOf(')', closeBracket + 2);
+          if (closeParen !== -1) {
+            const alt = output.slice(start, closeBracket);
+            const shouldStrip = isImage
+              ? config.images !== false
+              : config.links !== false;
+            tokens.push(shouldStrip ? alt : output.slice(i, closeParen + 1));
+            i = closeParen + 1;
+            continue;
+          }
+        }
+      }
+      tokens.push(output.charAt(i));
+      i++;
+    }
+    output = tokens.join('');
   }
   // Remove emphasis (bold, italic, strikethrough)
   if (config.emphasis !== false) {
