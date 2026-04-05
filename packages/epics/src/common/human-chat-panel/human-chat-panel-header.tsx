@@ -28,6 +28,7 @@ export function HumanChatPanelHeader({
           type="button"
           onClick={onBack}
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          title={t('backToSpaceChat')}
           aria-label={t('backToSpaceChat')}
         >
           <ArrowLeft className="h-4 w-4" />

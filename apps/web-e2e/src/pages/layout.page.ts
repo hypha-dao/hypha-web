@@ -1,4 +1,4 @@
-import { Page, Locator, BrowserContext } from '@playwright/test';
+import { Page, Locator } from '@playwright/test';
 import { BasePage } from './base.page';
 
 export class LayoutPage extends BasePage {

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { LayoutPage } from './pages/layout.page';
 
 /**
  * MenuTop — Consistent Height
@@ -37,7 +38,15 @@ test.describe('MenuTop consistent height', () => {
   }) => {
     await page.goto('/en/dho/hypha/agreements');
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(500);
+
+    // Poll until --menu-top-height is set by ResizeObserver
+    await page.waitForFunction(
+      () =>
+        getComputedStyle(document.documentElement)
+          .getPropertyValue('--menu-top-height')
+          .trim() !== '',
+      { timeout: 5000 },
+    );
 
     const value = await page.evaluate(() =>
       getComputedStyle(document.documentElement).getPropertyValue(
@@ -56,7 +65,15 @@ test.describe('MenuTop consistent height', () => {
   }) => {
     await page.goto('/en/dho/hypha/agreements');
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(500);
+
+    // Poll until --menu-top-height is set by ResizeObserver
+    await page.waitForFunction(
+      () =>
+        getComputedStyle(document.documentElement)
+          .getPropertyValue('--menu-top-height')
+          .trim() !== '',
+      { timeout: 5000 },
+    );
 
     // Read the published CSS variable
     const cssValue = await page.evaluate(() =>
@@ -66,20 +83,10 @@ test.describe('MenuTop consistent height', () => {
     );
     const cssHeight = parseInt(cssValue, 10);
 
-    // Measure actual header bounding box
-    // The menu bar is inside a sticky wrapper > header
-    const headers = page.locator('header');
-    const count = await headers.count();
-
-    // Find the MenuTop header (contains bg-background-2 class)
-    let headerHeight = 0;
-    for (let i = 0; i < count; i++) {
-      const box = await headers.nth(i).boundingBox();
-      if (box && box.y === 0) {
-        headerHeight = box.height;
-        break;
-      }
-    }
+    // Measure actual header bounding box via shared page object
+    const layout = new LayoutPage(page);
+    const menuTopBox = await layout.menuTop.boundingBox();
+    const headerHeight = menuTopBox?.height ?? 0;
 
     expect(headerHeight).toBeGreaterThan(0);
     // CSS variable and actual height should match (within rounding)

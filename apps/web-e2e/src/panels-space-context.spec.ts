@@ -86,7 +86,7 @@ test.describe('Panels hidden on non-space pages', () => {
 
     await expect(
       page.getByRole('button', { name: CHAT_TRIGGER }),
-    ).not.toBeVisible();
+    ).toHaveCount(0);
   });
 
   test('should NOT show AI trigger on /network', async ({ page }) => {
@@ -95,7 +95,7 @@ test.describe('Panels hidden on non-space pages', () => {
 
     await expect(
       page.getByRole('button', { name: AI_TRIGGER }),
-    ).not.toBeVisible();
+    ).toHaveCount(0);
   });
 
   test('should NOT show Human Chat trigger on /my-spaces', async ({ page }) => {
@@ -104,7 +104,7 @@ test.describe('Panels hidden on non-space pages', () => {
 
     await expect(
       page.getByRole('button', { name: CHAT_TRIGGER }),
-    ).not.toBeVisible();
+    ).toHaveCount(0);
   });
 
   test('should NOT show AI trigger on /my-spaces', async ({ page }) => {
@@ -113,16 +113,18 @@ test.describe('Panels hidden on non-space pages', () => {
 
     await expect(
       page.getByRole('button', { name: AI_TRIGGER }),
-    ).not.toBeVisible();
+    ).toHaveCount(0);
   });
 
   test('should NOT render sidebar markup on /network', async ({ page }) => {
     await page.goto('/en/network');
     await page.waitForLoadState('domcontentloaded');
 
-    // No sidebar elements should be in the DOM on non-space pages
-    const sidebars = page.locator('[data-sidebar="sidebar"]');
-    await expect(sidebars).toHaveCount(0);
+    // No panel sidebars should be in the DOM on non-space pages
+    const leftPanel = page.locator('[data-side="left"]');
+    const rightPanel = page.locator('[data-side="right"]');
+    await expect(leftPanel).toHaveCount(0);
+    await expect(rightPanel).toHaveCount(0);
   });
 });
 
@@ -160,10 +162,11 @@ test.describe('Panels appear after navigating into a space', () => {
     // Verify triggers are absent
     await expect(
       page.getByRole('button', { name: CHAT_TRIGGER }),
-    ).not.toBeVisible();
+    ).toHaveCount(0);
 
-    // Navigate to a space page
-    await page.goto('/en/dho/hypha/agreements');
+    // Navigate to a space page via client-side routing
+    await page.locator('a[href*="/dho/hypha"]').first().click();
+    await page.waitForURL('**/dho/hypha/**');
     await page.waitForLoadState('domcontentloaded');
 
     // Triggers should now be visible

@@ -34,18 +34,12 @@ test.describe('Panel Layout', () => {
 
   test('left panel stays fixed when content scrolls', async ({ page }) => {
     await layout.openAiPanel();
-    // Wait for sidebar open animation to settle
-    await page.waitForTimeout(300);
+    await expect(layout.leftSidebar).toBeVisible();
     const before = await layout.leftSidebar.boundingBox();
     expect(before).not.toBeNull();
 
     // Scroll the center content area
-    await page.evaluate(() => {
-      const scrollable =
-        document.querySelector('main.overflow-y-auto') ??
-        document.querySelector('main');
-      scrollable?.scrollBy(0, 500);
-    });
+    await layout.centerInset.evaluate((el) => el.scrollBy(0, 500));
     await page.waitForTimeout(100);
 
     const after = await layout.leftSidebar.boundingBox();
@@ -55,18 +49,12 @@ test.describe('Panel Layout', () => {
 
   test('right panel stays fixed when content scrolls', async ({ page }) => {
     await layout.openChatPanel();
-    // Wait for sidebar open animation to settle
-    await page.waitForTimeout(300);
+    await expect(layout.rightSidebar).toBeVisible();
     const before = await layout.rightSidebar.boundingBox();
     expect(before).not.toBeNull();
 
-    await page.evaluate(() => {
-      const scrollable =
-        document.querySelector('main.overflow-y-auto') ??
-        document.querySelector('main');
-      scrollable?.scrollBy(0, 500);
-    });
-    await page.waitForTimeout(200);
+    await layout.centerInset.evaluate((el) => el.scrollBy(0, 500));
+    await page.waitForTimeout(100);
 
     const after = await layout.rightSidebar.boundingBox();
     expect(after).not.toBeNull();
@@ -77,7 +65,7 @@ test.describe('Panel Layout', () => {
 
   test('left panel: header pinned at top of panel', async () => {
     await layout.openAiPanel();
-    await layout.page.waitForTimeout(300);
+    await expect(layout.leftSidebar).toBeVisible();
     const panel = await layout.leftSidebar.boundingBox();
     const header = await layout.leftSidebarHeader.boundingBox();
 
@@ -90,7 +78,7 @@ test.describe('Panel Layout', () => {
 
   test('right panel: header pinned at top, footer pinned at bottom', async () => {
     await layout.openChatPanel();
-    await layout.page.waitForTimeout(300);
+    await expect(layout.rightSidebar).toBeVisible();
     const panel = await layout.rightSidebar.boundingBox();
     const header = await layout.rightSidebarHeader.boundingBox();
     const footer = await layout.rightSidebarFooter.boundingBox();
@@ -149,7 +137,7 @@ test.describe('Panel Layout', () => {
 
   test('menu bar and panel headers occupy separate columns at same level', async () => {
     await layout.openChatPanel();
-    await layout.page.waitForTimeout(300);
+    await expect(layout.rightSidebar).toBeVisible();
     const menuTop = await layout.menuTop.boundingBox();
     const rightHeader = await layout.rightSidebarHeader.boundingBox();
 
@@ -177,12 +165,7 @@ test.describe('Panel Layout', () => {
     expect(before.height).toBeGreaterThan(0);
 
     // Scroll the center content area (SidebarInset with overflow-y-auto)
-    await page.evaluate(() => {
-      const scrollable =
-        document.querySelector('main.overflow-y-auto') ??
-        document.querySelector('main');
-      scrollable?.scrollBy(0, 500);
-    });
+    await layout.centerInset.evaluate((el) => el.scrollBy(0, 500));
     await page.waitForTimeout(100);
 
     await expect(layout.menuTop).toBeVisible();
@@ -202,9 +185,7 @@ test.describe('Panel Layout', () => {
     await layout.open('/en/dho/hypha/coherence/select-settings-action');
 
     // Wait for the SidePanel to render — use the heading inside the panel
-    const spaceSettingsHeading = page
-      .locator('span.text-4')
-      .filter({ hasText: 'Space Settings' });
+    const spaceSettingsHeading = page.getByText('Space Settings');
     await expect(spaceSettingsHeading).toBeVisible({ timeout: 10000 });
 
     // The SidePanel is the fixed-position ancestor
@@ -243,9 +224,7 @@ test.describe('Panel Layout', () => {
   test('SidePanel top aligns with bottom of MenuTop', async ({ page }) => {
     await layout.open('/en/dho/hypha/coherence/select-settings-action');
 
-    const spaceSettingsHeading = page
-      .locator('span.text-4')
-      .filter({ hasText: 'Space Settings' });
+    const spaceSettingsHeading = page.getByText('Space Settings');
     await expect(spaceSettingsHeading).toBeVisible({ timeout: 10000 });
 
     // Wait for --menu-top-height CSS variable to be set by MenuTop

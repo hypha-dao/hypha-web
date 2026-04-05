@@ -312,8 +312,9 @@ test.describe('Human Chat Panel — Resize Handle', () => {
       );
       await chatPanel.resizeHandle.focus();
 
-      // Press ArrowLeft enough times to reach min + extra to verify clamping
-      for (let i = 0; i < 6; i++) {
+      // Calculate presses needed to go from default to min, plus extra to verify clamping
+      const pressesNeeded = Math.ceil((DEFAULT_WIDTH - minWidth) / RESIZE_STEP) + 2;
+      for (let i = 0; i < pressesNeeded; i++) {
         await page.keyboard.press('ArrowLeft');
       }
 
