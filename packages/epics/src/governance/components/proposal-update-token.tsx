@@ -2,7 +2,6 @@ import {
   getPriceCurrencyCode,
   isTokenUpdateData,
   normalizeWhitelistAddresses,
-  splitWhitelistFormToTargets,
   useJwt,
   useTokenUpdateByDocumentId,
   useUpdateTokenByAddress,
@@ -254,43 +253,31 @@ export const ProposalUpdateToken = ({
   const hasWhitelistSnapshot =
     pendingData?.whitelistSnapshotBeforeProposal !== undefined;
 
+  /**
+   * Proposed whitelist addresses for diff vs `whitelistSnapshotBeforeProposal`.
+   * Must match how the snapshot relates to the saved form: use each row's
+   * `address` (space contract or member wallet) + `normalizeWhitelistAddresses`,
+   * same as at submit. Do not rebuild only via `splitWhitelistFormToTargets` +
+   * `addressesFromSpaceIds` — that drops space contract addresses when web3 id
+   * resolution fails, falsely marking spaces as removed (−).
+   */
   const targetFromForDiff = React.useMemo(() => {
-    if (!pendingData?.transferWhitelist?.from?.length) {
+    if (!fromEntriesPending?.length) {
       return [] as `0x${string}`[];
     }
-    const split = splitWhitelistFormToTargets(
-      pendingData.transferWhitelist.from,
-      spacesForWhitelistDisplay,
+    return normalizeWhitelistAddresses(
+      fromEntriesPending.map((e) => e.address as `0x${string}`),
     );
-    const spaceAddrs = addressesFromSpaceIds(split.spaceIds);
-    return normalizeWhitelistAddresses([
-      ...split.memberAddresses,
-      ...spaceAddrs,
-    ]);
-  }, [
-    pendingData?.transferWhitelist?.from,
-    spacesForWhitelistDisplay,
-    addressesFromSpaceIds,
-  ]);
+  }, [fromEntriesPending]);
 
   const targetToForDiff = React.useMemo(() => {
-    if (!pendingData?.transferWhitelist?.to?.length) {
+    if (!toEntriesPending?.length) {
       return [] as `0x${string}`[];
     }
-    const split = splitWhitelistFormToTargets(
-      pendingData.transferWhitelist.to,
-      spacesForWhitelistDisplay,
+    return normalizeWhitelistAddresses(
+      toEntriesPending.map((e) => e.address as `0x${string}`),
     );
-    const spaceAddrs = addressesFromSpaceIds(split.spaceIds);
-    return normalizeWhitelistAddresses([
-      ...split.memberAddresses,
-      ...spaceAddrs,
-    ]);
-  }, [
-    pendingData?.transferWhitelist?.to,
-    spacesForWhitelistDisplay,
-    addressesFromSpaceIds,
-  ]);
+  }, [toEntriesPending]);
 
   const fromWhitelistDiffRows = React.useMemo(() => {
     if (
