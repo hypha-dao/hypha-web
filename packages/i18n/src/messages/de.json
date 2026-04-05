@@ -156,7 +156,7 @@
         "description": "Erstellen Sie einen neuen Token für Nutzbarkeit, Eigentum, Wirkung, Gutschriften, Stimme oder Gemeinschaftswährung innerhalb Ihres Spaces."
       },
       "updateIssuedToken": {
-        "title": "Ausgegebenen Token aktualisieren (Demnächst)",
+        "title": "Ausgegebenen Token aktualisieren",
         "description": "Erweiterte Token-Einstellungen aktualisieren, einschließlich Token-Name, Symbol und Icon, Gesamtangebot, Auto-Minting-Optionen, Transferkontrollen, Voice-Decay-Parameter und im Treasury angezeigtem Token-Wert."
       },
       "mintTokensToSpaceTreasury": {

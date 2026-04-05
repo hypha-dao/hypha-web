@@ -37,6 +37,7 @@ export type AssetItem = {
   symbol: string;
   value: number;
   tokenPrice?: number;
+  referenceCurrency?: string | null;
   usdEqual: number;
   type: string;
   chartData: OneChartPoint[];

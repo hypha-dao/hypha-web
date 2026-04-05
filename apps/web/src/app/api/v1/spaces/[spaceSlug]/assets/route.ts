@@ -70,12 +70,17 @@ export async function GET(
     }));
 
     const referencePriceByAddress: Record<string, number> = {};
+    const referenceCurrencyByAddress: Record<string, string> = {};
     rawDbTokens.forEach((t) => {
       if (t.address && t.referencePrice != null) {
         const parsed = Number(t.referencePrice);
         if (Number.isFinite(parsed) && parsed >= 0) {
           referencePriceByAddress[t.address.toLowerCase()] = parsed;
         }
+      }
+      if (t.address && t.referenceCurrency) {
+        referenceCurrencyByAddress[t.address.toLowerCase()] =
+          t.referenceCurrency;
       }
     });
 
@@ -215,11 +220,14 @@ export async function GET(
             rate = referencePriceByAddress[token.address.toLowerCase()] ?? 0;
           }
           const decimals = await getTokenDecimals(token.address);
+          const referenceCurrency =
+            referenceCurrencyByAddress[token.address.toLowerCase()];
           return {
             ...meta,
             address: token.address,
             value: amount,
             tokenPrice: rate,
+            referenceCurrency,
             usdEqual: rate * amount,
             chartData: [],
             transactions: [],

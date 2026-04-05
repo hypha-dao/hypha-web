@@ -103,6 +103,11 @@ export const UpdateIssuedTokenPlugin = ({
   const [showDecaySettings, setShowDecaySettings] = useState<boolean>(false);
   const [showAdvancedSettings, setShowAdvancedSettings] =
     useState<boolean>(false);
+  /**
+   * Voice only: auto-open Advanced Decay once when decay first becomes dirty.
+   * Collapsing the panel does not clear `decaySettings` — values stay in the form.
+   */
+  const prevVoiceDecayDirtyRef = useRef(false);
   const selectedTokenAddress = watch('tokenAddress') || null;
   const watchedType = watch('type');
 
@@ -222,6 +227,26 @@ export const UpdateIssuedTokenPlugin = ({
       setShowDecaySettings(false);
     }
   }, [areGeneralFieldsFilled, showDecaySettings]);
+
+  useEffect(() => {
+    prevVoiceDecayDirtyRef.current = false;
+  }, [selectedTokenAddress]);
+
+  useEffect(() => {
+    if (currentTokenType !== 'voice') {
+      prevVoiceDecayDirtyRef.current = false;
+      return;
+    }
+    const ds = dirtyFields.decaySettings;
+    const decayDirty =
+      typeof ds === 'object' &&
+      ds !== null &&
+      Object.keys(ds as object).length > 0;
+    if (decayDirty && !prevVoiceDecayDirtyRef.current) {
+      setShowDecaySettings(true);
+    }
+    prevVoiceDecayDirtyRef.current = decayDirty;
+  }, [currentTokenType, dirtyFields.decaySettings]);
 
   const prevShowAdvancedSettingsRef = useRef(showAdvancedSettings);
 
@@ -474,8 +499,16 @@ export const UpdateIssuedTokenPlugin = ({
     const safeRefFromDb = sanitizeTokenPriceReferenceCurrency(
       selectedToken.referenceCurrency,
     );
+    const refPriceNum = (() => {
+      const p = selectedToken.referencePrice;
+      if (p === undefined || p === null) return undefined;
+      const n = Number(p);
+      return Number.isFinite(n) ? n : undefined;
+    })();
     const shouldShowAdvancedFromDb =
-      safeRefFromDb !== undefined && selectedToken.referencePrice !== undefined;
+      safeRefFromDb !== undefined &&
+      refPriceNum !== undefined &&
+      refPriceNum > 0;
     const iconFromDb = selectedToken.iconUrl || '';
 
     const setIfClean = (
@@ -521,11 +554,12 @@ export const UpdateIssuedTokenPlugin = ({
             decayPercentage: selectedToken.decayPercentage || 1,
           },
           archiveToken: selectedToken.archived,
-          referenceCurrency: safeRefFromDb,
-          tokenPrice:
-            safeRefFromDb !== undefined
-              ? selectedToken.referencePrice ?? undefined
-              : undefined,
+          referenceCurrency: shouldShowAdvancedFromDb
+            ? safeRefFromDb
+            : undefined,
+          tokenPrice: shouldShowAdvancedFromDb
+            ? selectedToken.referencePrice ?? undefined
+            : undefined,
           enableTokenPrice: shouldShowAdvancedFromDb,
           enableProposalAutoMinting: true,
           enableAdvancedTransferControls: false,
@@ -571,11 +605,18 @@ export const UpdateIssuedTokenPlugin = ({
       decayPercentage: selectedToken.decayPercentage || 1,
     });
     setIfClean('archiveToken', selectedToken.archived);
-    setIfClean('referenceCurrency', safeRefFromDb);
-    setIfClean(
-      'tokenPrice',
-      safeRefFromDb !== undefined ? selectedToken.referencePrice : undefined,
-    );
+    if (shouldShowAdvancedFromDb) {
+      setIfClean('referenceCurrency', safeRefFromDb);
+      setIfClean('tokenPrice', selectedToken.referencePrice ?? undefined);
+    } else if (!(dirtyFields as Record<string, unknown>)?.referenceCurrency) {
+      setValue('referenceCurrency', undefined, { shouldDirty: false });
+    }
+    if (
+      !shouldShowAdvancedFromDb &&
+      !(dirtyFields as Record<string, unknown>)?.tokenPrice
+    ) {
+      setValue('tokenPrice', undefined, { shouldDirty: false });
+    }
     if (!(dirtyFields as Record<string, unknown>)?.enableTokenPrice) {
       if (shouldShowAdvancedFromDb) {
         setValue('enableTokenPrice', true, { shouldDirty: false });
@@ -668,23 +709,14 @@ export const UpdateIssuedTokenPlugin = ({
       onChainData.priceCurrencyFeed !== undefined &&
       chainPriceRef !== undefined;
 
+    /**
+     * Do not hydrate "Enable Token Price" or currency/price fields from chain defaults
+     * (e.g. micro price 0 + USD feed) — that wrongly turns the toggle on and fills USD/0.
+     * Pricing UI follows DB (`shouldShowAdvancedFromDb`) or user edits; toggling off/on
+     * already clears fields via `clearTokenPriceFields`.
+     */
     if (hasValidChainPrice) {
-      if (!isDirty('enableTokenPrice')) {
-        setValue('enableTokenPrice', true, { shouldDirty: false });
-      }
       enableAdvancedTransferControls = true;
-    } else if (!isDirty('enableTokenPrice')) {
-      setValue('enableTokenPrice', false, { shouldDirty: false });
-    }
-    if (onChainData.tokenPrice !== undefined && !isDirty('tokenPrice')) {
-      setValue(
-        'tokenPrice',
-        chainPriceRef !== undefined ? onChainData.tokenPrice : undefined,
-        { shouldDirty: false },
-      );
-    }
-    if (!isDirty('referenceCurrency')) {
-      setValue('referenceCurrency', chainPriceRef, { shouldDirty: false });
     }
     const currentDecaySettings = getValues('decaySettings') || {};
     const newDecaySettings = { ...currentDecaySettings };

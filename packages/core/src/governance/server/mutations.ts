@@ -4,7 +4,7 @@ import {
   tokens,
   tokenUpdates,
 } from '@hypha-platform/storage-postgres';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import type { InferInsertModel } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -18,6 +18,10 @@ import {
 } from '../types';
 import { DatabaseInstance, findTokenUpdateByDocumentId } from '../../server';
 import { CreateTokenInput, DeleteTokenInput } from '../types';
+import {
+  buildUpdateTokenInputPatchFromTokenUpdateData,
+  omitUndefinedValues,
+} from './token-update-apply';
 
 export const createAgreement = async (
   { title, slug: maybeSlug, creatorId, ...rest }: CreateAgreementInput,
@@ -127,7 +131,7 @@ export const updateToken = async (
     existingToken = await db
       .select()
       .from(tokens)
-      .where(eq(tokens.address, address))
+      .where(sql`lower(${tokens.address}) = lower(${address})`)
       .execute();
   } else {
     throw new Error(
@@ -160,7 +164,7 @@ export const updateToken = async (
   // Map archiveToken to archived column; omit derived fields not in DB schema
   const { archiveToken, agreementWeb3IdUpdate, ...restWithoutDerivedFields } =
     rest;
-  const updateData = {
+  const updateDataRaw = {
     ...restWithoutDerivedFields,
     ...(address !== undefined && { address }),
     ...(agreementWeb3IdUpdate !== undefined && {
@@ -170,9 +174,13 @@ export const updateToken = async (
   } as Partial<InferInsertModel<typeof tokens>>;
 
   // Convert referencePrice to string if present
-  if (updateData.referencePrice !== undefined) {
-    updateData.referencePrice = String(updateData.referencePrice);
+  if (updateDataRaw.referencePrice !== undefined) {
+    updateDataRaw.referencePrice = String(updateDataRaw.referencePrice);
   }
+
+  const updateData = omitUndefinedValues(
+    updateDataRaw as Record<string, unknown>,
+  ) as Partial<InferInsertModel<typeof tokens>>;
 
   const [updated] = await db
     .update(tokens)
@@ -230,25 +238,17 @@ export const applyTokenUpdate = async (
   }
   const tokenUpdateData: TokenUpdateData = data;
 
-  // Prepare update input, including archiveToken. Omit iconUrl when the pending
-  // update did not change the icon so the existing DB value is preserved.
+  /**
+   * Apply pending JSON with patch semantics: only keys present on `data` update columns.
+   * Never overwrite `type` / `is_voting_token` / `agreement_id` / `space_id` / `created_at`
+   * from proposal JSON (see `buildUpdateTokenInputPatchFromTokenUpdateData`).
+   */
+  const patch = buildUpdateTokenInputPatchFromTokenUpdateData(tokenUpdateData);
+
   const updateInput: UpdateTokenInput = {
+    ...patch,
     address: tokenAddress,
-    name: tokenUpdateData.name,
-    symbol: tokenUpdateData.symbol,
-    maxSupply: tokenUpdateData.maxSupply,
-    type: tokenUpdateData.type,
-    transferable: tokenUpdateData.transferable,
-    isVotingToken: tokenUpdateData.isVotingToken,
-    decayInterval: tokenUpdateData.decayInterval,
-    decayPercentage: tokenUpdateData.decayPercentage,
-    referencePrice: tokenUpdateData.referencePrice,
-    referenceCurrency: tokenUpdateData.referenceCurrency,
-    archiveToken: tokenUpdateData.archiveToken,
   };
-  if (Object.hasOwn(tokenUpdateData, 'iconUrl')) {
-    updateInput.iconUrl = tokenUpdateData.iconUrl;
-  }
 
   const updatedToken = await updateToken(updateInput, { db });
 

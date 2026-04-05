@@ -1,6 +1,10 @@
 'use client';
 
-import { SelectAction, useActionGating } from '@hypha-platform/epics';
+import {
+  SelectAction,
+  useActionGating,
+  type ActionProps,
+} from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { isAbsoluteUrl } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
@@ -130,7 +134,7 @@ export const SelectSettingsAction = ({
       description: t('actions.updateIssuedToken.description'),
       href: 'create/update-issued-token',
       icon: <Pencil2Icon />,
-      disabled: true,
+      disabled: isPaymentExpired,
     },
     {
       group: t('groups.treasury'),
@@ -226,7 +230,7 @@ export const SelectSettingsAction = ({
     },
   ];
 
-  const computeHref = (action: any) => {
+  const computeHref = (action: ActionProps) => {
     if (!action?.href) {
       return '';
     }

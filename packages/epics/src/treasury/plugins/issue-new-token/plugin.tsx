@@ -27,12 +27,22 @@ export const IssueNewTokenPlugin = ({
   ownershipToWhitelistMembers,
   ownershipToWhitelistSpaces,
 }: IssueNewTokenPluginProps) => {
-  const { getValues, setValue, watch } = useFormContext();
+  const {
+    getValues,
+    setValue,
+    watch,
+    formState: { dirtyFields },
+  } = useFormContext();
   const values = getValues();
   const [tokenType, setTokenType] = useState<string>(values['type']);
   const [showDecaySettings, setShowDecaySettings] = useState<boolean>(false);
   const [showAdvancedSettings, setShowAdvancedSettings] =
     useState<boolean>(false);
+  /**
+   * Voice only: auto-open Advanced Decay once when decay first becomes dirty.
+   * Collapsing the panel does not clear `decaySettings` — values stay in the form.
+   */
+  const prevVoiceDecayDirtyRef = useRef(false);
 
   const enableLimitedSupply = watch('enableLimitedSupply') ?? false;
   const setEnableLimitedSupply = (value: boolean) => {
@@ -140,6 +150,8 @@ export const IssueNewTokenPlugin = ({
       prevType !== currentType &&
       currentType !== undefined
     ) {
+      prevVoiceDecayDirtyRef.current = false;
+      setShowDecaySettings(false);
       clearAdvancedSettingsFields();
       setValue('maxSupply', 0, { shouldDirty: true, shouldValidate: false });
       setValue(
@@ -190,6 +202,22 @@ export const IssueNewTokenPlugin = ({
       setShowDecaySettings(false);
     }
   }, [areGeneralFieldsFilled, showDecaySettings]);
+
+  useEffect(() => {
+    if (currentTokenType !== 'voice') {
+      prevVoiceDecayDirtyRef.current = false;
+      return;
+    }
+    const ds = dirtyFields.decaySettings;
+    const decayDirty =
+      typeof ds === 'object' &&
+      ds !== null &&
+      Object.keys(ds as object).length > 0;
+    if (decayDirty && !prevVoiceDecayDirtyRef.current) {
+      setShowDecaySettings(true);
+    }
+    prevVoiceDecayDirtyRef.current = decayDirty;
+  }, [currentTokenType, dirtyFields.decaySettings]);
 
   useEffect(() => {
     if (!showAdvancedSettings) {
