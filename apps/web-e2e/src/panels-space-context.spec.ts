@@ -84,36 +84,32 @@ test.describe('Panels hidden on non-space pages', () => {
     await page.goto('/en/network');
     await page.waitForLoadState('domcontentloaded');
 
-    await expect(
-      page.getByRole('button', { name: CHAT_TRIGGER }),
-    ).toHaveCount(0);
+    await expect(page.getByRole('button', { name: CHAT_TRIGGER })).toHaveCount(
+      0,
+    );
   });
 
   test('should NOT show AI trigger on /network', async ({ page }) => {
     await page.goto('/en/network');
     await page.waitForLoadState('domcontentloaded');
 
-    await expect(
-      page.getByRole('button', { name: AI_TRIGGER }),
-    ).toHaveCount(0);
+    await expect(page.getByRole('button', { name: AI_TRIGGER })).toHaveCount(0);
   });
 
   test('should NOT show Human Chat trigger on /my-spaces', async ({ page }) => {
     await page.goto('/en/my-spaces');
     await page.waitForLoadState('domcontentloaded');
 
-    await expect(
-      page.getByRole('button', { name: CHAT_TRIGGER }),
-    ).toHaveCount(0);
+    await expect(page.getByRole('button', { name: CHAT_TRIGGER })).toHaveCount(
+      0,
+    );
   });
 
   test('should NOT show AI trigger on /my-spaces', async ({ page }) => {
     await page.goto('/en/my-spaces');
     await page.waitForLoadState('domcontentloaded');
 
-    await expect(
-      page.getByRole('button', { name: AI_TRIGGER }),
-    ).toHaveCount(0);
+    await expect(page.getByRole('button', { name: AI_TRIGGER })).toHaveCount(0);
   });
 
   test('should NOT render sidebar markup on /network', async ({ page }) => {
@@ -160,9 +156,9 @@ test.describe('Panels appear after navigating into a space', () => {
     await page.waitForLoadState('domcontentloaded');
 
     // Verify triggers are absent
-    await expect(
-      page.getByRole('button', { name: CHAT_TRIGGER }),
-    ).toHaveCount(0);
+    await expect(page.getByRole('button', { name: CHAT_TRIGGER })).toHaveCount(
+      0,
+    );
 
     // Navigate to a space page via client-side routing
     await page.locator('a[href*="/dho/hypha"]').first().click();
