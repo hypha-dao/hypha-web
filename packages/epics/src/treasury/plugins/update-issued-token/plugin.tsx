@@ -709,23 +709,14 @@ export const UpdateIssuedTokenPlugin = ({
       onChainData.priceCurrencyFeed !== undefined &&
       chainPriceRef !== undefined;
 
+    /**
+     * Do not hydrate "Enable Token Price" or currency/price fields from chain defaults
+     * (e.g. micro price 0 + USD feed) — that wrongly turns the toggle on and fills USD/0.
+     * Pricing UI follows DB (`shouldShowAdvancedFromDb`) or user edits; toggling off/on
+     * already clears fields via `clearTokenPriceFields`.
+     */
     if (hasValidChainPrice) {
-      if (!isDirty('enableTokenPrice')) {
-        setValue('enableTokenPrice', true, { shouldDirty: false });
-      }
       enableAdvancedTransferControls = true;
-      if (onChainData.tokenPrice !== undefined && !isDirty('tokenPrice')) {
-        setValue(
-          'tokenPrice',
-          chainPriceRef !== undefined ? onChainData.tokenPrice : undefined,
-          { shouldDirty: false },
-        );
-      }
-      if (!isDirty('referenceCurrency')) {
-        setValue('referenceCurrency', chainPriceRef, { shouldDirty: false });
-      }
-    } else if (!isDirty('enableTokenPrice')) {
-      setValue('enableTokenPrice', false, { shouldDirty: false });
     }
     const currentDecaySettings = getValues('decaySettings') || {};
     const newDecaySettings = { ...currentDecaySettings };
