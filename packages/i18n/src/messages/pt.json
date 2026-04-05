@@ -760,7 +760,7 @@
         "description": "Crie um novo token para utilidade, propriedade, impacto, créditos em dinheiro, voz ou moeda comunitária em seu espaço."
       },
       "updateIssuedToken": {
-        "title": "Atualizar token emitido (Em breve)",
+        "title": "Atualizar token emitido",
         "description": "Atualize as configurações avançadas do token, incluindo nome, símbolo e ícone do token, fornecimento total, opções de cunhagem automática, controles de transferência, parâmetros de decaimento de voz e o valor do token exibido na tesouraria."
       },
       "mintTokensToSpaceTreasury": {

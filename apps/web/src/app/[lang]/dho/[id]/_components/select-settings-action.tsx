@@ -130,7 +130,7 @@ export const SelectSettingsAction = ({
       description: t('actions.updateIssuedToken.description'),
       href: 'create/update-issued-token',
       icon: <Pencil2Icon />,
-      disabled: true,
+      disabled: isPaymentExpired,
     },
     {
       group: t('groups.treasury'),
