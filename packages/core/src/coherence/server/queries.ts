@@ -12,7 +12,7 @@ type FindAllCoherencesInput = {
   tags?: CoherenceTag[];
   priority?: CoherencePriority;
   includeArchived?: boolean;
-  orderBy?: string;
+  orderBy?: 'mostrecent' | 'mostmessages' | 'mostviews';
 };
 
 export const findAllCoherences = async (
@@ -63,7 +63,9 @@ export const findAllCoherences = async (
             )`
           : undefined,
         type ? eq(coherences.type, type) : undefined,
-        tags ? arrayOverlaps(coherences.tags, tags) : undefined,
+        tags && tags.length > 0
+          ? arrayOverlaps(coherences.tags, tags)
+          : undefined,
         priority ? eq(coherences.priority, priority) : undefined,
       ),
     )

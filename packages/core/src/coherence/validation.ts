@@ -41,10 +41,5 @@ export const createCoherenceWeb2Props = {
 };
 export const schemaCreateCoherenceWeb2 = z.object(createCoherenceWeb2Props);
 
-export const schemaCreateCoherence = z.object({
-  ...createCoherenceWeb2Props,
-});
-
-export const schemaCreateCoherenceForm = z.object({
-  ...createCoherenceWeb2Props,
-});
+export const schemaCreateCoherence = schemaCreateCoherenceWeb2;
+export const schemaCreateCoherenceForm = schemaCreateCoherenceWeb2;

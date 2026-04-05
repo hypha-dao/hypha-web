@@ -6,18 +6,24 @@ import {
   pgTable,
   serial,
   text,
+  uniqueIndex,
   varchar,
 } from 'drizzle-orm/pg-core';
 import { InferInsertModel, InferSelectModel, sql } from 'drizzle-orm';
 import { commonDateFields } from './shared';
 import { spaces } from './space';
+import { people } from './people';
 
 export const coherences = pgTable(
   'coherences',
   {
     id: serial('id').primaryKey(),
-    creatorId: integer('creator_id').notNull(),
-    spaceId: integer('space_id').references(() => spaces.id),
+    creatorId: integer('creator_id')
+      .notNull()
+      .references(() => people.id),
+    spaceId: integer('space_id').references(() => spaces.id, {
+      onDelete: 'cascade',
+    }),
     title: text('title').notNull(),
     description: text('description').notNull(),
     type: text('type').notNull(),
@@ -41,11 +47,12 @@ export const coherences = pgTable(
     index('search_type').on(table.type),
     index('search_priority').on(table.priority),
     index('search_slug').on(table.slug),
+    uniqueIndex('unique_slug').on(table.slug),
     index('search_room_id').on(table.roomId),
     index('search_archived').on(table.archived),
     index('search_views').on(table.views),
     index('search_messages').on(table.messages),
-    index('search_tags').on(table.tags),
+    index('search_tags').using('gin', table.tags),
   ],
 );
 

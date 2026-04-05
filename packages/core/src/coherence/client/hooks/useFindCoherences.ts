@@ -13,6 +13,7 @@ export interface CoherenceQuery {
   tags?: CoherenceTag[];
   priority?: CoherencePriority;
   includeArchived?: boolean;
+  orderBy?: 'mostrecent' | 'mostmessages' | 'mostviews';
 }
 
 export const useFindCoherences = ({
@@ -23,15 +24,7 @@ export const useFindCoherences = ({
   priority,
   includeArchived,
   orderBy,
-}: {
-  spaceId?: number;
-  search?: string;
-  type?: CoherenceType;
-  tags?: CoherenceTag[];
-  priority?: CoherencePriority;
-  includeArchived?: boolean;
-  orderBy?: string;
-}) => {
+}: CoherenceQuery) => {
   const {
     data: coherences,
     isLoading,
@@ -39,10 +32,10 @@ export const useFindCoherences = ({
     mutate: refresh,
   } = useSWR(
     [
-      { spaceId, search, type, tags, priority, includeArchived },
+      { spaceId, search, type, tags, priority, includeArchived, orderBy },
       'getAllCoherences',
     ],
-    async ([{ search, type, tags, priority, includeArchived }]) =>
+    async ([{ search, type, tags, priority, includeArchived, orderBy }]) =>
       await getAllCoherences({
         spaceId,
         search,

@@ -1,9 +1,12 @@
 'use server';
 
 import { db } from '@hypha-platform/storage-postgres';
-import { CoherenceType } from '../../coherence-types';
-import { CoherenceTag } from '../../coherence-tags';
-import { CoherencePriority } from '../../coherence-priorities';
+import { CoherenceType, COHERENCE_TYPES } from '../../coherence-types';
+import { CoherenceTag, COHERENCE_TAGS } from '../../coherence-tags';
+import {
+  CoherencePriority,
+  COHERENCE_PRIORITIES,
+} from '../../coherence-priorities';
 import { findAllCoherences } from '../queries';
 import { Coherence } from '../../types';
 
@@ -14,7 +17,7 @@ type GetAllCoherencesInput = {
   tags?: CoherenceTag[];
   priority?: CoherencePriority;
   includeArchived?: boolean;
-  orderBy?: string;
+  orderBy?: 'mostrecent' | 'mostmessages' | 'mostviews';
 };
 
 export async function getAllCoherences(
@@ -35,14 +38,24 @@ export async function getAllCoherences(
         views,
         ...rest
       }): Coherence => ({
-        type: type as CoherenceType,
-        priority: (priority as CoherencePriority) ?? 'low',
-        tags: tags as CoherenceTag[],
+        type: (COHERENCE_TYPES as readonly string[]).includes(type)
+          ? (type as CoherenceType)
+          : 'Opportunity',
+        priority:
+          priority !== null &&
+          (COHERENCE_PRIORITIES as readonly string[]).includes(priority)
+            ? (priority as CoherencePriority)
+            : 'medium',
+        tags: Array.isArray(tags)
+          ? (tags.filter((t) =>
+              (COHERENCE_TAGS as readonly string[]).includes(t),
+            ) as CoherenceTag[])
+          : [],
         roomId: roomId ?? undefined,
         archived: archived ?? false,
-        slug: slug!,
-        messages: messages!,
-        views: views!,
+        slug: slug ?? '',
+        messages: messages ?? 0,
+        views: views ?? 0,
         ...rest,
       }),
     );

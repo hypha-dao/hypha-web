@@ -14,6 +14,10 @@ export async function getCoherenceBySlug(
   try {
     const coherence = await findCoherenceBySlug(props, { db });
 
+    if (!coherence) {
+      return undefined;
+    }
+
     return {
       ...coherence,
     } as Coherence;

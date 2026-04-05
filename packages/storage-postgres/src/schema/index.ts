@@ -16,6 +16,7 @@ import { tokenUpdates, tokenUpdateRelations } from './token-updates';
 
 export { SPACE_FLAGS } from './flags';
 export { CATEGORIES } from './categories';
+// TODO: Re-enable once coherence statuses are finalised and the enum is stable
 // export { COHERENCE_STATUSES } from './coherence-statuses';
 
 export * from './document';

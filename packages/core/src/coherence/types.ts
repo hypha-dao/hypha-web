@@ -18,7 +18,6 @@ export interface CreateCoherenceInput {
 }
 
 export interface UpdateCoherenceInput {
-  slug?: string;
   archived?: boolean;
   roomId?: string;
   messages?: number;
@@ -31,14 +30,14 @@ export type UpdateCoherenceBySlugInput = {
 
 export type Coherence = {
   id: number;
-  creatorId?: number;
+  creatorId: number;
   createdAt: Date;
   updatedAt: Date;
   type: CoherenceType;
   priority: CoherencePriority;
   title: string;
   description: string;
-  slug: string;
+  slug: string | null;
   roomId?: string;
   archived: boolean;
   tags: CoherenceTag[];
