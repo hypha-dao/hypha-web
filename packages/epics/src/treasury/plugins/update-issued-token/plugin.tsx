@@ -103,6 +103,8 @@ export const UpdateIssuedTokenPlugin = ({
   const [showDecaySettings, setShowDecaySettings] = useState<boolean>(false);
   const [showAdvancedSettings, setShowAdvancedSettings] =
     useState<boolean>(false);
+  /** Voice only: after decay is edited once, keep Advanced Decay Settings open. */
+  const voiceDecayEditedRef = useRef(false);
   const selectedTokenAddress = watch('tokenAddress') || null;
   const watchedType = watch('type');
 
@@ -222,6 +224,29 @@ export const UpdateIssuedTokenPlugin = ({
       setShowDecaySettings(false);
     }
   }, [areGeneralFieldsFilled, showDecaySettings]);
+
+  useEffect(() => {
+    voiceDecayEditedRef.current = false;
+  }, [selectedTokenAddress]);
+
+  useEffect(() => {
+    if (currentTokenType !== 'voice') {
+      voiceDecayEditedRef.current = false;
+      return;
+    }
+    const ds = dirtyFields.decaySettings;
+    const decayDirty =
+      ds === true ||
+      (typeof ds === 'object' &&
+        ds !== null &&
+        Object.keys(ds as object).length > 0);
+    if (decayDirty) {
+      voiceDecayEditedRef.current = true;
+    }
+    if (voiceDecayEditedRef.current) {
+      setShowDecaySettings(true);
+    }
+  }, [currentTokenType, dirtyFields.decaySettings]);
 
   const prevShowAdvancedSettingsRef = useRef(showAdvancedSettings);
 
