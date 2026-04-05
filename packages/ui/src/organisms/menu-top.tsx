@@ -35,27 +35,6 @@ export const MenuTop = ({
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
-  useEffect(() => {
-    if (!headerRef.current) return;
-    const observer = new ResizeObserver(() => {
-      const rect = headerRef.current?.getBoundingClientRect();
-      if (rect) {
-        // Round to prevent subpixel drift when toggle icons appear/disappear
-        const h = Math.round(rect.height);
-        setHeaderHeight(h);
-        document.documentElement.style.setProperty(
-          '--menu-top-height',
-          `${h}px`,
-        );
-      }
-    });
-    observer.observe(headerRef.current);
-    return () => {
-      observer.disconnect();
-      document.documentElement.style.removeProperty('--menu-top-height');
-    };
-  }, []);
-
   return (
     <header
       ref={headerRef}
