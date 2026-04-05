@@ -35,14 +35,7 @@ test.describe('Human Chat Panel — Avatar in Messages', () => {
 
   test.beforeEach(async ({ page, context }) => {
     // Layer 2: Persist cookie for client-side navigations
-    await context.addCookies([
-      {
-        name: 'HYPHA_ENABLE_HUMAN_CHAT',
-        value: 'true',
-        domain: '127.0.0.1',
-        path: '/',
-      },
-    ]);
+    await HumanChatPanelPage.enableHumanChat(context);
 
     chatPanel = new HumanChatPanelPage(page);
     await chatPanel.open();
@@ -99,14 +92,7 @@ test.describe('Human Chat Panel — Authenticated User Avatar', () => {
 
   test.beforeEach(async ({ page, context }) => {
     // Layer 2: Persist cookie for client-side navigations
-    await context.addCookies([
-      {
-        name: 'HYPHA_ENABLE_HUMAN_CHAT',
-        value: 'true',
-        domain: '127.0.0.1',
-        path: '/',
-      },
-    ]);
+    await HumanChatPanelPage.enableHumanChat(context);
 
     // Mock the /api/v1/people/me endpoint to return a user with an avatar
     await page.route('**/api/v1/people/me', (route) => {

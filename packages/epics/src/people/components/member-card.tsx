@@ -101,7 +101,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
     <Card className="w-full h-full p-5 mb-2 flex gap-3 flex-col">
       <div className="flex items-center">
         <PersonAvatar
-          avatarSrc={avatarUrl || '/placeholder/default-profile.svg'}
+          avatarSrc={avatarUrl}
           userName={nickname}
           size={minimize ? 'sm' : 'lg'}
           isLoading={isLoading}

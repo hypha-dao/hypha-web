@@ -126,6 +126,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const currentUserIdRef = useRef(currentUserId);
   currentUserIdRef.current = currentUserId;
 
+  // Backfill avatar on self-authored messages after useMe() resolves
+  useEffect(() => {
+    if (!currentUserAvatarUrl) return;
+    setMessages((prev) =>
+      prev.map((uiMessage) =>
+        uiMessage.role === 'user' && !uiMessage.avatarUrl
+          ? { ...uiMessage, avatarUrl: currentUserAvatarUrl }
+          : uiMessage,
+      ),
+    );
+  }, [currentUserAvatarUrl]);
+
   // Track previous sidebar open state to detect close events
   const prevSidebarOpenRef = useRef(sidebarOpen);
   useEffect(() => {

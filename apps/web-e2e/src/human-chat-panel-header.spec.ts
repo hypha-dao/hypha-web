@@ -13,7 +13,12 @@ import { HumanChatPanelPage } from './pages/human-chat-panel.page';
 test.describe('Human Chat Panel Header Layout', () => {
   let chatPanel: HumanChatPanelPage;
 
-  test.beforeEach(async ({ page }) => {
+  test.use({
+    extraHTTPHeaders: { Cookie: 'HYPHA_ENABLE_HUMAN_CHAT=true' },
+  });
+
+  test.beforeEach(async ({ page, context }) => {
+    await HumanChatPanelPage.enableHumanChat(context);
     chatPanel = new HumanChatPanelPage(page);
     await chatPanel.open();
     await chatPanel.openPanel();

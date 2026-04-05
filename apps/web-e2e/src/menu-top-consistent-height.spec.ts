@@ -43,16 +43,16 @@ test.describe('MenuTop consistent height', () => {
     // Measure on a space page (trigger icons present)
     await page.goto('/en/dho/hypha/agreements');
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(500);
     const spaceHeader = page.locator(menuSelector).first();
+    await spaceHeader.waitFor({ state: 'visible' });
     const spaceBox = await spaceHeader.boundingBox();
     expect(spaceBox).not.toBeNull();
 
     // Measure on a non-space page (no trigger icons)
     await page.goto('/en/network');
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(500);
     const networkHeader = page.locator(menuSelector).first();
+    await networkHeader.waitFor({ state: 'visible' });
     const networkBox = await networkHeader.boundingBox();
     expect(networkBox).not.toBeNull();
 

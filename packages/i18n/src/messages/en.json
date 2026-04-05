@@ -1642,6 +1642,7 @@
     "timestampDate": "{date} at {time}",
     "systemSender": "System",
     "noMembers": "No members found",
+    "unknownMember": "Unknown",
     "failedToJoinRoom": "Failed to join conversation room"
   },
   "CoherenceTab": {

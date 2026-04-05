@@ -59,7 +59,7 @@ export function HumanChatPanelMembers({
         const displayName =
           [member.name, member.surname].filter(Boolean).join(' ') ||
           member.nickname ||
-          'Unknown';
+          t('unknownMember');
 
         return (
           <div
