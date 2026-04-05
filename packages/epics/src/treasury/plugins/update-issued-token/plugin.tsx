@@ -103,8 +103,11 @@ export const UpdateIssuedTokenPlugin = ({
   const [showDecaySettings, setShowDecaySettings] = useState<boolean>(false);
   const [showAdvancedSettings, setShowAdvancedSettings] =
     useState<boolean>(false);
-  /** Voice only: after decay is edited once, keep Advanced Decay Settings open. */
-  const voiceDecayEditedRef = useRef(false);
+  /**
+   * Voice only: auto-open Advanced Decay once when decay first becomes dirty.
+   * Collapsing the panel does not clear `decaySettings` — values stay in the form.
+   */
+  const prevVoiceDecayDirtyRef = useRef(false);
   const selectedTokenAddress = watch('tokenAddress') || null;
   const watchedType = watch('type');
 
@@ -226,12 +229,12 @@ export const UpdateIssuedTokenPlugin = ({
   }, [areGeneralFieldsFilled, showDecaySettings]);
 
   useEffect(() => {
-    voiceDecayEditedRef.current = false;
+    prevVoiceDecayDirtyRef.current = false;
   }, [selectedTokenAddress]);
 
   useEffect(() => {
     if (currentTokenType !== 'voice') {
-      voiceDecayEditedRef.current = false;
+      prevVoiceDecayDirtyRef.current = false;
       return;
     }
     const ds = dirtyFields.decaySettings;
@@ -240,12 +243,10 @@ export const UpdateIssuedTokenPlugin = ({
       (typeof ds === 'object' &&
         ds !== null &&
         Object.keys(ds as object).length > 0);
-    if (decayDirty) {
-      voiceDecayEditedRef.current = true;
-    }
-    if (voiceDecayEditedRef.current) {
+    if (decayDirty && !prevVoiceDecayDirtyRef.current) {
       setShowDecaySettings(true);
     }
+    prevVoiceDecayDirtyRef.current = decayDirty;
   }, [currentTokenType, dirtyFields.decaySettings]);
 
   const prevShowAdvancedSettingsRef = useRef(showAdvancedSettings);

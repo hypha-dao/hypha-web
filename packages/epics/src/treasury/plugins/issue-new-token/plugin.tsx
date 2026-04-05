@@ -38,8 +38,11 @@ export const IssueNewTokenPlugin = ({
   const [showDecaySettings, setShowDecaySettings] = useState<boolean>(false);
   const [showAdvancedSettings, setShowAdvancedSettings] =
     useState<boolean>(false);
-  /** Voice only: after decay is edited once, keep Advanced Decay Settings open. */
-  const voiceDecayEditedRef = useRef(false);
+  /**
+   * Voice only: auto-open Advanced Decay once when decay first becomes dirty.
+   * Collapsing the panel does not clear `decaySettings` — values stay in the form.
+   */
+  const prevVoiceDecayDirtyRef = useRef(false);
 
   const enableLimitedSupply = watch('enableLimitedSupply') ?? false;
   const setEnableLimitedSupply = (value: boolean) => {
@@ -147,7 +150,7 @@ export const IssueNewTokenPlugin = ({
       prevType !== currentType &&
       currentType !== undefined
     ) {
-      voiceDecayEditedRef.current = false;
+      prevVoiceDecayDirtyRef.current = false;
       setShowDecaySettings(false);
       clearAdvancedSettingsFields();
       setValue('maxSupply', 0, { shouldDirty: true, shouldValidate: false });
@@ -202,7 +205,7 @@ export const IssueNewTokenPlugin = ({
 
   useEffect(() => {
     if (currentTokenType !== 'voice') {
-      voiceDecayEditedRef.current = false;
+      prevVoiceDecayDirtyRef.current = false;
       return;
     }
     const ds = dirtyFields.decaySettings;
@@ -211,12 +214,10 @@ export const IssueNewTokenPlugin = ({
       (typeof ds === 'object' &&
         ds !== null &&
         Object.keys(ds as object).length > 0);
-    if (decayDirty) {
-      voiceDecayEditedRef.current = true;
-    }
-    if (voiceDecayEditedRef.current) {
+    if (decayDirty && !prevVoiceDecayDirtyRef.current) {
       setShowDecaySettings(true);
     }
+    prevVoiceDecayDirtyRef.current = decayDirty;
   }, [currentTokenType, dirtyFields.decaySettings]);
 
   useEffect(() => {
