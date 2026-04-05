@@ -48,13 +48,13 @@ export function CoherenceBlock({
     [lang, spaceSlug],
   );
 
-  const { openCoherenceChat } = useHumanChatPanel();
+  const { toggle: openHumanChatPanel } = useHumanChatPanel();
 
   const handleSignalClick = React.useCallback(
-    (signal: Coherence) => {
-      openCoherenceChat(signal.roomId ?? null, signal.title, signal.slug!);
+    (_signal: Coherence) => {
+      openHumanChatPanel();
     },
-    [openCoherenceChat],
+    [openHumanChatPanel],
   );
 
   const onSignalClick = humanChatEnabled ? handleSignalClick : undefined;

@@ -125,6 +125,7 @@ export const ChatDetail = ({
       return;
     }
     const { slug, views = 0 } = conversation;
+    if (!slug) return;
     (async (slug: string, views: number) => {
       try {
         await updateCoherenceBySlug({ slug, views: views + 1 });

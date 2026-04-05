@@ -312,6 +312,35 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     [client],
   );
 
+  const unregisterRoomListener = React.useCallback(
+    (roomId: string) => {
+      if (!client) {
+        console.warn('Matrix client is not initialized');
+        return;
+      }
+      type Records = RoomMessageListenerRecord[];
+      const { found, rest } = registeredRoomListenersRef.current.reduce(
+        (acc, item) => {
+          if (item.roomId === roomId) {
+            acc.found.push(item);
+          } else {
+            acc.rest.push(item);
+          }
+          return acc;
+        },
+        { found: [] as Records, rest: [] as Records },
+      );
+      for (const item of found) {
+        if (item) {
+          client.removeListener(RoomEvent.Timeline, item.listener);
+        }
+      }
+      registeredRoomListenersRef.current = rest;
+      setRegisteredRoomListeners(rest);
+    },
+    [client],
+  );
+
   const registerRoomListener = React.useCallback(
     (
       roomId: string,
@@ -356,35 +385,6 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     [client, unregisterRoomListener],
   );
 
-  const unregisterRoomListener = React.useCallback(
-    (roomId: string) => {
-      if (!client) {
-        console.warn('Matrix client is not initialized');
-        return;
-      }
-      type Records = RoomMessageListenerRecord[];
-      const { found, rest } = registeredRoomListenersRef.current.reduce(
-        (acc, item) => {
-          if (item.roomId === roomId) {
-            acc.found.push(item);
-          } else {
-            acc.rest.push(item);
-          }
-          return acc;
-        },
-        { found: [] as Records, rest: [] as Records },
-      );
-      for (const item of found) {
-        if (item) {
-          client.removeListener(RoomEvent.Timeline, item.listener);
-        }
-      }
-      registeredRoomListenersRef.current = rest;
-      setRegisteredRoomListeners(rest);
-    },
-    [client],
-  );
-
   const value: MatrixContextType = {
     client,
     isMatrixAvailable,
@@ -422,6 +422,9 @@ const noopMatrixContext: MatrixContextType = {
   registerRoomListener: () => {},
   unregisterRoomListener: () => {},
   registeredRoomListeners: [],
+  getPinnedMessageIds: () => [],
+  togglePinnedMessage: async () => {},
+  getRoomMembers: async () => [],
 };
 
 export const useMatrix = () => {

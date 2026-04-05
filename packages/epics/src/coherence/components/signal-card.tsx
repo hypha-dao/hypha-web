@@ -18,11 +18,8 @@ import {
   Separator,
   Skeleton,
 } from '@hypha-platform/ui';
-import {
-  formatRelativeDateShort,
-  stripDescription,
-  stripMarkdown,
-} from '@hypha-platform/ui-utils';
+import { stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
+import { formatDistanceToNow } from 'date-fns';
 import {
   ChatBubbleIcon,
   UpdateIcon,
@@ -74,6 +71,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
 
   const handleUnarchive = React.useCallback(async () => {
     console.log('Unarchive conversation');
+    if (!slug) return;
     try {
       await updateCoherenceBySlug({ slug, archived: false });
       await refresh();
@@ -93,7 +91,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             <div className="flex-grow"></div>
             <div className="flex flex-row gap-1 text-1 text-neutral-11">
               <ClockIcon className="h-4 w-4" />
-              {formatRelativeDateShort(createdAt)}
+              {createdAt
+                ? formatDistanceToNow(new Date(createdAt), { addSuffix: true })
+                : ''}
             </div>
           </div>
           <div className="flex flex-row">

@@ -149,9 +149,7 @@ export const CreateSignalForm = ({
           const { roomId } = await createRoom(coherence.title);
           await updateCoherenceBySlug({ slug: coherence.slug!, roomId });
         } else {
-          console.warn(
-            'Matrix client is unavailable — skipping room creation',
-          );
+          console.warn('Matrix client is unavailable — skipping room creation');
         }
       } catch (error) {
         console.warn('Could not create conversation:', error);

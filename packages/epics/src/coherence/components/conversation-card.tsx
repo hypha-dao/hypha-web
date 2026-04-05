@@ -61,6 +61,7 @@ export const ConversationCard: React.FC<ConversationCardProps & Coherence> = ({
 
   const handleUnarchive = React.useCallback(async () => {
     console.log('Unarchive conversation');
+    if (!slug) return;
     try {
       await updateCoherenceBySlug({ slug, archived: false });
       await refresh();
