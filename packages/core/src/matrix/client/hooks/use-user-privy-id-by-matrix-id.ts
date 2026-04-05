@@ -3,7 +3,7 @@
 import { determineEnvironment, useJwt } from '@hypha-platform/core/client';
 import React from 'react';
 import useSWR from 'swr';
-import { getLinkByMatrixUserId } from '../../server/web3/get-link-by-matrix-user-id';
+import { getLinkByMatrixUserIdAction } from '../../server/actions';
 
 export interface UseUserPrivyIdByMatrixIdInput {
   matrixUserId: string;
@@ -29,7 +29,7 @@ export const useUserPrivyIdByMatrixId = ({
         return undefined;
       }
       try {
-        const response = await getLinkByMatrixUserId({
+        const response = await getLinkByMatrixUserIdAction({
           matrixUserId,
           environment,
         });
