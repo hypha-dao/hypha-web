@@ -16,7 +16,10 @@
     "format:check": "npx prettier --check 'apps/**/*.{ts,tsx}' --check 'packages/**/*.{ts,tsx}'",
     "format:fix": "npx prettier --write 'apps/**/*.{ts,tsx}' --write 'packages/**/*.{ts,tsx}'",
     "env:copy": "bash scripts/copy-env.sh",
-    "vercel:link": "npx vercel link"
+    "vercel:link": "npx vercel link",
+    "e2e": "npx playwright test --config=apps/web-e2e/playwright-local.config.ts --reporter=line",
+    "e2e:ui": "npx playwright test --config=apps/web-e2e/playwright-local.config.ts --ui",
+    "e2e:debug": "npx playwright test --config=apps/web-e2e/playwright-local.config.ts --debug"
   },
   "private": true,
   "nx": {},

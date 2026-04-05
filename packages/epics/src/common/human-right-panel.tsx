@@ -13,8 +13,10 @@ import {
   useMatrix,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
+  useMe,
   Message,
 } from '@hypha-platform/core/client';
+import { UseMembers } from '../spaces';
 
 import {
   HumanChatPanelHeader,
@@ -33,6 +35,7 @@ type UIMessage = {
     { type: 'text'; text: string } | { type: string; [k: string]: unknown }
   >;
   senderName?: string;
+  avatarUrl?: string;
 };
 
 const ROOM_STORAGE_KEY = 'hypha-chat-room-';
@@ -59,17 +62,26 @@ function storeRoomId(spaceSlug: string, roomId: string): void {
 /**
  * Convert a Matrix Message to the UIMessage format expected by panel components.
  */
-function toUIMessage(msg: Message, currentUserId?: string | null): UIMessage {
+function toUIMessage(
+  msg: Message,
+  currentUserId?: string | null,
+  currentUserAvatarUrl?: string,
+): UIMessage {
   const isCurrentUser = currentUserId ? msg.sender === currentUserId : false;
   return {
     id: msg.id,
     role: isCurrentUser ? 'user' : 'member',
     parts: [{ type: 'text', text: msg.content }],
     senderName: isCurrentUser ? undefined : msg.sender,
+    avatarUrl: isCurrentUser ? currentUserAvatarUrl : undefined,
   };
 }
 
-export function HumanRightPanel() {
+type HumanRightPanelProps = {
+  useMembers: UseMembers;
+};
+
+export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const t = useTranslations('HumanChatPanel');
   const params = useParams<{ id?: string }>();
   const spaceSlug = params?.id;
@@ -94,8 +106,13 @@ export function HumanRightPanel() {
     openCoherenceChat,
   } = useHumanChatPanel();
   const { jwt: authToken } = useJwt();
+  const { person: me } = useMe();
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
   const { open: sidebarOpen } = useSidebar();
+
+  const currentUserAvatarUrl = me?.avatarUrl;
+  const currentUserAvatarUrlRef = useRef(currentUserAvatarUrl);
+  currentUserAvatarUrlRef.current = currentUserAvatarUrl;
 
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<UIMessage[]>([]);
@@ -108,6 +125,18 @@ export function HumanRightPanel() {
   const currentUserId = client?.getUserId?.() ?? null;
   const currentUserIdRef = useRef(currentUserId);
   currentUserIdRef.current = currentUserId;
+
+  // Backfill avatar on self-authored messages after useMe() resolves
+  useEffect(() => {
+    if (!currentUserAvatarUrl) return;
+    setMessages((prev) =>
+      prev.map((uiMessage) =>
+        uiMessage.role === 'user' && !uiMessage.avatarUrl
+          ? { ...uiMessage, avatarUrl: currentUserAvatarUrl }
+          : uiMessage,
+      ),
+    );
+  }, [currentUserAvatarUrl]);
 
   // Track previous sidebar open state to detect close events
   const prevSidebarOpenRef = useRef(sidebarOpen);
@@ -176,7 +205,13 @@ export function HumanRightPanel() {
         const existing = getRoomMessages(targetRoomId);
         if (existing && !cancelled) {
           setMessages(
-            existing.map((m) => toUIMessage(m, currentUserIdRef.current)),
+            existing.map((m) =>
+              toUIMessage(
+                m,
+                currentUserIdRef.current,
+                currentUserAvatarUrlRef.current,
+              ),
+            ),
           );
         }
       } catch (err) {
@@ -281,7 +316,13 @@ export function HumanRightPanel() {
         const existing = matrixRef.current.getRoomMessages(targetRoomId);
         if (existing) {
           setMessages(
-            existing.map((m) => toUIMessage(m, currentUserIdRef.current)),
+            existing.map((m) =>
+              toUIMessage(
+                m,
+                currentUserIdRef.current,
+                currentUserAvatarUrlRef.current,
+              ),
+            ),
           );
         }
       } catch (err) {
@@ -323,7 +364,14 @@ export function HumanRightPanel() {
       async (message: Message) => {
         setMessages((prev) => {
           if (prev.some((m) => m.id === message.id)) return prev;
-          return [...prev, toUIMessage(message, currentUserIdRef.current)];
+          return [
+            ...prev,
+            toUIMessage(
+              message,
+              currentUserIdRef.current,
+              currentUserAvatarUrlRef.current,
+            ),
+          ];
         });
       },
       async (_pinned: string[]) => {
@@ -379,7 +427,12 @@ export function HumanRightPanel() {
             )}
           </>
         )}
-        {activeTab === 'members' && <HumanChatPanelMembers />}
+        {activeTab === 'members' && (
+          <HumanChatPanelMembers
+            useMembers={useMembers}
+            spaceSlug={spaceSlug}
+          />
+        )}
       </SidebarContent>
       {activeTab === 'chat' && (
         <SidebarFooter className="bg-background-2 p-0">

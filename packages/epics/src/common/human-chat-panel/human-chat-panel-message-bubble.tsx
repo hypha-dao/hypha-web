@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { Smile, Reply, MoreHorizontal } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { stringToHue, getInitials } from './utils';
+import { PersonAvatar } from '../../people/components/person-avatar';
 
 type Reaction = {
   emoji: string;
@@ -20,6 +21,7 @@ type HumanChatPanelMessageBubbleProps = {
     role: 'user' | 'member';
     parts?: UIMessagePart[];
     senderName?: string;
+    avatarUrl?: string;
     timestamp?: Date;
     reactions?: Reaction[];
   };
@@ -100,8 +102,6 @@ export function HumanChatPanelMessageBubble({
   const textContent = textParts.map((p) => p.text).join('');
 
   const senderName = message.senderName ?? t('you');
-  const hue = stringToHue(senderName);
-  const initials = getInitials(senderName);
   const timestamp = message.timestamp
     ? formatTimestamp(message.timestamp, t)
     : undefined;
@@ -113,11 +113,12 @@ export function HumanChatPanelMessageBubble({
       className="group relative flex gap-3 px-1 py-1 hover:bg-muted/30 rounded-md transition-colors"
     >
       {/* Avatar */}
-      <div
-        className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white text-xs font-semibold"
-        style={{ backgroundColor: `hsl(${hue}, 55%, 45%)` }}
-      >
-        {initials}
+      <div className="mt-0.5 shrink-0" data-testid="chat-message-avatar">
+        <PersonAvatar
+          size="sm"
+          avatarSrc={message.avatarUrl}
+          userName={senderName}
+        />
       </div>
 
       {/* Content */}

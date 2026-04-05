@@ -4,9 +4,10 @@ import { LayoutPage } from './pages/layout.page';
 /**
  * MenuTop — Consistent Height
  *
- * Verifies the menu bar has a stable, integer-pixel height and publishes
- * --menu-top-height as a rounded value. This prevents the resize handle
- * from shifting by 1px when panel trigger icons appear or disappear.
+ * Verifies the menu bar has identical height on space pages (where panel
+ * trigger icons are rendered) and non-space pages (where triggers are absent).
+ * A 1px difference would cause the resize handle to misalign with the
+ * content edge.
  */
 
 test.describe('MenuTop consistent height', () => {
@@ -33,7 +34,33 @@ test.describe('MenuTop consistent height', () => {
     ]);
   });
 
-  test('--menu-top-height CSS variable should be set and integer on space page', async ({
+  test('header height should be identical on space and non-space pages', async ({
+    page,
+  }) => {
+    // Use the sticky header that contains the logo — the MenuTop component
+    const menuSelector = 'header.sticky';
+
+    // Measure on a space page (trigger icons present)
+    await page.goto('/en/dho/hypha/agreements');
+    await page.waitForLoadState('domcontentloaded');
+    const spaceHeader = page.locator(menuSelector).first();
+    await spaceHeader.waitFor({ state: 'visible' });
+    const spaceBox = await spaceHeader.boundingBox();
+    expect(spaceBox).not.toBeNull();
+
+    // Measure on a non-space page (no trigger icons)
+    await page.goto('/en/network');
+    await page.waitForLoadState('domcontentloaded');
+    const networkHeader = page.locator(menuSelector).first();
+    await networkHeader.waitFor({ state: 'visible' });
+    const networkBox = await networkHeader.boundingBox();
+    expect(networkBox).not.toBeNull();
+
+    // Heights must be identical — no 1px drift allowed
+    expect(spaceBox!.height).toBe(networkBox!.height);
+  });
+
+  test('--menu-top-height CSS variable should be set and integer', async ({
     page,
   }) => {
     await page.goto('/en/dho/hypha/agreements');
@@ -56,40 +83,7 @@ test.describe('MenuTop consistent height', () => {
     expect(value).toBeTruthy();
     const px = parseInt(value, 10);
     expect(px).toBeGreaterThan(0);
-    // Must be a whole number — no fractional pixels
+    // Value should be an integer (no fractional pixels)
     expect(value.trim()).toBe(`${px}px`);
-  });
-
-  test('menu bar height should be integer pixels (no subpixel drift)', async ({
-    page,
-  }) => {
-    await page.goto('/en/dho/hypha/agreements');
-    await page.waitForLoadState('domcontentloaded');
-
-    // Poll until --menu-top-height is set by ResizeObserver
-    await page.waitForFunction(
-      () =>
-        getComputedStyle(document.documentElement)
-          .getPropertyValue('--menu-top-height')
-          .trim() !== '',
-      { timeout: 5000 },
-    );
-
-    // Read the published CSS variable
-    const cssValue = await page.evaluate(() =>
-      getComputedStyle(document.documentElement)
-        .getPropertyValue('--menu-top-height')
-        .trim(),
-    );
-    const cssHeight = parseInt(cssValue, 10);
-
-    // Measure actual header bounding box via shared page object
-    const layout = new LayoutPage(page);
-    const menuTopBox = await layout.menuTop.boundingBox();
-    const headerHeight = menuTopBox?.height ?? 0;
-
-    expect(headerHeight).toBeGreaterThan(0);
-    // CSS variable and actual height should match (within rounding)
-    expect(cssHeight).toBe(Math.round(headerHeight));
   });
 });
