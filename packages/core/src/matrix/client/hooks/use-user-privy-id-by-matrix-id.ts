@@ -15,7 +15,10 @@ export const useUserPrivyIdByMatrixId = ({
   const [error, setError] = React.useState<string | null>(null);
   const { jwt, isLoadingJwt } = useJwt();
 
-  const environment = determineEnvironment(window.location.href);
+  const environment = React.useMemo(() => {
+    if (typeof window === 'undefined') return undefined;
+    return determineEnvironment(window.location.href);
+  }, []);
   const arg = isLoadingJwt ? null : { matrixUserId, environment };
 
   const { data: privyUserId, isLoading } = useSWR(
@@ -29,10 +32,10 @@ export const useUserPrivyIdByMatrixId = ({
         return undefined;
       }
       try {
-        const response = await getLinkByMatrixUserIdAction({
-          matrixUserId,
-          environment,
-        });
+        const response = await getLinkByMatrixUserIdAction(
+          { matrixUserId, environment },
+          { authToken: jwt ?? undefined },
+        );
         if (!response) {
           return undefined;
         }
@@ -47,7 +50,7 @@ export const useUserPrivyIdByMatrixId = ({
   );
 
   return {
-    isLoading,
+    isLoading: isLoadingJwt || isLoading,
     privyUserId,
     error,
   };

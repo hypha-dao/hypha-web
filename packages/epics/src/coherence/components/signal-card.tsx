@@ -70,7 +70,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   }));
 
   const handleUnarchive = React.useCallback(async () => {
-    console.log('Unarchive conversation');
     if (!slug) return;
     try {
       await updateCoherenceBySlug({ slug, archived: false });
@@ -78,7 +77,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     } catch (error) {
       console.warn('Could not unarchive conversation:', error);
     }
-  }, [slug, refresh]);
+  }, [slug, refresh, updateCoherenceBySlug]);
 
   return (
     <Card className="h-full w-full space-y-5 pt-5">

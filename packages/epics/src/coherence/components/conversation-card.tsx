@@ -49,8 +49,11 @@ export const ConversationCard: React.FC<ConversationCardProps & Coherence> = ({
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
 
   const sendMessage = React.useCallback(async () => {
-    console.log('Send message into chat:', message);
-    await sendMatrixMessage({ roomId: roomId!, message });
+    if (!roomId) {
+      console.warn('Cannot send message: roomId is not available');
+      return;
+    }
+    await sendMatrixMessage({ roomId, message });
     setMessage('');
   }, [message, roomId, sendMatrixMessage]);
 
@@ -60,7 +63,6 @@ export const ConversationCard: React.FC<ConversationCardProps & Coherence> = ({
   };
 
   const handleUnarchive = React.useCallback(async () => {
-    console.log('Unarchive conversation');
     if (!slug) return;
     try {
       await updateCoherenceBySlug({ slug, archived: false });
@@ -68,7 +70,7 @@ export const ConversationCard: React.FC<ConversationCardProps & Coherence> = ({
     } catch (error) {
       console.warn('Could not unarchive conversation:', error);
     }
-  }, [slug, refresh]);
+  }, [slug, refresh, updateCoherenceBySlug]);
 
   return (
     <Card className="h-full w-full space-y-5 pt-5">

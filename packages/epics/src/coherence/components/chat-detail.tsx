@@ -126,14 +126,11 @@ export const ChatDetail = ({
     }
     const { slug, views = 0 } = conversation;
     if (!slug) return;
-    (async (slug: string, views: number) => {
-      try {
-        await updateCoherenceBySlug({ slug, views: views + 1 });
-      } catch (error) {
-        console.error(error);
-      }
-    })(slug, views);
-  }, [conversation]);
+    updateCoherenceBySlug({ slug, views: views + 1 }).catch((error) => {
+      console.error(error);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversation?.slug, updateCoherenceBySlug]);
 
   return (
     <div className="relative w-full h-full">

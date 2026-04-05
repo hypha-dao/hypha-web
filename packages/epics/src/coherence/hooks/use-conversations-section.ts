@@ -11,9 +11,6 @@ export const useConversationsSection = ({
   firstPageSize?: number;
   pageSize?: number;
 }) => {
-  if (firstPageSize <= 0 || pageSize <= 0) {
-    throw new Error('firstPageSize and pageSize must be positive numbers');
-  }
   const [activeFilter, setActiveFilter] = React.useState('most-recent');
   const [pages, setPages] = React.useState(1);
   const [searchTerm, setSearchTerm] = React.useState<string | undefined>(

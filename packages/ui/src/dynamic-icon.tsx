@@ -4,11 +4,8 @@ import type { ForwardRefExoticComponent, RefAttributes } from 'react';
 
 export type LucideReactIcon = keyof typeof icons;
 
-interface IconProps {
+interface IconProps extends Omit<LucideProps, 'ref'> {
   name: LucideReactIcon;
-  color?: string;
-  size?: number;
-  [key: string]: any;
 }
 
 export function DynamicIcon({ name, color, size, ...props }: IconProps) {

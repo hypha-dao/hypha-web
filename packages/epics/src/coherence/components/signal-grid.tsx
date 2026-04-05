@@ -19,35 +19,33 @@ export function SignalGrid({
 }: SignalGridProps) {
   return (
     <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-      {signals.map((signal, index) =>
+      {signals.map((signal) =>
         signal.archived ? (
           <SignalCard
-            key={`signal-card-${index}`}
+            key={signal.id}
             {...signal}
             isLoading={isLoading}
             refresh={refresh}
           />
         ) : onSignalClick ? (
           <div
-            key={`chat-card-${index}`}
+            key={signal.id}
+            role="button"
+            tabIndex={0}
             onClick={() => onSignalClick(signal)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onSignalClick(signal);
+              }
+            }}
             className="cursor-pointer"
           >
-            <SignalCard
-              key={`signal-card-${index}`}
-              {...signal}
-              isLoading={isLoading}
-              refresh={refresh}
-            />
+            <SignalCard {...signal} isLoading={isLoading} refresh={refresh} />
           </div>
         ) : (
-          <Link key={`chat-card-${index}`} href={`${basePath}/${signal.slug}`}>
-            <SignalCard
-              key={`signal-card-${index}`}
-              {...signal}
-              isLoading={isLoading}
-              refresh={refresh}
-            />
+          <Link key={signal.id} href={`${basePath}/${signal.slug}`}>
+            <SignalCard {...signal} isLoading={isLoading} refresh={refresh} />
           </Link>
         ),
       )}

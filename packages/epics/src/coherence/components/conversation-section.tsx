@@ -38,12 +38,12 @@ const orderOptions: {
   {
     value: 'mostviews',
     label: 'Most Views',
-    searchText: 'Most Members',
+    searchText: 'Most Views',
   },
   {
     value: 'mostmessages',
     label: 'Most Messages',
-    searchText: 'Most Agreements',
+    searchText: 'Most Messages',
   },
   {
     value: 'mostrecent',

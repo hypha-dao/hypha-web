@@ -32,7 +32,7 @@ export const ChatMessageInput = ({
     } catch (error) {
       console.warn(error);
     }
-  }, [client, input, roomId, sendMatrixMessage]);
+  }, [input, roomId, sendMatrixMessage]);
 
   const handleArchive = React.useCallback(async () => {
     try {
@@ -41,7 +41,7 @@ export const ChatMessageInput = ({
     } catch (error) {
       console.warn('Could not archive conversation:', error);
     }
-  }, [coherenceSlug, router, closeUrl]);
+  }, [coherenceSlug, router, closeUrl, updateCoherenceBySlug]);
 
   return (
     <div className="flex flex-col gap-3">

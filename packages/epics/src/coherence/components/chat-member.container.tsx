@@ -20,7 +20,7 @@ export const ChatMemberContainer: React.FC<ChatMemberContainerProps> = ({
         </>
       ) : (
         memberIds.map((memberId, index) => (
-          <ChatMember key={index} memberId={memberId} isLoading={false} />
+          <ChatMember key={memberId} memberId={memberId} isLoading={false} />
         ))
       )}
     </div>

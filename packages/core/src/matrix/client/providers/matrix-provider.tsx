@@ -283,15 +283,20 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       const room = client.getRoom(roomId);
       const members = room ? room.getJoinedMembers() : null;
       const memberObjects =
-        members?.map(
-          async (member) =>
-            ({
+        members?.map(async (member) => {
+          try {
+            const presence = await client.getPresence(member.userId);
+            return {
               userId: member.userId,
-              presence:
-                (await client.getPresence(member.userId)).currently_active ??
-                false,
-            } as ChatMember),
-        ) ?? null;
+              presence: presence.currently_active ?? false,
+            } as ChatMember;
+          } catch {
+            return {
+              userId: member.userId,
+              presence: false,
+            } as ChatMember;
+          }
+        }) ?? null;
       return memberObjects ? await Promise.all(memberObjects) : [];
     },
     [client],

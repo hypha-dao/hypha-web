@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import useSWR from 'swr';
 import { getCoherenceBySlug } from '@hypha-platform/core/coherence/server/web3';
 
@@ -9,20 +8,14 @@ type UseConversationProps = {
 };
 
 export const useConversation = ({ chatId }: UseConversationProps) => {
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-
-  const { data: conversation } = useSWR(
+  const {
+    data: conversation,
+    isLoading,
+    error,
+  } = useSWR(
     [chatId, 'loadConversation'],
     async ([chatId]) => {
-      setIsLoading(true);
-      try {
-        return await getCoherenceBySlug({ slug: chatId });
-      } catch (error) {
-        setError(error instanceof Error ? error.message : `${error}`);
-      } finally {
-        setIsLoading(false);
-      }
+      return await getCoherenceBySlug({ slug: chatId });
     },
     { keepPreviousData: true, revalidateOnFocus: false },
   );
@@ -30,6 +23,6 @@ export const useConversation = ({ chatId }: UseConversationProps) => {
   return {
     conversation,
     isLoading,
-    error,
+    error: error ? (error instanceof Error ? error.message : `${error}`) : null,
   };
 };

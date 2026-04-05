@@ -13,7 +13,7 @@ export const ChatPins = ({ messages, isLoading }: ChatPinsProps) => {
   return (
     <div>
       {pinnedMessages.map((message) => (
-        <ChatPin message={message} isLoading={isLoading} />
+        <ChatPin key={message.id} message={message} isLoading={isLoading} />
       ))}
     </div>
   );

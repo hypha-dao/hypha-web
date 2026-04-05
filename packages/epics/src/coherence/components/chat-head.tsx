@@ -19,7 +19,7 @@ export const ChatHead = ({
   const displayName =
     creator?.type === 'space'
       ? creator.name
-      : `${creator?.name} ${creator?.surname}`.trim();
+      : [creator?.name, creator?.surname].filter(Boolean).join(' ') || '';
 
   return (
     <div className="flex gap-3 w-full">

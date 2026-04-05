@@ -62,9 +62,13 @@ export const SignalSection: FC<SignalSectionProps> = ({
   const typeRaw = React.useMemo(() => {
     return searchParams.get('type');
   }, [searchParams]);
+  const validTypes = COHERENCE_TYPE_OPTIONS.map((o) => o.type);
   const type = React.useMemo(() => {
-    return typeRaw ? (typeRaw as CoherenceType) : undefined;
-  }, [typeRaw]);
+    if (!typeRaw) return undefined;
+    return validTypes.includes(typeRaw as CoherenceType)
+      ? (typeRaw as CoherenceType)
+      : undefined;
+  }, [typeRaw, validTypes]);
   const chosenSignals = React.useMemo(() => {
     if (!type) {
       return signals;
@@ -95,7 +99,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
       }
       replace(`${pathname}?${params.toString()}`);
     },
-    [searchParams, pathname],
+    [searchParams, pathname, replace],
   );
 
   const multiSelectVariants = cva(

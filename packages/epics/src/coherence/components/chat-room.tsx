@@ -41,14 +41,14 @@ export const ChatRoom = ({
         console.warn('Error due update conversation:', error);
       },
     );
-  }, [isMatrixAvailable, roomId, messages, slug]);
+  }, [isMatrixAvailable, roomId, messages, slug, updateCoherenceBySlug]);
 
   React.useEffect(() => {
     if (!isMatrixAvailable || !messages) {
       return;
     }
     scrollToSection(`message-list-bottom-${bottomId}`);
-  }, [isMatrixAvailable, messages, bottomId]);
+  }, [isMatrixAvailable, messages.length, bottomId]);
 
   return (
     <div className="flex flex-col">

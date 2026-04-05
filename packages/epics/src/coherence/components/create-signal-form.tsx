@@ -142,7 +142,6 @@ export const CreateSignalForm = ({
 
   const handleCreate = React.useCallback(
     async (data: FormValues) => {
-      console.log('Start Conversation');
       try {
         const coherence = await createCoherence({ ...data });
         if (isMatrixAvailable) {
@@ -151,12 +150,13 @@ export const CreateSignalForm = ({
         } else {
           console.warn('Matrix client is unavailable — skipping room creation');
         }
+        router.push(successfulUrl);
       } catch (error) {
         console.warn('Could not create conversation:', error);
       }
-      router.push(successfulUrl);
     },
     [
+      createCoherence,
       createRoom,
       updateCoherenceBySlug,
       isMatrixAvailable,
@@ -165,8 +165,8 @@ export const CreateSignalForm = ({
     ],
   );
 
-  const handleInvalid = async (err?: any) => {
-    console.log('form errors:', err);
+  const handleInvalid = async (err?: Record<string, unknown>) => {
+    console.warn('form errors:', err);
   };
 
   return (

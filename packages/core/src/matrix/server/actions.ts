@@ -62,12 +62,18 @@ export async function getAdminUserNameAction(
   return await findAdminUserName(data, { db });
 }
 
-export async function getLinkByMatrixUserIdAction({
-  matrixUserId,
-  environment,
-}: {
-  matrixUserId: string;
-  environment: Environment;
-}) {
+export async function getLinkByMatrixUserIdAction(
+  {
+    matrixUserId,
+    environment,
+  }: {
+    matrixUserId: string;
+    environment: Environment;
+  },
+  { authToken }: { authToken?: string } = {},
+) {
+  if (!authToken) {
+    throw new Error('authToken is required to get Matrix user link by ID');
+  }
   return getLinkByMatrixUserId({ matrixUserId, environment });
 }
