@@ -303,7 +303,14 @@ export function HumanRightPanel() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, coherenceRoomId, coherenceTitle, coherenceSlug, isMatrixAvailable, isMatrixAuthenticated]);
+  }, [
+    mode,
+    coherenceRoomId,
+    coherenceTitle,
+    coherenceSlug,
+    isMatrixAvailable,
+    isMatrixAuthenticated,
+  ]);
 
   // Register listener for incoming messages
   useEffect(() => {

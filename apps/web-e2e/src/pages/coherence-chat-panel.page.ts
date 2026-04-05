@@ -156,21 +156,16 @@ export class CoherenceChatPanelPage extends BasePage {
    * The CardTitle renders inside the SignalCard component.
    */
   async getFirstSignalTitle(): Promise<string> {
-    // CardTitle renders as a styled element — locate the heading-like text inside the first card button
-    const titleEl = this.firstSignalCard
-      .locator('[class*="CardTitle"], h3')
-      .first();
-    return (await titleEl.textContent()) ?? '';
+    const titleEl = this.firstSignalCard.getByRole('heading').first();
+    return ((await titleEl.textContent()) ?? '').trim();
   }
 
   /**
    * Get the visible text content of the second signal card's title.
    */
   async getSecondSignalTitle(): Promise<string> {
-    const titleEl = this.secondSignalCard
-      .locator('[class*="CardTitle"], h3')
-      .first();
-    return (await titleEl.textContent()) ?? '';
+    const titleEl = this.secondSignalCard.getByRole('heading').first();
+    return ((await titleEl.textContent()) ?? '').trim();
   }
 
   /**
