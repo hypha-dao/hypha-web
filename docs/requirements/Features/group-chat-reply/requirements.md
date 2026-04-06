@@ -76,7 +76,7 @@ Space members use the right-hand **group chat panel** to converse in the Matrix 
 
 **FR-9** If the **target event is not available** locally (e.g. unknown event id, redacted original), the system SHALL still render the new message and show a **non-blocking** placeholder for the quoted context (e.g. “Original message unavailable”) rather than failing the panel.
 
-**FR-10** Reply mode SHALL **not** change** room membership or mode**; it only affects the next outgoing event’s content until cleared or sent.
+**FR-10** Reply mode SHALL **not** change **room membership or mode**; it only affects the next outgoing event’s content until cleared or sent.
 
 ---
 
