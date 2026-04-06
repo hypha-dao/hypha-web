@@ -32,11 +32,14 @@ export function HumanChatPanelChatBar({
 }: HumanChatPanelChatBarProps) {
   const t = useTranslations('HumanChatPanel');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const replyPreviewWasOpenRef = useRef(false);
 
   useEffect(() => {
-    if (replyPreview) {
+    const isOpen = Boolean(replyPreview);
+    if (isOpen && !replyPreviewWasOpenRef.current) {
       textareaRef.current?.focus();
     }
+    replyPreviewWasOpenRef.current = isOpen;
   }, [replyPreview]);
 
   const autoResize = useCallback(() => {
