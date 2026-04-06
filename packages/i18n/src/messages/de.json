@@ -35,7 +35,7 @@
     "errorLoadTreasuryTab": "Ups, etwas ist schiefgelaufen. Der Treasury-Tab konnte nicht geladen werden.",
     "publish": "Veröffentlichen",
     "invalidTransactions": "Ungültige Transaktionen",
-    "Coherence": "Coherence"
+    "Coherence": "Kohärenz"
   },
   "Navigation": {
     "network": "Netzwerk",
@@ -1656,6 +1656,8 @@
     "newSignal": "Neues Signal",
     "all": "Alle",
     "listIsEmpty": "Liste ist leer",
+    "loadMore": "Mehr laden",
+    "noMore": "Nichts mehr",
     "mostViews": "Meiste Aufrufe",
     "mostMessages": "Meiste Nachrichten",
     "mostRecent": "Neueste",

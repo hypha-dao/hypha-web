@@ -35,7 +35,7 @@
     "errorLoadTreasuryTab": "Ups, algo salió mal. No se pudo cargar la pestaña de tesorería.",
     "publish": "Publicar",
     "invalidTransactions": "Transacciones inválidas",
-    "Coherence": "Coherence"
+    "Coherence": "Coherencia"
   },
   "AgreementFlow": {
     "proposalErrors": {
@@ -1656,6 +1656,8 @@
     "newSignal": "Nueva señal",
     "all": "Todos",
     "listIsEmpty": "La lista está vacía",
+    "loadMore": "Cargar más",
+    "noMore": "No hay más",
     "mostViews": "Más vistas",
     "mostMessages": "Más mensajes",
     "mostRecent": "Más recientes",

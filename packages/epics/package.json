@@ -20,6 +20,7 @@
     "@hypha-platform/notifications": "workspace:*",
     "@hypha-platform/ui": "workspace:*",
     "@hypha-platform/ui-utils": "workspace:*",
+    "date-fns": "^4.1.0",
     "next-intl": "^4.8.3"
   },
   "exports": {

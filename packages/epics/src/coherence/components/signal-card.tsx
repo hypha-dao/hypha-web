@@ -28,8 +28,9 @@ import {
 } from '@radix-ui/react-icons';
 import React from 'react';
 import type { BadgeProps } from '@hypha-platform/ui';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Users } from 'lucide-react';
+import { resolveDateFnsLocale } from '../date-fns-locale';
 
 type SignalCardProps = {
   isLoading: boolean;
@@ -54,16 +55,32 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
 }) => {
   const { jwt: authToken } = useJwt();
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
-  const t = useTranslations('SignalCard');
+  const t = useTranslations('CoherenceTab');
+  const tSignalCard = useTranslations('SignalCard');
+  const locale = useLocale();
+  const dateFnsLocale = React.useMemo(
+    () => resolveDateFnsLocale(locale),
+    [locale],
+  );
 
   const coherenceType = React.useMemo(
     () => COHERENCE_TYPE_OPTIONS.find((option) => option.type === type),
     [type],
   );
 
+  const typeLabel = t(
+    `types.${type}` as
+      | 'types.Opportunity'
+      | 'types.Risk'
+      | 'types.Tension'
+      | 'types.Insight'
+      | 'types.Trend'
+      | 'types.Proposal',
+  );
+
   const badges: BadgeItem[] = [
     {
-      label: type,
+      label: typeLabel,
       icon: coherenceType?.icon as LucideReactIcon,
       variant: 'outline',
       colorVariant: (coherenceType?.colorVariant ??
@@ -99,7 +116,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             <div className="flex flex-row gap-1 text-1 text-neutral-11">
               <ClockIcon className="h-4 w-4" />
               {createdAt
-                ? formatDistanceToNow(new Date(createdAt), { addSuffix: true })
+                ? formatDistanceToNow(new Date(createdAt), {
+                    addSuffix: true,
+                    locale: dateFnsLocale,
+                  })
                 : ''}
             </div>
           </div>
@@ -107,19 +127,19 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             {priority === 'high' && (
               <div className="flex flex-row gap-1 text-1 text-neutral-11">
                 <DotFilledIcon className="h-4 w-4 text-error-11" />
-                High Urgency
+                {t('highUrgency')}
               </div>
             )}
             {priority === 'medium' && (
               <div className="flex flex-row gap-1 text-1 text-neutral-11">
                 <DotFilledIcon className="h-4 w-4 text-warning-11" />
-                Medium Urgency
+                {t('mediumUrgency')}
               </div>
             )}
             {priority === 'low' && (
               <div className="flex flex-row gap-1 text-1 text-neutral-11">
                 <DotFilledIcon className="h-4 w-4 text-neutral-11" />
-                Low Urgency
+                {t('lowUrgency')}
               </div>
             )}
           </div>
@@ -151,7 +171,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           <div className="flex flex-row gap-1">
             <Skeleton loading={isLoading} height="16px" width="80px">
               <Users size={12} />
-              <div className="text-neutral-11 text-1">{messages} mentions</div>
+              <div className="text-neutral-11 text-1">
+                {t('mentions', { count: messages })}
+              </div>
             </Skeleton>
           </div>
           <div className="flex flex-row">
@@ -170,10 +192,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               }}
             >
               <ConfirmDialog
-                title="Unarchive Conversation"
-                description="Do you really want to unarchive this conversation?"
-                customAcceptButtonText="Yes, unarchive"
-                customRejectButtonText="No, leave"
+                title={t('unarchiveConversation')}
+                description={t('unarchiveConfirm')}
+                customAcceptButtonText={t('yesUnarchive')}
+                customRejectButtonText={t('noLeave')}
                 onAcceptClicked={handleUnarchive}
               >
                 <Button
@@ -181,7 +203,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                   colorVariant="accent"
                   className="w-full"
                 >
-                  Unarchive
+                  {t('unarchive')}
                 </Button>
               </ConfirmDialog>
             </div>
@@ -197,10 +219,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                   onOpenConversation();
                 }
               }}
-              title={!roomId ? t('noConversationRoom') : undefined}
+              title={!roomId ? tSignalCard('noConversationRoom') : undefined}
             >
               <ChatBubbleIcon />
-              Open conversation
+              {t('openConversation')}
             </Button>
           )}
 

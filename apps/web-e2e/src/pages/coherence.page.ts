@@ -55,26 +55,34 @@ export class CoherencePage extends BasePage {
     this.spaceSlug = spaceSlug;
 
     // Navigation tab — TabsTrigger with asChild merges role="tab" onto the <a> Link
-    this.coherenceTab = page.getByRole('tab', { name: 'Coherence' });
+    this.coherenceTab = page.getByRole('tab', {
+      name: /coherence|cohérence|coheren|kohärenz/i,
+    });
 
-    // Signal section label (rendered via SectionFilter's label prop, not a heading element)
-    this.signalsSectionHeading = page.getByText('Signals', { exact: true });
+    // Signal section label (SectionFilter: "{label} | {count}")
+    this.signalsSectionHeading = page.getByText(
+      /^(signals|signaux|sinais|señales|signale)\s*\|/i,
+    );
 
     // "New Signal" link — wraps a Button inside a <Link>
-    this.newSignalButton = page.getByRole('link', { name: 'New Signal' });
+    this.newSignalButton = page.getByRole('link', {
+      name: /new signal|nouveau signal|neuer|nueva|novo/i,
+    });
 
-    // Search input — placeholder defined in CoherenceTab.searchSignals i18n key
-    this.searchInput = page.getByPlaceholder('Search signals...');
+    // Search input — placeholder from CoherenceTab.searchSignals (localized)
+    this.searchInput = page.getByPlaceholder(
+      /signals|signaux|sinais|señales|signale|suchen|pesquisar|buscar|rechercher/i,
+    );
 
-    // Unauthenticated sign-in prompt
+    // Unauthenticated sign-in prompt (CoherenceTab.signInToSee, localized)
     this.signInMessage = page.getByText(
-      'Please, sign in to see signals and conversations',
+      /sign in|inicie sesión|connectez|faça login|melden sie sich/i,
       { exact: false },
     );
 
     // Filter badges rendered as <div> (Badge component), matched by visible text.
     // Note: Badge renders as div, so use getByText not getByRole('button').
-    this.allFilterBadge = page.getByText('All', { exact: false }).first();
+    this.allFilterBadge = page.getByText(/^(all|todos|tous|alle)\s/i).first();
 
     // Create signal form heading
     this.createSignalHeading = page.getByRole('heading', {

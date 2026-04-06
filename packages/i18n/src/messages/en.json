@@ -1656,6 +1656,8 @@
     "newSignal": "New Signal",
     "all": "All",
     "listIsEmpty": "List is empty",
+    "loadMore": "Load more",
+    "noMore": "No more",
     "mostViews": "Most Views",
     "mostMessages": "Most Messages",
     "mostRecent": "Most Recent",

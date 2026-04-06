@@ -1656,6 +1656,8 @@
     "newSignal": "Novo sinal",
     "all": "Todos",
     "listIsEmpty": "A lista está vazia",
+    "loadMore": "Carregar mais",
+    "noMore": "Não há mais",
     "mostViews": "Mais visualizações",
     "mostMessages": "Mais mensagens",
     "mostRecent": "Mais recentes",

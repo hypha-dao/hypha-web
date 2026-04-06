@@ -35,7 +35,7 @@
     "errorLoadTreasuryTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet trésorerie.",
     "publish": "Publier",
     "invalidTransactions": "Transactions invalides",
-    "Coherence": "Coherence"
+    "Coherence": "Cohérence"
   },
   "Navigation": {
     "network": "Réseau",
@@ -1656,6 +1656,8 @@
     "newSignal": "Nouveau signal",
     "all": "Tous",
     "listIsEmpty": "La liste est vide",
+    "loadMore": "Charger plus",
+    "noMore": "Plus rien",
     "mostViews": "Plus vues",
     "mostMessages": "Plus de messages",
     "mostRecent": "Plus récents",
