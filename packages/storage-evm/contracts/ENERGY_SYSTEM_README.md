@@ -416,7 +416,11 @@ struct MemberPPA {
 function consumeEnergy(ConsumptionReading[] calldata readings) external;
 ```
 
-> **Note:** The current `EnergyPPAImplementation.sol` contract has a single `ownershipBps` per member and only `LOCAL`/`IMPORT` source types. The per-source ownership model described in this document (separate solar vs battery ownership, `BATTERY` source type) requires extending the contract with per-source ownership mappings and an additional `BATTERY` source enum value.
+> **Note:** The current `EnergyPPAImplementation.sol` (v1) has a single `ownershipBps` per member and splits all LOCAL revenue on-chain. The v2 sketch (`EnergyPPAv2.sol`) addresses this:
+> - Per-source ownership is represented by **ERC-20 tokens** (`EnergySourceToken.sol`) — one token per source (solar, battery, etc.). Holding 30% of a source's token supply = 30% ownership.
+> - The contract has a **source registry** where each source's ownership token and price are stored on-chain for transparency.
+> - Revenue distribution is computed **off-chain by the VPP backend**, which reads ownership from the tokens and prices from the registry. The backend submits pre-computed balance adjustments via `settleInterval()`.
+> - The contract enforces the **zero-sum invariant** — if the backend's math is wrong, the transaction reverts.
 
 **On-chain formulas (inside `consumeEnergy()`):**
 
