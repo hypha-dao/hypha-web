@@ -195,21 +195,33 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!roomId || !client) return;
     setMessages((prev) =>
       prev.map((m) => {
+        const newSenderName =
+          m.role === 'member' && m.senderMatrixId
+            ? resolveMemberLabelRef.current(m.senderMatrixId)
+            : m.senderName;
+        const newAuthorLabel =
+          m.replyTo?.sourceUserId != null
+            ? resolveMemberLabelRef.current(m.replyTo.sourceUserId)
+            : m.replyTo?.authorLabel;
+
         const nextReply =
           m.replyTo?.sourceUserId != null
             ? {
                 ...m.replyTo,
-                authorLabel: resolveMemberLabelRef.current(
-                  m.replyTo.sourceUserId,
-                ),
+                authorLabel: newAuthorLabel ?? m.replyTo.authorLabel,
               }
             : m.replyTo;
-        if (m.role !== 'member' || !m.senderMatrixId) {
-          return { ...m, replyTo: nextReply };
+
+        if (
+          newSenderName === m.senderName &&
+          nextReply?.authorLabel === m.replyTo?.authorLabel
+        ) {
+          return m;
         }
+
         return {
           ...m,
-          senderName: resolveMemberLabelRef.current(m.senderMatrixId),
+          senderName: newSenderName,
           replyTo: nextReply,
         };
       }),
