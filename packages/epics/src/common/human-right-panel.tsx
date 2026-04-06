@@ -16,6 +16,7 @@ import {
   useMe,
   Message,
   RICH_REPLY_PREVIEW_MAX,
+  RoomEvent,
 } from '@hypha-platform/core/client';
 import { UseMembers } from '../spaces';
 
@@ -490,6 +491,38 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       unregisterRoomListener(roomId);
     };
   }, [roomId, isMatrixAvailable]);
+
+  // Keep message ids in sync when the SDK replaces provisional ~… ids with $… after send
+  useEffect(() => {
+    if (!roomId || !client) return;
+
+    const room = client.getRoom(roomId);
+    if (!room) return;
+
+    const onLocalEchoUpdated = (
+      ev: { getId: () => string | undefined },
+      _r: unknown,
+      oldEventId?: string,
+    ) => {
+      if (!oldEventId) return;
+      const newId = ev.getId();
+      if (!newId || oldEventId === newId) return;
+
+      setMessages((prev) =>
+        prev.map((m) => (m.id === oldEventId ? { ...m, id: newId } : m)),
+      );
+      setReplyDraft((draft) =>
+        draft?.messageId === oldEventId
+          ? { ...draft, messageId: newId }
+          : draft,
+      );
+    };
+
+    room.on(RoomEvent.LocalEchoUpdated, onLocalEchoUpdated);
+    return () => {
+      room.off(RoomEvent.LocalEchoUpdated, onLocalEchoUpdated);
+    };
+  }, [roomId, client]);
 
   const handleReplyToMessage = useCallback(
     (messageId: string) => {
