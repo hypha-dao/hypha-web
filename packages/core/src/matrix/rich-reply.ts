@@ -209,9 +209,15 @@ export function messageFromRoomMessageEvent(
     displayBody = stripMatrixReplyFallback(rawBody);
   }
 
+  const id = event.getId();
+  const sender = event.getSender();
+  if (!id || !sender) {
+    throw new Error('Matrix room message event missing id or sender');
+  }
+
   return {
-    id: event.getId()!,
-    sender: event.getSender()!,
+    id,
+    sender,
     content: displayBody,
     timestamp: new Date(event.getTs()),
     pinned,
