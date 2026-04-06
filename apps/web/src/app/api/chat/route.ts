@@ -1,10 +1,17 @@
 import { convertToModelMessages, stepCountIs, streamText } from 'ai';
 import { openrouter } from '@openrouter/ai-sdk-provider';
 import type { UIMessage } from 'ai';
-import { getSpaceBySlug } from '@hypha-platform/core/server';
+import {
+  findSpaceBySlug,
+  getSpaceBySlug,
+  getSpaceMembersRoster,
+} from '@hypha-platform/core/server';
+import { db } from '@hypha-platform/storage-postgres';
+import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { headers } from 'next/headers';
-import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { z } from 'zod';
+import { checkSpaceAccess } from '@web/utils/check-space-access';
 import { createRemoteJWKSet, jwtVerify, errors as joseErrors } from 'jose';
 
 // Fetch JWKS directly from Privy's endpoint instead of the app's own
@@ -78,9 +85,118 @@ function buildSystemPrompt(spaceSlug?: string | null): string {
   if (spaceSlug) {
     const safe = sanitizeSlug(spaceSlug);
     if (!safe) return BASE_SYSTEM_PROMPT;
-    return `${BASE_SYSTEM_PROMPT}\n\nThe user is currently viewing the space with slug "${safe}". Use the get_space_by_slug tool to answer space-specific questions about space metadata, members, and structure.`;
+    return `${BASE_SYSTEM_PROMPT}\n\nThe user is currently viewing the space with slug "${safe}". Use the get_space_by_slug tool for high-level space metadata and aggregate counts (title, member counts, subspaces). For who belongs to this space — people members, join times from the membership table, or other spaces listed as on-chain members (not child spaces in the hierarchy) — use the get_people_by_space_slug tool with space_slug "${safe}".`;
   }
   return BASE_SYSTEM_PROMPT;
+}
+
+/** JSON-serialize dates on roster entries (parity with MCP structuredContent). */
+function serializeSpaceMembersRosterForModel(
+  result: Awaited<ReturnType<typeof getSpaceMembersRoster>>,
+) {
+  if (!result.found) {
+    return result;
+  }
+
+  return {
+    ...result,
+    members: result.members.map((entry) => {
+      if (entry.member_kind === 'person') {
+        return {
+          ...entry,
+          person: {
+            ...entry.person,
+            createdAt: entry.person.createdAt.toISOString(),
+            updatedAt: entry.person.updatedAt.toISOString(),
+          },
+        };
+      }
+      return {
+        ...entry,
+        space: {
+          ...entry.space,
+          createdAt: entry.space.createdAt.toISOString(),
+          updatedAt: entry.space.updatedAt.toISOString(),
+        },
+      };
+    }),
+  };
+}
+
+function createGetPeopleBySpaceSlugTool(req: Request) {
+  const inputSchema = z.object({
+    space_slug: z
+      .string()
+      .trim()
+      .min(1)
+      .describe('Hypha space slug of the active space'),
+    page: z.number().int().min(1).optional().default(1),
+    page_size: z.number().int().min(1).max(100).optional().default(20),
+    searchTerm: z.string().optional(),
+  });
+
+  return {
+    description:
+      'Read-only: lists members of a Hypha space by slug — people and other spaces that appear as on-chain members (Members tab parity). Includes full memberships fields for people when stored in the database. Use for roster, who belongs, which other spaces are in the member list, and join times (DB-backed). Not for listing child subspaces by parent_id.',
+    inputSchema,
+    execute: async (args: z.infer<typeof inputSchema>) => {
+      const safe = sanitizeSlug(args.space_slug);
+      if (!safe) {
+        return {
+          found: false,
+          space_slug: args.space_slug,
+          error: 'Invalid space slug format',
+        };
+      }
+
+      try {
+        const host = await findSpaceBySlug({ slug: safe }, { db });
+        if (
+          host?.web3SpaceId != null &&
+          canConvertToBigInt(host.web3SpaceId as number)
+        ) {
+          const access = await checkSpaceAccess(
+            new NextRequest(req.url, { headers: req.headers }),
+            host.web3SpaceId as number,
+          );
+          if (!access.hasAccess && access.response) {
+            let message = 'Access denied';
+            try {
+              const body = await access.response.json();
+              if (body && typeof body.message === 'string') {
+                message = body.message;
+              }
+            } catch {
+              /* ignore */
+            }
+            return {
+              found: false,
+              space_slug: safe,
+              error: message,
+            };
+          }
+        }
+
+        const raw = await getSpaceMembersRoster(
+          {
+            spaceSlug: safe,
+            page: args.page,
+            pageSize: args.page_size,
+            searchTerm: args.searchTerm,
+          },
+          { db },
+        );
+        return serializeSpaceMembersRosterForModel(raw);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        return {
+          found: false,
+          space_slug: safe,
+          error: message,
+        };
+      }
+    },
+  };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- AI SDK tool() and Tool type trigger TS2589 (heap OOM) in CI
@@ -191,8 +307,9 @@ export async function POST(req: Request) {
     messages: await convertToModelMessages(messages),
     tools: {
       get_space_by_slug: getSpaceBySlugTool,
+      get_people_by_space_slug: createGetPeopleBySpaceSlugTool(req),
     },
-    stopWhen: stepCountIs(5),
+    stopWhen: stepCountIs(6),
     onStepFinish: (event) => {
       if (!OPENROUTER_DEBUG) return;
 
