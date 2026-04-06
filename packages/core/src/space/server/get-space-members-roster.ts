@@ -1,0 +1,269 @@
+import type { Person } from '@hypha-platform/core/client';
+import type { Space } from '../types';
+import { getSpaceDetails } from '@hypha-platform/core/client';
+import { publicClient } from '@hypha-platform/core/client';
+import {
+  memberships,
+  people,
+  spaces,
+  type Membership,
+} from '@hypha-platform/storage-postgres';
+import { canConvertToBigInt } from '@hypha-platform/ui-utils';
+import { and, eq, inArray, sql } from 'drizzle-orm';
+import { findSpaceBySlug } from './queries';
+import type { DbConfig } from '../../server';
+import {
+  applySearchFilter,
+  buildMemberEntriesFromAddresses,
+  type SpaceMemberRosterEntry,
+} from './get-space-members-roster-helpers';
+
+export type {
+  MembershipSnake,
+  PersonPublic,
+  SpaceMemberRosterPerson,
+  SpaceMemberRosterSpace,
+  SpaceMemberRosterEntry,
+} from './get-space-members-roster-helpers';
+
+export type GetSpaceMembersRosterInput = {
+  spaceSlug: string;
+  page?: number;
+  pageSize?: number;
+  searchTerm?: string;
+};
+
+export type SpaceMembersRosterResult =
+  | {
+      found: true;
+      space_slug: string;
+      space: {
+        id: number;
+        slug: string;
+        title: string;
+        parent_id: number | null;
+      };
+      source: 'db';
+      source_chain: 'rpc' | null;
+      asOf: string;
+      members: SpaceMemberRosterEntry[];
+      pagination: {
+        total: number;
+        page: number;
+        page_size: number;
+        total_pages: number;
+        has_next_page: boolean;
+        has_previous_page: boolean;
+      };
+    }
+  | {
+      found: false;
+      space_slug: string;
+      space: null;
+      source: 'db';
+      source_chain: null;
+      asOf: string;
+      members: [];
+      pagination: {
+        total: number;
+        page: number;
+        page_size: number;
+        total_pages: number;
+        has_next_page: boolean;
+        has_previous_page: boolean;
+      };
+    };
+
+async function fetchOnChainMemberAddresses(
+  space: Space,
+): Promise<readonly `0x${string}`[]> {
+  if (
+    space.web3SpaceId == null ||
+    !canConvertToBigInt(space.web3SpaceId as number)
+  ) {
+    return [];
+  }
+  const spaceDetails = await publicClient.readContract(
+    getSpaceDetails({ spaceId: BigInt(space.web3SpaceId as number) }),
+  );
+  const tuple = spaceDetails as readonly unknown[];
+  const members = (tuple[4] ?? []) as readonly `0x${string}`[];
+  return members;
+}
+
+function normalizeAddr(a: string): string {
+  return a.toLowerCase();
+}
+
+export async function getSpaceMembersRoster(
+  {
+    spaceSlug,
+    page = 1,
+    pageSize = 20,
+    searchTerm,
+  }: GetSpaceMembersRosterInput,
+  { db }: DbConfig,
+): Promise<SpaceMembersRosterResult> {
+  const asOf = new Date().toISOString();
+  const safePage = Math.max(1, page);
+  const safePageSize = Math.min(100, Math.max(1, pageSize));
+
+  const host = await findSpaceBySlug({ slug: spaceSlug }, { db });
+  if (!host) {
+    return {
+      found: false,
+      space_slug: spaceSlug,
+      space: null,
+      source: 'db',
+      source_chain: null,
+      asOf,
+      members: [],
+      pagination: {
+        total: 0,
+        page: safePage,
+        page_size: safePageSize,
+        total_pages: 0,
+        has_next_page: false,
+        has_previous_page: false,
+      },
+    };
+  }
+
+  let memberAddresses: readonly `0x${string}`[] = [];
+  let source_chain: 'rpc' | null = null;
+
+  try {
+    memberAddresses = await fetchOnChainMemberAddresses(host);
+    source_chain = 'rpc';
+  } catch {
+    memberAddresses = [];
+    source_chain = null;
+  }
+
+  if (memberAddresses.length === 0) {
+    return {
+      found: true,
+      space_slug: spaceSlug,
+      space: {
+        id: host.id,
+        slug: host.slug,
+        title: host.title,
+        parent_id: host.parentId ?? null,
+      },
+      source: 'db',
+      source_chain,
+      asOf,
+      members: [],
+      pagination: {
+        total: 0,
+        page: safePage,
+        page_size: safePageSize,
+        total_pages: 0,
+        has_next_page: false,
+        has_previous_page: false,
+      },
+    };
+  }
+
+  const uniqueAddresses = Array.from(
+    new Set(memberAddresses.map((a) => a as string)),
+  );
+
+  const upperList = uniqueAddresses.map((a) => a.toUpperCase());
+
+  const peopleRows = await db
+    .select()
+    .from(people)
+    .where(inArray(sql`upper(${people.address})`, upperList));
+
+  const peopleByAddress = new Map<string, Person>();
+  for (const row of peopleRows) {
+    if (!row.address || !row.createdAt || !row.updatedAt) continue;
+    peopleByAddress.set(normalizeAddr(row.address), {
+      id: row.id,
+      slug: row.slug ?? undefined,
+      name: row.name ?? undefined,
+      surname: row.surname ?? undefined,
+      email: row.email ?? undefined,
+      avatarUrl: row.avatarUrl ?? undefined,
+      leadImageUrl: row.leadImageUrl ?? undefined,
+      description: row.description ?? undefined,
+      location: row.location ?? undefined,
+      nickname: row.nickname ?? undefined,
+      address: row.address ?? undefined,
+      links: (row.links as string[]) ?? [],
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    });
+  }
+
+  const spaceRows = await db
+    .select()
+    .from(spaces)
+    .where(
+      and(
+        inArray(sql`upper(${spaces.address})`, upperList),
+        eq(spaces.isArchived, false),
+      ),
+    );
+
+  const spacesByAddress = new Map<string, Space>();
+  for (const row of spaceRows) {
+    if (!row.address) continue;
+    spacesByAddress.set(normalizeAddr(row.address), row as Space);
+  }
+
+  const personIds = [...peopleByAddress.values()].map((p) => p.id);
+  let membershipByPersonId = new Map<number, Membership>();
+  if (personIds.length > 0) {
+    const mRows = await db
+      .select()
+      .from(memberships)
+      .where(
+        and(
+          eq(memberships.spaceId, host.id),
+          inArray(memberships.personId, personIds),
+        ),
+      );
+    membershipByPersonId = new Map(
+      mRows.map((m) => [m.personId, m as Membership]),
+    );
+  }
+
+  let entries = buildMemberEntriesFromAddresses({
+    memberAddresses,
+    peopleByAddress,
+    spacesByAddress,
+    membershipByPersonId,
+  });
+
+  entries = applySearchFilter(entries, searchTerm);
+
+  const total = entries.length;
+  const totalPages = total === 0 ? 0 : Math.ceil(total / safePageSize);
+  const offset = (safePage - 1) * safePageSize;
+  const pageSlice = entries.slice(offset, offset + safePageSize);
+
+  return {
+    found: true,
+    space_slug: spaceSlug,
+    space: {
+      id: host.id,
+      slug: host.slug,
+      title: host.title,
+      parent_id: host.parentId ?? null,
+    },
+    source: 'db',
+    source_chain,
+    asOf,
+    members: pageSlice,
+    pagination: {
+      total,
+      page: safePage,
+      page_size: safePageSize,
+      total_pages: totalPages,
+      has_next_page: totalPages > 0 && safePage < totalPages,
+      has_previous_page: safePage > 1,
+    },
+  };
+}
