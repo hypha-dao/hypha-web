@@ -38,6 +38,8 @@ type UIMessage = {
   >;
   senderName?: string;
   avatarUrl?: string;
+  /** Matrix event time (origin_server_ts), for header timestamp */
+  timestamp?: Date;
   /** MXID of the message author (for reply target resolution). */
   senderMatrixId?: string;
   replyTo?: {
@@ -107,6 +109,7 @@ function toUIMessage(
     senderName: isCurrentUser ? undefined : resolveMemberLabel(msg.sender),
     senderMatrixId: msg.sender,
     avatarUrl: isCurrentUser ? currentUserAvatarUrl : undefined,
+    timestamp: msg.timestamp,
     replyTo,
   };
 }

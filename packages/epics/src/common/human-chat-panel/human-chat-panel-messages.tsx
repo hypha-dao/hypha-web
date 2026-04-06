@@ -13,6 +13,7 @@ type UIMessage = {
   >;
   senderName?: string;
   avatarUrl?: string;
+  timestamp?: Date;
   replyTo?: {
     authorLabel: string;
     excerpt?: string;
