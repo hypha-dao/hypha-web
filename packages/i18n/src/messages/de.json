@@ -1639,7 +1639,7 @@
     "bold": "Fett",
     "emoji": "Emoji",
     "mention": "Erwähnen",
-    "timestampToday": "Heute um {time}",
+    "timestampToday": "{time}",
     "timestampYesterday": "Gestern um {time}",
     "timestampDate": "{date} um {time}",
     "systemSender": "System",

@@ -1639,7 +1639,7 @@
     "bold": "Negrito",
     "emoji": "Emoji",
     "mention": "Mencionar",
-    "timestampToday": "Hoje às {time}",
+    "timestampToday": "{time}",
     "timestampYesterday": "Ontem às {time}",
     "timestampDate": "{date} às {time}",
     "systemSender": "Sistema",

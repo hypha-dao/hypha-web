@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildRichReplyPlainBody,
+  firstLineForReplyPreview,
   isLocalProvisionalEventId,
   stripMatrixReplyFallback,
   truncateForPreview,
@@ -34,6 +35,18 @@ describe('isLocalProvisionalEventId', () => {
 
   it('does not flag server ids', () => {
     expect(isLocalProvisionalEventId('$abc:example.com')).toBe(false);
+  });
+});
+
+describe('firstLineForReplyPreview', () => {
+  it('returns only the first line', () => {
+    expect(firstLineForReplyPreview('a\nb\nc')).toBe('a');
+  });
+
+  it('truncates long first line', () => {
+    const long = 'x'.repeat(150);
+    expect(firstLineForReplyPreview(long, 10).length).toBe(10);
+    expect(firstLineForReplyPreview(long, 10).endsWith('…')).toBe(true);
   });
 });
 

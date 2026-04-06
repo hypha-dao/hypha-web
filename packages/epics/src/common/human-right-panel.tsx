@@ -15,7 +15,7 @@ import {
   useJwt,
   useMe,
   Message,
-  RICH_REPLY_PREVIEW_MAX,
+  firstLineForReplyPreview,
   RoomEvent,
 } from '@hypha-platform/core/client';
 import { UseMembers } from '../spaces';
@@ -117,12 +117,6 @@ function getMessagePlainText(m: UIMessage): string {
       (p): p is { type: 'text'; text: string } => p.type === 'text',
     ) ?? [];
   return textParts.map((p) => p.text).join('');
-}
-
-function truncatePreview(text: string, max: number): string {
-  const t = text.trim();
-  if (t.length <= max) return t;
-  return `${t.slice(0, max - 1)}…`;
 }
 
 type HumanRightPanelProps = {
@@ -534,10 +528,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           : target.senderName ??
             resolveMemberLabel(target.senderMatrixId) ??
             t('unknownMember');
-      const excerpt = truncatePreview(
-        getMessagePlainText(target),
-        RICH_REPLY_PREVIEW_MAX,
-      );
+      const excerpt = firstLineForReplyPreview(getMessagePlainText(target));
       setReplyDraft({
         messageId,
         authorLabel,

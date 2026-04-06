@@ -3,7 +3,6 @@
 import { useTranslations } from 'next-intl';
 import { Smile, Reply, MoreHorizontal } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
-import { stringToHue, getInitials } from './utils';
 import { PersonAvatar } from '../../people/components/person-avatar';
 
 type Reaction = {
@@ -37,30 +36,45 @@ type HumanChatPanelMessageBubbleProps = {
 };
 
 /**
- * Format a timestamp for display.
+ * Discord-style relative timestamp: browser locale + user's timezone (default).
+ * Today: time only; yesterday: label + time; older: localized date + time.
  */
 function formatTimestamp(
   date: Date,
   t: (key: string, values?: Record<string, string>) => string,
 ): string {
   const now = new Date();
-  const isToday = date.toDateString() === now.toDateString();
-  const timeStr = date.toLocaleTimeString([], {
+  const startOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  );
+  const startOfMessageDay = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+  );
+  const dayDiff = Math.round(
+    (startOfToday.getTime() - startOfMessageDay.getTime()) /
+      (24 * 60 * 60 * 1000),
+  );
+
+  const timeStr = date.toLocaleTimeString(undefined, {
     hour: 'numeric',
     minute: '2-digit',
   });
 
-  if (isToday) return t('timestampToday', { time: timeStr });
-
-  const yesterday = new Date(now);
-  yesterday.setDate(yesterday.getDate() - 1);
-  if (date.toDateString() === yesterday.toDateString()) {
+  if (dayDiff === 0) {
+    return t('timestampToday', { time: timeStr });
+  }
+  if (dayDiff === 1) {
     return t('timestampYesterday', { time: timeStr });
   }
 
-  const dateStr = date.toLocaleDateString([], {
+  const dateStr = date.toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
+    year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
   });
   return t('timestampDate', { date: dateStr, time: timeStr });
 }
@@ -147,20 +161,25 @@ export function HumanChatPanelMessageBubble({
         {replyTo && (
           <div
             data-testid="chat-message-reply-context"
-            className="mt-1 border-l-2 border-primary/40 pl-2 text-xs text-muted-foreground"
+            className="mt-1 min-w-0 border-l-2 border-primary/40 pl-2 text-xs text-muted-foreground"
           >
-            <span className="font-medium text-foreground">
-              {replyTo.authorLabel}
-            </span>
-            {replyTo.excerpt != null && replyTo.excerpt !== '' ? (
-              <span className="mt-0.5 block line-clamp-3">
-                {replyTo.excerpt}
+            <p className="min-w-0 truncate">
+              <span className="font-medium text-foreground">
+                {replyTo.authorLabel}
               </span>
-            ) : (
-              <span className="mt-0.5 block italic">
-                {t('replyOriginalUnavailable')}
-              </span>
-            )}
+              {replyTo.excerpt != null && replyTo.excerpt !== '' ? (
+                <>
+                  <span className="text-muted-foreground"> — </span>
+                  <span className="text-muted-foreground">
+                    {replyTo.excerpt}
+                  </span>
+                </>
+              ) : (
+                <span className="ml-1 italic">
+                  {t('replyOriginalUnavailable')}
+                </span>
+              )}
+            </p>
           </div>
         )}
 

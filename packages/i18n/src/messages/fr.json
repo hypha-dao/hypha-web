@@ -1639,7 +1639,7 @@
     "bold": "Gras",
     "emoji": "Emoji",
     "mention": "Mentionner",
-    "timestampToday": "Aujourd'hui à {time}",
+    "timestampToday": "{time}",
     "timestampYesterday": "Hier à {time}",
     "timestampDate": "{date} à {time}",
     "systemSender": "Système",

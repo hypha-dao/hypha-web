@@ -7,6 +7,22 @@ import type { Message } from './types';
 
 export const RICH_REPLY_PREVIEW_MAX = 280;
 
+/** Single-line reply excerpt (Discord-style): first line only, then optional char cap. */
+export const REPLY_PREVIEW_LINE_MAX = 120;
+
+/**
+ * First visible line of text for reply banners (no multi-line quotes in UI).
+ */
+export function firstLineForReplyPreview(
+  text: string,
+  maxChars = REPLY_PREVIEW_LINE_MAX,
+): string {
+  const normalized = text.replace(/\r\n/g, '\n').trim();
+  const firstLine = normalized.split('\n')[0]?.trim() ?? '';
+  if (firstLine.length <= maxChars) return firstLine;
+  return `${firstLine.slice(0, Math.max(0, maxChars - 1))}…`;
+}
+
 /** Local / optimistic event ids start with `~` until the homeserver assigns `$…`. */
 export function isLocalProvisionalEventId(eventId: string): boolean {
   return eventId.startsWith('~');
@@ -181,13 +197,13 @@ export function messageFromRoomMessageEvent(
       if (parent.isRedacted() || !parentVisible) {
         inReplyToBodyPreview = undefined;
       } else {
-        inReplyToBodyPreview = truncateForPreview(parentVisible);
+        inReplyToBodyPreview = firstLineForReplyPreview(parentVisible);
       }
     } else {
       const parsed = parseReplyFallbackFirstLine(rawBody);
       if (parsed) {
         inReplyToSender = parsed.sender;
-        inReplyToBodyPreview = truncateForPreview(parsed.previewLine);
+        inReplyToBodyPreview = firstLineForReplyPreview(parsed.previewLine);
       }
     }
     displayBody = stripMatrixReplyFallback(rawBody);

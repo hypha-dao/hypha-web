@@ -1640,7 +1640,7 @@
     "bold": "Bold",
     "emoji": "Emoji",
     "mention": "Mention",
-    "timestampToday": "Today at {time}",
+    "timestampToday": "{time}",
     "timestampYesterday": "Yesterday at {time}",
     "timestampDate": "{date} at {time}",
     "systemSender": "System",
