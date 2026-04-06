@@ -1644,6 +1644,7 @@
     "timestampDate": "{date} à {time}",
     "systemSender": "Système",
     "noMembers": "Aucun membre trouvé",
+    "unknownMember": "Inconnu",
     "backToSpaceChat": "Retour au chat de l'espace",
     "failedToJoinRoom": "Impossible de rejoindre la salle de conversation"
   },
