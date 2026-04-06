@@ -64,4 +64,11 @@ describe('buildRichReplyPlainBody', () => {
     expect(out).toContain('> <@u:h> hello');
     expect(out).toContain('\n\nworld');
   });
+
+  it('does not nest an existing reply fallback from the parent body', () => {
+    const parent = `> <@a:b> hi\n\nhello`;
+    const out = buildRichReplyPlainBody('@u:h', parent, 'world');
+    expect(out).toContain('> <@u:h> hello');
+    expect(out).not.toContain('> <@u:h> > <@a:b> hi');
+  });
 });
