@@ -6,39 +6,67 @@
 |-------|--------|
 | **Status** | Ready for implementation |
 | **Epic** | [Expand Hypha MCP read API coverage #2027](https://github.com/hypha-dao/hypha-web/issues/2027) |
-| **Scope** | Read-only MCP tool listing people who are members of a space (by slug), including membership join metadata and deterministic JSON output |
+| **Scope** | Read-only MCP tool listing **all members of the active space** identified by slug: **people members** and **other spaces that are members** (same cohort as the Members tab), with **full `memberships` row fields** where applicable and deterministic JSON output |
 | **Parity** | Follow the **same structural pattern** as the existing `get_spaces` tool: Zod `inputSchema` / `outputSchema`, `structuredContent`, read-only semantics, tests, and error shapes |
 
 ---
 
 ## 1) Problem statement
 
-Assistants need a **typed, paginated** way to answer “who is in this space?” and “when did they join?” using **database membership** as the source of truth, without ad-hoc SQL or incomplete summaries from aggregate counts alone.
+Assistants need a **typed, paginated** way to answer “who is in this space?” for the **currently selected space**, including:
+
+- **People** who hold membership, and  
+- **Other spaces** that are members of that space (space-as-member rows in the product UI),
+
+with **join timing** and **full membership context**, without confusing this with **child spaces** (subspaces in the hierarchy). **Do not** return “members of child spaces” as a substitute for the active space’s roster.
 
 ---
 
 ## 2) Source of truth (data model)
 
-### 2.1 Tables (PostgreSQL / Drizzle)
+### 2.1 Product reference (Members tab)
 
-- **`memberships`** (`packages/storage-postgres/src/schema/membership.ts`):
-  - `id` (serial)
-  - `person_id` → `people.id`
-  - `space_id` → `spaces.id`
-  - `created_at`, `updated_at` (`commonDateFields`)
-- **Joining date** for a person in a space SHALL be **`memberships.created_at`** (first insert wins; unique index on `(person_id, space_id)`).
+The in-app Members list is implemented by **`GET /api/v1/spaces/[spaceSlug]/members`** (`apps/web/src/app/api/v1/spaces/[spaceSlug]/members/route.ts`):
 
-- **`people`** (`packages/storage-postgres/src/schema/people.ts`): profile fields exposed as person attributes in the tool output.
+1. Resolve the host space by slug.
+2. Read the **on-chain member address list** from `getSpaceDetails` / space contract (`members` tuple).
+3. Split addresses into:
+   - **`findPersonByAddresses`** → people members (`persons` in the JSON response).
+   - **`findSpaceByAddresses`** → nested **spaces** whose `spaces.web3_address` matches a member address (`spaces` in the JSON response).
 
-- **`spaces`** (`packages/storage-postgres/src/schema/space.ts`): resolved by **`spaces.slug`** to obtain `space_id` and optional parent/title metadata for the response envelope.
+**This is the roster of the active space.** It is **not** “all people who belong to a child space” and **not** “enumerate child spaces by `parent_id`” unless product explicitly asks for hierarchy elsewhere.
 
-### 2.2 Existing core query (gap)
+UI cards: `MembersList` renders `persons` via `MemberCard` and `spaces` via `SpaceMemberCard` (`packages/epics/src/people/components/members-list.tsx`). Join timestamps for display are resolved via **`useEvents`** (`type: 'joinSpace'`, `referenceEntity: 'space'`) in those components — the MCP tool SHOULD surface join time in a way that matches this **when event data is available** (see §4.2).
 
-`findPeopleBySpaceSlug` in `packages/core/src/people/server/queries.ts` returns **people only** and does **not** surface membership `id` or `created_at`. Implementation SHALL extend or replace this path so each row includes **full membership fields** plus **full person fields** required by the contract below.
+### 2.2 Database: `memberships` (“member table”)
 
-### 2.3 “Spaces that are members”
+The PostgreSQL table is **`memberships`** (`packages/storage-postgres/src/schema/membership.ts`). Product language **“member table”** maps to this table.
 
-The relational model links **people** to spaces via `memberships`. If product semantics require **child spaces** (rows in `spaces` with `parent_id` = parent space) to appear alongside people, expose them behind an explicit input flag (see §4.1) and document that this is **hierarchical**, not a second row in `memberships`. If that is out of scope for Phase 1, omit the flag and return **people members only**; do not block shipping the tool.
+| Column (DB) | Notes |
+|-------------|--------|
+| `id` | Serial primary key |
+| `person_id` | FK → `people.id` |
+| `space_id` | FK → `spaces.id` (host space) |
+| `created_at` | Membership created (join time when synced to DB) |
+| `updated_at` | Last update |
+
+**FR (full context):** For each **person** member returned, the tool SHALL include **every column** from the matching `memberships` row for `(person_id, host space_id)` when such a row exists. Serialize column names in API output using a **single consistent convention** (recommended: **snake_case** `id`, `person_id`, `space_id`, `created_at`, `updated_at` to match SQL and avoid ambiguity with nested objects).
+
+If a person appears on-chain but has **no** `memberships` row yet, represent membership as **`null`** and set flags in metadata (see §4.2) — do not invent IDs.
+
+For **space-type** members (another space’s treasury address in the on-chain list), there is typically **no** `person_id`; the Members tab still shows them via `findSpaceByAddresses`. Unless the schema is extended to link space-as-member to `memberships`, the tool SHALL return **`membership: null`** for those entries and still return **full space profile fields** from `spaces` (see §4.2). If product later adds a dedicated row type, revise this spec in a follow-up ticket.
+
+### 2.3 `people` and `spaces` profile tables
+
+- **`people`**: attributes for person members (see §4.2).  
+- **`spaces`**: attributes for space-type members (title, description, slug, `logo_url`, `web3_address`, `parent_id`, flags, etc.).
+
+### 2.4 Explicit non-requirements (correcting the earlier mistake)
+
+| Incorrect interpretation | Correct interpretation |
+|--------------------------|-------------------------|
+| Include “members of **child spaces**” of the active space | **Exclude.** Roster = members **of** the active space only. |
+| Child spaces appear only via `parent_id` | Child spaces are a **hierarchy** concern; **not** the same as “Space” badge members, which are **other spaces whose address is in the on-chain member set** for the host space. |
 
 ---
 
@@ -46,14 +74,17 @@ The relational model links **people** to spaces via `memberships`. If product se
 
 | ID | Requirement |
 |----|----------------|
-| **FR-1** | The system SHALL expose an MCP tool named **`get_people_by_space_slug`**. |
+| **FR-1** | The system SHALL expose an MCP tool named **`get_people_by_space_slug`** (name retained for epic traceability; description SHOULD clarify it returns **people and space members**). |
 | **FR-2** | The tool SHALL be **read-only** and **idempotent** (no writes, no side effects). |
-| **FR-3** | Given a valid space slug, the tool SHALL return **members** as an ordered list of objects, each containing **all columns** from the `memberships` row for that person–space pair and **all public person columns** needed for assistant use (see §5). |
-| **FR-4** | Each member object SHALL include **`joinedAt`** as ISO-8601 UTC, derived from **`memberships.created_at`**. |
-| **FR-5** | The tool SHALL support **pagination** consistent with `get_spaces` (same caps and defaults unless a shared MCP pagination utility defines otherwise). |
-| **FR-6** | The tool SHALL return explicit **`source: "db"`** and **`asOf`** (ISO-8601 UTC timestamp of the read) in `structuredContent`, per epic normalization rules. |
-| **FR-7** | When the slug does not match a space, the tool SHALL return a **not-found** result (HTTP-level behavior follows the MCP transport; structured payload MUST include `found: false` or equivalent agreed convention used by `get_spaces`). |
-| **FR-8** | Invalid slug input SHALL fail validation **before** database access (same slug validation pattern as `get_spaces` / chat tools). |
+| **FR-3** | Given a valid space slug, the tool SHALL return the active space’s **full member roster** aligned with §2.1: **people** and **spaces-as-members**, not child-space membership trees. |
+| **FR-4** | For each **person** member, the tool SHALL include the **complete `memberships` record** (all columns in §2.2) when present in DB, plus person profile fields needed for assistants. |
+| **FR-5** | For each **space** member, the tool SHALL include **complete `spaces` row fields** (or the same field set as `findSpaceByAddresses` / `getSpaceDefaultFields` in core), plus optional join metadata. |
+| **FR-6** | **`joined_at` / join display:** Prefer **`memberships.created_at`** for people when a row exists; for space members or when events are required for parity with the UI, include **`join_source`** (`"membership" \| "event" \| "unknown"`) and ISO timestamps when available. |
+| **FR-7** | The tool SHALL support **pagination** consistent with `get_spaces` (same caps and defaults unless a shared MCP pagination utility defines otherwise). Pagination MAY apply to a **merged** list in stable sort order (document order: e.g. people first, then spaces; or interleaved by join time — **pick one and test it**). |
+| **FR-8** | The tool SHALL return explicit **`source`** metadata: at minimum `source: "db"` for database-backed fields and, if chain reads are used for the roster, **`source_chain: "rpc"`** (or the epic’s standard enum) for the address list — see epic “source metadata” rules. |
+| **FR-9** | The tool SHALL include **`asOf`** (ISO-8601 UTC timestamp of the read). |
+| **FR-10** | When the slug does not match a space, the tool SHALL return a **not-found** result; structured payload MUST match the convention used by `get_spaces`. |
+| **FR-11** | Invalid slug input SHALL fail validation **before** database or RPC access (same slug validation pattern as `get_spaces` / chat tools). |
 
 ---
 
@@ -62,7 +93,6 @@ The relational model links **people** to spaces via `memberships`. If product se
 ### 4.1 Input schema (illustrative — align field names with `get_spaces`)
 
 ```typescript
-// Illustrative; match project conventions and shared pagination types.
 z.object({
   space_slug: z
     .string()
@@ -70,17 +100,17 @@ z.object({
     .min(1)
     .max(128)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
-    .describe('Hypha space slug, e.g. "hypha"'),
+    .describe('Hypha space slug of the active space, e.g. "hypha"'),
   page: z.number().int().min(1).optional().default(1),
   page_size: z.number().int().min(1).max(100).optional().default(20),
-  // Optional Phase-1b:
-  // include_child_spaces: z.boolean().optional().default(false),
 });
 ```
 
+**Do not** add `include_child_spaces` or similar — it is out of scope and was the source of the spec mistake.
+
 ### 4.2 Output schema (structured content)
 
-Minimum shape:
+Minimum shape (names are illustrative; keep **all `memberships` columns** on `membership` when non-null):
 
 ```typescript
 z.object({
@@ -88,40 +118,45 @@ z.object({
   space_slug: z.string(),
   space: z
     .object({
-      id: z.string(), // or number — match get_spaces numeric policy
+      id: z.union([z.string(), z.number()]),
       slug: z.string(),
       title: z.string().optional(),
-      parent_id: z.string().nullable().optional(),
+      parent_id: z.union([z.string(), z.number()]).nullable().optional(),
     })
     .nullable(),
-  source: z.literal('db'),
-  asOf: z.string().datetime(), // ISO UTC
+  source: z.literal('db'), // extend per FR-8 if multi-source
+  asOf: z.string().datetime(),
+  // Unified roster; discriminated by member_kind
   members: z.array(
-    z.object({
-      membership: z.object({
-        id: z.number(),
-        person_id: z.number(),
-        space_id: z.number(),
-        created_at: z.string().datetime(),
-        updated_at: z.string().datetime(),
+    z.discriminatedUnion('member_kind', [
+      z.object({
+        member_kind: z.literal('person'),
+        // Full memberships table — all columns from schema/membership.ts
+        membership: z
+          .object({
+            id: z.number(),
+            person_id: z.number(),
+            space_id: z.number(),
+            created_at: z.string().datetime(),
+            updated_at: z.string().datetime(),
+          })
+          .nullable(),
+        join_source: z.enum(['membership', 'event', 'unknown']),
+        joined_at: z.string().datetime().nullable(),
+        person: z.object({
+          /* all public people columns used elsewhere in APIs, ISO dates */
+        }),
       }),
-      person: z.object({
-        id: z.number(),
-        slug: z.string().nullable(),
-        name: z.string().nullable(),
-        surname: z.string().nullable(),
-        nickname: z.string().nullable(),
-        email: z.string().nullable(),
-        description: z.string().nullable(),
-        location: z.string().nullable(),
-        avatar_url: z.string().nullable(),
-        lead_image_url: z.string().nullable(),
-        web3_address: z.string().nullable(),
-        links: z.array(z.string()),
-        created_at: z.string().datetime(),
-        updated_at: z.string().datetime(),
+      z.object({
+        member_kind: z.literal('space'),
+        membership: z.null(), // unless schema extended
+        join_source: z.enum(['event', 'unknown']),
+        joined_at: z.string().datetime().nullable(),
+        space: z.object({
+          /* full space row fields aligned with findSpaceByAddresses / Space type */
+        }),
       }),
-    }),
+    ]),
   ),
   pagination: z.object({
     total: z.number(),
@@ -134,33 +169,36 @@ z.object({
 });
 ```
 
-**Privacy / RLS:** If `people` rows are subject to RLS, the MCP server’s DB role MUST match the same access rules as other read tools; redact or omit fields that must not leak (align with `get_spaces`).
+**Delegate / voting context** (shown in UI for space cards): optional Phase-2 enrichment via web3 reads (`useSpaceDelegate` pattern). Do not block MCP v1 on delegate; document as follow-up if not in scope.
+
+**Privacy / RLS:** Same rules as other read tools; omit `people.sub` unless explicitly approved.
 
 ### 4.3 Human-readable `content`
 
-Set MCP `content` to a short summary string (e.g. member count, page info) so non-structured clients still get a useful message. Mirror `get_spaces` wording style.
+Short summary: counts of **people** vs **space** members on this page, plus host space slug.
 
 ### 4.4 Registration
 
-Register the tool next to `get_spaces` using the **same server bootstrap** (transport, auth header forwarding, error middleware). File paths depend on the branch that contains the MCP server (see epic PR [#2031](https://github.com/hypha-dao/hypha-web/pull/2031) and related branches such as `litzi/feat/mcp-server`).
+Register the tool next to `get_spaces` using the **same server bootstrap** (transport, auth, error middleware).
 
 ---
 
 ## 5) Implementation plan (packages)
 
-1. **`@hypha-platform/core`**
-   - Add e.g. `findMembersWithMembershipBySpaceSlug` (name TBD) in `packages/core/src/people/server/queries.ts` (or a dedicated module) that:
-     - Resolves `space_id` by slug (reuse `findSpaceBySlug` or a lightweight `select id, slug, title, parent_id from spaces where slug = ?`).
-     - Joins `memberships` ↔ `people` with `where memberships.space_id = :spaceId`.
-     - Selects **explicit columns** for both tables (avoid `select *` in public API surfaces).
-     - Applies `limit` / `offset` and a **window count** for total (same pattern as existing `getDefaultFields()` + `count(*) over()`).
-   - Export from `packages/core/src/people/server/index.ts` (or the established barrel) for MCP and tests.
+1. **Core / shared service**
+   - Implement a single function used by MCP (and optionally chat) that:
+     - Loads host space by slug.
+     - Fetches on-chain member addresses (reuse logic from `members/route.ts`).
+     - Partitions into people vs spaces (reuse `findPersonByAddresses` / `findSpaceByAddresses` or equivalent batched queries).
+     - Left-joins **`memberships`** for people to attach **full row** fields.
+     - Optionally loads **join events** for parity with `SpaceMemberCard` / `MemberCard`.
+   - Centralize sorting + pagination so MCP and HTTP API stay aligned.
 
-2. **MCP server package / route**
-   - Add tool definition mirroring `get_spaces`: Zod parse → call core with `{ db }` → map DB dates to ISO strings → return `{ content, structuredContent }` per SDK expectations.
+2. **MCP server**
+   - Zod parse → call shared function → map to output schema → `{ content, structuredContent }`.
 
 3. **Tests**
-   - Unit or integration tests: success (1+ members), empty list, slug not found, invalid slug, pagination boundary, optional RLS-denied behavior if test DB supports it.
+   - Success with **only people**, **only spaces**, **mixed**; not-found slug; invalid slug; pagination; missing `memberships` row for an on-chain person.
 
 ---
 
@@ -168,19 +206,19 @@ Register the tool next to `get_spaces` using the **same server bootstrap** (tran
 
 | ID | Requirement |
 |----|----------------|
-| **NFR-1** | Deterministic date serialization: always UTC ISO-8601 strings in outputs. |
-| **NFR-2** | Bounded `page_size` to protect DB and MCP latency. |
-| **NFR-3** | No secrets in structured output (no raw `sub` / internal tokens unless already exposed elsewhere by policy). |
+| **NFR-1** | Deterministic date serialization: UTC ISO-8601 strings. |
+| **NFR-2** | Bounded `page_size`. |
+| **NFR-3** | No secrets in structured output. |
 
 ---
 
 ## 7) Acceptance criteria
 
-- [ ] Tool appears in MCP tool list alongside `get_spaces`.
-- [ ] Valid slug returns `structuredContent` validating against the output schema.
-- [ ] `joinedAt` / `membership.created_at` matches DB for sampled rows.
-- [ ] Unknown slug returns not-found without throwing (unless `get_spaces` throws — stay consistent).
-- [ ] Automated tests cover success, not-found, invalid input, and pagination.
+- [ ] Tool lists **people and space members** for the active slug, not child-space populations.
+- [ ] Each person entry includes **all `memberships` columns** when a DB row exists.
+- [ ] Each space entry includes full **space** profile fields for the member space.
+- [ ] `structuredContent` validates against the output schema.
+- [ ] Automated tests cover mixed rosters and pagination.
 
 ---
 
@@ -189,13 +227,13 @@ Register the tool next to `get_spaces` using the **same server bootstrap** (tran
 | Epic item | This spec |
 |-----------|-----------|
 | Phase 1 — `get_people_by_space_slug` | §3–§7 |
-| Strict typed contracts (`inputSchema`, `outputSchema`, `structuredContent`) | §4 |
-| Read-only / idempotent | FR-2, §2 |
-| Source metadata `db` + `asOf` | FR-6, output schema |
+| Strict typed contracts | §4 |
+| Read-only / idempotent | FR-2 |
+| Source metadata + `asOf` | FR-8–FR-9 |
 
 ---
 
-## 9) Open questions (resolve before or during implementation)
+## 9) Open questions
 
-1. Should **`people.sub`** ever be returned to MCP clients? Default: **omit** unless product confirms parity with another public API.
-2. Should **child spaces** be included in v1? If yes, define a separate array `child_spaces` with `{ id, slug, title, … }` and keep `members` for people only.
+1. **Unified pagination:** Interleaved vs two-section pagination — choose one and mirror in chat tool output.
+2. **Delegate enrichment** for MCP: include in v1 or defer to Phase 2.
