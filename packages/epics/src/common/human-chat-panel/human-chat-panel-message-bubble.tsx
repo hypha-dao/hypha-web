@@ -24,8 +24,16 @@ type HumanChatPanelMessageBubbleProps = {
     avatarUrl?: string;
     timestamp?: Date;
     reactions?: Reaction[];
+    /** Rich reply: quoted context above the new text */
+    replyTo?: {
+      authorLabel: string;
+      /** When omitted, UI shows “original unavailable” */
+      excerpt?: string;
+    };
   };
   isStreaming?: boolean;
+  /** When set, Reply is enabled (omit for synthetic messages like welcome). */
+  onReply?: () => void;
 };
 
 /**
@@ -91,6 +99,7 @@ function renderTextWithMentions(text: string): React.ReactNode[] {
 export function HumanChatPanelMessageBubble({
   message,
   isStreaming,
+  onReply,
 }: HumanChatPanelMessageBubbleProps) {
   const t = useTranslations('HumanChatPanel');
 
@@ -106,11 +115,13 @@ export function HumanChatPanelMessageBubble({
     ? formatTimestamp(message.timestamp, t)
     : undefined;
   const reactions = message.reactions ?? [];
+  const replyTo = message.replyTo;
+  const canReply = Boolean(onReply);
 
   return (
     <div
       data-testid="chat-message"
-      className="group relative flex gap-3 px-1 py-1 hover:bg-muted/30 rounded-md transition-colors"
+      className="group relative flex gap-3 px-1 py-1 hover:bg-muted/30 focus-within:bg-muted/30 rounded-md transition-colors"
     >
       {/* Avatar */}
       <div className="mt-0.5 shrink-0" data-testid="chat-message-avatar">
@@ -132,6 +143,26 @@ export function HumanChatPanelMessageBubble({
             <span className="text-xs text-muted-foreground">{timestamp}</span>
           )}
         </div>
+
+        {replyTo && (
+          <div
+            data-testid="chat-message-reply-context"
+            className="mt-1 border-l-2 border-primary/40 pl-2 text-xs text-muted-foreground"
+          >
+            <span className="font-medium text-foreground">
+              {replyTo.authorLabel}
+            </span>
+            {replyTo.excerpt != null && replyTo.excerpt !== '' ? (
+              <span className="mt-0.5 block line-clamp-3">
+                {replyTo.excerpt}
+              </span>
+            ) : (
+              <span className="mt-0.5 block italic">
+                {t('replyOriginalUnavailable')}
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Message text */}
         {textContent && (
@@ -168,8 +199,8 @@ export function HumanChatPanelMessageBubble({
         )}
       </div>
 
-      {/* Hover action bar */}
-      <div className="absolute right-2 top-0 -translate-y-1/2 flex items-center gap-0.5 rounded-md border border-border bg-background-2 px-1 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
+      {/* Hover / focus-within action bar */}
+      <div className="absolute right-2 top-0 -translate-y-1/2 flex items-center gap-0.5 rounded-md border border-border bg-background-2 px-1 py-0.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity shadow-sm">
         <button
           type="button"
           className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
@@ -181,10 +212,11 @@ export function HumanChatPanelMessageBubble({
         </button>
         <button
           type="button"
-          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors disabled:pointer-events-none disabled:opacity-40"
           aria-label={t('replyButton')}
-          disabled
-          aria-disabled
+          disabled={!canReply}
+          aria-disabled={!canReply}
+          onClick={onReply}
         >
           <Reply className="h-3.5 w-3.5" />
         </button>

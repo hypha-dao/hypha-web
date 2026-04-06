@@ -13,16 +13,22 @@ type UIMessage = {
   >;
   senderName?: string;
   avatarUrl?: string;
+  replyTo?: {
+    authorLabel: string;
+    excerpt?: string;
+  };
 };
 
 type HumanChatPanelMessagesProps = {
   messages: UIMessage[];
   isStreaming?: boolean;
+  onReply?: (messageId: string) => void;
 };
 
 export function HumanChatPanelMessages({
   messages,
   isStreaming = false,
+  onReply,
 }: HumanChatPanelMessagesProps) {
   const t = useTranslations('HumanChatPanel');
 
@@ -57,6 +63,11 @@ export function HumanChatPanelMessages({
               msg.role === 'member' &&
               isStreaming &&
               index === displayMessages.length - 1
+            }
+            onReply={
+              msg.id !== 'welcome' && onReply
+                ? () => onReply(msg.id)
+                : undefined
             }
           />
         ))}

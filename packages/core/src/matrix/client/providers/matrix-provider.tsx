@@ -5,10 +5,16 @@ import * as MatrixSdk from 'matrix-js-sdk';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { MatrixTokenData, useMatrixToken } from '../hooks';
 import { Message } from '../../types';
+import {
+  buildRichReplyPlainBody,
+  messageFromRoomMessageEvent,
+} from '../../rich-reply';
 
 interface SendMessageInput {
   roomId: string;
   message: string;
+  /** Rich reply: target m.room.message event id (space chat; not m.thread). */
+  replyToEventId?: string;
 }
 
 export type MatrixEventListener = (
@@ -173,7 +179,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   );
 
   const sendMessage = React.useCallback(
-    async ({ roomId, message }: SendMessageInput) => {
+    async ({ roomId, message, replyToEventId }: SendMessageInput) => {
       if (!client) {
         throw new Error('Client should be specified');
       }
@@ -181,6 +187,39 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         return;
       }
       if (!roomId?.trim()) {
+        return;
+      }
+
+      if (replyToEventId?.trim()) {
+        const room = client.getRoom(roomId);
+        let parent = room?.findEventById(replyToEventId);
+        if (!parent) {
+          try {
+            const raw = await client.fetchRoomEvent(roomId, replyToEventId);
+            parent = client.getEventMapper()(raw as MatrixSdk.IEvent);
+          } catch {
+            parent = undefined;
+          }
+        }
+        if (!parent) {
+          throw new Error('Reply target message not found');
+        }
+        const targetSender = parent.getSender();
+        if (!targetSender) {
+          throw new Error('Reply target has no sender');
+        }
+        const targetBody =
+          (parent.getContent().body as string | undefined) ?? '';
+        const body = buildRichReplyPlainBody(targetSender, targetBody, message);
+        await client.sendEvent(roomId, EventType.RoomMessage, {
+          msgtype: MsgType.Text,
+          body,
+          'm.relates_to': {
+            'm.in_reply_to': {
+              event_id: replyToEventId,
+            },
+          },
+        });
         return;
       }
 
@@ -235,17 +274,18 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             .getEvents()
             .filter((event) => event.getType() === EventType.RoomMessage)
             .filter((event) => event.getId() && event.getSender())
-            .map((event) => ({
-              id: event.getId()!,
-              sender: event.getSender()!,
-              content: event.getContent().body,
-              timestamp: new Date(event.getTs()),
-              pinned: pinned.includes(event.getId()!),
-            }))
+            .map((event) =>
+              messageFromRoomMessageEvent(
+                client,
+                roomId,
+                event,
+                pinned.includes(event.getId()!),
+              ),
+            )
         : null;
       return messages;
     },
-    [client],
+    [client, getPinnedMessageIds],
   );
 
   const togglePinnedMessage = React.useCallback(
@@ -367,12 +407,15 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           const eventId = event.getId();
           const sender = event.getSender();
           if (!eventId || !sender) return;
-          const message: Message = {
-            id: eventId,
-            sender,
-            content: event.getContent().body,
-            timestamp: new Date(event.getTs()),
-          };
+          const pinnedIds = client.getRoom(roomId)
+            ? getPinnedMessageIds(roomId)
+            : [];
+          const message = messageFromRoomMessageEvent(
+            client,
+            roomId,
+            event,
+            pinnedIds.includes(eventId),
+          );
           await messageListener(message);
         } else if (event.getType() === EventType.RoomPinnedEvents) {
           const pinned = event.getContent().pinned;
@@ -387,7 +430,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       ];
       setRegisteredRoomListeners([...registeredRoomListenersRef.current]);
     },
-    [client, unregisterRoomListener],
+    [client, unregisterRoomListener, getPinnedMessageIds],
   );
 
   const value: MatrixContextType = {
