@@ -32,7 +32,7 @@ Space members use the right-hand **group chat panel** to converse in the Matrix 
 
 **Non-goals**
 
-- **Matrix threads** (`rel_type: m.thread`) for **space-level** chat — that model is reserved for **Coherence card/signal** conversations per [`.agents/roles/senior-matrix-sdk-engineer.base.md`](../../../.agents/roles/senior-matrix-sdk-engineer.base.md). This feature is **room-timeline rich replies** only (`m.in_reply_to`).
+- **Matrix threads** (`rel_type: m.thread`) for **space-level** chat — that model is reserved for **Coherence card/signal** conversations per [`.agents/roles/senior-matrix-sdk-engineer.base.md`](../../../../.agents/roles/senior-matrix-sdk-engineer.base.md). This feature is **room-timeline rich replies** only (`m.in_reply_to`).
 - Full **Element-style** thread panel, **editing** messages, or **reactions** (separate work; hover buttons may stay scoped or disabled per product).
 - **E2EE-specific** edge cases beyond what `matrix-js-sdk` already exposes for timeline events in use today.
 
