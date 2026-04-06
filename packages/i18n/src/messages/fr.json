@@ -1716,6 +1716,17 @@
       "high": "Nécessite une attention immédiate",
       "medium": "Surveiller et agir bientôt",
       "low": "Informatif, pas urgent"
+    },
+    "keepWindowOpenWhileCreating": "Veuillez garder cette fenêtre ouverte jusqu'à la fin de la barre de progression.",
+    "tagLabels": {
+      "Strategy": "Stratégie",
+      "Culture": "Culture",
+      "Onboarding": "Intégration",
+      "Engagement": "Engagement",
+      "Learning": "Apprentissage",
+      "Capacity": "Capacité",
+      "Network": "Réseau",
+      "Reputation": "Réputation"
     }
   },
   "SignalCard": {

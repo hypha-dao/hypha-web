@@ -84,10 +84,10 @@ export class CoherencePage extends BasePage {
     // Note: Badge renders as div, so use getByText not getByRole('button').
     this.allFilterBadge = page.getByText(/^(all|todos|tous|alle)\s/i).first();
 
-    // Create signal form heading
-    this.createSignalHeading = page.getByRole('heading', {
-      name: /creating new signal/i,
-    });
+    // Loading overlay copy (CoherenceTab.creatingNewSignal) — rendered as text, not a heading
+    this.createSignalHeading = page.getByText(
+      /creating new signal|création d'un nouveau signal|neues signal wird erstellt|creando nueva señal|criando novo sinal/i,
+    );
   }
 
   /**

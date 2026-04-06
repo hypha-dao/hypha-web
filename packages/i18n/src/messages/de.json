@@ -1716,6 +1716,17 @@
       "high": "Erfordert sofortige Aufmerksamkeit",
       "medium": "Beobachten und bald handeln",
       "low": "Informativ, keine Eile"
+    },
+    "keepWindowOpenWhileCreating": "Bitte lassen Sie dieses Fenster offen, bis die Fortschrittsanzeige abgeschlossen ist.",
+    "tagLabels": {
+      "Strategy": "Strategie",
+      "Culture": "Kultur",
+      "Onboarding": "Onboarding",
+      "Engagement": "Engagement",
+      "Learning": "Lernen",
+      "Capacity": "Kapazität",
+      "Network": "Netzwerk",
+      "Reputation": "Reputation"
     }
   },
   "SignalCard": {

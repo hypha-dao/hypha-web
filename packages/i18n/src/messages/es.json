@@ -1716,6 +1716,17 @@
       "high": "Necesita atención inmediata",
       "medium": "Supervisar y actuar pronto",
       "low": "Informativo, sin prisa"
+    },
+    "keepWindowOpenWhileCreating": "Mantenga esta ventana abierta hasta que la barra de progreso termine.",
+    "tagLabels": {
+      "Strategy": "Estrategia",
+      "Culture": "Cultura",
+      "Onboarding": "Incorporación",
+      "Engagement": "Compromiso",
+      "Learning": "Aprendizaje",
+      "Capacity": "Capacidad",
+      "Network": "Red",
+      "Reputation": "Reputación"
     }
   },
   "SignalCard": {

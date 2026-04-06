@@ -1716,6 +1716,17 @@
       "high": "Needs immediate attention",
       "medium": "Monitor and act soon",
       "low": "Informational, no rush"
+    },
+    "keepWindowOpenWhileCreating": "Please keep this window open until the progress bar completes.",
+    "tagLabels": {
+      "Strategy": "Strategy",
+      "Culture": "Culture",
+      "Onboarding": "Onboarding",
+      "Engagement": "Engagement",
+      "Learning": "Learning",
+      "Capacity": "Capacity",
+      "Network": "Network",
+      "Reputation": "Reputation"
     }
   },
   "SignalCard": {
