@@ -9,7 +9,7 @@ import {
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { headers } from 'next/headers';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
 import { createRemoteJWKSet, jwtVerify, errors as joseErrors } from 'jose';
@@ -301,13 +301,16 @@ export async function POST(req: Request) {
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- AI SDK tools union triggers TS2589 in CI (see getSpaceBySlugTool)
+  const getPeopleBySpaceSlugTool: any = createGetPeopleBySpaceSlugTool(req);
+
   const result = streamText({
     model: openrouter('openrouter/auto'),
     system: buildSystemPrompt(spaceSlug),
     messages: await convertToModelMessages(messages),
     tools: {
       get_space_by_slug: getSpaceBySlugTool,
-      get_people_by_space_slug: createGetPeopleBySpaceSlugTool(req),
+      get_people_by_space_slug: getPeopleBySpaceSlugTool,
     },
     stopWhen: stepCountIs(6),
     onStepFinish: (event) => {
