@@ -177,10 +177,11 @@ export function messageFromRoomMessageEvent(
     if (parent) {
       inReplyToSender = parent.getSender() ?? undefined;
       const parentBody = (parent.getContent().body as string | undefined) ?? '';
-      if (parent.isRedacted() || !parentBody.trim()) {
+      const parentVisible = stripMatrixReplyFallback(parentBody).trim();
+      if (parent.isRedacted() || !parentVisible) {
         inReplyToBodyPreview = undefined;
       } else {
-        inReplyToBodyPreview = truncateForPreview(parentBody);
+        inReplyToBodyPreview = truncateForPreview(parentVisible);
       }
     } else {
       const parsed = parseReplyFallbackFirstLine(rawBody);

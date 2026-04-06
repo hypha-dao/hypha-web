@@ -13,6 +13,11 @@ describe('stripMatrixReplyFallback', () => {
     expect(stripMatrixReplyFallback(body)).toBe('my reply');
   });
 
+  it('strips nested reply parent so preview is only the visible line', () => {
+    const nestedParent = `> <@u:h> hello\n> there\n\nhey`;
+    expect(stripMatrixReplyFallback(nestedParent).trim()).toBe('hey');
+  });
+
   it('returns original when no reply structure', () => {
     expect(stripMatrixReplyFallback('plain')).toBe('plain');
   });
