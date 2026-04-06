@@ -128,11 +128,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const params = useParams<{ id?: string }>();
   const spaceSlug = params?.id;
 
-  useMembers({
-    spaceSlug,
-    paginationDisabled: true,
-  });
-
   const matrix = useMatrix();
   const {
     client,
