@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildRichReplyPlainBody,
+  isLocalProvisionalEventId,
   stripMatrixReplyFallback,
   truncateForPreview,
 } from '../rich-reply';
@@ -14,6 +15,20 @@ describe('stripMatrixReplyFallback', () => {
 
   it('returns original when no reply structure', () => {
     expect(stripMatrixReplyFallback('plain')).toBe('plain');
+  });
+});
+
+describe('isLocalProvisionalEventId', () => {
+  it('detects provisional client ids', () => {
+    expect(
+      isLocalProvisionalEventId(
+        '~!EbLD2GFiUPLzqn6N:srv1294735.hstgr.cloud:m1775513342375.0',
+      ),
+    ).toBe(true);
+  });
+
+  it('does not flag server ids', () => {
+    expect(isLocalProvisionalEventId('$abc:example.com')).toBe(false);
   });
 });
 

@@ -1,10 +1,98 @@
 /** Matrix rich reply plaintext helpers (Client-Server API — rich replies). */
 
+import { MatrixEventEvent } from 'matrix-js-sdk';
 import type * as MatrixSdk from 'matrix-js-sdk';
 
 import type { Message } from './types';
 
 export const RICH_REPLY_PREVIEW_MAX = 280;
+
+/** Local / optimistic event ids start with `~` until the homeserver assigns `$…`. */
+export function isLocalProvisionalEventId(eventId: string): boolean {
+  return eventId.startsWith('~');
+}
+
+/**
+ * Resolve the target message for a rich reply, waiting if the UI still holds a
+ * provisional `~…` id (outbound echo not yet received).
+ */
+export async function resolveReplyTargetForSend(
+  client: MatrixSdk.MatrixClient,
+  roomId: string,
+  replyToEventId: string,
+): Promise<{ eventId: string; sender: string; body: string }> {
+  const room = client.getRoom(roomId);
+  if (!room) {
+    throw new Error('Room not found');
+  }
+
+  let target =
+    room.findEventById(replyToEventId) ??
+    (typeof room.getPendingEvent === 'function'
+      ? room.getPendingEvent(replyToEventId)
+      : null) ??
+    undefined;
+
+  if (!target && !isLocalProvisionalEventId(replyToEventId)) {
+    try {
+      const raw = await client.fetchRoomEvent(roomId, replyToEventId);
+      target = client.getEventMapper()(raw as MatrixSdk.IEvent);
+    } catch {
+      target = undefined;
+    }
+  }
+
+  if (!target) {
+    throw new Error('Reply target message not found');
+  }
+
+  if (isLocalProvisionalEventId(target.getId()!)) {
+    await new Promise<void>((resolve, reject) => {
+      const timeoutMs = 30_000;
+      const timeout = setTimeout(() => {
+        cleanup();
+        reject(
+          new Error(
+            'Reply target is still sending; wait a moment and try again',
+          ),
+        );
+      }, timeoutMs);
+
+      const cleanup = () => {
+        clearTimeout(timeout);
+        target!.off(MatrixEventEvent.LocalEventIdReplaced, onReplaced);
+      };
+
+      const onReplaced = () => {
+        if (!isLocalProvisionalEventId(target!.getId()!)) {
+          cleanup();
+          resolve();
+        }
+      };
+
+      target.on(MatrixEventEvent.LocalEventIdReplaced, onReplaced);
+
+      if (!isLocalProvisionalEventId(target.getId()!)) {
+        cleanup();
+        resolve();
+      }
+    });
+  }
+
+  const eventId = target.getId()!;
+  if (isLocalProvisionalEventId(eventId)) {
+    throw new Error(
+      'Reply target is still sending; wait a moment and try again',
+    );
+  }
+
+  const sender = target.getSender();
+  if (!sender) {
+    throw new Error('Reply target has no sender');
+  }
+  const body = (target.getContent().body as string | undefined) ?? '';
+  return { eventId, sender, body };
+}
 
 export function truncateForPreview(
   text: string,

@@ -8,6 +8,7 @@ import { Message } from '../../types';
 import {
   buildRichReplyPlainBody,
   messageFromRoomMessageEvent,
+  resolveReplyTargetForSend,
 } from '../../rich-reply';
 
 interface SendMessageInput {
@@ -191,32 +192,18 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       }
 
       if (replyToEventId?.trim()) {
-        const room = client.getRoom(roomId);
-        let parent = room?.findEventById(replyToEventId);
-        if (!parent) {
-          try {
-            const raw = await client.fetchRoomEvent(roomId, replyToEventId);
-            parent = client.getEventMapper()(raw as MatrixSdk.IEvent);
-          } catch {
-            parent = undefined;
-          }
-        }
-        if (!parent) {
-          throw new Error('Reply target message not found');
-        }
-        const targetSender = parent.getSender();
-        if (!targetSender) {
-          throw new Error('Reply target has no sender');
-        }
-        const targetBody =
-          (parent.getContent().body as string | undefined) ?? '';
-        const body = buildRichReplyPlainBody(targetSender, targetBody, message);
+        const {
+          eventId: resolvedTargetId,
+          sender,
+          body: targetBody,
+        } = await resolveReplyTargetForSend(client, roomId, replyToEventId);
+        const body = buildRichReplyPlainBody(sender, targetBody, message);
         await client.sendEvent(roomId, EventType.RoomMessage, {
           msgtype: MsgType.Text,
           body,
           'm.relates_to': {
             'm.in_reply_to': {
-              event_id: replyToEventId,
+              event_id: resolvedTargetId,
             },
           },
         });
