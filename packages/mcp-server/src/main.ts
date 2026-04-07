@@ -1,43 +1,17 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { db } from '@hypha-platform/storage-postgres';
-import { getSpaceMembersRoster } from '@hypha-platform/core/server';
+import {
+  checkSpaceAccessForSpace,
+  findSpaceBySlug,
+  getSpaceMembersRoster,
+  serializeSpaceMembersRosterDatesForJson,
+  type SpaceMemberRosterEntry,
+} from '@hypha-platform/core/server';
 import {
   getPeopleBySpaceSlugInputSchema,
   getPeopleBySpaceSlugOutputSchema,
 } from './get-people-by-space-slug-schema.js';
-
-function serializeRosterForJson(
-  result: Awaited<ReturnType<typeof getSpaceMembersRoster>>,
-) {
-  if (!result.found) {
-    return result;
-  }
-
-  return {
-    ...result,
-    members: result.members.map((entry) => {
-      if (entry.member_kind === 'person') {
-        return {
-          ...entry,
-          person: {
-            ...entry.person,
-            createdAt: entry.person.createdAt.toISOString(),
-            updatedAt: entry.person.updatedAt.toISOString(),
-          },
-        };
-      }
-      return {
-        ...entry,
-        space: {
-          ...entry.space,
-          createdAt: entry.space.createdAt.toISOString(),
-          updatedAt: entry.space.updatedAt.toISOString(),
-        },
-      };
-    }),
-  };
-}
 
 const server = new McpServer(
   {
@@ -77,6 +51,24 @@ server.registerTool(
     }
 
     const { space_slug, page, page_size, searchTerm } = parsed.data;
+
+    const host = await findSpaceBySlug({ slug: space_slug }, { db });
+    if (host) {
+      const authToken = process.env.HYPHA_MCP_AUTH_TOKEN;
+      const access = await checkSpaceAccessForSpace(host, authToken);
+      if (!access.hasAccess) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: access.message,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+
     const raw = await getSpaceMembersRoster(
       {
         spaceSlug: space_slug,
@@ -87,7 +79,7 @@ server.registerTool(
       { db },
     );
 
-    const structured = serializeRosterForJson(raw);
+    const structured = serializeSpaceMembersRosterDatesForJson(raw);
     const outParse = getPeopleBySpaceSlugOutputSchema.safeParse(structured);
     if (!outParse.success) {
       return {
@@ -102,10 +94,14 @@ server.registerTool(
     }
 
     const peopleCount = structured.found
-      ? structured.members.filter((m) => m.member_kind === 'person').length
+      ? structured.members.filter(
+          (m: SpaceMemberRosterEntry) => m.member_kind === 'person',
+        ).length
       : 0;
     const spaceCount = structured.found
-      ? structured.members.filter((m) => m.member_kind === 'space').length
+      ? structured.members.filter(
+          (m: SpaceMemberRosterEntry) => m.member_kind === 'space',
+        ).length
       : 0;
 
     const summary = structured.found
