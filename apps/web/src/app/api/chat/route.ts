@@ -5,6 +5,7 @@ import {
   findSpaceBySlug,
   getSpaceBySlug,
   getSpaceMembersRoster,
+  serializeSpaceMembersRosterDatesForJson,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
@@ -90,39 +91,6 @@ function buildSystemPrompt(spaceSlug?: string | null): string {
   return BASE_SYSTEM_PROMPT;
 }
 
-/** JSON-serialize dates on roster entries (parity with MCP structuredContent). */
-function serializeSpaceMembersRosterForModel(
-  result: Awaited<ReturnType<typeof getSpaceMembersRoster>>,
-) {
-  if (!result.found) {
-    return result;
-  }
-
-  return {
-    ...result,
-    members: result.members.map((entry) => {
-      if (entry.member_kind === 'person') {
-        return {
-          ...entry,
-          person: {
-            ...entry.person,
-            createdAt: entry.person.createdAt.toISOString(),
-            updatedAt: entry.person.updatedAt.toISOString(),
-          },
-        };
-      }
-      return {
-        ...entry,
-        space: {
-          ...entry.space,
-          createdAt: entry.space.createdAt.toISOString(),
-          updatedAt: entry.space.updatedAt.toISOString(),
-        },
-      };
-    }),
-  };
-}
-
 function createGetPeopleBySpaceSlugTool(req: Request) {
   const inputSchema = z.object({
     space_slug: z
@@ -188,7 +156,7 @@ function createGetPeopleBySpaceSlugTool(req: Request) {
           },
           { db },
         );
-        return serializeSpaceMembersRosterForModel(raw);
+        return serializeSpaceMembersRosterDatesForJson(raw);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
         return {
@@ -303,7 +271,7 @@ export async function POST(req: Request) {
     });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- AI SDK tools union triggers TS2589 in CI (see getSpaceBySlugTool)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- AI SDK tools union triggers TS2589 in CI (explicit ReturnType also fails)
   const getPeopleBySpaceSlugTool: any = createGetPeopleBySpaceSlugTool(req);
 
   const result = streamText({
