@@ -55,31 +55,37 @@ export class CoherencePage extends BasePage {
     this.spaceSlug = spaceSlug;
 
     // Navigation tab — TabsTrigger with asChild merges role="tab" onto the <a> Link
-    this.coherenceTab = page.getByRole('tab', { name: 'Coherence' });
+    this.coherenceTab = page.getByRole('tab', {
+      name: /coherence|cohérence|coerência|coherencia|kohärenz/i,
+    });
 
-    // Signal section label (rendered via SectionFilter's label prop, not a heading element)
-    this.signalsSectionHeading = page.getByText('Signals', { exact: true });
-
-    // "New Signal" link — wraps a Button inside a <Link>
-    this.newSignalButton = page.getByRole('link', { name: 'New Signal' });
-
-    // Search input — placeholder defined in CoherenceTab.searchSignals i18n key
-    this.searchInput = page.getByPlaceholder('Search signals...');
-
-    // Unauthenticated sign-in prompt
-    this.signInMessage = page.getByText(
-      'Please, sign in to see signals and conversations',
-      { exact: false },
+    // Signal section label (SectionFilter: "{label} | {count}"; count omitted when 0)
+    this.signalsSectionHeading = page.getByText(
+      /^(signals|signaux|sinais|señales|signale)(\s*\|\s*\d+)?\s*$/i,
     );
 
-    // Filter badges rendered as <div> (Badge component), matched by visible text.
-    // Note: Badge renders as div, so use getByText not getByRole('button').
-    this.allFilterBadge = page.getByText('All', { exact: false }).first();
-
-    // Create signal form heading
-    this.createSignalHeading = page.getByRole('heading', {
-      name: /creating new signal/i,
+    // "New Signal" link — CoherenceTab.newSignal full phrases per locale
+    this.newSignalButton = page.getByRole('link', {
+      name: /new signal|nouveau signal|neues signal|nueva señal|novo sinal/i,
     });
+
+    // Search input — full placeholders from CoherenceTab.searchSignals (per locale)
+    this.searchInput = page.getByPlaceholder(
+      /Search signals|Buscar señales|Pesquisar sinais|Rechercher des signaux|Signale suchen/i,
+    );
+
+    // Unauthenticated sign-in prompt (CoherenceTab.signInToSee) — match distinctive tail phrases
+    this.signInMessage = page.getByText(
+      /signals and conversations|señales y conversaciones|sinais e conversas|signaux et les conversations|Signale und Gespräche/i,
+    );
+
+    // "All" filter badge: CoherenceTab.all + count (en All, es/pt Todos, fr Tous, de Alle)
+    this.allFilterBadge = page.getByText(/^(All|Todos|Tous|Alle)\s+\d+\s*$/i);
+
+    // Loading overlay copy (CoherenceTab.creatingNewSignal) — rendered as text, not a heading
+    this.createSignalHeading = page.getByText(
+      /creating new signal|création d'un nouveau signal|neues signal wird erstellt|creando nueva señal|criando novo sinal/i,
+    );
   }
 
   /**

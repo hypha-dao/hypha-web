@@ -1656,6 +1656,8 @@
     "newSignal": "Novo sinal",
     "all": "Todos",
     "listIsEmpty": "A lista está vazia",
+    "loadMore": "Carregar mais",
+    "noMore": "Não há mais",
     "mostViews": "Mais visualizações",
     "mostMessages": "Mais mensagens",
     "mostRecent": "Mais recentes",
@@ -1714,6 +1716,17 @@
       "high": "Necessita atenção imediata",
       "medium": "Monitorar e agir em breve",
       "low": "Informativo, sem pressa"
+    },
+    "keepWindowOpenWhileCreating": "Mantenha esta janela aberta até a barra de progresso concluir.",
+    "tagLabels": {
+      "Strategy": "Estratégia",
+      "Culture": "Cultura",
+      "Onboarding": "Integração",
+      "Engagement": "Engajamento",
+      "Learning": "Aprendizado",
+      "Capacity": "Capacidade",
+      "Network": "Rede",
+      "Reputation": "Reputação"
     }
   },
   "SignalCard": {

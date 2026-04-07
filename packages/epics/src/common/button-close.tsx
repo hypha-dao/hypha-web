@@ -3,6 +3,7 @@
 import { Button } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { RxCross1 } from 'react-icons/rx';
 
 type ButtonCloseProps = {
@@ -18,6 +19,7 @@ export const ButtonClose = ({
   narrow = false,
   className,
 }: ButtonCloseProps) => {
+  const t = useTranslations('Common');
   const pathname = usePathname();
 
   if (!closeUrl) {
@@ -29,7 +31,7 @@ export const ButtonClose = ({
     }
   }
 
-  const title = 'Close';
+  const title = t('close');
 
   return (
     <Button
