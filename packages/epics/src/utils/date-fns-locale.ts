@@ -1,3 +1,8 @@
+/**
+ * Maps app locale codes (next-intl / URL prefix) to `date-fns` locale objects.
+ * Keep this module feature-agnostic — treasury, coherence, and other epics import
+ * from here instead of coupling through another feature folder.
+ */
 import {
   de,
   enUS,
