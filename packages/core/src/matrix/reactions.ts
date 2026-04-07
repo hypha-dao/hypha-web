@@ -44,26 +44,33 @@ export function aggregateReactionsForTarget(
   const out: MessageReaction[] = [];
 
   for (const [key, eventSet] of sorted) {
-    const senders = new Set<string>();
-    const reactorUserIds: string[] = [];
-    let currentUserReactionEventId: string | undefined;
+    const bestBySender = new Map<string, { id: string; ts: number }>();
     for (const ev of eventSet) {
       if (ev.isRedacted()) continue;
       const sender = ev.getSender();
-      if (!sender || senders.has(sender)) continue;
-      senders.add(sender);
-      reactorUserIds.push(sender);
-      if (currentUserId && sender === currentUserId) {
-        const id = ev.getId();
-        if (id) currentUserReactionEventId = id;
+      if (!sender) continue;
+      const id = ev.getId();
+      if (!id) continue;
+      const ts = ev.getTs();
+      const prev = bestBySender.get(sender);
+      if (!prev || ts > prev.ts) {
+        bestBySender.set(sender, { id, ts });
       }
     }
-    const count = senders.size;
+    const reactorUserIds = [...bestBySender.entries()]
+      .sort((a, b) => b[1].ts - a[1].ts)
+      .map(([userId]) => userId);
+    const count = reactorUserIds.length;
+    let currentUserReactionEventId: string | undefined;
+    if (currentUserId) {
+      currentUserReactionEventId = bestBySender.get(currentUserId)?.id;
+    }
     if (count === 0) continue;
     out.push({
       key,
       count,
-      includesCurrentUser: currentUserId != null && senders.has(currentUserId),
+      includesCurrentUser:
+        currentUserId != null && bestBySender.has(currentUserId),
       currentUserReactionEventId,
       reactorUserIds,
     });
