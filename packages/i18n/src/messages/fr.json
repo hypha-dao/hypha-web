@@ -1651,7 +1651,8 @@
     "emojiPickerComposer": "Choisir un emoji",
     "emojiPickerReactToMessage": "Réagir avec un emoji",
     "emojiShortcodeListLabel": "Raccourcis emoji",
-    "reactionsOverflow": "+{count} de plus"
+    "reactionsOverflow": "+{count} de plus",
+    "reactionReactorsTooltip": "{names} ont réagi avec {emoji}"
   },
   "CoherenceTab": {
     "signals": "Signaux",

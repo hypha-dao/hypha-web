@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import type { TranslationValues } from 'next-intl';
 import { Smile, SmilePlus, Reply, MoreHorizontal } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../people/components/person-avatar';
 
@@ -12,6 +14,7 @@ type Reaction = {
   emoji: string;
   count: number;
   includesCurrentUser?: boolean;
+  reactorUserIds?: string[];
 };
 
 type UIMessagePart =
@@ -19,6 +22,8 @@ type UIMessagePart =
   | { type: string; [k: string]: unknown };
 
 type HumanChatPanelMessageBubbleProps = {
+  /** Map Matrix user id to display name for reaction hover tooltips. */
+  resolveReactionReactorLabel?: (userId: string) => string;
   message: {
     id: string;
     role: 'user' | 'member';
@@ -119,7 +124,22 @@ function renderTextWithMentions(text: string): React.ReactNode[] {
   return parts;
 }
 
+function reactionTooltipText(
+  reaction: Reaction,
+  resolveLabel: (userId: string) => string,
+  t: (key: string, values?: TranslationValues) => string,
+): string | undefined {
+  const ids = reaction.reactorUserIds;
+  if (!ids?.length) return undefined;
+  const names = ids.map((id) => resolveLabel(id));
+  return t('reactionReactorsTooltip', {
+    names: names.join(', '),
+    emoji: reaction.emoji,
+  });
+}
+
 export function HumanChatPanelMessageBubble({
+  resolveReactionReactorLabel,
   message,
   isStreaming,
   onReply,
@@ -226,40 +246,59 @@ export function HumanChatPanelMessageBubble({
             data-testid="chat-message-reactions"
             className="mt-1.5 flex flex-wrap items-center gap-1"
           >
-            {visibleReactions.map((reaction, idx) => (
-              <button
-                key={`${reaction.emoji}-${idx}`}
-                type="button"
-                disabled={!canReact}
-                aria-pressed={Boolean(reaction.includesCurrentUser)}
-                onClick={() => {
-                  if (canReact && onReact) {
-                    void onReact(reaction.emoji);
-                  }
-                }}
-                className={cn(
-                  'inline-flex h-6 min-w-0 shrink-0 items-center gap-1 rounded-full border px-2 text-xs tabular-nums leading-none transition-colors',
-                  reaction.includesCurrentUser
-                    ? 'border-[#5865f2]/50 bg-[#5865f2]/15 hover:bg-[#5865f2]/20 dark:border-[#5865f2]/40 dark:bg-[#5865f2]/20'
-                    : 'border-[#949ba4]/40 bg-[#f2f3f5] hover:bg-[#e3e5e8] dark:border-border dark:bg-muted/80 dark:hover:bg-muted',
-                  canReact ? 'cursor-pointer' : 'cursor-default opacity-80',
-                )}
-              >
-                <span className="text-[15px] leading-none" aria-hidden>
-                  {reaction.emoji}
-                </span>
-                <span
+            {visibleReactions.map((reaction, idx) => {
+              const tooltip =
+                resolveReactionReactorLabel &&
+                reactionTooltipText(reaction, resolveReactionReactorLabel, t);
+              const pill = (
+                <button
+                  type="button"
+                  disabled={!canReact}
+                  aria-pressed={Boolean(reaction.includesCurrentUser)}
+                  onClick={() => {
+                    if (canReact && onReact) {
+                      void onReact(reaction.emoji);
+                    }
+                  }}
                   className={cn(
-                    'text-[11px] font-medium',
+                    'inline-flex h-6 min-w-0 shrink-0 items-center gap-1 rounded-full border px-2 text-xs tabular-nums leading-none transition-colors',
                     reaction.includesCurrentUser
-                      ? 'text-[#5865f2] dark:text-[#949cf7]'
-                      : 'text-[#4e5058] dark:text-muted-foreground',
+                      ? 'border-[#5865f2]/50 bg-[#5865f2]/15 hover:bg-[#5865f2]/20 dark:border-[#5865f2]/40 dark:bg-[#5865f2]/20'
+                      : 'border-border bg-muted/80 hover:bg-muted',
+                    canReact ? 'cursor-pointer' : 'cursor-default opacity-80',
                   )}
                 >
-                  {reaction.count}
-                </span>
-              </button>
-            ))}
+                  <span className="text-[15px] leading-none" aria-hidden>
+                    {reaction.emoji}
+                  </span>
+                  <span
+                    className={cn(
+                      'text-[11px] font-medium',
+                      reaction.includesCurrentUser
+                        ? 'text-[#5865f2] dark:text-[#949cf7]'
+                        : 'text-muted-foreground',
+                    )}
+                  >
+                    {reaction.count}
+                  </span>
+                </button>
+              );
+
+              if (tooltip) {
+                return (
+                  <Tooltip key={`${reaction.emoji}-${idx}`} delayDuration={300}>
+                    <TooltipTrigger asChild>{pill}</TooltipTrigger>
+                    <TooltipContent
+                      side="top"
+                      className="max-w-xs text-left text-xs leading-snug"
+                    >
+                      {tooltip}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              }
+              return pill;
+            })}
             {hiddenReactionCount > 0 && (
               <span className="text-xs text-muted-foreground">
                 {t('reactionsOverflow', { count: hiddenReactionCount })}

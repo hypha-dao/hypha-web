@@ -50,6 +50,7 @@ type UIMessage = {
     emoji: string;
     count: number;
     includesCurrentUser?: boolean;
+    reactorUserIds?: string[];
   }>;
   replyTo?: {
     authorLabel: string;
@@ -116,6 +117,7 @@ function toUIMessage(
       emoji: r.key,
       count: r.count,
       includesCurrentUser: r.includesCurrentUser,
+      reactorUserIds: r.reactorUserIds,
     })) ?? undefined;
 
   return {
@@ -632,6 +634,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 messages={messages}
                 onReply={handleReplyToMessage}
                 onToggleReaction={handleToggleReaction}
+                resolveReactionReactorLabel={(userId) =>
+                  resolveMemberLabel(userId)
+                }
               />
             )}
           </>

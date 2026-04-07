@@ -20,6 +20,7 @@ type UIMessage = {
     emoji: string;
     count: number;
     includesCurrentUser?: boolean;
+    reactorUserIds?: string[];
   }>;
   replyTo?: {
     authorLabel: string;
@@ -32,6 +33,8 @@ type HumanChatPanelMessagesProps = {
   isStreaming?: boolean;
   onReply?: (messageId: string) => void;
   onToggleReaction?: (messageId: string, emoji: string) => void;
+  /** Map Matrix user id to display name for reaction hover tooltips. */
+  resolveReactionReactorLabel?: (userId: string) => string;
 };
 
 export function HumanChatPanelMessages({
@@ -39,6 +42,7 @@ export function HumanChatPanelMessages({
   isStreaming = false,
   onReply,
   onToggleReaction,
+  resolveReactionReactorLabel,
 }: HumanChatPanelMessagesProps) {
   const t = useTranslations('HumanChatPanel');
 
@@ -72,6 +76,7 @@ export function HumanChatPanelMessages({
             <HumanChatPanelMessageBubble
               key={msg.id}
               message={msg}
+              resolveReactionReactorLabel={resolveReactionReactorLabel}
               isStreaming={
                 msg.role === 'member' &&
                 isStreaming &&
