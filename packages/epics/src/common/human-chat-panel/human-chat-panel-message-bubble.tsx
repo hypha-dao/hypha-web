@@ -258,10 +258,17 @@ export function HumanChatPanelMessageBubble({
     reactions.length - MAX_VISIBLE_REACTIONS,
   );
 
+  /** Keep pill visible while hover emoji popover is open (pointer may leave row). */
+  const showFloatingToolbar = hoverReactPickerOpen;
+
   return (
     <div
       data-testid="chat-message"
-      className="group relative flex gap-3 px-1 py-1 hover:bg-muted/30 focus-within:bg-muted/30 rounded-md transition-colors"
+      className={cn(
+        'group relative -mx-3 flex gap-3 rounded-sm px-3 py-1 transition-colors',
+        /* Discord-style row tint: hover (primary) + focus-within for keyboard/reactions */
+        'hover:bg-muted/60 focus-within:bg-muted/60',
+      )}
     >
       {/* Avatar */}
       <div className="mt-0.5 shrink-0" data-testid="chat-message-avatar">
@@ -435,8 +442,15 @@ export function HumanChatPanelMessageBubble({
         )}
       </div>
 
-      {/* Hover / focus-within action bar — match main/live compact toolbar (padding + icon sizing) */}
-      <div className="absolute right-2 top-0 -translate-y-1/2 flex items-center gap-0.5 rounded-md border border-border bg-background-2 px-1 py-0.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity shadow-sm">
+      {/* Discord-style floating pill: only on row hover (or while emoji picker open) */}
+      <div
+        className={cn(
+          'absolute right-3 top-0 z-10 flex -translate-y-1/2 items-center gap-0.5 rounded-full border border-border bg-background px-1 py-0.5 shadow-md transition-opacity duration-150',
+          showFloatingToolbar
+            ? 'opacity-100'
+            : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100',
+        )}
+      >
         <HumanChatPanelEmojiPicker
           open={hoverReactPickerOpen}
           onOpenChange={setHoverReactPickerOpen}
