@@ -10,7 +10,7 @@ import {
 } from '@hypha-platform/ui';
 import { useFormContext } from 'react-hook-form';
 import { useLocale, useTranslations } from 'next-intl';
-import { resolveDateFnsLocale } from '../../../coherence/date-fns-locale';
+import { resolveDateFnsLocale } from '../../../utils/date-fns-locale';
 
 type RedemptionStartDateFieldProps = {
   isRequired?: boolean;

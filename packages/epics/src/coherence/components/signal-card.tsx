@@ -30,7 +30,7 @@ import React from 'react';
 import type { BadgeProps } from '@hypha-platform/ui';
 import { useLocale, useTranslations } from 'next-intl';
 import { Users } from 'lucide-react';
-import { resolveDateFnsLocale } from '../date-fns-locale';
+import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
 
 type SignalCardProps = {
   isLoading: boolean;
