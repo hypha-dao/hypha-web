@@ -8,6 +8,8 @@ import data from '@emoji-mart/data';
 import { Popover, PopoverContent, PopoverTrigger } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
+import { getEmojiMartI18n } from './emoji-mart-i18n';
+
 type HumanChatPanelEmojiPickerProps = {
   children: React.ReactNode;
   /** Called when user selects an emoji (native string). */
@@ -60,6 +62,7 @@ export function HumanChatPanelEmojiPicker({
           <div className="max-h-[min(420px,70vh)] w-[min(100vw-2rem,352px)] min-h-[230px] overflow-hidden">
             <Picker
               data={data}
+              i18n={getEmojiMartI18n(pickerLocale)}
               onEmojiSelect={(emoji: { native: string }) => {
                 onEmojiSelect(emoji.native);
                 onOpenChange(false);
