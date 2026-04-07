@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { TranslationValues } from 'next-intl';
 import { Smile, SmilePlus, Reply, MoreHorizontal } from 'lucide-react';
@@ -367,7 +367,7 @@ export function HumanChatPanelMessageBubble({
             data-testid="chat-message-reactions"
             className="mt-1.5 flex flex-wrap items-center gap-1"
           >
-            {visibleReactions.map((reaction, idx) => {
+            {visibleReactions.map((reaction) => {
               const tooltip =
                 resolveReactionReactorLabel &&
                 reactionTooltipText(reaction, resolveReactionReactorLabel, t);
@@ -408,7 +408,7 @@ export function HumanChatPanelMessageBubble({
 
               if (tooltip) {
                 return (
-                  <Tooltip key={`${reaction.emoji}-${idx}`} delayDuration={300}>
+                  <Tooltip key={reaction.emoji} delayDuration={300}>
                     <TooltipTrigger asChild>{pill}</TooltipTrigger>
                     <TooltipContent
                       side="top"
@@ -419,7 +419,7 @@ export function HumanChatPanelMessageBubble({
                   </Tooltip>
                 );
               }
-              return pill;
+              return <Fragment key={reaction.emoji}>{pill}</Fragment>;
             })}
             {hiddenReactionCount > 0 && (
               <span className="text-xs text-muted-foreground">
