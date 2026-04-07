@@ -1,11 +1,12 @@
 'use client';
 
-import dynamic from 'next/dynamic';
+import { useEffect, useState } from 'react';
 import { useLocale } from 'next-intl';
+import { useTheme } from 'next-themes';
+import Picker from '@emoji-mart/react';
+import data from '@emoji-mart/data';
 import { Popover, PopoverContent, PopoverTrigger } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-
-const Picker = dynamic(() => import('@emoji-mart/react'), { ssr: false });
 
 type HumanChatPanelEmojiPickerProps = {
   children: React.ReactNode;
@@ -30,9 +31,19 @@ export function HumanChatPanelEmojiPicker({
   className,
 }: HumanChatPanelEmojiPickerProps) {
   const locale = useLocale();
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const pickerLocale = ['en', 'es', 'fr', 'de', 'pt'].includes(locale)
     ? locale
     : 'en';
+
+  /** emoji-mart v5 + shadow DOM: avoid `theme="auto"` inside Radix portal — wrong root can yield invisible UI. */
+  const pickerTheme = mounted && resolvedTheme === 'dark' ? 'dark' : 'light';
 
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
@@ -41,23 +52,25 @@ export function HumanChatPanelEmojiPicker({
       </PopoverTrigger>
       <PopoverContent
         align={align}
-        className="w-auto border-border p-0 shadow-lg"
+        className="w-auto max-w-[min(100vw-2rem,352px)] border-border p-0 shadow-lg"
         aria-label={ariaLabel}
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <div className="max-h-[min(420px,70vh)] w-[min(100vw-2rem,352px)] overflow-hidden">
-          <Picker
-            data={async () => (await import('@emoji-mart/data')).default}
-            onEmojiSelect={(emoji: { native: string }) => {
-              onEmojiSelect(emoji.native);
-              onOpenChange(false);
-            }}
-            theme="auto"
-            previewPosition="none"
-            skinTonePosition="search"
-            locale={pickerLocale}
-          />
-        </div>
+        {mounted && (
+          <div className="max-h-[min(420px,70vh)] w-[min(100vw-2rem,352px)] min-h-[230px] overflow-hidden">
+            <Picker
+              data={data}
+              onEmojiSelect={(emoji: { native: string }) => {
+                onEmojiSelect(emoji.native);
+                onOpenChange(false);
+              }}
+              theme={pickerTheme}
+              previewPosition="none"
+              skinTonePosition="search"
+              locale={pickerLocale}
+            />
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );

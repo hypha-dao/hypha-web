@@ -181,7 +181,7 @@ export function HumanChatPanelChatBar({
   const handleMention = () => {};
 
   const iconButtonClass =
-    'flex min-h-11 min-w-11 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors';
+    'flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors';
 
   return (
     <div className="flex w-full min-w-0 flex-shrink-0 flex-col border-t border-border bg-background-2 p-3">
@@ -332,7 +332,7 @@ export function HumanChatPanelChatBar({
               onClick={onSend}
               disabled={!canSend}
               className={cn(
-                'flex min-h-11 min-w-11 items-center justify-center rounded transition-colors',
+                'flex h-7 w-7 items-center justify-center rounded transition-colors',
                 canSend
                   ? 'text-primary hover:bg-primary/10'
                   : 'cursor-not-allowed text-muted-foreground/50',

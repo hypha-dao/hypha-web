@@ -259,7 +259,7 @@ export function HumanChatPanelMessageBubble({
       </div>
 
       {/* Hover / focus-within action bar */}
-      <div className="absolute right-2 top-0 -translate-y-1/2 flex items-center gap-0.5 rounded-md border border-border bg-background-2 px-1 py-0.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity shadow-sm">
+      <div className="absolute right-2 top-0 -translate-y-1/2 flex h-7 items-center gap-0.5 rounded-md border border-border bg-background-2 px-0.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity shadow-sm">
         <HumanChatPanelEmojiPicker
           open={reactPickerOpen}
           onOpenChange={setReactPickerOpen}
@@ -271,7 +271,7 @@ export function HumanChatPanelMessageBubble({
         >
           <button
             type="button"
-            className="flex min-h-8 min-w-8 items-center justify-center rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors disabled:pointer-events-none disabled:opacity-40"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors disabled:pointer-events-none disabled:opacity-40"
             aria-label={t('reactButton')}
             disabled={!canReact}
             aria-disabled={!canReact}
@@ -282,7 +282,7 @@ export function HumanChatPanelMessageBubble({
         </HumanChatPanelEmojiPicker>
         <button
           type="button"
-          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors disabled:pointer-events-none disabled:opacity-40"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors disabled:pointer-events-none disabled:opacity-40"
           aria-label={t('replyButton')}
           disabled={!canReply}
           aria-disabled={!canReply}
@@ -292,7 +292,7 @@ export function HumanChatPanelMessageBubble({
         </button>
         <button
           type="button"
-          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           aria-label={t('moreButton')}
           disabled
           aria-disabled
