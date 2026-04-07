@@ -85,7 +85,7 @@ function buildSystemPrompt(spaceSlug?: string | null): string {
   if (spaceSlug) {
     const safe = sanitizeSlug(spaceSlug);
     if (!safe) return BASE_SYSTEM_PROMPT;
-    return `${BASE_SYSTEM_PROMPT}\n\nThe user is currently viewing the space with slug "${safe}". Use the get_space_by_slug tool for high-level space metadata and aggregate counts (title, member counts, subspaces). For who belongs to this space — people members, join times from the membership table, or other spaces listed as on-chain members (not child spaces in the hierarchy) — use the get_people_by_space_slug tool with space_slug "${safe}".`;
+    return `${BASE_SYSTEM_PROMPT}\n\nThe user is currently viewing the space with slug "${safe}". Use the get_space_by_slug tool for high-level space metadata and aggregate counts (title, member counts, subspaces). For who belongs to this space — people members, join times (from memberships when present, else from joinSpace events in the tool response, matching the Members tab), or other spaces listed as on-chain members (not child spaces in the hierarchy) — use the get_people_by_space_slug tool with space_slug "${safe}".`;
   }
   return BASE_SYSTEM_PROMPT;
 }
@@ -137,7 +137,7 @@ function createGetPeopleBySpaceSlugTool(req: Request) {
 
   return {
     description:
-      'Read-only: lists members of a Hypha space by slug — people and other spaces that appear as on-chain members (Members tab parity). Includes full memberships fields for people when stored in the database. Use for roster, who belongs, which other spaces are in the member list, and join times (DB-backed). Not for listing child subspaces by parent_id.',
+      'Read-only: lists members of a Hypha space by slug — people and other spaces that appear as on-chain members (Members tab parity). Join times use memberships when present, else joinSpace events (joined_at and join_source in the result). Includes full memberships fields for people when stored in the database. Use for roster, who belongs, which other spaces are in the member list, and when someone joined. Not for listing child subspaces by parent_id.',
     inputSchema,
     execute: async (args: z.infer<typeof inputSchema>) => {
       const safe = sanitizeSlug(args.space_slug);
