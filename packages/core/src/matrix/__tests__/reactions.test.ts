@@ -8,6 +8,15 @@ describe('isValidReactionKey', () => {
     expect(isValidReactionKey('😄')).toBe(true);
   });
 
+  it('accepts flag emoji (regional indicator pair)', () => {
+    expect(isValidReactionKey('🇩🇪')).toBe(true);
+  });
+
+  it('rejects bare variation selector and ZWJ', () => {
+    expect(isValidReactionKey('\uFE0F')).toBe(false);
+    expect(isValidReactionKey('\u200D')).toBe(false);
+  });
+
   it('rejects empty and non-emoji text', () => {
     expect(isValidReactionKey('')).toBe(false);
     expect(isValidReactionKey('hello')).toBe(false);

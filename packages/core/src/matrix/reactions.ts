@@ -7,16 +7,36 @@ import { EventType, RelationType } from 'matrix-js-sdk';
 
 import type { Message, MessageReaction } from './types';
 
-/**
- * Matrix reaction keys are emoji strings; reject plain text / overly long payloads before send.
- */
-export function isValidReactionKey(key: string): boolean {
-  if (!key || key.length > 32) return false;
-  for (const ch of key) {
+const FLAG_PAIR_RE = /^\p{Regional_Indicator}{2}$/u;
+/** One emoji grapheme: pictographic sequences (ZWJ, VS16) or a flag pair. */
+const EMOJI_GRAPHEME_RE =
+  /^(\p{Extended_Pictographic}\uFE0F?(?:\u200D\p{Extended_Pictographic}\uFE0F?)*)$/u;
+
+function isSingleEmojiGrapheme(g: string): boolean {
+  if (!g) return false;
+  for (const ch of g) {
     const cp = ch.codePointAt(0)!;
     if (cp < 33 || cp === 127) return false;
   }
-  return /[\p{Extended_Pictographic}\uFE0F\u200D]/u.test(key);
+  return FLAG_PAIR_RE.test(g) || EMOJI_GRAPHEME_RE.test(g);
+}
+
+/**
+ * Matrix reaction keys are emoji strings; reject plain text / overly long payloads before send.
+ * Validates one Unicode grapheme cluster (flags, ZWJ sequences) — not bare VS16/ZWJ.
+ */
+export function isValidReactionKey(key: string): boolean {
+  if (!key || key.length > 32) return false;
+  if (typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function') {
+    const segs = [
+      ...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(
+        key,
+      ),
+    ].map((s) => s.segment);
+    if (segs.length !== 1) return false;
+    return isSingleEmojiGrapheme(segs[0]!);
+  }
+  return isSingleEmojiGrapheme(key);
 }
 
 /**
