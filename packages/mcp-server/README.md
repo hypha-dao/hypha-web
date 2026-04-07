@@ -12,7 +12,9 @@ Without a token, **non-public** spaces return an access error. Public spaces sti
 
 ## TypeScript
 
-`tsconfig.json` extends the shared Next.js preset so `tsc --noEmit` matches other packages. Switching this package alone to **`moduleResolution: NodeNext`** would make TypeScript follow `@hypha-platform/core/server` into `packages/core` with extension rules that the core sources do not satisfy, so the preset stays as-is until core adopts Node16/NodeNext-compatible imports.
+`tsconfig.json` extends the shared Next.js preset so `tsc --noEmit` matches other packages and stays consistent with how workspace packages resolve `@hypha-platform/core`.
+
+**Why not `module: NodeNext` / `moduleResolution: NodeNext` here?** For a standalone Node ESM binary, that would align `tsc` import rules with `node --import tsx`. In this monorepo, turning that on for `mcp-server` alone makes TypeScript resolve `@hypha-platform/core/server` into `packages/core` with Node16/NodeNext extension rules that those sources do not satisfy today, so `tsc` fails while `tsx` still runs. We keep the Next preset until core exports are NodeNext-friendly (or this package stops depending on core via path mapping in a way that triggers those rules).
 
 For stdio scripts that use `process` globals, ensure the compiler includes Node typings (e.g. `"types": ["node"]` in `compilerOptions`, or rely on a preset that already pulls them in).
 
