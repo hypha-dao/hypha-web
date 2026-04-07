@@ -10,6 +10,9 @@ export function getDhoSpaceSlugFromPathname(
   pathname: string | null | undefined,
 ): string | undefined {
   if (!pathname) return undefined;
-  const match = pathname.match(/\/dho\/([^/]+)/);
-  return match?.[1];
+  // App routes are `/[lang]/dho/[id]/…`; avoid matching a stray `/…/dho/…` segment.
+  const withLocale = pathname.match(/^\/[^/]+\/dho\/([^/]+)/);
+  if (withLocale) return withLocale[1];
+  const root = pathname.match(/^\/dho\/([^/]+)/);
+  return root?.[1];
 }
