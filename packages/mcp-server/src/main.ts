@@ -6,7 +6,6 @@ import {
   findSpaceBySlug,
   getSpaceMembersRoster,
   serializeSpaceMembersRosterDatesForJson,
-  type SpaceMemberRosterEntry,
 } from '@hypha-platform/core/server';
 import {
   getPeopleBySpaceSlugInputSchema,
@@ -94,14 +93,10 @@ server.registerTool(
     }
 
     const peopleCount = structured.found
-      ? structured.members.filter(
-          (m: SpaceMemberRosterEntry) => m.member_kind === 'person',
-        ).length
+      ? structured.members.filter((m) => m.member_kind === 'person').length
       : 0;
     const spaceCount = structured.found
-      ? structured.members.filter(
-          (m: SpaceMemberRosterEntry) => m.member_kind === 'space',
-        ).length
+      ? structured.members.filter((m) => m.member_kind === 'space').length
       : 0;
 
     const summary = structured.found
@@ -121,6 +116,15 @@ server.registerTool(
     };
   },
 );
+
+process.on('unhandledRejection', (reason: unknown) => {
+  console.error('[hypha-mcp] Unhandled rejection:', reason);
+  process.exit(1);
+});
+process.on('uncaughtException', (err: unknown) => {
+  console.error('[hypha-mcp] Uncaught exception:', err);
+  process.exit(1);
+});
 
 const transport = new StdioServerTransport();
 server.connect(transport).catch((err: unknown) => {
