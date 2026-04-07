@@ -49,6 +49,91 @@ type HumanChatPanelMessageBubbleProps = {
 
 const MAX_VISIBLE_REACTIONS = 12;
 
+/** Discord-style jumbo emoji: cap so huge sticker-style spam stays readable. */
+const MAX_JUMBO_EMOJI_COUNT = 27;
+
+/**
+ * Split a string into user-perceived grapheme clusters (ZWJ sequences stay together).
+ */
+function splitGraphemeClusters(s: string): string[] {
+  if (typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function') {
+    return Array.from(
+      new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(s),
+      ({ segment }) => segment,
+    );
+  }
+  const out: string[] = [];
+  const re =
+    /\p{Extended_Pictographic}\uFE0F?(?:\u200D\p{Extended_Pictographic}\uFE0F?)*/gu;
+  let i = 0;
+  while (i < s.length) {
+    re.lastIndex = i;
+    const m = re.exec(s);
+    if (m && m.index === i) {
+      out.push(m[0]);
+      i = re.lastIndex;
+      continue;
+    }
+    const cp = s.codePointAt(i)!;
+    const w = cp > 0xffff ? 2 : 1;
+    out.push(s.slice(i, i + w));
+    i += w;
+  }
+  return out;
+}
+
+const EMOJI_GRAPHEME_RE =
+  /^(\p{Extended_Pictographic}\uFE0F?(?:\u200D\p{Extended_Pictographic}\uFE0F?)*)$/u;
+
+/** e.g. 🇺🇸 — not matched by Extended_Pictographic alone */
+const FLAG_CLUSTER_RE = /^\p{Regional_Indicator}{2}$/u;
+
+function isEmojiGrapheme(g: string): boolean {
+  const t = g.trim();
+  if (!t) return false;
+  return EMOJI_GRAPHEME_RE.test(t) || FLAG_CLUSTER_RE.test(t);
+}
+
+/**
+ * When the body is only emoji (optional whitespace), render large “jumboji” like Discord.
+ * Disabled for rich replies and @mentions so context stays readable.
+ */
+function getEmojiOnlyJumboLayout(
+  raw: string,
+  hasReply: boolean,
+):
+  | { mode: 'normal' }
+  | { mode: 'jumbo'; graphemes: string[]; sizeClass: string } {
+  const trimmed = raw.trim();
+  if (!trimmed || hasReply || /@\S/.test(trimmed)) {
+    return { mode: 'normal' };
+  }
+  const condensed = trimmed.replace(/\s+/g, '');
+  if (!condensed) {
+    return { mode: 'normal' };
+  }
+  const graphemes = splitGraphemeClusters(condensed).filter(
+    (g) => g.trim().length > 0,
+  );
+  if (graphemes.length === 0 || graphemes.length > MAX_JUMBO_EMOJI_COUNT) {
+    return { mode: 'normal' };
+  }
+  if (!graphemes.every(isEmojiGrapheme)) {
+    return { mode: 'normal' };
+  }
+
+  let sizeClass: string;
+  if (graphemes.length === 1) {
+    sizeClass = 'text-5xl leading-none gap-2';
+  } else if (graphemes.length <= 5) {
+    sizeClass = 'text-4xl leading-none gap-1';
+  } else {
+    sizeClass = 'text-3xl leading-none gap-1';
+  }
+
+  return { mode: 'jumbo', graphemes, sizeClass };
+}
+
 /**
  * Discord-style relative timestamp: browser locale + user's timezone (default).
  * Today: time only; yesterday: label + time; older: localized date + time.
@@ -155,13 +240,16 @@ export function HumanChatPanelMessageBubble({
       (p): p is { type: 'text'; text: string } => p.type === 'text',
     ) ?? [];
   const textContent = textParts.map((p) => p.text).join('');
+  const replyTo = message.replyTo;
+  const jumboLayout = textContent
+    ? getEmojiOnlyJumboLayout(textContent, Boolean(replyTo))
+    : { mode: 'normal' as const };
 
   const senderName = message.senderName ?? t('you');
   const timestamp = message.timestamp
     ? formatTimestamp(message.timestamp, t)
     : undefined;
   const reactions = message.reactions ?? [];
-  const replyTo = message.replyTo;
   const canReply = Boolean(onReply);
   const canReact = Boolean(onReact);
   const visibleReactions = reactions.slice(0, MAX_VISIBLE_REACTIONS);
@@ -221,15 +309,31 @@ export function HumanChatPanelMessageBubble({
           </div>
         )}
 
-        {/* Message text */}
-        {textContent && (
-          <p
-            data-testid="chat-message-body"
-            className="mt-0.5 text-sm leading-relaxed text-foreground"
-          >
-            {renderTextWithMentions(textContent)}
-          </p>
-        )}
+        {/* Message text — Discord-style jumboji when body is emoji-only */}
+        {textContent &&
+          (jumboLayout.mode === 'jumbo' ? (
+            <p
+              data-testid="chat-message-body"
+              className={cn(
+                'mt-0.5 flex flex-wrap items-end text-foreground',
+                jumboLayout.sizeClass,
+              )}
+              aria-label={textContent.trim()}
+            >
+              {jumboLayout.graphemes.map((g, i) => (
+                <span key={`${g}-${i}`} aria-hidden>
+                  {g}
+                </span>
+              ))}
+            </p>
+          ) : (
+            <p
+              data-testid="chat-message-body"
+              className="mt-0.5 text-sm leading-relaxed text-foreground"
+            >
+              {renderTextWithMentions(textContent)}
+            </p>
+          ))}
 
         {/* Streaming indicator */}
         {isStreaming && (
