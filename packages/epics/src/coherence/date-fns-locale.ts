@@ -17,7 +17,7 @@ const DATE_FNS_LOCALES: Record<string, DateFnsLocale> = {
 };
 
 export const resolveDateFnsLocale = (locale: string): DateFnsLocale => {
-  const normalized = locale.toLowerCase().replace('_', '-');
+  const normalized = locale.toLowerCase().replaceAll('_', '-');
   const baseLocale = normalized.split('-')[0] ?? 'en';
 
   return DATE_FNS_LOCALES[normalized] ?? DATE_FNS_LOCALES[baseLocale] ?? enUS;
