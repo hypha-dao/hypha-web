@@ -85,7 +85,7 @@ function buildSystemPrompt(spaceSlug?: string | null): string {
   if (spaceSlug) {
     const safe = sanitizeSlug(spaceSlug);
     if (!safe) return BASE_SYSTEM_PROMPT;
-    return `${BASE_SYSTEM_PROMPT}\n\nThe user is currently viewing the space with slug "${safe}". Use the get_space_by_slug tool for high-level space metadata and aggregate counts (title, member counts, subspaces). For who belongs to this space — people members, join times (from memberships when present, else from joinSpace events in the tool response, matching the Members tab), or other spaces listed as on-chain members (not child spaces in the hierarchy) — use the get_people_by_space_slug tool with space_slug "${safe}".`;
+    return `${BASE_SYSTEM_PROMPT}\n\nThe user is currently viewing the space with slug "${safe}".\n\nTool choice:\n- get_space_by_slug: space profile and aggregate numbers only (title, description, member count, document count, subspace count). Use for "tell me about this space", stats, or overview — not for listing people.\n- get_people_by_space_slug: the full member roster (people and space-type members, join times, membership fields). Use for "who are the members", "list members", "member names", roster, or join dates — always with space_slug "${safe}".\n\nIf the user asks about members as people or a list, you must call get_people_by_space_slug, not get_space_by_slug.`;
   }
   return BASE_SYSTEM_PROMPT;
 }
@@ -202,7 +202,7 @@ function createGetPeopleBySpaceSlugTool(req: Request) {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- AI SDK tool() and Tool type trigger TS2589 (heap OOM) in CI
 const getSpaceBySlugTool: any = {
   description:
-    'Returns a single Hypha space and summary counts for members, documents, and subspaces. Use this when the user asks about a space, its members, agreements, or structure.',
+    'Returns one Hypha space record: title, description, and aggregate counts (member count, document count, subspace count). Use for overview or "tell me about this space". Do not use for listing who the members are, names, roster, or join dates — use get_people_by_space_slug for any question about the member list or individuals.',
   inputSchema: z.object({
     slug: z
       .string()
