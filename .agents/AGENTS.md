@@ -18,6 +18,7 @@ When the user has not specified a role, select the best-matching one based on th
 | **Senior Application Security Engineer** | [roles/senior-application-security-engineer.base.md](roles/senior-application-security-engineer.base.md) | Application security, OWASP Top 10, threat modeling, secure code review, XSS, CSRF, SSRF, injection, auth bypass, CSP, CORS, security headers, dependency audit, supply chain security, secrets management, penetration testing, ASVS |
 | **Senior User Researcher** | [roles/senior-user-researcher.base.md](roles/senior-user-researcher.base.md) | User research, usability testing, user interviews, personas, journey maps, survey design, heuristic evaluation, JTBD, card sorting, accessibility research, DAO/Web3 UX, research synthesis |
 | **Elite Senior Lead Cursor Engineer** | [roles/elite-senior-lead-cursor-engineer.base.md](roles/elite-senior-lead-cursor-engineer.base.md) | Cursor IDE, rules, skills, agent roles, MCP, plugins, CLI, AGENTS.md, RULE.md, SKILL.md, Cursor configuration, AI-assisted development |
+| **Expert MCP Engineer** | [roles/expert-mcp-engineer.base.md](roles/expert-mcp-engineer.base.md) | Model Context Protocol, MCP servers, tools/resources/prompts, `mcp.json`, MCP transports, MCP debugging, MCP security, Cursor MCP integration |
 
 ## How to activate
 
