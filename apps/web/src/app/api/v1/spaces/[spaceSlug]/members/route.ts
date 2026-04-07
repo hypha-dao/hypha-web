@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  findPersonByAddresses,
   findSpaceBySlug,
-  findSpaceByAddresses,
+  getSpaceMembersForHttpApi,
 } from '@hypha-platform/core/server';
-import { getSpaceDetails } from '@hypha-platform/core/client';
-import { publicClient } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { checkSpaceAccess } from '@web/utils/check-space-access';
@@ -33,21 +30,44 @@ export async function GET(
       }
     }
 
-    let spaceDetails;
+    const url = new URL(request.url);
+    const pageRaw = url.searchParams.get('page');
+    const pageSizeRaw = url.searchParams.get('pageSize');
+    const searchTerm = url.searchParams.get('searchTerm') || undefined;
+
+    const page = pageRaw != null ? Number.parseInt(pageRaw, 10) : 1;
+    const pageSize =
+      pageSizeRaw != null ? Number.parseInt(pageSizeRaw, 10) : 10;
+
+    const hasValidPagination =
+      Number.isInteger(page) &&
+      page > 0 &&
+      Number.isInteger(pageSize) &&
+      pageSize > 0;
+
+    let roster;
     try {
-      spaceDetails = canConvertToBigInt(space.web3SpaceId)
-        ? await publicClient.readContract(
-            getSpaceDetails({ spaceId: BigInt(space.web3SpaceId as number) }),
-          )
-        : [];
-    } catch (err: any) {
-      const errorMessage =
-        err?.message || err?.shortMessage || JSON.stringify(err);
-      if (errorMessage.includes('rate limit') || errorMessage.includes('429')) {
-        console.warn(
-          'Rate limit exceeded when calling readContract:',
-          errorMessage,
-        );
+      roster = await getSpaceMembersForHttpApi(
+        {
+          spaceSlug,
+          page: hasValidPagination ? page : 1,
+          pageSize: hasValidPagination ? pageSize : 10,
+          searchTerm,
+        },
+        { db },
+      );
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : err &&
+            typeof err === 'object' &&
+            'shortMessage' in err &&
+            typeof (err as { shortMessage?: unknown }).shortMessage === 'string'
+          ? (err as { shortMessage: string }).shortMessage
+          : String(err);
+      if (msg.includes('rate limit') || msg.includes('429')) {
+        console.warn('Rate limit exceeded when calling readContract:', msg);
         return NextResponse.json(
           {
             error: 'External API rate limit exceeded. Please try again later.',
@@ -55,48 +75,16 @@ export async function GET(
           { status: 503 },
         );
       }
-
-      console.error('Error while calling readContract:', err);
-      return NextResponse.json(
-        { error: 'Failed to fetch contract data.' },
-        { status: 500 },
-      );
+      throw err;
     }
 
-    const [, , , , members = []] = spaceDetails;
-
-    const url = new URL(request.url);
-    const pageRaw = url.searchParams.get('page');
-    const pageSizeRaw = url.searchParams.get('pageSize');
-    const searchTerm = url.searchParams.get('searchTerm') || undefined;
-
-    const page = pageRaw != null ? Number.parseInt(pageRaw, 10) : undefined;
-    const pageSize =
-      pageSizeRaw != null ? Number.parseInt(pageSizeRaw, 10) : undefined;
-    const hasValidPagination =
-      Number.isInteger(page) &&
-      page! > 0 &&
-      Number.isInteger(pageSize) &&
-      pageSize! > 0;
-    const paginationOptions = hasValidPagination
-      ? { pagination: { page: page!, pageSize: pageSize! } }
-      : {};
-
-    const persons = await findPersonByAddresses(
-      members as `0x${string}`[],
-      { ...paginationOptions, searchTerm },
-      { db },
-    );
-
-    const spaces = await findSpaceByAddresses(
-      members as `0x${string}`[],
-      { ...paginationOptions, searchTerm },
-      { db },
-    );
+    if (!roster.found) {
+      return NextResponse.json({ error: 'Space not found' }, { status: 404 });
+    }
 
     return NextResponse.json({
-      persons,
-      spaces,
+      persons: roster.persons,
+      spaces: roster.spaces,
     });
   } catch (error) {
     console.error('Failed to fetch members:', error);

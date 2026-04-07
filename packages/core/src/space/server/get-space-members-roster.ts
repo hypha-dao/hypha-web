@@ -125,7 +125,19 @@ export async function computeSpaceMemberEntries(
   try {
     memberAddresses = await fetchOnChainMemberAddresses(host);
     source_chain = 'rpc';
-  } catch {
+  } catch (err) {
+    const msg =
+      err instanceof Error
+        ? err.message
+        : err &&
+          typeof err === 'object' &&
+          'shortMessage' in err &&
+          typeof (err as { shortMessage?: unknown }).shortMessage === 'string'
+        ? (err as { shortMessage: string }).shortMessage
+        : String(err);
+    if (msg.includes('rate limit') || msg.includes('429')) {
+      throw err;
+    }
     memberAddresses = [];
     source_chain = null;
   }
