@@ -20,27 +20,6 @@ export type MarkupNode =
   | { type: 'linebreak' }
   | { type: 'blockquote'; children: MarkupNode[] };
 
-/**
- * Plain text for timeline when we stored Matrix custom HTML (Element-compatible).
- */
-export function stripHtmlToPlain(html: string): string {
-  const normalized = html
-    .replace(/\r\n/g, '\n')
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/(p|div|blockquote|tr)>/gi, '\n')
-    .replace(/<\/(li)>/gi, '\n');
-  const stripped = normalized.replace(/<[^>]+>/g, '');
-  return stripped
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-}
-
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, '&amp;')

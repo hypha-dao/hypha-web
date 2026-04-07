@@ -16,18 +16,16 @@ export type SimpleHtmlNode =
 
 /**
  * Minimal HTML → nodes for safe React rendering (subset from Matrix formatted_body).
+ * Parses via DOMParser (no regex tag stripping); drops script/style; unknown tags → children or text only.
  */
 export function parseSimpleMatrixHtml(html: string): SimpleHtmlNode[] {
   const normalized = html.replace(/\r\n/g, '\n').trim();
   if (!normalized) return [];
 
-  const doc = new DOMParser().parseFromString(
-    `<div id="hypha-chat-html-root">${normalized}</div>`,
-    'text/html',
-  );
-  const root = doc.getElementById('hypha-chat-html-root');
-  if (!root) {
-    return [{ type: 'text', value: normalized.replace(/<[^>]+>/g, '') }];
+  const doc = new DOMParser().parseFromString(normalized, 'text/html');
+  const body = doc.body;
+  if (!body) {
+    return [];
   }
 
   const walk = (node: Node): SimpleHtmlNode[] => {
@@ -40,6 +38,9 @@ export function parseSimpleMatrixHtml(html: string): SimpleHtmlNode[] {
     }
     const el = node as HTMLElement;
     const tag = el.tagName.toLowerCase();
+    if (tag === 'script' || tag === 'style') {
+      return [];
+    }
     if (tag === 'br') {
       return [{ type: 'linebreak' }];
     }
@@ -77,7 +78,7 @@ export function parseSimpleMatrixHtml(html: string): SimpleHtmlNode[] {
     }
   };
 
-  return Array.from(root.childNodes).flatMap(walk);
+  return Array.from(body.childNodes).flatMap(walk);
 }
 
 function SpoilerSpan({ children }: { children: React.ReactNode }) {
