@@ -9,6 +9,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../people/components/person-avatar';
 
 import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
+import { ChatMessageRichText } from './parse-simple-matrix-html';
 
 type Reaction = {
   emoji: string;
@@ -33,6 +34,8 @@ type HumanChatPanelMessageBubbleProps = {
     avatarUrl?: string;
     timestamp?: Date;
     reactions?: Reaction[];
+    /** Matrix formatted_body (subset) for rich display */
+    formattedContentHtml?: string;
     /** Rich reply: quoted context above the new text */
     replyTo?: {
       authorLabel: string;
@@ -316,9 +319,16 @@ export function HumanChatPanelMessageBubble({
           </div>
         )}
 
-        {/* Message text — Discord-style jumboji when body is emoji-only */}
+        {/* Message text — Matrix HTML, or Discord-style jumboji, or plain + mentions */}
         {textContent &&
-          (jumboLayout.mode === 'jumbo' ? (
+          (message.formattedContentHtml ? (
+            <p
+              data-testid="chat-message-body"
+              className="mt-0.5 text-sm leading-relaxed text-foreground"
+            >
+              <ChatMessageRichText html={message.formattedContentHtml} />
+            </p>
+          ) : jumboLayout.mode === 'jumbo' ? (
             <p
               data-testid="chat-message-body"
               className={cn(

@@ -44,6 +44,8 @@ type UIMessage = {
   avatarUrl?: string;
   /** Matrix event time (origin_server_ts), for header timestamp */
   timestamp?: Date;
+  /** Matrix custom HTML for visible body (when sent with formatting). */
+  formattedContentHtml?: string;
   /** MXID of the message author (for reply target resolution). */
   senderMatrixId?: string;
   reactions?: Array<{
@@ -125,6 +127,7 @@ function toUIMessage(
     role: isCurrentUser ? 'user' : 'member',
     isSynthetic: false,
     parts: [{ type: 'text', text: msg.content }],
+    formattedContentHtml: msg.formattedContentHtml,
     senderName: isCurrentUser ? undefined : resolveMemberLabel(msg.sender),
     senderMatrixId: msg.sender,
     avatarUrl: isCurrentUser ? currentUserAvatarUrl : undefined,

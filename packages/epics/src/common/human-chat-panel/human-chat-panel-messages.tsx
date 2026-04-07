@@ -16,6 +16,7 @@ type UIMessage = {
   senderName?: string;
   avatarUrl?: string;
   timestamp?: Date;
+  formattedContentHtml?: string;
   reactions?: Array<{
     emoji: string;
     count: number;
