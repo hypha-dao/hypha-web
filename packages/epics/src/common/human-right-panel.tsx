@@ -229,7 +229,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         };
       }),
     );
-  }, [roomId, client, currentUserId, me?.name, me?.surname]);
+  }, [roomId, client, currentUserId, me?.name, me?.surname, t]);
 
   // Backfill avatar on self-authored messages after useMe() resolves
   useEffect(() => {
