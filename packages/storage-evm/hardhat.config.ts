@@ -24,7 +24,7 @@ const config: HardhatUserConfig = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 200,
+            runs: 1,
           },
           viaIR: true,
         },
@@ -32,6 +32,23 @@ const config: HardhatUserConfig = {
     ],
   },
   networks: {
+    hardhat: {
+      allowUnlimitedContractSize: true,
+      forking: {
+        url: process.env.RPC_URL || 'https://mainnet.base.org',
+        enabled: true,
+      },
+      chains: {
+        8453: {
+          hardforkHistory: {
+            london: 0,
+            merge: 0,
+            shanghai: 0,
+            cancun: 0,
+          },
+        },
+      },
+    },
     'base-mainnet': {
       url: process.env.RPC_URL || '',
       accounts:

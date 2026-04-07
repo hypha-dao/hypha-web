@@ -9,7 +9,7 @@ const config: HardhatUserConfig = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 200,
+        runs: 1,
       },
       viaIR: true,
     },
@@ -19,9 +19,10 @@ const config: HardhatUserConfig = {
   },
   networks: {
     hardhat: {
-      chainId: 31337, // it's the default chain id, doesn't need to add it.
+      chainId: 31337,
+      allowUnlimitedContractSize: true,
       accounts: {
-        count: 60, // Provide 60 accounts to be safe (test needs 52)
+        count: 60,
       },
     },
   },

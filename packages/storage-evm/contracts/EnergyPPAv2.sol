@@ -7,15 +7,14 @@ import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import './EnergyToken.sol';
-import './EnergySourceToken.sol';
 
 /// @title  EnergyPPAv2
 /// @notice On-chain per-source energy settlement for a community.
 ///
 ///         Each energy source (solar park, battery, etc.) has its own ERC-20
-///         ownership token (EnergySourceToken). Revenue from each source is
-///         split on-chain to that source's token holders — proportional to
-///         their token balance.
+///         ownership token (e.g. RegularSpaceToken proxy). Revenue from each
+///         source is split on-chain to that source's token holders —
+///         proportional to their token balance.
 ///
 ///         consumeEnergy() does everything in two phases:
 ///
@@ -25,7 +24,7 @@ import './EnergySourceToken.sol';
 ///
 ///         Phase 2 — Split revenue per source:
 ///           For each source: community fee → aggregator fee → remainder to
-///           that source's EnergySourceToken holders by balance proportion.
+///           that source's ownership-token holders by balance proportion.
 ///
 ///         The source registry stores a basePricePerKwh for each source as a
 ///         transparent reference (the agreed PPA price). The backend reads it,
@@ -55,7 +54,7 @@ contract EnergyPPAv2 is
 
   struct EnergySource {
     SourceType sourceType;
-    address ownershipToken; // EnergySourceToken address
+    address ownershipToken; // ERC-20 ownership token (e.g. RegularSpaceToken)
     uint256 basePricePerKwh; // agreed PPA base price (reference, not enforced)
     bool active;
   }
@@ -89,9 +88,9 @@ contract EnergyPPAv2 is
 
   // ── Balances ─────────────────────────────────────────────────────────
   EnergyToken internal energyToken;
-  mapping(address => int256) internal cashCreditBalances;
-  int256 internal importCashCreditBalance;
-  int256 internal exportCashCreditBalance;
+  mapping(address => int256) internal energyCreditBalances;
+  int256 internal importEnergyCreditBalance;
+  int256 internal exportEnergyCreditBalance;
   int256 internal settledBalance;
 
   // ── Fee Config ───────────────────────────────────────────────────────
@@ -150,6 +149,12 @@ contract EnergyPPAv2 is
     int256 previousBalance,
     int256 newBalance
   );
+  event CreditClaimed(
+    address indexed claimant,
+    uint256 stablecoinAmount,
+    int256 previousBalance,
+    int256 newBalance
+  );
   event WhitelistUpdated(address indexed account, bool isWhitelisted);
   event ExportDeviceIdSet(uint256 deviceId);
   event EmergencyReset();
@@ -195,7 +200,7 @@ contract EnergyPPAv2 is
   //  Source Registry
   // ════════════════════════════════════════════════════════════════════════
 
-  /// @notice Register a new energy source. Deploy an EnergySourceToken first,
+  /// @notice Register a new energy source. Deploy an ownership ERC-20 first
   ///         distribute tokens to investors, then register the source here.
   ///         The token's balance distribution determines revenue shares.
   ///         basePricePerKwh is the agreed PPA reference price — stored on-chain
@@ -268,7 +273,7 @@ contract EnergyPPAv2 is
         require(r.sourceId != IMPORT_SOURCE_ID, 'Cannot export import');
         uint256 revenue = r.quantity * r.pricePerKwh;
         _addSourceRevenue(srcRevenues, r.sourceId, revenue);
-        exportCashCreditBalance -= int256(revenue);
+        exportEnergyCreditBalance -= int256(revenue);
         emit EnergyExported(r.quantity, revenue, r.sourceId);
         continue;
       }
@@ -278,11 +283,11 @@ contract EnergyPPAv2 is
       require(members[consumer].isActive, 'Member not active');
 
       uint256 charge = r.quantity * r.pricePerKwh;
-      _adjustCashCreditBalance(consumer, -int256(charge));
+      _adjustEnergyCreditBalance(consumer, -int256(charge));
 
       // ── Grid import ──
       if (r.sourceId == IMPORT_SOURCE_ID) {
-        importCashCreditBalance += int256(charge);
+        importEnergyCreditBalance += int256(charge);
       }
       // ── Local source (solar, battery, etc.) ──
       else {
@@ -331,7 +336,7 @@ contract EnergyPPAv2 is
     // Community fee
     if (communityFeeBps > 0 && communityAddress != address(0)) {
       uint256 fee = (totalRevenue * communityFeeBps) / 10000;
-      _adjustCashCreditBalance(communityAddress, int256(fee));
+      _adjustEnergyCreditBalance(communityAddress, int256(fee));
       remaining -= fee;
       emit CommunityFeeCollected(communityAddress, fee, sourceId);
     }
@@ -339,7 +344,7 @@ contract EnergyPPAv2 is
     // Aggregator fee
     if (aggregatorFeeBps > 0 && aggregatorAddress != address(0)) {
       uint256 fee = (totalRevenue * aggregatorFeeBps) / 10000;
-      _adjustCashCreditBalance(aggregatorAddress, int256(fee));
+      _adjustEnergyCreditBalance(aggregatorAddress, int256(fee));
       remaining -= fee;
       emit AggregatorFeeCollected(aggregatorAddress, fee, sourceId);
     }
@@ -348,7 +353,7 @@ contract EnergyPPAv2 is
 
     // Read this source's ownership token
     address tokenAddr = sources[sourceId].ownershipToken;
-    EnergySourceToken token = EnergySourceToken(tokenAddr);
+    IERC20 token = IERC20(tokenAddr);
     uint256 totalSupply = token.totalSupply();
     if (totalSupply == 0) return;
 
@@ -377,7 +382,7 @@ contract EnergyPPAv2 is
       distributed += share;
 
       if (share > 0) {
-        _adjustCashCreditBalance(addr, int256(share));
+        _adjustEnergyCreditBalance(addr, int256(share));
         emit RevenueDistributed(addr, share, sourceId, totalRevenue);
       }
     }
@@ -388,7 +393,7 @@ contract EnergyPPAv2 is
   // ════════════════════════════════════════════════════════════════════════
 
   /// @notice Add a community member or investor.
-  ///         Ownership is NOT stored here — it lives in the EnergySourceTokens.
+  ///         Ownership is NOT stored here — it lives in the per-source ERC-20s.
   ///         Pass empty deviceIds for pure investors (no meter, just revenue).
   function addMember(
     address memberAddress,
@@ -437,7 +442,7 @@ contract EnergyPPAv2 is
     }
 
     delete members[memberAddress];
-    delete cashCreditBalances[memberAddress];
+    delete energyCreditBalances[memberAddress];
 
     uint256 tokenBal = energyToken.balanceOf(memberAddress);
     if (tokenBal > 0) energyToken.burn(memberAddress, tokenBal);
@@ -465,7 +470,7 @@ contract EnergyPPAv2 is
     require(stablecoinAmount > 0, 'Amount must be > 0');
     require(stablecoinAddress != address(0), 'No stablecoin configured');
 
-    int256 balance = _getCashCreditBalance(debtor);
+    int256 balance = _getEnergyCreditBalance(debtor);
     require(balance < 0, 'No debt');
 
     uint256 internalAmount = stablecoinAmount / 10000;
@@ -480,21 +485,65 @@ contract EnergyPPAv2 is
       coin.transferFrom(msg.sender, address(this), requiredStablecoin),
       'Stablecoin transfer failed'
     );
-    if (paymentRecipient != address(0)) {
-      require(
-        coin.transfer(paymentRecipient, requiredStablecoin),
-        'Forward failed'
-      );
-    }
 
     int256 prev = balance;
     int256 newBal = balance + int256(settle);
     if (newBal > 0) newBal = 0;
 
-    _setCashCreditBalance(debtor, newBal);
+    _setEnergyCreditBalance(debtor, newBal);
     settledBalance -= int256(settle);
 
     emit DebtSettled(msg.sender, debtor, requiredStablecoin, prev, newBal);
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  //  Credit Claiming
+  // ════════════════════════════════════════════════════════════════════════
+
+  /// @notice Withdraw a positive energy credit balance as stablecoins.
+  ///         The contract must hold enough stablecoin liquidity (funded by
+  ///         debt settlements). 1 internal unit = 10,000 stablecoin units.
+  function claimCredit(uint256 internalAmount) external nonReentrant {
+    _claim(msg.sender, internalAmount);
+  }
+
+  /// @notice Whitelisted caller can trigger a credit payout to any member.
+  function claimCreditFor(
+    address beneficiary,
+    uint256 internalAmount
+  ) external onlyWhitelist nonReentrant {
+    _claim(beneficiary, internalAmount);
+  }
+
+  function _claim(address beneficiary, uint256 internalAmount) internal {
+    require(beneficiary != address(0), 'Invalid address');
+    require(internalAmount > 0, 'Amount must be > 0');
+    require(stablecoinAddress != address(0), 'No stablecoin configured');
+
+    int256 balance = _getEnergyCreditBalance(beneficiary);
+    require(balance > 0, 'No credit');
+
+    uint256 available = uint256(balance);
+    uint256 claim = internalAmount > available ? available : internalAmount;
+    uint256 stablecoinAmount = claim * 10000;
+
+    IERC20 coin = IERC20(stablecoinAddress);
+    require(
+      coin.balanceOf(address(this)) >= stablecoinAmount,
+      'Insufficient contract liquidity'
+    );
+
+    int256 prev = balance;
+    int256 newBal = balance - int256(claim);
+    _setEnergyCreditBalance(beneficiary, newBal);
+    settledBalance += int256(claim);
+
+    require(
+      coin.transfer(beneficiary, stablecoinAmount),
+      'Stablecoin transfer failed'
+    );
+
+    emit CreditClaimed(beneficiary, stablecoinAmount, prev, newBal);
   }
 
   // ════════════════════════════════════════════════════════════════════════
@@ -548,16 +597,16 @@ contract EnergyPPAv2 is
 
   function emergencyReset() external onlyWhitelist {
     for (uint256 i = 0; i < memberAddresses.length; i++) {
-      _setCashCreditBalance(memberAddresses[i], 0);
+      _setEnergyCreditBalance(memberAddresses[i], 0);
     }
     if (communityAddress != address(0)) {
-      _setCashCreditBalance(communityAddress, 0);
+      _setEnergyCreditBalance(communityAddress, 0);
     }
     if (aggregatorAddress != address(0)) {
-      _setCashCreditBalance(aggregatorAddress, 0);
+      _setEnergyCreditBalance(aggregatorAddress, 0);
     }
-    importCashCreditBalance = 0;
-    exportCashCreditBalance = 0;
+    importEnergyCreditBalance = 0;
+    exportEnergyCreditBalance = 0;
     settledBalance = 0;
     emit EmergencyReset();
   }
@@ -566,49 +615,49 @@ contract EnergyPPAv2 is
   //  Internal: balance management (same dual representation as v1)
   // ════════════════════════════════════════════════════════════════════════
 
-  function _getCashCreditBalance(
+  function _getEnergyCreditBalance(
     address account
   ) internal view returns (int256) {
     uint256 tokenBal = energyToken.balanceOf(account);
-    return tokenBal > 0 ? int256(tokenBal) : cashCreditBalances[account];
+    return tokenBal > 0 ? int256(tokenBal) : energyCreditBalances[account];
   }
 
-  function _setCashCreditBalance(address account, int256 amount) internal {
+  function _setEnergyCreditBalance(address account, int256 amount) internal {
     uint256 current = energyToken.balanceOf(account);
     if (current > 0) energyToken.burn(account, current);
-    cashCreditBalances[account] = 0;
+    energyCreditBalances[account] = 0;
 
     if (amount > 0) {
       energyToken.transfer(account, uint256(amount));
     } else if (amount < 0) {
-      cashCreditBalances[account] = amount;
+      energyCreditBalances[account] = amount;
     }
   }
 
-  function _adjustCashCreditBalance(
+  function _adjustEnergyCreditBalance(
     address account,
     int256 adjustment
   ) internal {
-    _setCashCreditBalance(
+    _setEnergyCreditBalance(
       account,
-      _getCashCreditBalance(account) + adjustment
+      _getEnergyCreditBalance(account) + adjustment
     );
   }
 
   function _verifyZeroSum() internal view returns (bool, int256) {
     int256 total = 0;
     for (uint256 i = 0; i < memberAddresses.length; i++) {
-      total += _getCashCreditBalance(memberAddresses[i]);
+      total += _getEnergyCreditBalance(memberAddresses[i]);
     }
     if (communityAddress != address(0)) {
-      total += _getCashCreditBalance(communityAddress);
+      total += _getEnergyCreditBalance(communityAddress);
     }
     if (aggregatorAddress != address(0)) {
-      total += _getCashCreditBalance(aggregatorAddress);
+      total += _getEnergyCreditBalance(aggregatorAddress);
     }
     total +=
-      importCashCreditBalance +
-      exportCashCreditBalance +
+      importEnergyCreditBalance +
+      exportEnergyCreditBalance +
       settledBalance;
     return (total == 0, total);
   }
@@ -634,7 +683,7 @@ contract EnergyPPAv2 is
   ) external view returns (uint256) {
     address tokenAddr = sources[sourceId].ownershipToken;
     if (tokenAddr == address(0)) return 0;
-    return EnergySourceToken(tokenAddr).ownershipBpsOf(member);
+    return _ownershipBpsOf(tokenAddr, member);
   }
 
   /// @notice Bulk: for each source, return the member's ownership bps.
@@ -646,9 +695,20 @@ contract EnergyPPAv2 is
     for (uint256 i = 0; i < sourceIds.length; i++) {
       address tokenAddr = sources[sourceIds[i]].ownershipToken;
       if (tokenAddr != address(0) && sources[sourceIds[i]].active) {
-        bps[i] = EnergySourceToken(tokenAddr).ownershipBpsOf(member);
+        bps[i] = _ownershipBpsOf(tokenAddr, member);
       }
     }
+  }
+
+  /// @dev `balanceOf * 10000 / totalSupply` (same as legacy EnergySourceToken).
+  function _ownershipBpsOf(
+    address tokenAddr,
+    address account
+  ) internal view returns (uint256) {
+    IERC20 t = IERC20(tokenAddr);
+    uint256 supply = t.totalSupply();
+    if (supply == 0) return 0;
+    return (t.balanceOf(account) * 10000) / supply;
   }
 
   function getMember(
@@ -662,10 +722,10 @@ contract EnergyPPAv2 is
     return memberAddresses;
   }
 
-  function getCashCreditBalance(
+  function getEnergyCreditBalance(
     address account
   ) external view returns (int256) {
-    return _getCashCreditBalance(account);
+    return _getEnergyCreditBalance(account);
   }
 
   function getTokenBalance(
@@ -677,9 +737,22 @@ contract EnergyPPAv2 is
   function getDebtInStablecoin(
     address debtor
   ) external view returns (uint256) {
-    int256 bal = _getCashCreditBalance(debtor);
+    int256 bal = _getEnergyCreditBalance(debtor);
     if (bal >= 0) return 0;
     return uint256(-bal) * 10000;
+  }
+
+  function getCreditInStablecoin(
+    address account
+  ) external view returns (uint256) {
+    int256 bal = _getEnergyCreditBalance(account);
+    if (bal <= 0) return 0;
+    return uint256(bal) * 10000;
+  }
+
+  function getContractStablecoinBalance() external view returns (uint256) {
+    if (stablecoinAddress == address(0)) return 0;
+    return IERC20(stablecoinAddress).balanceOf(address(this));
   }
 
   function verifyZeroSum() external view returns (bool, int256) {
@@ -692,12 +765,12 @@ contract EnergyPPAv2 is
     return deviceToMember[deviceId];
   }
 
-  function getImportCashCreditBalance() external view returns (int256) {
-    return importCashCreditBalance;
+  function getImportEnergyCreditBalance() external view returns (int256) {
+    return importEnergyCreditBalance;
   }
 
-  function getExportCashCreditBalance() external view returns (int256) {
-    return exportCashCreditBalance;
+  function getExportEnergyCreditBalance() external view returns (int256) {
+    return exportEnergyCreditBalance;
   }
 
   function getSettledBalance() external view returns (int256) {

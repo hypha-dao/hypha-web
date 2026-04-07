@@ -18,9 +18,11 @@ interface IEscrowCreatorQuery {
  * @title OwnershipSpaceToken
  * @dev A space token that can only be transferred between space members and only by the executor
  * Special exceptions are made for escrow contract interactions
+ * Note: This contract has its own spacesContract that shadows the parent's constant
  */
 contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
-  address public spacesContract;
+  // Configurable spaces contract address (shadows parent's constant for membership checks)
+  address public ownershipSpacesContract;
 
   // Hardcoded escrow contract address
   address public constant escrowContract =
@@ -30,6 +32,10 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
    * @dev Emitted when a transfer is rejected due to membership requirements
    */
   event TransferRejected(address from, address to, string reason);
+  event OwnershipSpacesContractUpdated(
+    address indexed oldSpacesContract,
+    address indexed newSpacesContract
+  );
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
@@ -42,52 +48,85 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
     address _executor,
     uint256 _spaceId,
     uint256 _maxSupply,
-    address _spacesContract
+    address _spacesContract,
+    bool _fixedMaxSupply,
+    bool _autoMinting,
+    uint256 _tokenPrice,
+    address _priceCurrencyFeed,
+    bool _useTransferWhitelist,
+    bool _useReceiveWhitelist,
+    address[] memory _initialTransferWhitelist,
+    address[] memory _initialReceiveWhitelist,
+    uint256[] memory _initialTransferWhitelistSpaceIds,
+    uint256[] memory _initialReceiveWhitelistSpaceIds,
+    address _paymentToken,
+    uint256 _paymentTokenPricePerToken,
+    uint256 _tokensForSale,
+    uint8 _purchaseEligibilityMode,
+    uint256[] memory _initialPurchaseWhitelistSpaceIds
   ) public initializer {
+    require(
+      _spacesContract != address(0),
+      '!zero addr'
+    );
     RegularSpaceToken.initialize(
       name,
       symbol,
       _executor,
       _spaceId,
       _maxSupply,
-      true
+      true, // Ownership tokens are always transferable by executor
+      _fixedMaxSupply,
+      _autoMinting,
+      _tokenPrice,
+      _priceCurrencyFeed,
+      _useTransferWhitelist,
+      _useReceiveWhitelist,
+      _initialTransferWhitelist,
+      _initialReceiveWhitelist,
+      _initialTransferWhitelistSpaceIds,
+      _initialReceiveWhitelistSpaceIds,
+      0,
+      new uint256[](0),
+      _paymentToken,
+      _paymentTokenPricePerToken,
+      _tokensForSale,
+      _purchaseEligibilityMode,
+      _initialPurchaseWhitelistSpaceIds
     );
-    require(
-      _spacesContract != address(0),
-      'Spaces contract cannot be zero address'
-    );
-    spacesContract = _spacesContract;
+    ownershipSpacesContract = _spacesContract;
   }
 
   /**
-   * @dev Override transfer function to enforce space membership restrictions
-   * Allows space members to transfer to escrow contract only if the escrow was created by the space executor
-   * Only the executor can initiate other transfers between space members
+   * @dev Sets the spaces contract used for ownership membership checks.
+   * Allows recovering older upgraded proxies where this field was never initialized.
    */
-  function transfer(address to, uint256 amount) public override returns (bool) {
+  function setOwnershipSpacesContract(address _spacesContract) external virtual {
+    require(
+      msg.sender == executor || msg.sender == owner(),
+      '!executor/owner'
+    );
+    require(
+      _spacesContract != address(0),
+      '!zero addr'
+    );
+
+    address oldSpacesContract = ownershipSpacesContract;
+    ownershipSpacesContract = _spacesContract;
+    emit OwnershipSpacesContractUpdated(oldSpacesContract, _spacesContract);
+  }
+
+  function transfer(address to, uint256 amount) public virtual override returns (bool) {
     address sender = _msgSender();
-    if (sender == executor) {
-      if (balanceOf(sender) < amount) {
-        uint256 amountToMint = amount - balanceOf(sender);
-        mint(sender, amountToMint);
-      }
-    }
-    // If executor is transferring, mint to recipient instead
+    _validateTransferAccess(sender, to, sender);
+    _autoMintIfNeeded(sender, amount);
 
-    // Allow space members to transfer to escrow contract if it was created by the executor
     if (to == escrowContract && _isSpaceMember(sender)) {
-      // Get the escrow ID from the transfer context (this would need to be passed as a parameter in a real implementation)
-      // For now, we'll add a transferToEscrow function that takes the escrow ID as parameter
-      revert('Use transferToEscrow function for escrow transfers');
+      revert('use escrow fn');
     }
 
-    // Only executor can initiate other transfers
-    require(sender == executor, 'Only executor can transfer tokens');
-
-    // Check that recipient is a member of the space
-    require(_isSpaceMember(to), 'Can only transfer to space members');
-
-    // Execute the transfer using the parent implementation
+    require(sender == executor, '!executor');
+    require(_isSpaceMember(to), '!member');
     _transfer(sender, to, amount);
     return true;
   }
@@ -100,21 +139,22 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
     uint256 escrowId,
     uint256 amount
   ) external returns (bool) {
+    require(!archived, 'archived');
     require(
       _isSpaceMember(msg.sender),
-      'Only space members can transfer to escrow'
+      '!member'
     );
 
     IEscrowCreatorQuery escrowQuery = IEscrowCreatorQuery(escrowContract);
 
     // Check if escrow exists
-    require(escrowQuery.escrowExists(escrowId), 'Escrow does not exist');
+    require(escrowQuery.escrowExists(escrowId), '!escrow');
 
     // Check if escrow was created by the space executor
     address escrowCreator = escrowQuery.getEscrowCreator(escrowId);
     require(
       escrowCreator == executor,
-      'Escrow must be created by space executor'
+      '!escrow creator'
     );
 
     // Execute the transfer using the parent implementation
@@ -122,42 +162,28 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
     return true;
   }
 
-  /**
-   * @dev Override transferFrom function to enforce space membership restrictions
-   * Allows escrow contract to transfer to space members
-   * Only the executor can initiate other transfers between space members
-   */
   function transferFrom(
     address from,
     address to,
     uint256 amount
-  ) public override returns (bool) {
+  ) public virtual override returns (bool) {
     address spender = _msgSender();
-    if (from == executor) {
-      if (balanceOf(from) < amount) {
-        uint256 amountToMint = amount - balanceOf(from);
-        mint(from, amountToMint);
-      }
-    }
-    // Allow escrow contract to transfer to space members
+    _validateTransferAccess(from, to, spender);
+    _autoMintIfNeeded(from, amount);
+
     if (spender == escrowContract && _isSpaceMember(to)) {
       _transfer(from, to, amount);
       return true;
     }
 
     if (spender == transferHelper) {
-      require(_isSpaceMember(to), 'Can only transfer to space members');
+      require(_isSpaceMember(to), '!member');
       _transfer(from, to, amount);
       return true;
     }
 
-    // Only executor can initiate other transfers
-    require(spender == executor, 'Only executor can transfer tokens');
-
-    // Check that recipient is a member of the space
-    require(_isSpaceMember(to), 'Can only transfer to space members');
-
-    // Bypass allowance check when executor is transferring
+    require(spender == executor, '!executor');
+    require(_isSpaceMember(to), '!member');
     _transfer(from, to, amount);
     return true;
   }
@@ -166,18 +192,21 @@ contract OwnershipSpaceToken is Initializable, RegularSpaceToken {
    * @dev Check if an address is a member of the space
    */
   function _isSpaceMember(address account) internal view returns (bool) {
-    return IDAOSpaceFactory(spacesContract).isMember(spaceId, account);
+    // Backward compatibility:
+    // Some older proxies were upgraded without initializing ownershipSpacesContract.
+    // Fallback to the canonical parent spaces contract in that case.
+    address membershipSpacesContract = ownershipSpacesContract == address(0)
+      ? spacesContract
+      : ownershipSpacesContract;
+    return IDAOSpaceFactory(membershipSpacesContract).isMember(spaceId, account);
   }
 
-  /**
-   * @dev Override mint to ensure tokens can only be minted to space members or the executor
-   */
-  function mint(address to, uint256 amount) public override {
-    require(msg.sender == executor, 'Only executor can mint');
+  function mint(address to, uint256 amount) public virtual override {
+    require(msg.sender == executor, '!executor');
     require(
       _isSpaceMember(to) || to == executor,
-      'Can only mint to space members or executor'
+      '!member/executor'
     );
-    super.mint(to, amount);
+    _mintWithSupplyChecks(to, amount);
   }
 }

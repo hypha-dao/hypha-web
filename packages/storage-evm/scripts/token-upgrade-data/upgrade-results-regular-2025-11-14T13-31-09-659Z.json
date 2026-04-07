@@ -1,0 +1,43 @@
+{
+  "tokenType": "Regular",
+  "dryRun": false,
+  "timestamp": "2025-11-14T13:31:09.659Z",
+  "totalTime": "65.63",
+  "results": [
+    {
+      "tokenAddress": "0xDA8D32b5739cbf3bcaA4e2e2707f01e2A54aE107",
+      "success": false,
+      "oldImplementation": "0xF47129F5ffA4D1CE40C4E9C4fc08Cb6d071d8Cd6",
+      "newImplementation": null,
+      "error": "execution reverted"
+    },
+    {
+      "tokenAddress": "0xAe47243cfa71f4B95BCf6E2BB1D4F59599B963F0",
+      "success": true,
+      "oldImplementation": "0xb674B5ae66F7DDFA8c7239BC050f6aCF6B5aD818",
+      "newImplementation": "0x8b89e59b3e621cb7f806238C160b229025D229EC",
+      "error": null
+    },
+    {
+      "tokenAddress": "0xe1b6C04B8E2482eeFda484f9646669f8Ce05C7F6",
+      "success": false,
+      "oldImplementation": "0xF47129F5ffA4D1CE40C4E9C4fc08Cb6d071d8Cd6",
+      "newImplementation": null,
+      "error": "execution reverted"
+    },
+    {
+      "tokenAddress": "0x8010b9d8CB8a630f4380efC2eAB0caaeE681D3e0",
+      "success": false,
+      "oldImplementation": "0xF47129F5ffA4D1CE40C4E9C4fc08Cb6d071d8Cd6",
+      "newImplementation": null,
+      "error": "execution reverted"
+    },
+    {
+      "tokenAddress": "0xd8724e6609838a54F7e505679BF6818f1A3F2D40",
+      "success": true,
+      "oldImplementation": "0x9e17e1b07E1826cf7E22B36652a4c436435DDD11",
+      "newImplementation": "0x8b89e59b3e621cb7f806238C160b229025D229EC",
+      "error": null
+    }
+  ]
+}

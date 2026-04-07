@@ -75,9 +75,23 @@ contract DecayingTokenFactory is
    * @param symbol The token symbol
    * @param maxSupply The maximum token supply (0 for unlimited)
    * @param transferable Whether the token can be transferred
-   * @param isVotingToken Whether to register this as the space's voting token
+   * @param fixedMaxSupply If true, maxSupply cannot be changed later
+   * @param autoMinting If true, executor can auto-mint on transfer; if false, must mint separately
+   * @param tokenPrice Token price (6 decimals, e.g., 1_000_000 = 1.00)
+   * @param priceCurrencyFeed Chainlink X/USD feed for the currency (address(0) = USD)
+   * @param useTransferWhitelist If true, enforce transfer whitelist
+   * @param useReceiveWhitelist If true, enforce receive whitelist
+   * @param initialTransferWhitelist Initial addresses that can send tokens
+   * @param initialReceiveWhitelist Initial addresses that can receive tokens
+   * @param initialTransferWhitelistSpaceIds Space IDs whose members can initially send tokens
+   * @param initialReceiveWhitelistSpaceIds Space IDs whose members can initially receive tokens
    * @param decayPercentage The decay percentage in basis points (0-10000)
    * @param decayInterval The interval in seconds between decay periods
+   * @param paymentToken ERC20 payment token for token purchases (address(0) disables sale)
+   * @param paymentTokenPricePerToken Payment token amount per 1 token unit
+   * @param tokensForSale Max amount of tokens available for purchase
+   * @param purchaseEligibilityMode 0=issuer space only, 1=custom spaces, 2=all spaces
+   * @param initialPurchaseWhitelistSpaceIds Space IDs allowed when mode = custom spaces
    * @return The address of the deployed token
    */
   function deployDecayingToken(
@@ -86,10 +100,24 @@ contract DecayingTokenFactory is
     string memory symbol,
     uint256 maxSupply,
     bool transferable,
-    bool isVotingToken,
+    bool fixedMaxSupply,
+    bool autoMinting,
+    uint256 tokenPrice,
+    address priceCurrencyFeed,
+    bool useTransferWhitelist,
+    bool useReceiveWhitelist,
+    address[] memory initialTransferWhitelist,
+    address[] memory initialReceiveWhitelist,
+    uint256[] memory initialTransferWhitelistSpaceIds,
+    uint256[] memory initialReceiveWhitelistSpaceIds,
     uint256 decayPercentage,
-    uint256 decayInterval
-  ) public override returns (address) {
+    uint256 decayInterval,
+    address paymentToken,
+    uint256 paymentTokenPricePerToken,
+    uint256 tokensForSale,
+    uint8 purchaseEligibilityMode,
+    uint256[] memory initialPurchaseWhitelistSpaceIds
+  ) public returns (address) {
     require(spacesContract != address(0), 'Spaces contract not set');
     require(
       decayingTokenImplementation != address(0),
@@ -118,8 +146,23 @@ contract DecayingTokenFactory is
       spaceId,
       maxSupply,
       transferable,
+      fixedMaxSupply,
+      autoMinting,
+      tokenPrice,
+      priceCurrencyFeed,
+      useTransferWhitelist,
+      useReceiveWhitelist,
+      initialTransferWhitelist,
+      initialReceiveWhitelist,
+      initialTransferWhitelistSpaceIds,
+      initialReceiveWhitelistSpaceIds,
       decayPercentage,
-      decayInterval
+      decayInterval,
+      paymentToken,
+      paymentTokenPricePerToken,
+      tokensForSale,
+      purchaseEligibilityMode,
+      initialPurchaseWhitelistSpaceIds
     );
 
     address tokenAddress = address(

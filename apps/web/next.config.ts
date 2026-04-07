@@ -9,6 +9,8 @@ const LOCALES = routing.locales;
 const withNextIntl = createNextIntlPlugin('../../packages/i18n/src/request.ts');
 
 const nextConfig: NextConfig = {
+  // Avoid bundling matrix-js-sdk into multiple server chunks (uses Node's module cache).
+  serverExternalPackages: ['matrix-js-sdk'],
   webpack: (config) => {
     // Prevent matrix-js-sdk from being bundled via multiple entrypoints,
     // which causes the "Multiple matrix-js-sdk entrypoints detected!" error.

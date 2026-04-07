@@ -63,6 +63,40 @@ ENERGY VALUE FLOW — Investor
 
 Does not hold ESOT and has no ownership percentage. Receives no value allocation during distribution. After consuming energy, the value owed is purchased from the collective pool — first from any remaining owner allocations at production price, then from grid imports at import price (typically more expensive). Always ends with a negative balance (debt) that must be settled via EURC.
 
+### Mutual Credit (built into RegularSpaceToken)
+
+RegularSpaceToken includes an optional mutual credit feature that lets eligible members spend beyond their token balance, up to a shared credit limit.
+
+**How it works:**
+
+1. The executor sets a `defaultCreditLimit` and one or more "credit-whitelisted" space IDs.
+2. Any member of a credit-whitelisted space can transfer tokens even if their balance is insufficient. The shortfall is minted on the fly and tracked as the member's `creditBalance`.
+3. When a debtor receives tokens, the incoming amount automatically repays their outstanding credit debt (tokens are burned).
+4. `totalSupply` always equals the total outstanding credit across all members.
+
+**Enabling credit:**
+
+- **At deployment** — pass `defaultCreditLimit > 0` and the desired space IDs to `initialize` (or the factory's `deployToken`).
+- **After deployment** — call `enableCredit(_limit, spaceIds)` from the executor. This sets the limit and whitelists the spaces in one transaction.
+- **Disabled by default** — if `defaultCreditLimit` is 0 and no credit-whitelisted spaces exist, all credit hooks are no-ops and the token behaves like a normal ERC-20.
+
+**Key functions:**
+
+| Function | Description |
+|---|---|
+| `creditLimitOf(account)` | Returns `defaultCreditLimit` if the account is a member of any credit-whitelisted space, otherwise 0. |
+| `creditLimitLeftOf(account)` | How much credit the account can still use. |
+| `creditBalanceOf(account)` | Outstanding credit debt. |
+| `netBalanceOf(account)` | `balanceOf − creditBalance` (can be negative). |
+| `enableCredit(limit, spaceIds)` | Executor-only. Sets the default credit limit and adds space IDs to the credit whitelist. |
+| `setDefaultCreditLimit(limit)` | Executor-only. Update just the credit limit. |
+| `batchAddCreditWhitelistSpaces(ids)` | Executor-only. Add spaces to the credit whitelist. |
+| `batchRemoveCreditWhitelistSpaces(ids)` | Executor-only. Remove spaces from the credit whitelist. |
+
+**Note:** Credit mints are subject to the same `maxSupply` cap as executor mints.
+
+### Membership Management
+
 ```
 ENERGY VALUE FLOW — Internal Consumer (no ESOT)
 ─────────────────────────────────────────────────
@@ -97,6 +131,14 @@ ENERGY VALUE FLOW — Internal Consumer (no ESOT)
                                     │ with EURC         │
                                     └──────────────────┘
 ```
+
+### Token Backing Vault
+
+- `TokenBackingVaultImplementation.sol`: Fiat-referenced redemption vault for space tokens. Allows issuers to deposit backing tokens (oracle-priced or Hypha tokens) and lets holders redeem space tokens for proportional backing.
+  - **Redemption Price**: By default, redeemers receive backing based on the official token price (`tokenPrice()`). Issuers may set a separate **redemption price** either during vault creation (via the `redemptionPrice` and `redemptionPriceCurrencyFeed` parameters in `addBackingToken`) or later via `setRedemptionPrice(spaceId, spaceToken, price, currencyFeed)`. Useful for models like Berkshares where redemption occurs at a discount, or any other spread between official and redemption value. Pass `price = 0` to use the official token price (default).
+  - **Overcollateralization**: `minimumBackingBps` supports values up to 100,000 (10x), allowing issuers to enforce overcollateralization requirements.
+
+### Other Contracts
 
 ### 3. Member (holds ESOT and consumes)
 

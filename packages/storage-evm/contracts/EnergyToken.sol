@@ -6,7 +6,7 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 
 /**
  * @title EnergyToken
- * @dev ERC20 token representing positive cash credit balances in the energy distribution system
+ * @dev ERC20 token representing positive energy credit balances in the energy distribution system
  * Only the EnergyDistribution contract can mint and burn tokens
  */
 contract EnergyToken is ERC20, Ownable {
