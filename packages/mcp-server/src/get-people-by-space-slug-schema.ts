@@ -51,12 +51,31 @@ const rosterPersonSchema = z.object({
   person: personPublicSchema,
 });
 
+/** Serialized Space row in tool output (ISO date strings). */
+const spaceMemberSpaceSchema = z.object({
+  id: z.number(),
+  logoUrl: z.string().nullable().optional(),
+  leadImage: z.string().nullable().optional(),
+  title: z.string(),
+  description: z.string().nullable(),
+  slug: z.string(),
+  parentId: z.number().nullable().optional(),
+  web3SpaceId: z.number().nullable().optional(),
+  links: z.array(z.string()),
+  categories: z.array(z.string()),
+  address: z.string().nullable().optional(),
+  isArchived: z.boolean().optional(),
+  flags: z.array(z.string()),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
 const rosterSpaceSchema = z.object({
   member_kind: z.literal('space'),
   membership: z.null(),
   join_source: z.enum(['event', 'unknown']),
   joined_at: z.string().nullable(),
-  space: z.record(z.unknown()),
+  space: spaceMemberSpaceSchema,
 });
 
 /** Structured tool payload (validated after JSON serialization of dates). */
