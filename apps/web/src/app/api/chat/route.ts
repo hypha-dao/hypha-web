@@ -159,12 +159,14 @@ function createGetPeopleBySpaceSlugTool(req: Request) {
             new NextRequest(req.url, { headers: req.headers }),
             host.web3SpaceId as number,
           );
-          if (!access.hasAccess && access.response) {
+          if (!access.hasAccess) {
             let message = 'Access denied';
             try {
-              const body = await access.response.json();
-              if (body && typeof body.message === 'string') {
-                message = body.message;
+              if (access.response) {
+                const body = await access.response.json();
+                if (body && typeof body.message === 'string') {
+                  message = body.message;
+                }
               }
             } catch {
               /* ignore */
