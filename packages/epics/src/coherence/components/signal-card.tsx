@@ -2,6 +2,7 @@
 
 import {
   Coherence,
+  COHERENCE_TAGS,
   COHERENCE_TYPE_OPTIONS,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
@@ -88,11 +89,26 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     },
   ];
 
-  const tagList: BadgeItem[] = tags.map((tag) => ({
-    label: `#${tag}`,
-    variant: 'solid',
-    colorVariant: 'neutral',
-  }));
+  const tagList: BadgeItem[] = tags.map((tag) => {
+    const displayLabel = (COHERENCE_TAGS as readonly string[]).includes(tag)
+      ? t(
+          `tagLabels.${tag}` as
+            | 'tagLabels.Strategy'
+            | 'tagLabels.Culture'
+            | 'tagLabels.Onboarding'
+            | 'tagLabels.Engagement'
+            | 'tagLabels.Learning'
+            | 'tagLabels.Capacity'
+            | 'tagLabels.Network'
+            | 'tagLabels.Reputation',
+        )
+      : tag;
+    return {
+      label: `#${displayLabel}`,
+      variant: 'solid',
+      colorVariant: 'neutral',
+    };
+  });
 
   const handleUnarchive = React.useCallback(async () => {
     if (!slug) return;
