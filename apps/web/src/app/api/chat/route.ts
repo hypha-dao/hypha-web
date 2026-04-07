@@ -297,7 +297,7 @@ export async function POST(req: Request) {
     tools: {
       get_space_by_slug: getSpaceBySlugTool,
       get_people_by_space_slug: getPeopleBySpaceSlugTool,
-    } as any,
+    } as unknown as Parameters<typeof streamText>[0]['tools'],
     stopWhen: stepCountIs(6),
     onStepFinish: (event) => {
       if (!OPENROUTER_DEBUG) return;
