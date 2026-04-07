@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   findSpaceBySlug,
   getSpaceMembersForHttpApi,
+  spaceMembersHttpPaginationQuerySchema,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
@@ -31,27 +32,19 @@ export async function GET(
     }
 
     const url = new URL(request.url);
-    const pageRaw = url.searchParams.get('page');
-    const pageSizeRaw = url.searchParams.get('pageSize');
+    const pagination = spaceMembersHttpPaginationQuerySchema.parse({
+      page: url.searchParams.get('page') ?? undefined,
+      pageSize: url.searchParams.get('pageSize') ?? undefined,
+    });
     const searchTerm = url.searchParams.get('searchTerm') || undefined;
-
-    const page = pageRaw != null ? Number.parseInt(pageRaw, 10) : 1;
-    const pageSize =
-      pageSizeRaw != null ? Number.parseInt(pageSizeRaw, 10) : 10;
-
-    const hasValidPagination =
-      Number.isInteger(page) &&
-      page > 0 &&
-      Number.isInteger(pageSize) &&
-      pageSize > 0;
 
     let roster;
     try {
       roster = await getSpaceMembersForHttpApi(
         {
           spaceSlug,
-          page: hasValidPagination ? page : 1,
-          pageSize: hasValidPagination ? pageSize : 10,
+          page: pagination.page,
+          pageSize: pagination.pageSize,
           searchTerm,
         },
         { db },
