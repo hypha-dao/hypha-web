@@ -81,21 +81,21 @@ export type SpaceMembersRosterResult =
 
 async function fetchOnChainMemberAddresses(space: Space): Promise<{
   members: readonly `0x${string}`[];
-  /** `rpc` only after a successful on-chain read; `null` when no web3 id or read was skipped. */
-  source_chain: 'rpc' | null;
+  /** True only after `readContract` ran; false when web3 id missing / not convertible. */
+  queried: boolean;
 }> {
   if (
     space.web3SpaceId == null ||
     !canConvertToBigInt(space.web3SpaceId as number)
   ) {
-    return { members: [], source_chain: null };
+    return { members: [], queried: false };
   }
   const spaceDetails = await publicClient.readContract(
     getSpaceDetails({ spaceId: BigInt(space.web3SpaceId as number) }),
   );
   const tuple = spaceDetails as readonly unknown[];
   const members = (tuple[4] ?? []) as readonly `0x${string}`[];
-  return { members, source_chain: 'rpc' };
+  return { members, queried: true };
 }
 
 /**
@@ -128,7 +128,7 @@ export async function computeSpaceMemberEntries(
   try {
     const onChain = await fetchOnChainMemberAddresses(host);
     memberAddresses = onChain.members;
-    source_chain = onChain.source_chain;
+    source_chain = onChain.queried ? 'rpc' : null;
   } catch (err) {
     const msg =
       err instanceof Error
