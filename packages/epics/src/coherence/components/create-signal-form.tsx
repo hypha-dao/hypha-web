@@ -53,6 +53,23 @@ export const CreateSignalForm = ({
   closeUrl,
 }: CreateSignalFormProps) => {
   const t = useTranslations('CoherenceTab');
+  const tAgreementFlow = useTranslations('AgreementFlow');
+  const translateEditor = React.useCallback(
+    (
+      key: string,
+      defaultValue: string | undefined,
+      interpolations?: Record<string, string | number>,
+    ) => {
+      const translationKey = `createAgreementBaseFields.editor.${key}`;
+
+      if (!tAgreementFlow.has(translationKey)) {
+        return defaultValue ?? key;
+      }
+
+      return tAgreementFlow(translationKey, interpolations);
+    },
+    [tAgreementFlow],
+  );
   const { person } = useMe();
   const { jwt: authToken } = useJwt();
   const router = useRouter();
@@ -357,23 +374,29 @@ export const CreateSignalForm = ({
               <FormField
                 control={form.control}
                 name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-foreground gap-1">
-                      {t('description')} <RequirementMark />
-                    </FormLabel>
-                    <FormControl>
-                      <RichTextEditor
-                        editorRef={null}
-                        markdown={field.value}
-                        placeholder={t('descriptionPlaceholder')}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription />
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const descriptionValue = field.value || '';
+                  return (
+                    <FormItem>
+                      <FormLabel className="text-foreground gap-1">
+                        {t('description')} <RequirementMark />
+                      </FormLabel>
+                      <FormControl>
+                        <RichTextEditor
+                          editorRef={null}
+                          markdown={descriptionValue}
+                          translation={translateEditor}
+                          placeholder={tAgreementFlow(
+                            'createAgreementBaseFields.proposalContentPlaceholder',
+                          )}
+                          onChange={(markdown) => field.onChange(markdown)}
+                        />
+                      </FormControl>
+                      <FormDescription />
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
             </div>
           </div>
