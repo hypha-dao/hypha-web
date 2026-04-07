@@ -61,6 +61,7 @@ export function HumanChatPanelChatBar({
   );
   const [colonActive, setColonActive] = useState(0);
   const colonTokenRef = useRef<{ start: number; query: string } | null>(null);
+  const colonRequestIdRef = useRef(0);
 
   useEffect(() => {
     const isOpen = Boolean(replyPreview);
@@ -79,14 +80,25 @@ export function HumanChatPanelChatBar({
   }, []);
 
   const syncColonState = useCallback((val: string, cursor: number) => {
+    const requestId = ++colonRequestIdRef.current;
     const tok = getActiveColonToken(val, cursor);
     colonTokenRef.current = tok;
     if (!tok) {
       setColonOpen(false);
       setColonSuggestions([]);
+      setColonActive(0);
       return;
     }
     void loadEmojiSearchIndex().then(({ all }) => {
+      if (requestId !== colonRequestIdRef.current) return;
+      const current = colonTokenRef.current;
+      if (
+        !current ||
+        current.start !== tok.start ||
+        current.query !== tok.query
+      ) {
+        return;
+      }
       const sug = filterEmojiShortcodes(all, tok.query);
       setColonSuggestions(sug);
       setColonActive(0);
@@ -94,11 +106,23 @@ export function HumanChatPanelChatBar({
     });
   }, []);
 
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) {
+      setColonOpen(false);
+      setColonSuggestions([]);
+      colonTokenRef.current = null;
+      return;
+    }
+    syncColonState(value, el.selectionStart ?? value.length);
+  }, [value, syncColonState]);
+
   const applyColonChoice = useCallback(
     (entry: EmojiIndexEntry) => {
       const el = textareaRef.current;
       const tok = colonTokenRef.current;
       if (!el || !tok) return;
+      colonRequestIdRef.current += 1;
       const start = tok.start;
       const end = el.selectionStart ?? value.length;
       const { next, caret } = insertAtCaret(value, start, end, entry.native);
@@ -156,7 +180,10 @@ export function HumanChatPanelChatBar({
       }
       if (e.key === 'Escape') {
         e.preventDefault();
+        colonRequestIdRef.current += 1;
         setColonOpen(false);
+        setColonSuggestions([]);
+        colonTokenRef.current = null;
         return;
       }
     }
