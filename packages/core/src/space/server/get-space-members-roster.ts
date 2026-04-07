@@ -1,7 +1,7 @@
 import type { PaginatedResponse, Person } from '@hypha-platform/core/client';
+import { publicClient } from '../../common/web3/public-client';
+import { getSpaceDetails } from '../client/web3/dao-space-factory/get-space-details';
 import type { Space } from '../types';
-import { getSpaceDetails } from '@hypha-platform/core/client';
-import { publicClient } from '@hypha-platform/core/client';
 import {
   memberships,
   people,
@@ -172,7 +172,6 @@ export async function computeSpaceMemberEntries(
       slug: row.slug ?? undefined,
       name: row.name ?? undefined,
       surname: row.surname ?? undefined,
-      email: row.email ?? undefined,
       avatarUrl: row.avatarUrl ?? undefined,
       leadImageUrl: row.leadImageUrl ?? undefined,
       description: row.description ?? undefined,

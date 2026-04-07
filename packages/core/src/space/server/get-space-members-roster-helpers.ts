@@ -7,7 +7,6 @@ export type RosterPerson = {
   slug?: string;
   name?: string;
   surname?: string;
-  email?: string;
   avatarUrl?: string;
   leadImageUrl?: string;
   description?: string;
@@ -175,11 +174,9 @@ export function applySearchFilter(
   return entries.filter((e) => {
     if (e.member_kind === 'person') {
       const p = e.person;
-      return (
-        [p.name, p.surname, p.nickname, p.email, p.slug]
-          .filter(Boolean)
-          .some((v) => String(v).toLowerCase().includes(term)) === true
-      );
+      return [p.name, p.surname, p.nickname, p.slug]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(term));
     }
     const s = e.space;
     return (
