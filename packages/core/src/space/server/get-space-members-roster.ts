@@ -372,7 +372,7 @@ export async function getSpaceMembersRoster(
       page_size: safePageSize,
       total_pages: totalPages,
       has_next_page: totalPages > 0 && safePage < totalPages,
-      has_previous_page: safePage > 1,
+      has_previous_page: totalPages > 0 && safePage > 1,
     },
   };
 }
