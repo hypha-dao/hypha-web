@@ -4,7 +4,7 @@
 
 | Field | Value |
 |-------|--------|
-| **Status** | Architecture & requirements (implementation pending) |
+| **Status** | Architecture & requirements — **implementation:** [signal-thread-voip-implementation-spec.md](./signal-thread-voip-implementation-spec.md) |
 | **Scope** | Enable **audio and video calling** initiated from a **Signal** conversation in a **Space**, using **`matrix-js-sdk@^40.0.0`** and Hypha’s existing **Space = Room**, **Signal = Thread** mapping |
 | **Normative references** | [Matrix JS SDK `MatrixClient`](https://matrix-org.github.io/matrix-js-sdk/classes/matrix.MatrixClient.html), [`GroupCall`](https://matrix-org.github.io/matrix-js-sdk/classes/matrix.GroupCall.html), [`ICreateClientOpts`](https://matrix-org.github.io/matrix-js-sdk/interfaces/matrix.ICreateClientOpts.html); Hypha: [`hypha-matrix-mapping.md`](../../.agents/references/domain/hypha-matrix-mapping.md) |
 | **SDK version constraint** | Remain on **`matrix-js-sdk@^40.0.0`**; do **not** upgrade to v41+ in Next.js until the project-wide “multiple entrypoints” issue is resolved (see existing chat requirements and matrix engineer role). |
@@ -75,13 +75,17 @@ Per [Hypha ↔ Matrix mapping](../../.agents/references/domain/hypha-matrix-mapp
 
 **Conclusion:** “Call inside this thread” is a **product interpretation**. The SDK will still implement signaling for **`roomId`** (and optionally correlate **thread context in app state** or via **custom timeline events**).
 
+### 2.5 Implementation handoff
+
+Normative file paths, API shape, UI placement, i18n keys, and acceptance criteria for engineers are in **[signal-thread-voip-implementation-spec.md](./signal-thread-voip-implementation-spec.md)**.
+
 ---
 
 ## 3) Architecture options (no implementation commitment)
 
 Choose **one** primary model (secondary patterns may coexist for edge cases).
 
-### Option A — **Room group call + thread context (recommended baseline)**
+### Option A — **Room group call + thread context (recommended baseline)** — **SELECTED for v1**
 
 - **Media & signaling:** `GroupCall` (or successor RTC APIs) on the **Space’s Matrix `roomId`**.
 - **Product semantics:** When the user taps **Call** from a **Signal** view, the UI passes **`threadRootEventId`** (and room id) into a **CallSession** controller that:
