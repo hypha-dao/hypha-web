@@ -69,23 +69,18 @@ export class CoherencePage extends BasePage {
       name: /new signal|nouveau signal|neues signal|nueva señal|novo sinal/i,
     });
 
-    // Search input — placeholder from CoherenceTab.searchSignals (localized)
+    // Search input — full placeholders from CoherenceTab.searchSignals (per locale)
     this.searchInput = page.getByPlaceholder(
-      /signals|signaux|sinais|señales|signale|suchen|pesquisar|buscar|rechercher/i,
+      /Search signals|Buscar señales|Pesquisar sinais|Rechercher des signaux|Signale suchen/i,
     );
 
-    // Unauthenticated sign-in prompt (CoherenceTab.signInToSee, localized)
+    // Unauthenticated sign-in prompt (CoherenceTab.signInToSee) — match distinctive tail phrases
     this.signInMessage = page.getByText(
-      /sign in|inicie sesión|connectez|faça login|melden sie sich/i,
-      { exact: false },
+      /signals and conversations|señales y conversaciones|sinais e conversas|signaux et les conversations|Signale und Gespräche/i,
     );
 
-    // Filter badges rendered as <div> (Badge component), matched by visible text.
-    // Note: Badge renders as div, so use getByText not getByRole('button').
-    // Badge text is "{label} {count}" (e.g. "All 1") — allow end or space + rest
-    this.allFilterBadge = page
-      .getByText(/^(all|todos|tous|alle)(\s|$)/i)
-      .first();
+    // "All" filter badge: CoherenceTab.all + count (en All, es/pt Todos, fr Tous, de Alle)
+    this.allFilterBadge = page.getByText(/^(All|Todos|Tous|Alle)\s+\d+\s*$/i);
 
     // Loading overlay copy (CoherenceTab.creatingNewSignal) — rendered as text, not a heading
     this.createSignalHeading = page.getByText(
