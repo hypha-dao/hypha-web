@@ -1,16 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
-import { Paperclip, Image, Bold, Smile, AtSign, Send, X } from 'lucide-react';
+import { useCallback, useRef } from 'react';
+import { Paperclip, Image, Bold, Smile, AtSign, Send } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { cn } from '@hypha-platform/ui-utils';
-
-type ReplyPreview = {
-  authorLabel: string;
-  excerpt: string;
-  onDismiss: () => void;
-};
 
 type HumanChatPanelChatBarProps = {
   value: string;
@@ -18,8 +12,6 @@ type HumanChatPanelChatBarProps = {
   onSend: () => void;
   placeholder?: string;
   channelName?: string;
-  /** Rich reply: composer preview above the textarea */
-  replyPreview?: ReplyPreview;
 };
 
 export function HumanChatPanelChatBar({
@@ -28,19 +20,9 @@ export function HumanChatPanelChatBar({
   onSend,
   placeholder,
   channelName,
-  replyPreview,
 }: HumanChatPanelChatBarProps) {
   const t = useTranslations('HumanChatPanel');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const replyPreviewWasOpenRef = useRef(false);
-
-  useEffect(() => {
-    const isOpen = Boolean(replyPreview);
-    if (isOpen && !replyPreviewWasOpenRef.current) {
-      textareaRef.current?.focus();
-    }
-    replyPreviewWasOpenRef.current = isOpen;
-  }, [replyPreview]);
 
   const autoResize = useCallback(() => {
     if (textareaRef.current) {
@@ -83,31 +65,6 @@ export function HumanChatPanelChatBar({
           'transition-all duration-200 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20',
         )}
       >
-        {replyPreview && (
-          <div
-            data-testid="chat-reply-preview"
-            className="flex items-start gap-2 border-b border-border px-3 py-2"
-          >
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs text-muted-foreground">
-                <span className="font-medium text-foreground">
-                  {replyPreview.authorLabel}
-                </span>
-                <span className="text-muted-foreground"> — </span>
-                <span>{replyPreview.excerpt}</span>
-              </p>
-            </div>
-            <button
-              type="button"
-              className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-              aria-label={t('replyDismiss')}
-              title={t('replyDismiss')}
-              onClick={replyPreview.onDismiss}
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        )}
         <textarea
           ref={textareaRef}
           value={value}
