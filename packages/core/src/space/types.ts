@@ -14,6 +14,8 @@ export interface Space {
   links: string[];
   categories: Category[];
   subspaces?: Space[];
+  /** When present, count of direct child spaces (from DB); used when relations are not loaded. */
+  subspaceCount?: number;
   members?: Person[];
   memberCount?: number;
   /** True when on-chain enrichment failed for this space (distinct from zero counts). */

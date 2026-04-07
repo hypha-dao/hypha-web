@@ -1,5 +1,6 @@
 import {
   asc,
+  count,
   eq,
   inArray,
   sql,
@@ -119,25 +120,32 @@ export const findParentSpaceById = async (
 
 type FindSpaceBySlugInput = { slug: string };
 
+/**
+ * Loads a single space row by slug. Intentionally does not eager-load relations
+ * (subspaces, members, documents): those were never used by callers but caused
+ * very large queries and RSC payloads for active spaces.
+ */
 export const findSpaceBySlug = async (
   { slug }: FindSpaceBySlugInput,
   { db }: DbConfig,
-): Promise<(Space & { subspaces: Space[] }) | null> => {
-  const response = await db.query.spaces.findFirst({
-    where: (spaces, { eq }) => eq(spaces.slug, slug),
-    with: {
-      subspaces: true,
-      members: true,
-      documents: true,
-    },
-  });
+): Promise<Space | null> => {
+  return (
+    (await db.query.spaces.findFirst({
+      where: (spaces, { eq }) => eq(spaces.slug, slug),
+    })) ?? null
+  );
+};
 
-  if (!response) return null;
-
-  return {
-    ...response,
-    subspaces: response.subspaces ?? [],
-  };
+/** Direct children of a space (replaces counting `subspaces` from relational find). */
+export const countSubspacesByParentId = async (
+  { parentId }: { parentId: number },
+  { db }: DbConfig,
+): Promise<number> => {
+  const [row] = await db
+    .select({ c: count() })
+    .from(spaces)
+    .where(eq(spaces.parentId, parentId));
+  return Number(row?.c ?? 0);
 };
 
 type CheckSpaceSlugExistsInput = { slug: string };

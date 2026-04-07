@@ -1,7 +1,10 @@
 'use server';
 
 import { db } from '@hypha-platform/storage-postgres';
-import { findSpaceBySlug } from '@hypha-platform/core/server';
+import {
+  countSubspacesByParentId,
+  findSpaceBySlug,
+} from '@hypha-platform/core/server';
 import type { Space } from '@hypha-platform/core/client';
 import {
   fetchSpaceDetails,
@@ -20,6 +23,11 @@ export async function getSpaceBySlug({
 
     if (!space) return null;
 
+    const subspaceCount = await countSubspacesByParentId(
+      { parentId: space.id },
+      { db },
+    );
+
     const web3SpaceId =
       typeof space.web3SpaceId === 'number' &&
       Number.isSafeInteger(space.web3SpaceId) &&
@@ -27,7 +35,7 @@ export async function getSpaceBySlug({
         ? BigInt(space.web3SpaceId)
         : 0n;
     if (web3SpaceId === 0n) {
-      return space;
+      return { ...space, subspaceCount };
     }
 
     const web3SpaceIds = [web3SpaceId];
@@ -42,6 +50,7 @@ export async function getSpaceBySlug({
 
     return {
       ...space,
+      subspaceCount,
       memberCount: spaceDetails?.members?.length ?? 0,
       memberAddresses: Array.isArray(spaceDetails?.members)
         ? spaceDetails.members
