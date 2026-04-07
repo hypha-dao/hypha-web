@@ -278,9 +278,8 @@ export function HumanChatPanelMessageBubble({
                 <button
                   type="button"
                   className={cn(
-                    'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[#4e5058] transition-colors',
-                    'border-[#949ba4]/40 bg-[#f2f3f5] hover:bg-[#e3e5e8]',
-                    'dark:border-white/10 dark:bg-[#2b2d31] dark:text-[#b5bac1] dark:hover:bg-[#35373c]',
+                    'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border',
+                    'bg-muted text-muted-foreground transition-colors hover:bg-muted/80',
                   )}
                   aria-label={t('addReactionButton')}
                   aria-expanded={inlineReactPickerOpen}
