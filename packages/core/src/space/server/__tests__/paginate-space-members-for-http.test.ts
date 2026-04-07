@@ -13,4 +13,18 @@ describe('paginateSpaceMembersForHttp', () => {
     expect(r.pagination.hasNextPage).toBe(true);
     expect(r.pagination.hasPreviousPage).toBe(true);
   });
+
+  it('clamps pageSize and computes totals from clamped value', () => {
+    const items = Array.from({ length: 250 }, (_, i) => i + 1);
+    const r = paginateSpaceMembersForHttp(items, 1, 1000);
+    expect(r.pagination.pageSize).toBe(100);
+    expect(r.pagination.totalPages).toBe(3);
+  });
+
+  it('returns no prev/next pages when dataset is empty', () => {
+    const r = paginateSpaceMembersForHttp([], 5, 10);
+    expect(r.pagination.totalPages).toBe(0);
+    expect(r.pagination.hasNextPage).toBe(false);
+    expect(r.pagination.hasPreviousPage).toBe(false);
+  });
 });

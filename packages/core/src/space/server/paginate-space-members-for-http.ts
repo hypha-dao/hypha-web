@@ -9,9 +9,9 @@ export function paginateSpaceMembersForHttp<T>(
   pageSize: number,
 ): PaginatedResponse<T> {
   const total = items.length;
-  const totalPages = total === 0 ? 0 : Math.ceil(total / pageSize);
-  const safePage = Math.max(1, page);
   const safePageSize = Math.min(100, Math.max(1, pageSize));
+  const totalPages = total === 0 ? 0 : Math.ceil(total / safePageSize);
+  const safePage = Math.max(1, page);
   const offset = (safePage - 1) * safePageSize;
   const data = items.slice(offset, offset + safePageSize);
 
@@ -23,7 +23,7 @@ export function paginateSpaceMembersForHttp<T>(
       pageSize: safePageSize,
       totalPages,
       hasNextPage: totalPages > 0 && safePage < totalPages,
-      hasPreviousPage: safePage > 1,
+      hasPreviousPage: totalPages > 0 && safePage > 1,
     },
   };
 }
