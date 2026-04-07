@@ -462,10 +462,10 @@ export function HumanChatPanelMessageBubble({
         )}
       </div>
 
-      {/* Discord-style floating bar: stadium (full) rounding + elevated surface */}
+      {/* Discord-style floating bar: rounded rectangle (not a pill) */}
       <div
         className={cn(
-          'absolute right-3 top-0 z-10 flex h-8 -translate-y-1/2 items-center gap-0.5 rounded-full border border-border bg-popover px-1.5 py-0 text-popover-foreground shadow-lg ring-1 ring-black/5 dark:ring-white/10 transition-opacity duration-150',
+          'absolute right-3 top-0 z-10 flex h-7 -translate-y-1/2 items-center gap-0 rounded-md border border-border bg-popover px-0.5 py-0 text-popover-foreground shadow-md ring-1 ring-black/5 dark:ring-white/10 transition-opacity duration-150',
           isActionBarVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
         aria-hidden={!isActionBarVisible}
@@ -484,33 +484,33 @@ export function HumanChatPanelMessageBubble({
         >
           <button
             type="button"
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
             aria-label={t('reactButton')}
             disabled={!canReact}
             aria-disabled={!canReact}
             aria-expanded={hoverReactPickerOpen}
           >
-            <Smile className="h-3.5 w-3.5" />
+            <Smile className="h-3.5 w-3.5" strokeWidth={2} />
           </button>
         </HumanChatPanelEmojiPicker>
         <button
           type="button"
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
           aria-label={t('replyButton')}
           disabled={!canReply}
           aria-disabled={!canReply}
           onClick={onReply}
         >
-          <Reply className="h-3.5 w-3.5" />
+          <Reply className="h-3.5 w-3.5" strokeWidth={2} />
         </button>
         <button
           type="button"
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           aria-label={t('moreButton')}
           disabled
           aria-disabled
         >
-          <MoreHorizontal className="h-3.5 w-3.5" />
+          <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={2} />
         </button>
       </div>
     </div>
