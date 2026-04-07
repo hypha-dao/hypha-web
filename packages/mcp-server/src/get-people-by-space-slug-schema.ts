@@ -1,14 +1,18 @@
 import { z } from 'zod';
 
+/** Keep in sync with `spaceSlugSchema` in `packages/core/src/space/validation.ts`. */
 const slugSchema = z
   .string()
   .trim()
   .min(1)
-  .max(128)
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Invalid space slug format');
+  .max(50)
+  .regex(
+    /^[a-z0-9'-]+$/,
+    'Slug must contain only lowercase letters, numbers, hyphens, and apostrophes',
+  );
 
 export const getPeopleBySpaceSlugInputSchema = z.object({
-  space_slug: slugSchema.describe('Hypha space slug of the active space'),
+  space_slug: slugSchema,
   page: z.number().int().min(1).optional().default(1),
   page_size: z.number().int().min(1).max(100).optional().default(20),
   searchTerm: z.string().optional(),
@@ -31,7 +35,6 @@ const personPublicSchema = z.object({
   slug: z.string().optional(),
   name: z.string().optional(),
   surname: z.string().optional(),
-  email: z.string().optional(),
   avatarUrl: z.string().optional(),
   leadImageUrl: z.string().optional(),
   description: z.string().optional(),
