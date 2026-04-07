@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { buildMemberEntriesFromAddresses } from '../get-space-members-roster-helpers';
+import {
+  buildMemberEntriesFromAddresses,
+  mergeJoinEventTimesByAddress,
+} from '../get-space-members-roster-helpers';
 import type { Space } from '../../types';
 import type { Membership } from '@hypha-platform/storage-postgres';
 
@@ -60,5 +63,52 @@ describe('buildMemberEntriesFromAddresses', () => {
       expect(entries[0].join_source).toBe('membership');
     }
     expect(entries[1].member_kind).toBe('space');
+  });
+
+  it('uses joinSpace event time when memberships row is missing (UI parity)', () => {
+    const addr = '0x1111111111111111111111111111111111111111';
+    const p1 = {
+      id: 10,
+      slug: 'alice',
+      createdAt: new Date('2020-01-01'),
+      updatedAt: new Date('2020-01-01'),
+    };
+    const peopleByAddress = new Map([[addr, p1]]);
+    const eventJoin = new Map([
+      [addr.toLowerCase(), new Date('2026-04-03T09:23:14.000Z')],
+    ]);
+
+    const entries = buildMemberEntriesFromAddresses({
+      memberAddresses: [addr as `0x${string}`],
+      peopleByAddress,
+      spacesByAddress: new Map(),
+      membershipByPersonId: new Map(),
+      eventJoinTimeByAddress: eventJoin,
+    });
+
+    expect(entries).toHaveLength(1);
+    const e = entries[0];
+    expect(e.member_kind).toBe('person');
+    if (e.member_kind === 'person') {
+      expect(e.membership).toBeNull();
+      expect(e.join_source).toBe('event');
+      expect(e.joined_at).toBe('2026-04-03T09:23:14.000Z');
+    }
+  });
+});
+
+describe('mergeJoinEventTimesByAddress', () => {
+  it('keeps earliest createdAt per member address', () => {
+    const map = mergeJoinEventTimesByAddress([
+      {
+        createdAt: new Date('2026-04-02T00:00:00.000Z'),
+        parameters: { memberAddress: '0xAbC' },
+      },
+      {
+        createdAt: new Date('2026-04-01T00:00:00.000Z'),
+        parameters: { memberAddress: '0xabc' },
+      },
+    ]);
+    expect(map.get('0xabc')?.toISOString()).toBe('2026-04-01T00:00:00.000Z');
   });
 });

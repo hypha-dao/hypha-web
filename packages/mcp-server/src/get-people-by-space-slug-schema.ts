@@ -46,7 +46,7 @@ const personPublicSchema = z.object({
 const rosterPersonSchema = z.object({
   member_kind: z.literal('person'),
   membership: membershipSnakeSchema.nullable(),
-  join_source: z.enum(['membership', 'unknown']),
+  join_source: z.enum(['membership', 'event', 'unknown']),
   joined_at: z.string().nullable(),
   person: personPublicSchema,
 });
@@ -54,8 +54,8 @@ const rosterPersonSchema = z.object({
 const rosterSpaceSchema = z.object({
   member_kind: z.literal('space'),
   membership: z.null(),
-  join_source: z.literal('unknown'),
-  joined_at: z.null(),
+  join_source: z.enum(['event', 'unknown']),
+  joined_at: z.string().nullable(),
   space: z.record(z.unknown()),
 });
 

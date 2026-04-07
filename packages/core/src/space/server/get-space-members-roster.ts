@@ -10,11 +10,14 @@ import {
 } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { and, eq, inArray, sql } from 'drizzle-orm';
+import { findAllEvents } from '../../events/server/queries';
 import { findSpaceBySlug } from './queries';
 import type { DbConfig } from '../../server';
 import {
   applySearchFilter,
   buildMemberEntriesFromAddresses,
+  mergeJoinEventTimesByAddress,
+  normalizeMemberAddress,
   type SpaceMemberRosterEntry,
 } from './get-space-members-roster-helpers';
 
@@ -89,10 +92,6 @@ async function fetchOnChainMemberAddresses(
   const tuple = spaceDetails as readonly unknown[];
   const members = (tuple[4] ?? []) as readonly `0x${string}`[];
   return members;
-}
-
-function normalizeAddr(a: string): string {
-  return a.toLowerCase();
 }
 
 export async function getSpaceMembersRoster(
@@ -179,7 +178,7 @@ export async function getSpaceMembersRoster(
   const peopleByAddress = new Map<string, Person>();
   for (const row of peopleRows) {
     if (!row.address || !row.createdAt || !row.updatedAt) continue;
-    peopleByAddress.set(normalizeAddr(row.address), {
+    peopleByAddress.set(normalizeMemberAddress(row.address), {
       id: row.id,
       slug: row.slug ?? undefined,
       name: row.name ?? undefined,
@@ -210,8 +209,18 @@ export async function getSpaceMembersRoster(
   const spacesByAddress = new Map<string, Space>();
   for (const row of spaceRows) {
     if (!row.address) continue;
-    spacesByAddress.set(normalizeAddr(row.address), row as Space);
+    spacesByAddress.set(normalizeMemberAddress(row.address), row as Space);
   }
+
+  const joinSpaceEvents = await findAllEvents(
+    { db },
+    {
+      type: 'joinSpace',
+      referenceId: host.id,
+      referenceEntity: 'space',
+    },
+  );
+  const eventJoinTimeByAddress = mergeJoinEventTimesByAddress(joinSpaceEvents);
 
   const personIds = [...peopleByAddress.values()].map((p) => p.id);
   let membershipByPersonId = new Map<number, Membership>();
@@ -235,6 +244,7 @@ export async function getSpaceMembersRoster(
     peopleByAddress,
     spacesByAddress,
     membershipByPersonId,
+    eventJoinTimeByAddress,
   });
 
   entries = applySearchFilter(entries, searchTerm);
