@@ -4,13 +4,15 @@ Stdio [Model Context Protocol](https://modelcontextprotocol.io) server exposing 
 
 ## Security and access control
 
-This process uses the same **database** connection as other server code (`@hypha-platform/storage-postgres`) but does **not** replicate the **web app’s** per-request checks (`checkSpaceAccess` on `GET /api/v1/spaces/.../members` and the chat route). Treat it as **operator / trusted-environment** tooling: run only with credentials and network access you intend the MCP host to use.
+`get_people_by_space_slug` calls **`checkSpaceAccessForSpace`** in `@hypha-platform/core/server` (same transparency / membership rules as the web app) when the space exists in the database. Provide a **Privy JWT** (same kind the web client sends) via:
 
-For **end-user parity** with in-app transparency rules, use the **authenticated web APIs** or extend this server with explicit auth before production exposure.
+- **`HYPHA_MCP_AUTH_TOKEN`** — bearer token used to resolve the caller’s identity for non-public spaces.
+
+Without a token, **non-public** spaces return an access error. Public spaces still work without a token.
 
 ## Configuration
 
-Set the same environment variables required for DB and RPC access as the rest of the monorepo (e.g. `DEFAULT_DB_URL` or Neon/Postgres URLs, `NEXT_PUBLIC_RPC_URL` where `publicClient` reads the chain).
+Set the same environment variables required for DB and RPC access as the rest of the monorepo (e.g. `DEFAULT_DB_URL` or Neon/Postgres URLs, `NEXT_PUBLIC_RPC_URL` where `publicClient` reads the chain). For roster tools on restricted spaces, set **`HYPHA_MCP_AUTH_TOKEN`**.
 
 ## Run locally
 
