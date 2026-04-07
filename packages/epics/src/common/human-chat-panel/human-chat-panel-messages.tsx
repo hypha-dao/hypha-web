@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 
 import { HumanChatPanelMessageBubble } from './human-chat-panel-message-bubble';
@@ -8,12 +8,21 @@ import { HumanChatPanelMessageBubble } from './human-chat-panel-message-bubble';
 type UIMessage = {
   id: string;
   role: 'user' | 'member';
+  /** Non-Matrix / system rows: no reply or reactions. */
+  isSynthetic?: boolean;
   parts?: Array<
     { type: 'text'; text: string } | { type: string; [k: string]: unknown }
   >;
   senderName?: string;
   avatarUrl?: string;
   timestamp?: Date;
+  formattedContentHtml?: string;
+  reactions?: Array<{
+    emoji: string;
+    count: number;
+    includesCurrentUser?: boolean;
+    reactorUserIds?: string[];
+  }>;
   replyTo?: {
     authorLabel: string;
     excerpt?: string;
@@ -24,22 +33,39 @@ type HumanChatPanelMessagesProps = {
   messages: UIMessage[];
   isStreaming?: boolean;
   onReply?: (messageId: string) => void;
+  onToggleReaction?: (messageId: string, emoji: string) => void;
+  /** Map Matrix user id to display name for reaction hover tooltips. */
+  resolveReactionReactorLabel?: (userId: string) => string;
 };
 
 export function HumanChatPanelMessages({
   messages,
   isStreaming = false,
   onReply,
+  onToggleReaction,
+  resolveReactionReactorLabel,
 }: HumanChatPanelMessagesProps) {
   const t = useTranslations('HumanChatPanel');
 
   const welcomeMessage: UIMessage = {
     id: 'welcome',
     role: 'member',
+    isSynthetic: true,
     parts: [{ type: 'text', text: t('welcome') }],
-    senderName: 'System',
+    senderName: t('systemSender'),
   };
   const containerRef = useRef<HTMLDivElement>(null);
+  /** At most one floating action bar: pointer hover, or locked while that row's hover emoji picker is open. */
+  const [hoverActionMessageId, setHoverActionMessageId] = useState<
+    string | null
+  >(null);
+  const [lockActionMessageId, setLockActionMessageId] = useState<string | null>(
+    null,
+  );
+  const lockActionMessageIdRef = useRef<string | null>(null);
+  lockActionMessageIdRef.current = lockActionMessageId;
+  /** Pointer left row while hover picker was open (portal); hide bar when picker closes. */
+  const leaveWhileLockedRef = useRef<string | null>(null);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -56,22 +82,59 @@ export function HumanChatPanelMessages({
       className="narrow-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto px-3 py-3"
     >
       <div className="flex flex-col gap-4">
-        {displayMessages.map((msg, index) => (
-          <HumanChatPanelMessageBubble
-            key={msg.id}
-            message={msg}
-            isStreaming={
-              msg.role === 'member' &&
-              isStreaming &&
-              index === displayMessages.length - 1
-            }
-            onReply={
-              msg.id !== 'welcome' && onReply
-                ? () => onReply(msg.id)
-                : undefined
-            }
-          />
-        ))}
+        {displayMessages.map((msg, index) => {
+          const canInteract = !msg.isSynthetic;
+          const isActionBarVisible =
+            lockActionMessageId === msg.id ||
+            (hoverActionMessageId === msg.id && lockActionMessageId == null);
+          return (
+            <HumanChatPanelMessageBubble
+              key={msg.id}
+              message={msg}
+              resolveReactionReactorLabel={resolveReactionReactorLabel}
+              isActionBarVisible={isActionBarVisible}
+              onRowPointerEnter={() => {
+                leaveWhileLockedRef.current = null;
+                setHoverActionMessageId(msg.id);
+              }}
+              onRowPointerLeave={() => {
+                if (lockActionMessageIdRef.current === msg.id) {
+                  leaveWhileLockedRef.current = msg.id;
+                  return;
+                }
+                setHoverActionMessageId((current) =>
+                  current === msg.id ? null : current,
+                );
+              }}
+              onHoverReactPickerOpenChange={(open) => {
+                if (open) {
+                  setLockActionMessageId(msg.id);
+                  return;
+                }
+                setLockActionMessageId((cur) => (cur === msg.id ? null : cur));
+                if (leaveWhileLockedRef.current === msg.id) {
+                  leaveWhileLockedRef.current = null;
+                  setHoverActionMessageId((current) =>
+                    current === msg.id ? null : current,
+                  );
+                }
+              }}
+              isStreaming={
+                msg.role === 'member' &&
+                isStreaming &&
+                index === displayMessages.length - 1
+              }
+              onReply={
+                canInteract && onReply ? () => onReply(msg.id) : undefined
+              }
+              onReact={
+                canInteract && onToggleReaction
+                  ? (emoji: string) => onToggleReaction(msg.id, emoji)
+                  : undefined
+              }
+            />
+          );
+        })}
       </div>
     </div>
   );

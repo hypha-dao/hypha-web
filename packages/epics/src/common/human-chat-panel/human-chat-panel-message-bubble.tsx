@@ -1,13 +1,21 @@
 'use client';
 
+import { Fragment, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Smile, Reply, MoreHorizontal } from 'lucide-react';
+import type { TranslationValues } from 'next-intl';
+import { Smile, SmilePlus, Reply, MoreHorizontal } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../people/components/person-avatar';
+
+import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
+import { ChatMessageRichText } from './parse-simple-matrix-html';
 
 type Reaction = {
   emoji: string;
   count: number;
+  includesCurrentUser?: boolean;
+  reactorUserIds?: string[];
 };
 
 type UIMessagePart =
@@ -15,14 +23,25 @@ type UIMessagePart =
   | { type: string; [k: string]: unknown };
 
 type HumanChatPanelMessageBubbleProps = {
+  /** Map Matrix user id to display name for reaction hover tooltips. */
+  resolveReactionReactorLabel?: (userId: string) => string;
+  /** Parent list ensures at most one message shows the floating action bar. */
+  isActionBarVisible?: boolean;
+  onRowPointerEnter?: () => void;
+  onRowPointerLeave?: () => void;
+  /** Notify when the hover-bar emoji picker opens/closes (parent may lock visibility). */
+  onHoverReactPickerOpenChange?: (open: boolean) => void;
   message: {
     id: string;
     role: 'user' | 'member';
+    isSynthetic?: boolean;
     parts?: UIMessagePart[];
     senderName?: string;
     avatarUrl?: string;
     timestamp?: Date;
     reactions?: Reaction[];
+    /** Matrix formatted_body (subset) for rich display */
+    formattedContentHtml?: string;
     /** Rich reply: quoted context above the new text */
     replyTo?: {
       authorLabel: string;
@@ -33,7 +52,96 @@ type HumanChatPanelMessageBubbleProps = {
   isStreaming?: boolean;
   /** When set, Reply is enabled (omit for synthetic messages like welcome). */
   onReply?: () => void;
+  /** When set, user can open react picker (omit for welcome). */
+  onReact?: (emoji: string) => void | Promise<void>;
 };
+
+const MAX_VISIBLE_REACTIONS = 12;
+
+/** Discord-style jumbo emoji: cap so huge sticker-style spam stays readable. */
+const MAX_JUMBO_EMOJI_COUNT = 27;
+
+/**
+ * Split a string into user-perceived grapheme clusters (ZWJ sequences stay together).
+ */
+function splitGraphemeClusters(s: string): string[] {
+  if (typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function') {
+    return Array.from(
+      new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(s),
+      ({ segment }) => segment,
+    );
+  }
+  const out: string[] = [];
+  const re =
+    /\p{Extended_Pictographic}\uFE0F?(?:\u200D\p{Extended_Pictographic}\uFE0F?)*/gu;
+  let i = 0;
+  while (i < s.length) {
+    re.lastIndex = i;
+    const m = re.exec(s);
+    if (m && m.index === i) {
+      out.push(m[0]);
+      i = re.lastIndex;
+      continue;
+    }
+    const cp = s.codePointAt(i)!;
+    const w = cp > 0xffff ? 2 : 1;
+    out.push(s.slice(i, i + w));
+    i += w;
+  }
+  return out;
+}
+
+const EMOJI_GRAPHEME_RE =
+  /^(\p{Extended_Pictographic}\uFE0F?(?:\u200D\p{Extended_Pictographic}\uFE0F?)*)$/u;
+
+/** e.g. 🇺🇸 — not matched by Extended_Pictographic alone */
+const FLAG_CLUSTER_RE = /^\p{Regional_Indicator}{2}$/u;
+
+function isEmojiGrapheme(g: string): boolean {
+  const t = g.trim();
+  if (!t) return false;
+  return EMOJI_GRAPHEME_RE.test(t) || FLAG_CLUSTER_RE.test(t);
+}
+
+/**
+ * When the body is only emoji (optional whitespace), render large “jumboji” like Discord.
+ * Disabled for rich replies and @mentions so context stays readable.
+ */
+function getEmojiOnlyJumboLayout(
+  raw: string,
+  hasReply: boolean,
+):
+  | { mode: 'normal' }
+  | { mode: 'jumbo'; graphemes: string[]; sizeClass: string } {
+  const trimmed = raw.trim();
+  if (!trimmed || hasReply || /@\S/.test(trimmed)) {
+    return { mode: 'normal' };
+  }
+  const condensed = trimmed.replace(/\s+/g, '');
+  if (!condensed) {
+    return { mode: 'normal' };
+  }
+  const graphemes = splitGraphemeClusters(condensed).filter(
+    (g) => g.trim().length > 0,
+  );
+  if (graphemes.length === 0 || graphemes.length > MAX_JUMBO_EMOJI_COUNT) {
+    return { mode: 'normal' };
+  }
+  if (!graphemes.every(isEmojiGrapheme)) {
+    return { mode: 'normal' };
+  }
+
+  let sizeClass: string;
+  if (graphemes.length === 1) {
+    sizeClass = 'text-5xl leading-none gap-2';
+  } else if (graphemes.length <= 5) {
+    sizeClass = 'text-4xl leading-none gap-1';
+  } else {
+    sizeClass = 'text-3xl leading-none gap-1';
+  }
+
+  return { mode: 'jumbo', graphemes, sizeClass };
+}
 
 /**
  * Discord-style relative timestamp: browser locale + user's timezone (default).
@@ -110,12 +218,34 @@ function renderTextWithMentions(text: string): React.ReactNode[] {
   return parts;
 }
 
+function reactionTooltipText(
+  reaction: Reaction,
+  resolveLabel: (userId: string) => string,
+  t: (key: string, values?: TranslationValues) => string,
+): string | undefined {
+  const ids = reaction.reactorUserIds;
+  if (!ids?.length) return undefined;
+  const names = ids.map((id) => resolveLabel(id));
+  return t('reactionReactorsTooltip', {
+    names: names.join(', '),
+    emoji: reaction.emoji,
+  });
+}
+
 export function HumanChatPanelMessageBubble({
+  resolveReactionReactorLabel,
+  isActionBarVisible = false,
+  onRowPointerEnter,
+  onRowPointerLeave,
+  onHoverReactPickerOpenChange,
   message,
   isStreaming,
   onReply,
+  onReact,
 }: HumanChatPanelMessageBubbleProps) {
   const t = useTranslations('HumanChatPanel');
+  const [hoverReactPickerOpen, setHoverReactPickerOpen] = useState(false);
+  const [inlineReactPickerOpen, setInlineReactPickerOpen] = useState(false);
 
   // TODO: Handle non-text parts (file attachments, tool results, etc.)
   const textParts =
@@ -123,19 +253,34 @@ export function HumanChatPanelMessageBubble({
       (p): p is { type: 'text'; text: string } => p.type === 'text',
     ) ?? [];
   const textContent = textParts.map((p) => p.text).join('');
+  const replyTo = message.replyTo;
+  const jumboLayout = textContent
+    ? getEmojiOnlyJumboLayout(textContent, Boolean(replyTo))
+    : { mode: 'normal' as const };
 
   const senderName = message.senderName ?? t('you');
   const timestamp = message.timestamp
     ? formatTimestamp(message.timestamp, t)
     : undefined;
   const reactions = message.reactions ?? [];
-  const replyTo = message.replyTo;
   const canReply = Boolean(onReply);
+  const canReact = Boolean(onReact);
+  const visibleReactions = reactions.slice(0, MAX_VISIBLE_REACTIONS);
+  const hiddenReactionCount = Math.max(
+    0,
+    reactions.length - MAX_VISIBLE_REACTIONS,
+  );
 
   return (
     <div
       data-testid="chat-message"
-      className="group relative flex gap-3 px-1 py-1 hover:bg-muted/30 focus-within:bg-muted/30 rounded-md transition-colors"
+      className={cn(
+        'group relative -mx-3 flex gap-3 rounded-sm px-3 py-1 transition-colors',
+        /* Discord-style row tint: hover (primary) + focus-within for keyboard/reactions */
+        'hover:bg-muted/60 focus-within:bg-muted/60',
+      )}
+      onPointerEnter={onRowPointerEnter}
+      onPointerLeave={onRowPointerLeave}
     >
       {/* Avatar */}
       <div className="mt-0.5 shrink-0" data-testid="chat-message-avatar">
@@ -183,15 +328,38 @@ export function HumanChatPanelMessageBubble({
           </div>
         )}
 
-        {/* Message text */}
-        {textContent && (
-          <p
-            data-testid="chat-message-body"
-            className="mt-0.5 text-sm leading-relaxed text-foreground"
-          >
-            {renderTextWithMentions(textContent)}
-          </p>
-        )}
+        {/* Message text — Matrix HTML, or Discord-style jumboji, or plain + mentions */}
+        {textContent &&
+          (message.formattedContentHtml ? (
+            <p
+              data-testid="chat-message-body"
+              className="mt-0.5 text-sm leading-relaxed text-foreground"
+            >
+              <ChatMessageRichText html={message.formattedContentHtml} />
+            </p>
+          ) : jumboLayout.mode === 'jumbo' ? (
+            <p
+              data-testid="chat-message-body"
+              className={cn(
+                'mt-0.5 flex flex-wrap items-end text-foreground',
+                jumboLayout.sizeClass,
+              )}
+              aria-label={textContent.trim()}
+            >
+              {jumboLayout.graphemes.map((g, i) => (
+                <span key={`${g}-${i}`} aria-hidden>
+                  {g}
+                </span>
+              ))}
+            </p>
+          ) : (
+            <p
+              data-testid="chat-message-body"
+              className="mt-0.5 text-sm leading-relaxed text-foreground"
+            >
+              {renderTextWithMentions(textContent)}
+            </p>
+          ))}
 
         {/* Streaming indicator */}
         {isStreaming && (
@@ -202,36 +370,132 @@ export function HumanChatPanelMessageBubble({
           </span>
         )}
 
-        {/* Reactions */}
-        {reactions.length > 0 && (
-          <div className="mt-1.5 flex flex-wrap items-center gap-1">
-            {reactions.map((reaction, idx) => (
-              <span
-                key={`${reaction.emoji}-${idx}`}
-                className="inline-flex items-center gap-1 rounded-full bg-secondary border border-border px-2 py-0.5 text-xs"
-              >
-                <span>{reaction.emoji}</span>
-                <span className="text-muted-foreground">{reaction.count}</span>
+        {/* Reactions — Discord-style pills; inline add-reaction only when ≥1 reaction exists */}
+        {visibleReactions.length > 0 && (
+          <div
+            data-testid="chat-message-reactions"
+            className="mt-1.5 flex flex-wrap items-center gap-1"
+          >
+            {visibleReactions.map((reaction) => {
+              const tooltip =
+                resolveReactionReactorLabel &&
+                reactionTooltipText(reaction, resolveReactionReactorLabel, t);
+              const pill = (
+                <button
+                  type="button"
+                  disabled={!canReact}
+                  aria-pressed={Boolean(reaction.includesCurrentUser)}
+                  onClick={() => {
+                    if (canReact && onReact) {
+                      void onReact(reaction.emoji);
+                    }
+                  }}
+                  className={cn(
+                    /* Discord: rounded rectangle frame, not a full pill */
+                    'inline-flex h-6 min-w-0 shrink-0 items-center gap-1 rounded-md border px-2 text-xs tabular-nums leading-none transition-colors',
+                    reaction.includesCurrentUser
+                      ? 'border-[#5865f2]/50 bg-[#5865f2]/15 hover:bg-[#5865f2]/20 dark:border-[#5865f2]/40 dark:bg-[#5865f2]/20'
+                      : 'border-border bg-muted/80 hover:bg-muted',
+                    canReact ? 'cursor-pointer' : 'cursor-default opacity-80',
+                  )}
+                >
+                  <span className="text-[15px] leading-none" aria-hidden>
+                    {reaction.emoji}
+                  </span>
+                  <span
+                    className={cn(
+                      'text-[11px] font-medium',
+                      reaction.includesCurrentUser
+                        ? 'text-[#5865f2] dark:text-[#949cf7]'
+                        : 'text-muted-foreground',
+                    )}
+                  >
+                    {reaction.count}
+                  </span>
+                </button>
+              );
+
+              if (tooltip) {
+                return (
+                  <Tooltip key={reaction.emoji} delayDuration={300}>
+                    <TooltipTrigger asChild>{pill}</TooltipTrigger>
+                    <TooltipContent
+                      side="top"
+                      className="max-w-xs text-left text-xs leading-snug"
+                    >
+                      {tooltip}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              }
+              return <Fragment key={reaction.emoji}>{pill}</Fragment>;
+            })}
+            {hiddenReactionCount > 0 && (
+              <span className="text-xs text-muted-foreground">
+                {t('reactionsOverflow', { count: hiddenReactionCount })}
               </span>
-            ))}
+            )}
+            {canReact && onReact && (
+              <HumanChatPanelEmojiPicker
+                open={inlineReactPickerOpen}
+                onOpenChange={setInlineReactPickerOpen}
+                onEmojiSelect={(native) => {
+                  void onReact(native);
+                }}
+                ariaLabel={t('addReactionButton')}
+                align="start"
+              >
+                <button
+                  type="button"
+                  className={cn(
+                    'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-border',
+                    'bg-muted/80 text-muted-foreground transition-colors hover:bg-muted',
+                  )}
+                  aria-label={t('addReactionButton')}
+                  aria-expanded={inlineReactPickerOpen}
+                >
+                  <SmilePlus className="h-3.5 w-3.5" strokeWidth={2} />
+                </button>
+              </HumanChatPanelEmojiPicker>
+            )}
           </div>
         )}
       </div>
 
-      {/* Hover / focus-within action bar */}
-      <div className="absolute right-2 top-0 -translate-y-1/2 flex items-center gap-0.5 rounded-md border border-border bg-background-2 px-1 py-0.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity shadow-sm">
-        <button
-          type="button"
-          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-          aria-label={t('reactButton')}
-          disabled
-          aria-disabled
+      {/* Floating message actions — compact bar matching production (centered icons, h-8) */}
+      <div
+        className={cn(
+          'absolute right-3 top-0 z-10 flex h-8 -translate-y-1/2 items-center justify-center gap-0.5 rounded-full border border-border bg-popover px-1.5 py-0 text-popover-foreground shadow-lg ring-1 ring-black/5 dark:ring-white/10 transition-opacity duration-150',
+          isActionBarVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
+        )}
+        aria-hidden={!isActionBarVisible}
+      >
+        <HumanChatPanelEmojiPicker
+          open={hoverReactPickerOpen}
+          onOpenChange={(open) => {
+            setHoverReactPickerOpen(open);
+            onHoverReactPickerOpenChange?.(open);
+          }}
+          onEmojiSelect={(native) => {
+            if (onReact) void onReact(native);
+          }}
+          ariaLabel={t('emojiPickerReactToMessage')}
+          align="end"
         >
-          <Smile className="h-3.5 w-3.5" />
-        </button>
+          <button
+            type="button"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+            aria-label={t('reactButton')}
+            disabled={!canReact}
+            aria-disabled={!canReact}
+            aria-expanded={hoverReactPickerOpen}
+          >
+            <Smile className="h-3.5 w-3.5" />
+          </button>
+        </HumanChatPanelEmojiPicker>
         <button
           type="button"
-          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors disabled:pointer-events-none disabled:opacity-40"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
           aria-label={t('replyButton')}
           disabled={!canReply}
           aria-disabled={!canReply}
@@ -241,7 +505,7 @@ export function HumanChatPanelMessageBubble({
         </button>
         <button
           type="button"
-          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           aria-label={t('moreButton')}
           disabled
           aria-disabled

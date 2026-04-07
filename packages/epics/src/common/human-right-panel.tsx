@@ -18,6 +18,7 @@ import {
   Message,
   firstLineForReplyPreview,
   RoomEvent,
+  type MessageReaction,
 } from '@hypha-platform/core/client';
 import { UseMembers } from '../spaces';
 
@@ -34,6 +35,8 @@ import { useHumanChatPanel } from './human-chat-panel-context';
 type UIMessage = {
   id: string;
   role: 'user' | 'member';
+  /** True for non-Matrix rows (e.g. welcome); disables reply/reactions. */
+  isSynthetic?: boolean;
   parts?: Array<
     { type: 'text'; text: string } | { type: string; [k: string]: unknown }
   >;
@@ -41,8 +44,16 @@ type UIMessage = {
   avatarUrl?: string;
   /** Matrix event time (origin_server_ts), for header timestamp */
   timestamp?: Date;
+  /** Matrix custom HTML for visible body (when sent with formatting). */
+  formattedContentHtml?: string;
   /** MXID of the message author (for reply target resolution). */
   senderMatrixId?: string;
+  reactions?: Array<{
+    emoji: string;
+    count: number;
+    includesCurrentUser?: boolean;
+    reactorUserIds?: string[];
+  }>;
   replyTo?: {
     authorLabel: string;
     excerpt?: string;
@@ -103,14 +114,25 @@ function toUIMessage(
     };
   }
 
+  const reactions =
+    msg.reactions?.map((r: MessageReaction) => ({
+      emoji: r.key,
+      count: r.count,
+      includesCurrentUser: r.includesCurrentUser,
+      reactorUserIds: r.reactorUserIds,
+    })) ?? undefined;
+
   return {
     id: msg.id,
     role: isCurrentUser ? 'user' : 'member',
+    isSynthetic: false,
     parts: [{ type: 'text', text: msg.content }],
+    formattedContentHtml: msg.formattedContentHtml,
     senderName: isCurrentUser ? undefined : resolveMemberLabel(msg.sender),
     senderMatrixId: msg.sender,
     avatarUrl: isCurrentUser ? currentUserAvatarUrl : undefined,
     timestamp: msg.timestamp,
+    reactions,
     replyTo,
   };
 }
@@ -166,6 +188,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reactionError, setReactionError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ChatPanelTab>('chat');
   const joinedRef = useRef<string | null>(null);
 
@@ -475,16 +498,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       roomId,
       async (message: Message) => {
         setMessages((prev) => {
-          if (prev.some((m) => m.id === message.id)) return prev;
-          return [
-            ...prev,
-            toUIMessage(
-              message,
-              currentUserIdRef.current,
-              resolveMemberLabelRef.current,
-              currentUserAvatarUrlRef.current,
-            ),
-          ];
+          const next = toUIMessage(
+            message,
+            currentUserIdRef.current,
+            resolveMemberLabelRef.current,
+            currentUserAvatarUrlRef.current,
+          );
+          const idx = prev.findIndex((m) => m.id === next.id);
+          if (idx === -1) {
+            return [...prev, next];
+          }
+          return prev.map((m, i) => (i === idx ? next : m));
         });
       },
       async (_pinned: string[]) => {
@@ -528,6 +552,24 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       room.off(RoomEvent.LocalEchoUpdated, onLocalEchoUpdated);
     };
   }, [roomId, client]);
+
+  const handleToggleReaction = useCallback(
+    async (messageId: string, emoji: string) => {
+      if (!roomId) return;
+      setReactionError(null);
+      try {
+        await matrixRef.current.toggleReaction({
+          roomId,
+          targetEventId: messageId,
+          key: emoji,
+        });
+      } catch (err) {
+        console.error('[HumanRightPanel] Failed to toggle reaction:', err);
+        setReactionError(t('reactionToggleFailed'));
+      }
+    },
+    [roomId, t],
+  );
 
   const handleReplyToMessage = useCallback(
     (messageId: string) => {
@@ -587,6 +629,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 {error}
               </div>
             )}
+            {reactionError && (
+              <div
+                role="alert"
+                className="mx-3 mt-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              >
+                {reactionError}
+              </div>
+            )}
             {isJoining ? (
               <div className="flex flex-1 items-center justify-center">
                 <div className="text-sm text-muted-foreground">
@@ -597,6 +647,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               <HumanChatPanelMessages
                 messages={messages}
                 onReply={handleReplyToMessage}
+                onToggleReaction={handleToggleReaction}
+                resolveReactionReactorLabel={(userId) =>
+                  resolveMemberLabel(userId)
+                }
               />
             )}
           </>

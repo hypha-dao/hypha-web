@@ -38,11 +38,27 @@ export interface GetAdminUserNameActionInput {
   environment: Environment;
 }
 
+/** Aggregated Matrix reaction (m.annotation) on an m.room.message. */
+export interface MessageReaction {
+  key: string;
+  count: number;
+  includesCurrentUser?: boolean;
+  /** Current user's m.reaction event id for this key (for toggle off). */
+  currentUserReactionEventId?: string;
+  /** Distinct Matrix user ids who reacted with this key (for hover UI). */
+  reactorUserIds?: string[];
+}
+
 export interface Message {
   id: string;
   sender: string;
   /** Visible message text (reply fallback stripped when applicable). */
   content: string;
+  /**
+   * Matrix `formatted_body` for the visible reply (after stripping quote fallback),
+   * when `format` was `org.matrix.custom.html`. Used for rich timeline rendering.
+   */
+  formattedContentHtml?: string;
   timestamp: Date;
   pinned?: boolean;
   /** Matrix rich reply: event_id of the message being replied to. */
@@ -50,4 +66,6 @@ export interface Message {
   inReplyToSender?: string;
   /** Truncated excerpt for UI; omit when unknown or redacted. */
   inReplyToBodyPreview?: string;
+  /** Aggregated emoji reactions for this message. */
+  reactions?: MessageReaction[];
 }
