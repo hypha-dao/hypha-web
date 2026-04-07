@@ -47,7 +47,7 @@ export function HumanChatPanelMessages({
     role: 'member',
     isSynthetic: true,
     parts: [{ type: 'text', text: t('welcome') }],
-    senderName: 'System',
+    senderName: t('systemSender'),
   };
   const containerRef = useRef<HTMLDivElement>(null);
 
