@@ -1,11 +1,19 @@
 'use client';
 
-import { Fragment, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { TranslationValues } from 'next-intl';
-import { Smile, SmilePlus, Reply, MoreHorizontal } from 'lucide-react';
+import {
+  Smile,
+  SmilePlus,
+  Reply,
+  MoreHorizontal,
+  FileIcon,
+  ExternalLink,
+} from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { useMatrix } from '@hypha-platform/core/client';
 import { PersonAvatar } from '../../people/components/person-avatar';
 
 import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
@@ -21,6 +29,12 @@ type Reaction = {
 type UIMessagePart =
   | { type: 'text'; text: string }
   | { type: string; [k: string]: unknown };
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 type HumanChatPanelMessageBubbleProps = {
   /** Map Matrix user id to display name for reaction hover tooltips. */
@@ -42,6 +56,18 @@ type HumanChatPanelMessageBubbleProps = {
     reactions?: Reaction[];
     /** Matrix formatted_body (subset) for rich display */
     formattedContentHtml?: string;
+    media?: {
+      msgtype: 'm.file' | 'm.image';
+      mxcUrl?: string;
+      filename?: string;
+      mediaInfo?: {
+        mimetype?: string;
+        size?: number;
+        w?: number;
+        h?: number;
+      };
+      spoiler?: boolean;
+    };
     /** Rich reply: quoted context above the new text */
     replyTo?: {
       authorLabel: string;
@@ -244,8 +270,16 @@ export function HumanChatPanelMessageBubble({
   onReact,
 }: HumanChatPanelMessageBubbleProps) {
   const t = useTranslations('HumanChatPanel');
+  const { client } = useMatrix();
   const [hoverReactPickerOpen, setHoverReactPickerOpen] = useState(false);
   const [inlineReactPickerOpen, setInlineReactPickerOpen] = useState(false);
+  const [spoilerRevealed, setSpoilerRevealed] = useState(false);
+
+  const mediaHttpUrl = useMemo(() => {
+    const mxc = message.media?.mxcUrl;
+    if (!mxc || !client) return null;
+    return client.mxcUrlToHttp(mxc, 800, 600, 'scale', true, true, true);
+  }, [client, message.media?.mxcUrl]);
 
   // TODO: Handle non-text parts (file attachments, tool results, etc.)
   const textParts =
@@ -325,6 +359,77 @@ export function HumanChatPanelMessageBubble({
                 </span>
               )}
             </p>
+          </div>
+        )}
+
+        {message.media && message.media.msgtype === 'm.image' && (
+          <div
+            className="relative mt-1 max-w-md overflow-hidden rounded-lg border border-border bg-muted/30"
+            data-testid="chat-message-media-image"
+          >
+            {mediaHttpUrl ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element -- Matrix MXC HTTP URL */}
+                <img
+                  src={mediaHttpUrl}
+                  alt={message.media.filename ?? ''}
+                  className={cn(
+                    'max-h-72 w-full object-contain',
+                    message.media.spoiler && !spoilerRevealed && 'blur-2xl',
+                  )}
+                />
+                {message.media.spoiler && !spoilerRevealed && (
+                  <button
+                    type="button"
+                    className="absolute inset-0 flex items-center justify-center bg-background/60 text-sm font-medium text-foreground"
+                    onClick={() => setSpoilerRevealed(true)}
+                  >
+                    {t('spoilerTapToReveal')}
+                  </button>
+                )}
+              </>
+            ) : (
+              <p className="p-3 text-sm text-muted-foreground">
+                {message.media.filename ?? t('attachmentUnavailable')}
+              </p>
+            )}
+          </div>
+        )}
+
+        {message.media && message.media.msgtype === 'm.file' && (
+          <div
+            className="mt-1 max-w-md rounded-lg border border-border bg-card px-3 py-2"
+            data-testid="chat-message-media-file"
+          >
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                <FileIcon className="h-5 w-5" strokeWidth={1.5} />
+              </div>
+              <div className="min-w-0 flex-1">
+                {mediaHttpUrl ? (
+                  <a
+                    href={mediaHttpUrl}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                  >
+                    <span className="truncate">
+                      {message.media.filename ?? t('attachment')}
+                    </span>
+                    <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                  </a>
+                ) : (
+                  <span className="truncate text-sm font-medium text-foreground">
+                    {message.media.filename ?? t('attachment')}
+                  </span>
+                )}
+                {message.media.mediaInfo?.size != null && (
+                  <p className="text-xs text-muted-foreground">
+                    {formatFileSize(message.media.mediaInfo.size)}
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
         )}
 

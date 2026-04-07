@@ -8,6 +8,9 @@ import type { Message } from './types';
 /** Element / Hypha custom HTML for `m.room.message` (with plaintext `body` fallback). */
 export const MATRIX_CUSTOM_HTML_FORMAT = 'org.matrix.custom.html';
 
+/** Custom field on `m.room.message` for Discord-style blurred media until click. */
+export const HYPHA_SPOILER_FIELD = 'org.hypha.spoiler';
+
 export const RICH_REPLY_PREVIEW_MAX = 280;
 
 /** Single-line reply excerpt (Discord-style): first line only, then optional char cap. */
@@ -211,7 +214,19 @@ export function messageFromRoomMessageEvent(
     body?: string;
     format?: string;
     formatted_body?: string;
+    msgtype?: string;
+    url?: string;
+    filename?: string;
+    info?: {
+      mimetype?: string;
+      size?: number;
+      w?: number;
+      h?: number;
+    };
+    [key: string]: unknown;
   };
+  const msgtypeRaw = content.msgtype;
+  const isMedia = msgtypeRaw === 'm.file' || msgtypeRaw === 'm.image';
   const rawBody = content.body ?? '';
   const replyToId = event.getWireContent()?.['m.relates_to']?.['m.in_reply_to']
     ?.event_id as string | undefined;
@@ -240,14 +255,19 @@ export function messageFromRoomMessageEvent(
         inReplyToBodyPreview = firstLineForReplyPreview(parsed.previewLine);
       }
     }
-    displayBody = stripMatrixReplyFallback(rawBody);
-    if (
-      content.format === MATRIX_CUSTOM_HTML_FORMAT &&
-      typeof content.formatted_body === 'string'
-    ) {
-      formattedContentHtml = extractReplyFormattedHtml(content.formatted_body);
+    if (!isMedia) {
+      displayBody = stripMatrixReplyFallback(rawBody);
+      if (
+        content.format === MATRIX_CUSTOM_HTML_FORMAT &&
+        typeof content.formatted_body === 'string'
+      ) {
+        formattedContentHtml = extractReplyFormattedHtml(
+          content.formatted_body,
+        );
+      }
     }
   } else if (
+    !isMedia &&
     content.format === MATRIX_CUSTOM_HTML_FORMAT &&
     typeof content.formatted_body === 'string'
   ) {
@@ -258,6 +278,41 @@ export function messageFromRoomMessageEvent(
   const sender = event.getSender();
   if (!id || !sender) {
     throw new Error('Matrix room message event missing id or sender');
+  }
+
+  if (isMedia) {
+    const spoilerVal = content[HYPHA_SPOILER_FIELD];
+    const mxcUrl =
+      typeof content.url === 'string' && content.url.startsWith('mxc://')
+        ? content.url
+        : undefined;
+    const info = content.info;
+    return {
+      id,
+      sender,
+      msgtype: msgtypeRaw as Message['msgtype'],
+      content: rawBody,
+      formattedContentHtml,
+      timestamp: new Date(event.getTs()),
+      pinned,
+      inReplyToEventId: replyToId,
+      inReplyToSender,
+      inReplyToBodyPreview,
+      mxcUrl,
+      filename:
+        typeof content.filename === 'string'
+          ? content.filename
+          : rawBody || undefined,
+      mediaInfo: info
+        ? {
+            mimetype: info.mimetype,
+            size: info.size,
+            w: info.w,
+            h: info.h,
+          }
+        : undefined,
+      spoiler: spoilerVal === true,
+    };
   }
 
   return {

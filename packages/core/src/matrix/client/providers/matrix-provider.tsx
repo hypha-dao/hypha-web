@@ -12,15 +12,47 @@ import {
   matrixTextEventContentWithOptionalFormatting,
 } from '../../chat-markup';
 import {
+  HYPHA_SPOILER_FIELD,
   messageFromRoomMessageEvent,
   resolveReplyTargetForSend,
 } from '../../rich-reply';
+
+export interface SendAttachmentInput {
+  file: File;
+  /** Drives Matrix `msgtype`: `m.image` vs `m.file`. */
+  kind: 'file' | 'image';
+  /** Blur in timeline until clicked (`org.hypha.spoiler` on the event). */
+  spoiler?: boolean;
+}
 
 interface SendMessageInput {
   roomId: string;
   message: string;
   /** Rich reply: target m.room.message event id (space chat; not m.thread). */
   replyToEventId?: string;
+  /** Uploaded to the homeserver and sent as separate `m.file` / `m.image` events before optional text. */
+  attachments?: SendAttachmentInput[];
+}
+
+function loadImageDimensions(
+  file: File,
+): Promise<{ w: number; h: number } | undefined> {
+  if (!file.type.startsWith('image/')) {
+    return Promise.resolve(undefined);
+  }
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new globalThis.Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve({ w: img.naturalWidth, h: img.naturalHeight });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(undefined);
+    };
+    img.src = url;
+  });
 }
 
 export interface ToggleReactionInput {
@@ -247,26 +279,112 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   );
 
   const sendMessage = React.useCallback(
-    async ({ roomId, message, replyToEventId }: SendMessageInput) => {
+    async ({
+      roomId,
+      message,
+      replyToEventId,
+      attachments,
+    }: SendMessageInput) => {
       if (!client) {
         throw new Error('Client should be specified');
-      }
-      if (!message.trim()) {
-        return;
       }
       if (!roomId?.trim()) {
         return;
       }
 
+      const trimmed = message.trim();
+      const list = attachments?.length ? attachments : [];
+      const hasAttachments = list.length > 0;
+      if (!trimmed && !hasAttachments) {
+        return;
+      }
+
+      let replyContext:
+        | {
+            resolvedTargetId: string;
+            sender: string;
+            targetBody: string;
+          }
+        | undefined;
+
       if (replyToEventId?.trim()) {
-        const {
-          eventId: resolvedTargetId,
-          sender,
-          body: targetBody,
-        } = await resolveReplyTargetForSend(client, roomId, replyToEventId);
+        const resolved = await resolveReplyTargetForSend(
+          client,
+          roomId,
+          replyToEventId,
+        );
+        replyContext = {
+          resolvedTargetId: resolved.eventId,
+          sender: resolved.sender,
+          targetBody: resolved.body,
+        };
+      }
+
+      const sendOneMedia = async (att: SendAttachmentInput) => {
+        const upload = await client.uploadContent(att.file, {
+          name: att.file.name,
+          type: att.file.type || undefined,
+        });
+        const mxc = upload.content_uri;
+        const msgtype = att.kind === 'image' ? MsgType.Image : MsgType.File;
+        let info: {
+          mimetype?: string;
+          size?: number;
+          w?: number;
+          h?: number;
+        } = {
+          mimetype: att.file.type || undefined,
+          size: att.file.size,
+        };
+        if (msgtype === MsgType.Image) {
+          const dims = await loadImageDimensions(att.file);
+          if (dims) {
+            info = { ...info, w: dims.w, h: dims.h };
+          }
+        }
+
+        const caption = att.file.name;
+        const base: Record<string, unknown> = {
+          msgtype,
+          body: caption,
+          filename: att.file.name,
+          url: mxc,
+          info,
+        };
+        if (att.spoiler) {
+          base[HYPHA_SPOILER_FIELD] = true;
+        }
+
+        if (replyContext) {
+          await client.sendEvent(roomId, EventType.RoomMessage, {
+            ...base,
+            'm.relates_to': {
+              'm.in_reply_to': {
+                event_id: replyContext.resolvedTargetId,
+              },
+            },
+          } as RoomMessageEventContent);
+        } else {
+          await client.sendEvent(
+            roomId,
+            EventType.RoomMessage,
+            base as unknown as RoomMessageEventContent,
+          );
+        }
+      };
+
+      for (const att of list) {
+        await sendOneMedia(att);
+      }
+
+      if (!trimmed) {
+        return;
+      }
+
+      if (replyContext && !hasAttachments) {
         const payload = buildRichReplyMatrixContent(
-          sender,
-          targetBody,
+          replyContext.sender,
+          replyContext.targetBody,
           message,
         );
         await client.sendEvent(roomId, EventType.RoomMessage, {
@@ -274,7 +392,22 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           ...payload,
           'm.relates_to': {
             'm.in_reply_to': {
-              event_id: resolvedTargetId,
+              event_id: replyContext.resolvedTargetId,
+            },
+          },
+        } as RoomMessageEventContent);
+        return;
+      }
+
+      if (replyContext && hasAttachments) {
+        const textPayload =
+          matrixTextEventContentWithOptionalFormatting(message);
+        await client.sendEvent(roomId, EventType.RoomMessage, {
+          msgtype: MsgType.Text,
+          ...textPayload,
+          'm.relates_to': {
+            'm.in_reply_to': {
+              event_id: replyContext.resolvedTargetId,
             },
           },
         } as RoomMessageEventContent);

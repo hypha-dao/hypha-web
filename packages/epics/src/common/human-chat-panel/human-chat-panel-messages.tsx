@@ -13,6 +13,18 @@ type UIMessage = {
   parts?: Array<
     { type: 'text'; text: string } | { type: string; [k: string]: unknown }
   >;
+  media?: {
+    msgtype: 'm.file' | 'm.image';
+    mxcUrl?: string;
+    filename?: string;
+    mediaInfo?: {
+      mimetype?: string;
+      size?: number;
+      w?: number;
+      h?: number;
+    };
+    spoiler?: boolean;
+  };
   senderName?: string;
   avatarUrl?: string;
   timestamp?: Date;

@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import {
   Paperclip,
-  Image,
+  ImageIcon,
   Bold,
   Italic,
   Strikethrough,
@@ -14,6 +14,8 @@ import {
   AtSign,
   Send,
   X,
+  Trash2,
+  FileIcon,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -34,6 +36,14 @@ type ReplyPreview = {
   onDismiss: () => void;
 };
 
+export type ChatDraftAttachment = {
+  id: string;
+  file: File;
+  kind: 'file' | 'image';
+  previewUrl: string;
+  spoiler: boolean;
+};
+
 type HumanChatPanelChatBarProps = {
   value: string;
   onChange: (value: string) => void;
@@ -42,7 +52,15 @@ type HumanChatPanelChatBarProps = {
   channelName?: string;
   /** Rich reply: composer preview above the textarea */
   replyPreview?: ReplyPreview;
+  draftAttachments?: ChatDraftAttachment[];
+  onDraftAttachmentsChange?: (next: ChatDraftAttachment[]) => void;
 };
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 function insertAtCaret(
   value: string,
@@ -79,8 +97,14 @@ export function HumanChatPanelChatBar({
   placeholder,
   channelName,
   replyPreview,
+  draftAttachments = [],
+  onDraftAttachmentsChange,
 }: HumanChatPanelChatBarProps) {
   const t = useTranslations('HumanChatPanel');
+  const fileInputId = useId();
+  const imageInputId = useId();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const composerShellRef = useRef<HTMLDivElement>(null);
   const replyPreviewWasOpenRef = useRef(false);
@@ -321,20 +345,68 @@ export function HumanChatPanelChatBar({
 
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
-      if (value.trim().length > 0) {
+      if (value.trim().length > 0 || draftAttachments.length > 0) {
         onSend();
       }
     }
   };
 
-  const canSend = value.trim().length > 0;
+  const canSend = value.trim().length > 0 || draftAttachments.length > 0;
 
   const defaultPlaceholder = channelName
     ? t('placeholderChannel', { channel: channelName })
     : t('placeholder');
 
-  const handleAttachFile = () => {};
-  const handleAttachImage = () => {};
+  const pushDrafts = useCallback(
+    (files: FileList | File[], kind: 'file' | 'image') => {
+      if (!onDraftAttachmentsChange) return;
+      const arr = Array.from(files);
+      const next: ChatDraftAttachment[] = [...draftAttachments];
+      for (const file of arr) {
+        if (kind === 'image' && !file.type.startsWith('image/')) {
+          continue;
+        }
+        next.push({
+          id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          file,
+          kind: file.type.startsWith('image/') ? 'image' : 'file',
+          previewUrl: URL.createObjectURL(file),
+          spoiler: false,
+        });
+      }
+      onDraftAttachmentsChange(next);
+    },
+    [draftAttachments, onDraftAttachmentsChange],
+  );
+
+  const removeDraft = useCallback(
+    (id: string) => {
+      if (!onDraftAttachmentsChange) return;
+      const att = draftAttachments.find((a) => a.id === id);
+      if (att) URL.revokeObjectURL(att.previewUrl);
+      onDraftAttachmentsChange(draftAttachments.filter((a) => a.id !== id));
+    },
+    [draftAttachments, onDraftAttachmentsChange],
+  );
+
+  const toggleDraftSpoiler = useCallback(
+    (id: string) => {
+      if (!onDraftAttachmentsChange) return;
+      onDraftAttachmentsChange(
+        draftAttachments.map((a) =>
+          a.id === id ? { ...a, spoiler: !a.spoiler } : a,
+        ),
+      );
+    },
+    [draftAttachments, onDraftAttachmentsChange],
+  );
+
+  const handleAttachFile = () => {
+    fileInputRef.current?.click();
+  };
+  const handleAttachImage = () => {
+    imageInputRef.current?.click();
+  };
   const handleBold = () => {};
   const handleMention = () => {};
 
@@ -432,6 +504,95 @@ export function HumanChatPanelChatBar({
             </div>
           </>
         )}
+        <input
+          ref={fileInputRef}
+          id={fileInputId}
+          type="file"
+          className="sr-only"
+          multiple
+          onChange={(e) => {
+            if (e.target.files?.length) {
+              pushDrafts(e.target.files, 'file');
+            }
+            e.target.value = '';
+          }}
+        />
+        <input
+          ref={imageInputRef}
+          id={imageInputId}
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          multiple
+          onChange={(e) => {
+            if (e.target.files?.length) {
+              pushDrafts(e.target.files, 'image');
+            }
+            e.target.value = '';
+          }}
+        />
+
+        {draftAttachments.length > 0 && (
+          <div
+            className="flex flex-wrap gap-2 border-b border-border px-3 py-2"
+            data-testid="chat-draft-attachments"
+          >
+            {draftAttachments.map((att) => (
+              <div
+                key={att.id}
+                className="relative flex max-w-[200px] flex-col gap-1 rounded-lg border border-border bg-muted/40 p-1.5"
+              >
+                <div className="relative aspect-video w-full overflow-hidden rounded-md bg-background">
+                  {att.kind === 'image' ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- local object URL preview
+                    <img
+                      src={att.previewUrl}
+                      alt=""
+                      className={cn(
+                        'h-full w-full object-cover',
+                        att.spoiler && 'scale-105 blur-xl',
+                      )}
+                    />
+                  ) : (
+                    <div className="flex h-full min-h-[72px] items-center justify-center text-muted-foreground">
+                      <FileIcon className="h-10 w-10" strokeWidth={1.25} />
+                    </div>
+                  )}
+                  <div className="absolute right-1 top-1 flex gap-0.5 rounded-md bg-popover/95 p-0.5 shadow">
+                    {att.kind === 'image' && (
+                      <button
+                        type="button"
+                        className="rounded p-1 text-foreground hover:bg-muted"
+                        title={t('attachmentSpoiler')}
+                        aria-label={t('attachmentSpoiler')}
+                        aria-pressed={att.spoiler}
+                        onClick={() => toggleDraftSpoiler(att.id)}
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="rounded p-1 text-destructive hover:bg-destructive/10"
+                      title={t('attachmentRemove')}
+                      aria-label={t('attachmentRemove')}
+                      onClick={() => removeDraft(att.id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+                <p className="truncate px-0.5 text-xs text-muted-foreground">
+                  {att.file.name}
+                </p>
+                <p className="px-0.5 text-[10px] text-muted-foreground/80">
+                  {formatFileSize(att.file.size)}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+
         {replyPreview && (
           <div
             data-testid="chat-reply-preview"
@@ -532,7 +693,7 @@ export function HumanChatPanelChatBar({
               title={t('attachImage')}
               onClick={handleAttachImage}
             >
-              <Image className="h-4 w-4" />
+              <ImageIcon className="h-4 w-4" />
             </button>
           </div>
 
