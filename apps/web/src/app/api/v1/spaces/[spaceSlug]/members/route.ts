@@ -79,7 +79,10 @@ export async function GET(
     }
 
     if (!roster.found) {
-      return NextResponse.json({ error: 'Space not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Space roster unavailable for this slug.' },
+        { status: 404 },
+      );
     }
 
     return NextResponse.json({
