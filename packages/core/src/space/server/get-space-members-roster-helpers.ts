@@ -13,7 +13,7 @@ export type RosterPerson = {
   location?: string;
   nickname?: string;
   address?: string;
-  links?: string[];
+  links: string[];
   createdAt: Date;
   updatedAt: Date;
 };

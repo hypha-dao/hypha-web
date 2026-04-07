@@ -11,6 +11,7 @@ describe('buildMemberEntriesFromAddresses', () => {
     const p1 = {
       id: 10,
       slug: 'alice',
+      links: [],
       createdAt: new Date('2020-01-01'),
       updatedAt: new Date('2020-01-01'),
     };
@@ -72,6 +73,7 @@ describe('buildMemberEntriesFromAddresses', () => {
     const p1 = {
       id: 10,
       slug: 'alice',
+      links: [],
       createdAt: new Date('2020-01-01'),
       updatedAt: new Date('2020-01-01'),
     };
