@@ -1658,7 +1658,8 @@
     "emojiPickerReactToMessage": "Réagir avec un emoji",
     "emojiShortcodeListLabel": "Raccourcis emoji",
     "reactionsOverflow": "+{count} de plus",
-    "reactionReactorsTooltip": "{names} ont réagi avec {emoji}"
+    "reactionReactorsTooltip": "{names} ont réagi avec {emoji}",
+    "reactionToggleFailed": "Impossible de mettre à jour la réaction. Réessayez."
   },
   "CoherenceTab": {
     "signals": "Signaux",

@@ -188,6 +188,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reactionError, setReactionError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ChatPanelTab>('chat');
   const joinedRef = useRef<string | null>(null);
 
@@ -555,6 +556,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const handleToggleReaction = useCallback(
     async (messageId: string, emoji: string) => {
       if (!roomId) return;
+      setReactionError(null);
       try {
         await matrixRef.current.toggleReaction({
           roomId,
@@ -563,9 +565,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         });
       } catch (err) {
         console.error('[HumanRightPanel] Failed to toggle reaction:', err);
+        setReactionError(t('reactionToggleFailed'));
       }
     },
-    [roomId],
+    [roomId, t],
   );
 
   const handleReplyToMessage = useCallback(
@@ -624,6 +627,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 className="mx-3 mt-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
               >
                 {error}
+              </div>
+            )}
+            {reactionError && (
+              <div
+                role="alert"
+                className="mx-3 mt-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              >
+                {reactionError}
               </div>
             )}
             {isJoining ? (
