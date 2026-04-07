@@ -220,8 +220,8 @@ export function HumanChatPanelMessageBubble({
           </span>
         )}
 
-        {/* Reactions — Discord-style pills + inline add-reaction (opens picker) */}
-        {(visibleReactions.length > 0 || (canReact && onReact)) && (
+        {/* Reactions — Discord-style pills; inline add-reaction only when ≥1 reaction exists */}
+        {visibleReactions.length > 0 && (
           <div
             data-testid="chat-message-reactions"
             className="mt-1.5 flex flex-wrap items-center gap-1"
@@ -277,8 +277,9 @@ export function HumanChatPanelMessageBubble({
                 <button
                   type="button"
                   className={cn(
-                    'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#949ba4]/40 bg-[#f2f3f5] text-[#4e5058] transition-colors',
-                    'hover:bg-[#e3e5e8] dark:border-border dark:bg-muted/80 dark:text-muted-foreground dark:hover:bg-muted',
+                    'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[#4e5058] transition-colors',
+                    'border-[#949ba4]/40 bg-[#f2f3f5] hover:bg-[#e3e5e8]',
+                    'dark:border-white/10 dark:bg-[#2b2d31] dark:text-[#b5bac1] dark:hover:bg-[#35373c]',
                   )}
                   aria-label={t('addReactionButton')}
                   aria-expanded={inlineReactPickerOpen}
