@@ -56,7 +56,7 @@ export class CoherencePage extends BasePage {
 
     // Navigation tab — TabsTrigger with asChild merges role="tab" onto the <a> Link
     this.coherenceTab = page.getByRole('tab', {
-      name: /coherence|cohérence|coheren|kohärenz/i,
+      name: /coherence|cohérence|coerência|coherencia|kohärenz/i,
     });
 
     // Signal section label (SectionFilter: "{label} | {count}")
