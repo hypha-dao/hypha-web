@@ -7,7 +7,7 @@
     "lint": "eslint .",
     "check-types": "tsc --noEmit",
     "start": "node --import tsx src/main.ts",
-    "dev": "node --import tsx src/main.ts"
+    "dev": "tsx watch src/main.ts"
   },
   "dependencies": {
     "@hypha-platform/core": "workspace:*",
