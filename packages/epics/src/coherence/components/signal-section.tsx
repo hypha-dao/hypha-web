@@ -30,7 +30,6 @@ import Link from 'next/link';
 import { cva } from 'class-variance-authority';
 import { cn } from '@hypha-platform/ui-utils';
 import React from 'react';
-import { useTranslations } from 'next-intl';
 
 type SignalSectionProps = {
   basePath: string;
@@ -56,7 +55,6 @@ export const SignalSection: FC<SignalSectionProps> = ({
   refresh,
   onSignalClick,
 }) => {
-  const t = useTranslations('CoherenceTab');
   const { lang, id } = useParams<{ lang: Locale; id: string }>();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -136,24 +134,16 @@ export const SignalSection: FC<SignalSectionProps> = ({
       typeMap[signal.type] = count + 1;
     }
     const coherenceTypes = COHERENCE_TYPE_OPTIONS.map((option) => ({
-      label: t(
-        `types.${option.type}` as
-          | 'types.Opportunity'
-          | 'types.Risk'
-          | 'types.Tension'
-          | 'types.Insight'
-          | 'types.Trend'
-          | 'types.Proposal',
-      ),
+      label: option.title,
       value: option.type,
       count: typeMap[option.type],
     }));
     const typeOptions = [
-      { label: t('all'), value: 'all', count: signals.length },
+      { label: 'All', value: 'all', count: signals.length },
       ...coherenceTypes,
     ];
     return typeOptions;
-  }, [signals, t]);
+  }, [signals]);
 
   return (
     <div className="flex flex-col justify-around items-center gap-4">
@@ -161,14 +151,14 @@ export const SignalSection: FC<SignalSectionProps> = ({
         count={pagination?.total || 0}
         label={label || ''}
         hasSearch={hasSearch}
-        searchPlaceholder={t('searchSignals')}
+        searchPlaceholder="Search signals..."
         onChangeSearch={onUpdateSearch}
         inlineLabel={true}
       >
         <div className="flex flex-row gap-2">
           <Button variant="ghost" colorVariant="accent" disabled={true}>
             <RocketIcon />
-            {t('improve')}
+            Improve
           </Button>
           <Link href={createSignalHref}>
             <Button
@@ -177,7 +167,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
               disabled={isLoading}
             >
               <PlusIcon />
-              {t('newSignal')}
+              New Signal
             </Button>
           </Link>
         </div>
@@ -206,7 +196,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
 
       {pagination?.totalPages === 0 ? (
         <Empty>
-          <p>{t('listIsEmpty')}</p>
+          <p>List is empty</p>
         </Empty>
       ) : (
         <div className="w-full space-y-2">
@@ -240,7 +230,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
           isLoading={isLoading}
         >
           <Text>
-            {pagination?.totalPages === pages ? t('noMore') : t('loadMore')}
+            {pagination?.totalPages === pages ? 'No more' : 'Load more'}
           </Text>
         </SectionLoadMore>
       )}

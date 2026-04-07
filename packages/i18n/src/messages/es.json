@@ -35,7 +35,7 @@
     "errorLoadTreasuryTab": "Ups, algo salió mal. No se pudo cargar la pestaña de tesorería.",
     "publish": "Publicar",
     "invalidTransactions": "Transacciones inválidas",
-    "Coherence": "Coherencia"
+    "Coherence": "Coherence"
   },
   "AgreementFlow": {
     "proposalErrors": {
@@ -1630,21 +1630,17 @@
     "you": "Tú",
     "reactButton": "Reaccionar",
     "replyButton": "Responder",
-    "replyingTo": "Respondiendo a {author}",
-    "replyDismiss": "Cancelar respuesta",
-    "replyOriginalUnavailable": "Mensaje original no disponible",
     "moreButton": "Más",
     "attachFile": "Adjuntar archivo",
     "attachImage": "Adjuntar imagen",
     "bold": "Negrita",
     "emoji": "Emoji",
     "mention": "Mencionar",
-    "timestampToday": "{time}",
+    "timestampToday": "Hoy a las {time}",
     "timestampYesterday": "Ayer a las {time}",
     "timestampDate": "{date} a las {time}",
     "systemSender": "Sistema",
     "noMembers": "No se encontraron miembros",
-    "unknownMember": "Desconocido",
     "backToSpaceChat": "Volver al chat del espacio",
     "failedToJoinRoom": "No se pudo unir a la sala de conversación"
   },
@@ -1656,8 +1652,6 @@
     "newSignal": "Nueva señal",
     "all": "Todos",
     "listIsEmpty": "La lista está vacía",
-    "loadMore": "Cargar más",
-    "noMore": "No hay más",
     "mostViews": "Más vistas",
     "mostMessages": "Más mensajes",
     "mostRecent": "Más recientes",
@@ -1716,17 +1710,6 @@
       "high": "Necesita atención inmediata",
       "medium": "Supervisar y actuar pronto",
       "low": "Informativo, sin prisa"
-    },
-    "keepWindowOpenWhileCreating": "Mantenga esta ventana abierta hasta que la barra de progreso termine.",
-    "tagLabels": {
-      "Strategy": "Estrategia",
-      "Culture": "Cultura",
-      "Onboarding": "Incorporación",
-      "Engagement": "Compromiso",
-      "Learning": "Aprendizaje",
-      "Capacity": "Capacidad",
-      "Network": "Red",
-      "Reputation": "Reputación"
     }
   },
   "SignalCard": {

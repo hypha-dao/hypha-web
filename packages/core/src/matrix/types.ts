@@ -41,13 +41,7 @@ export interface GetAdminUserNameActionInput {
 export interface Message {
   id: string;
   sender: string;
-  /** Visible message text (reply fallback stripped when applicable). */
   content: string;
   timestamp: Date;
   pinned?: boolean;
-  /** Matrix rich reply: event_id of the message being replied to. */
-  inReplyToEventId?: string;
-  inReplyToSender?: string;
-  /** Truncated excerpt for UI; omit when unknown or redacted. */
-  inReplyToBodyPreview?: string;
 }

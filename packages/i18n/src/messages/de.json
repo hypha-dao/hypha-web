@@ -35,7 +35,7 @@
     "errorLoadTreasuryTab": "Ups, etwas ist schiefgelaufen. Der Treasury-Tab konnte nicht geladen werden.",
     "publish": "Veröffentlichen",
     "invalidTransactions": "Ungültige Transaktionen",
-    "Coherence": "Kohärenz"
+    "Coherence": "Coherence"
   },
   "Navigation": {
     "network": "Netzwerk",
@@ -1630,21 +1630,17 @@
     "you": "Du",
     "reactButton": "Reagieren",
     "replyButton": "Antworten",
-    "replyingTo": "Antwort an {author}",
-    "replyDismiss": "Antwort abbrechen",
-    "replyOriginalUnavailable": "Ursprüngliche Nachricht nicht verfügbar",
     "moreButton": "Mehr",
     "attachFile": "Datei anhängen",
     "attachImage": "Bild anhängen",
     "bold": "Fett",
     "emoji": "Emoji",
     "mention": "Erwähnen",
-    "timestampToday": "{time}",
+    "timestampToday": "Heute um {time}",
     "timestampYesterday": "Gestern um {time}",
     "timestampDate": "{date} um {time}",
     "systemSender": "System",
     "noMembers": "Keine Mitglieder gefunden",
-    "unknownMember": "Unbekannt",
     "backToSpaceChat": "Zurück zum Space-Chat",
     "failedToJoinRoom": "Gesprächsraum konnte nicht beigetreten werden"
   },
@@ -1656,8 +1652,6 @@
     "newSignal": "Neues Signal",
     "all": "Alle",
     "listIsEmpty": "Liste ist leer",
-    "loadMore": "Mehr laden",
-    "noMore": "Nichts mehr",
     "mostViews": "Meiste Aufrufe",
     "mostMessages": "Meiste Nachrichten",
     "mostRecent": "Neueste",
@@ -1716,17 +1710,6 @@
       "high": "Erfordert sofortige Aufmerksamkeit",
       "medium": "Beobachten und bald handeln",
       "low": "Informativ, keine Eile"
-    },
-    "keepWindowOpenWhileCreating": "Bitte lassen Sie dieses Fenster offen, bis die Fortschrittsanzeige abgeschlossen ist.",
-    "tagLabels": {
-      "Strategy": "Strategie",
-      "Culture": "Kultur",
-      "Onboarding": "Onboarding",
-      "Engagement": "Engagement",
-      "Learning": "Lernen",
-      "Capacity": "Kapazität",
-      "Network": "Netzwerk",
-      "Reputation": "Reputation"
     }
   },
   "SignalCard": {
