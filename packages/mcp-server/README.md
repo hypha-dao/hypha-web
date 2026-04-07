@@ -10,6 +10,10 @@ Stdio [Model Context Protocol](https://modelcontextprotocol.io) server exposing 
 
 Without a token, **non-public** spaces return an access error. Public spaces still work without a token.
 
+## TypeScript
+
+`tsconfig.json` extends the shared Next.js preset so `tsc --noEmit` matches other packages. Switching this package alone to **`moduleResolution: NodeNext`** would make TypeScript follow `@hypha-platform/core/server` into `packages/core` with extension rules that the core sources do not satisfy, so the preset stays as-is until core adopts Node16/NodeNext-compatible imports.
+
 ## Configuration
 
 Set the same environment variables required for DB and RPC access as the rest of the monorepo (e.g. `DEFAULT_DB_URL` or Neon/Postgres URLs, `NEXT_PUBLIC_RPC_URL` where `publicClient` reads the chain). For roster tools on restricted spaces, set **`HYPHA_MCP_AUTH_TOKEN`**.
