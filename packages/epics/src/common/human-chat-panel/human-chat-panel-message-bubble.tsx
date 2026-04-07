@@ -444,10 +444,10 @@ export function HumanChatPanelMessageBubble({
         )}
       </div>
 
-      {/* Discord-style floating pill: only on row hover (or while emoji picker open) */}
+      {/* Discord-style floating bar: stadium (full) rounding + elevated surface */}
       <div
         className={cn(
-          'absolute right-3 top-0 z-10 flex -translate-y-1/2 items-center gap-0.5 rounded-full border border-border bg-background px-1 py-0.5 shadow-md transition-opacity duration-150',
+          'absolute right-3 top-0 z-10 flex h-8 -translate-y-1/2 items-center gap-0.5 rounded-full border border-border bg-popover px-1.5 py-0 text-popover-foreground shadow-lg ring-1 ring-black/5 dark:ring-white/10 transition-opacity duration-150',
           showFloatingToolbar
             ? 'opacity-100'
             : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100',
@@ -464,7 +464,7 @@ export function HumanChatPanelMessageBubble({
         >
           <button
             type="button"
-            className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
             aria-label={t('reactButton')}
             disabled={!canReact}
             aria-disabled={!canReact}
@@ -475,7 +475,7 @@ export function HumanChatPanelMessageBubble({
         </HumanChatPanelEmojiPicker>
         <button
           type="button"
-          className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
           aria-label={t('replyButton')}
           disabled={!canReply}
           aria-disabled={!canReply}
@@ -485,7 +485,7 @@ export function HumanChatPanelMessageBubble({
         </button>
         <button
           type="button"
-          className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           aria-label={t('moreButton')}
           disabled
           aria-disabled
