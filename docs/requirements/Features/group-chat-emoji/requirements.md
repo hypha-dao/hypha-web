@@ -96,16 +96,16 @@ Space members use the **group chat panel** to talk in the Matrix room mapped to 
 
 **FR-12** The shared **`Message`** type (`packages/core/src/matrix/types.ts`) SHALL include optional **reaction** metadata, for example:
 
-- `reactions?: { key: string; count: number; includesCurrentUser?: boolean }[]`
+- `reactions?: { key: string; count: number; includesCurrentUser?: boolean; currentUserReactionEventId?: string }[]`
 
-(sorted key order is implementation-defined; counts MUST reflect aggregation rules below).
+(`currentUserReactionEventId` supports redacting the user’s own `m.reaction` when toggling off; sorted key order is implementation-defined; counts MUST reflect aggregation rules below).
 
 **FR-13** **`MatrixProvider`** (or the module that owns `sendMessage` / timeline listeners) SHALL expose **sendReaction** / **toggleReaction** (names flexible) that:
 
 - Send `client.sendEvent(roomId, 'm.reaction', { 'm.relates_to': { rel_type: 'm.annotation', event_id, key } })` for **add**, and
 - **Remove** the current user’s prior reaction for that `(event_id, key)` via **redaction** of the corresponding `m.reaction` event id when toggling off.
 
-**FR-14** Timeline processing SHALL **listen** for `m.reaction` events (and redactions) and **update** aggregated reactions on the target `m.room.message` in UI state. Implementation SHALL use **`matrix-js-sdk`** facilities for relations/annotations where available (e.g. aggregated relations APIs), or merge manually from the room timeline with correct **deduplication** by sender + key.
+**FR-14** Timeline processing SHALL **listen** for `m.reaction` events (and redactions) and **update** aggregated reactions on the target `m.room.message` in UI state. **Initial load and pagination:** When messages are first built from the room timeline (including scrollback), the system SHALL aggregate **all existing** `m.reaction` events for each `m.room.message` and populate `Message.reactions` (same rules as live updates)—e.g. **`attachReactionsToMessage`** after **`messageFromRoomMessageEvent`**, or equivalent relation queries. Implementation SHALL use **`matrix-js-sdk`** facilities for relations/annotations where available (e.g. aggregated relations APIs), or merge manually from the room timeline. **Deduplication (races):** If multiple `m.reaction` events exist from the **same sender** with the **same key**, the implementation SHALL count **one** reaction per sender+key for display: treat the **latest** non-redacted event by **`origin_server_ts`** as canonical for **`includesCurrentUser`** / **`currentUserReactionEventId`**; older duplicates MUST NOT inflate counts. **Toggle-off:** Redact the canonical **`m.reaction` event id** for the current user+key (if duplicates exist, redact the tracked id; homeserver may leave orphans—acceptable for v1).
 
 **FR-15** Implementation SHALL remain compatible with **`matrix-js-sdk@^40.0.0`** (Hypha constraint; avoid `^41` in Next.js until upgraded project-wide).
 
