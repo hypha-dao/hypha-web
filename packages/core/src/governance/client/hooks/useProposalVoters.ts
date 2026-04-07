@@ -6,6 +6,7 @@ type Voter = {
   name: string;
   avatarUrl: string;
   vote: 'yes' | 'no';
+  address: `0x${string}`;
 };
 
 export const useProposalVoters = (documentSlug?: string) => {

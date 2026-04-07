@@ -1,0 +1,36 @@
+{
+  "name": "hypha-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/server.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "scripts": {
+    "postinstall": "[ -f .env ] || cp .env.template .env",
+    "dev": "tsx src/server.ts",
+    "build": "tsc && tsc-alias",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "@fastify/autoload": "^6.3.1",
+    "@fastify/cors": "^11.0.1",
+    "@fastify/env": "^5.0.3",
+    "@fastify/rate-limit": "^10.3.0",
+    "@fastify/sensible": "^6.0.4",
+    "@fastify/swagger": "^9.5.1",
+    "@fastify/swagger-ui": "^5.2.3",
+    "alchemy-sdk": "^3.6.1",
+    "fastify": "^5.4.0",
+    "fastify-plugin": "^5.1.0",
+    "server-only": "^0.0.1",
+    "slugify": "^1.6.6",
+    "typebox": "^1.0.41",
+    "uploadthing": "^7.5.2",
+    "viem": "^2.27.2"
+  },
+  "devDependencies": {
+    "@hypha-platform/config-typescript": "workspace:*",
+    "tsc-alias": "^1.8.16"
+  }
+}

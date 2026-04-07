@@ -15,7 +15,7 @@ export const EthAddress = ({
       onClick={() => onClick(address)}
       className="w-full flex justify-between items-center cursor-pointer"
     >
-      <span className="text-neutral-9">
+      <span className="text-neutral-11">
         {`${address.slice(0, 6)}…${address.slice(-4)}`}
       </span>
       <CopyIcon className="icon-sm ml-2" />

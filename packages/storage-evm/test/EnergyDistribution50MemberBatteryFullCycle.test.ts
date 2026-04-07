@@ -190,7 +190,7 @@ describe('EnergyDistribution50MemberBatteryFullCycle', function () {
     console.log(`\n${timeLabel} - Community Summary:`);
 
     let totalAllocations = 0;
-    let totalValue = 0;
+    const totalValue = 0;
 
     // Sample a few members for detailed view
     const sampleIndices = [0, 9, 19, 29, 39, 49]; // Sample 6 members across the range

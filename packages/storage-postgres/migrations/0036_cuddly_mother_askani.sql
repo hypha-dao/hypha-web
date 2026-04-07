@@ -1,0 +1,1 @@
+ALTER TABLE "tokens" ADD COLUMN "agreement_web3_id" integer;

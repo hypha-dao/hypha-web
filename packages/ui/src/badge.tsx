@@ -7,6 +7,11 @@ import { Skeleton } from './skeleton';
 
 const parameters = {
   size: {
+    0: {
+      text: 'text-1',
+      px: 'px-[0.6rem]',
+      py: 'py-[2]',
+    },
     1: {
       text: 'text-1',
       px: 'px-[0.6rem]',
@@ -30,6 +35,11 @@ const badgeVariants = cva(
   {
     variants: {
       size: {
+        0: [
+          parameters.size[0].text,
+          parameters.size[0].px,
+          parameters.size[0].py,
+        ],
         1: [
           parameters.size[1].text,
           parameters.size[1].px,
@@ -155,7 +165,7 @@ const badgeVariants = cva(
         variant: 'surface',
         colorVariant: 'success',
         className:
-          'border-success-7 bg-success-2 text-success-11 hover:bg-success-3',
+          'border-success-11 bg-success-2 text-success-11 hover:bg-success-3',
       },
       {
         variant: 'surface',

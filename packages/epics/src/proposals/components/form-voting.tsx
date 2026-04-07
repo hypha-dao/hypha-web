@@ -1,18 +1,45 @@
-import { Button, Skeleton, Separator } from '@hypha-platform/ui';
+'use client';
+
+import { Button, Skeleton, Separator, Image } from '@hypha-platform/ui';
+import { WithdrawResubmitBanner } from './withdraw-resubmit-banner';
 import { ProgressLine } from './progress-line';
 import { intervalToDuration, isPast } from 'date-fns';
-import { Loader2 } from 'lucide-react';
 import { VoterList } from '../../governance/components/voter-list';
+import {
+  useMyVote,
+  useIsDelegate,
+  type SpaceDetails,
+  useMe,
+  useWithdrawProposal,
+  useJwt,
+  useAgreementMutationsWeb2Rsc,
+  TOKENS,
+  useSpaceMinProposalDuration,
+} from '@hypha-platform/core/client';
+import { getTokenUpdateByDocumentIdAction } from '@hypha-platform/core/governance/server/actions';
+import {
+  buildUpdateIssuedTokenResubmitPayload,
+  RESUBMIT_UPDATE_ISSUED_TOKEN_EMBEDDED_FIELD,
+  type UpdateTokenProposalSnapshot,
+} from '../update-issued-token-resubmit';
+import { useSpaceMember } from '../../spaces';
+import { formatDuration } from '@hypha-platform/ui-utils';
+import { useTheme } from 'next-themes';
+import { useState } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { formatUnits } from 'viem';
 
 function formatTimeRemaining(
   endTime: string,
+  tProposalDetails: any,
   executed?: boolean,
   expired?: boolean,
 ): string {
   const end = new Date(endTime);
 
   if (isPast(end) || executed || expired) {
-    return 'Vote closed';
+    return tProposalDetails('voting.voteClosed');
   }
 
   const duration = intervalToDuration({
@@ -26,9 +53,42 @@ function formatTimeRemaining(
   if (duration.minutes) parts.push(`${duration.minutes}m`);
 
   return parts.length
-    ? `This vote will close in ${parts.join(' ')}`
-    : 'Vote closing soon';
+    ? tProposalDetails('voting.voteWillCloseIn', { duration: parts.join(' ') })
+    : tProposalDetails('voting.voteClosingSoon');
 }
+
+const getCreateRouteForLabel = (label: string | undefined): string => {
+  if (!label) return '';
+
+  const labelToRoute: Record<string, string> = {
+    Contribution: 'propose-contribution',
+    'Collective Agreement': '',
+    Expenses: 'pay-for-expenses',
+    Funding: 'deploy-funds',
+    'Voting Method': 'change-voting-method',
+    'Entry Method': 'change-entry-method',
+    'Issue New Token': 'issue-new-token',
+    'Buy Hypha Tokens': 'buy-hypha-tokens',
+    'Activate Spaces': 'activate-spaces',
+    'Space To Space': 'space-to-space-membership',
+    'Treasury Minting': 'mint-tokens-to-space-treasury',
+    'Redeem Tokens': 'redeem-tokens',
+    'Token Burning': 'token-burning',
+    'Membership Exit': 'membership-exit',
+    'Backing Vault': 'token-backing-vault',
+    'Update Token': 'update-issued-token',
+    'Token Purchase': 'space-token-purchase',
+  };
+
+  return labelToRoute[label] || '';
+};
+
+const USDC_ADDRESS = TOKENS.find(
+  (token) => token.symbol === 'USDC',
+)?.address?.toLowerCase();
+const EURC_ADDRESS = TOKENS.find(
+  (token) => token.symbol === 'EURC',
+)?.address?.toLowerCase();
 
 export const FormVoting = ({
   unity,
@@ -39,9 +99,29 @@ export const FormVoting = ({
   isLoading,
   onAccept,
   onReject,
-  onCheckProposalExpiration,
+  isCheckingExpiration,
   isVoting,
   documentSlug,
+  isAuthenticated,
+  web3SpaceId,
+  spaceDetails,
+  proposalStatus,
+  hideDurationData,
+  proposalId,
+  proposalCreator,
+  onWithdrawSuccess,
+  documentTitle,
+  documentDescription,
+  documentLeadImage,
+  documentAttachments,
+  spaceSlug,
+  closeUrl,
+  label,
+  documentId,
+  updateTokenProposalSnapshot,
+  redeemResubmitPayload,
+  proposalTemplateData,
+  spaceTokenPurchaseData,
 }: {
   unity: number;
   quorum: number;
@@ -51,15 +131,297 @@ export const FormVoting = ({
   isLoading?: boolean;
   onAccept: () => void;
   onReject: () => void;
-  onCheckProposalExpiration: () => void;
+  isCheckingExpiration: boolean;
   isVoting?: boolean;
   documentSlug: string;
+  isAuthenticated?: boolean;
+  web3SpaceId?: number;
+  spaceDetails?: SpaceDetails;
+  proposalStatus?: string | null;
+  hideDurationData?: boolean;
+  proposalId?: number | null;
+  proposalCreator?: `0x${string}` | null;
+  onWithdrawSuccess?: () => void;
+  documentTitle?: string;
+  documentDescription?: string;
+  documentLeadImage?: string;
+  documentAttachments?: (string | { name: string; url: string })[];
+  spaceSlug?: string;
+  closeUrl?: string;
+  label?: string;
+  documentId?: number;
+  updateTokenProposalSnapshot?: UpdateTokenProposalSnapshot | null;
+  redeemResubmitPayload?: {
+    token: string;
+    amount: string;
+    conversions: { asset: string; percentage: string }[];
+  };
+  proposalTemplateData?: Record<string, unknown>;
+  spaceTokenPurchaseData?: {
+    tokenAddress?: string;
+    paymentToken?: string;
+    paymentTokenPricePerToken?: bigint;
+    tokensForSale?: bigint;
+    isActive?: boolean;
+  };
 }) => {
+  const tCommon = useTranslations('Common');
+  const tProposalDetails = useTranslations('ProposalDetails');
+  const { myVote } = useMyVote(documentSlug);
+  const { isMember } = useSpaceMember({ spaceId: web3SpaceId as number });
+  const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
+  const { theme } = useTheme();
+  const { person } = useMe();
+  const { jwt } = useJwt();
+  const router = useRouter();
+  const params = useParams();
+  const lang = params?.lang as string;
+  const { withdrawProposal, isWithdrawing } = useWithdrawProposal({
+    proposalId: proposalId ?? null,
+  });
+  const { deleteAgreementBySlug } = useAgreementMutationsWeb2Rsc(jwt);
+
+  const [localVote, setLocalVote] = useState<'no' | 'yes' | null>(null);
+
+  const isCreator = Boolean(
+    proposalCreator &&
+      person?.address &&
+      proposalCreator.toLowerCase() === person.address.toLowerCase(),
+  );
+
+  const showWithdrawBlock =
+    isCreator &&
+    !executed &&
+    !expired &&
+    !isPast(new Date(endTime)) &&
+    proposalStatus === 'onVoting';
+
+  const deleteDocument = async () => {
+    if (!documentSlug || !jwt) return;
+
+    try {
+      await deleteAgreementBySlug({ slug: documentSlug });
+    } catch (error) {
+      console.error('Error deleting document:', error);
+    }
+  };
+
+  const handleWithdraw = async () => {
+    try {
+      await withdrawProposal();
+      await deleteDocument();
+      await onWithdrawSuccess?.();
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      if (closeUrl) {
+        router.push(closeUrl);
+      } else {
+        router.refresh();
+      }
+    } catch (error) {
+      console.error('Error withdrawing proposal:', error);
+    }
+  };
+
+  const handleResubmit = async () => {
+    try {
+      const paymentTokenAddress =
+        spaceTokenPurchaseData?.paymentToken?.toLowerCase();
+      const purchaseCurrency =
+        paymentTokenAddress === EURC_ADDRESS
+          ? 'EUR'
+          : paymentTokenAddress === USDC_ADDRESS
+          ? 'USD'
+          : undefined;
+      const purchasePrice =
+        spaceTokenPurchaseData?.paymentTokenPricePerToken !== undefined
+          ? Number(
+              formatUnits(spaceTokenPurchaseData.paymentTokenPricePerToken, 6),
+            )
+          : undefined;
+      const tokensAvailableForPurchase =
+        spaceTokenPurchaseData?.tokensForSale !== undefined
+          ? Number(formatUnits(spaceTokenPurchaseData.tokensForSale, 18))
+          : undefined;
+      let updateIssuedTokenResubmitPayload: ReturnType<
+        typeof buildUpdateIssuedTokenResubmitPayload
+      > = null;
+
+      if (label === 'Update Token') {
+        let dbRow: Awaited<
+          ReturnType<typeof getTokenUpdateByDocumentIdAction>
+        > | null = null;
+        if (documentId != null && jwt) {
+          try {
+            dbRow = await getTokenUpdateByDocumentIdAction(documentId, {
+              authToken: jwt,
+            });
+          } catch {
+            dbRow = null;
+          }
+        }
+        updateIssuedTokenResubmitPayload =
+          buildUpdateIssuedTokenResubmitPayload({
+            dbRow: dbRow
+              ? {
+                  tokenAddress: dbRow.tokenAddress,
+                  data: dbRow.data,
+                }
+              : null,
+            snapshot: updateTokenProposalSnapshot ?? null,
+          });
+      }
+
+      const proposalData = {
+        title: documentTitle || '',
+        description: documentDescription || '',
+        leadImage: documentLeadImage || undefined,
+        attachments: documentAttachments || undefined,
+        ...(proposalTemplateData ?? {}),
+        ...(redeemResubmitPayload
+          ? { redeemResubmit: redeemResubmitPayload }
+          : {}),
+        ...(label === 'Token Purchase'
+          ? {
+              tokenAddress: spaceTokenPurchaseData?.tokenAddress || '',
+              activatePurchase: Boolean(spaceTokenPurchaseData?.isActive),
+              purchaseCurrency,
+              purchasePrice: Number.isFinite(purchasePrice)
+                ? purchasePrice
+                : undefined,
+              tokensAvailableForPurchase: Number.isFinite(
+                tokensAvailableForPurchase,
+              )
+                ? tokensAvailableForPurchase
+                : undefined,
+            }
+          : {}),
+        ...(label === 'Update Token' && updateIssuedTokenResubmitPayload
+          ? {
+              [RESUBMIT_UPDATE_ISSUED_TOKEN_EMBEDDED_FIELD]:
+                updateIssuedTokenResubmitPayload,
+            }
+          : {}),
+      };
+
+      sessionStorage.setItem(
+        'resubmitProposalData',
+        JSON.stringify(proposalData),
+      );
+
+      const saved = sessionStorage.getItem('resubmitProposalData');
+      if (!saved) {
+        console.error('Failed to save resubmit data to sessionStorage');
+        return;
+      }
+
+      await withdrawProposal();
+      await deleteDocument();
+      await onWithdrawSuccess?.();
+
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      if (spaceSlug && lang) {
+        const routePath = getCreateRouteForLabel(label);
+
+        let createPath: string;
+        if (routePath === '') {
+          createPath = `/${lang}/dho/${spaceSlug}/agreements/create`;
+        } else {
+          createPath = `/${lang}/dho/${spaceSlug}/agreements/create/${routePath}`;
+        }
+
+        router.push(createPath);
+      } else {
+        router.refresh();
+      }
+    } catch (error) {
+      console.error('Error resubmitting proposal:', error);
+      sessionStorage.removeItem('resubmitProposalData');
+      sessionStorage.removeItem('resubmitFormData');
+    }
+  };
+
+  const isDisabled =
+    isVoting ||
+    !isAuthenticated ||
+    isCheckingExpiration ||
+    (!isMember && !isDelegate);
+  const tooltipMessage = !isAuthenticated
+    ? tCommon('signIn')
+    : !isMember && !isDelegate
+    ? tCommon('joinSpaceToUse')
+    : '';
+
+  function getVoteLabels(spaceDetails?: SpaceDetails) {
+    if (!spaceDetails) {
+      return {
+        reject: tProposalDetails('voting.voteNo'),
+        accept: tProposalDetails('voting.voteYes'),
+      };
+    }
+
+    const quorum = Number(spaceDetails.quorum);
+    const unity = Number(spaceDetails.unity);
+
+    if (quorum === 0 && unity === 100) {
+      return {
+        reject: tProposalDetails('voting.object'),
+        accept: tProposalDetails('voting.consent'),
+      };
+    }
+
+    if (quorum === 100 && unity === 100) {
+      return {
+        reject: tProposalDetails('voting.no'),
+        accept: tProposalDetails('voting.hellYeah'),
+      };
+    }
+
+    if (quorum === 100 && unity === 0) {
+      return {
+        reject: tProposalDetails('voting.notSure'),
+        accept: tProposalDetails('voting.looksGood'),
+      };
+    }
+
+    return {
+      reject: tProposalDetails('voting.voteNo'),
+      accept: tProposalDetails('voting.voteYes'),
+    };
+  }
+
+  const labels = getVoteLabels(spaceDetails);
+
+  const hideTargets = () => {
+    return proposalStatus === 'accepted' || proposalStatus === 'rejected';
+  };
+
+  const spaceIdBigInt = web3SpaceId ? BigInt(web3SpaceId) : undefined;
+
+  const { duration } = useSpaceMinProposalDuration({
+    spaceId: spaceIdBigInt as bigint,
+  });
+
+  const handleAccept = () => {
+    setLocalVote('yes');
+    onAccept();
+  };
+
+  const handleReject = () => {
+    setLocalVote('no');
+    onReject();
+  };
+
+  const showVotedMessage = myVote || localVote;
+  const voteText = myVote || localVote;
+
+  const isRejectDisabled = isDisabled || voteText === 'no';
+  const isAcceptDisabled = isDisabled || voteText === 'yes';
+
   return (
-    <div className="flex flex-col gap-5 text-neutral-11">
+    <div className="flex flex-col gap-7 text-neutral-11">
       <VoterList documentSlug={documentSlug} />
-      <Separator />
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-6">
         <Skeleton
           width="100%"
           height="28px"
@@ -67,9 +429,13 @@ export const FormVoting = ({
           className="rounded-lg"
         >
           <ProgressLine
-            label="Unity"
-            value={unity}
-            indicatorColor="bg-accent-9"
+            label={tProposalDetails('voting.quorumMinParticipation')}
+            value={quorum}
+            target={
+              spaceDetails?.quorum ? Number(spaceDetails.quorum) : undefined
+            }
+            indicatorColor="bg-accent-12"
+            hideTargets={hideTargets()}
           />
         </Skeleton>
         <Skeleton
@@ -79,46 +445,136 @@ export const FormVoting = ({
           className="rounded-lg"
         >
           <ProgressLine
-            label="Quorum"
-            value={quorum}
-            indicatorColor="bg-accent-12"
+            label={tProposalDetails('voting.unityMinAlignment')}
+            value={unity}
+            target={
+              spaceDetails?.unity ? Number(spaceDetails.unity) : undefined
+            }
+            indicatorColor="bg-accent-9"
+            hideTargets={hideTargets()}
           />
         </Skeleton>
       </div>
-      <div className="flex items-center justify-between">
+      <div className="flex items-end justify-between">
         <Skeleton
           width="100%"
           height="28px"
           loading={isLoading}
           className="rounded-lg"
         >
-          <div className="text-1">
-            {formatTimeRemaining(endTime, executed, expired)}
-          </div>
-          {isPast(new Date(endTime)) && !executed && !expired ? (
-            <div className="flex gap-2">
-              <Button onClick={onCheckProposalExpiration}>Expire</Button>
-            </div>
-          ) : null}
-          {executed || expired || isPast(new Date(endTime)) ? null : (
-            <div className="flex gap-2">
-              {isVoting ? (
-                <div className="flex items-center gap-2 text-sm text-neutral-10">
-                  <Loader2 className="animate-spin w-4 h-4" />
-                  Processing vote...
+          <div className="flex flex-col gap-3">
+            <Skeleton
+              loading={isLoading}
+              width={120}
+              height={40}
+              className="rounded-lg"
+            >
+              {hideDurationData ? null : Number(duration) === 0 ? (
+                <div className="flex gap-2 h-fit items-center">
+                  <Image
+                    className="max-w-[24px] max-h-[24px] min-w-[24px] min-h-[24px]"
+                    width={24}
+                    height={24}
+                    src={
+                      theme === 'light'
+                        ? '/placeholder/auto-execution-icon-light.svg'
+                        : '/placeholder/auto-execution-icon.svg'
+                    }
+                    alt={tProposalDetails('voting.proposalVotingIconAlt')}
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-1 text-accent-11 text-nowrap font-medium">
+                      {tProposalDetails('voting.autoExecution')}
+                    </span>
+                    <span className="text-[9px] text-accent-11 text-nowrap font-medium">
+                      {spaceDetails?.quorum}%{' '}
+                      {tProposalDetails('labels.quorum')} |{' '}
+                      {spaceDetails?.unity}% {tProposalDetails('labels.unity')}
+                    </span>
+                  </div>
                 </div>
               ) : (
-                <>
-                  <Button variant="outline" onClick={onReject}>
-                    Vote no
-                  </Button>
-                  <Button onClick={onAccept}>Vote yes</Button>
-                </>
+                <div className="flex gap-2 h-fit items-center">
+                  <Image
+                    className="max-w-[24px] max-h-[24px] min-w-[24px] min-h-[24px]"
+                    width={24}
+                    height={24}
+                    src={
+                      theme === 'light'
+                        ? '/placeholder/non-auto-execution-icon-light.svg'
+                        : '/placeholder/non-auto-execution-icon.svg'
+                    }
+                    alt={tProposalDetails('voting.proposalVotingIconAlt')}
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-1 text-accent-11 text-nowrap font-medium">
+                      {tProposalDetails('voting.toVote', {
+                        duration: formatDuration(Number(duration)),
+                      })}
+                    </span>
+                    <span className="text-[9px] text-accent-11 text-nowrap font-medium">
+                      {spaceDetails?.quorum}%{' '}
+                      {tProposalDetails('labels.quorum')} |{' '}
+                      {spaceDetails?.unity}% {tProposalDetails('labels.unity')}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </Skeleton>
+            <div className="text-1">
+              {formatTimeRemaining(
+                endTime,
+                tProposalDetails,
+                executed,
+                expired,
+              )}
+            </div>
+          </div>
+          {executed || expired || isPast(new Date(endTime)) ? null : (
+            <div className="flex flex-col gap-2 items-end">
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  colorVariant="accent"
+                  className="active:bg-accent-9"
+                  onClick={handleReject}
+                  disabled={isRejectDisabled}
+                  title={tooltipMessage}
+                >
+                  {labels.reject}
+                </Button>
+                <Button
+                  variant="outline"
+                  colorVariant="accent"
+                  className="active:bg-accent-9"
+                  onClick={handleAccept}
+                  disabled={isAcceptDisabled}
+                  title={tooltipMessage}
+                >
+                  {labels.accept}
+                </Button>
+              </div>
+              {showVotedMessage && (
+                <div className="text-2 text-neutral-10">
+                  {tProposalDetails('voting.youVoted', {
+                    vote:
+                      voteText === 'yes'
+                        ? tProposalDetails('voting.voteValueYes')
+                        : tProposalDetails('voting.voteValueNo'),
+                  })}
+                </div>
               )}
             </div>
           )}
         </Skeleton>
       </div>
+      {showWithdrawBlock && (
+        <WithdrawResubmitBanner
+          onWithdraw={handleWithdraw}
+          onResubmit={handleResubmit}
+          isWithdrawing={isWithdrawing}
+        />
+      )}
     </div>
   );
 };

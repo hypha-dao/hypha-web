@@ -2,7 +2,8 @@
 
 import React from 'react';
 import useSWR from 'swr';
-import { TransferWithPerson } from './types';
+import { TransferWithEntity } from './types';
+import { useAuthentication } from '@hypha-platform/authentication';
 
 export const useTransfers = ({
   sort,
@@ -13,32 +14,40 @@ export const useTransfers = ({
   refreshInterval?: number;
   spaceSlug?: string;
 }) => {
+  const { getAccessToken } = useAuthentication();
+
   const endpoint = React.useMemo(() => {
     if (!spaceSlug) return '';
-    return `/api/v1/spaces/${spaceSlug}/transfers`;
-  }, [spaceSlug]);
+    const base = `/api/v1/spaces/${spaceSlug}/transfers`;
+    return sort?.sort ? `${base}?sort=${encodeURIComponent(sort.sort)}` : base;
+  }, [spaceSlug, sort]);
 
   const { data, isLoading, error } = useSWR(
-    spaceSlug ? [endpoint, sort] : null,
-    async ([endpoint, sort]) => {
-      const url = new URL(endpoint, window.location.origin);
-      if (sort?.sort) {
-        url.searchParams.set('sort', sort.sort);
-      }
+    spaceSlug ? [endpoint] : null,
+    async ([endpoint]) => {
+      try {
+        const token = await getAccessToken();
+        const headers: HeadersInit = {};
 
-      const res = await fetch(url.toString(), {
-        headers: { 'Content-Type': 'application/json' },
-      });
-      if (!res.ok) {
-        throw new Error(`Failed to fetch transfers: ${res.statusText}`);
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+
+        const res = await fetch(endpoint, { headers });
+        if (!res.ok) {
+          throw new Error(`Failed to fetch transfers: ${res.statusText}`);
+        }
+        return await res.json();
+      } catch (err) {
+        console.error('Fetch error:', err);
+        throw err;
       }
-      return await res.json();
     },
     { refreshInterval },
   );
 
   return {
-    transfers: data as TransferWithPerson[],
+    transfers: (data as TransferWithEntity[]) || [],
     isLoading,
     error,
   };

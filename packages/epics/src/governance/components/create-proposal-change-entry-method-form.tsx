@@ -1,6 +1,5 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Address,
   createAgreementFiles,
@@ -10,15 +9,19 @@ import {
   useJwt,
   useMe,
   useSpaceDetailsWeb3Rpc,
+  type Space,
 } from '@hypha-platform/core/client';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { useConfig } from 'wagmi';
 import { z } from 'zod';
-import { CreateAgreementBaseFields } from '@hypha-platform/epics';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
+import { useSpaceTokenRequirementsByAddress } from '../hooks';
+import { CreateAgreementBaseFields } from '../../agreements';
+import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
+import { useTranslations } from 'next-intl';
+import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
 
 const schemaCreateProposalChangeEntryMethod =
   schemaChangeEntryMethod.extend(createAgreementFiles);
@@ -31,6 +34,7 @@ interface CreateProposalChangeEntryMethodFormProps {
   successfulUrl: string;
   backUrl?: string;
   plugin: React.ReactNode;
+  spaces: Space[];
 }
 
 const ENTRY_METHODS = [
@@ -45,13 +49,20 @@ export const CreateProposalChangeEntryMethodForm = ({
   spaceId,
   web3SpaceId,
   plugin,
+  spaces,
 }: CreateProposalChangeEntryMethodFormProps) => {
-  const router = useRouter();
+  const tSpaces = useTranslations('Spaces');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
   const { spaceDetails, isLoading } = useSpaceDetailsWeb3Rpc({
     spaceId: web3SpaceId as number,
+  });
+
+  const { requiredToken, requiredAmount } = useSpaceTokenRequirementsByAddress({
+    spaceAddress: spaceDetails?.executor,
+    spaces,
   });
 
   const {
@@ -61,8 +72,11 @@ export const CreateProposalChangeEntryMethodForm = ({
     isError,
     isPending,
     progress,
-    changeEntryMethod: { slug: agreementSlug },
   } = useChangeEntryMethodOrchestrator({ authToken: jwt, config });
+  const resolver = useLocalizedProposalResolver(
+    schemaCreateProposalChangeEntryMethod,
+    tAgreementFlow,
+  );
 
   const defaultValues = React.useMemo(() => {
     return {
@@ -80,10 +94,14 @@ export const CreateProposalChangeEntryMethodForm = ({
     };
   }, [spaceId, person, spaceDetails]);
 
+  const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
-    resolver: zodResolver(schemaCreateProposalChangeEntryMethod),
+    resolver,
     defaultValues: defaultValues,
   });
+
+  useScrollToErrors(form, formRef);
+  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
 
   React.useEffect(() => {
     if (spaceDetails && !isLoading) {
@@ -92,6 +110,18 @@ export const CreateProposalChangeEntryMethodForm = ({
       form.setValue('entryMethod', Number(entryMethod));
     }
   }, [spaceDetails, isLoading]);
+
+  React.useEffect(() => {
+    if (requiredToken) {
+      const tokenBase = requiredToken
+        ? {
+            amount: requiredAmount as number,
+            token: requiredToken?.address as string,
+          }
+        : undefined;
+      form.setValue('tokenBase', tokenBase);
+    }
+  }, [requiredToken]);
 
   const handleCreate = async (data: FormValues) => {
     if (
@@ -123,21 +153,18 @@ export const CreateProposalChangeEntryMethodForm = ({
     console.log('Invalid form:', err);
   };
 
-  React.useEffect(() => {
-    if (progress === 100 && agreementSlug) {
-      router.push(successfulUrl);
-    }
-  }, [progress, agreementSlug, router, successfulUrl]);
-
   return (
     <LoadingBackdrop
+      showKeepWindowOpenMessage={true}
+      keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
+      fullHeight={true}
       progress={progress}
       isLoading={isPending}
       message={
         isError ? (
           <div className="flex flex-col">
-            <div>Ouh Snap. There was an error</div>
-            <Button onClick={reset}>Reset</Button>
+            <div>{tSpaces('errorOhSnap')}</div>
+            <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (
           <div>{currentAction}</div>
@@ -146,25 +173,29 @@ export const CreateProposalChangeEntryMethodForm = ({
     >
       <Form {...form}>
         <form
+          ref={formRef}
           onSubmit={form.handleSubmit(handleCreate, onInvalid)}
           className="flex flex-col gap-5"
         >
           <CreateAgreementBaseFields
+            key={resubmitKey}
             creator={{
               avatar: person?.avatarUrl || '',
               name: person?.name || '',
               surname: person?.surname || '',
             }}
+            successfulUrl={successfulUrl}
             backUrl={backUrl}
-            backLabel="Back to Settings"
+            backLabel={tSpaces('backToSettings')}
             closeUrl={successfulUrl}
             isLoading={false}
-            label="Entry Method"
+            label={tAgreementFlow('labels.entryMethod')}
+            progress={progress}
           />
           {plugin}
           <Separator />
           <div className="flex justify-end w-full">
-            <Button type="submit">Publish</Button>
+            <Button type="submit">{tAgreementFlow('buttons.publish')}</Button>
           </div>
         </form>
       </Form>

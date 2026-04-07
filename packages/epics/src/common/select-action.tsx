@@ -1,19 +1,22 @@
 'use client';
 
 import { Card, Separator, Skeleton, TextWithLinks } from '@hypha-platform/ui';
-import { isAbsoluteUrl } from '@hypha-platform/ui-utils';
 import clsx from 'clsx';
 import Link from 'next/link';
 import React from 'react';
 
-type ActionProps = {
+export type ActionProps = {
   title: string;
   description: string;
   group?: string;
-  href: string;
+  href?: string;
+  /** Agreements vs treasury tab segment for relative links */
+  baseTab?: string;
   icon: React.ReactNode;
   disabled?: boolean;
   target?: string;
+  defaultDurationDays?: number;
+  onAction?: () => void;
 };
 
 type SelectActionProps = {
@@ -21,6 +24,7 @@ type SelectActionProps = {
   title: string;
   content: string;
   actions: ActionProps[];
+  children?: React.ReactNode;
 };
 
 type GroupedActions = {
@@ -32,6 +36,7 @@ export const SelectAction = ({
   title,
   content,
   actions,
+  children,
 }: SelectActionProps) => {
   const groupedActions = React.useMemo(
     () =>
@@ -61,6 +66,7 @@ export const SelectAction = ({
       >
         <span className="text-2 text-neutral-11">{content}</span>
       </Skeleton>
+      {children}
       <Separator />
       <div className="flex flex-col gap-6">
         {Object.entries(groupedActions || {}).map(([group, groupActions]) => (
@@ -68,25 +74,30 @@ export const SelectAction = ({
             {group && (
               <h3 className="text-3 font-medium text-neutral-11">{group}</h3>
             )}
-            {groupActions.map((action) => (
-              <Link
-                href={action.href}
-                key={action.title}
-                target={action.target}
-                {...(action.disabled && {
-                  onClick: (e) => e.preventDefault(),
-                  'aria-disabled': 'true',
-                })}
-              >
+            {groupActions.map((action) => {
+              const isLink = !action.onAction && !!action.href;
+
+              const handleClick = (e: React.MouseEvent) => {
+                if (action.disabled) {
+                  e.preventDefault();
+                  return;
+                }
+
+                if (action.onAction) {
+                  e.preventDefault();
+                  action.onAction();
+                }
+              };
+              const card = (
                 <Card
                   className={clsx(
                     'flex p-6 cursor-pointer space-x-4 items-center',
                     {
                       'opacity-50 cursor-not-allowed': action.disabled,
-                      // 'hover:border-accent-5': !action.disabled,
                     },
                   )}
                   aria-disabled={action.disabled}
+                  onClick={handleClick}
                 >
                   <div>{action.icon}</div>
                   <div className="flex flex-col">
@@ -96,8 +107,21 @@ export const SelectAction = ({
                     </span>
                   </div>
                 </Card>
-              </Link>
-            ))}
+              );
+              return isLink ? (
+                <Link
+                  href={action.href!}
+                  target={action.target}
+                  onClick={handleClick}
+                  key={action.title}
+                  aria-disabled={action.disabled}
+                >
+                  {card}
+                </Link>
+              ) : (
+                <div key={action.title}>{card}</div>
+              );
+            })}
           </div>
         ))}
       </div>

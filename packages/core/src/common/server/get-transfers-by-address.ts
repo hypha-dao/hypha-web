@@ -31,8 +31,6 @@ export async function getTransfersByAddress(
   const { address, contractAddresses, limit = 50 } = params;
   const alchemy = getAlchemy();
 
-  const maxLimit = Math.min(limit, 50);
-
   const fromTransfers = await alchemy.core.getAssetTransfers({
     fromAddress: address,
     category: [AssetTransfersCategory.ERC20],
@@ -47,43 +45,43 @@ export async function getTransfersByAddress(
     withMetadata: true,
   });
 
-  const allTransfers = [...fromTransfers.transfers, ...toTransfers.transfers]
-    .slice(0, maxLimit)
-    .map((transfer) => {
-      const blockNumber = parseInt(transfer.blockNum, 16);
-      const getTimestampAndMetadata = async () => {
-        const block = await alchemy.core.getBlock(blockNumber);
-        const tokenMetadata = transfer.rawContract.address
-          ? await alchemy.core.getTokenMetadata(transfer.rawContract.address)
-          : { decimals: 18, symbol: transfer.asset || 'UNKNOWN' };
-        return {
-          timestamp: block.timestamp * 1000,
-          decimals: tokenMetadata.decimals ?? 18,
-          symbol: tokenMetadata.symbol ?? transfer.asset ?? 'UNKNOWN',
-        };
-      };
+  const allTransfers = [
+    ...fromTransfers.transfers,
+    ...toTransfers.transfers,
+  ].map((transfer) => {
+    const blockNumber = parseInt(transfer.blockNum, 16);
+    const timestamp = Date.parse(transfer.metadata.blockTimestamp) || 0;
 
+    const getMetadata = async () => {
+      const tokenMetadata = transfer.rawContract.address
+        ? await alchemy.core.getTokenMetadata(transfer.rawContract.address)
+        : { decimals: 18, symbol: transfer.asset || 'UNKNOWN' };
       return {
-        from: transfer.from,
-        to: transfer.to ?? '',
-        value: transfer.value ? transfer.value.toString() : '0',
-        symbol: transfer.asset ?? 'UNKNOWN',
-        decimals: 18,
-        token: transfer.rawContract.address ?? '',
-        timestamp: 0,
-        block_number: blockNumber,
-        transaction_index: 0,
-        transaction_hash: transfer.hash,
-        _getTimestampAndMetadata: getTimestampAndMetadata,
+        decimals: tokenMetadata.decimals ?? 18,
+        symbol: tokenMetadata.symbol ?? transfer.asset ?? 'UNKNOWN',
       };
-    });
+    };
+
+    return {
+      from: transfer.from,
+      to: transfer.to ?? '',
+      value: transfer.value ? transfer.value.toString() : '0',
+      symbol: transfer.asset ?? 'UNKNOWN',
+      decimals: 18,
+      token: transfer.rawContract.address ?? '',
+      timestamp,
+      block_number: blockNumber,
+      transaction_index: 0,
+      transaction_hash: transfer.hash,
+      _getMetadata: getMetadata,
+    };
+  });
 
   const transfersWithData = await Promise.all(
     allTransfers.map(async (transfer) => {
-      const { timestamp, decimals, symbol } =
-        await transfer._getTimestampAndMetadata();
-      const { _getTimestampAndMetadata, ...rest } = transfer;
-      return { ...rest, timestamp, decimals, symbol };
+      const { decimals, symbol } = await transfer._getMetadata();
+      const { _getMetadata, ...rest } = transfer;
+      return { ...rest, decimals, symbol };
     }),
   );
 

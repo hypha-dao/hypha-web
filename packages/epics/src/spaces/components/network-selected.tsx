@@ -1,16 +1,13 @@
 'use client';
 
 import { Category, Space } from '@hypha-platform/core/client';
-import {
-  CategorySearch,
-  SpaceCardList,
-  UseMembers,
-} from '@hypha-platform/epics';
+import { CategorySearch, SpaceCardList } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { ChevronLeftIcon } from '@radix-ui/react-icons';
 import { Text } from '@radix-ui/themes';
 import Link from 'next/link';
 import React from 'react';
+import { useTranslations } from 'next-intl';
 
 const categoriesIntersected = (
   categories1: Category[],
@@ -22,14 +19,13 @@ export function NetworkSelected({
   spaces,
   categories,
   uniqueCategories,
-  useMembers,
 }: {
   lang: Locale;
   spaces: Space[];
   categories: Category[];
   uniqueCategories: Category[];
-  useMembers: UseMembers;
 }) {
+  const tCommon = useTranslations('Common');
   const selectedSpaces = React.useMemo(
     () =>
       spaces.filter((space) =>
@@ -52,7 +48,7 @@ export function NetworkSelected({
           className="cursor-pointer flex items-center"
         >
           <ChevronLeftIcon width={16} height={16} />
-          <Text className="text-sm">Home</Text>
+          <Text className="text-sm">{tCommon('home')}</Text>
         </Link>
         <Text className="text-sm text-gray-400 ml-1 font-medium"> / </Text>
         {categories.map((category, index) => (
@@ -77,11 +73,7 @@ export function NetworkSelected({
       </Text>
       <CategorySearch suggestions={categorySuggestions} />
       <div className="space-y-6 flex mt-6">
-        <SpaceCardList
-          lang={lang}
-          spaces={selectedSpaces}
-          useMembers={useMembers}
-        />
+        <SpaceCardList lang={lang} spaces={selectedSpaces} />
       </div>
     </div>
   );

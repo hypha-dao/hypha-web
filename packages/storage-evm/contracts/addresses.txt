@@ -92,3 +92,92 @@ Deploying with:
   - Symbol: NRG
   - Initial Owner: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
 EnergyToken deployed to: 0xE7E8DaE0c4541fCDc563B1bD9A6a85d9aB762080
+
+Deploying VotingPowerDelegation...
+VotingPowerDelegation deployed to: 0xc87546357EeFF8653cF058Be2BA850813e39cda0
+
+
+OLD
+RegularSpaceToken implementation deployed to: 0xF47129F5ffA4D1CE40C4E9C4fc08Cb6d071d8Cd6
+DecayingSpaceToken implementation deployed to: 0x5BE10FdAce191216236668d9cDb12772f73CB698
+OwnershipSpaceToken implementation deployed to: 0xB06f27e16648F36C529839413f307a87b80d6ca1
+
+NEW
+OwnershipSpaceToken implementation deployed to: 0xf9d5AdC2c7D305a5764AD6C6E0a99D3150b9cE39
+DecayingSpaceToken implementation deployed to: 0x4c69746B7907f76f6742e2e6e43c5f7Abd4A629B
+RegularSpaceToken implementation deployed to: 0xeF88947ee8FC7Fb418d043ce65a67A4891B9FDF0
+
+before transfer helper RegularSpaceToken implementation deployed to: 0x8C105Debd4B222FFb2c438f7034158c6BA29aDB5
+
+
+
+
+✅ TransferHelper deployed successfully!
+TransferHelper address: 0x479002F7602579203ffba3eE84ACC1BC5b0d6785
+Owner: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Whitelist requirement: false
+
+📝 To verify the contract on Etherscan, run:
+npx hardhat verify --network <network> 0x479002F7602579203ffba3eE84ACC1BC5b0d6785
+
+📖 Usage Instructions:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1️⃣  Whitelist this contract with Coinbase Paymaster
+   Contract address: 0x479002F7602579203ffba3eE84ACC1BC5b0d6785
+
+2️⃣  In your frontend, users need to approve this contract before transfers:
+   await tokenContract.approve("0x479002F7602579203ffba3eE84ACC1BC5b0d6785", amount);
+
+3️⃣  Execute transfers through the helper contract:
+   await transferHelper.transferToken(tokenAddress, recipientAddress, amount);
+
+4️⃣  For batch transfers (save gas):
+   await transferHelper.batchTransfer(tokenAddress, [recipient1, recipient2], [amount1, amount2]);
+
+5️⃣  Optional: Enable token whitelist (restrict which tokens can be transferred):
+   await transferHelper.setWhitelistRequirement(true);
+   await transferHelper.setTokenWhitelist(tokenAddress, true);
+
+
+
+FOR TESTING
+Compiled 1 Solidity file successfully (evm target: paris).
+Deploying RegularTokenFactory with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying RegularTokenFactory...
+egularTokenFactory proxy deployed to: 0x9425c91c19066f6CAC6C25bF934F8861914Ccf2e
+
+
+Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying SpaceToken...
+paceToken deployed to: 0xDAdFbF2D33A8aB74f86752f2afF25F6323d73B87
+
+Deploying RegularTokenFactory with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying RegularTokenFactory...
+egularTokenFactory proxy deployed to: 0x475C1306CB572Af6f22F9ab6F9E9a7403c360ea5
+
+Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying RegularSpaceToken...
+egularSpaceToken deployed to: 0xd20C8ef38F213D3907B22a2bD128D32869676dad
+
+Compiled 6 Solidity files successfully (evm target: paris).
+Deploying with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying RegularSpaceToken...
+egularSpaceToken deployed to: 0x9962c152D8F79e0d8E12512457fa12bCd41F8Cba
+
+
+Compiled 3 Solidity files successfully (evm target: paris).
+Deploying OwnershipTokenFactory with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying OwnershipTokenFactory...
+wnershipTokenFactory proxy deployed to: 0xc69cB3D966e0Eb5306035e9a27979507D1F334Ee
+
+Deploying DecayingTokenFactory with admin address: 0x2687fe290b54d824c136Ceff2d5bD362Bc62019a
+Deploying DecayingTokenFactory...
+ecayingTokenFactory proxy deployed to: 0x66CA84bDa7508fa873fc22954b3144064cc5FF37
+
+Deploying DecayingSpaceToken implementation...
+ecayingSpaceToken implementation deployed to: 0x5BE10FdAce191216236668d9cDb12772f73CB698
+
+
+Deploying OwnershipSpaceToken implementation...
+wnershipSpaceToken implementation deployed to: 0xB06f27e16648F36C529839413f307a87b80d6ca1

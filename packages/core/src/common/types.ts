@@ -34,3 +34,30 @@ export type PaginationParams<T> = {
   filter?: FilterParams<T>;
   order?: Order<T>;
 };
+
+export type DbToken = {
+  id?: number;
+  agreementId?: number | undefined;
+  spaceId?: number;
+  name: string;
+  symbol: string;
+  maxSupply: number;
+  type:
+    | 'utility'
+    | 'credits'
+    | 'ownership'
+    | 'voice'
+    | 'impact'
+    | 'community_currency';
+  iconUrl?: string;
+  transferable: boolean;
+  isVotingToken: boolean;
+  address?: string;
+  agreementWeb3Id?: number;
+  createdAt?: Date;
+  referencePrice?: number | null;
+  referenceCurrency?: string | null;
+  archived?: boolean;
+  decayInterval?: number | null;
+  decayPercentage?: number | null;
+};

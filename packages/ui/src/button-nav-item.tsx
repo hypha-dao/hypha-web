@@ -26,14 +26,14 @@ export const ButtonNavItem = ({
       variant="ghost"
       colorVariant="neutral"
       className={clsx(
-        isActive && 'bg-primary-foreground',
-        'hover:bg-primary-foreground',
+        isActive && 'bg-neutral-3',
+        'hover:bg-neutral-3',
         classNames,
       )}
       asChild={!!href}
       onClick={onClick}
     >
-      {!!href ? <Link href={href}>{label}</Link> : <span>{label}</span>}
+      {href ? <Link href={href}>{label}</Link> : <span>{label}</span>}
     </Button>
   );
 };

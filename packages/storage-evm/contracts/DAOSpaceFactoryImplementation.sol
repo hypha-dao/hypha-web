@@ -55,8 +55,12 @@ contract DAOSpaceFactoryImplementation is
     SpaceCreationParams memory params
   ) external returns (uint256) {
     // Common parameter validation
-    require(params.quorum > 0 && params.quorum <= 100, 'quorum');
-    require(params.unity > 0 && params.unity <= 100, 'unity');
+    require(params.quorum >= 0 && params.quorum <= 100, 'Invalid quorum range');
+    require(params.unity >= 0 && params.unity <= 100, 'Invalid unity range');
+    require(
+      !(params.quorum == 0 && params.unity == 0),
+      'Both quorum and unity cannot be zero'
+    );
 
     spaceCounter++;
 
@@ -96,7 +100,7 @@ contract DAOSpaceFactoryImplementation is
     return spaceCounter;
   }
 
-  function joinSpace(uint256 _spaceId) public {
+  function joinSpace(uint256 _spaceId) public returns (uint256) {
     require(_spaceId > 0 && _spaceId <= spaceCounter, 'isp');
     //require(joinMethodDirectoryAddress != address(0), 'Dir not set');
 
@@ -109,6 +113,14 @@ contract DAOSpaceFactoryImplementation is
     if (space.joinMethod == 2) {
       // If join method is 2, create a proposal to add the member
       require(proposalManagerAddress != address(0), 'Proposal manager not st');
+
+      // Check if the member has an active invite proposal or created one within 24 hours
+      require(
+        memberActiveInviteProposal[_spaceId][msg.sender] == 0 ||
+          block.timestamp >=
+          memberLastInviteTime[_spaceId][msg.sender] + 48 hours,
+        'Active proposal exists or must wait 48h between invites'
+      );
 
       // Encode the function call data for addMember
       bytes memory executionData = abi.encodeWithSelector(
@@ -129,7 +141,7 @@ contract DAOSpaceFactoryImplementation is
       IDAOProposals.ProposalParams memory params = IDAOProposals
         .ProposalParams({
           spaceId: _spaceId,
-          duration: 86400, // 1 day
+          duration: 172800, // 2 day
           transactions: transactions
         });
 
@@ -138,8 +150,12 @@ contract DAOSpaceFactoryImplementation is
         params
       );
 
+      // Track the invite proposal
+      memberLastInviteTime[_spaceId][msg.sender] = block.timestamp;
+      memberActiveInviteProposal[_spaceId][msg.sender] = proposalId;
+
       //emit JoinRequestedWithProposal(_spaceId, msg.sender, proposalId);
-      return;
+      return proposalId;
     } else {
       require(
         IDirectory(joinMethodDirectoryAddress).joincheck(
@@ -151,14 +167,18 @@ contract DAOSpaceFactoryImplementation is
       );
 
       addMemberInternal(_spaceId, msg.sender);
+      return type(uint256).max;
     }
   }
 
-  function addMember(
-    uint256 _spaceId,
-    address _memberAddress
-  ) external onlySpaceExecutor(_spaceId) {
+  function addMember(uint256 _spaceId, address _memberAddress) external {
     //require(_spaceId > 0 && _spaceId <= spaceCounter, 'Invalid space ID');
+
+    // Allow either the space executor or contract owner to add members
+    require(
+      msg.sender == spaces[_spaceId].executor || msg.sender == owner(),
+      'Not authorized: only executor or owner'
+    );
 
     Space storage space = spaces[_spaceId];
 
@@ -198,9 +218,8 @@ contract DAOSpaceFactoryImplementation is
     emit MemberJoined(_spaceId, _memberAddress);
   }
 
-  /*
   function removeMember(uint256 _spaceId, address _memberToRemove) public {
-    //require(_spaceId > 0 && _spaceId <= spaceCounter, 'Invalid space ID');
+    require(_spaceId > 0 && _spaceId <= spaceCounter, 'Invalid space ID');
     require(
       exitMethodDirectoryAddress != address(0),
       'Exit directory contract not set'
@@ -208,21 +227,32 @@ contract DAOSpaceFactoryImplementation is
 
     Space storage space = spaces[_spaceId];
 
-    // If exit method is 1, only executor can remove members
-    if (space.exitMethod == 1) {
-      require(msg.sender == space.executor, 'Only executor can remove members');
-    }
+    // Allow contract owner to remove members regardless of exit method
+    bool isOwner = msg.sender == owner();
+    // Allow member to remove themselves
+    bool isSelfRemoval = msg.sender == _memberToRemove;
 
-    // Check if exit is allowed through exit method directory
-    if (space.exitMethod != 1) {
-      require(
-        IExitMethodDirectory(exitMethodDirectoryAddress).exitcheck(
-          _spaceId,
-          space.exitMethod,
-          _memberToRemove
-        ),
-        'exnm'
-      );
+    // If not owner and not self-removal, check exit method authorization
+    if (!isOwner && !isSelfRemoval) {
+      // If exit method is 1, only executor can remove members
+      if (space.exitMethod == 1) {
+        require(
+          msg.sender == space.executor,
+          'Only executor can remove members'
+        );
+      }
+
+      // Check if exit is allowed through exit method directory
+      if (space.exitMethod != 1) {
+        require(
+          IExitMethodDirectory(exitMethodDirectoryAddress).exitcheck(
+            _spaceId,
+            space.exitMethod,
+            _memberToRemove
+          ),
+          'Exit criteria is not met'
+        );
+      }
     }
 
     SpaceMembers storage members = spaceMembers[_spaceId];
@@ -238,41 +268,15 @@ contract DAOSpaceFactoryImplementation is
       }
     }
 
-    require(found, 'mnf');
-    require(_memberToRemove != space.creator, 'crsc');
+    require(found, 'Member not found');
+    //require(_memberToRemove != space.creator, 'Cannot remove space creator');
 
-    // Remove from regular members
+    // Remove from regular members array
     space.members[memberIndex] = space.members[space.members.length - 1];
     space.members.pop();
 
-
-    // Remove this space from the member's list of spaces
-    uint256[] storage memberSpacesList = memberSpaces[_memberToRemove];
-    for (uint256 i = 0; i < memberSpacesList.length; i++) {
-      if (memberSpacesList[i] == _spaceId) {
-        memberSpacesList[i] = memberSpacesList[memberSpacesList.length - 1];
-        memberSpacesList.pop();
-        break;
-      }
-    }
-
-    // If member is a space member, remove from space members too
-    if (members.isSpaceMember[_memberToRemove]) {
-      for (uint256 i = 0; i < members.spaceMemberAddresses.length; i++) {
-        if (members.spaceMemberAddresses[i] == _memberToRemove) {
-          members.spaceMemberAddresses[i] = members.spaceMemberAddresses[
-            members.spaceMemberAddresses.length - 1
-          ];
-          members.spaceMemberAddresses.pop();
-          members.isSpaceMember[_memberToRemove] = false;
-          break;
-        }
-      }
-    }
-
     emit MemberRemoved(_spaceId, _memberToRemove);
   }
-  */
 
   function getSpaceMembers(
     uint256 _spaceId
@@ -403,8 +407,12 @@ contract DAOSpaceFactoryImplementation is
       'Not authorized: only executor or owner'
     );
     require(_newVotingPowerSource > 0, 'Invalid voting power source');
-    require(_newQuorum > 0 && _newQuorum <= 100, 'Invalid quorum');
-    require(_newUnity > 0 && _newUnity <= 99, 'Invalid unity');
+    require(_newQuorum >= 0 && _newQuorum <= 100, 'Invalid quorum range');
+    require(_newUnity >= 0 && _newUnity <= 100, 'Invalid unity range');
+    require(
+      !(_newQuorum == 0 && _newUnity == 0),
+      'Both quorum and unity cannot be zero'
+    );
 
     Space storage space = spaces[_spaceId];
     uint256 oldVotingPowerSource = space.votingPowerSource;
@@ -431,7 +439,7 @@ contract DAOSpaceFactoryImplementation is
     uint256 _spaceId,
     uint256 _newJoinMethod
   ) external onlySpaceExecutor(_spaceId) {
-    require(_newJoinMethod > 0, 'Invalid join method');
+    require(_newJoinMethod >= 0, 'Invalid join method');
 
     Space storage space = spaces[_spaceId];
     uint256 oldJoinMethod = space.joinMethod;
@@ -445,5 +453,18 @@ contract DAOSpaceFactoryImplementation is
     address _memberAddress
   ) external view returns (uint256[] memory) {
     return memberSpaces[_memberAddress];
+  }
+
+  // View function to check if a member has an active invite proposal for a space
+  function getInviteInfo(
+    uint256 _spaceId,
+    address _memberAddress
+  ) external view returns (uint256 lastInviteTime, bool hasActiveProposal) {
+    uint256 activeProposalId = memberActiveInviteProposal[_spaceId][
+      _memberAddress
+    ];
+    uint256 lastInvite = memberLastInviteTime[_spaceId][_memberAddress];
+
+    return (lastInvite, activeProposalId != 0);
   }
 }

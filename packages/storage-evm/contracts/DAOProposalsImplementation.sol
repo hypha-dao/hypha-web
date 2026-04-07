@@ -9,6 +9,7 @@ import './interfaces/IDAOProposals.sol';
 import './interfaces/IExecutor.sol';
 import './interfaces/IDecayTokenVotingPower.sol';
 import './interfaces/ISpacePaymentTracker.sol';
+import './interfaces/IVotingPowerDelegation.sol';
 
 contract DAOProposalsImplementation is
   Initializable,
@@ -17,6 +18,27 @@ contract DAOProposalsImplementation is
   DAOProposalsStorage,
   IDAOProposals
 {
+  error InvalidFactory();
+  error InvalidDirectory();
+  error NotInitialized();
+  error NotMember();
+  error DurationTooLong();
+  error NoTransactions();
+  error InvalidTarget();
+  error EmptyData();
+  error NoExecutor();
+  error SetMinDuration();
+  error SubscriptionInactive();
+  error NotStarted();
+  error Expired();
+  error Executed();
+  error Voted();
+  error NoPower();
+  error InvalidTracker();
+  error InvalidDelegation();
+  error OnlyExecutor();
+  error ExecutionFailed();
+
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
     _disableInitializers();
@@ -36,8 +58,8 @@ contract DAOProposalsImplementation is
     address _spaceFactory,
     address _directory
   ) external override onlyOwner {
-    require(_spaceFactory != address(0), 'Invalid space factory address');
-    require(_directory != address(0), 'Invalid directory address');
+    if (_spaceFactory == address(0)) revert InvalidFactory();
+    if (_directory == address(0)) revert InvalidDirectory();
 
     spaceFactory = IDAOSpaceFactory(_spaceFactory);
     directoryContract = IDirectory(_directory);
@@ -62,20 +84,8 @@ contract DAOProposalsImplementation is
       newProposal.transactions.push(_transactions[i]);
     }
 
-    (
-      ,
-      ,
-      // unity
-      // quorum
-      uint256 votingPowerSourceId, // tokenAddresses // members // exitMethod // joinMethod // createdAt // creator // executor
-      ,
-      ,
-      ,
-      ,
-      ,
-      ,
-
-    ) = spaceFactory.getSpaceDetails(_spaceId);
+    (, , uint256 votingPowerSourceId, , , , , , , ) = spaceFactory
+      .getSpaceDetails(_spaceId);
 
     address votingPowerSourceAddr = directoryContract
       .getVotingPowerSourceContract(votingPowerSourceId);
@@ -88,40 +98,39 @@ contract DAOProposalsImplementation is
     return newProposalId;
   }
 
-  // Helper function to validate proposal parameters
   function _validateProposalParams(
     uint256 _spaceId,
     uint256 _duration,
     Transaction[] calldata _transactions
   ) internal view {
-    require(address(spaceFactory) != address(0), 'Contracts not initialized');
+    if (address(spaceFactory) == address(0)) revert NotInitialized();
 
-    // Allow space factory to create proposals regardless of membership
-    // This is needed for join requests with join method 2
     if (msg.sender != address(spaceFactory)) {
-      require(
-        spaceFactory.isMember(_spaceId, msg.sender),
-        'Not a space member'
-      );
+      if (!spaceFactory.isMember(_spaceId, msg.sender)) {
+        bool isDelegate = false;
+        if (address(delegationContract) != address(0)) {
+          if (
+            delegationContract.getDelegators(msg.sender, _spaceId).length > 0
+          ) {
+            isDelegate = true;
+          }
+        }
+        if (!isDelegate) {
+          revert NotMember();
+        }
+      }
     }
 
-    //require(_duration >= MIN_VOTING_DURATION, 'Duration too short');
-    require(_duration <= MAX_VOTING_DURATION, 'Duration too long');
-    require(_transactions.length > 0, 'No transactions provided');
+    if (_duration > MAX_VOTING_DURATION) revert DurationTooLong();
+    if (_transactions.length == 0) revert NoTransactions();
 
-    // Validate each transaction
     for (uint i = 0; i < _transactions.length; i++) {
-      require(_transactions[i].target != address(0), 'Invalid target contract');
-      require(
-        _transactions[i].data.length > 0,
-        'Execution data cannot be empty'
-      );
+      if (_transactions[i].target == address(0)) revert InvalidTarget();
+      if (_transactions[i].data.length == 0) revert EmptyData();
     }
 
-    require(
-      spaceFactory.getSpaceExecutor(_spaceId) != address(0),
-      'Executor not set for spc'
-    );
+    if (spaceFactory.getSpaceExecutor(_spaceId) == address(0))
+      revert NoExecutor();
   }
 
   function createProposal(
@@ -133,26 +142,39 @@ contract DAOProposalsImplementation is
       params.transactions
     );
 
-    // Check if space payment is active
+    (, uint256 q, , , , , , , , ) = spaceFactory.getSpaceDetails(
+      params.spaceId
+    );
+
+    // Determine the actual duration to use for the proposal
+    uint256 actualDuration;
+    if (spaceMinProposalDuration[params.spaceId] > 0 || q < 20) {
+      // If min proposal duration is set or q < 20, use min duration (or 72 hours default)
+      if (spaceMinProposalDuration[params.spaceId] == 0) {
+        spaceMinProposalDuration[params.spaceId] = 72 hours;
+      }
+      actualDuration = spaceMinProposalDuration[params.spaceId];
+    } else {
+      // Otherwise use the input parameter duration
+      actualDuration = params.duration;
+    }
+
     if (address(paymentTracker) != address(0)) {
       if (!paymentTracker.isSpaceActive(params.spaceId)) {
-        // Try auto-activating free trial once
         if (!paymentTracker.hasUsedFreeTrial(params.spaceId)) {
           paymentTracker.activateFreeTrial(params.spaceId);
         } else {
-          revert('Space subscription inactive');
+          revert SubscriptionInactive();
         }
       }
     }
 
     uint256 proposalId = _initializeProposal(
       params.spaceId,
-      params.duration,
+      actualDuration,
       params.transactions
     );
 
-    // We can adapt the event to store relevant information about transactions
-    // For backward compatibility, we can use the first transaction's data in the event
     emit ProposalCreated(
       proposalId,
       params.spaceId,
@@ -173,58 +195,33 @@ contract DAOProposalsImplementation is
   }
 
   function vote(uint256 _proposalId, bool _support) external override {
-    require(address(spaceFactory) != address(0), 'Contracts not initialized');
+    if (address(spaceFactory) == address(0)) revert NotInitialized();
     ProposalCore storage proposal = proposalsCoreData[_proposalId];
 
     checkProposalExpiration(_proposalId);
-    require(block.timestamp >= proposal.startTime, 'Voting not started');
-    require(!proposal.expired, 'Proposal has expired');
-    require(!proposal.executed, 'Proposal already executed');
-    require(!proposal.hasVoted[msg.sender], 'Already voted');
-    require(
-      spaceFactory.isMember(proposal.spaceId, msg.sender),
-      'Not a space member'
-    );
-    // Check if space payment is required and valid
+    if (block.timestamp < proposal.startTime) revert NotStarted();
+    if (proposal.expired) revert Expired();
+    if (proposal.executed) revert Executed();
+
     if (address(paymentTracker) != address(0)) {
-      // Check if the space has an active subscription
-      if (paymentTracker.isSpaceActive(proposal.spaceId)) {
-        // Space is active, proceed with voting
-      } else {
-        // Space is not active, check if eligible for free trial
+      if (paymentTracker.isSpaceActive(proposal.spaceId)) {} else {
         if (!paymentTracker.hasUsedFreeTrial(proposal.spaceId)) {
-          // Activate free trial for this space
           paymentTracker.activateFreeTrial(proposal.spaceId);
         } else {
-          // Not eligible for free trial and not active - reject
-          revert('Space subscription inactive');
+          revert SubscriptionInactive();
         }
       }
     }
 
-    (
-      ,
-      ,
-      // name
-      // unity
-      uint256 votingPowerSourceId, // tokenAddresses // members // exitMethod // joinMethod // createdAt // creator // executor
-      ,
-      ,
-      ,
-      ,
-      ,
-      ,
-
-    ) = spaceFactory.getSpaceDetails(proposal.spaceId);
+    (, , uint256 votingPowerSourceId, , , , , , , ) = spaceFactory
+      .getSpaceDetails(proposal.spaceId);
 
     address votingPowerSourceAddr = directoryContract
       .getVotingPowerSourceContract(votingPowerSourceId);
 
     uint256 votingPower;
 
-    // Check if this is a decaying token voting power source (ID 2)
     if (votingPowerSourceId == 3) {
-      // For decaying tokens, apply decay before calculating voting power
       IDecayTokenVotingPower decayVotingPowerSource = IDecayTokenVotingPower(
         votingPowerSourceAddr
       );
@@ -233,7 +230,6 @@ contract DAOProposalsImplementation is
         proposal.spaceId
       );
     } else {
-      // For regular voting power sources
       IVotingPowerSource votingPowerSource = IVotingPowerSource(
         votingPowerSourceAddr
       );
@@ -243,7 +239,29 @@ contract DAOProposalsImplementation is
       );
     }
 
-    require(votingPower > 0, 'No voting powerr');
+    if (votingPower == 0) revert NoPower();
+
+    // Handle vote resubmission - remove previous vote if exists
+    if (proposal.hasVoted[msg.sender]) {
+      uint256 previousVotingPower = proposal.votingPowerAtSnapshot[msg.sender];
+      bool previousSupport = _findAndRemoveVoter(_proposalId, msg.sender);
+
+      // Subtract previous voting power from the appropriate vote count
+      if (previousSupport) {
+        proposal.yesVotes -= previousVotingPower;
+      } else {
+        proposal.noVotes -= previousVotingPower;
+      }
+
+      emit VoteChanged(
+        _proposalId,
+        msg.sender,
+        previousSupport,
+        _support,
+        previousVotingPower,
+        votingPower
+      );
+    }
 
     proposal.hasVoted[msg.sender] = true;
     proposal.votingPowerAtSnapshot[msg.sender] = votingPower;
@@ -261,90 +279,136 @@ contract DAOProposalsImplementation is
     checkAndExecuteProposal(_proposalId);
   }
 
+  function _findAndRemoveVoter(
+    uint256 _proposalId,
+    address _voter
+  ) internal returns (bool previousSupport) {
+    address[] storage yesVoters = proposalYesVoters[_proposalId];
+    address[] storage noVoters = proposalNoVoters[_proposalId];
+
+    // Check and remove from yes voters
+    for (uint i = 0; i < yesVoters.length; i++) {
+      if (yesVoters[i] == _voter) {
+        // Move the last element to this position and pop
+        yesVoters[i] = yesVoters[yesVoters.length - 1];
+        yesVoters.pop();
+        return true; // Was a yes vote
+      }
+    }
+
+    // Check and remove from no voters
+    for (uint i = 0; i < noVoters.length; i++) {
+      if (noVoters[i] == _voter) {
+        // Move the last element to this position and pop
+        noVoters[i] = noVoters[noVoters.length - 1];
+        noVoters.pop();
+        return false; // Was a no vote
+      }
+    }
+
+    // Should never reach here if hasVoted is true
+    return false;
+  }
+
   function checkAndExecuteProposal(uint256 _proposalId) internal {
     ProposalCore storage proposal = proposalsCoreData[_proposalId];
     if (proposal.executed || proposal.expired) return;
 
-    (
-      uint256 unityThreshold, // 1st parameter = unity ✓
-      uint256 quorumThreshold, // 2nd parameter = quorum ✓ // votingPowerSource (skip) // tokenAddresses (skip) // members (skip) // exitMethod (skip) // joinMethod (skip) // createdAt (skip) // creator (skip) // executor (skip)
-      ,
-      ,
-      ,
-      ,
-      ,
-      ,
-      ,
+    (uint256 u, uint256 q, , , , , , , , ) = spaceFactory.getSpaceDetails(
+      proposal.spaceId
+    );
 
-    ) = spaceFactory.getSpaceDetails(proposal.spaceId);
-
-    // Calculate total participation
     uint256 totalVotesCast = proposal.yesVotes + proposal.noVotes;
-
-    // Check if quorum is reached - use ceiling division to prevent rounding errors
-    // Formula: ceil(a/b) = (a + b - 1) / b
-    uint256 requiredQuorum = (quorumThreshold *
-      proposal.totalVotingPowerAtSnapshot +
-      99) / 100;
+    uint256 requiredQuorum = (q * proposal.totalVotingPowerAtSnapshot + 99) /
+      100;
     bool quorumReached = totalVotesCast >= requiredQuorum;
 
-    if (!quorumReached) {
-      return; // Early return - insufficient participation
-    }
-
-    // Check if proposal should be executed (Yes votes reach unity threshold)
-    if (proposal.yesVotes * 100 >= unityThreshold * totalVotesCast) {
-      proposal.executed = true;
-
-      // Add this proposal to the space's executed proposals list
-      spaceExecutedProposals[proposal.spaceId].push(_proposalId);
-
-      // Also add it to the global list of executed proposals
-      allExecutedProposals.push(_proposalId);
-
-      spaceAcceptedProposals[proposal.spaceId].push(_proposalId);
-
-      address executor = spaceFactory.getSpaceExecutor(proposal.spaceId);
-
-      // Convert proposal transactions to Executor.Transaction format
-      IExecutor.Transaction[]
-        memory execTransactions = new IExecutor.Transaction[](
-          proposal.transactions.length
-        );
-      for (uint i = 0; i < proposal.transactions.length; i++) {
-        execTransactions[i] = IExecutor.Transaction({
-          target: proposal.transactions[i].target,
-          value: proposal.transactions[i].value,
-          data: proposal.transactions[i].data
-        });
+    if (quorumReached && _shouldRejectEarly(_proposalId, u)) {
+      uint256 minDuration = spaceMinProposalDuration[proposal.spaceId];
+      if (block.timestamp < proposal.startTime + minDuration) {
+        return;
       }
+      proposal.expired = true;
+      spaceRejectedProposals[proposal.spaceId].push(_proposalId);
+      emit ProposalRejected(_proposalId, proposal.yesVotes, proposal.noVotes);
+      return;
+    }
 
-      // Execute all transactions
-      bool success = IExecutor(executor).executeTransactions(execTransactions);
-      require(success, 'Proposal execution failedd');
+    if (!quorumReached) {
+      return;
+    }
 
-      emit ProposalExecuted(
-        _proposalId,
-        true,
-        proposal.yesVotes,
-        proposal.noVotes
+    if (proposal.yesVotes * 100 >= u * totalVotesCast) {
+      uint256 minDuration = spaceMinProposalDuration[proposal.spaceId];
+      if (block.timestamp < proposal.startTime + minDuration) {
+        return;
+      }
+      _executeProposal(_proposalId, proposal);
+    } else if (proposal.noVotes * 100 >= u * totalVotesCast) {
+      uint256 minDuration = spaceMinProposalDuration[proposal.spaceId];
+      if (block.timestamp < proposal.startTime + minDuration) {
+        return;
+      }
+      proposal.expired = true;
+      spaceRejectedProposals[proposal.spaceId].push(_proposalId);
+      emit ProposalRejected(_proposalId, proposal.yesVotes, proposal.noVotes);
+    } else if (q == 100) {
+      uint256 minDuration = spaceMinProposalDuration[proposal.spaceId];
+      if (block.timestamp < proposal.startTime + minDuration) {
+        return;
+      }
+      proposal.expired = true;
+      spaceRejectedProposals[proposal.spaceId].push(_proposalId);
+      emit ProposalRejected(_proposalId, proposal.yesVotes, proposal.noVotes);
+    }
+  }
+
+  function _shouldRejectEarly(
+    uint256 _proposalId,
+    uint256 u
+  ) internal view returns (bool) {
+    ProposalCore storage proposal = proposalsCoreData[_proposalId];
+    uint256 totalVotesCast = proposal.yesVotes + proposal.noVotes;
+    uint256 remainingVotingPower = proposal.totalVotingPowerAtSnapshot -
+      totalVotesCast;
+    uint256 maxPossibleYesVotes = proposal.yesVotes + remainingVotingPower;
+    uint256 maxPossibleTotalVotes = totalVotesCast + remainingVotingPower;
+    return maxPossibleYesVotes * 100 < u * maxPossibleTotalVotes;
+  }
+
+  function _executeProposal(
+    uint256 _proposalId,
+    ProposalCore storage proposal
+  ) internal {
+    proposal.executed = true;
+    spaceExecutedProposals[proposal.spaceId].push(_proposalId);
+    allExecutedProposals.push(_proposalId);
+    spaceAcceptedProposals[proposal.spaceId].push(_proposalId);
+
+    address executor = spaceFactory.getSpaceExecutor(proposal.spaceId);
+    if (executor == address(0)) revert NoExecutor();
+
+    IExecutor.Transaction[]
+      memory execTransactions = new IExecutor.Transaction[](
+        proposal.transactions.length
       );
+    for (uint i = 0; i < proposal.transactions.length; i++) {
+      execTransactions[i] = IExecutor.Transaction({
+        target: proposal.transactions[i].target,
+        value: proposal.transactions[i].value,
+        data: proposal.transactions[i].data
+      });
     }
-    // Check if proposal should be rejected (No votes reach unity threshold)
-    else if (proposal.noVotes * 100 >= unityThreshold * totalVotesCast) {
-      proposal.expired = true; // Mark as expired to prevent further voting
-      spaceRejectedProposals[proposal.spaceId].push(_proposalId);
 
-      emit ProposalRejected(_proposalId, proposal.yesVotes, proposal.noVotes);
-    }
-    // Check if 100% quorum reached but no unity - reject due to lack of consensus
-    else if (quorumThreshold == 100) {
-      // If 100% participation achieved but neither side reached unity, reject
-      proposal.expired = true; // Mark as expired to prevent further voting
-      spaceRejectedProposals[proposal.spaceId].push(_proposalId);
+    bool success = IExecutor(executor).executeTransactions(execTransactions);
+    if (!success) revert ExecutionFailed();
 
-      emit ProposalRejected(_proposalId, proposal.yesVotes, proposal.noVotes);
-    }
+    emit ProposalExecuted(
+      _proposalId,
+      true,
+      proposal.yesVotes,
+      proposal.noVotes
+    );
   }
 
   function checkProposalExpiration(
@@ -352,13 +416,28 @@ contract DAOProposalsImplementation is
   ) public override returns (bool) {
     ProposalCore storage proposal = proposalsCoreData[_proposalId];
 
+    if (address(spaceFactory) == address(0)) revert NotInitialized();
+    if (!spaceFactory.isMember(proposal.spaceId, msg.sender)) {
+      bool isDelegate = false;
+      if (address(delegationContract) != address(0)) {
+        if (
+          delegationContract
+            .getDelegators(msg.sender, proposal.spaceId)
+            .length > 0
+        ) {
+          isDelegate = true;
+        }
+      }
+      if (!isDelegate) {
+        revert NotMember();
+      }
+    }
+
     if (
       !proposal.expired && block.timestamp > getProposalEndTime(_proposalId)
     ) {
       proposal.expired = true;
 
-      // Check if expired proposal should be added to rejected list
-      // Only if it wasn't already executed
       if (!proposal.executed) {
         spaceRejectedProposals[proposal.spaceId].push(_proposalId);
       }
@@ -368,6 +447,19 @@ contract DAOProposalsImplementation is
     }
 
     return proposal.expired;
+  }
+
+  function triggerExecutionCheck(uint256 _proposalId) external {
+    if (address(spaceFactory) == address(0)) revert NotInitialized();
+    checkAndExecuteProposal(_proposalId);
+
+    ProposalCore storage proposal = proposalsCoreData[_proposalId];
+    if (!proposal.executed && !proposal.expired) {
+      uint256 minDuration = spaceMinProposalDuration[proposal.spaceId];
+      if (block.timestamp >= proposal.startTime + minDuration) {
+        checkProposalExpiration(_proposalId);
+      }
+    }
   }
 
   function getSpaceProposals(
@@ -431,20 +523,24 @@ contract DAOProposalsImplementation is
     );
   }
 
-  // Add a function to set the payment tracker (setting the storage variable)
   function setPaymentTracker(address _paymentTracker) external onlyOwner {
-    require(_paymentTracker != address(0), 'Invalid paymnt tracker address');
+    if (_paymentTracker == address(0)) revert InvalidTracker();
     paymentTracker = ISpacePaymentTracker(_paymentTracker);
   }
 
-  // Function to get all executed proposals for a specific space
+  function setDelegationContract(
+    address _delegationContract
+  ) external onlyOwner {
+    if (_delegationContract == address(0)) revert InvalidDelegation();
+    delegationContract = IVotingPowerDelegation(_delegationContract);
+  }
+
   function getExecutedProposalsBySpace(
     uint256 _spaceId
   ) external view override returns (uint256[] memory) {
     return spaceExecutedProposals[_spaceId];
   }
 
-  // Function to get all executed proposals across all spaces
   function getAllExecutedProposals()
     external
     view
@@ -454,7 +550,6 @@ contract DAOProposalsImplementation is
     return allExecutedProposals;
   }
 
-  // Function to get voter addresses for a proposal
   function getProposalVoters(
     uint256 _proposalId
   )
@@ -463,5 +558,19 @@ contract DAOProposalsImplementation is
     returns (address[] memory yesVoters, address[] memory noVoters)
   {
     return (proposalYesVoters[_proposalId], proposalNoVoters[_proposalId]);
+  }
+
+  function setMinimumProposalDuration(
+    uint256 _spaceId,
+    uint256 _minDuration
+  ) external {
+    if (address(spaceFactory) == address(0)) revert NotInitialized();
+
+    address executor = spaceFactory.getSpaceExecutor(_spaceId);
+    if (executor == address(0)) revert NoExecutor();
+    if (msg.sender != executor && msg.sender != owner()) revert OnlyExecutor();
+
+    spaceMinProposalDuration[_spaceId] = _minDuration;
+    emit MinimumProposalDurationSet(_spaceId, _minDuration);
   }
 }

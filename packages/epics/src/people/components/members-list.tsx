@@ -1,13 +1,16 @@
 import { FC } from 'react';
 import { MemberCard } from './member-card';
 import Link from 'next/link';
-import { type UseMembers } from '@hypha-platform/epics';
+import { type UseMembers, SpaceMemberCard } from '@hypha-platform/epics';
+import { useParams } from 'next/navigation';
+import { Locale } from '@hypha-platform/i18n';
 
 type MembersListProps = {
   page: number;
   minimize?: boolean;
   basePath: string;
   useMembers: UseMembers;
+  spaceId?: number;
   spaceSlug?: string;
   searchTerm?: string;
   refreshInterval?: number;
@@ -18,11 +21,13 @@ export const MembersList: FC<MembersListProps> = ({
   minimize,
   basePath,
   useMembers,
+  spaceId,
   spaceSlug,
   searchTerm,
   refreshInterval,
 }) => {
-  const { members, isLoading } = useMembers({
+  const { lang } = useParams<{ lang: Locale }>();
+  const { persons, spaces, isLoading } = useMembers({
     page,
     spaceSlug,
     searchTerm,
@@ -30,13 +35,31 @@ export const MembersList: FC<MembersListProps> = ({
   });
   return (
     <div className="member-list w-full">
-      {members.map((member) => (
+      {persons?.data?.map((member) => (
         <Link
           href={`${basePath}/${member.slug}`}
           key={member.slug}
           scroll={false}
         >
-          <MemberCard minimize={minimize} {...member} isLoading={isLoading} />
+          <MemberCard
+            spaceId={spaceId}
+            minimize={minimize}
+            {...member}
+            isLoading={isLoading}
+          />
+        </Link>
+      ))}
+      {spaces.data.map((space) => (
+        <Link
+          href={`/${lang}/dho/${space.slug}/agreements`}
+          key={space.slug}
+          scroll={false}
+        >
+          <SpaceMemberCard
+            hostSpaceId={spaceId}
+            space={space}
+            isLoading={isLoading}
+          />
         </Link>
       ))}
 

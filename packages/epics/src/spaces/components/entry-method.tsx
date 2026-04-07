@@ -9,6 +9,7 @@ import {
 import clsx from 'clsx';
 import { EntryMethodType } from '@hypha-platform/core/client';
 import { PlusCircledIcon } from '@radix-ui/react-icons';
+import { useTranslations } from 'next-intl';
 
 type EntryMethodProps = {
   value?: EntryMethodType;
@@ -24,31 +25,33 @@ type EntryMethodOption = {
   disabledTooltip?: string;
 };
 
-const entryMethods: EntryMethodOption[] = [
-  {
-    id: EntryMethodType.OPEN_ACCESS,
-    title: 'Open Access',
-    disabled: false,
-    icon: <PlusCircledIcon />,
-    description: 'Join to space immediately',
-  },
-  {
-    id: EntryMethodType.INVITE_ONLY,
-    title: 'Invite Only',
-    disabled: false,
-    icon: <PlusCircledIcon />,
-    description: 'Join to space by invite only',
-  },
-  {
-    id: EntryMethodType.TOKEN_BASED,
-    title: 'Token Based',
-    disabled: false,
-    icon: <PlusCircledIcon />,
-    description: 'Join to space only when match token requirements',
-  },
-];
-
 export const EntryMethod = ({ onChange, value }: EntryMethodProps) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
+  const entryMethods: EntryMethodOption[] = [
+    {
+      id: EntryMethodType.OPEN_ACCESS,
+      title: tAgreementFlow('plugins.entryMethod.openAccessTitle'),
+      disabled: false,
+      icon: <PlusCircledIcon />,
+      description: tAgreementFlow('plugins.entryMethod.openAccessDescription'),
+    },
+    {
+      id: EntryMethodType.INVITE_ONLY,
+      title: tAgreementFlow('plugins.entryMethod.inviteRequestTitle'),
+      disabled: false,
+      icon: <PlusCircledIcon />,
+      description: tAgreementFlow(
+        'plugins.entryMethod.inviteRequestDescription',
+      ),
+    },
+    {
+      id: EntryMethodType.TOKEN_BASED,
+      title: tAgreementFlow('plugins.entryMethod.tokenBasedTitle'),
+      disabled: false,
+      icon: <PlusCircledIcon />,
+      description: tAgreementFlow('plugins.entryMethod.tokenBasedDescription'),
+    },
+  ];
   const handleSelect = (selection: EntryMethodType, disabled?: boolean) => {
     if (disabled) return;
     if (onChange) {
@@ -64,7 +67,9 @@ export const EntryMethod = ({ onChange, value }: EntryMethodProps) => {
     <div className="flex flex-col gap-4">
       <div className="flex w-full justify-between items-center gap-2">
         <div className="flex flex-col gap-4 w-full">
-          <label className="text-sm text-neutral-11">Entry Method</label>
+          <label className="text-sm text-neutral-11">
+            {tAgreementFlow('plugins.entryMethod.label')}
+          </label>
           {entryMethods.map((option) => (
             <Tooltip key={option.id}>
               <TooltipTrigger asChild>

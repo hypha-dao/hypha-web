@@ -1,5 +1,8 @@
-import { SelectAction } from '@hypha-platform/epics';
+'use client';
+
+import { SelectAction, useActionGating } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
+import { useTranslations } from 'next-intl';
 import {
   ArrowUpIcon,
   ArrowDownIcon,
@@ -9,75 +12,91 @@ import {
   Share1Icon,
 } from '@radix-ui/react-icons';
 
-export const CREATE_ACTIONS = [
-  {
-    title: 'Make a Collective Agreement',
-    description:
-      'Define and formalize a mutual understanding, policy, or decision among members of the space.',
-    href: 'governance/create',
-    icon: <FileIcon />,
-  },
-  {
-    title: 'Propose a Contribution',
-    description:
-      'Propose a new contribution, such as work, knowledge, capital, or resources, for the space to consider.',
-    href: 'governance/create/propose-contribution',
-    icon: <RocketIcon />,
-  },
-  {
-    title: 'Pay for Expenses',
-    description:
-      'Cover expenses by sending funds from the treasury to another space, entity, or wallet.',
-    href: 'governance/create/pay-for-expenses',
-    icon: <ArrowUpIcon />,
-  },
-  {
-    title: 'Accept Investment (Coming Soon)',
-    description:
-      'Receive capital from investors, members, or aligned spaces in exchange for native space tokens.',
-    href: '#',
-    icon: <PlusCircledIcon />,
-    disabled: true,
-  },
-  {
-    title: 'Exchange Ownership (Coming Soon)',
-    description:
-      'Swap ownership between members or spaces, whether selling a stake or exchanging assets.',
-    href: '#',
-    icon: <PlusCircledIcon />,
-    disabled: true,
-  },
-  {
-    title: 'Deploy Funds',
-    description:
-      'Allocate treasury funds for investments to other spaces or distributing resources among sub-spaces.',
-    href: 'governance/create/deploy-funds',
-    icon: <Share1Icon />,
-  },
-  {
-    title: 'Deposit Funds',
-    description:
-      'Deposit funds into your treasury by copying the treasury address or scanning the QR code.',
-    href: 'treasury/deposit',
-    icon: <ArrowDownIcon />,
-  },
-];
+type SelectCreateActionProps = {
+  daoSlug: string;
+  lang: Locale;
+  children?: React.ReactNode;
+};
 
 export const SelectCreateAction = ({
   daoSlug,
   lang,
-}: {
-  daoSlug: string;
-  lang: Locale;
-}) => {
+  children,
+}: SelectCreateActionProps) => {
+  const { isPaymentExpired, fundWallet, space } = useActionGating(daoSlug);
+  const t = useTranslations('SelectCreateAction');
+
+  const CREATE_ACTIONS = [
+    {
+      defaultDurationDays: 3,
+      title: t('actions.makeCollectiveAgreement.title'),
+      description: t('actions.makeCollectiveAgreement.description'),
+      href: 'agreements/create',
+      icon: <FileIcon />,
+      disabled: isPaymentExpired,
+    },
+    {
+      defaultDurationDays: 4,
+      title: t('actions.proposeContribution.title'),
+      description: t('actions.proposeContribution.description'),
+      href: 'agreements/create/propose-contribution',
+      icon: <RocketIcon />,
+      disabled: isPaymentExpired,
+    },
+    {
+      defaultDurationDays: 7,
+      title: t('actions.payExpenses.title'),
+      description: t('actions.payExpenses.description'),
+      href: 'agreements/create/pay-for-expenses',
+      icon: <ArrowUpIcon />,
+      disabled: isPaymentExpired,
+    },
+    {
+      defaultDurationDays: 7,
+      title: t('actions.acceptInvestmentComingSoon.title'),
+      description: t('actions.acceptInvestmentComingSoon.description'),
+      href: '#',
+      icon: <PlusCircledIcon />,
+      disabled: true,
+    },
+    {
+      defaultDurationDays: 7,
+      title: t('actions.exchangeOwnershipComingSoon.title'),
+      description: t('actions.exchangeOwnershipComingSoon.description'),
+      href: '#',
+      icon: <PlusCircledIcon />,
+      disabled: true,
+    },
+    {
+      defaultDurationDays: 7,
+      title: t('actions.deployFunds.title'),
+      description: t('actions.deployFunds.description'),
+      href: 'agreements/create/deploy-funds',
+      icon: <Share1Icon />,
+      disabled: isPaymentExpired,
+    },
+    {
+      title: t('actions.depositFunds.title'),
+      description: t('actions.depositFunds.description'),
+      icon: <ArrowDownIcon />,
+      onAction: () => {
+        fundWallet();
+      },
+      disabled: !space?.address,
+    },
+  ];
   return (
     <SelectAction
-      title="Create a Proposal"
-      content="Select an action to contribute, collaborate, make decisions or manage resources within your space."
+      title={t('title')}
+      content={t('content')}
       actions={CREATE_ACTIONS.map((action) => ({
         ...action,
-        href: `/${lang}/dho/${daoSlug}/${action.href}`,
+        ...(action.href && {
+          href: `/${lang}/dho/${daoSlug}/${action.href}`,
+        }),
       }))}
-    />
+    >
+      {children}
+    </SelectAction>
   );
 };

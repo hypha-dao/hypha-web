@@ -1,98 +1,59 @@
 'use client';
 
-import { useCallback, useState } from 'react';
-import { useAccount } from 'wagmi';
-import { daoProposalsImplementationConfig } from '@hypha-platform/core/generated';
-import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
+import { useProposalVoting } from './useProposalVoting';
+import { useProposalEvents } from './useProposalEvents';
+import { useJoinSpaceProposalHandler } from '@hypha-platform/core/client';
+import { useCallback } from 'react';
 
-export const useVote = ({ proposalId }: { proposalId?: number | null }) => {
-  const { address } = useAccount();
-  const { client } = useSmartWallets();
+export const useVote = ({
+  documentId,
+  proposalId,
+  tokenSymbol,
+  authToken,
+}: {
+  documentId?: number | null;
+  proposalId?: number | null;
+  tokenSymbol?: string | null;
+  authToken?: string | null;
+}) => {
+  const voting = useProposalVoting({ proposalId });
+  const { handleJoinSpaceExecutedProposal } = useJoinSpaceProposalHandler({
+    authToken,
+  });
 
-  const [isVoting, setIsVoting] = useState(false);
-  const [isCheckingExpiration, setIsCheckingExpiration] = useState(false);
-
-  const vote = useCallback(
-    async (proposalId: number, support: boolean) => {
-      if (!client) throw new Error('Smart wallet not connected');
-      if (!address) throw new Error('Wallet not connected');
-      if (proposalId === undefined || proposalId === null)
-        throw new Error('Proposal ID is required');
-
-      setIsVoting(true);
-      try {
-        const txHash = await client.writeContract({
-          address: daoProposalsImplementationConfig.address[8453],
-          abi: daoProposalsImplementationConfig.abi,
-          functionName: 'vote',
-          args: [BigInt(proposalId), support],
-        });
-        return txHash;
-      } catch (error) {
-        console.error('Voting failed:', error);
-        throw error;
-      } finally {
-        setIsVoting(false);
+  const onProposalExecuted = useCallback(
+    async (transactionHash: string) => {
+      if (proposalId) {
+        await handleJoinSpaceExecutedProposal(
+          Number(proposalId),
+          transactionHash as `0x${string}`,
+        );
       }
     },
-    [address, client],
+    [proposalId, handleJoinSpaceExecutedProposal],
   );
 
-  const checkProposalExpiration = useCallback(
-    async (proposalId: number) => {
-      if (!client) throw new Error('Smart wallet not connected');
-      if (!address) throw new Error('Wallet not connected');
-      if (proposalId === undefined || proposalId === null)
-        throw new Error('Proposal ID is required');
-
-      setIsCheckingExpiration(true);
-      try {
-        const txHash = await client.writeContract({
-          address: daoProposalsImplementationConfig.address[8453],
-          abi: daoProposalsImplementationConfig.abi,
-          functionName: 'checkProposalExpiration',
-          args: [BigInt(proposalId)],
-        });
-        return txHash;
-      } catch (error) {
-        console.error('Check proposal expiration failed:', error);
-        throw error;
-      } finally {
-        setIsCheckingExpiration(false);
-      }
-    },
-    [address, client],
-  );
-
-  const handleAccept = async () => {
-    try {
-      if (proposalId != null) await vote(proposalId, true);
-    } catch (error) {
-      console.error('Failed to vote yes:', error);
-    }
-  };
-
-  const handleReject = async () => {
-    try {
-      if (proposalId != null) await vote(proposalId, false);
-    } catch (error) {
-      console.error('Failed to vote no:', error);
-    }
-  };
+  const { isDeletingToken, isUpdatingToken } = useProposalEvents({
+    documentId,
+    proposalId,
+    tokenSymbol,
+    authToken,
+    onProposalExecuted,
+  });
 
   const handleCheckProposalExpiration = async () => {
     try {
-      if (proposalId != null) await checkProposalExpiration(proposalId);
+      await voting.handleCheckProposalExpiration();
     } catch (error) {
-      console.error('Failed to check proposal expiration:', error);
+      console.error('Error in check proposal expiration:', error);
+      throw error;
     }
   };
 
   return {
-    handleAccept,
-    handleReject,
+    ...voting,
     handleCheckProposalExpiration,
-    isVoting,
-    isCheckingExpiration,
+    isDeletingToken,
+    isUpdatingToken,
   };
 };

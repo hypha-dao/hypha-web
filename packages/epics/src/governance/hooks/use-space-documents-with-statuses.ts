@@ -3,10 +3,14 @@
 import React from 'react';
 import useSWR from 'swr';
 
-import { useSpaceProposalsWeb3Rpc } from '@hypha-platform/core/client';
+import {
+  useSpaceProposalsWeb3Rpc,
+  useWithdrawnProposalsWeb3Rpc,
+} from '@hypha-platform/core/client';
 import { Document } from '@hypha-platform/core/client';
 import { DirectionType, Order, OrderField } from '@hypha-platform/core/client';
 import queryString from 'query-string';
+import { useAuthentication } from '@hypha-platform/authentication';
 
 const getDocumentBadges = (document: Document) => {
   const badges = [];
@@ -75,6 +79,78 @@ const getDocumentBadges = (document: Document) => {
         colorVariant: 'accent',
       });
       break;
+    case 'Buy Hypha Tokens':
+      badges.push({
+        label: 'Buy Hypha Tokens',
+        className: 'capitalize',
+        variant: 'solid',
+        colorVariant: 'accent',
+      });
+      break;
+    case 'Activate Spaces':
+      badges.push({
+        label: 'Activate Spaces',
+        className: 'capitalize',
+        variant: 'solid',
+        colorVariant: 'accent',
+      });
+      break;
+    case 'Space To Space':
+      badges.push({
+        label: 'Space To Space',
+        className: 'capitalize',
+        variant: 'solid',
+        colorVariant: 'accent',
+      });
+      break;
+    case 'Space Transparency':
+      badges.push({
+        label: 'Space Transparency',
+        className: 'capitalize',
+        variant: 'solid',
+        colorVariant: 'accent',
+      });
+      break;
+    case 'Treasury Minting':
+      badges.push({
+        label: 'Treasury Minting',
+        className: 'capitalize',
+        variant: 'solid',
+        colorVariant: 'accent',
+      });
+      break;
+    case 'Backing Vault':
+      badges.push({
+        label: 'Backing Vault',
+        className: 'capitalize',
+        variant: 'solid',
+        colorVariant: 'accent',
+      });
+      break;
+    case 'Redeem Tokens':
+      badges.push({
+        label: 'Redeem Tokens',
+        className: 'capitalize',
+        variant: 'solid',
+        colorVariant: 'accent',
+      });
+      break;
+    case 'Token Purchase':
+      badges.push({
+        label: 'Token Purchase',
+        className: 'capitalize',
+        variant: 'solid',
+        colorVariant: 'accent',
+      });
+      break;
+    case 'Update Token':
+      badges.push({
+        label: 'Update Token',
+        className: 'capitalize',
+        variant: 'solid',
+        colorVariant: 'accent',
+      });
+      break;
     default:
       break;
   }
@@ -116,7 +192,11 @@ export const useSpaceDocumentsWithStatuses = ({
   spaceId: number;
   order?: Order<Document>;
 }) => {
+  const { getAccessToken } = useAuthentication();
   const { spaceProposalsIds } = useSpaceProposalsWeb3Rpc({ spaceId: spaceId });
+  const { withdrawnProposalsIds } = useWithdrawnProposalsWeb3Rpc({
+    spaceId: spaceId,
+  });
 
   const getDirection = (dir: DirectionType) => {
     return `${dir === DirectionType.DESC ? '-' : '+'}`;
@@ -144,9 +224,25 @@ export const useSpaceDocumentsWithStatuses = ({
     data: documentsFromDb,
     isLoading,
     mutate,
+    error,
   } = useSWR(
     [endpoint],
-    ([endpoint]) => fetch(endpoint).then((res) => res.json()),
+    async ([endpoint]) => {
+      const token = await getAccessToken();
+      const headers: HeadersInit = {};
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const res = await fetch(endpoint, { headers });
+      if (!res.ok) {
+        throw new Error(
+          `Failed to fetch documents: ${res.status} ${res.statusText}`,
+        );
+      }
+      return res.json();
+    },
     {
       revalidateOnFocus: true,
       refreshInterval: 10000,
@@ -155,7 +251,11 @@ export const useSpaceDocumentsWithStatuses = ({
     },
   );
   const response = React.useMemo(() => {
-    if (!documentsFromDb || !spaceProposalsIds) {
+    if (
+      !documentsFromDb ||
+      !Array.isArray(documentsFromDb) ||
+      !spaceProposalsIds
+    ) {
       return {
         accepted: [],
         rejected: [],
@@ -163,10 +263,15 @@ export const useSpaceDocumentsWithStatuses = ({
       };
     }
 
+    const withdrawnIdsSet = new Set(
+      Array.from(withdrawnProposalsIds ?? []).map((id) => Number(id)),
+    );
+
     const acceptedDocuments = (documentsFromDb as Document[])
       .filter(
         (doc: { web3ProposalId: number | null }) =>
           doc.web3ProposalId != null &&
+          !withdrawnIdsSet.has(doc.web3ProposalId) &&
           Array.from(spaceProposalsIds?.accepted ?? []).includes(
             BigInt(doc.web3ProposalId),
           ),
@@ -183,6 +288,7 @@ export const useSpaceDocumentsWithStatuses = ({
       .filter(
         (doc: { web3ProposalId: number | null }) =>
           doc.web3ProposalId != null &&
+          !withdrawnIdsSet.has(doc.web3ProposalId) &&
           Array.from(spaceProposalsIds?.rejected ?? []).includes(
             BigInt(doc.web3ProposalId),
           ),
@@ -199,6 +305,7 @@ export const useSpaceDocumentsWithStatuses = ({
       .filter(
         (doc: { web3ProposalId: number | null }) =>
           doc.web3ProposalId != null &&
+          !withdrawnIdsSet.has(doc.web3ProposalId) &&
           !Array.from(spaceProposalsIds?.accepted ?? []).includes(
             BigInt(doc.web3ProposalId),
           ) &&
@@ -218,10 +325,11 @@ export const useSpaceDocumentsWithStatuses = ({
       rejected: rejectedDocuments,
       onVoting: onVotingDocuments,
     };
-  }, [documentsFromDb, spaceProposalsIds]);
+  }, [documentsFromDb, spaceProposalsIds, withdrawnProposalsIds]);
   return {
     documents: response,
     isLoading,
     update: mutate,
+    error,
   };
 };

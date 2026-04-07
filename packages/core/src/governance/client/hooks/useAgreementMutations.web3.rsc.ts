@@ -11,8 +11,11 @@ import {
   mapToCreateProposalWeb3Input,
 } from '../web3';
 
-import { schemaCreateProposalWeb3 } from '@hypha-platform/core/client';
-import { publicClient } from '@hypha-platform/core/client';
+import {
+  schemaCreateProposalWeb3,
+  publicClient,
+  getSpaceMinProposalDuration,
+} from '@hypha-platform/core/client';
 
 import {
   agreementsImplementationAbi,
@@ -20,12 +23,15 @@ import {
   daoProposalsImplementationAbi,
   daoProposalsImplementationAddress,
 } from '@hypha-platform/core/generated';
+import { getDuration } from '@hypha-platform/ui-utils';
+import { getGovernanceChainId } from './governance-chain-id';
 
 export const useAgreementMutationsWeb3Rpc = ({
   proposalSlug,
 }: {
   proposalSlug?: string | null;
 }) => {
+  const chainId = getGovernanceChainId();
   const { client } = useSmartWallets();
 
   const {
@@ -41,14 +47,18 @@ export const useAgreementMutationsWeb3Rpc = ({
         throw new Error('Smart wallet not connected');
       }
 
+      const duration = await publicClient.readContract(
+        getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
+      );
+
       const proposalCounter = await publicClient.readContract({
-        address: daoProposalsImplementationAddress[8453],
+        address: daoProposalsImplementationAddress[chainId],
         abi: daoProposalsImplementationAbi,
         functionName: 'proposalCounter',
       });
 
       const acceptAgreementTx = {
-        target: agreementsImplementationAddress[8453],
+        target: agreementsImplementationAddress[chainId],
         value: 0,
         data: encodeFunctionData({
           abi: agreementsImplementationAbi,
@@ -58,8 +68,8 @@ export const useAgreementMutationsWeb3Rpc = ({
       };
 
       const input = {
-        spaceId: arg.spaceId,
-        duration: 86400,
+        spaceId: BigInt(arg.spaceId),
+        duration: duration && duration > 0 ? duration : getDuration(3),
         transactions: [acceptAgreementTx],
       };
 

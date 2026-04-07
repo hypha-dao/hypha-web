@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   findPersonByAddresses,
   findSpaceBySlug,
+  findSpaceByAddresses,
 } from '@hypha-platform/core/server';
 import { getSpaceDetails } from '@hypha-platform/core/client';
 import { publicClient } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
+import { canConvertToBigInt } from '@hypha-platform/ui-utils';
+import { checkSpaceAccess } from '@web/utils/check-space-access';
 
 export async function GET(
   request: NextRequest,
@@ -14,17 +17,29 @@ export async function GET(
   const { spaceSlug } = await params;
 
   try {
-    // TODO: implement authorization
     const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
     if (!space) {
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
     }
 
+    if (space.web3SpaceId && canConvertToBigInt(space.web3SpaceId)) {
+      const { hasAccess, response } = await checkSpaceAccess(
+        request,
+        space.web3SpaceId as number,
+      );
+
+      if (!hasAccess && response) {
+        return response;
+      }
+    }
+
     let spaceDetails;
     try {
-      spaceDetails = await publicClient.readContract(
-        getSpaceDetails({ spaceId: BigInt(space.web3SpaceId as number) }),
-      );
+      spaceDetails = canConvertToBigInt(space.web3SpaceId)
+        ? await publicClient.readContract(
+            getSpaceDetails({ spaceId: BigInt(space.web3SpaceId as number) }),
+          )
+        : [];
     } catch (err: any) {
       const errorMessage =
         err?.message || err?.shortMessage || JSON.stringify(err);
@@ -48,20 +63,41 @@ export async function GET(
       );
     }
 
-    const [, , , , members] = spaceDetails;
+    const [, , , , members = []] = spaceDetails;
 
     const url = new URL(request.url);
-    const page = parseInt(url.searchParams.get('page') || '1', 10);
-    const pageSize = parseInt(url.searchParams.get('pageSize') || '4', 10);
+    const pageRaw = url.searchParams.get('page');
+    const pageSizeRaw = url.searchParams.get('pageSize');
     const searchTerm = url.searchParams.get('searchTerm') || undefined;
 
-    const result = await findPersonByAddresses(
+    const page = pageRaw != null ? Number.parseInt(pageRaw, 10) : undefined;
+    const pageSize =
+      pageSizeRaw != null ? Number.parseInt(pageSizeRaw, 10) : undefined;
+    const hasValidPagination =
+      Number.isInteger(page) &&
+      page! > 0 &&
+      Number.isInteger(pageSize) &&
+      pageSize! > 0;
+    const paginationOptions = hasValidPagination
+      ? { pagination: { page: page!, pageSize: pageSize! } }
+      : {};
+
+    const persons = await findPersonByAddresses(
       members as `0x${string}`[],
-      { pagination: { page, pageSize }, searchTerm },
+      { ...paginationOptions, searchTerm },
       { db },
     );
 
-    return NextResponse.json(result);
+    const spaces = await findSpaceByAddresses(
+      members as `0x${string}`[],
+      { ...paginationOptions, searchTerm },
+      { db },
+    );
+
+    return NextResponse.json({
+      persons,
+      spaces,
+    });
   } catch (error) {
     console.error('Failed to fetch members:', error);
     return NextResponse.json(

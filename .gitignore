@@ -61,3 +61,7 @@ vitest.config.*.timestamp*
 
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
+.firecrawl/
+.playwright-cli/
+test-results/
+playwright-report/

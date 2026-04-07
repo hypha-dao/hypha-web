@@ -2,7 +2,10 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Image, Combobox, Input } from '@hypha-platform/ui';
-import { Person } from '@hypha-platform/core/client';
+import {
+  DEFAULT_SPACE_AVATAR_IMAGE,
+  Person,
+} from '@hypha-platform/core/client';
 
 type MemberWithNumberValue = {
   member: string;
@@ -60,11 +63,12 @@ export const MemberWithNumberField = ({
 
   const handleNumberChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const val = Number(e.target.value);
-      setNumber(val);
+      const rawValue = Number(e.target.value);
+      const nextNumber = Number.isNaN(rawValue) ? 0 : rawValue;
+      setNumber(nextNumber);
       onChange?.({
         member: selected?.address || '',
-        number: val,
+        number: nextNumber,
       });
     },
     [selected, onChange],
@@ -74,13 +78,14 @@ export const MemberWithNumberField = ({
     <div className="flex gap-2 items-center">
       <div className="flex-1">
         <Combobox
+          className="max-w-[190px]"
           options={options}
           placeholder={placeholder}
           onChange={handleMemberChange}
           renderOption={(option) => (
             <>
               <Image
-                src={option.avatarUrl || '/placeholder/space-avatar-image.png'}
+                src={option.avatarUrl || DEFAULT_SPACE_AVATAR_IMAGE}
                 alt={option.label}
                 width={24}
                 height={24}
@@ -93,9 +98,7 @@ export const MemberWithNumberField = ({
             option ? (
               <div className="flex items-center gap-2 truncate">
                 <Image
-                  src={
-                    option.avatarUrl || '/placeholder/space-avatar-image.png'
-                  }
+                  src={option.avatarUrl || DEFAULT_SPACE_AVATAR_IMAGE}
                   alt={option.label}
                   width={24}
                   height={24}

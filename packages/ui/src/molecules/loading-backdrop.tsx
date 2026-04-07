@@ -7,6 +7,9 @@ type LoadingBackdrop = {
   progress?: number;
   className?: string;
   message?: React.ReactElement;
+  showKeepWindowOpenMessage?: boolean;
+  keepWindowOpenMessage?: React.ReactNode;
+  fullHeight?: boolean;
 };
 
 export const LoadingBackdrop = ({
@@ -15,21 +18,31 @@ export const LoadingBackdrop = ({
   children,
   className,
   message,
+  showKeepWindowOpenMessage = false,
+  keepWindowOpenMessage = 'Please keep this window open until the progress bar completes.',
+  fullHeight = false,
 }: LoadingBackdrop) => {
-  return isLoading ? (
-    <div className="relative h-full w-full">
+  return (
+    <div className={cn('relative w-full', fullHeight && 'h-full')}>
       {children}
-      <div
-        className={cn(
-          'absolute inset-0 flex flex-col items-center justify-center space-y-2 bg-background/75 z-10',
-          className,
-        )}
-      >
-        <Progress value={progress} className="h-2 w-3/4 max-w-md" />
-        <div className="text-center text-sm">{message}</div>
-      </div>
+      {isLoading && (
+        <div
+          className={cn(
+            fullHeight
+              ? 'fixed top-9 bottom-0 right-0 flex flex-col items-center justify-center space-y-2 bg-background/75 z-10 w-full md:w-container-sm p-4 lg:p-7'
+              : 'absolute inset-0 flex flex-col items-center justify-center space-y-2 bg-background/75 z-10 min-h-full',
+            className,
+          )}
+        >
+          <Progress value={progress} className="h-2 w-3/4 max-w-md" />
+          {showKeepWindowOpenMessage && (
+            <div className="text-center text-sm font-medium">
+              {keepWindowOpenMessage}
+            </div>
+          )}
+          <div className="text-center text-sm">{message}</div>
+        </div>
+      )}
     </div>
-  ) : (
-    children
   );
 };

@@ -5,7 +5,7 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from '@hypha-platform/ui';
-import { ChevronLeftIcon } from 'lucide-react';
+import { ChevronRightIcon } from 'lucide-react';
 import { Fragment } from 'react';
 
 type SpaceBreadcrumb = {
@@ -13,14 +13,21 @@ type SpaceBreadcrumb = {
   title: string;
 };
 
-export function SpaceBreadcrumb({ children }: { children: React.ReactNode }) {
+export function SpaceBreadcrumb({
+  children,
+  rootHref = '/my-spaces',
+  rootLabel = 'My Spaces',
+}: {
+  children: React.ReactNode;
+  rootHref?: string;
+  rootLabel?: string;
+}) {
   return (
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
-          <BreadcrumbLink href="/my-spaces" className="flex items-center">
-            <ChevronLeftIcon width={16} height={16} />
-            My Spaces
+          <BreadcrumbLink href={rootHref} className="flex items-center">
+            {rootLabel}
           </BreadcrumbLink>
         </BreadcrumbItem>
         {children}
@@ -31,17 +38,19 @@ export function SpaceBreadcrumb({ children }: { children: React.ReactNode }) {
 
 export const SpaceBreadcrumbItem = ({
   breadcrumb,
+  lang,
 }: {
   breadcrumb: SpaceBreadcrumb;
+  lang?: string;
 }) => {
   return (
     <Fragment key={breadcrumb.slug}>
       <BreadcrumbSeparator>
-        <ChevronLeftIcon width={16} height={16} />
+        <ChevronRightIcon width={16} height={16} />
       </BreadcrumbSeparator>
       <BreadcrumbItem>
         <BreadcrumbLink
-          href={`/dho/${breadcrumb.slug}/governance`}
+          href={`${lang ? `/${lang}` : ''}/dho/${breadcrumb.slug}/agreements`}
           className="flex items-center"
         >
           {breadcrumb.title}

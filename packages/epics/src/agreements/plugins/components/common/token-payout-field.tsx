@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { ChevronDownIcon } from '@radix-ui/themes';
 import {
   DropdownMenu,
@@ -10,89 +11,205 @@ import {
   Image,
   Button,
 } from '@hypha-platform/ui';
+import { TokenType } from '@hypha-platform/core/client';
+import { getTokenTypeLabel } from '../../../../treasury/components/common/token-type-field';
+import { useTranslations } from 'next-intl';
 
 interface Token {
   icon: string;
   symbol: string;
   address: `0x${string}`;
+  value?: number;
+  tokenPrice?: number;
+  tokenCurrencyLabel?: string;
+  space?: {
+    title: string;
+    slug: string;
+  };
+  type?: TokenType | null;
 }
 
 interface TokenPayoutFieldProps {
   value: {
     amount: string;
     token: string;
+    spaceSlug?: string;
   };
-  onChange: (val: { amount: string; token: string }) => void;
+  onChange: (val: {
+    amount: string;
+    token: string;
+    spaceSlug?: string;
+  }) => void;
   tokens: Token[];
+  readOnlyDropdown?: boolean;
+  showSelectedTokenBalanceHint?: boolean;
+  /** When true, use treasury balance copy (space redeem) instead of wallet balance. */
+  useTreasuryBalanceLine?: boolean;
+  selectedTokenPriceHint?: string;
 }
 
-export const TokenPayoutField = ({
+function TokenPayoutFieldInner({
   value,
   onChange,
   tokens,
-}: TokenPayoutFieldProps) => {
-  const selectedToken = tokens.find((t) => t.address === value.token);
+  readOnlyDropdown,
+  showSelectedTokenBalanceHint = false,
+  useTreasuryBalanceLine = false,
+  selectedTokenPriceHint,
+}: TokenPayoutFieldProps) {
+  const tAgreementFlow = useTranslations('AgreementFlow');
+  const selectedToken = value.token
+    ? tokens.find(
+        (t) =>
+          t.address.toLowerCase() === value.token.toLowerCase() &&
+          (value.spaceSlug ? t.space?.slug === value.spaceSlug : true),
+      ) ??
+      tokens.find((t) => t.address.toLowerCase() === value.token.toLowerCase())
+    : undefined;
 
   const handleTokenChange = (token: Token) => {
-    onChange({ amount: value.amount, token: token.address });
+    onChange({
+      amount: value.amount,
+      token: token.address,
+      spaceSlug: token.space?.slug,
+    });
   };
 
   const handleAmountChange = (amount: string) => {
-    onChange({ amount, token: value.token });
+    if (amount === '') {
+      onChange({
+        amount: '',
+        token: value.token,
+        spaceSlug: value.spaceSlug,
+      });
+      return;
+    }
+
+    const normalizedAmount = amount.replace(',', '.');
+
+    if (/^\d*\.?\d*$/.test(normalizedAmount)) {
+      onChange({
+        amount: normalizedAmount,
+        token: value.token,
+        spaceSlug: value.spaceSlug,
+      });
+    }
   };
 
   return (
-    <div className="flex flex-row md:justify-end gap-4 items-end">
-      <Input
-        value={value.amount}
-        type="number"
-        placeholder="Type an amount"
-        onChange={(e) => handleAmountChange(e.target.value)}
-      />
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            colorVariant="neutral"
-            role="combobox"
-            className="w-full flex-1 text-2 md:w-72 justify-between py-2 font-normal"
-          >
-            <div className="flex items-center gap-2 w-24">
-              {selectedToken ? (
-                <>
-                  <Image
-                    src={selectedToken.icon}
-                    width={20}
-                    height={20}
-                    alt={selectedToken.symbol}
-                  />
-                  <span className="text-2">{selectedToken.symbol}</span>
-                </>
+    <div className="flex flex-col gap-1 w-full">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 md:justify-end items-end w-full">
+        <div className="flex top-0 m-0 p-0 flex-1 min-w-0">
+          <Input
+            value={value.amount ?? ''}
+            type="text"
+            inputMode="decimal"
+            placeholder={tAgreementFlow('plugins.tokenPayoutField.amount')}
+            onChange={(e) => handleAmountChange(e.target.value)}
+          />
+        </div>
+        <div className="flex top-0 w-full sm:w-60 shrink-0 min-w-0 m-0 p-0">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                colorVariant="neutral"
+                role="combobox"
+                className="w-full text-2 md:w-72 justify-between py-2 font-normal"
+              >
+                <div className="flex items-center gap-2">
+                  {selectedToken ? (
+                    <>
+                      <Image
+                        src={selectedToken.icon}
+                        width={20}
+                        height={20}
+                        alt={selectedToken.symbol}
+                        className="mr-2 rounded-full h-4 w-4"
+                      />
+                      <span className="text-2 text-neutral-11">
+                        {selectedToken.symbol}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-2 text-neutral-11 whitespace-nowrap">
+                      {tAgreementFlow('plugins.tokenPayoutField.selectToken')}
+                    </span>
+                  )}
+                </div>
+                <ChevronDownIcon className="size-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-full max-h-[200px] overflow-y-scroll">
+              {tokens.length > 0 ? (
+                tokens.map((token) => (
+                  <DropdownMenuItem
+                    key={token.address}
+                    onSelect={() => handleTokenChange(token)}
+                  >
+                    <Image
+                      src={token.icon}
+                      width={24}
+                      height={24}
+                      alt={token.symbol}
+                      className="mr-2 rounded-full h-5 w-5"
+                    />
+                    <div className="flex flex-col">
+                      <span className="flex gap-2 items-center">
+                        <span className="text-2 text-neutral-11">
+                          {token.symbol}
+                        </span>
+                        {token?.type && (
+                          <div className="rounded-lg text-[10px] text-accent-11 border-1 border-accent-11 px-2 py-0.75">
+                            {getTokenTypeLabel(token.type, tAgreementFlow)}
+                          </div>
+                        )}
+                      </span>
+                      {token?.space?.title ? (
+                        <span className="text-1 text-accent-11">
+                          {tAgreementFlow('plugins.tokenPayoutField.bySpace', {
+                            space: token.space.title,
+                          })}
+                        </span>
+                      ) : null}
+                    </div>
+                  </DropdownMenuItem>
+                ))
               ) : (
-                <span className="text-2 text-nowrap">Select a token</span>
+                <span className="text-2 text-neutral-11">
+                  {tAgreementFlow('plugins.tokenPayoutField.noTokensFound')}
+                </span>
               )}
-            </div>
-            <ChevronDownIcon className="size-2" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          {tokens.map((token) => (
-            <DropdownMenuItem
-              key={`${token.address}_${token.symbol}`}
-              onSelect={() => handleTokenChange(token)}
-            >
-              <Image
-                src={token.icon}
-                width={24}
-                height={24}
-                alt={token.symbol}
-                className="mr-2 object-cover"
-              />
-              <span className="text-2 text-neutral-11">{token.symbol}</span>
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+      {showSelectedTokenBalanceHint &&
+      selectedToken &&
+      typeof selectedToken.value === 'number' &&
+      Number.isFinite(selectedToken.value) ? (
+        <div className="text-1 text-neutral-11 w-full min-w-0 self-end overflow-x-auto">
+          <span className="whitespace-nowrap inline-block min-w-full text-right">
+            {tAgreementFlow(
+              useTreasuryBalanceLine
+                ? 'plugins.tokenPayoutField.treasuryBalanceLine'
+                : 'plugins.tokenPayoutField.walletBalanceLine',
+              {
+                amount: String(selectedToken.value),
+                symbol: selectedToken.symbol,
+              },
+            )}
+            {selectedTokenPriceHint
+              ? tAgreementFlow(
+                  'plugins.tokenPayoutField.tokenRedemptionPriceSuffix',
+                  { hint: selectedTokenPriceHint },
+                )
+              : ''}
+          </span>
+        </div>
+      ) : null}
     </div>
   );
-};
+}
+
+export const TokenPayoutField = React.memo(TokenPayoutFieldInner);

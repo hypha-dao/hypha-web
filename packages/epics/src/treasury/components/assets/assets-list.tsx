@@ -1,5 +1,9 @@
+'use client';
+
 import { FC } from 'react';
 import { AssetCard } from './asset-card';
+import { useParams } from 'next/navigation';
+import { Locale } from '@hypha-platform/i18n';
 import Link from 'next/link';
 
 type OneChartPoint = {
@@ -27,17 +31,29 @@ type TransactionCardProps = {
   commentCount?: number;
 };
 
-type AssetItem = {
+export type AssetItem = {
   icon: string;
   name: string;
   symbol: string;
   value: number;
+  tokenPrice?: number;
+  referenceCurrency?: string | null;
   usdEqual: number;
   type: string;
   chartData: OneChartPoint[];
   transactions: TransactionCardProps[];
   closeUrl: string;
   slug: string;
+  createdAt?: Date;
+  supply?: {
+    total: number;
+    max: number;
+  };
+  space?: {
+    title: string;
+    slug: string;
+  };
+  address?: string;
 };
 
 type AssetsListProps = {
@@ -52,9 +68,10 @@ export const AssetsList: FC<AssetsListProps> = ({
   activeFilter,
   isLoading,
 }) => {
+  const { lang } = useParams<{ lang: Locale }>();
   return (
     <div className="w-full">
-      <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+      <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
         {assets.map((asset, index) => (
           // <Link
           //   key={`${asset.slug}_${index}`}
@@ -65,13 +82,15 @@ export const AssetsList: FC<AssetsListProps> = ({
             key={`${asset.slug}_${index}`}
             {...asset}
             isLoading={isLoading}
+            lang={lang}
           />
           // </Link>
         ))}
       </div>
 
       {isLoading && (
-        <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+        <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+          <AssetCard isLoading />
           <AssetCard isLoading />
           <AssetCard isLoading />
         </div>

@@ -1,16 +1,18 @@
-import { DEFAULT_IMAGE_ACCEPT } from '../assets';
+import { ALLOWED_IMAGE_FILE_SIZE, DEFAULT_IMAGE_ACCEPT } from '../assets';
 
 import { z } from 'zod';
+import { isAddress } from 'viem';
+import { percentageStringToBigInt } from '../common';
 
-const ALLOWED_IMAGE_FILE_SIZE = 4 * 1024 * 1024;
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
 const signupPersonWeb2Props = {
-  name: z.string().min(1, { message: 'Name must not be empty' }),
-  surname: z.string().min(1, { message: 'Surname must not be empty' }),
+  name: z.string().trim().min(1, { message: 'Please enter your first name' }),
+  surname: z.string().trim().min(1, { message: 'Please enter your last name' }),
   nickname: z
     .string()
-    .min(1)
+    .trim()
+    .min(1, { message: 'Please choose a nickname' })
     .max(12, { message: 'Nickname length should not exceed 12 characters' }),
   description: z
     .string()
@@ -37,7 +39,9 @@ const signupPersonWeb2Props = {
     })
     .optional(),
   links: z
-    .array(z.string().url('Links must be a valid URL'))
+    .array(
+      z.string().url('Please enter a valid URL (e.g., https://example.com)'),
+    )
     .max(3)
     .default([])
     .optional(),
@@ -45,11 +49,12 @@ const signupPersonWeb2Props = {
 
 const editPersonWeb2Props = {
   id: z.number(),
-  name: z.string().min(1, { message: 'Name must not be empty' }),
-  surname: z.string().min(1, { message: 'Surname must not be empty' }),
+  name: z.string().trim().min(1, { message: 'Please enter your first name' }),
+  surname: z.string().trim().min(1, { message: 'Please enter your last name' }),
   nickname: z
     .string()
-    .min(1)
+    .trim()
+    .min(1, { message: 'Please choose a nickname' })
     .max(12, { message: 'Nickname length should not exceed 12 characters' }),
   description: z
     .string()
@@ -69,7 +74,9 @@ const editPersonWeb2Props = {
     .trim()
     .optional(),
   links: z
-    .array(z.string().url('Links must be a valid URL'))
+    .array(
+      z.string().url('Please enter a valid URL (e.g., https://example.com)'),
+    )
     .max(3)
     .default([])
     .optional(),
@@ -86,7 +93,7 @@ export const editPersonFiles = z.object({
         .instanceof(File)
         .refine(
           (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-          'File size must be less than 4MB',
+          'Your file is too large and exceeds the 4MB limit. Please upload a smaller file',
         )
         .refine(
           (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
@@ -119,7 +126,7 @@ export const editPersonFiles = z.object({
 export const personTransfer = z.object({
   recipient: z
     .string()
-    .min(1, { message: 'Recipient is required' })
+    .min(1, { message: 'Please add a recipient or wallet address' })
     .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' }),
 
   payouts: z
@@ -132,6 +139,53 @@ export const personTransfer = z.object({
       }),
     )
     .min(1, { message: 'At least one payout is required' }),
+  memo: z.string().optional(),
+});
+
+export const personRedeem = z.object({
+  redemptions: z
+    .array(
+      z.object({
+        spaceSlug: z.string().min(1, { message: 'Space is required' }),
+        token: z.string().min(1, { message: 'Token is required' }),
+        amount: z.string().refine((value) => parseFloat(value) > 0, {
+          message: 'Amount must be greater than 0',
+        }),
+      }),
+    )
+    .length(1, { message: 'Only one redemption is required' }),
+  conversions: z
+    .array(
+      z.object({
+        asset: z
+          .string()
+          .refine((value) => value.trim().length > 0, {
+            message: 'Please select a collateral asset',
+          })
+          .refine((value): boolean => isAddress(value, { strict: false }), {
+            message: 'Invalid Ethereum address',
+          }),
+        percentage: z
+          .string()
+          .refine(
+            (value) => parseFloat(value) >= 0 && parseFloat(value) <= 100,
+            {
+              message: 'Percentage must be between 0 and 100',
+            },
+          ),
+      }),
+    )
+    .min(1, { message: 'At least one conversion is required' })
+    .refine(
+      (value) =>
+        value.reduce(
+          (acc, curr) => acc + percentageStringToBigInt(curr.percentage),
+          0n,
+        ) === 10000n,
+      {
+        message: 'Summary percentage must be 100%',
+      },
+    ),
 });
 
 export type PersonFiles = z.infer<typeof editPersonFiles>;

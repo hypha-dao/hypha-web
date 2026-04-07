@@ -1,9 +1,13 @@
 import HyphaWallet from './components/HyphaWallet'
+import './App.css'
 
 function App() {
   return (
-    <div className="App" style={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
-      <HyphaWallet />
+    <div className="container">
+      <h1>Hypha Wallet</h1>
+      <div className="card">
+        <HyphaWallet />
+      </div>
     </div>
   )
 }

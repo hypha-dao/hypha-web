@@ -11,7 +11,10 @@ import {
   getProposalFromLogs,
   mapToCreateProposalWeb3Input,
 } from '../web3';
-import { publicClient } from '@hypha-platform/core/client';
+import {
+  publicClient,
+  getSpaceMinProposalDuration,
+} from '@hypha-platform/core/client';
 
 import {
   daoSpaceFactoryImplementationAbi,
@@ -22,10 +25,12 @@ import {
 
 import { Address, EntryMethodType, TokenBase } from '../../types';
 import { schemaCreateProposalWeb3, transactionSchema } from '../../validation';
+import { getDuration } from '@hypha-platform/ui-utils';
+import { getGovernanceChainId } from './governance-chain-id';
 
 type TxData = z.infer<typeof transactionSchema>;
 
-const chainId = 8453;
+const chainId = getGovernanceChainId();
 
 function changeEntryMethodTx(spaceId: number, joinMethod: number): TxData {
   return {
@@ -81,6 +86,10 @@ export const useChangeEntryMethodMutationsWeb3Rpc = ({
         throw new Error('Smart wallet client not available');
       }
 
+      const duration = await publicClient.readContract(
+        getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
+      );
+
       const transactions: Array<TxData> = [];
 
       switch (arg.joinMethod) {
@@ -103,8 +112,8 @@ export const useChangeEntryMethodMutationsWeb3Rpc = ({
       }
 
       const input = {
-        spaceId: arg.spaceId,
-        duration: 86400,
+        spaceId: BigInt(arg.spaceId),
+        duration: duration && duration > 0 ? duration : getDuration(4),
         transactions,
       };
 

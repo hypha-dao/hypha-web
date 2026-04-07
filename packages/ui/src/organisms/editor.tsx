@@ -30,7 +30,6 @@ export function RichTextEditor({
     <MDXEditor
       className="prose max-w-full"
       plugins={[
-        // Example Plugin Usage
         toolbarPlugin({
           toolbarContents: () => (
             <div className="flex gap-1 grow text-lg">
@@ -44,7 +43,7 @@ export function RichTextEditor({
             </div>
           ),
         }),
-        headingsPlugin(),
+        headingsPlugin({ allowedHeadingLevels: [1, 2, 3, 4] }),
         listsPlugin(),
         quotePlugin(),
         thematicBreakPlugin(),

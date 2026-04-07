@@ -8,10 +8,14 @@ import {
   FormLabel,
   FormMessage,
   Input,
+  RequirementMark,
 } from '@hypha-platform/ui';
+import { cn, handleNumberChange } from '@hypha-platform/ui-utils';
+import { useTranslations } from 'next-intl';
 
 export function TokenMaxSupplyField() {
   const { setValue, control } = useFormContext();
+  const tAgreementFlow = useTranslations('AgreementFlow');
 
   const maxSupply = useWatch({
     control,
@@ -19,15 +23,24 @@ export function TokenMaxSupplyField() {
     defaultValue: 0,
   });
 
-  const handleMaxSupplyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.value === '') {
-      setValue('maxSupply', '');
-      return;
-    }
-    const val = Number(e.target.value);
-    const num = Number.isNaN(val) ? 0 : val;
-    setValue('maxSupply', num);
-  };
+  const enableLimitedSupply = useWatch({
+    control,
+    name: 'enableLimitedSupply',
+    defaultValue: false,
+  });
+
+  const maxSupplyType = useWatch({
+    control,
+    name: 'maxSupplyType',
+  });
+
+  const isForeverImmutable =
+    typeof maxSupplyType === 'object' &&
+    maxSupplyType != null &&
+    'value' in maxSupplyType &&
+    (maxSupplyType as { value?: string }).value === 'immutable';
+
+  const handleMaxSupplyChange = handleNumberChange(setValue, 'maxSupply');
 
   return (
     <FormField
@@ -36,22 +49,39 @@ export function TokenMaxSupplyField() {
       render={({ field }) => (
         <FormItem>
           <div className="flex justify-between items-center">
-            <FormLabel className="text-2 text-neutral-11 w-full">
-              Token Max Supply
-            </FormLabel>
+            <div className="flex gap-1 w-full">
+              <FormLabel className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
+                {tAgreementFlow('plugins.issueNewToken.supply.maxSupplyLabel')}
+              </FormLabel>
+              {enableLimitedSupply && <RequirementMark className="text-2" />}
+            </div>
             <FormControl>
               <Input
                 type="number"
-                placeholder="Type an amount or 0 for unlimited supply"
+                readOnly={isForeverImmutable}
+                aria-readonly={isForeverImmutable}
+                title={
+                  isForeverImmutable
+                    ? tAgreementFlow(
+                        'plugins.issueNewToken.supply.maxSupplyReadOnlyWhenImmutable',
+                      )
+                    : undefined
+                }
+                placeholder={tAgreementFlow(
+                  'plugins.issueNewToken.supply.maxSupplyPlaceholder',
+                )}
                 value={maxSupply}
                 onChange={handleMaxSupplyChange}
                 name={field.name}
                 onBlur={field.onBlur}
                 ref={field.ref}
+                className={cn(
+                  isForeverImmutable &&
+                    'cursor-not-allowed bg-neutral-2 text-neutral-11',
+                )}
               />
             </FormControl>
           </div>
-          <FormMessage />
         </FormItem>
       )}
     />

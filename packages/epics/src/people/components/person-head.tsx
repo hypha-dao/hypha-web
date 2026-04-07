@@ -9,22 +9,32 @@ import {
   Button,
   Skeleton,
 } from '@hypha-platform/ui';
-import { CopyIcon } from '@radix-ui/react-icons';
 import { WebLinks } from '../../common';
 import { RxPencil2 } from 'react-icons/rx';
 import { MailIcon, MapPinIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthentication } from '@hypha-platform/authentication';
 import React from 'react';
-import { ExportEmbeddedWalletButton } from '@hypha-platform/epics';
-import { useMe } from '@hypha-platform/core/client';
+import {
+  ButtonCopyUserId,
+  ExportEmbeddedWalletButton,
+  ProfileComponentParams,
+} from '@hypha-platform/epics';
+import {
+  DEFAULT_SPACE_AVATAR_IMAGE,
+  DEFAULT_SPACE_LEAD_IMAGE,
+  useMe,
+} from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
+import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
+import { useFormatter, useTranslations } from 'next-intl';
 
 export type MemberType = {
   avatar: string;
   name: string;
   surname: string;
   slug: string;
+  createdAt?: Date;
 };
 
 interface PersonHeadProps {
@@ -40,10 +50,11 @@ interface PersonHeadProps {
 
 export const PersonHead = ({
   isLoading = false,
-  avatar = '/placeholder/space-avatar-image.png',
+  avatar = DEFAULT_SPACE_AVATAR_IMAGE,
   name,
   surname,
   slug,
+  createdAt,
   about,
   background,
   links,
@@ -52,9 +63,24 @@ export const PersonHead = ({
   onExportEmbeddedWallet,
   exportEmbeddedWallet,
 }: PersonHeadProps & MemberType) => {
+  const tProfile = useTranslations('Profile');
+  const format = useFormatter();
   const { exportWallet, isEmbeddedWallet } = useAuthentication();
   const { isMe } = useMe();
-  const { lang, personSlug } = useParams();
+  const { lang, personSlug: personSlugRaw } =
+    useParams<ProfileComponentParams>();
+  const personSlug = tryDecodeUriPart(personSlugRaw);
+
+  const signupDate = createdAt
+    ? format.dateTime(createdAt, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      })
+    : null;
 
   const customLogoStyles: React.CSSProperties = {
     width: '128px',
@@ -72,14 +98,14 @@ export const PersonHead = ({
             width={768}
             height={270}
             className="rounded-xl max-h-[270px] min-h-[270px] w-full object-cover"
-            src={background || '/placeholder/space-lead-image.png'}
+            src={background || DEFAULT_SPACE_LEAD_IMAGE}
             alt={`Profile Lead Image: ${name} ${surname}`}
           />
         </Skeleton>
         <Avatar style={customLogoStyles}>
           <Skeleton loading={isLoading} width={128} height={128}>
             <AvatarImage
-              src={avatar || '/placeholder/space-avatar-image.png'}
+              src={avatar || DEFAULT_SPACE_AVATAR_IMAGE}
               alt={`Profile Avatar Image: ${name} ${surname}`}
             />
           </Skeleton>
@@ -91,6 +117,7 @@ export const PersonHead = ({
             <ExportEmbeddedWalletButton
               isLoading={isLoading}
               isEmbeddedWallet={isEmbeddedWallet || !!onExportEmbeddedWallet}
+              label={tProfile('exportKeys')}
               onExportEmbeddedWallet={
                 exportEmbeddedWallet && isEmbeddedWallet
                   ? exportWallet
@@ -98,23 +125,24 @@ export const PersonHead = ({
               }
             />
           )}
+          <ButtonCopyUserId
+            title={tProfile('copyUserId')}
+            successMessage={tProfile('copied')}
+            slug={slug}
+            isLoading={isLoading}
+          />
           <Skeleton loading={isLoading} width={120} height={35}>
-            <Button
-              variant="outline"
-              colorVariant="accent"
-              title="Copy user ID"
+            <Link
+              href={
+                isMe(personSlug) ? `/${lang}/profile/${personSlug}/edit` : {}
+              }
+              scroll={false}
             >
-              <CopyIcon />
-              <span className="hidden md:flex">Copy user ID</span>
-            </Button>
-          </Skeleton>
-          <Skeleton loading={isLoading} width={120} height={35}>
-            <Button asChild colorVariant="accent">
-              <Link href={`/${lang}/profile/${personSlug}/edit`} scroll={false}>
+              <Button colorVariant="accent" disabled={!isMe(personSlug)}>
                 <RxPencil2 />
-                Edit profile
-              </Link>
-            </Button>
+                {tProfile('editProfile')}
+              </Button>
+            </Link>
           </Skeleton>
         </div>
         <Skeleton loading={isLoading} width={180} height={32}>
@@ -126,14 +154,23 @@ export const PersonHead = ({
           <div className="flex flex-col gap-4">
             <WebLinks links={links} />
             <div className="flex gap-5 text-1">
-              <span className="flex gap-3">
-                <MailIcon width={16} height={16} />
-                {email}
-              </span>
-              <span className="flex gap-3">
-                <MapPinIcon width={16} height={16} />
-                {location}
-              </span>
+              {signupDate ? (
+                <span className="flex gap-3">
+                  {tProfile('hyphaMemberSince', { date: signupDate })}
+                </span>
+              ) : null}
+              {email && isMe(personSlug) ? (
+                <span className="flex gap-3">
+                  <MailIcon width={16} height={16} />
+                  {email}
+                </span>
+              ) : null}
+              {location ? (
+                <span className="flex gap-3">
+                  <MapPinIcon width={16} height={16} />
+                  {location}
+                </span>
+              ) : null}
             </div>
           </div>
           <Skeleton loading={isLoading} height={72} width={768}>

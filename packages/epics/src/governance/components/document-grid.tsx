@@ -11,6 +11,7 @@ interface Document {
   badges?: BadgeItem[];
   slug?: string;
   interactions?: React.ReactNode;
+  createdAt?: Date;
 }
 
 interface DocumentGridProps {
@@ -25,7 +26,7 @@ export const DocumentGrid = ({
   documents,
 }: DocumentGridProps) => {
   return (
-    <div className="w-full grid grid-cols-1 sm:grid-cols-3 space-x-2">
+    <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2">
       {documents.map((document) => (
         <Link
           href={`${basePath}/${document.slug}`}

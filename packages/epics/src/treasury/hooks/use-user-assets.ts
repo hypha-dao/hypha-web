@@ -41,13 +41,17 @@ type AssetItem = {
   closeUrl: string;
   slug: string;
   address: string;
+  space?: {
+    title: string;
+    slug: string;
+  };
 };
 
 type UseAssetsReturn = {
   assets: AssetItem[];
   isLoading: boolean;
   balance: number;
-  manualUpdate: () => void;
+  manualUpdate: () => Promise<void>;
 };
 
 export const useUserAssets = ({

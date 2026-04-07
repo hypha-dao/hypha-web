@@ -5,8 +5,11 @@ import useSWR from 'swr';
 import { encodeFunctionData } from 'viem';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 
-import { publicClient } from '@hypha-platform/core/client';
-import { schemaCreateProposalWeb3 } from '@hypha-platform/core/client';
+import {
+  schemaCreateProposalWeb3,
+  publicClient,
+  getSpaceMinProposalDuration,
+} from '@hypha-platform/core/client';
 import {
   getProposalFromLogs,
   mapToCreateProposalWeb3Input,
@@ -20,6 +23,9 @@ import {
   decayingTokenFactoryAbi,
   decayingTokenFactoryAddress,
 } from '@hypha-platform/core/generated';
+import { decayPercentToBasisPoints } from '../../voice-decay-units';
+import { getDuration } from '@hypha-platform/ui-utils';
+import { getGovernanceChainId } from './governance-chain-id';
 
 interface CreateTokenArgs {
   spaceId: number;
@@ -28,12 +34,34 @@ interface CreateTokenArgs {
   maxSupply: number;
   transferable: boolean;
   isVotingToken: boolean;
-  type: 'utility' | 'credits' | 'ownership' | 'voice';
+  type:
+    | 'utility'
+    | 'credits'
+    | 'ownership'
+    | 'voice'
+    | 'impact'
+    | 'community_currency';
   decayPercentage?: number;
   decayInterval?: number;
+  fixedMaxSupply?: boolean;
+  autoMinting?: boolean;
+  tokenPrice?: number;
+  priceCurrencyFeed?: `0x${string}`;
+  useTransferWhitelist?: boolean;
+  useReceiveWhitelist?: boolean;
+  initialTransferWhitelist?: `0x${string}`[];
+  initialReceiveWhitelist?: `0x${string}`[];
+  defaultCreditLimit?: number;
+  initialCreditWhitelistSpaceIds?: number[];
+  salePaymentToken?: `0x${string}`;
+  salePaymentTokenPricePerToken?: bigint;
+  tokensForSale?: number;
+  purchaseEligibilityMode?: 0 | 1 | 2;
+  initialPurchaseWhitelistSpaceIds?: number[];
 }
 
-const chainId = 8453;
+const chainId = getGovernanceChainId();
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
 export const useIssueTokenMutationsWeb3Rpc = ({
   proposalSlug,
@@ -53,13 +81,44 @@ export const useIssueTokenMutationsWeb3Rpc = ({
     async (_, { arg }: { arg: CreateTokenArgs }) => {
       if (!client) throw new Error('Smart wallet client not available');
 
+      const duration = await publicClient.readContract(
+        getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
+      );
+
       let txData: Array<{
         target: `0x${string}`;
         value: number;
         data: `0x${string}`;
       }> = [];
 
-      if (['utility', 'credits'].includes(arg.type)) {
+      const fixedMaxSupply = arg.fixedMaxSupply ?? false;
+      const autoMinting = arg.autoMinting ?? true;
+      const tokenPrice = arg.tokenPrice ? BigInt(arg.tokenPrice) : 0n;
+      const priceCurrencyFeed =
+        arg.priceCurrencyFeed ??
+        ('0x0000000000000000000000000000000000000000' as `0x${string}`);
+      const useTransferWhitelist = arg.useTransferWhitelist ?? false;
+      const useReceiveWhitelist = arg.useReceiveWhitelist ?? false;
+      const initialTransferWhitelist = arg.initialTransferWhitelist ?? [];
+      const initialReceiveWhitelist = arg.initialReceiveWhitelist ?? [];
+      const defaultCreditLimit = BigInt(arg.defaultCreditLimit ?? 0);
+      const initialCreditWhitelistSpaceIds = (
+        arg.initialCreditWhitelistSpaceIds ?? []
+      ).map((id) => BigInt(id));
+      const salePaymentToken = arg.salePaymentToken ?? ZERO_ADDRESS;
+      const salePaymentTokenPricePerToken =
+        arg.salePaymentTokenPricePerToken ?? 0n;
+      const tokensForSale = BigInt(arg.tokensForSale ?? 0) * 10n ** 18n;
+      const purchaseEligibilityMode = arg.purchaseEligibilityMode ?? 0;
+      const initialPurchaseWhitelistSpaceIds = (
+        arg.initialPurchaseWhitelistSpaceIds ?? []
+      ).map((id) => BigInt(id));
+
+      if (
+        ['utility', 'credits', 'impact', 'community_currency'].includes(
+          arg.type,
+        )
+      ) {
         txData = [
           {
             target: regularTokenFactoryAddress[chainId],
@@ -73,7 +132,21 @@ export const useIssueTokenMutationsWeb3Rpc = ({
                 arg.symbol,
                 BigInt(arg.maxSupply) * 10n ** 18n,
                 arg.transferable,
-                arg.isVotingToken,
+                fixedMaxSupply,
+                autoMinting,
+                tokenPrice,
+                priceCurrencyFeed,
+                useTransferWhitelist,
+                useReceiveWhitelist,
+                initialTransferWhitelist,
+                initialReceiveWhitelist,
+                defaultCreditLimit,
+                initialCreditWhitelistSpaceIds,
+                salePaymentToken,
+                salePaymentTokenPricePerToken,
+                tokensForSale,
+                purchaseEligibilityMode,
+                initialPurchaseWhitelistSpaceIds,
               ],
             }),
           },
@@ -91,7 +164,19 @@ export const useIssueTokenMutationsWeb3Rpc = ({
                 arg.name,
                 arg.symbol,
                 BigInt(arg.maxSupply) * 10n ** 18n,
-                arg.transferable,
+                fixedMaxSupply,
+                autoMinting,
+                tokenPrice,
+                priceCurrencyFeed,
+                useTransferWhitelist,
+                useReceiveWhitelist,
+                initialTransferWhitelist,
+                initialReceiveWhitelist,
+                salePaymentToken,
+                salePaymentTokenPricePerToken,
+                tokensForSale,
+                purchaseEligibilityMode,
+                initialPurchaseWhitelistSpaceIds,
               ],
             }),
           },
@@ -119,9 +204,21 @@ export const useIssueTokenMutationsWeb3Rpc = ({
                 arg.symbol,
                 BigInt(arg.maxSupply) * 10n ** 18n,
                 arg.transferable,
-                arg.isVotingToken,
-                BigInt(arg.decayPercentage),
+                fixedMaxSupply,
+                autoMinting,
+                tokenPrice,
+                priceCurrencyFeed,
+                useTransferWhitelist,
+                useReceiveWhitelist,
+                initialTransferWhitelist,
+                initialReceiveWhitelist,
+                BigInt(decayPercentToBasisPoints(arg.decayPercentage)),
                 BigInt(arg.decayInterval),
+                salePaymentToken,
+                salePaymentTokenPricePerToken,
+                tokensForSale,
+                purchaseEligibilityMode,
+                initialPurchaseWhitelistSpaceIds,
               ],
             }),
           },
@@ -129,8 +226,8 @@ export const useIssueTokenMutationsWeb3Rpc = ({
       }
 
       const parsedProposal = schemaCreateProposalWeb3.parse({
-        spaceId: arg.spaceId,
-        duration: 604800,
+        spaceId: BigInt(arg.spaceId),
+        duration: duration && duration > 0 ? duration : getDuration(4),
         transactions: txData,
       });
 

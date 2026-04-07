@@ -26,7 +26,7 @@ export async function getTokenBalancesByAddress(address: `0x${string}`) {
             10 ** (metadata.decimals || 18), // Convert from wei
           symbol: metadata.symbol || 'UNKNOWN',
           name: metadata.name || 'Unnamed',
-          logo: metadata.logo || '/placeholder/token-icon.png',
+          logo: metadata.logo || '/placeholder/token-icon.svg',
         };
       } catch (error) {
         console.warn(

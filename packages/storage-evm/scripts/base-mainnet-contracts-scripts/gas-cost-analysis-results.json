@@ -1,0 +1,66 @@
+{
+  "timestamp": "2025-08-26T13:24:15.966Z",
+  "ethPrice": 4600,
+  "gasCosts": [
+    {
+      "operation": "Space Creation",
+      "gasUsed": "960285",
+      "gasPrice": "8658769",
+      "ethCost": "0.000008314885989165",
+      "usdCost": "0.038248",
+      "txHash": "0xb6b98a19d9faef322f6f2b48ea73f9c4f8ed6534398788927710b992a3bbdda6"
+    },
+    {
+      "operation": "Proposal Creation (Token Deployment)",
+      "gasUsed": "527418",
+      "gasPrice": "8525653",
+      "ethCost": "0.000004496582853954",
+      "usdCost": "0.020684",
+      "txHash": "0x64e3d917b2e7b2cf165666f1f0916fc44d2a40d150d0c879a4651294346e2707"
+    },
+    {
+      "operation": "Proposal Creation (Token Minting)",
+      "gasUsed": "378389",
+      "gasPrice": "8454697",
+      "ethCost": "0.000003199164343133",
+      "usdCost": "0.014716",
+      "txHash": "0xab9a53ae542ff37e8bdb8c3ced9023af075fa5869985374d004aa25b37a0b5ab"
+    },
+    {
+      "operation": "Voting on Proposal (Token Minting)",
+      "gasUsed": "446949",
+      "gasPrice": "8465095",
+      "ethCost": "0.000003783465745155",
+      "usdCost": "0.017404",
+      "txHash": "0x3f0d5487d1b6d0194b1babdb29865f149f06787e3ce7899c5868efba2b3de3f3"
+    },
+    {
+      "operation": "Voting on Proposal (Token Deployment)",
+      "gasUsed": "2549025",
+      "gasPrice": "8409197",
+      "ethCost": "0.000021435253382925",
+      "usdCost": "0.098602",
+      "txHash": "0x1f7ed7f48bebdf6c276eb2cd3072bd74045b2db8eaf3ee4523a6406b1cf72017"
+    },
+    {
+      "operation": "Joining Space - Estimated",
+      "gasUsed": "100000",
+      "gasPrice": "8431359",
+      "ethCost": "0.0000008431359",
+      "usdCost": "0.003878",
+      "txHash": "N/A (Failed)"
+    },
+    {
+      "operation": "USDC Token Transfer (0.0001 USDC)",
+      "gasUsed": "62135",
+      "gasPrice": "8326443",
+      "ethCost": "0.000000517363535805",
+      "usdCost": "0.002380",
+      "txHash": "0x80e51f1496ae5e980661ee7fcb3fa936a0f191c59f5be75508d44f2608183b32"
+    }
+  ],
+  "totals": {
+    "ethCost": "0.00004259",
+    "usdCost": "0.20"
+  }
+}

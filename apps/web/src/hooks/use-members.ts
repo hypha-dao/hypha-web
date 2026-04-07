@@ -1,10 +1,11 @@
 'use client';
 
 import React from 'react';
-import useSWR from 'swr';
+import useSWR, { mutate as mutateCache, type Key } from 'swr';
 import queryString from 'query-string';
 
 import { type UseMembers, type UseMembersReturn } from '@hypha-platform/epics';
+import { useAuthentication } from '@hypha-platform/authentication';
 
 type MemberItem = {
   name: string;
@@ -18,14 +19,15 @@ type MemberItem = {
   isLoading?: boolean;
 };
 
-import { FilterParams, useJwt } from '@hypha-platform/core/client';
+import { FilterParams } from '@hypha-platform/core/client';
 
 export const useMembers: UseMembers = ({
   page = 1,
-  pageSize = 4,
+  pageSize = 0,
   spaceSlug,
   searchTerm,
   refreshInterval,
+  paginationDisabled = false,
 }: {
   page?: number;
   pageSize?: number;
@@ -33,17 +35,16 @@ export const useMembers: UseMembers = ({
   spaceSlug?: string;
   searchTerm?: string;
   refreshInterval?: number;
+  paginationDisabled?: boolean;
 }): UseMembersReturn => {
-  const { jwt } = useJwt();
+  const { getAccessToken } = useAuthentication();
 
   const queryParams = React.useMemo(() => {
-    const effectiveFilter = {
-      page,
-      pageSize,
-      ...(searchTerm ? { searchTerm } : {}),
-    };
+    const effectiveFilter = paginationDisabled
+      ? { ...(searchTerm ? { searchTerm } : {}) }
+      : { page, pageSize, ...(searchTerm ? { searchTerm } : {}) };
     return `?${queryString.stringify(effectiveFilter)}`;
-  }, [page, pageSize, searchTerm]);
+  }, [page, pageSize, searchTerm, paginationDisabled]);
 
   console.debug('useMembers', { queryParams });
 
@@ -55,24 +56,54 @@ export const useMembers: UseMembers = ({
   const interval = refreshInterval ?? 0;
   const keepPreviousData = !!interval;
 
-  const { data: response, isLoading } = useSWR(
-    jwt ? [endpoint] : null,
-    ([endpoint]) =>
-      fetch(endpoint, {
-        headers: {
-          Authorization: `Bearer ${jwt}`,
-          'Content-Type': 'application/json',
-        },
-      }).then((res) => res.json()),
+  const {
+    data: response,
+    isLoading,
+    mutate,
+  } = useSWR(
+    spaceSlug ? [endpoint] : null,
+    async ([endpoint]) => {
+      const token = await getAccessToken();
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      return fetch(endpoint, { headers }).then((res) => res.json());
+    },
     {
       refreshInterval: interval,
       keepPreviousData,
     },
   );
 
+  const updateMembers = React.useCallback(async () => {
+    if (!spaceSlug) {
+      await mutate();
+      return;
+    }
+
+    await mutateCache(
+      (key: Key) => {
+        if (!Array.isArray(key)) return false;
+        const [url] = key;
+        return (
+          typeof url === 'string' &&
+          url.startsWith(`/api/v1/spaces/${spaceSlug}/members`)
+        );
+      },
+      undefined,
+      { revalidate: true },
+    );
+  }, [mutate, spaceSlug]);
+
   return {
-    members: response?.data || [],
-    pagination: response?.pagination,
+    persons: response?.persons || { data: [], pagination: undefined },
+    spaces: response?.spaces || { data: [], pagination: undefined },
     isLoading,
+    updateMembers,
   };
 };

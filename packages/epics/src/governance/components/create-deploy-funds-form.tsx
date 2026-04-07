@@ -1,8 +1,6 @@
 'use client';
 
-import { CreateAgreementBaseFields } from '@hypha-platform/epics';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import {
   schemaCreateAgreementForm,
   createAgreementFiles,
@@ -13,9 +11,12 @@ import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
 import { useCreateDeployFundsOrchestrator } from '@hypha-platform/core/client';
-import { useRouter } from 'next/navigation';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useConfig } from 'wagmi';
+import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
+import { CreateAgreementBaseFields } from '../../agreements';
+import { useTranslations } from 'next-intl';
+import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
 
 const fullSchemaCreateDeployFundsForm =
   schemaCreateAgreementForm.extend(createAgreementFiles);
@@ -37,7 +38,8 @@ export const CreateDeployFundsForm = ({
   web3SpaceId,
   plugin,
 }: CreateDeployFundsFormProps) => {
-  const router = useRouter();
+  const tSpaces = useTranslations('Spaces');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
@@ -48,11 +50,15 @@ export const CreateDeployFundsForm = ({
     isError,
     isPending,
     progress,
-    agreement: { slug: agreementSlug },
   } = useCreateDeployFundsOrchestrator({ authToken: jwt, config });
+  const resolver = useLocalizedProposalResolver(
+    fullSchemaCreateDeployFundsForm,
+    tAgreementFlow,
+  );
 
+  const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
-    resolver: zodResolver(fullSchemaCreateDeployFundsForm),
+    resolver,
     defaultValues: {
       title: '',
       description: '',
@@ -70,13 +76,8 @@ export const CreateDeployFundsForm = ({
     },
   });
 
-  console.log(form);
-
-  React.useEffect(() => {
-    if (progress === 100 && agreementSlug) {
-      router.push(successfulUrl);
-    }
-  }, [progress, agreementSlug, router, successfulUrl]);
+  useScrollToErrors(form, formRef);
+  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
 
   const handleCreate = async (data: FormValues) => {
     if (!data.recipient || !data.payouts || data.payouts.length === 0) {
@@ -108,17 +109,18 @@ export const CreateDeployFundsForm = ({
     });
   };
 
-  console.log('form errors:', form.formState.errors);
-
   return (
     <LoadingBackdrop
+      showKeepWindowOpenMessage={true}
+      keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
+      fullHeight={true}
       progress={progress}
       isLoading={isPending}
       message={
         isError ? (
           <div className="flex flex-col">
-            <div>Ouh Snap. There was an error</div>
-            <Button onClick={reset}>Reset</Button>
+            <div>{tSpaces('errorOhSnap')}</div>
+            <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (
           <div>{currentAction}</div>
@@ -127,24 +129,28 @@ export const CreateDeployFundsForm = ({
     >
       <Form {...form}>
         <form
+          ref={formRef}
           onSubmit={form.handleSubmit(handleCreate)}
           className="flex flex-col gap-5"
         >
           <CreateAgreementBaseFields
+            key={resubmitKey}
             creator={{
               avatar: person?.avatarUrl || '',
               name: person?.name || '',
               surname: person?.surname || '',
             }}
+            successfulUrl={successfulUrl}
             closeUrl={successfulUrl}
             backUrl={backUrl}
             isLoading={false}
-            label="Funding"
+            label={tAgreementFlow('labels.funding')}
+            progress={progress}
           />
           {plugin}
           <Separator />
           <div className="flex justify-end w-full">
-            <Button type="submit">Publish</Button>
+            <Button type="submit">{tAgreementFlow('buttons.publish')}</Button>
           </div>
         </form>
       </Form>

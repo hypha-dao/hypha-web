@@ -1,6 +1,7 @@
 'use client';
 
 import { useFormContext, useWatch } from 'react-hook-form';
+import { useTheme } from 'next-themes';
 import {
   FormField,
   FormItem,
@@ -8,6 +9,9 @@ import {
   FormMessage,
 } from '@hypha-platform/ui';
 import { QuorumAndUnityChanger } from './quorum-and-unity-changer';
+import { Button } from '@hypha-platform/ui';
+import { VOTING_METHOD_TEMPLATES } from '../../../../governance';
+import { useTranslations } from 'next-intl';
 
 interface QuorumAndUnityChangerFieldProps {
   name: string;
@@ -16,8 +20,42 @@ interface QuorumAndUnityChangerFieldProps {
 export function QuorumAndUnityChangerField({
   name,
 }: QuorumAndUnityChangerFieldProps) {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { control, setValue } = useFormContext();
   const fieldValue = useWatch({ control, name }) || { quorum: 0, unity: 0 };
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
+  const matchedPreset = VOTING_METHOD_TEMPLATES.find(
+    (p) => p.quorum === fieldValue.quorum && p.unity === fieldValue.unity,
+  );
+
+  const handleChange = (values: { quorum: number; unity: number }) => {
+    setValue(name, values, { shouldValidate: true });
+  };
+
+  const handlePresetClick = (preset: {
+    title: string;
+    titleKey: string;
+    quorum: number;
+    unity: number;
+  }) => {
+    setValue(
+      name,
+      { quorum: preset.quorum, unity: preset.unity },
+      { shouldValidate: true },
+    );
+  };
+
+  const getTextColor = (value: number) => {
+    if (value >= 50) {
+      return 'text-white';
+    }
+    if (value === 0) {
+      return isDark ? 'text-white' : 'text-accent-9';
+    }
+    return isDark ? 'text-white' : 'text-accent-9';
+  };
 
   return (
     <FormField
@@ -25,16 +63,81 @@ export function QuorumAndUnityChangerField({
       name={name}
       render={() => (
         <FormItem>
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 mb-2">
+            {VOTING_METHOD_TEMPLATES.map((preset) => {
+              const isSelected = matchedPreset === preset;
+              return (
+                <Button
+                  key={preset.title}
+                  type="button"
+                  onClick={() => handlePresetClick(preset)}
+                  className={`flex flex-col items-start h-full rounded-xl border p-4 text-left transition ${
+                    isSelected
+                      ? 'border-accent-11'
+                      : 'border-neutral-7 hover:border-neutral-9'
+                  }`}
+                  variant="ghost"
+                >
+                  <div className="font-bold mb-2">
+                    {tAgreementFlow(
+                      `plugins.quorumAndUnity.templates.${preset.titleKey}` as Parameters<
+                        typeof tAgreementFlow
+                      >[0],
+                    )}
+                  </div>
+                  <div className="space-y-3 text-sm text-neutral-11 w-full">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 bg-neutral-6 h-5 rounded-2xl relative">
+                        <div
+                          className="bg-accent-9 h-5 rounded-2xl"
+                          style={{
+                            width: `${preset.quorum}%`,
+                          }}
+                        />
+                        <span
+                          className={`absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-xs ${getTextColor(
+                            preset.quorum,
+                          )}`}
+                        >
+                          {preset.quorum}%
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 bg-neutral-6 h-5 rounded-2xl relative">
+                        <div
+                          className="bg-accent-9 h-5 rounded-2xl"
+                          style={{
+                            width: `${preset.unity}%`,
+                          }}
+                        />
+                        <span
+                          className={`absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-xs ${getTextColor(
+                            preset.unity,
+                          )}`}
+                        >
+                          {preset.unity}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </Button>
+              );
+            })}
+          </div>
           <FormControl>
             <QuorumAndUnityChanger
               quorum={fieldValue.quorum}
               unity={fieldValue.unity}
-              onChange={(values) =>
-                setValue(name, values, { shouldValidate: true })
-              }
+              onChange={handleChange}
             />
           </FormControl>
           <FormMessage />
+          {fieldValue.quorum === 0 && fieldValue.unity === 0 && (
+            <span className="text-2 text-error-11 mt-2">
+              {tAgreementFlow('plugins.quorumAndUnity.cannotBothZero')}
+            </span>
+          )}
         </FormItem>
       )}
     />

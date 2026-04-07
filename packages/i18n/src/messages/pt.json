@@ -1,0 +1,1718 @@
+{
+  "Common": {
+    "createdOn": "Criado em {date}",
+    "acceptedOn": "Aceito em {date}",
+    "rejectedOn": "Rejeitado em {date}",
+    "joinedSpaceOn": "Entrou no espaço em {date}",
+    "Assignments": "Tarefas",
+    "Members": "Membros",
+    "Treasury": "Tesouraria",
+    "Agreements": "Acordos",
+    "Spaces": "Espaços",
+    "loadMore": "Carregar mais",
+    "noMore": "Não mais",
+    "signIn": "Faça login para usar este recurso.",
+    "joinSpaceToUse": "Por favor, junte-se a este espaço para usar este recurso.",
+    "back": "Voltar",
+    "home": "Lar",
+    "remove": "Remover",
+    "by": "por",
+    "otherMembers": "+ outros membros {count}",
+    "exploreSpaces": "Explorar espaços",
+    "findCategory": "Encontre uma categoria",
+    "noSpacesYet": "Nenhum espaço criado ou associado ainda. Explore nossa rede e participe de um Espaço ou crie o seu próprio.",
+    "close": "Fechar",
+    "notFoundOops": "Oooops!",
+    "notFoundCouldNotFindPage": "Não conseguimos encontrar esta página",
+    "notFoundDescription": "A página que você procura pode ter sido removida, renomeada ou está temporariamente indisponível.",
+    "errorTryAgain": "Tentar novamente",
+    "errorRefreshPage": "Atualizar página",
+    "errorMaintenanceTitle": "Voltaremos em breve!",
+    "errorMaintenanceDescription": "A Hypha está fazendo uma breve pausa enquanto aplicamos atualizações. Voltaremos em breve com melhorias empolgantes!",
+    "errorLoadOverviewTab": "Ops, algo deu errado. Não foi possível carregar a aba de visão geral.",
+    "errorLoadMembersTab": "Ops, algo deu errado. Não foi possível carregar a aba de membros.",
+    "errorLoadAgreementsTab": "Ops, algo deu errado. Não foi possível carregar a aba de acordos.",
+    "errorLoadTreasuryTab": "Ops, algo deu errado. Não foi possível carregar a aba de tesouraria.",
+    "publish": "Publicar",
+    "invalidTransactions": "Transações inválidas",
+    "Coherence": "Coerência"
+  },
+  "AgreementFlow": {
+    "proposalErrors": {
+      "recipientRequired": "Adicione um destinatário ou endereço de carteira",
+      "invalidEthereumAddress": "Endereço Ethereum inválido",
+      "amountGreaterThanZero": "O valor deve ser maior que 0",
+      "amountRequired": "Insira um valor para continuar.",
+      "tokenRequired": "Selecione um token",
+      "chooseTokenToBurn": "Escolha um token para queimar",
+      "atLeastOneBurnTargetRequired": "É necessário pelo menos um destino de queima",
+      "atLeastOnePayoutRequired": "Pelo menos um pagamento é obrigatório",
+      "purchaseAmountRequired": "Digite um valor de compra.",
+      "selectSpaceToActivate": "Selecione um espaço para ativar.",
+      "monthsToActivateRequired": "Digite o número de meses para ativar.",
+      "selectSpaceToJoin": "Selecione um espaço para participar",
+      "selectDelegatedVotingMember": "Selecione um membro delegado para votação",
+      "selectSpaceToExit": "Selecione um espaço para sair.",
+      "selectMemberToRemove": "Selecione um membro para remover",
+      "invalidWalletAddress": "Endereço de carteira inválido",
+      "selectMember": "Selecione um membro.",
+      "invalidMemberAddress": "Endereço do membro inválido.",
+      "positiveTokenNumberRequired": "Informe um número positivo de tokens.",
+      "selectMemberAndTokens": "Selecione um membro e informe a quantidade de tokens a alocar.",
+      "autoExecutionVotingDurationRequired": "A execução automática está desativada. Defina uma duração mínima de votação.",
+      "selectVotingToken": "Selecione um token para este método de votação.",
+      "backingCollateralRequired": "Selecione um colateral de lastro",
+      "enterAmount": "Insira um valor para continuar.",
+      "invalidTokenAddress": "Endereço do token inválido",
+      "invalidAddress": "Endereço inválido",
+      "tokenAddressRequired": "O endereço do token é obrigatório",
+      "integerRequired": "Deve ser um número inteiro",
+      "chooseTokenToMint": "Escolha um token para cunhar",
+      "redemptionTokenPriceRequired": "O preço do token é obrigatório quando o resgate está ativo. Informe um preço maior que 0.",
+      "redemptionReferenceCurrencyRequired": "A moeda de referência é obrigatória quando o resgate está ativo.",
+      "redemptionMaxPercentRequired": "O percentual máximo de resgate é obrigatório quando o resgate está ativo. Insira 0 para sem limite.",
+      "redemptionPeriodDaysRequired": "O período (dias) é obrigatório quando o resgate está ativo. Selecione um período de resgate.",
+      "redemptionStartDateRequired": "A data \"Autorizar resgate desde\" é obrigatória quando o resgate está ativo."
+    },
+    "plugins": {
+      "paymentSchedule": {
+        "errors": {
+          "milestonesEmpty": "Os marcos não podem estar vazios",
+          "missingStartDate": "Cada marco deve ter uma data de início",
+          "firstMilestoneFuture": "O primeiro marco deve estar no futuro",
+          "milestoneOrder": "O marco {current} deve ser após o marco {previous}",
+          "totalPercentageMax": "A porcentagem total não pode exceder 100%",
+          "futureDateMustBeLater": "A data de pagamento futuro deve ser posterior à data atual"
+        },
+        "label": "Cronograma de Pagamento",
+        "immediately": "Imediatamente",
+        "futurePayment": "Pagamento Futuro",
+        "milestones": "Marcos",
+        "date": "Data",
+        "selectDate": "Selecione uma data",
+        "add": "Adicionar"
+      },
+      "activateSpaces": {
+        "checkOut": "Resumo",
+        "totalContribution": "Contribuição total:",
+        "payWith": "Pague com:",
+        "totalAmountIn": "Valor total em {token}:",
+        "paidBy": "Pago por",
+        "paidTo": "Pago para"
+      },
+      "buyHyphaTokens": {
+        "purchaseAmount": "Valor da compra",
+        "receiveHyphaTokens": "Nosso espaço receberá {amount} tokens HYPHA (1 HYPHA = {price} USD)",
+        "hyphaSentTo": "HYPHA enviado para",
+        "usdcPaidTo": "USDC pago a"
+      },
+      "tokenBackingVault": {
+        "title": "Cofre de lastro de token",
+        "description": "Crie um cofre de lastro de token, defina regras e restrições de resgate, configure a data de início e o preço de resgate e autorize a adição ou retirada de colaterais do cofre.",
+        "noTokens": "Seu espaço ainda não criou um token, <link>clique aqui</link> para emitir um token primeiro.",
+        "selectTokenLabel": "Selecionar token",
+        "noTokenFound": "Nenhum token encontrado",
+        "selectTokenPlaceholder": "Selecione um token",
+        "tokenSupplyLabel": "Fornecimento de tokens",
+        "unlimitedSupply": "Fornecimento ilimitado",
+        "issuanceToDate": "Emissão até o momento",
+        "currentBackingCollaterals": "Colaterais atuais",
+        "activateVault": "Ativar cofre",
+        "addCollaterals": "Adicionar colaterais ao cofre",
+        "addCollateralsDescription": "Adicione colaterais de lastro da tesouraria ao cofre.",
+        "removeCollaterals": "Remover colaterais do cofre",
+        "removeCollateralsDescription": "Retire colaterais de lastro do cofre para a tesouraria.",
+        "backingCollateral": "Colateral de lastro",
+        "enableRedemption": "Ativar resgate",
+        "setRedemptionPrice": "Definir preço de resgate",
+        "referenceCurrency": "Moeda de referência",
+        "redemptionPrice": "Preço de resgate",
+        "minimumBackingPercent": "Percentual mínimo de lastro",
+        "maximumRedemptionPercent": "Percentual máximo de resgate",
+        "maxRedemptionNoLimit": "0 = sem limite",
+        "per": "por",
+        "selectPeriod": "Selecionar período",
+        "periodDays": "{count, plural, one {# dia} other {# dias}}",
+        "authoriseRedemptionFrom": "Autorizar resgate a partir de",
+        "selectDate": "Selecionar uma data",
+        "optionalAdvancedRedemptionControls": "Opcional: controles avançados de resgate",
+        "redemptionWhitelistLabel": "Lista de permissões de resgate",
+        "redemptionWhitelistDescription": "Especifique quais membros ou espaços estão autorizados a resgatar tokens.",
+        "enterRedemptionPrice": "Insira o preço de resgate",
+        "leaveBlankUseTokenPrice": "Deixe em branco para usar o preço do token ({price} {currency})",
+        "leaveBlankForTokenContractPrice": "Deixe em branco para usar o preço do contrato do token",
+        "add": "Adicionar",
+        "remove": "Remover"
+      },
+      "issueNewToken": {
+        "general": {
+          "title": "Em geral",
+          "description": "Selecione o tipo de token e personalize seu nome, símbolo e ícone para uma identificação clara.",
+          "customizeIdentityDescription": "Personalize o nome, o símbolo e o ícone do token para uma identificação clara.",
+          "tokenTypeLabel": "Tipo de token",
+          "tokenTypePlaceholder": "Selecione um tipo de token",
+          "tokenTypeOptions": {
+            "utility": {
+              "label": "Token Utilitário",
+              "description": "usado para acesso ou funcionalidade dentro do espaço"
+            },
+            "ownership": {
+              "label": "Token de propriedade",
+              "description": "reflete participação ou patrimônio no espaço"
+            },
+            "impact": {
+              "label": "Token de Impacto",
+              "description": "valoriza resultados sociais, econômicos e ambientais mensuráveis"
+            },
+            "credits": {
+              "label": "Créditos em dinheiro",
+              "description": "créditos resgatáveis ​​que podem ser trocados por moeda fiduciária"
+            },
+            "voice": {
+              "label": "Símbolo de voz",
+              "description": "fornece voz na gestão ou na tomada de decisões dentro do espaço"
+            },
+            "community_currency": {
+              "label": "Moeda da comunidade",
+              "description": "moeda local usada para transações e troca de valores dentro da comunidade"
+            }
+          },
+          "tokenNameLabel": "Nome do token",
+          "tokenNamePlaceholder": "Digite um nome",
+          "tokenSymbolLabel": "Símbolo simbólico",
+          "tokenSymbolPlaceholder": "Digite um símbolo",
+          "tokenIconLabel": "Ícone de token"
+        },
+        "advancedSettings": {
+          "title": "Configurações avançadas de token (opcional)",
+          "description": "Os padrões são pré-configurados para uso padrão. Habilite configurações avançadas apenas se desejar configurar limites de fornecimento, cunhagem manual, políticas de transferência e listas de permissões ou definir um valor de token.",
+          "enable": "Habilitar configurações avançadas"
+        },
+        "supply": {
+          "title": "Fornecimento de tokens",
+          "description": "Escolha um fornecimento de tokens fixo ou ilimitado. Selecione “Fornecimento limitado” para definir um valor máximo de token, seja permanentemente ou com opção de atualização no futuro.",
+          "enableLimited": "Habilitar fornecimento limitado",
+          "maxSupplyLabel": "Fornecimento máximo",
+          "maxSupplyPlaceholder": "Digite um valor",
+          "maxSupplyReadOnlyWhenImmutable": "O fornecimento máximo é fixo enquanto «Para sempre imutável» estiver selecionado",
+          "maxSupplyTypeReadOnlyWhenImmutableOnChain": "O tipo de fornecimento máximo está fixado na cadeia e não pode ser alterado",
+          "maxSupplyTypeLabel": "Tipo de fornecimento máximo",
+          "maxSupplyTypePlaceholder": "Selecione o tipo de suprimento máximo",
+          "maxSupplyTypeOptions": {
+            "immutable": "Para sempre imutável",
+            "updatable": "Atualizável ao longo do tempo"
+          },
+          "maxSupplyTypeHelp": "Escolher \"Forever Immutable\" bloqueia permanentemente o suprimento máximo e bloqueia quaisquer alterações futuras. Selecione \"Atualizável ao longo do tempo\" se você puder aumentar o limite posteriormente (por exemplo, por meio de lançamentos graduais ou baseados em marcos) ou deixar o fornecimento limitado desativado para mantê-lo ilimitado."
+        },
+        "autoMint": {
+          "title": "Tokens Auto-Mint por meio de propostas",
+          "description": "Quando ativado, os tokens são automaticamente emitidos para o tesouro sempre que uma proposta é aprovada. Desative esta opção se preferir gerenciar um orçamento predefinido, cunhando tokens para o tesouro manualmente com antecedência.",
+          "enable": "Ativar a cunhagem automática de propostas",
+          "disabledNotice": "A cunhagem automática está desativada. Os tokens agora devem ser emitidos por meio de uma proposta de cunhagem separada, que pode ser acessada nas configurações."
+        },
+        "transfer": {
+          "title": "Transferência de token",
+          "description": "Controle quem pode enviar e receber seu token. Você pode torná-lo totalmente transferível, restringir as transferências para contas ou espaços na lista de permissões ou desabilitar totalmente as transferências para obter controle máximo.",
+          "transferable": "Transferível",
+          "advancedControlsDescription": "Para obter mais controle, você pode opcionalmente ativar a lista de permissões. Isso restringe as transferências de token apenas a membros, espaços ou endereços de blockchain selecionados que você especificar. Se você não ativar esta opção, os tokens permanecerão livremente transferíveis para todas as contas.",
+          "advancedControls": "Opcional: controles de transferência avançados",
+          "autoWhitelistedNotice": "{spaceName} e seus membros são automaticamente colocados na lista de permissões. Listar espaço(s) e/ou membro(s) abaixo permite que eles enviem tokens (\"Da\" lista de permissões) ou recebam tokens (\"Para\" a lista de permissões) quando a lista de permissões estiver habilitada.",
+          "toWhitelistLabel": "Lista de permissões “para”",
+          "toWhitelistDescription": "Defina quais membros ou espaços têm permissão para receber tokens. Adicione membros ou espaços, inclua endereços de blockchain e escolha se a lista de permissões se aplica a um espaço inteiro ou apenas à sua conta do tesouro.",
+          "fromWhitelistLabel": "Lista branca “de”",
+          "fromWhitelistDescription": "Defina quais membros ou espaços têm permissão para enviar tokens. Adicione membros ou espaços, inclua endereços de blockchain e escolha se a lista de permissões se aplica a um espaço inteiro ou apenas à sua conta do tesouro.",
+          "whitelist": {
+            "memberOrSpace": "Membro ou Espaço",
+            "memberOrSpaceDescription": "Escolha se esta entrada se destina a um membro individual ou a um espaço inteiro.",
+            "member": "Membro",
+            "space": "Espaço",
+            "selectMember": "Selecione um membro",
+            "selectSpace": "Selecione um espaço",
+            "selectMemberPlaceholder": "Selecione membro...",
+            "selectSpacePlaceholder": "Selecione o espaço...",
+            "noMembersFound": "Nenhum membro corresponde à sua pesquisa.",
+            "noSpacesFound": "Nenhum espaço corresponde à sua pesquisa.",
+            "blockchainAddress": "Endereço Blockchain",
+            "spaceAccessScope": "Escopo de acesso espacial",
+            "spaceAccessScopeDescription": "Alterne se as transferências devem incluir toda a associação ao espaço ou apenas a conta do espaço.",
+            "spaceOnly": "Somente espaço",
+            "spaceAndMembers": "Espaço e Membros",
+            "remove": "Remover",
+            "add": "Adicionar"
+          }
+        },
+        "value": {
+          "title": "Valor do token em tesouraria",
+          "description": "Defina um valor inicial para o seu token. O preço de referência é exibido em sua tesouraria e ajuda os membros a entender o valor inicial de mercado do token.",
+          "enable": "Habilitar preço do token",
+          "referenceCurrencyLabel": "Moeda de referência",
+          "referenceCurrencyPlaceholder": "Selecione a moeda",
+          "tokenPriceLabel": "Preço do token",
+          "tokenPricePlaceholder": "Insira o preço do token",
+          "currencies": {
+            "usd": "Dólar dos Estados Unidos",
+            "gbp": "Libra britânica",
+            "cad": "Dólar canadense",
+            "eur": "Euro",
+            "cny": "Yuan chinês",
+            "chf": "Franco Suíço",
+            "jpy": "Iene japonês",
+            "aud": "Dólar Australiano",
+            "hkd": "Dólar de Hong Kong"
+          }
+        },
+        "decay": {
+          "advancedSettings": "Configurações avançadas de deterioração",
+          "frequencyLabel": "Frequência de deterioração de voz",
+          "frequencyPlaceholder": "Período de decadência",
+          "timeFormatPlaceholder": "Selecione o formato da hora",
+          "timeFormats": {
+            "weeks": "Semanas",
+            "months": "Meses",
+            "years": "Anos"
+          },
+          "percentageLabel": "Porcentagem de deterioração da voz",
+          "percentagePlaceholder": "Decadência"
+        }
+      },
+      "quorumAndUnity": {
+        "title": "Método de votação",
+        "description": "Selecione um modelo de método de votação ou ajuste os valores de Quorum e Unidade com os controles deslizantes.",
+        "votingPeriod": "Período de votação",
+        "autoExecutionWhenConditionsMet": "Execução automática (quando as condições forem atendidas)",
+        "autoExecutionDisabled": "A execução automática é desativada quando o quorum está abaixo de 20% para proteger os ativos da tesouraria.",
+        "minimumVotingDuration": "Duração mínima de votação",
+        "minDurationUnavailableNotConnected": "A duração mínima de votação não está disponível até o espaço estar conectado.",
+        "minDurationLoadError": "Não foi possível carregar a duração mínima de votação da rede. Tente novamente mais tarde.",
+        "durationPlaceholder": "Duração",
+        "votingPower": "Poder de voto",
+        "votingTokenAllocation": "Alocação de token de votação",
+        "cannotBothZero": "Quorum e unidade não podem ser definidos como 0%",
+        "durations": {
+          "h6": "6 horas",
+          "h12": "12 horas",
+          "h24": "24 horas",
+          "d2": "2 dias",
+          "d3": "3 dias",
+          "d5": "5 dias",
+          "d7": "7 dias",
+          "d10": "10 dias",
+          "d14": "14 dias",
+          "d21": "21 dias",
+          "d30": "30 dias"
+        },
+        "quorumMinParticipation": "Quórum (Participação mín.)",
+        "unityMinAlignment": "Unidade (Alinhamento mín.)",
+        "templates": {
+          "pareto8020": "80-20 Pareto",
+          "majorityVote": "Voto da maioria",
+          "minorityVote": "Voto da minoria",
+          "consensus": "Consenso",
+          "consent": "Consentimento",
+          "hearing": "Audiência"
+        }
+      },
+      "recipient": {
+        "recipient": "Destinatário",
+        "member": "Membro",
+        "space": "Espaço",
+        "selectMemberPlaceholder": "Selecione membro...",
+        "selectSpacePlaceholder": "Selecione o espaço...",
+        "walletAddress": "Endereço da carteira",
+        "enterWalletAddress": "Insira o endereço da carteira",
+        "memoOptional": "Memorando (opcional)",
+        "memoPlaceholder": "Adicione quaisquer notas ou detalhes relevantes sobre esta transação"
+      },
+      "membershipExit": {
+        "noMembersFound": "Nenhum membro encontrado.",
+        "noMemberSpacesFound": "Nenhum espaço para membros encontrado.",
+        "exitingMember": "Membro Saindo"
+      },
+      "spaceToSpaceMembershipSelector": {
+        "findSpace": "Encontre espaço",
+        "findMember": "Encontrar membro",
+        "spaceToJoin": "Espaço para participar",
+        "delegatedVotingMember": "Membro Votante Delegado"
+      },
+      "tokenPayoutField": {
+        "amount": "Quantia",
+        "selectToken": "Selecione um token",
+        "noTokensFound": "Nenhum token encontrado",
+        "by": "por",
+        "bySpace": "de {space}",
+        "walletBalanceLine": "Saldo da carteira: {amount} {symbol}",
+        "redemptionPriceLine": "Preço de resgate do token: {price}",
+        "treasuryBalanceLine": "Saldo do tesouro: {amount} {symbol}",
+        "tokenRedemptionPriceSuffix": " · Preço de resgate do token: {hint}"
+      },
+      "redeemTokensProposal": {
+        "selectCollateralAsset": "Selecionar um ativo",
+        "noCollateralAssetsFound": "Nenhum ativo encontrado",
+        "requestedExceedsTreasury": "O valor de resgate solicitado excede o saldo do tesouro ({amount} solicitado vs {balance} {symbol} disponíveis).",
+        "collateralInsufficient": "O valor do resgate excede a garantia no cofre; insira um valor menor.",
+        "conversionDetails": {
+          "vaultLine": "No cofre: {amount} {symbol}",
+          "priceLine": "Preço: {currency}{price}",
+          "requestedLine": "Solicitado: {currency}{amount}"
+        }
+      },
+      "tokenPercentageFieldArray": {
+        "convertedInto": "Convertido em",
+        "add": "Adicionar",
+        "emptyRowHint": "Selecione um ativo e uma porcentagem para cada linha de conversão."
+      },
+      "spaceToSpaceMembership": {
+        "space": "Espaço",
+        "delegationRules": "Regras de delegação",
+        "delegatedVotingMemberDescription": "O Membro Votante Delegado é o indivíduo do seu espaço que está formalmente autorizado a votar em nome do seu espaço dentro do espaço de adesão."
+      },
+      "spaceTransparencySettings": {
+        "title": "Transparência Espacial",
+        "description": "Defina o nível de transparência que você deseja aplicar coletivamente ao seu espaço. Observe que, independentemente da escolha que você fizer abaixo, apenas membros diretos poderão realizar ações no espaço.",
+        "discoverability": "Descoberta Espacial",
+        "activityAccess": "Acesso à atividade espacial"
+      },
+      "votingMethodSelector": {
+        "oneMemberOneVoteTitle": "1 membro 1 voto",
+        "oneMemberOneVoteDescription": "Cada membro tem voz igual nas decisões, sem peso por função, tokens ou participação, garantindo igualdade e poder compartilhado. Comumente usado em espaços comunitários ou ecossistêmicos.",
+        "oneVoiceOneVoteTitle": "1 Voz 1 Voto",
+        "oneVoiceOneVoteDescription": "Cada voto está vinculado a tokens de voz ganhos, refletindo contribuições, reputação e compromisso, mas decai com a inatividade para incentivar o envolvimento. Comumente usado em equipes principais ou grupos de colaboradores.",
+        "oneTokenOneVoteTitle": "1 token 1 voto",
+        "oneTokenOneVoteDescription": "O poder de voto é proporcional ao número de tokens detidos, alinhando a influência com a participação. Comumente usado em fluxos de valor, tesouraria ou espaços de investimento.",
+        "clickHere": "Clique aqui",
+        "voiceTokenTooltipPrefix": "Para selecionar este método de votação você primeiro precisa emitir seu Token de Voz.",
+        "voiceTokenTooltipSuffix": "para criar seu token de voz",
+        "tokenTooltipPrefix": "Para selecionar este método de votação, primeiro você precisa emitir um token.",
+        "tokenTooltipSuffix": "para criar seu token"
+      },
+      "entryMethod": {
+        "label": "Método de entrada",
+        "openAccessTitle": "Acesso aberto",
+        "openAccessDescription": "Novos membros podem ingressar instantaneamente. A participação é aberta a todos e totalmente transparente.",
+        "inviteRequestTitle": "Solicitação de convite",
+        "inviteRequestDescription": "Novos membros podem participar solicitando um convite para ingressar. Os membros existentes votam nas solicitações de convite. A participação está aberta apenas a membros convidados, mas permanece totalmente transparente para todos.",
+        "tokenBasedTitle": "Baseado em token",
+        "tokenBasedDescription": "Novos membros podem ingressar se atenderem aos requisitos de token. A participação está aberta apenas a membros elegíveis, mas permanece totalmente transparente para todos."
+      },
+      "entryMethodTokenField": {
+        "requiredMinTokenNumberOptional": "Obrigatório Mín. Número do token (opcional)",
+        "typeAmount": "Digite um valor",
+        "selectToken": "Selecione um token"
+      },
+      "transparency": {
+        "publicTitle": "Público",
+        "networkTitle": "Rede",
+        "organisationTitle": "Organização",
+        "spaceTitle": "Espaço",
+        "discoverabilityPublic": "Seu espaço pode ser descoberto publicamente.",
+        "discoverabilityNetwork": "Seu espaço só pode ser descoberto por membros da Hypha Network.",
+        "discoverabilityOrganisation": "Seu espaço só pode ser descoberto por membros da sua organização.",
+        "discoverabilitySpace": "Seu espaço só pode ser descoberto por membros do espaço.",
+        "activityPublic": "O acesso à sua atividade espacial não é restrito e visível publicamente.",
+        "activityNetwork": "O acesso à atividade dos seus espaços é restrito aos membros da Hypha Network.",
+        "activityOrganisation": "O acesso à sua atividade espacial é restrito aos membros da sua organização.",
+        "activitySpace": "O acesso à atividade do seu espaço é restrito aos membros do espaço."
+      },
+      "mintTokens": {
+        "mintToSpaceTreasury": "Tesouro do Mint para o Espaço",
+        "description": "Crie tokens em seu tesouro espacial para financiar operações, distribuir recompensas ou fornecer liquidez.",
+        "selectToken": "Selecione o token",
+        "tokenSupply": "Fornecimento de tokens",
+        "unlimitedSupply": "Fornecimento ilimitado",
+        "issuanceToDate": "Emissão até a data",
+        "mintAmountLimit": "Limite de quantidade de hortelã",
+        "exceedsLimit": "O número de tokens solicitados excede o Limite de Valor Mint. Insira um valor até {limit}",
+        "noTokensPrefix": "Seu espaço ainda não criou um token,",
+        "clickHere": "Clique aqui",
+        "noTokensSuffix": "primeiro emitir um token"
+      },
+      "tokenBurning": {
+        "selectTokenTitle": "Selecionar token",
+        "selectTokenDescription": "Escolha um token para queimar",
+        "selectToken": "Selecionar token",
+        "tokenSupply": "Fornecimento de tokens",
+        "unlimitedSupply": "Fornecimento ilimitado",
+        "issuanceToDate": "Emissão até a data",
+        "tokenLabel": "Token",
+        "selectTokenPlaceholder": "Selecione um token",
+        "noTokenFound": "Nenhum token encontrado.",
+        "noTokensPrefix": "Seu espaço ainda não criou um token,",
+        "clickHere": "clique aqui",
+        "noTokensSuffix": "para emitir um token primeiro",
+        "tokenBurn": "Queima de tokens",
+        "tokenBurnDescription": "Remova (queime) tokens de espaços ou endereços de carteira selecionados. Esta ação reduz o fornecimento total de tokens e pode ser usada para gerenciar a circulação ou corrigir alocações.",
+        "burnTargetsLabel": "Queimar tokens",
+        "recipientTypeLabel": "Destinatário",
+        "member": "Membro",
+        "space": "Espaço",
+        "selectTarget": "Selecione membro ou espaço",
+        "selectMemberPlaceholder": "Selecione um membro...",
+        "selectSpacePlaceholder": "Selecione um espaço...",
+        "walletAddress": "Endereço da carteira",
+        "walletAddressPlaceholder": "Digite o endereço da carteira",
+        "addressAutofillHint": "Endereço preenchido automaticamente a partir do membro ou espaço selecionado.",
+        "amountLabel": "Valor",
+        "amountPlaceholder": "Insira o valor",
+        "recipientBalance": "Saldo de tokens do destinatário",
+        "recipientBalanceHint": "Saldo atual: {balance}",
+        "recipientBalanceValue": "{value} {symbol}",
+        "burnAmountExceedsBalance": "O valor da queima excede o saldo de tokens do destinatário. Insira um valor menor para continuar.",
+        "recipientBalanceLoading": "Carregando saldo...",
+        "recipientBalanceUnavailable": "Saldo indisponível",
+        "currentSpaceTag": "Espaço atual",
+        "allBalance": "Saldo total",
+        "noMembersFound": "Nenhum membro encontrado.",
+        "noSpacesFound": "Nenhum espaço encontrado.",
+        "allBalanceWarning": "Quando \"Saldo total\" estiver selecionado, todo o saldo de tokens deste membro ou espaço será queimado permanentemente.",
+        "add": "Adicionar",
+        "remove": "Remover"
+      },
+      "spaceWithMonths": {
+        "spaces": "Espaço(s)",
+        "contribution": "Contribuição:",
+        "contributionPerMonthPerSpace": "$ 11 por mês por espaço",
+        "removeSpace": "Remover espaço",
+        "addSpace": "Adicionar espaço",
+        "selectSpace": "Selecione o espaço",
+        "selectSpacePlaceholder": "Selecione o espaço...",
+        "findSpace": "Encontre espaço",
+        "numberOfMonths": "Número de meses",
+        "typeAmount": "Digite um valor",
+        "otherSpaces": "Outros espaços"
+      },
+      "tokenPayoutFieldArray": {
+        "paymentRequest": "Solicitação de pagamento",
+        "enterAmountAndToken": "Insira um valor e selecione um token.",
+        "add": "Adicionar"
+      },
+      "milestoneField": {
+        "milestone": "Marco {index}",
+        "percentageRequired": "A porcentagem é obrigatória",
+        "percentageMin": "A porcentagem deve ser pelo menos 0",
+        "percentageMax": "A porcentagem deve ser no máximo 100",
+        "typePercentage": "Digite uma porcentagem"
+      }
+    },
+    "labels": {
+      "activateSpaces": "Ativar espaços",
+      "votingMethod": "Método de votação",
+      "entryMethod": "Método de entrada",
+      "membershipExit": "Saída de adesão",
+      "spaceToSpace": "Espaço para Espaço",
+      "issueNewToken": "Emitir novo token",
+      "treasuryMinting": "Cunhagem de Tesouro",
+      "tokenBurning": "Queima de tokens",
+      "backingVault": "Cofre de lastro",
+      "buyHyphaTokensRewards": "Compre tokens Hypha (recompensas)",
+      "spaceTokenPurchase": "Compra de tokens do espaço",
+      "spaceTransparency": "Transparência Espacial",
+      "collectiveAgreement": "Acordo Coletivo",
+      "contribution": "Contribuição",
+      "expenses": "Despesas",
+      "funding": "Financiamento"
+    },
+    "buttons": {
+      "publish": "Publicar"
+    },
+    "pageErrors": {
+      "loadSpaces": "Falha ao carregar espaços. Por favor, tente novamente mais tarde."
+    },
+    "spaceConfiguration": {
+      "update": "Atualizar",
+      "updating": "Atualizando..."
+    },
+    "activateSpacesForm": {
+      "insufficientFunds": {
+        "spaceWalletBalanceInsufficient": "O saldo da carteira espacial é insuficiente para concluir esta transação.",
+        "please": "Por favor",
+        "topUpWith": "recarregue sua conta com {token}",
+        "buyHyphaTokens": "comprar tokens Hypha",
+        "toProceed": "para prosseguir.",
+        "fullMessage": "O saldo da carteira do espaço é insuficiente. Por favor, <topUpLink>recarregue com {token}</topUpLink> para continuar."
+      }
+    },
+    "buyHyphaTokensForm": {
+      "insufficientFunds": {
+        "walletBalanceInsufficient": "O saldo da sua carteira é insuficiente para concluir esta transação.",
+        "please": "Por favor",
+        "topUpWith": "recarregue sua conta com {token}",
+        "toProceed": "para prosseguir.",
+        "fullMessage": "O saldo da sua carteira é insuficiente. <topUpLink>Recarregue com {token}</topUpLink> para continuar."
+      }
+    },
+    "issueNewTokenForm": {
+      "duplicateToken": "Já existe um token com o mesmo nome e símbolo em seu espaço. Modifique o nome ou o símbolo para continuar.",
+      "errors": {
+        "titleRequired": "Adicione um título para sua proposta",
+        "descriptionRequired": "Adicione conteúdo à sua proposta",
+        "slugFormat": "Slug deve conter apenas letras minúsculas, números e hifens",
+        "uploadValidFile": "Por favor carregue um arquivo válido",
+        "fileTooLarge": "Seu arquivo é muito grande e excede o limite de 4 MB. Faça upload de um arquivo menor.",
+        "imageFileType": "O arquivo deve ser uma imagem (JPEG, PNG, GIF, WEBP).",
+        "leadImageUrlInvalid": "O URL da imagem principal deve ser um URL válido",
+        "attachmentUrlInvalid": "O URL do anexo precisa ser um URL válido",
+        "attachmentNameRequired": "O nome do anexo é obrigatório",
+        "attachmentsLimit": "Você pode anexar até 3 arquivos. Remova os anexos extras.",
+        "attachmentFileTooLarge": "Seu arquivo \"{fileName}\" é muito grande e excede o limite de 4 MB. Faça upload de um arquivo menor.",
+        "attachmentFileTypeUnsupported": "Este formato de arquivo \"{fileName}\" não é compatível. Faça upload de um arquivo JPEG, PNG, WebP ou PDF (até 4 MB).",
+        "tokenNameMin": "Insira um nome de token (mín. 2 caracteres)",
+        "tokenNameMax": "O nome do token deve ter no máximo 100 caracteres",
+        "tokenNameInvalidContent": "O nome do token não pode conter emojis ou links",
+        "tokenSymbolMin": "Insira um símbolo de token (mín. 2 caracteres)",
+        "tokenSymbolMax": "O símbolo do token deve ter no máximo 10 caracteres",
+        "tokenSymbolUppercase": "Insira o símbolo do token usando apenas letras maiúsculas (A – Z)",
+        "tokenSymbolInvalidContent": "O símbolo do token não pode conter emojis ou links",
+        "tokenIconRequired": "Faça upload de um ícone de token",
+        "tokenIconUrlInvalid": "O URL do ícone precisa ser um URL válido",
+        "tokenTypeRequired": "Selecione um tipo de token",
+        "maxSupplyMinZero": "A oferta máxima deve ser 0 ou superior",
+        "maxSupplyNonNegative": "A oferta máxima precisa ser um número não negativo",
+        "maxSupplyTypeRequired": "Selecione um tipo de fornecimento máximo",
+        "maxSupplyUpdatablePositive": "O suprimento máximo deve ser maior que 0 quando o tipo atualizável for selecionado",
+        "maxSupplyLimitedPositiveOrDisable": "Insira um fornecimento máximo maior que 0 ou desative o fornecimento limitado se desejar fornecimento ilimitado.",
+        "voiceDecayFrequencyRequired": "Insira uma frequência de declínio de voz",
+        "voiceDecayFrequencyPositive": "A frequência de queda de voz deve ser maior que 0",
+        "voiceDecayPercentageRequired": "Insira uma porcentagem de redução de voz",
+        "voiceDecayPercentagePositive": "A porcentagem de queda de voz precisa ser maior que 0",
+        "decayPercentageMax": "A porcentagem de deterioração não deve exceder 100%",
+        "blockchainAddressRequired": "Por favor insira um endereço blockchain",
+        "blockchainAddressInvalid": "Por favor insira um endereço blockchain válido",
+        "referenceCurrencyRequired": "Selecione uma moeda de referência",
+        "tokenPricePositive": "Insira um preço de token maior que 0",
+        "duplicateWhitelistEntry": "Este membro ou espaço já está nesta lista de permissões. Remova o duplicado ou escolha outra entrada."
+      }
+    },
+    "createAgreementBaseFields": {
+      "agreementLabel": "Acordo",
+      "backToCreate": "Voltar para criar",
+      "formContextMissing": "O contexto do formulário está faltando!",
+      "delegate": "Delegar",
+      "proposalTitlePlaceholder": "Título da proposta...",
+      "proposalMinimumVotingIconAlt": "Ícone de votação mínima da proposta",
+      "autoExecution": "Execução automática",
+      "toVote": "{duration} para votar",
+      "uploadImageLabel": "<accent>Carregar</accent> uma imagem",
+      "addAttachmentLabel": "Adicionar anexo (JPEG, PNG, WebP ou PDF — máximo 4 MB)",
+      "proposalContent": "Conteúdo da proposta",
+      "proposalContentPlaceholder": "Digite o conteúdo da sua proposta aqui...",
+      "editor": {
+        "toolbar": {
+          "blockTypes": {
+            "paragraph": "Parágrafo",
+            "quote": "Citar",
+            "heading": "Título {level}"
+          },
+          "blockTypeSelect": {
+            "selectBlockTypeTooltip": "Selecione o tipo de bloco",
+            "placeholder": "Tipo de bloco"
+          },
+          "bold": "Negrito",
+          "italic": "Itálico",
+          "underline": "Sublinhado",
+          "bulletedList": "Lista com marcadores",
+          "numberedList": "Lista numerada",
+          "undo": "Desfazer {shortcut}",
+          "redo": "Refazer {shortcut}"
+        }
+      }
+    },
+    "loadingBackdrop": {
+      "keepWindowOpen": "Por favor, mantenha esta janela aberta até que a barra de progresso seja concluída."
+    },
+    "spaceTokenPurchaseProgress": {
+      "CREATE_WEB2_AGREEMENT": "A criar acordo...",
+      "CREATE_WEB3_PROPOSAL": "A criar proposta Web3...",
+      "UPLOAD_FILES": "A carregar ficheiros...",
+      "LINK_WEB2_AND_WEB3_AGREEMENT": "A ligar acordos Web2 e Web3"
+    },
+    "proposalLoader": {
+      "processingVote": "Processando voto...",
+      "savingVote": "Salvando voto...",
+      "gettingUpdatedData": "Obtendo dados atualizados...",
+      "voteProcessed": "Votação processada!",
+      "somethingWentWrong": "Algo deu errado.",
+      "tryAgainGeneric": "Algo deu errado. Tente novamente.",
+      "pleaseWait": "Por favor, aguarde...",
+      "retry": "Tentar novamente",
+      "transactionRevertedUnknownReason": "Transação revertida por motivo desconhecido.",
+      "unknownErrorOccurred": "Ocorreu um erro desconhecido."
+    },
+    "createActionForms": {
+      "defaultAgreement": "Acordo"
+    }
+  },
+  "Navigation": {
+    "network": "Rede",
+    "mySpaces": "Meus espaços",
+    "openMenu": "Abrir menu",
+    "openProfileMenu": "Abrir menu do perfil",
+    "closeMenu": "Fechar menu",
+    "selectLanguage": "Selecione o idioma",
+    "myProfile": "Meu perfil",
+    "notificationCentre": "Central de Notificações",
+    "switchToLightMode": "Mudar para o modo claro",
+    "switchToDarkMode": "Mudar para o modo escuro",
+    "updateMfa": "Atualizar proteção de fundos (MFA)",
+    "protectMfa": "Proteger fundos (MFA)",
+    "logout": "Sair",
+    "viewProfile": "Ver perfil",
+    "delete": "Excluir",
+    "signIn": "Entrar",
+    "getStarted": "Comece"
+  },
+  "NotificationCentre": {
+    "title": "Central de Notificações",
+    "loading": {
+      "keepWindowOpen": "Por favor, mantenha esta janela aberta até que a barra de progresso seja concluída."
+    },
+    "subscribe": {
+      "title": "Assine as notificações",
+      "subscribe": "Inscrever-se",
+      "unsubscribe": "Cancelar inscrição",
+      "subscribedDescription": "Você está inscrito para receber notificações. Clique em cancelar a qualquer momento para parar de receber alertas.",
+      "unsubscribedDescription": "Clique em inscrever-se para receber notificações. Alguns navegadores bloqueiam notificações por padrão, então pode ser necessário ativá-los usando o ícone de cadeado próximo à barra de endereço ou nas configurações do seu navegador."
+    },
+    "channels": {
+      "title": "Canais de Notificação",
+      "description": "Escolha como você deseja receber notificações:",
+      "emailNotifications": "Notificações por e-mail",
+      "toEmail": "para {email}",
+      "browserNotifications": "Notificações do navegador (anteriormente \"Notificações pop-up na área de trabalho\")",
+      "yes": "Sim",
+      "no": "Não",
+      "emailNotificationsWithEmail": "Notificações por e-mail ({email})"
+    },
+    "subscriptions": {
+      "title": "Seja notificado quando...",
+      "comingSoon": "Em breve",
+      "newProposalOpen": {
+        "title": "Uma nova proposta está aberta para votação",
+        "description": "Em qualquer um dos espaços dos quais você é membro."
+      },
+      "proposalApprovedOrRejected": {
+        "title": "Uma proposta é aprovada ou rejeitada",
+        "description": "Em qualquer um dos espaços dos quais você é membro."
+      },
+      "labelWithComingSoon": "{title} ({comingSoon})"
+    },
+    "actions": {
+      "retry": "Tentar novamente",
+      "savePreferences": "Salvar preferências"
+    }
+  },
+  "DHO": {
+    "Dashboard": "Painel DHO",
+    "actionButtons": {
+      "spaceSettings": "Configurações de espaço",
+      "create": "Criar"
+    },
+    "nestedSpacesButton": {
+      "label": "Navegação Espacial",
+      "loading": "Carregando...",
+      "noAccess": "Você não tem acesso para visualizar a navegação espacial."
+    }
+  },
+  "SpaceSettingsAction": {
+    "title": "Configurações de espaço",
+    "content": "Acesse e gerencie as configurações do seu espaço, incluindo aparência, estrutura, métodos, associação e tesouraria.",
+    "groups": {
+      "overview": "Visão geral",
+      "agreements": "Acordos",
+      "members": "Membros",
+      "treasury": "Tesouraria",
+      "extensionsPlugins": "Extensões e plug-ins",
+      "ecosystemVerticals": "Verticais do ecossistema"
+    },
+    "actions": {
+      "spaceConfiguration": {
+        "title": "Configuração do espaço",
+        "description": "Personalize seu espaço definindo sua finalidade, adicionando elementos de marca e vinculando mídias sociais."
+      },
+      "spaceTransparencyConfiguration": {
+        "title": "Configuração de transparência espacial",
+        "description": "Defina o nível de transparência que você deseja aplicar coletivamente ao seu espaço."
+      },
+      "addSpace": {
+        "title": "Adicionar espaço",
+        "description": "Crie um novo espaço dentro da sua organização para atividades, equipes ou projetos."
+      },
+      "activateSpaces": {
+        "title": "Ativar espaço(s)",
+        "description": "Contribua com HYPHA ou USDC para ativar seu(s) espaço(s) e apoiar a Rede Hypha."
+      },
+      "votingMethod": {
+        "title": "Método de votação",
+        "description": "Selecione e configure o método de votação para tomada de decisão dentro do seu espaço."
+      },
+      "entryMethod": {
+        "title": "Método de entrada",
+        "description": "Selecione e configure o processo pelo qual novos membros ingressam no seu espaço."
+      },
+      "membershipExit": {
+        "title": "Saída de adesão",
+        "description": "Remova um membro do seu espaço se ele infringir as regras e políticas acordadas."
+      },
+      "spaceToSpaceMembership": {
+        "title": "Associação Espaço-Espaço",
+        "description": "Permita que seu espaço ingresse em outro espaço como membro, ganhando a possibilidade de participar da governança e votar propostas."
+      },
+      "issueNewToken": {
+        "title": "Emitir novo token",
+        "description": "Crie um novo token para utilidade, propriedade, impacto, créditos em dinheiro, voz ou moeda comunitária em seu espaço."
+      },
+      "updateIssuedToken": {
+        "title": "Atualizar token emitido",
+        "description": "Atualize as configurações avançadas do token, incluindo nome, símbolo e ícone do token, fornecimento total, opções de cunhagem automática, controles de transferência, parâmetros de decaimento de voz e o valor do token exibido na tesouraria."
+      },
+      "mintTokensToSpaceTreasury": {
+        "title": "Mint Tokens para Tesouro Espacial",
+        "description": "Crie tokens em seu tesouro espacial para financiar operações, distribuir recompensas ou fornecer liquidez."
+      },
+      "tokenBurning": {
+        "title": "Queimar tokens em espaços ou carteiras específicas",
+        "description": "Remova (queime) tokens de espaços ou endereços de carteira selecionados. Essa ação reduz o fornecimento total de tokens e pode ser usada para gerenciar a circulação ou corrigir alocações."
+      },
+      "tokenBackingVault": {
+        "title": "Cofre de lastro de token",
+        "description": "Crie um cofre de lastro de token, defina regras e restrições de resgate, configure a data de início e o preço de resgate e autorize a adição ou retirada de colaterais do cofre."
+      },
+      "buyHyphaTokensRewards": {
+        "title": "Compre tokens Hypha (recompensas)",
+        "description": "Compre tokens Hypha para participar da rede e ganhar recompensas."
+      },
+      "spaceTokenPurchase": {
+        "title": "Ativar compra de tokens do espaço",
+        "description": "Permita que os membros comprem os tokens nativos do seu espaço."
+      },
+      "redeemTokens": {
+        "title": "Resgatar tokens",
+        "description": "Converta tokens no tesouro em seu valor fiat equivalente mantido no cofre do emissor de tokens do espaço."
+      },
+      "depositFunds": {
+        "title": "Depositar fundos",
+        "description": "Deposite fundos em seu tesouro copiando o endereço do tesouro ou digitalizando o código QR."
+      },
+      "integrateSmartContractInSpace": {
+        "title": "Integrar contrato inteligente no espaço (avançado)",
+        "description": "Permita que seu espaço assuma a propriedade multisig de seus contratos inteligentes, permitindo que sua comunidade governe os fluxos de valor (tokenomics) diretamente de seu espaço."
+      },
+      "exploreExtensionsMarketplaceComingSoon": {
+        "title": "Explore o mercado de extensões e plug-ins (em breve)",
+        "description": "Descubra um ecossistema crescente de ferramentas e integrações para ampliar os recursos do seu espaço."
+      },
+      "hyphaEnergy": {
+        "title": "Energia Hifa",
+        "description": "Uma plataforma dedicada para a sua comunidade ou centro de energia renovável, permitindo o compartilhamento local de energia, a copropriedade de ativos energéticos, a governança e a distribuição de valor justo entre os membros."
+      }
+    }
+  },
+  "SelectCreateAction": {
+    "title": "Crie uma proposta",
+    "content": "Selecione uma ação para contribuir, colaborar, tomar decisões ou gerenciar recursos em seu espaço.",
+    "actions": {
+      "makeCollectiveAgreement": {
+        "title": "Faça um Acordo Coletivo",
+        "description": "Definir e formalizar um entendimento, política ou decisão mútua entre os membros do espaço."
+      },
+      "proposeContribution": {
+        "title": "Propor uma contribuição",
+        "description": "Proponha uma nova contribuição, como trabalho, conhecimento, capital ou recursos, para o espaço considerar."
+      },
+      "payExpenses": {
+        "title": "Pagar despesas por produtos ou serviços",
+        "description": "Faça pagamentos de produtos e serviços transferindo fundos do tesouro do seu espaço para outro espaço, entidade ou carteira individual."
+      },
+      "acceptInvestmentComingSoon": {
+        "title": "Aceitar investimento (em breve)",
+        "description": "Receba capital de investidores, membros ou espaços alinhados em troca de tokens espaciais nativos."
+      },
+      "exchangeOwnershipComingSoon": {
+        "title": "Propriedade de troca (em breve)",
+        "description": "Troque a propriedade entre membros ou espaços, seja vendendo uma participação ou trocando ativos."
+      },
+      "deployFunds": {
+        "title": "Distribuir fundos",
+        "description": "Aloque fundos de tesouraria para investimentos em outros espaços da rede ou para distribuição de recursos entre espaços da sua organização."
+      },
+      "depositFunds": {
+        "title": "Depositar fundos",
+        "description": "Deposite fundos em seu tesouro copiando o endereço do tesouro ou digitalizando o código QR."
+      }
+    }
+  },
+  "SelectActivateAction": {
+    "title": "Ativar espaço",
+    "content": "Escolha uma das opções abaixo para ativar seu Espaço e desbloquear todos os recursos disponíveis na Rede Hypha.",
+    "actions": {
+      "depositFunds": {
+        "title": "Depositar fundos",
+        "description": "Deposite fundos em seu tesouro copiando o endereço do tesouro ou digitalizando o código QR."
+      },
+      "buyHyphaTokensRewards": {
+        "title": "Compre tokens Hypha (recompensas)",
+        "description": "Compre tokens Hypha para participar da rede e ganhar recompensas."
+      },
+      "activateSpaces": {
+        "title": "Ativar espaço(s)",
+        "description": "Contribua com HYPHA ou USDC para ativar seu(s) espaço(s) e apoiar a Rede Hypha."
+      }
+    }
+  },
+  "SelectNavigationAction": {
+    "title": "Navegação Espacial",
+    "content": "Navegue por todos os seus espaços em um único mapa interativo para ver como eles se conectam. Visite facilmente espaços aninhados, explore associações de espaço para espaço e siga os fluxos de valor em todo o seu ecossistema direto.",
+    "tabs": {
+      "nestedSpaces": "Espaços aninhados",
+      "spaceToSpace": "Espaço-a-Espaço",
+      "valuesFlows": "Fluxos de valores"
+    },
+    "comingSoon": {
+      "spaceToSpaceVisualization": "Visualização espaço-a-espaço em breve",
+      "valuesFlowsVisualization": "Visualização de fluxos de valores em breve"
+    },
+    "visibleSpaces": {
+      "nestedRoot": "Raiz",
+      "nestedIn": "Aninhado em {parent}",
+      "nested": "Aninhado",
+      "spaceInfoNotAvailable": "Informações sobre o espaço não disponíveis",
+      "addSpace": "Adicionar espaço",
+      "loading": "Carregando...",
+      "noAccessAddSpace": "Você não tem acesso para adicionar espaços a esta organização.",
+      "visitSpace": "Visite o Espaço",
+      "searchSpaces": "Espaços de pesquisa",
+      "noSpacesFound": "Nenhum espaço encontrado"
+    }
+  },
+  "AgreementsTab": {
+    "onVoting": "Na votação",
+    "accepted": "Aceito",
+    "rejected": "Rejeitado",
+    "searchDocuments": "Pesquisar documentos",
+    "listIsEmpty": "A lista está vazia"
+  },
+  "MembersTab": {
+    "searchMembers": "Pesquisar membros",
+    "delegateVoting": "Votação de delegado",
+    "listIsEmpty": "A lista está vazia",
+    "loading": "Carregando...",
+    "noMoreMembers": "Não há mais membros",
+    "loadMoreMembers": "Carregar mais membros",
+    "memberDetail": {
+      "statusBadge": {
+        "active": "Ativo",
+        "voting": "Em votação",
+        "completed": "Concluído",
+        "rejected": "Rejeitado",
+        "inactive": "Inativo",
+        "applicant": "Candidato",
+        "unknown": "Desconhecido"
+      }
+    },
+    "delegateSection": {
+      "title": "Delegar para membro",
+      "description": "Selecione um membro deste espaço para receber seu poder de voto.",
+      "delegatedVotingMember": "Membro delegado com direito a voto",
+      "findMember": "Encontrar membro",
+      "noMembersFound": "Nenhum membro encontrado.",
+      "save": "Salvar",
+      "delegating": "Delegando...",
+      "undelegate": "Remover delegação",
+      "undelegating": "Removendo delegação...",
+      "success": "Delegação concluída com sucesso!",
+      "errors": {
+        "selectMember": "Selecione um membro",
+        "selectSpace": "Selecione um espaço"
+      }
+    }
+  },
+  "TreasuryTab": {
+    "balance": "Equilíbrio",
+    "searchTokens": "Tokens de pesquisa",
+    "hideSmallBalances": "Ocultar pequenos saldos",
+    "newToken": "Novo token",
+    "depositFunds": "Depositar fundos",
+    "listIsEmpty": "A lista está vazia",
+    "loadMoreAssets": "Carregar mais ativos",
+    "transactions": "Transações",
+    "searchTransactions": "Transações de pesquisa",
+    "noTransactionsFound": "Nenhuma transação encontrada",
+    "loadMoreTransactions": "Carregar mais transações",
+    "rewardsSection": {
+      "title": "Recompensas",
+      "claim": "Resgatar",
+      "signInToClaimRewards": "Faça login para resgatar recompensas",
+      "onlySpaceMembersCanClaimRewards": "Somente membros do espaço podem resgatar recompensas",
+      "noRewardsToClaim": "Não há recompensas para resgatar",
+      "signInToViewSpaceRewards": "Faça login para ver as recompensas do espaço"
+    },
+    "vaultsSection": {
+      "title": "Cofres de lastro",
+      "vaultTitle": "Cofre de lastro de {symbol}",
+      "totalLabel": "${amount} em colateral | {percent}% lastreado",
+      "updateBackingVault": "Atualizar cofre de lastro",
+      "noCollateralInVault": "Não há colateral neste cofre",
+      "signInToUpdateBackingVault": "Faça login para atualizar o cofre de lastro",
+      "joinSpaceToUpdateBackingVault": "Entre no espaço para atualizar o cofre de lastro"
+    },
+    "assetCard": {
+      "fromSpace": "de {spaceTitle}",
+      "totalIssuance": "Emissão total: {value}",
+      "createdOn": "Criado em {date}"
+    },
+    "transactionCard": {
+      "tokenIconAlt": "Ícone de token",
+      "memo": "Memorando",
+      "type": {
+        "transfer": "Transferir",
+        "mint": "Hortelã",
+        "burn": "Queimar"
+      },
+      "direction": {
+        "in": "Em",
+        "out": "Fora"
+      },
+      "counterparty": {
+        "from": "De {name}",
+        "to": "Para {name}"
+      }
+    },
+    "tokenSupply": "Fornecimento do token",
+    "issuanceToDate": "Emissão até a data",
+    "unlimitedSupply": "Fornecimento ilimitado",
+    "selectTokenPlaceholder": "Selecione um token",
+    "noTokensAvailable": "Nenhum token disponível",
+    "tokenPendingContractAddress": "Endereço on-chain pendente (execute primeiro a proposta de emissão do token)"
+  },
+  "Footer": {
+    "network": "REDE",
+    "legal": "JURÍDICO",
+    "hyphaServices": "Serviços Hypha",
+    "hyphaTokenomics": "Hypha Tokenomics",
+    "licensingPolicy": "Política de licenciamento",
+    "termsAndConditions": "Termos e Condições",
+    "privacyPolicy": "Política de Privacidade"
+  },
+  "Profile": {
+    "profilePage": "Página de perfil",
+    "personNotFound": "Pessoa não encontrada",
+    "redirectingToProfile": "Redirecionando para o perfil...",
+    "exportKeys": "Exportar chaves",
+    "copyUserId": "Copiar ID do usuário",
+    "copied": "Copiado!",
+    "editProfile": "Editar perfil",
+    "hyphaMemberSince": "Membro Hypha desde {date}",
+    "rewards": "Recompensas",
+    "claim": "Alegar",
+    "claimOnlyOnPersonalPage": "A reivindicação está disponível apenas na sua página pessoal",
+    "rewardValueMustBeGreaterThanZero": "O valor da recompensa deve ser maior que 0",
+    "noRewardsFoundForUser": "Nenhuma recompensa encontrada para este usuário",
+    "buyHypha": "Compre HYPHA",
+    "buySpaceTokens": "Comprar tokens do espaço",
+    "actions": "Ações",
+    "noAssetsFoundForUser": "Nenhum recurso encontrado para este usuário",
+    "editForm": {
+      "uploadLeadImageLabel": "<accent>Carregar</accent> uma imagem",
+      "labels": {
+        "email": "E-mail",
+        "location": "Localização"
+      },
+      "placeholders": {
+        "firstName": "Primeiro nome",
+        "lastName": "Sobrenome",
+        "nickname": "Apelido",
+        "lifePurpose": "Digite aqui o seu propósito de vida...",
+        "email": "E-mail",
+        "location": "Localização"
+      },
+      "actions": {
+        "retry": "Tentar novamente",
+        "save": "Salvar"
+      },
+      "errors": {
+        "firstNameRequired": "Por favor insira seu primeiro nome",
+        "lastNameRequired": "Por favor insira seu sobrenome",
+        "nicknameRequired": "Por favor escolha um apelido",
+        "nicknameMaxLength": "O comprimento do apelido não deve exceder 12 caracteres",
+        "descriptionMaxLength": "O comprimento da descrição não deve exceder 300 caracteres",
+        "emailInvalid": "Por favor insira um endereço de e-mail válido",
+        "emailMaxLength": "O e-mail deve ter no máximo 100 caracteres",
+        "locationMaxLength": "O local deve ter no máximo 100 caracteres",
+        "urlInvalid": "Insira um URL válido (por exemplo, https://example.com)",
+        "avatarUrlInvalid": "O URL do avatar deve ser um URL válido",
+        "leadImageUrlInvalid": "O URL da imagem principal deve ser um URL válido",
+        "fileTooLarge": "Seu arquivo é muito grande e excede o limite de 4 MB. Por favor carregue um arquivo menor",
+        "fileMustBeImage": "O arquivo deve ser uma imagem (JPEG, PNG, GIF, WEBP)"
+      }
+    }
+  },
+  "ProfileActions": {
+    "content": "Gerencie seus fundos pessoais, interaja com a rede Hypha e contribua diretamente usando sua carteira.",
+    "backToActions": "Voltar às ações",
+    "actions": {
+      "depositFunds": {
+        "title": "Depositar fundos",
+        "description": "Adicione tokens à sua carteira pessoal copiando o endereço da sua carteira ou digitalizando o código QR."
+      },
+      "transferFunds": {
+        "title": "Transferir fundos",
+        "description": "Envie tokens da sua carteira pessoal para um membro, espaço ou endereço personalizado."
+      },
+      "buyHyphaTokensRewards": {
+        "title": "Compre tokens Hypha (recompensas)",
+        "description": "Compre tokens Hypha para participar da rede e ganhar recompensas"
+      },
+      "buySpaceTokens": {
+        "title": "Comprar tokens do espaço",
+        "backLabel": "Voltar às ações",
+        "description": "Compre os tokens nativos do seu espaço com a moeda de pagamento configurada."
+      },
+      "activateSpaces": {
+        "title": "Ativar espaço(s)",
+        "description": "Patrocine e ative seu(s) espaço(s) favorito(s) contribuindo com HYPHA ou USDC, apoiando a Rede Hypha."
+      },
+      "migrateHyphaTokens": {
+        "title": "Migrar tokens Hypha (Telos → Base)",
+        "description": "Mova seus tokens Hypha do blockchain Telos para a rede Base. Inicia a experiência de migração."
+      },
+      "redeemTokens": {
+        "title": "Resgatar tokens",
+        "description": "Converta seus tokens no valor fiduciário equivalente mantido no cofre."
+      }
+    },
+    "purchaseHypha": {
+      "title": "Compre tokens Hypha (recompensas)",
+      "content": "Use USDC para comprar Hypha, ganhar recompensas e participar da governança, se desejar.",
+      "form": {
+        "receiveHyphaTokens": "Você receberá {amount} tokens HYPHA (1 HYPHA = {price} USD)",
+        "actions": {
+          "purchasing": "Comprando",
+          "buy": "Comprar"
+        },
+        "success": {
+          "purchased": "Você comprou com sucesso seus tokens Hypha. Eles aparecerão na sua conta da carteira em alguns segundos."
+        },
+        "errors": {
+          "purchaseAmountRequired": "Insira um valor de compra.",
+          "recipientRequired": "Adicione um destinatário ou endereço de carteira",
+          "invalidEthereumAddress": "Endereço Ethereum inválido",
+          "paymentTokenNotConfigured": "O token de pagamento não está configurado.",
+          "invalidTokenSelected": "Token inválido selecionado.",
+          "purchaseProcessingFailed": "Ocorreu um erro ao processar sua compra. Por favor, tente novamente.",
+          "smartWalletNotConnected": "A carteira inteligente não está conectada. Conecte sua carteira e tente novamente.",
+          "contractExecutionFailed": "A execução do contrato falhou.",
+          "transactionRejected": "A transação foi rejeitada. Aprove a transação para prosseguir.",
+          "noValidSpaces": "Não há espaços válidos disponíveis. Por favor, tente novamente mais tarde."
+        }
+      }
+    },
+    "activateSpaces": {
+      "title": "Ativar espaço(s)",
+      "contentPrefix": "Patrocine e ative seu(s) espaço(s) favorito(s) contribuindo com HYPHA ou USDC, apoiando a Rede Hypha. Mais detalhes em",
+      "contentSuffix": ".",
+      "form": {
+        "icons": {
+          "usdcAlt": "Ícone USDC",
+          "hyphaAlt": "Ícone de token Hypha"
+        },
+        "actions": {
+          "activating": "Ativando",
+          "activate": "Ativar"
+        },
+        "success": {
+          "activated": "Os espaços que você selecionou foram ativados com sucesso!"
+        },
+        "errors": {
+          "selectSpaceToActivate": "Selecione um espaço para ativar.",
+          "monthsRequired": "Insira o número de meses para ativar.",
+          "atLeastOneSpace": "Pelo menos um espaço deve ser adicionado",
+          "recipientRequired": "Adicione um destinatário ou endereço de carteira",
+          "invalidEthereumAddress": "Endereço Ethereum inválido",
+          "invalidWalletAddress": "Endereço de carteira inválido",
+          "activationProcessingFailed": "Ocorreu um erro ao processar sua ativação. Por favor, tente novamente.",
+          "smartWalletNotConnected": "A carteira inteligente não está conectada. Conecte sua carteira e tente novamente.",
+          "contractExecutionFailed": "A execução do contrato falhou.",
+          "transactionRejected": "A transação foi rejeitada. Aprove a transação para prosseguir.",
+          "noValidSpaces": "Não há espaços válidos disponíveis. Por favor, tente novamente mais tarde."
+        }
+      }
+    },
+    "transferFunds": {
+      "title": "Transferir fundos",
+      "content": "Envie facilmente fundos da sua carteira para um membro ou espaço.",
+      "form": {
+        "amountLabel": "Quantia"
+      }
+    },
+    "redeemTokens": {
+      "title": "Resgatar tokens",
+      "loading": "Carregando dados de resgate…",
+      "content": "Converta seus tokens no valor fiduciário equivalente mantido no cofre.",
+      "form": {
+        "redemptionAmountLabel": "Valor do resgate",
+        "convertedIntoLabel": "Convertido em",
+        "redeem": "Resgatar",
+        "redeeming": "Resgatando",
+        "loadingCollaterals": "Carregando ativos colaterais…",
+        "successMessage": "Seu resgate foi concluído com sucesso!",
+        "requestedExceedsBalance": "O valor solicitado ({amount}) excede o saldo disponível ({balance}).",
+        "collateralInsufficient": "O valor do resgate excede o valor das garantias; insira um valor menor.",
+        "insufficientFundsLead": "O saldo da sua carteira é insuficiente para concluir esta transação. Por favor",
+        "insufficientFundsTopUp": "adicione fundos à sua conta",
+        "insufficientFundsTrail": "para continuar.",
+        "selectCollateralAsset": "Selecione um ativo",
+        "noCollateralAssetsFound": "Nenhum ativo encontrado",
+        "errors": {
+          "noRedemptionData": "Nenhum dado de resgate encontrado. Preencha o formulário.",
+          "selectSpace": "Selecione um espaço para o resgate.",
+          "spaceNotConfigured": "O espaço selecionado não está configurado para resgate.",
+          "exceedsBalance": "O valor solicitado excede o saldo disponível dos seus tokens. Reduza o valor e tente novamente.",
+          "collateralExceeded": "O valor do resgate excede o valor das garantias; insira um valor menor.",
+          "generic": "Ocorreu um erro ao processar seu resgate. Tente novamente.",
+          "smartWalletNotConnected": "A carteira inteligente não está conectada. Conecte sua carteira e tente novamente.",
+          "contractFailed": "A execução do contrato falhou.",
+          "transactionRejected": "A transação foi rejeitada. Aprove a transação para continuar.",
+          "loadSpaces": "Não foi possível carregar os detalhes do espaço. Tente novamente."
+        }
+      },
+      "provenanceBySpace": "de {space}",
+      "conversionDetails": {
+        "vaultLine": "Cofre: {amount} {symbol}",
+        "priceLine": "Preço: {currency}{price}",
+        "requestedLine": "Solicitado: {currency}{amount}"
+      },
+      "diagnostics": {
+        "vaultAccess": "Não foi possível carregar os dados do cofre para alguns espaços: {details}. Talvez você não tenha acesso a esses espaços.",
+        "tokenDiscovery": "Diagnóstico de detecção de tokens: {reasons}.",
+        "reasons": {
+          "missingJwt": "Token de sessão autenticado ausente",
+          "profileLoadFailed": "Falha ao carregar dados do perfil",
+          "noWalletAddress": "O perfil não tem endereço de carteira",
+          "spacesLoadFailed": "Falha ao carregar espaços do membro",
+          "spacesFallback": "A busca de espaços de associação não retornou espaços; usando espaços inferidos dos tokens da carteira",
+          "noSpaces": "Nenhum espaço encontrado para este membro",
+          "balanceReadFailed": "Falha ao ler saldos on-chain para {failed}/{total} token(s) do cofre",
+          "noVaultTokens": "Nenhum token de cofre resgatável encontrado",
+          "restrictedFallback": "Fallback on-chain usado para espaços restritos: {spaces}",
+          "restrictedFallbackFailed": "Fallback on-chain falhou para {count, plural, one {# espaço restrito} other {# espaços restritos}}"
+        }
+      }
+    },
+    "errors": {
+      "loadSpaces": "Falha ao carregar espaços. Por favor, tente novamente mais tarde."
+    }
+  },
+  "Network": {
+    "manySpaces": "Muitos espaços,",
+    "oneVibrantNetwork": "Uma rede vibrante",
+    "findASpace": "Encontre um espaço",
+    "createSpace": "Criar espaço",
+    "mostMembers": "A maioria dos membros",
+    "mostAgreements": "A maioria dos acordos",
+    "mostRecent": "Mais recente",
+    "all": "Todos",
+    "exploreNetwork": "Explore a rede Hypha",
+    "seeAll": "Ver tudo",
+    "noCategory": "Nenhuma categoria"
+  },
+  "Proposals": {
+    "CreateNew": "Crie uma nova proposta",
+    "Create": "Criar proposta"
+  },
+  "SpaceTokenPurchase": {
+    "selection": {
+      "sectionTitle": "Token",
+      "description": "Escolha um token disponível para compra neste espaço.",
+      "fieldLabel": "Token",
+      "placeholder": "Selecione um token",
+      "noTokenFound": "Nenhum token encontrado.",
+      "noTokenPrefix": "Seu espaço ainda não criou um token,",
+      "clickHere": "clique aqui",
+      "noTokenSuffix": "para emitir primeiro um token",
+      "tokenSupply": "Fornecimento de tokens",
+      "issuanceToDate": "Emissão até a data",
+      "unlimitedSupply": "Fornecimento ilimitado",
+      "availableLimit": "Limite de tokens disponíveis para compra"
+    },
+    "toggle": {
+      "sectionTitle": "Compra de tokens",
+      "description": "Ative esta opção para permitir que os membros comprem os tokens nativos do seu espaço. Desative a qualquer momento.",
+      "activateLabel": "Ativar compra de tokens",
+      "disabledHint": "Quando desativada, os membros não podem mais comprar este token."
+    },
+    "price": {
+      "sectionTitle": "Preço de compra do token",
+      "description": "Defina um preço de compra personalizado ou use o preço padrão da tesouraria.",
+      "currencyPlaceholder": "Moeda",
+      "currentPriceLabel": "Preço atual na tesouraria:",
+      "currentPriceSuffix": "— definido na configuração do token do seu espaço.",
+      "fieldLabel": "Preço de compra do token",
+      "availableAtThisPriceLabel": "Tokens disponíveis para compra a este preço",
+      "exceedsLimit": "A quantidade de tokens solicitada excede o limite de tokens disponíveis para compra. Insira um valor até {limit}."
+    },
+    "eligibility": {
+      "sectionTitle": "Elegibilidade de compra",
+      "description": "O botão «Comprar tokens do espaço» será exibido no perfil dos espaços ou membros que estiverem na lista branca nas configurações do token. Para rever esse acesso, você pode gerenciar listas brancas por meio de uma proposta de configuração do token.",
+      "whitelistInfo": "A lista branca é configurada nas definições originais de emissão do token. Todos os membros ou espaços na lista branca «Para» poderão ver e comprar tokens {tokenName}."
+    }
+  },
+  "ProposalSpaceTokenPurchase": {
+    "token": "Token",
+    "tokenAlt": "Token",
+    "purchase_status": "Estado da compra",
+    "enabled": "Ativado",
+    "disabled": "Desativado",
+    "payment_token": "Token de pagamento",
+    "not_configured": "Não configurado",
+    "purchase_price": "Preço de compra",
+    "tokens_for_sale": "Tokens à venda"
+  },
+  "PeopleBuySpaceTokens": {
+    "validation": {
+      "tokenRequired": "Selecione um token",
+      "amountRequired": "Insira uma quantidade",
+      "amountPositive": "A quantidade deve ser maior que 0"
+    },
+    "empty": "Não há tokens do espaço disponíveis para compra no momento.",
+    "eligibilityLoadError": "Não foi possível verificar quais tokens estão disponíveis. Tente novamente.",
+    "selectToken": "Selecionar token",
+    "selectPlaceholder": "Selecione um token",
+    "amountAndToken": "Quantidade e token",
+    "amount": "Quantidade",
+    "pricePerToken": "Preço: {price} {currency} por token",
+    "totalCost": "Custo total: {amount} {currency}",
+    "remainingInSale": "Restantes na venda: {amount}",
+    "loadingSale": "Carregando configuração da venda...",
+    "unableToReadSale": "Não foi possível ler a configuração de venda do token.",
+    "saleDisabled": "A venda deste token está desativada.",
+    "recipientTokenSent": "{symbol} enviado para",
+    "recipientPaymentPaid": "{symbol} pago a",
+    "fallbackTokenSymbol": "Token",
+    "fallbackPaymentSymbol": "Pagamento",
+    "statusApproving": "A aprovar",
+    "statusPurchasing": "A comprar",
+    "statusProcessing": "A processar",
+    "success": "A sua compra foi concluída com sucesso. Os tokens aparecerão na sua carteira em breve.",
+    "buy": "Comprar",
+    "transactionFailed": "A transação falhou. Tente novamente.",
+    "purchaseFailedGeneric": "Ocorreu um erro ao processar a sua compra. Tente novamente."
+  },
+  "Spaces": {
+    "createSpace": "Criar espaço",
+    "addSpace": "Adicionar espaço",
+    "configureSpace": "Configurar espaço",
+    "nameYourSpace": "Dê um nome ao seu espaço...",
+    "createdBy": "Criado por",
+    "uploadSpaceBanner": "Carregar",
+    "spaceBanner": "bandeira espacial",
+    "purpose": "Propósito",
+    "purposePlaceholder": "Digite aqui a finalidade do seu espaço...",
+    "organisationLevel": "Nível de organização",
+    "tags": "Etiquetas",
+    "selectOneOrMore": "Selecione um ou mais",
+    "spaceUniqueLink": "Link exclusivo do espaço",
+    "spaceLinkDescription": "O nome do seu espaço é adicionado automaticamente ao final do link do seu espaço. Você pode editá-lo se necessário, mas ele deve permanecer exclusivo.",
+    "channels": "Canais",
+    "activationMode": "Modo de ativação",
+    "sandboxMode": "Modo sandbox",
+    "sandboxDescription": "Use o modo Sandbox para configurar e testar seu espaço apenas no My Spaces, compartilhando-o com sua equipe via URL enquanto estabelece as bases para fins regenerativos.",
+    "pilotMode": "Modo Piloto",
+    "pilotDescription": "Use o Modo Piloto para compartilhar seu espaço para demonstrações, validação de casos de uso ou como modelo replicável. Expanda seu alcance, ative a participação dos membros e obtenha feedback.",
+    "liveMode": "Modo ao vivo",
+    "liveDescription": "Use o Live Mode para tornar seu espaço totalmente operacional e publicamente detectável, gerando valor sustentável e transformando seu propósito em impacto regenerativo.",
+    "archiveMode": "Modo de arquivo",
+    "archiveDescription": "Arquive este espaço para pausar temporariamente a atividade ou desativá-la, mantendo todos os dados e histórico seguros. Você pode reativá-lo a qualquer momento selecionando um modo de ativação diferente.",
+    "organisationSpaces": "Espaços de Organização",
+    "myOtherSpaces": "Meus outros espaços",
+    "selectCategoryError": "Selecione pelo menos uma categoria de tags.",
+    "selectParentError": "Selecione um espaço vinculado ou ative \"Espaço raiz\"",
+    "slugFieldRegex": "Este campo só pode conter letras minúsculas, números, hifens e apóstrofos.",
+    "slugAlreadyExists": "O ID do espaço já existe",
+    "slugAlreadyExistsLong": "Já existe um espaço com este nome. Escolha um nome diferente para o seu espaço.",
+    "alreadyMember": "Já membro",
+    "invitePending": "Convite pendente",
+    "requestInvite": "Solicitar convite",
+    "becomeMember": "Torne-se membro",
+    "becomeMemberOrRequestInvite": "Torne-se um membro ou solicite um convite",
+    "inviteAlreadySubmitted": "Você já enviou sua solicitação de convite. Sua proposta agora está visível para os membros do espaço analisarem. Se necessário, você poderá reenviar 24 horas após seu último envio.",
+    "tokenRequirements": "Você ainda não pode participar. Cumpra os requisitos de token para obter acesso.",
+    "exitSpace": "Sair do espaço",
+    "couldNotExitSpace": "Não foi possível sair do espaço",
+    "exitSpaceConfirmTitle": "Sair do espaço",
+    "exitSpaceConfirmDescription": "Você realmente quer sair deste espaço?",
+    "exitSpaceConfirmYes": "Sim, vá embora",
+    "exitSpaceConfirmNo": "Não, fique",
+    "exitSpaceDisabledTooltip": "Você precisa estar autorizado e ser membro do espaço atual para poder sair",
+    "accessDeniedNotLoggedIn": "Você precisa de uma conta ativa para acessar esta seção. Faça login ou clique em Primeiros passos para criar um.",
+    "signIn": "Entrar",
+    "getStarted": "Comece",
+    "accessDeniedNotMember": "Você precisa se tornar um membro para acessar este recurso. Junte-se ao espaço agora para ver a atividade deste espaço.",
+    "accessDenied": "Acesso negado",
+    "noSpaces": "Sem espaços",
+    "errorOhSnap": "Ah, droga! Ocorreu um erro",
+    "reset": "Reiniciar",
+    "backToSettings": "Voltar para configurações",
+    "sandbox": "Caixa de areia",
+    "pilot": "Piloto",
+    "archived": "Arquivado",
+    "changeSpaceConfiguration": "Alterar configuração do espaço",
+    "trialBannerTitle": "Restam apenas {daysLeft} dias para seu teste gratuito!",
+    "trialBannerSubtitle": "Contribua com US$ 11 por mês em tokens USDC ou Hypha para a Rede Hypha para desbloquear acesso total ao seu Espaço e manter seu progresso!",
+    "activateNow": "Ative agora",
+    "beforeExpiryBannerTitle": "Faltam apenas {daysLeft} dias para que sua contribuição da Hypha Network expire!",
+    "beforeExpiryBannerSubtitle": "Não perca o acesso aos recursos do seu Space! Renove agora contribuindo com US$ 11 por mês em tokens USDC ou Hypha para a Rede Hypha.",
+    "renewNow": "Renovar agora",
+    "expiredBannerTitle": "Sua contribuição da Hypha Network expirou {daysAgo} dias atrás!",
+    "expiredBannerSubtitle": "Reative agora contribuindo com US$ 11 por mês em tokens USDC ou Hypha para a Rede Hypha e recupere o acesso a todos os recursos do seu Space.",
+    "reactivateNow": "Reativar agora",
+    "subscriptionBadgeActiveFreeTrialUntil": "Ativo em teste gratuito até {date}",
+    "subscriptionBadgeRenewBefore": "Renovar antes de {date}",
+    "subscriptionBadgeActiveUntil": "Ativo até {date}",
+    "subscriptionBadgeExpiredSince": "Expirado desde {date}",
+    "proposalCreationDisabled": "Criação de propostas desativada",
+    "proposalExpiredSubtitle": "Sua contribuição da Hypha Network expirou em {expiredElapsed}. Por favor, reative seu espaço antes de enviar uma nova proposta.",
+    "allYourSpaces": "Todos os seus espaços,",
+    "inOnePlace": "em um só lugar",
+    "spacesYouMightLike": "Espaços que você pode gostar",
+    "mySpacesLabel": "Meus espaços",
+    "hideArchivedSpaces": "Ocultar espaços arquivados",
+    "creating": "Criando espaço...",
+    "expiredToday": "hoje",
+    "expiredDayAgo": "dia atrás",
+    "expiredDaysAgo": "{count} dias atrás",
+    "linkedTo": "Vinculado a",
+    "rootSpace": "Espaço Raiz",
+    "rootSpaceDescription": "Marcar este espaço como Root Space o tornará independente. Não estará mais vinculado à organização atual e todos os seus espaços vinculados se moverão com ele.",
+    "search": "Procurar...",
+    "addYourUrl": "Adicione seu URL"
+  },
+  "ProposalDetails": {
+    "status": {
+      "accepted": "Aceito",
+      "rejected": "Rejeitado",
+      "onVoting": "Na votação"
+    },
+    "badges": {
+      "space": "Espaço",
+      "delegate": "Delegar",
+      "member": "Membro",
+      "active": "Ativo"
+    },
+    "sections": {
+      "payment": "Pagamento",
+      "transparencySettings": "Configurações de transparência",
+      "decaySettings": "Configurações de deterioração",
+      "fromWhitelist": "Da lista branca",
+      "toWhitelist": "Para colocar na lista de permissões"
+    },
+    "labels": {
+      "unknown": "Desconhecido",
+      "custom": "Personalizado",
+      "token": "Símbolo",
+      "amount": "Quantia",
+      "usdcAmount": "USDC Valor",
+      "hyphaAmount": "HYPHA Valor",
+      "joiningSpace": "Entrando no Espaço",
+      "delegatedVotingMember": "Membro Votante Delegado",
+      "exitingMember": "Membro Saindo",
+      "exitFrom": "Sair de",
+      "entryMethod": "Método de entrada",
+      "spaces": "Espaços",
+      "months": "Meses",
+      "logoForSpace": "Logotipo para {title}",
+      "payWith": "Pague com",
+      "totalAmountInHypha": "Valor total em HYPHA",
+      "hyphaTokenIcon": "Hypha Ícone de token",
+      "totalAmountInUsdc": "Valor total em USDC",
+      "usdcIcon": "USDC Ícone",
+      "tokenType": "Tipo de token",
+      "tokenName": "Nome do token",
+      "tokenSymbol": "Símbolo simbólico",
+      "tokenIcon": "Ícone de token",
+      "tokenIconFor": "Ícone de token para {symbol}",
+      "maxSupply": "Fornecimento máximo",
+      "unlimitedSupply": "Fornecimento ilimitado",
+      "unlimited": "Ilimitado",
+      "transferable": "Transferível",
+      "yes": "Sim",
+      "no": "Não",
+      "maxSupplyType": "Tipo de fornecimento máximo",
+      "immutable": "Imutável",
+      "updatable": "Atualizável",
+      "autoMinting": "Cunhagem automática",
+      "enabled": "Habilitado",
+      "disabled": "Desabilitado",
+      "tokenPrice": "Preço do token",
+      "decayPercentage": "Porcentagem de decaimento",
+      "decayInterval": "Intervalo de decaimento",
+      "spaceDiscoverability": "Descoberta Espacial",
+      "spaceActivityAccess": "Acesso à atividade espacial",
+      "votingMethod": "Método de votação",
+      "quorum": "Quorum",
+      "unity": "Unidade",
+      "votingPeriod": "Período de votação",
+      "votingPower": "Poder de voto",
+      "tokenBackingVault": "Cofre de lastro de token",
+      "backingVaultPayout": "Backing Vault Payout",
+      "redeemTokens": "Redeem tokens",
+      "redeemToken": "Token to redeem",
+      "redeemAmount": "Redemption amount",
+      "redeemNotional": "Reference value",
+      "redeemApproxUsd": "≈ {value} USD",
+      "redeemApproxNotional": "≈ {value} {currency}",
+      "redeemCollateralUnitPrice": "{price} {currency} each",
+      "spaceToken": "Token do espaço",
+      "currentBackingCollaterals": "Colaterais atuais",
+      "addCollaterals": "Adicionar colaterais",
+      "withdrawCollaterals": "Retirar colaterais",
+      "redemptionEnabled": "Resgate ativado",
+      "redemptionWhitelistEnabled": "Lista de permissões de resgate ativada",
+      "redemptionStartDate": "Data de início do resgate",
+      "redemptionPrice": "Preço de resgate",
+      "maxRedemption": "Resgate máximo",
+      "maxRedemptionValue": "{percent}% em {days} dias",
+      "minimumBackingPercent": "Percentual mínimo de lastro",
+      "tokenBurning": "Queima de tokens",
+      "burnRecipient": "Destinatário da queima",
+      "burnAmount": "Valor da queima",
+      "defaultAvatar": "Avatar padrão",
+      "selfBurn": "Autoqueima",
+      "archived": "Arquivado",
+      "transferFromWhitelist": "Lista de permissões de envio",
+      "receiveToWhitelist": "Lista de permissões de receção",
+      "whitelistEnforcementActive": "Ativo",
+      "whitelistEnforcementInactive": "Inativo",
+      "spaceWhitelistMembersSuffix": "(Space e membros)",
+      "spaceWhitelistOnlySuffix": "(Apenas space)"
+    },
+    "entryMethods": {
+      "openAccess": "Acesso aberto",
+      "tokenBased": "Baseado em token",
+      "inviteOnly": "Somente convite"
+    },
+    "transparencyLevel": {
+      "public": "Público",
+      "network": "Rede",
+      "organisation": "Organização",
+      "space": "Espaço"
+    },
+    "votingPower": {
+      "oneTokenOneVote": "1 token 1 voto",
+      "oneMemberOneVote": "1 membro 1 voto",
+      "oneVoiceOneVote": "1 Voz 1 Voto"
+    },
+    "voters": {
+      "votes": "Votos",
+      "personVoted": "{name} votou {vote}",
+      "andMore": "e {count} mais",
+      "voted": "Votou {vote}"
+    },
+    "voting": {
+      "voteClosed": "Votação encerrada",
+      "voteWillCloseIn": "Esta votação será encerrada em {duration}",
+      "voteClosingSoon": "Votação encerrando em breve",
+      "voteNo": "Votar não",
+      "voteYes": "Votar sim",
+      "object": "Objeto",
+      "consent": "Consentimento",
+      "no": "Não",
+      "hellYeah": "Claro que sim",
+      "notSure": "Não tenho certeza",
+      "looksGood": "Parece bom",
+      "quorumMinParticipation": "Quórum (Participação Mínima)",
+      "unityMinAlignment": "Unidade (alinhamento mínimo)",
+      "proposalVotingIconAlt": "Ícone de votação mínima da proposta",
+      "autoExecution": "Execução automática",
+      "toVote": "{duration} para votar",
+      "youVoted": "Você votou em {vote}",
+      "voteValueYes": "sim",
+      "voteValueNo": "não"
+    },
+    "withdrawResubmit": {
+      "title": "Retirar sua proposta ou editar e enviar novamente?",
+      "withdrawDialogTitle": "Retirar Proposta",
+      "withdrawDialogDescription": "Tem certeza de que deseja retirar esta proposta? Ela não aparecerá mais na tela de propostas e não poderá ser recuperada.",
+      "withdraw": "Retirar",
+      "cancel": "Cancelar",
+      "withdrawing": "Retirando...",
+      "resubmitDialogTitle": "Reenviar proposta",
+      "resubmitDialogDescription": "Tem certeza de que deseja reenviar esta proposta? A proposta atual será retirada, uma nova será criada com o seu conteúdo e os votos serão zerados.",
+      "resubmit": "Reenviar",
+      "processing": "Processando..."
+    },
+    "expireBanner": {
+      "checkingMembership": "Verificando associação...",
+      "processing": "Processamento...",
+      "actionCompleted": "Ação concluída",
+      "title": "O período de votação terminou.",
+      "confirmDecision": "Confirmar decisão",
+      "states": {
+        "noParticipation": {
+          "subtitle": "Nenhum voto foi registrado para esta proposta. Sem qualquer participação, esta proposta será rejeitada.",
+          "completedMessage": "Decisão registrada: Proposta rejeitada por não participação."
+        },
+        "insufficientParticipation": {
+          "subtitle": "A participação foi muito baixa para que esta proposta fosse aprovada. Esta proposta será rejeitada.",
+          "completedMessage": "Decisão registrada: Proposta rejeitada por participação insuficiente."
+        },
+        "lackAlignment": {
+          "subtitle": "A participação foi suficiente, mas o apoio foi demasiado dividido. Esta proposta será rejeitada.",
+          "completedMessage": "Decisão registrada: Proposta rejeitada por falta de alinhamento."
+        },
+        "approved": {
+          "subtitle": "Esta proposta atendeu a todos os requisitos e foi aprovada como um novo acordo.",
+          "completedMessage": "Decisão registrada: Proposta aprovada e movida para a seção Aceita."
+        },
+        "insufficientParticipationAndAlignment": {
+          "subtitle": "A participação foi muito baixa e o apoio muito dividido. Esta proposta será rejeitada.",
+          "completedMessage": "Decisão registrada: Proposta rejeitada por participação insuficiente e falta de alinhamento."
+        }
+      }
+    },
+    "archiveToken": "Arquivar token",
+    "archiveTokenDescription": "Arquivar um token desativará o seu uso em novas propostas e transferências.",
+    "clickHere": "clique aqui",
+    "noTokenCreated": "Seu espaço ainda não criou um token, {clickHere} para primeiro emitir um token.",
+    "tokenShouldBeChosen": "Um token deve ser escolhido",
+    "maxSupplyValidation": "Digite um fornecimento máximo maior que 0 ou desative o fornecimento limitado se quiser fornecimento ilimitado.",
+    "selectReferenceCurrency": "Selecione uma moeda de referência",
+    "tokenPriceGreaterThanZero": "Digite um preço de token maior que 0",
+    "updateTokenLabel": "Atualizar token",
+    "spaceInformationMissing": "Faltam informações do espaço. Tente novamente."
+  },
+  "AiPanel": {
+    "title": "Hypha AI",
+    "suggestions": {
+      "aboutSpace": "Conte-me sobre este espaço",
+      "memberCount": "Quantos membros este espaço tem?",
+      "agreements": "Quais acordos existem neste espaço?",
+      "structure": "Descreva a estrutura deste espaço"
+    },
+    "welcome": "Olá! Sou seu assistente Hypha AI. Posso buscar detalhes do espaço como número de membros, acordos e estrutura. Pergunte-me qualquer coisa sobre o espaço que você está visualizando.",
+    "placeholder": "Pergunte ao Hypha AI...",
+    "sendButton": "Enviar",
+    "stopButton": "Parar",
+    "newlineHint": "Shift+Enter para nova linha",
+    "signIn": "Entre para usar o Hypha AI",
+    "signInButton": "Entrar",
+    "loading": "Carregando...",
+    "openPanel": "Abrir Hypha AI",
+    "hidePanel": "Ocultar painel AI",
+    "resetChat": "Reiniciar chat",
+    "closePanel": "Fechar painel",
+    "copyButton": "Copiar",
+    "copiedButton": "Copiado!",
+    "toolLookingUp": "Buscando espaço…",
+    "toolLookingUpSlug": "Buscando espaço \"{slug}\"…",
+    "toolCompleted": "Chamada de ferramenta concluída.",
+    "toolFoundSpace": "{title} ({slug}) encontrado - {memberCount} membros, {documentCount} acordos",
+    "toolNoSpace": "Nenhum espaço encontrado para o slug \"{slug}\"",
+    "toolTokens": "{count} token(s) obtido(s) para o espaço \"{slug}\".",
+    "toolError": "Erro: {message}",
+    "streamError": "Ocorreu um erro ao gerar a resposta.",
+    "attachment": "Anexo"
+  },
+  "HumanChatPanel": {
+    "title": "Chat",
+    "welcome": "Bem-vindo ao chat! Inicie uma conversa com outros membros deste espaço.",
+    "placeholder": "Digite uma mensagem...",
+    "placeholderChannel": "Mensagem #{channel}",
+    "sendButton": "Enviar",
+    "newlineHint": "Enter para enviar · Shift+Enter para nova linha · @ para mencionar",
+    "loading": "Carregando...",
+    "openPanel": "Abrir painel de chat",
+    "hidePanel": "Ocultar painel de chat",
+    "closePanel": "Fechar painel",
+    "copyButton": "Copiar",
+    "copiedButton": "Copiado!",
+    "tabChat": "Chat",
+    "tabMembers": "Membros",
+    "membersCount": "{count, plural, one {# membro} other {# membros}} · {online} online",
+    "you": "Você",
+    "reactButton": "Reagir",
+    "replyButton": "Responder",
+    "moreButton": "Mais",
+    "attachFile": "Anexar arquivo",
+    "attachImage": "Anexar imagem",
+    "bold": "Negrito",
+    "emoji": "Emoji",
+    "mention": "Mencionar",
+    "timestampToday": "Hoje às {time}",
+    "timestampYesterday": "Ontem às {time}",
+    "timestampDate": "{date} às {time}",
+    "systemSender": "Sistema",
+    "noMembers": "Nenhum membro encontrado",
+    "backToSpaceChat": "Voltar ao chat do espaço",
+    "failedToJoinRoom": "Falha ao entrar na sala de conversa"
+  },
+  "CoherenceTab": {
+    "signals": "Sinais",
+    "signInToSee": "Por favor, faça login para ver sinais e conversas",
+    "searchSignals": "Pesquisar sinais...",
+    "improve": "Melhorar",
+    "newSignal": "Novo sinal",
+    "all": "Todos",
+    "listIsEmpty": "A lista está vazia",
+    "mostViews": "Mais visualizações",
+    "mostMessages": "Mais mensagens",
+    "mostRecent": "Mais recentes",
+    "searchConversation": "Pesquisar conversa",
+    "hideArchived": "Ocultar arquivados",
+    "highUrgency": "Urgência alta",
+    "mediumUrgency": "Urgência média",
+    "lowUrgency": "Urgência baixa",
+    "mentions": "{count, plural, one {# menção} other {# menções}}",
+    "unarchiveConversation": "Desarquivar conversa",
+    "unarchiveConfirm": "Deseja realmente desarquivar esta conversa?",
+    "yesUnarchive": "Sim, desarquivar",
+    "noLeave": "Não, deixar",
+    "unarchive": "Desarquivar",
+    "openConversation": "Abrir conversa",
+    "saySomething": "Diga algo...",
+    "proposeAgreement": "Propor acordo",
+    "errorOhSnap": "Ops! Ocorreu um erro",
+    "reset": "Redefinir",
+    "creatingNewSignal": "Criando novo sinal",
+    "signalTitle": "Título do sinal...",
+    "type": "Tipo",
+    "priority": "Prioridade",
+    "tags": "Tags",
+    "selectOneOrMore": "Selecione um ou mais",
+    "description": "Descrição",
+    "descriptionPlaceholder": "Digite sua descrição aqui...",
+    "publish": "Publicar",
+    "createdOn": "Criado em {date}",
+    "archiveConversation": "Arquivar conversa",
+    "archiveConfirm": "Deseja realmente arquivar esta conversa?",
+    "yesArchive": "Sim, arquivar",
+    "errorCoherenceTab": "Ops, algo deu errado. Não foi possível carregar a aba de coerência.",
+    "types": {
+      "Opportunity": "Oportunidade",
+      "Risk": "Risco",
+      "Tension": "Tensão",
+      "Insight": "Perspetiva",
+      "Trend": "Tendência",
+      "Proposal": "Proposta"
+    },
+    "typeDescriptions": {
+      "Opportunity": "Janela de coordenação ou abertura positiva",
+      "Risk": "Ameaça, preocupação ou perigo",
+      "Tension": "Conflito ou desacordo que precisa de resolução",
+      "Insight": "Observação ou descoberta baseada em dados",
+      "Trend": "Padrão emergente entre espaços",
+      "Proposal": "Ação de governança ou voto necessário"
+    },
+    "priorities": {
+      "high": "Alta",
+      "medium": "Média",
+      "low": "Baixa"
+    },
+    "priorityDescriptions": {
+      "high": "Necessita atenção imediata",
+      "medium": "Monitorar e agir em breve",
+      "low": "Informativo, sem pressa"
+    }
+  },
+  "SignalCard": {
+    "noConversationRoom": "Ainda não há sala de conversa"
+  }
+}

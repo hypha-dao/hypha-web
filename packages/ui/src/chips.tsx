@@ -75,6 +75,12 @@ interface MultiSelectProps
   placeholder?: string;
 
   /**
+   * Placeholder text shown in the dropdown search input.
+   * Optional, defaults to "Search...".
+   */
+  searchPlaceholder?: string;
+
+  /**
    * Animation duration in seconds for the visual effects (e.g., bouncing badges).
    * Optional, defaults to 0 (no animation).
    */
@@ -100,10 +106,33 @@ interface MultiSelectProps
   asChild?: boolean;
 
   /**
+   * Selected passed into selector
+   */
+  value?: string[];
+
+  /**
+   * Controls whether the "Select All" option is displayed in the dropdown.
+   * Optional, defaults to true.
+   */
+  allowToggleAll?: boolean;
+
+  /**
    * Additional class names to apply custom styles to the multi-select component.
    * Optional, can be used to add custom styles.
    */
   className?: string;
+}
+
+function arraysShallowEqual(
+  arr1: readonly string[],
+  arr2: readonly string[],
+): boolean {
+  if (arr1 === arr2) return true;
+  if (arr1.length !== arr2.length) return false;
+  for (let i = 0; i < arr1.length; i++) {
+    if (arr1[i] !== arr2[i]) return false;
+  }
+  return true;
 }
 
 export const MultiSelect = React.forwardRef<
@@ -117,10 +146,13 @@ export const MultiSelect = React.forwardRef<
       variant,
       defaultValue = [],
       placeholder = 'Select options',
+      searchPlaceholder = 'Search...',
       animation = 0,
       maxCount = 3,
       modalPopover = false,
       asChild = false,
+      value,
+      allowToggleAll = true,
       className,
       ...props
     },
@@ -129,6 +161,14 @@ export const MultiSelect = React.forwardRef<
     const [selectedValues, setSelectedValues] =
       React.useState<string[]>(defaultValue);
     const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
+
+    React.useEffect(() => {
+      if (value === undefined) return;
+      const next = Array.isArray(value) ? (value as string[]) : [];
+      setSelectedValues((prev) =>
+        arraysShallowEqual(prev, next) ? prev : next,
+      );
+    }, [value]);
 
     const handleInputKeyDown = (
       event: React.KeyboardEvent<HTMLInputElement>,
@@ -271,34 +311,43 @@ export const MultiSelect = React.forwardRef<
         >
           <Command>
             <CommandInput
-              placeholder="Search..."
+              placeholder={searchPlaceholder}
               onKeyDown={handleInputKeyDown}
             />
             <CommandList>
               <CommandEmpty>No results found.</CommandEmpty>
               <CommandGroup>
-                <CommandItem
-                  key="all"
-                  onSelect={toggleAll}
-                  className="cursor-pointer"
-                >
-                  <div
-                    className={cn(
-                      'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
-                      selectedValues.length === options.length
-                        ? 'bg-primary text-primary-foreground'
-                        : 'opacity-50 [&_svg]:invisible',
-                    )}
-                  >
-                    <CheckIcon className="h-4 w-4" />
-                  </div>
-                  <span>(Select All)</span>
-                </CommandItem>
-                {options.map((option) => {
-                  const isSelected = selectedValues.includes(option.value);
-                  return (
+                {allowToggleAll && (
+                  <>
                     <CommandItem
-                      key={option.value}
+                      key="all"
+                      onSelect={toggleAll}
+                      className="cursor-pointer"
+                    >
+                      <div
+                        className={cn(
+                          'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
+                          selectedValues.length === options.length
+                            ? 'bg-primary text-primary-foreground'
+                            : 'opacity-50 [&_svg]:invisible',
+                        )}
+                      >
+                        <CheckIcon className="h-4 w-4" />
+                      </div>
+                      <span>(Select All)</span>
+                    </CommandItem>
+                    <CommandSeparator />
+                  </>
+                )}
+                {options.map((option, index) => {
+                  const isSelected = selectedValues.includes(option.value);
+                  const isDelimiter =
+                    option.value.length === 0 || option.value === '---';
+                  return isDelimiter ? (
+                    <CommandSeparator key={`sep-${index}`} />
+                  ) : (
+                    <CommandItem
+                      key={`${option.value}-${index}`}
                       onSelect={() => toggleOption(option.value)}
                       className="cursor-pointer"
                     >

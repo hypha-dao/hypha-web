@@ -3,6 +3,7 @@
 import React from 'react';
 import useSWR from 'swr';
 import { useParams } from 'next/navigation';
+import { useAuthentication } from '@hypha-platform/authentication';
 
 type OneChartPoint = {
   month: string;
@@ -34,12 +35,22 @@ type AssetItem = {
   name: string;
   symbol: string;
   value: number;
+  tokenPrice?: number;
+  referenceCurrency?: string | null;
   usdEqual: number;
   type: string;
   chartData: OneChartPoint[];
   transactions: TransactionCardProps[];
   closeUrl: string;
   slug: string;
+  address: string;
+  createdAt?: Date;
+};
+
+type UseAssetsData = {
+  assets: (Omit<AssetItem, 'createdAt'> & { createdAt?: string })[];
+  isLoading: boolean;
+  balance: number;
 };
 
 type UseAssetsReturn = {
@@ -56,6 +67,7 @@ export const useAssets = ({
   refreshInterval?: number;
 }): UseAssetsReturn => {
   const { id } = useParams<{ id: string }>();
+  const { getAccessToken } = useAuthentication();
 
   const endpoint = React.useMemo(() => {
     return `/api/v1/spaces/${id}/assets`;
@@ -64,9 +76,16 @@ export const useAssets = ({
   const { data, isLoading } = useSWR(
     [endpoint],
     async ([endpoint]) => {
-      const res = await fetch(endpoint, {
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const token = await getAccessToken();
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const res = await fetch(endpoint, { headers });
       if (!res.ok) {
         throw new Error(`Failed to fetch assets: ${res.statusText}`);
       }
@@ -75,7 +94,7 @@ export const useAssets = ({
     { refreshInterval },
   );
 
-  const typedData = data as UseAssetsReturn | undefined;
+  const typedData = data as UseAssetsData | undefined;
   const hasValidData =
     typedData &&
     Array.isArray(typedData.assets) &&
@@ -83,8 +102,19 @@ export const useAssets = ({
 
   const filteredAssets = React.useMemo(() => {
     if (!hasValidData) return [];
-    if (!filter || filter.type === 'all') return typedData.assets;
-    return typedData.assets.filter((asset) => asset.type === filter.type);
+    const transformAsset = (asset: (typeof typedData.assets)[0]) => ({
+      ...asset,
+      createdAt:
+        asset.createdAt && asset.createdAt.length > 0
+          ? new Date(asset.createdAt)
+          : undefined,
+    });
+    if (!filter || filter.type === 'all') {
+      return typedData.assets.map(transformAsset);
+    }
+    return typedData.assets
+      .filter((asset) => asset.type === filter.type)
+      .map(transformAsset);
   }, [hasValidData, typedData?.assets, filter]);
 
   return {

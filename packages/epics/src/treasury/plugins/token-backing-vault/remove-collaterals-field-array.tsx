@@ -1,0 +1,112 @@
+'use client';
+
+import { FormLabel, FormControl, Button } from '@hypha-platform/ui';
+import { TokenPayoutField } from '../../../agreements/plugins/components/common/token-payout-field';
+import { useFormContext, useFieldArray } from 'react-hook-form';
+import { PlusIcon, Cross2Icon } from '@radix-ui/react-icons';
+import { TOKENS, Token } from '@hypha-platform/core/client';
+import { useTranslations } from 'next-intl';
+
+interface ExtendedToken extends Token {
+  space?: {
+    title: string;
+    slug: string;
+  };
+}
+
+const DEFAULT_COLLATERAL_ENTRY = { token: '', amount: '' };
+
+type RemoveCollateralsFieldArrayProps = {
+  filteredTokens: ExtendedToken[];
+};
+
+export function RemoveCollateralsFieldArray({
+  filteredTokens,
+}: RemoveCollateralsFieldArrayProps) {
+  const tAgreementFlow = useTranslations('AgreementFlow');
+  const { control, setValue, getValues } = useFormContext();
+  const collateralTokens: ExtendedToken[] = [...TOKENS, ...filteredTokens];
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'tokenBackingVault.removeCollaterals',
+  });
+
+  return (
+    <div className="flex flex-col gap-4">
+      <FormLabel>
+        {tAgreementFlow('plugins.tokenBackingVault.removeCollaterals')}
+      </FormLabel>
+      <span className="text-2 text-neutral-11">
+        {tAgreementFlow(
+          'plugins.tokenBackingVault.removeCollateralsDescription',
+        )}
+      </span>
+      <div className="flex flex-col gap-3">
+        {fields.map((field, index) => (
+          <div
+            key={field.id}
+            className="flex flex-col gap-4 rounded-xl border border-neutral-6 p-4"
+          >
+            <div className="flex justify-between items-center w-full flex-col gap-4">
+              <div className="flex gap-1 w-full">
+                <span className="text-2 text-neutral-11 whitespace-nowrap items-center w-full">
+                  {tAgreementFlow(
+                    'plugins.tokenBackingVault.backingCollateral',
+                  )}
+                </span>
+              </div>
+              <FormControl className="w-full">
+                <TokenPayoutField
+                  value={
+                    getValues(`tokenBackingVault.removeCollaterals.${index}`) ||
+                    DEFAULT_COLLATERAL_ENTRY
+                  }
+                  onChange={(val) =>
+                    setValue(
+                      `tokenBackingVault.removeCollaterals.${index}`,
+                      val,
+                    )
+                  }
+                  tokens={
+                    collateralTokens as Parameters<
+                      typeof TokenPayoutField
+                    >[0]['tokens']
+                  }
+                />
+              </FormControl>
+            </div>
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={(e) => {
+                  e.preventDefault();
+                  remove(index);
+                }}
+                className="gap-2 text-2"
+              >
+                <Cross2Icon />
+                {tAgreementFlow('plugins.tokenBackingVault.remove')}
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex justify-start md:justify-end">
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={(e) => {
+            e.preventDefault();
+            append(DEFAULT_COLLATERAL_ENTRY);
+          }}
+          className="gap-2 text-2"
+        >
+          <PlusIcon />
+          {tAgreementFlow('plugins.tokenBackingVault.add')}
+        </Button>
+      </div>
+    </div>
+  );
+}

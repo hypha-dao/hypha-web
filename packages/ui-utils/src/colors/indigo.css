@@ -2,7 +2,7 @@
 .light,
 .light-theme {
   --indigo-1: oklch(99.433% 0.00143 285.189);
-  --indigo-2: oklch(98.231% 0.00837 271.335);
+  --indigo-2: oklch(0.949 0.009 264);
   --indigo-3: oklch(96.086% 0.01707 267.82);
   --indigo-4: oklch(93.461% 0.03115 269.83);
   --indigo-5: oklch(90.195% 0.04726 269.626);

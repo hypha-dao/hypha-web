@@ -5,7 +5,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@hypha-platform/ui-utils';
 
 const buttonVariants = cva(
-  'cursor-pointer rounded inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  'cursor-pointer rounded inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
   {
     variants: {
       variant: {
@@ -24,6 +24,7 @@ const buttonVariants = cva(
         accent: '',
         neutral: '',
         error: '',
+        success: '',
       },
     },
     defaultVariants: {
@@ -32,7 +33,6 @@ const buttonVariants = cva(
       colorVariant: 'accent',
     },
     compoundVariants: [
-      // Default variant combinations
       {
         variant: 'default',
         colorVariant: 'accent',
@@ -48,7 +48,11 @@ const buttonVariants = cva(
         colorVariant: 'error',
         className: 'bg-error-9 text-error-contrast hover:bg-error-10',
       },
-      // Outline variant combinations
+      {
+        variant: 'default',
+        colorVariant: 'success',
+        className: 'bg-success-9 text-success-contrast hover:bg-success-10',
+      },
       {
         variant: 'outline',
         colorVariant: 'accent',
@@ -67,7 +71,12 @@ const buttonVariants = cva(
         className:
           'border-error-9 text-error-9 hover:bg-error-2 hover:text-error-11',
       },
-      // Link variant combinations
+      {
+        variant: 'outline',
+        colorVariant: 'success',
+        className:
+          'border-success-10 text-success-11 hover:bg-success-2 hover:text-success-12',
+      },
       {
         variant: 'link',
         colorVariant: 'accent',
@@ -83,7 +92,11 @@ const buttonVariants = cva(
         colorVariant: 'error',
         className: 'text-error-9 hover:text-error-10',
       },
-      // Ghost variant combinations
+      {
+        variant: 'link',
+        colorVariant: 'success',
+        className: 'text-success-9 hover:text-success-10',
+      },
       {
         variant: 'ghost',
         colorVariant: 'accent',
@@ -98,6 +111,11 @@ const buttonVariants = cva(
         variant: 'ghost',
         colorVariant: 'error',
         className: 'text-error-11 hover:bg-error-3 hover:text-error-12',
+      },
+      {
+        variant: 'ghost',
+        colorVariant: 'success',
+        className: 'text-success-11 hover:bg-success-3 hover:text-success-12',
       },
     ],
   },

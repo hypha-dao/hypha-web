@@ -5,6 +5,7 @@ import * as LabelPrimitive from '@radix-ui/react-label';
 import { Slot } from '@radix-ui/react-slot';
 import {
   Controller,
+  FieldError,
   FormProvider,
   useFormContext,
   type ControllerProps,
@@ -147,26 +148,61 @@ const FormDescription = React.forwardRef<
 });
 FormDescription.displayName = 'FormDescription';
 
-const FormMessage = React.forwardRef<
-  HTMLParagraphElement,
-  React.HTMLAttributes<HTMLParagraphElement>
->(({ className, children, ...props }, ref) => {
-  const { error, formMessageId } = useFormField();
-  const body = error ? String(error?.message ?? '') : children;
+const FormMessageError = ({
+  message,
+  ...props
+}: React.HTMLAttributes<HTMLParagraphElement> & { message?: string }) => {
+  if (!message) return null;
+  return <p {...props}>{message}</p>;
+};
 
-  if (!body) {
+const FormMessage = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & { custom?: string }
+>(({ className, children, custom, ...props }, ref) => {
+  const { error, formMessageId } = useFormField();
+
+  if (!error && !children) {
     return null;
   }
 
+  const body = custom ? (
+    custom
+  ) : Array.isArray(error) ? (
+    error.map((err, index) => (
+      <FormMessageError
+        key={`${formMessageId}-${index}`}
+        message={err?.message ?? ''}
+      />
+    ))
+  ) : error?.message ? (
+    <FormMessageError
+      key={`${formMessageId}-message`}
+      message={error?.message ?? ''}
+    />
+  ) : error ? (
+    Object.entries(error)
+      .filter(([_, value]) => (value as FieldError)?.message)
+      .map(([key, value], index) => (
+        <FormMessageError
+          key={`${formMessageId}-${key}-${index}`}
+          message={(value as FieldError).message}
+        />
+      ))
+  ) : (
+    children
+  );
+
   return (
-    <p
+    <div
       ref={ref}
       id={formMessageId}
+      aria-live="polite"
       className={cn('text-sm font-medium text-destructive', className)}
       {...props}
     >
       {body}
-    </p>
+    </div>
   );
 });
 FormMessage.displayName = 'FormMessage';

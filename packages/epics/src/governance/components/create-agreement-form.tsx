@@ -1,22 +1,22 @@
 'use client';
 
-import { CreateAgreementBaseFields } from '@hypha-platform/epics';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import {
   schemaCreateAgreementForm,
   createAgreementFiles,
+  useMe,
+  useJwt,
+  useCreateAgreementOrchestrator,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
-import { Button } from '@hypha-platform/ui';
+import { Button, Form } from '@hypha-platform/ui';
 import React from 'react';
-import { useCreateAgreementOrchestrator } from '@hypha-platform/core/client';
-import { useRouter } from 'next/navigation';
-import { useJwt } from '@hypha-platform/core/client';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
-import { Form } from '@hypha-platform/ui';
-import { useMe } from '@hypha-platform/core/client';
 import { useConfig } from 'wagmi';
+import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
+import { CreateAgreementBaseFields } from '../../agreements';
+import { useTranslations } from 'next-intl';
+import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
 
 type FormValues = z.infer<typeof schemaCreateAgreementForm>;
 
@@ -28,17 +28,20 @@ interface CreateAgreementFormProps {
   web3SpaceId: number | undefined | null;
   successfulUrl: string;
   backUrl?: string;
+  closeUrl?: string;
   label?: string;
 }
 
 export const CreateAgreementForm = ({
   successfulUrl,
   backUrl,
+  closeUrl,
   spaceId,
   web3SpaceId,
-  label = 'Agreement',
+  label,
 }: CreateAgreementFormProps) => {
-  const router = useRouter();
+  const tSpaces = useTranslations('Spaces');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
@@ -49,11 +52,18 @@ export const CreateAgreementForm = ({
     isError,
     isPending,
     progress,
-    agreement: { slug: agreementSlug },
   } = useCreateAgreementOrchestrator({ authToken: jwt, config });
+  const resolver = useLocalizedProposalResolver(
+    fullSchemaCreateSpaceForm,
+    tAgreementFlow,
+  );
+  const resolvedLabel =
+    label ?? tAgreementFlow('createActionForms.defaultAgreement');
+
+  const formRef = React.useRef<HTMLFormElement>(null);
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(fullSchemaCreateSpaceForm),
+    resolver,
     defaultValues: {
       title: '',
       description: '',
@@ -64,59 +74,62 @@ export const CreateAgreementForm = ({
     },
   });
 
-  console.log(form);
-
-  React.useEffect(() => {
-    if (progress === 100 && agreementSlug) {
-      router.push(successfulUrl);
-    }
-  }, [progress, agreementSlug]);
+  useScrollToErrors(form, formRef);
+  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
 
   const handleCreate = async (data: FormValues) => {
     await createAgreement({
       ...data,
-      label: label,
+      label: resolvedLabel,
       spaceId: spaceId as number,
       ...(typeof web3SpaceId === 'number' ? { web3SpaceId } : {}),
     });
   };
 
-  console.log('form errors:', form.formState.errors);
+  const handleInvalid = async (err?: any) => {
+    console.log('form errors:', err);
+  };
 
   return (
     <LoadingBackdrop
+      showKeepWindowOpenMessage={true}
+      keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       progress={progress}
       isLoading={isPending}
+      fullHeight={true}
       message={
         isError ? (
           <div className="flex flex-col">
-            <div>Ouh Snap. There was an error</div>
-            <Button onClick={reset}>Reset</Button>
+            <div>{tSpaces('errorOhSnap')}</div>
+            <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (
           <div>{currentAction}</div>
         )
       }
-      className="-m-4 lg:-m-7"
     >
       <Form {...form}>
         <form
-          onSubmit={form.handleSubmit(handleCreate)}
+          ref={formRef}
+          onSubmit={form.handleSubmit(handleCreate, handleInvalid)}
           className="flex flex-col gap-5"
         >
           <CreateAgreementBaseFields
+            key={resubmitKey}
             creator={{
               avatar: person?.avatarUrl || '',
               name: person?.name || '',
               surname: person?.surname || '',
             }}
-            closeUrl={successfulUrl}
+            successfulUrl={successfulUrl}
+            closeUrl={closeUrl || successfulUrl}
             backUrl={backUrl}
             isLoading={false}
-            label={label}
+            label={resolvedLabel}
+            progress={progress}
           />
           <div className="flex justify-end w-full">
-            <Button type="submit">Publish</Button>
+            <Button type="submit">{tAgreementFlow('buttons.publish')}</Button>
           </div>
         </form>
       </Form>

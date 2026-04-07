@@ -183,10 +183,39 @@ export const useCreateAgreementOrchestrator = ({
           completeTask('CREATE_WEB3_AGREEMENT');
         }
 
-        const files = schemaCreateAgreementFiles.parse(arg);
-        if (files.attachments?.length || files.leadImage) {
+        const hasFileUrls =
+          (typeof (arg as any).leadImage === 'string' &&
+            (arg as any).leadImage) ||
+          ((arg as any).attachments &&
+            Array.isArray((arg as any).attachments) &&
+            (arg as any).attachments.length > 0 &&
+            (arg as any).attachments[0] instanceof File === false);
+
+        let filesToUpload = null;
+        if (!hasFileUrls) {
+          try {
+            filesToUpload = schemaCreateAgreementFiles.parse(arg);
+          } catch (e) {
+            filesToUpload = null;
+          }
+        }
+
+        if (
+          filesToUpload &&
+          (filesToUpload.attachments?.length || filesToUpload.leadImage)
+        ) {
           startTask('UPLOAD_FILES');
-          await agreementFiles.upload(files, web2Slug);
+          await agreementFiles.upload(filesToUpload, web2Slug);
+          completeTask('UPLOAD_FILES');
+        } else if (hasFileUrls) {
+          startTask('UPLOAD_FILES');
+          await agreementFiles.upload(
+            {
+              leadImage: (arg as any).leadImage,
+              attachments: (arg as any).attachments,
+            } as any,
+            web2Slug,
+          );
           completeTask('UPLOAD_FILES');
         } else {
           startTask('UPLOAD_FILES');

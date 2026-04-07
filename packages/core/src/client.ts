@@ -5,3 +5,7 @@ export * from './governance';
 export * from './people';
 export * from './space';
 export * from './transaction';
+export * from './events';
+export * from './notifications';
+export * from './matrix';
+export * from './coherence';

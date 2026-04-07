@@ -2,18 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   findSpaceBySlug,
   getTokenBalancesByAddress,
+  getTokenMeta,
+  web3Client,
+  findAllTokens,
 } from '@hypha-platform/core/server';
 import {
   getSpaceRegularTokens,
   getSpaceDecayingTokens,
   getSpaceOwnershipTokens,
-  getTokenMeta,
-  publicClient,
   Token,
   TOKENS,
   ALLOWED_SPACES,
 } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
+import { hasEmojiOrLink } from '@hypha-platform/ui-utils';
+import { checkSpaceAccess } from '@web/utils/check-space-access';
 
 export async function GET(
   request: NextRequest,
@@ -22,10 +25,20 @@ export async function GET(
   const { spaceSlug } = await params;
 
   try {
-    // TODO: implement authorization
     const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
     if (!space) {
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
+    }
+
+    if (space.web3SpaceId) {
+      const { hasAccess, response } = await checkSpaceAccess(
+        request,
+        space.web3SpaceId as number,
+      );
+
+      if (!hasAccess && response) {
+        return response;
+      }
     }
 
     const spaceAddress = space.address as `0x${string}`;
@@ -38,15 +51,52 @@ export async function GET(
 
     const spaceId = BigInt(space.web3SpaceId as number);
 
-    let spaceTokens;
+    const rawDbTokens = await findAllTokens({ db }, { search: undefined });
+    const dbTokens = rawDbTokens.map((token) => ({
+      agreementId: token.agreementId ?? undefined,
+      spaceId: token.spaceId ?? undefined,
+      name: token.name,
+      symbol: token.symbol,
+      maxSupply: token.maxSupply,
+      type: token.type as
+        | 'utility'
+        | 'credits'
+        | 'ownership'
+        | 'voice'
+        | 'impact'
+        | 'community_currency',
+      iconUrl: token.iconUrl ?? undefined,
+      transferable: token.transferable,
+      isVotingToken: token.isVotingToken,
+      address: token.address ?? undefined,
+    }));
+
+    let regularTokens: readonly `0x${string}`[] = [];
+    let ownershipTokens: readonly `0x${string}`[] = [];
+    let decayingTokens: readonly `0x${string}`[] = [];
     try {
-      spaceTokens = await publicClient.multicall({
-        contracts: [
-          getSpaceRegularTokens({ spaceId }),
-          getSpaceOwnershipTokens({ spaceId }),
-          getSpaceDecayingTokens({ spaceId }),
-        ],
-      });
+      const [regularResult, ownershipResult, decayingResult] =
+        await web3Client.multicall({
+          contracts: [
+            getSpaceRegularTokens({ spaceId }),
+            getSpaceOwnershipTokens({ spaceId }),
+            getSpaceDecayingTokens({ spaceId }),
+          ],
+        });
+      regularTokens =
+        regularResult.status === 'success' && regularResult.result.length !== 0
+          ? regularResult.result
+          : [];
+      ownershipTokens =
+        ownershipResult.status === 'success' &&
+        ownershipResult.result.length !== 0
+          ? ownershipResult.result
+          : [];
+      decayingTokens =
+        decayingResult.status === 'success' &&
+        decayingResult.result.length !== 0
+          ? decayingResult.result
+          : [];
     } catch (err: any) {
       const errorMessage =
         err?.message || err?.shortMessage || JSON.stringify(err);
@@ -87,17 +137,9 @@ export async function GET(
         symbol: token.symbol || 'UNKNOWN',
         name: token.name || 'Unnamed',
         address: token.tokenAddress as `0x${string}`,
-        icon: token.logo || '/placeholder/token-icon.png',
+        icon: token.logo || '/placeholder/token-icon.svg',
         type: 'utility' as const,
       }));
-
-    spaceTokens = spaceTokens
-      .filter(
-        (response) =>
-          response.status === 'success' && response.result.length !== 0,
-      )
-      .map(({ result }) => result)
-      .flat() as `0x${string}`[];
 
     const addressMap = new Map<string, Token>();
     const filteredTokens = TOKENS.filter((token) => {
@@ -109,14 +151,53 @@ export async function GET(
       addressMap.set(token.address.toLowerCase(), token),
     );
 
-    spaceTokens.forEach((address) => {
+    regularTokens.forEach((address) => {
       if (!addressMap.has(address.toLowerCase())) {
         addressMap.set(address.toLowerCase(), {
           symbol: '',
           name: '',
           address,
-          icon: '/placeholder/token-icon.png',
-          type: 'utility' as const,
+          icon: '/placeholder/token-icon.svg',
+          type: 'utility',
+        });
+      } else {
+        addressMap.set(address.toLowerCase(), {
+          ...addressMap.get(address.toLowerCase())!,
+          type: 'utility',
+        });
+      }
+    });
+
+    ownershipTokens.forEach((address) => {
+      if (!addressMap.has(address.toLowerCase())) {
+        addressMap.set(address.toLowerCase(), {
+          symbol: '',
+          name: '',
+          address,
+          icon: '/placeholder/token-icon.svg',
+          type: 'ownership',
+        });
+      } else {
+        addressMap.set(address.toLowerCase(), {
+          ...addressMap.get(address.toLowerCase())!,
+          type: 'ownership',
+        });
+      }
+    });
+
+    decayingTokens.forEach((address) => {
+      if (!addressMap.has(address.toLowerCase())) {
+        addressMap.set(address.toLowerCase(), {
+          symbol: '',
+          name: '',
+          address,
+          icon: '/placeholder/token-icon.svg',
+          type: 'voice',
+        });
+      } else {
+        addressMap.set(address.toLowerCase(), {
+          ...addressMap.get(address.toLowerCase())!,
+          type: 'voice',
         });
       }
     });
@@ -132,7 +213,10 @@ export async function GET(
     const assets = await Promise.all(
       allTokens.map(async (token) => {
         try {
-          const meta = await getTokenMeta(token.address);
+          const meta = await getTokenMeta(token.address, dbTokens);
+          if (hasEmojiOrLink(meta.name) || hasEmojiOrLink(meta.symbol)) {
+            return null;
+          }
           return {
             ...meta,
             address: token.address,

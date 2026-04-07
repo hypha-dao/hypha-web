@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 import useSWR from 'swr';
-import { TransferWithPerson } from './types';
+import { TransferWithEntity } from './types';
 import { useJwt } from '@hypha-platform/core/client';
 
 export const useUserTransfers = ({
@@ -14,36 +14,36 @@ export const useUserTransfers = ({
   personSlug?: string;
 }) => {
   const { jwt } = useJwt();
+
   const endpoint = React.useMemo(() => {
     if (!personSlug) return '';
-    return `/api/v1/people/${personSlug}/transactions`;
-  }, [personSlug]);
+    const base = `/api/v1/people/${personSlug}/transactions`;
+    return sort?.sort ? `${base}?sort=${encodeURIComponent(sort.sort)}` : base;
+  }, [personSlug, sort]);
 
   const { data, isLoading, error } = useSWR(
-    personSlug && jwt ? [endpoint, sort, jwt] : null,
-    async ([endpoint, sort, jwt]) => {
-      const url = new URL(endpoint, window.location.origin);
-      if (sort?.sort) {
-        url.searchParams.set('sort', sort.sort);
-      }
-
-      return fetch(url.toString(), {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${jwt}`,
-        },
-      }).then(async (res): Promise<TransferWithPerson[]> => {
+    personSlug && jwt ? [endpoint, jwt] : null,
+    async ([endpoint, jwt]) => {
+      try {
+        const res = await fetch(endpoint, {
+          headers: {
+            Authorization: `Bearer ${jwt}`,
+          },
+        });
         if (!res.ok) {
           throw new Error(`Failed to fetch transactions: ${res.statusText}`);
         }
         return await res.json();
-      });
+      } catch (err) {
+        console.error('Fetch error:', err);
+        throw err;
+      }
     },
     { refreshInterval },
   );
 
   return {
-    transfers: data as TransferWithPerson[],
+    transfers: (data as TransferWithEntity[]) || [],
     isLoading,
     error,
   };

@@ -1,0 +1,1 @@
+ALTER TABLE "tokens" ADD COLUMN "web3_address" text;

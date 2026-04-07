@@ -133,12 +133,14 @@ async function checkMembers() {
         console.log(`  - ${owner} (Household ${householdIndex + 1})`);
       } else {
         console.log(`  - ${owner} (UNKNOWN - Not in test list!)`);
-        
+
         // Try to get member info for this unknown address
         try {
           const member = await contract.getMember(owner);
           console.log(`    → Active: ${member.isActive}`);
-          console.log(`    → Ownership: ${Number(member.ownershipPercentage) / 100}%`);
+          console.log(
+            `    → Ownership: ${Number(member.ownershipPercentage) / 100}%`,
+          );
           console.log(`    → Devices: ${member.deviceIds.join(', ')}`);
         } catch (err) {
           console.log(`    → Could not fetch member info`);

@@ -13,9 +13,9 @@ export const PreviewOverlay = ({
       className={clsx(
         'absolute flex items-center justify-center',
         'p-2 rounded transition-all duration-200',
-        'group-hover:bg-background/100',
-        'group-hover:opacity-100',
-        isVisible ? 'opacity-100 bg-background/20' : 'opacity-0',
+        isVisible
+          ? 'opacity-100 bg-background/20 group-hover:bg-background/100 group-hover:opacity-100'
+          : 'pointer-events-none opacity-0',
       )}
     >
       {children}

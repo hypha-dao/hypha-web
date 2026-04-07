@@ -4,7 +4,7 @@ import { ethers, upgrades } from 'hardhat';
 const PROXY_ADDRESS = '0xA1eDf096B72226ae2f7BDEb12E9c9C82152BccB6';
 
 async function main(): Promise<void> {
-  // Get the deployer's address (first account from the connected provider)
+  // Get the deployer's address
   const [deployer] = await ethers.getSigners();
   const adminAddress = await deployer.getAddress();
 

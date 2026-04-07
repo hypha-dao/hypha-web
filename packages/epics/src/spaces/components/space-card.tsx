@@ -1,14 +1,22 @@
+'use client';
+
+import { DEFAULT_SPACE_LEAD_IMAGE } from '@hypha-platform/core/client';
 import {
   Avatar,
   AvatarImage,
-  Badge,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   Skeleton,
   Image,
+  Button,
 } from '@hypha-platform/ui';
+import { ExitIcon } from '@radix-ui/react-icons';
+import { SpaceModeLabel } from './space-mode-label';
+import { cn } from '@hypha-platform/ui-utils';
+import { ExitSpace } from './exit-space';
+import { useFormatter, useTranslations } from 'next-intl';
 
 type SpaceCardProps = {
   description: string;
@@ -18,30 +26,68 @@ type SpaceCardProps = {
   title: string;
   isLoading?: boolean;
   leadImage?: string;
+  isSandbox?: boolean;
+  isDemo?: boolean;
+  isArchived?: boolean;
+  configPath?: string;
+  web3SpaceId?: number;
+  createdAt: Date;
+  className?: string;
+  showExitButton?: boolean;
 };
 
 const customCardHeaderStyles: React.CSSProperties = {
   height: '150px',
 };
 
-const customAvatarStyles: React.CSSProperties = {
-  width: '64px',
-  height: '64px',
-  position: 'absolute',
-  top: '-54px',
-};
-
 export const SpaceCard: React.FC<SpaceCardProps> = ({
   description,
   icon,
-  members,
-  agreements,
+  members = 0,
+  agreements = 0,
   isLoading = false,
   title,
   leadImage,
+  isSandbox = false,
+  isDemo = false,
+  isArchived = false,
+  configPath,
+  web3SpaceId,
+  createdAt,
+  className,
+  showExitButton = false,
 }) => {
+  const t = useTranslations('Spaces');
+  const tCommon = useTranslations('Common');
+  const format = useFormatter();
   return (
-    <Card className="w-full h-full flex flex-col">
+    <Card
+      className={cn('group relative w-full h-full flex flex-col', className)}
+    >
+      {showExitButton && web3SpaceId && (
+        <div
+          className="absolute w-[30px] h-[30px] top-[10px] right-[10px] invisible [@media(hover:none)]:visible group-hover:visible"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+        >
+          <ExitSpace
+            web3SpaceId={web3SpaceId}
+            exitButton={
+              <Button
+                size="icon"
+                variant="outline"
+                colorVariant="neutral"
+                className="border-0 w-[30px] h-[30px]"
+                title={t('exitSpace')}
+              >
+                <ExitIcon width={18} height={18} />
+              </Button>
+            }
+          />
+        </div>
+      )}
       <CardHeader
         style={customCardHeaderStyles}
         className="p-0 rounded-tl-md rounded-tr-md overflow-hidden flex-shrink-0"
@@ -51,14 +97,14 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
             width={454}
             height={150}
             className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full"
-            src={leadImage || '/placeholder/space-lead-image.png'}
+            src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
             alt={title}
           />
         </Skeleton>
       </CardHeader>
       <CardContent className="flex flex-col flex-1 pt-5 relative">
         <div>
-          <Avatar style={customAvatarStyles}>
+          <Avatar className="w-[64px] h-[64px] absolute top-[-54px]">
             <Skeleton width="64px" height="64px" loading={isLoading}>
               <AvatarImage src={icon} alt="logo" />
             </Skeleton>
@@ -85,18 +131,54 @@ export const SpaceCard: React.FC<SpaceCardProps> = ({
             </Skeleton>
           </div>
           <div className="flex gap-2 text-xs items-center">
-            <div className="flex">
-              <Skeleton loading={isLoading} height="16px" width="80px">
-                <div className="font-bold text-1">{members}</div>
-                <div className="text-neutral-11 ml-1 text-1">Members</div>
-              </Skeleton>
+            <div className="flex flex-col gap-y-2 gap-x-4 flex-wrap">
+              <div className="flex flex-row gap-y-2 gap-x-4 flex-wrap">
+                <div className="flex flex-row">
+                  <Skeleton loading={isLoading} height="16px" width="80px">
+                    <div className="font-bold text-1">{members}</div>
+                    <div className="text-neutral-11 ml-1 text-1">
+                      {tCommon('Members')}
+                    </div>
+                  </Skeleton>
+                </div>
+                <div className="flex flex-row">
+                  <Skeleton loading={isLoading} height="16px" width="80px">
+                    <div className="font-bold text-1">{agreements}</div>
+                    <div className="text-neutral-11 ml-1 text-1">
+                      {tCommon('Agreements')}
+                    </div>
+                  </Skeleton>
+                </div>
+              </div>
+              <div className="flex flex-row">
+                {createdAt instanceof Date &&
+                  !Number.isNaN(createdAt.getTime()) && (
+                    <Skeleton loading={isLoading} height="16px" width="80px">
+                      <div className="text-neutral-11 text-1">
+                        {tCommon('createdOn', {
+                          date: format.dateTime(createdAt, {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                          }),
+                        })}
+                      </div>
+                    </Skeleton>
+                  )}
+              </div>
             </div>
-            <div className="flex ml-3">
-              <Skeleton loading={isLoading} height="16px" width="80px">
-                <div className="font-bold text-1">{agreements}</div>
-                <div className="text-neutral-11 ml-1 text-1">Agreements</div>
-              </Skeleton>
-            </div>
+            <div className="flex grow"></div>
+            <SpaceModeLabel
+              web3SpaceId={web3SpaceId}
+              isSandbox={isSandbox}
+              isDemo={isDemo}
+              isArchived={isArchived}
+              configPath={configPath}
+              className="ml-2"
+            />
           </div>
         </div>
       </CardContent>

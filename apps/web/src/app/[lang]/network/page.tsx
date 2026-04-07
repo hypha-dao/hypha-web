@@ -1,20 +1,20 @@
 import { Locale } from '@hypha-platform/i18n';
 import { Container } from '@hypha-platform/ui';
-import { findAllSpaces, Space } from '@hypha-platform/core/server';
-import { CATEGORIES, Category } from '@hypha-platform/core/client';
-import { db } from '@hypha-platform/storage-postgres';
-import { useMembers } from '@web/hooks/use-members';
+import { getAllSpaces, Space } from '@hypha-platform/core/server';
 import {
-  getDhoPathGovernance,
-  NetworkAll,
-  NetworkSelected,
-} from '@hypha-platform/epics';
+  CATEGORIES,
+  Category,
+  SPACE_ORDERS,
+  SpaceOrder,
+} from '@hypha-platform/core/client';
+import { ExploreSpaces } from '@hypha-platform/epics';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
   searchParams?: Promise<{
     query?: string;
     category?: string;
+    order?: string;
   }>;
 };
 
@@ -41,31 +41,32 @@ export default async function Index(props: PageProps) {
     .filter((category): category is Category => {
       return CATEGORIES.includes(category);
     });
+  const orderRaw = searchParams?.order;
+  const order: SpaceOrder =
+    orderRaw && SPACE_ORDERS.includes(orderRaw as SpaceOrder)
+      ? (orderRaw as SpaceOrder)
+      : SPACE_ORDERS[0];
 
   const { lang } = params;
 
-  const spaces = await findAllSpaces({ db }, { search: query });
+  const spaces = await getAllSpaces({
+    search: query?.trim() || undefined,
+    parentOnly: false,
+    omitArchived: true,
+  });
 
   const uniqueCategories = extractUniqueCategories(spaces);
 
   return (
     <Container className="flex flex-col gap-9 py-9">
-      {categories && categories.length > 0 ? (
-        <NetworkSelected
-          lang={lang}
-          spaces={spaces}
-          categories={categories}
-          uniqueCategories={uniqueCategories}
-          useMembers={useMembers}
-        />
-      ) : (
-        <NetworkAll
-          lang={lang}
-          spaces={spaces}
-          uniqueCategories={uniqueCategories}
-          getPathHelper={getDhoPathGovernance}
-        />
-      )}
+      <ExploreSpaces
+        lang={lang}
+        query={query}
+        spaces={spaces}
+        categories={categories}
+        order={order}
+        uniqueCategories={uniqueCategories}
+      />
     </Container>
   );
 }

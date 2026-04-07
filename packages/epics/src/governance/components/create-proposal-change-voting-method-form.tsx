@@ -2,24 +2,23 @@
 
 import { CreateAgreementBaseFields } from '../../agreements/components';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  schemaChangeVotingMethod,
-  createAgreementFiles,
+  schemaCreateProposalChangeVotingMethod,
   useMe,
   useCreateChangeVotingMethodOrchestrator,
+  useTokensVotingPower,
+  useJwt,
+  useSpaceDetailsWeb3Rpc,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
-import { useJwt } from '@hypha-platform/core/client';
 import { useConfig } from 'wagmi';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
-import { useRouter } from 'next/navigation';
-import { useSpaceDetailsWeb3Rpc } from '@hypha-platform/core/client';
-
-const schemaCreateProposalChangeVotingMethod =
-  schemaChangeVotingMethod.extend(createAgreementFiles);
+import { VOTING_METHOD_TYPES } from '../hooks';
+import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
+import { useTranslations } from 'next-intl';
+import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
 
 type FormValues = z.infer<typeof schemaCreateProposalChangeVotingMethod>;
 
@@ -38,7 +37,8 @@ export const CreateProposalChangeVotingMethodForm = ({
   web3SpaceId,
   plugin,
 }: CreateProposalChangeVotingMethodFormProps) => {
-  const router = useRouter();
+  const tSpaces = useTranslations('Spaces');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { person } = useMe();
   const { jwt } = useJwt();
   const config = useConfig();
@@ -53,11 +53,18 @@ export const CreateProposalChangeVotingMethodForm = ({
     isError,
     isPending,
     progress,
-    agreement: { slug: agreementSlug },
   } = useCreateChangeVotingMethodOrchestrator({ authToken: jwt, config });
+  const resolver = useLocalizedProposalResolver(
+    schemaCreateProposalChangeVotingMethod,
+    tAgreementFlow,
+  );
+  const { votingPowerToken, voicePowerToken } = useTokensVotingPower({
+    spaceId: BigInt(web3SpaceId as number),
+  });
 
+  const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
-    resolver: zodResolver(schemaCreateProposalChangeVotingMethod),
+    resolver,
     defaultValues: {
       title: '',
       description: '',
@@ -66,15 +73,22 @@ export const CreateProposalChangeVotingMethodForm = ({
       spaceId: spaceId ?? undefined,
       creatorId: person?.id,
       members: [],
-      token: undefined as `0x${string}` | undefined,
+      token: '',
       quorumAndUnity: {
         quorum: 0,
         unity: 0,
       },
       votingMethod: undefined,
       label: 'Voting Method',
+      votingDuration: undefined,
     },
+    mode: 'onChange',
   });
+
+  useScrollToErrors(form, formRef);
+  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+
+  const { quorum = 0, unity = 0 } = form.watch('quorumAndUnity') ?? {};
 
   const getVotingMethod = (
     votingPowerSource: number | undefined,
@@ -98,8 +112,14 @@ export const CreateProposalChangeVotingMethodForm = ({
       form.setValue('quorumAndUnity.quorum', quorum);
       form.setValue('quorumAndUnity.unity', unity);
       form.setValue('votingMethod', votingMethod);
+
+      if (votingMethod === VOTING_METHOD_TYPES[1]) {
+        form.setValue('token', votingPowerToken);
+      } else if (votingMethod === VOTING_METHOD_TYPES[3]) {
+        form.setValue('token', voicePowerToken);
+      }
     }
-  }, [spaceDetails, isLoading]);
+  }, [spaceDetails, isLoading, votingPowerToken, voicePowerToken]);
 
   const handleCreate = async (data: FormValues) => {
     if (!web3SpaceId || !data.votingMethod) return;
@@ -118,27 +138,27 @@ export const CreateProposalChangeVotingMethodForm = ({
           unity: BigInt(data.quorumAndUnity?.unity ?? 0),
         },
         votingMethod: data.votingMethod,
+        votingDuration: data.votingDuration,
       });
     } catch (error) {
       console.error('Error creating change voting method proposal:', error);
     }
   };
 
-  React.useEffect(() => {
-    if (progress === 100 && agreementSlug) {
-      router.push(successfulUrl);
-    }
-  }, [progress, agreementSlug, router, successfulUrl]);
+  const isButtonDisabled = quorum === 0 && unity === 0;
 
   return (
     <LoadingBackdrop
+      showKeepWindowOpenMessage={true}
+      keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
+      fullHeight={true}
       progress={progress}
       isLoading={isPending || isLoading}
       message={
         isError ? (
           <div className="flex flex-col">
-            <div>Ouh Snap. There was an error</div>
-            <Button onClick={reset}>Reset</Button>
+            <div>{tSpaces('errorOhSnap')}</div>
+            <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (
           <div>{currentAction}</div>
@@ -147,25 +167,31 @@ export const CreateProposalChangeVotingMethodForm = ({
     >
       <Form {...form}>
         <form
+          ref={formRef}
           onSubmit={form.handleSubmit(handleCreate)}
           className="flex flex-col gap-5"
         >
           <CreateAgreementBaseFields
+            key={resubmitKey}
             creator={{
               avatar: person?.avatarUrl || '',
               name: person?.name || '',
               surname: person?.surname || '',
             }}
+            successfulUrl={successfulUrl}
             closeUrl={successfulUrl}
             backUrl={backUrl}
-            backLabel="Back to Settings"
+            backLabel={tSpaces('backToSettings')}
             isLoading={false}
-            label="Voting Method"
+            label={tAgreementFlow('labels.votingMethod')}
+            progress={progress}
           />
           {plugin}
           <Separator />
           <div className="flex justify-end w-full">
-            <Button type="submit">Publish</Button>
+            <Button type="submit" disabled={isButtonDisabled}>
+              {tAgreementFlow('buttons.publish')}
+            </Button>
           </div>
         </form>
       </Form>

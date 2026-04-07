@@ -2,7 +2,7 @@
 
 import useSWRMutation from 'swr/mutation';
 import useSWR from 'swr';
-import { encodeFunctionData, zeroAddress } from 'viem';
+import { encodeFunctionData } from 'viem';
 import { z } from 'zod';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 
@@ -15,17 +15,26 @@ import { schemaCreateProposalWeb3 } from '@hypha-platform/core/client';
 import { publicClient } from '@hypha-platform/core/client';
 
 import {
+  daoProposalsImplementationAbi,
+  daoProposalsImplementationAddress,
   daoSpaceFactoryImplementationAbi,
   daoSpaceFactoryImplementationAddress,
   decayingSpaceTokenAbi,
-  decayingTokenFactoryAbi,
-  decayingTokenFactoryAddress,
+  tokenVotingPowerImplementationAbi,
+  tokenVotingPowerImplementationAddress,
+  voteDecayTokenVotingPowerImplementationAbi,
+  voteDecayTokenVotingPowerImplementationAddress,
 } from '@hypha-platform/core/generated';
 
-import { transactionSchema } from '@hypha-platform/core/client';
-import { VotingMethodType } from '@hypha-platform/core/client';
+import {
+  VotingMethodType,
+  getSpaceMinProposalDuration,
+  transactionSchema,
+} from '@hypha-platform/core/client';
+import { getDuration } from '@hypha-platform/ui-utils';
+import { getGovernanceChainId } from './governance-chain-id';
 
-const chainId = 8453;
+const chainId = getGovernanceChainId();
 type TxData = z.infer<typeof transactionSchema>;
 
 interface ChangeVotingMethodArgs {
@@ -34,6 +43,7 @@ interface ChangeVotingMethodArgs {
   token: string | undefined;
   quorumAndUnity: { quorum: bigint; unity: bigint };
   votingMethod: VotingMethodType;
+  votingDuration?: number;
 }
 
 const VOTING_METHOD_MAP: Record<VotingMethodType, bigint> = {
@@ -60,6 +70,10 @@ export const useChangeVotingMethodMutationsWeb3Rpc = ({
     async (_, { arg }: { arg: ChangeVotingMethodArgs }) => {
       if (!client) throw new Error('Smart wallet client not available');
 
+      const duration = await publicClient.readContract(
+        getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
+      );
+
       const transactions: TxData[] = [];
 
       const votingMethodCode = VOTING_METHOD_MAP[arg.votingMethod];
@@ -79,34 +93,69 @@ export const useChangeVotingMethodMutationsWeb3Rpc = ({
         }),
       });
 
-      if (arg.votingMethod === '1v1v') {
-        const [tokenAddress] = await publicClient.readContract({
-          abi: decayingTokenFactoryAbi,
-          address: decayingTokenFactoryAddress[chainId],
-          functionName: 'getSpaceToken',
-          args: [BigInt(arg.spaceId)],
-        });
+      transactions.push({
+        target: daoProposalsImplementationAddress[chainId],
+        value: 0,
+        data: encodeFunctionData({
+          abi: daoProposalsImplementationAbi,
+          functionName: 'setMinimumProposalDuration',
+          args: [BigInt(arg.spaceId), BigInt(arg.votingDuration as number)],
+        }),
+      });
 
-        if (!tokenAddress || tokenAddress === zeroAddress) {
-          throw new Error('Invalid token address returned from getSpaceToken');
-        }
-
+      if (arg.votingMethod === '1t1v') {
         for (const { member, number } of arg.members) {
           transactions.push({
-            target: tokenAddress,
+            target: arg.token as `0x${string}`,
             value: 0,
             data: encodeFunctionData({
               abi: decayingSpaceTokenAbi,
-              functionName: 'mint',
+              functionName: 'transfer',
               args: [member as `0x${string}`, BigInt(number) * 10n ** 18n],
             }),
           });
         }
+        if (!arg.token || !/^0x[a-fA-F0-9]{40}$/.test(arg.token)) {
+          throw new Error('Invalid or missing token address for 1t1v');
+        }
+        transactions.push({
+          target: tokenVotingPowerImplementationAddress[chainId],
+          value: 0,
+          data: encodeFunctionData({
+            abi: tokenVotingPowerImplementationAbi,
+            functionName: 'setSpaceToken',
+            args: [BigInt(arg.spaceId), arg.token as `0x${string}`],
+          }),
+        });
+      }
+
+      if (arg.votingMethod === '1v1v') {
+        for (const { member, number } of arg.members) {
+          transactions.push({
+            target: arg.token as `0x${string}`,
+            value: 0,
+            data: encodeFunctionData({
+              abi: decayingSpaceTokenAbi,
+              functionName: 'transfer',
+              args: [member as `0x${string}`, BigInt(number) * 10n ** 18n],
+            }),
+          });
+        }
+
+        transactions.push({
+          target: voteDecayTokenVotingPowerImplementationAddress[chainId],
+          value: 0,
+          data: encodeFunctionData({
+            abi: voteDecayTokenVotingPowerImplementationAbi,
+            functionName: 'setSpaceToken',
+            args: [BigInt(arg.spaceId), arg.token as `0x${string}`],
+          }),
+        });
       }
 
       const input = {
-        spaceId: arg.spaceId,
-        duration: 604800,
+        spaceId: BigInt(arg.spaceId),
+        duration: duration && duration > 0 ? duration : getDuration(4),
         transactions,
       };
 

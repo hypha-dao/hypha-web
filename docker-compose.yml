@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: hypha-api
+    ports:
+      - "3001:3001"
+    restart: unless-stopped

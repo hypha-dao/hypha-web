@@ -1,8 +1,10 @@
 import {
-  SpaceCardWrapper,
-  FilteredSpaces,
+  SpaceCard,
+  MyFilteredSpaces,
   SpaceSearch,
+  AuthenticatedLinkButton,
 } from '@hypha-platform/epics';
+import { isSpaceArchived } from '@hypha-platform/core/client';
 import Link from 'next/link';
 import { Locale } from '@hypha-platform/i18n';
 import {
@@ -10,15 +12,14 @@ import {
   Carousel,
   CarouselItem,
   CarouselContent,
-  Button,
 } from '@hypha-platform/ui';
 import { Heading } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
-import { findAllSpaces } from '@hypha-platform/core/server';
-import { getDhoPathGovernance } from '../dho/[id]/@tab/governance/constants';
-import { useMembers } from '@web/hooks/use-members';
+import { getAllSpaces } from '@hypha-platform/core/server';
+import { getDhoPathAgreements } from '../dho/[id]/@tab/agreements/constants';
 import { PlusIcon } from '@radix-ui/react-icons';
-import { db } from '@hypha-platform/storage-postgres';
+import { DEFAULT_SPACE_LEAD_IMAGE } from '@hypha-platform/core/client';
+import { getTranslations } from 'next-intl/server';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -34,53 +35,72 @@ export default async function Index(props: PageProps) {
 
   const { lang } = params;
 
-  const spaces = await findAllSpaces(
-    {
-      db,
-    },
-    { search: query },
-  );
+  const [allSpaces, mySpaces, t] = await Promise.all([
+    getAllSpaces({ parentOnly: false, omitSandbox: true }),
+    getAllSpaces({ search: query, parentOnly: false }),
+    getTranslations('Spaces'),
+  ]);
 
   return (
     <div className="w-full overflow-auto">
       <Container className="flex flex-col gap-9 py-9">
-        <Heading size="9" color="secondary" weight="medium" align="center">
-          All your spaces, in one place
+        <Heading
+          size="9"
+          color="secondary"
+          weight="medium"
+          align="center"
+          className="flex flex-col"
+        >
+          <span>{t('allYourSpaces')}</span>
+          <span> {t('inOnePlace')}</span>
         </Heading>
         <div className="flex justify-center">
           <SpaceSearch />
-          <Link href={`/${lang}/my-spaces/create`} scroll={false}>
-            <Button className="ml-2">
-              <PlusIcon className="mr-2" />
-              Create Space
-            </Button>
-          </Link>
+          {mySpaces?.length > 0 ? (
+            <AuthenticatedLinkButton
+              hideInsteadDisabled
+              href={`/${lang}/my-spaces/create`}
+            >
+              <PlusIcon />
+              {t('createSpace')}
+            </AuthenticatedLinkButton>
+          ) : null}
         </div>
-        <FilteredSpaces lang={lang} spaces={spaces} useMembers={useMembers} />
+        <MyFilteredSpaces lang={lang} spaces={mySpaces} showLoadMore={false} />
         <div
           data-testid="recommended-spaces-container"
           className="w-full space-y-6"
         >
-          <Text className="text-4 font-medium">Spaces you might like</Text>
-          <Carousel>
-            <CarouselContent>
-              {spaces.map((space) => (
+          <Text className="text-4 font-medium pb-4 pt-4">
+            {t('spacesYouMightLike')}
+          </Text>
+          <Carousel className="mt-6">
+            <CarouselContent className="pb-5" showScrollbar>
+              {allSpaces.map((space) => (
                 <CarouselItem
                   key={space.id}
                   className="w-full sm:w-[454px] max-w-[454px] flex-shrink-0"
                 >
                   <Link
                     className="flex flex-col flex-1"
-                    href={getDhoPathGovernance(lang, space.slug as string)}
+                    href={getDhoPathAgreements(lang, space.slug as string)}
                   >
-                    <SpaceCardWrapper
+                    <SpaceCard
                       description={space.description as string}
                       icon={space.logoUrl || ''}
-                      leadImage={space.leadImage || ''}
+                      leadImage={space.leadImage || DEFAULT_SPACE_LEAD_IMAGE}
+                      members={space.memberCount}
                       agreements={space.documentCount}
                       title={space.title as string}
-                      spaceSlug={space.slug as string}
-                      useMembers={useMembers}
+                      isSandbox={space.flags?.includes('sandbox') ?? false}
+                      isDemo={space.flags?.includes('demo') ?? false}
+                      isArchived={isSpaceArchived(space)}
+                      web3SpaceId={space.web3SpaceId as number}
+                      createdAt={space.createdAt}
+                      configPath={`${getDhoPathAgreements(
+                        lang,
+                        space.slug,
+                      )}/space-configuration`}
                     />
                   </Link>
                 </CarouselItem>

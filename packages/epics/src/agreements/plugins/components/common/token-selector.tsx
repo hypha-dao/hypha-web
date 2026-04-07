@@ -9,20 +9,27 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   Image,
+  RequirementMark,
+  FormLabel,
 } from '@hypha-platform/ui';
 import { Token } from './token-payout-field-array';
+import { getTokenTypeLabel } from '../../../../treasury/components/common/token-type-field';
+import { useTranslations } from 'next-intl';
 
 interface TokenSelectorProps {
   value: string;
   onChange: (tokenAddress: string) => void;
   tokens: Token[];
+  showRequirementMark?: boolean;
 }
 
 export const TokenSelector = ({
   value,
   onChange,
   tokens,
+  showRequirementMark = false,
 }: TokenSelectorProps) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const selectedToken = tokens.find((t) => t.address === value);
 
   const handleTokenChange = (token: Token) => {
@@ -31,7 +38,10 @@ export const TokenSelector = ({
 
   return (
     <div className="flex justify-between w-full">
-      <label className="text-2 text-neutral-11 flex items-center">Token</label>
+      <FormLabel className="text-2 text-neutral-11 gap-1 flex">
+        Token
+        {showRequirementMark && <RequirementMark className="text-2" />}
+      </FormLabel>
       <div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -49,6 +59,7 @@ export const TokenSelector = ({
                       width={20}
                       height={20}
                       alt={selectedToken.symbol}
+                      className="mr-2 rounded-full h-4 w-4"
                     />
                     <span className="text-2 text-neutral-11">
                       {selectedToken.symbol}
@@ -63,7 +74,7 @@ export const TokenSelector = ({
               <ChevronDownIcon className="size-2" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent>
+          <DropdownMenuContent className="w-full max-h-[200px] overflow-y-scroll">
             {tokens.map((token) => (
               <DropdownMenuItem
                 key={token.address}
@@ -74,9 +85,25 @@ export const TokenSelector = ({
                   width={24}
                   height={24}
                   alt={token.symbol}
-                  className="mr-2"
+                  className="mr-2 rounded-full h-5 w-5"
                 />
-                <span className="text-2 text-neutral-11">{token.symbol}</span>
+                <div className="flex flex-col">
+                  <span className="flex gap-2 items-center">
+                    <span className="text-2 text-neutral-11">
+                      {token.symbol}
+                    </span>
+                    {token?.type && (
+                      <div className="rounded-lg text-[10px] text-accent-11 border-1 border-accent-11 px-2 py-0.75">
+                        {getTokenTypeLabel(token.type, tAgreementFlow)}
+                      </div>
+                    )}
+                  </span>
+                  {token.space?.title ? (
+                    <span className="text-1 text-accent-11">
+                      by {token.space?.title}
+                    </span>
+                  ) : null}
+                </div>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>

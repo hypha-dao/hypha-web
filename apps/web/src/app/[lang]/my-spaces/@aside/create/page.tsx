@@ -1,7 +1,11 @@
 'use client';
 
-import { SpaceForm, SidePanel } from '@hypha-platform/epics';
-import { useParams, useRouter } from 'next/navigation';
+import {
+  SpaceForm,
+  SidePanel,
+  getDhoPathAgreements,
+} from '@hypha-platform/epics';
+import { useParams, useRouter, usePathname } from 'next/navigation';
 import React from 'react';
 import { Locale } from '@hypha-platform/i18n';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
@@ -12,7 +16,7 @@ import {
 } from '@hypha-platform/core/client';
 import { useConfig } from 'wagmi';
 import { Button } from '@hypha-platform/ui';
-import { getDhoPathGovernance } from '@web/app/[lang]/dho/[id]/@tab/governance/constants';
+import { useTranslations } from 'next-intl';
 
 export default function AsideCreateSpacePage() {
   const { lang } = useParams();
@@ -20,6 +24,7 @@ export default function AsideCreateSpacePage() {
   const config = useConfig();
   const { person } = useMe();
   const { jwt, isLoadingJwt } = useJwt();
+  const pathname = usePathname();
   const {
     createSpace,
     reset,
@@ -32,39 +37,45 @@ export default function AsideCreateSpacePage() {
 
   React.useEffect(() => {
     if (progress === 100 && spaceSlug) {
-      router.push(getDhoPathGovernance(lang as Locale, spaceSlug));
+      router.push(getDhoPathAgreements(lang as Locale, spaceSlug));
     }
   }, [progress, spaceSlug]);
 
-  const mySpacesUrl = `/${lang}/my-spaces/`;
+  const tSpaces = useTranslations('Spaces');
+  const tCommon = useTranslations('Common');
+
+  const closeUrl = pathname.split('/').slice(0, -1).join('/') || '/';
 
   return progress !== 100 ? (
     <SidePanel>
       <LoadingBackdrop
+        fullHeight={true}
+        showKeepWindowOpenMessage={true}
         progress={progress}
         isLoading={isPending}
         message={
           isError ? (
             <div className="flex flex-col">
-              <div>Ouh Snap. There was an error</div>
-              <Button onClick={reset}>Reset</Button>
+              <div>{tSpaces('errorOhSnap')}</div>
+              <Button onClick={reset}>{tSpaces('reset')}</Button>
             </div>
           ) : (
             <div>{currentAction}</div>
           )
         }
-        className="-m-4 lg:-m-7"
       >
         <SpaceForm
           creator={{
             name: person?.name,
             surname: person?.surname,
           }}
-          closeUrl={mySpacesUrl}
-          backUrl={mySpacesUrl}
-          backLabel="Back"
-          onSubmit={createSpace}
+          closeUrl={closeUrl}
+          backUrl={closeUrl}
+          backLabel={tCommon('back')}
+          onSubmit={(values) => createSpace(values)}
           isLoading={isLoadingJwt}
+          label="create"
+          slugIncorrectMessage={tSpaces('slugAlreadyExistsLong')}
         />
       </LoadingBackdrop>
     </SidePanel>

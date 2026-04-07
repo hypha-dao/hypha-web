@@ -19,6 +19,7 @@ import {
   FormMessage,
   UploadLeadImage,
   UploadAvatar,
+  RequirementMark,
 } from '@hypha-platform/ui';
 import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
@@ -27,6 +28,8 @@ import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { Links } from '../../common';
 import { useAuthentication } from '@hypha-platform/authentication';
+import { useEffect, useRef } from 'react';
+import { useScrollToErrors } from '../../hooks';
 
 const schemaSignupPersonForm = schemaSignupPerson.extend(editPersonFiles.shape);
 
@@ -48,6 +51,7 @@ export const SignupPanel = ({
   error,
 }: SignupPanelProps) => {
   const { user } = useAuthentication();
+  const formRef = useRef<HTMLFormElement>(null);
   const form = useForm<FormData>({
     resolver: zodResolver(schemaSignupPersonForm),
     defaultValues: {
@@ -58,15 +62,30 @@ export const SignupPanel = ({
       leadImageUrl: undefined,
       description: '',
       location: undefined,
-      email: user?.email?.trim() || undefined,
-      address: user?.wallet?.address || '',
+      email: undefined,
+      address: '',
       links: [],
     },
   });
 
+  useScrollToErrors(form, formRef);
+
+  useEffect(() => {
+    if (user?.email) {
+      form.setValue('email', user.email.trim());
+    }
+    if (user?.wallet?.address) {
+      form.setValue('address', user.wallet.address);
+    }
+  }, [user, form]);
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSave)} className="space-y-8">
+      <form
+        ref={formRef}
+        onSubmit={form.handleSubmit(onSave)}
+        className="space-y-8"
+      >
         <div className="flex flex-col gap-5">
           <div className="flex gap-5 justify-between">
             <div className="flex items-center space-x-2">
@@ -93,8 +112,13 @@ export const SignupPanel = ({
                           <FormControl>
                             <Input
                               disabled={isLoading}
-                              placeholder="Name *"
+                              placeholder="First Name"
                               className="text-2 text-neutral-11"
+                              rightIcon={
+                                !field.value && (
+                                  <RequirementMark className="text-2" />
+                                )
+                              }
                               {...field}
                             />
                           </FormControl>
@@ -110,8 +134,13 @@ export const SignupPanel = ({
                           <FormControl>
                             <Input
                               disabled={isLoading}
-                              placeholder="Surname *"
+                              placeholder="Last Name"
                               className="text-2 text-neutral-11"
+                              rightIcon={
+                                !field.value && (
+                                  <RequirementMark className="text-2" />
+                                )
+                              }
                               {...field}
                             />
                           </FormControl>
@@ -128,8 +157,13 @@ export const SignupPanel = ({
                         <FormControl>
                           <Input
                             disabled={isLoading}
-                            placeholder="Nickname *"
+                            placeholder="Nickname"
                             className="text-1 text-neutral-11"
+                            rightIcon={
+                              !field.value && (
+                                <RequirementMark className="text-1" />
+                              )
+                            }
                             {...field}
                           />
                         </FormControl>
@@ -140,16 +174,6 @@ export const SignupPanel = ({
                 </div>
               </div>
             </div>
-            <Link href={closeUrl} scroll={false}>
-              <Button
-                variant="ghost"
-                colorVariant="neutral"
-                className="flex items-center"
-              >
-                Close
-                <RxCross1 className="ml-2" />
-              </Button>
-            </Link>
           </div>
           <Separator />
           <FormField
@@ -158,7 +182,10 @@ export const SignupPanel = ({
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <UploadLeadImage onChange={field.onChange} />
+                  <UploadLeadImage
+                    onChange={field.onChange}
+                    enableImageResizer={true}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -171,7 +198,7 @@ export const SignupPanel = ({
               <FormItem>
                 <FormControl>
                   <Textarea
-                    placeholder="Enter description"
+                    placeholder="Type your life purpose here..."
                     disabled={isLoading}
                     {...field}
                   />

@@ -313,7 +313,7 @@ async function analyzeCashFlows(): Promise<void> {
     }
 
     // Track cumulative cash flows
-    let cumulativeImportRevenue = 0;
+    const cumulativeImportRevenue = 0;
     let cumulativeExportCosts = 0;
     let cumulativeConsumptionPayments = 0;
 

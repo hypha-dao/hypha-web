@@ -6,12 +6,17 @@ import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 import { encodeFunctionData, erc20Abi, parseUnits } from 'viem';
 
 import { getProposalFromLogs } from '../web3';
-import { publicClient } from '@hypha-platform/core/client';
 import {
   daoProposalsImplementationAbi,
   daoProposalsImplementationAddress,
 } from '@hypha-platform/core/generated';
-import { getTokenDecimals } from '@hypha-platform/core/client';
+import {
+  getTokenDecimals,
+  getSpaceMinProposalDuration,
+  publicClient,
+} from '@hypha-platform/core/client';
+import { getDuration } from '@hypha-platform/ui-utils';
+import { getGovernanceChainId } from './governance-chain-id';
 
 interface CreateProposeAContributionInput {
   spaceId: number;
@@ -22,7 +27,7 @@ interface CreateProposeAContributionInput {
   recipient: string;
 }
 
-const chainId = 8453;
+const chainId = getGovernanceChainId();
 
 export const useProposeAContributionMutationsWeb3Rpc = ({
   proposalSlug,
@@ -44,6 +49,10 @@ export const useProposeAContributionMutationsWeb3Rpc = ({
         throw new Error('Smart wallet client not available');
       }
 
+      const duration = await publicClient.readContract(
+        getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
+      );
+
       const transactions = await Promise.all(
         arg.payouts.map(async (payout) => {
           const decimals = await getTokenDecimals(payout.token);
@@ -63,7 +72,7 @@ export const useProposeAContributionMutationsWeb3Rpc = ({
 
       const proposalParams = {
         spaceId: BigInt(arg.spaceId),
-        duration: BigInt(86400),
+        duration: duration && duration > 0 ? duration : getDuration(4),
         transactions,
       };
 

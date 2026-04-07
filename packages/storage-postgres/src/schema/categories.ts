@@ -1,21 +1,39 @@
 import { pgEnum } from 'drizzle-orm/pg-core';
 
 export const CATEGORIES = [
+  // outdated
   'art',
-  'biodiversity',
-  'education',
-  'energy',
   'events',
+  // actual
+  'arts',
+  'biodiversity',
+  'bioregions',
+  'cities',
+  'culture',
+  'education',
+  'emergency',
+  'energy',
   'finance',
+  'food',
+  'gaming',
   'governance',
   'health',
   'housing',
-  'mobility',
+  'innovation',
+  'knowledge',
   'land',
-  'sandbox',
-  'tech',
-  'usecase',
+  'media',
+  'mobility',
+  'networks',
   'ocean',
+  'distribution',
+  'goods',
+  'services',
+  'sport',
+  'tech',
+  'tourism',
+  'villages',
+  'water',
+  'wellbeing',
 ] as const;
-
 export const categories = pgEnum('categories', CATEGORIES);

@@ -6,8 +6,17 @@ import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
 
 import { MembersList } from './members-list';
 import { useMembersSection } from '../hooks/use-members-section';
-import { UseMembers } from '../hooks/types';
+import { ExitSpace, UseMembers, useSpaceMember } from '../../spaces';
 import { Empty } from '../../common';
+import { Button } from '@hypha-platform/ui';
+import {
+  useSpaceBySlug,
+  useMe,
+  useIsDelegate,
+} from '@hypha-platform/core/client';
+import { useAuthentication } from '@hypha-platform/authentication';
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 type MemberSectionProps = {
   basePath: string;
@@ -22,6 +31,8 @@ export const MembersSection: FC<MemberSectionProps> = ({
   spaceSlug,
   refreshInterval,
 }) => {
+  const tCommon = useTranslations('Common');
+  const tMembers = useTranslations('MembersTab');
   const { pages, isLoading, loadMore, pagination, onUpdateSearch, searchTerm } =
     useMembersSection({
       useMembers,
@@ -29,20 +40,50 @@ export const MembersSection: FC<MemberSectionProps> = ({
       refreshInterval,
     });
   console.debug('MembersSection', { searchTerm });
+  const { space } = useSpaceBySlug(spaceSlug as string);
+  const { isMember, isMemberLoading } = useSpaceMember({
+    spaceId: space?.web3SpaceId as number,
+  });
+  const { person } = useMe();
+  const { isAuthenticated } = useAuthentication();
+  const { isDelegate } = useIsDelegate({
+    spaceId: space?.web3SpaceId as number,
+  });
+  const isDisabled = !isAuthenticated || !isMember;
+  const tooltipMessage = !isAuthenticated
+    ? tCommon('signIn')
+    : !isMember
+    ? tCommon('joinSpaceToUse')
+    : '';
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-4">
-      <SectionFilter
-        count={pagination?.total || 0}
-        label="Members"
-        hasSearch
-        searchPlaceholder="Search members"
-        onChangeSearch={onUpdateSearch}
-      />
-
+      <span className="w-full flex gap-4">
+        <SectionFilter
+          count={pagination?.total || 0}
+          label={tCommon('Members')}
+          hasSearch
+          searchPlaceholder={tMembers('searchMembers')}
+          onChangeSearch={onUpdateSearch}
+        >
+          <ExitSpace web3SpaceId={space?.web3SpaceId as number} />
+        </SectionFilter>
+        {!isDelegate && (
+          <Link
+            title={tooltipMessage || ''}
+            className={isDisabled ? 'cursor-not-allowed' : ''}
+            href={`${basePath}/${person?.slug}`}
+            scroll={false}
+          >
+            <Button disabled={isDisabled || isMemberLoading}>
+              {tMembers('delegateVoting')}
+            </Button>
+          </Link>
+        )}
+      </span>
       {pagination?.total === 0 ? (
         <Empty>
-          <p>List is empty</p>
+          <p>{tMembers('listIsEmpty')}</p>
         </Empty>
       ) : (
         Array.from({ length: pages }).map((_, index) => (
@@ -51,6 +92,7 @@ export const MembersSection: FC<MemberSectionProps> = ({
             page={index + 1}
             key={index}
             useMembers={useMembers}
+            spaceId={space?.id}
             spaceSlug={spaceSlug}
             searchTerm={searchTerm}
             refreshInterval={refreshInterval}
@@ -69,11 +111,11 @@ export const MembersSection: FC<MemberSectionProps> = ({
         >
           <Text>
             {isLoading
-              ? 'Loading…'
+              ? tMembers('loading')
               : pagination &&
                 (pagination.totalPages === pages || !pagination.hasNextPage)
-              ? 'No more members'
-              : 'Load more members'}
+              ? tMembers('noMoreMembers')
+              : tMembers('loadMoreMembers')}
           </Text>
         </SectionLoadMore>
       )}

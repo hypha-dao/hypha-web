@@ -7,30 +7,34 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  Image,
-  // TokenIcon,
+  RequirementMark,
 } from '@hypha-platform/ui';
+import { TokenIconUpload } from './token-icon';
+import { useTranslations } from 'next-intl';
 
 export function TokenIconField() {
   const { control } = useFormContext();
+  const tAgreementFlow = useTranslations('AgreementFlow');
 
   return (
     <FormField
       control={control}
-      name="icon"
+      name="iconUrl"
+      rules={{
+        required: tAgreementFlow('issueNewTokenForm.errors.tokenIconRequired'),
+      }}
       render={({ field }) => (
         <FormItem>
           <div className="flex justify-between items-center">
-            <FormLabel className="text-2 text-neutral-11">Token Icon</FormLabel>
+            <FormLabel className="text-2 text-neutral-11 gap-1">
+              {tAgreementFlow('plugins.issueNewToken.general.tokenIconLabel')}{' '}
+              <RequirementMark className="text-2" />
+            </FormLabel>
             <FormControl>
-              <Image
-                src="/placeholder/space-avatar-image.png"
-                alt="Token Icon"
-                width={32}
-                height={32}
-                className="rounded-full object-cover w-8 h-8"
+              <TokenIconUpload
+                defaultImage={field.value}
+                onChange={field.onChange}
               />
-              {/* <TokenIcon value={field.value} onChange={field.onChange} /> */}
             </FormControl>
           </div>
           <FormMessage />

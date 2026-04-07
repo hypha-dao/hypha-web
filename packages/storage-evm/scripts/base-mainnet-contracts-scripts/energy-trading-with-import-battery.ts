@@ -220,7 +220,7 @@ async function displaySystemState(contract: ethers.Contract, title: string) {
   let totalEnergy = 0;
   let totalLocalEnergy = 0;
   let totalImportEnergy = 0;
-  let totalBatteryEnergy = 0;
+  const totalBatteryEnergy = 0;
 
   for (let i = 0; i < collectiveConsumption.length; i++) {
     const batch = collectiveConsumption[i];

@@ -1,7 +1,7 @@
 'use client';
 
 import { Logo } from '../atoms';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Menu } from 'lucide-react';
 import { RxCross1 } from 'react-icons/rx';
 import { usePathname } from 'next/navigation';
@@ -9,11 +9,26 @@ import clsx from 'clsx';
 
 type MenuTopProps = {
   children?: React.ReactNode;
+  leadingAction?: React.ReactNode;
+  trailingAction?: React.ReactNode;
   logoHref?: string;
+  hrefTarget?: string;
+  openMenuLabel?: string;
+  closeMenuLabel?: string;
 };
 
-export const MenuTop = ({ children, logoHref }: MenuTopProps) => {
+export const MenuTop = ({
+  children,
+  leadingAction,
+  trailingAction,
+  logoHref,
+  hrefTarget,
+  openMenuLabel = 'Open menu',
+  closeMenuLabel = 'Close menu',
+}: MenuTopProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -21,27 +36,45 @@ export const MenuTop = ({ children, logoHref }: MenuTopProps) => {
   }, [pathname]);
 
   return (
-    <header className="fixed top-0 right-0 left-0 flex items-center h-9 bg-page-background z-20">
+    <header
+      ref={headerRef}
+      className="flex min-h-[65px] min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background-2 px-4 py-3 z-30"
+    >
       <div
         className={clsx(
-          'w-full mx-auto flex items-center px-10',
+          'w-full mx-auto flex items-center',
           children ? 'justify-between' : 'justify-center',
         )}
       >
-        {!!logoHref && <Logo width={140} href={logoHref} />}
+        <div className="flex items-center gap-2">
+          {leadingAction}
+          {!!logoHref && (
+            <Logo width={110} href={logoHref} target={hrefTarget} />
+          )}
+        </div>
 
-        {/* Desktop Nav */}
-        {children && (
-          <div id="menu-top-actions" className="hidden md:flex gap-2">
+        {/* Desktop Nav + Trailing action (right-aligned group) */}
+        {(children || trailingAction) && (
+          <div
+            id="menu-top-actions"
+            className="hidden md:flex items-center gap-2"
+          >
             {children}
+            {trailingAction}
           </div>
+        )}
+
+        {/* Mobile trailing action (always visible on small screens) */}
+        {trailingAction && (
+          <div className="flex md:hidden items-center">{trailingAction}</div>
         )}
 
         {/* Mobile Burger */}
         {children && (
           <button
+            type="button"
             className="md:hidden flex items-center"
-            aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-label={isMobileMenuOpen ? closeMenuLabel : openMenuLabel}
             aria-expanded={isMobileMenuOpen}
             aria-controls="mobile-menu"
             onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
@@ -53,7 +86,10 @@ export const MenuTop = ({ children, logoHref }: MenuTopProps) => {
 
         {/* Mobile Full Screen Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden fixed inset-0 top-9 z-40 flex flex-col items-center p-4 bg-page-background overflow-y-auto">
+          <div
+            className="md:hidden fixed inset-x-0 bottom-0 z-40 flex flex-col items-center p-4 bg-background-2 overflow-y-auto"
+            style={{ top: headerHeight }}
+          >
             <div className="flex flex-col space-y-8 items-center">
               {children}
             </div>

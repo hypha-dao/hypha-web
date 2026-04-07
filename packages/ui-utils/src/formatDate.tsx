@@ -1,4 +1,7 @@
-export const formatDate = (dateInput: string | number | Date): string => {
+export const formatDate = (
+  dateInput: string | number | Date,
+  withTime?: boolean,
+): string => {
   const months = [
     'January',
     'February',
@@ -24,5 +27,15 @@ export const formatDate = (dateInput: string | number | Date): string => {
   const monthIndex = date.getMonth();
   const day = date.getDate();
 
-  return `${months[monthIndex]} ${day}, ${year}`;
+  let formattedDate = `${months[monthIndex]} ${day}, ${year}`;
+
+  if (withTime) {
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+
+    formattedDate += ` ${hours}:${minutes}:${seconds}`;
+  }
+
+  return formattedDate;
 };

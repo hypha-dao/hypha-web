@@ -1,63 +1,85 @@
+'use client';
+
 import { Text } from '@radix-ui/themes';
-import { Button } from '@hypha-platform/ui';
-import Link from 'next/link';
 import { PlusIcon } from '@radix-ui/react-icons';
-import { UseMembers, InnerSpaceCardWrapper } from '@hypha-platform/epics';
-import { Space } from '@hypha-platform/core/client';
-import { Locale } from '@hypha-platform/i18n';
+import type { Space } from '@hypha-platform/core/client';
+import type { Locale } from '@hypha-platform/i18n';
+import { InnerSpaceCardList } from './inner-space-card-list';
+import { Button } from '@hypha-platform/ui';
+import type { UseMembers } from '../hooks';
+import { useSpaceDiscoverability } from '../hooks/use-space-discoverability';
+import { useUserSpaceState } from '../hooks/use-user-space-state';
+import { checkAccess } from '../utils/transparency-access';
+import Link from 'next/link';
 
 interface SubspaceSectionProps {
-  getSpaceDetailLink: (lang: Locale, id: string) => string;
   spaces: Space[];
   lang: Locale;
+  currentSpaceId: number;
+  currentSpaceWeb3Id?: number;
+  currentSpaceSlug?: string;
   useMembers: UseMembers;
 }
 
 export const SubspaceSection = ({
   spaces,
   lang,
-  getSpaceDetailLink,
+  currentSpaceId,
+  currentSpaceWeb3Id,
+  currentSpaceSlug,
   useMembers,
 }: SubspaceSectionProps) => {
+  const { access, isLoading: isAccessLoading } = useSpaceDiscoverability({
+    spaceId: currentSpaceWeb3Id ? BigInt(currentSpaceWeb3Id) : undefined,
+  });
+
+  const { userState, isLoading: isUserStateLoading } = useUserSpaceState({
+    spaceId: currentSpaceWeb3Id,
+    spaceSlug: currentSpaceSlug,
+  });
+
+  const hasAccess = checkAccess(access, userState);
+  const isLoading = isAccessLoading || isUserStateLoading;
+  const isDisabled = isLoading || !hasAccess;
+
   return (
     <div className="flex flex-col gap-4">
       <div className="justify-between items-center flex">
-        <Text className="text-4">Sub-Spaces | {spaces.length}</Text>
+        <Text className="text-4">Organisation Spaces | {spaces.length}</Text>
         <div className="flex items-center">
-          <Link href={`membership/space/create`} scroll={false}>
-            <Button className="ml-2">
-              <PlusIcon className="mr-2" />
-              Create
+          <Link
+            href={hasAccess && !isLoading ? 'space/create' : '#'}
+            className={isDisabled ? 'cursor-not-allowed' : ''}
+            title={
+              isLoading
+                ? 'Loading...'
+                : !hasAccess
+                ? 'You do not have access to add spaces to this organization.'
+                : 'Add Space'
+            }
+          >
+            <Button
+              variant="default"
+              size="default"
+              colorVariant="accent"
+              disabled={isDisabled}
+            >
+              <PlusIcon />
+              Add Space
             </Button>
           </Link>
         </div>
       </div>
       {!spaces.length ? (
-        <span className="text-2 text-center text-neutral-11">
-          {' '}
-          No sub-spaces
-        </span>
+        <span className="text-2 text-center text-neutral-11"> No spaces</span>
       ) : (
-        <div
-          data-testid="sub-spaces-container"
-          className="grid grid-cols-1 sm:grid-cols-3 gap-3"
-        >
-          {spaces.map((space) => (
-            <div key={space.id} className="mb-1">
-              <Link href={getSpaceDetailLink(lang, space.slug as string)}>
-                <InnerSpaceCardWrapper
-                  spaceSlug={space.slug}
-                  title={space.title}
-                  description={space.description as string}
-                  leadImageUrl={
-                    space.leadImage || '/placeholder/space-lead-image.png'
-                  }
-                  useMembers={useMembers}
-                />
-              </Link>
-            </div>
-          ))}
-        </div>
+        <InnerSpaceCardList
+          lang={lang}
+          spaces={spaces}
+          pageSize={15}
+          currentSpaceId={currentSpaceId}
+          useMembers={useMembers}
+        />
       )}
     </div>
   );

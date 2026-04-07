@@ -103,6 +103,14 @@ interface IDAOProposals {
     bool support,
     uint256 votingPower
   );
+  event VoteChanged(
+    uint256 indexed proposalId,
+    address indexed voter,
+    bool previousSupport,
+    bool newSupport,
+    uint256 previousVotingPower,
+    uint256 newVotingPower
+  );
   event ProposalExecuted(
     uint256 indexed proposalId,
     bool passed,
@@ -119,4 +127,6 @@ interface IDAOProposals {
 
   // Add new event for value tracking
   event ProposalValueSet(uint256 indexed proposalId, uint256 value);
+
+  event MinimumProposalDurationSet(uint256 indexed spaceId, uint256 duration);
 }

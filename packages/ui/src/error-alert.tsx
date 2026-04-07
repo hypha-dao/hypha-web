@@ -24,7 +24,7 @@ const ErrorAlertLabel = React.forwardRef<
   >
     <p className="inline-flex mb-2 mt-2 ml-4">{text}</p>
     <Button
-      className="ml-2 rounded-lg"
+      className="ml-2 rounded-lg bg-transparent hover:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
       onClick={onClose}
       colorVariant="neutral"
       variant="ghost"
@@ -39,6 +39,7 @@ ErrorAlertLabel.displayName = 'ErrorAlertLabel';
 type ErrorAlertElement = HTMLDivElement;
 interface ErrorAlertProps extends React.HTMLAttributes<ErrorAlertElement> {
   lines: string[];
+  bgColor?: string;
 }
 
 function removeLine(lines: string[], index: number) {
@@ -46,7 +47,7 @@ function removeLine(lines: string[], index: number) {
 }
 
 const ErrorAlert = React.forwardRef<ErrorAlertElement, ErrorAlertProps>(
-  ({ className, lines, ...props }, ref) => {
+  ({ className, lines, bgColor, ...props }, ref) => {
     const [errorLines, setErrorLines] = React.useState<string[]>(lines);
 
     React.useEffect(() => {
@@ -61,8 +62,9 @@ const ErrorAlert = React.forwardRef<ErrorAlertElement, ErrorAlertProps>(
       >
         {errorLines.map((line, index) => (
           <ErrorAlertLabel
-            key={`error-${uuidv4()}`}
+            key={`error-${index}-${line}`}
             text={line}
+            className={bgColor}
             onClose={() => {
               setErrorLines(removeLine(errorLines, index));
             }}

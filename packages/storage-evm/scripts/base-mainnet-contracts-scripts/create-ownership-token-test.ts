@@ -70,6 +70,16 @@ const daoSpaceFactoryAbi = [
     stateMutability: 'view',
     type: 'function',
   },
+  {
+    inputs: [
+      { internalType: 'uint256', name: '_spaceId', type: 'uint256' },
+      { internalType: 'address', name: '_account', type: 'address' },
+    ],
+    name: 'isMember',
+    outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
 ];
 
 // DAOProposals ABI with necessary functions
@@ -219,6 +229,20 @@ const ownershipTokenFactoryAbi = [
   },
 ];
 
+// InviteSystem ABI
+const inviteSystemAbi = [
+  {
+    inputs: [
+      { internalType: 'uint256', name: '_spaceId', type: 'uint256' },
+      { internalType: 'address[]', name: '_addresses', type: 'address[]' },
+    ],
+    name: 'inviteMembers',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+];
+
 // OwnershipSpaceToken ABI
 const ownershipSpaceTokenAbi = [
   {
@@ -261,8 +285,15 @@ const ownershipSpaceTokenAbi = [
   },
 ];
 
+// Target address for TransferHelper testing
+const TRANSFER_HELPER_TEST_ADDRESS =
+  '0x2687fe290b54d824c136Ceff2d5bD362Bc62019a';
+
 async function testOwnershipTokenCreationAndMinting(): Promise<void> {
   console.log('Starting ownership token creation and minting test...');
+  console.log(
+    `Will mint tokens to TransferHelper test address: ${TRANSFER_HELPER_TEST_ADDRESS}`,
+  );
 
   const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
 
@@ -345,10 +376,21 @@ async function testOwnershipTokenCreationAndMinting(): Promise<void> {
     wallet,
   );
 
+  const inviteSystemAddress =
+    process.env.INVITE_SYSTEM_ADDRESS ||
+    '0x2B05b9C4B0CefCf0ff46fCDa6F055fa6e4fF9a57'; // InviteSystem proxy address
+
+  const inviteSystem = new ethers.Contract(
+    inviteSystemAddress,
+    inviteSystemAbi,
+    wallet,
+  );
+
   console.log('Contract addresses:');
   console.log(`- DAO Space Factory: ${daoSpaceFactory.target}`);
   console.log(`- DAO Proposals: ${daoProposals.target}`);
   console.log(`- Ownership Token Factory: ${ownershipTokenFactory.target}`);
+  console.log(`- Invite System: ${inviteSystem.target}`);
 
   try {
     // Step 1: Create a Space
@@ -396,6 +438,41 @@ async function testOwnershipTokenCreationAndMinting(): Promise<void> {
     console.log(`Space members: ${members}`);
     console.log(`Creator is member: ${members.includes(wallet.address)}`);
 
+    // Step 1.5: Invite TransferHelper test address to the space
+    console.log(
+      '\n=== Step 1.5: Inviting TransferHelper test address to space ===',
+    );
+    console.log(`Inviting address: ${TRANSFER_HELPER_TEST_ADDRESS}`);
+
+    try {
+      const inviteTx = await inviteSystem.inviteMembers(spaceId, [
+        TRANSFER_HELPER_TEST_ADDRESS,
+      ]);
+      console.log(`Invite transaction hash: ${inviteTx.hash}`);
+      await inviteTx.wait();
+      console.log('✅ Invitation confirmed');
+
+      // Verify membership
+      const isNowMember = await daoSpaceFactory.isMember(
+        spaceId,
+        TRANSFER_HELPER_TEST_ADDRESS,
+      );
+      console.log(
+        `${TRANSFER_HELPER_TEST_ADDRESS} is now member: ${isNowMember}`,
+      );
+
+      if (!isNowMember) {
+        console.warn(
+          '⚠️  Address may not be a member yet. Tokens may not be transferable.',
+        );
+      }
+    } catch (error) {
+      console.error('Error inviting member:', error.message);
+      console.log(
+        '⚠️  Continuing anyway, but token transfers may fail if address is not a member',
+      );
+    }
+
     // Step 2: Create proposal to deploy ownership token
     console.log(
       '\n=== Step 2: Creating proposal to deploy ownership token ===',
@@ -405,7 +482,7 @@ async function testOwnershipTokenCreationAndMinting(): Promise<void> {
       spaceId: spaceId,
       name: 'Test Ownership Token',
       symbol: 'TOT',
-      maxSupply: ethers.parseUnits('1000000', 18), // 1M tokens max
+      maxSupply: ethers.parseUnits('1000000000000000000000000', 18), // 1M tokens max
       isVotingToken: false, // Not setting as voting token for simplicity
     };
 
@@ -598,17 +675,22 @@ async function testOwnershipTokenCreationAndMinting(): Promise<void> {
       console.error('Error verifying token properties:', error.message);
     }
 
-    // Step 5: Create Proposal to Mint Tokens
-    console.log('\n=== Step 5: Creating proposal to mint tokens ===');
+    // Step 5: Create Proposal to Mint Tokens to TransferHelper test address
+    console.log(
+      '\n=== Step 5: Creating proposal to mint tokens to TransferHelper test address ===',
+    );
 
     const mintAmount = ethers.parseUnits('1000', 18); // Mint 1000 tokens
-    const mintTo = wallet.address; // Mint to the creator
+    const mintTo = TRANSFER_HELPER_TEST_ADDRESS; // Mint to the TransferHelper test address
 
     console.log(
       `Creating proposal to mint ${ethers.formatUnits(
         mintAmount,
         18,
       )} tokens to ${mintTo}`,
+    );
+    console.log(
+      '💡 These tokens will be used for testing TransferHelper functionality',
     );
 
     // Encode the mint function call
@@ -690,24 +772,54 @@ async function testOwnershipTokenCreationAndMinting(): Promise<void> {
     }
 
     // Step 8: Check token balance after minting
-    console.log('\n=== Step 8: Checking token balance ===');
+    console.log('\n=== Step 8: Checking token balances ===');
     try {
-      const tokenBalance = await ownershipSpaceToken.balanceOf(wallet.address);
+      const testAddressBalance = await ownershipSpaceToken.balanceOf(
+        TRANSFER_HELPER_TEST_ADDRESS,
+      );
+      const creatorBalance = await ownershipSpaceToken.balanceOf(
+        wallet.address,
+      );
       const newTotalSupply = await ownershipSpaceToken.totalSupply();
 
       console.log(
-        `Token balance: ${ethers.formatUnits(tokenBalance, 18)} tokens`,
+        `TransferHelper test address (${TRANSFER_HELPER_TEST_ADDRESS}) balance: ${ethers.formatUnits(
+          testAddressBalance,
+          18,
+        )} tokens`,
       );
       console.log(
-        `New total supply: ${ethers.formatUnits(newTotalSupply, 18)} tokens`,
+        `Creator balance: ${ethers.formatUnits(creatorBalance, 18)} tokens`,
+      );
+      console.log(
+        `Total supply: ${ethers.formatUnits(newTotalSupply, 18)} tokens`,
       );
 
-      if (mintProposalData.executed && tokenBalance > 0) {
-        console.log('✅ Tokens were successfully minted!');
+      if (mintProposalData.executed && testAddressBalance > 0) {
+        console.log(
+          '✅ Tokens were successfully minted to TransferHelper test address!',
+        );
+        console.log(
+          `💡 You can now use these tokens to test TransferHelper functionality`,
+        );
       } else if (!mintProposalData.executed) {
         console.log('⏳ Minting not yet executed');
       } else {
         console.log('⚠️  Minting may have failed');
+      }
+
+      // Verify the test address is a space member
+      const isMember = await daoSpaceFactory.isMember(
+        spaceId,
+        TRANSFER_HELPER_TEST_ADDRESS,
+      );
+      console.log(
+        `\n✅ ${TRANSFER_HELPER_TEST_ADDRESS} is space member: ${isMember}`,
+      );
+      if (isMember) {
+        console.log(
+          '💡 Token is transferable between space members including this address',
+        );
       }
     } catch (error) {
       console.error('Error checking token balance:', error.message);
@@ -716,6 +828,9 @@ async function testOwnershipTokenCreationAndMinting(): Promise<void> {
     console.log('\n=== Final Test Summary ===');
     console.log(`✅ Space created: ${spaceId}`);
     console.log(`✅ Ownership token deployed: ${tokenAddress}`);
+    console.log(
+      `✅ TransferHelper test address invited: ${TRANSFER_HELPER_TEST_ADDRESS}`,
+    );
     console.log(`✅ Deploy token proposal created: ${deployProposalId}`);
     console.log(`✅ Mint proposal created: ${mintProposalId}`);
     console.log(`✅ Deploy proposal executed: ${deployProposalData.executed}`);
@@ -725,8 +840,16 @@ async function testOwnershipTokenCreationAndMinting(): Promise<void> {
     );
     console.log('📊 The test demonstrated:');
     console.log('   - Token deployment through governance');
-    console.log('   - Token minting through governance');
+    console.log('   - Space member invitation');
+    console.log('   - Token minting through governance to specific address');
     console.log('   - Verification of token deployment and balance');
+    console.log('\n🔧 TransferHelper Testing:');
+    console.log(`   Token Address: ${tokenAddress}`);
+    console.log(`   Test Address: ${TRANSFER_HELPER_TEST_ADDRESS}`);
+    console.log(`   Token Amount: 1000 tokens`);
+    console.log(
+      '   Note: Use this token address in your TransferHelper test scripts',
+    );
 
     return;
   } catch (error) {

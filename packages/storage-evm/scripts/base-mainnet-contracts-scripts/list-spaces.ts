@@ -16,6 +16,12 @@ interface SpaceDetails {
   executor: string;
 }
 
+interface ParsedArgs {
+  startId?: number;
+  endId?: number;
+  latest?: number;
+}
+
 interface DAOSpaceFactoryInterface {
   getSpaceDetails: (spaceId: number) => Promise<SpaceDetails>;
   spaceCounter: () => Promise<bigint>;
@@ -101,9 +107,9 @@ const daoSpaceFactoryAbi = [
   },
 ];
 
-function parseArguments(): { startId?: number; endId?: number } {
+function parseArguments(): ParsedArgs {
   const args = process.argv.slice(2);
-  const result: { startId?: number; endId?: number } = {};
+  const result: ParsedArgs = {};
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -121,6 +127,9 @@ function parseArguments(): { startId?: number; endId?: number } {
         result.endId = parseInt(range[1], 10);
       }
       i++; // Skip the next argument as it's the value
+    } else if (arg === '--latest' && i + 1 < args.length) {
+      result.latest = parseInt(args[i + 1], 10);
+      i++; // Skip the next argument as it's the value
     } else if (arg === '--help' || arg === '-h') {
       console.log(`
 Usage: npx tsx list-spaces.ts [options]
@@ -129,6 +138,7 @@ Options:
   --start, --from <number>    Start space ID (default: 1)
   --end, --to <number>        End space ID (default: spaceCounter)
   --range <start,end>         Range of space IDs (e.g., --range 1,10)
+  --latest <number>           List the latest N spaces in descending order
   --help, -h                  Show this help message
 
 Examples:
@@ -136,6 +146,7 @@ Examples:
   npx tsx list-spaces.ts --start 10 --end 20   # List spaces 10-20
   npx tsx list-spaces.ts --range 100,115       # List spaces 100-115
   npx tsx list-spaces.ts --from 116            # List spaces from 116 to end
+  npx tsx list-spaces.ts --latest 10           # List the 10 most recent spaces
       `);
       process.exit(0);
     }
@@ -145,7 +156,7 @@ Examples:
 }
 
 async function main(): Promise<void> {
-  const { startId, endId } = parseArguments();
+  const { startId, endId, latest } = parseArguments();
 
   // Connect to the network
   const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
@@ -163,8 +174,16 @@ async function main(): Promise<void> {
     console.log(`Total number of spaces (counter): ${spaceCounter}`);
 
     // Determine the actual range to query
-    const actualStartId = startId || 1;
-    const actualEndId = endId || Number(spaceCounter);
+    let actualStartId: number;
+    let actualEndId: number;
+
+    if (latest) {
+      actualEndId = Number(spaceCounter);
+      actualStartId = Math.max(1, actualEndId - latest + 1);
+    } else {
+      actualStartId = startId || 1;
+      actualEndId = endId || Number(spaceCounter);
+    }
 
     // Validate range
     if (actualStartId < 1) {
@@ -180,8 +199,18 @@ async function main(): Promise<void> {
     let invalidSpaces = 0;
     const failedSpaceIds: number[] = [];
 
+    const spaceIdsToQuery: number[] = [];
+    if (latest) {
+      for (let i = actualEndId; i >= actualStartId; i--) {
+        spaceIdsToQuery.push(i);
+      }
+    } else {
+      for (let i = actualStartId; i <= actualEndId; i++) {
+        spaceIdsToQuery.push(i);
+      }
+    }
     // Iterate through the specified range of spaces
-    for (let spaceId = actualStartId; spaceId <= actualEndId; spaceId++) {
+    for (const spaceId of spaceIdsToQuery) {
       try {
         const spaceDetails = await daoSpaceFactory.getSpaceDetails(spaceId);
 

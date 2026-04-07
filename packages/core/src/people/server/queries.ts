@@ -8,6 +8,7 @@ import {
   Person as DbPerson,
   memberships,
   spaces,
+  documents,
 } from '@hypha-platform/storage-postgres';
 import { sql, eq, inArray, and } from 'drizzle-orm';
 import invariant from 'tiny-invariant';
@@ -37,6 +38,8 @@ export const getDefaultFields = () => {
 
 export const mapToDomainPerson = (dbPerson: Partial<DbPerson>): Person => {
   invariant(dbPerson.slug, 'Person must have a slug');
+  invariant(dbPerson.createdAt, 'Person must have createdAt');
+  invariant(dbPerson.updatedAt, 'Person must have updatedAt');
 
   return {
     id: dbPerson.id!,
@@ -52,6 +55,8 @@ export const mapToDomainPerson = (dbPerson: Partial<DbPerson>): Person => {
     nickname: nullToUndefined(dbPerson.nickname ?? null),
     address: nullToUndefined(dbPerson.address ?? null),
     links: nullToUndefined(dbPerson.links ?? null),
+    createdAt: dbPerson.createdAt!,
+    updatedAt: dbPerson.updatedAt!,
   };
 };
 
@@ -270,6 +275,23 @@ export const findPeopleBySpaceSlug = async (
   };
 };
 
+export type FindPersonsBySlugInput = {
+  slugs: Array<string>;
+};
+export const findPersonsBySlug = async (
+  { slugs }: FindPersonsBySlugInput,
+  { db }: DbConfig,
+) => {
+  if (slugs.length === 0) return [];
+
+  const persons = await db
+    .select()
+    .from(people)
+    .where(inArray(people.slug, slugs));
+
+  return persons.map(mapToDomainPerson);
+};
+
 export type FindPersonBySlugInput = {
   slug: string;
 };
@@ -303,7 +325,9 @@ export const findSelf = async ({ db }: DbConfig) => {
     return mapToDomainPerson(dbPerson);
   } catch (error) {
     console.error('Error finding authenticated user:', error);
-    return null;
+    throw error instanceof Error
+      ? new Error('Error finding authenticated user', { cause: error })
+      : new Error(String(error));
   }
 };
 
@@ -376,4 +400,45 @@ export const findPersonByAddresses = async (
       hasPreviousPage,
     },
   };
+};
+
+export const findDocumentsCreatorsForNotifications = async (
+  {
+    proposalIds,
+  }: {
+    proposalIds: number[];
+  },
+  { db }: DbConfig,
+) => {
+  return await db
+    .select({
+      slug: people.slug,
+      spaceTitle: spaces.title,
+      spaceSlug: spaces.slug,
+      proposalTitle: documents.title,
+      proposalLabel: documents.label,
+      proposalState: documents.state,
+    })
+    .from(documents)
+    .innerJoin(people, eq(documents.creatorId, people.id))
+    .innerJoin(spaces, eq(documents.spaceId, spaces.id))
+    .where(inArray(documents.web3ProposalId, proposalIds))
+    .groupBy(documents.id, people.slug, spaces.slug, spaces.title);
+};
+
+export type FindPersonBySubInput = {
+  sub: string;
+};
+export const findPersonBySub = async (
+  { sub }: FindPersonBySubInput,
+  { db }: DbConfig,
+) => {
+  const [person] = await db
+    .select()
+    .from(people)
+    .where(eq(people.sub, sub))
+    .limit(1);
+  if (!person) return null;
+
+  return mapToDomainPerson(person);
 };

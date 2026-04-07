@@ -1,10 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTransfersByAddress } from '@hypha-platform/core/server';
-import { schemaGetTransfersQuery } from '@hypha-platform/core/client';
-import { findPersonByWeb3Address } from '@hypha-platform/core/server';
-import { db } from '@hypha-platform/storage-postgres';
+import {
+  getTransfersByAddress,
+  getTokenMeta,
+  findAllTokens,
+} from '@hypha-platform/core/server';
+import {
+  schemaGetTransfersQuery,
+  validTokenTypes,
+  TokenType,
+} from '@hypha-platform/core/client';
+import {
+  findPersonByWeb3Address,
+  findSpaceByAddress,
+} from '@hypha-platform/core/server';
 import { findPersonBySlug, getDb } from '@hypha-platform/core/server';
-import { headers } from 'next/headers';
+import { zeroAddress } from 'viem';
+import { hasEmojiOrLink, tryDecodeUriPart } from '@hypha-platform/ui-utils';
+import { ProfileRouteParams } from '@hypha-platform/epics';
+import { findAllTransfers } from '@hypha-platform/core/server';
 
 /**
  * A route to get ERC20 transfers for a user.
@@ -17,13 +30,14 @@ import { headers } from 'next/headers';
  * - toBlock: the maximum block number from which to get the transfers. Optional
  * - limit: the desired number of the result. Not greater than 50. Defaults to 10
  */
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ personSlug: string }> },
+  { params }: { params: Promise<ProfileRouteParams> },
 ) {
-  const { personSlug } = await params;
-  const headersList = await headers();
-  const authToken = headersList.get('Authorization')?.split(' ')[1] || '';
+  const { personSlug: personSlugRaw } = await params;
+  const personSlug = tryDecodeUriPart(personSlugRaw);
+  const authToken = request.headers.get('Authorization')?.split(' ')[1] || '';
   if (!authToken) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -60,25 +74,95 @@ export async function GET(
       limit,
     });
 
-    const transfersWithPersonsInfo = await Promise.all(
+    const dbTransfers = await findAllTransfers(
+      { db: getDb({ authToken }) },
+      {},
+    );
+
+    const memoMap = new Map(
+      dbTransfers.map((dbTransfer) => [
+        dbTransfer.transactionHash.toLowerCase(),
+        dbTransfer.memo,
+      ]),
+    );
+
+    const rawDbTokens = await findAllTokens(
+      { db: getDb({ authToken }) },
+      { search: undefined },
+    );
+    const dbTokens = rawDbTokens.map((token) => ({
+      agreementId: token.agreementId ?? undefined,
+      spaceId: token.spaceId ?? undefined,
+      name: token.name,
+      symbol: token.symbol,
+      maxSupply: token.maxSupply,
+      type: validTokenTypes.includes(token.type as TokenType)
+        ? (token.type as TokenType)
+        : 'utility',
+      iconUrl: token.iconUrl ?? undefined,
+      transferable: token.transferable,
+      isVotingToken: token.isVotingToken,
+      address: token.address ?? undefined,
+    }));
+
+    const transfersWithEntityInfo = await Promise.all(
       transfers.map(async (transfer) => {
+        const tokenMeta = await getTokenMeta(
+          transfer.token as `0x${string}`,
+          dbTokens,
+        );
+        const name = tokenMeta.name || 'Unnamed';
+        const symbol = tokenMeta.symbol || 'UNKNOWN';
+        if (hasEmojiOrLink(name) || hasEmojiOrLink(symbol)) {
+          return null;
+        }
+
         const isIncoming = transfer.to.toUpperCase() === address.toUpperCase();
         const counterpartyAddress = isIncoming ? transfer.from : transfer.to;
+        let person = null;
+        let space = null;
+        const tokenIcon = tokenMeta.icon;
 
-        const counterpartyPerson = await findPersonByWeb3Address(
+        person = await findPersonByWeb3Address(
           { address: counterpartyAddress },
-          { db },
+          { db: getDb({ authToken }) },
         );
+        if (!person) {
+          space = await findSpaceByAddress(
+            { address: counterpartyAddress },
+            { db: getDb({ authToken }) },
+          );
+        }
+
+        const memo =
+          memoMap.get(transfer.transaction_hash.toLowerCase()) || null;
+
         return {
           ...transfer,
-          person: counterpartyPerson,
+          memo,
+          person: person
+            ? {
+                name: person.name,
+                surname: person.surname,
+                avatarUrl: person.avatarUrl,
+              }
+            : undefined,
+          space: space
+            ? {
+                title: space.title,
+                avatarUrl: space.logoUrl,
+              }
+            : undefined,
+          tokenIcon,
           direction: isIncoming ? 'incoming' : 'outgoing',
           counterparty: isIncoming ? 'from' : 'to',
         };
       }),
     );
 
-    return NextResponse.json(transfersWithPersonsInfo);
+    const validTransfers = transfersWithEntityInfo.filter((t) => t !== null);
+
+    return NextResponse.json(validTransfers);
   } catch (error: any) {
     const errorMessage =
       error?.message || error?.shortMessage || JSON.stringify(error);

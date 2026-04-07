@@ -22,11 +22,11 @@ interface IDAOSpaceFactory {
     SpaceCreationParams memory params
   ) external returns (uint256);
 
-  function joinSpace(uint256 _spaceId) external;
+  function joinSpace(uint256 _spaceId) external returns (uint256);
 
   function addMember(uint256 _spaceId, address _memberAddress) external;
 
-  //function removeMember(uint256 _spaceId, address _memberToRemove) external;
+  function removeMember(uint256 _spaceId, address _memberToRemove) external;
 
   function getSpaceMembers(
     uint256 _spaceId
@@ -116,5 +116,4 @@ interface IDAOSpaceFactory {
     uint256 oldJoinMethod,
     uint256 newJoinMethod
   );
-
 }

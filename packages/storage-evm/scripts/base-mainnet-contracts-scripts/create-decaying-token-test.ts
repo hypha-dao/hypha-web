@@ -411,11 +411,11 @@ async function testDecayingTokenCreationAndVoting(): Promise<void> {
       spaceId: spaceId,
       name: 'Test Decay Token',
       symbol: 'TDT',
-      maxSupply: ethers.parseUnits('1000000', 18), // 1M tokens max
-      transferable: true,
-      isVotingToken: true, // Set as voting token
-      decayPercentage: 500, // 5% decay (500 basis points)
-      decayInterval: 86400, // 1 day in seconds
+      maxSupply: 0, // Change to unlimited like the working token
+      transferable: false, // Change to false like the working token
+      isVotingToken: false, // Change to false to test
+      decayPercentage: 1, // Change to 1 bp like the working token
+      decayInterval: 604800, // Change to 1 week like the working token
     };
 
     console.log('Creating proposal to deploy decaying token with parameters:', {

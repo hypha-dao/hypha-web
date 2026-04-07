@@ -1,0 +1,20 @@
+{
+  "name": "@hypha-platform/notifications",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@hypha-platform/config-typescript": "workspace:*"
+  },
+  "dependencies": {
+    "@hypha-platform/core": "workspace:*",
+    "@hypha-platform/storage-postgres": "workspace:*",
+    "@onesignal/node-onesignal": "5.3.1-beta1",
+    "react": "^19.1.2",
+    "react-onesignal": "^3.4.0"
+  },
+  "exports": {
+    "./client": "./src/client.ts",
+    "./server": "./src/server.ts",
+    "./template": "./src/template/index.ts"
+  }
+}

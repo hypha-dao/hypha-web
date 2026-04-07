@@ -1,11 +1,13 @@
+'use client';
+
 import { MemberHead } from './member-head';
 import { Skeleton, Button, Separator } from '@hypha-platform/ui';
 import { RxCross1 } from 'react-icons/rx';
 import Link from 'next/link';
 import { MemberSpaces } from './member-spaces';
 import { Address, Space } from '@hypha-platform/core/client';
-import { UseDocuments } from '../../governance';
 import { Locale } from '@hypha-platform/i18n';
+import { useTranslations } from 'next-intl';
 
 type MemberType = {
   avatarUrl?: string;
@@ -23,9 +25,7 @@ export type MemberDetailProps = {
   closeUrl: string;
   member: MemberType;
   isLoading: boolean;
-  basePath: string;
   spaces: Space[];
-  useDocuments: UseDocuments;
 };
 
 export const MemberDetail = ({
@@ -33,10 +33,10 @@ export const MemberDetail = ({
   lang,
   closeUrl,
   member,
-  basePath,
   spaces,
-  useDocuments,
 }: MemberDetailProps) => {
+  const tCommon = useTranslations('Common');
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex gap-5 justify-between">
@@ -47,7 +47,7 @@ export const MemberDetail = ({
             colorVariant="neutral"
             className="flex items-center"
           >
-            Close
+            {tCommon('close')}
             <RxCross1 className="ml-2" />
           </Button>
         </Link>

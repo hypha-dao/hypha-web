@@ -9,9 +9,13 @@ import React from 'react';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { Button } from '@hypha-platform/ui';
 import { useMe } from '@hypha-platform/core/client';
+import { Locale } from '@hypha-platform/i18n';
+import { useTranslations } from 'next-intl';
+import { getDhoPathAgreements } from '../../common';
 
 interface CreateSpaceFormProps {
   parentSpaceId: number | null;
+  parentSpaceSlug: string;
   successfulUrl: string;
   backUrl?: string;
 }
@@ -20,7 +24,10 @@ export const CreateSubspaceForm = ({
   successfulUrl,
   backUrl,
   parentSpaceId,
+  parentSpaceSlug,
 }: CreateSpaceFormProps) => {
+  const t = useTranslations('Spaces');
+  const { lang } = useParams();
   const router = useRouter();
   const config = useConfig();
   const { person } = useMe();
@@ -37,34 +44,38 @@ export const CreateSubspaceForm = ({
 
   React.useEffect(() => {
     if (progress === 100 && spaceSlug) {
-      router.push(successfulUrl);
+      router.push(getDhoPathAgreements(lang as Locale, spaceSlug));
     }
   }, [progress, spaceSlug]);
 
   return (
     <LoadingBackdrop
+      showKeepWindowOpenMessage={true}
+      fullHeight={true}
       progress={progress}
       isLoading={isPending}
       message={
         isError ? (
           <div className="flex flex-col">
-            <div>Ouh Snap. There was an error</div>
-            <Button onClick={reset}>Reset</Button>
+            <div>{t('errorOhSnap')}</div>
+            <Button onClick={reset}>{t('reset')}</Button>
           </div>
         ) : (
           <div>{currentAction}</div>
         )
       }
-      className="-m-4 lg:-m-7"
     >
       <SpaceForm
         isLoading={false}
         creator={{ name: person?.name, surname: person?.surname }}
         closeUrl={successfulUrl}
         backUrl={backUrl}
-        backLabel="Back to Settings"
-        onSubmit={createSpace}
-        parentSpaceId={parentSpaceId as number}
+        backLabel={t('backToSettings')}
+        onSubmit={(values) => createSpace(values)}
+        initialParentSpaceId={parentSpaceId as number}
+        parentSpaceSlug={parentSpaceSlug}
+        label="add"
+        slugIncorrectMessage={t('slugAlreadyExistsLong')}
       />
     </LoadingBackdrop>
   );

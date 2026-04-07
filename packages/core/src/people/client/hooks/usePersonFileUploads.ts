@@ -1,6 +1,6 @@
 'use client';
 
-import { useFileUpload, editPersonFiles } from '@hypha-platform/core/client';
+import { useImageUpload, editPersonFiles } from '@hypha-platform/core/client';
 import React from 'react';
 import { z } from 'zod';
 
@@ -22,8 +22,8 @@ export const usePersonFileUploads = (
   const [files, setFiles] = React.useState<{ [K in keyof Files]: string }>(
     {} as { [K in keyof Files]: string },
   );
-  const { upload, isUploading } = useFileUpload({
-    headers: { Authorization: `Bearer ${authToken}` },
+  const { upload, isUploading } = useImageUpload({
+    authorizationToken: authToken ?? undefined,
   });
 
   const handleUpload = React.useCallback(

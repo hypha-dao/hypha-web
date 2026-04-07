@@ -11,11 +11,29 @@ const customLinkStyles: React.CSSProperties = {
 
 const customLabelStyles: React.CSSProperties = {
   fontSize: '12px',
-  fontWeight: '510',
+  fontWeight: '500',
   marginBottom: '12px',
 };
 
-export const Footer = () => {
+type FooterProps = {
+  networkLabel?: string;
+  legalLabel?: string;
+  hyphaServicesLabel?: string;
+  hyphaTokenomicsLabel?: string;
+  licensingPolicyLabel?: string;
+  termsAndConditionsLabel?: string;
+  privacyPolicyLabel?: string;
+};
+
+export const Footer = ({
+  networkLabel = 'NETWORK',
+  legalLabel = 'LEGAL',
+  hyphaServicesLabel = 'Hypha Services',
+  hyphaTokenomicsLabel = 'Hypha Tokenomics',
+  licensingPolicyLabel = 'Licensing policy',
+  termsAndConditionsLabel = 'Terms & Conditions',
+  privacyPolicyLabel = 'Privacy Policy',
+}: FooterProps) => {
   return (
     <div className="bg-background-2">
       <Container>
@@ -24,94 +42,73 @@ export const Footer = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-0 py-8">
           <div className="flex flex-col items-start space-y-4 md:space-y-0">
-            <Text style={customLabelStyles}>THE NETWORK</Text>
+            <Text style={customLabelStyles}>{networkLabel}</Text>
             <Button
               asChild
               variant="ghost"
               className="rounded-lg justify-start text-gray-400 px-0"
             >
-              <Link style={customLinkStyles} href="/">
-                Explore
+              <Link
+                rel="noopener noreferrer"
+                style={customLinkStyles}
+                target="_blank"
+                href="https://hypha.services/"
+              >
+                {hyphaServicesLabel}
               </Link>
             </Button>
-            <Button
+            {/* NOTE: Turned off until a new constitution is provided,
+                      which is still in development. */}
+            {/* <Button
               asChild
               variant="ghost"
               className="rounded-lg justify-start text-gray-400 px-0"
             >
-              <Link style={customLinkStyles} href="/">
-                My Network
+              <Link
+                rel="noopener noreferrer"
+                style={customLinkStyles}
+                target="_blank"
+                href="https://assets.hypha.earth/files/Hypha%20DAO%20Constitution.pdf?_gl=1*1firc45*_ga*MTk3MzcyMDY5LjE2OTcwMzY0NDA.*_ga_JM4W5HJMYV*czE3NTQ1ODMzMDkkbzM4MyRnMSR0MTc1NDU4MzMxNyRqNjAkbDAkaDA"
+              >
+                Hypha Constitution
               </Link>
-            </Button>
+            </Button> */}
             <Button
               asChild
               variant="ghost"
               className="rounded-lg justify-start text-gray-400 px-0"
             >
-              <Link style={customLinkStyles} href="/">
-                Wallet
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant="ghost"
-              className="rounded-lg justify-start text-gray-400 px-0"
-            >
-              <Link style={customLinkStyles} href="/">
-                Notifications
-              </Link>
-            </Button>
-          </div>
-
-          <div className="flex flex-col items-start space-y-4 md:space-y-0">
-            <Text style={customLabelStyles}>GET STARTED</Text>
-            <Button
-              asChild
-              variant="ghost"
-              className="rounded-lg justify-start text-gray-400 px-0"
-            >
-              <Link style={customLinkStyles} href="/">
-                Create Hypha Account
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant="ghost"
-              className="rounded-lg justify-start text-gray-400 px-0"
-            >
-              <Link style={customLinkStyles} href="/">
-                Create Your Space
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant="ghost"
-              className="rounded-lg justify-start text-gray-400 px-0"
-            >
-              <Link style={customLinkStyles} href="/">
-                Develop With Us
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant="ghost"
-              className="rounded-lg justify-start text-gray-400 px-0"
-            >
-              <Link style={customLinkStyles} href="/">
-                Join a Space
+              <Link
+                rel="noopener noreferrer"
+                style={customLinkStyles}
+                target="_blank"
+                href={
+                  process.env.NEXT_PUBLIC_HYPHA_TOKENOMICS_DOCS_URL ||
+                  'https://assets.hypha.earth/files/Tokenomics_Paper.pdf'
+                }
+              >
+                {hyphaTokenomicsLabel}
               </Link>
             </Button>
           </div>
 
           <div className="flex flex-col items-start space-y-4 md:space-y-0">
-            <Text style={customLabelStyles}>DAO SERVICES</Text>
+            <Text style={customLabelStyles}>{legalLabel}</Text>
             <Button
               asChild
               variant="ghost"
               className="rounded-lg justify-start text-gray-400 px-0"
             >
-              <Link style={customLinkStyles} href="/">
-                Launch Programme
+              <Link
+                rel="noopener noreferrer"
+                style={customLinkStyles}
+                target="_blank"
+                href={
+                  process.env.NEXT_PUBLIC_LICENCE_URL ||
+                  'https://assets.hypha.earth/files/Hypha_Licensing_Policy.pdf'
+                }
+              >
+                {licensingPolicyLabel}
               </Link>
             </Button>
             <Button
@@ -119,8 +116,16 @@ export const Footer = () => {
               variant="ghost"
               className="rounded-lg justify-start text-gray-400 px-0"
             >
-              <Link style={customLinkStyles} href="/">
-                Expert Deep Dives
+              <Link
+                rel="noopener noreferrer"
+                style={customLinkStyles}
+                target="_blank"
+                href={
+                  process.env.NEXT_PUBLIC_TERMS_URL ||
+                  'https://assets.hypha.earth/files/Hypha_Terms_And_Conditions.pdf'
+                }
+              >
+                {termsAndConditionsLabel}
               </Link>
             </Button>
             <Button
@@ -128,19 +133,32 @@ export const Footer = () => {
               variant="ghost"
               className="rounded-lg justify-start text-gray-400 px-0"
             >
-              <Link style={customLinkStyles} href="/">
-                Founders Round Table
+              <Link
+                rel="noopener noreferrer"
+                style={customLinkStyles}
+                target="_blank"
+                href={
+                  process.env.NEXT_PUBLIC_PRIVACY_URL ||
+                  'https://assets.hypha.earth/files/Hypha_Privacy_Policy.pdf'
+                }
+              >
+                {privacyPolicyLabel}
               </Link>
             </Button>
-            <Button
+            {/* <Button
               asChild
               variant="ghost"
               className="rounded-lg justify-start text-gray-400 px-0"
             >
-              <Link style={customLinkStyles} href="/">
-                Activation Group
+              <Link
+                rel="noopener noreferrer"
+                style={customLinkStyles}
+                target='_blank'
+                href="https://hypha.earth/cookie-policy/"
+              >
+                Cookie Policy
               </Link>
-            </Button>
+            </Button> */}
           </div>
         </div>
       </Container>

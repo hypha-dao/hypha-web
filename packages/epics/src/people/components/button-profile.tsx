@@ -10,35 +10,54 @@ import {
 } from '@hypha-platform/ui';
 import { PersonAvatar } from './person-avatar';
 import { EthAddress } from './eth-address';
-import { TrashIcon, LogOutIcon } from 'lucide-react';
+import { TrashIcon, LogOutIcon, Repeat, Shield } from 'lucide-react';
 import { ButtonNavItem, ButtonNavItemProps } from '@hypha-platform/ui';
 import Link from 'next/link';
+import { Person } from '@hypha-platform/core/client';
+import { Text } from '@radix-ui/themes';
+import { usePrivy, useMfaEnrollment } from '@privy-io/react-auth';
+import { useTranslations } from 'next-intl';
+import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export type ButtonProfileProps = {
-  avatarSrc?: string;
-  userName?: string;
   address?: string;
   isConnected: boolean;
   onLogin: () => void;
   onLogout: () => void;
   onDelete?: () => void;
-  onEdit?: () => void;
+  onChangeThemeMode?: () => void;
   profileUrl?: string;
+  notificationCentrePath?: string;
   navItems: ButtonNavItemProps[];
+  person?: Person;
+  resolvedTheme?: string;
 };
 
 export const ButtonProfile = ({
-  avatarSrc,
-  userName,
+  person,
   isConnected,
   address,
   onLogin,
   onLogout,
   onDelete,
-  onEdit,
   profileUrl,
+  notificationCentrePath,
   navItems,
+  onChangeThemeMode,
+  resolvedTheme,
 }: ButtonProfileProps) => {
+  const t = useTranslations('Navigation');
+  const pathname = usePathname();
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const { user } = usePrivy();
+  const { showMfaEnrollmentModal } = useMfaEnrollment();
+  const hasMfaMethods = user && user.mfaMethods && user.mfaMethods.length > 0;
+
+  useEffect(() => {
+    setProfileMenuOpen(false);
+  }, [pathname]);
+
   return (
     <div>
       {isConnected ? (
@@ -47,11 +66,11 @@ export const ButtonProfile = ({
           <div className="flex flex-col justify-center gap-8 md:hidden">
             <div className="flex flex-col items-center gap-2">
               <PersonAvatar
-                avatarSrc={avatarSrc}
-                userName={userName}
+                avatarSrc={person?.avatarUrl}
+                userName={person?.nickname}
                 size="lg"
               />
-              <p>{userName}</p>
+              <p>{person?.nickname}</p>
               {address && (
                 <div>
                   <EthAddress address={address} />
@@ -68,25 +87,50 @@ export const ButtonProfile = ({
             ))}
 
             {profileUrl && (
-              <ButtonNavItem href={profileUrl} label="My Profile" />
+              <ButtonNavItem href={profileUrl} label={t('myProfile')} />
             )}
 
-            {onEdit && (
-              <ButtonNavItem onClick={onEdit} label="Edit My Profile" />
+            {notificationCentrePath && (
+              <ButtonNavItem
+                label={t('notificationCentre')}
+                href={notificationCentrePath}
+              />
             )}
 
-            {onDelete && (
+            {/* TODO: It is necessary to implement profile deletion as part of a separate task */}
+            {/* {onDelete && (
               <ButtonNavItem
                 onClick={onDelete}
                 classNames="text-error-11"
-                label="Delete Profile"
+                label="Delete"
+              />
+            )} */}
+
+            <ButtonNavItem
+              onClick={onChangeThemeMode}
+              label={
+                resolvedTheme === 'dark'
+                  ? t('switchToLightMode')
+                  : t('switchToDarkMode')
+              }
+            />
+
+            {hasMfaMethods ? (
+              <ButtonNavItem
+                onClick={showMfaEnrollmentModal}
+                label={t('updateMfa')}
+              />
+            ) : (
+              <ButtonNavItem
+                onClick={showMfaEnrollmentModal}
+                label={t('protectMfa')}
               />
             )}
 
             <ButtonNavItem
               onClick={onLogout}
               classNames="text-error-11"
-              label="Logout"
+              label={t('logout')}
             />
           </div>
 
@@ -101,46 +145,104 @@ export const ButtonProfile = ({
                 />
               ))}
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger>
-                <PersonAvatar
-                  size="md"
-                  avatarSrc={avatarSrc}
-                  userName={userName}
-                />
+            <DropdownMenu
+              open={profileMenuOpen}
+              onOpenChange={setProfileMenuOpen}
+            >
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="rounded-lg outline-none"
+                  aria-label={t('openProfileMenu')}
+                >
+                  <PersonAvatar
+                    size="md"
+                    avatarSrc={person?.avatarUrl}
+                    userName={person?.nickname}
+                  />
+                </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                {profileUrl && (
-                  <DropdownMenuItem className="text-1">
-                    <Link href={profileUrl}>My Profile</Link>
-                  </DropdownMenuItem>
-                )}
-                {onEdit && (
-                  <DropdownMenuItem onClick={onEdit} className="text-1">
-                    Edit My Profile
-                  </DropdownMenuItem>
-                )}
+              <DropdownMenuContent className="bg-neutral-2 rounded-[6px] min-w-[185px] flex flex-col">
+                <Text className="text-2 font-medium text-foreground">
+                  {person?.name} {person?.surname}
+                </Text>
                 {address && (
-                  <DropdownMenuItem className="text-1 flex justify-between">
+                  <DropdownMenuItem className="px-0 text-1 flex justify-between">
                     <EthAddress address={address} />
                   </DropdownMenuItem>
+                )}
+                {profileUrl && (
+                  <DropdownMenuItem className="px-0 text-1" asChild>
+                    <Link className="text-accent-11" href={profileUrl}>
+                      {t('viewProfile')}
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                {notificationCentrePath && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="px-0 text-1" asChild>
+                      <Link
+                        className="text-accent-11"
+                        href={notificationCentrePath}
+                      >
+                        {t('notificationCentre')}
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+                <DropdownMenuSeparator />
+                {onChangeThemeMode && (
+                  <DropdownMenuItem
+                    onClick={onChangeThemeMode}
+                    className="px-0 text-1 flex justify-between"
+                  >
+                    {resolvedTheme === 'dark'
+                      ? t('switchToLightMode')
+                      : t('switchToDarkMode')}
+                    <Repeat className="icon-sm" />
+                  </DropdownMenuItem>
+                )}
+                {hasMfaMethods ? (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={showMfaEnrollmentModal}
+                      className="px-0 text-1"
+                    >
+                      {t('updateMfa')}
+                      <Shield className="icon-sm" />
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={showMfaEnrollmentModal}
+                      className="px-0 text-1 flex justify-between"
+                    >
+                      {t('protectMfa')}
+                      <Shield className="icon-sm" />
+                    </DropdownMenuItem>
+                  </>
                 )}
                 <DropdownMenuSeparator />
                 {onDelete && (
                   <DropdownMenuItem
                     onClick={onDelete}
-                    className="text-1 text-error-11 flex justify-between"
+                    className="px-0 text-1 flex justify-between"
+                    disabled
                   >
-                    Delete Profile
+                    {t('delete')}
                     <TrashIcon className="icon-sm" />
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={onLogout}
-                  className="text-1 text-error-11 flex justify-between"
+                  className="px-0 text-1 text-error-11 flex justify-between"
                 >
-                  Logout
+                  {t('logout')}
                   <LogOutIcon className="icon-sm" />
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -156,13 +258,13 @@ export const ButtonProfile = ({
               label={item.label}
             />
           ))}
-          <Button onClick={onLogin}>Sign in</Button>
+          <Button onClick={onLogin}>{t('signIn')}</Button>
           <Button
             className="hidden md:flex"
             variant="outline"
             onClick={onLogin}
           >
-            Get started
+            {t('getStarted')}
           </Button>
         </div>
       )}

@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useFormContext, useFieldArray } from 'react-hook-form';
 import { TokenPayoutField } from './token-payout-field';
 import {
@@ -8,24 +9,47 @@ import {
   FormItem,
   FormControl,
   FormMessage,
+  RequirementMark,
 } from '@hypha-platform/ui';
 import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
+import { TokenType } from '@hypha-platform/core/client';
+import { useTranslations } from 'next-intl';
 
 export interface Token {
   icon: string;
   symbol: string;
   address: `0x${string}`;
+  value?: number;
+  tokenPrice?: number;
+  space?: {
+    title: string;
+    slug: string;
+  };
+  type?: TokenType | null;
 }
 
 interface TokenPayoutFieldArrayProps {
   tokens: Token[];
   name?: string;
+  label?: string;
+  allowAddOrRemove?: boolean;
+  showSelectedTokenBalanceHint?: boolean;
+  showTreasuryBalanceHint?: boolean;
+  selectedTokenPriceHint?: string;
 }
 
-export const TokenPayoutFieldArray = ({
+function TokenPayoutFieldArrayInner({
   tokens,
   name = 'payouts',
-}: TokenPayoutFieldArrayProps) => {
+  label,
+  allowAddOrRemove = true,
+  showSelectedTokenBalanceHint = false,
+  showTreasuryBalanceHint = false,
+  selectedTokenPriceHint,
+}: TokenPayoutFieldArrayProps) {
+  const tAgreementFlow = useTranslations('AgreementFlow');
+  const resolvedLabel =
+    label ?? tAgreementFlow('plugins.tokenPayoutFieldArray.paymentRequest');
   const { control } = useFormContext();
   const { fields, append, remove } = useFieldArray({
     control,
@@ -49,11 +73,11 @@ export const TokenPayoutFieldArray = ({
 
   return (
     <div className="flex flex-col gap-2 w-full">
-      <div className="flex flex-col gap-4 md:gap-8 md:flex-row md:items-start w-full">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start w-full">
         <label className="text-2 text-neutral-11 whitespace-nowrap md:min-w-max items-center md:pt-1">
-          Payment Request
+          {resolvedLabel} <RequirementMark />
         </label>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 grow min-w-0">
           {fields.map((field, index) => (
             <div key={field.id} className="flex md:justify-end gap-2">
               <div className="">
@@ -67,30 +91,46 @@ export const TokenPayoutFieldArray = ({
                           value={value}
                           onChange={onChange}
                           tokens={tokens}
+                          showSelectedTokenBalanceHint={
+                            showSelectedTokenBalanceHint ||
+                            showTreasuryBalanceHint
+                          }
+                          useTreasuryBalanceLine={showTreasuryBalanceHint}
+                          selectedTokenPriceHint={selectedTokenPriceHint}
                         />
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage
+                        custom={tAgreementFlow(
+                          'plugins.tokenPayoutFieldArray.enterAmountAndToken',
+                        )}
+                      />
                     </FormItem>
                   )}
                 />
               </div>
-              <Button
-                variant="ghost"
-                onClick={(ev) => handleDeleteField(ev, index)}
-                className="px-2 md:px-3"
-              >
-                <Cross2Icon />
-              </Button>
+              {allowAddOrRemove && (
+                <Button
+                  variant="ghost"
+                  onClick={(ev) => handleDeleteField(ev, index)}
+                  className="px-2 md:px-3"
+                >
+                  <Cross2Icon />
+                </Button>
+              )}
             </div>
           ))}
         </div>
       </div>
-      <div className="flex justify-end w-full">
-        <Button className="w-fit" onClick={handleAddField} variant="ghost">
-          <PlusIcon />
-          Add
-        </Button>
-      </div>
+      {allowAddOrRemove && (
+        <div className="flex justify-end w-full">
+          <Button className="w-fit" onClick={handleAddField} variant="ghost">
+            <PlusIcon />
+            {tAgreementFlow('plugins.tokenPayoutFieldArray.add')}
+          </Button>
+        </div>
+      )}
     </div>
   );
-};
+}
+
+export const TokenPayoutFieldArray = React.memo(TokenPayoutFieldArrayInner);

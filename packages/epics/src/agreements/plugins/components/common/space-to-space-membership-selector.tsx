@@ -1,0 +1,136 @@
+'use client';
+
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { Image, Combobox } from '@hypha-platform/ui';
+import { Space, Person } from '@hypha-platform/core/client';
+import { useFilterSpacesListWithDiscoverability } from '@hypha-platform/epics';
+import { useTranslations } from 'next-intl';
+
+type SpaceToSpaceMembershipSelectorProps = {
+  memberOptions?: Person[];
+  spaceOptions?: Space[];
+  value?: string;
+  onChange?: (selected: Person | Space | null) => void;
+};
+
+export const SpaceToSpaceMembershipSelector = ({
+  memberOptions = [],
+  spaceOptions = [],
+  onChange,
+  value,
+}: SpaceToSpaceMembershipSelectorProps) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
+  const [selected, setSelected] = useState<Person | Space | null>(null);
+
+  const { filteredSpaces } = useFilterSpacesListWithDiscoverability({
+    spaces: spaceOptions,
+    useGeneralState: true,
+  });
+
+  useEffect(() => {
+    if (value) {
+      const foundMember = memberOptions.find((r) => r.address === value);
+      const foundSpace = filteredSpaces.find((s) => s.address === value);
+      setSelected(foundMember || foundSpace || null);
+    }
+  }, [value, memberOptions, filteredSpaces]);
+  const isSpace = filteredSpaces.length > 0 && memberOptions.length === 0;
+  const placeholder = isSpace
+    ? tAgreementFlow('plugins.spaceToSpaceMembershipSelector.findSpace')
+    : tAgreementFlow('plugins.spaceToSpaceMembershipSelector.findMember');
+  const title = isSpace
+    ? tAgreementFlow('plugins.spaceToSpaceMembershipSelector.spaceToJoin')
+    : tAgreementFlow(
+        'plugins.spaceToSpaceMembershipSelector.delegatedVotingMember',
+      );
+
+  const options = useMemo(() => {
+    const memberItems = memberOptions.map((member) => ({
+      value: String(member.address),
+      label: `${member.name} ${member.surname}`,
+      searchText: `${member.name} ${member.surname}`.toLowerCase(),
+      avatarUrl: member.avatarUrl,
+      address: member.address,
+    }));
+
+    const spaceItems = filteredSpaces.map((space) => ({
+      value: String(space.address),
+      label: space.title,
+      searchText: space.title.toLowerCase(),
+      avatarUrl: space.logoUrl,
+      address: space.address,
+    }));
+
+    return [...spaceItems, ...memberItems];
+  }, [memberOptions, filteredSpaces]);
+
+  const handleChange = useCallback(
+    (value: string) => {
+      const found = options.find((option) => option.value === value);
+      if (found) {
+        const source = [...memberOptions, ...filteredSpaces];
+        const originalItem = source.find(
+          (item) => item.address === found.value,
+        );
+        setSelected(originalItem || null);
+        onChange?.(originalItem || null);
+      } else {
+        setSelected(null);
+        onChange?.(null);
+      }
+    },
+    [options, memberOptions, filteredSpaces, onChange],
+  );
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-2 w-full justify-between">
+        <label className="text-2 text-neutral-11 w-full">{title}</label>
+        <div className="min-w-72 w-full">
+          <Combobox
+            options={options}
+            placeholder={placeholder}
+            onChange={handleChange}
+            initialValue={value}
+            renderOption={(option) => (
+              <>
+                {option.avatarUrl && (
+                  <Image
+                    src={option.avatarUrl}
+                    alt={option.label}
+                    width={24}
+                    height={24}
+                    className="rounded-full min-h-5"
+                  />
+                )}
+                <span className="text-ellipsis overflow-hidden text-nowrap">
+                  {option.label}
+                </span>
+              </>
+            )}
+            renderValue={(option) =>
+              option ? (
+                <div className="flex items-center gap-2 truncate">
+                  {option.avatarUrl && (
+                    <Image
+                      src={option.avatarUrl}
+                      alt={option.label}
+                      width={24}
+                      height={24}
+                      className="rounded-full min-h-5"
+                    />
+                  )}
+                  <span className="truncate text-ellipsis overflow-hidden text-nowrap">
+                    {option.label}
+                  </span>
+                </div>
+              ) : (
+                placeholder
+              )
+            }
+          />
+        </div>
+      </div>
+    </div>
+  );
+};

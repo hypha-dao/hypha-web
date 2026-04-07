@@ -1,9 +1,17 @@
 import { z } from 'zod';
-import { DEFAULT_IMAGE_ACCEPT } from '@hypha-platform/core/client';
+import {
+  ALLOWED_IMAGE_FILE_SIZE,
+  DEFAULT_FILE_ACCEPT,
+  DEFAULT_IMAGE_ACCEPT,
+} from '../assets/constant';
 import { isBefore } from 'date-fns';
-import { EntryMethodType } from './types';
+import {
+  EntryMethodType,
+  REFERENCE_CURRENCIES,
+  TOKEN_PRICE_REFERENCE_CURRENCIES,
+} from './types';
+import { getAddress, isAddress } from 'ethers';
 
-const ALLOWED_IMAGE_FILE_SIZE = 4 * 1024 * 1024;
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
 export const paymentScheduleOptions = [
@@ -104,8 +112,16 @@ export const paymentScheduleSchema = z
   });
 
 const createAgreementWeb2Props = {
-  title: z.string().min(1).max(50),
-  description: z.string().min(1).max(4000),
+  title: z
+    .string()
+    .trim()
+    .min(1, { message: 'Please add a title for your proposal' })
+    .max(50),
+  description: z
+    .string()
+    .trim()
+    .min(1, { message: 'Please add content to your proposal' })
+    .max(4000),
   slug: z
     .string()
     .min(1)
@@ -138,19 +154,58 @@ export const schemaCreateAgreementWeb2FileUrls = z.object(
   createAgreementWeb2FileUrls,
 );
 
+const isBrowserFile = (v: unknown): v is File =>
+  typeof File !== 'undefined' && v instanceof File;
+
+const leadImageFileSchema = z
+  .custom<File>(isBrowserFile, { message: 'Please upload a valid file' })
+  .refine(
+    (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
+    'Your file is too large and exceeds the 4MB limit. Please upload a smaller file.',
+  )
+  .refine(
+    (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
+    'File must be an image (JPEG, PNG, GIF, WEBP).',
+  );
+
+const attachmentFileSchema = z
+  .custom<File>(isBrowserFile, { message: 'Please upload a valid file' })
+  .refine(
+    (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
+    (file) => ({
+      message: `Your file "${file.name}" is too large and exceeds the 4MB limit. Please upload a smaller file.`,
+    }),
+  )
+  .refine(
+    (file) => DEFAULT_FILE_ACCEPT.includes(file.type),
+    (file) => ({
+      message: `This file "${file.name}" format isn’t supported. Please upload a JPEG, PNG, WebP, or PDF (up to 4MB).`,
+    }),
+  );
+
 export const createAgreementFiles = {
   leadImage: z
-    .instanceof(File)
-    .refine(
-      (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-      'File size must be less than 4MB',
-    )
-    .refine(
-      (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
-      'File must be an image (JPEG, PNG, GIF, WEBP)',
-    )
+    .union([
+      leadImageFileSchema,
+      z.string().url('Lead Image URL must be a valid URL'),
+    ])
     .optional(),
-  attachments: z.array(z.instanceof(File)).optional(),
+  attachments: z
+    .array(
+      z.union([
+        attachmentFileSchema,
+        z.string().url('Attachment URL must be a valid URL'),
+        z.object({
+          name: z.string().min(1, 'Attachment name is required'),
+          url: z.string().url('Attachment URL must be a valid URL'),
+        }),
+      ]),
+    )
+    .max(3, {
+      message:
+        'You can attach up to 3 files. Please remove the extra attachments.',
+    })
+    .optional(),
 };
 
 export const schemaCreateAgreementFiles = z.object(createAgreementFiles);
@@ -162,7 +217,7 @@ export const schemaCreateAgreement = z.object({
 export const schemaProposeContribution = z.object({
   recipient: z
     .string()
-    .min(1, { message: 'Recipient is required' })
+    .min(1, { message: 'Please add a recipient or wallet address' })
     .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' })
     .optional(),
 
@@ -218,65 +273,224 @@ export const schemaQuorumAndUnity = z.object({
 const decaySettingsSchema = z.object({
   decayInterval: z
     .number({
-      required_error: 'Decay interval is required',
-      invalid_type_error: 'Decay interval must be a number',
+      invalid_type_error: 'Please enter a voice decay frequency',
     })
-    .min(0, 'Decay interval must be greater or equal to 0'),
-
+    .positive({ message: 'Voice decay frequency must be greater than 0' }),
   decayPercentage: z
     .number({
-      required_error: 'Decay percentage is required',
-      invalid_type_error: 'Decay percentage must be a number',
+      invalid_type_error: 'Please enter a voice decay percentage',
     })
-    .min(0, 'Decay percentage must be at least 0%')
-    .max(100, 'Decay percentage must not exceed 100%'),
+    .positive({ message: 'Voice decay percentage must be greater than 0' })
+    .lte(100, {
+      message: 'Decay percentage must not exceed 100%',
+    }),
 });
 
-export const schemaIssueNewToken = z.object({
+const transferWhitelistEntrySchema = z.object({
+  type: z.enum(['member', 'space']).default('member'),
+  address: z
+    .string({ message: 'Please enter a blockchain address' })
+    .trim()
+    .min(1, { message: 'Please enter a blockchain address' })
+    .refine((value) => isAddress(value), {
+      message: 'Please enter a valid blockchain address',
+    }),
+  includeSpaceMembers: z.boolean().optional(),
+});
+
+/** Stable message token for i18n mapping in issue/update token forms */
+export const WHITELIST_DUPLICATE_ENTRY_MESSAGE =
+  '__WHITELIST_DUPLICATE_ENTRY__';
+
+/** Same member/space key used for Zod duplicate checks and whitelist combobox filtering */
+export function transferWhitelistEntryDedupeKey(
+  type: 'member' | 'space',
+  address: string,
+): string | undefined {
+  const trimmed = address.trim();
+  if (!trimmed) return undefined;
+  if (!isAddress(trimmed)) {
+    // Avoid `trimmed` after `!isAddress`: ethers’ type guard narrows to `never` here in strict TS.
+    return `${type === 'space' ? 's' : 'm'}:raw:${address
+      .trim()
+      .toLowerCase()}`;
+  }
+  try {
+    const norm = getAddress(trimmed).toLowerCase();
+    return `${type === 'space' ? 's' : 'm'}:${norm}`;
+  } catch {
+    return undefined;
+  }
+}
+
+function refineTransferWhitelistNoDuplicates(
+  data: { to?: unknown[]; from?: unknown[] },
+  ctx: z.RefinementCtx,
+) {
+  const checkSide = (side: 'to' | 'from') => {
+    const arr = data[side] as
+      | Array<{ type?: string; address?: string }>
+      | undefined;
+    if (!arr?.length) return;
+    const keyToIndices = new Map<string, number[]>();
+    for (let i = 0; i < arr.length; i++) {
+      const e = arr[i];
+      const t = e?.type === 'space' ? 'space' : 'member';
+      const key = e?.address
+        ? transferWhitelistEntryDedupeKey(t, e.address)
+        : undefined;
+      if (!key) continue;
+      const list = keyToIndices.get(key) ?? [];
+      list.push(i);
+      keyToIndices.set(key, list);
+    }
+    for (const indices of keyToIndices.values()) {
+      if (indices.length < 2) continue;
+      for (const idx of indices) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: WHITELIST_DUPLICATE_ENTRY_MESSAGE,
+          path: [side, idx, 'address'],
+        });
+      }
+    }
+  };
+  checkSide('to');
+  checkSide('from');
+}
+
+const transferWhitelistSchema = z
+  .object({
+    to: z.array(transferWhitelistEntrySchema).optional(),
+    from: z.array(transferWhitelistEntrySchema).optional(),
+  })
+  .superRefine((data, ctx) => {
+    refineTransferWhitelistNoDuplicates(data, ctx);
+  });
+
+export const schemaMintTokensToSpaceTreasury = z.object({
   ...createAgreementWeb2Props,
   ...createAgreementFiles,
+  mint: z.object({
+    amount: z
+      .string({ message: 'Please enter amount' })
+      .min(1, 'Please enter amount'),
+    token: z
+      .string({ message: 'Choose a token to mint' })
+      .min(1, 'Choose a token to mint'),
+  }),
+});
+
+const schemaTokenBurningTarget = z
+  .object({
+    type: z.enum(['member', 'space']).default('member'),
+    address: z
+      .string({ message: 'Please add a recipient or wallet address' })
+      .trim()
+      .min(1, { message: 'Please add a recipient or wallet address' })
+      .regex(ETH_ADDRESS_REGEX, { message: 'Invalid Ethereum address' }),
+    amount: z.string().optional(),
+    allBalance: z.boolean().default(false),
+  })
+  .superRefine((data, ctx) => {
+    if (data.allBalance) {
+      return;
+    }
+
+    if (!data.amount || data.amount.trim() === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Enter an amount to continue.',
+        path: ['amount'],
+      });
+      return;
+    }
+
+    const parsedAmount = Number(data.amount);
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Amount must be greater than 0',
+        path: ['amount'],
+      });
+    }
+  });
+
+export const schemaTokenBurning = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  label: z.literal('Token Burning').optional(),
+  tokenBurning: z.object({
+    token: z
+      .string({ message: 'Choose a token to burn' })
+      .min(1, 'Choose a token to burn')
+      .refine((value) => isAddress(value), {
+        message: 'Invalid token address',
+      }),
+    burns: z
+      .array(schemaTokenBurningTarget)
+      .min(1, 'At least one burn target is required'),
+  }),
+});
+
+export const baseSchemaIssueNewToken = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+
   name: z
     .string()
-    .min(2, { message: 'Token name must be at least 2 characters long' })
-    .max(100, { message: 'Token name must be at most 100 characters long' }),
+    .trim()
+    .min(2, { message: 'Please enter a token name (min. 2 characters)' })
+    .max(100, { message: 'Token name must be at most 100 characters long' })
+    .refine((val) => !/[\p{Emoji}]|(https?:\/\/|www\.|t\.me\/)/iu.test(val), {
+      message: 'Token name cannot contain emojis or links',
+    }),
 
   symbol: z
     .string()
-    .min(2, { message: 'Token symbol must be at least 2 characters long' })
+    .trim()
+    .min(2, { message: 'Please enter a token symbol (min. 2 characters)' })
     .max(10, { message: 'Token symbol must be at most 10 characters long' })
     .regex(/^[A-Z]+$/, {
-      message: 'Token symbol must contain only uppercase letters',
+      message:
+        'Please enter the token symbol using only uppercase letters (A–Z)',
+    })
+    .refine((val) => !/[\p{Emoji}]|(https?:\/\/|www\.|t\.me\/)/iu.test(val), {
+      message: 'Token symbol cannot contain emojis or links',
     }),
 
-  icon: z
-    .instanceof(File)
-    .refine(
-      (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
-      'File size must be less than 4MB',
-    )
-    .refine(
-      (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
-      'File must be an image (JPEG, PNG, GIF, WEBP)',
-    )
-    .optional(),
+  iconUrl: z
+    .union([
+      z
+        .string({ message: 'Please upload a token icon' })
+        .url('Icon URL must be a valid URL'),
+      z.literal(''),
+      z
+        .custom<File>(isBrowserFile, { message: 'Please upload a valid file' })
+        .refine(
+          (file) => file.size <= ALLOWED_IMAGE_FILE_SIZE,
+          'Your file is too large and exceeds the 4MB limit. Please upload a smaller file',
+        )
+        .refine(
+          (file) => DEFAULT_IMAGE_ACCEPT.includes(file.type),
+          'File must be an image (JPEG, PNG, GIF, WEBP)',
+        ),
+    ])
+    .transform((val) => (val === '' || val === null ? undefined : val)),
 
-  // tokenDescription: z
-  //   .string()
-  //   .min(10, { message: 'Description must be at least 10 characters long' })
-  //   .max(500, { message: 'Description must be at most 500 characters long' }),
-
-  // TODO: after MVP
-  // digits: z.preprocess(
-  //   (val) => Number(val),
-  //   z
-  //     .number()
-  //     .min(0, { message: 'Digits must be 0 or greater' })
-  //     .max(18, { message: 'Digits must not exceed 18' }),
-  // ),
-
-  type: z.enum(['utility', 'credits', 'ownership', 'voice'], {
-    required_error: 'Token type is required',
-  }),
+  type: z.enum(
+    [
+      'utility',
+      'credits',
+      'ownership',
+      'voice',
+      'impact',
+      'community_currency',
+    ],
+    {
+      required_error: 'Please select a token type',
+    },
+  ),
 
   maxSupply: z.preprocess(
     (val) => Number(val),
@@ -287,18 +501,171 @@ export const schemaIssueNewToken = z.object({
         message: 'Max supply must be a non-negative number',
       }),
   ),
+
+  maxSupplyType: z
+    .object({
+      label: z.string(),
+      value: z.enum(['immutable', 'updatable']),
+    })
+    .optional(),
   decaySettings: decaySettingsSchema,
+
   isVotingToken: z.boolean(),
+  transferable: z.boolean().optional(),
+  enableAdvancedTransferControls: z.boolean().optional(),
+  transferWhitelist: transferWhitelistSchema.optional(),
+
+  enableProposalAutoMinting: z.boolean(),
+  enableLimitedSupply: z.boolean().optional(),
+  enableTokenPrice: z.boolean(),
+  referenceCurrency: z.enum(TOKEN_PRICE_REFERENCE_CURRENCIES).optional(),
+  tokenPrice: z.preprocess((val) => {
+    if (val === '' || val === null || val === undefined) {
+      return undefined;
+    }
+    const num = Number(val);
+    return isNaN(num) ? undefined : num;
+  }, z.number().positive().optional()),
 });
 
-export const schemaChangeVotingMethod = z.object({
-  ...createAgreementWeb2Props,
-  ...createAgreementFiles,
-  members: z.array(schemaMemberWithNumber).optional(),
-  token: z.string().optional(),
-  quorumAndUnity: schemaQuorumAndUnity.optional(),
-  votingMethod: z.enum(['1m1v', '1v1v', '1t1v']).nullable().optional(),
-});
+export const schemaIssueNewToken = baseSchemaIssueNewToken.superRefine(
+  (data, ctx) => {
+    if (
+      (data.enableLimitedSupply === true || data.maxSupply > 0) &&
+      !data.maxSupplyType
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Please select a max supply type',
+        path: ['maxSupplyType'],
+      });
+    }
+
+    if (
+      data.maxSupplyType?.value === 'updatable' &&
+      (data.maxSupply == null || isNaN(data.maxSupply) || data.maxSupply <= 0)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          'Max supply must be greater than 0 when updatable type is selected',
+        path: ['maxSupply'],
+      });
+    }
+
+    if (data.enableTokenPrice) {
+      if (!data.referenceCurrency) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Please select a reference currency',
+          path: ['referenceCurrency'],
+        });
+      }
+      if (
+        data.tokenPrice === undefined ||
+        data.tokenPrice === null ||
+        isNaN(data.tokenPrice) ||
+        data.tokenPrice <= 0
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Please enter a token price greater than 0',
+          path: ['tokenPrice'],
+        });
+      }
+    }
+  },
+);
+
+export const schemaCreateProposalChangeVotingMethodMembersField = z
+  .object({
+    member: z
+      .string()
+      .trim()
+      .min(1, { message: 'Please select a member.' })
+      .refine((memberAddress) => isAddress(memberAddress), {
+        message: 'Invalid member address.',
+      })
+      .catch(''),
+    number: z.coerce
+      .number()
+      .positive({ message: 'Please specify a positive number of tokens.' })
+      .catch(0),
+  })
+  .refine(({ member, number }) => !!(member && number > 0), {
+    message:
+      'Please select a member and specify the number of tokens to allocate.',
+    path: [],
+  });
+
+export const schemaCreateProposalChangeVotingMethod = z
+  .object({
+    title: z
+      .string()
+      .trim()
+      .min(1, { message: 'Please add a title for your proposal' })
+      .max(50),
+    description: z
+      .string()
+      .trim()
+      .min(1, { message: 'Please add content to your proposal' })
+      .max(4000),
+    slug: z
+      .string()
+      .min(1)
+      .max(50)
+      .regex(/^[a-z0-9-]+$/)
+      .optional(),
+    creatorId: z.number().min(1),
+    spaceId: z.number().min(1),
+    web3ProposalId: z.number().optional(),
+    label: z.string().optional(),
+    members: z
+      .array(schemaCreateProposalChangeVotingMethodMembersField)
+      .optional(),
+    token: z.string().optional(),
+    quorumAndUnity: z
+      .object({
+        quorum: z.number().min(0).max(100),
+        unity: z.number().min(0).max(100),
+      })
+      .optional(),
+    votingMethod: z.enum(['1m1v', '1v1v', '1t1v']).nullable().optional(),
+    autoExecution: z.boolean().optional(),
+    votingDuration: z
+      .number({
+        message:
+          'Auto-execution is disabled. Please set a minimum voting duration.',
+      })
+      .optional(),
+    leadImage: z.custom<File>().optional(),
+    attachments: z.array(z.custom<File>()).max(3).optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.autoExecution === false) {
+        return data.votingDuration !== undefined && data.votingDuration > 0;
+      }
+      return true;
+    },
+    {
+      message:
+        'Auto-execution is disabled. Please set a minimum voting duration.',
+      path: ['votingDuration'],
+    },
+  )
+  .refine(
+    (data) => {
+      if (data.votingMethod === '1v1v' || data.votingMethod === '1t1v') {
+        return typeof data.token === 'string' && data.token.length > 0;
+      }
+      return true;
+    },
+    {
+      message: 'Please select a token to pursue with this voting method.',
+      path: ['token'],
+    },
+  );
 
 export const schemaCreateAgreementForm = z.object({
   ...createAgreementWeb2Props,
@@ -309,12 +676,13 @@ export const schemaCreateAgreementForm = z.object({
 });
 
 export const schemaCreateProposalWeb3 = z.object({
-  spaceId: z.number().min(1, { message: 'Space ID must be a positive number' }),
-  duration: z.number().min(1, { message: 'Duration must be greater than 0' }),
+  spaceId: z
+    .bigint()
+    .min(1n, { message: 'Space ID must be a positive number' }),
+  duration: z.bigint().min(1n, { message: 'Duration must be greater than 0' }),
   transactions: z
-    .array(transactionSchema)
-    .min(1, { message: 'At least one transaction is required' })
-    .max(10, { message: 'A proposal cannot have more than 10 transactions' }),
+    .array(transactionSchema, { message: 'Invalid transactions' })
+    .min(1, { message: 'At least one transaction is required' }),
 });
 
 export const schemaChangeEntryMethod = z.object({
@@ -338,3 +706,250 @@ export const schemaChangeEntryMethod = z.object({
     })
     .optional(),
 });
+
+export const schemaBuyHyphaTokens = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  payout: z.object({
+    amount: z.string().min(1, 'Please enter a purchase amount. '),
+    token: z.string(),
+  }),
+  recipient: z
+    .string()
+    .min(1, { message: 'Please add a recipient or wallet address' })
+    .refine(isAddress, { message: 'Invalid Ethereum address' }),
+});
+
+export const schemaActivateSpaces = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  label: z.literal('Activate Spaces'),
+  recipient: z.string(),
+  paymentToken: z.enum(['HYPHA', 'USDC']),
+  spaces: z
+    .array(
+      z.object({
+        spaceId: z
+          .number()
+          .min(1, { message: 'Please select a space to activate.' }),
+        months: z.number().min(1, {
+          message: 'Please enter the number of months to activate.',
+        }),
+      }),
+    )
+    .min(1),
+});
+
+export const schemaSpaceToSpaceMembership = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  label: z.literal('Space To Space'),
+  space: z
+    .string({ message: 'Please select a space to join' })
+    .min(1)
+    .refine(isAddress, { message: 'Invalid Ethereum address' }),
+  member: z
+    .string({ message: 'Please select a delegated voting member' })
+    .min(1)
+    .refine(isAddress, { message: 'Invalid Ethereum address' }),
+});
+
+export const schemaMembershipExit = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  label: z.literal('Membership Exit'),
+  space: z.number().min(1, { message: 'Please select a space to exit.' }),
+  member: z
+    .string({ message: 'Please select a member to remove' })
+    .min(1)
+    .refine(isAddress, { message: 'Invalid Ethereum address' }),
+});
+
+const backingCollateralEntrySchema = z.object({
+  token: z
+    .string()
+    .min(1, { message: 'Please select a backing collateral' })
+    .refine((v) => isAddress(v), { message: 'Invalid token address' }),
+  amount: z
+    .string()
+    .min(1, { message: 'Please enter amount' })
+    .refine((v) => parseFloat(v) > 0, {
+      message: 'Amount must be greater than 0',
+    }),
+});
+
+const whitelistEntrySchema = z.object({
+  type: z.enum(['member', 'space']),
+  address: z
+    .string()
+    .min(1)
+    .refine((v) => isAddress(v), { message: 'Invalid address' }),
+  includeSpaceMembers: z.boolean().optional(),
+});
+
+export const schemaTokenBackingVault = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  label: z.literal('Backing Vault').optional(),
+  tokenBackingVault: z
+    .object({
+      spaceToken: z
+        .string()
+        .min(1, { message: 'Please select a token' })
+        .refine((v) => isAddress(v), { message: 'Invalid token address' }),
+      activateVault: z.boolean().default(true),
+      enableRedemption: z.boolean().default(false),
+      addCollaterals: z.array(backingCollateralEntrySchema).optional(),
+      removeCollaterals: z.array(backingCollateralEntrySchema).optional(),
+      referenceCurrency: z.string().optional(),
+      tokenPrice: z
+        .string()
+        .optional()
+        .transform((v) => (v === '' || v === undefined ? undefined : v)),
+      minimumBackingPercent: z.number().min(0).max(100).optional().default(0),
+      maxRedemptionPercent: z.number().min(0).max(100).optional(),
+      maxRedemptionPeriodDays: z.number().min(0).optional(),
+      redemptionStartDate: z.date().optional().nullable(),
+      enableAdvancedRedemptionControls: z.boolean().default(false),
+      redemptionWhitelist: z.array(whitelistEntrySchema).optional(),
+    })
+    .superRefine((data, ctx) => {
+      if (data.enableRedemption) {
+        const price = data.tokenPrice;
+        if (
+          !price ||
+          price === '' ||
+          isNaN(parseFloat(price)) ||
+          parseFloat(price) <= 0
+        ) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+              'Token price is required when redemption is active. Enter a price greater than 0.',
+            path: ['tokenPrice'],
+          });
+        }
+        if (!data.referenceCurrency || data.referenceCurrency.trim() === '') {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+              'Reference currency is required when redemption is active.',
+            path: ['referenceCurrency'],
+          });
+        }
+        if (
+          data.maxRedemptionPercent === undefined ||
+          data.maxRedemptionPercent === null
+        ) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+              'Maximum Redemption % is required when redemption is active. Enter 0 for no limit.',
+            path: ['maxRedemptionPercent'],
+          });
+        }
+        if (
+          data.maxRedemptionPeriodDays === undefined ||
+          data.maxRedemptionPeriodDays === null ||
+          data.maxRedemptionPeriodDays <= 0
+        ) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+              'Period (days) is required when Redemption is active. Select a redemption period.',
+            path: ['maxRedemptionPeriodDays'],
+          });
+        }
+        if (
+          !data.redemptionStartDate ||
+          !(data.redemptionStartDate instanceof Date) ||
+          isNaN(data.redemptionStartDate.getTime())
+        ) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+              'Authorise Redemption from date is required when Redemption is active.',
+            path: ['redemptionStartDate'],
+          });
+        }
+      }
+    }),
+});
+
+export const schemaChangeSpaceTransparencySettings = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  spaceDiscoverability: z.number().int().min(0).max(3),
+  spaceActivityAccess: z.number().int().min(0).max(3),
+});
+
+/** Plain object schema so consumers can `.extend()` before `.superRefine(refineSpaceTokenPurchaseWhenActive)`. */
+export const schemaSpaceTokenPurchaseObject = z.object({
+  ...createAgreementWeb2Props,
+  ...createAgreementFiles,
+  tokenAddress: z
+    .string({ message: 'Please select a token' })
+    .min(1, 'Please select a token'),
+  activatePurchase: z.boolean().default(false),
+  purchasePrice: z.preprocess(
+    (val) =>
+      val === '' || val === null || val === undefined ? undefined : Number(val),
+    z.number().positive('Purchase price must be greater than 0').optional(),
+  ),
+  /**
+   * Full set of reference currencies for UI selection (REFERENCE_CURRENCIES).
+   * On-chain hydration via useSpaceTokenSaleDetailsFromChain only yields USD/EUR.
+   */
+  purchaseCurrency: z.enum(REFERENCE_CURRENCIES).optional(),
+  tokensAvailableForPurchase: z.preprocess(
+    (val) =>
+      val === '' || val === null || val === undefined ? undefined : Number(val),
+    z.number().min(0, 'Available amount cannot be negative').optional(),
+  ),
+});
+
+export const refineSpaceTokenPurchaseWhenActive = (
+  data: {
+    activatePurchase: boolean;
+    purchasePrice?: number;
+    purchaseCurrency?: string;
+    tokensAvailableForPurchase?: number;
+  },
+  ctx: z.RefinementCtx,
+) => {
+  if (!data.activatePurchase) {
+    return;
+  }
+  if (data.purchasePrice === undefined || data.purchasePrice <= 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message:
+        'Purchase price must be greater than 0 when token purchase is active.',
+      path: ['purchasePrice'],
+    });
+  }
+  if (!data.purchaseCurrency) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message:
+        'Please select a payment currency when token purchase is active.',
+      path: ['purchaseCurrency'],
+    });
+  }
+  if (
+    data.tokensAvailableForPurchase === undefined ||
+    data.tokensAvailableForPurchase < 0
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message:
+        'Tokens available for purchase is required when token purchase is active (use 0 if none left).',
+      path: ['tokensAvailableForPurchase'],
+    });
+  }
+};
+
+export const schemaSpaceTokenPurchase =
+  schemaSpaceTokenPurchaseObject.superRefine(
+    refineSpaceTokenPurchaseWhenActive,
+  );

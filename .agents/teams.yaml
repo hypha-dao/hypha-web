@@ -1,0 +1,141 @@
+teams:
+  frontend-wizards:
+    description: >
+      Frontend Wizards — a UI/UX-focused team that delivers stunning,
+      accessible, and production-ready user interfaces for hypha-web.
+      Follows a structured 6-phase workflow:
+        1. Planning — Product owner and requirements engineer define scope,
+           user stories, and acceptance criteria.
+        2. Researching — User researcher and UI/UX design engineer explore
+           user needs, design patterns, and interaction models.
+        3. Plan Consolidation — Meta-cognitive reasoning expert synthesizes
+           research findings into an actionable, prioritized build plan.
+        4. Building — Fullstack Next.js engineer and i18n engineer implement
+           components, pages, layouts, and translations.
+        5. Reviewing — QA/test engineer and application security engineer
+           validate quality, accessibility, visual regression, and security.
+        6. Pull Request — Fullstack lead creates the PR with a comprehensive
+           description, linked issues, and review checklist.
+    workflow:
+      - phase: planning
+        description: >
+          Define the UI/UX scope. The product owner writes user stories and
+          acceptance criteria. The requirements engineer formalizes functional
+          and non-functional requirements, edge cases, and constraints.
+        agents: [product-owner, requirements-eng]
+      - phase: researching
+        description: >
+          Explore user needs and design possibilities. The user researcher
+          conducts heuristic evaluations and identifies usability risks. The
+          UI/UX design engineer explores visual patterns, component anatomy,
+          interaction states, and responsive behavior using the Hypha design
+          system.
+        agents: [user-researcher, ui-ux-design]
+      - phase: plan-consolidation
+        description: >
+          Synthesize all planning and research outputs into a single,
+          actionable build plan. The meta-cognition agent resolves conflicts
+          between requirements and design proposals, prioritizes work items,
+          and produces a step-by-step implementation roadmap.
+        agents: [meta-cognition]
+      - phase: building
+        description: >
+          Implement the UI. The fullstack Next.js engineer builds components,
+          pages, layouts, server/client boundaries, and data fetching. The
+          i18n engineer adds translation keys and ensures locale coverage.
+          The Matrix SDK engineer handles real-time chat features, room/thread
+          management, and Matrix protocol integration.
+        agents: [fullstack-nextjs, i18n-eng, matrix-sdk]
+      - phase: reviewing
+        description: >
+          Validate quality and security. The QA/test engineer runs Playwright
+          E2E tests, accessibility audits (axe-core), and visual regression
+          checks. The security engineer reviews for XSS, CSRF, auth gaps,
+          and data exposure.
+        agents: [qa-test, app-security]
+      - phase: pull-request
+        description: >
+          Create the pull request. The fullstack lead writes a comprehensive
+          PR description with screenshots, linked issues, acceptance criteria
+          checklist, and review instructions. Resolves any final lint or type
+          errors before requesting review.
+        agents: [fullstack-nextjs]
+    agents:
+      - name: product-owner
+        role: roles/senior-product-owner.base.md
+        model: anthropic/claude-sonnet-4
+      - name: requirements-eng
+        role: roles/senior-requirements-engineer.base.md
+        model: anthropic/claude-sonnet-4
+      - name: user-researcher
+        role: roles/senior-user-researcher.base.md
+        model: anthropic/claude-sonnet-4
+      - name: ui-ux-design
+        role: roles/senior-ui-ux-design-engineer.base.md
+        model: anthropic/claude-sonnet-4
+      - name: meta-cognition
+        role: roles/meta-cognitive-reasoning-expert.base.md
+        model: anthropic/claude-sonnet-4
+      - name: fullstack-nextjs
+        role: roles/senior-lead-fullstack-nextjs-engineer.base.md
+        model: anthropic/claude-sonnet-4
+      - name: i18n-eng
+        role: roles/i18n-engineer.md
+        model: anthropic/claude-sonnet-4
+      - name: matrix-sdk
+        role: roles/senior-matrix-sdk-engineer.base.md
+        model: anthropic/claude-sonnet-4
+      - name: qa-test
+        role: roles/senior-qa-test-engineer.base.md
+        model: anthropic/claude-sonnet-4
+      - name: app-security
+        role: roles/senior-application-security-engineer.base.md
+        model: anthropic/claude-sonnet-4
+
+  agentic-engineering:
+    description: >
+      Agentic engineering team for the hypha-web DAO platform.
+      Coordinates specialized agents across fullstack development,
+      database engineering, security, QA, UI/UX design, product ownership,
+      requirements engineering, i18n, prompt engineering, user research,
+      meta-cognition, and Cursor IDE configuration.
+    agents:
+      - name: fullstack-nextjs
+        role: roles/senior-lead-fullstack-nextjs-engineer.base.md
+        model: anthropic/claude-sonnet-4
+      - name: neon-db
+        role: roles/senior-neon-db-engineer.base.md
+        model: anthropic/claude-sonnet-4
+      - name: app-security
+        role: roles/senior-application-security-engineer.base.md
+        model: anthropic/claude-sonnet-4
+      - name: qa-test
+        role: roles/senior-qa-test-engineer.base.md
+        model: anthropic/claude-sonnet-4
+      - name: ui-ux-design
+        role: roles/senior-ui-ux-design-engineer.base.md
+        model: anthropic/claude-sonnet-4
+      - name: product-owner
+        role: roles/senior-product-owner.base.md
+        model: anthropic/claude-sonnet-4
+      - name: requirements-eng
+        role: roles/senior-requirements-engineer.base.md
+        model: anthropic/claude-sonnet-4
+      - name: prompt-eng
+        role: roles/senior-prompt-engineer.base.md
+        model: anthropic/claude-sonnet-4
+      - name: user-researcher
+        role: roles/senior-user-researcher.base.md
+        model: anthropic/claude-sonnet-4
+      - name: cursor-engineer
+        role: roles/elite-senior-lead-cursor-engineer.base.md
+        model: anthropic/claude-sonnet-4
+      - name: i18n-eng
+        role: roles/i18n-engineer.md
+        model: anthropic/claude-sonnet-4
+      - name: matrix-sdk
+        role: roles/senior-matrix-sdk-engineer.base.md
+        model: anthropic/claude-sonnet-4
+      - name: meta-cognition
+        role: roles/meta-cognitive-reasoning-expert.base.md
+        model: anthropic/claude-sonnet-4

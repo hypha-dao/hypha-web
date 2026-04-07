@@ -1,0 +1,448 @@
+'use client';
+
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslations } from 'next-intl';
+import { useParams } from 'next/navigation';
+import {
+  SidebarHeader,
+  SidebarContent,
+  SidebarFooter,
+  useSidebar,
+} from '@hypha-platform/ui';
+import {
+  useMatrix,
+  useCoherenceMutationsWeb2Rsc,
+  useJwt,
+  useMe,
+  Message,
+} from '@hypha-platform/core/client';
+import { UseMembers } from '../spaces';
+
+import {
+  HumanChatPanelHeader,
+  HumanChatPanelMessages,
+  HumanChatPanelChatBar,
+  HumanChatPanelTabs,
+  HumanChatPanelMembers,
+} from './human-chat-panel';
+import type { ChatPanelTab } from './human-chat-panel';
+import { useHumanChatPanel } from './human-chat-panel-context';
+
+type UIMessage = {
+  id: string;
+  role: 'user' | 'member';
+  parts?: Array<
+    { type: 'text'; text: string } | { type: string; [k: string]: unknown }
+  >;
+  senderName?: string;
+  avatarUrl?: string;
+};
+
+const ROOM_STORAGE_KEY = 'hypha-chat-room-';
+
+/**
+ * Get a persisted room ID for a space slug from localStorage.
+ */
+function getStoredRoomId(spaceSlug: string): string | null {
+  try {
+    return localStorage.getItem(`${ROOM_STORAGE_KEY}${spaceSlug}`);
+  } catch {
+    return null;
+  }
+}
+
+function storeRoomId(spaceSlug: string, roomId: string): void {
+  try {
+    localStorage.setItem(`${ROOM_STORAGE_KEY}${spaceSlug}`, roomId);
+  } catch {
+    // localStorage not available
+  }
+}
+
+/**
+ * Convert a Matrix Message to the UIMessage format expected by panel components.
+ */
+function toUIMessage(
+  msg: Message,
+  currentUserId?: string | null,
+  currentUserAvatarUrl?: string,
+): UIMessage {
+  const isCurrentUser = currentUserId ? msg.sender === currentUserId : false;
+  return {
+    id: msg.id,
+    role: isCurrentUser ? 'user' : 'member',
+    parts: [{ type: 'text', text: msg.content }],
+    senderName: isCurrentUser ? undefined : msg.sender,
+    avatarUrl: isCurrentUser ? currentUserAvatarUrl : undefined,
+  };
+}
+
+type HumanRightPanelProps = {
+  useMembers: UseMembers;
+};
+
+export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
+  const t = useTranslations('HumanChatPanel');
+  const params = useParams<{ id?: string }>();
+  const spaceSlug = params?.id;
+
+  const matrix = useMatrix();
+  const {
+    client,
+    isMatrixAvailable,
+    isAuthenticated: isMatrixAuthenticated,
+  } = matrix;
+
+  // Store matrix methods in a ref to avoid infinite re-render loops.
+  const matrixRef = useRef(matrix);
+  matrixRef.current = matrix;
+
+  const {
+    mode,
+    coherenceRoomId,
+    coherenceTitle,
+    coherenceSlug,
+    closeCoherenceChat,
+    openCoherenceChat,
+  } = useHumanChatPanel();
+  const { jwt: authToken } = useJwt();
+  const { person: me } = useMe();
+  const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
+  const { open: sidebarOpen } = useSidebar();
+
+  const currentUserAvatarUrl = me?.avatarUrl;
+  const currentUserAvatarUrlRef = useRef(currentUserAvatarUrl);
+  currentUserAvatarUrlRef.current = currentUserAvatarUrl;
+
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<UIMessage[]>([]);
+  const [roomId, setRoomId] = useState<string | null>(null);
+  const [isJoining, setIsJoining] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<ChatPanelTab>('chat');
+  const joinedRef = useRef<string | null>(null);
+
+  const currentUserId = client?.getUserId?.() ?? null;
+  const currentUserIdRef = useRef(currentUserId);
+  currentUserIdRef.current = currentUserId;
+
+  // Backfill avatar on self-authored messages after useMe() resolves
+  useEffect(() => {
+    if (!currentUserAvatarUrl) return;
+    setMessages((prev) =>
+      prev.map((uiMessage) =>
+        uiMessage.role === 'user' && !uiMessage.avatarUrl
+          ? { ...uiMessage, avatarUrl: currentUserAvatarUrl }
+          : uiMessage,
+      ),
+    );
+  }, [currentUserAvatarUrl]);
+
+  // Track previous sidebar open state to detect close events
+  const prevSidebarOpenRef = useRef(sidebarOpen);
+  useEffect(() => {
+    if (prevSidebarOpenRef.current && !sidebarOpen && mode === 'coherence') {
+      closeCoherenceChat();
+    }
+    prevSidebarOpenRef.current = sidebarOpen;
+  }, [sidebarOpen, mode, closeCoherenceChat]);
+
+  // Reset chat state when space changes
+  useEffect(() => {
+    if (joinedRef.current && joinedRef.current !== spaceSlug) {
+      if (roomId) {
+        matrixRef.current.unregisterRoomListener(roomId);
+      }
+      joinedRef.current = null;
+      setRoomId(null);
+      setMessages([]);
+      setInput('');
+      setError(null);
+    }
+  }, [spaceSlug, roomId]);
+
+  // Join space room when Matrix is ready (space mode)
+  useEffect(() => {
+    if (mode !== 'space') return;
+    if (
+      !isMatrixAvailable ||
+      !isMatrixAuthenticated ||
+      joinedRef.current === spaceSlug
+    )
+      return;
+    if (!spaceSlug) return;
+
+    let cancelled = false;
+    const { joinRoom, createRoom, getRoomMessages } = matrixRef.current;
+
+    const initRoom = async () => {
+      setIsJoining(true);
+      setError(null);
+      try {
+        let targetRoomId = getStoredRoomId(spaceSlug);
+
+        if (targetRoomId) {
+          try {
+            await joinRoom(targetRoomId);
+          } catch {
+            targetRoomId = null;
+          }
+        }
+
+        if (!targetRoomId) {
+          const { roomId: newRoomId } = await createRoom(`space-${spaceSlug}`);
+          if (!newRoomId) {
+            throw new Error('Failed to create room: empty roomId returned');
+          }
+          targetRoomId = newRoomId;
+          storeRoomId(spaceSlug, newRoomId);
+        }
+
+        if (cancelled) return;
+        joinedRef.current = spaceSlug;
+        setRoomId(targetRoomId);
+
+        const existing = getRoomMessages(targetRoomId);
+        if (existing && !cancelled) {
+          setMessages(
+            existing.map((m) =>
+              toUIMessage(
+                m,
+                currentUserIdRef.current,
+                currentUserAvatarUrlRef.current,
+              ),
+            ),
+          );
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error('[HumanRightPanel] Failed to join room:', err);
+          setError('Failed to join chat room');
+        }
+      } finally {
+        if (!cancelled) setIsJoining(false);
+      }
+    };
+
+    initRoom();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, isMatrixAvailable, isMatrixAuthenticated, spaceSlug]);
+
+  // Track previous mode to detect actual transitions (not initial mount)
+  const prevModeRef = useRef(mode);
+  useEffect(() => {
+    const prevMode = prevModeRef.current;
+    prevModeRef.current = mode;
+
+    // Only act on actual mode transitions, not initial mount
+    if (prevMode === mode) return;
+
+    if (mode === 'coherence') {
+      // Switching FROM space TO coherence — unregister space listener, clear state
+      if (roomId) {
+        matrixRef.current.unregisterRoomListener(roomId);
+      }
+      joinedRef.current = null; // allow space room to re-init when returning
+      setMessages([]);
+      setRoomId(null);
+      setError(null);
+    }
+
+    if (mode === 'space' && prevMode === 'coherence') {
+      // Switching FROM coherence TO space — clear state, space init will re-run
+      if (roomId) {
+        matrixRef.current.unregisterRoomListener(roomId);
+      }
+      setMessages([]);
+      setRoomId(null);
+      setError(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+
+  // Join (or create) coherence room when mode switches to 'coherence'
+  useEffect(() => {
+    if (mode !== 'coherence' || !isMatrixAvailable || !isMatrixAuthenticated)
+      return;
+
+    let cancelled = false;
+
+    const init = async () => {
+      setIsJoining(true);
+      setError(null);
+      setMessages([]);
+      try {
+        let targetRoomId = coherenceRoomId;
+
+        // If no room exists yet, only create one when we can link it back
+        if (!targetRoomId) {
+          if (!coherenceSlug) {
+            // Cannot persist without a slug — skip room creation
+            setIsJoining(false);
+            return;
+          }
+          console.log(
+            '[HumanRightPanel] Creating Matrix room for coherence:',
+            coherenceSlug,
+          );
+          const { roomId: newRoomId } = await matrixRef.current.createRoom(
+            coherenceTitle || 'Conversation',
+          );
+          if (cancelled) return;
+          targetRoomId = newRoomId;
+
+          try {
+            await updateCoherenceBySlug({
+              slug: coherenceSlug,
+              roomId: newRoomId,
+            });
+            // Update context so subsequent opens don't re-create
+            openCoherenceChat(newRoomId, coherenceTitle || '', coherenceSlug);
+          } catch (err) {
+            console.warn(
+              '[HumanRightPanel] Failed to persist roomId to coherence:',
+              err,
+            );
+          }
+        } else {
+          await matrixRef.current.joinRoom(targetRoomId);
+        }
+
+        if (cancelled) return;
+        setRoomId(targetRoomId);
+        const existing = matrixRef.current.getRoomMessages(targetRoomId);
+        if (existing) {
+          setMessages(
+            existing.map((m) =>
+              toUIMessage(
+                m,
+                currentUserIdRef.current,
+                currentUserAvatarUrlRef.current,
+              ),
+            ),
+          );
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error(
+            '[HumanRightPanel] Failed to join coherence room:',
+            err,
+          );
+          setError(t('failedToJoinRoom'));
+        }
+      } finally {
+        if (!cancelled) setIsJoining(false);
+      }
+    };
+
+    init();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    mode,
+    coherenceRoomId,
+    coherenceTitle,
+    coherenceSlug,
+    isMatrixAvailable,
+    isMatrixAuthenticated,
+  ]);
+
+  // Register listener for incoming messages
+  useEffect(() => {
+    if (!roomId || !isMatrixAvailable) return;
+
+    const { registerRoomListener, unregisterRoomListener } = matrixRef.current;
+
+    registerRoomListener(
+      roomId,
+      async (message: Message) => {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === message.id)) return prev;
+          return [
+            ...prev,
+            toUIMessage(
+              message,
+              currentUserIdRef.current,
+              currentUserAvatarUrlRef.current,
+            ),
+          ];
+        });
+      },
+      async (_pinned: string[]) => {
+        // pinned messages not used in human chat panel
+      },
+    );
+
+    return () => {
+      unregisterRoomListener(roomId);
+    };
+  }, [roomId, isMatrixAvailable]);
+
+  const handleSend = useCallback(async () => {
+    if (!input.trim() || !roomId) return;
+    const text = input;
+    setInput('');
+    try {
+      await matrixRef.current.sendMessage({ roomId, message: text });
+    } catch (err) {
+      console.error('[HumanRightPanel] Failed to send message:', err);
+      setInput(text);
+    }
+  }, [input, roomId]);
+
+  return (
+    <>
+      <SidebarHeader className="bg-background-2 p-0">
+        <HumanChatPanelHeader
+          title={mode === 'coherence' ? coherenceTitle ?? undefined : undefined}
+          onBack={mode === 'coherence' ? closeCoherenceChat : undefined}
+        />
+        <HumanChatPanelTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      </SidebarHeader>
+      <SidebarContent className="bg-background-2 min-h-0">
+        {activeTab === 'chat' && (
+          <>
+            {error && (
+              <div
+                role="alert"
+                className="mx-3 mt-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              >
+                {error}
+              </div>
+            )}
+            {isJoining ? (
+              <div className="flex flex-1 items-center justify-center">
+                <div className="text-sm text-muted-foreground">
+                  {t('loading')}
+                </div>
+              </div>
+            ) : (
+              <HumanChatPanelMessages messages={messages} />
+            )}
+          </>
+        )}
+        {activeTab === 'members' && (
+          <HumanChatPanelMembers
+            useMembers={useMembers}
+            spaceSlug={spaceSlug}
+          />
+        )}
+      </SidebarContent>
+      {activeTab === 'chat' && (
+        <SidebarFooter className="bg-background-2 p-0">
+          <HumanChatPanelChatBar
+            value={input}
+            onChange={setInput}
+            onSend={handleSend}
+          />
+        </SidebarFooter>
+      )}
+    </>
+  );
+}

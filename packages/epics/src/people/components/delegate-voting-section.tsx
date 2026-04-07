@@ -1,0 +1,387 @@
+'use client';
+
+import { useEffect, useRef, useState, useMemo } from 'react';
+import { Separator, Label, Button } from '@hypha-platform/ui';
+import { DelegatedMemberSelector } from './delegated-member-selector';
+// import { DelegatedSpaceSelector } from './delegated-space-selector';
+import { UseMembers } from '../../spaces';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Form, FormField, FormMessage, FormItem } from '@hypha-platform/ui';
+import { z } from 'zod';
+import {
+  useSpaceBySlug,
+  useDelegateWeb3Rpc,
+  useMe,
+  useSpaceDelegate,
+  useUndelegateWeb3Rpc,
+} from '@hypha-platform/core/client';
+import { mutate as mutateCache, type Key } from 'swr';
+import { useParams } from 'next/navigation';
+import { ProfileComponentParams } from './types';
+import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
+import { useScrollToErrors } from '../../hooks';
+import { useTranslations } from 'next-intl';
+
+interface DelegateVotingSectionProps {
+  spaceSlug?: string;
+  web3SpaceId?: number;
+  useMembers: UseMembers;
+}
+
+type DelegateToMemberForm = {
+  delegatedSpace: number;
+  delegatedMember: string;
+};
+
+/*
+const passOnDelegatedVoiceSchema = z.object({
+  delegatedSpace: z.number({
+    required_error: 'Please select a space',
+    invalid_type_error: 'Please select a space',
+  }),
+  delegatedMember: z.string().min(1, 'Please select a member'),
+});
+type PassOnDelegatedVoiceForm = z.infer<typeof passOnDelegatedVoiceSchema>;
+*/
+
+export const DelegateVotingSection = ({
+  web3SpaceId,
+  spaceSlug,
+  useMembers,
+}: DelegateVotingSectionProps) => {
+  const tMembersTab = useTranslations('MembersTab');
+  const { personSlug: personSlugRaw } = useParams<ProfileComponentParams>();
+  const personSlug = tryDecodeUriPart(personSlugRaw);
+  const { person } = useMe();
+  const { space } = useSpaceBySlug(spaceSlug as string);
+  const effectiveSpaceId = space?.web3SpaceId || web3SpaceId;
+  const { persons, spaces, updateMembers } = useMembers({
+    spaceSlug,
+    paginationDisabled: true,
+  });
+  const filteredMembers =
+    persons?.data?.filter((member) => member.address !== person?.address) ?? [];
+  const isMember = person?.slug === personSlug;
+
+  const {
+    delegate: delegateToMember,
+    isDelegating: isDelegatingToMember,
+    delegateHash: delegateHashMember,
+    errorDelegate: errorDelegateMember,
+    resetDelegateMutation: resetDelegateMember,
+  } = useDelegateWeb3Rpc();
+  const { undelegate, isUndelegating, errorUndelegate } =
+    useUndelegateWeb3Rpc();
+
+  /*
+  const {
+    delegate: delegateToSpace,
+    isDelegating: isDelegatingToSpace,
+    delegateHash: delegateHashSpace,
+    errorDelegate: errorDelegateSpace,
+    resetDelegateMutation: resetDelegateSpace,
+  } = useDelegateWeb3Rpc();
+  */
+
+  const [successMember, setSuccessMember] = useState(false);
+  /* const [successSpace, setSuccessSpace] = useState(false); */
+
+  useEffect(() => {
+    if (delegateHashMember) {
+      setSuccessMember(true);
+      const t = setTimeout(() => {
+        setSuccessMember(false);
+        resetDelegateMember();
+      }, 3000);
+      return () => clearTimeout(t);
+    }
+  }, [delegateHashMember, resetDelegateMember]);
+
+  /*
+  useEffect(() => {
+    if (delegateHashSpace) {
+      setSuccessSpace(true);
+      const t = setTimeout(() => {
+        setSuccessSpace(false);
+        resetDelegateSpace();
+      }, 3000);
+      return () => clearTimeout(t);
+    }
+  }, [delegateHashSpace, resetDelegateSpace]);
+  */
+
+  if (!isMember) return null;
+
+  const delegateToMemberSchema = z.object({
+    delegatedSpace: z.number({
+      required_error: tMembersTab('delegateSection.errors.selectSpace'),
+      invalid_type_error: tMembersTab('delegateSection.errors.selectSpace'),
+    }),
+    delegatedMember: z
+      .string()
+      .min(1, tMembersTab('delegateSection.errors.selectMember')),
+  });
+
+  const delegateToMemberFormRef = useRef<HTMLFormElement>(null);
+  const delegateToMemberForm = useForm<DelegateToMemberForm>({
+    resolver: zodResolver(delegateToMemberSchema),
+    defaultValues: {
+      delegatedMember: '',
+      delegatedSpace: effectiveSpaceId as number,
+    },
+  });
+
+  const viewerAddress = person?.address?.toLowerCase();
+
+  const { person: currentDelegate } = useSpaceDelegate({
+    user: person?.address as `0x${string}`,
+    spaceId: effectiveSpaceId,
+  });
+  const currentDelegateAddress = currentDelegate?.address?.toLowerCase();
+  const hasConfirmedDelegate =
+    Boolean(currentDelegateAddress) && currentDelegateAddress !== viewerAddress;
+
+  useEffect(() => {
+    if (effectiveSpaceId) {
+      delegateToMemberForm.setValue('delegatedSpace', effectiveSpaceId);
+    }
+  }, [delegateToMemberForm, effectiveSpaceId]);
+
+  useEffect(() => {
+    const delegateAddress =
+      hasConfirmedDelegate && currentDelegate?.address
+        ? currentDelegate.address
+        : '';
+    const existingValue =
+      delegateToMemberForm.getValues('delegatedMember') ?? '';
+    if (delegateAddress !== existingValue) {
+      delegateToMemberForm.setValue('delegatedMember', delegateAddress);
+    }
+  }, [currentDelegate?.address, delegateToMemberForm, hasConfirmedDelegate]);
+
+  useScrollToErrors(delegateToMemberForm, delegateToMemberFormRef);
+
+  /*
+  const passOnDelegatedVoiceFormRef = useRef<HTMLFormElement>(null);
+  const passOnDelegatedVoiceForm = useForm<PassOnDelegatedVoiceForm>({
+    resolver: zodResolver(passOnDelegatedVoiceSchema),
+    defaultValues: { delegatedSpace: undefined, delegatedMember: '' },
+  });
+
+  useScrollToErrors(passOnDelegatedVoiceForm, passOnDelegatedVoiceFormRef);
+
+  const selectedSpaceWeb3SpaceId =
+    passOnDelegatedVoiceForm.watch('delegatedSpace');
+  const selectedSpace = spaces?.data?.find(
+    (s) => s.web3SpaceId === selectedSpaceWeb3SpaceId,
+  );
+  const { persons: passOnDelegatedVoiceFormMembers } = useMembers({
+    spaceSlug: selectedSpace?.slug,
+    paginationDisabled: true,
+  });
+
+  const { setValue } = passOnDelegatedVoiceForm;
+  useEffect(() => {
+    setValue('delegatedMember', '');
+  }, [selectedSpaceWeb3SpaceId, selectedSpace?.slug, setValue]);
+  */
+
+  const delegateCacheKey = useMemo<Key | null>(() => {
+    if (!person?.address || !effectiveSpaceId) {
+      return null;
+    }
+    return [
+      person.address as `0x${string}`,
+      BigInt(effectiveSpaceId),
+      'delegate',
+    ];
+  }, [effectiveSpaceId, person?.address]);
+
+  const handleDelegateToMember = async (data: DelegateToMemberForm) => {
+    await delegateToMember({
+      address: data.delegatedMember as `0x${string}`,
+      spaceId: data.delegatedSpace,
+    });
+    delegateToMemberForm.setValue('delegatedMember', data.delegatedMember);
+    if (delegateCacheKey) {
+      await mutateCache(delegateCacheKey);
+    }
+    await updateMembers?.();
+  };
+
+  const handleUndelegate = async () => {
+    if (!effectiveSpaceId || !hasConfirmedDelegate) return;
+    await undelegate({
+      spaceId: effectiveSpaceId,
+    });
+    delegateToMemberForm.setValue('delegatedMember', '');
+    if (delegateCacheKey) {
+      await mutateCache(delegateCacheKey);
+    }
+    await updateMembers?.();
+  };
+
+  /*
+  const handleDelegateSpace = async (data: PassOnDelegatedVoiceForm) => {
+    await delegateToSpace({
+      address: data.delegatedMember as `0x${string}`,
+      spaceId: data.delegatedSpace,
+    });
+  };
+  */
+  return (
+    <div className="flex flex-col gap-5">
+      <Form {...delegateToMemberForm}>
+        <form
+          ref={delegateToMemberFormRef}
+          onSubmit={delegateToMemberForm.handleSubmit(handleDelegateToMember)}
+          className="flex flex-col gap-5"
+        >
+          <Label>{tMembersTab('delegateSection.title')}</Label>
+          <span className="text-2 text-neutral-11">
+            {tMembersTab('delegateSection.description')}
+          </span>
+          <FormField
+            control={delegateToMemberForm.control}
+            name="delegatedMember"
+            render={({ field }) => (
+              <FormItem>
+                <span className="flex w-full items-center">
+                  <div className="text-2 text-neutral-11 w-full">
+                    {tMembersTab('delegateSection.delegatedVotingMember')}
+                  </div>
+                  <DelegatedMemberSelector
+                    members={filteredMembers}
+                    value={field.value}
+                    onChange={(selected) =>
+                      field.onChange(selected ? selected.address : '')
+                    }
+                  />
+                </span>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <span className="flex items-center justify-end w-full gap-3">
+            {hasConfirmedDelegate ? (
+              <Button
+                type="button"
+                variant="outline"
+                colorVariant="accent"
+                disabled={isUndelegating || isDelegatingToMember}
+                onClick={handleUndelegate}
+              >
+                {isUndelegating
+                  ? tMembersTab('delegateSection.undelegating')
+                  : tMembersTab('delegateSection.undelegate')}
+              </Button>
+            ) : null}
+            <Button
+              type="submit"
+              disabled={isDelegatingToMember || isUndelegating}
+            >
+              {isDelegatingToMember
+                ? tMembersTab('delegateSection.delegating')
+                : tMembersTab('delegateSection.save')}
+            </Button>
+          </span>
+          {successMember && (
+            <span className="text-foreground text-sm">
+              {tMembersTab('delegateSection.success')}
+            </span>
+          )}
+          {errorDelegateMember && (
+            <span className="text-red-600 text-sm">
+              {errorDelegateMember.message}
+            </span>
+          )}
+          {errorUndelegate && (
+            <span className="text-red-600 text-sm">
+              {errorUndelegate.message}
+            </span>
+          )}
+        </form>
+      </Form>
+      <Separator />
+      {/*
+      {spaces?.data?.length ? (
+        <Form {...passOnDelegatedVoiceForm}>
+          <form
+            ref={passOnDelegatedVoiceFormRef}
+            onSubmit={passOnDelegatedVoiceForm.handleSubmit(
+              handleDelegateSpace,
+            )}
+            className="flex flex-col gap-5"
+          >
+            <Label>Pass On Delegated Voice</Label>
+            <span className="text-2 text-neutral-11">
+              Reassign voting power you’ve received in another space to a
+              different member of that space.
+            </span>
+            <FormField
+              control={passOnDelegatedVoiceForm.control}
+              name="delegatedSpace"
+              render={({ field }) => (
+                <FormItem>
+                  <span className="flex w-full items-center">
+                    <div className="text-2 text-neutral-11 w-full">
+                      Delegated Voice In
+                    </div>
+                    <DelegatedSpaceSelector
+                      spaces={spaces?.data}
+                      value={field.value}
+                      onChange={(selected) =>
+                        field.onChange(
+                          selected ? selected.web3SpaceId : undefined,
+                        )
+                      }
+                    />
+                  </span>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={passOnDelegatedVoiceForm.control}
+              name="delegatedMember"
+              render={({ field }) => (
+                <FormItem>
+                  <span className="flex w-full items-center">
+                    <div className="text-2 text-neutral-11 w-full">
+                      Delegated Voting Member
+                    </div>
+                    <DelegatedMemberSelector
+                      members={passOnDelegatedVoiceFormMembers?.data}
+                      value={field.value}
+                      onChange={(selected) =>
+                        field.onChange(selected ? selected.address : '')
+                      }
+                    />
+                  </span>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <span className="flex items-center justify-end w-full">
+              <Button type="submit" disabled={isDelegatingToSpace}>
+                {isDelegatingToSpace ? 'Delegating...' : 'Save'}
+              </Button>
+            </span>
+            {successSpace && (
+              <span className="text-foreground text-sm">
+                Delegation completed successfully!
+              </span>
+            )}
+            {errorDelegateSpace && (
+              <span className="text-red-600 text-sm">
+                {errorDelegateSpace.message}
+              </span>
+            )}
+          </form>
+        </Form>
+      ) : null} */}
+      {/* <Separator /> */}
+    </div>
+  );
+};

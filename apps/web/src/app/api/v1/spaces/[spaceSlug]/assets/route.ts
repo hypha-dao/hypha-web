@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  web3Client,
   findSpaceBySlug,
   getTokenPrice,
   getTokenBalancesByAddress,
+  getBalance,
+  getTokenMeta,
+  findAllTokens,
+  getSupply,
 } from '@hypha-platform/core/server';
 import {
   getSpaceDetails,
@@ -10,37 +15,83 @@ import {
   getSpaceDecayingTokens,
   getSpaceOwnershipTokens,
   TOKENS,
-  publicClient,
-  getBalance,
-  getTokenMeta,
   Token,
   ALLOWED_SPACES,
+  getTokenDecimals,
 } from '@hypha-platform/core/client';
 import { db } from '@hypha-platform/storage-postgres';
+import { canConvertToBigInt, hasEmojiOrLink } from '@hypha-platform/ui-utils';
+import { checkSpaceAccess } from '@web/utils/check-space-access';
+
+const EVC_TOKEN_ADDRESS = '0xEa6FC1ff9C204E7b40073cCB091Ca8ac30B0B80a';
 
 export async function GET(
-  _: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ spaceSlug: string }> },
 ) {
   const { spaceSlug } = await params;
 
   try {
-    // TODO: implement authorization
     const space = await findSpaceBySlug({ slug: spaceSlug }, { db });
-    if (!space) {
+    if (!space || !canConvertToBigInt(space.web3SpaceId)) {
       return NextResponse.json({ error: 'Space not found' }, { status: 404 });
+    }
+
+    const { hasAccess, response } = await checkSpaceAccess(
+      request,
+      space.web3SpaceId as number,
+    );
+
+    if (!hasAccess && response) {
+      return response;
     }
 
     const spaceId = BigInt(space.web3SpaceId as number);
 
+    const rawDbTokens = await findAllTokens({ db }, { search: undefined });
+    const dbTokens = rawDbTokens.map((token) => ({
+      agreementId: token.agreementId ?? undefined,
+      spaceId: token.spaceId ?? undefined,
+      name: token.name,
+      symbol: token.symbol,
+      maxSupply: token.maxSupply,
+      type: token.type as
+        | 'utility'
+        | 'credits'
+        | 'ownership'
+        | 'voice'
+        | 'impact'
+        | 'community_currency',
+      iconUrl: token.iconUrl ?? undefined,
+      transferable: token.transferable,
+      isVotingToken: token.isVotingToken,
+      address: token.address ?? undefined,
+      createdAt: token.createdAt ?? undefined,
+    }));
+
+    const referencePriceByAddress: Record<string, number> = {};
+    const referenceCurrencyByAddress: Record<string, string> = {};
+    rawDbTokens.forEach((t) => {
+      if (t.address && t.referencePrice != null) {
+        const parsed = Number(t.referencePrice);
+        if (Number.isFinite(parsed) && parsed >= 0) {
+          referencePriceByAddress[t.address.toLowerCase()] = parsed;
+        }
+      }
+      if (t.address && t.referenceCurrency) {
+        referenceCurrencyByAddress[t.address.toLowerCase()] =
+          t.referenceCurrency;
+      }
+    });
+
     let spaceDetails;
     let spaceTokens;
     try {
-      spaceDetails = await publicClient.readContract(
+      spaceDetails = await web3Client.readContract(
         getSpaceDetails({ spaceId }),
       );
 
-      spaceTokens = await publicClient.multicall({
+      spaceTokens = await web3Client.multicall({
         contracts: [
           getSpaceRegularTokens({ spaceId }),
           getSpaceOwnershipTokens({ spaceId }),
@@ -95,7 +146,7 @@ export async function GET(
         symbol: token.symbol || 'UNKNOWN',
         name: token.name || 'Unnamed',
         address: token.tokenAddress as `0x${string}`,
-        icon: token.logo || '/placeholder/token-icon.png',
+        icon: token.logo || '/placeholder/token-icon.svg',
         type: 'utility' as const,
       }));
 
@@ -123,7 +174,7 @@ export async function GET(
           symbol: '',
           name: '',
           address,
-          icon: '/placeholder/token-icon.png',
+          icon: '/placeholder/token-icon.svg',
           type: 'utility' as const,
         });
       }
@@ -147,18 +198,52 @@ export async function GET(
     const assets = await Promise.all(
       allTokens.map(async (token) => {
         try {
-          const meta = await getTokenMeta(token.address);
+          const meta = await getTokenMeta(token.address, dbTokens);
+          if (hasEmojiOrLink(meta.name) || hasEmojiOrLink(meta.symbol)) {
+            return null;
+          }
           const { amount } = await getBalance(token.address, spaceAddress);
-          const rate = prices[token.address] || 0;
+          let totalSupply: bigint | undefined;
+          try {
+            const supply = await getSupply(token.address);
+            totalSupply = supply.totalSupply;
+          } catch (err) {
+            console.warn(
+              `Failed to fetch supply for token ${token.address}: ${err}`,
+            );
+          }
+          let rate = prices[token.address] || 0;
+          if (token.address.toLowerCase() === EVC_TOKEN_ADDRESS) {
+            rate = 1;
+          }
+          if (rate === 0) {
+            rate = referencePriceByAddress[token.address.toLowerCase()] ?? 0;
+          }
+          const decimals = await getTokenDecimals(token.address);
+          const referenceCurrency =
+            referenceCurrencyByAddress[token.address.toLowerCase()];
           return {
             ...meta,
             address: token.address,
             value: amount,
+            tokenPrice: rate,
+            referenceCurrency,
             usdEqual: rate * amount,
             chartData: [],
             transactions: [],
             closeUrl: [],
             slug: '',
+            supply: totalSupply
+              ? {
+                  total: Number(totalSupply / 10n ** BigInt(decimals)),
+                }
+              : undefined,
+            space: meta.space
+              ? {
+                  slug: meta.space.slug,
+                  title: meta.space.title,
+                }
+              : undefined,
           };
         } catch (err) {
           console.warn(`Skipping token ${token.address}: ${err}`);

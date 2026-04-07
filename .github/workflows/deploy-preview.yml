@@ -1,6 +1,16 @@
 name: Deploy Preview
 
-on: [pull_request]
+on:
+  pull_request:
+  merge_group:
+
+concurrency:
+  group: deploy-preview-${{ github.event.pull_request.number || github.event.merge_group.head_sha || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
 
 env:
   NEON_DATABASE_USERNAME: ${{ secrets.DB_USER_NAME }} # change this to your database username
@@ -12,29 +22,24 @@ env:
   PRIVATE_KEY: ${{ secrets.EVM_SC_OWNER_PRIVATE_KEY }}
   DEFAULT_DB_AUTHENTICATED_URL: ${{ secrets.POSTGRES_AUTHENTICATED_URL }}
   DEFAULT_DB_ANONYMOUS_URL: ${{secrets.POSTGRES_ANONYMOUS_URL}}
+  PR_OR_QUEUE_HEAD: ${{ github.event.pull_request.number || github.event.merge_group.head_sha }}
 
 jobs:
   detect-changes:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     outputs:
       has_migrations: ${{ steps.detect.outputs.has_migrations }}
+      has_preview_deploy_changes: ${{ steps.detect.outputs.has_preview_deploy_changes }}
     steps:
       - uses: actions/checkout@v4
       - name: Detect Changes
         id: detect
         uses: ./.github/actions/detect-changes
 
-  deploy-preview:
-    needs: detect-changes
-    permissions: write-all
-    runs-on: ubuntu-latest
-
+  check-types:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v4
-
-      # Debug step
-      - name: Debug Workflow
-        run: echo "Running Deploy Preview workflow for PR ${{ github.event.pull_request.number }}"
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -44,8 +49,28 @@ jobs:
           node-version: 20
           cache: 'pnpm'
 
-      - run: pnpm i
-      - uses: nrwl/nx-set-shas@v4
+      - run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm turbo run check-types --filter=web
+
+  deploy-preview:
+    needs: [detect-changes, check-types]
+    if: github.event_name == 'pull_request' && needs.detect-changes.outputs.has_preview_deploy_changes == 'true'
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
 
       - name: Get branch name
         if: needs.detect-changes.outputs.has_migrations == 'true'
@@ -59,10 +84,15 @@ jobs:
         with:
           project_id: ${{ env.NEON_PROJECT_ID }}
           parent: main
-          branch_name: preview/pr-${{ github.event.number }}-${{ steps.branch-name.outputs.current_branch }}
+          branch_name: preview/pr-${{ env.PR_OR_QUEUE_HEAD }}-${{ steps.branch-name.outputs.current_branch }}
           username: ${{ env.NEON_DATABASE_USERNAME }}
           database: ${{ env.NEON_DATABASE_NAME }}
           api_key: ${{ env.NEON_API_KEY }}
+
+      - name: Update branch variables
+        if: needs.detect-changes.outputs.has_migrations == 'true'
+        run: |
+          echo "BRANCH_DB_URL=${{ steps.create-branch.outputs.db_url_with_pooler }}" >> $GITHUB_ENV
 
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
@@ -72,8 +102,10 @@ jobs:
 
       - name: Run Migrations
         if: needs.detect-changes.outputs.has_migrations == 'true'
+        env:
+          BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}
         run: |
-          echo "BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}" >> apps/web/.env
+          vercel env pull --environment=preview --token=${{ env.VERCEL_TOKEN }}
           pnpm run migrate
 
       - name: Post Schema Diff Comment to PR
@@ -81,24 +113,35 @@ jobs:
         uses: neondatabase/schema-diff-action@v1
         with:
           project_id: ${{ secrets.NEON_PROJECT_ID }}
-          compare_branch: preview/pr-${{ github.event.number }}-${{ steps.branch-name.outputs.current_branch }}
+          compare_branch: preview/pr-${{ env.PR_OR_QUEUE_HEAD }}-${{ steps.branch-name.outputs.current_branch }}
           api_key: ${{ secrets.NEON_API_KEY }}
 
       - name: Build Project Artifacts
-        run: vercel build --token=${{ env.VERCEL_TOKEN }}
+        env:
+          BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}
+        run: |
+          vercel env pull --environment=preview --token=${{ env.VERCEL_TOKEN }}
+          vercel build --token=${{ env.VERCEL_TOKEN }}
 
       - name: Deploy Preview to Vercel
         id: deploy
-        run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }}) >> $GITHUB_OUTPUT
+        env:
+          BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}
+        run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }} --env BRANCH_DB_URL=${{ env.BRANCH_DB_URL }}) >> $GITHUB_OUTPUT
 
   main:
     needs: [detect-changes]
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+
+      # Must run before format:check — if format fails, later steps are skipped but
+      # Delete Neon Branch uses `if: always()` and needs this output for the branch name.
+      - name: Get branch name
+        if: needs.detect-changes.outputs.has_migrations == 'true'
+        id: branch-name
+        uses: tj-actions/branch-names@v8
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -108,25 +151,26 @@ jobs:
           node-version: 20
           cache: 'pnpm'
 
-      - run: pnpm install
-      - uses: nrwl/nx-set-shas@v4
+      - run: pnpm install --frozen-lockfile
 
       - run: pnpm run format:check
 
-      - name: Get branch name
-        id: branch-name
-        uses: tj-actions/branch-names@v8
-
       - name: Create Neon Branch
+        if: needs.detect-changes.outputs.has_migrations == 'true'
         id: create-branch
         uses: neondatabase/create-branch-action@v5
         with:
           project_id: ${{ env.NEON_PROJECT_ID }}
           parent: main
-          branch_name: test/pr-${{ github.event.number }}-${{ steps.branch-name.outputs.current_branch }}
+          branch_name: test/pr-${{ env.PR_OR_QUEUE_HEAD }}-${{ steps.branch-name.outputs.current_branch }}
           username: ${{ env.NEON_DATABASE_USERNAME }}
           database: ${{ env.NEON_DATABASE_NAME }}
           api_key: ${{ env.NEON_API_KEY }}
+
+      - name: Update branch variables
+        if: needs.detect-changes.outputs.has_migrations == 'true'
+        run: |
+          echo "BRANCH_DB_URL=${{ steps.create-branch.outputs.db_url_with_pooler }}" >> $GITHUB_ENV
 
       - name: Run Migrations
         if: needs.detect-changes.outputs.has_migrations == 'true'
@@ -135,9 +179,9 @@ jobs:
           pnpm run migrate
 
       - name: Delete Neon Branch
-        if: always()
+        if: always() && needs.detect-changes.outputs.has_migrations == 'true' && steps.create-branch.outcome == 'success'
         uses: neondatabase/delete-branch-action@v3
         with:
           project_id: ${{ secrets.NEON_PROJECT_ID }}
-          branch: test/pr-${{ github.event.number }}-${{ github.event.pull_request.head.ref }}
+          branch: test/pr-${{ env.PR_OR_QUEUE_HEAD }}-${{ steps.branch-name.outputs.current_branch }}
           api_key: ${{ secrets.NEON_API_KEY }}

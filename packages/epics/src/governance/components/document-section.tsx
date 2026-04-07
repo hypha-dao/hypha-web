@@ -7,34 +7,44 @@ import { Document } from '@hypha-platform/core/client';
 import { DocumentGridContainer } from './document-grid.container';
 import { DirectionType } from '@hypha-platform/core/client';
 import { Empty } from '../../common';
+import { useTranslations } from 'next-intl';
 
 type DocumentSectionProps = {
   basePath: string;
+  web3SpaceId: number;
   documents: Document[];
   label?: string;
   headSectionButton?: React.ReactNode;
   hasSearch?: boolean;
   isLoading: boolean;
+  firstPageSize?: number;
+  pageSize?: number;
 };
 
 export const DocumentSection: FC<DocumentSectionProps> = ({
   basePath,
+  web3SpaceId,
   documents,
   label,
   headSectionButton,
   hasSearch = false,
   isLoading,
+  firstPageSize = 3,
+  pageSize = 3,
 }) => {
+  const tAgreements = useTranslations('AgreementsTab');
+  const tCommon = useTranslations('Common');
   const {
     pages,
     loadMore,
     pagination,
-    activeTab,
     onUpdateSearch,
     searchTerm,
     filteredDocuments,
   } = useDocumentsSection({
     documents,
+    firstPageSize,
+    pageSize,
   });
 
   return (
@@ -43,7 +53,7 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
         count={pagination?.total || 0}
         label={label || ''}
         hasSearch={hasSearch}
-        searchPlaceholder="Search documents"
+        searchPlaceholder={tAgreements('searchDocuments')}
         onChangeSearch={onUpdateSearch}
       >
         {headSectionButton}
@@ -51,7 +61,7 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
 
       {pagination?.totalPages === 0 ? (
         <Empty>
-          <p>List is empty</p>
+          <p>{tAgreements('listIsEmpty')}</p>
         </Empty>
       ) : (
         <div className="w-full space-y-2">
@@ -59,9 +69,11 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
             <DocumentGridContainer
               key={index}
               basePath={basePath}
+              web3SpaceId={web3SpaceId}
               pagination={{
                 page: index + 1,
-                pageSize: 3,
+                firstPageSize,
+                pageSize,
                 searchTerm,
                 order: [
                   {
@@ -71,7 +83,6 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
                 ],
               }}
               documents={filteredDocuments}
-              activeTab={activeTab}
             />
           ))}
         </div>
@@ -83,7 +94,9 @@ export const DocumentSection: FC<DocumentSectionProps> = ({
           isLoading={isLoading}
         >
           <Text>
-            {pagination?.totalPages === pages ? 'No more' : 'Load more'}
+            {pagination?.totalPages === pages
+              ? tCommon('noMore')
+              : tCommon('loadMore')}
           </Text>
         </SectionLoadMore>
       )}

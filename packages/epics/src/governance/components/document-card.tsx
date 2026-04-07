@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Skeleton,
   Card,
@@ -10,10 +12,16 @@ import { PersonLabel } from '../../people/components/person-label';
 import { type Creator } from '../../people/components/person-label';
 import { type BadgeItem, BadgesList } from '@hypha-platform/ui';
 import { stripMarkdown } from '@hypha-platform/ui-utils';
+import { DocumentStatus, useEvents } from '@hypha-platform/core/client';
+import React from 'react';
+import { useFormatter, useTranslations } from 'next-intl';
 
 interface Document {
+  id?: number;
   title?: string;
   description?: string;
+  createdAt?: Date;
+  status?: DocumentStatus;
 }
 
 interface DocumentCardProps {
@@ -24,7 +32,42 @@ interface DocumentCardProps {
   interactions?: React.ReactNode;
 }
 
+function stripHtmlComments(text: string): string {
+  let result = text;
+  for (;;) {
+    const start = result.indexOf('<!--');
+    if (start === -1) break;
+    const end = result.indexOf('-->', start + 4);
+    if (end === -1) {
+      result = result.slice(0, start);
+      break;
+    }
+    result = result.slice(0, start) + result.slice(end + 3);
+  }
+  return result;
+}
+
+function stripDescription(description: string): string {
+  if (!description) return '';
+  return stripHtmlComments(description)
+    .replace(/\\([\[\]\(\)\{\}])/g, '$1')
+    .replace(/&#x([0-9A-Fa-f]+);/gi, (full, hex) => {
+      const codePoint = Number.parseInt(hex, 16);
+      if (!Number.isFinite(codePoint) || codePoint < 0 || codePoint > 0x10ffff)
+        return full;
+      return String.fromCodePoint(codePoint);
+    })
+    .replace(/&#(\d+);/g, (full, dec) => {
+      const codePoint = Number.parseInt(dec, 10);
+      if (!Number.isFinite(codePoint) || codePoint < 0 || codePoint > 0x10ffff)
+        return full;
+      return String.fromCodePoint(codePoint);
+    })
+    .trim();
+}
+
 export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
+  id: documentId,
   title,
   description,
   isLoading,
@@ -32,7 +75,43 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
   creator,
   badges,
   interactions,
+  createdAt,
+  status,
 }) => {
+  const tCommon = useTranslations('Common');
+  const format = useFormatter();
+  const formatDateTime = (date: string | number | Date) => {
+    const parsedDate = date instanceof Date ? date : new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return '';
+    }
+
+    return format.dateTime(parsedDate, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  };
+  const type = React.useMemo(() => {
+    switch (status) {
+      case 'accepted':
+        return 'executeProposal';
+      case 'rejected':
+        return 'rejectProposal';
+      default:
+        return undefined;
+    }
+  }, [status]);
+  const { events, isLoadingEvents } = useEvents({
+    type,
+    referenceEntity: 'document',
+    referenceId: documentId,
+  });
+  const event = !isLoadingEvents && events instanceof Array ? events[0] : null;
   return (
     <Card className="h-full w-full space-y-5">
       <CardHeader className="p-0 rounded-tl-md rounded-tr-md overflow-hidden h-[150px]">
@@ -44,7 +123,7 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
         >
           <Image
             className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full"
-            src={leadImage || '/placeholder/document-lead-image.png'}
+            src={leadImage || '/placeholder/document-lead-image.webp'}
             alt={title || ''}
             width={250}
             height={150}
@@ -72,11 +151,43 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
             loading={isLoading}
           >
             <div className="line-clamp-3 w-full">
-              {stripMarkdown(description, {
-                orderedListMarkers: false,
-                unorderedListMarkers: false,
-              })}
+              {stripDescription(
+                stripMarkdown(description, {
+                  orderedListMarkers: false,
+                  unorderedListMarkers: false,
+                }),
+              )}
             </div>
+          </Skeleton>
+        </div>
+        <div className="flex flex-grow text-1 text-neutral-11">
+          <Skeleton
+            className="min-w-full"
+            width="200px"
+            height="48px"
+            loading={isLoading || isLoadingEvents}
+          >
+            {type === 'executeProposal' && event && (
+              <>
+                {tCommon('acceptedOn', {
+                  date: formatDateTime(event.createdAt),
+                })}
+              </>
+            )}
+            {type === 'rejectProposal' && event && (
+              <>
+                {tCommon('rejectedOn', {
+                  date: formatDateTime(event.createdAt),
+                })}
+              </>
+            )}
+            {!type && createdAt && (
+              <>
+                {tCommon('createdOn', {
+                  date: formatDateTime(createdAt),
+                })}
+              </>
+            )}
           </Skeleton>
         </div>
         {interactions}

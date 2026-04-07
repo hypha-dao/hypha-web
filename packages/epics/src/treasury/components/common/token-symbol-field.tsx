@@ -8,10 +8,13 @@ import {
   FormLabel,
   FormMessage,
   Input,
+  RequirementMark,
 } from '@hypha-platform/ui';
+import { useTranslations } from 'next-intl';
 
 export function TokenSymbolField() {
   const { control } = useFormContext();
+  const tAgreementFlow = useTranslations('AgreementFlow');
 
   return (
     <FormField
@@ -20,11 +23,17 @@ export function TokenSymbolField() {
       render={({ field }) => (
         <FormItem>
           <div className="flex justify-between items-center">
-            <FormLabel className="text-2 text-neutral-11 w-full">
-              Token Symbol
+            <FormLabel className="text-2 text-neutral-11 w-full gap-1">
+              {tAgreementFlow('plugins.issueNewToken.general.tokenSymbolLabel')}{' '}
+              <RequirementMark className="text-2" />
             </FormLabel>
             <FormControl>
-              <Input placeholder="Type a symbol" {...field} />
+              <Input
+                placeholder={tAgreementFlow(
+                  'plugins.issueNewToken.general.tokenSymbolPlaceholder',
+                )}
+                {...field}
+              />
             </FormControl>
           </div>
           <FormMessage />
