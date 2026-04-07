@@ -123,4 +123,7 @@ server.registerTool(
 );
 
 const transport = new StdioServerTransport();
-await server.connect(transport);
+server.connect(transport).catch((err: unknown) => {
+  console.error('[hypha-mcp] Failed to start:', err);
+  process.exit(1);
+});
