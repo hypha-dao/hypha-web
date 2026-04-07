@@ -60,7 +60,7 @@ export async function GET(
           ? (err as { shortMessage: string }).shortMessage
           : String(err);
       if (msg.includes('rate limit') || msg.includes('429')) {
-        console.warn('Rate limit exceeded when calling readContract:', msg);
+        console.warn('Rate limit exceeded in getSpaceMembersForHttpApi:', msg);
         return NextResponse.json(
           {
             error: 'External API rate limit exceeded. Please try again later.',
