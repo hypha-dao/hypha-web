@@ -552,6 +552,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!input.trim() || !roomId) return;
     const text = input;
     const replyToEventId = replyDraft?.messageId;
+    const savedDraft = replyDraft;
     setInput('');
     try {
       await matrixRef.current.sendMessage({
@@ -563,8 +564,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     } catch (err) {
       console.error('[HumanRightPanel] Failed to send message:', err);
       setInput(text);
+      setReplyDraft(savedDraft);
     }
-  }, [input, roomId, replyDraft?.messageId]);
+  }, [input, roomId, replyDraft]);
 
   return (
     <>
