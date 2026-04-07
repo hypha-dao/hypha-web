@@ -1,6 +1,6 @@
 # Agent skills (hypha-web)
 
-Project skills live under [`.agents/skills/`](../skills/). Each skill has a `SKILL.md` entry point with YAML frontmatter (`name`, `description`). Load a skill when its description matches the task.
+Project skills live under [`.agents/skills/`](../skills/). Each skill has a `SKILL.md` entry point with YAML frontmatter (`name`, `description`). Load a skill when its description matches the task. For dedicated MCP work, prefer the [Expert MCP Engineer](expert-mcp-engineer.base.md) role.
 
 | Skill | Entry |
 |-------|--------|
