@@ -18,6 +18,7 @@ import {
   Message,
   firstLineForReplyPreview,
   RoomEvent,
+  type MessageReaction,
 } from '@hypha-platform/core/client';
 import { UseMembers } from '../spaces';
 
@@ -43,6 +44,11 @@ type UIMessage = {
   timestamp?: Date;
   /** MXID of the message author (for reply target resolution). */
   senderMatrixId?: string;
+  reactions?: Array<{
+    emoji: string;
+    count: number;
+    includesCurrentUser?: boolean;
+  }>;
   replyTo?: {
     authorLabel: string;
     excerpt?: string;
@@ -103,6 +109,13 @@ function toUIMessage(
     };
   }
 
+  const reactions =
+    msg.reactions?.map((r: MessageReaction) => ({
+      emoji: r.key,
+      count: r.count,
+      includesCurrentUser: r.includesCurrentUser,
+    })) ?? undefined;
+
   return {
     id: msg.id,
     role: isCurrentUser ? 'user' : 'member',
@@ -111,6 +124,7 @@ function toUIMessage(
     senderMatrixId: msg.sender,
     avatarUrl: isCurrentUser ? currentUserAvatarUrl : undefined,
     timestamp: msg.timestamp,
+    reactions,
     replyTo,
   };
 }
@@ -475,16 +489,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       roomId,
       async (message: Message) => {
         setMessages((prev) => {
-          if (prev.some((m) => m.id === message.id)) return prev;
-          return [
-            ...prev,
-            toUIMessage(
-              message,
-              currentUserIdRef.current,
-              resolveMemberLabelRef.current,
-              currentUserAvatarUrlRef.current,
-            ),
-          ];
+          const next = toUIMessage(
+            message,
+            currentUserIdRef.current,
+            resolveMemberLabelRef.current,
+            currentUserAvatarUrlRef.current,
+          );
+          const idx = prev.findIndex((m) => m.id === next.id);
+          if (idx === -1) {
+            return [...prev, next];
+          }
+          return prev.map((m, i) => (i === idx ? next : m));
         });
       },
       async (_pinned: string[]) => {
@@ -528,6 +543,22 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       room.off(RoomEvent.LocalEchoUpdated, onLocalEchoUpdated);
     };
   }, [roomId, client]);
+
+  const handleToggleReaction = useCallback(
+    async (messageId: string, emoji: string) => {
+      if (!roomId) return;
+      try {
+        await matrixRef.current.toggleReaction({
+          roomId,
+          targetEventId: messageId,
+          key: emoji,
+        });
+      } catch (err) {
+        console.error('[HumanRightPanel] Failed to toggle reaction:', err);
+      }
+    },
+    [roomId],
+  );
 
   const handleReplyToMessage = useCallback(
     (messageId: string) => {
@@ -597,6 +628,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               <HumanChatPanelMessages
                 messages={messages}
                 onReply={handleReplyToMessage}
+                onToggleReaction={handleToggleReaction}
               />
             )}
           </>

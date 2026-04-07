@@ -1,13 +1,17 @@
 'use client';
 
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Smile, Reply, MoreHorizontal } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../people/components/person-avatar';
 
+import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
+
 type Reaction = {
   emoji: string;
   count: number;
+  includesCurrentUser?: boolean;
 };
 
 type UIMessagePart =
@@ -33,7 +37,11 @@ type HumanChatPanelMessageBubbleProps = {
   isStreaming?: boolean;
   /** When set, Reply is enabled (omit for synthetic messages like welcome). */
   onReply?: () => void;
+  /** When set, user can open react picker (omit for welcome). */
+  onReact?: (emoji: string) => void | Promise<void>;
 };
+
+const MAX_VISIBLE_REACTIONS = 12;
 
 /**
  * Discord-style relative timestamp: browser locale + user's timezone (default).
@@ -114,8 +122,10 @@ export function HumanChatPanelMessageBubble({
   message,
   isStreaming,
   onReply,
+  onReact,
 }: HumanChatPanelMessageBubbleProps) {
   const t = useTranslations('HumanChatPanel');
+  const [reactPickerOpen, setReactPickerOpen] = useState(false);
 
   // TODO: Handle non-text parts (file attachments, tool results, etc.)
   const textParts =
@@ -131,6 +141,12 @@ export function HumanChatPanelMessageBubble({
   const reactions = message.reactions ?? [];
   const replyTo = message.replyTo;
   const canReply = Boolean(onReply);
+  const canReact = Boolean(onReact);
+  const visibleReactions = reactions.slice(0, MAX_VISIBLE_REACTIONS);
+  const hiddenReactionCount = Math.max(
+    0,
+    reactions.length - MAX_VISIBLE_REACTIONS,
+  );
 
   return (
     <div
@@ -203,32 +219,66 @@ export function HumanChatPanelMessageBubble({
         )}
 
         {/* Reactions */}
-        {reactions.length > 0 && (
-          <div className="mt-1.5 flex flex-wrap items-center gap-1">
-            {reactions.map((reaction, idx) => (
-              <span
+        {visibleReactions.length > 0 && (
+          <div
+            data-testid="chat-message-reactions"
+            className="mt-1.5 flex flex-wrap items-center gap-1"
+          >
+            {visibleReactions.map((reaction, idx) => (
+              <button
                 key={`${reaction.emoji}-${idx}`}
-                className="inline-flex items-center gap-1 rounded-full bg-secondary border border-border px-2 py-0.5 text-xs"
+                type="button"
+                disabled={!canReact}
+                onClick={() => {
+                  if (canReact && onReact) {
+                    void onReact(reaction.emoji);
+                  }
+                }}
+                className={cn(
+                  'inline-flex min-h-8 items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors',
+                  reaction.includesCurrentUser
+                    ? 'border-primary/60 bg-primary/10'
+                    : 'border-border bg-secondary',
+                  canReact
+                    ? 'cursor-pointer hover:bg-muted'
+                    : 'cursor-default opacity-80',
+                )}
               >
                 <span>{reaction.emoji}</span>
                 <span className="text-muted-foreground">{reaction.count}</span>
-              </span>
+              </button>
             ))}
+            {hiddenReactionCount > 0 && (
+              <span className="text-xs text-muted-foreground">
+                {t('reactionsOverflow', { count: hiddenReactionCount })}
+              </span>
+            )}
           </div>
         )}
       </div>
 
       {/* Hover / focus-within action bar */}
       <div className="absolute right-2 top-0 -translate-y-1/2 flex items-center gap-0.5 rounded-md border border-border bg-background-2 px-1 py-0.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity shadow-sm">
-        <button
-          type="button"
-          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-          aria-label={t('reactButton')}
-          disabled
-          aria-disabled
+        <HumanChatPanelEmojiPicker
+          open={reactPickerOpen}
+          onOpenChange={setReactPickerOpen}
+          onEmojiSelect={(native) => {
+            if (onReact) void onReact(native);
+          }}
+          ariaLabel={t('emojiPickerReactToMessage')}
+          align="end"
         >
-          <Smile className="h-3.5 w-3.5" />
-        </button>
+          <button
+            type="button"
+            className="flex min-h-8 min-w-8 items-center justify-center rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors disabled:pointer-events-none disabled:opacity-40"
+            aria-label={t('reactButton')}
+            disabled={!canReact}
+            aria-disabled={!canReact}
+            aria-expanded={reactPickerOpen}
+          >
+            <Smile className="h-3.5 w-3.5" />
+          </button>
+        </HumanChatPanelEmojiPicker>
         <button
           type="button"
           className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors disabled:pointer-events-none disabled:opacity-40"

@@ -1617,7 +1617,7 @@
     "placeholder": "Tapez un message...",
     "placeholderChannel": "Message #{channel}",
     "sendButton": "Envoyer",
-    "newlineHint": "Entrée pour envoyer · Shift+Entrée pour nouvelle ligne · @ pour mentionner",
+    "newlineHint": "Entrée pour envoyer · Shift+Entrée pour nouvelle ligne · @ pour mentionner · :emoji:",
     "loading": "Chargement...",
     "openPanel": "Ouvrir le panneau de chat",
     "hidePanel": "Masquer le panneau de chat",
@@ -1646,7 +1646,11 @@
     "noMembers": "Aucun membre trouvé",
     "unknownMember": "Inconnu",
     "backToSpaceChat": "Retour au chat de l'espace",
-    "failedToJoinRoom": "Impossible de rejoindre la salle de conversation"
+    "failedToJoinRoom": "Impossible de rejoindre la salle de conversation",
+    "emojiPickerComposer": "Choisir un emoji",
+    "emojiPickerReactToMessage": "Réagir avec un emoji",
+    "emojiShortcodeListLabel": "Raccourcis emoji",
+    "reactionsOverflow": "+{count} de plus"
   },
   "CoherenceTab": {
     "signals": "Signaux",

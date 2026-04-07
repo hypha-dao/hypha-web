@@ -14,6 +14,11 @@ type UIMessage = {
   senderName?: string;
   avatarUrl?: string;
   timestamp?: Date;
+  reactions?: Array<{
+    emoji: string;
+    count: number;
+    includesCurrentUser?: boolean;
+  }>;
   replyTo?: {
     authorLabel: string;
     excerpt?: string;
@@ -24,12 +29,14 @@ type HumanChatPanelMessagesProps = {
   messages: UIMessage[];
   isStreaming?: boolean;
   onReply?: (messageId: string) => void;
+  onToggleReaction?: (messageId: string, emoji: string) => void;
 };
 
 export function HumanChatPanelMessages({
   messages,
   isStreaming = false,
   onReply,
+  onToggleReaction,
 }: HumanChatPanelMessagesProps) {
   const t = useTranslations('HumanChatPanel');
 
@@ -68,6 +75,11 @@ export function HumanChatPanelMessages({
             onReply={
               msg.id !== 'welcome' && onReply
                 ? () => onReply(msg.id)
+                : undefined
+            }
+            onReact={
+              msg.id !== 'welcome' && onToggleReaction
+                ? (emoji: string) => onToggleReaction(msg.id, emoji)
                 : undefined
             }
           />

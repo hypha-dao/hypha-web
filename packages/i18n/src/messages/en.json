@@ -1617,7 +1617,7 @@
     "placeholder": "Type a message...",
     "placeholderChannel": "Message #{channel}",
     "sendButton": "Send",
-    "newlineHint": "Enter to send · Shift+Enter for newline · @ to mention",
+    "newlineHint": "Enter to send · Shift+Enter for newline · @ to mention · :emoji:",
     "loading": "Loading...",
     "openPanel": "Open chat panel",
     "hidePanel": "Hide chat panel",
@@ -1646,7 +1646,11 @@
     "systemSender": "System",
     "noMembers": "No members found",
     "unknownMember": "Unknown",
-    "failedToJoinRoom": "Failed to join conversation room"
+    "failedToJoinRoom": "Failed to join conversation room",
+    "emojiPickerComposer": "Choose emoji",
+    "emojiPickerReactToMessage": "React with emoji",
+    "emojiShortcodeListLabel": "Emoji shortcodes",
+    "reactionsOverflow": "+{count} more"
   },
   "CoherenceTab": {
     "signals": "Signals",
