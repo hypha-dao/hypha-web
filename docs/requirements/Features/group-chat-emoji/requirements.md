@@ -117,7 +117,7 @@ Space members use the **group chat panel** to talk in the Matrix room mapped to 
 
 **NFR-2** **Performance:** Emoji datasets and picker UI SHOULD be **lazy-loaded** (dynamic import) so initial panel load is not dominated by emoji metadata.
 
-**NFR-3** **Privacy / abuse:** Reaction keys MUST be **Unicode emoji** strings only in v1; reject or strip unexpected `key` values before send if user input can reach `key`.
+**NFR-3** **Privacy / abuse:** In v1, **`key`** on outgoing **`m.reaction`** events MUST be a **Unicode emoji** string. The system SHALL **validate** every `key` before **`client.sendEvent`** (reject or no-op invalid values). Allowed inputs in-product are FR-1 (picker) and FR-5 (shortcode → native emoji); validation is **defense in depth** against future code paths or malformed state.
 
 **NFR-4** **Ordering:** Reaction chips SHOULD be ordered **deterministically** (e.g. by count descending, then key) for stable UI.
 
