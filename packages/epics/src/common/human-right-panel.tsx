@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import type { MatrixEvent, Room } from 'matrix-js-sdk';
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import {
@@ -504,8 +505,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (!room) return;
 
     const onLocalEchoUpdated = (
-      ev: { getId: () => string | undefined },
-      _r: unknown,
+      ev: MatrixEvent,
+      _r: Room,
       oldEventId?: string,
     ) => {
       if (!oldEventId) return;
