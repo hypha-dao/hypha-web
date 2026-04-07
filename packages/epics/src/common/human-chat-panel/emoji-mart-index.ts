@@ -16,17 +16,22 @@ export function loadEmojiSearchIndex(): Promise<{
 }> {
   if (!indexPromise) {
     indexPromise = (async () => {
-      const mod = await import('@emoji-mart/data');
-      const data = mod.default as EmojiMartData;
-      const byId = new Map<string, string>();
-      const all: EmojiIndexEntry[] = [];
-      for (const [id, emoji] of Object.entries(data.emojis)) {
-        const native = emoji.skins[0]?.native;
-        if (!native) continue;
-        byId.set(id, native);
-        all.push({ id, native });
+      try {
+        const mod = await import('@emoji-mart/data');
+        const data = mod.default as EmojiMartData;
+        const byId = new Map<string, string>();
+        const all: EmojiIndexEntry[] = [];
+        for (const [id, emoji] of Object.entries(data.emojis)) {
+          const native = emoji.skins[0]?.native;
+          if (!native) continue;
+          byId.set(id, native);
+          all.push({ id, native });
+        }
+        return { byId, all };
+      } catch (error) {
+        indexPromise = null;
+        throw error;
       }
-      return { byId, all };
     })();
   }
   return indexPromise;
