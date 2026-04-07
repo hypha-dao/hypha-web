@@ -78,6 +78,8 @@ contract RegularTokenFactory is
    * @param useReceiveWhitelist If true, enforce receive whitelist
    * @param initialTransferWhitelist Initial addresses that can send tokens
    * @param initialReceiveWhitelist Initial addresses that can receive tokens
+   * @param initialTransferWhitelistSpaceIds Space IDs whose members can initially send tokens
+   * @param initialReceiveWhitelistSpaceIds Space IDs whose members can initially receive tokens
    * @param defaultCreditLimit Default credit limit for members of whitelisted spaces (0 = no credit)
    * @param initialCreditWhitelistSpaceIds Space IDs whose members receive credit eligibility
    * @param paymentToken Payment token contract for direct purchases (address(0) disables initial sale)
@@ -101,6 +103,8 @@ contract RegularTokenFactory is
     bool useReceiveWhitelist,
     address[] memory initialTransferWhitelist,
     address[] memory initialReceiveWhitelist,
+    uint256[] memory initialTransferWhitelistSpaceIds,
+    uint256[] memory initialReceiveWhitelistSpaceIds,
     uint256 defaultCreditLimit,
     uint256[] memory initialCreditWhitelistSpaceIds,
     address paymentToken,
@@ -140,6 +144,8 @@ contract RegularTokenFactory is
       useReceiveWhitelist,
       initialTransferWhitelist,
       initialReceiveWhitelist,
+      initialTransferWhitelistSpaceIds,
+      initialReceiveWhitelistSpaceIds,
       defaultCreditLimit,
       initialCreditWhitelistSpaceIds,
       paymentToken,

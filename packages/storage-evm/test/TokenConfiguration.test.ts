@@ -203,6 +203,8 @@ describe('Token Configuration Tests', function () {
         false, // useReceiveWhitelist
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        [], // initialTransferWhitelistSpaceIds
+        [], // initialReceiveWhitelistSpaceIds
         0, // defaultCreditLimit
         [], // initialCreditWhitelistSpaceIds
         ethers.ZeroAddress, // paymentToken
@@ -259,6 +261,8 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        [], // initialTransferWhitelistSpaceIds
+        [], // initialReceiveWhitelistSpaceIds
         0,
         [],
         ethers.ZeroAddress,
@@ -308,6 +312,8 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        [], // initialTransferWhitelistSpaceIds
+        [], // initialReceiveWhitelistSpaceIds
         0,
         [],
         ethers.ZeroAddress,
@@ -364,6 +370,8 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        [], // initialTransferWhitelistSpaceIds
+        [], // initialReceiveWhitelistSpaceIds
         0,
         [],
         ethers.ZeroAddress,
@@ -418,6 +426,8 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        [], // initialTransferWhitelistSpaceIds
+        [], // initialReceiveWhitelistSpaceIds
         0,
         [],
         ethers.ZeroAddress,
@@ -484,6 +494,8 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        [], // initialTransferWhitelistSpaceIds
+        [], // initialReceiveWhitelistSpaceIds
         0,
         [],
         ethers.ZeroAddress,
@@ -547,6 +559,8 @@ describe('Token Configuration Tests', function () {
         true, // useReceiveWhitelist = true
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        [], // initialTransferWhitelistSpaceIds
+        [], // initialReceiveWhitelistSpaceIds
         0,
         [],
         ethers.ZeroAddress,
@@ -727,6 +741,8 @@ describe('Token Configuration Tests', function () {
             false, // useReceiveWhitelist = false
             [],
             [],
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
             0,
             [],
             ethers.ZeroAddress,
@@ -792,6 +808,8 @@ describe('Token Configuration Tests', function () {
             true, // useReceiveWhitelist = true
             [],
             [],
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
             0,
             [],
             ethers.ZeroAddress,
@@ -875,6 +893,8 @@ describe('Token Configuration Tests', function () {
             true, // useReceiveWhitelist = true
             [],
             [],
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
             0,
             [],
             ethers.ZeroAddress,
@@ -961,6 +981,8 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        [], // initialTransferWhitelistSpaceIds
+        [], // initialReceiveWhitelistSpaceIds
         0,
         [],
         ethers.ZeroAddress,
@@ -1005,6 +1027,8 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        [], // initialTransferWhitelistSpaceIds
+        [], // initialReceiveWhitelistSpaceIds
         0,
         [],
         ethers.ZeroAddress,
@@ -1056,6 +1080,8 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        [], // initialTransferWhitelistSpaceIds
+        [], // initialReceiveWhitelistSpaceIds
         0,
         [],
         ethers.ZeroAddress,
@@ -1104,6 +1130,8 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        [], // initialTransferWhitelistSpaceIds
+        [], // initialReceiveWhitelistSpaceIds
         0,
         [],
         ethers.ZeroAddress,
@@ -1176,6 +1204,8 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        [], // initialTransferWhitelistSpaceIds
+        [], // initialReceiveWhitelistSpaceIds
         0,
         [],
         ethers.ZeroAddress,
@@ -1279,6 +1309,8 @@ describe('Token Configuration Tests', function () {
           false, // useReceiveWhitelist
           [], // initialTransferWhitelist
           [], // initialReceiveWhitelist
+          [], // initialTransferWhitelistSpaceIds
+          [], // initialReceiveWhitelistSpaceIds
           100, // 1% decay
           3600, // 1 hour
           ethers.ZeroAddress, // paymentToken (sale disabled)
@@ -1340,6 +1372,8 @@ describe('Token Configuration Tests', function () {
             false,
             [],
             [],
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
             100, // 1%
             3600, // 1 hour
             ethers.ZeroAddress,
@@ -1424,6 +1458,8 @@ describe('Token Configuration Tests', function () {
           true, // useReceiveWhitelist
           [], // initialTransferWhitelist
           [], // initialReceiveWhitelist
+          [], // initialTransferWhitelistSpaceIds
+          [], // initialReceiveWhitelistSpaceIds
           ethers.ZeroAddress, // paymentToken (sale disabled)
           0, // paymentTokenPricePerToken
           0, // tokensForSale
@@ -1483,6 +1519,8 @@ describe('Token Configuration Tests', function () {
             false,
             [], // initialTransferWhitelist
             [], // initialReceiveWhitelist
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
             0,
             [],
             ethers.ZeroAddress,
@@ -1559,6 +1597,8 @@ describe('Token Configuration Tests', function () {
             false,
             [], // initialTransferWhitelist
             [], // initialReceiveWhitelist
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
             0,
             [],
             ethers.ZeroAddress,
@@ -1627,6 +1667,8 @@ describe('Token Configuration Tests', function () {
             false,
             [], // initialTransferWhitelist
             [], // initialReceiveWhitelist
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
             0,
             [],
             ethers.ZeroAddress,
@@ -1703,6 +1745,8 @@ describe('Token Configuration Tests', function () {
             false,
             [], // initialTransferWhitelist
             [], // initialReceiveWhitelist
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
             100, // 1% decay
             3600, // 1 hour
             ethers.ZeroAddress,
@@ -1819,6 +1863,8 @@ describe('Token Configuration Tests', function () {
             false,
             [], // initialTransferWhitelist
             [], // initialReceiveWhitelist
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
             ethers.ZeroAddress,
             0,
             0,
@@ -1940,6 +1986,8 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        [], // initialTransferWhitelistSpaceIds
+        [], // initialReceiveWhitelistSpaceIds
         0,
         [],
         ethers.ZeroAddress,
@@ -2014,6 +2062,8 @@ describe('Token Configuration Tests', function () {
             false,
             [], // initialTransferWhitelist
             [], // initialReceiveWhitelist
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
             0,
             [],
             ethers.ZeroAddress,
@@ -2219,6 +2269,8 @@ describe('Token Configuration Tests', function () {
             false,
             [], // initialTransferWhitelist
             [], // initialReceiveWhitelist
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
             100, // 1% decay
             3600, // 1 hour
             ethers.ZeroAddress,
@@ -2389,6 +2441,8 @@ describe('Token Configuration Tests', function () {
             false,
             [], // initialTransferWhitelist
             [], // initialReceiveWhitelist
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
             ethers.ZeroAddress,
             0,
             0,
@@ -2499,6 +2553,8 @@ describe('Token Configuration Tests', function () {
             false,
             [], // initialTransferWhitelist
             [], // initialReceiveWhitelist
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
             0,
             [],
             ethers.ZeroAddress,
@@ -2570,6 +2626,8 @@ describe('Token Configuration Tests', function () {
             true, // useReceiveWhitelist
             [], // initialTransferWhitelist
             [], // initialReceiveWhitelist
+            [], // initialTransferWhitelistSpaceIds
+            [], // initialReceiveWhitelistSpaceIds
             0,
             [],
             ethers.ZeroAddress,
@@ -2650,6 +2708,8 @@ describe('Token Configuration Tests', function () {
         true, // only whitelisted can receive
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        [], // initialTransferWhitelistSpaceIds
+        [], // initialReceiveWhitelistSpaceIds
         0,
         [],
         ethers.ZeroAddress,
@@ -2718,6 +2778,8 @@ describe('Token Configuration Tests', function () {
         true, // only whitelisted can receive
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        [], // initialTransferWhitelistSpaceIds
+        [], // initialReceiveWhitelistSpaceIds
         0,
         [],
         ethers.ZeroAddress,
@@ -2823,6 +2885,8 @@ describe('Token Configuration Tests', function () {
         true, // useReceiveWhitelist
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        [], // initialTransferWhitelistSpaceIds
+        [], // initialReceiveWhitelistSpaceIds
         0,
         [],
         ethers.ZeroAddress,
@@ -3194,6 +3258,8 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        [], // initialTransferWhitelistSpaceIds
+        [], // initialReceiveWhitelistSpaceIds
         0,
         [],
         ethers.ZeroAddress,
@@ -3306,6 +3372,8 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        [], // initialTransferWhitelistSpaceIds
+        [], // initialReceiveWhitelistSpaceIds
         0,
         [],
         ethers.ZeroAddress,
@@ -3356,6 +3424,8 @@ describe('Token Configuration Tests', function () {
         false,
         [], // initialTransferWhitelist
         [], // initialReceiveWhitelist
+        [], // initialTransferWhitelistSpaceIds
+        [], // initialReceiveWhitelistSpaceIds
         0,
         [],
         ethers.ZeroAddress,
@@ -3470,6 +3540,8 @@ describe('Token Configuration Tests', function () {
           false,
           [], // initialTransferWhitelist
           [], // initialReceiveWhitelist
+          [], // initialTransferWhitelistSpaceIds
+          [], // initialReceiveWhitelistSpaceIds
           100, // 1% decay
           3600, // 1 hour
           ethers.ZeroAddress,
@@ -3522,6 +3594,8 @@ describe('Token Configuration Tests', function () {
           false,
           [], // initialTransferWhitelist
           [], // initialReceiveWhitelist
+          [], // initialTransferWhitelistSpaceIds
+          [], // initialReceiveWhitelistSpaceIds
           ethers.ZeroAddress,
           0,
           0,
@@ -3616,6 +3690,8 @@ describe('Token Configuration Tests', function () {
         false,
         [],
         [],
+        [], // initialTransferWhitelistSpaceIds
+        [], // initialReceiveWhitelistSpaceIds
         defaultCreditLimit,
         initialCreditWhitelistSpaceIds,
         ethers.ZeroAddress,
@@ -3803,6 +3879,8 @@ describe('Token Configuration Tests', function () {
         useReceiveWhitelist,
         [],
         [],
+        [], // initialTransferWhitelistSpaceIds
+        [], // initialReceiveWhitelistSpaceIds
         0,
         [],
         paymentTokenAddress,

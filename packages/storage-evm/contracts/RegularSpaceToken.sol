@@ -151,6 +151,8 @@ contract RegularSpaceToken is
     bool _useReceiveWhitelist,
     address[] memory _initialTransferWhitelist,
     address[] memory _initialReceiveWhitelist,
+    uint256[] memory _initialTransferWhitelistSpaceIds,
+    uint256[] memory _initialReceiveWhitelistSpaceIds,
     uint256 _defaultCreditLimit,
     uint256[] memory _initialCreditWhitelistSpaceIds,
     address _paymentToken,
@@ -191,6 +193,16 @@ contract RegularSpaceToken is
     // Set initial receive whitelist
     for (uint256 i = 0; i < _initialReceiveWhitelist.length; i++) {
       canReceive[_initialReceiveWhitelist[i]] = true;
+    }
+
+    // Set initial transfer whitelist spaces (all current members can transfer)
+    for (uint256 i = 0; i < _initialTransferWhitelistSpaceIds.length; i++) {
+      _addSpaceToList(_transferWhitelistedSpaceIds, isTransferWhitelistedSpace, _initialTransferWhitelistSpaceIds[i]);
+    }
+
+    // Set initial receive whitelist spaces (all current members can receive)
+    for (uint256 i = 0; i < _initialReceiveWhitelistSpaceIds.length; i++) {
+      _addSpaceToList(_receiveWhitelistedSpaceIds, isReceiveWhitelistedSpace, _initialReceiveWhitelistSpaceIds[i]);
     }
 
     // Initialize mutual credit

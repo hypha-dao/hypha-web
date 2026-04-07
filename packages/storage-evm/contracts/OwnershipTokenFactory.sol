@@ -82,6 +82,8 @@ contract OwnershipTokenFactory is
    * @param useReceiveWhitelist If true, enforce receive whitelist
    * @param initialTransferWhitelist Initial addresses that can send tokens
    * @param initialReceiveWhitelist Initial addresses that can receive tokens
+   * @param initialTransferWhitelistSpaceIds Space IDs whose members can initially send tokens
+   * @param initialReceiveWhitelistSpaceIds Space IDs whose members can initially receive tokens
    * @param paymentToken ERC20 payment token for token purchases (address(0) disables sale)
    * @param paymentTokenPricePerToken Payment token amount per 1 token unit
    * @param tokensForSale Max amount of tokens available for purchase
@@ -102,6 +104,8 @@ contract OwnershipTokenFactory is
     bool useReceiveWhitelist,
     address[] memory initialTransferWhitelist,
     address[] memory initialReceiveWhitelist,
+    uint256[] memory initialTransferWhitelistSpaceIds,
+    uint256[] memory initialReceiveWhitelistSpaceIds,
     address paymentToken,
     uint256 paymentTokenPricePerToken,
     uint256 tokensForSale,
@@ -139,6 +143,8 @@ contract OwnershipTokenFactory is
       useReceiveWhitelist,
       initialTransferWhitelist,
       initialReceiveWhitelist,
+      initialTransferWhitelistSpaceIds,
+      initialReceiveWhitelistSpaceIds,
       paymentToken,
       paymentTokenPricePerToken,
       tokensForSale,
