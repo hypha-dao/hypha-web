@@ -1,4 +1,4 @@
-import type { Person } from '@hypha-platform/core/client';
+import type { PaginatedResponse, Person } from '@hypha-platform/core/client';
 import type { Space } from '../types';
 import { getSpaceDetails } from '@hypha-platform/core/client';
 import { publicClient } from '@hypha-platform/core/client';
@@ -20,6 +20,7 @@ import {
   normalizeMemberAddress,
   type SpaceMemberRosterEntry,
 } from './get-space-members-roster-helpers';
+import { paginateSpaceMembersForHttp } from './paginate-space-members-for-http';
 
 export type {
   MembershipSnake,
@@ -94,38 +95,28 @@ async function fetchOnChainMemberAddresses(
   return members;
 }
 
-export async function getSpaceMembersRoster(
-  {
-    spaceSlug,
-    page = 1,
-    pageSize = 20,
-    searchTerm,
-  }: GetSpaceMembersRosterInput,
+/**
+ * Builds the full merged member list (on-chain order) for a space slug.
+ * Shared by MCP/chat roster and the HTTP members API.
+ */
+export async function computeSpaceMemberEntries(
+  spaceSlug: string,
   { db }: DbConfig,
-): Promise<SpaceMembersRosterResult> {
+): Promise<
+  | { found: false }
+  | {
+      found: true;
+      host: Space;
+      memberAddresses: readonly `0x${string}`[];
+      entries: SpaceMemberRosterEntry[];
+      source_chain: 'rpc' | null;
+      asOf: string;
+    }
+> {
   const asOf = new Date().toISOString();
-  const safePage = Math.max(1, page);
-  const safePageSize = Math.min(100, Math.max(1, pageSize));
-
   const host = await findSpaceBySlug({ slug: spaceSlug }, { db });
   if (!host) {
-    return {
-      found: false,
-      space_slug: spaceSlug,
-      space: null,
-      source: 'db',
-      source_chain: null,
-      asOf,
-      members: [],
-      pagination: {
-        total: 0,
-        page: safePage,
-        page_size: safePageSize,
-        total_pages: 0,
-        has_next_page: false,
-        has_previous_page: false,
-      },
-    };
+    return { found: false };
   }
 
   let memberAddresses: readonly `0x${string}`[] = [];
@@ -142,25 +133,11 @@ export async function getSpaceMembersRoster(
   if (memberAddresses.length === 0) {
     return {
       found: true,
-      space_slug: spaceSlug,
-      space: {
-        id: host.id,
-        slug: host.slug,
-        title: host.title,
-        parent_id: host.parentId ?? null,
-      },
-      source: 'db',
+      host,
+      memberAddresses,
+      entries: [],
       source_chain,
       asOf,
-      members: [],
-      pagination: {
-        total: 0,
-        page: safePage,
-        page_size: safePageSize,
-        total_pages: 0,
-        has_next_page: false,
-        has_previous_page: false,
-      },
     };
   }
 
@@ -239,7 +216,7 @@ export async function getSpaceMembersRoster(
     );
   }
 
-  let entries = buildMemberEntriesFromAddresses({
+  const entries = buildMemberEntriesFromAddresses({
     memberAddresses,
     peopleByAddress,
     spacesByAddress,
@@ -247,7 +224,118 @@ export async function getSpaceMembersRoster(
     eventJoinTimeByAddress,
   });
 
-  entries = applySearchFilter(entries, searchTerm);
+  return {
+    found: true,
+    host,
+    memberAddresses,
+    entries,
+    source_chain,
+    asOf,
+  };
+}
+
+export async function getSpaceMembersForHttpApi(
+  {
+    spaceSlug,
+    page = 1,
+    pageSize = 10,
+    searchTerm,
+  }: {
+    spaceSlug: string;
+    page?: number;
+    pageSize?: number;
+    searchTerm?: string;
+  },
+  { db }: DbConfig,
+): Promise<
+  | { found: false }
+  | {
+      found: true;
+      persons: PaginatedResponse<Person>;
+      spaces: PaginatedResponse<Space>;
+    }
+> {
+  const computed = await computeSpaceMemberEntries(spaceSlug, { db });
+  if (!computed.found) {
+    return { found: false };
+  }
+
+  const filtered = applySearchFilter(computed.entries, searchTerm);
+  const personRows = filtered.filter((e) => e.member_kind === 'person');
+  const spaceRowsFiltered = filtered.filter((e) => e.member_kind === 'space');
+
+  const personsList = personRows.map((e) => e.person as Person);
+  const spacesList = spaceRowsFiltered.map((e) => e.space);
+
+  return {
+    found: true,
+    persons: paginateSpaceMembersForHttp(personsList, page, pageSize),
+    spaces: paginateSpaceMembersForHttp(spacesList, page, pageSize),
+  };
+}
+
+export async function getSpaceMembersRoster(
+  {
+    spaceSlug,
+    page = 1,
+    pageSize = 20,
+    searchTerm,
+  }: GetSpaceMembersRosterInput,
+  { db }: DbConfig,
+): Promise<SpaceMembersRosterResult> {
+  const asOf = new Date().toISOString();
+  const safePage = Math.max(1, page);
+  const safePageSize = Math.min(100, Math.max(1, pageSize));
+
+  const computed = await computeSpaceMemberEntries(spaceSlug, { db });
+  if (!computed.found) {
+    return {
+      found: false,
+      space_slug: spaceSlug,
+      space: null,
+      source: 'db',
+      source_chain: null,
+      asOf,
+      members: [],
+      pagination: {
+        total: 0,
+        page: safePage,
+        page_size: safePageSize,
+        total_pages: 0,
+        has_next_page: false,
+        has_previous_page: false,
+      },
+    };
+  }
+
+  const { host, entries: rawEntries, source_chain } = computed;
+
+  if (rawEntries.length === 0) {
+    return {
+      found: true,
+      space_slug: spaceSlug,
+      space: {
+        id: host.id,
+        slug: host.slug,
+        title: host.title,
+        parent_id: host.parentId ?? null,
+      },
+      source: 'db',
+      source_chain,
+      asOf: computed.asOf,
+      members: [],
+      pagination: {
+        total: 0,
+        page: safePage,
+        page_size: safePageSize,
+        total_pages: 0,
+        has_next_page: false,
+        has_previous_page: false,
+      },
+    };
+  }
+
+  const entries = applySearchFilter(rawEntries, searchTerm);
 
   const total = entries.length;
   const totalPages = total === 0 ? 0 : Math.ceil(total / safePageSize);
@@ -265,7 +353,7 @@ export async function getSpaceMembersRoster(
     },
     source: 'db',
     source_chain,
-    asOf,
+    asOf: computed.asOf,
     members: pageSlice,
     pagination: {
       total,

@@ -53,16 +53,18 @@ describe('buildMemberEntriesFromAddresses', () => {
     });
 
     expect(entries).toHaveLength(2);
-    expect(entries[0].member_kind).toBe('person');
-    if (entries[0].member_kind === 'person') {
-      expect(entries[0].membership).toMatchObject({
+    const first = entries[0]!;
+    const second = entries[1]!;
+    expect(first.member_kind).toBe('person');
+    if (first.member_kind === 'person') {
+      expect(first.membership).toMatchObject({
         id: 1,
         person_id: 10,
         space_id: 1,
       });
-      expect(entries[0].join_source).toBe('membership');
+      expect(first.join_source).toBe('membership');
     }
-    expect(entries[1].member_kind).toBe('space');
+    expect(second.member_kind).toBe('space');
   });
 
   it('uses joinSpace event time when memberships row is missing (UI parity)', () => {
@@ -87,7 +89,7 @@ describe('buildMemberEntriesFromAddresses', () => {
     });
 
     expect(entries).toHaveLength(1);
-    const e = entries[0];
+    const e = entries[0]!;
     expect(e.member_kind).toBe('person');
     if (e.member_kind === 'person') {
       expect(e.membership).toBeNull();
