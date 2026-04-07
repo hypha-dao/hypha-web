@@ -185,7 +185,7 @@ For each `m.room.message` event id shown in the panel:
 
 ## 10. Implementation decomposition (suggested tickets)
 
-1. **Matrix core:** Extend `Message`, timeline listeners, `sendReaction` / `toggleReaction`, aggregation + redaction handling (`matrix-provider.tsx`, `types.ts`).
+1. **Matrix core:** Extend `Message`, timeline listeners, `sendReaction` / `toggleReaction`, aggregation + redaction handling (`matrix-provider.tsx`, `types.ts`). Include **`messageFromRoomMessageEvent`** / **`rich-reply.ts`** (or the call site that maps `MatrixEvent` → `Message`): after building each room message, **attach** aggregated reactions (e.g. **`attachReactionsToMessage`**) so initial load, pagination, and live updates all populate `reactions`, `includesCurrentUser`, and **`currentUserReactionEventId`** for toggle/redaction.
 2. **Composer UI:** Wire smile button, lazy-load picker, caret insertion, i18n + a11y.
 3. **Shortcode autocomplete:** Tokenize `:` prefix, filter list, keyboard nav.
 4. **Bubble UI:** Enable react button, show aggregated chips, hook toggle + live updates.
