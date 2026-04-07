@@ -84,13 +84,13 @@ Space members use the **group chat panel** to talk in the Matrix room mapped to 
 
 ### 5.3 Timeline — display and interaction
 
-**FR-8** For each **real** chat message (excluding `id === 'welcome'` synthetic messages), the system SHALL render **aggregated reactions** under the bubble when at least one reaction exists, showing **emoji** and **count**, grouped by **`key`**.
+**FR-8** For each **real** Matrix `m.room.message` row in the UI (not **synthetic** system rows), the system SHALL render **aggregated reactions** under the bubble when at least one reaction exists, showing **emoji** and **count**, grouped by **`key`**. Synthetic rows are identified in the UI model with a boolean such as **`isSynthetic`** (or equivalent); the welcome row uses **`isSynthetic: true`**.
 
-**FR-9** The hover / focus-within **react** control on a message SHALL be **enabled** for real messages and SHALL open a **reaction picker** (may reuse the same picker component as the composer with a distinct `aria-label`) or a **compact quick-reaction strip** plus “more” opening the full picker.
+**FR-9** The hover / focus-within **React** control on a message SHALL be **enabled** only when **`canReact(message)`** is true (e.g. `!message.isSynthetic` and the row maps to a real Matrix event id), and SHALL open a **reaction picker** (may reuse the same picker component as the composer with a distinct `aria-label`) or a **compact quick-reaction strip** plus “more” opening the full picker.
 
-**FR-10** Choosing an emoji from the message-level react UI SHALL **send** an `m.reaction` annotation for that message’s event id. If the user already reacted with the **same key**, the system SHALL **remove** that reaction (redact the user’s `m.reaction` event for that key), so behavior matches common chat **toggle** semantics.
+**FR-10** Choosing an emoji from the message-level React UI SHALL **send** an `m.reaction` annotation for that message’s event id. If the user already reacted with the **same key**, the system SHALL **remove** that reaction (redact the user’s `m.reaction` event for that key), so behavior matches common chat **toggle** semantics.
 
-**FR-11** The system SHALL **not** send reactions targeting the **welcome** synthetic message; the react affordance SHALL remain **hidden or disabled** for that row (consistent with reply rules in the reply spec).
+**FR-11** The system SHALL **not** send reactions for **synthetic** system messages (`isSynthetic` or equivalent). The **React** affordance SHALL remain **hidden or disabled** for those rows (consistent with reply rules in the reply spec).
 
 ### 5.4 Matrix API surface (Hypha)
 

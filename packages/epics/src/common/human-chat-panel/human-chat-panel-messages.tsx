@@ -8,6 +8,8 @@ import { HumanChatPanelMessageBubble } from './human-chat-panel-message-bubble';
 type UIMessage = {
   id: string;
   role: 'user' | 'member';
+  /** Non-Matrix / system rows: no reply or reactions. */
+  isSynthetic?: boolean;
   parts?: Array<
     { type: 'text'; text: string } | { type: string; [k: string]: unknown }
   >;
@@ -43,6 +45,7 @@ export function HumanChatPanelMessages({
   const welcomeMessage: UIMessage = {
     id: 'welcome',
     role: 'member',
+    isSynthetic: true,
     parts: [{ type: 'text', text: t('welcome') }],
     senderName: 'System',
   };
@@ -63,27 +66,28 @@ export function HumanChatPanelMessages({
       className="narrow-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto px-3 py-3"
     >
       <div className="flex flex-col gap-4">
-        {displayMessages.map((msg, index) => (
-          <HumanChatPanelMessageBubble
-            key={msg.id}
-            message={msg}
-            isStreaming={
-              msg.role === 'member' &&
-              isStreaming &&
-              index === displayMessages.length - 1
-            }
-            onReply={
-              msg.id !== 'welcome' && onReply
-                ? () => onReply(msg.id)
-                : undefined
-            }
-            onReact={
-              msg.id !== 'welcome' && onToggleReaction
-                ? (emoji: string) => onToggleReaction(msg.id, emoji)
-                : undefined
-            }
-          />
-        ))}
+        {displayMessages.map((msg, index) => {
+          const canInteract = !msg.isSynthetic;
+          return (
+            <HumanChatPanelMessageBubble
+              key={msg.id}
+              message={msg}
+              isStreaming={
+                msg.role === 'member' &&
+                isStreaming &&
+                index === displayMessages.length - 1
+              }
+              onReply={
+                canInteract && onReply ? () => onReply(msg.id) : undefined
+              }
+              onReact={
+                canInteract && onToggleReaction
+                  ? (emoji: string) => onToggleReaction(msg.id, emoji)
+                  : undefined
+              }
+            />
+          );
+        })}
       </div>
     </div>
   );

@@ -22,6 +22,7 @@ type HumanChatPanelMessageBubbleProps = {
   message: {
     id: string;
     role: 'user' | 'member';
+    isSynthetic?: boolean;
     parts?: UIMessagePart[];
     senderName?: string;
     avatarUrl?: string;

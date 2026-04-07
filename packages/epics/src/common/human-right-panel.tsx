@@ -35,6 +35,8 @@ import { useHumanChatPanel } from './human-chat-panel-context';
 type UIMessage = {
   id: string;
   role: 'user' | 'member';
+  /** True for non-Matrix rows (e.g. welcome); disables reply/reactions. */
+  isSynthetic?: boolean;
   parts?: Array<
     { type: 'text'; text: string } | { type: string; [k: string]: unknown }
   >;
@@ -119,6 +121,7 @@ function toUIMessage(
   return {
     id: msg.id,
     role: isCurrentUser ? 'user' : 'member',
+    isSynthetic: false,
     parts: [{ type: 'text', text: msg.content }],
     senderName: isCurrentUser ? undefined : resolveMemberLabel(msg.sender),
     senderMatrixId: msg.sender,
