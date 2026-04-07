@@ -91,6 +91,13 @@ function buildSystemPrompt(spaceSlug?: string | null): string {
   return BASE_SYSTEM_PROMPT;
 }
 
+/** Narrow contract for chat tools; `streamText` tools map is still cast (TS2589). */
+type ChatRouteTool = {
+  description: string;
+  inputSchema: z.ZodTypeAny;
+  execute: (args: unknown) => Promise<unknown>;
+};
+
 function createGetPeopleBySpaceSlugTool(req: Request) {
   const inputSchema = z.object({
     space_slug: z
@@ -107,12 +114,21 @@ function createGetPeopleBySpaceSlugTool(req: Request) {
     description:
       'Read-only: lists members of a Hypha space by slug — people and other spaces that appear as on-chain members (Members tab parity). Join times use memberships when present, else joinSpace events (joined_at and join_source in the result). Includes full memberships fields for people when stored in the database. Use for roster, who belongs, which other spaces are in the member list, and when someone joined. Not for listing child subspaces by parent_id.',
     inputSchema,
-    execute: async (args: z.infer<typeof inputSchema>) => {
-      const safe = sanitizeSlug(args.space_slug);
+    execute: async (args: unknown) => {
+      const parsedArgs = inputSchema.safeParse(args);
+      if (!parsedArgs.success) {
+        return {
+          found: false,
+          space_slug: '',
+          error: parsedArgs.error.message,
+        };
+      }
+      const toolArgs = parsedArgs.data;
+      const safe = sanitizeSlug(toolArgs.space_slug);
       if (!safe) {
         return {
           found: false,
-          space_slug: args.space_slug,
+          space_slug: toolArgs.space_slug,
           error: 'Invalid space slug format',
         };
       }
@@ -150,9 +166,9 @@ function createGetPeopleBySpaceSlugTool(req: Request) {
         const raw = await getSpaceMembersRoster(
           {
             spaceSlug: safe,
-            page: args.page,
-            pageSize: args.page_size,
-            searchTerm: args.searchTerm,
+            page: toolArgs.page,
+            pageSize: toolArgs.page_size,
+            searchTerm: toolArgs.searchTerm,
           },
           { db },
         );
@@ -166,7 +182,7 @@ function createGetPeopleBySpaceSlugTool(req: Request) {
         };
       }
     },
-  };
+  } satisfies ChatRouteTool;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- AI SDK tool() and Tool type trigger TS2589 (heap OOM) in CI
@@ -271,17 +287,17 @@ export async function POST(req: Request) {
     });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- AI SDK tools union triggers TS2589 in CI (explicit ReturnType also fails)
-  const getPeopleBySpaceSlugTool: any = createGetPeopleBySpaceSlugTool(req);
+  const getPeopleBySpaceSlugTool = createGetPeopleBySpaceSlugTool(req);
 
   const result = streamText({
     model: openrouter('openrouter/auto'),
     system: buildSystemPrompt(spaceSlug),
     messages: await convertToModelMessages(messages),
+
     tools: {
       get_space_by_slug: getSpaceBySlugTool,
       get_people_by_space_slug: getPeopleBySpaceSlugTool,
-    },
+    } as any,
     stopWhen: stepCountIs(6),
     onStepFinish: (event) => {
       if (!OPENROUTER_DEBUG) return;
