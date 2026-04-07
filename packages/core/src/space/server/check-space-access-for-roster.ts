@@ -38,6 +38,7 @@ export async function checkSpaceAccessForSpace(
       getSpaceVisibility({ spaceId: spaceIdBigInt }),
     );
 
+    // viem may return either a struct `{ access: number }` or a positional tuple; normalize to level 0–3.
     const accessLevel = Number(
       'access' in visibility ? visibility.access : visibility[1],
     ) as SpaceTransparencyLevel;
