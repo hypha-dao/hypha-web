@@ -5,6 +5,7 @@ import * as MatrixSdk from 'matrix-js-sdk';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { MatrixTokenData, useMatrixToken } from '../hooks';
 import { Message } from '../../types';
+import { attachReactionsToMessage, isValidReactionKey } from '../../reactions';
 import {
   buildRichReplyPlainBody,
   messageFromRoomMessageEvent,
@@ -16,6 +17,12 @@ interface SendMessageInput {
   message: string;
   /** Rich reply: target m.room.message event id (space chat; not m.thread). */
   replyToEventId?: string;
+}
+
+export interface ToggleReactionInput {
+  roomId: string;
+  targetEventId: string;
+  key: string;
 }
 
 export type MatrixEventListener = (
@@ -40,6 +47,7 @@ interface MatrixContextType {
   isAuthenticated: boolean;
   createRoom: (title: string) => Promise<{ roomId: string }>;
   sendMessage: (params: SendMessageInput) => Promise<void>;
+  toggleReaction: (params: ToggleReactionInput) => Promise<void>;
   getRoomMessages: (roomId: string) => Message[] | null;
   getPinnedMessageIds: (roomId: string) => string[];
   togglePinnedMessage: (roomId: string, messageId: string) => Promise<void>;
@@ -179,6 +187,58 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     [client],
   );
 
+  const toggleReaction = React.useCallback(
+    async ({ roomId, targetEventId, key }: ToggleReactionInput) => {
+      if (!client) {
+        throw new Error('Client should be specified');
+      }
+      if (!isValidReactionKey(key)) {
+        throw new Error('Invalid reaction key');
+      }
+      const room = client.getRoom(roomId);
+      if (!room) {
+        throw new Error('Room not found');
+      }
+      const uid = client.getUserId();
+      const rel = room.relations.getChildEventsForEvent(
+        targetEventId,
+        MatrixSdk.RelationType.Annotation,
+        MatrixSdk.EventType.Reaction,
+      );
+      let ownReactionEventId: string | undefined;
+      if (rel && uid) {
+        const byKey = rel.getSortedAnnotationsByKey();
+        if (byKey) {
+          for (const [k, eventSet] of byKey) {
+            if (k !== key) continue;
+            for (const ev of eventSet) {
+              if (ev.isRedacted()) continue;
+              if (ev.getSender() === uid) {
+                const id = ev.getId();
+                if (id) ownReactionEventId = id;
+                break;
+              }
+            }
+          }
+        }
+      }
+
+      if (ownReactionEventId) {
+        await client.redactEvent(roomId, ownReactionEventId);
+        return;
+      }
+
+      await client.sendEvent(roomId, MatrixSdk.EventType.Reaction, {
+        'm.relates_to': {
+          event_id: targetEventId,
+          key,
+          rel_type: MatrixSdk.RelationType.Annotation,
+        },
+      });
+    },
+    [client],
+  );
+
   const sendMessage = React.useCallback(
     async ({ roomId, message, replyToEventId }: SendMessageInput) => {
       if (!client) {
@@ -255,20 +315,22 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       }
 
       const pinned = getPinnedMessageIds(roomId);
+      const uid = client.getUserId();
       const messages = room
         ? room
             .getLiveTimeline()
             .getEvents()
             .filter((event) => event.getType() === EventType.RoomMessage)
             .filter((event) => event.getId() && event.getSender())
-            .map((event) =>
-              messageFromRoomMessageEvent(
+            .map((event) => {
+              const base = messageFromRoomMessageEvent(
                 client,
                 roomId,
                 event,
                 pinned.includes(event.getId()!),
-              ),
-            )
+              );
+              return attachReactionsToMessage(room, base, uid);
+            })
         : null;
       return messages;
     },
@@ -390,23 +452,100 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         if (event.getRoomId() !== roomId) {
           return;
         }
-        if (event.getType() === EventType.RoomMessage) {
+        const room = client.getRoom(roomId);
+        const type = event.getType();
+
+        if (type === EventType.RoomMessage) {
           const eventId = event.getId();
           const sender = event.getSender();
           if (!eventId || !sender) return;
-          const pinnedIds = client.getRoom(roomId)
-            ? getPinnedMessageIds(roomId)
-            : [];
-          const message = messageFromRoomMessageEvent(
+          const pinnedIds = room ? getPinnedMessageIds(roomId) : [];
+          let message = messageFromRoomMessageEvent(
             client,
             roomId,
             event,
             pinnedIds.includes(eventId),
           );
+          if (room) {
+            message = attachReactionsToMessage(
+              room,
+              message,
+              client.getUserId(),
+            );
+          }
           await messageListener(message);
-        } else if (event.getType() === EventType.RoomPinnedEvents) {
+        } else if (type === EventType.RoomPinnedEvents) {
           const pinned = event.getContent().pinned;
           await messagePinnedListener(pinned);
+        } else if (type === EventType.Reaction) {
+          const targetId = event.getWireContent()?.['m.relates_to']?.[
+            'event_id'
+          ] as string | undefined;
+          if (!targetId || !room) return;
+          const targetEv = room.findEventById(targetId);
+          if (!targetEv || targetEv.getType() !== EventType.RoomMessage) {
+            return;
+          }
+          const pinnedIds = getPinnedMessageIds(roomId);
+          const eventId = targetEv.getId();
+          const targetSender = targetEv.getSender();
+          if (!eventId || !targetSender) return;
+          let message = messageFromRoomMessageEvent(
+            client,
+            roomId,
+            targetEv,
+            pinnedIds.includes(eventId),
+          );
+          message = attachReactionsToMessage(room, message, client.getUserId());
+          await messageListener(message);
+        } else if (type === EventType.RoomRedaction) {
+          const redacts = event.getContent()?.redacts as string | undefined;
+          if (!redacts || !room) return;
+          const redacted = room.findEventById(redacts);
+          if (!redacted) return;
+          if (redacted.getType() === EventType.Reaction) {
+            const targetId = redacted.getWireContent()?.['m.relates_to']?.[
+              'event_id'
+            ] as string | undefined;
+            if (!targetId) return;
+            const targetEv = room.findEventById(targetId);
+            if (!targetEv || targetEv.getType() !== EventType.RoomMessage) {
+              return;
+            }
+            const pinnedIds = getPinnedMessageIds(roomId);
+            const tevId = targetEv.getId();
+            const tevSender = targetEv.getSender();
+            if (!tevId || !tevSender) return;
+            let message = messageFromRoomMessageEvent(
+              client,
+              roomId,
+              targetEv,
+              pinnedIds.includes(tevId),
+            );
+            message = attachReactionsToMessage(
+              room,
+              message,
+              client.getUserId(),
+            );
+            await messageListener(message);
+          } else if (redacted.getType() === EventType.RoomMessage) {
+            const pinnedIds = getPinnedMessageIds(roomId);
+            const mid = redacted.getId();
+            const ms = redacted.getSender();
+            if (!mid || !ms) return;
+            let message = messageFromRoomMessageEvent(
+              client,
+              roomId,
+              redacted,
+              pinnedIds.includes(mid),
+            );
+            message = attachReactionsToMessage(
+              room,
+              message,
+              client.getUserId(),
+            );
+            await messageListener(message);
+          }
         }
       };
       client.addListener(RoomEvent.Timeline, eventListener);
@@ -426,6 +565,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     isAuthenticated,
     createRoom,
     sendMessage,
+    toggleReaction,
     getRoomMessages,
     getPinnedMessageIds,
     togglePinnedMessage,
@@ -448,6 +588,9 @@ const noopMatrixContext: MatrixContextType = {
     throw new Error('Matrix unavailable');
   },
   sendMessage: async () => {
+    throw new Error('Matrix unavailable');
+  },
+  toggleReaction: async () => {
     throw new Error('Matrix unavailable');
   },
   getRoomMessages: () => null,

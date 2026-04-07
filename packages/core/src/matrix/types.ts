@@ -38,6 +38,15 @@ export interface GetAdminUserNameActionInput {
   environment: Environment;
 }
 
+/** Aggregated Matrix reaction (m.annotation) on an m.room.message. */
+export interface MessageReaction {
+  key: string;
+  count: number;
+  includesCurrentUser?: boolean;
+  /** Current user's m.reaction event id for this key (for toggle off). */
+  currentUserReactionEventId?: string;
+}
+
 export interface Message {
   id: string;
   sender: string;
@@ -50,4 +59,6 @@ export interface Message {
   inReplyToSender?: string;
   /** Truncated excerpt for UI; omit when unknown or redacted. */
   inReplyToBodyPreview?: string;
+  /** Aggregated emoji reactions for this message. */
+  reactions?: MessageReaction[];
 }
