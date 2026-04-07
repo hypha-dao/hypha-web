@@ -499,7 +499,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           message = attachReactionsToMessage(room, message, client.getUserId());
           await messageListener(message);
         } else if (type === EventType.RoomRedaction) {
-          const redacts = event.getContent()?.redacts as string | undefined;
+          const redacts =
+            (event.getAssociatedId() as string | undefined) ??
+            (event.getContent()?.redacts as string | undefined);
           if (!redacts || !room) return;
           const redacted = room.findEventById(redacts);
           if (!redacted) return;
