@@ -209,7 +209,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         MatrixSdk.RelationType.Annotation,
         MatrixSdk.EventType.Reaction,
       );
-      let ownReactionEventId: string | undefined;
+      const ownReactionEventIds = new Set<string>();
       if (rel && uid) {
         const byKey = rel.getSortedAnnotationsByKey();
         if (byKey) {
@@ -219,16 +219,19 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
               if (ev.isRedacted()) continue;
               if (ev.getSender() === uid) {
                 const id = ev.getId();
-                if (id) ownReactionEventId = id;
-                break;
+                if (id) ownReactionEventIds.add(id);
               }
             }
           }
         }
       }
 
-      if (ownReactionEventId) {
-        await client.redactEvent(roomId, ownReactionEventId);
+      if (ownReactionEventIds.size > 0) {
+        await Promise.all(
+          [...ownReactionEventIds].map((reactionEventId) =>
+            client.redactEvent(roomId, reactionEventId),
+          ),
+        );
         return;
       }
 
