@@ -18,6 +18,7 @@ import {
   buildMemberEntriesFromAddresses,
   mergeJoinEventTimesByAddress,
   normalizeMemberAddress,
+  type RosterPerson,
   type SpaceMemberRosterEntry,
 } from './get-space-members-roster-helpers';
 import { paginateSpaceMembersForHttp } from './paginate-space-members-for-http';
@@ -167,7 +168,7 @@ export async function computeSpaceMemberEntries(
     .from(people)
     .where(inArray(sql`upper(${people.address})`, upperList));
 
-  const peopleByAddress = new Map<string, Person>();
+  const peopleByAddress = new Map<string, RosterPerson>();
   for (const row of peopleRows) {
     if (!row.address || !row.createdAt || !row.updatedAt) continue;
     peopleByAddress.set(normalizeMemberAddress(row.address), {
