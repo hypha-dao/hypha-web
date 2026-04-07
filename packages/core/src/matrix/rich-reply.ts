@@ -5,6 +5,9 @@ import type * as MatrixSdk from 'matrix-js-sdk';
 
 import type { Message } from './types';
 
+/** Element / Hypha custom HTML for `m.room.message` (with plaintext `body` fallback). */
+export const MATRIX_CUSTOM_HTML_FORMAT = 'org.matrix.custom.html';
+
 export const RICH_REPLY_PREVIEW_MAX = 280;
 
 /** Single-line reply excerpt (Discord-style): first line only, then optional char cap. */
@@ -155,6 +158,31 @@ export function buildRichReplyPlainBody(
   return `${quoted}\n\n${safeReply}`;
 }
 
+/** Split `buildRichReplyPlainBody` output into quoted fallback vs new reply text. */
+export function splitRichReplyPlainBody(plainBody: string): {
+  quoted: string;
+  reply: string;
+} {
+  const normalized = plainBody.replace(/\r\n/g, '\n');
+  const idx = normalized.indexOf('\n\n');
+  if (idx === -1) {
+    return { quoted: '', reply: normalized };
+  }
+  return {
+    quoted: normalized.slice(0, idx),
+    reply: normalized.slice(idx + 2),
+  };
+}
+
+const REPLY_FORMATTED_HTML_SEP = '<br /><br />';
+
+/** After rich-reply Matrix HTML, the new reply HTML follows the first `<br /><br />`. */
+export function extractReplyFormattedHtml(formattedBody: string): string {
+  const i = formattedBody.indexOf(REPLY_FORMATTED_HTML_SEP);
+  if (i === -1) return formattedBody;
+  return formattedBody.slice(i + REPLY_FORMATTED_HTML_SEP.length);
+}
+
 /**
  * Parse first line of Matrix rich-reply fallback: `> <@user:hs> text`
  */
@@ -179,13 +207,19 @@ export function messageFromRoomMessageEvent(
   event: MatrixSdk.MatrixEvent,
   pinned: boolean,
 ): Message {
-  const rawBody = (event.getContent().body as string | undefined) ?? '';
+  const content = event.getContent() as {
+    body?: string;
+    format?: string;
+    formatted_body?: string;
+  };
+  const rawBody = content.body ?? '';
   const replyToId = event.getWireContent()?.['m.relates_to']?.['m.in_reply_to']
     ?.event_id as string | undefined;
 
   let inReplyToSender: string | undefined;
   let inReplyToBodyPreview: string | undefined;
   let displayBody = rawBody;
+  let formattedContentHtml: string | undefined;
 
   if (replyToId) {
     const room = client.getRoom(roomId);
@@ -207,6 +241,17 @@ export function messageFromRoomMessageEvent(
       }
     }
     displayBody = stripMatrixReplyFallback(rawBody);
+    if (
+      content.format === MATRIX_CUSTOM_HTML_FORMAT &&
+      typeof content.formatted_body === 'string'
+    ) {
+      formattedContentHtml = extractReplyFormattedHtml(content.formatted_body);
+    }
+  } else if (
+    content.format === MATRIX_CUSTOM_HTML_FORMAT &&
+    typeof content.formatted_body === 'string'
+  ) {
+    formattedContentHtml = content.formatted_body;
   }
 
   const id = event.getId();
@@ -219,6 +264,7 @@ export function messageFromRoomMessageEvent(
     id,
     sender,
     content: displayBody,
+    formattedContentHtml,
     timestamp: new Date(event.getTs()),
     pinned,
     inReplyToEventId: replyToId,

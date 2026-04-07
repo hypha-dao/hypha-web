@@ -54,6 +54,11 @@ export interface Message {
   sender: string;
   /** Visible message text (reply fallback stripped when applicable). */
   content: string;
+  /**
+   * Matrix `formatted_body` for the visible reply (after stripping quote fallback),
+   * when `format` was `org.matrix.custom.html`. Used for rich timeline rendering.
+   */
+  formattedContentHtml?: string;
   timestamp: Date;
   pinned?: boolean;
   /** Matrix rich reply: event_id of the message being replied to. */

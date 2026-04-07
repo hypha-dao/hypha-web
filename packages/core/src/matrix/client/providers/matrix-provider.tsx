@@ -2,12 +2,16 @@
 
 import React from 'react';
 import * as MatrixSdk from 'matrix-js-sdk';
+import type { RoomMessageEventContent } from 'matrix-js-sdk/lib/@types/events';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { MatrixTokenData, useMatrixToken } from '../hooks';
 import { Message } from '../../types';
 import { attachReactionsToMessage, isValidReactionKey } from '../../reactions';
 import {
-  buildRichReplyPlainBody,
+  buildRichReplyMatrixContent,
+  matrixTextEventContentWithOptionalFormatting,
+} from '../../chat-markup';
+import {
   messageFromRoomMessageEvent,
   resolveReplyTargetForSend,
 } from '../../rich-reply';
@@ -257,23 +261,28 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           sender,
           body: targetBody,
         } = await resolveReplyTargetForSend(client, roomId, replyToEventId);
-        const body = buildRichReplyPlainBody(sender, targetBody, message);
+        const payload = buildRichReplyMatrixContent(
+          sender,
+          targetBody,
+          message,
+        );
         await client.sendEvent(roomId, EventType.RoomMessage, {
           msgtype: MsgType.Text,
-          body,
+          ...payload,
           'm.relates_to': {
             'm.in_reply_to': {
               event_id: resolvedTargetId,
             },
           },
-        });
+        } as RoomMessageEventContent);
         return;
       }
 
+      const textPayload = matrixTextEventContentWithOptionalFormatting(message);
       await client.sendEvent(roomId, EventType.RoomMessage, {
         msgtype: MsgType.Text,
-        body: message,
-      });
+        ...textPayload,
+      } as RoomMessageEventContent);
     },
     [client],
   );
