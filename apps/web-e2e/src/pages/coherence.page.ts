@@ -64,9 +64,9 @@ export class CoherencePage extends BasePage {
       /^(signals|signaux|sinais|señales|signale)\s*\|/i,
     );
 
-    // "New Signal" link — wraps a Button inside a <Link>
+    // "New Signal" link — CoherenceTab.newSignal full phrases per locale
     this.newSignalButton = page.getByRole('link', {
-      name: /new signal|nouveau signal|neuer|nueva|novo/i,
+      name: /new signal|nouveau signal|neues signal|nueva señal|novo sinal/i,
     });
 
     // Search input — placeholder from CoherenceTab.searchSignals (localized)
