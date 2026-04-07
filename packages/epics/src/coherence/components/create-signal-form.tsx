@@ -386,9 +386,7 @@ export const CreateSignalForm = ({
                           editorRef={null}
                           markdown={descriptionValue}
                           translation={translateEditor}
-                          placeholder={tAgreementFlow(
-                            'createAgreementBaseFields.proposalContentPlaceholder',
-                          )}
+                          placeholder={t('descriptionPlaceholder')}
                           onChange={(markdown) => field.onChange(markdown)}
                         />
                       </FormControl>
