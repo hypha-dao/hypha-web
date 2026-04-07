@@ -957,6 +957,9 @@ importers:
       ai:
         specifier: ^6.0.105
         version: 6.0.138(zod@3.25.76)
+      date-fns:
+        specifier: ^4.1.0
+        version: 4.1.0
       matrix-js-sdk:
         specifier: ^40.0.0
         version: 40.2.0
