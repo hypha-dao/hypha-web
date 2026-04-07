@@ -15,6 +15,8 @@ import {
   useJwt,
   useMe,
   Message,
+  firstLineForReplyPreview,
+  RoomEvent,
 } from '@hypha-platform/core/client';
 import { UseMembers } from '../spaces';
 
@@ -36,6 +38,22 @@ type UIMessage = {
   >;
   senderName?: string;
   avatarUrl?: string;
+  /** Matrix event time (origin_server_ts), for header timestamp */
+  timestamp?: Date;
+  /** MXID of the message author (for reply target resolution). */
+  senderMatrixId?: string;
+  replyTo?: {
+    authorLabel: string;
+    excerpt?: string;
+    /** Quoted author MXID when known (for label refresh). */
+    sourceUserId?: string;
+  };
+};
+
+type ReplyDraft = {
+  messageId: string;
+  authorLabel: string;
+  excerpt: string;
 };
 
 const ROOM_STORAGE_KEY = 'hypha-chat-room-';
@@ -64,17 +82,44 @@ function storeRoomId(spaceSlug: string, roomId: string): void {
  */
 function toUIMessage(
   msg: Message,
-  currentUserId?: string | null,
+  currentUserId: string | null | undefined,
+  resolveMemberLabel: (userId: string | undefined) => string,
   currentUserAvatarUrl?: string,
 ): UIMessage {
   const isCurrentUser = currentUserId ? msg.sender === currentUserId : false;
+
+  let replyTo: UIMessage['replyTo'];
+  if (msg.inReplyToEventId) {
+    const authorLabel = resolveMemberLabel(msg.inReplyToSender);
+    const excerpt =
+      msg.inReplyToBodyPreview != null && msg.inReplyToBodyPreview !== ''
+        ? msg.inReplyToBodyPreview
+        : undefined;
+    replyTo = {
+      authorLabel,
+      excerpt,
+      sourceUserId: msg.inReplyToSender,
+    };
+  }
+
   return {
     id: msg.id,
     role: isCurrentUser ? 'user' : 'member',
     parts: [{ type: 'text', text: msg.content }],
-    senderName: isCurrentUser ? undefined : msg.sender,
+    senderName: isCurrentUser ? undefined : resolveMemberLabel(msg.sender),
+    senderMatrixId: msg.sender,
     avatarUrl: isCurrentUser ? currentUserAvatarUrl : undefined,
+    timestamp: msg.timestamp,
+    replyTo,
   };
+}
+
+function getMessagePlainText(m: UIMessage): string {
+  const textParts =
+    m.parts?.filter(
+      (p): p is { type: 'text'; text: string } => p.type === 'text',
+    ) ?? [];
+  return textParts.map((p) => p.text).join('');
 }
 
 type HumanRightPanelProps = {
@@ -116,6 +161,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<UIMessage[]>([]);
+  const [replyDraft, setReplyDraft] = useState<ReplyDraft | null>(null);
   const [roomId, setRoomId] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -125,6 +171,65 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const currentUserId = client?.getUserId?.() ?? null;
   const currentUserIdRef = useRef(currentUserId);
   currentUserIdRef.current = currentUserId;
+
+  const resolveMemberLabel = useCallback(
+    (userId: string | undefined) => {
+      if (!userId) return t('unknownMember');
+      if (currentUserId && userId === currentUserId) {
+        const full = [me?.name, me?.surname].filter(Boolean).join(' ').trim();
+        return full || t('you');
+      }
+      if (roomId && client) {
+        const room = client.getRoom(roomId);
+        const member = room?.getMember(userId);
+        if (member?.name && member.name !== userId) {
+          return member.name;
+        }
+      }
+      return userId;
+    },
+    [client, roomId, currentUserId, me?.name, me?.surname, t],
+  );
+
+  const resolveMemberLabelRef = useRef(resolveMemberLabel);
+  resolveMemberLabelRef.current = resolveMemberLabel;
+
+  useEffect(() => {
+    if (!roomId || !client) return;
+    setMessages((prev) =>
+      prev.map((m) => {
+        const newSenderName =
+          m.role === 'member' && m.senderMatrixId
+            ? resolveMemberLabelRef.current(m.senderMatrixId)
+            : m.senderName;
+        const newAuthorLabel =
+          m.replyTo?.sourceUserId != null
+            ? resolveMemberLabelRef.current(m.replyTo.sourceUserId)
+            : m.replyTo?.authorLabel;
+
+        const nextReply =
+          m.replyTo?.sourceUserId != null
+            ? {
+                ...m.replyTo,
+                authorLabel: newAuthorLabel ?? m.replyTo.authorLabel,
+              }
+            : m.replyTo;
+
+        if (
+          newSenderName === m.senderName &&
+          nextReply?.authorLabel === m.replyTo?.authorLabel
+        ) {
+          return m;
+        }
+
+        return {
+          ...m,
+          senderName: newSenderName,
+          replyTo: nextReply,
+        };
+      }),
+    );
+  }, [roomId, client, currentUserId, me?.name, me?.surname]);
 
   // Backfill avatar on self-authored messages after useMe() resolves
   useEffect(() => {
@@ -157,6 +262,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setRoomId(null);
       setMessages([]);
       setInput('');
+      setReplyDraft(null);
       setError(null);
     }
   }, [spaceSlug, roomId]);
@@ -209,6 +315,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               toUIMessage(
                 m,
                 currentUserIdRef.current,
+                resolveMemberLabelRef.current,
                 currentUserAvatarUrlRef.current,
               ),
             ),
@@ -248,6 +355,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       joinedRef.current = null; // allow space room to re-init when returning
       setMessages([]);
       setRoomId(null);
+      setReplyDraft(null);
       setError(null);
     }
 
@@ -258,6 +366,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       }
       setMessages([]);
       setRoomId(null);
+      setReplyDraft(null);
       setError(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -274,6 +383,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setIsJoining(true);
       setError(null);
       setMessages([]);
+      setReplyDraft(null);
       try {
         let targetRoomId = coherenceRoomId;
 
@@ -320,6 +430,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               toUIMessage(
                 m,
                 currentUserIdRef.current,
+                resolveMemberLabelRef.current,
                 currentUserAvatarUrlRef.current,
               ),
             ),
@@ -369,6 +480,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             toUIMessage(
               message,
               currentUserIdRef.current,
+              resolveMemberLabelRef.current,
               currentUserAvatarUrlRef.current,
             ),
           ];
@@ -384,17 +496,75 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     };
   }, [roomId, isMatrixAvailable]);
 
+  // Keep message ids in sync when the SDK replaces provisional ~… ids with $… after send
+  useEffect(() => {
+    if (!roomId || !client) return;
+
+    const room = client.getRoom(roomId);
+    if (!room) return;
+
+    const onLocalEchoUpdated = (
+      ev: { getId: () => string | undefined },
+      _r: unknown,
+      oldEventId?: string,
+    ) => {
+      if (!oldEventId) return;
+      const newId = ev.getId();
+      if (!newId || oldEventId === newId) return;
+
+      setMessages((prev) =>
+        prev.map((m) => (m.id === oldEventId ? { ...m, id: newId } : m)),
+      );
+      setReplyDraft((draft) =>
+        draft?.messageId === oldEventId
+          ? { ...draft, messageId: newId }
+          : draft,
+      );
+    };
+
+    room.on(RoomEvent.LocalEchoUpdated, onLocalEchoUpdated);
+    return () => {
+      room.off(RoomEvent.LocalEchoUpdated, onLocalEchoUpdated);
+    };
+  }, [roomId, client]);
+
+  const handleReplyToMessage = useCallback(
+    (messageId: string) => {
+      const target = messages.find((m) => m.id === messageId);
+      if (!target) return;
+      const authorLabel =
+        target.role === 'user'
+          ? t('you')
+          : target.senderName ??
+            resolveMemberLabel(target.senderMatrixId) ??
+            t('unknownMember');
+      const excerpt = firstLineForReplyPreview(getMessagePlainText(target));
+      setReplyDraft({
+        messageId,
+        authorLabel,
+        excerpt,
+      });
+    },
+    [messages, resolveMemberLabel, t],
+  );
+
   const handleSend = useCallback(async () => {
     if (!input.trim() || !roomId) return;
     const text = input;
+    const replyToEventId = replyDraft?.messageId;
     setInput('');
     try {
-      await matrixRef.current.sendMessage({ roomId, message: text });
+      await matrixRef.current.sendMessage({
+        roomId,
+        message: text,
+        ...(replyToEventId ? { replyToEventId } : {}),
+      });
+      setReplyDraft(null);
     } catch (err) {
       console.error('[HumanRightPanel] Failed to send message:', err);
       setInput(text);
     }
-  }, [input, roomId]);
+  }, [input, roomId, replyDraft?.messageId]);
 
   return (
     <>
@@ -423,7 +593,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 </div>
               </div>
             ) : (
-              <HumanChatPanelMessages messages={messages} />
+              <HumanChatPanelMessages
+                messages={messages}
+                onReply={handleReplyToMessage}
+              />
             )}
           </>
         )}
@@ -440,6 +613,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             value={input}
             onChange={setInput}
             onSend={handleSend}
+            replyPreview={
+              replyDraft
+                ? {
+                    authorLabel: replyDraft.authorLabel,
+                    excerpt: replyDraft.excerpt,
+                    onDismiss: () => setReplyDraft(null),
+                  }
+                : undefined
+            }
           />
         </SidebarFooter>
       )}
