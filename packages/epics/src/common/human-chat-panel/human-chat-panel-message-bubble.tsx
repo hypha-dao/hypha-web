@@ -231,6 +231,7 @@ export function HumanChatPanelMessageBubble({
                 key={`${reaction.emoji}-${idx}`}
                 type="button"
                 disabled={!canReact}
+                aria-pressed={Boolean(reaction.includesCurrentUser)}
                 onClick={() => {
                   if (canReact && onReact) {
                     void onReact(reaction.emoji);
