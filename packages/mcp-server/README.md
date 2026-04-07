@@ -26,6 +26,6 @@ Add the server to your MCP host (e.g. Cursor **Settings → MCP** or `.cursor/mc
 
 ## Tools
 
-| Tool | Description |
-|------|-------------|
+| Tool                       | Description                                                                                                             |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | `get_people_by_space_slug` | Members of a space by slug (people + space-as-members), aligned with `getSpaceMembersRoster` in `@hypha-platform/core`. |
