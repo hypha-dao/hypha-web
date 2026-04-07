@@ -96,7 +96,10 @@ export const getPeopleBySpaceSlugOutputSchema = z.object({
   source: z.literal('db'),
   source_chain: z.enum(['rpc']).nullable(),
   asOf: z.string(),
-  members: z.array(z.union([rosterPersonSchema, rosterSpaceSchema])),
+  members: z.discriminatedUnion('member_kind', [
+    rosterPersonSchema,
+    rosterSpaceSchema,
+  ]),
   pagination: z.object({
     total: z.number(),
     page: z.number(),
