@@ -59,9 +59,9 @@ export class CoherencePage extends BasePage {
       name: /coherence|cohérence|coerência|coherencia|kohärenz/i,
     });
 
-    // Signal section label (SectionFilter: "{label} | {count}")
+    // Signal section label (SectionFilter: "{label} | {count}"; count omitted when 0)
     this.signalsSectionHeading = page.getByText(
-      /^(signals|signaux|sinais|señales|signale)\s*\|/i,
+      /^(signals|signaux|sinais|señales|signale)(\s*\|\s*\d+)?\s*$/i,
     );
 
     // "New Signal" link — CoherenceTab.newSignal full phrases per locale
