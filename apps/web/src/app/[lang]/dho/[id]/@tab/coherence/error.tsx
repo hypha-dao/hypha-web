@@ -1,7 +1,6 @@
 'use client'; // Error boundaries must be Client Components
 
 import { ErrorComponent } from '@web/components/error';
-import { useTranslations } from 'next-intl';
 
 export default function ErrorBoundary({
   error,
@@ -10,10 +9,9 @@ export default function ErrorBoundary({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  const t = useTranslations('CoherenceTab');
   return (
     <ErrorComponent
-      message={t('errorCoherenceTab')}
+      message="Oops, something went wrong. Couldn't load coherence tab."
       error={error}
       reset={reset}
     />

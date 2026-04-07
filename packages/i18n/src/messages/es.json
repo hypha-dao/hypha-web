@@ -35,7 +35,7 @@
     "errorLoadTreasuryTab": "Ups, algo salió mal. No se pudo cargar la pestaña de tesorería.",
     "publish": "Publicar",
     "invalidTransactions": "Transacciones inválidas",
-    "Coherence": "Coherencia"
+    "Coherence": "Coherence"
   },
   "AgreementFlow": {
     "proposalErrors": {
@@ -1656,8 +1656,6 @@
     "newSignal": "Nueva señal",
     "all": "Todos",
     "listIsEmpty": "La lista está vacía",
-    "loadMore": "Cargar más",
-    "noMore": "No hay más",
     "mostViews": "Más vistas",
     "mostMessages": "Más mensajes",
     "mostRecent": "Más recientes",
@@ -1716,17 +1714,6 @@
       "high": "Necesita atención inmediata",
       "medium": "Supervisar y actuar pronto",
       "low": "Informativo, sin prisa"
-    },
-    "keepWindowOpenWhileCreating": "Mantenga esta ventana abierta hasta que la barra de progreso termine.",
-    "tagLabels": {
-      "Strategy": "Estrategia",
-      "Culture": "Cultura",
-      "Onboarding": "Incorporación",
-      "Engagement": "Compromiso",
-      "Learning": "Aprendizaje",
-      "Capacity": "Capacidad",
-      "Network": "Red",
-      "Reputation": "Reputación"
     }
   },
   "SignalCard": {

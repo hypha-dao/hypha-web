@@ -35,7 +35,7 @@
     "errorLoadTreasuryTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet trésorerie.",
     "publish": "Publier",
     "invalidTransactions": "Transactions invalides",
-    "Coherence": "Cohérence"
+    "Coherence": "Coherence"
   },
   "Navigation": {
     "network": "Réseau",
@@ -1656,8 +1656,6 @@
     "newSignal": "Nouveau signal",
     "all": "Tous",
     "listIsEmpty": "La liste est vide",
-    "loadMore": "Charger plus",
-    "noMore": "Plus rien",
     "mostViews": "Plus vues",
     "mostMessages": "Plus de messages",
     "mostRecent": "Plus récents",
@@ -1716,17 +1714,6 @@
       "high": "Nécessite une attention immédiate",
       "medium": "Surveiller et agir bientôt",
       "low": "Informatif, pas urgent"
-    },
-    "keepWindowOpenWhileCreating": "Veuillez garder cette fenêtre ouverte jusqu'à la fin de la barre de progression.",
-    "tagLabels": {
-      "Strategy": "Stratégie",
-      "Culture": "Culture",
-      "Onboarding": "Intégration",
-      "Engagement": "Engagement",
-      "Learning": "Apprentissage",
-      "Capacity": "Capacité",
-      "Network": "Réseau",
-      "Reputation": "Réputation"
     }
   },
   "SignalCard": {

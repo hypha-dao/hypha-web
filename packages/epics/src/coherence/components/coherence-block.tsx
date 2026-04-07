@@ -9,7 +9,6 @@ import {
 } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
 import React from 'react';
-import { useTranslations } from 'next-intl';
 import { CoherenceOrder } from '../types';
 import { SignalSection } from './signal-section';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
@@ -27,7 +26,6 @@ export function CoherenceBlock({
   order,
   humanChatEnabled = false,
 }: CoherenceBlockProps) {
-  const t = useTranslations('CoherenceTab');
   const [hideArchived, setHideArchived] = React.useState(true);
   const { isAuthenticated } = useAuthentication();
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug);
@@ -71,7 +69,7 @@ export function CoherenceBlock({
         <>
           <SignalSection
             basePath={chatBasePath}
-            label={t('signals')}
+            label="Signals"
             hasSearch={true}
             signals={signals ?? []}
             isLoading={isSpaceLoading || isSignalsLoading}
@@ -83,7 +81,7 @@ export function CoherenceBlock({
         </>
       ) : (
         <Empty>
-          <p>{t('signInToSee')}</p>
+          <p>Please, sign in to see signals and conversations</p>
         </Empty>
       )}
     </div>

@@ -2,7 +2,6 @@
 
 import {
   Coherence,
-  COHERENCE_TAGS,
   COHERENCE_TYPE_OPTIONS,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
@@ -29,9 +28,8 @@ import {
 } from '@radix-ui/react-icons';
 import React from 'react';
 import type { BadgeProps } from '@hypha-platform/ui';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { Users } from 'lucide-react';
-import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
 
 type SignalCardProps = {
   isLoading: boolean;
@@ -56,32 +54,16 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
 }) => {
   const { jwt: authToken } = useJwt();
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
-  const t = useTranslations('CoherenceTab');
-  const tSignalCard = useTranslations('SignalCard');
-  const locale = useLocale();
-  const dateFnsLocale = React.useMemo(
-    () => resolveDateFnsLocale(locale),
-    [locale],
-  );
+  const t = useTranslations('SignalCard');
 
   const coherenceType = React.useMemo(
     () => COHERENCE_TYPE_OPTIONS.find((option) => option.type === type),
     [type],
   );
 
-  const typeLabel = t(
-    `types.${type}` as
-      | 'types.Opportunity'
-      | 'types.Risk'
-      | 'types.Tension'
-      | 'types.Insight'
-      | 'types.Trend'
-      | 'types.Proposal',
-  );
-
   const badges: BadgeItem[] = [
     {
-      label: typeLabel,
+      label: type,
       icon: coherenceType?.icon as LucideReactIcon,
       variant: 'outline',
       colorVariant: (coherenceType?.colorVariant ??
@@ -89,26 +71,11 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     },
   ];
 
-  const tagList: BadgeItem[] = tags.map((tag) => {
-    const displayLabel = (COHERENCE_TAGS as readonly string[]).includes(tag)
-      ? t(
-          `tagLabels.${tag}` as
-            | 'tagLabels.Strategy'
-            | 'tagLabels.Culture'
-            | 'tagLabels.Onboarding'
-            | 'tagLabels.Engagement'
-            | 'tagLabels.Learning'
-            | 'tagLabels.Capacity'
-            | 'tagLabels.Network'
-            | 'tagLabels.Reputation',
-        )
-      : tag;
-    return {
-      label: `#${displayLabel}`,
-      variant: 'solid',
-      colorVariant: 'neutral',
-    };
-  });
+  const tagList: BadgeItem[] = tags.map((tag) => ({
+    label: `#${tag}`,
+    variant: 'solid',
+    colorVariant: 'neutral',
+  }));
 
   const handleUnarchive = React.useCallback(async () => {
     if (!slug) return;
@@ -132,10 +99,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             <div className="flex flex-row gap-1 text-1 text-neutral-11">
               <ClockIcon className="h-4 w-4" />
               {createdAt
-                ? formatDistanceToNow(new Date(createdAt), {
-                    addSuffix: true,
-                    locale: dateFnsLocale,
-                  })
+                ? formatDistanceToNow(new Date(createdAt), { addSuffix: true })
                 : ''}
             </div>
           </div>
@@ -143,19 +107,19 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             {priority === 'high' && (
               <div className="flex flex-row gap-1 text-1 text-neutral-11">
                 <DotFilledIcon className="h-4 w-4 text-error-11" />
-                {t('highUrgency')}
+                High Urgency
               </div>
             )}
             {priority === 'medium' && (
               <div className="flex flex-row gap-1 text-1 text-neutral-11">
                 <DotFilledIcon className="h-4 w-4 text-warning-11" />
-                {t('mediumUrgency')}
+                Medium Urgency
               </div>
             )}
             {priority === 'low' && (
               <div className="flex flex-row gap-1 text-1 text-neutral-11">
                 <DotFilledIcon className="h-4 w-4 text-neutral-11" />
-                {t('lowUrgency')}
+                Low Urgency
               </div>
             )}
           </div>
@@ -187,9 +151,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           <div className="flex flex-row gap-1">
             <Skeleton loading={isLoading} height="16px" width="80px">
               <Users size={12} />
-              <div className="text-neutral-11 text-1">
-                {t('mentions', { count: messages })}
-              </div>
+              <div className="text-neutral-11 text-1">{messages} mentions</div>
             </Skeleton>
           </div>
           <div className="flex flex-row">
@@ -208,10 +170,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               }}
             >
               <ConfirmDialog
-                title={t('unarchiveConversation')}
-                description={t('unarchiveConfirm')}
-                customAcceptButtonText={t('yesUnarchive')}
-                customRejectButtonText={t('noLeave')}
+                title="Unarchive Conversation"
+                description="Do you really want to unarchive this conversation?"
+                customAcceptButtonText="Yes, unarchive"
+                customRejectButtonText="No, leave"
                 onAcceptClicked={handleUnarchive}
               >
                 <Button
@@ -219,7 +181,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                   colorVariant="accent"
                   className="w-full"
                 >
-                  {t('unarchive')}
+                  Unarchive
                 </Button>
               </ConfirmDialog>
             </div>
@@ -235,10 +197,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                   onOpenConversation();
                 }
               }}
-              title={!roomId ? tSignalCard('noConversationRoom') : undefined}
+              title={!roomId ? t('noConversationRoom') : undefined}
             >
               <ChatBubbleIcon />
-              {t('openConversation')}
+              Open conversation
             </Button>
           )}
 

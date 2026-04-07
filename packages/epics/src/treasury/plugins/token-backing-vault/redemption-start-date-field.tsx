@@ -10,8 +10,30 @@ import {
 } from '@hypha-platform/ui';
 import { useFormContext } from 'react-hook-form';
 import { useLocale, useTranslations } from 'next-intl';
-// Shared epics util — not the coherence feature package (avoids cross-feature imports).
-import { resolveDateFnsLocale } from '../../../utils/date-fns-locale';
+import {
+  enUS,
+  de,
+  fr,
+  es,
+  ptBR,
+  type Locale as DateFnsLocale,
+} from 'date-fns/locale';
+
+const DATE_FNS_LOCALES: Record<string, DateFnsLocale> = {
+  en: enUS,
+  de,
+  fr,
+  es,
+  pt: ptBR,
+  'pt-br': ptBR,
+};
+
+const resolveDateFnsLocale = (locale: string): DateFnsLocale => {
+  const normalized = locale.toLowerCase().replace('_', '-');
+  const baseLocale = normalized.split('-')[0] ?? 'en';
+
+  return DATE_FNS_LOCALES[normalized] ?? DATE_FNS_LOCALES[baseLocale] ?? enUS;
+};
 
 type RedemptionStartDateFieldProps = {
   isRequired?: boolean;

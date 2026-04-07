@@ -17,6 +17,7 @@ import {
   RequirementMark,
   RichTextEditor,
 } from '@hypha-platform/ui';
+import { Text } from '@radix-ui/themes';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import {
@@ -33,7 +34,6 @@ import {
 import React from 'react';
 import { useScrollToErrors } from '../../hooks';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import { CoherenceTypeButton } from './coherence-type-button';
 import { CoherencePriorityButton } from './coherence-priority-button';
 import { ButtonClose } from '../../common/button-close';
@@ -52,24 +52,6 @@ export const CreateSignalForm = ({
   successfulUrl,
   closeUrl,
 }: CreateSignalFormProps) => {
-  const t = useTranslations('CoherenceTab');
-  const tAgreementFlow = useTranslations('AgreementFlow');
-  const translateEditor = React.useCallback(
-    (
-      key: string,
-      defaultValue: string | undefined,
-      interpolations?: Record<string, string | number>,
-    ) => {
-      const translationKey = `createAgreementBaseFields.editor.${key}`;
-
-      if (!tAgreementFlow.has(translationKey)) {
-        return defaultValue ?? key;
-      }
-
-      return tAgreementFlow(translationKey, interpolations);
-    },
-    [tAgreementFlow],
-  );
   const { person } = useMe();
   const { jwt: authToken } = useJwt();
   const router = useRouter();
@@ -106,67 +88,35 @@ export const CreateSignalForm = ({
     const computeColor = (colorVariant: string) => {
       return `var(--${colorVariant}-10)`;
     };
-    return COHERENCE_TYPE_OPTIONS.map(({ icon, type, colorVariant }) => ({
-      icon: icon as LucideReactIcon,
-      title: t(
-        `types.${type}` as
-          | 'types.Opportunity'
-          | 'types.Risk'
-          | 'types.Tension'
-          | 'types.Insight'
-          | 'types.Trend'
-          | 'types.Proposal',
-      ),
-      description: t(
-        `typeDescriptions.${type}` as
-          | 'typeDescriptions.Opportunity'
-          | 'typeDescriptions.Risk'
-          | 'typeDescriptions.Tension'
-          | 'typeDescriptions.Insight'
-          | 'typeDescriptions.Trend'
-          | 'typeDescriptions.Proposal',
-      ),
-      type,
-      colorVariant: colorVariant as CardButtonColorVariant,
-      titleColor: computeColor(colorVariant),
-    }));
-  }, [t]);
+    return COHERENCE_TYPE_OPTIONS.map(
+      ({ icon, title, description, type, colorVariant }) => ({
+        icon: icon as LucideReactIcon,
+        title,
+        description,
+        type,
+        colorVariant: colorVariant as CardButtonColorVariant,
+        titleColor: computeColor(colorVariant),
+      }),
+    );
+  }, []);
 
   const priorityOptions = React.useMemo(() => {
-    return COHERENCE_PRIORITY_OPTIONS.map(({ priority, colorVariant }) => ({
-      title: t(
-        `priorities.${priority}` as
-          | 'priorities.high'
-          | 'priorities.medium'
-          | 'priorities.low',
-      ),
-      priority,
-      description: t(
-        `priorityDescriptions.${priority}` as
-          | 'priorityDescriptions.high'
-          | 'priorityDescriptions.medium'
-          | 'priorityDescriptions.low',
-      ),
-      colorVariant: colorVariant as CardButtonColorVariant,
-    }));
-  }, [t]);
+    return COHERENCE_PRIORITY_OPTIONS.map(
+      ({ title, priority, description, colorVariant }) => ({
+        title,
+        priority,
+        description,
+        colorVariant: colorVariant as CardButtonColorVariant,
+      }),
+    );
+  }, []);
 
   const tagOptions = React.useMemo(() => {
-    return COHERENCE_TAGS.map((tag) => ({
-      value: tag,
-      label: t(
-        `tagLabels.${tag}` as
-          | 'tagLabels.Strategy'
-          | 'tagLabels.Culture'
-          | 'tagLabels.Onboarding'
-          | 'tagLabels.Engagement'
-          | 'tagLabels.Learning'
-          | 'tagLabels.Capacity'
-          | 'tagLabels.Network'
-          | 'tagLabels.Reputation',
-      ),
+    return COHERENCE_TAGS.map((type) => ({
+      value: type,
+      label: type,
     }));
-  }, [t]);
+  }, []);
 
   React.useEffect(() => {
     const { isDirty } = form.getFieldState('creatorId');
@@ -225,15 +175,14 @@ export const CreateSignalForm = ({
       progress={progress}
       isLoading={isCreatingCoherence}
       fullHeight={true}
-      keepWindowOpenMessage={t('keepWindowOpenWhileCreating')}
       message={
         errorCreateCoherenceMutation ? (
           <div className="flex flex-col">
-            <div>{t('errorOhSnap')}</div>
-            <Button onClick={resetCreateCoherenceMutation}>{t('reset')}</Button>
+            <div>Ouh Snap. There was an error</div>
+            <Button onClick={resetCreateCoherenceMutation}>Reset</Button>
           </div>
         ) : (
-          <div>{t('creatingNewSignal')}</div>
+          <div>Creating new signal</div>
         )
       }
     >
@@ -263,7 +212,7 @@ export const CreateSignalForm = ({
                   <FormItem>
                     <FormControl>
                       <Input
-                        placeholder={t('signalTitle')}
+                        placeholder="Signal title..."
                         className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
                         rightIcon={<RequirementMark className="text-4" />}
                         {...field}
@@ -281,7 +230,7 @@ export const CreateSignalForm = ({
                   <FormItem>
                     <div className="w-full flex flex-col gap-3">
                       <FormLabel className="text-foreground">
-                        {t('type')} <RequirementMark />
+                        Type <RequirementMark />
                       </FormLabel>
                       <FormControl>
                         <span className="w-full grid grid-cols-2 gap-2">
@@ -321,7 +270,7 @@ export const CreateSignalForm = ({
                   <FormItem>
                     <div className="w-full flex flex-col gap-3">
                       <FormLabel className="text-foreground">
-                        {t('priority')} <RequirementMark />
+                        Priority <RequirementMark />
                       </FormLabel>
                       <FormControl>
                         <span className="w-full flex flex-row gap-2">
@@ -355,12 +304,10 @@ export const CreateSignalForm = ({
                 name="tags"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-foreground">
-                      {t('tags')}
-                    </FormLabel>
+                    <FormLabel className="text-foreground">Tags</FormLabel>
                     <FormControl>
                       <MultiSelect
-                        placeholder={t('selectOneOrMore')}
+                        placeholder={'Select one or more'}
                         options={tagOptions}
                         value={field.value}
                         allowToggleAll={false}
@@ -374,32 +321,28 @@ export const CreateSignalForm = ({
               <FormField
                 control={form.control}
                 name="description"
-                render={({ field }) => {
-                  const descriptionValue = field.value || '';
-                  return (
-                    <FormItem>
-                      <FormLabel className="text-foreground gap-1">
-                        {t('description')} <RequirementMark />
-                      </FormLabel>
-                      <FormControl>
-                        <RichTextEditor
-                          editorRef={null}
-                          markdown={descriptionValue}
-                          translation={translateEditor}
-                          placeholder={t('descriptionPlaceholder')}
-                          onChange={(markdown) => field.onChange(markdown)}
-                        />
-                      </FormControl>
-                      <FormDescription />
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-foreground gap-1">
+                      Description <RequirementMark />
+                    </FormLabel>
+                    <FormControl>
+                      <RichTextEditor
+                        editorRef={null}
+                        markdown={field.value}
+                        placeholder="Type your description here..."
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription />
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
           </div>
           <div className="flex justify-end w-full">
-            <Button type="submit">{t('publish')}</Button>
+            <Button type="submit">Publish</Button>
           </div>
         </form>
       </Form>
