@@ -21,6 +21,8 @@ interface IOwnershipTokenFactory {
     bool useReceiveWhitelist,
     address[] memory initialTransferWhitelist,
     address[] memory initialReceiveWhitelist,
+    uint256[] memory initialTransferWhitelistSpaceIds,
+    uint256[] memory initialReceiveWhitelistSpaceIds,
     address paymentToken,
     uint256 paymentTokenPricePerToken,
     uint256 tokensForSale,

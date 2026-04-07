@@ -22,6 +22,8 @@ interface IRegularTokenFactory {
     bool useReceiveWhitelist,
     address[] memory initialTransferWhitelist,
     address[] memory initialReceiveWhitelist,
+    uint256[] memory initialTransferWhitelistSpaceIds,
+    uint256[] memory initialReceiveWhitelistSpaceIds,
     uint256 defaultCreditLimit,
     uint256[] memory initialCreditWhitelistSpaceIds,
     address paymentToken,

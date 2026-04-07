@@ -83,6 +83,8 @@ contract DecayingTokenFactory is
    * @param useReceiveWhitelist If true, enforce receive whitelist
    * @param initialTransferWhitelist Initial addresses that can send tokens
    * @param initialReceiveWhitelist Initial addresses that can receive tokens
+   * @param initialTransferWhitelistSpaceIds Space IDs whose members can initially send tokens
+   * @param initialReceiveWhitelistSpaceIds Space IDs whose members can initially receive tokens
    * @param decayPercentage The decay percentage in basis points (0-10000)
    * @param decayInterval The interval in seconds between decay periods
    * @param paymentToken ERC20 payment token for token purchases (address(0) disables sale)
@@ -106,6 +108,8 @@ contract DecayingTokenFactory is
     bool useReceiveWhitelist,
     address[] memory initialTransferWhitelist,
     address[] memory initialReceiveWhitelist,
+    uint256[] memory initialTransferWhitelistSpaceIds,
+    uint256[] memory initialReceiveWhitelistSpaceIds,
     uint256 decayPercentage,
     uint256 decayInterval,
     address paymentToken,
@@ -150,6 +154,8 @@ contract DecayingTokenFactory is
       useReceiveWhitelist,
       initialTransferWhitelist,
       initialReceiveWhitelist,
+      initialTransferWhitelistSpaceIds,
+      initialReceiveWhitelistSpaceIds,
       decayPercentage,
       decayInterval,
       paymentToken,
