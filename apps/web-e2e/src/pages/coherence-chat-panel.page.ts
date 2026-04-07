@@ -140,7 +140,9 @@ export class CoherenceChatPanelPage extends BasePage {
     // "Open conversation" button within the first signal card (Step 4)
     this.firstOpenConversationButton = this.signalCardButtons
       .first()
-      .getByRole('button', { name: /open conversation/i });
+      .getByRole('button', {
+        name: /open conversation|abrir conversa|ouvrir la conversation|gespräch öffnen|abrir conversación/i,
+      });
   }
 
   /**
