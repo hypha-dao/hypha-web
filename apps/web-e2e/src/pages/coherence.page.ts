@@ -82,7 +82,10 @@ export class CoherencePage extends BasePage {
 
     // Filter badges rendered as <div> (Badge component), matched by visible text.
     // Note: Badge renders as div, so use getByText not getByRole('button').
-    this.allFilterBadge = page.getByText(/^(all|todos|tous|alle)\s/i).first();
+    // Badge text is "{label} {count}" (e.g. "All 1") — allow end or space + rest
+    this.allFilterBadge = page
+      .getByText(/^(all|todos|tous|alle)(\s|$)/i)
+      .first();
 
     // Loading overlay copy (CoherenceTab.creatingNewSignal) — rendered as text, not a heading
     this.createSignalHeading = page.getByText(
