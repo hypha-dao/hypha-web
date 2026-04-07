@@ -372,10 +372,11 @@ export function HumanChatPanelMessageBubble({
                     }
                   }}
                   className={cn(
-                    'inline-flex h-6 min-w-0 shrink-0 items-center gap-1 rounded-full border px-2 text-xs tabular-nums leading-none transition-colors',
+                    /* Discord: rounded rectangle frame, not a full pill */
+                    'inline-flex h-6 min-w-0 shrink-0 items-center gap-1 rounded-md border px-2 text-xs tabular-nums leading-none transition-colors',
                     reaction.includesCurrentUser
                       ? 'border-[#5865f2]/50 bg-[#5865f2]/15 hover:bg-[#5865f2]/20 dark:border-[#5865f2]/40 dark:bg-[#5865f2]/20'
-                      : 'border-border bg-muted/80 hover:bg-muted',
+                      : 'border-[#949ba4]/35 bg-[#f2f3f5] hover:bg-[#e3e5e8] dark:border-border dark:bg-muted/80 dark:hover:bg-muted',
                     canReact ? 'cursor-pointer' : 'cursor-default opacity-80',
                   )}
                 >
@@ -428,8 +429,9 @@ export function HumanChatPanelMessageBubble({
                 <button
                   type="button"
                   className={cn(
-                    'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border',
-                    'bg-muted text-muted-foreground transition-colors hover:bg-muted/80',
+                    'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border',
+                    'border-[#949ba4]/35 bg-[#f2f3f5] text-[#4e5058] transition-colors hover:bg-[#e3e5e8]',
+                    'dark:border-border dark:bg-muted/80 dark:text-muted-foreground dark:hover:bg-muted',
                   )}
                   aria-label={t('addReactionButton')}
                   aria-expanded={inlineReactPickerOpen}
