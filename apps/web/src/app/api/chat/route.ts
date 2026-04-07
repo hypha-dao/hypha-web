@@ -185,8 +185,7 @@ function createGetPeopleBySpaceSlugTool(req: Request) {
   } satisfies ChatRouteTool;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- AI SDK tool() and Tool type trigger TS2589 (heap OOM) in CI
-const getSpaceBySlugTool: any = {
+const getSpaceBySlugTool = {
   description:
     'Returns one Hypha space record: title, description, and aggregate counts (member count, document count, subspace count). Use for overview or "tell me about this space". Do not use for listing who the members are, names, roster, or join dates — use get_people_by_space_slug for any question about the member list or individuals.',
   inputSchema: z.object({
@@ -196,7 +195,8 @@ const getSpaceBySlugTool: any = {
       .min(1)
       .describe('Hypha space slug, for example "hypha"'),
   }),
-  execute: async ({ slug }: { slug: string }) => {
+  execute: async (args: unknown) => {
+    const { slug } = args as { slug: string };
     let space;
     try {
       space = await getSpaceBySlug({ slug });
@@ -239,7 +239,7 @@ const getSpaceBySlugTool: any = {
     };
     return result;
   },
-};
+} satisfies ChatRouteTool;
 
 export async function POST(req: Request) {
   const debugRequestId = `chat-${Date.now().toString(36)}-${Math.random()
