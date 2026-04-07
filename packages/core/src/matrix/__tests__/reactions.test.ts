@@ -17,5 +17,8 @@ describe('isValidReactionKey', () => {
   it('rejects whitespace and control chars', () => {
     expect(isValidReactionKey('👍 ')).toBe(false);
     expect(isValidReactionKey(' 👍')).toBe(false);
+    expect(isValidReactionKey('👍\n')).toBe(false);
+    expect(isValidReactionKey('\t👍')).toBe(false);
+    expect(isValidReactionKey('\x00👍')).toBe(false);
   });
 });
