@@ -1,10 +1,18 @@
 import { convertToModelMessages, stepCountIs, streamText } from 'ai';
 import { openrouter } from '@openrouter/ai-sdk-provider';
 import type { UIMessage } from 'ai';
-import { getSpaceBySlug } from '@hypha-platform/core/server';
+import {
+  findSpaceBySlug,
+  getSpaceBySlug,
+  getSpaceMembersRoster,
+  serializeSpaceMembersRosterDatesForJson,
+} from '@hypha-platform/core/server';
+import { db } from '@hypha-platform/storage-postgres';
+import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { headers } from 'next/headers';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { checkSpaceAccess } from '@web/utils/check-space-access';
 import { createRemoteJWKSet, jwtVerify, errors as joseErrors } from 'jose';
 
 // Fetch JWKS directly from Privy's endpoint instead of the app's own
@@ -78,15 +86,108 @@ function buildSystemPrompt(spaceSlug?: string | null): string {
   if (spaceSlug) {
     const safe = sanitizeSlug(spaceSlug);
     if (!safe) return BASE_SYSTEM_PROMPT;
-    return `${BASE_SYSTEM_PROMPT}\n\nThe user is currently viewing the space with slug "${safe}". Use the get_space_by_slug tool to answer space-specific questions about space metadata, members, and structure.`;
+    return `${BASE_SYSTEM_PROMPT}\n\nThe user is currently viewing the space with slug "${safe}".\n\nTool choice:\n- get_space_by_slug: space profile and aggregate numbers only (title, description, member count, document count, subspace count). Use for "tell me about this space", stats, or overview — not for listing people.\n- get_people_by_space_slug: the full member roster (people and space-type members, join times, membership fields). Use for "who are the members", "list members", "member names", roster, or join dates — always with space_slug "${safe}".\n\nIf the user asks about members as people or a list, you must call get_people_by_space_slug, not get_space_by_slug.`;
   }
   return BASE_SYSTEM_PROMPT;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- AI SDK tool() and Tool type trigger TS2589 (heap OOM) in CI
-const getSpaceBySlugTool: any = {
+/** Narrow contract for chat tools; `streamText` tools map is still cast (TS2589). */
+type ChatRouteTool = {
+  description: string;
+  inputSchema: z.ZodTypeAny;
+  execute: (args: unknown) => Promise<unknown>;
+};
+
+function createGetPeopleBySpaceSlugTool(req: Request) {
+  const inputSchema = z.object({
+    space_slug: z
+      .string()
+      .trim()
+      .min(1)
+      .describe('Hypha space slug of the active space'),
+    page: z.number().int().min(1).optional().default(1),
+    page_size: z.number().int().min(1).max(100).optional().default(20),
+    searchTerm: z.string().optional(),
+  });
+
+  return {
+    description:
+      'Read-only: lists members of a Hypha space by slug — people and other spaces that appear as on-chain members (Members tab parity). Join times use memberships when present, else joinSpace events (joined_at and join_source in the result). Includes full memberships fields for people when stored in the database. Use for roster, who belongs, which other spaces are in the member list, and when someone joined. Not for listing child subspaces by parent_id.',
+    inputSchema,
+    execute: async (args: unknown) => {
+      const parsedArgs = inputSchema.safeParse(args);
+      if (!parsedArgs.success) {
+        return {
+          found: false,
+          space_slug: '',
+          error: parsedArgs.error.message,
+        };
+      }
+      const toolArgs = parsedArgs.data;
+      const safe = sanitizeSlug(toolArgs.space_slug);
+      if (!safe) {
+        return {
+          found: false,
+          space_slug: toolArgs.space_slug,
+          error: 'Invalid space slug format',
+        };
+      }
+
+      try {
+        const host = await findSpaceBySlug({ slug: safe }, { db });
+        if (
+          host?.web3SpaceId != null &&
+          canConvertToBigInt(host.web3SpaceId as number)
+        ) {
+          const access = await checkSpaceAccess(
+            new NextRequest(req.url, { headers: req.headers }),
+            host.web3SpaceId as number,
+          );
+          if (!access.hasAccess) {
+            let message = 'Access denied';
+            try {
+              if (access.response) {
+                const body = await access.response.json();
+                if (body && typeof body.message === 'string') {
+                  message = body.message;
+                }
+              }
+            } catch {
+              /* ignore */
+            }
+            return {
+              found: false,
+              space_slug: safe,
+              error: message,
+            };
+          }
+        }
+
+        const raw = await getSpaceMembersRoster(
+          {
+            spaceSlug: safe,
+            page: toolArgs.page,
+            pageSize: toolArgs.page_size,
+            searchTerm: toolArgs.searchTerm,
+          },
+          { db },
+        );
+        return serializeSpaceMembersRosterDatesForJson(raw);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        return {
+          found: false,
+          space_slug: safe,
+          error: message,
+        };
+      }
+    },
+  } satisfies ChatRouteTool;
+}
+
+const getSpaceBySlugTool = {
   description:
-    'Returns a single Hypha space and summary counts for members, documents, and subspaces. Use this when the user asks about a space, its members, agreements, or structure.',
+    'Returns one Hypha space record: title, description, and aggregate counts (member count, document count, subspace count). Use for overview or "tell me about this space". Do not use for listing who the members are, names, roster, or join dates — use get_people_by_space_slug for any question about the member list or individuals.',
   inputSchema: z.object({
     slug: z
       .string()
@@ -94,7 +195,8 @@ const getSpaceBySlugTool: any = {
       .min(1)
       .describe('Hypha space slug, for example "hypha"'),
   }),
-  execute: async ({ slug }: { slug: string }) => {
+  execute: async (args: unknown) => {
+    const { slug } = args as { slug: string };
     let space;
     try {
       space = await getSpaceBySlug({ slug });
@@ -137,7 +239,7 @@ const getSpaceBySlugTool: any = {
     };
     return result;
   },
-};
+} satisfies ChatRouteTool;
 
 export async function POST(req: Request) {
   const debugRequestId = `chat-${Date.now().toString(36)}-${Math.random()
@@ -185,14 +287,18 @@ export async function POST(req: Request) {
     });
   }
 
+  const getPeopleBySpaceSlugTool = createGetPeopleBySpaceSlugTool(req);
+
   const result = streamText({
     model: openrouter('openrouter/auto'),
     system: buildSystemPrompt(spaceSlug),
     messages: await convertToModelMessages(messages),
+
     tools: {
       get_space_by_slug: getSpaceBySlugTool,
-    },
-    stopWhen: stepCountIs(5),
+      get_people_by_space_slug: getPeopleBySpaceSlugTool,
+    } as unknown as Parameters<typeof streamText>[0]['tools'],
+    stopWhen: stepCountIs(6),
     onStepFinish: (event) => {
       if (!OPENROUTER_DEBUG) return;
 

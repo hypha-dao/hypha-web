@@ -8,6 +8,10 @@ export * from './people/server';
 export * from './people/types';
 export * from './space/server';
 export * from './space/types';
+export {
+  spaceSlugSchema,
+  spaceMembersHttpPaginationQuerySchema,
+} from './space/validation';
 export * from './events/server';
 export * from './transaction/server';
 export * from './coherence/server';

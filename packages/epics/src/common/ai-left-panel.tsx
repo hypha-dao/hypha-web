@@ -4,7 +4,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useAuthentication } from '@hypha-platform/authentication';
-import { useParams } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   SidebarHeader,
@@ -13,6 +13,7 @@ import {
 } from '@hypha-platform/ui';
 
 import { AiPanelHeader, AiPanelMessages, AiPanelChatBar } from './ai-panel';
+import { getDhoSpaceSlugFromPathname } from './get-dho-space-slug-from-pathname';
 
 type ChatUIMessage = {
   id: string;
@@ -28,7 +29,13 @@ export function AiLeftPanel() {
   const { isAuthenticated, isLoading, login, getAccessToken } =
     useAuthentication();
   const params = useParams<{ id?: string }>();
-  const spaceSlug = params?.id;
+  const pathname = usePathname();
+  const spaceSlugFromPath = useMemo(
+    () => getDhoSpaceSlugFromPathname(pathname),
+    [pathname],
+  );
+  /** Prefer pathname: AiLeftPanel mounts in root layout where `id` is often missing for `/dho/[id]/...` routes. */
+  const spaceSlug = spaceSlugFromPath ?? params?.id;
   const t = useTranslations('AiPanel');
 
   const [input, setInput] = useState('');

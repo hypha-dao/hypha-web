@@ -5,6 +5,38 @@ import {
 import { z } from 'zod';
 import { CATEGORIES, SPACE_FLAGS } from '../categories/types';
 
+/** Shared Hypha space slug rule (forms, APIs, MCP tools). */
+export const spaceSlugSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(50)
+  .regex(
+    /^[a-z0-9'-]+$/,
+    'Slug must contain only lowercase letters, numbers, hyphens, and apostrophes',
+  );
+
+/** Query params for `GET /api/v1/spaces/[spaceSlug]/members` pagination. */
+export const spaceMembersHttpPaginationQuerySchema = z
+  .object({
+    page: z.union([z.string(), z.number()]).optional(),
+    pageSize: z.union([z.string(), z.number()]).optional(),
+  })
+  .transform((v) => {
+    const rawPage =
+      v.page !== undefined && v.page !== ''
+        ? Number.parseInt(String(v.page), 10)
+        : 1;
+    const rawSize =
+      v.pageSize !== undefined && v.pageSize !== ''
+        ? Number.parseInt(String(v.pageSize), 10)
+        : 10;
+    return {
+      page: Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1,
+      pageSize: Number.isInteger(rawSize) && rawSize > 0 ? rawSize : 10,
+    };
+  });
+
 const createSpaceWeb2Props = {
   title: z
     .string()
@@ -16,15 +48,7 @@ const createSpaceWeb2Props = {
     .trim()
     .min(1, 'Please add the purpose of your space')
     .max(300, 'Description must contain at most 300 characters'),
-  slug: z
-    .string()
-    .min(1)
-    .max(50)
-    .regex(
-      /^[a-z0-9'-]+$/,
-      'Slug must contain only lowercase letters, numbers, hyphens, and apostrophes',
-    )
-    .optional(),
+  slug: spaceSlugSchema.optional(),
   web3SpaceId: z.number().optional(),
   parentId: z.number().nullable(),
   categories: z.array(z.enum(CATEGORIES)).default([]),

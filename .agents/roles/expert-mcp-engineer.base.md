@@ -21,8 +21,8 @@ For all MCP-related tasks (server design, `.cursor/mcp.json`, transports, tools/
 
 ### Supporting Engineering Competencies
 
-3. [Agile Delivery](../references/competencies/agile-delivery.md)
-4. [Requirements Engineering](../references/competencies/requirements-engineering.md)
+1. [Agile Delivery](../references/competencies/agile-delivery.md)
+2. [Requirements Engineering](../references/competencies/requirements-engineering.md)
 
 ### Domain Specialization
 
