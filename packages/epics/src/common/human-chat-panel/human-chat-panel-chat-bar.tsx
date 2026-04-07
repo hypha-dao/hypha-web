@@ -175,7 +175,12 @@ export function HumanChatPanelChatBar({
       }
       if (e.key === 'Enter' || e.key === 'Tab') {
         e.preventDefault();
-        applyColonChoice(colonSuggestions[colonActive]!);
+        const safeIndex = Math.max(
+          0,
+          Math.min(colonActive, colonSuggestions.length - 1),
+        );
+        const entry = colonSuggestions[safeIndex];
+        if (entry) applyColonChoice(entry);
         return;
       }
       if (e.key === 'Escape') {
