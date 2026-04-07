@@ -25,6 +25,12 @@ type UIMessagePart =
 type HumanChatPanelMessageBubbleProps = {
   /** Map Matrix user id to display name for reaction hover tooltips. */
   resolveReactionReactorLabel?: (userId: string) => string;
+  /** Parent list ensures at most one message shows the floating action bar. */
+  isActionBarVisible?: boolean;
+  onRowPointerEnter?: () => void;
+  onRowPointerLeave?: () => void;
+  /** Notify when the hover-bar emoji picker opens/closes (parent may lock visibility). */
+  onHoverReactPickerOpenChange?: (open: boolean) => void;
   message: {
     id: string;
     role: 'user' | 'member';
@@ -228,6 +234,10 @@ function reactionTooltipText(
 
 export function HumanChatPanelMessageBubble({
   resolveReactionReactorLabel,
+  isActionBarVisible = false,
+  onRowPointerEnter,
+  onRowPointerLeave,
+  onHoverReactPickerOpenChange,
   message,
   isStreaming,
   onReply,
@@ -261,9 +271,6 @@ export function HumanChatPanelMessageBubble({
     reactions.length - MAX_VISIBLE_REACTIONS,
   );
 
-  /** Keep pill visible while hover emoji popover is open (pointer may leave row). */
-  const showFloatingToolbar = hoverReactPickerOpen;
-
   return (
     <div
       data-testid="chat-message"
@@ -272,6 +279,8 @@ export function HumanChatPanelMessageBubble({
         /* Discord-style row tint: hover (primary) + focus-within for keyboard/reactions */
         'hover:bg-muted/60 focus-within:bg-muted/60',
       )}
+      onPointerEnter={onRowPointerEnter}
+      onPointerLeave={onRowPointerLeave}
     >
       {/* Avatar */}
       <div className="mt-0.5 shrink-0" data-testid="chat-message-avatar">
@@ -458,14 +467,16 @@ export function HumanChatPanelMessageBubble({
       <div
         className={cn(
           'absolute right-3 top-0 z-10 flex h-8 -translate-y-1/2 items-center gap-0.5 rounded-full border border-border bg-popover px-1.5 py-0 text-popover-foreground shadow-lg ring-1 ring-black/5 dark:ring-white/10 transition-opacity duration-150',
-          showFloatingToolbar
-            ? 'opacity-100'
-            : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100',
+          isActionBarVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
+        aria-hidden={!isActionBarVisible}
       >
         <HumanChatPanelEmojiPicker
           open={hoverReactPickerOpen}
-          onOpenChange={setHoverReactPickerOpen}
+          onOpenChange={(open) => {
+            setHoverReactPickerOpen(open);
+            onHoverReactPickerOpenChange?.(open);
+          }}
           onEmojiSelect={(native) => {
             if (onReact) void onReact(native);
           }}

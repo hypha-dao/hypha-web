@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 
 import { HumanChatPanelMessageBubble } from './human-chat-panel-message-bubble';
@@ -55,6 +55,17 @@ export function HumanChatPanelMessages({
     senderName: t('systemSender'),
   };
   const containerRef = useRef<HTMLDivElement>(null);
+  /** At most one floating action bar: pointer hover, or locked while that row's hover emoji picker is open. */
+  const [hoverActionMessageId, setHoverActionMessageId] = useState<
+    string | null
+  >(null);
+  const [lockActionMessageId, setLockActionMessageId] = useState<string | null>(
+    null,
+  );
+  const lockActionMessageIdRef = useRef<string | null>(null);
+  lockActionMessageIdRef.current = lockActionMessageId;
+  /** Pointer left row while hover picker was open (portal); hide bar when picker closes. */
+  const leaveWhileLockedRef = useRef<string | null>(null);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -73,11 +84,41 @@ export function HumanChatPanelMessages({
       <div className="flex flex-col gap-4">
         {displayMessages.map((msg, index) => {
           const canInteract = !msg.isSynthetic;
+          const isActionBarVisible =
+            lockActionMessageId === msg.id ||
+            (hoverActionMessageId === msg.id && lockActionMessageId == null);
           return (
             <HumanChatPanelMessageBubble
               key={msg.id}
               message={msg}
               resolveReactionReactorLabel={resolveReactionReactorLabel}
+              isActionBarVisible={isActionBarVisible}
+              onRowPointerEnter={() => {
+                leaveWhileLockedRef.current = null;
+                setHoverActionMessageId(msg.id);
+              }}
+              onRowPointerLeave={() => {
+                if (lockActionMessageIdRef.current === msg.id) {
+                  leaveWhileLockedRef.current = msg.id;
+                  return;
+                }
+                setHoverActionMessageId((current) =>
+                  current === msg.id ? null : current,
+                );
+              }}
+              onHoverReactPickerOpenChange={(open) => {
+                if (open) {
+                  setLockActionMessageId(msg.id);
+                  return;
+                }
+                setLockActionMessageId((cur) => (cur === msg.id ? null : cur));
+                if (leaveWhileLockedRef.current === msg.id) {
+                  leaveWhileLockedRef.current = null;
+                  setHoverActionMessageId((current) =>
+                    current === msg.id ? null : current,
+                  );
+                }
+              }}
               isStreaming={
                 msg.role === 'member' &&
                 isStreaming &&
