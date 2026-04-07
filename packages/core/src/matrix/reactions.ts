@@ -45,12 +45,14 @@ export function aggregateReactionsForTarget(
 
   for (const [key, eventSet] of sorted) {
     const senders = new Set<string>();
+    const reactorUserIds: string[] = [];
     let currentUserReactionEventId: string | undefined;
     for (const ev of eventSet) {
       if (ev.isRedacted()) continue;
       const sender = ev.getSender();
       if (!sender || senders.has(sender)) continue;
       senders.add(sender);
+      reactorUserIds.push(sender);
       if (currentUserId && sender === currentUserId) {
         const id = ev.getId();
         if (id) currentUserReactionEventId = id;
@@ -63,6 +65,7 @@ export function aggregateReactionsForTarget(
       count,
       includesCurrentUser: currentUserId != null && senders.has(currentUserId),
       currentUserReactionEventId,
+      reactorUserIds,
     });
   }
 

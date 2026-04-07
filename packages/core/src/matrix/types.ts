@@ -45,6 +45,8 @@ export interface MessageReaction {
   includesCurrentUser?: boolean;
   /** Current user's m.reaction event id for this key (for toggle off). */
   currentUserReactionEventId?: string;
+  /** Distinct Matrix user ids who reacted with this key (for hover UI). */
+  reactorUserIds?: string[];
 }
 
 export interface Message {
