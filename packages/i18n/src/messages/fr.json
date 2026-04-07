@@ -1629,6 +1629,7 @@
     "membersCount": "{count, plural, one {# membre} other {# membres}} · {online} en ligne",
     "you": "Vous",
     "reactButton": "Réagir",
+    "addReactionButton": "Ajouter une réaction",
     "replyButton": "Répondre",
     "replyingTo": "Réponse à {author}",
     "replyDismiss": "Annuler la réponse",

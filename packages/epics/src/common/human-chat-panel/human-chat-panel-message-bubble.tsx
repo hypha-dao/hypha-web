@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Smile, Reply, MoreHorizontal } from 'lucide-react';
+import { SmilePlus, Reply, MoreHorizontal } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../people/components/person-avatar';
 
@@ -126,7 +126,8 @@ export function HumanChatPanelMessageBubble({
   onReact,
 }: HumanChatPanelMessageBubbleProps) {
   const t = useTranslations('HumanChatPanel');
-  const [reactPickerOpen, setReactPickerOpen] = useState(false);
+  const [hoverReactPickerOpen, setHoverReactPickerOpen] = useState(false);
+  const [inlineReactPickerOpen, setInlineReactPickerOpen] = useState(false);
 
   // TODO: Handle non-text parts (file attachments, tool results, etc.)
   const textParts =
@@ -219,8 +220,8 @@ export function HumanChatPanelMessageBubble({
           </span>
         )}
 
-        {/* Reactions */}
-        {visibleReactions.length > 0 && (
+        {/* Reactions — Discord-style pills + inline add-reaction (opens picker) */}
+        {(visibleReactions.length > 0 || (canReact && onReact)) && (
           <div
             data-testid="chat-message-reactions"
             className="mt-1.5 flex flex-wrap items-center gap-1"
@@ -236,23 +237,55 @@ export function HumanChatPanelMessageBubble({
                   }
                 }}
                 className={cn(
-                  'inline-flex min-h-8 items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors',
+                  'inline-flex h-6 min-w-0 shrink-0 items-center gap-1 rounded-full border px-2 text-xs tabular-nums leading-none transition-colors',
                   reaction.includesCurrentUser
-                    ? 'border-primary/60 bg-primary/10'
-                    : 'border-border bg-secondary',
-                  canReact
-                    ? 'cursor-pointer hover:bg-muted'
-                    : 'cursor-default opacity-80',
+                    ? 'border-[#5865f2]/50 bg-[#5865f2]/15 hover:bg-[#5865f2]/20 dark:border-[#5865f2]/40 dark:bg-[#5865f2]/20'
+                    : 'border-[#949ba4]/40 bg-[#f2f3f5] hover:bg-[#e3e5e8] dark:border-border dark:bg-muted/80 dark:hover:bg-muted',
+                  canReact ? 'cursor-pointer' : 'cursor-default opacity-80',
                 )}
               >
-                <span>{reaction.emoji}</span>
-                <span className="text-muted-foreground">{reaction.count}</span>
+                <span className="text-[15px] leading-none" aria-hidden>
+                  {reaction.emoji}
+                </span>
+                <span
+                  className={cn(
+                    'text-[11px] font-medium',
+                    reaction.includesCurrentUser
+                      ? 'text-[#5865f2] dark:text-[#949cf7]'
+                      : 'text-[#4e5058] dark:text-muted-foreground',
+                  )}
+                >
+                  {reaction.count}
+                </span>
               </button>
             ))}
             {hiddenReactionCount > 0 && (
               <span className="text-xs text-muted-foreground">
                 {t('reactionsOverflow', { count: hiddenReactionCount })}
               </span>
+            )}
+            {canReact && onReact && (
+              <HumanChatPanelEmojiPicker
+                open={inlineReactPickerOpen}
+                onOpenChange={setInlineReactPickerOpen}
+                onEmojiSelect={(native) => {
+                  void onReact(native);
+                }}
+                ariaLabel={t('addReactionButton')}
+                align="start"
+              >
+                <button
+                  type="button"
+                  className={cn(
+                    'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#949ba4]/40 bg-[#f2f3f5] text-[#4e5058] transition-colors',
+                    'hover:bg-[#e3e5e8] dark:border-border dark:bg-muted/80 dark:text-muted-foreground dark:hover:bg-muted',
+                  )}
+                  aria-label={t('addReactionButton')}
+                  aria-expanded={inlineReactPickerOpen}
+                >
+                  <SmilePlus className="h-3.5 w-3.5" strokeWidth={2} />
+                </button>
+              </HumanChatPanelEmojiPicker>
             )}
           </div>
         )}
@@ -261,8 +294,8 @@ export function HumanChatPanelMessageBubble({
       {/* Hover / focus-within action bar */}
       <div className="absolute right-2 top-0 -translate-y-1/2 flex h-7 items-center gap-0.5 rounded-md border border-border bg-background-2 px-0.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity shadow-sm">
         <HumanChatPanelEmojiPicker
-          open={reactPickerOpen}
-          onOpenChange={setReactPickerOpen}
+          open={hoverReactPickerOpen}
+          onOpenChange={setHoverReactPickerOpen}
           onEmojiSelect={(native) => {
             if (onReact) void onReact(native);
           }}
@@ -275,9 +308,9 @@ export function HumanChatPanelMessageBubble({
             aria-label={t('reactButton')}
             disabled={!canReact}
             aria-disabled={!canReact}
-            aria-expanded={reactPickerOpen}
+            aria-expanded={hoverReactPickerOpen}
           >
-            <Smile className="h-3.5 w-3.5" />
+            <SmilePlus className="h-3.5 w-3.5" strokeWidth={2} />
           </button>
         </HumanChatPanelEmojiPicker>
         <button
