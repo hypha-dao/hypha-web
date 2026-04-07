@@ -9,9 +9,14 @@ const LOCALES = routing.locales;
 const withNextIntl = createNextIntlPlugin('../../packages/i18n/src/request.ts');
 
 const nextConfig: NextConfig = {
+  // Load matrix-js-sdk from node_modules on the server so it is not duplicated
+  // across server chunks (pairs with webpack resolve.alias below). See
+  // .agents/references/domain/hypha-matrix-mapping.md — stay on SDK ^40.x.
+  serverExternalPackages: ['matrix-js-sdk'],
   webpack: (config) => {
-    // Prevent matrix-js-sdk from being bundled via multiple entrypoints,
-    // which causes the "Multiple matrix-js-sdk entrypoints detected!" error.
+    // Single module path for matrix-js-sdk (require.resolve from apps/web needs
+    // matrix-js-sdk as a direct dependency). Avoids "Multiple matrix-js-sdk
+    // entrypoints detected!" when the SDK initializes from more than one bundle.
     config.resolve.alias = {
       ...config.resolve.alias,
       'matrix-js-sdk': require.resolve('matrix-js-sdk'),
