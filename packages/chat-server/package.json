@@ -1,0 +1,28 @@
+{
+  "name": "@hypha-platform/chat-server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hypha-platform/core": "workspace:*",
+    "@hypha-platform/storage-postgres": "workspace:*",
+    "@hypha-platform/ui-utils": "workspace:*",
+    "@openrouter/ai-sdk-provider": "^2.3.3",
+    "ai": "^6.0.105",
+    "jose": "^5.9.6",
+    "server-only": "^0.0.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@hypha-platform/config-eslint": "workspace:*",
+    "@hypha-platform/config-typescript": "workspace:*",
+    "typescript": "^5.8.2"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

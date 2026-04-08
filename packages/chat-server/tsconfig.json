@@ -1,0 +1,6 @@
+{
+  "extends": "@hypha-platform/config-typescript/nextjs.json",
+  "compilerOptions": { "noEmit": true },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules"]
+}
