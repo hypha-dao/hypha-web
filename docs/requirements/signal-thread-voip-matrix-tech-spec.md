@@ -4,7 +4,7 @@
 
 | Field | Value |
 |-------|--------|
-| **Status** | Architecture & requirements — **implementation:** [signal-thread-voip-implementation-spec.md](./signal-thread-voip-implementation-spec.md) |
+| **Status** | Architecture & requirements — **implementation:** [signal-thread-voip-implementation-spec.md](./signal-thread-voip-implementation-spec.md) — **plan & quality bar:** [signal-thread-voip-implementation-plan.md](./signal-thread-voip-implementation-plan.md) |
 | **Scope** | Enable **audio and video calling** initiated from a **Signal** conversation in a **Space**, using **`matrix-js-sdk@^40.0.0`** and Hypha’s existing **Space = Room**, **Signal = Thread** mapping |
 | **Normative references** | [Matrix JS SDK `MatrixClient`](https://matrix-org.github.io/matrix-js-sdk/classes/matrix.MatrixClient.html), [`GroupCall`](https://matrix-org.github.io/matrix-js-sdk/classes/matrix.GroupCall.html), [`ICreateClientOpts`](https://matrix-org.github.io/matrix-js-sdk/interfaces/matrix.ICreateClientOpts.html); Hypha: [`hypha-matrix-mapping.md`](../../.agents/references/domain/hypha-matrix-mapping.md) |
 | **SDK version constraint** | Remain on **`matrix-js-sdk@^40.0.0`**; do **not** upgrade to v41+ in Next.js until the project-wide “multiple entrypoints” issue is resolved (see existing chat requirements and matrix engineer role). |
@@ -80,6 +80,8 @@ Per [Hypha ↔ Matrix mapping](../../.agents/references/domain/hypha-matrix-mapp
 ### 2.5 Implementation handoff
 
 Normative file paths, API shape, UI placement, i18n keys, and acceptance criteria for engineers are in **[signal-thread-voip-implementation-spec.md](./signal-thread-voip-implementation-spec.md)**.
+
+Phased **step-by-step plan**, **world-class** acceptance criteria (quality + UX), and **recording / transcript** (organizational memory in the Space) are in **[signal-thread-voip-implementation-plan.md](./signal-thread-voip-implementation-plan.md)**.
 
 ---
 

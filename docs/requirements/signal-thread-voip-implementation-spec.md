@@ -6,6 +6,7 @@
 |-------|--------|
 | **Status** | Ready to implement |
 | **Parent** | [signal-thread-voip-matrix-tech-spec.md](./signal-thread-voip-matrix-tech-spec.md) |
+| **Plan** | [signal-thread-voip-implementation-plan.md](./signal-thread-voip-implementation-plan.md) — phased steps, world-class acceptance criteria, recording/transcript |
 | **SDK** | `matrix-js-sdk@^40.0.0` (no v41+ in Next.js until platform upgrade) |
 | **Architecture** | **Option A** — `GroupCall` on **Space `roomId`**; **`threadRootEventId`** is **app context + optional timeline notice** only |
 
