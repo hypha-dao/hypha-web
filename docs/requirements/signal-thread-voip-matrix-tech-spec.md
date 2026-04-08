@@ -60,9 +60,11 @@ From the public API (see [MatrixClient](https://matrix-org.github.io/matrix-js-s
 
 ### 2.3 `GroupCall` (multi-party)
 
-[`GroupCall`](https://matrix-org.github.io/matrix-js-sdk/classes/matrix.GroupCall.html) is constructed with `(client, room, type, …)` — explicitly **`Room`-scoped**. It exposes **`enter`**, **`leave`**, **`terminate`**, participant maps, local feed control (`setMicrophoneMuted`, `setLocalVideoMuted`, screenshare), and optional **LiveKit** URL updates.
+[`GroupCall`](https://matrix-org.github.io/matrix-js-sdk/classes/matrix.GroupCall.html) is constructed with `(client, room, type, …)` — explicitly **`Room`-scoped**. It exposes **`enter`**, **`leave`**, **`terminate`**, participant maps, local feed control (`setMicrophoneMuted`, `setLocalVideoMuted`, **`setScreensharingEnabled`** / **`screenshareFeeds`**), and optional **LiveKit** URL updates.
 
 **There is no `Thread` parameter** on `GroupCall`: **group calls are not modeled as sub-room thread resources** in this API.
+
+**UI mapping:** A full **SDK capability → layout/control** matrix (mic, camera, **screen share**, feeds, optional PTT/stats) is in the implementation spec **§2.4 and §3.5** of [signal-thread-voip-implementation-spec.md](./signal-thread-voip-implementation-spec.md).
 
 ### 2.4 Threads vs VoIP (Hypha mapping impact)
 

@@ -59,7 +59,9 @@ Expose a **narrow** API on `MatrixContextType` (same provider file) or a **dedic
 | `enterVideo(threadRootEventId?)` | `Promise<void>` | Same with **video** (request camera + mic). |
 | `leave()` | `Promise<void>` | `GroupCall.leave` / cleanup; **stop all local tracks**. |
 | `setMicrophoneMuted` | `(muted: boolean) => Promise<void>` | Delegate to `GroupCall` when connected. |
-| `setCameraMuted` | `(muted: boolean) => Promise<void>` | Use SDK’s video mute API (see `GroupCall` / local feed). |
+| `setCameraMuted` | `(muted: boolean) => Promise<void>` | Use SDK’s **`setLocalVideoMuted`** (or equivalent). |
+| `setScreensharingEnabled` | `(enabled: boolean) => Promise<void>` | Delegates to **`GroupCall.setScreensharingEnabled`** — **v1.1+ UI** unless product promotes earlier (§3.7). |
+| `isScreensharing` | `boolean` | For toggle **pressed** state and stage layout. |
 | `localPreviewStream` | `MediaStream \| null` | Optional: for local preview `<video>` (implementation detail). |
 | `participantSummary` | `{ count: number }` or SDK-derived | For header badge. |
 | `callKind` | `'audio' \| 'video' \| null` | **`null`** when idle; drives **banner** (show/hide camera) and **stage** (§3.4). |
@@ -77,7 +79,28 @@ Expose a **narrow** API on `MatrixContextType` (same provider file) or a **dedic
 
 ### 2.3 Optional thread timeline notice
 
-**If** product enables FR-5 (parent doc): add **`sendThreadCallNotice(roomId, threadRootEventId, body)`** using existing thread send pattern (`m.relates_to` with `rel_type: m.thread`) — mirror **`sendMessage`** thread logic from matrix engineer role / `sendEvent` helpers. **Gate** behind a boolean `postThreadNoticeOnCallStart` in config or constant for v1.
+**If** product enables FR-5 (parent doc): add **`sendThreadCallNotice(roomId, threadRootEventId, body)`** using existing thread send pattern (`m.relates_to` with `rel_type: m.thread`) — mirror **`sendMessage`** thread logic from matrix engineer role / `sendEvent` helpers. **Gate** behind a boolean `postThreadCallNoticeOnCallStart` in config or constant for v1.
+
+### 2.4 `GroupCall` in-call capabilities (matrix-js-sdk v40)
+
+The spec below maps **[`GroupCall`](https://matrix-org.github.io/matrix-js-sdk/classes/matrix.GroupCall.html)** methods and feeds to product/UI. Implementers SHALL verify exact signatures in the installed SDK.
+
+| SDK surface | Purpose |
+|-------------|---------|
+| **`setMicrophoneMuted` / `isMicrophoneMuted`** | Local mic mute. |
+| **`setLocalVideoMuted` / `isLocalVideoMuted`** | Local camera off (distinct from leaving call). |
+| **`setScreensharingEnabled(enabled, opts?)` / `isScreensharing`** | **Screen share** (browser `getDisplayMedia` path inside SDK). |
+| **`updateLocalUsermediaStream(stream)`** | Replace local A/V stream (advanced). |
+| **`getLocalFeeds`**, **`userMediaFeeds`**, **`screenshareFeeds`** | **`CallFeed`** instances for rendering `<video>` / audio elements. |
+| **`getUserMediaFeed(userId, deviceId)`**, **`getScreenshareFeed(userId, deviceId)`** | Per-participant feed lookup for tiles. |
+| **`participants`** | Map of **`RoomMember`** → devices → participant info. |
+| **`terminate`**, **`leave`** | End session for room / local participant. |
+| **`activeSpeaker`** (optional) | Highlight dominant speaker if SDK exposes (see accessor on `GroupCall`). |
+| **`getGroupCallStats` / `setGroupCallStatsInterval`** | Optional quality/debug UI (not required for v1). |
+| **PTT** (`isPtt`, `pttMaxTransmitTime`, etc.) | Push-to-talk mode — **optional** product; not in baseline v1 UI. |
+| **`on` / `GroupCall` events** | React to participant join/leave, feed updates — drive stage re-render. |
+
+**Not on `GroupCall` (use `MatrixClient` elsewhere):** **`supportsCallTransfer`**, **`setSupportsCallTransfer`** — **1:1 call transfer**; **out of scope** for baseline **group** Space call unless product adds 1:1 flows later.
 
 ---
 
@@ -185,7 +208,29 @@ type HumanChatPanelCallToolbarProps = {
 
 **IMP:** Panel unmount or leaving Space **must** `leave()` and release `MediaStream` tracks.
 
-### 3.5 `threadRootEventId` source
+### 3.5 In-call layout: all `GroupCall` media types (video, screen share, …)
+
+The **call stage** (`human-chat-panel-call-stage.tsx`) SHALL render feeds from **`userMediaFeeds`** and **`screenshareFeeds`** (and **`getUserMediaFeed` / `getScreenshareFeed`** as needed), not only “camera video”:
+
+| Feed type | Source (conceptual) | UI treatment |
+|-----------|---------------------|--------------|
+| **Remote / local camera** | `userMediaFeeds` / `CallFeed` | Tile in grid; local as **PiP** overlay. |
+| **Screen share** | `screenshareFeeds` | **Dedicated tile** (often large aspect ratio); may **replace** or **split** grid with camera tiles (product: **prefer prominent screen tile** when `isScreensharing` local or remote). |
+| **Audio-only** | Audio tracks on feeds | **Avatar / initials** tile when no video track; still show **speaking** indicator if available. |
+
+**Screen share control:** **`setScreensharingEnabled`** — button in **banner** (next to camera) or overflow menu; **icon** “Share screen” / “Stop sharing”; **browser permission** for display capture may fail independently of camera — map errors to **`callErrorPermission`** or a dedicated **`callErrorScreenshare`** string.
+
+**v1 vs later:**
+
+| Feature | Spec status |
+|---------|-------------|
+| Mic, camera, leave, participant tiles (camera) | **v1** (§3.3–§3.4). |
+| **Screen share** | **Specified** for layout + hook (§2.4, §3.5); **implement in v1** if product prioritizes; otherwise **v1.1** — document choice in implementation PR. |
+| **Active speaker** highlight | **Optional** — subscribe if SDK exposes stable **`activeSpeaker`**; visual ring on tile. |
+| **Call stats / debug** | **Optional** — dev-only overlay. |
+| **Push-to-talk** | **Out of scope** v1 unless product requests. |
+
+### 3.6 `threadRootEventId` source
 
 Until Signal/thread routing is wired end-to-end:
 
@@ -193,7 +238,7 @@ Until Signal/thread routing is wired end-to-end:
 
 **Grep target for integration:** coherence uses `openCoherenceChat`; space mode resolves `roomId` in `HumanRightPanel` — thread id must come from the same **coherence / space** feature that renders “Signal” (add prop drill-down as needed).
 
-### 3.6 i18n
+### 3.7 i18n
 
 **Files:** `packages/i18n/src/messages/{en,de,es,fr,pt}.json` under **`HumanChatPanel`**:
 
@@ -207,7 +252,9 @@ Until Signal/thread routing is wired end-to-end:
 | `callLeave` | Leave button |
 | `callMute` / `callUnmute` | Mic |
 | `callCameraOn` / `callCameraOff` | Camera |
+| `callScreenshareStart` / `callScreenshareStop` | Screen share toggle |
 | `callErrorPermission` | Mic/camera denied |
+| `callErrorScreenshare` | Display capture denied / failed |
 | `callErrorGeneric` | Fallback |
 | `callSearchComingSoon` | Search stub tooltip |
 
@@ -235,6 +282,7 @@ Follow [i18n-translate skill](../../.agents/skills/i18n-translate/SKILL.md) for 
 | **IMP-4** | **One** concurrent group call session per **`roomId`** in the client state machine. |
 | **IMP-5** | All user-visible errors map to **`HumanChatPanel.*`** strings (no raw SDK errors in production UI; log details to console in dev). |
 | **IMP-6** | In-call UI SHALL follow **§3.1–§3.4**: combined **tabs + call/search** row, **banner** below, **video stage** above messages when `callKind === 'video'` and connected. |
+| **IMP-7** | When screen share is in scope for the release, stage SHALL render **`screenshareFeeds`** per **§3.5**; hook SHALL expose **`setScreensharingEnabled`** / **`isScreensharing`**. |
 
 ---
 
@@ -253,6 +301,7 @@ Follow [i18n-translate skill](../../.agents/skills/i18n-translate/SKILL.md) for 
 - [ ] Space chat panel shows **audio** and **video** actions when `roomId` is ready and Matrix is authenticated.
 - [ ] User can **start** a call, see **connected** state, **mute** mic, **toggle** camera (if video path), and **leave** without reload.
 - [ ] **Layout** matches **§3.1**: tabs + phone/video/search on one row; **banner** under it; **video stage** (when applicable) above messages in Chat tab.
+- [ ] **Stage** can show **camera tiles** and, when implemented, **screen-share** tiles from **`userMediaFeeds` / `screenshareFeeds`** (**§3.5**).
 - [ ] Second participant in the **same Space** can **join** the same session (same `roomId`).
 - [ ] No duplicate `matrix-js-sdk` bundles; no VoIP code on server.
 - [ ] Copy reflects **space-wide** call semantics.
