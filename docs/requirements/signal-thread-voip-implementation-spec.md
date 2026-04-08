@@ -62,6 +62,7 @@ Expose a **narrow** API on `MatrixContextType` (same provider file) or a **dedic
 | `setCameraMuted` | `(muted: boolean) => Promise<void>` | Use SDK’s video mute API (see `GroupCall` / local feed). |
 | `localPreviewStream` | `MediaStream \| null` | Optional: for local preview `<video>` (implementation detail). |
 | `participantSummary` | `{ count: number }` or SDK-derived | For header badge. |
+| `callKind` | `'audio' \| 'video' \| null` | **`null`** when idle; drives **banner** (show/hide camera) and **stage** (§3.4). |
 
 **Matrix client usage (normative sequence):**
 
@@ -82,46 +83,109 @@ Expose a **narrow** API on `MatrixContextType` (same provider file) or a **dedic
 
 ## 3) UI integration (packages/epics)
 
-### 3.1 Placement
+### 3.1 Target layout (aligned with design mock)
 
-**File:** `packages/epics/src/common/human-right-panel.tsx`
+The Signal / thread panel SHALL use a **stacked header** inside `SidebarHeader` (or equivalent), **top to bottom**:
 
-- **When:** `mode === 'space'` and `roomId` is non-null and Matrix is authenticated.
-- **Where:** Add a **toolbar row** between **`HumanChatPanelHeader`** and **`HumanChatPanelTabs`**, or **extend** the header to a two-row layout:
-  - **Row 1:** existing back/title (header).
-  - **Row 2:** tabs **left**; **call actions + optional search** **right** (match design mocks).
+1. **Context strip (optional)** — One or two lines: Signal title and/or short description (e.g. coordination copy). Uses existing typography (`text-xs`, `text-muted-foreground`, `line-clamp-*`). May reuse fields from coherence/Signal metadata when available.
+2. **Navigation + actions row** — **Single horizontal row**, full width:
+   - **Left:** `HumanChatPanelTabs` — **Chat** | **Members** | **Pins** (add **Pins** when that epic lands; until then **Chat** | **Members** only is acceptable if product agrees).
+   - **Right:** **Icon group** (outline style, dark theme): **Phone** (audio), **Video**, **Search** — same visual weight and spacing as the mock.
+3. **Active-call banner** — Only when `callState` is `connecting` | `connected` | `disconnecting` (see §3.3). Sits **directly under** the navigation row, **above** `SidebarContent`.
+4. **Main content** — `SidebarContent`: chat list, members list, or pins per tab; **call stage** overlays or shares the top of this area during an active **video** call (see §3.4).
 
-**New presentational component (recommended):**
+**ASCII wireframe (structure only):**
 
-- `packages/epics/src/common/human-chat-panel/human-chat-panel-call-toolbar.tsx`
+```
+┌─────────────────────────────────────────────────────────────┐
+│ [optional description / signal context line-clamp]            │
+├─────────────────────────────────────────────────────────────┤
+│  (Chat) (Members) (Pins)          [phone] [video] [search]   │
+├─────────────────────────────────────────────────────────────┤
+│  Space call · 02:14     [Mute] [Camera] [Leave]  (spinner)  │  ← banner when in call
+├─────────────────────────────────────────────────────────────┤
+│  ┌─ call stage (video) ────────────────────────┐            │
+│  │  remote tiles + local PiP                     │  OR  msg  │
+│  └──────────────────────────────────────────────┘            │
+│  … messages …                                                │
+└─────────────────────────────────────────────────────────────┘
+```
 
-Props (illustrative):
+**File:** `packages/epics/src/common/human-right-panel.tsx` wires layout; presentational pieces live under `human-chat-panel/`.
+
+### 3.2 Idle state — header icons (phone, video, search)
+
+**Component:** `human-chat-panel-call-toolbar.tsx` (or a merged row component that renders **tabs + icons** in one flex row).
+
+| Control | Idle behavior |
+|---------|----------------|
+| **Phone** | Starts **join** with **audio only** (`enterAudio`). |
+| **Video** | Starts **join** with **camera + mic** (`enterVideo`). |
+| **Search** | **In-scope for v1:** wire `onSearchClick` to **in-thread / in-space search** when the search epic exists; until then **stub** with tooltip “Coming soon” or `aria-disabled` — **do not** block VoIP on search. |
+
+**States:**
+
+- **`callState === 'idle'`:** Icons **enabled** when Matrix + `roomId` are ready.
+- **`callState` in `initializing` | `awaiting_media` | `connecting`:** Phone + Video show **loading** and are **non-interactive** to prevent double-join.
+- **`callState === 'connected'`:** **Recommended:** keep header icons **visible** with **`aria-pressed={true}`** on phone/video, or rely on **banner-only** controls — pick one pattern and stay consistent.
+
+**Props (normative minimum):**
 
 ```typescript
 type HumanChatPanelCallToolbarProps = {
-  roomId: string;
-  threadRootEventId: string | null; // null until Signal/thread is wired
+  callState: SpaceCallState; // from useSpaceGroupCall
+  threadRootEventId: string | null;
   disabled?: boolean;
   onAudioClick: () => void;
   onVideoClick: () => void;
-  // optional: onSearchClick when search epic exists
+  onSearchClick?: () => void;
 };
 ```
 
-**Accessibility:**
+**Accessibility:** `aria-label` per icon; live region for **joined** / **left** call; focus order: tabs → phone → video → search → banner controls.
 
-- Buttons: `aria-label` from i18n; **`aria-pressed`** or live region when call active if toggling join state.
+### 3.3 Active-call banner (space-wide + primary controls)
 
-### 3.2 Active call chrome
+**Component:** `human-chat-panel-call-banner.tsx`
 
-When `callState === 'connected'` (or `'connecting'` with spinner):
+**Placement:** Immediately **below** the Chat / Members / Pins + icons row, **above** `SidebarContent` (or above the split **stage + messages** region when video is active).
 
-- Render **`HumanChatPanelCallBanner`** (new) **below** the toolbar or **above** `SidebarContent`:
-  - Text: **space-wide** wording, e.g. “Space call active” + duration (optional v1.1).
-  - Actions: **Mute**, **Camera off**, **Leave**.
-- **Media tiles:** v1 can be **minimal** (local preview + participant count) or **grid**—product choice; spec requires **no** raw `MediaStream` leaks on navigation away (unmount `leave()`).
+| Element | Requirement |
+|---------|-------------|
+| **Label** | **Must** indicate a **space** call (e.g. “Space call”, “Call in this space”) — not “Signal-only”. Optional: **participant count**. |
+| **Timer** | **Optional v1.1:** `mm:ss` since connected; otherwise show **Connecting…** / **Connected**. |
+| **Mute** | Toggles mic; reflects `GroupCall` state. |
+| **Camera** | Toggle video mute / camera off. **Hide** when session is **audio-only** (`callKind === 'audio'`) or show **disabled** — choose one and document in implementation PR. |
+| **Leave** | Primary destructive control; calls `leave()`. |
+| **Connecting** | Spinner + disabled primary controls until `connected`. |
 
-### 3.3 `threadRootEventId` source
+**Errors:** If `callState === 'error'`, show compact message with optional **Retry** / **Dismiss**.
+
+### 3.4 During-call — audio vs video (main panel)
+
+#### 3.4.1 Audio-only (`enterAudio`, camera off)
+
+- **No** full-screen video stage required.
+- **Optional v1:** Thin strip under banner: local avatar + mic indicator.
+- **Chat tab:** Message list remains **primary**; banner stays at **top** of panel while scrolling.
+
+#### 3.4.2 Video (`enterVideo` or camera on after join)
+
+**Component:** `human-chat-panel-call-stage.tsx`
+
+- When `activeTab === 'chat'` and `callState === 'connected'` and **video is active** (local or remote):
+  - **Top** of `SidebarContent`: **stage** with **remote** participant tiles (from SDK feeds) and **local** preview as **picture-in-picture** in a **corner** (e.g. bottom-end) so tabs/header stay unobstructed.
+  - **Below** stage: **scrollable** message list (split view). **Min-height** for stage (e.g. `min-h-[220px]` or ~40% panel height) — tune with design.
+- **Camera off (video muted):** **Collapse** to audio-only presentation (avatars or placeholders); **keep** banner controls.
+
+#### 3.4.3 Tab switching during a call
+
+- **Members** / **Pins:** Banner **stays visible**; call continues in background.
+- **Chat:** Stage + messages as **§3.4.2** when video active.
+
+**IMP:** Panel unmount or leaving Space **must** `leave()` and release `MediaStream` tracks.
+
+### 3.5 `threadRootEventId` source
 
 Until Signal/thread routing is wired end-to-end:
 
@@ -129,7 +193,7 @@ Until Signal/thread routing is wired end-to-end:
 
 **Grep target for integration:** coherence uses `openCoherenceChat`; space mode resolves `roomId` in `HumanRightPanel` — thread id must come from the same **coherence / space** feature that renders “Signal” (add prop drill-down as needed).
 
-### 3.4 i18n
+### 3.6 i18n
 
 **Files:** `packages/i18n/src/messages/{en,de,es,fr,pt}.json` under **`HumanChatPanel`**:
 
@@ -137,12 +201,15 @@ Until Signal/thread routing is wired end-to-end:
 |-----|---------|
 | `callAudio` | Audio call button |
 | `callVideo` | Video call button |
+| `callSearch` | Search (thread/space) |
 | `callActiveInSpace` | Banner title |
+| `callConnecting` | Banner connecting state |
 | `callLeave` | Leave button |
 | `callMute` / `callUnmute` | Mic |
 | `callCameraOn` / `callCameraOff` | Camera |
 | `callErrorPermission` | Mic/camera denied |
 | `callErrorGeneric` | Fallback |
+| `callSearchComingSoon` | Search stub tooltip |
 
 Follow [i18n-translate skill](../../.agents/skills/i18n-translate/SKILL.md) for locale parity.
 
@@ -167,6 +234,7 @@ Follow [i18n-translate skill](../../.agents/skills/i18n-translate/SKILL.md) for 
 | **IMP-3** | UI must **not** claim “thread-only” or “private to this signal” for the media path. |
 | **IMP-4** | **One** concurrent group call session per **`roomId`** in the client state machine. |
 | **IMP-5** | All user-visible errors map to **`HumanChatPanel.*`** strings (no raw SDK errors in production UI; log details to console in dev). |
+| **IMP-6** | In-call UI SHALL follow **§3.1–§3.4**: combined **tabs + call/search** row, **banner** below, **video stage** above messages when `callKind === 'video'` and connected. |
 
 ---
 
@@ -184,6 +252,7 @@ Follow [i18n-translate skill](../../.agents/skills/i18n-translate/SKILL.md) for 
 
 - [ ] Space chat panel shows **audio** and **video** actions when `roomId` is ready and Matrix is authenticated.
 - [ ] User can **start** a call, see **connected** state, **mute** mic, **toggle** camera (if video path), and **leave** without reload.
+- [ ] **Layout** matches **§3.1**: tabs + phone/video/search on one row; **banner** under it; **video stage** (when applicable) above messages in Chat tab.
 - [ ] Second participant in the **same Space** can **join** the same session (same `roomId`).
 - [ ] No duplicate `matrix-js-sdk` bundles; no VoIP code on server.
 - [ ] Copy reflects **space-wide** call semantics.
@@ -198,7 +267,8 @@ Follow [i18n-translate skill](../../.agents/skills/i18n-translate/SKILL.md) for 
 | Add | `packages/core/src/matrix/client/hooks/use-space-group-call.ts` (or equivalent name) |
 | Export | `packages/core/src/matrix/client/index.ts` (or barrel) — public API |
 | Add | `packages/epics/src/common/human-chat-panel/human-chat-panel-call-toolbar.tsx` |
-| Add | `packages/epics/src/common/human-chat-panel/human-chat-panel-call-banner.tsx` (optional split) |
+| Add | `packages/epics/src/common/human-chat-panel/human-chat-panel-call-banner.tsx` |
+| Add | `packages/epics/src/common/human-chat-panel/human-chat-panel-call-stage.tsx` (video grid + local PiP) |
 | Edit | `packages/epics/src/common/human-right-panel.tsx` — wire toolbar + banner |
 | Edit | `packages/epics/src/common/human-chat-panel/index.ts` — re-exports |
 | Edit | `packages/i18n/src/messages/*.json` — keys under `HumanChatPanel` |
