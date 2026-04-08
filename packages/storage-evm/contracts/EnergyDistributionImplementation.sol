@@ -378,6 +378,13 @@ contract EnergyDistributionImplementation is
       uint256 remainingToConsume = request.quantity;
       int256 totalCost = 0;
 
+      // DEBUG: Emit loop info before first pass
+      emit DebugConsumptionLoopInfo(
+        collectiveConsumption.length,
+        remainingToConsume,
+        true
+      );
+
       // FIRST PASS: Prioritize self-consumption (own tokens first)
       for (
         uint256 j = 0;
@@ -403,10 +410,29 @@ contract EnergyDistributionImplementation is
           // _adjustCashCreditBalance(communityAddress, cost);
           _adjustCommunityBalance(cost);
 
+          // DEBUG: Capture before value
+          uint256 quantityBefore = collectiveConsumption[j].quantity;
+
           collectiveConsumption[j].quantity -= canConsume;
           remainingToConsume -= canConsume;
+
+          // DEBUG: Emit consumption attempt details
+          emit DebugConsumptionAttempt(
+            j,
+            collectiveConsumption[j].owner,
+            quantityBefore,
+            canConsume,
+            collectiveConsumption[j].quantity
+          );
         }
       }
+
+      // DEBUG: Emit loop info before second pass
+      emit DebugConsumptionLoopInfo(
+        collectiveConsumption.length,
+        remainingToConsume,
+        false
+      );
 
       // SECOND PASS: Buy from others if still needed (other members' tokens or imports)
       for (
@@ -437,8 +463,20 @@ contract EnergyDistributionImplementation is
             importCashCreditBalance += cost;
           }
 
+          // DEBUG: Capture before value
+          uint256 quantityBefore = collectiveConsumption[j].quantity;
+
           collectiveConsumption[j].quantity -= canConsume;
           remainingToConsume -= canConsume;
+
+          // DEBUG: Emit consumption attempt details
+          emit DebugConsumptionAttempt(
+            j,
+            collectiveConsumption[j].owner,
+            quantityBefore,
+            canConsume,
+            collectiveConsumption[j].quantity
+          );
         }
       }
 
@@ -449,6 +487,9 @@ contract EnergyDistributionImplementation is
 
       emit EnergyConsumed(memberAddress, request.quantity, totalCost);
     }
+
+    // DEBUG: Emit total remaining in pool after all consumption
+    emit DebugPoolStateAfterConsumption(_getTotalAvailableEnergy());
   }
 
   function _processExportRequests(
@@ -467,6 +508,13 @@ contract EnergyDistributionImplementation is
     for (uint256 i = 0; i < requestCount; i++) {
       totalExportRequested += exportRequests[i].quantity;
     }
+
+    // DEBUG: Emit loop info for export processing
+    emit DebugConsumptionLoopInfo(
+      collectiveConsumption.length,
+      totalExportRequested,
+      true // reusing flag to indicate "export pass"
+    );
 
     for (
       uint256 j = 0;
@@ -503,8 +551,20 @@ contract EnergyDistributionImplementation is
 
           totalCalculatedExportRevenue += revenue; // Still track for event emitting
 
+          // DEBUG: Capture before value
+          uint256 quantityBefore = collectiveConsumption[j].quantity;
+
           totalExportedTokens += amountToProcess;
           collectiveConsumption[j].quantity -= amountToProcess;
+
+          // DEBUG: Emit export consumption details
+          emit DebugConsumptionAttempt(
+            j,
+            collectiveConsumption[j].owner,
+            quantityBefore,
+            amountToProcess,
+            collectiveConsumption[j].quantity
+          );
         }
       }
     }
@@ -512,6 +572,9 @@ contract EnergyDistributionImplementation is
     if (totalExportedTokens > 0) {
       emit EnergyExported(totalExportedTokens, totalCalculatedExportRevenue);
     }
+
+    // DEBUG: Emit total remaining after exports
+    emit DebugPoolStateAfterConsumption(_getTotalAvailableEnergy());
   }
 
   function _sortCollectiveConsumptionByPrice() internal {
@@ -679,7 +742,7 @@ contract EnergyDistributionImplementation is
 
   // Helper function to update community balance with treasury integration
   function _adjustCommunityBalance(int256 adjustment) internal {
-    address treasury = 0xD86e25d230D1dB17BC573399FB7f14c8d8c685Ae;
+    address treasury = 0xf048f5Cad727DD972619c360e00d371a9ef68658;
     int256 newBalance = communityCashCreditBalance + adjustment;
 
     // If balance goes from non-positive to positive, transfer tokens to treasury
@@ -714,7 +777,7 @@ contract EnergyDistributionImplementation is
   ) external view override returns (int256, address) {
     return (
       _getCashCreditBalance(member),
-      0xd8724e6609838a54F7e505679BF6818f1A3F2D40
+      0x2f4903bEeFbE23c057Bd26587Cd3f0bd6e337136
     );
   }
 
@@ -820,6 +883,11 @@ contract EnergyDistributionImplementation is
 
   function getSettledBalance() external view returns (int256) {
     return settledBalance;
+  }
+
+  // DEBUG: Public getter for total unconsumed energy in pool
+  function getTotalUnconsumedEnergy() external view returns (uint256) {
+    return _getTotalAvailableEnergy();
   }
 
   function isAddressWhitelisted(

@@ -139,7 +139,7 @@ async function main(): Promise<void> {
   );
 
   // Tokenomics proposal IDs from our earlier investigation
-  const proposalIds = [841];
+  const proposalIds = [827, 828, 829];
 
   for (const proposalId of proposalIds) {
     console.log(`\n=== CHECKING PROPOSAL ${proposalId} ===`);

@@ -1,0 +1,693 @@
+@page "/blockchain-integration"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using EMOS.Data
+@using EMOS.Models
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<AppDbContext> DbFactory
+@inject EMOS.Services.BlockchainApiService BlockchainApi
+@inject ILogger<BlockchainIntegration> Logger
+@inject EnergyDistributionOrchestrator Orchestrator
+@inject CommunityEnergyService CommunityEnergy
+@inject StateServer State
+
+<PageTitle>Blockchain Integration Test</PageTitle>
+
+<div class="page">
+    <h2>Blockchain Integration</h2>
+    <p class="subtitle">Wallet diagnostics and end-to-end scenario runner.</p>
+
+    <!-- Scenario Runner -->
+    <div class="card">
+        <div class="card-header">Scenario Runner</div>
+        <div class="card-body">
+            <div class="runner-grid">
+                <div>
+                    <label class="lbl">Community</label>
+                    <div>
+                        @if (activeCommunityName is null)
+                        {
+                            <span class="muted">(auto)</span>
+                        }
+                        else
+                        {
+                            <span class="badge">@activeCommunityName</span>
+                        }
+                    </div>
+                </div>
+                <div>
+                    <label class="lbl">Time Window</label>
+                    <div class="muted">Last @timeWindowMinutes min</div>
+                </div>
+                <div>
+                    <label class="lbl">Options</label>
+                    <div class="opts">
+                        <label><input type="checkbox" @bind="skipReset" /> Skip reset</label>
+                        <label><input type="checkbox" @bind="lowGasMode" /> Low gas mode</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button class="btn btn-primary" @onclick="Initialize" disabled="@isRunning">Initialize</button>
+                <button class="btn btn-success" @onclick="RunScenario" disabled="@isRunning">@(isRunning ? "Running..." : "Run Scenario")</button>
+                <button class="btn btn-secondary" @onclick="ClearLog" disabled="@isRunning">Clear Log</button>
+            </div>
+
+            <div class="summary small">
+                <div><strong>Status:</strong> @connectionStatus</div>
+                @if (zeroSumChecked)
+                {
+                    <div><strong>Zero-sum:</strong> @(zeroSumOk ? "PASS" : "FAIL") (@zeroSumBalance.ToString("F6") USDC)</div>
+                }
+                @if (importExportChecked)
+                {
+                    <div><strong>Import:</strong> @importBalance.ToString("F6") USDC</div>
+                    <div><strong>Export:</strong> @exportBalance.ToString("F6") USDC</div>
+                }
+            </div>
+
+            <div class="log">
+                <div class="log-title">Log</div>
+                <pre>@string.Join("\n", logs)</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Balance Diagnostics -->
+    <div class="actions" style="margin-top:18px;">
+        <button class="btn btn-primary" @onclick="LoadHouseholds" disabled="@isLoading">@(isLoading ? "Loading..." : "Reload Households")</button>
+        <button class="btn btn-info" @onclick="RefreshBalances" disabled="@(isLoading || !households.Any())">Refresh Balances</button>
+        <a class="btn btn-secondary" href="/blockchain">Open Blockchain Management</a>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(error))
+    {
+        <div class="alert error">@error</div>
+    }
+
+    @if (!households.Any())
+    {
+        <div class="empty">
+            <div>?? No households with wallet addresses were found.</div>
+            <div>Add wallet addresses to users to test balances.</div>
+        </div>
+    }
+    else
+    {
+        <div class="summary">
+            <div><strong>Households:</strong> @households.Count</div>
+            <div><strong>Balances Loaded:</strong> @households.Count(h => h.HasBalance)</div>
+            <div><strong>Total Balance (USDC):</strong> @totalBalance.ToString("F6")</div>
+        </div>
+
+        <div class="grid">
+            <div class="grid-header">
+                <div>Household</div>
+                <div>Wallet</div>
+                <div style="text-align:right">Balance (USDC)</div>
+                <div style="text-align:right">Status</div>
+            </div>
+            @foreach (var h in households)
+            {
+                <div class="grid-row">
+                    <div>
+                        <div class="name">@h.Name</div>
+                        <div class="muted">ID: @h.HouseholdId</div>
+                    </div>
+                    <div>
+                        @if (string.IsNullOrWhiteSpace(h.WalletAddress))
+                        {
+                            <span class="muted">(no wallet)</span>
+                        }
+                        else
+                        {
+                            <span class="wallet">@Short(h.WalletAddress)</span>
+                        }
+                    </div>
+                    <div style="text-align:right">
+                        @if (h.HasBalance)
+                        {
+                            <span class="@(h.Balance >= 0 ? "bal-pos" : "bal-neg")">@h.Balance.ToString("F6")</span>
+                        }
+                        else if (h.IsLoading)
+                        {
+                            <span class="muted">Loading...</span>
+                        }
+                        else if (!string.IsNullOrWhiteSpace(h.Error))
+                        {
+                            <span class="error">Error</span>
+                        }
+                        else
+                        {
+                            <span class="muted">-</span>
+                        }
+                    </div>
+                    <div style="text-align:right">
+                        @if (!string.IsNullOrWhiteSpace(h.Error))
+                        {
+                            <span class="error" title="@h.Error">Failed</span>
+                        }
+                        else if (h.HasBalance)
+                        {
+                            <span class="ok">OK</span>
+                        }
+                        else
+                        {
+                            <span class="muted">—</span>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .page { 
+        max-width: none; 
+        margin: 0; 
+        padding: 5px 25px 60px; 
+        font-family: var(--body-font, 'Segoe UI', sans-serif); 
+    }
+    .subtitle { color: #6c757d; margin-top: -6px; }
+    .card { border:1px solid #e2e6ea; border-radius: 10px; overflow:hidden; background:#fff; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+    .card-header { background:#f1f3f5; padding:10px 12px; font-weight:700; color:#444; }
+    .card-body { padding: 12px; }
+    .runner-grid { display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 10px; }
+    .lbl { display:block; font-size:12px; color:#666; margin-bottom:3px; text-transform:uppercase; letter-spacing:.5px; }
+    .badge { background:#eef2f7; color:#333; padding:2px 6px; border-radius:4px; font-size:12px; }
+    .opts { display:flex; gap:10px; }
+    .actions { display:flex; gap:10px; margin: 12px 0 18px; }
+    .btn { 
+        background:#007bff; 
+        color:#fff; 
+        border:none; 
+        border-radius:6px; 
+        padding:8px 14px; 
+        cursor:pointer; 
+        font-weight:600; 
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        font-size: 14px;
+    }
+    
+    .btn:hover:not(:disabled) { 
+        background: #0056b3; 
+    }
+    
+    .btn[disabled] { 
+        opacity:.6; 
+        cursor:not-allowed; 
+    }
+    
+    .btn.secondary { 
+        background:#6c757d; 
+        text-decoration:none; 
+        display:inline-flex; 
+        align-items:center; 
+    }
+    
+    .btn.secondary:hover:not(:disabled) { 
+        background: #545b62; 
+    }
+    
+    .btn-primary {
+        background: #007bff;
+        color: white;
+        border: 1px solid #007bff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        background: #0056b3;
+        border-color: #0056b3;
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+        border: 1px solid #6c757d;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+        background: #545b62;
+        border-color: #545b62;
+    }
+
+    .btn-success {
+        background: #28a745;
+        color: white;
+        border: 1px solid #28a745;
+    }
+
+    .btn-success:hover:not(:disabled) {
+        background: #218838;
+        border-color: #218838;
+    }
+
+    .btn-info {
+        background: #17a2b8;
+        color: white;
+        border: 1px solid #17a2b8;
+    }
+
+    .btn-info:hover:not(:disabled) {
+        background: #138496;
+        border-color: #138496;
+    }
+
+    .btn-warning {
+        background: #ffc107;
+        color: #212529;
+        border: 1px solid #ffc107;
+    }
+
+    .btn-warning:hover:not(:disabled) {
+        background: #e0a800;
+        border-color: #e0a800;
+    }
+
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+        border: 1px solid #dc3545;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+        background: #c82333;
+        border-color: #c82333;
+    }
+
+    .alert.error { background:#f8d7da; border:1px solid #f5c6cb; color:#721c24; padding:10px 12px; border-radius:6px; margin: 10px 0; }
+    .empty { padding:18px; border:1px dashed #ced4da; border-radius:8px; color:#555; }
+    .summary { display:flex; gap:18px; padding:10px 12px; background:#f8f9fa; border:1px solid #e2e6ea; border-radius:8px; margin-bottom:12px; }
+    .summary.small { gap:12px; font-size: 13px; }
+    .grid { border:1px solid #e2e6ea; border-radius:8px; overflow:hidden; }
+    .grid-header, .grid-row { display:grid; grid-template-columns: 2fr 2fr 1fr 1fr; gap:12px; padding:10px 12px; align-items:center; }
+    .grid-header { background:#f1f3f5; font-weight:700; color:#444; }
+    .grid-row { border-top:1px solid #eceff1; }
+    .name { font-weight:600; }
+    .muted { color:#6c757d; font-size:12px; }
+    .wallet { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .ok { color:#155724; background:#d4edda; padding:2px 6px; border-radius:4px; font-weight:700; font-size:12px; }
+    .error { color:#721c24; }
+    .bal-pos { color:#155724; font-weight:700; }
+    .bal-neg { color:#721c24; font-weight:700; }
+    .log { margin-top:10px; border:1px solid #e2e6ea; border-radius:8px; background:#fff; }
+    .log-title { padding:8px 10px; font-weight:700; background:#fafbfc; border-bottom:1px solid #e2e6ea; color:#444; }
+    .log pre { margin:0; padding:10px 12px; max-height:240px; overflow:auto; font-size:12px; }
+</style>
+
+@code {
+    // Runner state
+    private bool isRunning;
+    private bool skipReset;
+    private bool lowGasMode = true;
+    private string connectionStatus = "Disconnected";
+    private readonly List<string> logs = new();
+    private int timeWindowMinutes = 60;
+    private bool zeroSumChecked;
+    private bool zeroSumOk;
+    private decimal zeroSumBalance;
+    private bool importExportChecked;
+    private decimal importBalance;
+    private decimal exportBalance;
+    private string? activeCommunityName;
+
+    // Balance diagnostics
+    private bool isLoading;
+    private string? error;
+    private decimal totalBalance;
+    private readonly List<HouseholdWallet> households = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadHouseholds();
+        await ResolveActiveCommunityName();
+    }
+
+    private async Task ResolveActiveCommunityName()
+    {
+        try
+        {
+            var cid = State.CommunityId;
+            if (cid != Guid.Empty)
+            {
+                using var ctx = DbFactory.CreateDbContext();
+                var c = await ctx.Communities.FirstOrDefaultAsync(x => x.Id == cid);
+                activeCommunityName = c?.Name;
+            }
+            else
+            {
+                activeCommunityName = null;
+            }
+        }
+        catch { activeCommunityName = null; }
+    }
+
+    private void Log(string msg)
+    {
+        logs.Add($"[{DateTime.Now:HH:mm:ss}] {msg}");
+        if (logs.Count > 400) logs.RemoveAt(0);
+        StateHasChanged();
+    }
+
+    private void ClearLog() { logs.Clear(); }
+
+    private async Task Initialize()
+    {
+        try
+        {
+            Log("Initializing blockchain service...");
+            var ok = await BlockchainApi.InitializeAsync();
+            connectionStatus = BlockchainApi.ConnectionStatus;
+            Log(ok ? $"Connected: {connectionStatus}" : $"Init failed: {connectionStatus}");
+        }
+        catch (Exception ex)
+        {
+            connectionStatus = ex.Message;
+            Log($"Init error: {ex.Message}");
+        }
+    }
+
+    private async Task RunScenario()
+    {
+        if (isRunning) return;
+        isRunning = true;
+        zeroSumChecked = false; importExportChecked = false;
+        try
+        {
+            logs.Clear();
+            Log("Starting scenario with hardcoded test data...");
+
+            // Ensure initialized
+            if (!BlockchainApi.IsConnected)
+            {
+                await Initialize();
+                if (!BlockchainApi.IsConnected)
+                {
+                    Log("Cannot continue: blockchain not connected");
+                    return;
+                }
+            }
+
+            // 0) Config status
+            var cfg = await BlockchainApi.GetConfigurationStatusAsync();
+            Log($"Mode: {(cfg.CanWrite ? "Write" : "Read-only")}, RPC: {(cfg.RpcConnectionWorking ? "OK" : "N/A")}, ChainId: {cfg.ChainId}");
+
+            // Time window (for logging only - we'll use hardcoded data)
+            var end = DateTime.UtcNow;
+            var start = end.AddMinutes(-timeWindowMinutes);
+            Guid? communityId = State.CommunityId != Guid.Empty ? State.CommunityId : null;
+
+            // INITIAL BALANCE CHECK
+            Log("=== INITIAL BALANCE CHECK ===");
+            await CheckAndLogAllBalances("INITIAL");
+
+            // 1) Optional reset
+            if (!skipReset && cfg.CanWrite)
+            {
+                Log("Emergency reset...");
+                var reset = await BlockchainApi.EmergencyResetAsync();
+                Log(reset.Success ? $"Reset OK (tx {ShortTx(reset.TransactionHash)})" : $"Reset failed: {reset.ErrorMessage}");
+                if (!reset.Success) return;
+
+                // BALANCE CHECK AFTER RESET
+                Log("=== BALANCE CHECK AFTER RESET ===");
+                await CheckAndLogAllBalances("AFTER_RESET");
+            }
+            else
+            {
+                Log("Skipping reset.");
+            }
+
+            // 2) HARDCODED: Create test energy sources instead of querying DB
+            Log("Creating hardcoded test energy sources...");
+            var testEnergySources = new List<EnergySource>
+            {
+                new EnergySource { SourceId = 1, Price = 0.12m, Quantity = 50, IsImport = false }, // Solar: 50 kWh @ $0.12/kWh
+                new EnergySource { SourceId = 2, Price = 0.25m, Quantity = 20, IsImport = true },  // Grid Import: 20 kWh @ $0.25/kWh
+                new EnergySource { SourceId = 3, Price = 0.08m, Quantity = 15, IsImport = false }  // Battery: 15 kWh @ $0.08/kWh
+            };
+
+            var totalDistributed = (uint)testEnergySources.Sum(s => s.Quantity); // 85 kWh
+            var avgPrice = testEnergySources.Average(s => s.Price); // ~$0.15/kWh
+
+            Log($"Test sources: Solar=50kWh@$0.12, GridImport=20kWh@$0.25, Battery=15kWh@$0.08");
+            Log($"Total: {totalDistributed} kWh @ avg ${avgPrice:F6}/kWh");
+
+            // Distribute hardcoded energy sources
+            if (cfg.CanWrite)
+            {
+                Log("Distributing hardcoded energy sources to blockchain...");
+                var distResult = await BlockchainApi.DistributeEnergyTokensAsync(testEnergySources, batteryState: 10);
+                Log(distResult.Success ? $"Distribution OK (tx {ShortTx(distResult.TransactionHash)})" : $"Distribution failed: {distResult.ErrorMessage}");
+                if (!distResult.Success) return;
+
+                // BALANCE CHECK AFTER DISTRIBUTION
+                Log("=== BALANCE CHECK AFTER DISTRIBUTION ===");
+                await CheckAndLogAllBalances("AFTER_DISTRIBUTION");
+            }
+            else
+            {
+                Log("Skipping distribution (read-only mode)");
+            }
+
+            // 3) HARDCODED: Create test consumption requests to exactly match distributed energy
+            if (cfg.CanWrite)
+            {
+                Log($"Creating hardcoded consumption requests to match {totalDistributed} kWh...");
+                var testConsumptionRequests = new List<ConsumptionRequest>
+                {
+                    // Household consumptions (device IDs 1-4)
+                    new ConsumptionRequest { DeviceId = 1, Quantity = 25 },  // Household 1: 25 kWh
+                    new ConsumptionRequest { DeviceId = 2, Quantity = 20 },  // Household 2: 20 kWh  
+                    new ConsumptionRequest { DeviceId = 3, Quantity = 15 },  // Household 3: 15 kWh
+                    new ConsumptionRequest { DeviceId = 4, Quantity = 10 },  // Household 4: 10 kWh
+                    // Grid export (device ID 1000)
+                    new ConsumptionRequest { DeviceId = 1000, Quantity = 15 } // Grid export: 15 kWh
+                };
+
+                var totalConsumed = (uint)testConsumptionRequests.Sum(r => r.Quantity); // Should be 85 kWh
+                Log($"Test consumption: H1=25kWh, H2=20kWh, H3=15kWh, H4=10kWh, Export=15kWh");
+                Log($"Total consumption: {totalConsumed} kWh (matches distribution: {totalConsumed == totalDistributed})");
+
+                Log("Submitting hardcoded consumption to blockchain...");
+                var consResult = await BlockchainApi.ConsumeEnergyTokensAsync(testConsumptionRequests);
+                Log(consResult.Success ? $"Consumption OK (tx {ShortTx(consResult.TransactionHash)})" : $"Consumption failed: {consResult.ErrorMessage}");
+
+                // BALANCE CHECK AFTER CONSUMPTION
+                Log("=== BALANCE CHECK AFTER CONSUMPTION ===");
+                await CheckAndLogAllBalances("AFTER_CONSUMPTION");
+            }
+            else
+            {
+                Log("Skipping consumption (read-only mode)");
+            }
+
+            // 4) Verify zero-sum
+            var (isZero, bal) = await BlockchainApi.VerifyZeroSumPropertyAsync();
+            zeroSumChecked = true; zeroSumOk = isZero; zeroSumBalance = bal;
+            Log($"Zero-sum: {(isZero ? "PASS" : "FAIL")} (Balance {bal:F6} USDC)");
+
+            // 5) Import/export balances
+            importBalance = await BlockchainApi.GetImportCashCreditBalanceAsync();
+            exportBalance = await BlockchainApi.GetExportCashCreditBalanceAsync();
+            importExportChecked = true;
+            Log($"Import balance: {importBalance:F6} USDC, Export balance: {exportBalance:F6} USDC");
+
+            // 6) Sync household balances to see cash credit updates
+            Log("Syncing household balances to check cash credit updates...");
+            var updated = await BlockchainApi.SyncAllCashCreditBalancesAsync();
+            Log($"Updated {updated} user balances");
+
+            // FINAL BALANCE CHECK
+            Log("=== FINAL BALANCE CHECK ===");
+            await CheckAndLogAllBalances("FINAL");
+
+            // 7) Refresh UI balances to show changes
+            await RefreshBalances();
+            Log($"UI refreshed - Total balance now: {totalBalance:F6} USDC");
+
+            Log("Hardcoded test scenario completed successfully!");
+        }
+        catch (Exception ex)
+        {
+            Log($"Scenario error: {ex.Message}");
+        }
+        finally
+        {
+            isRunning = false;
+            StateHasChanged();
+        }
+    }
+
+    private static string Short(string? v)
+        => string.IsNullOrWhiteSpace(v) || v.Length < 10 ? (v ?? "-") : $"{v[..6]}…{v[^4..]}";
+    
+    private static string ShortTx(string? v)
+        => string.IsNullOrWhiteSpace(v) || v.Length < 12 ? (v ?? "-") : $"{v[..10]}…{v[^6..]}";
+
+    private async Task CheckAndLogAllBalances(string stage)
+    {
+        try
+        {
+            Log($"[{stage}] Checking household balances...");
+            
+            // Get all users with wallets from database
+            using var ctx = DbFactory.CreateDbContext();
+            var usersWithWallets = await ctx.Users
+                .Where(u => !string.IsNullOrEmpty(u.WalletAddress))
+                .Select(u => new { u.HouseholdId, u.WalletAddress, u.FullName, u.Email })
+                .ToListAsync();
+
+            if (!usersWithWallets.Any())
+            {
+                Log($"[{stage}] No users with wallet addresses found");
+                return;
+            }
+
+            decimal stageTotal = 0m;
+            foreach (var user in usersWithWallets)
+            {
+                try
+                {
+                    var balance = await BlockchainApi.GetCashCreditBalanceAsync(user.WalletAddress!);
+                    if (balance.Success)
+                    {
+                        stageTotal += balance.Balance;
+                        var displayName = !string.IsNullOrEmpty(user.FullName) ? user.FullName : user.Email ?? "Unknown";
+                        Log($"[{stage}] {displayName} (HH:{user.HouseholdId}): {balance.Balance:F6} USDC");
+                    }
+                    else
+                    {
+                        Log($"[{stage}] {user.HouseholdId}: Error - {balance.ErrorMessage}");
+                    }
+
+                    // Add delay between balance checks to avoid rate limiting
+                    await Task.Delay(150); // 150ms delay between individual balance checks
+                }
+                catch (Exception ex)
+                {
+                    Log($"[{stage}] {user.HouseholdId}: Exception - {ex.Message}");
+                }
+            }
+
+            Log($"[{stage}] TOTAL: {stageTotal:F6} USDC");
+
+            // Also check import/export balances if available
+            try
+            {
+                var impBal = await BlockchainApi.GetImportCashCreditBalanceAsync();
+                await Task.Delay(100); // Small delay before next call
+                var expBal = await BlockchainApi.GetExportCashCreditBalanceAsync();
+                Log($"[{stage}] Import: {impBal:F6} USDC, Export: {expBal:F6} USDC");
+            }
+            catch (Exception ex)
+            {
+                Log($"[{stage}] Import/Export balance check failed: {ex.Message}");
+            }
+
+            Log($"[{stage}] Balance check completed");
+        }
+        catch (Exception ex)
+        {
+            Log($"[{stage}] Balance check error: {ex.Message}");
+        }
+    }
+
+    // Household balance diagnostics
+    private async Task LoadHouseholds()
+    {
+        try
+        {
+            isLoading = true;
+            error = null;
+            households.Clear();
+
+            using var ctx = DbFactory.CreateDbContext();
+            var users = await ctx.Users
+                .OrderBy(u => u.HouseholdId)
+                .ToListAsync();
+
+            foreach (var u in users)
+            {
+                households.Add(new HouseholdWallet
+                {
+                    Name = string.IsNullOrWhiteSpace(u.FullName) ? u.Email ?? "User" : u.FullName,
+                    HouseholdId = u.HouseholdId ?? "-",
+                    WalletAddress = u.WalletAddress
+                });
+            }
+
+            await RefreshBalances();
+        }
+        catch (Exception ex)
+        {
+            error = $"Failed to load households: {ex.Message}";
+            Logger?.LogError(ex, "Failed to load households for blockchain integration");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RefreshBalances()
+    {
+        totalBalance = 0m;
+        var tasks = households
+            .Where(h => !string.IsNullOrWhiteSpace(h.WalletAddress))
+            .Select(async h =>
+            {
+                h.IsLoading = true;
+                h.Error = null;
+                h.HasBalance = false;
+
+                try
+                {
+                    var resp = await BlockchainApi.GetCashCreditBalanceAsync(h.WalletAddress!);
+                    if (resp.Success)
+                    {
+                        h.Balance = resp.Balance;
+                        h.HasBalance = true;
+                    }
+                    else
+                    {
+                        h.Error = resp.ErrorMessage ?? "Unknown error";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    h.Error = ex.Message;
+                }
+                finally
+                {
+                    h.IsLoading = false;
+                }
+            });
+
+        // Process sequentially with delays instead of parallel to avoid rate limits
+        foreach (var task in tasks)
+        {
+            await task;
+            await Task.Delay(150); // 150ms delay between balance checks
+        }
+
+        totalBalance = households.Where(h => h.HasBalance).Sum(h => h.Balance);
+        StateHasChanged();
+    }
+
+    private sealed class HouseholdWallet
+    {
+        public string Name { get; set; } = string.Empty;
+        public string HouseholdId { get; set; } = string.Empty;
+        public string? WalletAddress { get; set; }
+        public bool IsLoading { get; set; }
+        public bool HasBalance { get; set; }
+        public string? Error { get; set; }
+        public decimal Balance { get; set; }
+    }
+}

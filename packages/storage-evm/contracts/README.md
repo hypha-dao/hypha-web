@@ -1,108 +1,262 @@
-# Hypha DAO Smart Contracts
+# Hypha Energy Community
 
-This document provides an overview of the Hypha DAO smart contract architecture, intended for auditors and developers reviewing the system. It outlines the overall design, describes individual contracts, and highlights key security considerations.
+## Overview
 
-## Architecture Overview
+An Energy Community in Hypha is a collectively governed solar energy system where members share ownership of energy infrastructure and its financial accounting is managed on-chain. The system tracks energy flows (local production, battery storage, grid import/export) and settles the resulting credits and debts using a zero-sum accounting model backed by ERC-20 tokens and stablecoin settlement.
 
-The Hypha DAO contract system is a modular and upgradable framework for creating and managing decentralized autonomous organizations (DAOs), referred to as "Spaces." The architecture is designed to be flexible, allowing for different governance models and membership criteria.
+## Token Model
 
-### Upgradability
+It is important to differentiate between **energy value flows** and **physical energy flows**. The smart contracts and tokens described below handle energy value flows — the financial accounting of who owns, owes, and earns what. Physical energy flows (who actually receives electricity) are governed by nano PPAs (see [Nano PPAs](#nano-ppas-power-purchase-agreements)).
 
-The contracts are built using the **UUPS (Universal Upgradeable Proxy Standard)** pattern. Each main contract is an implementation contract that sits behind a proxy. This allows the logic of the contracts to be upgraded without requiring a data migration. The upgrade process is controlled by the owner of the contract.
+In order to function, each energy community needs two types of tokens:
 
-### Storage Separation
+### 1. Energy System Ownership Token (ESOT/Epart)
 
-To ensure safe upgrades, the contract state is kept in separate storage contracts. Logic contracts inherit from their corresponding storage contracts. This separation of logic and data is a critical safety feature for upgradable contracts.
+Represents ownership of the community's physical infrastructure — treasury, solar panels, batteries, and other equipment. Holding ESOT gives the right to a proportional share of the energy value produced by the system.
 
-### Core Components
+### 2. Energy Credits (EC)
 
-The system is comprised of several key components:
+An ERC-20 token (`EnergyToken.sol`) that represents positive cash credit balances within the energy distribution system. ECT tokens can be converted to stablecoins (USDC/EURC) through the settlement process. The token uses 6 decimals to match stablecoin precision.
 
-- **Space Factory**: A factory contract for creating new Spaces (DAOs).
-- **Proposals Module**: Manages proposal creation, voting, and execution.
-- **Hypha Token**: The native ERC20 token used for payments and rewards.
-- **Voting Power Modules**: A flexible system for calculating voting power based on different criteria (e.g., token holdings, reputation).
-- **Join/Exit Modules**: Defines different methods for members to join or leave a Space.
+ESOT holders who do not consume their full energy allocation accumulate ECT, which they can redeem for stablecoins. ESOT holders who consume energy pay at the local production cost. Non-owners pay market rate and do not accumulate ECT.
 
-## Contract Descriptions
+## Participant Types
 
-Below is a list of the main contracts in the system, grouped by functionality.
+There are three types of participants in an energy community. The flow diagrams below show the **energy value flows** — how money and credits move — during a single distribution and consumption cycle.
 
-### Core Contracts
+### 1. Investor
 
-- `DAOSpaceFactoryImplementation.sol`: The central factory for creating and managing Spaces. It handles the creation of new DAOs, member management, and configuration of various parameters like voting rules and join/exit methods.
-- `DAOProposalsImplementation.sol`: Manages the lifecycle of proposals within a Space, including creation, voting, and execution. It interacts with voting power modules to determine voter weight.
-- `Executor.sol`: A simple contract created for each Space that is responsible for executing the transactions associated with a passed proposal. Each Space gets its own `Executor`.
-- `HyphaToken.sol`: The ERC20 token for the Hypha ecosystem. It includes mechanisms for payments, investments, and a rewards distribution system. Transfers are restricted by a whitelist.
+Holds ESOT but does not consume energy. Their proportional share of energy value enters the collective pool and is purchased by other consumers. The investor accumulates ECT.
 
-### Voting Power Contracts
+```
+ENERGY VALUE FLOW — Investor
+─────────────────────────────
 
-These contracts implement different strategies for calculating a user's voting power within a Space.
+  Value Distribution                  Value Settlement
+  ──────────────────                  ──────────────────
 
-- `TokenVotingPowerImplementation.sol`: Voting power is based on the balance of a specific ERC20 token.
-- `VoteDecayTokenVotingPowerImplementation.sol`: A variation of token-based voting where voting power decays over time.
-- `OwnershipTokenVotingPowerImplementation.sol`: Voting power is based on ownership of an NFT (ERC721).
-- `SpaceVotingPowerImplementation.sol`: A base contract for Space-related voting power.
-- `VotingPowerDelegationImplementation.sol`: Allows users to delegate their voting power to another address.
-- `VotingPowerDirectoryImplementation.sol`: A directory that maps voting power source IDs to their contract addresses.
+  Solar production value              Another participant
+  allocated by ESOT %                 consumed energy
+       │                                     │
+       ▼                                     ▼
+┌──────────────┐                    ┌──────────────────┐
+│ Collective   │                    │ Consumer pays     │
+│ Value Pool   │                    │ production price  │
+│ [Investor's  │ ──────────────▶    │ for investor's    │
+│  share]      │                    │ allocation        │
+└──────────────┘                    └────────┬─────────┘
+                                             │
+                                             ▼
+                                   ┌──────────────────┐
+                                   │ Investor receives │
+                                   │ ECT (credit)      │
+                                   └────────┬─────────┘
+                                            │
+                                            ▼
+                                   ┌──────────────────┐
+                                   │ Convert ECT ──▶   │
+                                   │ USDC / EURC       │
+                                   └──────────────────┘
+```
 
-### Token and Factory Contracts
+### 2. Internal Consumer (no ESOT)
 
-- `OwnershipTokenFactory.sol`, `RegularTokenFactory.sol`, `DecayingTokenFactory.sol`: Factories for creating different types of tokens used within Spaces.
-- `OwnershipSpaceToken.sol`, `RegularSpaceToken.sol`, `DecayingSpaceToken.sol`: The actual token contracts created by the factories.
+Does not hold ESOT and has no ownership percentage. Receives no value allocation during distribution. After consuming energy, the value owed is purchased from the collective pool — first from any remaining owner allocations at production price, then from grid imports at import price (typically more expensive). Always ends with a negative balance (debt) that must be settled via EURC.
 
-### Membership Management
+```
+ENERGY VALUE FLOW — Internal Consumer (no ESOT)
+─────────────────────────────────────────────────
 
-- `JoinMethodDirectoryImplementation.sol` & `ExitMethodDirectoryImplementation.sol`: Directories for different methods of joining or exiting a space.
-- `JoinMethodOpenJoin.sol`: Anyone can join.
-- `TokenBalanceJoinImplementation.sol` & `TokenBalanceExitImplementation.sol`: Joining or exiting is based on holding a certain token balance.
-- `InviteSystemImplementation.sol`: A system for inviting new members to a space.
-- `NoExit.sol`: A contract that doesn't allow members to exit.
+  Value Distribution                  Value Settlement
+  ──────────────────                  ──────────────────
 
-### Other Contracts
+  No value allocated                  Consumer consumed energy
+  (0% ownership)                             │
+                                             ▼
+                                    ┌──────────────────┐
+                                    │ Owes value to     │
+                                    │ pool (cheapest    │
+                                    │ sources first)    │
+                                    │                   │
+                                    │ 1. Owner shares   │
+                                    │    @ local price  │
+                                    │ 2. Import pool    │
+                                    │    @ import price │
+                                    └────────┬─────────┘
+                                             │
+                                             ▼
+                                    ┌──────────────────┐
+                                    │ Consumer balance  │
+                                    │ goes NEGATIVE     │
+                                    │ (debt)            │
+                                    └────────┬─────────┘
+                                             │
+                                             ▼
+                                    ┌──────────────────┐
+                                    │ Must settle debt  │
+                                    │ with EURC         │
+                                    └──────────────────┘
+```
 
-- `SpacePaymentTracker.sol`: Tracks payments for Spaces, which is required to keep them active.
-- `EscrowImplementation.sol`: A general-purpose escrow contract.
-- `AgreementsImplementation.sol`: A contract for managing agreements.
+### 3. Member (holds ESOT and consumes)
 
-### Interfaces and Storage
+Holds ESOT and also consumes energy. During distribution, receives a proportional value allocation. When they consume energy, they first use their own allocation at local production cost — that payment goes to the community treasury (which they partially own). If they consumed less value than allocated, the surplus is sold to others and the member accumulates ECT. If they consumed more, they owe the remainder at whatever pool price is available.
 
-- The `interfaces/` directory contains the interfaces for all major contracts, defining their public functions.
-- The `storage/` directory contains the storage contracts for all major contracts, defining their state variables.
+```
+ENERGY VALUE FLOW — Member (holds ESOT + consumes)
+────────────────────────────────────────────────────
 
-## Known Vulnerabilities & Security Considerations
+  Value Distribution                  Value Settlement
+  ──────────────────                  ──────────────────
 
-This section highlights known risks and areas that require special attention during an audit.
+  Solar production value              Member consumed energy
+  allocated by ESOT %                        │
+       │                                     ▼
+       ▼                            ┌──────────────────┐
+┌──────────────┐                    │ PASS 1: Own       │
+│ Collective   │                    │ allocation used   │
+│ Value Pool   │                    │ first @ local     │
+│ [Member's    │ ──────────────▶    │ production price  │
+│  share]      │                    └────────┬─────────┘
+└──────────────┘                             │
+                              ┌──────────────┴──────────────┐
+                              │                             │
+                   Consumed less than              Consumed more than
+                   allocated value                 allocated value
+                              │                             │
+                              ▼                             ▼
+                    ┌─────────────────┐          ┌─────────────────┐
+                    │ Surplus value   │          │ PASS 2: Owes    │
+                    │ sold to other   │          │ remaining value │
+                    │ consumers       │          │ to pool         │
+                    │       │         │          │ (others/imports)│
+                    │       ▼         │          └────────┬────────┘
+                    │ Member receives │                   │
+                    │ ECT (credit)    │                   ▼
+                    └─────────────────┘          ┌─────────────────┐
+                                                 │ Balance may go  │
+                                                 │ negative (debt) │
+                                                 │ → settle w EURC │
+                                                 └─────────────────┘
+```
 
-### 1. Contract Ownership and Centralization
+## Nano PPAs (Power Purchase Agreements)
 
-- **Description**: Each of the main contracts (`DAOSpaceFactory`, `DAOProposals`, `HyphaToken`, etc.) is `Ownable`. The owner has powerful privileges, including the ability to upgrade the contract's implementation (`_authorizeUpgrade` is modified by `onlyOwner`).
-- **Risk**: A compromised owner key could lead to a malicious upgrade of the contracts, potentially allowing the attacker to steal funds, change governance parameters, or lock the system. The ownership is a single point of failure.
-- **Mitigation**: The owner key must be stored securely, ideally in a multi-sig wallet or hardware wallet. A future mitigation could be to transfer ownership to a DAO governed by HYPHA token holders.
+A nano PPA is a small-scale Power Purchase Agreement between the energy community and an individual energy recipient. It governs the **physical delivery** of energy — who receives it, at what terms, and from which installation.
 
-### 2. Deployment Key Management
+### What the agreement covers
 
-- **Description**: The private key for deploying and managing the contracts is stored as an environment variable in the deployment environment.
-- **Risk**: Storing private keys in environment variables is risky. If the deployment server or CI/CD system is compromised, the key could be exposed. This key is used to set the initial owner of the contracts.
-- **Mitigation**: Use a dedicated key management service to store and manage the deployment key. Avoid storing it directly in environment variables.
+- The recipient address (wallet) that will receive energy
+- The terms of delivery (price discount, duration, quantity commitments)
+- The physical device(s) / meter(s) associated with the recipient
 
-### 3. UUPS Upgrade Risks
+### Relationship to the smart contract
 
-- **Description**: The contracts use the UUPS proxy pattern. While this allows for upgradability, it also carries risks.
-- **Risk**:
-  - **Storage Collisions**: An upgrade to a new implementation contract could introduce new state variables that conflict with the storage layout of the previous implementation, leading to data corruption.
-  - **Initialization**: The `initialize` function can be called only once. However, a faulty upgrade could potentially allow for re-initialization. The use of `_disableInitializers()` in constructors helps prevent this on implementation contracts, but care must be taken.
-  - **Malicious Upgrade**: As mentioned above, the owner can upgrade to a malicious implementation.
-- **Mitigation**: Follow a strict development and deployment process for upgrades, including thorough testing of storage layout compatibility using tools like `hardhat-upgrades`. Upgrades should be audited before deployment. A timelock on upgrades would provide users time to exit the system if a malicious upgrade is proposed.
 
-### 4. Whitelist-based Transfers in `HyphaToken`
+| Nano PPA (agreement) | Zek reads who are eligible to receive energy and at what price passes to EMS. Combines it with the actual consumption/production data and sends back into the contract.
+|---|---|
+| Defines who receives energy | `addMember(address, deviceIds, ownershipPercentage)` registers the recipient |
+| Defines price terms | Pool prices and self-consumption priority enforce discounted rates for owners |
+| Defines duration / commitments | Governance can add/remove recipients via proposals |
+| Physical delivery tracking | Backend reads meter data and submits to `distributeEnergyTokens` / `consumeEnergyTokens` |
 
-- **Description**: The `HyphaToken.sol` contract restricts token transfers to whitelisted addresses.
-- **Risk**: This is a centralizing feature. If the owner (who controls the whitelist) becomes malicious or is compromised, they could prevent legitimate transfers or enable transfers for malicious actors.
-- **Mitigation**: The process for managing the whitelist should be transparent and, ideally, governed by the DAO.
+A nano PPA does **not** affect the distribution of ECT. ECT distribution is determined solely by ESOT ownership percentage. The nano PPA only governs who receives the physical energy and on what terms.
 
-### 5. Complexity of the System
+## Governance: Energy System Owners Space
 
-- **Description**: The system is composed of many interacting contracts.
-- **Risk**: The high degree of complexity and interaction between contracts can lead to emergent vulnerabilities that are not apparent when looking at contracts in isolation. For example, the interplay between voting power calculation, proposal execution, and token mechanics could have unforeseen consequences.
-- **Mitigation**: In addition to auditing individual contracts, a holistic review of the entire system and its economic incentives is required. Comprehensive integration testing is also crucial.
+The Energy System Owners Space is the governing body of the community.
+
+The space controls:
+
+- Issuance of ESOT
+- Adding and removing energy recipients (members)
+- Configuration of battery, export prices, and other system parameters
+- Whitelisting backend services for automated energy distribution
+
+### Proposal Types
+
+- **Apply Energy Community Template** — applies the template to the Space, creating all tokens and contracts (see [The Template](#the-template) below).
+- **Add Energy Recipient** — register a new member address. Device IDs are optional during setup; if a member has multiple devices, aggregation can happen on the backend before on-chain submission.
+- Additional proposal types can be added as the community evolves.
+
+## The Template
+
+After a Space is created in Hypha, there is one template that can be applied to turn it into an energy community. Applying the template creates:
+
+- **ESOT** — Energy System Ownership Token
+- **ECT** — Energy Credit Token
+- **ECT Distribution Contract** — an instance of `EnergyDistributionImplementation`, deployed per community so each can customize its configuration independently
+
+The template requires the following parameters at setup:
+
+| Parameter | Description |
+|---|---|
+| Battery price | Cost per unit of energy stored/discharged from the battery |
+| Battery max capacity | Maximum energy the battery can hold |
+| Export price | Price per kWh when surplus energy is sold to the grid |
+| Export device ID | Identifier for the grid export meter |
+| Community device ID | Identifier for the community's shared meter |
+| Payment recipient address | Address that receives EURC stablecoin payments from debt settlement |
+| Backend service address | Off-chain service whitelisted to submit energy distribution and consumption data |
+| Energy recipients | List of member wallet addresses that will receive energy from the community |
+
+## Contract Architecture
+
+### EnergyDistributionImplementation
+
+The core contract managing the energy community's accounting. Upgradeable via UUPS proxy.
+
+**Energy Sources** have a `sourceId`, `price`, `quantity`, and an `isImport` flag:
+
+- **Local production** (`isImport = false`) — solar output distributed proportionally to members by ownership percentage. Each member's share enters the collective consumption pool tagged with their address.
+- **Grid import** (`isImport = true`) — purchased grid energy enters the pool as community-owned (address zero). Members who consume more than their allocation buy from this pool at cost.
+- **Battery discharge** (`sourceId = 999`) — when battery state decreases, the released energy is treated as a production source at the configured battery price.
+
+**Distribution cycle** (`distributeEnergyTokens`):
+
+1. Previous distribution must be fully consumed before a new one can occur.
+2. Battery state changes are calculated (charging deducts from local production, discharging adds a source).
+3. Local production is split by ownership percentage into the collective consumption pool.
+4. Imported energy is added to the community pool.
+5. The pool is sorted by price (cheapest first).
+
+**Consumption cycle** (`consumeEnergyTokens`):
+
+1. Exports are processed first — surplus energy sold to the grid at the configured export price. Profit goes to the token owner, production cost goes to the community balance, and revenue is debited from the export balance.
+2. Member consumption follows two passes:
+   - **Self-consumption** — members consume their own allocated tokens first (payment credited to community balance).
+   - **Cross-consumption** — remaining demand is filled from other members' tokens or the import pool, cheapest first. Payments flow to the respective token owners or the import balance.
+3. All consumption must be fully satisfied; partial consumption reverts.
+
+**Zero-sum accounting**: Every credit is offset by an equal debit. The system enforces this invariant with the `ensureZeroSum` modifier that checks: `memberBalances + exportBalance + importBalance + settledBalance + communityBalance == 0`.
+
+### EnergySettlement
+
+Handles conversion of negative energy balances (debts) into stablecoin payments.
+
+- Members (or third parties) pay EURC to settle a debtor's negative balance.
+- EURC is forwarded to a configurable payment recipient (e.g., the community treasury).
+- The debt amount is converted from EURC (6 decimals) to the energy system's internal unit (cents, 2 decimals) at a 1:1 EUR ratio.
+- Settlement updates the distribution contract's `settledBalance` to maintain the zero-sum property.
+
+### EnergyToken (ECT)
+
+An ERC-20 with authorized mint/burn access. The distribution contract is the sole authorized minter. Positive cash credit balances are represented as token holdings; negative balances are tracked in a separate mapping. When an authorized contract transfers tokens, auto-minting ensures sufficient supply.
+
+## Balance Model
+
+| Balance | Tracks |
+|---|---|
+| Member token balance (positive) | Energy credits — convertible to stablecoins |
+| Member cash credit (negative) | Energy debt — must be settled via EURC |
+| Export balance | Revenue owed to the community from grid export |
+| Import balance | Cost owed by the community for grid import |
+| Community balance | Accumulated self-consumption payments, routed to treasury |
+| Settled balance | External money brought in through debt settlement |
+
+## Key Addresses (Base Mainnet)
+
+| Contract | Address |
+|---|---|
+| EnergyDistribution (proxy) | `0x02d88b0C4CC3A4AE86482056c25d65916Dd6DD95` |
+| EnergyToken (ECT) | `0xE7E8DaE0c4541fCDc563B1bD9A6a85d9aB762080` |

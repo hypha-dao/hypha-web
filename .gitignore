@@ -58,6 +58,9 @@ vitest.config.*.timestamp*
 
 # Turborepo
 .turbo
+
+.cursor/rules/nx-rules.mdc
+.github/instructions/nx.instructions.md
 .firecrawl/
 .playwright-cli/
 test-results/

@@ -20,6 +20,9 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       chainId: 31337, // it's the default chain id, doesn't need to add it.
+      accounts: {
+        count: 60, // Provide 60 accounts to be safe (test needs 52)
+      },
     },
   },
 };
