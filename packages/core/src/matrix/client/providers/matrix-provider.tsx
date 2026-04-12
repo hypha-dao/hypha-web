@@ -711,10 +711,19 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       const newBody =
         'body' in newContentPayload ? newContentPayload.body : message;
       const fallbackBody = `* ${newBody}`;
+      const newFormatted = (newContentPayload as { formatted_body?: string })
+        .formatted_body;
+      const fallbackFormattedBody =
+        typeof newFormatted === 'string' && newFormatted.length > 0
+          ? `* ${newFormatted}`
+          : undefined;
 
       await client.sendEvent(roomId, EventType.RoomMessage, {
         ...newContentPayload,
         body: fallbackBody,
+        ...(fallbackFormattedBody !== undefined
+          ? { formatted_body: fallbackFormattedBody }
+          : {}),
         'm.new_content': newContentPayload,
         'm.relates_to': {
           rel_type: MatrixSdk.RelationType.Replace,
