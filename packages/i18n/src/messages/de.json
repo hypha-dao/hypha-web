@@ -1635,7 +1635,7 @@
     "editingMessageLabel": "Nachricht bearbeiten",
     "editDismiss": "Bearbeitung abbrechen",
     "editMessageFailed": "Die Bearbeitung konnte nicht gespeichert werden. Bitte erneut versuchen.",
-    "editOriginalUnavailable": "Die bearbeitete Nachricht ist nicht mehr verfügbar.",
+    "editOriginalUnavailable": "Die ursprüngliche Nachricht ist nicht mehr verfügbar.",
     "replyButton": "Antworten",
     "replyingTo": "Antwort an {author}",
     "replyDismiss": "Antwort abbrechen",
