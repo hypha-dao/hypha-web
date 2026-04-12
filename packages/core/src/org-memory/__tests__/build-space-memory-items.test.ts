@@ -89,6 +89,23 @@ describe('buildSpaceMemoryItemsFromDocuments', () => {
     expect(rows[0].url).toBe('https://a/new.png');
     expect(rows[1].url).toBe('https://a/old.png');
   });
+
+  it('accepts ISO date strings from JSON (fetch / NextResponse)', () => {
+    const docs = [
+      {
+        ...baseDoc({
+          attachments: ['https://a/x.pdf'],
+        }),
+        createdAt: '2024-01-01T00:00:00.000Z' as unknown as Date,
+        updatedAt: '2024-06-01T12:00:00.000Z' as unknown as Date,
+      },
+    ];
+    expect(() =>
+      buildSpaceMemoryItemsFromDocuments(docs as Document[]),
+    ).not.toThrow();
+    const rows = buildSpaceMemoryItemsFromDocuments(docs as Document[]);
+    expect(rows[0].uploadedAt).toBe('2024-06-01T12:00:00.000Z');
+  });
 });
 
 describe('filterSpaceMemoryItems', () => {

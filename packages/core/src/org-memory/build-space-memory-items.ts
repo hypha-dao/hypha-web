@@ -58,6 +58,30 @@ function inferKind(name: string, url: string): SpaceMemoryAssetKind {
   return 'other';
 }
 
+/**
+ * API JSON and some callers pass ISO strings; server `Document` uses `Date`.
+ * Normalize so Space Memory never calls `.toISOString()` on a string.
+ */
+function timestampMs(value: unknown): number {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.getTime();
+  }
+  if (typeof value === 'string' || typeof value === 'number') {
+    const t = new Date(value).getTime();
+    if (!Number.isNaN(t)) return t;
+  }
+  return 0;
+}
+
+/** Prefer `updatedAt`, then `createdAt`, for display and sort. */
+function documentActivityIso(doc: Document): string {
+  const fromUpdated = timestampMs(doc.updatedAt);
+  if (fromUpdated > 0) return new Date(fromUpdated).toISOString();
+  const fromCreated = timestampMs(doc.createdAt);
+  if (fromCreated > 0) return new Date(fromCreated).toISOString();
+  return new Date(0).toISOString();
+}
+
 function stateLabel(state: Document['state']): string {
   if (typeof state === 'string') return state;
   switch (state) {
@@ -82,6 +106,7 @@ export function buildSpaceMemoryItemsFromDocuments(
   const items: SpaceMemoryItem[] = [];
 
   for (const doc of documents) {
+    const activityIso = documentActivityIso(doc);
     const attachmentUrls = new Set<string>();
     const docTitle = doc.title?.trim() || '';
     const stateStr = stateLabel(doc.state);
@@ -104,7 +129,7 @@ export function buildSpaceMemoryItemsFromDocuments(
         url,
         kind: inferKind(name, url),
         source: 'proposal_upload',
-        uploadedAt: doc.updatedAt.toISOString(),
+        uploadedAt: activityIso,
         context: { ...baseContext },
       });
     });
@@ -118,7 +143,7 @@ export function buildSpaceMemoryItemsFromDocuments(
         url: lead,
         kind: inferKind(name, lead),
         source: 'proposal_upload',
-        uploadedAt: doc.updatedAt.toISOString(),
+        uploadedAt: activityIso,
         context: { ...baseContext },
       });
     }
