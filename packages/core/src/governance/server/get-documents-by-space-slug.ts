@@ -1,11 +1,11 @@
 import 'server-only';
 
-import { DirectionType } from '@hypha-platform/core/client';
+import { DirectionType } from '../../common/types';
 import type { Document } from '../types';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import type { DbConfig } from '../../server';
 import { checkSpaceAccessForSpace } from '../../space/server/check-space-access-for-roster';
-import { findSpaceBySlug } from '../../space/server/queries';
+import { findSpaceHostFieldsBySlug } from '../../space/server/queries';
 import { findAllDocumentsBySpaceSlug } from './queries';
 
 export type DocumentWithCreatorJson = Omit<
@@ -113,7 +113,7 @@ export async function getDocumentsBySpaceSlug(
   const safePage = Math.max(1, page);
   const safePageSize = Math.min(100, Math.max(1, pageSize));
 
-  const host = await findSpaceBySlug({ slug: spaceSlug }, { db });
+  const host = await findSpaceHostFieldsBySlug({ slug: spaceSlug }, { db });
   if (!host) {
     return {
       access: 'ok',
