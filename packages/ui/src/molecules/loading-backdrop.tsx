@@ -29,10 +29,18 @@ export const LoadingBackdrop = ({
         <div
           className={cn(
             fullHeight
-              ? 'fixed top-9 bottom-0 right-0 flex flex-col items-center justify-center space-y-2 bg-background/75 z-10 w-full md:w-container-sm p-4 lg:p-7'
+              ? 'fixed bottom-0 flex flex-col items-center justify-center space-y-2 bg-background/75 z-10 w-full md:w-container-sm p-4 lg:p-7'
               : 'absolute inset-0 flex flex-col items-center justify-center space-y-2 bg-background/75 z-10 min-h-full',
             className,
           )}
+          style={
+            fullHeight
+              ? {
+                  top: 'var(--menu-top-height, 65px)',
+                  right: 'var(--sidebar-right-width, 0px)',
+                }
+              : undefined
+          }
         >
           <Progress value={progress} className="h-2 w-3/4 max-w-md" />
           {showKeepWindowOpenMessage && (
