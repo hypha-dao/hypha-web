@@ -131,9 +131,12 @@ export function HumanChatPanelMessages({
             msg.role === 'user' &&
             Boolean(onDeleteMessage) &&
             !msg.id.startsWith('~');
+          // Persist (e.g. edit draft) keeps the bar on that row; ephemeral lock (picker/menu)
+          // blocks hover elsewhere. Do not treat persist alone as blocking hover — otherwise
+          // hovering another message shows highlight but no toolbar (combinedLock !== null).
           const isActionBarVisible =
             combinedLockMessageId === msg.id ||
-            (hoverActionMessageId === msg.id && combinedLockMessageId == null);
+            (hoverActionMessageId === msg.id && lockActionMessageId == null);
           const isRowPointerActive = hoverActionMessageId === msg.id;
           return (
             <HumanChatPanelMessageBubble
