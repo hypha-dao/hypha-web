@@ -36,7 +36,7 @@ Those flows **do not** put bytes in the same bucket today. Hypha adds a thin **o
 **Important for coherence engineering:**
 
 - **Space chat** uses the space’s Matrix **room**; **signal conversations** use each signal’s `roomId` on the `coherences` row. Any Matrix-side ingestion job for org memory must consider **both** room identifiers for a space.
-- **Automatic** catalogue registration from chat is **not** required for the chat UI itself; it is **follow-up** work after the attachment send path (tracked in [PR #2133](https://github.com/hypha-dao/hypha-web/pull/2133)). Proposal-side registration can lead (§4.5).
+- **Automatic** catalogue registration from chat is **not** required for the chat UI itself; it is **follow-up** work after the attachment send path (Matrix `m.file` / `m.image` shipped in [PR #2133](https://github.com/hypha-dao/hypha-web/pull/2133), merged to `main`). Proposal-side registration can lead (§4.5).
 - Matrix remains the **system of record for chat**; the catalogue is an **index** (and optional mirror) for search and AI — not a second timeline.
 
 For implementation detail on chat attachments, see `docs/architecture/space-chat-attachments.md` and `docs/development/space-chat-attachments.md`.
