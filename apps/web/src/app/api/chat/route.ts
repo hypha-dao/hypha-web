@@ -1,8 +1,8 @@
-import type { UIMessage } from 'ai';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import {
   chatRequestSchema,
+  type ChatRequestPayload,
   createChatStreamResult,
   isAbortLikeError,
   OPENROUTER_DEBUG,
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const messages = parsed.data.messages as UIMessage[];
+  const messages: ChatRequestPayload['messages'] = parsed.data.messages;
   const spaceSlug = parsed.data.spaceSlug;
 
   let result;

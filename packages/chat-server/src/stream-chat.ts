@@ -1,6 +1,7 @@
 import { convertToModelMessages, stepCountIs, streamText } from 'ai';
 import { openrouter } from '@openrouter/ai-sdk-provider';
 import type { UIMessage } from 'ai';
+import type { ChatRequestPayload } from './request-schema';
 import { buildSystemPrompt } from './system-prompt';
 import { createChatTools } from './tools/index';
 
@@ -20,7 +21,7 @@ export type ChatStreamCallbacks = {
 };
 
 export async function createChatStreamResult(
-  messages: UIMessage[],
+  messages: ChatRequestPayload['messages'],
   spaceSlug: string | null | undefined,
   authToken: string,
   { debugRequestId }: ChatStreamCallbacks,
@@ -39,7 +40,7 @@ export async function createChatStreamResult(
   return streamText({
     model: openrouter('openrouter/auto'),
     system: buildSystemPrompt(spaceSlug),
-    messages: await convertToModelMessages(messages),
+    messages: await convertToModelMessages(messages as UIMessage[]),
 
     tools: tools as unknown as Parameters<typeof streamText>[0]['tools'],
     stopWhen: stepCountIs(6),

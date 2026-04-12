@@ -1,6 +1,7 @@
 import 'server-only';
 
 export { chatRequestSchema } from './request-schema';
+export type { ChatRequestPayload } from './request-schema';
 export { verifyPrivyAuthToken } from './privy-auth';
 export {
   createChatStreamResult,
