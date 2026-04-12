@@ -160,6 +160,8 @@ export function HumanChatPanelChatBar({
   const replyPreviewWasOpenRef = useRef(false);
   const mentionTokenRef = useRef<{ start: number; query: string } | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  /** Bumped when dictation ends; stale `onresult` handlers must not call `onChange`. */
+  const dictationEpochRef = useRef(0);
 
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const [colonOpen, setColonOpen] = useState(false);
@@ -468,6 +470,7 @@ export function HumanChatPanelChatBar({
   );
 
   const stopDictation = useCallback(() => {
+    dictationEpochRef.current += 1;
     try {
       recognitionRef.current?.stop();
     } catch {
@@ -501,6 +504,7 @@ export function HumanChatPanelChatBar({
     }
     setComposerError(null);
     const baseText = value;
+    const sessionEpoch = dictationEpochRef.current;
     const rec = new Ctor();
     rec.continuous = true;
     rec.interimResults = true;
@@ -509,6 +513,12 @@ export function HumanChatPanelChatBar({
         ? navigator.language || 'en-US'
         : 'en-US';
     rec.onresult = (ev) => {
+      if (
+        dictationEpochRef.current !== sessionEpoch ||
+        recognitionRef.current !== rec
+      ) {
+        return;
+      }
       let spoken = '';
       for (let i = 0; i < ev.results.length; i++) {
         const r = ev.results[i]?.[0];
@@ -525,6 +535,7 @@ export function HumanChatPanelChatBar({
       });
     };
     rec.onerror = (event: { error?: string; message?: string }) => {
+      if (dictationEpochRef.current !== sessionEpoch) return;
       const code =
         typeof event?.error === 'string'
           ? event.error
@@ -534,10 +545,13 @@ export function HumanChatPanelChatBar({
       setComposerError(t('dictationError', { code }));
       setDictationActive(false);
       recognitionRef.current = null;
+      dictationEpochRef.current += 1;
     };
     rec.onend = () => {
+      if (recognitionRef.current === rec) {
+        recognitionRef.current = null;
+      }
       setDictationActive(false);
-      recognitionRef.current = null;
     };
     recognitionRef.current = rec;
     setDictationActive(true);
@@ -549,6 +563,11 @@ export function HumanChatPanelChatBar({
       setComposerError(t('dictationUnsupported'));
     }
   }, [dictationActive, value, onChange, autoResize, stopDictation, t]);
+
+  const handleSendClick = useCallback(() => {
+    stopDictation();
+    onSend();
+  }, [onSend, stopDictation]);
 
   useEffect(() => {
     return () => {
@@ -654,7 +673,7 @@ export function HumanChatPanelChatBar({
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       if (value.trim().length > 0 || pendingAttachment) {
-        if (!isSending) onSend();
+        if (!isSending) handleSendClick();
       }
     }
   };
@@ -1117,7 +1136,10 @@ export function HumanChatPanelChatBar({
           </div>
           <button
             type="button"
-            onClick={() => canSend && onSend()}
+            onClick={() => {
+              if (!canSend) return;
+              handleSendClick();
+            }}
             disabled={!canSend}
             className={cn(
               iconButtonClass,
