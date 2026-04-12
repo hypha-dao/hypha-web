@@ -11,6 +11,20 @@ Central index for all project documentation.
 
 ---
 
+## Architecture
+
+Cross-cutting technical references (storage, Matrix, org-wide document memory).
+
+| Document | Description |
+|---|---|
+| [Documents and media overview](./architecture/documents-and-media-overview.md) | Where chat vs proposal bytes live; **§4 organisation memory** (single catalogue, Matrix + upload ingestion) |
+| [Space chat attachments](./architecture/space-chat-attachments.md) | Matrix `m.file` / `m.image` behaviour in Human Chat; links to §4 for org memory |
+| [Space chat attachments (developer)](./development/space-chat-attachments.md) | APIs and UI wiring for chat attachments |
+
+**Pull request:** [feat(chat): Matrix attachments + space chat documentation #2133](https://github.com/hypha-dao/hypha-web/pull/2133) — PR body summarises the two storage paths and points reviewers at **§4**.
+
+---
+
 ## Plans
 
 Active implementation plans and feature roadmaps.
