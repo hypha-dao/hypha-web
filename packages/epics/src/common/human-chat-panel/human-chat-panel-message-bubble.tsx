@@ -380,6 +380,16 @@ export function HumanChatPanelMessageBubble({
           <div
             className="relative mt-1 max-w-md overflow-hidden rounded-lg border border-border bg-muted/30"
             data-testid="chat-message-media-image"
+            style={
+              message.media.mediaInfo?.w &&
+              message.media.mediaInfo?.h &&
+              message.media.mediaInfo.w > 0 &&
+              message.media.mediaInfo.h > 0
+                ? {
+                    aspectRatio: `${message.media.mediaInfo.w} / ${message.media.mediaInfo.h}`,
+                  }
+                : undefined
+            }
           >
             {mediaPreviewUrl ? (
               <>
@@ -387,6 +397,8 @@ export function HumanChatPanelMessageBubble({
                 <img
                   src={mediaPreviewUrl}
                   alt={message.media.filename ?? ''}
+                  width={message.media.mediaInfo?.w}
+                  height={message.media.mediaInfo?.h}
                   className={cn(
                     'max-h-72 w-full object-contain',
                     message.media.spoiler && !spoilerRevealed && 'blur-2xl',
