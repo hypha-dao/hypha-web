@@ -586,10 +586,10 @@ export function HumanChatPanelMessageBubble({
         )}
       </div>
 
-      {/* Floating action bar: compact rectangle + rounded corners (not full pill) */}
+      {/* Floating action bar: tight width, subtle corner radius (Discord-like) */}
       <div
         className={cn(
-          'absolute right-3 top-0 z-10 flex h-6 -translate-y-1/2 items-center gap-0 rounded-md border border-border bg-popover px-0 py-0 leading-none text-popover-foreground shadow-md ring-1 ring-black/5 dark:ring-white/10 transition-opacity duration-150',
+          'absolute right-3 top-0 z-10 inline-flex h-5 -translate-y-1/2 items-center gap-0 rounded border border-border bg-popover px-px py-0 leading-none text-popover-foreground shadow-md ring-1 ring-black/5 dark:ring-white/10 transition-opacity duration-150',
           isActionBarVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
         aria-hidden={!isActionBarVisible}
@@ -599,7 +599,7 @@ export function HumanChatPanelMessageBubble({
             <button
               key={emoji}
               type="button"
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-[13px] leading-none transition-colors hover:bg-muted"
+              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[2px] p-0 text-[12px] leading-none transition-colors hover:bg-muted"
               aria-label={t('quickReactWith', { emoji })}
               onClick={() => {
                 void onReact!(emoji);
@@ -612,7 +612,7 @@ export function HumanChatPanelMessageBubble({
           <div
             role="separator"
             aria-orientation="vertical"
-            className="mx-px h-3 w-px shrink-0 bg-border"
+            className="h-2.5 w-px shrink-0 bg-border"
           />
         ) : null}
         <HumanChatPanelEmojiPicker
@@ -630,7 +630,7 @@ export function HumanChatPanelMessageBubble({
         >
           <button
             type="button"
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
+            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[2px] p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
             aria-label={t('reactButton')}
             disabled={!canReact}
             aria-disabled={!canReact}
@@ -641,7 +641,7 @@ export function HumanChatPanelMessageBubble({
         </HumanChatPanelEmojiPicker>
         <button
           type="button"
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[2px] p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
           aria-label={t('editButton')}
           disabled={!canEdit}
           aria-disabled={!canEdit}
@@ -651,7 +651,7 @@ export function HumanChatPanelMessageBubble({
         </button>
         <button
           type="button"
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[2px] p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
           aria-label={t('replyButton')}
           disabled={!canReply}
           aria-disabled={!canReply}
@@ -672,7 +672,7 @@ export function HumanChatPanelMessageBubble({
             <button
               type="button"
               data-testid="chat-message-more-trigger"
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground data-[state=open]:bg-muted disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
+              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[2px] p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground data-[state=open]:bg-muted disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
               aria-label={t('moreButton')}
               aria-expanded={moreMenuOpen}
               disabled={!showMessageOverflowMenu}
