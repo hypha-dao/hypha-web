@@ -48,7 +48,7 @@ export async function POST(req: Request) {
   const messages: ChatRequestPayload['messages'] = parsed.data.messages;
   const spaceSlug = parsed.data.spaceSlug;
 
-  let result;
+  let result: Awaited<ReturnType<typeof createChatStreamResult>>;
   try {
     result = await createChatStreamResult(messages, spaceSlug, authToken, {
       debugRequestId,
