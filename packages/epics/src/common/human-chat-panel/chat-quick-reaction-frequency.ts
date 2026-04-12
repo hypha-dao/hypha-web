@@ -2,15 +2,59 @@
  * Persist which emoji reactions the current user sends most often (per browser),
  * to populate Discord-style quick-react slots on message hover.
  */
-const STORAGE_KEY = 'hypha-chat-quick-reactions-v1';
-const RECENT_EMOJI_MENU_KEY = 'hypha-chat-recent-emojis-v1';
+const STORAGE_KEY_PREFIX = 'hypha-chat-quick-reactions-v1';
+const RECENT_EMOJI_MENU_KEY_PREFIX = 'hypha-chat-recent-emojis-v1';
+/** Pre-user-id keys (migrate once into scoped keys). */
+const LEGACY_STORAGE_KEY = 'hypha-chat-quick-reactions-v1';
+const LEGACY_RECENT_EMOJI_MENU_KEY = 'hypha-chat-recent-emojis-v1';
+
+function storageUserSegment(userId: string | null | undefined): string {
+  const id = userId?.trim();
+  return id && id.length > 0 ? id : 'anon';
+}
+
+function quickReactionsStorageKey(userId: string | null | undefined): string {
+  return `${STORAGE_KEY_PREFIX}:${storageUserSegment(userId)}`;
+}
+
+function recentEmojiMenuStorageKey(userId: string | null | undefined): string {
+  return `${RECENT_EMOJI_MENU_KEY_PREFIX}:${storageUserSegment(userId)}`;
+}
+
+function migrateLegacyEmojiStorage(userId: string | null | undefined): void {
+  try {
+    const nextCounts = quickReactionsStorageKey(userId);
+    const nextRecent = recentEmojiMenuStorageKey(userId);
+    if (
+      !localStorage.getItem(nextCounts) &&
+      localStorage.getItem(LEGACY_STORAGE_KEY)
+    ) {
+      localStorage.setItem(
+        nextCounts,
+        localStorage.getItem(LEGACY_STORAGE_KEY)!,
+      );
+    }
+    if (
+      !localStorage.getItem(nextRecent) &&
+      localStorage.getItem(LEGACY_RECENT_EMOJI_MENU_KEY)
+    ) {
+      localStorage.setItem(
+        nextRecent,
+        localStorage.getItem(LEGACY_RECENT_EMOJI_MENU_KEY)!,
+      );
+    }
+  } catch {
+    // ignore
+  }
+}
 
 /** Fallback when the user has not reacted yet (common chat defaults). */
-export const DEFAULT_QUICK_REACTION_EMOJIS = ['👍', '🎵', '🙏', '✅'] as const;
+export const DEFAULT_QUICK_REACTION_EMOJIS = ['👍', '🎵', '🙏'] as const;
 
-function readRecentEmojiList(): string[] {
+function readRecentEmojiList(userId: string | null | undefined): string[] {
+  migrateLegacyEmojiStorage(userId);
   try {
-    const raw = localStorage.getItem(RECENT_EMOJI_MENU_KEY);
+    const raw = localStorage.getItem(recentEmojiMenuStorageKey(userId));
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
@@ -22,9 +66,15 @@ function readRecentEmojiList(): string[] {
   }
 }
 
-function writeRecentEmojiList(list: string[]): void {
+function writeRecentEmojiList(
+  list: string[],
+  userId: string | null | undefined,
+): void {
   try {
-    localStorage.setItem(RECENT_EMOJI_MENU_KEY, JSON.stringify(list));
+    localStorage.setItem(
+      recentEmojiMenuStorageKey(userId),
+      JSON.stringify(list),
+    );
   } catch {
     // ignore
   }
@@ -33,20 +83,26 @@ function writeRecentEmojiList(list: string[]): void {
 /**
  * Remember emoji for the overflow “recent” strip (reactions + menu picks).
  */
-export function recordRecentMenuEmoji(emoji: string): void {
+export function recordRecentMenuEmoji(
+  emoji: string,
+  userId?: string | null,
+): void {
   const key = emoji.trim();
   if (!key) return;
-  const prev = readRecentEmojiList();
+  const prev = readRecentEmojiList(userId);
   const next = [key, ...prev.filter((e) => e !== key)].slice(0, 24);
-  writeRecentEmojiList(next);
+  writeRecentEmojiList(next, userId);
 }
 
 /**
  * Most recently used emoji for the message overflow menu (newest first).
  * Pads with {@link DEFAULT_QUICK_REACTION_EMOJIS} when needed.
  */
-export function getRecentMenuEmojis(limit = 4): string[] {
-  const recent = readRecentEmojiList();
+export function getRecentMenuEmojis(
+  limit = 4,
+  userId?: string | null,
+): string[] {
+  const recent = readRecentEmojiList(userId);
   const out: string[] = [];
   for (const e of recent) {
     if (out.length >= limit) break;
@@ -59,9 +115,10 @@ export function getRecentMenuEmojis(limit = 4): string[] {
   return out.slice(0, limit);
 }
 
-function readCounts(): Record<string, number> {
+function readCounts(userId: string | null | undefined): Record<string, number> {
+  migrateLegacyEmojiStorage(userId);
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(quickReactionsStorageKey(userId));
     if (!raw) return {};
     const parsed = JSON.parse(raw) as unknown;
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
@@ -79,30 +136,42 @@ function readCounts(): Record<string, number> {
   }
 }
 
-function writeCounts(counts: Record<string, number>): void {
+function writeCounts(
+  counts: Record<string, number>,
+  userId: string | null | undefined,
+): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(counts));
+    localStorage.setItem(
+      quickReactionsStorageKey(userId),
+      JSON.stringify(counts),
+    );
   } catch {
     // ignore quota / private mode
   }
 }
 
 /** Increment usage for one emoji key (typically after a successful reaction send). */
-export function recordUserReactionEmojiUse(emoji: string): void {
+export function recordUserReactionEmojiUse(
+  emoji: string,
+  userId?: string | null,
+): void {
   const key = emoji.trim();
   if (!key) return;
-  const counts = readCounts();
+  const counts = readCounts(userId);
   counts[key] = (counts[key] ?? 0) + 1;
-  writeCounts(counts);
-  recordRecentMenuEmoji(key);
+  writeCounts(counts, userId);
+  recordRecentMenuEmoji(key, userId);
 }
 
 /**
  * Top emoji by frequency for this user, oldest tie-breaker first.
  * Pads with {@link DEFAULT_QUICK_REACTION_EMOJIS} when fewer than `limit` exist.
  */
-export function getTopQuickReactionEmojis(limit = 3): string[] {
-  const counts = readCounts();
+export function getTopQuickReactionEmojis(
+  limit = DEFAULT_QUICK_REACTION_EMOJIS.length,
+  userId?: string | null,
+): string[] {
+  const counts = readCounts(userId);
   const ranked = Object.entries(counts)
     .filter(([k]) => k.length > 0)
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))

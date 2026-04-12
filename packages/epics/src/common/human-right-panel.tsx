@@ -289,7 +289,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [quickReactionEmojis, setQuickReactionEmojis] = useState<string[]>(() =>
     typeof window === 'undefined'
       ? [...DEFAULT_QUICK_REACTION_EMOJIS]
-      : getTopQuickReactionEmojis(),
+      : getTopQuickReactionEmojis(undefined, null),
   );
   const [roomId, setRoomId] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
@@ -713,8 +713,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           targetEventId: messageId,
           key: emoji,
         });
-        recordUserReactionEmojiUse(emoji);
-        setQuickReactionEmojis(getTopQuickReactionEmojis());
+        recordUserReactionEmojiUse(emoji, currentUserIdRef.current);
+        setQuickReactionEmojis(
+          getTopQuickReactionEmojis(undefined, currentUserIdRef.current),
+        );
       } catch (err) {
         console.error('[HumanRightPanel] Failed to toggle reaction:', err);
         setReactionError(t('reactionToggleFailed'));
@@ -924,8 +926,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    setQuickReactionEmojis(getTopQuickReactionEmojis());
-  }, [roomId]);
+    setQuickReactionEmojis(getTopQuickReactionEmojis(undefined, currentUserId));
+  }, [roomId, currentUserId]);
 
   useEffect(() => {
     if (!editDraft) return;
@@ -1017,6 +1019,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 persistHoverActionBarMessageId={editDraft?.messageId ?? null}
                 quickReactionEmojis={quickReactionEmojis}
                 matrixRoomId={roomId}
+                matrixUserId={currentUserId}
                 onEditMessage={handleEditMessage}
                 onDeleteMessage={handleDeleteMessage}
                 resolveReactionReactorLabel={(userId) =>

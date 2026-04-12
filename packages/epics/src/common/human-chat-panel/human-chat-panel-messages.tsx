@@ -49,6 +49,8 @@ type HumanChatPanelMessagesProps = {
   quickReactionEmojis?: string[];
   /** Matrix room id for deep-linking messages (copy message link). */
   matrixRoomId?: string | null;
+  /** Current Matrix user id (scopes emoji frequency / recents in localStorage). */
+  matrixUserId?: string | null;
   onEditMessage?: (messageId: string) => void;
   onDeleteMessage?: (messageId: string) => void | Promise<void>;
   /** Map Matrix user id to display name for reaction hover tooltips. */
@@ -63,6 +65,7 @@ export function HumanChatPanelMessages({
   persistHoverActionBarMessageId = null,
   quickReactionEmojis,
   matrixRoomId,
+  matrixUserId,
   onEditMessage,
   onDeleteMessage,
   resolveReactionReactorLabel,
@@ -182,6 +185,7 @@ export function HumanChatPanelMessages({
                 setHoverActionMessageId(null);
               }}
               matrixRoomId={matrixRoomId ?? undefined}
+              matrixUserId={matrixUserId}
               isStreaming={
                 msg.role === 'member' &&
                 isStreaming &&
