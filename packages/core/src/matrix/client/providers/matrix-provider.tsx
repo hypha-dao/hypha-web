@@ -954,7 +954,15 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             const pinnedIds = getPinnedMessageIds(roomId);
             const targetEventId = targetEv.getId();
             const targetSender = targetEv.getSender();
-            if (!targetEventId || !targetSender) return;
+            const editSender = event.getSender();
+            if (
+              !targetEventId ||
+              !targetSender ||
+              !editSender ||
+              editSender !== targetSender
+            ) {
+              return;
+            }
             targetEv.makeReplaced(event);
             let message = messageFromRoomMessageEvent(
               client,
