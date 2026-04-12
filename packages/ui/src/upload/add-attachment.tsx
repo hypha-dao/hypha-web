@@ -1,5 +1,11 @@
 'use client';
-import React, { ChangeEvent, useRef, useState } from 'react';
+import React, {
+  ChangeEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   FileText,
   Image as ImageIcon,
@@ -11,6 +17,21 @@ import { Separator } from '../separator';
 import { Link2Icon } from '@radix-ui/react-icons';
 
 type AttachmentInput = string | { name: string; url: string };
+
+function LocalFileImageThumb({ src, alt }: { src: string; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return <ImageIcon className="h-5 w-5 shrink-0 text-neutral-11" />;
+  }
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="h-5 w-5 shrink-0 rounded-lg object-cover"
+      onError={() => setFailed(true)}
+    />
+  );
+}
 
 interface AddAttachmentProps {
   onChange?: (files: File[]) => void;
@@ -28,10 +49,48 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({
   label = 'Add Attachment (JPEG, PNG, WebP, or PDF — max 4MB)',
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  /** Stable object URLs for `File` thumbnails; revoked when a file leaves the list or on unmount. */
+  const filePreviewUrlsRef = useRef<Map<string, string>>(new Map());
   const [attachments, setAttachments] = useState<File[]>([]);
   const [existingAttachments, setExistingAttachments] = useState<
     AttachmentInput[]
   >(defaultAttachments || []);
+
+  const getFilePreviewKey = useCallback((file: File) => {
+    return `${file.name}:${file.size}:${file.lastModified}`;
+  }, []);
+
+  const getOrCreateFilePreviewUrl = useCallback(
+    (file: File) => {
+      const key = getFilePreviewKey(file);
+      let url = filePreviewUrlsRef.current.get(key);
+      if (!url) {
+        url = URL.createObjectURL(file);
+        filePreviewUrlsRef.current.set(key, url);
+      }
+      return url;
+    },
+    [getFilePreviewKey],
+  );
+
+  useEffect(() => {
+    const keys = new Set(attachments.map((f) => getFilePreviewKey(f)));
+    for (const [key, url] of filePreviewUrlsRef.current) {
+      if (!keys.has(key)) {
+        URL.revokeObjectURL(url);
+        filePreviewUrlsRef.current.delete(key);
+      }
+    }
+  }, [attachments, getFilePreviewKey]);
+
+  useEffect(() => {
+    return () => {
+      for (const url of filePreviewUrlsRef.current.values()) {
+        URL.revokeObjectURL(url);
+      }
+      filePreviewUrlsRef.current.clear();
+    };
+  }, []);
 
   React.useEffect(() => {
     if (value) {
@@ -75,15 +134,8 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({
   const renderFileIcon = (file: File | AttachmentInput) => {
     if (file instanceof File) {
       if (file.type.startsWith('image/')) {
-        const objectURL = URL.createObjectURL(file);
-        return (
-          <img
-            src={objectURL}
-            alt={file.name}
-            className="w-5 h-5 object-cover rounded-lg"
-            onLoad={() => URL.revokeObjectURL(objectURL)}
-          />
-        );
+        const objectURL = getOrCreateFilePreviewUrl(file);
+        return <LocalFileImageThumb src={objectURL} alt={file.name} />;
       }
 
       if (
