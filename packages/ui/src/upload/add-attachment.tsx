@@ -20,6 +20,12 @@ function LocalFileImageThumb({ file }: { file: File }) {
   useEffect(() => {
     setFailed(false);
     const url = URL.createObjectURL(file);
+    if (!url.startsWith('blob:')) {
+      URL.revokeObjectURL(url);
+      setObjectUrl(null);
+      setFailed(true);
+      return;
+    }
     setObjectUrl(url);
     return () => {
       URL.revokeObjectURL(url);
@@ -40,7 +46,7 @@ function LocalFileImageThumb({ file }: { file: File }) {
   return (
     <img
       src={objectUrl}
-      alt={file.name}
+      alt=""
       className="h-5 w-5 shrink-0 rounded-lg object-cover"
       onError={() => setFailed(true)}
     />
