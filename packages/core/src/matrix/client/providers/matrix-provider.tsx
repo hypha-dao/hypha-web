@@ -760,7 +760,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         throw new Error('You can only delete your own messages');
       }
 
-      await client.redactEvent(roomId, targetEventId);
+      // matrix-js-sdk: 2-arg form is (roomId, eventId); 3-arg is (roomId, threadId, eventId).
+      // Passing only (roomId, eventId) mis-assigns eventId as threadId and breaks redaction.
+      await client.redactEvent(roomId, null, targetEventId);
     },
     [client],
   );
