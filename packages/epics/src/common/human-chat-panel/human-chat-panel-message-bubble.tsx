@@ -1560,7 +1560,7 @@ export function HumanChatPanelMessageBubble({
             side="left"
             align="start"
             collisionPadding={12}
-            className="z-[60] w-[min(100vw-2rem,200px)] border border-border p-1.5 shadow-lg"
+            className="z-[50] w-[min(100vw-2rem,200px)] overflow-visible border border-border p-1.5 shadow-lg"
           >
             {canReact && onReact && recentMenuEmojis.length > 0 ? (
               <>
@@ -1592,7 +1592,7 @@ export function HumanChatPanelMessageBubble({
                   </span>
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent
-                  className="z-[100] border border-border p-0 shadow-lg"
+                  className="z-[300] overflow-visible border border-border bg-popover p-0 shadow-xl"
                   sideOffset={8}
                 >
                   {emojiMartMounted ? (
