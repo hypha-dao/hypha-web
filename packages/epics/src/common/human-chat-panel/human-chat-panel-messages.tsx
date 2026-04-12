@@ -45,7 +45,7 @@ type HumanChatPanelMessagesProps = {
   onToggleReaction?: (messageId: string, emoji: string) => void;
   /** Keep the hover action bar visible for this message (e.g. while editing it). */
   persistHoverActionBarMessageId?: string | null;
-  /** Up to four emoji shown ahead of the action icons (Discord-style quick react). */
+  /** Up to three emoji shown ahead of the action icons (Discord-style quick react). */
   quickReactionEmojis?: string[];
   /** Matrix room id for deep-linking messages (copy message link). */
   matrixRoomId?: string | null;
@@ -142,23 +142,13 @@ export function HumanChatPanelMessages({
               resolveReactionReactorLabel={resolveReactionReactorLabel}
               isActionBarVisible={isActionBarVisible}
               isRowPointerActive={isRowPointerActive}
-              onRowPointerEnter={(e) => {
+              onRowPointerEnter={() => {
                 if (lockActionMessageIdRef.current) {
                   migrateLockRowId(lockActionMessageIdRef.current, msg.id);
                 }
                 setHoverActionMessageId(msg.id);
-                try {
-                  e.currentTarget.setPointerCapture(e.pointerId);
-                } catch {
-                  // ignore
-                }
               }}
-              onRowPointerLeave={(e) => {
-                try {
-                  e.currentTarget.releasePointerCapture(e.pointerId);
-                } catch {
-                  // ignore
-                }
+              onRowPointerLeave={() => {
                 if (combinedLockMessageIdRef.current === msg.id) {
                   return;
                 }
