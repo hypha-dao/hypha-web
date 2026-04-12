@@ -34,6 +34,11 @@ type ReplyPreview = {
   onDismiss: () => void;
 };
 
+type EditPreview = {
+  excerpt: string;
+  onDismiss: () => void;
+};
+
 type HumanChatPanelChatBarProps = {
   value: string;
   onChange: (value: string) => void;
@@ -42,6 +47,8 @@ type HumanChatPanelChatBarProps = {
   channelName?: string;
   /** Rich reply: composer preview above the textarea */
   replyPreview?: ReplyPreview;
+  /** Editing an existing message: preview strip above the textarea */
+  editPreview?: EditPreview;
 };
 
 function insertAtCaret(
@@ -79,6 +86,7 @@ export function HumanChatPanelChatBar({
   placeholder,
   channelName,
   replyPreview,
+  editPreview,
 }: HumanChatPanelChatBarProps) {
   const t = useTranslations('HumanChatPanel');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -129,12 +137,12 @@ export function HumanChatPanelChatBar({
   }, [colonOpen]);
 
   useEffect(() => {
-    const isOpen = Boolean(replyPreview);
+    const isOpen = Boolean(replyPreview || editPreview);
     if (isOpen && !replyPreviewWasOpenRef.current) {
       textareaRef.current?.focus();
     }
     replyPreviewWasOpenRef.current = isOpen;
-  }, [replyPreview]);
+  }, [replyPreview, editPreview]);
 
   const autoResize = useCallback(() => {
     if (textareaRef.current) {
@@ -431,6 +439,31 @@ export function HumanChatPanelChatBar({
               </button>
             </div>
           </>
+        )}
+        {editPreview && (
+          <div
+            data-testid="chat-edit-preview"
+            className="flex items-start gap-2 border-b border-border px-3 py-2"
+          >
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">
+                  {t('editingMessageLabel')}
+                </span>
+                <span className="text-muted-foreground"> — </span>
+                <span>{editPreview.excerpt}</span>
+              </p>
+            </div>
+            <button
+              type="button"
+              className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              aria-label={t('editDismiss')}
+              title={t('editDismiss')}
+              onClick={editPreview.onDismiss}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         )}
         {replyPreview && (
           <div
