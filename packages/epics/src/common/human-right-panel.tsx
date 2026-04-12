@@ -188,6 +188,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug ?? '');
   const { updateSpaceBySlug } = useSpaceMutationsWeb2Rsc(authToken);
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
+
+  const authTokenRef = useRef(authToken);
+  authTokenRef.current = authToken;
+  const updateSpaceBySlugRef = useRef(updateSpaceBySlug);
+  updateSpaceBySlugRef.current = updateSpaceBySlug;
   const { open: sidebarOpen } = useSidebar();
 
   const currentUserAvatarUrl = me?.avatarUrl;
@@ -365,9 +370,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           }
           targetRoomId = newRoomId;
           storeRoomId(spaceSlug, newRoomId);
-          if (authToken) {
+          if (authTokenRef.current) {
             try {
-              await updateSpaceBySlug({
+              await updateSpaceBySlugRef.current({
                 slug: spaceSlug,
                 chatRoomId: newRoomId,
               });
@@ -419,8 +424,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceSlug,
     isSpaceLoading,
     space?.chatRoomId,
-    authToken,
-    updateSpaceBySlug,
   ]);
 
   // Track previous mode to detect actual transitions (not initial mount)

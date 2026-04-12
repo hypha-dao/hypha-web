@@ -37,10 +37,11 @@ export const spaceMembersHttpPaginationQuerySchema = z
     };
   });
 
+/** `!opaque:server` where server may include extra colons (ports, IPv6 literals). */
 const matrixRoomIdSchema = z
   .string()
   .trim()
-  .regex(/^![^:]+:[^:]+$/, 'Invalid Matrix room id');
+  .regex(/^![^:]+:.+$/, 'Invalid Matrix room id format');
 
 const createSpaceWeb2Props = {
   title: z
