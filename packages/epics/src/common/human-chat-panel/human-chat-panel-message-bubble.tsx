@@ -1,15 +1,37 @@
 'use client';
 
-import { Fragment, useState } from 'react';
+import { Fragment, useCallback, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { TranslationValues } from 'next-intl';
-import { Smile, SmilePlus, Reply, MoreHorizontal, Pencil } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@hypha-platform/ui';
-import { cn } from '@hypha-platform/ui-utils';
+import {
+  Smile,
+  SmilePlus,
+  Reply,
+  MoreHorizontal,
+  Pencil,
+  Copy,
+  Link2,
+  Volume2,
+} from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@hypha-platform/ui';
+import { cn, copyToClipboard } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../people/components/person-avatar';
 
 import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
 import { ChatMessageRichText } from './parse-simple-matrix-html';
+import {
+  getRecentMenuEmojis,
+  recordRecentMenuEmoji,
+} from './chat-quick-reaction-frequency';
 
 type Reaction = {
   emoji: string;
@@ -31,6 +53,10 @@ type HumanChatPanelMessageBubbleProps = {
   onRowPointerLeave?: () => void;
   /** Notify when the hover-bar emoji picker opens/closes (parent may lock visibility). */
   onHoverReactPickerOpenChange?: (open: boolean) => void;
+  /** Same as picker lock, for the “more” overflow menu (portal). */
+  onMoreMenuOpenChange?: (open: boolean) => void;
+  /** Matrix room id for “copy message link” (permalink with event anchor). */
+  matrixRoomId?: string;
   message: {
     id: string;
     role: 'user' | 'member';
@@ -222,6 +248,18 @@ function renderTextWithMentions(text: string): React.ReactNode[] {
   return parts;
 }
 
+function stripHtmlToPlainText(html: string): string {
+  if (typeof document === 'undefined') {
+    return html
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+  const el = document.createElement('div');
+  el.innerHTML = html;
+  return (el.textContent ?? '').replace(/\s+/g, ' ').trim();
+}
+
 function reactionTooltipText(
   reaction: Reaction,
   resolveLabel: (userId: string) => string,
@@ -242,6 +280,8 @@ export function HumanChatPanelMessageBubble({
   onRowPointerEnter,
   onRowPointerLeave,
   onHoverReactPickerOpenChange,
+  onMoreMenuOpenChange,
+  matrixRoomId,
   message,
   isStreaming,
   onReply,
@@ -252,6 +292,7 @@ export function HumanChatPanelMessageBubble({
   const t = useTranslations('HumanChatPanel');
   const [hoverReactPickerOpen, setHoverReactPickerOpen] = useState(false);
   const [inlineReactPickerOpen, setInlineReactPickerOpen] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
   // TODO: Handle non-text parts (file attachments, tool results, etc.)
   const textParts =
@@ -259,6 +300,12 @@ export function HumanChatPanelMessageBubble({
       (p): p is { type: 'text'; text: string } => p.type === 'text',
     ) ?? [];
   const textContent = textParts.map((p) => p.text).join('');
+  const plainTextForActions = useMemo(() => {
+    if (message.formattedContentHtml) {
+      return stripHtmlToPlainText(message.formattedContentHtml);
+    }
+    return textContent;
+  }, [message.formattedContentHtml, textContent]);
   const replyTo = message.replyTo;
   const jumboLayout = textContent
     ? getEmojiOnlyJumboLayout(textContent, Boolean(replyTo))
@@ -282,6 +329,46 @@ export function HumanChatPanelMessageBubble({
     0,
     reactions.length - MAX_VISIBLE_REACTIONS,
   );
+
+  const showMessageOverflowMenu = !message.isSynthetic;
+
+  const canCopyMessageLink = Boolean(
+    matrixRoomId &&
+      showMessageOverflowMenu &&
+      message.id &&
+      !message.id.startsWith('~'),
+  );
+
+  const matrixMessageLink = useMemo(() => {
+    if (!canCopyMessageLink || !matrixRoomId) return '';
+    return `matrix:r/${encodeURIComponent(matrixRoomId)}/e/${encodeURIComponent(
+      message.id,
+    )}`;
+  }, [canCopyMessageLink, matrixRoomId, message.id]);
+
+  const handleCopyText = useCallback(() => {
+    const text = plainTextForActions.trim();
+    if (!text) return;
+    copyToClipboard(text);
+  }, [plainTextForActions]);
+
+  const handleCopyLink = useCallback(() => {
+    if (!matrixMessageLink) return;
+    copyToClipboard(matrixMessageLink);
+  }, [matrixMessageLink]);
+
+  const handleSpeak = useCallback(() => {
+    const text = plainTextForActions.trim();
+    if (!text || typeof window === 'undefined' || !window.speechSynthesis) {
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = document.documentElement.lang || 'en';
+    window.speechSynthesis.speak(u);
+  }, [plainTextForActions]);
+
+  const recentMenuEmojis = moreMenuOpen ? getRecentMenuEmojis(4) : [];
 
   return (
     <div
@@ -452,6 +539,7 @@ export function HumanChatPanelMessageBubble({
                 open={inlineReactPickerOpen}
                 onOpenChange={setInlineReactPickerOpen}
                 onEmojiSelect={(native) => {
+                  recordRecentMenuEmoji(native);
                   void onReact(native);
                 }}
                 ariaLabel={t('addReactionButton')}
@@ -510,6 +598,7 @@ export function HumanChatPanelMessageBubble({
             onHoverReactPickerOpenChange?.(open);
           }}
           onEmojiSelect={(native) => {
+            recordRecentMenuEmoji(native);
             if (onReact) void onReact(native);
           }}
           ariaLabel={t('emojiPickerReactToMessage')}
@@ -546,15 +635,105 @@ export function HumanChatPanelMessageBubble({
         >
           <Reply className="h-3.5 w-3.5" strokeWidth={2} />
         </button>
-        <button
-          type="button"
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground [&_svg]:block"
-          aria-label={t('moreButton')}
-          disabled
-          aria-disabled
+        <DropdownMenu
+          modal={false}
+          open={showMessageOverflowMenu ? moreMenuOpen : false}
+          onOpenChange={(open) => {
+            if (!showMessageOverflowMenu) return;
+            setMoreMenuOpen(open);
+            onMoreMenuOpenChange?.(open);
+          }}
         >
-          <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={2} />
-        </button>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              data-testid="chat-message-more-trigger"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground data-[state=open]:bg-muted disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
+              aria-label={t('moreButton')}
+              aria-expanded={moreMenuOpen}
+              disabled={!showMessageOverflowMenu}
+              aria-disabled={!showMessageOverflowMenu}
+            >
+              <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={2} />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            side="left"
+            align="start"
+            className="min-w-[220px] border border-border p-2 shadow-lg"
+          >
+            {canReact && onReact && recentMenuEmojis.length > 0 ? (
+              <>
+                <div className="flex gap-1 px-1 pb-2">
+                  {recentMenuEmojis.map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-muted/40 text-lg leading-none transition-colors hover:bg-muted"
+                      aria-label={t('quickReactWith', { emoji })}
+                      onClick={() => {
+                        recordRecentMenuEmoji(emoji);
+                        void onReact(emoji);
+                        setMoreMenuOpen(false);
+                      }}
+                    >
+                      <span aria-hidden>{emoji}</span>
+                    </button>
+                  ))}
+                </div>
+                <DropdownMenuSeparator className="my-1 bg-border" />
+              </>
+            ) : null}
+            <DropdownMenuItem
+              className="gap-2 text-sm"
+              disabled={!canReply}
+              onSelect={(e) => {
+                e.preventDefault();
+                onReply?.();
+                setMoreMenuOpen(false);
+              }}
+            >
+              <Reply className="h-4 w-4" strokeWidth={2} />
+              {t('messageMenuReply')}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="gap-2 text-sm"
+              disabled={!plainTextForActions.trim()}
+              onSelect={(e) => {
+                e.preventDefault();
+                handleCopyText();
+                setMoreMenuOpen(false);
+              }}
+            >
+              <Copy className="h-4 w-4" strokeWidth={2} />
+              {t('messageMenuCopyText')}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="gap-2 text-sm"
+              disabled={!canCopyMessageLink}
+              onSelect={(e) => {
+                e.preventDefault();
+                handleCopyLink();
+                setMoreMenuOpen(false);
+              }}
+            >
+              <Link2 className="h-4 w-4" strokeWidth={2} />
+              {t('messageMenuCopyLink')}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="gap-2 text-sm"
+              disabled={!plainTextForActions.trim()}
+              onSelect={(e) => {
+                e.preventDefault();
+                handleSpeak();
+                setMoreMenuOpen(false);
+              }}
+            >
+              <Volume2 className="h-4 w-4" strokeWidth={2} />
+              {t('messageMenuSpeak')}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );

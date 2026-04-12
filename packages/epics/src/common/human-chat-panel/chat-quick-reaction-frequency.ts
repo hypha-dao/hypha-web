@@ -3,9 +3,61 @@
  * to populate Discord-style quick-react slots on message hover.
  */
 const STORAGE_KEY = 'hypha-chat-quick-reactions-v1';
+const RECENT_EMOJI_MENU_KEY = 'hypha-chat-recent-emojis-v1';
 
 /** Fallback when the user has not reacted yet (common chat defaults). */
 export const DEFAULT_QUICK_REACTION_EMOJIS = ['👍', '🎵', '🙏'] as const;
+
+function readRecentEmojiList(): string[] {
+  try {
+    const raw = localStorage.getItem(RECENT_EMOJI_MENU_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (x): x is string => typeof x === 'string' && x.trim().length > 0,
+    );
+  } catch {
+    return [];
+  }
+}
+
+function writeRecentEmojiList(list: string[]): void {
+  try {
+    localStorage.setItem(RECENT_EMOJI_MENU_KEY, JSON.stringify(list));
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Remember emoji for the overflow “recent” strip (reactions + menu picks).
+ */
+export function recordRecentMenuEmoji(emoji: string): void {
+  const key = emoji.trim();
+  if (!key) return;
+  const prev = readRecentEmojiList();
+  const next = [key, ...prev.filter((e) => e !== key)].slice(0, 24);
+  writeRecentEmojiList(next);
+}
+
+/**
+ * Most recently used emoji for the message overflow menu (newest first).
+ * Pads with {@link DEFAULT_QUICK_REACTION_EMOJIS} when needed.
+ */
+export function getRecentMenuEmojis(limit = 4): string[] {
+  const recent = readRecentEmojiList();
+  const out: string[] = [];
+  for (const e of recent) {
+    if (out.length >= limit) break;
+    if (!out.includes(e)) out.push(e);
+  }
+  for (const e of DEFAULT_QUICK_REACTION_EMOJIS) {
+    if (out.length >= limit) break;
+    if (!out.includes(e)) out.push(e);
+  }
+  return out.slice(0, limit);
+}
 
 function readCounts(): Record<string, number> {
   try {
@@ -42,6 +94,7 @@ export function recordUserReactionEmojiUse(emoji: string): void {
   const counts = readCounts();
   counts[key] = (counts[key] ?? 0) + 1;
   writeCounts(counts);
+  recordRecentMenuEmoji(key);
 }
 
 /**
