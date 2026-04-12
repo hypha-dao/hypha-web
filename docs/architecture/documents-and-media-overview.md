@@ -46,7 +46,7 @@ Hypha handles **files and images** in two main places. The **bytes** and **metad
 |--|----------------|---------------|
 | **Primary store** | Matrix homeserver (content repo) | Your upload / CDN + Hypha DB fields |
 | **Pointer in app** | `mxc://` in `m.room.message` events | HTTPS URLs (+ names) on the document |
-| **Who “owns” the file”** | The room’s homeserver | Hypha + file host |
+| **Who “owns” the file** | The room’s homeserver | Hypha + file host |
 | **Organisation memory** | See **§4** below (ingestion from Matrix events) | See **§4** below (ingestion from document / upload records) |
 
 ---
