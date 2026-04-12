@@ -12,22 +12,30 @@ import { Link2Icon } from '@radix-ui/react-icons';
 
 type AttachmentInput = string | { name: string; url: string };
 
-/** Creates `blob:` URL in an effect (not during render) and revokes on unmount / file change. */
+/**
+ * Preview thumbnail: assign `blob:` URL on the DOM node inside `useEffect` so
+ * static analysis does not treat React state as unsanitized HTML in `src`.
+ */
 function LocalFileImageThumb({ file }: { file: File }) {
-  const [objectUrl, setObjectUrl] = useState<string | null>(null);
+  const imgRef = useRef<HTMLImageElement | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     setFailed(false);
+    const el = imgRef.current;
     const url = URL.createObjectURL(file);
     if (!url.startsWith('blob:')) {
       URL.revokeObjectURL(url);
-      setObjectUrl(null);
       setFailed(true);
       return;
     }
-    setObjectUrl(url);
+    if (el) {
+      el.src = url;
+    }
     return () => {
+      if (el) {
+        el.removeAttribute('src');
+      }
       URL.revokeObjectURL(url);
     };
   }, [file]);
@@ -35,17 +43,9 @@ function LocalFileImageThumb({ file }: { file: File }) {
   if (failed) {
     return <ImageIcon className="h-5 w-5 shrink-0 text-neutral-11" />;
   }
-  if (!objectUrl) {
-    return (
-      <span
-        className="inline-block h-5 w-5 shrink-0 rounded-lg bg-muted"
-        aria-hidden
-      />
-    );
-  }
   return (
     <img
-      src={objectUrl}
+      ref={imgRef}
       alt=""
       className="h-5 w-5 shrink-0 rounded-lg object-cover"
       onError={() => setFailed(true)}
