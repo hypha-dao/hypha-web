@@ -22,7 +22,7 @@ export function createGetDocumentsBySpaceSlugTool(authToken: string) {
 
   return {
     description:
-      'Read-only: lists documents in a Hypha space by slug (proposals, discussions, agreements from the documents table). Includes creator summary, state, slug, label, web3 proposal id, attachments, timestamps. Optional full-text search on title/description (same as app). Use for "what proposals", "list documents", "agreements in this space". Not for member roster — use get_people_by_space_slug.',
+      'Read-only: lists documents in a Hypha space by slug (proposals, discussions, agreements from the documents table). For documents with web3ProposalId and on-chain data, includes proposal outcome status: accepted, rejected, or onVoting (same logic as the space documents UI). Also returns state (discussion/proposal/agreement DB enum), creator summary, slug, label, attachments, timestamps. Optional full-text search. Not for member roster — use get_people_by_space_slug.',
     inputSchema,
     execute: async (args) => {
       const parsedArgs = inputSchema.safeParse(args);

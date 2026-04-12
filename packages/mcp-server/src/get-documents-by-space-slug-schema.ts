@@ -42,6 +42,7 @@ export const getDocumentsBySpaceSlugOutputSchema = z.object({
     })
     .nullable(),
   source: z.literal('db'),
+  source_chain: z.enum(['rpc']).nullable(),
   asOf: z.string(),
   documents: z.array(
     z.object({

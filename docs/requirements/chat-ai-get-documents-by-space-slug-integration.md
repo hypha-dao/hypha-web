@@ -19,6 +19,7 @@ Enable **Hypha AI** to answer:
 - “**Search** for documents about X in this space.”
 - “Who **created** this proposal?” (from `creator` on each item)
 - “What **files** (PDFs, images, videos) are **attached** to those documents?” (from **`attachments`** and **`leadImage`** on each row — same payload as MCP)
+- “Which proposals are **on voting** vs **accepted**?” — use each item’s **`status`** when **`source_chain`** is **`"rpc"`** (on-chain proposal lists); **`state`** remains the DB workflow enum (`discussion` / `proposal` / `agreement`).
 
 using a **server-side tool** backed by the **same SQL and access rules** as the MCP tool, without duplicating query logic in the chat route.
 
@@ -33,9 +34,9 @@ using a **server-side tool** backed by the **same SQL and access rules** as the 
 | Concern | Approach |
 |---------|----------|
 | **Single implementation** | Chat tool calls **`getDocumentsBySpaceSlug({ spaceSlug, page, pageSize, searchTerm, state }, { db, authToken })`** from `@hypha-platform/core/server`. |
-| **Access** | Before core runs `checkSpaceAccessForSpace`, the chat tool mirrors **`get_people_by_space_slug`**: if `web3SpaceId` present, require valid token path via `checkSpaceAccessForSpace(host, authToken)`; return structured `{ found: false, error }` on denial. |
+| **Access** | **`getDocumentsBySpaceSlug`** applies **`checkSpaceAccessForSpace`** when the space has **`web3SpaceId`**; the chat tool delegates only (no duplicate gating). |
 | **Slug hygiene** | Use **`sanitizeSlug`** from `system-prompt.ts` (same as other chat tools). |
-| **Output** | Return the **core result object** directly (dates already ISO strings from `serializeDocumentsForToolJson`). |
+| **Output** | Return the **core result object** directly (dates already ISO strings; includes **`source_chain`** and per-document **`status`** when chain data is available — same semantics as the space documents UI). |
 | **Errors** | DB/RPC failures → `{ found: false, space_slug, error }` — **do not throw** into the model stream (match `get_people_by_space_slug`). |
 
 ---
@@ -74,7 +75,7 @@ using a **server-side tool** backed by the **same SQL and access rules** as the 
 ## 6) Follow-ups (optional)
 
 - Add **`order`** parameter (reuse `PaginationParams` / `Order<Document>`) if product needs sort other than `createdAt DESC`.
-- Extend payload with **token / voting** summaries per document in a separate tool to keep this read surface stable.
+- Extend payload with **token / vote tallies** per document in a separate tool if needed beyond **`status`** (accepted / rejected / onVoting).
 - **Org memory catalogue:** extend MCP + Chat with **`org_memory_assets`** or **`get_org_memory_by_space_slug`** per MCP spec **§8.1** so **Matrix + uploads** appear in one surface for AI.
 
 ---

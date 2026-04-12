@@ -7,9 +7,13 @@ import type { DbConfig } from '../../server';
 import { checkSpaceAccessForSpace } from '../../space/server/check-space-access-for-roster';
 import { findSpaceHostFieldsBySlug } from '../../space/server/queries';
 import { findAllDocumentsBySpaceSlug } from './queries';
+import {
+  attachProposalStatusToDocument,
+  fetchProposalOutcomeSetsForSpace,
+} from './resolve-document-proposal-status';
 
 export type DocumentWithCreatorJson = Omit<
-  Document & { creator?: Document['creator'] },
+  Document & { creator?: Document['creator']; status?: Document['status'] },
   'createdAt' | 'updatedAt'
 > & {
   createdAt: string;
@@ -26,6 +30,8 @@ export type GetDocumentsBySpaceSlugSuccess = {
     parent_id: number | null;
   };
   source: 'db';
+  /** Present when `web3SpaceId` is set: `rpc` if proposal outcome lists were read; `null` if read failed. */
+  source_chain: 'rpc' | null;
   asOf: string;
   documents: DocumentWithCreatorJson[];
   pagination: {
@@ -43,6 +49,7 @@ export type GetDocumentsBySpaceSlugNotFound = {
   space_slug: string;
   space: null;
   source: 'db';
+  source_chain: null;
   asOf: string;
   documents: [];
   pagination: {
@@ -83,7 +90,10 @@ function emptyPagination(
 }
 
 export function serializeDocumentsForToolJson(
-  doc: Document & { creator?: Document['creator'] },
+  doc: Document & {
+    creator?: Document['creator'];
+    status?: Document['status'];
+  },
 ): DocumentWithCreatorJson {
   return {
     ...doc,
@@ -122,6 +132,7 @@ export async function getDocumentsBySpaceSlug(
         space_slug: spaceSlug,
         space: null,
         source: 'db',
+        source_chain: null,
         asOf,
         documents: [],
         pagination: emptyPagination(safePage, safePageSize),
@@ -138,6 +149,7 @@ export async function getDocumentsBySpaceSlug(
           space_slug: spaceSlug,
           space: null,
           source: 'db',
+          source_chain: null,
           asOf,
           documents: [],
           pagination: emptyPagination(safePage, safePageSize),
@@ -168,6 +180,17 @@ export async function getDocumentsBySpaceSlug(
     },
   );
 
+  let proposalOutcomes = null as Awaited<
+    ReturnType<typeof fetchProposalOutcomeSetsForSpace>
+  >;
+  let source_chain: 'rpc' | null = null;
+  if (host.web3SpaceId != null && canConvertToBigInt(host.web3SpaceId)) {
+    proposalOutcomes = await fetchProposalOutcomeSetsForSpace(
+      host.web3SpaceId as number,
+    );
+    source_chain = proposalOutcomes !== null ? 'rpc' : null;
+  }
+
   return {
     access: 'ok',
     result: {
@@ -180,8 +203,13 @@ export async function getDocumentsBySpaceSlug(
         parent_id: host.parentId ?? null,
       },
       source: 'db',
+      source_chain,
       asOf,
-      documents: data.map(serializeDocumentsForToolJson),
+      documents: data.map((doc) =>
+        serializeDocumentsForToolJson(
+          attachProposalStatusToDocument(doc, proposalOutcomes),
+        ),
+      ),
       pagination: {
         total: pagination.total,
         page: pagination.page,

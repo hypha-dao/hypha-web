@@ -71,7 +71,8 @@ Spaces **without** `web3SpaceId` are treated as **open** for reads (same as rost
 | **FR-1** | Expose MCP tool **`get_documents_by_space_slug`**. |
 | **FR-2** | Read-only, idempotent; no writes. |
 | **FR-3** | Inputs: **`space_slug`**, **`page`** (default 1), **`page_size`** (default 20, max 100), optional **`searchTerm`**, optional **`state`**. |
-| **FR-4** | Output: **`found`**, **`space_slug`**, **`space`** (`id`, `slug`, `title`, `parent_id`) or **`null`** if not found, **`source: "db"`**, **`asOf`**, **`documents[]`**, **`pagination`** with snake_case keys matching roster style (`page_size`, `total_pages`, `has_next_page`, `has_previous_page`). |
+| **FR-4** | Output: **`found`**, **`space_slug`**, **`space`** (`id`, `slug`, `title`, `parent_id`) or **`null`** if not found, **`source: "db"`**, **`source_chain`**: **`"rpc"`** when on-chain proposal outcome lists were read for the space’s `web3SpaceId`, else **`null`** (e.g. no web3 id or RPC failure), **`asOf`**, **`documents[]`**, **`pagination`** with snake_case keys matching roster style (`page_size`, `total_pages`, `has_next_page`, `has_previous_page`). |
+| **FR-4b** | When **`source_chain === "rpc"`**, each document with **`web3ProposalId`** not in the withdrawn set SHOULD include **`status`**: **`accepted`** \| **`rejected`** \| **`onVoting`**, matching **`useSpaceDocumentsWithStatuses`** (`getSpaceProposals` + `getWithdrawnProposalsBySpace`). Documents without `web3ProposalId` omit **`status`**. |
 | **FR-5** | Serialize all **`Date`** fields on documents as **ISO strings**. |
 | **FR-6** | Invalid slug → validation error **before** DB (Zod; align with `get-people-by-space-slug-schema` slug rules). |
 | **FR-7** | Unknown slug → **`found: false`**, empty `documents`, `space: null`, pagination zeros — not an MCP transport error. |
