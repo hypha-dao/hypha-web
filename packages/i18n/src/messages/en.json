@@ -1707,7 +1707,7 @@
   },
   "CoherenceTab": {
     "signals": "Signals",
-    "signInToSee": "Please, sign in to see signals and conversations",
+    "signInToSee": "Please, sign in to see signals, space memory, and conversations",
     "searchSignals": "Search signals...",
     "improve": "Improve",
     "newSignal": "New Signal",
@@ -1748,6 +1748,22 @@
     "archiveConfirm": "Do you really want to archive this conversation?",
     "yesArchive": "Yes, archive",
     "errorCoherenceTab": "Oops, something went wrong. Couldn't load coherence tab.",
+    "spaceMemory": "Space memory",
+    "searchSpaceMemory": "Search space memory...",
+    "spaceMemoryLoading": "Loading assets…",
+    "spaceMemoryEmpty": "No uploaded files yet. Attachments on proposals and agreements appear here.",
+    "spaceMemoryEmptySearch": "No assets match your search.",
+    "spaceMemoryError": "Could not load space memory.",
+    "spaceMemoryRetry": "Retry",
+    "spaceMemoryRefresh": "Refresh",
+    "spaceMemoryContext": "From «{title}» · {state}",
+    "spaceMemoryOpenAsset": "Open {name}",
+    "untitledDocument": "Untitled document",
+    "documentStates": {
+      "discussion": "Discussion",
+      "proposal": "Proposal",
+      "agreement": "Agreement"
+    },
     "types": {
       "Opportunity": "Opportunity",
       "Risk": "Risk",

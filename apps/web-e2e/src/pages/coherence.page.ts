@@ -76,7 +76,7 @@ export class CoherencePage extends BasePage {
 
     // Unauthenticated sign-in prompt (CoherenceTab.signInToSee) — match distinctive tail phrases
     this.signInMessage = page.getByText(
-      /signals and conversations|señales y conversaciones|sinais e conversas|signaux et les conversations|Signale und Gespräche/i,
+      /signals, space memory|memoria del espacio|memória do espaço|mémoire de l'espace|Space Memory und|signals and conversations|señales y conversaciones|sinais e conversas|signaux et les conversations|Signale und Gespräche/i,
     );
 
     // "All" filter badge: CoherenceTab.all + count (en All, es/pt Todos, fr Tous, de Alle)
