@@ -1,7 +1,7 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { FileText, File as FileIcon } from 'lucide-react';
+import { FileText, File as FileIcon, Image as ImageIcon } from 'lucide-react';
 import { Separator } from '../separator';
 import { Label } from '../label';
 
@@ -14,7 +14,7 @@ interface AttachmentListProps {
   attachments: (string | Attachment)[];
 }
 
-function isString(variable: any): variable is string {
+function isString(variable: unknown): variable is string {
   return typeof variable === 'string';
 }
 
@@ -24,21 +24,44 @@ function isAttachment(variable: unknown): variable is Attachment {
   return typeof v.name === 'string' && typeof v.url === 'string';
 }
 
+/** Last path segment or full name, without query/hash (for extension detection). */
+function fileBaseNameFromHint(hint: string): string {
+  const noQuery = hint.split(/[?#]/)[0] ?? '';
+  const seg = noQuery.split('/').pop() ?? noQuery;
+  return seg;
+}
+
+function extensionFromFileName(hint: string): string | undefined {
+  const base = fileBaseNameFromHint(hint);
+  if (!base.includes('.')) return undefined;
+  return base.split('.').pop()?.toLowerCase();
+}
+
+function AttachmentRowImage({ src, alt }: { src: string; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return <ImageIcon className="h-5 w-5 shrink-0 text-neutral-11" />;
+  }
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="h-5 w-5 shrink-0 rounded-lg object-cover"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 export const AttachmentList: React.FC<AttachmentListProps> = ({
   attachments,
 }) => {
-  const renderFileIcon = (url: string) => {
-    const fileName = url.split('/').pop() || '';
-    const ext = fileName.split('.').pop()?.toLowerCase();
+  const renderFileIcon = (url: string, displayFileName: string) => {
+    const extFromName = extensionFromFileName(displayFileName);
+    const extFromUrl = extensionFromFileName(url.split('/').pop() || url);
+    const ext = extFromName ?? extFromUrl;
 
     if (ext?.match(/(png|jpe?g|gif|webp|bmp|svg)/)) {
-      return (
-        <img
-          src={url}
-          alt={fileName}
-          className="w-5 h-5 object-cover rounded-lg"
-        />
-      );
+      return <AttachmentRowImage src={url} alt={displayFileName} />;
     }
 
     if (ext?.match(/(pdf|docx?|txt)/)) {
@@ -71,7 +94,7 @@ export const AttachmentList: React.FC<AttachmentListProps> = ({
               className="flex items-center justify-between text-sm py-2 rounded"
             >
               <div className="flex items-center gap-2 overflow-hidden">
-                {renderFileIcon(url)}
+                {renderFileIcon(url, fileName)}
                 <Link
                   href={url}
                   rel="noopener noreferrer"
