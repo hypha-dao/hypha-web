@@ -248,12 +248,36 @@ function renderTextWithMentions(text: string): React.ReactNode[] {
   return parts;
 }
 
+/**
+ * Strip angle-bracket tags for plain-text copy/speech (SSR-safe, linear time).
+ * Avoids regex on HTML strings (CodeQL: polynomial ReDoS on `<` runs).
+ */
+function stripAngleBracketTagsToPlainText(html: string): string {
+  const parts: string[] = [];
+  let i = 0;
+  while (i < html.length) {
+    const c = html[i]!;
+    if (c === '<') {
+      const close = html.indexOf('>', i + 1);
+      if (close === -1) {
+        i += 1;
+        continue;
+      }
+      parts.push(' ');
+      i = close + 1;
+      continue;
+    }
+    const next = html.indexOf('<', i + 1);
+    const end = next === -1 ? html.length : next;
+    parts.push(html.slice(i, end));
+    i = end;
+  }
+  return parts.join('').replace(/\s+/g, ' ').trim();
+}
+
 function stripHtmlToPlainText(html: string): string {
   if (typeof document === 'undefined') {
-    return html
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
+    return stripAngleBracketTagsToPlainText(html);
   }
   const el = document.createElement('div');
   el.innerHTML = html;
