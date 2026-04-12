@@ -1536,7 +1536,7 @@ export function HumanChatPanelMessageBubble({
           <DropdownMenuContent
             side="left"
             align="start"
-            className="w-[min(100vw-2rem,200px)] border border-border p-1.5 shadow-lg"
+            className="z-[60] w-[min(100vw-2rem,200px)] border border-border p-1.5 shadow-lg"
           >
             {canReact && onReact && recentMenuEmojis.length > 0 ? (
               <>
@@ -1562,14 +1562,14 @@ export function HumanChatPanelMessageBubble({
             ) : null}
             {canReact && onReact ? (
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger className="flex h-8 w-full items-center justify-between gap-2 rounded-sm px-2 py-0 text-xs outline-none focus:bg-accent data-[state=open]:bg-accent">
-                  <span className="truncate">
+                <DropdownMenuSubTrigger className="flex h-8 w-full items-center rounded-sm px-2 py-0 text-xs outline-none focus:bg-accent data-[state=open]:bg-accent">
+                  <span className="min-w-0 flex-1 truncate text-left">
                     {t('messageMenuAddReaction')}
                   </span>
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent
-                  className="border border-border p-0 shadow-lg"
-                  sideOffset={4}
+                  className="z-[100] border border-border p-0 shadow-lg"
+                  sideOffset={8}
                 >
                   {emojiMartMounted ? (
                     <div className="h-[min(320px,50vh)] w-[min(100vw-2rem,280px)] overflow-hidden">
