@@ -53,7 +53,7 @@ For timeline rows, `Message` may include:
 ### `HumanChatPanelMessageBubble`
 
 - Renders `message.media` when `msgtype` is `m.file` or `m.image`.
-- Uses `useMatrix().client` for `mxcUrlToHttp` with **`useAuthentication: false`** so URLs hit `/_matrix/media/v3/...` and work in `<img>` and new-tab navigation (no `Authorization` header). **Download** URL (no width/height) for `m.file` / image open-in-tab; **thumbnail** URL (e.g. 800×600, `scale`) for `m.image` inline preview.
+- Uses `useMatrix().client` for `mxcUrlToHttp` with **`useAuthentication: false`** so URLs hit `/_matrix/media/v3/...` and work in `<img>` and new-tab navigation (no `Authorization` header). **Download** URL (no width/height) for `m.file` / image open-in-tab; **thumbnail** URL (e.g. 800×600, `scale`) for `m.image` inline preview first. If the thumbnail request fails (some servers reject certain PNG thumbnails), the bubble **falls back to the download URL**, then to an image placeholder + filename.
 
 ## Testing manually
 

@@ -10,6 +10,7 @@ import {
   MoreHorizontal,
   FileIcon,
   ExternalLink,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
@@ -34,6 +35,55 @@ function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/**
+ * Some homeservers reject `/_matrix/media/v3/thumbnail` for certain PNGs while
+ * `.../download` works. Try thumbnail first, then full download, then icon.
+ */
+function MatrixTimelineImage({
+  previewUrl,
+  downloadUrl,
+  alt,
+  className,
+}: {
+  previewUrl: string;
+  downloadUrl: string;
+  alt: string;
+  className?: string;
+}) {
+  const [stage, setStage] = useState<'thumb' | 'full' | 'fail'>('thumb');
+
+  if (stage === 'fail') {
+    return (
+      <div
+        className={cn(
+          'flex min-h-[120px] w-full items-center justify-center gap-2 bg-muted/50 text-muted-foreground',
+          className,
+        )}
+      >
+        <ImageIcon className="h-8 w-8 shrink-0 opacity-70" strokeWidth={1.25} />
+        <span className="truncate px-2 text-xs">{alt}</span>
+      </div>
+    );
+  }
+
+  const src = stage === 'thumb' ? previewUrl : downloadUrl;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- Matrix MXC HTTP URL
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      onError={() => {
+        if (stage === 'thumb' && downloadUrl !== previewUrl) {
+          setStage('full');
+        } else {
+          setStage('fail');
+        }
+      }}
+    />
+  );
 }
 
 type HumanChatPanelMessageBubbleProps = {
@@ -411,12 +461,11 @@ export function HumanChatPanelMessageBubble({
                   aria-label={t('openAttachmentInNewTab')}
                   title={t('openAttachmentInNewTab')}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element -- Matrix MXC HTTP URL */}
-                  <img
-                    src={mediaPreviewUrl}
+                  <MatrixTimelineImage
+                    key={message.id}
+                    previewUrl={mediaPreviewUrl}
+                    downloadUrl={mediaDownloadUrl}
                     alt={message.media.filename ?? ''}
-                    width={message.media.mediaInfo?.w}
-                    height={message.media.mediaInfo?.h}
                     className={cn(
                       'max-h-72 w-full object-contain',
                       message.media.spoiler && !spoilerRevealed && 'blur-2xl',
