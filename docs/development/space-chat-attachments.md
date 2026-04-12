@@ -30,7 +30,7 @@ Parameters:
 - `kind: 'file' \| 'image'` — drives `msgtype` (`m.file` vs `m.image`). The image button sets `accept` to images only; users can still pick non-images via the file button.
 - `spoiler?: boolean` — Hypha-only blur until click (`org.hypha.spoiler` on the event).
 
-Send order: **each attachment** is uploaded then sent as its own event; if `message.trim()` is non-empty, a **text** event is sent last.
+Send order: **each attachment** is uploaded in parallel (`Promise.all` over `prepareMediaPayload`), then **sent as separate events in list order**; if `message.trim()` is non-empty, a **text** event is sent last. If sending fails after some media events were committed, `sendMessage` throws **`SendMessagePartialFailureError`** (`sentAttachmentCount`, `restoreCaption`) so the UI can restore only the unsent remainder.
 
 ### `Message` type extensions
 
@@ -46,14 +46,13 @@ For timeline rows, `Message` may include:
 
 ### `HumanChatPanelChatBar`
 
-- Maintains **draft attachments** in parent state (see `HumanRightPanel`).
-- Props: `draftAttachments`, `onAddAttachments`, `onRemoveAttachment`, `onToggleSpoiler`.
+- Maintains **draft attachments** in parent state (`HumanRightPanel` passes `draftAttachments` and `onDraftAttachmentsChange`). Inline remove/spoiler/toggle are implemented inside the bar by updating that list.
 - Hidden file inputs: `accept` for image picker vs broad file picker.
 
 ### `HumanChatPanelMessageBubble`
 
 - Renders `message.media` when `msgtype` is `m.file` or `m.image`.
-- Uses `useMatrix().client` for `mxcUrlToHttp` when rendering images/links.
+- Uses `useMatrix().client` for `mxcUrlToHttp`: **download** URL (no width/height) for `m.file` links, **thumbnail** URL (e.g. 800×600, `scale`) for `m.image` previews.
 
 ## Testing manually
 
