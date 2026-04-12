@@ -1625,6 +1625,7 @@
     "mentionListLabel": "Mentionner un membre",
     "attachmentTooLarge": "Fichier trop volumineux (max {max}).",
     "dictationUnsupported": "La dictée n’est pas prise en charge dans ce navigateur.",
+    "dictationError": "Dictée interrompue ({code}). Réessayez ou vérifiez le micro.",
     "dictationStart": "Démarrer la dictée",
     "dictationStop": "Arrêter la dictée",
     "chatImageAlt": "Image envoyée",

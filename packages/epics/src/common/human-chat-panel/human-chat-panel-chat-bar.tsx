@@ -1,27 +1,32 @@
 'use client';
 
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Paperclip,
-  ImageIcon,
+  Image,
+  Video,
   Bold,
   Italic,
   Strikethrough,
   Code,
   TextQuote,
   Eye,
-  EyeOff,
   Smile,
   AtSign,
   Send,
   X,
-  Trash2,
-  FileIcon,
-  Play,
+  Mic,
   Loader2,
+  Plus,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
 import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
@@ -32,7 +37,11 @@ import {
   type EmojiIndexEntry,
 } from './emoji-mart-index';
 import { getTextareaSelectionCenter } from './textarea-caret-position';
-import { looksLikeVideoMimeOrName } from './chat-panel-media-types';
+
+/** Spec defaults (bytes) */
+const MAX_IMAGE_BYTES = 15 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+const MAX_FILE_BYTES = 25 * 1024 * 1024;
 
 type ReplyPreview = {
   authorLabel: string;
@@ -40,12 +49,9 @@ type ReplyPreview = {
   onDismiss: () => void;
 };
 
-export type ChatDraftAttachment = {
-  id: string;
-  file: File;
-  kind: 'file' | 'image' | 'video';
-  previewUrl: string;
-  spoiler: boolean;
+export type ChatMentionCandidate = {
+  userId: string;
+  label: string;
 };
 
 type HumanChatPanelChatBarProps = {
@@ -56,131 +62,14 @@ type HumanChatPanelChatBarProps = {
   channelName?: string;
   /** Rich reply: composer preview above the textarea */
   replyPreview?: ReplyPreview;
-  draftAttachments?: ChatDraftAttachment[];
-  onDraftAttachmentsChange?: (next: ChatDraftAttachment[]) => void;
+  /** Optional file queued for next send (cleared by parent on success). */
+  pendingAttachment: File | null;
+  onPendingAttachmentChange: (file: File | null) => void;
+  /** Room members for @ typeahead (MXID + display label). */
+  mentionCandidates?: ChatMentionCandidate[];
+  /** While Matrix upload/send is in progress */
+  isSending?: boolean;
 };
-
-function formatFileSize(bytes: number): string {
-  if (!Number.isFinite(bytes) || bytes < 0) {
-    return '0 B';
-  }
-  if (bytes < 1024) return `${Math.round(bytes)} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function newAttachmentDraftId(): string {
-  if (
-    typeof globalThis.crypto !== 'undefined' &&
-    typeof globalThis.crypto.randomUUID === 'function'
-  ) {
-    return globalThis.crypto.randomUUID();
-  }
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-
-function ChatDraftVideoPreview({
-  url,
-  spoiler,
-  playLabel,
-  spoilerBadge,
-}: {
-  url: string;
-  spoiler: boolean;
-  playLabel: string;
-  spoilerBadge: string;
-}) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [playing, setPlaying] = useState(false);
-  const [hasFrame, setHasFrame] = useState(false);
-
-  useEffect(() => {
-    if (spoiler) {
-      videoRef.current?.pause();
-    }
-  }, [spoiler]);
-
-  return (
-    <div className="relative h-full w-full bg-muted">
-      <video
-        ref={videoRef}
-        src={url}
-        className={cn(
-          'h-full w-full object-contain',
-          spoiler && 'scale-105 blur-xl',
-        )}
-        muted
-        playsInline
-        preload="auto"
-        onLoadedData={() => {
-          const el = videoRef.current;
-          if (!el || hasFrame) return;
-          try {
-            if (el.readyState >= 2) {
-              el.currentTime = 0.001;
-            }
-          } catch {
-            // ignore seek errors on tiny clips
-          }
-          setHasFrame(true);
-        }}
-        onSeeked={() => setHasFrame(true)}
-        onClick={(e) => {
-          e.stopPropagation();
-          const el = videoRef.current;
-          if (!el || spoiler) return;
-          if (playing) {
-            el.pause();
-          } else {
-            void el.play().catch(() => {
-              /* ignore — browser may block until user gesture; button retry */
-            });
-          }
-        }}
-        onPlay={() => setPlaying(true)}
-        onPause={() => setPlaying(false)}
-        onEnded={() => setPlaying(false)}
-      />
-      {!hasFrame && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-muted">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
-      )}
-      {spoiler && (
-        <div
-          className="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center bg-muted/90"
-          aria-hidden
-        >
-          <span className="rounded-full bg-foreground px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-background shadow-sm">
-            {spoilerBadge}
-          </span>
-        </div>
-      )}
-      {!playing && !spoiler && (
-        <div
-          className="pointer-events-none absolute inset-0 z-[1] flex items-center justify-center bg-black/20"
-          aria-hidden
-        >
-          <button
-            type="button"
-            className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-black/55 text-white shadow-md ring-1 ring-white/20 outline-none transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-primary/50"
-            aria-label={playLabel}
-            title={playLabel}
-            onClick={(e) => {
-              e.stopPropagation();
-              const el = videoRef.current;
-              if (!el) return;
-              el.muted = true;
-              void el.play().catch(() => {});
-            }}
-          >
-            <Play className="ml-0.5 h-5 w-5" fill="currentColor" aria-hidden />
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
 
 function insertAtCaret(
   value: string,
@@ -210,6 +99,46 @@ function wrapSelection(
   return { next, selStart, selEnd };
 }
 
+function getAtMentionToken(
+  text: string,
+  cursor: number,
+): { start: number; query: string } | null {
+  let i = cursor - 1;
+  if (i < 0) return null;
+  while (i >= 0 && text[i] !== '@' && text[i] !== ' ' && text[i] !== '\n') {
+    i -= 1;
+  }
+  if (i < 0 || text[i] !== '@') return null;
+  if (i > 0 && text[i - 1] !== ' ' && text[i - 1] !== '\n') return null;
+  const query = text.slice(i + 1, cursor);
+  if (/[\s\n]/.test(query)) return null;
+  return { start: i, query };
+}
+
+function maxBytesForFile(file: File): number {
+  const t = file.type || '';
+  if (t.startsWith('image/')) return MAX_IMAGE_BYTES;
+  if (t.startsWith('video/')) return MAX_VIDEO_BYTES;
+  return MAX_FILE_BYTES;
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+type SpeechRecognitionLike = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((ev: { results: { 0: { transcript: string } }[] }) => void) | null;
+  onerror: ((ev: { error?: string; message?: string }) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
 export function HumanChatPanelChatBar({
   value,
   onChange,
@@ -217,17 +146,21 @@ export function HumanChatPanelChatBar({
   placeholder,
   channelName,
   replyPreview,
-  draftAttachments = [],
-  onDraftAttachmentsChange,
+  pendingAttachment,
+  onPendingAttachmentChange,
+  mentionCandidates = [],
+  isSending = false,
 }: HumanChatPanelChatBarProps) {
   const t = useTranslations('HumanChatPanel');
-  const fileInputId = useId();
-  const imageInputId = useId();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const composerShellRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
   const replyPreviewWasOpenRef = useRef(false);
+  const mentionTokenRef = useRef<{ start: number; query: string } | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const [colonOpen, setColonOpen] = useState(false);
   const [colonSuggestions, setColonSuggestions] = useState<EmojiIndexEntry[]>(
@@ -237,10 +170,19 @@ export function HumanChatPanelChatBar({
   const colonTokenRef = useRef<{ start: number; query: string } | null>(null);
   const colonRequestIdRef = useRef(0);
 
+  const [mentionOpen, setMentionOpen] = useState(false);
+  const [mentionSuggestions, setMentionSuggestions] = useState<
+    ChatMentionCandidate[]
+  >([]);
+  const [mentionActive, setMentionActive] = useState(0);
+
   const [selectionBar, setSelectionBar] = useState<{
     top: number;
     left: number;
   } | null>(null);
+
+  const [composerError, setComposerError] = useState<string | null>(null);
+  const [dictationActive, setDictationActive] = useState(false);
 
   const updateSelectionBar = useCallback(() => {
     const el = textareaRef.current;
@@ -250,7 +192,7 @@ export function HumanChatPanelChatBar({
     }
     const start = el.selectionStart ?? 0;
     const end = el.selectionEnd ?? 0;
-    if (start === end || colonOpen) {
+    if (start === end || colonOpen || mentionOpen) {
       setSelectionBar(null);
       return;
     }
@@ -270,7 +212,7 @@ export function HumanChatPanelChatBar({
       top: local.top + (taRect.top - wrapRect.top),
       left: local.left + (taRect.left - wrapRect.left),
     });
-  }, [colonOpen]);
+  }, [colonOpen, mentionOpen]);
 
   useEffect(() => {
     const isOpen = Boolean(replyPreview);
@@ -320,6 +262,29 @@ export function HumanChatPanelChatBar({
     });
   }, []);
 
+  const syncMentionState = useCallback(
+    (val: string, cursor: number) => {
+      const tok = getAtMentionToken(val, cursor);
+      mentionTokenRef.current = tok;
+      if (!tok || mentionCandidates.length === 0) {
+        setMentionOpen(false);
+        setMentionSuggestions([]);
+        setMentionActive(0);
+        return;
+      }
+      const q = tok.query.toLowerCase();
+      const list = mentionCandidates.filter(
+        (c) =>
+          c.label.toLowerCase().includes(q) ||
+          c.userId.toLowerCase().includes(q),
+      );
+      setMentionSuggestions(list.slice(0, 8));
+      setMentionActive(0);
+      setMentionOpen(list.length > 0);
+    },
+    [mentionCandidates],
+  );
+
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) {
@@ -330,6 +295,12 @@ export function HumanChatPanelChatBar({
     }
     syncColonState(value, el.selectionStart ?? value.length);
   }, [value, syncColonState]);
+
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    syncMentionState(value, el.selectionStart ?? value.length);
+  }, [value, syncMentionState]);
 
   const applyColonChoice = useCallback(
     (entry: EmojiIndexEntry) => {
@@ -353,9 +324,35 @@ export function HumanChatPanelChatBar({
     [value, onChange, autoResize],
   );
 
+  const applyMentionChoice = useCallback(
+    (c: ChatMentionCandidate) => {
+      if (isSending) return;
+      const el = textareaRef.current;
+      const tok = mentionTokenRef.current;
+      if (!el || !tok) return;
+      const start = tok.start;
+      const end = el.selectionStart ?? value.length;
+      const safeLabel = c.label.replace(/</g, '').replace(/>/g, '').trim();
+      const labelPart = safeLabel.length > 0 ? safeLabel : c.userId;
+      /** Stable mention: display label + Matrix user id (avoids duplicate-name collisions). */
+      const insert = `@${labelPart} <${c.userId}> `;
+      const { next, caret } = insertAtCaret(value, start, end, insert);
+      onChange(next);
+      setMentionOpen(false);
+      setMentionSuggestions([]);
+      mentionTokenRef.current = null;
+      requestAnimationFrame(() => {
+        el.focus();
+        el.setSelectionRange(caret, caret);
+        autoResize();
+      });
+    },
+    [value, onChange, autoResize, isSending],
+  );
+
   useEffect(() => {
-    if (colonOpen) setSelectionBar(null);
-  }, [colonOpen]);
+    if (colonOpen || mentionOpen) setSelectionBar(null);
+  }, [colonOpen, mentionOpen]);
 
   useEffect(() => {
     const onSel = () => updateSelectionBar();
@@ -414,6 +411,24 @@ export function HumanChatPanelChatBar({
     [value, onChange, autoResize, updateSelectionBar],
   );
 
+  const applyBoldAtCaret = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    const start = el.selectionStart ?? 0;
+    const end = el.selectionEnd ?? 0;
+    if (start !== end) {
+      applyFormat('bold');
+      return;
+    }
+    const { next, caret } = insertAtCaret(value, start, end, '****');
+    onChange(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(caret - 2, caret - 2);
+      autoResize();
+    });
+  }, [value, onChange, applyFormat, autoResize]);
+
   const insertEmoji = useCallback(
     (native: string) => {
       const el = textareaRef.current;
@@ -434,7 +449,157 @@ export function HumanChatPanelChatBar({
     [value, onChange, autoResize],
   );
 
+  const queueFile = useCallback(
+    (file: File | null) => {
+      if (!file || isSending) return;
+      setComposerError(null);
+      const maxB = maxBytesForFile(file);
+      if (file.size > maxB) {
+        setComposerError(
+          t('attachmentTooLarge', {
+            max: formatFileSize(maxB),
+          }),
+        );
+        return;
+      }
+      onPendingAttachmentChange(file);
+    },
+    [isSending, onPendingAttachmentChange, t],
+  );
+
+  const stopDictation = useCallback(() => {
+    try {
+      recognitionRef.current?.stop();
+    } catch {
+      /* ignore */
+    }
+    recognitionRef.current = null;
+    setDictationActive(false);
+  }, []);
+
+  const startDictation = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const Ctor =
+      (
+        window as unknown as {
+          SpeechRecognition?: new () => SpeechRecognitionLike;
+          webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+        }
+      ).SpeechRecognition ??
+      (
+        window as unknown as {
+          webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+        }
+      ).webkitSpeechRecognition;
+    if (!Ctor) {
+      setComposerError(t('dictationUnsupported'));
+      return;
+    }
+    if (dictationActive) {
+      stopDictation();
+      return;
+    }
+    setComposerError(null);
+    const baseText = value;
+    const rec = new Ctor();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang =
+      typeof navigator !== 'undefined'
+        ? navigator.language || 'en-US'
+        : 'en-US';
+    rec.onresult = (ev) => {
+      let spoken = '';
+      for (let i = 0; i < ev.results.length; i++) {
+        const r = ev.results[i]?.[0];
+        if (r?.transcript) spoken += r.transcript;
+      }
+      const next = baseText + spoken;
+      onChange(next);
+      requestAnimationFrame(() => {
+        const el = textareaRef.current;
+        el?.focus();
+        const end = next.length;
+        el?.setSelectionRange(end, end);
+        autoResize();
+      });
+    };
+    rec.onerror = (event: { error?: string; message?: string }) => {
+      const code =
+        typeof event?.error === 'string'
+          ? event.error
+          : typeof event?.message === 'string'
+          ? event.message
+          : 'unknown';
+      setComposerError(t('dictationError', { code }));
+      setDictationActive(false);
+      recognitionRef.current = null;
+    };
+    rec.onend = () => {
+      setDictationActive(false);
+      recognitionRef.current = null;
+    };
+    recognitionRef.current = rec;
+    setDictationActive(true);
+    try {
+      rec.start();
+    } catch {
+      setDictationActive(false);
+      recognitionRef.current = null;
+      setComposerError(t('dictationUnsupported'));
+    }
+  }, [dictationActive, value, onChange, autoResize, stopDictation, t]);
+
+  useEffect(() => {
+    return () => {
+      try {
+        recognitionRef.current?.stop();
+      } catch {
+        /* ignore */
+      }
+    };
+  }, []);
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'b') {
+      e.preventDefault();
+      applyBoldAtCaret();
+      return;
+    }
+
+    if (mentionOpen && mentionSuggestions.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setMentionActive((i) => (i + 1) % mentionSuggestions.length);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setMentionActive(
+          (i) =>
+            (i - 1 + mentionSuggestions.length) % mentionSuggestions.length,
+        );
+        return;
+      }
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        const safeIndex = Math.max(
+          0,
+          Math.min(mentionActive, mentionSuggestions.length - 1),
+        );
+        const c = mentionSuggestions[safeIndex];
+        if (c) applyMentionChoice(c);
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setMentionOpen(false);
+        setMentionSuggestions([]);
+        mentionTokenRef.current = null;
+        return;
+      }
+    }
+
     if (colonOpen && colonSuggestions.length > 0) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -468,97 +633,158 @@ export function HumanChatPanelChatBar({
       }
     }
 
+    if (e.key === 'Escape' && !colonOpen && !mentionOpen) {
+      if (dictationActive) {
+        e.preventDefault();
+        stopDictation();
+        return;
+      }
+      if (pendingAttachment) {
+        e.preventDefault();
+        if (!isSending) onPendingAttachmentChange(null);
+        return;
+      }
+      if (replyPreview) {
+        e.preventDefault();
+        if (!isSending) replyPreview.onDismiss();
+      }
+      return;
+    }
+
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
-      if (value.trim().length > 0 || draftAttachments.length > 0) {
-        onSend();
+      if (value.trim().length > 0 || pendingAttachment) {
+        if (!isSending) onSend();
       }
     }
   };
 
-  const canSend = value.trim().length > 0 || draftAttachments.length > 0;
+  const canSend =
+    (value.trim().length > 0 || Boolean(pendingAttachment)) && !isSending;
 
   const defaultPlaceholder = channelName
     ? t('placeholderChannel', { channel: channelName })
     : t('placeholder');
 
-  const pushDrafts = useCallback(
-    (files: FileList | File[], kind: 'file' | 'image') => {
-      if (!onDraftAttachmentsChange) return;
-      const arr = Array.from(files);
-      const next: ChatDraftAttachment[] = [...draftAttachments];
-      for (const file of arr) {
-        if (kind === 'image' && !file.type.startsWith('image/')) {
-          continue;
+  const handleMention = () => {
+    const el = textareaRef.current;
+    if (!el) {
+      onChange(`${value}@`);
+      return;
+    }
+    const start = el.selectionStart ?? value.length;
+    const { next, caret } = insertAtCaret(value, start, start, '@');
+    onChange(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(caret, caret);
+      syncMentionState(next, caret);
+      autoResize();
+    });
+  };
+
+  const onPaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    if (isSending) return;
+    const items = e.clipboardData?.files;
+    if (!items?.length) return;
+    const f = items[0];
+    if (f && f.type.startsWith('image/')) {
+      e.preventDefault();
+      queueFile(f);
+    }
+  };
+
+  const onDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (isSending) return;
+    const f = e.dataTransfer.files?.[0];
+    if (f) queueFile(f);
+  };
+
+  const speechSupported =
+    typeof window !== 'undefined' &&
+    Boolean(
+      (
+        window as unknown as {
+          SpeechRecognition?: unknown;
+          webkitSpeechRecognition?: unknown;
         }
-        const isVideo =
-          kind === 'file' && looksLikeVideoMimeOrName(file.type, file.name);
-        const slotKind: ChatDraftAttachment['kind'] = file.type.startsWith(
-          'image/',
-        )
-          ? 'image'
-          : isVideo
-          ? 'video'
-          : 'file';
-        next.push({
-          id: newAttachmentDraftId(),
-          file,
-          kind: slotKind,
-          previewUrl: URL.createObjectURL(file),
-          spoiler: false,
-        });
-      }
-      onDraftAttachmentsChange(next);
-    },
-    [draftAttachments, onDraftAttachmentsChange],
-  );
+      ).SpeechRecognition ??
+        (
+          window as unknown as {
+            webkitSpeechRecognition?: unknown;
+          }
+        ).webkitSpeechRecognition,
+    );
 
-  const removeDraft = useCallback(
-    (id: string) => {
-      if (!onDraftAttachmentsChange) return;
-      const att = draftAttachments.find((a) => a.id === id);
-      if (att) URL.revokeObjectURL(att.previewUrl);
-      onDraftAttachmentsChange(draftAttachments.filter((a) => a.id !== id));
-    },
-    [draftAttachments, onDraftAttachmentsChange],
-  );
-
-  const toggleDraftSpoiler = useCallback(
-    (id: string) => {
-      if (!onDraftAttachmentsChange) return;
-      onDraftAttachmentsChange(
-        draftAttachments.map((a) =>
-          a.id === id ? { ...a, spoiler: !a.spoiler } : a,
-        ),
-      );
-    },
-    [draftAttachments, onDraftAttachmentsChange],
-  );
-
-  const handleAttachFile = () => {
-    fileInputRef.current?.click();
-  };
-  const handleAttachImage = () => {
-    imageInputRef.current?.click();
-  };
-  const handleBold = () => {};
-  const handleMention = () => {};
-
+  /** One compact row: 32px controls; `touch-manipulation` + row padding aid taps on mobile. */
   const iconButtonClass =
-    'flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors';
+    'flex h-8 w-8 shrink-0 touch-manipulation items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground active:bg-muted/80 transition-colors disabled:pointer-events-none disabled:opacity-40';
 
   const fmtBtn =
     'flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-popover-foreground transition-colors hover:bg-white/10';
 
   return (
-    <div className="flex w-full min-w-0 flex-shrink-0 flex-col border-t border-border bg-background-2 p-3">
+    <div className="flex w-full min-w-0 flex-shrink-0 flex-col border-t border-border bg-background-2 px-2 py-2 sm:px-3">
+      {composerError && (
+        <div
+          role="alert"
+          className="mb-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+        >
+          {composerError}
+        </div>
+      )}
       <div
         ref={composerShellRef}
+        title={t('newlineHintExtended')}
         className={cn(
-          'relative flex min-w-0 flex-col rounded-2xl border border-border bg-muted/50',
+          'relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-muted/50',
           'transition-all duration-200 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20',
         )}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
       >
+        <input
+          ref={fileInputRef}
+          type="file"
+          className="hidden"
+          aria-hidden
+          onChange={(ev) => {
+            const f = ev.target.files?.[0] ?? null;
+            ev.target.value = '';
+            queueFile(f);
+          }}
+        />
+        <input
+          ref={imageInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          aria-hidden
+          onChange={(ev) => {
+            const f = ev.target.files?.[0] ?? null;
+            ev.target.value = '';
+            queueFile(f);
+          }}
+        />
+        <input
+          ref={videoInputRef}
+          type="file"
+          accept="video/*"
+          className="hidden"
+          aria-hidden
+          onChange={(ev) => {
+            const f = ev.target.files?.[0] ?? null;
+            ev.target.value = '';
+            queueFile(f);
+          }}
+        />
+
         {selectionBar && (
           <>
             <div
@@ -638,146 +864,10 @@ export function HumanChatPanelChatBar({
             </div>
           </>
         )}
-        <input
-          ref={fileInputRef}
-          id={fileInputId}
-          type="file"
-          className="sr-only"
-          tabIndex={-1}
-          aria-hidden="true"
-          multiple
-          onChange={(e) => {
-            if (e.target.files?.length) {
-              pushDrafts(e.target.files, 'file');
-            }
-            e.target.value = '';
-          }}
-        />
-        <input
-          ref={imageInputRef}
-          id={imageInputId}
-          type="file"
-          accept="image/*"
-          className="sr-only"
-          tabIndex={-1}
-          aria-hidden="true"
-          multiple
-          onChange={(e) => {
-            if (e.target.files?.length) {
-              pushDrafts(e.target.files, 'image');
-            }
-            e.target.value = '';
-          }}
-        />
-
-        {draftAttachments.length > 0 && (
-          <div
-            className="narrow-scrollbar max-h-[168px] shrink-0 overflow-x-auto overflow-y-hidden border-b border-border px-3 py-2"
-            data-testid="chat-draft-attachments"
-          >
-            <div className="flex w-max flex-nowrap items-stretch gap-2 pb-1">
-              {draftAttachments.map((att) => (
-                <div
-                  key={att.id}
-                  className="relative flex w-[168px] shrink-0 flex-col gap-1 rounded-lg border border-border bg-muted/40 p-1.5"
-                >
-                  <div className="relative h-24 w-full shrink-0 overflow-hidden rounded-md bg-background">
-                    {att.kind === 'image' ? (
-                      <>
-                        {/* eslint-disable-next-line @next/next/no-img-element -- local object URL preview */}
-                        <img
-                          src={att.previewUrl}
-                          alt=""
-                          className={cn(
-                            'h-full w-full object-cover',
-                            att.spoiler && 'scale-105 blur-xl',
-                          )}
-                        />
-                        {att.spoiler && (
-                          <div
-                            className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-muted/85"
-                            aria-hidden
-                          >
-                            <span className="rounded-full bg-foreground px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-background shadow-sm">
-                              {t('draftSpoilerTag')}
-                            </span>
-                          </div>
-                        )}
-                      </>
-                    ) : att.kind === 'video' ? (
-                      <ChatDraftVideoPreview
-                        url={att.previewUrl}
-                        spoiler={att.spoiler}
-                        playLabel={t('videoPreviewPlay')}
-                        spoilerBadge={t('draftSpoilerTag')}
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-muted-foreground">
-                        <FileIcon className="h-10 w-10" strokeWidth={1.25} />
-                      </div>
-                    )}
-                    <div className="absolute right-1 top-1 z-30 flex gap-0.5 rounded-md bg-popover/95 p-0.5 shadow">
-                      {(att.kind === 'image' || att.kind === 'video') && (
-                        <button
-                          type="button"
-                          className="relative z-30 rounded p-1 text-foreground hover:bg-muted"
-                          title={
-                            att.spoiler
-                              ? t('attachmentSpoilerRemove')
-                              : t('attachmentSpoiler')
-                          }
-                          aria-label={
-                            att.spoiler
-                              ? t('attachmentSpoilerRemove')
-                              : t('attachmentSpoiler')
-                          }
-                          aria-pressed={att.spoiler}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleDraftSpoiler(att.id);
-                          }}
-                        >
-                          {att.spoiler ? (
-                            <EyeOff
-                              className="h-3.5 w-3.5"
-                              strokeWidth={2}
-                              aria-hidden
-                            />
-                          ) : (
-                            <Eye className="h-3.5 w-3.5" aria-hidden />
-                          )}
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        className="relative z-30 rounded p-1 text-destructive hover:bg-destructive/10"
-                        title={t('attachmentRemove')}
-                        aria-label={t('attachmentRemove')}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeDraft(att.id);
-                        }}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                  <p className="truncate px-0.5 text-xs text-muted-foreground">
-                    {att.file.name}
-                  </p>
-                  <p className="px-0.5 text-[10px] text-muted-foreground/80">
-                    {formatFileSize(att.file.size)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {replyPreview && (
           <div
             data-testid="chat-reply-preview"
-            className="flex items-start gap-2 border-b border-border px-3 py-2"
+            className="flex items-start gap-2 border-b border-border px-2.5 py-1.5 sm:px-3"
           >
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs text-muted-foreground">
@@ -793,10 +883,65 @@ export function HumanChatPanelChatBar({
               className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
               aria-label={t('replyDismiss')}
               title={t('replyDismiss')}
-              onClick={replyPreview.onDismiss}
+              disabled={isSending}
+              onClick={() => {
+                if (!isSending) replyPreview.onDismiss();
+              }}
             >
               <X className="h-4 w-4" />
             </button>
+          </div>
+        )}
+        {pendingAttachment && (
+          <div className="flex items-center gap-2 border-b border-border px-2.5 py-1.5 sm:px-3">
+            <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+              <span className="font-medium text-foreground">
+                {t('pendingAttachment')}
+              </span>{' '}
+              {pendingAttachment.name} ({formatFileSize(pendingAttachment.size)}
+              )
+            </span>
+            <button
+              type="button"
+              className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              aria-label={t('removeAttachment')}
+              title={t('removeAttachment')}
+              disabled={isSending}
+              onClick={() => {
+                if (!isSending) onPendingAttachmentChange(null);
+              }}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+        {mentionOpen && mentionSuggestions.length > 0 && (
+          <div
+            role="listbox"
+            aria-label={t('mentionListLabel')}
+            className="absolute bottom-full left-2 right-2 z-20 mb-1 max-h-48 overflow-y-auto rounded-md border border-border bg-popover shadow-md"
+          >
+            {mentionSuggestions.map((c, idx) => (
+              <button
+                key={c.userId}
+                type="button"
+                role="option"
+                aria-selected={idx === mentionActive}
+                className={cn(
+                  'flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left text-sm',
+                  idx === mentionActive
+                    ? 'bg-muted text-foreground'
+                    : 'text-foreground hover:bg-muted/80',
+                )}
+                onMouseDown={(ev) => ev.preventDefault()}
+                onClick={() => applyMentionChoice(c)}
+              >
+                <span className="font-medium">{c.label}</span>
+                <span className="text-xs text-muted-foreground">
+                  {c.userId}
+                </span>
+              </button>
+            ))}
           </div>
         )}
         {colonOpen && colonSuggestions.length > 0 && (
@@ -829,66 +974,47 @@ export function HumanChatPanelChatBar({
         <textarea
           ref={textareaRef}
           value={value}
+          disabled={isSending}
           onChange={(e) => {
             onChange(e.target.value);
             autoResize();
             const cursor = e.target.selectionStart ?? e.target.value.length;
             syncColonState(e.target.value, cursor);
+            syncMentionState(e.target.value, cursor);
             requestAnimationFrame(updateSelectionBar);
           }}
           onSelect={(e) => {
             const el = e.currentTarget;
             syncColonState(el.value, el.selectionStart ?? 0);
+            syncMentionState(el.value, el.selectionStart ?? 0);
             updateSelectionBar();
           }}
           onKeyUp={updateSelectionBar}
           onMouseUp={updateSelectionBar}
           onBlur={() => setSelectionBar(null)}
           onKeyDown={handleKeyDown}
+          onPaste={onPaste}
           aria-label={placeholder ?? defaultPlaceholder}
           placeholder={placeholder ?? defaultPlaceholder}
           rows={1}
           className={cn(
-            'min-h-[36px] min-w-0 max-h-[160px] w-full resize-none',
-            'bg-transparent px-3 pt-3 pb-1 text-sm leading-relaxed text-foreground',
+            'min-h-[32px] min-w-0 max-h-[160px] w-full resize-none',
+            'bg-transparent px-2.5 pt-2 pb-1 text-sm leading-snug text-foreground sm:px-3',
             'placeholder:text-muted-foreground focus:outline-none',
+            isSending && 'cursor-wait opacity-70',
           )}
         />
 
-        <div className="flex min-w-0 items-center justify-between px-2 pb-2">
-          {/* Left icons */}
-          <div className="flex items-center gap-0.5">
-            <button
-              type="button"
-              className={iconButtonClass}
-              aria-label={t('attachFile')}
-              title={t('attachFile')}
-              onClick={handleAttachFile}
-            >
-              <Paperclip className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              className={iconButtonClass}
-              aria-label={t('attachImage')}
-              title={t('attachImage')}
-              onClick={handleAttachImage}
-            >
-              <ImageIcon className="h-4 w-4" />
-            </button>
-          </div>
-
-          {/* Right icons */}
-          <div className="flex items-center gap-0.5">
-            <button
-              type="button"
-              className={iconButtonClass}
-              aria-label={t('bold')}
-              title={t('bold')}
-              onClick={handleBold}
-            >
-              <Bold className="h-4 w-4" />
-            </button>
+        {/*
+          UX order (high-frequency first, research-aligned): emoji → @mention → voice → add media → send.
+          Bold stays on selection toolbar + ⌘/Ctrl+B — no duplicate icon (saves width, avoids horizontal scroll).
+        */}
+        <div
+          role="toolbar"
+          aria-label={t('composerToolbar')}
+          className="flex min-h-9 min-w-0 items-center gap-0.5 border-t border-border/60 py-0.5 pe-1 ps-1 sm:pe-1.5 sm:ps-1.5"
+        >
+          <div className="flex min-w-0 flex-1 flex-nowrap items-center justify-start gap-0.5">
             <HumanChatPanelEmojiPicker
               open={emojiPickerOpen}
               onOpenChange={setEmojiPickerOpen}
@@ -902,6 +1028,7 @@ export function HumanChatPanelChatBar({
                 aria-label={t('emoji')}
                 title={t('emoji')}
                 aria-expanded={emojiPickerOpen}
+                disabled={isSending}
               >
                 <Smile className="h-4 w-4" />
               </button>
@@ -911,30 +1038,110 @@ export function HumanChatPanelChatBar({
               className={iconButtonClass}
               aria-label={t('mention')}
               title={t('mention')}
+              disabled={isSending}
               onClick={handleMention}
             >
               <AtSign className="h-4 w-4" />
             </button>
-            <button
-              type="button"
-              onClick={onSend}
-              disabled={!canSend}
-              className={cn(
-                'flex h-7 w-7 items-center justify-center rounded transition-colors',
-                canSend
-                  ? 'text-primary hover:bg-primary/10'
-                  : 'cursor-not-allowed text-muted-foreground/50',
-              )}
-              aria-label={t('sendButton')}
-              title={t('sendButton')}
-            >
-              <Send className="h-4 w-4" />
-            </button>
+            {speechSupported && (
+              <button
+                type="button"
+                className={cn(
+                  iconButtonClass,
+                  dictationActive && 'bg-accent-3 text-accent-11',
+                )}
+                aria-label={
+                  dictationActive ? t('dictationStop') : t('dictationStart')
+                }
+                title={
+                  dictationActive ? t('dictationStop') : t('dictationStart')
+                }
+                aria-pressed={dictationActive}
+                disabled={isSending}
+                onClick={() =>
+                  dictationActive ? stopDictation() : startDictation()
+                }
+              >
+                <Mic className="h-4 w-4" />
+              </button>
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className={iconButtonClass}
+                  aria-label={t('attachMenu')}
+                  title={t('attachMenu')}
+                  disabled={isSending}
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                side="top"
+                align="start"
+                className="min-w-[10rem] border border-border"
+              >
+                <DropdownMenuItem
+                  disabled={isSending}
+                  className="gap-2"
+                  onSelect={() => {
+                    requestAnimationFrame(() => imageInputRef.current?.click());
+                  }}
+                >
+                  <Image className="h-4 w-4" aria-hidden />
+                  {t('attachMenuPhoto')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={isSending}
+                  className="gap-2"
+                  onSelect={() => {
+                    requestAnimationFrame(() => videoInputRef.current?.click());
+                  }}
+                >
+                  <Video className="h-4 w-4" aria-hidden />
+                  {t('attachMenuVideo')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={isSending}
+                  className="gap-2"
+                  onSelect={() => {
+                    requestAnimationFrame(() => fileInputRef.current?.click());
+                  }}
+                >
+                  <Paperclip className="h-4 w-4" aria-hidden />
+                  {t('attachMenuFile')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
+          <button
+            type="button"
+            onClick={() => canSend && onSend()}
+            disabled={!canSend}
+            className={cn(
+              iconButtonClass,
+              'shrink-0',
+              canSend
+                ? 'text-primary hover:bg-primary/15'
+                : 'cursor-not-allowed text-muted-foreground/40',
+            )}
+            aria-label={t('sendButton')}
+            title={t('sendButton')}
+          >
+            {isSending ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
+          </button>
         </div>
       </div>
-      <span className="mt-1.5 px-1 text-xs text-muted-foreground">
-        {t('newlineHint')}
+      <span
+        className="mt-1 line-clamp-2 px-0.5 text-[11px] leading-tight text-muted-foreground sm:text-xs"
+        title={t('newlineHintExtended')}
+      >
+        {t('newlineHintCompact')}
       </span>
     </div>
   );

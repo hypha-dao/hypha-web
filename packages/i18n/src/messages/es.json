@@ -1625,6 +1625,7 @@
     "mentionListLabel": "Mencionar miembro",
     "attachmentTooLarge": "El archivo es demasiado grande (máx. {max}).",
     "dictationUnsupported": "El dictado no es compatible con este navegador.",
+    "dictationError": "Dictado detenido ({code}). Inténtalo de nuevo o revisa el micrófono.",
     "dictationStart": "Iniciar dictado",
     "dictationStop": "Detener dictado",
     "chatImageAlt": "Imagen subida",

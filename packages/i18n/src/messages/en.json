@@ -1625,6 +1625,7 @@
     "mentionListLabel": "Mention member",
     "attachmentTooLarge": "File is too large (max {max}).",
     "dictationUnsupported": "Dictation is not supported in this browser.",
+    "dictationError": "Dictation stopped ({code}). Try again or check the microphone.",
     "dictationStart": "Start dictation",
     "dictationStop": "Stop dictation",
     "chatImageAlt": "Uploaded image",

@@ -654,32 +654,85 @@ function formatTimestamp(
 
 /**
  * Render text content with @mentions highlighted.
+ * Supports `@Display <@mxid>` (composer) and plain `@mxid` (Matrix-style).
  */
 function renderTextWithMentions(text: string): React.ReactNode[] {
-  const mentionRegex = /@([\w\s]+?)(?=\s|$|[.,!?;:])/g;
-  const parts: React.ReactNode[] = [];
-  let lastIndex = 0;
-  let match;
+  /** `@Display <@user:server>` — label non-greedy until ` <@` */
+  const pillRe = /@([^\n<]+?)\s+(<(@[^>\n]+)>)(?=\s|$|[.,!?;:])/g;
+  /** Matrix-style `@user:server` (single leading @) */
+  const plainMxidRe = /@([^:\s]+:[^\s>]+)(?=\s|$|[.,!?;:])/g;
+  type Seg =
+    | { type: 'pill'; start: number; end: number; label: string; mxid: string }
+    | { type: 'mxid'; start: number; end: number; display: string };
 
-  while ((match = mentionRegex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(text.slice(lastIndex, match.index));
+  const segments: Seg[] = [];
+  for (const m of text.matchAll(pillRe)) {
+    const full = m[0];
+    const label = (m[1] ?? '').trim();
+    const mxid = m[3] ?? '';
+    if (m.index != null && full) {
+      segments.push({
+        type: 'pill',
+        start: m.index,
+        end: m.index + full.length,
+        label,
+        mxid,
+      });
     }
-    parts.push(
-      <span
-        key={match.index}
-        className="bg-primary/20 text-primary rounded px-1 font-medium"
-      >
-        @{match[1]}
-      </span>,
+  }
+  for (const m of text.matchAll(plainMxidRe)) {
+    const full = m[0];
+    if (m.index == null || !full) continue;
+    const start = m.index;
+    const end = start + full.length;
+    const insidePill = segments.some(
+      (s) => s.type === 'pill' && start >= s.start && end <= s.end,
     );
-    lastIndex = match.index + match[0].length;
+    if (insidePill) continue;
+    segments.push({ type: 'mxid', start, end, display: full });
+  }
+  segments.sort((a, b) => a.start - b.start);
+  const nonOverlap: Seg[] = [];
+  let cursor = 0;
+  for (const s of segments) {
+    if (s.start < cursor) continue;
+    nonOverlap.push(s);
+    cursor = s.end;
   }
 
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let key = 0;
+  for (const s of nonOverlap) {
+    if (s.start > lastIndex) {
+      parts.push(text.slice(lastIndex, s.start));
+    }
+    if (s.type === 'pill') {
+      parts.push(
+        <span
+          key={`m-${key++}`}
+          className="bg-primary/20 text-primary rounded px-1 font-medium"
+          title={s.mxid}
+        >
+          @{s.label}
+        </span>,
+      );
+    } else {
+      parts.push(
+        <span
+          key={`m-${key++}`}
+          className="bg-primary/20 text-primary rounded px-1 font-medium"
+          title={s.display}
+        >
+          {s.display}
+        </span>,
+      );
+    }
+    lastIndex = s.end;
+  }
   if (lastIndex < text.length) {
     parts.push(text.slice(lastIndex));
   }
-
   return parts;
 }
 
