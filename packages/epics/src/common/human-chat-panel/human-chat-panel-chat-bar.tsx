@@ -125,8 +125,17 @@ function ChatDraftVideoPreview({
           setHasFrame(true);
         }}
         onSeeked={() => setHasFrame(true)}
-        onClick={() => {
-          if (playing) videoRef.current?.pause();
+        onClick={(e) => {
+          e.stopPropagation();
+          const el = videoRef.current;
+          if (!el || spoiler) return;
+          if (playing) {
+            el.pause();
+          } else {
+            void el.play().catch(() => {
+              /* ignore — browser may block until user gesture; button retry */
+            });
+          }
         }}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
@@ -159,7 +168,10 @@ function ChatDraftVideoPreview({
             title={playLabel}
             onClick={(e) => {
               e.stopPropagation();
-              void videoRef.current?.play();
+              const el = videoRef.current;
+              if (!el) return;
+              el.muted = true;
+              void el.play().catch(() => {});
             }}
           >
             <Play className="ml-0.5 h-5 w-5" fill="currentColor" aria-hidden />

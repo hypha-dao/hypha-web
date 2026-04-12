@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useMemo, useRef, useState } from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
 import type { TranslationValues } from 'next-intl';
 import {
@@ -335,6 +335,7 @@ function TimelineMatrixVideo({
   const { client } = useMatrix();
   const { download: src } = useMxcUrls(client, media.mxcUrl);
   const [spoilerRevealed, setSpoilerRevealed] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const boxStyle =
     media.mediaInfo?.w &&
@@ -342,7 +343,7 @@ function TimelineMatrixVideo({
     media.mediaInfo.w > 0 &&
     media.mediaInfo.h > 0
       ? { aspectRatio: `${media.mediaInfo.w} / ${media.mediaInfo.h}` }
-      : undefined;
+      : { minHeight: '200px' };
 
   if (!src) {
     return (
@@ -359,15 +360,27 @@ function TimelineMatrixVideo({
       style={boxStyle}
     >
       <video
+        ref={videoRef}
         src={src}
         controls
         playsInline
-        preload="metadata"
+        preload="auto"
         aria-label={media.filename ?? t('attachment')}
         className={cn(
-          'max-h-72 w-full object-contain',
+          'max-h-72 w-full min-h-[160px] object-contain',
           media.spoiler && !spoilerRevealed && 'pointer-events-none blur-2xl',
         )}
+        onLoadedMetadata={() => {
+          const el = videoRef.current;
+          if (!el || media.spoiler) return;
+          try {
+            if (el.readyState >= 1 && el.currentTime === 0) {
+              el.currentTime = 0.001;
+            }
+          } catch {
+            // ignore
+          }
+        }}
       />
       {media.spoiler && !spoilerRevealed && (
         <TimelineSpoilerRevealOverlay
