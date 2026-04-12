@@ -446,9 +446,9 @@ export function HumanChatPanelMessageBubble({
         }
       }
       setContextMenuAnchor({ x, y });
-      // Defer open so the contextmenu gesture does not immediately dismiss the
-      // menu, and so Radix keeps a stable trigger (we use one button below).
-      requestAnimationFrame(() => {
+      // Defer past the contextmenu event so Radix does not treat the gesture as
+      // an outside dismiss on the same tick (stable single trigger button).
+      queueMicrotask(() => {
         setMoreMenuOpen(true);
         onMoreMenuOpenChange?.(true);
       });
