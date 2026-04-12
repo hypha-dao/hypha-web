@@ -156,6 +156,17 @@ function getMessagePlainText(m: UIMessage): string {
   return textParts.map((p) => p.text).join('');
 }
 
+/** Plain text for editing when `parts` may be empty but `formattedContentHtml` exists. */
+function getMessagePlainTextForEdit(m: UIMessage): string {
+  const fromParts = getMessagePlainText(m);
+  if (fromParts.trim()) return fromParts;
+  const html = m.formattedContentHtml?.trim();
+  if (!html || typeof document === 'undefined') return fromParts;
+  const el = document.createElement('div');
+  el.innerHTML = html;
+  return (el.textContent ?? '').replace(/\s+/g, ' ').trim();
+}
+
 type HumanRightPanelProps = {
   useMembers: UseMembers;
 };
@@ -634,7 +645,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     (messageId: string) => {
       const target = messages.find((m) => m.id === messageId);
       if (!target || target.role !== 'user') return;
-      const plain = getMessagePlainText(target);
+      const plain = getMessagePlainTextForEdit(target);
       if (!plain.trim()) return;
       setReplyDraft(null);
       setDeleteError(null);
@@ -723,7 +734,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setEditError(t('editOriginalUnavailable'));
       return;
     }
-    const serverPlain = getMessagePlainText(target);
+    const serverPlain = getMessagePlainTextForEdit(target);
     if (serverPlain === editDraft.originalPlainText) return;
     setEditDraft((d) =>
       d
