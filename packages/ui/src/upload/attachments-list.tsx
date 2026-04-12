@@ -37,7 +37,7 @@ function extensionFromFileName(hint: string): string | undefined {
   return base.split('.').pop()?.toLowerCase();
 }
 
-function AttachmentRowImage({ src, alt }: { src: string; alt: string }) {
+function AttachmentRowImage({ src }: { src: string }) {
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     setFailed(false);
@@ -48,7 +48,8 @@ function AttachmentRowImage({ src, alt }: { src: string; alt: string }) {
   return (
     <img
       src={src}
-      alt={alt}
+      alt=""
+      aria-hidden="true"
       className="h-5 w-5 shrink-0 rounded-lg object-cover"
       onError={() => setFailed(true)}
     />
@@ -64,7 +65,7 @@ export const AttachmentList: React.FC<AttachmentListProps> = ({
     const ext = extFromName ?? extFromUrl;
 
     if (ext?.match(/(png|jpe?g|gif|webp|bmp|svg)/)) {
-      return <AttachmentRowImage src={url} alt={displayFileName} />;
+      return <AttachmentRowImage src={url} />;
     }
 
     if (ext?.match(/(pdf|docx?|txt)/)) {
