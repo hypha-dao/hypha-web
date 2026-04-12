@@ -7,9 +7,12 @@ import { createChatTools } from './tools/index';
 
 export const OPENROUTER_DEBUG = process.env.OPENROUTER_DEBUG === 'true';
 
-export function isAbortLikeError(error: unknown): boolean {
+/** Narrowed shape when `isAbortLikeError` returns true (abort-like DOM/undici errors). */
+export type AbortLikeCandidate = { name?: string; message?: string };
+
+export function isAbortLikeError(error: unknown): error is AbortLikeCandidate {
   if (!error || typeof error !== 'object') return false;
-  const maybeError = error as { name?: string; message?: string };
+  const maybeError = error as AbortLikeCandidate;
   return (
     maybeError.name === 'AbortError' ||
     maybeError.message?.toLowerCase().includes('aborted') === true
