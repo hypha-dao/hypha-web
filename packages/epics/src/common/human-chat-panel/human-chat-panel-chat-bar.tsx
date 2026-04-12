@@ -702,7 +702,7 @@ export function HumanChatPanelChatBar({
       <div
         ref={composerShellRef}
         className={cn(
-          'relative flex min-w-0 flex-col rounded-2xl border border-border bg-muted/50',
+          'relative flex min-w-0 flex-col rounded-lg border border-border bg-muted/50',
           'transition-all duration-200 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20',
         )}
       >
