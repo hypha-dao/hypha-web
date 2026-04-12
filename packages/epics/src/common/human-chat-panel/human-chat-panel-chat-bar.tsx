@@ -749,7 +749,7 @@ export function HumanChatPanelChatBar({
     'flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-popover-foreground transition-colors hover:bg-white/10';
 
   return (
-    <div className="flex w-full min-w-0 flex-shrink-0 flex-col border-t border-border bg-background-2 px-2 py-2 sm:px-3">
+    <div className="flex w-full min-w-0 flex-shrink-0 flex-col border-t border-border bg-background-2 px-2 pb-1.5 pt-2 sm:px-3">
       {composerError && (
         <div
           role="alert"
@@ -1017,7 +1017,7 @@ export function HumanChatPanelChatBar({
           placeholder={placeholder ?? defaultPlaceholder}
           rows={1}
           className={cn(
-            'min-h-[32px] min-w-0 max-h-[160px] w-full resize-none',
+            'min-h-[32px] min-w-0 max-h-[192px] w-full resize-none',
             'bg-transparent px-2.5 pt-2 pb-0.5 text-sm leading-snug text-foreground sm:px-3',
             'placeholder:text-muted-foreground focus:outline-none',
             isSending && 'cursor-wait opacity-70',
@@ -1159,12 +1159,6 @@ export function HumanChatPanelChatBar({
           </button>
         </div>
       </div>
-      <span
-        className="mt-1 line-clamp-2 px-0.5 text-[11px] leading-tight text-muted-foreground sm:text-xs"
-        title={t('newlineHintExtended')}
-      >
-        {t('newlineHintCompact')}
-      </span>
     </div>
   );
 }
