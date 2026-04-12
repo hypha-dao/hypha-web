@@ -692,7 +692,7 @@ export function HumanChatPanelChatBar({
   }, []);
 
   const iconButtonClass =
-    'flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors';
+    'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-primary/12 hover:text-primary active:bg-primary/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-0';
 
   const fmtBtn =
     'flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-popover-foreground transition-colors hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent dark:hover:text-accent-foreground';
@@ -1144,9 +1144,9 @@ export function HumanChatPanelChatBar({
               onClick={onSend}
               disabled={!canSend}
               className={cn(
-                'flex h-7 w-7 shrink-0 items-center justify-center rounded transition-colors',
+                'flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-0',
                 canSend
-                  ? 'text-primary hover:bg-primary/10'
+                  ? 'text-primary hover:bg-primary/12 hover:text-primary active:bg-primary/18'
                   : 'cursor-not-allowed text-muted-foreground/50',
               )}
               aria-label={t('sendButton')}
