@@ -50,9 +50,10 @@ function TokenPayoutFieldArrayInner({
   showTreasuryBalanceHint = false,
   selectedTokenPriceHint,
 }: TokenPayoutFieldArrayProps) {
-  const tAgreementFlow = useTranslations('AgreementFlow');
-  const resolvedLabel =
-    label ?? tAgreementFlow('plugins.tokenPayoutFieldArray.paymentRequest');
+  const tPayoutRows = useTranslations(
+    'AgreementFlow.plugins.tokenPayoutFieldArray',
+  );
+  const resolvedLabel = label ?? tPayoutRows('paymentRequest');
   const { control } = useFormContext();
   const { fields, append, remove } = useFieldArray({
     control,
@@ -106,9 +107,7 @@ function TokenPayoutFieldArrayInner({
                         />
                       </FormControl>
                       <FormMessage
-                        custom={tAgreementFlow(
-                          'plugins.tokenPayoutFieldArray.enterAmountAndToken',
-                        )}
+                        custom={tPayoutRows('enterAmountAndToken')}
                       />
                     </FormItem>
                   )}
@@ -131,7 +130,7 @@ function TokenPayoutFieldArrayInner({
         <div className="flex justify-end w-full">
           <Button className="w-fit" onClick={handleAddField} variant="ghost">
             <PlusIcon />
-            {tAgreementFlow('plugins.tokenPayoutFieldArray.add')}
+            {tPayoutRows('add')}
           </Button>
         </div>
       )}
