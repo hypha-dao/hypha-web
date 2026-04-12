@@ -31,9 +31,13 @@ function InvestmentSection({
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-3">
-      <div className="text-1 text-neutral-11 leading-snug">{label}</div>
-      <div className="flex flex-col items-end gap-2">{children}</div>
+    <div className="flex flex-row items-start gap-4 w-full">
+      <div className="text-1 text-neutral-11 leading-snug shrink-0 max-w-[12rem]">
+        {label}
+      </div>
+      <div className="flex flex-col items-end gap-2 grow min-w-0">
+        {children}
+      </div>
     </div>
   );
 }
