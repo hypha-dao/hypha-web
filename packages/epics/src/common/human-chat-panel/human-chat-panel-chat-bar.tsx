@@ -1,19 +1,24 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import {
   Paperclip,
-  Image,
+  ImageIcon,
   Bold,
   Italic,
   Strikethrough,
   Code,
   TextQuote,
   Eye,
+  EyeOff,
   Smile,
   AtSign,
   Send,
   X,
+  Trash2,
+  FileIcon,
+  Play,
+  Loader2,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -27,11 +32,20 @@ import {
   type EmojiIndexEntry,
 } from './emoji-mart-index';
 import { getTextareaSelectionCenter } from './textarea-caret-position';
+import { looksLikeVideoMimeOrName } from './chat-panel-media-types';
 
 type ReplyPreview = {
   authorLabel: string;
   excerpt: string;
   onDismiss: () => void;
+};
+
+export type ChatDraftAttachment = {
+  id: string;
+  file: File;
+  kind: 'file' | 'image' | 'video';
+  previewUrl: string;
+  spoiler: boolean;
 };
 
 type HumanChatPanelChatBarProps = {
@@ -42,7 +56,131 @@ type HumanChatPanelChatBarProps = {
   channelName?: string;
   /** Rich reply: composer preview above the textarea */
   replyPreview?: ReplyPreview;
+  draftAttachments?: ChatDraftAttachment[];
+  onDraftAttachmentsChange?: (next: ChatDraftAttachment[]) => void;
 };
+
+function formatFileSize(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 0) {
+    return '0 B';
+  }
+  if (bytes < 1024) return `${Math.round(bytes)} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function newAttachmentDraftId(): string {
+  if (
+    typeof globalThis.crypto !== 'undefined' &&
+    typeof globalThis.crypto.randomUUID === 'function'
+  ) {
+    return globalThis.crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function ChatDraftVideoPreview({
+  url,
+  spoiler,
+  playLabel,
+  spoilerBadge,
+}: {
+  url: string;
+  spoiler: boolean;
+  playLabel: string;
+  spoilerBadge: string;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [hasFrame, setHasFrame] = useState(false);
+
+  useEffect(() => {
+    if (spoiler) {
+      videoRef.current?.pause();
+    }
+  }, [spoiler]);
+
+  return (
+    <div className="relative h-full w-full bg-muted">
+      <video
+        ref={videoRef}
+        src={url}
+        className={cn(
+          'h-full w-full object-contain',
+          spoiler && 'scale-105 blur-xl',
+        )}
+        muted
+        playsInline
+        preload="auto"
+        onLoadedData={() => {
+          const el = videoRef.current;
+          if (!el || hasFrame) return;
+          try {
+            if (el.readyState >= 2) {
+              el.currentTime = 0.001;
+            }
+          } catch {
+            // ignore seek errors on tiny clips
+          }
+          setHasFrame(true);
+        }}
+        onSeeked={() => setHasFrame(true)}
+        onClick={(e) => {
+          e.stopPropagation();
+          const el = videoRef.current;
+          if (!el || spoiler) return;
+          if (playing) {
+            el.pause();
+          } else {
+            void el.play().catch(() => {
+              /* ignore — browser may block until user gesture; button retry */
+            });
+          }
+        }}
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={() => setPlaying(false)}
+      />
+      {!hasFrame && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-muted">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      )}
+      {spoiler && (
+        <div
+          className="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center bg-muted/90"
+          aria-hidden
+        >
+          <span className="rounded-full bg-foreground px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-background shadow-sm">
+            {spoilerBadge}
+          </span>
+        </div>
+      )}
+      {!playing && !spoiler && (
+        <div
+          className="pointer-events-none absolute inset-0 z-[1] flex items-center justify-center bg-black/20"
+          aria-hidden
+        >
+          <button
+            type="button"
+            className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-black/55 text-white shadow-md ring-1 ring-white/20 outline-none transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-primary/50"
+            aria-label={playLabel}
+            title={playLabel}
+            onClick={(e) => {
+              e.stopPropagation();
+              const el = videoRef.current;
+              if (!el) return;
+              el.muted = true;
+              void el.play().catch(() => {});
+            }}
+          >
+            <Play className="ml-0.5 h-5 w-5" fill="currentColor" aria-hidden />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function insertAtCaret(
   value: string,
@@ -79,8 +217,14 @@ export function HumanChatPanelChatBar({
   placeholder,
   channelName,
   replyPreview,
+  draftAttachments = [],
+  onDraftAttachmentsChange,
 }: HumanChatPanelChatBarProps) {
   const t = useTranslations('HumanChatPanel');
+  const fileInputId = useId();
+  const imageInputId = useId();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const composerShellRef = useRef<HTMLDivElement>(null);
   const replyPreviewWasOpenRef = useRef(false);
@@ -321,20 +465,77 @@ export function HumanChatPanelChatBar({
 
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
-      if (value.trim().length > 0) {
+      if (value.trim().length > 0 || draftAttachments.length > 0) {
         onSend();
       }
     }
   };
 
-  const canSend = value.trim().length > 0;
+  const canSend = value.trim().length > 0 || draftAttachments.length > 0;
 
   const defaultPlaceholder = channelName
     ? t('placeholderChannel', { channel: channelName })
     : t('placeholder');
 
-  const handleAttachFile = () => {};
-  const handleAttachImage = () => {};
+  const pushDrafts = useCallback(
+    (files: FileList | File[], kind: 'file' | 'image') => {
+      if (!onDraftAttachmentsChange) return;
+      const arr = Array.from(files);
+      const next: ChatDraftAttachment[] = [...draftAttachments];
+      for (const file of arr) {
+        if (kind === 'image' && !file.type.startsWith('image/')) {
+          continue;
+        }
+        const isVideo =
+          kind === 'file' && looksLikeVideoMimeOrName(file.type, file.name);
+        const slotKind: ChatDraftAttachment['kind'] = file.type.startsWith(
+          'image/',
+        )
+          ? 'image'
+          : isVideo
+          ? 'video'
+          : 'file';
+        next.push({
+          id: newAttachmentDraftId(),
+          file,
+          kind: slotKind,
+          previewUrl: URL.createObjectURL(file),
+          spoiler: false,
+        });
+      }
+      onDraftAttachmentsChange(next);
+    },
+    [draftAttachments, onDraftAttachmentsChange],
+  );
+
+  const removeDraft = useCallback(
+    (id: string) => {
+      if (!onDraftAttachmentsChange) return;
+      const att = draftAttachments.find((a) => a.id === id);
+      if (att) URL.revokeObjectURL(att.previewUrl);
+      onDraftAttachmentsChange(draftAttachments.filter((a) => a.id !== id));
+    },
+    [draftAttachments, onDraftAttachmentsChange],
+  );
+
+  const toggleDraftSpoiler = useCallback(
+    (id: string) => {
+      if (!onDraftAttachmentsChange) return;
+      onDraftAttachmentsChange(
+        draftAttachments.map((a) =>
+          a.id === id ? { ...a, spoiler: !a.spoiler } : a,
+        ),
+      );
+    },
+    [draftAttachments, onDraftAttachmentsChange],
+  );
+
+  const handleAttachFile = () => {
+    fileInputRef.current?.click();
+  };
+  const handleAttachImage = () => {
+    imageInputRef.current?.click();
+  };
   const handleBold = () => {};
   const handleMention = () => {};
 
@@ -432,6 +633,142 @@ export function HumanChatPanelChatBar({
             </div>
           </>
         )}
+        <input
+          ref={fileInputRef}
+          id={fileInputId}
+          type="file"
+          className="sr-only"
+          tabIndex={-1}
+          aria-hidden="true"
+          multiple
+          onChange={(e) => {
+            if (e.target.files?.length) {
+              pushDrafts(e.target.files, 'file');
+            }
+            e.target.value = '';
+          }}
+        />
+        <input
+          ref={imageInputRef}
+          id={imageInputId}
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          tabIndex={-1}
+          aria-hidden="true"
+          multiple
+          onChange={(e) => {
+            if (e.target.files?.length) {
+              pushDrafts(e.target.files, 'image');
+            }
+            e.target.value = '';
+          }}
+        />
+
+        {draftAttachments.length > 0 && (
+          <div
+            className="narrow-scrollbar max-h-[168px] shrink-0 overflow-x-auto overflow-y-hidden border-b border-border px-3 py-2"
+            data-testid="chat-draft-attachments"
+          >
+            <div className="flex w-max flex-nowrap items-stretch gap-2 pb-1">
+              {draftAttachments.map((att) => (
+                <div
+                  key={att.id}
+                  className="relative flex w-[168px] shrink-0 flex-col gap-1 rounded-lg border border-border bg-muted/40 p-1.5"
+                >
+                  <div className="relative h-24 w-full shrink-0 overflow-hidden rounded-md bg-background">
+                    {att.kind === 'image' ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element -- local object URL preview */}
+                        <img
+                          src={att.previewUrl}
+                          alt=""
+                          className={cn(
+                            'h-full w-full object-cover',
+                            att.spoiler && 'scale-105 blur-xl',
+                          )}
+                        />
+                        {att.spoiler && (
+                          <div
+                            className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-muted/85"
+                            aria-hidden
+                          >
+                            <span className="rounded-full bg-foreground px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-background shadow-sm">
+                              {t('draftSpoilerTag')}
+                            </span>
+                          </div>
+                        )}
+                      </>
+                    ) : att.kind === 'video' ? (
+                      <ChatDraftVideoPreview
+                        url={att.previewUrl}
+                        spoiler={att.spoiler}
+                        playLabel={t('videoPreviewPlay')}
+                        spoilerBadge={t('draftSpoilerTag')}
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-muted-foreground">
+                        <FileIcon className="h-10 w-10" strokeWidth={1.25} />
+                      </div>
+                    )}
+                    <div className="absolute right-1 top-1 z-30 flex gap-0.5 rounded-md bg-popover/95 p-0.5 shadow">
+                      {(att.kind === 'image' || att.kind === 'video') && (
+                        <button
+                          type="button"
+                          className="relative z-30 rounded p-1 text-foreground hover:bg-muted"
+                          title={
+                            att.spoiler
+                              ? t('attachmentSpoilerRemove')
+                              : t('attachmentSpoiler')
+                          }
+                          aria-label={
+                            att.spoiler
+                              ? t('attachmentSpoilerRemove')
+                              : t('attachmentSpoiler')
+                          }
+                          aria-pressed={att.spoiler}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleDraftSpoiler(att.id);
+                          }}
+                        >
+                          {att.spoiler ? (
+                            <EyeOff
+                              className="h-3.5 w-3.5"
+                              strokeWidth={2}
+                              aria-hidden
+                            />
+                          ) : (
+                            <Eye className="h-3.5 w-3.5" aria-hidden />
+                          )}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="relative z-30 rounded p-1 text-destructive hover:bg-destructive/10"
+                        title={t('attachmentRemove')}
+                        aria-label={t('attachmentRemove')}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeDraft(att.id);
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                  <p className="truncate px-0.5 text-xs text-muted-foreground">
+                    {att.file.name}
+                  </p>
+                  <p className="px-0.5 text-[10px] text-muted-foreground/80">
+                    {formatFileSize(att.file.size)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {replyPreview && (
           <div
             data-testid="chat-reply-preview"
@@ -532,7 +869,7 @@ export function HumanChatPanelChatBar({
               title={t('attachImage')}
               onClick={handleAttachImage}
             >
-              <Image className="h-4 w-4" />
+              <ImageIcon className="h-4 w-4" />
             </button>
           </div>
 

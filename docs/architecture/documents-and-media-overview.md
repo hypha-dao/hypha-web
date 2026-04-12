@@ -46,7 +46,7 @@ Hypha handles **files and images** in two main places. The **bytes** and **metad
 |--|----------------|---------------|
 | **Primary store** | Matrix homeserver (content repo) | Your upload / CDN + Hypha DB fields |
 | **Pointer in app** | `mxc://` in `m.room.message` events | HTTPS URLs (+ names) on the document |
-| **Who “owns” the file”** | The room’s homeserver | Hypha + file host |
+| **Who “owns” the file** | The room’s homeserver | Hypha + file host |
 | **Organisation memory** | See **§4** below (ingestion from Matrix events) | See **§4** below (ingestion from document / upload records) |
 
 ---
@@ -126,11 +126,11 @@ When a proposal (or other entity) is saved with attachments:
 |------|----------------|
 | Matrix send + upload | `packages/core/src/matrix/client/providers/matrix-provider.tsx` |
 | Timeline mapping | `packages/core/src/matrix/rich-reply.ts` |
-| Chat composer + drafts | `packages/epics/src/common/human-chat-panel/human-chat-panel-chat-bar.tsx`, `human-right-panel.tsx` |
+| Chat composer + drafts | `packages/epics/src/common/human-chat-panel/human-chat-panel-chat-bar.tsx`, `packages/epics/src/common/human-right-panel.tsx` |
 | Chat bubbles | `packages/epics/src/common/human-chat-panel/human-chat-panel-message-bubble.tsx` |
 | Proposal attachment list | `packages/ui/src/upload/attachments-list.tsx`, `packages/ui/src/upload/add-attachment.tsx` |
-| Coherence tab (signals; future **Space Memory** UI over org catalogue) | `packages/epics/src/coherence/components/coherence-block.tsx`, `signal-section.tsx` |
+| Coherence tab (signals; future **Space Memory** UI) | `packages/epics/src/coherence/components/coherence-block.tsx`, `signal-section.tsx` — panel spec: [space-memory-panel.md](../plans/space-memory-panel.md) |
 
 This file is the **high-level map**; the space-chat docs above go deeper on Matrix only.
 
-**Related PR:** Matrix chat attachments + this overview landed in [hypha-web#2133](https://github.com/hypha-dao/hypha-web/pull/2133) (description links here §4; automatic org-memory wiring from chat is explicitly **follow-up**).
+Matrix chat attachments and this overview are on **`main`** ([PR #2133](https://github.com/hypha-dao/hypha-web/pull/2133), merged). Automatic org-memory catalogue wiring from chat remains **follow-up** (§4.2).

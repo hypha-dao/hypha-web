@@ -1,6 +1,6 @@
 ---
 title: "Space Memory panel — implementation plan"
-date: 2026-04-08
+date: 2026-04-12
 status: draft
 tags: [coherence, space-memory, org-memory, matrix, proposals, ui]
 parent: docs/index.md
@@ -9,8 +9,25 @@ parent: docs/index.md
 # Space Memory panel — implementation plan
 
 > **Goal:** Add a **Space Memory** section on the Coherence tab, **directly under** the Signals panel, listing space-scoped **assets** (documents, images, etc.) with **human-readable upload context**.  
-> **Architecture context:** [documents-and-media-overview.md §4](../architecture/documents-and-media-overview.md#4-organisation-memory--how-all-documents-matrix--upload-can-work) (organisation memory: one catalogue, Matrix vs upload backends). Chat attachments today: [space-chat-attachments.md](../architecture/space-chat-attachments.md).  
-> **Related PRs:** Matrix attachments + media docs — [#2133](https://github.com/hypha-dao/hypha-web/pull/2133). This plan + coherence doc alignment — [#2138](https://github.com/hypha-dao/hypha-web/pull/2138).
+> **Architecture context:** [documents-and-media-overview.md §4](../architecture/documents-and-media-overview.md#4-organisation-memory--how-all-documents-matrix--upload-can-work) (organisation memory: one catalogue, Matrix vs upload backends). Chat attachments on `main`: [space-chat-attachments.md](../architecture/space-chat-attachments.md), [space-chat-attachments (dev)](../development/space-chat-attachments.md).  
+> **Upstream:** Matrix chat attachments + media architecture merged in [#2133](https://github.com/hypha-dao/hypha-web/pull/2133) (on `main`). This document and coherence cross-links ship via [#2138](https://github.com/hypha-dao/hypha-web/pull/2138).
+
+---
+
+## 0. Current codebase snapshot (`main`, reviewed 2026-04-12)
+
+Use this as the **source of truth** when implementing; re-verify paths after large refactors.
+
+| Area | Location on `main` |
+|------|---------------------|
+| Coherence tab shell | `packages/epics/src/coherence/components/coherence-block.tsx` — today renders **only** `SignalSection` inside `isAuthenticated`; otherwise `Empty` + `CoherenceTab.signInToSee` |
+| Signals UI | `packages/epics/src/coherence/components/signal-section.tsx` |
+| Space documents API | `GET /api/v1/spaces/[spaceSlug]/documents/all` → `apps/web/src/app/api/v1/spaces/[spaceSlug]/documents/all/route.ts` (`findAllDocumentsBySpaceSlugWithoutPagination`, `checkSpaceAccess`) |
+| Document shape | `packages/core/src/governance/types.ts` (`Document`, `Attachment`); storage: `packages/storage-postgres/src/schema/document.ts` (`attachments` jsonb, `lead_image`) |
+| Matrix send + attachments | `packages/core/src/matrix/client/providers/matrix-provider.tsx` — `sendMessage` with optional `attachments`; `uploadContent` with `{ name, type }`; partial failure: `SendMessagePartialFailureError` |
+| Timeline → UI model | `packages/core/src/matrix/rich-reply.ts` — `m.file` / `m.image` → shared `Message` type |
+| Chat composer / bubbles | `packages/epics/src/common/human-chat-panel/human-chat-panel-chat-bar.tsx`, `packages/epics/src/common/human-right-panel.tsx`, `human-chat-panel-message-bubble.tsx` |
+| Matrix SDK version | `matrix-js-sdk@^40` in `packages/core` (per Hypha Matrix role: not ^41 in Next.js) |
 
 ---
 
@@ -36,7 +53,7 @@ Organisations need **one place** to see files relevant to a space, whether they 
 
 - **Route:** Coherence tab — `packages/epics/src/coherence/components/coherence-block.tsx`.
 - **Order:** Render **below** `SignalSection`, **above** the DHO layout’s “Spaces you might like” (layout is outside tab `children`; panel sits in tab column only).
-- **Auth:** Same gate as Signals (`isAuthenticated`); unauthenticated users do **not** see Space Memory (or show sign-in prompt consistent with existing Coherence empty states — **pick one** and document in i18n).
+- **Auth:** Match **`CoherenceBlock` on `main`**: the entire authenticated block (Signals today; Signals + Space Memory after implementation) sits inside `isAuthenticated`; unauthenticated users see **only** the existing `Empty` + `signInToSee` copy — **do not** fetch documents for signed-out users.
 - **Chrome:** Match Signals rhythm: section title **“Space Memory”**, optional search, `Separator` from `@hypha-platform/ui`, spacing consistent with `CoherenceBlock` (`gap-6`, `py-4`).
 - **Row content:** Primary = file name (truncated + `title` full string); secondary = **context line** (e.g. proposal title + state); meta = date; action = open in new tab (`rel="noopener noreferrer"`) where allowed.
 - **States:** loading (skeleton or compact spinner), empty, error + retry, filtered-empty if search exists.
@@ -94,9 +111,11 @@ interface SpaceMemoryItem {
 
 ### 4.4 Matrix (V2 / optional V1b)
 
-- **Matrix SDK:** filter `RoomMessage` events for `msgtype` `m.file` / `m.image`; read `url` (`mxc://`), `body`, `filename`, `info`, `event_id`, room id, timestamp.
-- **Do not** store room aliases as stable IDs for writes; use real `!room_id:server` per Hypha Matrix role rules.
-- **V2:** server job registers catalogue rows (`source = matrix_chat`); panel reads catalogue only.
+- **Matrix JS SDK:** listen on the relevant `Room` timeline (space room and/or signal `roomId` from `Coherence`). Filter `EventType.RoomMessage` (or equivalent) where `msgtype` is **`m.file`** or **`m.image`**. Read `content.url` (`mxc://`), `body`, `filename`, `info`, sender, `event.getId()`, room id, `event.getTs()`.
+- **Display URLs:** client UI uses `mxcUrlToHttp` with the same rules as chat bubbles (see dev guide — often **unauthenticated** media endpoints for `<img>` / links).
+- **Do not** use room **aliases** as stable IDs for `sendEvent` / server APIs; use real `!room_id:server` per Hypha Matrix role rules.
+- **Partial sends:** chat already surfaces `SendMessagePartialFailureError` when some attachments commit and others fail; any V1b client reader should tolerate **gaps** in local echo vs server timeline.
+- **V2:** server job registers catalogue rows (`source = matrix_chat`); panel reads catalogue only (§4.2).
 
 ---
 
@@ -104,12 +123,12 @@ interface SpaceMemoryItem {
 
 | Step | Deliverable | Verification |
 |------|-------------|--------------|
-| 1 | `buildSpaceMemoryItemsFromDocuments` + unit tests | `pnpm nx run core:test` (or package test target) |
-| 2 | `useSpaceMemory` (or inline hook) fetching `documents/all` + mapping | Manual: network tab, correct slug |
+| 1 | `buildSpaceMemoryItemsFromDocuments` + unit tests | `pnpm nx run @hypha-platform/core:test` — prefer a **dedicated test file** that imports only governance/pure code so it is not coupled to Matrix Vitest graph issues |
+| 2 | `useSpaceMemory` (or inline hook) fetching `documents/all` + mapping | Manual: network tab, correct `spaceSlug`; align with other hooks using **`useSWR`** in `packages/core` (see `useSpaceBySlugExists`, `useOrganisationSpacesBySingleSlug`, etc.) |
 | 3 | `SpaceMemorySection` in `packages/epics/src/coherence/components/` | Story / manual Coherence tab |
 | 4 | Wire `CoherenceBlock` below `SignalSection` | Coherence tab shows both sections |
-| 5 | i18n keys (`CoherenceTab` or agreed namespace): title, empty, error, retry, context pattern, optional search | All locale files updated |
-| 6 | E2E: `apps/web-e2e` — section present when auth + coherence; empty or fixture | `pnpm nx run web-e2e:e2e` subset |
+| 5 | i18n keys (`CoherenceTab` or agreed namespace): title, empty, error, retry, context pattern, optional search | `packages/i18n/src/messages/*.json` (en, de, es, fr, pt) |
+| 6 | E2E: `apps/web-e2e` — section present when auth + coherence; empty or fixture | `pnpm nx run web-e2e:e2e` (e.g. `--spec=coherence.spec.ts`); extend `apps/web-e2e/src/pages/coherence.page.ts` if needed |
 | 7 | (V2) Catalogue schema, register on document save, Matrix ingestion, `GET .../space-memory` | Separate milestone per §4.5 in architecture doc |
 
 ---
@@ -140,6 +159,8 @@ interface SpaceMemoryItem {
 | Doc | Purpose |
 |-----|---------|
 | [documents-and-media-overview.md §4](../architecture/documents-and-media-overview.md) | Org memory catalogue and ingestion order |
+| [space-chat-attachments.md](../architecture/space-chat-attachments.md) | Matrix attachment UX and event shape on `main` |
+| [space-chat-attachments (dev)](../development/space-chat-attachments.md) | `sendMessage`, `Message`, composer/bubble behaviour |
 | [coherence-research.md](./coherence-research.md) §1.1 | Coherence vs Matrix rooms vs org memory |
 | [coherence-incremental-plan.md](./coherence-incremental-plan.md) | Post-cleanup Space Memory item |
 

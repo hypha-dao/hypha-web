@@ -75,15 +75,7 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({
   const renderFileIcon = (file: File | AttachmentInput) => {
     if (file instanceof File) {
       if (file.type.startsWith('image/')) {
-        const objectURL = URL.createObjectURL(file);
-        return (
-          <img
-            src={objectURL}
-            alt={file.name}
-            className="w-5 h-5 object-cover rounded-lg"
-            onLoad={() => URL.revokeObjectURL(objectURL)}
-          />
-        );
+        return <ImageIcon className="h-5 w-5 shrink-0 text-neutral-11" />;
       }
 
       if (
@@ -105,13 +97,7 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({
       const ext = fileName.split('.').pop()?.toLowerCase();
 
       if (ext?.match(/(png|jpe?g|gif|webp|bmp|svg)/)) {
-        return (
-          <img
-            src={url}
-            alt={fileName}
-            className="w-5 h-5 object-cover rounded-lg"
-          />
-        );
+        return <ImageIcon className="h-5 w-5 shrink-0 text-neutral-11" />;
       }
 
       if (ext?.match(/(pdf|docx?|txt)/)) {
