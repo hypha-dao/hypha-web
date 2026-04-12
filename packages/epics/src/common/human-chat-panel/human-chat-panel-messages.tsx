@@ -42,6 +42,7 @@ type HumanChatPanelMessagesProps = {
   messages: UIMessage[];
   isStreaming?: boolean;
   onReply?: (messageId: string) => void;
+  onEditMessage?: (messageId: string) => void;
   onToggleReaction?: (messageId: string, emoji: string) => void;
   /** Map Matrix user id to display name for reaction hover tooltips. */
   resolveReactionReactorLabel?: (userId: string) => string;
@@ -51,6 +52,7 @@ export function HumanChatPanelMessages({
   messages,
   isStreaming = false,
   onReply,
+  onEditMessage,
   onToggleReaction,
   resolveReactionReactorLabel,
 }: HumanChatPanelMessagesProps) {
@@ -135,6 +137,16 @@ export function HumanChatPanelMessages({
               }
               onReply={
                 canInteract && onReply ? () => onReply(msg.id) : undefined
+              }
+              onEdit={
+                canInteract &&
+                onEditMessage &&
+                msg.role === 'user' &&
+                !msg.media &&
+                !msg.mediaSlots?.length &&
+                !msg.sendPending
+                  ? () => onEditMessage(msg.id)
+                  : undefined
               }
               onReact={
                 canInteract && onToggleReaction

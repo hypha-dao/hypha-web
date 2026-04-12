@@ -6,6 +6,7 @@ import type { TranslationValues } from 'next-intl';
 import {
   Smile,
   SmilePlus,
+  Pencil,
   Reply,
   MoreHorizontal,
   FileIcon,
@@ -517,6 +518,8 @@ type HumanChatPanelMessageBubbleProps = {
   isStreaming?: boolean;
   /** When set, Reply is enabled (omit for synthetic messages like welcome). */
   onReply?: () => void;
+  /** When set, Edit is enabled (own text messages only; parent omits otherwise). */
+  onEdit?: () => void;
   /** When set, user can open react picker (omit for welcome). */
   onReact?: (emoji: string) => void | Promise<void>;
 };
@@ -706,6 +709,7 @@ export function HumanChatPanelMessageBubble({
   message,
   isStreaming,
   onReply,
+  onEdit,
   onReact,
 }: HumanChatPanelMessageBubbleProps) {
   const t = useTranslations('HumanChatPanel');
@@ -758,6 +762,7 @@ export function HumanChatPanelMessageBubble({
   const reactions = message.reactions ?? [];
   const isSendPendingRow = Boolean(message.sendPending);
   const canReply = Boolean(onReply) && !isSendPendingRow;
+  const canEdit = Boolean(onEdit) && !isSendPendingRow;
   const canReact = Boolean(onReact) && !isSendPendingRow;
 
   const sendPendingMainLabel = (() => {
@@ -1275,6 +1280,16 @@ export function HumanChatPanelMessageBubble({
             <Smile className="h-3 w-3" strokeWidth={2} />
           </button>
         </HumanChatPanelEmojiPicker>
+        <button
+          type="button"
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
+          aria-label={t('editButton')}
+          disabled={!canEdit}
+          aria-disabled={!canEdit}
+          onClick={onEdit}
+        >
+          <Pencil className="h-3 w-3" strokeWidth={2} />
+        </button>
         <button
           type="button"
           className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
