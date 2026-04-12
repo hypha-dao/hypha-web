@@ -275,7 +275,21 @@ export function HumanChatPanelMessageBubble({
   const [inlineReactPickerOpen, setInlineReactPickerOpen] = useState(false);
   const [spoilerRevealed, setSpoilerRevealed] = useState(false);
 
-  const mediaHttpUrl = useMemo(() => {
+  const mediaDownloadUrl = useMemo(() => {
+    const mxc = message.media?.mxcUrl;
+    if (!mxc || !client) return null;
+    return client.mxcUrlToHttp(
+      mxc,
+      undefined,
+      undefined,
+      undefined,
+      true,
+      true,
+      true,
+    );
+  }, [client, message.media?.mxcUrl]);
+
+  const mediaPreviewUrl = useMemo(() => {
     const mxc = message.media?.mxcUrl;
     if (!mxc || !client) return null;
     return client.mxcUrlToHttp(mxc, 800, 600, 'scale', true, true, true);
@@ -367,11 +381,11 @@ export function HumanChatPanelMessageBubble({
             className="relative mt-1 max-w-md overflow-hidden rounded-lg border border-border bg-muted/30"
             data-testid="chat-message-media-image"
           >
-            {mediaHttpUrl ? (
+            {mediaPreviewUrl ? (
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element -- Matrix MXC HTTP URL */}
                 <img
-                  src={mediaHttpUrl}
+                  src={mediaPreviewUrl}
                   alt={message.media.filename ?? ''}
                   className={cn(
                     'max-h-72 w-full object-contain',
@@ -406,9 +420,9 @@ export function HumanChatPanelMessageBubble({
                 <FileIcon className="h-5 w-5" strokeWidth={1.5} />
               </div>
               <div className="min-w-0 flex-1">
-                {mediaHttpUrl ? (
+                {mediaDownloadUrl ? (
                   <a
-                    href={mediaHttpUrl}
+                    href={mediaDownloadUrl}
                     target="_blank"
                     rel="noreferrer noopener"
                     className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
