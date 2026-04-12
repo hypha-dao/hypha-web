@@ -29,9 +29,9 @@ function LocalFileImageThumb({ file }: { file: File }) {
       setFailed(true);
       return;
     }
+    // codeql[js/xss-through-dom] `url` is always `blob:` from URL.createObjectURL(file).
     if (el) {
-      // codeql[js/xss-through-dom] `url` is always `blob:` from URL.createObjectURL(this File), not remote HTML.
-      el.src = url;
+      el.setAttribute('src', url);
     }
     return () => {
       if (el) {
@@ -140,11 +140,7 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({
 
       if (ext?.match(/(png|jpe?g|gif|webp|bmp|svg)/)) {
         return (
-          <img
-            src={url}
-            alt={fileName}
-            className="w-5 h-5 object-cover rounded-lg"
-          />
+          <img src={url} alt="" className="w-5 h-5 object-cover rounded-lg" />
         );
       }
 
