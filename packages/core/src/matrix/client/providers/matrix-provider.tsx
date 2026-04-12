@@ -27,6 +27,11 @@ export interface SendAttachmentInput {
   spoiler?: boolean;
 }
 
+export type SendMessageUploadProgress = {
+  completed: number;
+  total: number;
+};
+
 interface SendMessageInput {
   roomId: string;
   message: string;
@@ -34,6 +39,8 @@ interface SendMessageInput {
   replyToEventId?: string;
   /** Uploaded to the homeserver and sent as separate `m.file` / `m.image` events before optional text. */
   attachments?: SendAttachmentInput[];
+  /** Fires after each attachment finishes uploading (before the room message is sent). */
+  onUploadProgress?: (p: SendMessageUploadProgress) => void;
 }
 
 /**
@@ -363,6 +370,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       message,
       replyToEventId,
       attachments,
+      onUploadProgress,
     }: SendMessageInput) => {
       if (!client) {
         throw new Error('Client should be specified');
@@ -466,6 +474,10 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         while (true) {
           try {
             mediaPayloads.push(await prepareMediaPayload(att));
+            onUploadProgress?.({
+              completed: mediaPayloads.length,
+              total: list.length,
+            });
             break;
           } catch (e) {
             if (
