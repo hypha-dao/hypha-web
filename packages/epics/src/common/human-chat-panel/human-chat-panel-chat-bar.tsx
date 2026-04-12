@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Paperclip,
   Image,
@@ -751,21 +751,14 @@ export function HumanChatPanelChatBar({
     if (f) queueFile(f);
   };
 
-  const speechSupported =
-    typeof window !== 'undefined' &&
-    Boolean(
-      (
-        window as unknown as {
-          SpeechRecognition?: unknown;
-          webkitSpeechRecognition?: unknown;
-        }
-      ).SpeechRecognition ??
-        (
-          window as unknown as {
-            webkitSpeechRecognition?: unknown;
-          }
-        ).webkitSpeechRecognition,
-    );
+  const speechSupported = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    const w = window as unknown as {
+      SpeechRecognition?: unknown;
+      webkitSpeechRecognition?: unknown;
+    };
+    return Boolean(w.SpeechRecognition ?? w.webkitSpeechRecognition);
+  }, []);
 
   /** Unified toolbar control: light accent fill + icon color on hover (all actions + send). */
   const toolbarIconButtonClass =

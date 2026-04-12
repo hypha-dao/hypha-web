@@ -12,6 +12,8 @@ export type MentionSegment =
   | { type: 'mxid'; start: number; end: number; display: string };
 
 const MAX_SCAN = 50_000;
+/** Max chars after `@` to search for ` <@mxid>` — avoids O(n²) on repeated `@`. */
+const MAX_PILL_LOOKAHEAD = 512;
 
 function isMxidLocalpartChar(c: string): boolean {
   return /[0-9a-zA-Z._=/+-]/.test(c);
@@ -37,13 +39,16 @@ export function parseMentionSegments(text: string): MentionSegment[] {
   const tryPill = (
     at: number,
   ): { end: number; label: string; mxid: string } | null => {
+    const jMax = Math.min(n - 3, at + 1 + MAX_PILL_LOOKAHEAD);
     let j = at + 1;
-    while (j <= n - 3) {
+    while (j <= jMax) {
       if (text[j] === ' ' && text[j + 1] === '<' && text[j + 2] === '@') {
-        let close = j + 3;
-        while (close < n && text[close] !== '>') close += 1;
+        const mxidStart = j + 3;
+        const mxidScanEnd = Math.min(n, mxidStart + 256);
+        let close = mxidStart;
+        while (close < mxidScanEnd && text[close] !== '>') close += 1;
         if (close < n && text[close] === '>') {
-          const mxid = text.slice(j + 3, close);
+          const mxid = text.slice(mxidStart, close);
           if (mxid.includes(':') && mxid.length > 0 && mxid.length <= 255) {
             const label = text.slice(at + 1, j).trim();
             return {

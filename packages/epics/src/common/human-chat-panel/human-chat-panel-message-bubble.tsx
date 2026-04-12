@@ -201,6 +201,19 @@ function renderTextWithMentions(text: string): React.ReactNode[] {
   return renderTextWithMentionsFromSegments(text, parseMentionSegments(text));
 }
 
+/** Only allow http(s) in media href/src (avoid javascript: / data: injection). */
+function safeHttpMediaUrl(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+      ? url
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function reactionTooltipText(
   reaction: Reaction,
   resolveLabel: (userId: string) => string,
@@ -252,6 +265,13 @@ export function HumanChatPanelMessageBubble({
   const hiddenReactionCount = Math.max(
     0,
     reactions.length - MAX_VISIBLE_REACTIONS,
+  );
+
+  const safeMediaUrl = safeHttpMediaUrl(message.mediaHttpUrl);
+  const mediaUnavailable = (
+    <span className="mt-1 block text-xs text-muted-foreground">
+      {t('attachmentUnavailable')}
+    </span>
   );
 
   return (
@@ -311,33 +331,39 @@ export function HumanChatPanelMessageBubble({
           </div>
         )}
 
-        {message.msgType === 'm.image' && message.mediaHttpUrl && (
-          <a
-            href={message.mediaHttpUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-1 block max-w-sm overflow-hidden rounded-md border border-border"
-          >
-            <img
-              src={message.mediaHttpUrl}
-              alt={textContent || t('chatImageAlt')}
-              className="max-h-64 w-full object-contain"
-            />
-          </a>
-        )}
-        {message.msgType === 'm.video' && message.mediaHttpUrl && (
-          <video
-            controls
-            className="mt-1 max-h-64 max-w-full rounded-md border border-border"
-            src={message.mediaHttpUrl}
-          >
-            <track kind="captions" />
-          </video>
-        )}
-        {message.msgType === 'm.file' &&
-          (message.mediaHttpUrl ? (
+        {message.msgType === 'm.image' &&
+          (safeMediaUrl ? (
             <a
-              href={message.mediaHttpUrl}
+              href={safeMediaUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 block max-w-sm overflow-hidden rounded-md border border-border"
+            >
+              <img
+                src={safeMediaUrl}
+                alt={textContent || t('chatImageAlt')}
+                className="max-h-64 w-full object-contain"
+              />
+            </a>
+          ) : (
+            mediaUnavailable
+          ))}
+        {message.msgType === 'm.video' &&
+          (safeMediaUrl ? (
+            <video
+              controls
+              className="mt-1 max-h-64 max-w-full rounded-md border border-border"
+              src={safeMediaUrl}
+            >
+              <track kind="captions" />
+            </video>
+          ) : (
+            mediaUnavailable
+          ))}
+        {message.msgType === 'm.file' &&
+          (safeMediaUrl ? (
+            <a
+              href={safeMediaUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-1 inline-flex max-w-full items-center gap-1 truncate rounded-md border border-border bg-muted/50 px-2 py-1 text-xs text-primary underline-offset-2 hover:underline"
@@ -345,9 +371,7 @@ export function HumanChatPanelMessageBubble({
               {message.mediaFileName || textContent || t('downloadFile')}
             </a>
           ) : (
-            <span className="mt-1 block text-xs text-muted-foreground">
-              {textContent || t('attachmentUnavailable')}
-            </span>
+            mediaUnavailable
           ))}
 
         {/* Message text — Matrix HTML, or Discord-style jumboji, or plain + mentions */}

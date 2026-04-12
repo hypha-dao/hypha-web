@@ -652,6 +652,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
 
   const handleSend = useCallback(async () => {
+    if (isSendingMessage) return;
     if ((!input.trim() && !pendingAttachment) || !roomId) return;
     const text = input;
     const file = pendingAttachment;
@@ -677,7 +678,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     } finally {
       setIsSendingMessage(false);
     }
-  }, [input, pendingAttachment, roomId, replyDraft]);
+  }, [input, pendingAttachment, roomId, replyDraft, isSendingMessage]);
 
   return (
     <>
