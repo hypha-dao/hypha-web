@@ -14,7 +14,7 @@ This document describes how the Human Chat panel handles **file** and **image** 
 - **Space** ↔ Matrix **room** (existing).
 - **Chat message** ↔ `m.room.message` events on the room timeline.
 
-There is no separate “organisation memory” write path in this implementation: media lives on the Matrix homeserver. A future integration can **mirror** the same bytes or `mxc://` URI into organisation memory when that pipeline is available.
+There is no **automatic** organisation-memory write in the chat UI itself: media lives on the Matrix homeserver. How org memory will cover Matrix **and** uploads is described in [documents-and-media-overview.md §4](./documents-and-media-overview.md#4-organisation-memory--how-all-documents-matrix--upload-can-work) (single catalogue, dual ingestion).
 
 ## Upload and send flow
 

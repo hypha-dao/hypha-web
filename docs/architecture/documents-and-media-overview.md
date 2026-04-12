@@ -47,11 +47,72 @@ Hypha handles **files and images** in two main places. The **bytes** and **metad
 | **Primary store** | Matrix homeserver (content repo) | Your upload / CDN + Hypha DB fields |
 | **Pointer in app** | `mxc://` in `m.room.message` events | HTTPS URLs (+ names) on the document |
 | **Who “owns” the file”** | The room’s homeserver | Hypha + file host |
-| **Organisation memory** | Not wired here yet; could later index `mxc` or mirror bytes | Already part of proposal / space document model |
+| **Organisation memory** | See **§4** below (ingestion from Matrix events) | See **§4** below (ingestion from document / upload records) |
 
 ---
 
-## 4. Security and limits (short)
+## 4. Organisation memory — how **all** documents (Matrix + upload) can work
+
+The spec asks that the **space** (organisation) can use **org memory** over **every** document: both **Matrix chat attachments** and **proposal / upload** files. Today those bytes sit in **two different stores**; org memory does not need to move them into a third silo on day one, but it **does** need a **single catalogue** in Hypha that knows *what exists*, *where it lives*, *who may see it*, and *how to retrieve text for RAG*.
+
+### 4.1 Core idea: one catalogue, two (or three) backends
+
+Introduce (or extend) an **organisation-scoped asset / document index** row for each logical file, for example:
+
+| Field (conceptual) | Purpose |
+|--------------------|--------|
+| `organisation_id` / `space_id` | Scope for ACL and “everything in this space” |
+| `source` | `matrix_chat` \| `proposal_upload` \| … |
+| `matrix_room_id`, `matrix_event_id` | When source is Matrix (optional if not Matrix) |
+| `mxc_uri` | Matrix pointer when applicable |
+| `app_url` or `storage_key` | When source is upload / CDN |
+| `mime`, `size`, `filename`, `sha256` (optional) | Dedup, display, policy |
+| `indexed_text_ref` / `embedding_ref` | Pointer to chunks in your vector / search store |
+| `visibility` / `retention` | Policy |
+
+**Retrieval for the model:** the worker that answers org-memory questions loads rows for the space, then **fetches bytes or text** using the right backend (Matrix authenticated download vs signed HTTPS URL vs internal object store).
+
+### 4.2 Ingestion path A — Matrix chat (`m.file` / `m.image`)
+
+After (or when) a successful `m.room.message` with an attachment is known:
+
+1. **Event hook** — A server-side listener or periodic job reads the space room timeline (or consumes your existing sync/outbox if you centralise Matrix server-side).
+2. **Normalise** — For each `m.file` / `m.image`, read `url` (`mxc://`), `body`, `filename`, `info`, sender, `event_id`, room id, timestamp.
+3. **Register** — Upsert a catalogue row (`source = matrix_chat`, `mxc_uri`, …) keyed by `(room_id, event_id)` or stable content id.
+4. **Index** — Optionally **download** via homeserver (with service token) into a **private** org bucket for long-term RAG and offline policy **or** index from `mxc` + metadata only until mirroring exists.
+5. **ACL** — Row inherits space membership (and any stricter org rules).
+
+### 4.3 Ingestion path B — Proposals / uploads (existing pipeline)
+
+When a proposal (or other entity) is saved with attachments:
+
+1. **Webhook or same transaction** — After upload returns URL, the API that persists the document **also emits** “asset registered” for org memory (or a queue message).
+2. **Normalise** — `source = proposal_upload`, `document_id`, `attachment_index`, `app_url`, filename, mime from upload metadata.
+3. **Register + index** — Same catalogue + indexer as above; fetch bytes from CDN / object store with server credentials.
+
+### 4.4 Why this satisfies “space has access in org memory”
+
+- **Access** = catalogue rows are **scoped to the organisation / space** and filtered by the same auth you use elsewhere.
+- **All documents** = every attachment becomes **one row** (Matrix-backed or upload-backed); the memory layer **does not care** which backend holds bytes once it has a pointer and a fetch strategy.
+- **No double truth for chat** — Matrix remains the **chat** source of truth; org memory is an **index + optional mirror** for search and AI, not a replacement for the timeline.
+
+### 4.5 Order of implementation (typical)
+
+1. **Catalogue schema + API** (register, list by space, delete on redaction if required).  
+2. **Proposal path first** (you already have URLs in DB).  
+3. **Matrix path** (subscribe to room / backfill events for spaces you care about).  
+4. **Embeddings / chunking** on top of registered assets.  
+5. **Optional:** copy Matrix media into org-owned storage for retention and E2EE‑safe patterns.
+
+### 4.6 Edge cases to decide in product
+
+- **Redaction / delete** — Remove or tombstone catalogue rows when Matrix events are redacted or proposals delete attachments.  
+- **E2EE rooms** — May require **client-assisted** registration or encrypted export; spec should call out if org memory must include E2EE attachments.  
+- **Deduplication** — Same file re-uploaded in chat vs proposal: optional `sha256` match to link rows.
+
+---
+
+## 5. Security and limits (short)
 
 - **Chat:** Matrix token is used for **upload** and for the **client**; media links for **inline display** use the normal unauthenticated media URL pattern so browsers can load images without sending a Bearer header on every `<img>`.
 - **Size and types** are limited by the homeserver (chat) and by your **proposal validation** (agreements).
@@ -59,7 +120,7 @@ Hypha handles **files and images** in two main places. The **bytes** and **metad
 
 ---
 
-## 5. Where to look in the repo
+## 6. Where to look in the repo
 
 | Area | Main locations |
 |------|----------------|
