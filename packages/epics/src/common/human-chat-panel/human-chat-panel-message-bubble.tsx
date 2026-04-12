@@ -1,7 +1,7 @@
 'use client';
 
 import { Fragment, useMemo, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import type { TranslationValues } from 'next-intl';
 import {
   Smile,
@@ -31,12 +31,6 @@ type Reaction = {
 type UIMessagePart =
   | { type: 'text'; text: string }
   | { type: string; [k: string]: unknown };
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 /**
  * Some homeservers reject `/_matrix/media/v3/thumbnail` for certain PNGs while
@@ -310,6 +304,7 @@ export function HumanChatPanelMessageBubble({
   onReact,
 }: HumanChatPanelMessageBubbleProps) {
   const t = useTranslations('HumanChatPanel');
+  const format = useFormatter();
   const { client } = useMatrix();
   const [hoverReactPickerOpen, setHoverReactPickerOpen] = useState(false);
   const [inlineReactPickerOpen, setInlineReactPickerOpen] = useState(false);
@@ -522,7 +517,38 @@ export function HumanChatPanelMessageBubble({
                 )}
                 {message.media.mediaInfo?.size != null && (
                   <p className="text-xs text-muted-foreground">
-                    {formatFileSize(message.media.mediaInfo.size)}
+                    {(() => {
+                      const size = message.media.mediaInfo.size;
+                      if (
+                        typeof size !== 'number' ||
+                        !Number.isFinite(size) ||
+                        size < 0
+                      ) {
+                        return t('attachmentSizeUnknown');
+                      }
+                      if (size < 1024) {
+                        return format.number(size, {
+                          style: 'unit',
+                          unit: 'byte',
+                          unitDisplay: 'narrow',
+                          maximumFractionDigits: 0,
+                        });
+                      }
+                      if (size < 1024 * 1024) {
+                        return format.number(size / 1024, {
+                          style: 'unit',
+                          unit: 'kilobyte',
+                          unitDisplay: 'narrow',
+                          maximumFractionDigits: 1,
+                        });
+                      }
+                      return format.number(size / (1024 * 1024), {
+                        style: 'unit',
+                        unit: 'megabyte',
+                        unitDisplay: 'narrow',
+                        maximumFractionDigits: 1,
+                      });
+                    })()}
                   </p>
                 )}
               </div>

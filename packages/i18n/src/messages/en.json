@@ -1644,6 +1644,7 @@
     "openAttachmentInNewTab": "Open attachment in new tab",
     "attachmentUnavailable": "Attachment unavailable",
     "attachment": "Attachment",
+    "attachmentSizeUnknown": "Unknown size",
     "bold": "Bold",
     "italic": "Italic",
     "strikethrough": "Strikethrough",

@@ -1643,6 +1643,7 @@
     "openAttachmentInNewTab": "Abrir anexo num novo separador",
     "attachmentUnavailable": "Anexo indisponível",
     "attachment": "Anexo",
+    "attachmentSizeUnknown": "Tamanho desconhecido",
     "bold": "Negrito",
     "italic": "Itálico",
     "strikethrough": "Riscado",

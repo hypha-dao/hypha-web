@@ -1643,6 +1643,7 @@
     "openAttachmentInNewTab": "Ouvrir la pièce jointe dans un nouvel onglet",
     "attachmentUnavailable": "Pièce jointe indisponible",
     "attachment": "Pièce jointe",
+    "attachmentSizeUnknown": "Taille inconnue",
     "bold": "Gras",
     "italic": "Italique",
     "strikethrough": "Barré",
