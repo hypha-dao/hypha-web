@@ -21,13 +21,13 @@ There is no **automatic** organisation-memory write in the chat UI itself: media
 1. User picks files via hidden `<input type="file">` (different `accept` for image vs file).
 2. Client stages `File` objects in memory (object URLs for previews).
 3. On **Send**, for each staged file:
-   - `client.uploadContent(file, { name: file.name })` → `content_uri` (`mxc://…`).
+   - `client.uploadContent(file, { name: file.name, type: file.type })` → `content_uri` (`mxc://…`).
    - Build event content:
-     - **`m.image`:** `url`, `body` (caption or filename), `info` (mimetype, size, optional `w`/`h` from a browser `Image()` decode).
-     - **`m.file`:** same, without requiring image dimensions.
+     - **`m.image` / `m.file`:** `body` and **`filename`** are both set to **`file.name`** (the composer caption is **not** embedded in the media event).
+     - **`url`** is the `mxc://` URI; **`info`** includes mimetype, size, and for images optional `w`/`h` from a browser `Image()` decode.
    - Optional **spoiler:** `org.hypha.spoiler: true` on the event; the Hypha UI blurs until clicked.
 4. If the user is **replying** to a message, each uploaded event includes `m.relates_to` with `m.in_reply_to` (same as text replies).
-5. If there is **text** in the composer, a separate **`m.text`** message is sent (after uploads). Order: **attachments first, then text**, so the text appears below in the timeline.
+5. Any **user-entered text** in the composer is sent as a separate **`m.text`** message **after** all attachment events. Order: **attachments first, then text**, so the caption appears below the files in the timeline. Implementation: `packages/core/src/matrix/client/providers/matrix-provider.tsx`.
 
 ## Rendering
 
