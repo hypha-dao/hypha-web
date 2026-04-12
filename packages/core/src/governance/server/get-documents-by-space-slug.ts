@@ -142,18 +142,16 @@ export async function getDocumentsBySpaceSlug(
 
   if (host.web3SpaceId != null) {
     if (!canConvertToBigInt(host.web3SpaceId)) {
+      console.error(
+        '[getDocumentsBySpaceSlug] invalid web3SpaceId for space',
+        spaceSlug,
+        host.slug,
+        host.web3SpaceId,
+      );
       return {
-        access: 'ok',
-        result: {
-          found: false,
-          space_slug: spaceSlug,
-          space: null,
-          source: 'db',
-          source_chain: null,
-          asOf,
-          documents: [],
-          pagination: emptyPagination(safePage, safePageSize),
-        },
+        access: 'denied',
+        message: `Space "${host.slug}" (${spaceSlug}) has an invalid on-chain space id in the database. An operator must fix web3SpaceId before documents can be listed.`,
+        space_slug: spaceSlug,
       };
     }
     const gate = await checkSpaceAccessForSpace(host, authToken);
