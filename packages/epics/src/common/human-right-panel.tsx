@@ -33,6 +33,12 @@ import {
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
 
+function disposeDraftAttachmentUrls(drafts: ChatDraftAttachment[]) {
+  for (const a of drafts) {
+    URL.revokeObjectURL(a.previewUrl);
+  }
+}
+
 type UIMessage = {
   id: string;
   role: 'user' | 'member';
@@ -217,6 +223,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [draftAttachments, setDraftAttachments] = useState<
     ChatDraftAttachment[]
   >([]);
+  const draftAttachmentsRef = useRef(draftAttachments);
+  draftAttachmentsRef.current = draftAttachments;
   const [messages, setMessages] = useState<UIMessage[]>([]);
   const [replyDraft, setReplyDraft] = useState<ReplyDraft | null>(null);
   const [roomId, setRoomId] = useState<string | null>(null);
@@ -320,6 +328,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setRoomId(null);
       setMessages([]);
       setInput('');
+      disposeDraftAttachmentUrls(draftAttachmentsRef.current);
       setDraftAttachments([]);
       setReplyDraft(null);
       setError(null);
@@ -415,6 +424,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setMessages([]);
       setRoomId(null);
       setReplyDraft(null);
+      disposeDraftAttachmentUrls(draftAttachmentsRef.current);
       setDraftAttachments([]);
       setError(null);
     }
@@ -427,6 +437,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setMessages([]);
       setRoomId(null);
       setReplyDraft(null);
+      disposeDraftAttachmentUrls(draftAttachmentsRef.current);
       setDraftAttachments([]);
       setError(null);
     }
@@ -445,6 +456,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setError(null);
       setMessages([]);
       setReplyDraft(null);
+      disposeDraftAttachmentUrls(draftAttachmentsRef.current);
       setDraftAttachments([]);
       try {
         let targetRoomId = coherenceRoomId;
@@ -652,9 +664,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             }
           : {}),
       });
-      for (const a of savedAttachments) {
-        URL.revokeObjectURL(a.previewUrl);
-      }
+      disposeDraftAttachmentUrls(savedAttachments);
       setReplyDraft(null);
     } catch (err) {
       console.error('[HumanRightPanel] Failed to send message:', err);
@@ -663,6 +673,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setDraftAttachments(savedAttachments);
     }
   }, [input, roomId, replyDraft, draftAttachments]);
+
+  useEffect(() => {
+    return () => {
+      disposeDraftAttachmentUrls(draftAttachmentsRef.current);
+    };
+  }, []);
 
   return (
     <>
