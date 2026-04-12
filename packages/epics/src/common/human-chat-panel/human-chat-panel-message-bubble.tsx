@@ -1560,16 +1560,16 @@ export function HumanChatPanelMessageBubble({
             side="left"
             align="start"
             collisionPadding={12}
-            className="z-[50] w-[min(100vw-2rem,200px)] overflow-visible border border-border p-1.5 shadow-lg"
+            className="z-[50] w-[min(100vw-2rem,200px)] overflow-visible border border-border px-1 py-0.5 shadow-lg"
           >
             {canReact && onReact && recentMenuEmojis.length > 0 ? (
               <>
-                <div className="flex justify-center gap-0.5 px-0.5 pb-1.5">
+                <div className="flex justify-center gap-0.5 px-0.5 pb-1 pt-0.5">
                   {recentMenuEmojis.map((emoji) => (
                     <button
                       key={emoji}
                       type="button"
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border bg-muted/50 text-[15px] leading-none transition-colors hover:bg-muted"
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-border bg-muted/50 text-[13px] leading-none transition-colors hover:bg-muted"
                       aria-label={t('quickReactWith', { emoji })}
                       onClick={() => {
                         recordRecentMenuEmoji(emoji);
@@ -1581,22 +1581,22 @@ export function HumanChatPanelMessageBubble({
                     </button>
                   ))}
                 </div>
-                <DropdownMenuSeparator className="my-1 bg-border" />
+                <DropdownMenuSeparator className="my-0.5 bg-border" />
               </>
             ) : null}
             {canReact && onReact ? (
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger className="flex h-8 w-full items-center rounded-sm px-2 py-0 text-xs outline-none focus:bg-accent data-[state=open]:bg-accent">
+                <DropdownMenuSubTrigger className="flex h-7 min-h-7 w-full items-center rounded-sm px-1.5 py-0 text-[11px] leading-tight outline-none focus:bg-accent data-[state=open]:bg-accent [&_svg]:!size-3">
                   <span className="min-w-0 flex-1 truncate text-left">
                     {t('messageMenuAddReaction')}
                   </span>
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent
                   className="z-[300] overflow-visible border border-border bg-popover p-0 shadow-xl"
-                  sideOffset={8}
+                  sideOffset={6}
                 >
                   {emojiMartMounted ? (
-                    <div className="h-[min(320px,50vh)] w-[min(100vw-2rem,280px)] overflow-hidden">
+                    <div className="h-[min(260px,42vh)] w-[min(100vw-2rem,260px)] overflow-hidden">
                       <Picker
                         data={data}
                         i18n={getEmojiMartI18n(pickerLocale)}
@@ -1612,7 +1612,7 @@ export function HumanChatPanelMessageBubble({
                       />
                     </div>
                   ) : (
-                    <div className="flex h-40 w-[260px] items-center justify-center text-xs text-muted-foreground">
+                    <div className="flex h-32 w-[240px] items-center justify-center text-[11px] text-muted-foreground">
                       {t('loading')}
                     </div>
                   )}
@@ -1620,10 +1620,10 @@ export function HumanChatPanelMessageBubble({
               </DropdownMenuSub>
             ) : null}
             {canReact && onReact ? (
-              <DropdownMenuSeparator className="my-1 bg-border" />
+              <DropdownMenuSeparator className="my-0.5 bg-border" />
             ) : null}
             <DropdownMenuItem
-              className="flex h-8 items-center justify-between gap-2 rounded-sm px-2 py-0 text-xs"
+              className="flex h-7 min-h-7 items-center justify-between gap-1.5 rounded-sm px-1.5 py-0 text-[11px] leading-tight [&_svg]:!size-3"
               disabled={!canEdit}
               onSelect={(e) => {
                 e.preventDefault();
@@ -1632,13 +1632,10 @@ export function HumanChatPanelMessageBubble({
               }}
             >
               <span className="truncate">{t('messageMenuEdit')}</span>
-              <Pencil
-                className="h-3.5 w-3.5 shrink-0 opacity-70"
-                strokeWidth={2}
-              />
+              <Pencil className="shrink-0 opacity-70" strokeWidth={2} />
             </DropdownMenuItem>
             <DropdownMenuItem
-              className="flex h-8 items-center justify-between gap-2 rounded-sm px-2 py-0 text-xs"
+              className="flex h-7 min-h-7 items-center justify-between gap-1.5 rounded-sm px-1.5 py-0 text-[11px] leading-tight [&_svg]:!size-3"
               disabled={!canReply}
               onSelect={(e) => {
                 e.preventDefault();
@@ -1647,14 +1644,11 @@ export function HumanChatPanelMessageBubble({
               }}
             >
               <span className="truncate">{t('messageMenuReply')}</span>
-              <Reply
-                className="h-3.5 w-3.5 shrink-0 opacity-70"
-                strokeWidth={2}
-              />
+              <Reply className="shrink-0 opacity-70" strokeWidth={2} />
             </DropdownMenuItem>
-            <DropdownMenuSeparator className="my-1 bg-border" />
+            <DropdownMenuSeparator className="my-0.5 bg-border" />
             <DropdownMenuItem
-              className="flex h-8 items-center justify-between gap-2 rounded-sm px-2 py-0 text-xs"
+              className="flex h-7 min-h-7 items-center justify-between gap-1.5 rounded-sm px-1.5 py-0 text-[11px] leading-tight [&_svg]:!size-3"
               disabled={!plainTextForActions.trim()}
               onSelect={(e) => {
                 e.preventDefault();
@@ -1663,13 +1657,10 @@ export function HumanChatPanelMessageBubble({
               }}
             >
               <span className="truncate">{t('messageMenuCopyText')}</span>
-              <Copy
-                className="h-3.5 w-3.5 shrink-0 opacity-70"
-                strokeWidth={2}
-              />
+              <Copy className="shrink-0 opacity-70" strokeWidth={2} />
             </DropdownMenuItem>
             <DropdownMenuItem
-              className="flex h-8 items-center justify-between gap-2 rounded-sm px-2 py-0 text-xs"
+              className="flex h-7 min-h-7 items-center justify-between gap-1.5 rounded-sm px-1.5 py-0 text-[11px] leading-tight [&_svg]:!size-3"
               disabled={!canCopyMessageLink}
               onSelect={(e) => {
                 e.preventDefault();
@@ -1678,13 +1669,10 @@ export function HumanChatPanelMessageBubble({
               }}
             >
               <span className="truncate">{t('messageMenuCopyLink')}</span>
-              <Link2
-                className="h-3.5 w-3.5 shrink-0 opacity-70"
-                strokeWidth={2}
-              />
+              <Link2 className="shrink-0 opacity-70" strokeWidth={2} />
             </DropdownMenuItem>
             <DropdownMenuItem
-              className="flex h-8 items-center justify-between gap-2 rounded-sm px-2 py-0 text-xs"
+              className="flex h-7 min-h-7 items-center justify-between gap-1.5 rounded-sm px-1.5 py-0 text-[11px] leading-tight [&_svg]:!size-3"
               disabled={!plainTextForActions.trim()}
               onSelect={(e) => {
                 e.preventDefault();
@@ -1693,16 +1681,13 @@ export function HumanChatPanelMessageBubble({
               }}
             >
               <span className="truncate">{t('messageMenuSpeak')}</span>
-              <Volume2
-                className="h-3.5 w-3.5 shrink-0 opacity-70"
-                strokeWidth={2}
-              />
+              <Volume2 className="shrink-0 opacity-70" strokeWidth={2} />
             </DropdownMenuItem>
             {canDelete ? (
               <>
-                <DropdownMenuSeparator className="my-1 bg-border" />
+                <DropdownMenuSeparator className="my-0.5 bg-border" />
                 <DropdownMenuItem
-                  className="flex h-8 items-center justify-between gap-2 rounded-sm px-2 py-0 text-xs text-destructive focus:bg-destructive/10 focus:text-destructive"
+                  className="flex h-7 min-h-7 items-center justify-between gap-1.5 rounded-sm px-1.5 py-0 text-[11px] leading-tight text-destructive focus:bg-destructive/10 focus:text-destructive [&_svg]:!size-3"
                   onSelect={(e) => {
                     e.preventDefault();
                     void onDeleteMessage?.();
@@ -1710,10 +1695,7 @@ export function HumanChatPanelMessageBubble({
                   }}
                 >
                   <span className="truncate">{t('messageMenuDelete')}</span>
-                  <Trash2
-                    className="h-3.5 w-3.5 shrink-0 opacity-90"
-                    strokeWidth={2}
-                  />
+                  <Trash2 className="shrink-0 opacity-90" strokeWidth={2} />
                 </DropdownMenuItem>
               </>
             ) : null}
