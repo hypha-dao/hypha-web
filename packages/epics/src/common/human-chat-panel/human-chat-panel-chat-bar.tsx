@@ -13,7 +13,7 @@ import {
   Eye,
   Smile,
   AtSign,
-  SendHorizontal,
+  ArrowBigUp,
   X,
   Mic,
   Loader2,
@@ -228,7 +228,7 @@ export function HumanChatPanelChatBar({
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
       textareaRef.current.style.height =
-        Math.min(textareaRef.current.scrollHeight, 160) + 'px';
+        Math.min(textareaRef.current.scrollHeight, 192) + 'px';
     }
   }, []);
 
@@ -749,7 +749,7 @@ export function HumanChatPanelChatBar({
     'flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-popover-foreground transition-colors hover:bg-white/10';
 
   return (
-    <div className="flex w-full min-w-0 flex-shrink-0 flex-col border-t border-border bg-background-2 px-2 pb-1.5 pt-2 sm:px-3">
+    <div className="flex w-full min-w-0 flex-shrink-0 flex-col border-t border-border bg-background-2 px-3 py-0">
       {composerError && (
         <div
           role="alert"
@@ -762,8 +762,10 @@ export function HumanChatPanelChatBar({
         ref={composerShellRef}
         title={t('newlineHintExtended')}
         className={cn(
-          'relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-muted/50',
-          'transition-all duration-200 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20',
+          'relative flex min-w-0 flex-col overflow-hidden rounded-2xl bg-muted/40 shadow-sm',
+          'ring-1 ring-border/70 dark:bg-muted/25 dark:ring-white/[0.08]',
+          'transition-[box-shadow,ring-color] duration-200',
+          'focus-within:shadow-md focus-within:ring-2 focus-within:ring-primary/35',
         )}
         onDragOver={onDragOver}
         onDrop={onDrop}
@@ -990,173 +992,182 @@ export function HumanChatPanelChatBar({
             ))}
           </div>
         )}
-        <textarea
-          ref={textareaRef}
-          value={value}
-          disabled={isSending}
-          onChange={(e) => {
-            onChange(e.target.value);
-            autoResize();
-            const cursor = e.target.selectionStart ?? e.target.value.length;
-            syncColonState(e.target.value, cursor);
-            syncMentionState(e.target.value, cursor);
-            requestAnimationFrame(updateSelectionBar);
-          }}
-          onSelect={(e) => {
-            const el = e.currentTarget;
-            syncColonState(el.value, el.selectionStart ?? 0);
-            syncMentionState(el.value, el.selectionStart ?? 0);
-            updateSelectionBar();
-          }}
-          onKeyUp={updateSelectionBar}
-          onMouseUp={updateSelectionBar}
-          onBlur={() => setSelectionBar(null)}
-          onKeyDown={handleKeyDown}
-          onPaste={onPaste}
-          aria-label={placeholder ?? defaultPlaceholder}
-          placeholder={placeholder ?? defaultPlaceholder}
-          rows={1}
-          className={cn(
-            'min-h-[32px] min-w-0 max-h-[192px] w-full resize-none',
-            'bg-transparent px-2.5 pt-2 pb-0.5 text-sm leading-snug text-foreground sm:px-3',
-            'placeholder:text-muted-foreground focus:outline-none',
-            isSending && 'cursor-wait opacity-70',
-          )}
-        />
+        {/* Two equal bands (min 44px each): input / toolbar — divider at visual midpoint when empty */}
+        <div className="grid min-h-[5.5rem] w-full min-w-0 grid-rows-[minmax(2.75rem,auto)_2.75rem]">
+          <textarea
+            ref={textareaRef}
+            value={value}
+            disabled={isSending}
+            onChange={(e) => {
+              onChange(e.target.value);
+              autoResize();
+              const cursor = e.target.selectionStart ?? e.target.value.length;
+              syncColonState(e.target.value, cursor);
+              syncMentionState(e.target.value, cursor);
+              requestAnimationFrame(updateSelectionBar);
+            }}
+            onSelect={(e) => {
+              const el = e.currentTarget;
+              syncColonState(el.value, el.selectionStart ?? 0);
+              syncMentionState(el.value, el.selectionStart ?? 0);
+              updateSelectionBar();
+            }}
+            onKeyUp={updateSelectionBar}
+            onMouseUp={updateSelectionBar}
+            onBlur={() => setSelectionBar(null)}
+            onKeyDown={handleKeyDown}
+            onPaste={onPaste}
+            aria-label={placeholder ?? defaultPlaceholder}
+            placeholder={placeholder ?? defaultPlaceholder}
+            rows={1}
+            className={cn(
+              'min-h-[2.75rem] min-w-0 max-h-[192px] w-full resize-none',
+              'border-0 bg-transparent px-3 py-2.5 text-sm leading-snug text-foreground',
+              'placeholder:text-muted-foreground focus:outline-none',
+              isSending && 'cursor-wait opacity-70',
+            )}
+          />
 
-        {/*
-          Order: attach (+) first, then emoji → @ → voice → send (compact strip).
+          {/*
+          Order: attach (+) first, then emoji → @ → voice → send.
           Bold: selection toolbar + ⌘/Ctrl+B only.
         */}
-        <div
-          role="toolbar"
-          aria-label={t('composerToolbar')}
-          className="flex min-h-0 min-w-0 items-center gap-0 border-t border-border/60 py-0 pe-1 ps-1 sm:pe-1.5 sm:ps-1.5"
-        >
-          <div className="flex min-w-0 flex-1 flex-nowrap items-center justify-start gap-0">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+          <div
+            role="toolbar"
+            aria-label={t('composerToolbar')}
+            className="flex h-11 min-h-[2.75rem] min-w-0 items-center gap-0 border-t border-border/50 px-1.5 sm:px-2"
+          >
+            <div className="flex min-w-0 flex-1 flex-nowrap items-center justify-start gap-0">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className={iconButtonClass}
+                    aria-label={t('attachMenu')}
+                    title={t('attachMenu')}
+                    disabled={isSending}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  side="top"
+                  align="start"
+                  className="min-w-[10rem] border border-border"
+                >
+                  <DropdownMenuItem
+                    disabled={isSending}
+                    className="gap-2"
+                    onSelect={() => {
+                      requestAnimationFrame(() =>
+                        imageInputRef.current?.click(),
+                      );
+                    }}
+                  >
+                    <Image className="h-4 w-4" aria-hidden />
+                    {t('attachMenuPhoto')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={isSending}
+                    className="gap-2"
+                    onSelect={() => {
+                      requestAnimationFrame(() =>
+                        videoInputRef.current?.click(),
+                      );
+                    }}
+                  >
+                    <Video className="h-4 w-4" aria-hidden />
+                    {t('attachMenuVideo')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={isSending}
+                    className="gap-2"
+                    onSelect={() => {
+                      requestAnimationFrame(() =>
+                        fileInputRef.current?.click(),
+                      );
+                    }}
+                  >
+                    <Paperclip className="h-4 w-4" aria-hidden />
+                    {t('attachMenuFile')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <HumanChatPanelEmojiPicker
+                open={emojiPickerOpen}
+                onOpenChange={setEmojiPickerOpen}
+                onEmojiSelect={insertEmoji}
+                ariaLabel={t('emojiPickerComposer')}
+                align="end"
+              >
                 <button
                   type="button"
                   className={iconButtonClass}
-                  aria-label={t('attachMenu')}
-                  title={t('attachMenu')}
+                  aria-label={t('emoji')}
+                  title={t('emoji')}
+                  aria-expanded={emojiPickerOpen}
                   disabled={isSending}
                 >
-                  <Plus className="h-4 w-4" />
+                  <Smile className="h-4 w-4" />
                 </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                side="top"
-                align="start"
-                className="min-w-[10rem] border border-border"
-              >
-                <DropdownMenuItem
-                  disabled={isSending}
-                  className="gap-2"
-                  onSelect={() => {
-                    requestAnimationFrame(() => imageInputRef.current?.click());
-                  }}
-                >
-                  <Image className="h-4 w-4" aria-hidden />
-                  {t('attachMenuPhoto')}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={isSending}
-                  className="gap-2"
-                  onSelect={() => {
-                    requestAnimationFrame(() => videoInputRef.current?.click());
-                  }}
-                >
-                  <Video className="h-4 w-4" aria-hidden />
-                  {t('attachMenuVideo')}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={isSending}
-                  className="gap-2"
-                  onSelect={() => {
-                    requestAnimationFrame(() => fileInputRef.current?.click());
-                  }}
-                >
-                  <Paperclip className="h-4 w-4" aria-hidden />
-                  {t('attachMenuFile')}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <HumanChatPanelEmojiPicker
-              open={emojiPickerOpen}
-              onOpenChange={setEmojiPickerOpen}
-              onEmojiSelect={insertEmoji}
-              ariaLabel={t('emojiPickerComposer')}
-              align="end"
-            >
+              </HumanChatPanelEmojiPicker>
               <button
                 type="button"
                 className={iconButtonClass}
-                aria-label={t('emoji')}
-                title={t('emoji')}
-                aria-expanded={emojiPickerOpen}
+                aria-label={t('mention')}
+                title={t('mention')}
                 disabled={isSending}
+                onClick={handleMention}
               >
-                <Smile className="h-4 w-4" />
+                <AtSign className="h-4 w-4" />
               </button>
-            </HumanChatPanelEmojiPicker>
+              {speechSupported && (
+                <button
+                  type="button"
+                  className={cn(
+                    iconButtonClass,
+                    dictationActive && 'bg-accent-3 text-accent-11',
+                  )}
+                  aria-label={
+                    dictationActive ? t('dictationStop') : t('dictationStart')
+                  }
+                  title={
+                    dictationActive ? t('dictationStop') : t('dictationStart')
+                  }
+                  aria-pressed={dictationActive}
+                  disabled={isSending}
+                  onClick={() =>
+                    dictationActive ? stopDictation() : startDictation()
+                  }
+                >
+                  <Mic className="h-4 w-4" />
+                </button>
+              )}
+            </div>
             <button
               type="button"
-              className={iconButtonClass}
-              aria-label={t('mention')}
-              title={t('mention')}
-              disabled={isSending}
-              onClick={handleMention}
+              onClick={() => {
+                if (!canSend) return;
+                handleSendClick();
+              }}
+              disabled={!canSend}
+              className={cn(
+                iconButtonClass,
+                'shrink-0',
+                canSend
+                  ? 'text-primary hover:bg-primary/15'
+                  : 'cursor-not-allowed text-muted-foreground/40',
+              )}
+              aria-label={t('sendButton')}
+              title={t('sendButton')}
             >
-              <AtSign className="h-4 w-4" />
+              {isSending ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <ArrowBigUp className="h-5 w-5" strokeWidth={1.75} />
+              )}
             </button>
-            {speechSupported && (
-              <button
-                type="button"
-                className={cn(
-                  iconButtonClass,
-                  dictationActive && 'bg-accent-3 text-accent-11',
-                )}
-                aria-label={
-                  dictationActive ? t('dictationStop') : t('dictationStart')
-                }
-                title={
-                  dictationActive ? t('dictationStop') : t('dictationStart')
-                }
-                aria-pressed={dictationActive}
-                disabled={isSending}
-                onClick={() =>
-                  dictationActive ? stopDictation() : startDictation()
-                }
-              >
-                <Mic className="h-4 w-4" />
-              </button>
-            )}
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              if (!canSend) return;
-              handleSendClick();
-            }}
-            disabled={!canSend}
-            className={cn(
-              iconButtonClass,
-              'shrink-0',
-              canSend
-                ? 'text-primary hover:bg-primary/15'
-                : 'cursor-not-allowed text-muted-foreground/40',
-            )}
-            aria-label={t('sendButton')}
-            title={t('sendButton')}
-          >
-            {isSending ? (
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-            ) : (
-              <SendHorizontal className="h-4 w-4" />
-            )}
-          </button>
         </div>
       </div>
     </div>
