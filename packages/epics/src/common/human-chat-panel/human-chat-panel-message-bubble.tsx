@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type MouseEvent,
 } from 'react';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
@@ -798,6 +799,11 @@ export function HumanChatPanelMessageBubble({
   const [inlineReactPickerOpen, setInlineReactPickerOpen] = useState(false);
   const [spoilerRevealed, setSpoilerRevealed] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  /** When set, the overflow menu was opened via row context menu; anchor at fixed coords. */
+  const [contextMenuAnchor, setContextMenuAnchor] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   const locale = useLocale();
   const { resolvedTheme } = useTheme();
   const [emojiMartMounted, setEmojiMartMounted] = useState(false);
@@ -886,7 +892,7 @@ export function HumanChatPanelMessageBubble({
   })();
   const canEdit = Boolean(
     onEditMessage &&
-      (textContent.trim().length > 0 ||
+      (plainTextForActions.trim().length > 0 ||
         Boolean(message.formattedContentHtml?.trim())),
   );
   const canDelete = Boolean(onDeleteMessage);
@@ -947,6 +953,29 @@ export function HumanChatPanelMessageBubble({
   const pickerTheme =
     emojiMartMounted && resolvedTheme === 'dark' ? 'dark' : 'light';
 
+  const handleMessageContextMenu = useCallback(
+    (e: MouseEvent<HTMLDivElement>) => {
+      if (e.button !== 2 || !showMessageOverflowMenu) return;
+      e.preventDefault();
+      setContextMenuAnchor({ x: e.clientX, y: e.clientY });
+      setMoreMenuOpen(true);
+      onMoreMenuOpenChange?.(true);
+    },
+    [showMessageOverflowMenu, onMoreMenuOpenChange],
+  );
+
+  const handleMoreMenuOpenChange = useCallback(
+    (open: boolean) => {
+      if (!showMessageOverflowMenu) return;
+      setMoreMenuOpen(open);
+      onMoreMenuOpenChange?.(open);
+      if (!open) {
+        setContextMenuAnchor(null);
+      }
+    },
+    [showMessageOverflowMenu, onMoreMenuOpenChange],
+  );
+
   return (
     <div
       data-testid="chat-message"
@@ -957,6 +986,7 @@ export function HumanChatPanelMessageBubble({
       )}
       onPointerEnter={onRowPointerEnter}
       onPointerLeave={onRowPointerLeave}
+      onContextMenu={handleMessageContextMenu}
     >
       {/* Avatar */}
       <div className="mt-0.5 shrink-0" data-testid="chat-message-avatar">
@@ -1475,24 +1505,33 @@ export function HumanChatPanelMessageBubble({
         <DropdownMenu
           modal={false}
           open={showMessageOverflowMenu ? moreMenuOpen : false}
-          onOpenChange={(open) => {
-            if (!showMessageOverflowMenu) return;
-            setMoreMenuOpen(open);
-            onMoreMenuOpenChange?.(open);
-          }}
+          onOpenChange={handleMoreMenuOpenChange}
         >
           <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              data-testid="chat-message-more-trigger"
-              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[2px] p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground data-[state=open]:bg-muted disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
-              aria-label={t('moreButton')}
-              aria-expanded={moreMenuOpen}
-              disabled={!showMessageOverflowMenu}
-              aria-disabled={!showMessageOverflowMenu}
-            >
-              <MoreHorizontal className="h-3 w-3" strokeWidth={2} />
-            </button>
+            {contextMenuAnchor ? (
+              <button
+                type="button"
+                tabIndex={-1}
+                aria-hidden
+                className="pointer-events-none fixed z-20 h-px w-px min-w-0 border-0 bg-transparent p-0 opacity-0"
+                style={{
+                  left: contextMenuAnchor.x,
+                  top: contextMenuAnchor.y,
+                }}
+              />
+            ) : (
+              <button
+                type="button"
+                data-testid="chat-message-more-trigger"
+                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[2px] p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground data-[state=open]:bg-muted disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
+                aria-label={t('moreButton')}
+                aria-expanded={moreMenuOpen}
+                disabled={!showMessageOverflowMenu}
+                aria-disabled={!showMessageOverflowMenu}
+              >
+                <MoreHorizontal className="h-3 w-3" strokeWidth={2} />
+              </button>
+            )}
           </DropdownMenuTrigger>
           <DropdownMenuContent
             side="left"

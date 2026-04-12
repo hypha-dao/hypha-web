@@ -118,8 +118,9 @@ export function HumanChatPanelMessages({
           const canEditThis =
             canInteract &&
             msg.role === 'user' &&
-            textContent.trim().length > 0 &&
-            Boolean(onEditMessage);
+            Boolean(onEditMessage) &&
+            (textContent.trim().length > 0 ||
+              Boolean(msg.formattedContentHtml?.trim()));
           const canDeleteThis =
             canInteract &&
             msg.role === 'user' &&
