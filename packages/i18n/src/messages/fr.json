@@ -1670,7 +1670,7 @@
     "sendFailed": "Impossible d’envoyer le message. Réessayez.",
     "sendFailedWithReason": "Impossible d’envoyer le message : {message}",
     "sendUploadTimedOut": "Délai d’envoi dépassé. Essayez un fichier plus petit ou vérifiez la connexion.",
-    "sendPartialFailed": "L’envoi s’est arrêté après {sent} pièce(s) jointe(s). {detail}"
+    "sendPartialFailed": "L’envoi s’est arrêté après {sent, plural, one {# pièce jointe} other {# pièces jointes}}. {detail}"
   },
   "CoherenceTab": {
     "signals": "Signaux",
