@@ -615,6 +615,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       if (!target) return;
       setEditDraft(null);
       setEditError(null);
+      setDeleteError(null);
       const authorLabel =
         target.role === 'user'
           ? t('you')
