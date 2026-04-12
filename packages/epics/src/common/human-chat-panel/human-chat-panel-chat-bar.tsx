@@ -13,7 +13,7 @@ import {
   Eye,
   Smile,
   AtSign,
-  Send,
+  SendHorizontal,
   X,
   Mic,
   Loader2,
@@ -1154,7 +1154,7 @@ export function HumanChatPanelChatBar({
             {isSending ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
             ) : (
-              <Send className="h-4 w-4" />
+              <SendHorizontal className="h-4 w-4" />
             )}
           </button>
         </div>
