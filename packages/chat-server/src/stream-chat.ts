@@ -43,6 +43,7 @@ export async function createChatStreamResult(
   return streamText({
     model: openrouter('openrouter/auto'),
     system: buildSystemPrompt(spaceSlug),
+    // Cast: chatRequestSchema already validated UIMessage shape; Zod inference differs from ai's UIMessage type.
     messages: await convertToModelMessages(messages as UIMessage[]),
 
     // Cast: ChatRouteTool's generic Zod input doesn't satisfy ai's CoreTool typing, but is structurally compatible at runtime.
