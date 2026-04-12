@@ -1,6 +1,6 @@
 /** Matrix rich reply plaintext helpers (Client-Server API — rich replies). */
 
-import { MatrixEventEvent, RelationType } from 'matrix-js-sdk';
+import { EventType, MatrixEventEvent, RelationType } from 'matrix-js-sdk';
 import type * as MatrixSdk from 'matrix-js-sdk';
 
 import type { Message, MessageMediaBundleItem } from './types';
@@ -61,6 +61,9 @@ export function isLocalProvisionalEventId(eventId: string): boolean {
 export function getMessageReplaceTargetEventId(
   event: MatrixSdk.MatrixEvent,
 ): string | undefined {
+  if (event.getType() !== EventType.RoomMessage) {
+    return undefined;
+  }
   const rel = event.getWireContent()?.['m.relates_to'] as
     | { rel_type?: string; event_id?: string }
     | undefined;
