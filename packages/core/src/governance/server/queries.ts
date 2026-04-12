@@ -295,6 +295,8 @@ export const findAllDocumentsBySpaceSlug = async (
   }
 
   const orderBy = getOrderBy(order);
+  const orderByClause =
+    orderBy.length > 0 ? orderBy : [desc(documents.createdAt)];
 
   const results = await db
     .select({
@@ -308,7 +310,7 @@ export const findAllDocumentsBySpaceSlug = async (
     .leftJoin(people, eq(documents.creatorId, people.id))
     .leftJoin(spaceCreator, eq(documents.creatorId, spaceCreator.id))
     .where(and(...conditions))
-    .orderBy(...orderBy)
+    .orderBy(...orderByClause)
     .limit(pageSize)
     .offset(offset);
 
@@ -398,6 +400,8 @@ export const findAllDocumentsBySpaceSlugWithoutPagination = async (
   }
 
   const orderBy = getOrderBy(order);
+  const orderByClause =
+    orderBy.length > 0 ? orderBy : [desc(documents.createdAt)];
 
   const results = await db
     .select({
@@ -410,7 +414,7 @@ export const findAllDocumentsBySpaceSlugWithoutPagination = async (
     .leftJoin(people, eq(documents.creatorId, people.id))
     .leftJoin(spaceCreator, eq(documents.creatorId, spaceCreator.id))
     .where(and(...conditions))
-    .orderBy(...orderBy);
+    .orderBy(...orderByClause);
 
   return results.map((result) =>
     mapToDocument(

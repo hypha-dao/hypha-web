@@ -25,3 +25,8 @@ Active implementation plans and feature roadmaps.
 ## Requirements
 
 Feature requirements and specifications are in [docs/requirements/](./requirements/).
+
+| Document | Description |
+|----------|-------------|
+| [MCP `get_documents_by_space_slug`](./requirements/mcp-get-documents-by-space-slug-tech-spec.md) | MCP read tool for space documents (DB + access parity) |
+| [Chat AI `get_documents_by_space_slug`](./requirements/chat-ai-get-documents-by-space-slug-integration.md) | Hypha AI / chat-server integration for the same tool |
