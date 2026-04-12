@@ -55,7 +55,7 @@ export function createGetPeopleBySpaceSlugTool(authToken: string) {
           };
         }
         if (host.web3SpaceId != null) {
-          if (!canConvertToBigInt(host.web3SpaceId as number)) {
+          if (!canConvertToBigInt(host.web3SpaceId)) {
             return {
               found: false,
               space_slug: safe,
