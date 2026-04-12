@@ -131,12 +131,14 @@ export function HumanChatPanelMessages({
           const isActionBarVisible =
             combinedLockMessageId === msg.id ||
             (hoverActionMessageId === msg.id && combinedLockMessageId == null);
+          const isRowPointerActive = hoverActionMessageId === msg.id;
           return (
             <HumanChatPanelMessageBubble
               key={msg.id}
               message={msg}
               resolveReactionReactorLabel={resolveReactionReactorLabel}
               isActionBarVisible={isActionBarVisible}
+              isRowPointerActive={isRowPointerActive}
               onRowPointerEnter={(e) => {
                 if (lockActionMessageIdRef.current) {
                   migrateLockRowId(lockActionMessageIdRef.current, msg.id);
