@@ -275,7 +275,7 @@ export function HumanChatPanelMessageBubble({
     <div
       data-testid="chat-message"
       className={cn(
-        'group relative -mx-3 flex gap-3 rounded-sm px-3 py-1 transition-colors',
+        'group relative -mx-3 flex gap-3 rounded-sm px-3 py-0.5 transition-colors',
         /* Discord-style row tint: hover (primary) + focus-within for keyboard/reactions */
         'hover:bg-muted/60 focus-within:bg-muted/60',
       )}
@@ -306,7 +306,7 @@ export function HumanChatPanelMessageBubble({
         {replyTo && (
           <div
             data-testid="chat-message-reply-context"
-            className="mt-1 min-w-0 border-l-2 border-primary/40 pl-2 text-xs text-muted-foreground"
+            className="mt-0.5 min-w-0 border-l-2 border-primary/40 pl-2 text-xs text-muted-foreground"
           >
             <p className="min-w-0 truncate">
               <span className="font-medium text-foreground">
@@ -333,7 +333,7 @@ export function HumanChatPanelMessageBubble({
           (message.formattedContentHtml ? (
             <p
               data-testid="chat-message-body"
-              className="mt-0.5 text-sm leading-relaxed text-foreground"
+              className="mt-0 text-sm leading-snug text-foreground"
             >
               <ChatMessageRichText html={message.formattedContentHtml} />
             </p>
@@ -341,7 +341,7 @@ export function HumanChatPanelMessageBubble({
             <p
               data-testid="chat-message-body"
               className={cn(
-                'mt-0.5 flex flex-wrap items-end text-foreground',
+                'mt-0 flex flex-wrap items-end text-foreground',
                 jumboLayout.sizeClass,
               )}
               aria-label={textContent.trim()}
@@ -355,7 +355,7 @@ export function HumanChatPanelMessageBubble({
           ) : (
             <p
               data-testid="chat-message-body"
-              className="mt-0.5 text-sm leading-relaxed text-foreground"
+              className="mt-0 text-sm leading-snug text-foreground"
             >
               {renderTextWithMentions(textContent)}
             </p>
@@ -374,7 +374,7 @@ export function HumanChatPanelMessageBubble({
         {visibleReactions.length > 0 && (
           <div
             data-testid="chat-message-reactions"
-            className="mt-1.5 flex flex-wrap items-center gap-1"
+            className="mt-1 flex flex-wrap items-center gap-0.5"
           >
             {visibleReactions.map((reaction) => {
               const tooltip =
@@ -392,19 +392,19 @@ export function HumanChatPanelMessageBubble({
                   }}
                   className={cn(
                     /* Discord: rounded rectangle frame, not a full pill */
-                    'inline-flex h-6 min-w-0 shrink-0 items-center gap-1 rounded-md border px-2 text-xs tabular-nums leading-none transition-colors',
+                    'inline-flex h-5 min-w-0 shrink-0 items-center gap-0.5 rounded-md border px-1.5 text-xs tabular-nums leading-none transition-colors',
                     reaction.includesCurrentUser
                       ? 'border-[#5865f2]/50 bg-[#5865f2]/15 hover:bg-[#5865f2]/20 dark:border-[#5865f2]/40 dark:bg-[#5865f2]/20'
                       : 'border-border bg-muted/80 hover:bg-muted',
                     canReact ? 'cursor-pointer' : 'cursor-default opacity-80',
                   )}
                 >
-                  <span className="text-[15px] leading-none" aria-hidden>
+                  <span className="text-[13px] leading-none" aria-hidden>
                     {reaction.emoji}
                   </span>
                   <span
                     className={cn(
-                      'text-[11px] font-medium',
+                      'text-[10px] font-medium leading-none',
                       reaction.includesCurrentUser
                         ? 'text-[#5865f2] dark:text-[#949cf7]'
                         : 'text-muted-foreground',
@@ -448,13 +448,13 @@ export function HumanChatPanelMessageBubble({
                 <button
                   type="button"
                   className={cn(
-                    'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-border',
+                    'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-border',
                     'bg-muted/80 text-muted-foreground transition-colors hover:bg-muted',
                   )}
                   aria-label={t('addReactionButton')}
                   aria-expanded={inlineReactPickerOpen}
                 >
-                  <SmilePlus className="h-3.5 w-3.5" strokeWidth={2} />
+                  <SmilePlus className="h-3 w-3" strokeWidth={2} />
                 </button>
               </HumanChatPanelEmojiPicker>
             )}
@@ -462,10 +462,10 @@ export function HumanChatPanelMessageBubble({
         )}
       </div>
 
-      {/* Discord-style floating bar: rounded rectangle (not a pill) */}
+      {/* Discord-style floating bar: compact height, tight to icon row */}
       <div
         className={cn(
-          'absolute right-3 top-0 z-10 flex h-7 -translate-y-1/2 items-center gap-0 rounded-md border border-border bg-popover px-0.5 py-0 text-popover-foreground shadow-md ring-1 ring-black/5 dark:ring-white/10 transition-opacity duration-150',
+          'absolute right-3 top-0 z-10 flex h-6 -translate-y-1/2 items-center gap-0 rounded-md border border-border bg-popover px-0 py-0 leading-none text-popover-foreground shadow-md ring-1 ring-black/5 dark:ring-white/10 transition-opacity duration-150',
           isActionBarVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
         aria-hidden={!isActionBarVisible}
@@ -484,33 +484,33 @@ export function HumanChatPanelMessageBubble({
         >
           <button
             type="button"
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
             aria-label={t('reactButton')}
             disabled={!canReact}
             aria-disabled={!canReact}
             aria-expanded={hoverReactPickerOpen}
           >
-            <Smile className="h-3.5 w-3.5" strokeWidth={2} />
+            <Smile className="h-3 w-3" strokeWidth={2} />
           </button>
         </HumanChatPanelEmojiPicker>
         <button
           type="button"
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
           aria-label={t('replyButton')}
           disabled={!canReply}
           aria-disabled={!canReply}
           onClick={onReply}
         >
-          <Reply className="h-3.5 w-3.5" strokeWidth={2} />
+          <Reply className="h-3 w-3" strokeWidth={2} />
         </button>
         <button
           type="button"
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground [&_svg]:block"
           aria-label={t('moreButton')}
           disabled
           aria-disabled
         >
-          <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={2} />
+          <MoreHorizontal className="h-3 w-3" strokeWidth={2} />
         </button>
       </div>
     </div>
