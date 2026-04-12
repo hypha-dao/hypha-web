@@ -35,19 +35,31 @@ type UIMessagePart =
 /**
  * Some homeservers reject `/_matrix/media/v3/thumbnail` for certain PNGs while
  * `.../download` works. Try thumbnail first, then full download, then icon.
+ *
+ * **Collage mode:** skip the thumbnail URL entirely — a grid of N tiles would
+ * otherwise issue 2N concurrent media requests (thumb + fallback) and strict
+ * homeservers return 429; download-only halves load and retries help transients.
  */
 function MatrixTimelineImage({
   previewUrl,
   downloadUrl,
   alt,
   className,
+  skipThumbnail = false,
+  errorRetries = 0,
 }: {
   previewUrl: string;
   downloadUrl: string;
   alt: string;
   className?: string;
+  skipThumbnail?: boolean;
+  /** Extra full-URL load attempts after thumb→full already failed (429, etc.). */
+  errorRetries?: number;
 }) {
-  const [stage, setStage] = useState<'thumb' | 'full' | 'fail'>('thumb');
+  const [stage, setStage] = useState<'thumb' | 'full' | 'fail'>(() =>
+    skipThumbnail ? 'full' : 'thumb',
+  );
+  const [retryAttempt, setRetryAttempt] = useState(0);
 
   if (stage === 'fail') {
     return (
@@ -67,15 +79,24 @@ function MatrixTimelineImage({
   return (
     // eslint-disable-next-line @next/next/no-img-element -- Matrix MXC HTTP URL
     <img
+      key={`${stage}-${retryAttempt}`}
       src={src}
       alt={alt}
       className={className}
+      loading={skipThumbnail ? 'lazy' : undefined}
       onError={() => {
         if (stage === 'thumb' && downloadUrl !== previewUrl) {
           setStage('full');
-        } else {
-          setStage('fail');
+          return;
         }
+        if (errorRetries > 0 && retryAttempt < errorRetries) {
+          const next = retryAttempt + 1;
+          window.setTimeout(() => {
+            setRetryAttempt(next);
+          }, 350 * next);
+          return;
+        }
+        setStage('fail');
       }}
     />
   );
@@ -238,6 +259,8 @@ function TimelineCollageImageTile({
                 'h-full w-full object-cover',
                 media.spoiler && !spoilerRevealed && 'blur-2xl',
               )}
+              skipThumbnail
+              errorRetries={2}
             />
           </a>
           {media.spoiler && !spoilerRevealed && (
