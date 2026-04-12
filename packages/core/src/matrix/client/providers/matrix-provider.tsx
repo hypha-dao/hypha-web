@@ -127,6 +127,19 @@ type HyphaMediaEventContent = RoomMessageEventContent & {
   [HYPHA_MEDIA_BUNDLE_FIELD]?: HyphaMediaBundleItemWire[];
 };
 
+/** If `event` is an `m.replace` edit, return the **original** message event id; otherwise `null`. */
+function getRoomMessageReplaceTargetEventId(
+  event: MatrixSdk.MatrixEvent,
+): string | null {
+  if (event.getType() !== MatrixSdk.EventType.RoomMessage) return null;
+  const rel = event.getWireContent()?.['m.relates_to'] as
+    | { rel_type?: string; event_id?: string }
+    | undefined;
+  if (!rel || rel.rel_type !== MatrixSdk.RelationType.Replace) return null;
+  const id = rel.event_id;
+  return typeof id === 'string' && id.trim() !== '' ? id : null;
+}
+
 function loadImageDimensions(
   file: File,
 ): Promise<{ w: number; h: number } | undefined> {
@@ -728,6 +741,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             .getEvents()
             .filter((event) => event.getType() === EventType.RoomMessage)
             .filter((event) => event.getId() && event.getSender())
+            .filter(
+              (event) => getRoomMessageReplaceTargetEventId(event) == null,
+            )
             .map((event) => {
               const base = messageFromRoomMessageEvent(
                 client,
@@ -862,6 +878,34 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         const type = event.getType();
 
         if (type === EventType.RoomMessage) {
+          const replaceTargetId = getRoomMessageReplaceTargetEventId(event);
+          if (replaceTargetId && room) {
+            const targetEv = room.findEventById(replaceTargetId);
+            const targetId = targetEv?.getId();
+            const targetSender = targetEv?.getSender();
+            if (
+              targetEv &&
+              targetEv.getType() === EventType.RoomMessage &&
+              targetId &&
+              targetSender
+            ) {
+              const pinnedIds = getPinnedMessageIds(roomId);
+              let message = messageFromRoomMessageEvent(
+                client,
+                roomId,
+                targetEv,
+                pinnedIds.includes(targetId),
+              );
+              message = attachReactionsToMessage(
+                room,
+                message,
+                client.getUserId(),
+              );
+              await messageListener(message);
+            }
+            return;
+          }
+
           const eventId = event.getId();
           const sender = event.getSender();
           if (!eventId || !sender) return;
