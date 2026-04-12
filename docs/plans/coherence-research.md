@@ -24,6 +24,25 @@ The coherence screen introduces a new DHO tab that surfaces **organisational hea
 | Epics | `packages/epics/src/coherence/` | All UI components (signal cards, conversation cards, forms, chat) |
 | Routes | `apps/web/src/app/[lang]/dho/[id]/` | `@tab/coherence` + `@aside/coherence` parallel routes, nav update |
 
+### 1.1 Organisation memory vs coherence (Space Memory)
+
+The Coherence tab is the natural home for a **single place the organisation looks** at space-scoped files: **organisation memory** (product name may appear in UI as *Space Memory*). That view must eventually cover **both**:
+
+- **Matrix chat / signal-thread attachments** — bytes on the homeserver; `mxc://` pointers in `m.room.message` events (`m.file` / `m.image`).
+- **Proposal (and other) uploads** — bytes in your CDN / object store; HTTPS URLs (+ names) on Hypha `documents` (and similar).
+
+Those flows **do not** put bytes in the same bucket today. Hypha adds a thin **org-scoped catalogue** (one row per logical file) with `source`, fetch strategy (`mxc_uri` vs `app_url` / storage key), ACL, and optional indexing refs — see **`docs/architecture/documents-and-media-overview.md` §4**.
+
+**Important for coherence engineering:**
+
+- **Space chat** uses the space’s Matrix **room**; **signal conversations** use each signal’s `roomId` on the `coherences` row. Any Matrix-side ingestion job for org memory must consider **both** room identifiers for a space.
+- **Automatic** catalogue registration from chat is **not** required for the chat UI itself; it is **follow-up** work after the attachment send path (Matrix `m.file` / `m.image` shipped in [PR #2133](https://github.com/hypha-dao/hypha-web/pull/2133), merged to `main`). Proposal-side registration can lead (§4.5).
+- Matrix remains the **system of record for chat**; the catalogue is an **index** (and optional mirror) for search and AI — not a second timeline.
+
+For implementation detail on chat attachments, see `docs/architecture/space-chat-attachments.md` and `docs/development/space-chat-attachments.md`.
+
+**Implementation plan for the Space Memory UI:** [space-memory-panel.md](./space-memory-panel.md).
+
 ---
 
 ## 2. Storage Layer — `packages/storage-postgres`

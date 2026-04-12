@@ -24,6 +24,8 @@ Two systems need to be joined:
 
 The goal is: clicking a signal card **opens the right panel** and loads that signal's Matrix room into it — no page navigation.
 
+**Attachments and org memory:** Files sent from Human Chat use Matrix media (`m.file` / `m.image`, `mxc://`); they are **not** the same store as proposal uploads (HTTPS on documents). A future **organisation-scoped catalogue** unifies visibility for search, AI, and UI such as *Space Memory* on the Coherence tab — see `docs/architecture/documents-and-media-overview.md` **§4** and [PR #2133](https://github.com/hypha-dao/hypha-web/pull/2133). Automatic catalogue writes from chat are **follow-up**; the chat UI only posts to Matrix.
+
 ---
 
 ## 2. Key File Inventory
