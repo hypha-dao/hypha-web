@@ -722,9 +722,9 @@ export function HumanChatPanelChatBar({
         ).webkitSpeechRecognition,
     );
 
-  /** One compact row: 32px controls; `touch-manipulation` + row padding aid taps on mobile. */
+  /** Tight icon row: 28px hit box, minimal vertical padding on the toolbar strip. */
   const iconButtonClass =
-    'flex h-8 w-8 shrink-0 touch-manipulation items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground active:bg-muted/80 transition-colors disabled:pointer-events-none disabled:opacity-40';
+    'flex h-7 w-7 shrink-0 touch-manipulation items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground active:bg-muted/80 transition-colors disabled:pointer-events-none disabled:opacity-40';
 
   const fmtBtn =
     'flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-popover-foreground transition-colors hover:bg-white/10';
@@ -999,22 +999,71 @@ export function HumanChatPanelChatBar({
           rows={1}
           className={cn(
             'min-h-[32px] min-w-0 max-h-[160px] w-full resize-none',
-            'bg-transparent px-2.5 pt-2 pb-1 text-sm leading-snug text-foreground sm:px-3',
+            'bg-transparent px-2.5 pt-2 pb-0.5 text-sm leading-snug text-foreground sm:px-3',
             'placeholder:text-muted-foreground focus:outline-none',
             isSending && 'cursor-wait opacity-70',
           )}
         />
 
         {/*
-          UX order (high-frequency first, research-aligned): emoji → @mention → voice → add media → send.
-          Bold stays on selection toolbar + ⌘/Ctrl+B — no duplicate icon (saves width, avoids horizontal scroll).
+          Order: attach (+) first, then emoji → @ → voice → send (compact strip).
+          Bold: selection toolbar + ⌘/Ctrl+B only.
         */}
         <div
           role="toolbar"
           aria-label={t('composerToolbar')}
-          className="flex min-h-9 min-w-0 items-center gap-0.5 border-t border-border/60 py-0.5 pe-1 ps-1 sm:pe-1.5 sm:ps-1.5"
+          className="flex min-h-0 min-w-0 items-center gap-0 border-t border-border/60 py-0 pe-1 ps-1 sm:pe-1.5 sm:ps-1.5"
         >
-          <div className="flex min-w-0 flex-1 flex-nowrap items-center justify-start gap-0.5">
+          <div className="flex min-w-0 flex-1 flex-nowrap items-center justify-start gap-0">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className={iconButtonClass}
+                  aria-label={t('attachMenu')}
+                  title={t('attachMenu')}
+                  disabled={isSending}
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                side="top"
+                align="start"
+                className="min-w-[10rem] border border-border"
+              >
+                <DropdownMenuItem
+                  disabled={isSending}
+                  className="gap-2"
+                  onSelect={() => {
+                    requestAnimationFrame(() => imageInputRef.current?.click());
+                  }}
+                >
+                  <Image className="h-4 w-4" aria-hidden />
+                  {t('attachMenuPhoto')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={isSending}
+                  className="gap-2"
+                  onSelect={() => {
+                    requestAnimationFrame(() => videoInputRef.current?.click());
+                  }}
+                >
+                  <Video className="h-4 w-4" aria-hidden />
+                  {t('attachMenuVideo')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={isSending}
+                  className="gap-2"
+                  onSelect={() => {
+                    requestAnimationFrame(() => fileInputRef.current?.click());
+                  }}
+                >
+                  <Paperclip className="h-4 w-4" aria-hidden />
+                  {t('attachMenuFile')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <HumanChatPanelEmojiPicker
               open={emojiPickerOpen}
               onOpenChange={setEmojiPickerOpen}
@@ -1065,55 +1114,6 @@ export function HumanChatPanelChatBar({
                 <Mic className="h-4 w-4" />
               </button>
             )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className={iconButtonClass}
-                  aria-label={t('attachMenu')}
-                  title={t('attachMenu')}
-                  disabled={isSending}
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                side="top"
-                align="start"
-                className="min-w-[10rem] border border-border"
-              >
-                <DropdownMenuItem
-                  disabled={isSending}
-                  className="gap-2"
-                  onSelect={() => {
-                    requestAnimationFrame(() => imageInputRef.current?.click());
-                  }}
-                >
-                  <Image className="h-4 w-4" aria-hidden />
-                  {t('attachMenuPhoto')}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={isSending}
-                  className="gap-2"
-                  onSelect={() => {
-                    requestAnimationFrame(() => videoInputRef.current?.click());
-                  }}
-                >
-                  <Video className="h-4 w-4" aria-hidden />
-                  {t('attachMenuVideo')}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={isSending}
-                  className="gap-2"
-                  onSelect={() => {
-                    requestAnimationFrame(() => fileInputRef.current?.click());
-                  }}
-                >
-                  <Paperclip className="h-4 w-4" aria-hidden />
-                  {t('attachMenuFile')}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
           <button
             type="button"
