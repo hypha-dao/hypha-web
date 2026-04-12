@@ -119,6 +119,24 @@ export const findParentSpaceById = async (
 
 type FindSpaceBySlugInput = { slug: string };
 
+/** Minimal space row for access checks and slug-scoped tools (avoids loading relations). */
+export const findSpaceHostFieldsBySlug = async (
+  { slug }: FindSpaceBySlugInput,
+  { db }: DbConfig,
+) => {
+  const row = await db.query.spaces.findFirst({
+    columns: {
+      id: true,
+      slug: true,
+      title: true,
+      parentId: true,
+      web3SpaceId: true,
+    },
+    where: (spaces, { eq }) => eq(spaces.slug, slug),
+  });
+  return row ?? null;
+};
+
 export const findSpaceBySlug = async (
   { slug }: FindSpaceBySlugInput,
   { db }: DbConfig,
