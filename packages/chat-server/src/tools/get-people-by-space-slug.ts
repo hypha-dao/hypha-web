@@ -47,10 +47,14 @@ export function createGetPeopleBySpaceSlugTool(authToken: string) {
 
       try {
         const host = await findSpaceBySlug({ slug: safe }, { db });
-        if (
-          host?.web3SpaceId != null &&
-          canConvertToBigInt(host.web3SpaceId as number)
-        ) {
+        if (host?.web3SpaceId != null) {
+          if (!canConvertToBigInt(host.web3SpaceId as number)) {
+            return {
+              found: false,
+              space_slug: safe,
+              error: 'Invalid space identifier',
+            };
+          }
           const access = await checkSpaceAccessForSpace(host, authToken);
           if (!access.hasAccess) {
             return {
