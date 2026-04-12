@@ -217,6 +217,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   >([]);
   const draftAttachmentsRef = useRef(draftAttachments);
   draftAttachmentsRef.current = draftAttachments;
+  /** Latest in-flight send; used so error recovery does not clobber edits from a newer send. */
+  const sendOperationTokenRef = useRef<symbol | null>(null);
   const [messages, setMessages] = useState<UIMessage[]>([]);
   const [replyDraft, setReplyDraft] = useState<ReplyDraft | null>(null);
   const [roomId, setRoomId] = useState<string | null>(null);
@@ -640,6 +642,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     const replyToEventId = replyDraft?.messageId;
     const savedDraft = replyDraft;
     const savedAttachments = draftAttachments;
+    const sendToken = Symbol('send');
+    sendOperationTokenRef.current = sendToken;
     setComposerError(null);
     setInput('');
     setDraftAttachments([]);
@@ -660,13 +664,21 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       });
       disposeDraftAttachmentUrls(savedAttachments);
       setReplyDraft(null);
+      if (sendOperationTokenRef.current === sendToken) {
+        sendOperationTokenRef.current = null;
+      }
     } catch (err) {
       console.error('[HumanRightPanel] Failed to send message:', err);
+      if (sendOperationTokenRef.current !== sendToken) {
+        disposeDraftAttachmentUrls(savedAttachments);
+        return;
+      }
+      sendOperationTokenRef.current = null;
       if (err instanceof SendMessagePartialFailureError) {
         const { sentAttachmentCount, restoreCaption, message } = err;
         setComposerError(
           t('sendPartialFailed', {
-            sent: String(sentAttachmentCount),
+            sent: sentAttachmentCount,
             detail: message,
           }),
         );
@@ -690,7 +702,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setReplyDraft(savedDraft);
       setDraftAttachments(savedAttachments);
     }
-  }, [input, roomId, replyDraft, draftAttachments]);
+  }, [input, roomId, replyDraft, draftAttachments, t]);
 
   useEffect(() => {
     return () => {
