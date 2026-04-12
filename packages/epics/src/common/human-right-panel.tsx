@@ -968,6 +968,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 onToggleReaction={handleToggleReaction}
                 persistHoverActionBarMessageId={editDraft?.messageId ?? null}
                 quickReactionEmojis={quickReactionEmojis}
+                matrixRoomId={roomId}
                 onEditMessage={handleEditMessage}
                 resolveReactionReactorLabel={(userId) =>
                   resolveMemberLabel(userId)

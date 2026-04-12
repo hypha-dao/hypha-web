@@ -47,6 +47,8 @@ type HumanChatPanelMessagesProps = {
   persistHoverActionBarMessageId?: string | null;
   /** Up to three emoji shown ahead of the action icons (Discord-style quick react). */
   quickReactionEmojis?: string[];
+  /** Matrix room id for deep-linking messages (copy message link). */
+  matrixRoomId?: string | null;
   onEditMessage?: (messageId: string) => void;
   /** Map Matrix user id to display name for reaction hover tooltips. */
   resolveReactionReactorLabel?: (userId: string) => string;
@@ -59,6 +61,7 @@ export function HumanChatPanelMessages({
   onToggleReaction,
   persistHoverActionBarMessageId = null,
   quickReactionEmojis,
+  matrixRoomId,
   onEditMessage,
   resolveReactionReactorLabel,
 }: HumanChatPanelMessagesProps) {
@@ -150,6 +153,20 @@ export function HumanChatPanelMessages({
                   );
                 }
               }}
+              onMoreMenuOpenChange={(open) => {
+                if (open) {
+                  setLockActionMessageId(msg.id);
+                  return;
+                }
+                setLockActionMessageId((cur) => (cur === msg.id ? null : cur));
+                if (leaveWhileLockedRef.current === msg.id) {
+                  leaveWhileLockedRef.current = null;
+                  setHoverActionMessageId((current) =>
+                    current === msg.id ? null : current,
+                  );
+                }
+              }}
+              matrixRoomId={matrixRoomId ?? undefined}
               isStreaming={
                 msg.role === 'member' &&
                 isStreaming &&
