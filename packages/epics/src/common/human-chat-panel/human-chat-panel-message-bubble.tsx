@@ -3,10 +3,12 @@
 import {
   Fragment,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
   type MouseEvent,
+  type PointerEvent,
 } from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
 import type { TranslationValues } from 'next-intl';
@@ -514,8 +516,8 @@ type HumanChatPanelMessageBubbleProps = {
   resolveReactionReactorLabel?: (userId: string) => string;
   /** Parent list ensures at most one message shows the floating action bar. */
   isActionBarVisible?: boolean;
-  onRowPointerEnter?: () => void;
-  onRowPointerLeave?: () => void;
+  onRowPointerEnter?: (e: PointerEvent<HTMLDivElement>) => void;
+  onRowPointerLeave?: (e: PointerEvent<HTMLDivElement>) => void;
   /** Notify when the hover-bar emoji picker opens/closes (parent may lock visibility). */
   onHoverReactPickerOpenChange?: (open: boolean) => void;
   /** Same as picker lock, for the “more” overflow menu (portal). */
@@ -986,6 +988,14 @@ export function HumanChatPanelMessageBubble({
     },
     [showMessageOverflowMenu, onMoreMenuOpenChange],
   );
+
+  useEffect(() => {
+    if (isActionBarVisible) return;
+    setMoreMenuOpen(false);
+    setContextMenuAnchor(null);
+    setHoverReactPickerOpen(false);
+    onHoverReactPickerOpenChange?.(false);
+  }, [isActionBarVisible, onHoverReactPickerOpenChange]);
 
   return (
     <div
