@@ -101,7 +101,7 @@ export function recordUserReactionEmojiUse(emoji: string): void {
  * Top emoji by frequency for this user, oldest tie-breaker first.
  * Pads with {@link DEFAULT_QUICK_REACTION_EMOJIS} when fewer than `limit` exist.
  */
-export function getTopQuickReactionEmojis(limit = 4): string[] {
+export function getTopQuickReactionEmojis(limit = 3): string[] {
   const counts = readCounts();
   const ranked = Object.entries(counts)
     .filter(([k]) => k.length > 0)
