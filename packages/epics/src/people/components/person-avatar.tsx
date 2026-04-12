@@ -3,6 +3,7 @@ import { UserIcon } from 'lucide-react';
 import { Skeleton } from '@hypha-platform/ui';
 
 type AvatarSize = 'xs' | 'sm' | 'md' | 'lg';
+type AvatarShape = 'rounded' | 'circle';
 
 const sizeMap: Record<AvatarSize, { avatar: string; skeleton: string }> = {
   xs: { avatar: 'w-[12px] h-[12px]', skeleton: '12px' },
@@ -17,12 +18,15 @@ export const PersonAvatar = ({
   className = '',
   isLoading = false,
   size = 'md',
+  shape = 'rounded',
 }: {
   avatarSrc?: string;
   userName?: string;
   className?: string;
   isLoading?: boolean;
   size?: AvatarSize;
+  /** `circle` matches Discord-style round avatars in chat. */
+  shape?: AvatarShape;
 }) => {
   const getFallbackContent = () => {
     if (!userName) {
@@ -38,15 +42,16 @@ export const PersonAvatar = ({
   };
 
   const { avatar: avatarSize, skeleton: skeletonSize } = sizeMap[size];
+  const radiusClass = shape === 'circle' ? 'rounded-full' : 'rounded-lg';
 
   return (
     <Skeleton
       width={skeletonSize}
       height={skeletonSize}
       loading={isLoading}
-      className={`rounded-lg ${className}`}
+      className={`${radiusClass} ${className}`}
     >
-      <Avatar className={`${avatarSize} rounded-lg ${className}`}>
+      <Avatar className={`${avatarSize} ${radiusClass} ${className}`}>
         <AvatarImage src={avatarSrc} alt={`${userName}'s avatar`} />
         <AvatarFallback>{getFallbackContent()}</AvatarFallback>
       </Avatar>

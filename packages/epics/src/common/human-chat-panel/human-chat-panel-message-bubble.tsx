@@ -1,6 +1,15 @@
 'use client';
 
-import { Fragment, useMemo, useRef, useState } from 'react';
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+  type PointerEvent,
+} from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
 import type { TranslationValues } from 'next-intl';
 import {
@@ -8,22 +17,44 @@ import {
   SmilePlus,
   Reply,
   MoreHorizontal,
+  Pencil,
+  Copy,
+  Link2,
+  Volume2,
   FileIcon,
   ExternalLink,
   Image as ImageIcon,
   Loader2,
+  Trash2,
 } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@hypha-platform/ui';
-import { cn } from '@hypha-platform/ui-utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '@hypha-platform/ui';
+import { cn, copyToClipboard } from '@hypha-platform/ui-utils';
 import { useMatrix } from '@hypha-platform/core/client';
 import { PersonAvatar } from '../../people/components/person-avatar';
 
 import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
+import { HumanChatPanelEmojiMartBody } from './human-chat-panel-emoji-mart-body';
 import { ChatMessageRichText } from './parse-simple-matrix-html';
 import {
   type ChatPanelAttachmentMedia,
   isChatPanelVideoFile,
 } from './chat-panel-media-types';
+import {
+  getRecentMenuEmojis,
+  recordRecentMenuEmoji,
+} from './chat-quick-reaction-frequency';
 
 type Reaction = {
   emoji: string;
@@ -485,10 +516,18 @@ type HumanChatPanelMessageBubbleProps = {
   resolveReactionReactorLabel?: (userId: string) => string;
   /** Parent list ensures at most one message shows the floating action bar. */
   isActionBarVisible?: boolean;
-  onRowPointerEnter?: () => void;
-  onRowPointerLeave?: () => void;
+  /** True when this row is the pointer hover target (stronger active state). */
+  isRowPointerActive?: boolean;
+  onRowPointerEnter?: (e: PointerEvent<HTMLDivElement>) => void;
+  onRowPointerLeave?: (e: PointerEvent<HTMLDivElement>) => void;
   /** Notify when the hover-bar emoji picker opens/closes (parent may lock visibility). */
   onHoverReactPickerOpenChange?: (open: boolean) => void;
+  /** Same as picker lock, for the “more” overflow menu (portal). */
+  onMoreMenuOpenChange?: (open: boolean) => void;
+  /** Matrix room id for “copy message link” (permalink with event anchor). */
+  matrixRoomId?: string;
+  /** Matrix user id for scoping recent-emoji / frequency persistence. */
+  matrixUserId?: string | null;
   message: {
     id: string;
     role: 'user' | 'member';
@@ -519,6 +558,12 @@ type HumanChatPanelMessageBubbleProps = {
   onReply?: () => void;
   /** When set, user can open react picker (omit for welcome). */
   onReact?: (emoji: string) => void | Promise<void>;
+  /** Discord-style one-tap reactions ahead of the picker (from local frequency). */
+  quickReactionEmojis?: string[];
+  /** When set, Edit is enabled (own text messages). */
+  onEditMessage?: () => void;
+  /** When set, Delete is enabled (own messages; Matrix redaction). */
+  onDeleteMessage?: () => void | Promise<void>;
 };
 
 const MAX_VISIBLE_REACTIONS = 12;
@@ -683,6 +728,48 @@ function renderTextWithMentions(text: string): React.ReactNode[] {
   return parts;
 }
 
+/**
+ * Strip angle-bracket tags for plain-text copy/speech (SSR-safe, linear time).
+ * Avoids regex on HTML strings (CodeQL: polynomial ReDoS on `<` runs).
+ */
+function stripAngleBracketTagsToPlainText(html: string): string {
+  const parts: string[] = [];
+  let tagBuffer = '';
+
+  for (const c of html) {
+    if (tagBuffer) {
+      tagBuffer += c;
+      if (c === '>') {
+        parts.push(' ');
+        tagBuffer = '';
+      }
+      continue;
+    }
+
+    if (c === '<') {
+      tagBuffer = '<';
+      continue;
+    }
+
+    parts.push(c);
+  }
+
+  if (tagBuffer) {
+    parts.push(tagBuffer);
+  }
+
+  return parts.join('').replace(/\s+/g, ' ').trim();
+}
+
+function stripHtmlToPlainText(html: string): string {
+  if (typeof document === 'undefined') {
+    return stripAngleBracketTagsToPlainText(html);
+  }
+  const el = document.createElement('div');
+  el.innerHTML = html;
+  return (el.textContent ?? '').replace(/\s+/g, ' ').trim();
+}
+
 function reactionTooltipText(
   reaction: Reaction,
   resolveLabel: (userId: string) => string,
@@ -700,13 +787,20 @@ function reactionTooltipText(
 export function HumanChatPanelMessageBubble({
   resolveReactionReactorLabel,
   isActionBarVisible = false,
+  isRowPointerActive = false,
   onRowPointerEnter,
   onRowPointerLeave,
   onHoverReactPickerOpenChange,
+  onMoreMenuOpenChange,
+  matrixRoomId,
+  matrixUserId,
   message,
   isStreaming,
   onReply,
   onReact,
+  quickReactionEmojis,
+  onEditMessage,
+  onDeleteMessage,
 }: HumanChatPanelMessageBubbleProps) {
   const t = useTranslations('HumanChatPanel');
   const format = useFormatter();
@@ -714,6 +808,12 @@ export function HumanChatPanelMessageBubble({
   const [hoverReactPickerOpen, setHoverReactPickerOpen] = useState(false);
   const [inlineReactPickerOpen, setInlineReactPickerOpen] = useState(false);
   const [spoilerRevealed, setSpoilerRevealed] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  /** When set, the overflow menu was opened via row context menu; anchor at fixed coords. */
+  const [contextMenuAnchor, setContextMenuAnchor] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
 
   /**
    * Use **unauthenticated** v3 media URLs for `<img>` and `<a target="_blank">`.
@@ -746,6 +846,12 @@ export function HumanChatPanelMessageBubble({
       (p): p is { type: 'text'; text: string } => p.type === 'text',
     ) ?? [];
   const textContent = textParts.map((p) => p.text).join('');
+  const plainTextForActions = useMemo(() => {
+    if (message.formattedContentHtml) {
+      return stripHtmlToPlainText(message.formattedContentHtml);
+    }
+    return textContent;
+  }, [message.formattedContentHtml, textContent]);
   const replyTo = message.replyTo;
   const jumboLayout = textContent
     ? getEmojiOnlyJumboLayout(textContent, Boolean(replyTo))
@@ -788,27 +894,148 @@ export function HumanChatPanelMessageBubble({
       };
     return { pct: 18, indeterminate: true, showBar: true };
   })();
+  const canEdit = Boolean(
+    onEditMessage &&
+      (plainTextForActions.trim().length > 0 ||
+        Boolean(message.formattedContentHtml?.trim())),
+  );
+  const canDelete = Boolean(onDeleteMessage);
+  const quickStrip =
+    canReact &&
+    onReact &&
+    quickReactionEmojis &&
+    quickReactionEmojis.length > 0;
   const visibleReactions = reactions.slice(0, MAX_VISIBLE_REACTIONS);
   const hiddenReactionCount = Math.max(
     0,
     reactions.length - MAX_VISIBLE_REACTIONS,
   );
 
+  const showMessageOverflowMenu = !message.isSynthetic;
+
+  const canCopyMessageLink = Boolean(
+    matrixRoomId &&
+      showMessageOverflowMenu &&
+      message.id &&
+      !message.id.startsWith('~'),
+  );
+
+  const matrixMessageLink = useMemo(() => {
+    if (!canCopyMessageLink || !matrixRoomId) return '';
+    return `matrix:r/${encodeURIComponent(matrixRoomId)}/e/${encodeURIComponent(
+      message.id,
+    )}`;
+  }, [canCopyMessageLink, matrixRoomId, message.id]);
+
+  const handleCopyText = useCallback(() => {
+    const text = plainTextForActions.trim();
+    if (!text) return;
+    copyToClipboard(text);
+  }, [plainTextForActions]);
+
+  const handleCopyLink = useCallback(() => {
+    if (!matrixMessageLink) return;
+    copyToClipboard(matrixMessageLink);
+  }, [matrixMessageLink]);
+
+  const handleSpeak = useCallback(() => {
+    const text = plainTextForActions.trim();
+    if (!text || typeof window === 'undefined' || !window.speechSynthesis) {
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = document.documentElement.lang || 'en';
+    window.speechSynthesis.speak(u);
+  }, [plainTextForActions]);
+
+  const recentMenuEmojis = moreMenuOpen
+    ? getRecentMenuEmojis(4, matrixUserId)
+    : [];
+
+  const closeMoreMenu = useCallback(() => {
+    setMoreMenuOpen(false);
+    onMoreMenuOpenChange?.(false);
+  }, [onMoreMenuOpenChange]);
+
+  const handleMessageContextMenu = useCallback(
+    (e: MouseEvent<HTMLDivElement>) => {
+      if (e.button !== 2 || !showMessageOverflowMenu) return;
+      e.preventDefault();
+      /** Radix positions `side="left"` content to the left of the anchor; keep anchor inset so the menu stays inside the chat scroll panel. */
+      const APPROX_MENU_WIDTH = 188;
+      const PAD = 8;
+      const scrollEl = (e.currentTarget as HTMLElement).closest(
+        '[data-chat-messages-scroll]',
+      ) as HTMLElement | null;
+      let x = e.clientX;
+      let y = e.clientY;
+      if (scrollEl) {
+        const r = scrollEl.getBoundingClientRect();
+        const minX = r.left + APPROX_MENU_WIDTH + PAD;
+        const maxX = r.right - PAD;
+        const minY = r.top + PAD;
+        const maxY = r.bottom - PAD;
+        if (minX <= maxX) {
+          x = Math.min(Math.max(x, minX), maxX);
+        } else {
+          x = (r.left + r.right) / 2;
+        }
+        if (minY <= maxY) {
+          y = Math.min(Math.max(y, minY), maxY);
+        }
+      }
+      setContextMenuAnchor({ x, y });
+      // Defer past the contextmenu event so Radix does not treat the gesture as
+      // an outside dismiss on the same tick (stable single trigger button).
+      queueMicrotask(() => {
+        setMoreMenuOpen(true);
+        onMoreMenuOpenChange?.(true);
+      });
+    },
+    [showMessageOverflowMenu, onMoreMenuOpenChange],
+  );
+
+  const handleMoreMenuOpenChange = useCallback(
+    (open: boolean) => {
+      if (!showMessageOverflowMenu) return;
+      setMoreMenuOpen(open);
+      onMoreMenuOpenChange?.(open);
+      if (!open) {
+        setContextMenuAnchor(null);
+      }
+    },
+    [showMessageOverflowMenu, onMoreMenuOpenChange],
+  );
+
+  useEffect(() => {
+    if (isActionBarVisible) return;
+    setMoreMenuOpen(false);
+    onMoreMenuOpenChange?.(false);
+    setContextMenuAnchor(null);
+    setHoverReactPickerOpen(false);
+    onHoverReactPickerOpenChange?.(false);
+  }, [isActionBarVisible, onHoverReactPickerOpenChange, onMoreMenuOpenChange]);
+
   return (
     <div
       data-testid="chat-message"
       className={cn(
-        'group relative -mx-3 flex gap-3 rounded-sm px-3 py-0.5 transition-colors',
+        'group relative -mx-3 flex gap-3 rounded-md px-3 py-0.5 transition-colors',
         /* Discord-style row tint: hover (primary) + focus-within for keyboard/reactions */
         'hover:bg-muted/60 focus-within:bg-muted/60',
+        isRowPointerActive &&
+          'bg-primary/10 ring-1 ring-primary/25 dark:bg-primary/15 dark:ring-primary/30',
       )}
       onPointerEnter={onRowPointerEnter}
       onPointerLeave={onRowPointerLeave}
+      onContextMenu={handleMessageContextMenu}
     >
       {/* Avatar */}
       <div className="mt-0.5 shrink-0" data-testid="chat-message-avatar">
         <PersonAvatar
           size="sm"
+          shape="circle"
           avatarSrc={message.avatarUrl}
           userName={senderName}
         />
@@ -1222,6 +1449,7 @@ export function HumanChatPanelMessageBubble({
                 open={inlineReactPickerOpen}
                 onOpenChange={setInlineReactPickerOpen}
                 onEmojiSelect={(native) => {
+                  recordRecentMenuEmoji(native, matrixUserId);
                   void onReact(native);
                 }}
                 ariaLabel={t('addReactionButton')}
@@ -1244,14 +1472,37 @@ export function HumanChatPanelMessageBubble({
         )}
       </div>
 
-      {/* Discord-style floating bar: compact height, tight to icon row */}
+      {/* Floating action bar: tight width, subtle corner radius (Discord-like) */}
       <div
         className={cn(
-          'absolute right-3 top-0 z-10 flex h-6 -translate-y-1/2 items-center gap-0 rounded-md border border-border bg-popover px-0 py-0 leading-none text-popover-foreground shadow-md ring-1 ring-black/5 dark:ring-white/10 transition-opacity duration-150',
+          'absolute right-3 top-0 z-10 inline-flex h-[22px] -translate-y-1/2 items-center gap-0 rounded border border-border bg-popover px-px py-0 leading-none text-popover-foreground shadow-md ring-1 ring-black/5 dark:ring-white/10 transition-opacity duration-150',
           isActionBarVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
         aria-hidden={!isActionBarVisible}
+        inert={isActionBarVisible ? undefined : true}
       >
+        {quickStrip &&
+          quickReactionEmojis!.slice(0, 3).map((emoji) => (
+            <button
+              key={emoji}
+              type="button"
+              className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-[2px] p-0 text-[12px] leading-none transition-colors hover:bg-muted"
+              aria-label={t('quickReactWith', { emoji })}
+              onClick={() => {
+                recordRecentMenuEmoji(emoji, matrixUserId);
+                void onReact!(emoji);
+              }}
+            >
+              <span aria-hidden>{emoji}</span>
+            </button>
+          ))}
+        {quickStrip ? (
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            className="h-3 w-px shrink-0 bg-border"
+          />
+        ) : null}
         <HumanChatPanelEmojiPicker
           open={hoverReactPickerOpen}
           onOpenChange={(open) => {
@@ -1259,6 +1510,7 @@ export function HumanChatPanelMessageBubble({
             onHoverReactPickerOpenChange?.(open);
           }}
           onEmojiSelect={(native) => {
+            recordRecentMenuEmoji(native, matrixUserId);
             if (onReact) void onReact(native);
           }}
           ariaLabel={t('emojiPickerReactToMessage')}
@@ -1266,7 +1518,7 @@ export function HumanChatPanelMessageBubble({
         >
           <button
             type="button"
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
+            className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-[2px] p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
             aria-label={t('reactButton')}
             disabled={!canReact}
             aria-disabled={!canReact}
@@ -1277,7 +1529,17 @@ export function HumanChatPanelMessageBubble({
         </HumanChatPanelEmojiPicker>
         <button
           type="button"
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
+          className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-[2px] p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
+          aria-label={t('editButton')}
+          disabled={!canEdit}
+          aria-disabled={!canEdit}
+          onClick={onEditMessage}
+        >
+          <Pencil className="h-3 w-3" strokeWidth={2} />
+        </button>
+        <button
+          type="button"
+          className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-[2px] p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
           aria-label={t('replyButton')}
           disabled={!canReply}
           aria-disabled={!canReply}
@@ -1285,15 +1547,171 @@ export function HumanChatPanelMessageBubble({
         >
           <Reply className="h-3 w-3" strokeWidth={2} />
         </button>
-        <button
-          type="button"
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground [&_svg]:block"
-          aria-label={t('moreButton')}
-          disabled
-          aria-disabled
+        <DropdownMenu
+          modal={false}
+          open={showMessageOverflowMenu ? moreMenuOpen : false}
+          onOpenChange={handleMoreMenuOpenChange}
         >
-          <MoreHorizontal className="h-3 w-3" strokeWidth={2} />
-        </button>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              data-testid="chat-message-more-trigger"
+              aria-label={t('moreButton')}
+              aria-expanded={moreMenuOpen}
+              disabled={!showMessageOverflowMenu}
+              aria-disabled={!showMessageOverflowMenu}
+              className={cn(
+                'shrink-0 rounded-[2px] p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground data-[state=open]:bg-muted disabled:pointer-events-none disabled:opacity-40 [&_svg]:block',
+                contextMenuAnchor
+                  ? 'pointer-events-none fixed z-20 h-1 w-1 min-w-0 border-0 bg-transparent opacity-0'
+                  : 'relative flex h-[22px] w-[22px] items-center justify-center',
+              )}
+              style={
+                contextMenuAnchor
+                  ? {
+                      left: contextMenuAnchor.x,
+                      top: contextMenuAnchor.y,
+                    }
+                  : undefined
+              }
+            >
+              {!contextMenuAnchor ? (
+                <MoreHorizontal className="h-3 w-3" strokeWidth={2} />
+              ) : null}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            side="left"
+            align="start"
+            collisionPadding={12}
+            className="z-[50] w-[min(100vw-2rem,172px)] overflow-visible border border-border px-1 py-0.5 shadow-lg"
+          >
+            {canReact && onReact && recentMenuEmojis.length > 0 ? (
+              <>
+                <div className="flex justify-center gap-0.5 px-0.5 pb-1 pt-0.5">
+                  {recentMenuEmojis.map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-border bg-muted/50 text-[13px] leading-none transition-colors hover:bg-muted"
+                      aria-label={t('quickReactWith', { emoji })}
+                      onClick={() => {
+                        recordRecentMenuEmoji(emoji, matrixUserId);
+                        void onReact(emoji);
+                        closeMoreMenu();
+                      }}
+                    >
+                      <span aria-hidden>{emoji}</span>
+                    </button>
+                  ))}
+                </div>
+                <DropdownMenuSeparator className="my-0.5 bg-border" />
+              </>
+            ) : null}
+            {canReact && onReact ? (
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="flex h-7 min-h-7 w-full items-center rounded-sm px-1.5 py-0 text-[11px] leading-tight outline-none focus:bg-accent data-[state=open]:bg-accent [&_svg]:!size-3">
+                  <span className="min-w-0 flex-1 truncate text-left">
+                    {t('messageMenuAddReaction')}
+                  </span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent
+                  className="z-[300] overflow-visible border border-border bg-popover p-0 shadow-xl"
+                  sideOffset={6}
+                >
+                  <HumanChatPanelEmojiMartBody
+                    compact
+                    onEmojiSelect={(native) => {
+                      recordRecentMenuEmoji(native, matrixUserId);
+                      void onReact(native);
+                      closeMoreMenu();
+                    }}
+                  />
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+            ) : null}
+            {canReact && onReact ? (
+              <DropdownMenuSeparator className="my-0.5 bg-border" />
+            ) : null}
+            <DropdownMenuItem
+              className="flex h-7 min-h-7 items-center justify-between gap-1.5 rounded-sm px-1.5 py-0 text-[11px] leading-tight [&_svg]:!size-3"
+              disabled={!canEdit}
+              onSelect={(e) => {
+                e.preventDefault();
+                onEditMessage?.();
+                closeMoreMenu();
+              }}
+            >
+              <span className="truncate">{t('messageMenuEdit')}</span>
+              <Pencil className="shrink-0 opacity-70" strokeWidth={2} />
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="flex h-7 min-h-7 items-center justify-between gap-1.5 rounded-sm px-1.5 py-0 text-[11px] leading-tight [&_svg]:!size-3"
+              disabled={!canReply}
+              onSelect={(e) => {
+                e.preventDefault();
+                onReply?.();
+                closeMoreMenu();
+              }}
+            >
+              <span className="truncate">{t('messageMenuReply')}</span>
+              <Reply className="shrink-0 opacity-70" strokeWidth={2} />
+            </DropdownMenuItem>
+            <DropdownMenuSeparator className="my-0.5 bg-border" />
+            <DropdownMenuItem
+              className="flex h-7 min-h-7 items-center justify-between gap-1.5 rounded-sm px-1.5 py-0 text-[11px] leading-tight [&_svg]:!size-3"
+              disabled={!plainTextForActions.trim()}
+              onSelect={(e) => {
+                e.preventDefault();
+                handleCopyText();
+                closeMoreMenu();
+              }}
+            >
+              <span className="truncate">{t('messageMenuCopyText')}</span>
+              <Copy className="shrink-0 opacity-70" strokeWidth={2} />
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="flex h-7 min-h-7 items-center justify-between gap-1.5 rounded-sm px-1.5 py-0 text-[11px] leading-tight [&_svg]:!size-3"
+              disabled={!canCopyMessageLink}
+              onSelect={(e) => {
+                e.preventDefault();
+                handleCopyLink();
+                closeMoreMenu();
+              }}
+            >
+              <span className="truncate">{t('messageMenuCopyLink')}</span>
+              <Link2 className="shrink-0 opacity-70" strokeWidth={2} />
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="flex h-7 min-h-7 items-center justify-between gap-1.5 rounded-sm px-1.5 py-0 text-[11px] leading-tight [&_svg]:!size-3"
+              disabled={!plainTextForActions.trim()}
+              onSelect={(e) => {
+                e.preventDefault();
+                handleSpeak();
+                closeMoreMenu();
+              }}
+            >
+              <span className="truncate">{t('messageMenuSpeak')}</span>
+              <Volume2 className="shrink-0 opacity-70" strokeWidth={2} />
+            </DropdownMenuItem>
+            {canDelete ? (
+              <>
+                <DropdownMenuSeparator className="my-0.5 bg-border" />
+                <DropdownMenuItem
+                  className="flex h-7 min-h-7 items-center justify-between gap-1.5 rounded-sm px-1.5 py-0 text-[11px] leading-tight text-destructive focus:bg-destructive/10 focus:text-destructive [&_svg]:!size-3"
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    void onDeleteMessage?.();
+                    closeMoreMenu();
+                  }}
+                >
+                  <span className="truncate">{t('messageMenuDelete')}</span>
+                  <Trash2 className="shrink-0 opacity-90" strokeWidth={2} />
+                </DropdownMenuItem>
+              </>
+            ) : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );

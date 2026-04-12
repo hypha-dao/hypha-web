@@ -43,6 +43,16 @@ type HumanChatPanelMessagesProps = {
   isStreaming?: boolean;
   onReply?: (messageId: string) => void;
   onToggleReaction?: (messageId: string, emoji: string) => void;
+  /** Keep the hover action bar visible for this message (e.g. while editing it). */
+  persistHoverActionBarMessageId?: string | null;
+  /** Up to three emoji shown ahead of the action icons (Discord-style quick react). */
+  quickReactionEmojis?: string[];
+  /** Matrix room id for deep-linking messages (copy message link). */
+  matrixRoomId?: string | null;
+  /** Current Matrix user id (scopes emoji frequency / recents in localStorage). */
+  matrixUserId?: string | null;
+  onEditMessage?: (messageId: string) => void;
+  onDeleteMessage?: (messageId: string) => void | Promise<void>;
   /** Map Matrix user id to display name for reaction hover tooltips. */
   resolveReactionReactorLabel?: (userId: string) => string;
 };
@@ -52,6 +62,12 @@ export function HumanChatPanelMessages({
   isStreaming = false,
   onReply,
   onToggleReaction,
+  persistHoverActionBarMessageId = null,
+  quickReactionEmojis,
+  matrixRoomId,
+  matrixUserId,
+  onEditMessage,
+  onDeleteMessage,
   resolveReactionReactorLabel,
 }: HumanChatPanelMessagesProps) {
   const t = useTranslations('HumanChatPanel');
@@ -71,10 +87,15 @@ export function HumanChatPanelMessages({
   const [lockActionMessageId, setLockActionMessageId] = useState<string | null>(
     null,
   );
+  const migrateLockRowId = (fromId: string, toId: string) => {
+    setLockActionMessageId((cur) => (cur === fromId ? toId : cur));
+  };
   const lockActionMessageIdRef = useRef<string | null>(null);
   lockActionMessageIdRef.current = lockActionMessageId;
-  /** Pointer left row while hover picker was open (portal); hide bar when picker closes. */
-  const leaveWhileLockedRef = useRef<string | null>(null);
+  const combinedLockMessageId =
+    persistHoverActionBarMessageId ?? lockActionMessageId;
+  const combinedLockMessageIdRef = useRef<string | null>(null);
+  combinedLockMessageIdRef.current = combinedLockMessageId;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -88,27 +109,50 @@ export function HumanChatPanelMessages({
   return (
     <div
       ref={containerRef}
-      className="narrow-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto px-3 py-3"
+      data-chat-messages-scroll
+      className="narrow-scrollbar flex min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto px-3 py-3"
     >
       <div className="flex flex-col gap-4">
         {displayMessages.map((msg, index) => {
           const canInteract = !msg.isSynthetic;
+          const textParts =
+            msg.parts?.filter(
+              (p): p is { type: 'text'; text: string } => p.type === 'text',
+            ) ?? [];
+          const textContent = textParts.map((p) => p.text).join('');
+          const canEditThis =
+            canInteract &&
+            msg.role === 'user' &&
+            Boolean(onEditMessage) &&
+            (textContent.trim().length > 0 ||
+              Boolean(msg.formattedContentHtml?.trim()));
+          const canDeleteThis =
+            canInteract &&
+            msg.role === 'user' &&
+            Boolean(onDeleteMessage) &&
+            !msg.id.startsWith('~');
+          // Persist (e.g. edit draft) keeps the bar on that row; ephemeral lock (picker/menu)
+          // blocks hover elsewhere. Do not treat persist alone as blocking hover — otherwise
+          // hovering another message shows highlight but no toolbar (combinedLock !== null).
           const isActionBarVisible =
-            lockActionMessageId === msg.id ||
+            combinedLockMessageId === msg.id ||
             (hoverActionMessageId === msg.id && lockActionMessageId == null);
+          const isRowPointerActive = hoverActionMessageId === msg.id;
           return (
             <HumanChatPanelMessageBubble
               key={msg.id}
               message={msg}
               resolveReactionReactorLabel={resolveReactionReactorLabel}
               isActionBarVisible={isActionBarVisible}
+              isRowPointerActive={isRowPointerActive}
               onRowPointerEnter={() => {
-                leaveWhileLockedRef.current = null;
+                if (lockActionMessageIdRef.current) {
+                  migrateLockRowId(lockActionMessageIdRef.current, msg.id);
+                }
                 setHoverActionMessageId(msg.id);
               }}
               onRowPointerLeave={() => {
-                if (lockActionMessageIdRef.current === msg.id) {
-                  leaveWhileLockedRef.current = msg.id;
+                if (combinedLockMessageIdRef.current === msg.id) {
                   return;
                 }
                 setHoverActionMessageId((current) =>
@@ -121,13 +165,20 @@ export function HumanChatPanelMessages({
                   return;
                 }
                 setLockActionMessageId((cur) => (cur === msg.id ? null : cur));
-                if (leaveWhileLockedRef.current === msg.id) {
-                  leaveWhileLockedRef.current = null;
-                  setHoverActionMessageId((current) =>
-                    current === msg.id ? null : current,
-                  );
-                }
+                // Portal: pointer may not leave the row; reset hover when picker closes.
+                setHoverActionMessageId(null);
               }}
+              onMoreMenuOpenChange={(open) => {
+                if (open) {
+                  setLockActionMessageId(msg.id);
+                  return;
+                }
+                setLockActionMessageId((cur) => (cur === msg.id ? null : cur));
+                // Portal: pointer may not leave the row; reset hover when menu closes.
+                setHoverActionMessageId(null);
+              }}
+              matrixRoomId={matrixRoomId ?? undefined}
+              matrixUserId={matrixUserId}
               isStreaming={
                 msg.role === 'member' &&
                 isStreaming &&
@@ -139,6 +190,17 @@ export function HumanChatPanelMessages({
               onReact={
                 canInteract && onToggleReaction
                   ? (emoji: string) => onToggleReaction(msg.id, emoji)
+                  : undefined
+              }
+              quickReactionEmojis={quickReactionEmojis}
+              onEditMessage={
+                canEditThis && onEditMessage
+                  ? () => onEditMessage(msg.id)
+                  : undefined
+              }
+              onDeleteMessage={
+                canDeleteThis && onDeleteMessage
+                  ? () => onDeleteMessage(msg.id)
                   : undefined
               }
             />
