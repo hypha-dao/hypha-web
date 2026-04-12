@@ -981,8 +981,12 @@ export function HumanChatPanelMessageBubble({
         }
       }
       setContextMenuAnchor({ x, y });
-      setMoreMenuOpen(true);
-      onMoreMenuOpenChange?.(true);
+      // Defer open so the contextmenu gesture does not immediately dismiss the
+      // menu, and so Radix keeps a stable trigger (we use one button below).
+      requestAnimationFrame(() => {
+        setMoreMenuOpen(true);
+        onMoreMenuOpenChange?.(true);
+      });
     },
     [showMessageOverflowMenu, onMoreMenuOpenChange],
   );
@@ -1531,30 +1535,32 @@ export function HumanChatPanelMessageBubble({
           onOpenChange={handleMoreMenuOpenChange}
         >
           <DropdownMenuTrigger asChild>
-            {contextMenuAnchor ? (
-              <button
-                type="button"
-                tabIndex={-1}
-                aria-hidden
-                className="pointer-events-none fixed z-20 h-px w-px min-w-0 border-0 bg-transparent p-0 opacity-0"
-                style={{
-                  left: contextMenuAnchor.x,
-                  top: contextMenuAnchor.y,
-                }}
-              />
-            ) : (
-              <button
-                type="button"
-                data-testid="chat-message-more-trigger"
-                className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-[2px] p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground data-[state=open]:bg-muted disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
-                aria-label={t('moreButton')}
-                aria-expanded={moreMenuOpen}
-                disabled={!showMessageOverflowMenu}
-                aria-disabled={!showMessageOverflowMenu}
-              >
+            <button
+              type="button"
+              data-testid="chat-message-more-trigger"
+              aria-label={t('moreButton')}
+              aria-expanded={moreMenuOpen}
+              disabled={!showMessageOverflowMenu}
+              aria-disabled={!showMessageOverflowMenu}
+              className={cn(
+                'shrink-0 rounded-[2px] p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground data-[state=open]:bg-muted disabled:pointer-events-none disabled:opacity-40 [&_svg]:block',
+                contextMenuAnchor
+                  ? 'pointer-events-none fixed z-20 h-1 w-1 min-w-0 border-0 bg-transparent opacity-0'
+                  : 'relative flex h-[22px] w-[22px] items-center justify-center',
+              )}
+              style={
+                contextMenuAnchor
+                  ? {
+                      left: contextMenuAnchor.x,
+                      top: contextMenuAnchor.y,
+                    }
+                  : undefined
+              }
+            >
+              {!contextMenuAnchor ? (
                 <MoreHorizontal className="h-3 w-3" strokeWidth={2} />
-              </button>
-            )}
+              ) : null}
+            </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             side="left"
