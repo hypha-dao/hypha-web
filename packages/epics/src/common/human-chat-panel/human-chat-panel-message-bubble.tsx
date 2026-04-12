@@ -3,15 +3,11 @@
 import {
   Fragment,
   useCallback,
-  useEffect,
   useMemo,
   useState,
   type MouseEvent,
 } from 'react';
-import { useLocale, useTranslations } from 'next-intl';
-import { useTheme } from 'next-themes';
-import Picker from '@emoji-mart/react';
-import data from '@emoji-mart/data';
+import { useTranslations } from 'next-intl';
 import type { TranslationValues } from 'next-intl';
 import {
   Smile,
@@ -41,8 +37,8 @@ import { cn, copyToClipboard } from '@hypha-platform/ui-utils';
 import { PersonAvatar } from '../../people/components/person-avatar';
 
 import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
+import { HumanChatPanelEmojiMartBody } from './human-chat-panel-emoji-mart-body';
 import { ChatMessageRichText } from './parse-simple-matrix-html';
-import { getEmojiMartI18n } from './emoji-mart-i18n';
 import {
   getRecentMenuEmojis,
   recordRecentMenuEmoji,
@@ -340,12 +336,6 @@ export function HumanChatPanelMessageBubble({
     x: number;
     y: number;
   } | null>(null);
-  const locale = useLocale();
-  const { resolvedTheme } = useTheme();
-  const [emojiMartMounted, setEmojiMartMounted] = useState(false);
-  useEffect(() => {
-    setEmojiMartMounted(true);
-  }, []);
 
   // TODO: Handle non-text parts (file attachments, tool results, etc.)
   const textParts =
@@ -427,12 +417,6 @@ export function HumanChatPanelMessageBubble({
   }, [plainTextForActions]);
 
   const recentMenuEmojis = moreMenuOpen ? getRecentMenuEmojis(4) : [];
-
-  const pickerLocale = ['en', 'es', 'fr', 'de', 'pt'].includes(locale)
-    ? locale
-    : 'en';
-  const pickerTheme =
-    emojiMartMounted && resolvedTheme === 'dark' ? 'dark' : 'light';
 
   const handleMessageContextMenu = useCallback(
     (e: MouseEvent<HTMLDivElement>) => {
@@ -823,27 +807,14 @@ export function HumanChatPanelMessageBubble({
                   className="z-[300] overflow-visible border border-border bg-popover p-0 shadow-xl"
                   sideOffset={6}
                 >
-                  {emojiMartMounted ? (
-                    <div className="h-[min(260px,42vh)] w-[min(100vw-2rem,240px)] overflow-hidden">
-                      <Picker
-                        data={data}
-                        i18n={getEmojiMartI18n(pickerLocale)}
-                        onEmojiSelect={(emoji: { native: string }) => {
-                          recordRecentMenuEmoji(emoji.native);
-                          void onReact(emoji.native);
-                          setMoreMenuOpen(false);
-                        }}
-                        theme={pickerTheme}
-                        previewPosition="none"
-                        skinTonePosition="search"
-                        locale={pickerLocale}
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex h-32 w-[240px] items-center justify-center text-[11px] text-muted-foreground">
-                      {t('loading')}
-                    </div>
-                  )}
+                  <HumanChatPanelEmojiMartBody
+                    compact
+                    onEmojiSelect={(native) => {
+                      recordRecentMenuEmoji(native);
+                      void onReact(native);
+                      setMoreMenuOpen(false);
+                    }}
+                  />
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
             ) : null}
