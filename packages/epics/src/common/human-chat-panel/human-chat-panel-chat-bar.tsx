@@ -164,6 +164,9 @@ export function HumanChatPanelChatBar({
   const dictationEpochRef = useRef(0);
 
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  /** Controlled so we can close + open another surface in one pointer gesture. */
+  const [attachMenuOpen, setAttachMenuOpen] = useState(false);
+  const skipNextToolbarClickRef = useRef(false);
   const [colonOpen, setColonOpen] = useState(false);
   const [colonSuggestions, setColonSuggestions] = useState<EmojiIndexEntry[]>(
     [],
@@ -685,7 +688,7 @@ export function HumanChatPanelChatBar({
     ? t('placeholderChannel', { channel: channelName })
     : t('placeholder');
 
-  const handleMention = () => {
+  const handleMention = useCallback(() => {
     const el = textareaRef.current;
     if (!el) {
       onChange(`${value}@`);
@@ -700,7 +703,30 @@ export function HumanChatPanelChatBar({
       syncMentionState(next, caret);
       autoResize();
     });
-  };
+  }, [value, onChange, autoResize, syncMentionState]);
+
+  /** One tap: dismiss attach menu then run action (avoids “click twice” when switching surfaces). */
+  const switchFromAttachMenu = useCallback(
+    (e: React.PointerEvent, action: () => void) => {
+      if (!attachMenuOpen || isSending) return;
+      e.preventDefault();
+      e.stopPropagation();
+      skipNextToolbarClickRef.current = true;
+      setAttachMenuOpen(false);
+      requestAnimationFrame(() => {
+        action();
+      });
+    },
+    [attachMenuOpen, isSending],
+  );
+
+  const onToolbarClickAfterAttachSwitch = useCallback((action: () => void) => {
+    if (skipNextToolbarClickRef.current) {
+      skipNextToolbarClickRef.current = false;
+      return;
+    }
+    action();
+  }, []);
 
   const onPaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     if (isSending) return;
@@ -1038,7 +1064,10 @@ export function HumanChatPanelChatBar({
             className="flex h-11 min-h-[2.75rem] min-w-0 items-center gap-0 border-t border-border/50 px-1.5 sm:px-2"
           >
             <div className="flex min-w-0 flex-1 flex-nowrap items-center justify-start gap-0">
-              <DropdownMenu>
+              <DropdownMenu
+                open={attachMenuOpen}
+                onOpenChange={setAttachMenuOpen}
+              >
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
@@ -1107,6 +1136,9 @@ export function HumanChatPanelChatBar({
                   title={t('emoji')}
                   aria-expanded={emojiPickerOpen}
                   disabled={isSending}
+                  onPointerDownCapture={(e) => {
+                    switchFromAttachMenu(e, () => setEmojiPickerOpen(true));
+                  }}
                 >
                   <Smile className="h-4 w-4" />
                 </button>
@@ -1117,7 +1149,10 @@ export function HumanChatPanelChatBar({
                 aria-label={t('mention')}
                 title={t('mention')}
                 disabled={isSending}
-                onClick={handleMention}
+                onPointerDownCapture={(e) =>
+                  switchFromAttachMenu(e, handleMention)
+                }
+                onClick={() => onToolbarClickAfterAttachSwitch(handleMention)}
               >
                 <AtSign className="h-4 w-4" />
               </button>
@@ -1136,8 +1171,15 @@ export function HumanChatPanelChatBar({
                   }
                   aria-pressed={dictationActive}
                   disabled={isSending}
+                  onPointerDownCapture={(e) =>
+                    switchFromAttachMenu(e, () =>
+                      dictationActive ? stopDictation() : startDictation(),
+                    )
+                  }
                   onClick={() =>
-                    dictationActive ? stopDictation() : startDictation()
+                    onToolbarClickAfterAttachSwitch(() =>
+                      dictationActive ? stopDictation() : startDictation(),
+                    )
                   }
                 >
                   <Mic className="h-4 w-4" />
