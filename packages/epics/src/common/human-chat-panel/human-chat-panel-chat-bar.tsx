@@ -1044,6 +1044,7 @@ export function HumanChatPanelChatBar({
             onKeyUp={updateSelectionBar}
             onMouseUp={updateSelectionBar}
             onBlur={() => setSelectionBar(null)}
+            onContextMenu={() => setSelectionBar(null)}
             onKeyDown={handleKeyDown}
             onPaste={onPaste}
             aria-label={placeholder ?? defaultPlaceholder}
