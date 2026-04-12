@@ -948,6 +948,11 @@ export function HumanChatPanelMessageBubble({
 
   const recentMenuEmojis = moreMenuOpen ? getRecentMenuEmojis(4) : [];
 
+  const closeMoreMenu = useCallback(() => {
+    setMoreMenuOpen(false);
+    onMoreMenuOpenChange?.(false);
+  }, [onMoreMenuOpenChange]);
+
   const handleMessageContextMenu = useCallback(
     (e: MouseEvent<HTMLDivElement>) => {
       if (e.button !== 2 || !showMessageOverflowMenu) return;
@@ -1001,10 +1006,11 @@ export function HumanChatPanelMessageBubble({
   useEffect(() => {
     if (isActionBarVisible) return;
     setMoreMenuOpen(false);
+    onMoreMenuOpenChange?.(false);
     setContextMenuAnchor(null);
     setHoverReactPickerOpen(false);
     onHoverReactPickerOpenChange?.(false);
-  }, [isActionBarVisible, onHoverReactPickerOpenChange]);
+  }, [isActionBarVisible, onHoverReactPickerOpenChange, onMoreMenuOpenChange]);
 
   return (
     <div
@@ -1585,7 +1591,7 @@ export function HumanChatPanelMessageBubble({
                       onClick={() => {
                         recordRecentMenuEmoji(emoji);
                         void onReact(emoji);
-                        setMoreMenuOpen(false);
+                        closeMoreMenu();
                       }}
                     >
                       <span aria-hidden>{emoji}</span>
@@ -1611,7 +1617,7 @@ export function HumanChatPanelMessageBubble({
                     onEmojiSelect={(native) => {
                       recordRecentMenuEmoji(native);
                       void onReact(native);
-                      setMoreMenuOpen(false);
+                      closeMoreMenu();
                     }}
                   />
                 </DropdownMenuSubContent>
@@ -1626,7 +1632,7 @@ export function HumanChatPanelMessageBubble({
               onSelect={(e) => {
                 e.preventDefault();
                 onEditMessage?.();
-                setMoreMenuOpen(false);
+                closeMoreMenu();
               }}
             >
               <span className="truncate">{t('messageMenuEdit')}</span>
@@ -1638,7 +1644,7 @@ export function HumanChatPanelMessageBubble({
               onSelect={(e) => {
                 e.preventDefault();
                 onReply?.();
-                setMoreMenuOpen(false);
+                closeMoreMenu();
               }}
             >
               <span className="truncate">{t('messageMenuReply')}</span>
@@ -1651,7 +1657,7 @@ export function HumanChatPanelMessageBubble({
               onSelect={(e) => {
                 e.preventDefault();
                 handleCopyText();
-                setMoreMenuOpen(false);
+                closeMoreMenu();
               }}
             >
               <span className="truncate">{t('messageMenuCopyText')}</span>
@@ -1663,7 +1669,7 @@ export function HumanChatPanelMessageBubble({
               onSelect={(e) => {
                 e.preventDefault();
                 handleCopyLink();
-                setMoreMenuOpen(false);
+                closeMoreMenu();
               }}
             >
               <span className="truncate">{t('messageMenuCopyLink')}</span>
@@ -1675,7 +1681,7 @@ export function HumanChatPanelMessageBubble({
               onSelect={(e) => {
                 e.preventDefault();
                 handleSpeak();
-                setMoreMenuOpen(false);
+                closeMoreMenu();
               }}
             >
               <span className="truncate">{t('messageMenuSpeak')}</span>
@@ -1689,7 +1695,7 @@ export function HumanChatPanelMessageBubble({
                   onSelect={(e) => {
                     e.preventDefault();
                     void onDeleteMessage?.();
-                    setMoreMenuOpen(false);
+                    closeMoreMenu();
                   }}
                 >
                   <span className="truncate">{t('messageMenuDelete')}</span>
