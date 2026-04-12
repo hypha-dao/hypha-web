@@ -15,6 +15,8 @@ import {
   useCoherenceMutationsWeb2Rsc,
   useJwt,
   useMe,
+  useSpaceBySlug,
+  useSpaceMutationsWeb2Rsc,
   Message,
   firstLineForReplyPreview,
   RoomEvent,
@@ -84,6 +86,14 @@ function getStoredRoomId(spaceSlug: string): string | null {
 function storeRoomId(spaceSlug: string, roomId: string): void {
   try {
     localStorage.setItem(`${ROOM_STORAGE_KEY}${spaceSlug}`, roomId);
+  } catch {
+    // localStorage not available
+  }
+}
+
+function clearStoredRoomId(spaceSlug: string): void {
+  try {
+    localStorage.removeItem(`${ROOM_STORAGE_KEY}${spaceSlug}`);
   } catch {
     // localStorage not available
   }
@@ -175,6 +185,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   } = useHumanChatPanel();
   const { jwt: authToken } = useJwt();
   const { person: me } = useMe();
+  const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug ?? '');
+  const { updateSpaceBySlug } = useSpaceMutationsWeb2Rsc(authToken);
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
   const { open: sidebarOpen } = useSidebar();
 
@@ -301,31 +313,71 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     )
       return;
     if (!spaceSlug) return;
+    if (isSpaceLoading) return;
 
     let cancelled = false;
-    const { joinRoom, createRoom, getRoomMessages } = matrixRef.current;
+    const { joinRoom, createRoom, getRoomMessages, client } = matrixRef.current;
 
     const initRoom = async () => {
       setIsJoining(true);
       setError(null);
       try {
-        let targetRoomId = getStoredRoomId(spaceSlug);
+        const canonicalRoomId = space?.chatRoomId?.trim() || null;
+        const storedRoomId = getStoredRoomId(spaceSlug);
+
+        if (
+          canonicalRoomId &&
+          storedRoomId &&
+          canonicalRoomId !== storedRoomId
+        ) {
+          clearStoredRoomId(spaceSlug);
+        }
+
+        let targetRoomId: string | null = canonicalRoomId || storedRoomId;
+
+        const ensureJoined = async (roomId: string) => {
+          await joinRoom(roomId);
+          const room = client?.getRoom(roomId);
+          if (!room) {
+            throw new Error('Room not available in Matrix client after join');
+          }
+        };
 
         if (targetRoomId) {
           try {
-            await joinRoom(targetRoomId);
-          } catch {
+            await ensureJoined(targetRoomId);
+          } catch (joinErr) {
+            if (canonicalRoomId && targetRoomId === canonicalRoomId) {
+              throw joinErr;
+            }
+            clearStoredRoomId(spaceSlug);
             targetRoomId = null;
           }
         }
 
         if (!targetRoomId) {
+          if (canonicalRoomId) {
+            throw new Error('Failed to join canonical space chat room');
+          }
           const { roomId: newRoomId } = await createRoom(`space-${spaceSlug}`);
           if (!newRoomId) {
             throw new Error('Failed to create room: empty roomId returned');
           }
           targetRoomId = newRoomId;
           storeRoomId(spaceSlug, newRoomId);
+          if (authToken) {
+            try {
+              await updateSpaceBySlug({
+                slug: spaceSlug,
+                chatRoomId: newRoomId,
+              });
+            } catch (persistErr) {
+              console.warn(
+                '[HumanRightPanel] Failed to persist chat room id on space:',
+                persistErr,
+              );
+            }
+          }
         }
 
         if (cancelled) return;
@@ -360,7 +412,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     return () => {
       cancelled = true;
     };
-  }, [mode, isMatrixAvailable, isMatrixAuthenticated, spaceSlug]);
+  }, [
+    mode,
+    isMatrixAvailable,
+    isMatrixAuthenticated,
+    spaceSlug,
+    isSpaceLoading,
+    space?.chatRoomId,
+    authToken,
+    updateSpaceBySlug,
+  ]);
 
   // Track previous mode to detect actual transitions (not initial mount)
   const prevModeRef = useRef(mode);

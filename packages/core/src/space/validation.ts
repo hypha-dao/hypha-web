@@ -37,6 +37,11 @@ export const spaceMembersHttpPaginationQuerySchema = z
     };
   });
 
+const matrixRoomIdSchema = z
+  .string()
+  .trim()
+  .regex(/^![^:]+:[^:]+$/, 'Invalid Matrix room id');
+
 const createSpaceWeb2Props = {
   title: z
     .string()
@@ -119,6 +124,7 @@ export const updateSpaceProps = {
   categories: createSpaceWeb2Props.categories.optional(),
   links: createSpaceWeb2Props.links.optional(),
   flags: createSpaceWeb2Props.flags.optional(),
+  chatRoomId: matrixRoomIdSchema.nullable().optional(),
 };
 
 export const schemaUpdateSpace = z.object(updateSpaceProps);

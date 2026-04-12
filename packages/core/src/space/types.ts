@@ -22,6 +22,8 @@ export interface Space {
   documentCount?: number;
   documents?: Document[];
   address?: string | null;
+  /** Matrix room id for space chat when provisioned. */
+  chatRoomId?: string | null;
   flags: SpaceFlags[];
   parent?: Space | null;
   organisationSpaces?: Space[];
@@ -50,6 +52,7 @@ export interface UpdateSpaceInput {
   parentId?: number | null;
   web3SpaceId?: number;
   address?: string;
+  chatRoomId?: string | null;
   flags?: SpaceFlags[];
 }
 
