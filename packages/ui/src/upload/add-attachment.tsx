@@ -1,5 +1,5 @@
 'use client';
-import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
+import React, { ChangeEvent, useRef, useState } from 'react';
 import {
   FileText,
   Image as ImageIcon,
@@ -11,48 +11,6 @@ import { Separator } from '../separator';
 import { Link2Icon } from '@radix-ui/react-icons';
 
 type AttachmentInput = string | { name: string; url: string };
-
-/**
- * Preview thumbnail: assign `blob:` URL on the DOM node inside `useEffect` so
- * static analysis does not treat React state as unsanitized HTML in `src`.
- */
-function LocalFileImageThumb({ file }: { file: File }) {
-  const imgRef = useRef<HTMLImageElement | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    setFailed(false);
-    const el = imgRef.current;
-    const url = URL.createObjectURL(file);
-    if (!url.startsWith('blob:')) {
-      URL.revokeObjectURL(url);
-      setFailed(true);
-      return;
-    }
-    // codeql[js/xss-through-dom] `url` is always `blob:` from URL.createObjectURL(file).
-    if (el) {
-      el.setAttribute('src', url);
-    }
-    return () => {
-      if (el) {
-        el.removeAttribute('src');
-      }
-      URL.revokeObjectURL(url);
-    };
-  }, [file]);
-
-  if (failed) {
-    return <ImageIcon className="h-5 w-5 shrink-0 text-neutral-11" />;
-  }
-  return (
-    <img
-      ref={imgRef}
-      alt=""
-      className="h-5 w-5 shrink-0 rounded-lg object-cover"
-      onError={() => setFailed(true)}
-    />
-  );
-}
 
 interface AddAttachmentProps {
   onChange?: (files: File[]) => void;
@@ -117,7 +75,7 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({
   const renderFileIcon = (file: File | AttachmentInput) => {
     if (file instanceof File) {
       if (file.type.startsWith('image/')) {
-        return <LocalFileImageThumb file={file} />;
+        return <ImageIcon className="h-5 w-5 shrink-0 text-neutral-11" />;
       }
 
       if (
@@ -139,9 +97,7 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({
       const ext = fileName.split('.').pop()?.toLowerCase();
 
       if (ext?.match(/(png|jpe?g|gif|webp|bmp|svg)/)) {
-        return (
-          <img src={url} alt="" className="w-5 h-5 object-cover rounded-lg" />
-        );
+        return <ImageIcon className="h-5 w-5 shrink-0 text-neutral-11" />;
       }
 
       if (ext?.match(/(pdf|docx?|txt)/)) {
