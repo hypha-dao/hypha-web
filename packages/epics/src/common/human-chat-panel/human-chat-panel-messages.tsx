@@ -11,6 +11,11 @@ type UIMessage = {
   role: 'user' | 'member';
   /** Non-Matrix / system rows: no reply or reactions. */
   isSynthetic?: boolean;
+  sendPending?: {
+    attachmentCount: number;
+    captionPreview: string;
+    uploadedCount?: number;
+  };
   parts?: Array<
     { type: 'text'; text: string } | { type: string; [k: string]: unknown }
   >;

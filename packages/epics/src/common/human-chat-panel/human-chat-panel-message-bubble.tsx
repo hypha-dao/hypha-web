@@ -11,6 +11,7 @@ import {
   FileIcon,
   ExternalLink,
   Image as ImageIcon,
+  Loader2,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
@@ -402,6 +403,11 @@ type HumanChatPanelMessageBubbleProps = {
     formattedContentHtml?: string;
     media?: ChatPanelAttachmentMedia;
     mediaSlots?: ChatPanelAttachmentMedia[];
+    sendPending?: {
+      attachmentCount: number;
+      captionPreview: string;
+      uploadedCount?: number;
+    };
     /** Rich reply: quoted context above the new text */
     replyTo?: {
       authorLabel: string;
@@ -651,8 +657,22 @@ export function HumanChatPanelMessageBubble({
     ? formatTimestamp(message.timestamp, t)
     : undefined;
   const reactions = message.reactions ?? [];
-  const canReply = Boolean(onReply);
-  const canReact = Boolean(onReact);
+  const isSendPendingRow = Boolean(message.sendPending);
+  const canReply = Boolean(onReply) && !isSendPendingRow;
+  const canReact = Boolean(onReact) && !isSendPendingRow;
+
+  const sendPendingMainLabel = (() => {
+    const sp = message.sendPending;
+    if (!sp) return '';
+    const { attachmentCount: n, uploadedCount: u } = sp;
+    if (u != null && u > 0 && u < n) {
+      return t('messageSendUploadProgress', { completed: u, total: n });
+    }
+    if (u != null && u >= n) {
+      return t('messageSendFinishing');
+    }
+    return t('messageSendBuilding', { count: n });
+  })();
   const visibleReactions = reactions.slice(0, MAX_VISIBLE_REACTIONS);
   const hiddenReactionCount = Math.max(
     0,
@@ -690,6 +710,29 @@ export function HumanChatPanelMessageBubble({
             <span className="text-xs text-muted-foreground">{timestamp}</span>
           )}
         </div>
+
+        {message.sendPending && (
+          <div
+            role="status"
+            aria-live="polite"
+            aria-busy="true"
+            data-testid="chat-message-send-pending"
+            className="mt-1 flex max-w-md flex-col gap-2 rounded-lg border border-dashed border-primary/40 bg-primary/5 px-3 py-3 text-sm text-foreground"
+          >
+            <div className="flex items-center gap-2 font-medium text-foreground">
+              <Loader2
+                className="h-4 w-4 shrink-0 animate-spin text-primary"
+                aria-hidden
+              />
+              <span>{sendPendingMainLabel}</span>
+            </div>
+            {message.sendPending.captionPreview.trim() !== '' && (
+              <p className="line-clamp-2 pl-6 text-xs text-muted-foreground">
+                {message.sendPending.captionPreview.trim()}
+              </p>
+            )}
+          </div>
+        )}
 
         {replyTo && (
           <div

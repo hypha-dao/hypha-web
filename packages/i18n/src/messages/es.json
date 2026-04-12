@@ -1671,6 +1671,9 @@
     "sendFailedWithReason": "No se pudo enviar el mensaje: {message}",
     "sendUploadTimedOut": "Se agotó el tiempo de subida. Prueba con un archivo más pequeño o revisa la conexión.",
     "sendRateLimited": "El servidor de chat limita las subidas. Espera unos segundos e inténtalo de nuevo, o envía menos archivos a la vez.",
+    "messageSendBuilding": "{count, plural, one {Enviando # adjunto…} other {Enviando # adjuntos…}}",
+    "messageSendUploadProgress": "Subiendo {completed} de {total}…",
+    "messageSendFinishing": "Publicando mensaje…",
     "sendPartialFailed": "El envío se detuvo tras {sent, plural, one {# archivo adjunto} other {# archivos adjuntos}}. {detail}"
   },
   "CoherenceTab": {

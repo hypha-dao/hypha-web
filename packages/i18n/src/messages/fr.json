@@ -1671,6 +1671,9 @@
     "sendFailedWithReason": "Impossible d’envoyer le message : {message}",
     "sendUploadTimedOut": "Délai d’envoi dépassé. Essayez un fichier plus petit ou vérifiez la connexion.",
     "sendRateLimited": "Le serveur de chat limite les envois. Attendez quelques secondes puis réessayez, ou envoyez moins de fichiers à la fois.",
+    "messageSendBuilding": "{count, plural, one {Envoi de # pièce jointe…} other {Envoi de # pièces jointes…}}",
+    "messageSendUploadProgress": "Téléversement de {completed} sur {total}…",
+    "messageSendFinishing": "Publication du message…",
     "sendPartialFailed": "L’envoi s’est arrêté après {sent, plural, one {# pièce jointe} other {# pièces jointes}}. {detail}"
   },
   "CoherenceTab": {

@@ -1671,6 +1671,9 @@
     "sendFailedWithReason": "Nachricht konnte nicht gesendet werden: {message}",
     "sendUploadTimedOut": "Zeitüberschreitung beim Hochladen. Versuchen Sie eine kleinere Datei oder prüfen Sie die Verbindung.",
     "sendRateLimited": "Der Chat-Server begrenzt Uploads. Warten Sie einige Sekunden und versuchen Sie es erneut, oder senden Sie weniger Dateien auf einmal.",
+    "messageSendBuilding": "{count, plural, one {Sende # Anhang…} other {Sende # Anhänge…}}",
+    "messageSendUploadProgress": "Lade {completed} von {total} hoch…",
+    "messageSendFinishing": "Nachricht wird gesendet…",
     "sendPartialFailed": "Senden wurde nach {sent} Anhang(en) abgebrochen. {detail}"
   },
   "CoherenceTab": {

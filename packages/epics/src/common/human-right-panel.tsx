@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { MatrixEvent, Room } from 'matrix-js-sdk';
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
@@ -48,6 +48,12 @@ type UIMessage = {
   role: 'user' | 'member';
   /** True for non-Matrix rows (e.g. welcome); disables reply/reactions. */
   isSynthetic?: boolean;
+  /** Optimistic row while uploads run (cleared when send completes or fails). */
+  sendPending?: {
+    attachmentCount: number;
+    captionPreview: string;
+    uploadedCount?: number;
+  };
   parts?: Array<
     { type: 'text'; text: string } | { type: string; [k: string]: unknown }
   >;
@@ -250,6 +256,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [reactionError, setReactionError] = useState<string | null>(null);
   const [composerError, setComposerError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ChatPanelTab>('chat');
+  /** Shown in timeline after a short delay while large attachment sends run. */
+  const [sendingPending, setSendingPending] = useState<null | {
+    id: string;
+    attachmentCount: number;
+    captionPreview: string;
+    uploadedCount?: number;
+  }>(null);
   const joinedRef = useRef<string | null>(null);
 
   const currentUserId = client?.getUserId?.() ?? null;
@@ -350,6 +363,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setDraftAttachments([]);
       setReplyDraft(null);
       setError(null);
+      setSendingPending(null);
     }
   }, [spaceSlug, roomId]);
 
@@ -445,6 +459,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       disposeDraftAttachmentUrls(draftAttachmentsRef.current);
       setDraftAttachments([]);
       setError(null);
+      setSendingPending(null);
     }
 
     if (mode === 'space' && prevMode === 'coherence') {
@@ -458,6 +473,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       disposeDraftAttachmentUrls(draftAttachmentsRef.current);
       setDraftAttachments([]);
       setError(null);
+      setSendingPending(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
@@ -476,6 +492,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setReplyDraft(null);
       disposeDraftAttachmentUrls(draftAttachmentsRef.current);
       setDraftAttachments([]);
+      setSendingPending(null);
       try {
         let targetRoomId = coherenceRoomId;
 
@@ -578,6 +595,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           }
           return prev.map((m, i) => (i === idx ? next : m));
         });
+        if (
+          message.sender === currentUserIdRef.current &&
+          message.id &&
+          !String(message.id).startsWith('hypha-send-pending')
+        ) {
+          setSendingPending(null);
+        }
       },
       async (_pinned: string[]) => {
         // pinned messages not used in human chat panel
@@ -639,6 +663,23 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [roomId, t],
   );
 
+  const mergedMessages = useMemo(() => {
+    if (!sendingPending) return messages;
+    const pendingRow: UIMessage = {
+      id: sendingPending.id,
+      role: 'user',
+      isSynthetic: true,
+      parts: [],
+      sendPending: {
+        attachmentCount: sendingPending.attachmentCount,
+        captionPreview: sendingPending.captionPreview,
+        uploadedCount: sendingPending.uploadedCount,
+      },
+      avatarUrl: currentUserAvatarUrl,
+    };
+    return [...messages, pendingRow];
+  }, [messages, sendingPending, currentUserAvatarUrl]);
+
   const handleReplyToMessage = useCallback(
     (messageId: string) => {
       const target = messages.find((m) => m.id === messageId);
@@ -670,6 +711,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     setComposerError(null);
     setInput('');
     setDraftAttachments([]);
+    const pendingId =
+      savedAttachments.length > 0 ? `hypha-send-pending-${Date.now()}` : null;
+    if (pendingId) {
+      setSendingPending({
+        id: pendingId,
+        attachmentCount: savedAttachments.length,
+        captionPreview: text,
+        uploadedCount: 0,
+      });
+    }
     try {
       await matrixRef.current.sendMessage({
         roomId,
@@ -682,9 +733,21 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 kind: a.kind,
                 spoiler: a.spoiler,
               })),
+              onUploadProgress: ({ completed, total }) => {
+                setSendingPending((cur) =>
+                  cur && cur.id === pendingId
+                    ? {
+                        ...cur,
+                        attachmentCount: total,
+                        uploadedCount: completed,
+                      }
+                    : cur,
+                );
+              },
             }
           : {}),
       });
+      setSendingPending(null);
       disposeDraftAttachmentUrls(savedAttachments);
       setReplyDraft(null);
       if (sendOperationTokenRef.current === sendToken) {
@@ -694,9 +757,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       console.error('[HumanRightPanel] Failed to send message:', err);
       if (sendOperationTokenRef.current !== sendToken) {
         disposeDraftAttachmentUrls(savedAttachments);
+        setSendingPending(null);
         return;
       }
       sendOperationTokenRef.current = null;
+      setSendingPending(null);
       if (err instanceof SendMessagePartialFailureError) {
         const { sentAttachmentCount, restoreCaption, message } = err;
         setComposerError(
@@ -778,7 +843,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               </div>
             ) : (
               <HumanChatPanelMessages
-                messages={messages}
+                messages={mergedMessages}
                 onReply={handleReplyToMessage}
                 onToggleReaction={handleToggleReaction}
                 resolveReactionReactorLabel={(userId) =>

@@ -1671,6 +1671,9 @@
     "sendFailedWithReason": "Não foi possível enviar a mensagem: {message}",
     "sendUploadTimedOut": "Tempo de envio esgotado. Tente um ficheiro menor ou verifique a ligação.",
     "sendRateLimited": "O servidor de chat está a limitar os envios. Aguarde alguns segundos e tente novamente, ou envie menos ficheiros de uma vez.",
+    "messageSendBuilding": "{count, plural, one {A enviar # anexo…} other {A enviar # anexos…}}",
+    "messageSendUploadProgress": "A carregar {completed} de {total}…",
+    "messageSendFinishing": "A publicar a mensagem…",
     "sendPartialFailed": "O envio parou após {sent} anexo(s). {detail}"
   },
   "CoherenceTab": {

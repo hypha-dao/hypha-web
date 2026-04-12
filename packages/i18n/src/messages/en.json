@@ -1671,6 +1671,9 @@
     "sendFailedWithReason": "Could not send message: {message}",
     "sendUploadTimedOut": "Upload timed out. Try a smaller file or check your connection.",
     "sendRateLimited": "The chat server is limiting uploads. Wait a few seconds and try again, or send fewer files at once.",
+    "messageSendBuilding": "{count, plural, one {Sending # attachment…} other {Sending # attachments…}}",
+    "messageSendUploadProgress": "Uploading {completed} of {total}…",
+    "messageSendFinishing": "Posting message…",
     "sendPartialFailed": "Send stopped after {sent} attachment(s). {detail}"
   },
   "CoherenceTab": {
