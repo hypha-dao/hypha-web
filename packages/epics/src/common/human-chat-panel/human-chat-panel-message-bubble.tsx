@@ -62,6 +62,8 @@ type HumanChatPanelMessageBubbleProps = {
   resolveReactionReactorLabel?: (userId: string) => string;
   /** Parent list ensures at most one message shows the floating action bar. */
   isActionBarVisible?: boolean;
+  /** True when this row is the pointer hover target (stronger active state). */
+  isRowPointerActive?: boolean;
   onRowPointerEnter?: (e: PointerEvent<HTMLDivElement>) => void;
   onRowPointerLeave?: (e: PointerEvent<HTMLDivElement>) => void;
   /** Notify when the hover-bar emoji picker opens/closes (parent may lock visibility). */
@@ -316,6 +318,7 @@ function reactionTooltipText(
 export function HumanChatPanelMessageBubble({
   resolveReactionReactorLabel,
   isActionBarVisible = false,
+  isRowPointerActive = false,
   onRowPointerEnter,
   onRowPointerLeave,
   onHoverReactPickerOpenChange,
@@ -482,9 +485,11 @@ export function HumanChatPanelMessageBubble({
     <div
       data-testid="chat-message"
       className={cn(
-        'group relative -mx-3 flex gap-3 rounded-sm px-3 py-0.5 transition-colors',
+        'group relative -mx-3 flex gap-3 rounded-md px-3 py-0.5 transition-colors',
         /* Discord-style row tint: hover (primary) + focus-within for keyboard/reactions */
         'hover:bg-muted/60 focus-within:bg-muted/60',
+        isRowPointerActive &&
+          'bg-primary/10 ring-1 ring-primary/25 dark:bg-primary/15 dark:ring-primary/30',
       )}
       onPointerEnter={onRowPointerEnter}
       onPointerLeave={onRowPointerLeave}
