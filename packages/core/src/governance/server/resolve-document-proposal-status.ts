@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { publicClient } from '../../common/web3/public-client';
+import { web3Client } from '../../common/server/web3-rpc/client';
 import { getSpaceProposals } from '../../space/client/web3/dao-space-factory/get-space-proposals';
 import { getWithdrawnProposalsBySpace } from '../../space/client/web3/dao-space-factory/get-withdrawn-proposals-by-space';
 import type { Document, DocumentStatus } from '../types';
@@ -20,7 +20,7 @@ export async function fetchProposalOutcomeSetsForSpace(
 ): Promise<ProposalOutcomeSets | null> {
   const spaceId = BigInt(web3SpaceId);
   try {
-    const [proposalsResult, withdrawnResult] = await publicClient.multicall({
+    const [proposalsResult, withdrawnResult] = await web3Client.multicall({
       allowFailure: false,
       blockTag: 'safe',
       contracts: [
