@@ -42,6 +42,7 @@ export async function createChatStreamResult(
     system: buildSystemPrompt(spaceSlug),
     messages: await convertToModelMessages(messages as UIMessage[]),
 
+    // Cast: ChatRouteTool's generic Zod input doesn't satisfy ai's CoreTool typing, but is structurally compatible at runtime.
     tools: tools as unknown as Parameters<typeof streamText>[0]['tools'],
     stopWhen: stepCountIs(6),
     onStepFinish: (event) => {
