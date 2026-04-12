@@ -45,7 +45,7 @@ type HumanChatPanelMessagesProps = {
   onToggleReaction?: (messageId: string, emoji: string) => void;
   /** Keep the hover action bar visible for this message (e.g. while editing it). */
   persistHoverActionBarMessageId?: string | null;
-  /** Up to three emoji shown ahead of the action icons (Discord-style quick react). */
+  /** Up to four emoji shown ahead of the action icons (Discord-style quick react). */
   quickReactionEmojis?: string[];
   /** Matrix room id for deep-linking messages (copy message link). */
   matrixRoomId?: string | null;
