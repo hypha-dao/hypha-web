@@ -75,6 +75,9 @@ export function HumanChatPanelMessages({
   const [lockActionMessageId, setLockActionMessageId] = useState<string | null>(
     null,
   );
+  const migrateLockRowId = (fromId: string, toId: string) => {
+    setLockActionMessageId((cur) => (cur === fromId ? toId : cur));
+  };
   const lockActionMessageIdRef = useRef<string | null>(null);
   lockActionMessageIdRef.current = lockActionMessageId;
   const combinedLockMessageId =
@@ -125,10 +128,23 @@ export function HumanChatPanelMessages({
               message={msg}
               resolveReactionReactorLabel={resolveReactionReactorLabel}
               isActionBarVisible={isActionBarVisible}
-              onRowPointerEnter={() => {
+              onRowPointerEnter={(e) => {
+                if (lockActionMessageIdRef.current) {
+                  migrateLockRowId(lockActionMessageIdRef.current, msg.id);
+                }
                 setHoverActionMessageId(msg.id);
+                try {
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                } catch {
+                  // ignore
+                }
               }}
-              onRowPointerLeave={() => {
+              onRowPointerLeave={(e) => {
+                try {
+                  e.currentTarget.releasePointerCapture(e.pointerId);
+                } catch {
+                  // ignore
+                }
                 if (combinedLockMessageIdRef.current === msg.id) {
                   return;
                 }
