@@ -20,7 +20,7 @@ function getPrivyJwks() {
 export async function verifyPrivyAuthToken(
   token: string,
 ): Promise<{ valid: true } | { valid: false; reason: string }> {
-  let keyset;
+  let keyset: ReturnType<typeof createRemoteJWKSet>;
   try {
     keyset = getPrivyJwks();
   } catch (error) {
