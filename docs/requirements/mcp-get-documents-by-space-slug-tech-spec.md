@@ -54,7 +54,7 @@ Single entry point in core: **`getDocumentsBySpaceSlug`** (`packages/core/src/go
 - `INNER JOIN spaces ON documents.space_id = spaces.id WHERE spaces.slug = :spaceSlug`
 - Optional **`searchTerm`**: same `to_tsvector` / `plainto_tsquery` filter as the app list.
 - Optional **`state`**: `discussion` \| `proposal` \| `agreement`.
-- **Order:** `createdAt` **DESC** via explicit `order` passed from **`getDocumentsBySpaceSlug`** only. Shared **`findAllDocumentsBySpaceSlug`** does not apply implicit ordering when `order` is empty (caller-defined).
+- **Order:** **`getDocumentsBySpaceSlug`** always passes **`order: [{ name: 'createdAt', dir: DESC }]`** for deterministic newest-first lists. Shared **`findAllDocumentsBySpaceSlug`** applies SQL **`ORDER BY`** only when the caller supplies a non-empty `order`; if `order` is empty, no `ORDER BY` clause is emitted (undefined DB ordering — other callers must pass `order` when they need stability).
 
 ### 2.3 Access control
 
