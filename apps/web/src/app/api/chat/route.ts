@@ -48,9 +48,28 @@ export async function POST(req: Request) {
   const messages = parsed.data.messages as unknown as UIMessage[];
   const spaceSlug = parsed.data.spaceSlug;
 
-  const result = await createChatStreamResult(messages, spaceSlug, authToken, {
-    debugRequestId,
-  });
+  let result;
+  try {
+    result = await createChatStreamResult(messages, spaceSlug, authToken, {
+      debugRequestId,
+    });
+  } catch (error) {
+    console.error('[chat][route][stream-init-error]', {
+      debugRequestId,
+      message: error instanceof Error ? error.message : String(error),
+      ...(OPENROUTER_DEBUG && { error }),
+    });
+
+    return NextResponse.json(
+      { error: 'STREAM_ERROR' },
+      {
+        status: 502,
+        headers: {
+          'x-hypha-chat-debug-id': debugRequestId,
+        },
+      },
+    );
+  }
 
   return result.toUIMessageStreamResponse({
     headers: {
