@@ -962,6 +962,7 @@ export function HumanChatPanelMessageBubble({
       <div className="mt-0.5 shrink-0" data-testid="chat-message-avatar">
         <PersonAvatar
           size="sm"
+          shape="circle"
           avatarSrc={message.avatarUrl}
           userName={senderName}
         />
