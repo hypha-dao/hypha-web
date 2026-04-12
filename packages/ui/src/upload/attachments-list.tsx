@@ -79,7 +79,7 @@ export const AttachmentList: React.FC<AttachmentListProps> = ({
           const fileName = isString(attachment)
             ? (attachment.split('/').pop() || `Document ${idx + 1}`).split(
                 /[?#]/,
-              )[0]
+              )[0] ?? `Document ${idx + 1}`
             : isAttachment(attachment)
             ? attachment.name
             : 'unnamed';
