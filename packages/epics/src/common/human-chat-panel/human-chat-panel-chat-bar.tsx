@@ -1051,7 +1051,7 @@ export function HumanChatPanelChatBar({
             rows={1}
             className={cn(
               'min-h-[2.75rem] min-w-0 max-h-[192px] w-full resize-none',
-              'border-0 bg-transparent px-3 py-2.5 text-sm leading-snug text-foreground',
+              'border-0 bg-transparent px-3 py-3 text-sm leading-5 text-foreground',
               'placeholder:text-muted-foreground focus:outline-none',
               isSending && 'cursor-wait opacity-70',
             )}
