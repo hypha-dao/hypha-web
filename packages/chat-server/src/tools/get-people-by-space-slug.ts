@@ -7,8 +7,8 @@ import {
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { canConvertToBigInt } from '@hypha-platform/ui-utils';
-import type { ChatRouteTool } from './types.js';
-import { sanitizeSlug } from '../system-prompt.js';
+import type { ChatRouteTool } from './types';
+import { sanitizeSlug } from '../system-prompt';
 
 export function createGetPeopleBySpaceSlugTool(authToken: string) {
   const inputSchema = z.object({

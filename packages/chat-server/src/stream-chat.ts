@@ -1,8 +1,8 @@
 import { convertToModelMessages, stepCountIs, streamText } from 'ai';
 import { openrouter } from '@openrouter/ai-sdk-provider';
 import type { UIMessage } from 'ai';
-import { buildSystemPrompt } from './system-prompt.js';
-import { createChatTools } from './tools/index.js';
+import { buildSystemPrompt } from './system-prompt';
+import { createChatTools } from './tools/index';
 
 export const OPENROUTER_DEBUG = process.env.OPENROUTER_DEBUG === 'true';
 

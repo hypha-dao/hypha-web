@@ -1,16 +1,16 @@
 import 'server-only';
 
-export { chatRequestSchema } from './request-schema.js';
-export { verifyPrivyAuthToken } from './privy-auth.js';
+export { chatRequestSchema } from './request-schema';
+export { verifyPrivyAuthToken } from './privy-auth';
 export {
   createChatStreamResult,
   isAbortLikeError,
   OPENROUTER_DEBUG,
-} from './stream-chat.js';
-export { buildSystemPrompt, sanitizeSlug } from './system-prompt.js';
+} from './stream-chat';
+export { buildSystemPrompt, sanitizeSlug } from './system-prompt';
 export {
   createChatTools,
   getSpaceBySlugTool,
   createGetPeopleBySpaceSlugTool,
-} from './tools/index.js';
-export type { ChatRouteTool } from './tools/types.js';
+} from './tools/index';
+export type { ChatRouteTool } from './tools/types';

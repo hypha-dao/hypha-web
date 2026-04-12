@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { getSpaceBySlug } from '@hypha-platform/core/server';
-import type { ChatRouteTool } from './types.js';
+import type { ChatRouteTool } from './types';
 
 export const getSpaceBySlugTool = {
   description:
