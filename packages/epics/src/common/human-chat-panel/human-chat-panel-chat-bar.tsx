@@ -65,6 +65,16 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function newAttachmentDraftId(): string {
+  if (
+    typeof globalThis.crypto !== 'undefined' &&
+    typeof globalThis.crypto.randomUUID === 'function'
+  ) {
+    return globalThis.crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 function insertAtCaret(
   value: string,
   selectionStart: number,
@@ -370,7 +380,7 @@ export function HumanChatPanelChatBar({
           continue;
         }
         next.push({
-          id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          id: newAttachmentDraftId(),
           file,
           kind: file.type.startsWith('image/') ? 'image' : 'file',
           previewUrl: URL.createObjectURL(file),
