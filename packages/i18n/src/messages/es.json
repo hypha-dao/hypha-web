@@ -1670,7 +1670,7 @@
     "sendFailed": "No se pudo enviar el mensaje. Inténtalo de nuevo.",
     "sendFailedWithReason": "No se pudo enviar el mensaje: {message}",
     "sendUploadTimedOut": "Se agotó el tiempo de subida. Prueba con un archivo más pequeño o revisa la conexión.",
-    "sendPartialFailed": "El envío se detuvo tras {sent} archivo(s) adjunto(s). {detail}"
+    "sendPartialFailed": "El envío se detuvo tras {sent, plural, one {# archivo adjunto} other {# archivos adjuntos}}. {detail}"
   },
   "CoherenceTab": {
     "signals": "Señales",
