@@ -64,6 +64,49 @@ export class MatrixUploadTimeoutError extends Error {
 /** Default max wait for `client.uploadContent` per attachment (ms). */
 export const MATRIX_UPLOAD_TIMEOUT_MS = 120_000;
 
+/**
+ * Gap between sequential `uploadContent` calls when sending multiple attachments.
+ * Parallel uploads hit homeserver rate limits (429); spacing keeps one in-flight upload.
+ */
+const MATRIX_UPLOAD_STAGGER_MS = 400;
+
+const MATRIX_UPLOAD_RATE_LIMIT_MAX_ATTEMPTS = 4;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+/** True when the homeserver rejected the request for rate limiting (HTTP 429 / M_LIMIT_EXCEEDED). */
+export function isMatrixRateLimitedError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const e = err as Error & {
+    httpStatus?: number;
+    errcode?: string;
+    data?: { errcode?: string; retry_after_ms?: number };
+  };
+  if (e.httpStatus === 429) return true;
+  const msg = e.message;
+  if (msg.includes('[429]') || msg.includes(' 429 ')) return true;
+  if (e.errcode === 'M_LIMIT_EXCEEDED') return true;
+  if (e.data?.errcode === 'M_LIMIT_EXCEEDED') return true;
+  if (/too many requests/i.test(msg)) return true;
+  return false;
+}
+
+function matrixRateLimitBackoffMs(
+  err: unknown,
+  zeroBasedAttempt: number,
+): number {
+  const e = err as { data?: { retry_after_ms?: number } };
+  const ra = e.data?.retry_after_ms;
+  if (typeof ra === 'number' && Number.isFinite(ra) && ra > 0) {
+    return Math.min(Math.max(Math.ceil(ra), 500), 45_000);
+  }
+  return Math.min(1500 * 2 ** zeroBasedAttempt, 30_000);
+}
+
 /** Matrix room message with optional Hypha spoiler + multi-attach bundle extension. */
 type HyphaMediaEventContent = RoomMessageEventContent & {
   [HYPHA_SPOILER_FIELD]?: boolean;
@@ -413,8 +456,29 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         return base;
       };
 
-      const mediaPayloads =
-        list.length > 0 ? await Promise.all(list.map(prepareMediaPayload)) : [];
+      const mediaPayloads: HyphaMediaEventContent[] = [];
+      for (let i = 0; i < list.length; i++) {
+        if (i > 0) {
+          await delay(MATRIX_UPLOAD_STAGGER_MS);
+        }
+        const att = list[i]!;
+        let attempt = 0;
+        while (true) {
+          try {
+            mediaPayloads.push(await prepareMediaPayload(att));
+            break;
+          } catch (e) {
+            if (
+              !isMatrixRateLimitedError(e) ||
+              attempt >= MATRIX_UPLOAD_RATE_LIMIT_MAX_ATTEMPTS - 1
+            ) {
+              throw e;
+            }
+            await delay(matrixRateLimitBackoffMs(e, attempt));
+            attempt += 1;
+          }
+        }
+      }
 
       let sentMediaCount = 0;
       try {
