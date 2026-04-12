@@ -1,156 +1,200 @@
 'use client';
 
 import { useForm } from 'react-hook-form';
+
 import {
   schemaCreateAgreementForm,
-  createAgreementFiles,
-  useJwt,
-  useMe,
-  useCreateProposeAContributionOrchestrator,
-} from '@hypha-platform/core/client';
-import { z } from 'zod';
-import { Button, Form, Separator } from '@hypha-platform/ui';
-import React from 'react';
-import { useRouter } from 'next/navigation';
-import { LoadingBackdrop } from '@hypha-platform/ui/server';
-import { useConfig } from 'wagmi';
-import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
-import { CreateAgreementBaseFields } from '../../agreements';
-import { useTranslations } from 'next-intl';
-import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
-
-type FormValues = z.infer<typeof schemaCreateAgreementForm>;
-
-const fullSchemaCreateProposeAContributionForm =
-  schemaCreateAgreementForm.extend(createAgreementFiles);
-
-interface CreateProposeAContributionFormProps {
-  spaceId: number | undefined | null;
-  web3SpaceId: number | undefined | null;
-  successfulUrl: string;
-  backUrl?: string;
-  plugin: React.ReactNode;
-}
-
-export const CreateProposeAContributionForm = ({
-  successfulUrl,
-  backUrl,
-  spaceId,
-  web3SpaceId,
-  plugin,
-}: CreateProposeAContributionFormProps) => {
-  const tSpaces = useTranslations('Spaces');
-  const tAgreementFlow = useTranslations('AgreementFlow');
-  const router = useRouter();
-  const { person } = useMe();
-  const { jwt } = useJwt();
-  const config = useConfig();
-  const {
-    createProposeAContribution,
-    reset,
-    currentAction,
-    isError,
-    isPending,
-    progress,
-  } = useCreateProposeAContributionOrchestrator({ authToken: jwt, config });
-  const resolver = useLocalizedProposalResolver(
-    fullSchemaCreateProposeAContributionForm,
-    tAgreementFlow,
-  );
-
-  const formRef = React.useRef<HTMLFormElement>(null);
-  const form = useForm<FormValues>({
-    resolver,
-    defaultValues: {
-      title: '',
-      description: '',
-      leadImage: undefined,
-      attachments: undefined,
-      spaceId: spaceId ?? undefined,
-      creatorId: person?.id,
-      recipient: '',
-      payouts: [
-        {
-          amount: undefined,
-          token: undefined,
-        },
-      ],
-      label: 'Contribution',
-    },
-  });
-
-  useScrollToErrors(form, formRef);
-  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
-
-  React.useEffect(() => {
-    if (progress === 100 && successfulUrl) {
-      router.push(successfulUrl);
-    }
-  }, [progress, successfulUrl, router]);
-
-  const handleCreate = async (data: FormValues) => {
-    if (!data.recipient || !data.payouts || data.payouts.length === 0) {
-      console.error('Recipient or payouts are missing');
-      return;
-    }
-
-    await createProposeAContribution({
-      ...data,
-      spaceId: spaceId as number,
-      web3SpaceId: typeof web3SpaceId === 'number' ? web3SpaceId : undefined,
-      recipient: data.recipient,
-      payouts: data.payouts.map(({ amount, token }) => ({
-        amount: String(amount ?? '0'),
-        token: token ?? '',
-      })),
-    });
-  };
-
-  return (
-    <LoadingBackdrop
-      showKeepWindowOpenMessage={true}
-      keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
-      fullHeight={true}
-      progress={progress}
-      isLoading={isPending}
-      message={
-        isError ? (
-          <div className="flex flex-col">
-            <div>{tSpaces('errorOhSnap')}</div>
-            <Button onClick={reset}>{tSpaces('reset')}</Button>
-          </div>
-        ) : (
-          <div>{currentAction}</div>
-        )
-      }
-    >
-      <Form {...form}>
-        <form
-          ref={formRef}
-          onSubmit={form.handleSubmit(handleCreate)}
-          className="flex flex-col gap-5"
-        >
-          <CreateAgreementBaseFields
-            key={resubmitKey}
-            creator={{
-              avatar: person?.avatarUrl || '',
-              name: person?.name || '',
-              surname: person?.surname || '',
-            }}
-            successfulUrl={successfulUrl}
-            closeUrl={successfulUrl}
-            backUrl={backUrl}
-            isLoading={false}
-            label={tAgreementFlow('labels.contribution')}
-            progress={progress}
-          />
-          {plugin}
-          <Separator />
-          <div className="flex justify-end w-full">
-            <Button type="submit">{tAgreementFlow('buttons.publish')}</Button>
-          </div>
-        </form>
-      </Form>
-    </LoadingBackdrop>
-  );
-};
+    createAgreementFiles,
+      useJwt,
+        useMe,
+          useCreateProposeAContributionOrchestrator,
+          } from '@hypha-platform/core/client';
+          
+          import { z } from 'zod';
+          
+          import { Button, Form, Separator } from '@hypha-platform/ui';
+          
+          import React from 'react';
+          
+          import { useRouter } from 'next/navigation';
+          
+          import { LoadingBackdrop } from '@hypha-platform/ui/server';
+          
+          import { useConfig } from 'wagmi';
+          
+          import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
+          
+          import { CreateAgreementBaseFields } from '../../agreements';
+          
+          import { useTranslations } from 'next-intl';
+          
+          import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
+          
+          type FormValues = z.infer<typeof schemaCreateAgreementForm>;
+          
+          const fullSchemaCreateProposeAContributionForm =
+            schemaCreateAgreementForm.extend(createAgreementFiles);
+            
+            /** Pre-fill values passed in via URL searchParams from an external bridge (e.g. ReGen Civics). */
+            export interface BridgeInitialValues {
+              title?: string;
+                description?: string;
+                  leadImage?: string;
+                    attachments?: Array<{ url: string; filename: string }>;
+                      payouts?: Array<{ amount: string; token: string }>;
+                      }
+                      
+                      interface CreateProposeAContributionFormProps {
+                        spaceId: number | undefined | null;
+                          web3SpaceId: number | undefined | null;
+                            successfulUrl: string;
+                              backUrl?: string;
+                                plugin: React.ReactNode;
+                                  /** Optional pre-fill values passed in via URL searchParams from an external bridge. */
+                                    initialValues?: BridgeInitialValues;
+                                      /** Bridge key for back-channel status tracking (embedded in the proposal title marker). */
+                                        bridgeKey?: string;
+                                        }
+                                        
+                                        export const CreateProposeAContributionForm = ({
+                                          successfulUrl,
+                                            backUrl,
+                                              spaceId,
+                                                web3SpaceId,
+                                                  plugin,
+                                                    initialValues,
+                                                      bridgeKey,
+                                                      }: CreateProposeAContributionFormProps) => {
+                                                        const tSpaces = useTranslations('Spaces');
+                                                          const tAgreementFlow = useTranslations('AgreementFlow');
+                                                            const router = useRouter();
+                                                              const { person } = useMe();
+                                                                const { jwt } = useJwt();
+                                                                  const config = useConfig();
+                                                                  
+                                                                    const {
+                                                                        createProposeAContribution,
+                                                                            reset,
+                                                                                currentAction,
+                                                                                    isError,
+                                                                                        isPending,
+                                                                                            progress,
+                                                                                              } = useCreateProposeAContributionOrchestrator({ authToken: jwt, config });
+                                                                                              
+                                                                                                const resolver = useLocalizedProposalResolver(
+                                                                                                    fullSchemaCreateProposeAContributionForm,
+                                                                                                        tAgreementFlow,
+                                                                                                          );
+                                                                                                          
+                                                                                                            const formRef = React.useRef<HTMLFormElement>(null);
+                                                                                                            
+                                                                                                              const form = useForm<FormValues>({
+                                                                                                                  resolver,
+                                                                                                                      defaultValues: {
+                                                                                                                            title: initialValues?.title ?? '',
+                                                                                                                                  description: initialValues?.description ?? '',
+                                                                                                                                        leadImage: initialValues?.leadImage ?? undefined,
+                                                                                                                                              attachments: undefined,
+                                                                                                                                                    spaceId: spaceId ?? undefined,
+                                                                                                                                                          creatorId: person?.id,
+                                                                                                                                                                recipient: '',
+                                                                                                                                                                      payouts: [
+                                                                                                                                                                              {
+                                                                                                                                                                                        amount: undefined,
+                                                                                                                                                                                                  token: undefined,
+                                                                                                                                                                                                          },
+                                                                                                                                                                                                                ],
+                                                                                                                                                                                                                      label: 'Contribution',
+                                                                                                                                                                                                                          },
+                                                                                                                                                                                                                            });
+                                                                                                                                                                                                                            
+                                                                                                                                                                                                                              useScrollToErrors(form, formRef);
+                                                                                                                                                                                                                                const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                  // Apply payout pre-fills from the bridge after form mount.
+                                                                                                                                                                                                                                    // Done in an effect rather than defaultValues to avoid schema coercion issues.
+                                                                                                                                                                                                                                      React.useEffect(() => {
+                                                                                                                                                                                                                                          if (!initialValues?.payouts?.length) return;
+                                                                                                                                                                                                                                              form.setValue(
+                                                                                                                                                                                                                                                    'payouts',
+                                                                                                                                                                                                                                                          initialValues.payouts.map(({ amount, token }) => ({
+                                                                                                                                                                                                                                                                  amount: amount as unknown as undefined,
+                                                                                                                                                                                                                                                                          token: token as unknown as undefined,
+                                                                                                                                                                                                                                                                                })),
+                                                                                                                                                                                                                                                                                    );
+                                                                                                                                                                                                                                                                                      }, []); // eslint-disable-line react-hooks/exhaustive-deps
+                                                                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                                                                        React.useEffect(() => {
+                                                                                                                                                                                                                                                                                            if (progress === 100 && successfulUrl) {
+                                                                                                                                                                                                                                                                                                  router.push(successfulUrl);
+                                                                                                                                                                                                                                                                                                      }
+                                                                                                                                                                                                                                                                                                        }, [progress, successfulUrl, router]);
+                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                          const handleCreate = async (data: FormValues) => {
+                                                                                                                                                                                                                                                                                                              if (!data.recipient || !data.payouts || data.payouts.length === 0) {
+                                                                                                                                                                                                                                                                                                                    console.error('Recipient or payouts are missing');
+                                                                                                                                                                                                                                                                                                                          return;
+                                                                                                                                                                                                                                                                                                                              }
+                                                                                                                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                  await createProposeAContribution({
+                                                                                                                                                                                                                                                                                                                                        ...data,
+                                                                                                                                                                                                                                                                                                                                              spaceId: spaceId as number,
+                                                                                                                                                                                                                                                                                                                                                    web3SpaceId: typeof web3SpaceId === 'number' ? web3SpaceId : undefined,
+                                                                                                                                                                                                                                                                                                                                                          recipient: data.recipient,
+                                                                                                                                                                                                                                                                                                                                                                payouts: data.payouts.map(({ amount, token }) => ({
+                                                                                                                                                                                                                                                                                                                                                                        amount: String(amount ?? '0'),
+                                                                                                                                                                                                                                                                                                                                                                                token: token ?? '',
+                                                                                                                                                                                                                                                                                                                                                                                      })),
+                                                                                                                                                                                                                                                                                                                                                                                          });
+                                                                                                                                                                                                                                                                                                                                                                                            };
+                                                                                                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                              return (
+                                                                                                                                                                                                                                                                                                                                                                                                  <LoadingBackdrop
+                                                                                                                                                                                                                                                                                                                                                                                                        showKeepWindowOpenMessage={true}
+                                                                                                                                                                                                                                                                                                                                                                                                              keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
+                                                                                                                                                                                                                                                                                                                                                                                                                    fullHeight={true}
+                                                                                                                                                                                                                                                                                                                                                                                                                          progress={progress}
+                                                                                                                                                                                                                                                                                                                                                                                                                                isLoading={isPending}
+                                                                                                                                                                                                                                                                                                                                                                                                                                      message={
+                                                                                                                                                                                                                                                                                                                                                                                                                                              isError ? (
+                                                                                                                                                                                                                                                                                                                                                                                                                                                        <div className="flex flex-col">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <div>{tSpaces('errorOhSnap')}</div>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <Button onClick={reset}>{tSpaces('reset')}</Button>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          </div>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ) : (
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <div>{currentAction}</div>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    )
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              >
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <Form {...form}>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <form
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ref={formRef}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                onSubmit={form.handleSubmit(handleCreate)}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          className="flex flex-col gap-5"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  >
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <CreateAgreementBaseFields
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        key={resubmitKey}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    creator={{
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  avatar: person?.avatarUrl || '',
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                name: person?.name || '',
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              surname: person?.surname || '',
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          }}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      successfulUrl={successfulUrl}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  closeUrl={successfulUrl}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              backUrl={backUrl}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          isLoading={false}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      label={tAgreementFlow('labels.contribution')}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  progress={progress}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              initialValues={initialValues}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          bridgeKey={bridgeKey}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    />
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              {plugin}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <Separator />
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  <div className="flex justify-end w-full">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              <Button type="submit">{tAgreementFlow('buttons.publish')}</Button>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        </div>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </form>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      </Form>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          </LoadingBackdrop>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            );
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            };'

@@ -50,6 +50,19 @@ const schemaCreateAgreementForm =
 
 export type CreateAgreementFormData = z.infer<typeof schemaCreateAgreementForm>;
 
+/**
+ * Pre-fill values passed in from an external bridge (e.g. ReGen Civics quest
+ * submission). These arrive via URL searchParams, not sessionStorage, so they
+ * need their own code path alongside the existing resubmit flow.
+ */
+export interface BridgeInitialValues {
+  title?: string;
+  description?: string;
+  leadImage?: string;
+  attachments?: Array<{ url: string; filename: string }>;
+  payouts?: Array<{ amount: string; token: string }>;
+}
+
 export type CreateAgreementFormProps = {
   creator?: Creator;
   isLoading?: boolean;
@@ -59,6 +72,10 @@ export type CreateAgreementFormProps = {
   backLabel?: string;
   label?: string;
   progress: number;
+  /** Pre-fill values from an external bridge (e.g. ReGen Civics). */
+  initialValues?: BridgeInitialValues;
+  /** Bridge key embedded in the proposal title marker (e.g. "rc:abc12345"). */
+  bridgeKey?: string;
 };
 
 type Callback = () => Promise<void>;
@@ -73,6 +90,8 @@ export function CreateAgreementBaseFields({
   backLabel,
   label,
   progress,
+  initialValues,
+  bridgeKey,
 }: CreateAgreementFormProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const translateEditor = React.useCallback(
@@ -117,8 +136,29 @@ export function CreateAgreementBaseFields({
     (string | { name: string; url: string })[]
   >([]);
 
+  // Apply title and description from bridge initialValues on first render.
+  // These come cross-origin via URL searchParams and are not in sessionStorage.
+  React.useEffect(() => {
+    if (!initialValues) return;
+    if (initialValues.title) {
+      form.setValue('title', initialValues.title);
+    }
+    if (initialValues.description) {
+      form.setValue('description', initialValues.description);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
+
+    // Pre-fill attachments from bridge initialValues (takes priority over
+    // sessionStorage since it comes from a trusted cross-origin source).
+    if (initialValues?.attachments?.length) {
+      const mapped = initialValues.attachments.map(
+        ({ url, filename }) => ({ url, name: filename }),
+      );
+      setExistingAttachments(mapped);
+    }
 
     try {
       const data = sessionStorage.getItem('resubmitFormData');
@@ -138,7 +178,11 @@ export function CreateAgreementBaseFields({
 
       setResubmitFormData(parsed);
       if (parsed.attachments && parsed.attachments.length > 0) {
-        setExistingAttachments(parsed.attachments);
+        // Only set from sessionStorage if bridge initialValues didn't already
+        // provide attachments.
+        if (!initialValues?.attachments?.length) {
+          setExistingAttachments(parsed.attachments);
+        }
       }
 
       sessionStorage.setItem(
@@ -417,11 +461,12 @@ export function CreateAgreementBaseFields({
                   },
                 )}
                 defaultImage={
-                  resubmitFormData?.leadImage || field.value
+                  initialValues?.leadImage ||
+                  (resubmitFormData?.leadImage || field.value
                     ? typeof field.value === 'string'
                       ? field.value
                       : resubmitFormData?.leadImage
-                    : undefined
+                    : undefined)
                 }
               />
             </FormControl>
