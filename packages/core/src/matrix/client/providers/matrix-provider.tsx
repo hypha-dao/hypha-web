@@ -32,15 +32,14 @@ export type SendMessageUploadProgress = {
   total: number;
 };
 
-interface SendMessageInput {
+export interface SendMessageInput {
   roomId: string;
   message: string;
-  /** Rich reply: target m.room.message event id (space chat; not m.thread). */
   replyToEventId?: string;
-  /** Uploaded to the homeserver and sent as separate `m.file` / `m.image` events before optional text. */
   attachments?: SendAttachmentInput[];
-  /** Fires after each attachment finishes uploading (before the room message is sent). */
   onUploadProgress?: (p: SendMessageUploadProgress) => void;
+  /** Single-file send from composer (maps to `attachments` pipeline). */
+  attachment?: File;
 }
 
 /**
@@ -370,6 +369,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       message,
       replyToEventId,
       attachments,
+      attachment,
       onUploadProgress,
     }: SendMessageInput) => {
       if (!client) {
@@ -380,7 +380,34 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       }
 
       const trimmed = message.trim();
-      const list = attachments?.length ? attachments : [];
+      const inferComposerAttachmentKind = (
+        file: File,
+      ): SendAttachmentInput['kind'] => {
+        const t = (file.type || '').toLowerCase();
+        if (t.startsWith('image/')) return 'image';
+        const n = file.name.toLowerCase();
+        if (
+          t === '' &&
+          /\.(avif|bmp|gif|jpe?g|png|svg|webp)$/i.test(file.name)
+        ) {
+          return 'image';
+        }
+        if (t.startsWith('video/')) return 'file';
+        if (t === '' && /\.(avi|m4v|mov|mp4|mpeg|ogv|webm)$/i.test(n)) {
+          return 'file';
+        }
+        return 'file';
+      };
+      const list: SendAttachmentInput[] = attachments?.length
+        ? [...attachments]
+        : attachment
+        ? [
+            {
+              file: attachment,
+              kind: inferComposerAttachmentKind(attachment),
+            },
+          ]
+        : [];
       const hasAttachments = list.length > 0;
       if (!trimmed && !hasAttachments) {
         return;
