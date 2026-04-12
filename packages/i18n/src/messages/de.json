@@ -1640,6 +1640,8 @@
     "videoPreviewPlay": "Videovorschau abspielen",
     "attachmentRemove": "Anhang entfernen",
     "attachmentSpoiler": "Als Spoiler markieren",
+    "attachmentSpoilerRemove": "Spoiler entfernen",
+    "draftSpoilerTag": "Spoiler",
     "spoilerTapToReveal": "Spoiler — zum Anzeigen klicken",
     "openAttachmentInNewTab": "Anhang in neuem Tab öffnen",
     "attachmentUnavailable": "Anhang nicht verfügbar",

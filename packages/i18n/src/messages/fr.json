@@ -1640,6 +1640,8 @@
     "videoPreviewPlay": "Lire l’aperçu vidéo",
     "attachmentRemove": "Retirer la pièce jointe",
     "attachmentSpoiler": "Marquer comme spoiler",
+    "attachmentSpoilerRemove": "Retirer le spoiler",
+    "draftSpoilerTag": "Spoiler",
     "spoilerTapToReveal": "Spoiler — cliquer pour afficher",
     "openAttachmentInNewTab": "Ouvrir la pièce jointe dans un nouvel onglet",
     "attachmentUnavailable": "Pièce jointe indisponible",

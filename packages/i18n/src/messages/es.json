@@ -1640,6 +1640,8 @@
     "videoPreviewPlay": "Reproducir vista previa del vídeo",
     "attachmentRemove": "Quitar adjunto",
     "attachmentSpoiler": "Marcar como spoiler",
+    "attachmentSpoilerRemove": "Quitar spoiler",
+    "draftSpoilerTag": "Spoiler",
     "spoilerTapToReveal": "Spoiler — pulsa para mostrar",
     "openAttachmentInNewTab": "Abrir adjunto en una pestaña nueva",
     "attachmentUnavailable": "Adjunto no disponible",

@@ -1641,6 +1641,8 @@
     "videoPreviewPlay": "Play video preview",
     "attachmentRemove": "Remove attachment",
     "attachmentSpoiler": "Mark as spoiler",
+    "attachmentSpoilerRemove": "Remove spoiler",
+    "draftSpoilerTag": "Spoiler",
     "spoilerTapToReveal": "Spoiler — click to reveal",
     "openAttachmentInNewTab": "Open attachment in new tab",
     "attachmentUnavailable": "Attachment unavailable",

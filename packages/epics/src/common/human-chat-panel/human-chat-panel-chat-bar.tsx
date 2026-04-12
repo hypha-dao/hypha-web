@@ -10,6 +10,7 @@ import {
   Code,
   TextQuote,
   Eye,
+  EyeOff,
   Smile,
   AtSign,
   Send,
@@ -82,14 +83,22 @@ function ChatDraftVideoPreview({
   url,
   spoiler,
   playLabel,
+  spoilerBadge,
 }: {
   url: string;
   spoiler: boolean;
   playLabel: string;
+  spoilerBadge: string;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
   const [hasFrame, setHasFrame] = useState(false);
+
+  useEffect(() => {
+    if (spoiler) {
+      videoRef.current?.pause();
+    }
+  }, [spoiler]);
 
   return (
     <div className="relative h-full w-full bg-muted">
@@ -128,9 +137,19 @@ function ChatDraftVideoPreview({
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       )}
-      {!playing && (
+      {spoiler && (
         <div
-          className="absolute inset-0 z-[1] flex items-center justify-center bg-black/20 pointer-events-none"
+          className="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center bg-muted/90"
+          aria-hidden
+        >
+          <span className="rounded-md bg-foreground px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-background shadow-sm">
+            {spoilerBadge}
+          </span>
+        </div>
+      )}
+      {!playing && !spoiler && (
+        <div
+          className="pointer-events-none absolute inset-0 z-[1] flex items-center justify-center bg-black/20"
           aria-hidden
         >
           <button
@@ -647,20 +666,33 @@ export function HumanChatPanelChatBar({
                 >
                   <div className="relative h-24 w-full shrink-0 overflow-hidden rounded-md bg-background">
                     {att.kind === 'image' ? (
-                      // eslint-disable-next-line @next/next/no-img-element -- local object URL preview
-                      <img
-                        src={att.previewUrl}
-                        alt=""
-                        className={cn(
-                          'h-full w-full object-cover',
-                          att.spoiler && 'scale-105 blur-xl',
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element -- local object URL preview */}
+                        <img
+                          src={att.previewUrl}
+                          alt=""
+                          className={cn(
+                            'h-full w-full object-cover',
+                            att.spoiler && 'scale-105 blur-xl',
+                          )}
+                        />
+                        {att.spoiler && (
+                          <div
+                            className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-muted/85"
+                            aria-hidden
+                          >
+                            <span className="rounded-md bg-foreground px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-background shadow-sm">
+                              {t('draftSpoilerTag')}
+                            </span>
+                          </div>
                         )}
-                      />
+                      </>
                     ) : att.kind === 'video' ? (
                       <ChatDraftVideoPreview
                         url={att.previewUrl}
                         spoiler={att.spoiler}
                         playLabel={t('videoPreviewPlay')}
+                        spoilerBadge={t('draftSpoilerTag')}
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center text-muted-foreground">
@@ -672,15 +704,31 @@ export function HumanChatPanelChatBar({
                         <button
                           type="button"
                           className="relative z-30 rounded p-1 text-foreground hover:bg-muted"
-                          title={t('attachmentSpoiler')}
-                          aria-label={t('attachmentSpoiler')}
+                          title={
+                            att.spoiler
+                              ? t('attachmentSpoilerRemove')
+                              : t('attachmentSpoiler')
+                          }
+                          aria-label={
+                            att.spoiler
+                              ? t('attachmentSpoilerRemove')
+                              : t('attachmentSpoiler')
+                          }
                           aria-pressed={att.spoiler}
                           onClick={(e) => {
                             e.stopPropagation();
                             toggleDraftSpoiler(att.id);
                           }}
                         >
-                          <Eye className="h-3.5 w-3.5" />
+                          {att.spoiler ? (
+                            <EyeOff
+                              className="h-3.5 w-3.5"
+                              strokeWidth={2}
+                              aria-hidden
+                            />
+                          ) : (
+                            <Eye className="h-3.5 w-3.5" aria-hidden />
+                          )}
                         </button>
                       )}
                       <button
