@@ -35,6 +35,7 @@ Active implementation plans and feature roadmaps.
 | [Coherence Incremental Plan](./plans/coherence-incremental-plan.md) | Step-by-step implementation plan (storage → core → epics → routes → nav) | final |
 | [Coherence Chat Panel Research](./plans/coherence-chat-panel-research.md) | Architecture research for integrating coherence chat into the Human Right Panel | final |
 | [Coherence Chat Panel Plan](./plans/coherence-chat-panel-plan.md) | Step-by-step plan to open coherence chats in the right panel sidebar (6 steps) | draft |
+| [Space Memory panel](./plans/space-memory-panel.md) | Coherence tab: assets list + context; V1 from documents; V2 org catalogue (§4) | draft |
 
 ## Requirements
 

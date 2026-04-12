@@ -41,6 +41,8 @@ Those flows **do not** put bytes in the same bucket today. Hypha adds a thin **o
 
 For implementation detail on chat attachments, see `docs/architecture/space-chat-attachments.md` and `docs/development/space-chat-attachments.md`.
 
+**Implementation plan for the Space Memory UI:** [space-memory-panel.md](./space-memory-panel.md).
+
 ---
 
 ## 2. Storage Layer — `packages/storage-postgres`

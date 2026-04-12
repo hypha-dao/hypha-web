@@ -352,7 +352,7 @@ After all E2E tests pass, consider:
 
 1. **Fix `use-conversation.ts` import** — replace relative `../../../../core/src/...` with `@hypha-platform/core/server`
 2. **Wire ConversationSection** — `CoherenceBlock` currently only shows signals; conversations can be added as a second section
-3. **Space Memory / org memory UI** — add a section under signals that lists the **org-scoped asset catalogue** (not a raw duplicate of Matrix or CDN). Architecture: `docs/architecture/documents-and-media-overview.md` **§4**; chat attachment UX and Matrix semantics: `docs/architecture/space-chat-attachments.md`. Automatic ingestion from Matrix chat is **follow-up** to the chat attachment ship ([PR #2133](https://github.com/hypha-dao/hypha-web/pull/2133)); proposal path can register first (§4.5).
+3. **Space Memory / org memory UI** — implementation checklist and acceptance criteria: **`docs/plans/space-memory-panel.md`**. V1: derive from existing `documents` API (no new tables). V2: **org-scoped asset catalogue** per `docs/architecture/documents-and-media-overview.md` **§4**. Chat attachment semantics: `docs/architecture/space-chat-attachments.md`. Automatic Matrix ingestion is **follow-up** to [PR #2133](https://github.com/hypha-dao/hypha-web/pull/2133); proposal catalogue registration can lead (§4.5).
 4. **RLS policies** — implement authToken-based row-level security for update/delete (#602)
 5. **Non-English translations** — replace placeholder en strings with proper translations
 6. **New signal / chat routes** — create `@tab/coherence/new-signal/` and `@tab/coherence/chat/[chatId]/` route files (not in current reference diff but implied by component hrefs)
