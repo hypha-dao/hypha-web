@@ -1665,7 +1665,11 @@
     "emojiShortcodeListLabel": "Raccourcis emoji",
     "reactionsOverflow": "+{count} de plus",
     "reactionReactorsTooltip": "{names} ont réagi avec {emoji}",
-    "reactionToggleFailed": "Impossible de mettre à jour la réaction. Réessayez."
+    "reactionToggleFailed": "Impossible de mettre à jour la réaction. Réessayez.",
+    "sendFailed": "Impossible d’envoyer le message. Réessayez.",
+    "sendFailedWithReason": "Impossible d’envoyer le message : {message}",
+    "sendUploadTimedOut": "Délai d’envoi dépassé. Essayez un fichier plus petit ou vérifiez la connexion.",
+    "sendPartialFailed": "L’envoi s’est arrêté après {sent} pièce(s) jointe(s). {detail}"
   },
   "CoherenceTab": {
     "signals": "Signaux",

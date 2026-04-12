@@ -1665,7 +1665,11 @@
     "emojiShortcodeListLabel": "Emoji shortcodes",
     "reactionsOverflow": "+{count} more",
     "reactionReactorsTooltip": "{names} reacted with {emoji}",
-    "reactionToggleFailed": "Could not update reaction. Try again."
+    "reactionToggleFailed": "Could not update reaction. Try again.",
+    "sendFailed": "Could not send message. Try again.",
+    "sendFailedWithReason": "Could not send message: {message}",
+    "sendUploadTimedOut": "Upload timed out. Try a smaller file or check your connection.",
+    "sendPartialFailed": "Send stopped after {sent} attachment(s). {detail}"
   },
   "CoherenceTab": {
     "signals": "Signals",

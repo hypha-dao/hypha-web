@@ -1665,7 +1665,11 @@
     "emojiShortcodeListLabel": "Atalhos de emoji",
     "reactionsOverflow": "+{count} mais",
     "reactionReactorsTooltip": "{names} reagiram com {emoji}",
-    "reactionToggleFailed": "Não foi possível atualizar a reação. Tente novamente."
+    "reactionToggleFailed": "Não foi possível atualizar a reação. Tente novamente.",
+    "sendFailed": "Não foi possível enviar a mensagem. Tente novamente.",
+    "sendFailedWithReason": "Não foi possível enviar a mensagem: {message}",
+    "sendUploadTimedOut": "Tempo de envio esgotado. Tente um ficheiro menor ou verifique a ligação.",
+    "sendPartialFailed": "O envio parou após {sent} anexo(s). {detail}"
   },
   "CoherenceTab": {
     "signals": "Sinais",

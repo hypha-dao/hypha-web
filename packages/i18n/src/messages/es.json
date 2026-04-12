@@ -1665,7 +1665,11 @@
     "emojiShortcodeListLabel": "Códigos cortos de emoji",
     "reactionsOverflow": "+{count} más",
     "reactionReactorsTooltip": "{names} reaccionaron con {emoji}",
-    "reactionToggleFailed": "No se pudo actualizar la reacción. Inténtalo de nuevo."
+    "reactionToggleFailed": "No se pudo actualizar la reacción. Inténtalo de nuevo.",
+    "sendFailed": "No se pudo enviar el mensaje. Inténtalo de nuevo.",
+    "sendFailedWithReason": "No se pudo enviar el mensaje: {message}",
+    "sendUploadTimedOut": "Se agotó el tiempo de subida. Prueba con un archivo más pequeño o revisa la conexión.",
+    "sendPartialFailed": "El envío se detuvo tras {sent} archivo(s) adjunto(s). {detail}"
   },
   "CoherenceTab": {
     "signals": "Señales",

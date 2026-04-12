@@ -18,6 +18,7 @@ import {
   Message,
   firstLineForReplyPreview,
   RoomEvent,
+  MatrixUploadTimeoutError,
   SendMessagePartialFailureError,
   type MessageReaction,
 } from '@hypha-platform/core/client';
@@ -222,6 +223,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reactionError, setReactionError] = useState<string | null>(null);
+  const [composerError, setComposerError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ChatPanelTab>('chat');
   const joinedRef = useRef<string | null>(null);
 
@@ -638,6 +640,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     const replyToEventId = replyDraft?.messageId;
     const savedDraft = replyDraft;
     const savedAttachments = draftAttachments;
+    setComposerError(null);
     setInput('');
     setDraftAttachments([]);
     try {
@@ -660,7 +663,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     } catch (err) {
       console.error('[HumanRightPanel] Failed to send message:', err);
       if (err instanceof SendMessagePartialFailureError) {
-        const { sentAttachmentCount, restoreCaption } = err;
+        const { sentAttachmentCount, restoreCaption, message } = err;
+        setComposerError(
+          t('sendPartialFailed', {
+            sent: String(sentAttachmentCount),
+            detail: message,
+          }),
+        );
         for (let i = 0; i < sentAttachmentCount; i++) {
           const a = savedAttachments[i];
           if (a) URL.revokeObjectURL(a.previewUrl);
@@ -670,6 +679,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         setReplyDraft(savedDraft);
         return;
       }
+      const msg =
+        err instanceof MatrixUploadTimeoutError
+          ? t('sendUploadTimedOut')
+          : err instanceof Error
+          ? t('sendFailedWithReason', { message: err.message })
+          : t('sendFailed');
+      setComposerError(msg);
       setInput(text);
       setReplyDraft(savedDraft);
       setDraftAttachments(savedAttachments);
@@ -700,6 +716,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 className="mx-3 mt-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
               >
                 {error}
+              </div>
+            )}
+            {composerError && (
+              <div
+                role="alert"
+                className="mx-3 mt-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              >
+                {composerError}
               </div>
             )}
             {reactionError && (
