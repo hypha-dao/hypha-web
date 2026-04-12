@@ -30,6 +30,7 @@ function LocalFileImageThumb({ file }: { file: File }) {
       return;
     }
     if (el) {
+      // codeql[js/xss-through-dom] `url` is always `blob:` from URL.createObjectURL(this File), not remote HTML.
       el.src = url;
     }
     return () => {
