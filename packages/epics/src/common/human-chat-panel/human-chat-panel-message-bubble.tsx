@@ -107,6 +107,7 @@ function useMxcUrls(
   }, [client, mxc]);
 }
 
+/** Single-image timeline row: preserve intrinsic aspect when known. */
 function TimelineImageSlot({
   media,
   tOpen,
@@ -163,7 +164,7 @@ function TimelineImageSlot({
               downloadUrl={mediaDownloadUrl}
               alt={media.filename ?? ''}
               className={cn(
-                'h-full max-h-48 w-full min-w-[160px] object-contain',
+                'h-full max-h-72 w-full object-contain',
                 media.spoiler && !spoilerRevealed && 'blur-2xl',
               )}
             />
@@ -187,14 +188,101 @@ function TimelineImageSlot({
   );
 }
 
+/** Square tile in a multi-attach collage (Discord-style crop). */
+function TimelineCollageImageTile({
+  media,
+  tOpen,
+}: {
+  media: ChatPanelAttachmentMedia;
+  tOpen: (key: string) => string;
+}) {
+  const { client } = useMatrix();
+  const [spoilerRevealed, setSpoilerRevealed] = useState(false);
+  const { preview: mediaPreviewUrl, download: mediaDownloadUrl } = useMxcUrls(
+    client,
+    media.mxcUrl,
+  );
+
+  return (
+    <div className="relative aspect-square min-h-0 min-w-0 overflow-hidden rounded-md bg-muted/40">
+      {mediaPreviewUrl && mediaDownloadUrl ? (
+        <>
+          <a
+            href={mediaDownloadUrl}
+            target="_blank"
+            rel="noreferrer noopener"
+            tabIndex={media.spoiler && !spoilerRevealed ? -1 : 0}
+            aria-hidden={media.spoiler && !spoilerRevealed}
+            onKeyDown={(e) => {
+              if (
+                media.spoiler &&
+                !spoilerRevealed &&
+                (e.key === 'Enter' || e.key === ' ')
+              ) {
+                e.preventDefault();
+                e.stopPropagation();
+              }
+            }}
+            className={cn(
+              'block h-full w-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+              media.spoiler && !spoilerRevealed && 'pointer-events-none',
+            )}
+            aria-label={tOpen('openAttachmentInNewTab')}
+            title={tOpen('openAttachmentInNewTab')}
+          >
+            <MatrixTimelineImage
+              previewUrl={mediaPreviewUrl}
+              downloadUrl={mediaDownloadUrl}
+              alt={media.filename ?? ''}
+              className={cn(
+                'h-full w-full object-cover',
+                media.spoiler && !spoilerRevealed && 'blur-2xl',
+              )}
+            />
+          </a>
+          {media.spoiler && !spoilerRevealed && (
+            <button
+              type="button"
+              className="absolute inset-0 z-[1] flex items-center justify-center bg-background/60 text-xs font-medium text-foreground"
+              onClick={() => setSpoilerRevealed(true)}
+            >
+              {tOpen('spoilerTapToReveal')}
+            </button>
+          )}
+        </>
+      ) : (
+        <div className="flex h-full items-center justify-center p-2 text-center text-xs text-muted-foreground">
+          {media.filename ?? tOpen('attachmentUnavailable')}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function bundleImageGridClass(imageCount: number): string {
+  if (imageCount <= 1) return 'grid-cols-1';
+  if (imageCount === 2) return 'grid-cols-2';
+  if (imageCount === 4) return 'grid-cols-2';
+  return 'grid-cols-3';
+}
+
+function partitionBundleSlots(slots: ChatPanelAttachmentMedia[]) {
+  const images = slots.filter((s) => s.msgtype === 'm.image');
+  const files = slots.filter((s) => s.msgtype === 'm.file');
+  return { images, files };
+}
+
 function TimelineFileSlot({
   media,
   t,
   format,
+  fullWidth = false,
 }: {
   media: ChatPanelAttachmentMedia;
   t: (key: string, values?: Record<string, string | number | Date>) => string;
   format: ReturnType<typeof useFormatter>;
+  /** Use under a collage so the row spans the bundle width. */
+  fullWidth?: boolean;
 }) {
   const { client } = useMatrix();
   const { download: mediaDownloadUrl } = useMxcUrls(client, media.mxcUrl);
@@ -231,8 +319,12 @@ function TimelineFileSlot({
 
   return (
     <div
-      className="shrink-0 rounded-lg border border-border bg-card px-3 py-2"
-      style={{ width: 'min(240px, 85vw)' }}
+      className={cn(
+        'rounded-lg border border-border bg-card px-3 py-2',
+        fullWidth
+          ? 'w-full min-w-0 max-w-none'
+          : 'w-[min(240px,85vw)] shrink-0',
+      )}
     >
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
@@ -603,27 +695,48 @@ export function HumanChatPanelMessageBubble({
 
         {message.mediaSlots && message.mediaSlots.length > 1 && (
           <div
-            className="narrow-scrollbar mt-1 max-w-md overflow-x-auto pb-1"
+            className="mt-1 max-w-md space-y-2"
             data-testid="chat-message-media-bundle"
           >
-            <div className="flex w-max gap-2 pr-1">
-              {message.mediaSlots.map((slot, idx) =>
-                slot.msgtype === 'm.image' ? (
-                  <TimelineImageSlot
-                    key={`${message.id}-slot-${idx}`}
-                    media={slot}
-                    tOpen={t}
-                  />
-                ) : (
-                  <TimelineFileSlot
-                    key={`${message.id}-slot-${idx}`}
-                    media={slot}
-                    t={t}
-                    format={format}
-                  />
-                ),
-              )}
-            </div>
+            {(() => {
+              const { images, files } = partitionBundleSlots(
+                message.mediaSlots,
+              );
+              const gridClass = bundleImageGridClass(images.length);
+              return (
+                <>
+                  {images.length > 0 && (
+                    <div
+                      className={cn(
+                        'grid auto-rows-[minmax(0,1fr)] gap-0.5 overflow-hidden rounded-lg border border-border bg-muted/20 p-0.5',
+                        gridClass,
+                      )}
+                    >
+                      {images.map((slot, idx) => (
+                        <TimelineCollageImageTile
+                          key={`${message.id}-img-${idx}`}
+                          media={slot}
+                          tOpen={t}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  {files.length > 0 && (
+                    <div className="flex flex-col gap-2">
+                      {files.map((slot, idx) => (
+                        <TimelineFileSlot
+                          key={`${message.id}-file-${idx}`}
+                          media={slot}
+                          t={t}
+                          format={format}
+                          fullWidth
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         )}
 
