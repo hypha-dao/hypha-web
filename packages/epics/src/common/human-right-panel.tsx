@@ -20,6 +20,7 @@ import {
   RoomEvent,
   MatrixUploadTimeoutError,
   SendMessagePartialFailureError,
+  isMatrixRateLimitedError,
   type MessageReaction,
 } from '@hypha-platform/core/client';
 import { UseMembers } from '../spaces';
@@ -713,12 +714,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         setReplyDraft(savedDraft);
         return;
       }
-      const msg =
-        err instanceof MatrixUploadTimeoutError
-          ? t('sendUploadTimedOut')
-          : err instanceof Error
-          ? t('sendFailedWithReason', { message: err.message })
-          : t('sendFailed');
+      const msg = isMatrixRateLimitedError(err)
+        ? t('sendRateLimited')
+        : err instanceof MatrixUploadTimeoutError
+        ? t('sendUploadTimedOut')
+        : err instanceof Error
+        ? t('sendFailedWithReason', { message: err.message })
+        : t('sendFailed');
       setComposerError(msg);
       setInput(text);
       setReplyDraft(savedDraft);
