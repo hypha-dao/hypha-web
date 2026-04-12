@@ -28,6 +28,7 @@ Use this as the **source of truth** when implementing; re-verify paths after lar
 | Timeline → UI model | `packages/core/src/matrix/rich-reply.ts` — `m.file` / `m.image` → shared `Message` type |
 | Chat composer / bubbles | `packages/epics/src/common/human-chat-panel/human-chat-panel-chat-bar.tsx`, `packages/epics/src/common/human-right-panel.tsx`, `human-chat-panel-message-bubble.tsx` |
 | Matrix SDK version | `matrix-js-sdk@^40` in `packages/core` (per Hypha Matrix role: not ^41 in Next.js) |
+| MCP / Hypha Chat (org-wide file listing for AI) | **`get_documents_by_space_slug`** ([PR #2141](https://github.com/hypha-dao/hypha-web/pull/2141)) — see **§9**; must stay aligned with org memory **§4** as Matrix ingestion lands |
 
 ---
 
@@ -159,11 +160,51 @@ interface SpaceMemoryItem {
 | Doc | Purpose |
 |-----|---------|
 | [documents-and-media-overview.md §4](../architecture/documents-and-media-overview.md) | Org memory catalogue and ingestion order |
+| [documents-and-media-overview.md §4.7](../architecture/documents-and-media-overview.md#47-mcp-and-hypha-chat-ai) | MCP / Chat AI access to uploads vs Matrix assets |
 | [space-chat-attachments.md](../architecture/space-chat-attachments.md) | Matrix attachment UX and event shape on `main` |
 | [space-chat-attachments (dev)](../development/space-chat-attachments.md) | `sendMessage`, `Message`, composer/bubble behaviour |
 | [coherence-research.md](./coherence-research.md) §1.1 | Coherence vs Matrix rooms vs org memory |
 | [coherence-incremental-plan.md](./coherence-incremental-plan.md) | Post-cleanup Space Memory item |
+| MCP tool spec (PR [#2141](https://github.com/hypha-dao/hypha-web/pull/2141)) | `docs/requirements/mcp-get-documents-by-space-slug-tech-spec.md` |
 
 ---
 
-_Outcome:_ V1 ships a **catalogue-shaped** panel backed **only** by existing document storage; V2 aligns the same UI with the **org memory catalogue** once schema and ingestion exist.
+## 9. MCP and Hypha Chat AI (expert MCP + fullstack)
+
+Org memory’s **catalogue** (§4.1) is the right **machine-facing** projection for “everything in the space” across **upload** and **Matrix** backends. **Hypha Chat** and the **MCP server** must consume **the same access rules** as the web app (`checkSpaceAccessForSpace` / token parity).
+
+### 9.1 What exists today (`get_documents_by_space_slug`, PR #2141)
+
+- The tool lists **PostgreSQL `documents` rows** for the space (proposals / discussions / agreements), including **`attachments`** (JSON array of URLs + names) and **`leadImage`**.
+- That already covers **upload / CDN** files **attached to those documents** (PDFs, images, videos — whatever URLs your upload pipeline stored). The **model does not receive file bytes** in the tool JSON; it receives **metadata + URLs** (and optional text fields `title`, `description`).
+- **Matrix-only** chat attachments (`mxc://` on timeline events) are **not** rows in `documents` — they are **not** returned by the SQL-backed tool **until** either:
+  - **Catalogue ingestion** (§4.2) runs and the tool (or a sibling tool) reads **org memory** rows, or
+  - A **follow-up** extends the contract (see §9.3).
+
+### 9.2 How the AI should “open” and understand file content
+
+| Asset type | Typical URL in `attachments` / `leadImage` | Model / host behaviour |
+|------------|---------------------------------------------|-------------------------|
+| **Public HTTPS** | CDN or signed URL readable without session | Host may **`web_fetch`** / multimodal attachment on the URL; model can summarise text PDFs and describe images/video **if** the host passes media into the model. |
+| **Cookie- or session-gated** | Same tool returns URL but fetch fails anonymously | **Gap:** require a **server-side fetch** tool (authenticated service) or pre-extract text into org memory **`indexed_text_ref`** (§4.1). Document in product before promising RAG on private blobs. |
+| **Matrix `mxc://`** (future catalogue row) | Catalogue stores `mxc_uri` + optional **ready-to-fetch HTTPS** (`media_http_url`) resolved with a **server** Matrix token | MCP host must **not** assume browser `mxcUrlToHttp` rules; server resolves media for indexing or returns a **short-lived** fetch URL to the model per policy. |
+
+**Video:** treat like other binaries — URL in payload + fetch capability; no separate Matrix primitive in Hypha’s chat events beyond `m.file` / `m.image` with `info` (mimetype).
+
+### 9.3 Target contract (org memory complete)
+
+When the **org memory catalogue** exists:
+
+- **`get_documents_by_space_slug`** SHOULD continue to return **governance documents** (stable SQL contract).
+- **Either** extend the tool with a structured **`org_memory_assets`** array (same access gating), **or** register **`get_org_memory_by_space_slug`** (read-only) returning flattened rows: `source`, `filename`, `mime`, `app_url` | `mxc_uri`, optional `fetch_url` / `text_excerpt`, `document_id?`, `matrix_room_id?`, `matrix_event_id?`.
+- **MCP schema-first:** each asset row MUST include enough for the host to choose **fetch vs summarise-from-index** (see [MCP Expert skill](../../.agents/skills/mcp-expert/SKILL.md) — small composable tools, explicit JSON Schema).
+
+### 9.4 Matrix SDK constraints (server-side fetch)
+
+- Use **real room IDs** (`!…`), not aliases, for server-side timeline or catalogue correlation.
+- **`matrix-js-sdk@^40`** in this monorepo — respect Hypha Matrix role constraints for workers that sync media.
+- **E2EE:** org memory including encrypted attachments needs the **client-assisted** or export path called out in §4.6 — do not silently promise MCP access.
+
+---
+
+_Outcome:_ V1 ships a **catalogue-shaped** panel backed **only** by existing document storage; V2 aligns the same UI with the **org memory catalogue** once schema and ingestion exist. **MCP / Chat** use **`get_documents_by_space_slug`** for SQL documents + embedded upload URLs today; **unify Matrix + uploads** for AI via **§4 catalogue** and spec updates in **PR #2141** (and follow-up implementation).

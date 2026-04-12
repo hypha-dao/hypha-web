@@ -110,6 +110,19 @@ When a proposal (or other entity) is saved with attachments:
 - **E2EE rooms** — May require **client-assisted** registration or encrypted export; spec should call out if org memory must include E2EE attachments.  
 - **Deduplication** — Same file re-uploaded in chat vs proposal: optional `sha256` match to link rows.
 
+### 4.7 MCP and Hypha Chat AI
+
+Hypha exposes **read tools** so assistants can reason about a space without scraping the UI. Today **`get_documents_by_space_slug`** (MCP + Chat server; see [PR #2141](https://github.com/hypha-dao/hypha-web/pull/2141) and `docs/requirements/mcp-get-documents-by-space-slug-tech-spec.md`) lists **PostgreSQL `documents` rows** for the slug, including **`attachments`** and **`leadImage`**.
+
+| Consumer | What it can access **today** | What requires **§4 catalogue** (or a new tool) |
+|----------|------------------------------|------------------------------------------------|
+| **`get_documents_by_space_slug`** | All **governance documents** in the space + **upload / CDN URLs** embedded in those rows (PDF, image, video links your pipeline stored). Same **access gating** as the web API (`checkSpaceAccessForSpace` / token parity). | **Matrix-only** files (`mxc://` on chat timeline) that never became a `documents` attachment |
+| **Model “understanding” file bytes** | Tool JSON carries **metadata + URLs**, not raw bytes. Hosts use **`web_fetch`**, multimodal attachments, or a **future authenticated fetch** tool. **Public or signed HTTPS** URLs work best; session-only URLs need server-side fetch or **pre-indexed text** in the catalogue (`indexed_text_ref` / §4.1). | **`mxc://`** resolution for AI must use a **server** Matrix token (or short-lived HTTPS the server mints) — not the browser-only `mxcUrlToHttp` pattern |
+
+**Contract direction:** Keep **`get_documents_by_space_slug`** stable for SQL **documents**. When the catalogue ships, **either** add a structured **`org_memory_assets[]`** (or sibling tool **`get_org_memory_by_space_slug`**) that flattens **upload + Matrix** rows with `source`, fetch hints, and optional excerpts — **or** extend this tool’s output in a **backward-compatible** way (additive fields only). Align specs in PR [#2141](https://github.com/hypha-dao/hypha-web/pull/2141) with each release.
+
+**Space Memory UI** (Coherence tab) and **MCP** should ultimately read the **same logical org memory** projection; until the catalogue exists, both rely on **`documents`** + embedded URLs for uploads only.
+
 ---
 
 ## 5. Security and limits (short)
