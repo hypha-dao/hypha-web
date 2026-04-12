@@ -439,7 +439,7 @@ export function HumanChatPanelMessageBubble({
       if (e.button !== 2 || !showMessageOverflowMenu) return;
       e.preventDefault();
       /** Radix positions `side="left"` content to the left of the anchor; keep anchor inset so the menu stays inside the chat scroll panel. */
-      const APPROX_MENU_WIDTH = 216;
+      const APPROX_MENU_WIDTH = 188;
       const PAD = 8;
       const scrollEl = (e.currentTarget as HTMLElement).closest(
         '[data-chat-messages-scroll]',
@@ -788,7 +788,7 @@ export function HumanChatPanelMessageBubble({
             side="left"
             align="start"
             collisionPadding={12}
-            className="z-[50] w-[min(100vw-2rem,200px)] overflow-visible border border-border px-1 py-0.5 shadow-lg"
+            className="z-[50] w-[min(100vw-2rem,172px)] overflow-visible border border-border px-1 py-0.5 shadow-lg"
           >
             {canReact && onReact && recentMenuEmojis.length > 0 ? (
               <>
@@ -824,7 +824,7 @@ export function HumanChatPanelMessageBubble({
                   sideOffset={6}
                 >
                   {emojiMartMounted ? (
-                    <div className="h-[min(260px,42vh)] w-[min(100vw-2rem,260px)] overflow-hidden">
+                    <div className="h-[min(260px,42vh)] w-[min(100vw-2rem,240px)] overflow-hidden">
                       <Picker
                         data={data}
                         i18n={getEmojiMartI18n(pickerLocale)}
