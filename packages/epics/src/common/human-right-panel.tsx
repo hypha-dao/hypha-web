@@ -225,17 +225,6 @@ function getMessagePlainTextForEdit(m: UIMessage): string {
   return (el.textContent ?? '').replace(/\s+/g, ' ').trim();
 }
 
-/** Plain text for editing when `parts` may be empty but `formattedContentHtml` exists. */
-function getMessagePlainTextForEdit(m: UIMessage): string {
-  const fromParts = getMessagePlainText(m);
-  if (fromParts.trim()) return fromParts;
-  const html = m.formattedContentHtml?.trim();
-  if (!html || typeof document === 'undefined') return fromParts;
-  const el = document.createElement('div');
-  el.innerHTML = html;
-  return (el.textContent ?? '').replace(/\s+/g, ' ').trim();
-}
-
 type HumanRightPanelProps = {
   useMembers: UseMembers;
 };
