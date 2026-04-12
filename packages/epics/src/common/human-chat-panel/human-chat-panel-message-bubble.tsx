@@ -732,24 +732,30 @@ function renderTextWithMentions(text: string): React.ReactNode[] {
  */
 function stripAngleBracketTagsToPlainText(html: string): string {
   const parts: string[] = [];
-  let i = 0;
-  while (i < html.length) {
-    const c = html[i]!;
-    if (c === '<') {
-      const close = html.indexOf('>', i + 1);
-      if (close === -1) {
-        i += 1;
-        continue;
+  let tagBuffer = '';
+
+  for (const c of html) {
+    if (tagBuffer) {
+      tagBuffer += c;
+      if (c === '>') {
+        parts.push(' ');
+        tagBuffer = '';
       }
-      parts.push(' ');
-      i = close + 1;
       continue;
     }
-    const next = html.indexOf('<', i + 1);
-    const end = next === -1 ? html.length : next;
-    parts.push(html.slice(i, end));
-    i = end;
+
+    if (c === '<') {
+      tagBuffer = '<';
+      continue;
+    }
+
+    parts.push(c);
   }
+
+  if (tagBuffer) {
+    parts.push(tagBuffer);
+  }
+
   return parts.join('').replace(/\s+/g, ' ').trim();
 }
 
