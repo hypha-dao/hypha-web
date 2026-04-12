@@ -1,15 +1,5 @@
 import { z } from 'zod';
-
-/** Keep in sync with `spaceSlugSchema` in `packages/core/src/space/validation.ts`. */
-const slugSchema = z
-  .string()
-  .trim()
-  .min(1)
-  .max(50)
-  .regex(
-    /^[a-z0-9'-]+$/,
-    'Slug must contain only lowercase letters, numbers, hyphens, and apostrophes',
-  );
+import { spaceSlugSchema } from '@hypha-platform/core/server';
 
 const documentStateSchema = z.enum(['discussion', 'proposal', 'agreement']);
 
@@ -29,7 +19,7 @@ const attachmentSchema = z.union([
 ]);
 
 export const getDocumentsBySpaceSlugInputSchema = z.object({
-  space_slug: slugSchema,
+  space_slug: spaceSlugSchema,
   page: z.number().int().min(1).optional().default(1),
   page_size: z.number().int().min(1).max(100).optional().default(20),
   searchTerm: z.string().optional(),
