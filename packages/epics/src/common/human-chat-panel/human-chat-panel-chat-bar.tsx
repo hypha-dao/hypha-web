@@ -142,7 +142,7 @@ function ChatDraftVideoPreview({
           className="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center bg-muted/90"
           aria-hidden
         >
-          <span className="rounded-md bg-foreground px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-background shadow-sm">
+          <span className="rounded-full bg-foreground px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-background shadow-sm">
             {spoilerBadge}
           </span>
         </div>
@@ -681,7 +681,7 @@ export function HumanChatPanelChatBar({
                             className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-muted/85"
                             aria-hidden
                           >
-                            <span className="rounded-md bg-foreground px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-background shadow-sm">
+                            <span className="rounded-full bg-foreground px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-background shadow-sm">
                               {t('draftSpoilerTag')}
                             </span>
                           </div>

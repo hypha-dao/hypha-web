@@ -36,6 +36,35 @@ type UIMessagePart =
   | { type: 'text'; text: string }
   | { type: string; [k: string]: unknown };
 
+/** Discord-style: dimmed media + centered pill (not full-width text strip). */
+function TimelineSpoilerRevealOverlay({
+  t,
+  onReveal,
+}: {
+  t: (key: string) => string;
+  onReveal: () => void;
+}) {
+  return (
+    <>
+      <div
+        className="pointer-events-none absolute inset-0 z-[1] bg-muted/90 backdrop-blur-sm"
+        aria-hidden
+      />
+      <div className="absolute inset-0 z-[2] flex items-center justify-center p-3">
+        <button
+          type="button"
+          onClick={onReveal}
+          aria-label={t('spoilerTapToReveal')}
+          title={t('spoilerTapToReveal')}
+          className="pointer-events-auto rounded-full bg-foreground px-4 py-2 text-[11px] font-bold uppercase tracking-wide text-background shadow-md ring-1 ring-black/10 transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:ring-white/15"
+        >
+          {t('draftSpoilerTag')}
+        </button>
+      </div>
+    </>
+  );
+}
+
 /**
  * Some homeservers reject `/_matrix/media/v3/thumbnail` for certain PNGs while
  * `.../download` works. Try thumbnail first, then full download, then icon.
@@ -195,13 +224,10 @@ function TimelineImageSlot({
             />
           </a>
           {media.spoiler && !spoilerRevealed && (
-            <button
-              type="button"
-              className="absolute inset-0 z-[1] flex items-center justify-center bg-background/60 text-sm font-medium text-foreground"
-              onClick={() => setSpoilerRevealed(true)}
-            >
-              {tOpen('spoilerTapToReveal')}
-            </button>
+            <TimelineSpoilerRevealOverlay
+              t={tOpen}
+              onReveal={() => setSpoilerRevealed(true)}
+            />
           )}
         </>
       ) : (
@@ -268,13 +294,10 @@ function TimelineCollageImageTile({
             />
           </a>
           {media.spoiler && !spoilerRevealed && (
-            <button
-              type="button"
-              className="absolute inset-0 z-[1] flex items-center justify-center bg-background/60 text-xs font-medium text-foreground"
-              onClick={() => setSpoilerRevealed(true)}
-            >
-              {tOpen('spoilerTapToReveal')}
-            </button>
+            <TimelineSpoilerRevealOverlay
+              t={tOpen}
+              onReveal={() => setSpoilerRevealed(true)}
+            />
           )}
         </>
       ) : (
@@ -347,13 +370,10 @@ function TimelineMatrixVideo({
         )}
       />
       {media.spoiler && !spoilerRevealed && (
-        <button
-          type="button"
-          className="absolute inset-0 z-[1] flex items-center justify-center bg-background/60 text-sm font-medium text-foreground"
-          onClick={() => setSpoilerRevealed(true)}
-        >
-          {t('spoilerTapToReveal')}
-        </button>
+        <TimelineSpoilerRevealOverlay
+          t={t}
+          onReveal={() => setSpoilerRevealed(true)}
+        />
       )}
       <p className="truncate border-t border-border/40 bg-card px-2 py-1.5 text-xs text-muted-foreground">
         {media.filename ?? t('attachment')}
@@ -985,13 +1005,10 @@ export function HumanChatPanelMessageBubble({
                     />
                   </a>
                   {message.media.spoiler && !spoilerRevealed && (
-                    <button
-                      type="button"
-                      className="absolute inset-0 z-[1] flex items-center justify-center bg-background/60 text-sm font-medium text-foreground"
-                      onClick={() => setSpoilerRevealed(true)}
-                    >
-                      {t('spoilerTapToReveal')}
-                    </button>
+                    <TimelineSpoilerRevealOverlay
+                      t={t}
+                      onReveal={() => setSpoilerRevealed(true)}
+                    />
                   )}
                 </>
               ) : (
