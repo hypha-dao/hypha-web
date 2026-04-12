@@ -4,28 +4,22 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 
 import { HumanChatPanelMessageBubble } from './human-chat-panel-message-bubble';
-import type { ChatPanelAttachmentMedia } from './chat-panel-media-types';
 
 type UIMessage = {
   id: string;
   role: 'user' | 'member';
   /** Non-Matrix / system rows: no reply or reactions. */
   isSynthetic?: boolean;
-  sendPending?: {
-    attachmentCount: number;
-    captionPreview: string;
-    uploadedCount?: number;
-  };
   parts?: Array<
     { type: 'text'; text: string } | { type: string; [k: string]: unknown }
   >;
-  media?: ChatPanelAttachmentMedia;
-  /** Multiple attachments in one Matrix event (`org.hypha.media_bundle`). */
-  mediaSlots?: ChatPanelAttachmentMedia[];
   senderName?: string;
   avatarUrl?: string;
   timestamp?: Date;
   formattedContentHtml?: string;
+  msgType?: string;
+  mediaHttpUrl?: string;
+  mediaFileName?: string;
   reactions?: Array<{
     emoji: string;
     count: number;

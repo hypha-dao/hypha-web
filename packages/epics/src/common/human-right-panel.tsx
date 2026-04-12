@@ -18,9 +18,6 @@ import {
   Message,
   firstLineForReplyPreview,
   RoomEvent,
-  MatrixUploadTimeoutError,
-  SendMessagePartialFailureError,
-  isMatrixRateLimitedError,
   type MessageReaction,
 } from '@hypha-platform/core/client';
 import { UseMembers } from '../spaces';
@@ -29,44 +26,33 @@ import {
   HumanChatPanelHeader,
   HumanChatPanelMessages,
   HumanChatPanelChatBar,
+  type ChatMentionCandidate,
   HumanChatPanelTabs,
   HumanChatPanelMembers,
-  type ChatDraftAttachment,
-  type ChatPanelAttachmentMedia,
 } from './human-chat-panel';
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
-
-function disposeDraftAttachmentUrls(drafts: ChatDraftAttachment[]) {
-  for (const a of drafts) {
-    URL.revokeObjectURL(a.previewUrl);
-  }
-}
 
 type UIMessage = {
   id: string;
   role: 'user' | 'member';
   /** True for non-Matrix rows (e.g. welcome); disables reply/reactions. */
   isSynthetic?: boolean;
-  /** Optimistic row while uploads run (cleared when send completes or fails). */
-  sendPending?: {
-    attachmentCount: number;
-    captionPreview: string;
-    uploadedCount?: number;
-  };
   parts?: Array<
     { type: 'text'; text: string } | { type: string; [k: string]: unknown }
   >;
-  /** Matrix file/image attachment (timeline); first slot when `mediaSlots` is set. */
-  media?: ChatPanelAttachmentMedia;
-  /** All attachment slots for one Matrix message (bundle). */
-  mediaSlots?: ChatPanelAttachmentMedia[];
   senderName?: string;
   avatarUrl?: string;
   /** Matrix event time (origin_server_ts), for header timestamp */
   timestamp?: Date;
   /** Matrix custom HTML for visible body (when sent with formatting). */
   formattedContentHtml?: string;
+  /** Matrix `msgtype` when not plain text (e.g. `m.image`). */
+  msgType?: string;
+  /** HTTPS URL for uploaded media (from MXC). */
+  mediaHttpUrl?: string;
+  /** Matrix `m.file` filename when body is a caption. */
+  mediaFileName?: string;
   /** MXID of the message author (for reply target resolution). */
   senderMatrixId?: string;
   reactions?: Array<{
@@ -118,10 +104,9 @@ function toUIMessage(
   currentUserId: string | null | undefined,
   resolveMemberLabel: (userId: string | undefined) => string,
   currentUserAvatarUrl?: string,
+  resolveMediaHttpUrl?: (mxc: string | undefined) => string | undefined,
 ): UIMessage {
   const isCurrentUser = currentUserId ? msg.sender === currentUserId : false;
-
-  const isMedia = msg.msgtype === 'm.file' || msg.msgtype === 'm.image';
 
   let replyTo: UIMessage['replyTo'];
   if (msg.inReplyToEventId) {
@@ -145,38 +130,22 @@ function toUIMessage(
       reactorUserIds: r.reactorUserIds,
     })) ?? undefined;
 
-  const mediaSingle =
-    isMedia && msg.msgtype
-      ? {
-          msgtype: msg.msgtype as 'm.file' | 'm.image',
-          mxcUrl: msg.mxcUrl,
-          filename: msg.filename ?? msg.content,
-          mediaInfo: msg.mediaInfo,
-          spoiler: msg.spoiler,
-        }
+  const msgType = msg.msgType;
+  const mediaHttpUrl =
+    msg.mediaMxcUrl && resolveMediaHttpUrl
+      ? resolveMediaHttpUrl(msg.mediaMxcUrl)
       : undefined;
-
-  const mediaSlots: ChatPanelAttachmentMedia[] | undefined =
-    isMedia && msg.msgtype && msg.mediaBundle && msg.mediaBundle.length > 1
-      ? msg.mediaBundle.map((b) => ({
-          msgtype: b.msgtype,
-          mxcUrl: b.mxcUrl,
-          filename: b.filename ?? '',
-          mediaInfo: b.mediaInfo,
-          spoiler: b.spoiler,
-        }))
-      : undefined;
-
-  const media = mediaSingle;
+  const mediaFileName = msg.mediaFileName;
 
   return {
     id: msg.id,
     role: isCurrentUser ? 'user' : 'member',
     isSynthetic: false,
-    parts: isMedia ? [] : [{ type: 'text', text: msg.content }],
-    media,
-    mediaSlots,
-    formattedContentHtml: isMedia ? undefined : msg.formattedContentHtml,
+    parts: [{ type: 'text', text: msg.content }],
+    formattedContentHtml: msg.formattedContentHtml,
+    msgType,
+    mediaHttpUrl,
+    mediaFileName,
     senderName: isCurrentUser ? undefined : resolveMemberLabel(msg.sender),
     senderMatrixId: msg.sender,
     avatarUrl: isCurrentUser ? currentUserAvatarUrl : undefined,
@@ -191,16 +160,7 @@ function getMessagePlainText(m: UIMessage): string {
     m.parts?.filter(
       (p): p is { type: 'text'; text: string } => p.type === 'text',
     ) ?? [];
-  const fromParts = textParts.map((p) => p.text).join('');
-  if (fromParts.trim()) return fromParts;
-  if (m.mediaSlots && m.mediaSlots.length > 0) {
-    const names = m.mediaSlots
-      .map((s) => s.filename)
-      .filter(Boolean) as string[];
-    if (names.length) return names.join(', ');
-  }
-  if (m.media?.filename) return m.media.filename;
-  return '';
+  return textParts.map((p) => p.text).join('');
 }
 
 type HumanRightPanelProps = {
@@ -241,28 +201,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   currentUserAvatarUrlRef.current = currentUserAvatarUrl;
 
   const [input, setInput] = useState('');
-  const [draftAttachments, setDraftAttachments] = useState<
-    ChatDraftAttachment[]
-  >([]);
-  const draftAttachmentsRef = useRef(draftAttachments);
-  draftAttachmentsRef.current = draftAttachments;
-  /** Latest in-flight send; used so error recovery does not clobber edits from a newer send. */
-  const sendOperationTokenRef = useRef<symbol | null>(null);
+  const [pendingAttachment, setPendingAttachment] = useState<File | null>(null);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [messages, setMessages] = useState<UIMessage[]>([]);
   const [replyDraft, setReplyDraft] = useState<ReplyDraft | null>(null);
   const [roomId, setRoomId] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reactionError, setReactionError] = useState<string | null>(null);
-  const [composerError, setComposerError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ChatPanelTab>('chat');
-  /** Shown in timeline after a short delay while large attachment sends run. */
-  const [sendingPending, setSendingPending] = useState<null | {
-    id: string;
-    attachmentCount: number;
-    captionPreview: string;
-    uploadedCount?: number;
-  }>(null);
   const joinedRef = useRef<string | null>(null);
 
   const currentUserId = client?.getUserId?.() ?? null;
@@ -290,6 +237,41 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const resolveMemberLabelRef = useRef(resolveMemberLabel);
   resolveMemberLabelRef.current = resolveMemberLabel;
+
+  const resolveMediaHttpUrl = useCallback(
+    (mxc: string | undefined): string | undefined => {
+      if (!mxc || !client) return undefined;
+      try {
+        const url = client.mxcUrlToHttp(
+          mxc,
+          undefined,
+          undefined,
+          undefined,
+          true,
+        );
+        return url ?? undefined;
+      } catch {
+        return undefined;
+      }
+    },
+    [client],
+  );
+
+  const resolveMediaHttpUrlRef = useRef(resolveMediaHttpUrl);
+  resolveMediaHttpUrlRef.current = resolveMediaHttpUrl;
+
+  const mentionCandidates = useMemo((): ChatMentionCandidate[] => {
+    if (!roomId || !client) return [];
+    const room = client.getRoom(roomId);
+    if (!room) return [];
+    return room
+      .getJoinedMembers()
+      .map((m) => ({
+        userId: m.userId,
+        label: m.name && m.name !== m.userId ? m.name : m.userId,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [roomId, client]);
 
   useEffect(() => {
     if (!roomId || !client) return;
@@ -359,11 +341,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setRoomId(null);
       setMessages([]);
       setInput('');
-      disposeDraftAttachmentUrls(draftAttachmentsRef.current);
-      setDraftAttachments([]);
+      setPendingAttachment(null);
       setReplyDraft(null);
       setError(null);
-      setSendingPending(null);
     }
   }, [spaceSlug, roomId]);
 
@@ -417,6 +397,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 currentUserIdRef.current,
                 resolveMemberLabelRef.current,
                 currentUserAvatarUrlRef.current,
+                resolveMediaHttpUrlRef.current,
               ),
             ),
           );
@@ -456,10 +437,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setMessages([]);
       setRoomId(null);
       setReplyDraft(null);
-      disposeDraftAttachmentUrls(draftAttachmentsRef.current);
-      setDraftAttachments([]);
+      setPendingAttachment(null);
       setError(null);
-      setSendingPending(null);
     }
 
     if (mode === 'space' && prevMode === 'coherence') {
@@ -470,10 +449,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setMessages([]);
       setRoomId(null);
       setReplyDraft(null);
-      disposeDraftAttachmentUrls(draftAttachmentsRef.current);
-      setDraftAttachments([]);
+      setPendingAttachment(null);
       setError(null);
-      setSendingPending(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
@@ -490,9 +467,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setError(null);
       setMessages([]);
       setReplyDraft(null);
-      disposeDraftAttachmentUrls(draftAttachmentsRef.current);
-      setDraftAttachments([]);
-      setSendingPending(null);
+      setPendingAttachment(null);
       try {
         let targetRoomId = coherenceRoomId;
 
@@ -541,6 +516,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 currentUserIdRef.current,
                 resolveMemberLabelRef.current,
                 currentUserAvatarUrlRef.current,
+                resolveMediaHttpUrlRef.current,
               ),
             ),
           );
@@ -588,6 +564,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             currentUserIdRef.current,
             resolveMemberLabelRef.current,
             currentUserAvatarUrlRef.current,
+            resolveMediaHttpUrlRef.current,
           );
           const idx = prev.findIndex((m) => m.id === next.id);
           if (idx === -1) {
@@ -595,13 +572,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           }
           return prev.map((m, i) => (i === idx ? next : m));
         });
-        if (
-          message.sender === currentUserIdRef.current &&
-          message.id &&
-          !String(message.id).startsWith('hypha-send-pending')
-        ) {
-          setSendingPending(null);
-        }
       },
       async (_pinned: string[]) => {
         // pinned messages not used in human chat panel
@@ -663,23 +633,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [roomId, t],
   );
 
-  const mergedMessages = useMemo(() => {
-    if (!sendingPending) return messages;
-    const pendingRow: UIMessage = {
-      id: sendingPending.id,
-      role: 'user',
-      isSynthetic: true,
-      parts: [],
-      sendPending: {
-        attachmentCount: sendingPending.attachmentCount,
-        captionPreview: sendingPending.captionPreview,
-        uploadedCount: sendingPending.uploadedCount,
-      },
-      avatarUrl: currentUserAvatarUrl,
-    };
-    return [...messages, pendingRow];
-  }, [messages, sendingPending, currentUserAvatarUrl]);
-
   const handleReplyToMessage = useCallback(
     (messageId: string) => {
       const target = messages.find((m) => m.id === messageId);
@@ -699,105 +652,32 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
 
   const handleSend = useCallback(async () => {
-    if (!roomId) return;
-    const trimmed = input.trim();
-    if (!trimmed && draftAttachments.length === 0) return;
+    if ((!input.trim() && !pendingAttachment) || !roomId) return;
     const text = input;
+    const file = pendingAttachment;
     const replyToEventId = replyDraft?.messageId;
     const savedDraft = replyDraft;
-    const savedAttachments = draftAttachments;
-    const sendToken = Symbol('send');
-    sendOperationTokenRef.current = sendToken;
-    setComposerError(null);
+    const savedFile = file;
     setInput('');
-    setDraftAttachments([]);
-    const pendingId =
-      savedAttachments.length > 0 ? `hypha-send-pending-${Date.now()}` : null;
-    if (pendingId) {
-      setSendingPending({
-        id: pendingId,
-        attachmentCount: savedAttachments.length,
-        captionPreview: text,
-        uploadedCount: 0,
-      });
-    }
+    setPendingAttachment(null);
+    setIsSendingMessage(true);
     try {
       await matrixRef.current.sendMessage({
         roomId,
-        message: text,
+        message: text.trim() ? text : file?.name ?? 'attachment',
         ...(replyToEventId ? { replyToEventId } : {}),
-        ...(savedAttachments.length > 0
-          ? {
-              attachments: savedAttachments.map((a) => ({
-                file: a.file,
-                kind: a.kind === 'video' ? 'file' : a.kind,
-                spoiler: a.spoiler,
-              })),
-              onUploadProgress: ({ completed, total }) => {
-                setSendingPending((cur) =>
-                  cur && cur.id === pendingId
-                    ? {
-                        ...cur,
-                        attachmentCount: total,
-                        uploadedCount: completed,
-                      }
-                    : cur,
-                );
-              },
-            }
-          : {}),
+        ...(file ? { attachment: file } : {}),
       });
-      setSendingPending(null);
-      disposeDraftAttachmentUrls(savedAttachments);
       setReplyDraft(null);
-      if (sendOperationTokenRef.current === sendToken) {
-        sendOperationTokenRef.current = null;
-      }
     } catch (err) {
       console.error('[HumanRightPanel] Failed to send message:', err);
-      if (sendOperationTokenRef.current !== sendToken) {
-        disposeDraftAttachmentUrls(savedAttachments);
-        setSendingPending(null);
-        return;
-      }
-      sendOperationTokenRef.current = null;
-      setSendingPending(null);
-      if (err instanceof SendMessagePartialFailureError) {
-        const { sentAttachmentCount, restoreCaption, message } = err;
-        setComposerError(
-          t('sendPartialFailed', {
-            sent: sentAttachmentCount,
-            detail: message,
-          }),
-        );
-        for (let i = 0; i < sentAttachmentCount; i++) {
-          const a = savedAttachments[i];
-          if (a) URL.revokeObjectURL(a.previewUrl);
-        }
-        setDraftAttachments(savedAttachments.slice(sentAttachmentCount));
-        setInput(restoreCaption ? text : '');
-        setReplyDraft(savedDraft);
-        return;
-      }
-      const msg = isMatrixRateLimitedError(err)
-        ? t('sendRateLimited')
-        : err instanceof MatrixUploadTimeoutError
-        ? t('sendUploadTimedOut')
-        : err instanceof Error
-        ? t('sendFailedWithReason', { message: err.message })
-        : t('sendFailed');
-      setComposerError(msg);
       setInput(text);
+      setPendingAttachment(savedFile ?? null);
       setReplyDraft(savedDraft);
-      setDraftAttachments(savedAttachments);
+    } finally {
+      setIsSendingMessage(false);
     }
-  }, [input, roomId, replyDraft, draftAttachments, t]);
-
-  useEffect(() => {
-    return () => {
-      disposeDraftAttachmentUrls(draftAttachmentsRef.current);
-    };
-  }, []);
+  }, [input, pendingAttachment, roomId, replyDraft]);
 
   return (
     <>
@@ -819,14 +699,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 {error}
               </div>
             )}
-            {composerError && (
-              <div
-                role="alert"
-                className="mx-3 mt-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
-              >
-                {composerError}
-              </div>
-            )}
             {reactionError && (
               <div
                 role="alert"
@@ -843,7 +715,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               </div>
             ) : (
               <HumanChatPanelMessages
-                messages={mergedMessages}
+                messages={messages}
                 onReply={handleReplyToMessage}
                 onToggleReaction={handleToggleReaction}
                 resolveReactionReactorLabel={(userId) =>
@@ -866,8 +738,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             value={input}
             onChange={setInput}
             onSend={handleSend}
-            draftAttachments={draftAttachments}
-            onDraftAttachmentsChange={setDraftAttachments}
+            pendingAttachment={pendingAttachment}
+            onPendingAttachmentChange={setPendingAttachment}
+            mentionCandidates={mentionCandidates}
+            isSending={isSendingMessage}
             replyPreview={
               replyDraft
                 ? {
