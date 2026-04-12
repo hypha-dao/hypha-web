@@ -41,6 +41,7 @@ type HumanChatPanelMessagesProps = {
   /** Matrix room id for deep-linking messages (copy message link). */
   matrixRoomId?: string | null;
   onEditMessage?: (messageId: string) => void;
+  onDeleteMessage?: (messageId: string) => void | Promise<void>;
   /** Map Matrix user id to display name for reaction hover tooltips. */
   resolveReactionReactorLabel?: (userId: string) => string;
 };
@@ -54,6 +55,7 @@ export function HumanChatPanelMessages({
   quickReactionEmojis,
   matrixRoomId,
   onEditMessage,
+  onDeleteMessage,
   resolveReactionReactorLabel,
 }: HumanChatPanelMessagesProps) {
   const t = useTranslations('HumanChatPanel');
@@ -109,6 +111,11 @@ export function HumanChatPanelMessages({
             msg.role === 'user' &&
             textContent.trim().length > 0 &&
             Boolean(onEditMessage);
+          const canDeleteThis =
+            canInteract &&
+            msg.role === 'user' &&
+            Boolean(onDeleteMessage) &&
+            !msg.id.startsWith('~');
           const isActionBarVisible =
             combinedLockMessageId === msg.id ||
             (hoverActionMessageId === msg.id && combinedLockMessageId == null);
@@ -175,6 +182,11 @@ export function HumanChatPanelMessages({
               onEditMessage={
                 canEditThis && onEditMessage
                   ? () => onEditMessage(msg.id)
+                  : undefined
+              }
+              onDeleteMessage={
+                canDeleteThis && onDeleteMessage
+                  ? () => onDeleteMessage(msg.id)
                   : undefined
               }
             />
