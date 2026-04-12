@@ -15,6 +15,7 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
 
   const imageSrc = [
     'data:',
+    'blob:',
     ...IMAGE_HOSTS.map((host) => `https://${host}`),
   ].join(' ');
   const connectSrc = [
