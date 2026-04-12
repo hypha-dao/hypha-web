@@ -1,11 +1,6 @@
 import { z } from 'zod';
-import {
-  checkSpaceAccessForSpace,
-  findSpaceBySlug,
-  getDocumentsBySpaceSlug,
-} from '@hypha-platform/core/server';
+import { getDocumentsBySpaceSlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
-import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import type { ChatRouteTool } from './types';
 import { sanitizeSlug } from '../system-prompt';
 
@@ -49,32 +44,6 @@ export function createGetDocumentsBySpaceSlugTool(authToken: string) {
       }
 
       try {
-        const host = await findSpaceBySlug({ slug: safe }, { db });
-        if (!host) {
-          return {
-            found: false,
-            space_slug: safe,
-            error: 'Space not found',
-          };
-        }
-        if (host.web3SpaceId != null) {
-          if (!canConvertToBigInt(host.web3SpaceId)) {
-            return {
-              found: false,
-              space_slug: safe,
-              error: 'Invalid space identifier',
-            };
-          }
-          const access = await checkSpaceAccessForSpace(host, authToken);
-          if (!access.hasAccess) {
-            return {
-              found: false,
-              space_slug: safe,
-              error: access.message,
-            };
-          }
-        }
-
         const gated = await getDocumentsBySpaceSlug(
           {
             spaceSlug: safe,
