@@ -51,6 +51,17 @@ export class SendMessagePartialFailureError extends Error {
   }
 }
 
+/** Matrix `uploadContent` exceeded the configured timeout (see `MATRIX_UPLOAD_TIMEOUT_MS`). */
+export class MatrixUploadTimeoutError extends Error {
+  constructor(message = 'Matrix media upload timed out') {
+    super(message);
+    this.name = 'MatrixUploadTimeoutError';
+  }
+}
+
+/** Default max wait for `client.uploadContent` per attachment (ms). */
+export const MATRIX_UPLOAD_TIMEOUT_MS = 120_000;
+
 /** Matrix room message with optional Hypha spoiler extension. */
 type HyphaMediaEventContent = RoomMessageEventContent & {
   [HYPHA_SPOILER_FIELD]?: boolean;
@@ -345,10 +356,28 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       const prepareMediaPayload = async (
         att: SendAttachmentInput,
       ): Promise<HyphaMediaEventContent> => {
-        const upload = await client.uploadContent(att.file, {
-          name: att.file.name,
-          type: att.file.type || undefined,
-        });
+        const abortController = new AbortController();
+        const timeoutMs = MATRIX_UPLOAD_TIMEOUT_MS;
+        const timeoutId = setTimeout(() => {
+          abortController.abort();
+        }, timeoutMs);
+        let upload: { content_uri: string };
+        try {
+          upload = await client.uploadContent(att.file, {
+            name: att.file.name,
+            type: att.file.type || undefined,
+            abortController,
+          });
+        } catch (e) {
+          if (abortController.signal.aborted) {
+            throw new MatrixUploadTimeoutError(
+              `Matrix media upload timed out after ${timeoutMs}ms`,
+            );
+          }
+          throw e;
+        } finally {
+          clearTimeout(timeoutId);
+        }
         const mxc = upload.content_uri;
         const msgtype = att.kind === 'image' ? MsgType.Image : MsgType.File;
         let info: {
