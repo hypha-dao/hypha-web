@@ -1630,6 +1630,8 @@
     "chatImageAlt": "Uploaded image",
     "downloadFile": "Download file",
     "attachmentUnavailable": "Attachment (link unavailable)",
+    "composerToolbar": "Message actions",
+    "newlineHintCompact": "Enter send · Shift+Enter newline · Esc cancel · Hover composer for shortcuts",
     "loading": "Loading...",
     "openPanel": "Open chat panel",
     "hidePanel": "Hide chat panel",

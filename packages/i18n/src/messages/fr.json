@@ -1630,6 +1630,8 @@
     "chatImageAlt": "Image envoyée",
     "downloadFile": "Télécharger le fichier",
     "attachmentUnavailable": "Pièce jointe (lien indisponible)",
+    "composerToolbar": "Actions du message",
+    "newlineHintCompact": "Entrée envoyer · Maj+Entrée ligne · Échap annuler · Raccourcis : survol du champ",
     "loading": "Chargement...",
     "openPanel": "Ouvrir le panneau de chat",
     "hidePanel": "Masquer le panneau de chat",

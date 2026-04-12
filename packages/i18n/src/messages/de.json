@@ -1630,6 +1630,8 @@
     "chatImageAlt": "Hochgeladenes Bild",
     "downloadFile": "Datei herunterladen",
     "attachmentUnavailable": "Anhang (Link nicht verfügbar)",
+    "composerToolbar": "Nachrichtenaktionen",
+    "newlineHintCompact": "Enter senden · Shift+Enter Zeile · Esc abbrechen · Maus über Eingabe für Kurzbefehle",
     "loading": "Laden...",
     "openPanel": "Chat-Panel öffnen",
     "hidePanel": "Chat-Panel ausblenden",
