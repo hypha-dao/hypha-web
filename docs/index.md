@@ -25,3 +25,7 @@ Active implementation plans and feature roadmaps.
 ## Requirements
 
 Feature requirements and specifications are in [docs/requirements/](./requirements/).
+
+| Document | Description |
+|----------|-------------|
+| [Human chat composer — world-class tech spec](./requirements/human-chat-composer-world-class-tech-spec.md) | Composer UX, Matrix media uploads, dictation, mentions, phased PR plan |
