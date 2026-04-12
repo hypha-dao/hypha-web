@@ -8,6 +8,7 @@ import {
   SmilePlus,
   Reply,
   MoreHorizontal,
+  Pencil,
   FileIcon,
   ExternalLink,
   Image as ImageIcon,
@@ -519,6 +520,10 @@ type HumanChatPanelMessageBubbleProps = {
   onReply?: () => void;
   /** When set, user can open react picker (omit for welcome). */
   onReact?: (emoji: string) => void | Promise<void>;
+  /** Discord-style one-tap reactions ahead of the picker (from local frequency). */
+  quickReactionEmojis?: string[];
+  /** When set, Edit is enabled (own text messages). */
+  onEditMessage?: () => void;
 };
 
 const MAX_VISIBLE_REACTIONS = 12;
@@ -707,6 +712,8 @@ export function HumanChatPanelMessageBubble({
   isStreaming,
   onReply,
   onReact,
+  quickReactionEmojis,
+  onEditMessage,
 }: HumanChatPanelMessageBubbleProps) {
   const t = useTranslations('HumanChatPanel');
   const format = useFormatter();
@@ -788,6 +795,16 @@ export function HumanChatPanelMessageBubble({
       };
     return { pct: 18, indeterminate: true, showBar: true };
   })();
+  const canEdit = Boolean(
+    onEditMessage &&
+      (textContent.trim().length > 0 ||
+        Boolean(message.formattedContentHtml?.trim())),
+  );
+  const quickStrip =
+    canReact &&
+    onReact &&
+    quickReactionEmojis &&
+    quickReactionEmojis.length > 0;
   const visibleReactions = reactions.slice(0, MAX_VISIBLE_REACTIONS);
   const hiddenReactionCount = Math.max(
     0,
@@ -1247,11 +1264,32 @@ export function HumanChatPanelMessageBubble({
       {/* Discord-style floating bar: compact height, tight to icon row */}
       <div
         className={cn(
-          'absolute right-3 top-0 z-10 flex h-6 -translate-y-1/2 items-center gap-0 rounded-md border border-border bg-popover px-0 py-0 leading-none text-popover-foreground shadow-md ring-1 ring-black/5 dark:ring-white/10 transition-opacity duration-150',
+          'absolute right-3 top-0 z-10 flex h-7 -translate-y-1/2 items-center gap-0 rounded-full border border-border bg-popover px-0.5 leading-none text-popover-foreground shadow-md ring-1 ring-black/5 dark:ring-white/10 transition-opacity duration-150',
           isActionBarVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
         aria-hidden={!isActionBarVisible}
       >
+        {quickStrip &&
+          quickReactionEmojis!.slice(0, 3).map((emoji) => (
+            <button
+              key={emoji}
+              type="button"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full p-0 text-[15px] leading-none transition-colors hover:bg-muted"
+              aria-label={t('quickReactWith', { emoji })}
+              onClick={() => {
+                void onReact!(emoji);
+              }}
+            >
+              <span aria-hidden>{emoji}</span>
+            </button>
+          ))}
+        {quickStrip ? (
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            className="mx-0.5 h-4 w-px shrink-0 bg-border"
+          />
+        ) : null}
         <HumanChatPanelEmojiPicker
           open={hoverReactPickerOpen}
           onOpenChange={(open) => {
@@ -1266,33 +1304,43 @@ export function HumanChatPanelMessageBubble({
         >
           <button
             type="button"
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
             aria-label={t('reactButton')}
             disabled={!canReact}
             aria-disabled={!canReact}
             aria-expanded={hoverReactPickerOpen}
           >
-            <Smile className="h-3 w-3" strokeWidth={2} />
+            <Smile className="h-3.5 w-3.5" strokeWidth={2} />
           </button>
         </HumanChatPanelEmojiPicker>
         <button
           type="button"
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
+          aria-label={t('editButton')}
+          disabled={!canEdit}
+          aria-disabled={!canEdit}
+          onClick={onEditMessage}
+        >
+          <Pencil className="h-3.5 w-3.5" strokeWidth={2} />
+        </button>
+        <button
+          type="button"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 [&_svg]:block"
           aria-label={t('replyButton')}
           disabled={!canReply}
           aria-disabled={!canReply}
           onClick={onReply}
         >
-          <Reply className="h-3 w-3" strokeWidth={2} />
+          <Reply className="h-3.5 w-3.5" strokeWidth={2} />
         </button>
         <button
           type="button"
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground [&_svg]:block"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground [&_svg]:block"
           aria-label={t('moreButton')}
           disabled
           aria-disabled
         >
-          <MoreHorizontal className="h-3 w-3" strokeWidth={2} />
+          <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={2} />
         </button>
       </div>
     </div>

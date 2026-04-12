@@ -1,6 +1,6 @@
 /** Matrix rich reply plaintext helpers (Client-Server API — rich replies). */
 
-import { MatrixEventEvent } from 'matrix-js-sdk';
+import { MatrixEventEvent, RelationType } from 'matrix-js-sdk';
 import type * as MatrixSdk from 'matrix-js-sdk';
 
 import type { Message, MessageMediaBundleItem } from './types';
@@ -52,6 +52,26 @@ export function firstLineForReplyPreview(
 /** Local / optimistic event ids start with `~` until the homeserver assigns `$…`. */
 export function isLocalProvisionalEventId(eventId: string): boolean {
   return eventId.startsWith('~');
+}
+
+/**
+ * When `event` is an `m.room.message` with `m.relates_to.rel_type === m.replace`,
+ * returns the event id of the message being edited. Otherwise `undefined`.
+ */
+export function getMessageReplaceTargetEventId(
+  event: MatrixSdk.MatrixEvent,
+): string | undefined {
+  const rel = event.getWireContent()?.['m.relates_to'] as
+    | { rel_type?: string; event_id?: string }
+    | undefined;
+  if (
+    rel?.rel_type === RelationType.Replace &&
+    typeof rel.event_id === 'string' &&
+    rel.event_id.length > 0
+  ) {
+    return rel.event_id;
+  }
+  return undefined;
 }
 
 /**

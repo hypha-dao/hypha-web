@@ -36,6 +36,11 @@ import {
 } from './human-chat-panel';
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
+import {
+  DEFAULT_QUICK_REACTION_EMOJIS,
+  getTopQuickReactionEmojis,
+  recordUserReactionEmojiUse,
+} from './human-chat-panel/chat-quick-reaction-frequency';
 
 function disposeDraftAttachmentUrls(drafts: ChatDraftAttachment[]) {
   for (const a of drafts) {
@@ -86,6 +91,12 @@ type UIMessage = {
 type ReplyDraft = {
   messageId: string;
   authorLabel: string;
+  excerpt: string;
+};
+
+type EditDraft = {
+  messageId: string;
+  originalPlainText: string;
   excerpt: string;
 };
 
@@ -203,6 +214,17 @@ function getMessagePlainText(m: UIMessage): string {
   return '';
 }
 
+/** Plain text for editing when `parts` may be empty but `formattedContentHtml` exists. */
+function getMessagePlainTextForEdit(m: UIMessage): string {
+  const fromParts = getMessagePlainText(m);
+  if (fromParts.trim()) return fromParts;
+  const html = m.formattedContentHtml?.trim();
+  if (!html || typeof document === 'undefined') return fromParts;
+  const el = document.createElement('div');
+  el.innerHTML = html;
+  return (el.textContent ?? '').replace(/\s+/g, ' ').trim();
+}
+
 type HumanRightPanelProps = {
   useMembers: UseMembers;
 };
@@ -250,6 +272,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const sendOperationTokenRef = useRef<symbol | null>(null);
   const [messages, setMessages] = useState<UIMessage[]>([]);
   const [replyDraft, setReplyDraft] = useState<ReplyDraft | null>(null);
+  const [editDraft, setEditDraft] = useState<EditDraft | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [quickReactionEmojis, setQuickReactionEmojis] = useState<string[]>(() =>
+    typeof window === 'undefined'
+      ? [...DEFAULT_QUICK_REACTION_EMOJIS]
+      : getTopQuickReactionEmojis(),
+  );
   const [roomId, setRoomId] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -362,6 +391,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       disposeDraftAttachmentUrls(draftAttachmentsRef.current);
       setDraftAttachments([]);
       setReplyDraft(null);
+      setEditDraft(null);
+      setEditError(null);
       setError(null);
       setSendingPending(null);
     }
@@ -458,6 +489,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setReplyDraft(null);
       disposeDraftAttachmentUrls(draftAttachmentsRef.current);
       setDraftAttachments([]);
+      setEditDraft(null);
+      setEditError(null);
       setError(null);
       setSendingPending(null);
     }
@@ -472,6 +505,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setReplyDraft(null);
       disposeDraftAttachmentUrls(draftAttachmentsRef.current);
       setDraftAttachments([]);
+      setEditDraft(null);
+      setEditError(null);
       setError(null);
       setSendingPending(null);
     }
@@ -493,6 +528,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       disposeDraftAttachmentUrls(draftAttachmentsRef.current);
       setDraftAttachments([]);
       setSendingPending(null);
+      setEditDraft(null);
+      setEditError(null);
       try {
         let targetRoomId = coherenceRoomId;
 
@@ -637,6 +674,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           ? { ...draft, messageId: newId }
           : draft,
       );
+      setEditDraft((draft) =>
+        draft?.messageId === oldEventId
+          ? { ...draft, messageId: newId }
+          : draft,
+      );
     };
 
     room.on(RoomEvent.LocalEchoUpdated, onLocalEchoUpdated);
@@ -655,6 +697,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           targetEventId: messageId,
           key: emoji,
         });
+        recordUserReactionEmojiUse(emoji);
+        setQuickReactionEmojis(getTopQuickReactionEmojis());
       } catch (err) {
         console.error('[HumanRightPanel] Failed to toggle reaction:', err);
         setReactionError(t('reactionToggleFailed'));
@@ -684,6 +728,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     (messageId: string) => {
       const target = messages.find((m) => m.id === messageId);
       if (!target) return;
+      setEditDraft(null);
+      setEditError(null);
       const authorLabel =
         target.role === 'user'
           ? t('you')
@@ -698,11 +744,48 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [messages, resolveMemberLabel, t],
   );
 
+  const handleEditMessage = useCallback(
+    (messageId: string) => {
+      const target = messages.find((m) => m.id === messageId);
+      if (!target || target.role !== 'user') return;
+      const plain = getMessagePlainTextForEdit(target);
+      if (!plain.trim()) return;
+      setReplyDraft(null);
+      setEditError(null);
+      setEditDraft({
+        messageId,
+        originalPlainText: plain,
+        excerpt: firstLineForReplyPreview(plain),
+      });
+      setInput(plain);
+    },
+    [messages],
+  );
+
   const handleSend = useCallback(async () => {
     if (!roomId) return;
     const trimmed = input.trim();
     if (!trimmed && draftAttachments.length === 0) return;
     const text = input;
+
+    if (editDraft) {
+      const savedEdit = editDraft;
+      setEditError(null);
+      try {
+        await matrixRef.current.replaceMessage({
+          roomId,
+          targetEventId: savedEdit.messageId,
+          message: text,
+        });
+        setInput('');
+        setEditDraft(null);
+      } catch (err) {
+        console.error('[HumanRightPanel] Failed to edit message:', err);
+        setEditError(t('editMessageFailed'));
+      }
+      return;
+    }
+
     const replyToEventId = replyDraft?.messageId;
     const savedDraft = replyDraft;
     const savedAttachments = draftAttachments;
@@ -791,13 +874,42 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setReplyDraft(savedDraft);
       setDraftAttachments(savedAttachments);
     }
-  }, [input, roomId, replyDraft, draftAttachments, t]);
+  }, [input, roomId, replyDraft, editDraft, draftAttachments, t]);
 
   useEffect(() => {
     return () => {
       disposeDraftAttachmentUrls(draftAttachmentsRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setQuickReactionEmojis(getTopQuickReactionEmojis());
+  }, [roomId]);
+
+  useEffect(() => {
+    if (!editDraft) return;
+    const target = messages.find((m) => m.id === editDraft.messageId);
+    if (!target) {
+      setEditDraft(null);
+      setEditError(t('editOriginalUnavailable'));
+      return;
+    }
+    const serverPlain = getMessagePlainTextForEdit(target);
+    if (serverPlain === editDraft.originalPlainText) return;
+    setEditDraft((d) =>
+      d
+        ? {
+            ...d,
+            originalPlainText: serverPlain,
+            excerpt: firstLineForReplyPreview(serverPlain),
+          }
+        : d,
+    );
+    setInput((current) =>
+      current === editDraft.originalPlainText ? serverPlain : current,
+    );
+  }, [messages, editDraft, t]);
 
   return (
     <>
@@ -835,6 +947,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 {reactionError}
               </div>
             )}
+            {editError && (
+              <div
+                role="alert"
+                className="mx-3 mt-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              >
+                {editError}
+              </div>
+            )}
             {isJoining ? (
               <div className="flex flex-1 items-center justify-center">
                 <div className="text-sm text-muted-foreground">
@@ -846,6 +966,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 messages={mergedMessages}
                 onReply={handleReplyToMessage}
                 onToggleReaction={handleToggleReaction}
+                persistHoverActionBarMessageId={editDraft?.messageId ?? null}
+                quickReactionEmojis={quickReactionEmojis}
+                onEditMessage={handleEditMessage}
                 resolveReactionReactorLabel={(userId) =>
                   resolveMemberLabel(userId)
                 }
@@ -874,6 +997,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     authorLabel: replyDraft.authorLabel,
                     excerpt: replyDraft.excerpt,
                     onDismiss: () => setReplyDraft(null),
+                  }
+                : undefined
+            }
+            editPreview={
+              editDraft
+                ? {
+                    excerpt: editDraft.excerpt,
+                    onDismiss: () => {
+                      setEditDraft(null);
+                      setEditError(null);
+                      setInput('');
+                    },
                   }
                 : undefined
             }

@@ -43,6 +43,11 @@ type HumanChatPanelMessagesProps = {
   isStreaming?: boolean;
   onReply?: (messageId: string) => void;
   onToggleReaction?: (messageId: string, emoji: string) => void;
+  /** Keep the hover action bar visible for this message (e.g. while editing it). */
+  persistHoverActionBarMessageId?: string | null;
+  /** Up to three emoji shown ahead of the action icons (Discord-style quick react). */
+  quickReactionEmojis?: string[];
+  onEditMessage?: (messageId: string) => void;
   /** Map Matrix user id to display name for reaction hover tooltips. */
   resolveReactionReactorLabel?: (userId: string) => string;
 };
@@ -52,6 +57,9 @@ export function HumanChatPanelMessages({
   isStreaming = false,
   onReply,
   onToggleReaction,
+  persistHoverActionBarMessageId = null,
+  quickReactionEmojis,
+  onEditMessage,
   resolveReactionReactorLabel,
 }: HumanChatPanelMessagesProps) {
   const t = useTranslations('HumanChatPanel');
@@ -73,6 +81,10 @@ export function HumanChatPanelMessages({
   );
   const lockActionMessageIdRef = useRef<string | null>(null);
   lockActionMessageIdRef.current = lockActionMessageId;
+  const combinedLockMessageId =
+    persistHoverActionBarMessageId ?? lockActionMessageId;
+  const combinedLockMessageIdRef = useRef<string | null>(null);
+  combinedLockMessageIdRef.current = combinedLockMessageId;
   /** Pointer left row while hover picker was open (portal); hide bar when picker closes. */
   const leaveWhileLockedRef = useRef<string | null>(null);
 
@@ -93,9 +105,19 @@ export function HumanChatPanelMessages({
       <div className="flex flex-col gap-4">
         {displayMessages.map((msg, index) => {
           const canInteract = !msg.isSynthetic;
+          const textParts =
+            msg.parts?.filter(
+              (p): p is { type: 'text'; text: string } => p.type === 'text',
+            ) ?? [];
+          const textContent = textParts.map((p) => p.text).join('');
+          const canEditThis =
+            canInteract &&
+            msg.role === 'user' &&
+            textContent.trim().length > 0 &&
+            Boolean(onEditMessage);
           const isActionBarVisible =
-            lockActionMessageId === msg.id ||
-            (hoverActionMessageId === msg.id && lockActionMessageId == null);
+            combinedLockMessageId === msg.id ||
+            (hoverActionMessageId === msg.id && combinedLockMessageId == null);
           return (
             <HumanChatPanelMessageBubble
               key={msg.id}
@@ -107,7 +129,7 @@ export function HumanChatPanelMessages({
                 setHoverActionMessageId(msg.id);
               }}
               onRowPointerLeave={() => {
-                if (lockActionMessageIdRef.current === msg.id) {
+                if (combinedLockMessageIdRef.current === msg.id) {
                   leaveWhileLockedRef.current = msg.id;
                   return;
                 }
@@ -139,6 +161,12 @@ export function HumanChatPanelMessages({
               onReact={
                 canInteract && onToggleReaction
                   ? (emoji: string) => onToggleReaction(msg.id, emoji)
+                  : undefined
+              }
+              quickReactionEmojis={quickReactionEmojis}
+              onEditMessage={
+                canEditThis && onEditMessage
+                  ? () => onEditMessage(msg.id)
                   : undefined
               }
             />
