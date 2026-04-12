@@ -34,6 +34,23 @@ interface SendMessageInput {
   attachments?: SendAttachmentInput[];
 }
 
+/**
+ * Thrown when some attachment events were committed but a later send step failed.
+ * Callers should restore only `attachments.slice(sentAttachmentCount)` and optionally caption text.
+ */
+export class SendMessagePartialFailureError extends Error {
+  constructor(
+    message: string,
+    /** Number of `m.file` / `m.image` events successfully sent before the failure. */
+    public readonly sentAttachmentCount: number,
+    /** True when non-empty caption text should be restored (not yet committed). */
+    public readonly restoreCaption: boolean,
+  ) {
+    super(message);
+    this.name = 'SendMessagePartialFailureError';
+  }
+}
+
 /** Matrix room message with optional Hypha spoiler extension. */
 type HyphaMediaEventContent = RoomMessageEventContent & {
   [HYPHA_SPOILER_FIELD]?: boolean;
@@ -367,21 +384,33 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       const mediaPayloads =
         list.length > 0 ? await Promise.all(list.map(prepareMediaPayload)) : [];
 
-      for (const base of mediaPayloads) {
-        const eventContent = replyContext
-          ? {
-              ...base,
-              'm.relates_to': {
-                'm.in_reply_to': {
-                  event_id: replyContext.resolvedTargetId,
+      let sentMediaCount = 0;
+      try {
+        for (const base of mediaPayloads) {
+          const eventContent = replyContext
+            ? {
+                ...base,
+                'm.relates_to': {
+                  'm.in_reply_to': {
+                    event_id: replyContext.resolvedTargetId,
+                  },
                 },
-              },
-            }
-          : base;
-        await client.sendEvent(
-          roomId,
-          EventType.RoomMessage,
-          eventContent as RoomMessageEventContent,
+              }
+            : base;
+          await client.sendEvent(
+            roomId,
+            EventType.RoomMessage,
+            eventContent as RoomMessageEventContent,
+          );
+          sentMediaCount += 1;
+        }
+      } catch (mediaErr) {
+        throw new SendMessagePartialFailureError(
+          mediaErr instanceof Error
+            ? mediaErr.message
+            : 'Failed to send attachment',
+          sentMediaCount,
+          false,
         );
       }
 
@@ -389,44 +418,55 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         return;
       }
 
-      if (replyContext && !hasAttachments) {
-        const payload = buildRichReplyMatrixContent(
-          replyContext.sender,
-          replyContext.targetBody,
-          message,
-        );
-        await client.sendEvent(roomId, EventType.RoomMessage, {
-          msgtype: MsgType.Text,
-          ...payload,
-          'm.relates_to': {
-            'm.in_reply_to': {
-              event_id: replyContext.resolvedTargetId,
+      try {
+        if (replyContext && !hasAttachments) {
+          const payload = buildRichReplyMatrixContent(
+            replyContext.sender,
+            replyContext.targetBody,
+            message,
+          );
+          await client.sendEvent(roomId, EventType.RoomMessage, {
+            msgtype: MsgType.Text,
+            ...payload,
+            'm.relates_to': {
+              'm.in_reply_to': {
+                event_id: replyContext.resolvedTargetId,
+              },
             },
-          },
-        } as RoomMessageEventContent);
-        return;
-      }
+          } as RoomMessageEventContent);
+          return;
+        }
 
-      if (replyContext && hasAttachments) {
+        if (replyContext && hasAttachments) {
+          const textPayload =
+            matrixTextEventContentWithOptionalFormatting(message);
+          await client.sendEvent(roomId, EventType.RoomMessage, {
+            msgtype: MsgType.Text,
+            ...textPayload,
+            'm.relates_to': {
+              'm.in_reply_to': {
+                event_id: replyContext.resolvedTargetId,
+              },
+            },
+          } as RoomMessageEventContent);
+          return;
+        }
+
         const textPayload =
           matrixTextEventContentWithOptionalFormatting(message);
         await client.sendEvent(roomId, EventType.RoomMessage, {
           msgtype: MsgType.Text,
           ...textPayload,
-          'm.relates_to': {
-            'm.in_reply_to': {
-              event_id: replyContext.resolvedTargetId,
-            },
-          },
         } as RoomMessageEventContent);
-        return;
+      } catch (textErr) {
+        throw new SendMessagePartialFailureError(
+          textErr instanceof Error
+            ? textErr.message
+            : 'Failed to send message text',
+          list.length,
+          true,
+        );
       }
-
-      const textPayload = matrixTextEventContentWithOptionalFormatting(message);
-      await client.sendEvent(roomId, EventType.RoomMessage, {
-        msgtype: MsgType.Text,
-        ...textPayload,
-      } as RoomMessageEventContent);
     },
     [client],
   );
