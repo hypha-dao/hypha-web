@@ -47,7 +47,7 @@ Single entry point in core: **`getDocumentsBySpaceSlug`** (`packages/core/src/go
 - `INNER JOIN spaces ON documents.space_id = spaces.id WHERE spaces.slug = :spaceSlug`
 - Optional **`searchTerm`**: same `to_tsvector` / `plainto_tsquery` filter as the app list.
 - Optional **`state`**: `discussion` \| `proposal` \| `agreement`.
-- **Order:** `createdAt` **DESC** (explicit in the core call; SQL also defaults when `order` is empty — see `queries.ts` fix for empty `orderBy`).
+- **Order:** `createdAt` **DESC** via explicit `order` passed from **`getDocumentsBySpaceSlug`** only. Shared **`findAllDocumentsBySpaceSlug`** does not apply implicit ordering when `order` is empty (caller-defined).
 
 ### 2.3 Access control
 
