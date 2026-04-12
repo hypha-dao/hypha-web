@@ -733,7 +733,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         )}
       </SidebarContent>
       {activeTab === 'chat' && (
-        <SidebarFooter className="bg-background-2 px-0 py-4">
+        <SidebarFooter className="bg-background-2 px-0 py-0">
           <HumanChatPanelChatBar
             value={input}
             onChange={setInput}

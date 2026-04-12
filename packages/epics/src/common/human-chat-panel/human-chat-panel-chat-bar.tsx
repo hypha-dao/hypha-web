@@ -775,7 +775,7 @@ export function HumanChatPanelChatBar({
     'flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-popover-foreground transition-colors hover:bg-white/10';
 
   return (
-    <div className="flex w-full min-w-0 flex-shrink-0 flex-col border-t border-border bg-background-2 px-3 py-0">
+    <div className="flex w-full min-w-0 flex-shrink-0 flex-col border-t border-border bg-background-2 px-3 pt-4 pb-4">
       {composerError && (
         <div
           role="alert"
