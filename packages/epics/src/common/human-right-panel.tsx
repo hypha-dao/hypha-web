@@ -730,7 +730,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           ? {
               attachments: savedAttachments.map((a) => ({
                 file: a.file,
-                kind: a.kind,
+                kind: a.kind === 'video' ? 'file' : a.kind,
                 spoiler: a.spoiler,
               })),
               onUploadProgress: ({ completed, total }) => {

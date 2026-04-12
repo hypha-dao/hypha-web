@@ -16,6 +16,7 @@ import {
   X,
   Trash2,
   FileIcon,
+  Play,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -39,7 +40,7 @@ type ReplyPreview = {
 export type ChatDraftAttachment = {
   id: string;
   file: File;
-  kind: 'file' | 'image';
+  kind: 'file' | 'image' | 'video';
   previewUrl: string;
   spoiler: boolean;
 };
@@ -65,6 +66,28 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+const VIDEO_EXTENSIONS = new Set([
+  'mov',
+  'mp4',
+  'webm',
+  'mkv',
+  'avi',
+  'm4v',
+  'mpeg',
+  'mpg',
+  'ogv',
+  '3gp',
+]);
+
+function fileLooksLikeVideo(file: File): boolean {
+  if (file.type.startsWith('video/')) return true;
+  const base = file.name.split(/[/\\]/).pop() ?? file.name;
+  const ext = base.includes('.')
+    ? base.split('.').pop()?.toLowerCase() ?? ''
+    : '';
+  return VIDEO_EXTENSIONS.has(ext);
+}
+
 function newAttachmentDraftId(): string {
   if (
     typeof globalThis.crypto !== 'undefined' &&
@@ -73,6 +96,56 @@ function newAttachmentDraftId(): string {
     return globalThis.crypto.randomUUID();
   }
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function ChatDraftVideoPreview({
+  url,
+  spoiler,
+  playLabel,
+}: {
+  url: string;
+  spoiler: boolean;
+  playLabel: string;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [playing, setPlaying] = useState(false);
+
+  return (
+    <div className="relative h-full w-full bg-black/90">
+      <video
+        ref={videoRef}
+        src={url}
+        className={cn(
+          'h-full w-full object-contain',
+          spoiler && 'scale-105 blur-xl',
+        )}
+        muted
+        playsInline
+        preload="metadata"
+        onClick={() => {
+          if (playing) videoRef.current?.pause();
+        }}
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={() => setPlaying(false)}
+      />
+      {!playing && (
+        <button
+          type="button"
+          className="absolute inset-0 z-[1] flex items-center justify-center bg-black/25 outline-none transition-colors hover:bg-black/35 focus-visible:ring-2 focus-visible:ring-primary/50"
+          aria-label={playLabel}
+          title={playLabel}
+          onClick={() => {
+            void videoRef.current?.play();
+          }}
+        >
+          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-black/55 text-white shadow-md ring-1 ring-white/20">
+            <Play className="ml-0.5 h-5 w-5" fill="currentColor" aria-hidden />
+          </span>
+        </button>
+      )}
+    </div>
+  );
 }
 
 function insertAtCaret(
@@ -379,10 +452,18 @@ export function HumanChatPanelChatBar({
         if (kind === 'image' && !file.type.startsWith('image/')) {
           continue;
         }
+        const isVideo = kind === 'file' && fileLooksLikeVideo(file);
+        const slotKind: ChatDraftAttachment['kind'] = file.type.startsWith(
+          'image/',
+        )
+          ? 'image'
+          : isVideo
+          ? 'video'
+          : 'file';
         next.push({
           id: newAttachmentDraftId(),
           file,
-          kind: file.type.startsWith('image/') ? 'image' : 'file',
+          kind: slotKind,
           previewUrl: URL.createObjectURL(file),
           spoiler: false,
         });
@@ -571,13 +652,19 @@ export function HumanChatPanelChatBar({
                           att.spoiler && 'scale-105 blur-xl',
                         )}
                       />
+                    ) : att.kind === 'video' ? (
+                      <ChatDraftVideoPreview
+                        url={att.previewUrl}
+                        spoiler={att.spoiler}
+                        playLabel={t('videoPreviewPlay')}
+                      />
                     ) : (
                       <div className="flex h-full items-center justify-center text-muted-foreground">
                         <FileIcon className="h-10 w-10" strokeWidth={1.25} />
                       </div>
                     )}
                     <div className="absolute right-1 top-1 flex gap-0.5 rounded-md bg-popover/95 p-0.5 shadow">
-                      {att.kind === 'image' && (
+                      {(att.kind === 'image' || att.kind === 'video') && (
                         <button
                           type="button"
                           className="rounded p-1 text-foreground hover:bg-muted"
