@@ -1675,6 +1675,7 @@
     "messageSendBuilding": "{count, plural, one {Envoi de # pièce jointe…} other {Envoi de # pièces jointes…}}",
     "messageSendUploadProgress": "Téléversement de {completed} sur {total}…",
     "messageSendFinishing": "Publication du message…",
+    "messageSendFilesBadge": "{count, plural, one {# fichier} other {# fichiers}}",
     "sendPartialFailed": "L’envoi s’est arrêté après {sent, plural, one {# pièce jointe} other {# pièces jointes}}. {detail}"
   },
   "CoherenceTab": {

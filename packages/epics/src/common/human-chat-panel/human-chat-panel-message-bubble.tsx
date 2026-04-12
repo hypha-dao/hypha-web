@@ -673,6 +673,22 @@ export function HumanChatPanelMessageBubble({
     }
     return t('messageSendBuilding', { count: n });
   })();
+
+  const sendPendingProgress = (() => {
+    const sp = message.sendPending;
+    if (!sp) return { pct: 0, indeterminate: false, showBar: false };
+    const n = sp.attachmentCount;
+    const u = sp.uploadedCount ?? 0;
+    if (n <= 0) return { pct: 0, indeterminate: false, showBar: false };
+    if (u >= n) return { pct: 100, indeterminate: false, showBar: true };
+    if (u > 0)
+      return {
+        pct: Math.max(6, Math.round((u / n) * 100)),
+        indeterminate: false,
+        showBar: true,
+      };
+    return { pct: 18, indeterminate: true, showBar: true };
+  })();
   const visibleReactions = reactions.slice(0, MAX_VISIBLE_REACTIONS);
   const hiddenReactionCount = Math.max(
     0,
@@ -717,20 +733,47 @@ export function HumanChatPanelMessageBubble({
             aria-live="polite"
             aria-busy="true"
             data-testid="chat-message-send-pending"
-            className="mt-1 flex max-w-md flex-col gap-2 rounded-lg border border-dashed border-primary/40 bg-primary/5 px-3 py-3 text-sm text-foreground"
+            className="mt-1.5 max-w-md overflow-hidden rounded-xl border border-border bg-gradient-to-b from-card to-muted/30 shadow-sm"
           >
-            <div className="flex items-center gap-2 font-medium text-foreground">
-              <Loader2
-                className="h-4 w-4 shrink-0 animate-spin text-primary"
+            <div className="flex gap-3 px-4 py-3">
+              <div
+                className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/12 dark:bg-primary/20"
                 aria-hidden
-              />
-              <span>{sendPendingMainLabel}</span>
+              >
+                <Loader2 className="h-[18px] w-[18px] animate-spin text-primary" />
+              </div>
+              <div className="min-w-0 flex-1 space-y-2.5">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <p className="text-sm font-medium leading-snug text-foreground">
+                    {sendPendingMainLabel}
+                  </p>
+                  <span className="rounded-md bg-muted/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    {t('messageSendFilesBadge', {
+                      count: message.sendPending.attachmentCount,
+                    })}
+                  </span>
+                </div>
+                {sendPendingProgress.showBar && (
+                  <div
+                    className="h-2 overflow-hidden rounded-full bg-muted/90 dark:bg-muted/50"
+                    aria-hidden
+                  >
+                    <div
+                      className={cn(
+                        'h-full rounded-full bg-gradient-to-r from-primary to-primary/80 transition-[width] duration-500 ease-out',
+                        sendPendingProgress.indeterminate && 'animate-pulse',
+                      )}
+                      style={{ width: `${sendPendingProgress.pct}%` }}
+                    />
+                  </div>
+                )}
+                {message.sendPending.captionPreview.trim() !== '' && (
+                  <p className="line-clamp-2 border-t border-border/60 pt-2 text-xs leading-relaxed text-muted-foreground">
+                    {message.sendPending.captionPreview.trim()}
+                  </p>
+                )}
+              </div>
             </div>
-            {message.sendPending.captionPreview.trim() !== '' && (
-              <p className="line-clamp-2 pl-6 text-xs text-muted-foreground">
-                {message.sendPending.captionPreview.trim()}
-              </p>
-            )}
           </div>
         )}
 

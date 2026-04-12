@@ -1675,6 +1675,7 @@
     "messageSendBuilding": "{count, plural, one {Enviando # adjunto…} other {Enviando # adjuntos…}}",
     "messageSendUploadProgress": "Subiendo {completed} de {total}…",
     "messageSendFinishing": "Publicando mensaje…",
+    "messageSendFilesBadge": "{count, plural, one {# archivo} other {# archivos}}",
     "sendPartialFailed": "El envío se detuvo tras {sent, plural, one {# archivo adjunto} other {# archivos adjuntos}}. {detail}"
   },
   "CoherenceTab": {
