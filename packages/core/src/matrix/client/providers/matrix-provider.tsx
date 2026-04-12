@@ -12,9 +12,11 @@ import {
   matrixTextEventContentWithOptionalFormatting,
 } from '../../chat-markup';
 import {
+  HYPHA_MEDIA_BUNDLE_FIELD,
   HYPHA_SPOILER_FIELD,
   messageFromRoomMessageEvent,
   resolveReplyTargetForSend,
+  type HyphaMediaBundleItemWire,
 } from '../../rich-reply';
 
 export interface SendAttachmentInput {
@@ -62,9 +64,10 @@ export class MatrixUploadTimeoutError extends Error {
 /** Default max wait for `client.uploadContent` per attachment (ms). */
 export const MATRIX_UPLOAD_TIMEOUT_MS = 120_000;
 
-/** Matrix room message with optional Hypha spoiler extension. */
+/** Matrix room message with optional Hypha spoiler + multi-attach bundle extension. */
 type HyphaMediaEventContent = RoomMessageEventContent & {
   [HYPHA_SPOILER_FIELD]?: boolean;
+  [HYPHA_MEDIA_BUNDLE_FIELD]?: HyphaMediaBundleItemWire[];
 };
 
 function loadImageDimensions(
@@ -415,7 +418,8 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
 
       let sentMediaCount = 0;
       try {
-        for (const base of mediaPayloads) {
+        if (mediaPayloads.length === 1) {
+          const base = mediaPayloads[0]!;
           const eventContent = replyContext
             ? {
                 ...base,
@@ -431,7 +435,42 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             EventType.RoomMessage,
             eventContent as RoomMessageEventContent,
           );
-          sentMediaCount += 1;
+          sentMediaCount = 1;
+        } else if (mediaPayloads.length > 1) {
+          const [first, ...rest] = mediaPayloads;
+          const bundleItems: HyphaMediaBundleItemWire[] = rest.map((item) => {
+            const spoiler = item[HYPHA_SPOILER_FIELD] === true;
+            const c = item as HyphaMediaBundleItemWire;
+            const { msgtype, body, filename, url, info } = c;
+            return {
+              msgtype,
+              body,
+              filename,
+              url,
+              info,
+              ...(spoiler ? { [HYPHA_SPOILER_FIELD]: true } : {}),
+            };
+          });
+          const combined: HyphaMediaEventContent = {
+            ...first!,
+            [HYPHA_MEDIA_BUNDLE_FIELD]: bundleItems,
+          };
+          const eventContent = replyContext
+            ? {
+                ...combined,
+                'm.relates_to': {
+                  'm.in_reply_to': {
+                    event_id: replyContext.resolvedTargetId,
+                  },
+                },
+              }
+            : combined;
+          await client.sendEvent(
+            roomId,
+            EventType.RoomMessage,
+            eventContent as RoomMessageEventContent,
+          );
+          sentMediaCount = list.length;
         }
       } catch (mediaErr) {
         throw new SendMessagePartialFailureError(

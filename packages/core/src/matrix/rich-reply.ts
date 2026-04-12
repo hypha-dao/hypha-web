@@ -3,13 +3,33 @@
 import { MatrixEventEvent } from 'matrix-js-sdk';
 import type * as MatrixSdk from 'matrix-js-sdk';
 
-import type { Message } from './types';
+import type { Message, MessageMediaBundleItem } from './types';
 
 /** Element / Hypha custom HTML for `m.room.message` (with plaintext `body` fallback). */
 export const MATRIX_CUSTOM_HTML_FORMAT = 'org.matrix.custom.html';
 
 /** Custom field on `m.room.message` for Discord-style blurred media until click. */
 export const HYPHA_SPOILER_FIELD = 'org.hypha.spoiler';
+
+/**
+ * Hypha extension: extra `m.file` / `m.image` payloads in the same event (items 1..n).
+ * Root `msgtype`/`url`/`info` are item 0.
+ */
+export const HYPHA_MEDIA_BUNDLE_FIELD = 'org.hypha.media_bundle';
+
+export type HyphaMediaBundleItemWire = {
+  msgtype: 'm.file' | 'm.image';
+  url: string;
+  body?: string;
+  filename?: string;
+  info?: {
+    mimetype?: string;
+    size?: number;
+    w?: number;
+    h?: number;
+  };
+  [key: string]: unknown;
+};
 
 export const RICH_REPLY_PREVIEW_MAX = 280;
 
@@ -287,6 +307,64 @@ export function messageFromRoomMessageEvent(
         ? content.url
         : undefined;
     const info = content.info;
+
+    const mapWireToMediaInfo = (
+      wire: HyphaMediaBundleItemWire | typeof content,
+    ): Message['mediaInfo'] | undefined => {
+      const inf = 'info' in wire ? wire.info : undefined;
+      if (!inf || typeof inf !== 'object') return undefined;
+      const o = inf as Record<string, unknown>;
+      return {
+        mimetype: typeof o.mimetype === 'string' ? o.mimetype : undefined,
+        size: typeof o.size === 'number' ? o.size : undefined,
+        w: typeof o.w === 'number' ? o.w : undefined,
+        h: typeof o.h === 'number' ? o.h : undefined,
+      };
+    };
+
+    const parseBundleItem = (wire: unknown): MessageMediaBundleItem => {
+      const w = wire as HyphaMediaBundleItemWire;
+      const mt =
+        w.msgtype === 'm.file' || w.msgtype === 'm.image'
+          ? w.msgtype
+          : 'm.file';
+      const url =
+        typeof w.url === 'string' && w.url.startsWith('mxc://') ? w.url : '';
+      const fn =
+        typeof w.filename === 'string'
+          ? w.filename
+          : typeof w.body === 'string'
+          ? w.body
+          : '';
+      const sp = w[HYPHA_SPOILER_FIELD] === true;
+      return {
+        msgtype: mt,
+        mxcUrl: url || undefined,
+        filename: fn || undefined,
+        mediaInfo: mapWireToMediaInfo(w),
+        spoiler: sp,
+      };
+    };
+
+    const bundleRaw = content[HYPHA_MEDIA_BUNDLE_FIELD];
+    let mediaBundle: Message['mediaBundle'];
+    if (Array.isArray(bundleRaw) && bundleRaw.length > 0) {
+      const first = {
+        msgtype: msgtypeRaw as 'm.file' | 'm.image',
+        mxcUrl,
+        filename:
+          typeof content.filename === 'string'
+            ? content.filename
+            : rawBody || undefined,
+        mediaInfo: mapWireToMediaInfo(content),
+        spoiler: spoilerVal === true,
+      };
+      const rest = bundleRaw.map(parseBundleItem).filter((x) => x.mxcUrl);
+      mediaBundle = [first, ...rest];
+    } else {
+      mediaBundle = undefined;
+    }
+
     return {
       id,
       sender,
@@ -312,6 +390,7 @@ export function messageFromRoomMessageEvent(
           }
         : undefined,
       spoiler: spoilerVal === true,
+      mediaBundle,
     };
   }
 

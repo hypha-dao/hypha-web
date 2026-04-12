@@ -57,6 +57,15 @@ export type MessageMediaInfo = {
   h?: number;
 };
 
+/** One slot in a multi-attachment `org.hypha.media_bundle` message. */
+export type MessageMediaBundleItem = {
+  msgtype: 'm.file' | 'm.image';
+  mxcUrl?: string;
+  filename?: string;
+  mediaInfo?: MessageMediaInfo;
+  spoiler?: boolean;
+};
+
 export interface Message {
   id: string;
   sender: string;
@@ -85,4 +94,9 @@ export interface Message {
   mediaInfo?: MessageMediaInfo;
   /** Hypha extension: blur media until clicked. */
   spoiler?: boolean;
+  /**
+   * Hypha `org.hypha.media_bundle`: multiple files/images in one timeline event.
+   * When set, index 0 matches root `msgtype`/`mxcUrl`/…; further indices are bundle slots.
+   */
+  mediaBundle?: MessageMediaBundleItem[];
 }
