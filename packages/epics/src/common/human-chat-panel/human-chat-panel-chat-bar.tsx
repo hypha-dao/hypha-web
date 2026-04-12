@@ -288,6 +288,11 @@ export function HumanChatPanelChatBar({
     }
   }, []);
 
+  /** Parent clears `value` on send without firing textarea onChange — re-sync height */
+  useEffect(() => {
+    autoResize();
+  }, [value, autoResize]);
+
   const syncColonState = useCallback((val: string, cursor: number) => {
     const requestId = ++colonRequestIdRef.current;
     const tok = getActiveColonToken(val, cursor);
