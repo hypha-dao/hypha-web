@@ -1,22 +1,36 @@
 import { createRemoteJWKSet, jwtVerify, errors as joseErrors } from 'jose';
 
-const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
-if (!PRIVY_APP_ID) {
-  throw new Error('Missing required env var: NEXT_PUBLIC_PRIVY_APP_ID');
-}
+let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
 
-/** Privy's JWKS (avoids same-origin fetch issues on Vercel preview SSO). */
-const PRIVY_JWKS_URL = new URL(
-  `/api/v1/apps/${PRIVY_APP_ID}/jwks.json`,
-  'https://auth.privy.io',
-);
-const JWKS = createRemoteJWKSet(PRIVY_JWKS_URL);
+function getPrivyJwks() {
+  const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
+  if (!appId) {
+    throw new Error('Missing required env var: NEXT_PUBLIC_PRIVY_APP_ID');
+  }
+  if (!jwks) {
+    const jwksUrl = new URL(
+      `/api/v1/apps/${appId}/jwks.json`,
+      'https://auth.privy.io',
+    );
+    jwks = createRemoteJWKSet(jwksUrl);
+  }
+  return jwks;
+}
 
 export async function verifyPrivyAuthToken(
   token: string,
 ): Promise<{ valid: true } | { valid: false; reason: string }> {
+  let keyset;
   try {
-    await jwtVerify(token, JWKS);
+    keyset = getPrivyJwks();
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : 'Configuration error';
+    return { valid: false, reason: message };
+  }
+
+  try {
+    await jwtVerify(token, keyset);
     return { valid: true };
   } catch (error) {
     if (error instanceof joseErrors.JWTExpired) {
