@@ -1,7 +1,6 @@
 import {
   JoinSpace,
   SalesBanner,
-  SpaceCard,
   SpaceModeLabel,
   WebLinks,
   SubscriptionBadge,
@@ -16,8 +15,6 @@ import {
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import Image from 'next/image';
-import { Carousel, CarouselContent, CarouselItem } from '@hypha-platform/ui';
-import Link from 'next/link';
 import { getAllSpaces, findSpaceBySlug } from '@hypha-platform/core/server';
 import { getDhoPathAgreements } from './@tab/agreements/constants';
 import { ActionButtons } from './_components/action-buttons';
@@ -27,11 +24,11 @@ import {
   DEFAULT_SPACE_LEAD_IMAGE,
   fetchSpaceDetails,
   fetchSpaceProposalsIds,
-  isSpaceArchived,
 } from '@hypha-platform/core/client';
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
 import { Breadcrumbs } from './_components/breadcrumbs';
+import { SpacesCarouselWithFrom } from './_components/spaces-carousel-with-from';
 import { canConvertToBigInt, formatDate } from '@hypha-platform/ui-utils';
 import { getTranslations } from 'next-intl/server';
 
@@ -194,39 +191,7 @@ export default async function DhoLayout({
             <Text className="text-4 font-medium pb-4 pt-4">
               {tSpaces('spacesYouMightLike')}
             </Text>
-            <Carousel className="my-6 mt-6">
-              <CarouselContent className="pb-5" showScrollbar>
-                {spaces.map((space) => (
-                  <CarouselItem
-                    key={space.id}
-                    className="w-full sm:w-[454px] max-w-[454px] flex-shrink-0"
-                  >
-                    <Link
-                      className="flex flex-col flex-1"
-                      href={getDhoPathAgreements(lang, space.slug as string)}
-                    >
-                      <SpaceCard
-                        description={space.description as string}
-                        icon={space.logoUrl || ''}
-                        leadImage={space.leadImage || DEFAULT_SPACE_LEAD_IMAGE}
-                        members={space.memberCount}
-                        agreements={space.documentCount}
-                        title={space.title as string}
-                        isSandbox={space.flags?.includes('sandbox') ?? false}
-                        isDemo={space.flags?.includes('demo') ?? false}
-                        isArchived={isSpaceArchived(space)}
-                        web3SpaceId={space.web3SpaceId as number}
-                        configPath={`${getDhoPathAgreements(
-                          lang,
-                          space.slug,
-                        )}/space-configuration`}
-                        createdAt={space.createdAt}
-                      />
-                    </Link>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-            </Carousel>
+            <SpacesCarouselWithFrom spaces={spaces} lang={lang} />
           </div>
         </div>
       </Container>

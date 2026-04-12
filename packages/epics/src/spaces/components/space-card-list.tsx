@@ -18,6 +18,8 @@ type SpaceCardListProps = {
   pageSize?: number;
   showLoadMore?: boolean;
   showExitButton?: boolean;
+  /** Query string for breadcrumb origin (e.g. "from=network" or "from=profile&profileSlug=xxx") */
+  fromParam?: string;
 };
 
 export function SpaceCardList({
@@ -26,6 +28,7 @@ export function SpaceCardList({
   pageSize = 3,
   showLoadMore = true,
   showExitButton = false,
+  fromParam,
 }: SpaceCardListProps) {
   const { pages, loadMore, pagination } = useSpaceCardList({
     spaces,
@@ -51,6 +54,7 @@ export function SpaceCardList({
                     spaces={pageSpaces}
                     lang={lang}
                     showExitButton={showExitButton}
+                    fromParam={fromParam}
                   />
                 );
               })
@@ -60,6 +64,7 @@ export function SpaceCardList({
                 spaces={spaces}
                 lang={lang}
                 showExitButton={showExitButton}
+                fromParam={fromParam}
               />
             )}
           </div>

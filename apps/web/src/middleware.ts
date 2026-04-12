@@ -1,11 +1,14 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { middleware as i18nMiddleware } from '@hypha-platform/i18n';
 
+const BREADCRUMB_ORIGIN_COOKIE = 'breadcrumb_origin';
+const COOKIE_MAX_AGE_DAYS = 1;
+
 const IMAGE_HOSTS = process.env.NEXT_PUBLIC_IMAGE_HOSTS?.split(', ') ?? [];
 const CONNECT_SOURCES =
   process.env.NEXT_PUBLIC_CONNECT_SOURCES?.split(', ') ?? [];
 
-function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
+function applyCsp(response: NextResponse): NextResponse {
   if (
     process.env.NODE_ENV === 'development' &&
     process.env.ENABLE_LOCALHOST_CSP !== 'true'
@@ -49,6 +52,29 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
   return response;
 }
 
+function setBreadcrumbOriginCookie(
+  response: NextResponse,
+  req: NextRequest,
+): void {
+  const url = req.nextUrl;
+  if (!url.pathname.match(/\/[a-z]{2}\/dho\/[^/]+/)) {
+    return;
+  }
+  const from = url.searchParams.get('from');
+  if (!from || !['network', 'profile', 'my-spaces'].includes(from)) {
+    return;
+  }
+  const profileSlug = url.searchParams.get('profileSlug');
+  const value = JSON.stringify(
+    profileSlug ? { from, profileSlug } : { from },
+  );
+  response.cookies.set(BREADCRUMB_ORIGIN_COOKIE, value, {
+    path: '/',
+    maxAge: 60 * 60 * 24 * COOKIE_MAX_AGE_DAYS,
+    sameSite: 'lax',
+  });
+}
+
 export function middleware(request: NextRequest) {
   // Run i18n middleware first — it returns a NextResponse with the
   // X-NEXT-INTL-LOCALE request header embedded. We must use this response
@@ -61,8 +87,10 @@ export function middleware(request: NextRequest) {
     return response;
   }
 
+  setBreadcrumbOriginCookie(response, request);
+
   // Apply CSP headers on top of the i18n response
-  return applyCsp(response, request);
+  return applyCsp(response);
 }
 
 export const config = {
