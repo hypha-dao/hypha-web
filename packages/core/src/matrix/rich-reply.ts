@@ -3,33 +3,10 @@
 import { MatrixEventEvent } from 'matrix-js-sdk';
 import type * as MatrixSdk from 'matrix-js-sdk';
 
-import type { Message, MessageMediaBundleItem } from './types';
+import type { Message } from './types';
 
 /** Element / Hypha custom HTML for `m.room.message` (with plaintext `body` fallback). */
 export const MATRIX_CUSTOM_HTML_FORMAT = 'org.matrix.custom.html';
-
-/** Custom field on `m.room.message` for Discord-style blurred media until click. */
-export const HYPHA_SPOILER_FIELD = 'org.hypha.spoiler';
-
-/**
- * Hypha extension: extra `m.file` / `m.image` payloads in the same event (items 1..n).
- * Root `msgtype`/`url`/`info` are item 0.
- */
-export const HYPHA_MEDIA_BUNDLE_FIELD = 'org.hypha.media_bundle';
-
-export type HyphaMediaBundleItemWire = {
-  msgtype: 'm.file' | 'm.image';
-  url: string;
-  body?: string;
-  filename?: string;
-  info?: {
-    mimetype?: string;
-    size?: number;
-    w?: number;
-    h?: number;
-  };
-  [key: string]: unknown;
-};
 
 export const RICH_REPLY_PREVIEW_MAX = 280;
 
@@ -237,17 +214,20 @@ export function messageFromRoomMessageEvent(
     msgtype?: string;
     url?: string;
     filename?: string;
-    info?: {
-      mimetype?: string;
-      size?: number;
-      w?: number;
-      h?: number;
-    };
-    [key: string]: unknown;
   };
-  const msgtypeRaw = content.msgtype;
-  const isMedia = msgtypeRaw === 'm.file' || msgtypeRaw === 'm.image';
+  const msgType = content.msgtype;
+  const mediaMxcUrl =
+    msgType === 'm.image' || msgType === 'm.video' || msgType === 'm.file'
+      ? typeof content.url === 'string'
+        ? content.url
+        : undefined
+      : undefined;
+
   const rawBody = content.body ?? '';
+  const mediaFileName =
+    msgType === 'm.file' && typeof content.filename === 'string'
+      ? content.filename
+      : undefined;
   const replyToId = event.getWireContent()?.['m.relates_to']?.['m.in_reply_to']
     ?.event_id as string | undefined;
 
@@ -275,19 +255,14 @@ export function messageFromRoomMessageEvent(
         inReplyToBodyPreview = firstLineForReplyPreview(parsed.previewLine);
       }
     }
-    if (!isMedia) {
-      displayBody = stripMatrixReplyFallback(rawBody);
-      if (
-        content.format === MATRIX_CUSTOM_HTML_FORMAT &&
-        typeof content.formatted_body === 'string'
-      ) {
-        formattedContentHtml = extractReplyFormattedHtml(
-          content.formatted_body,
-        );
-      }
+    displayBody = stripMatrixReplyFallback(rawBody);
+    if (
+      content.format === MATRIX_CUSTOM_HTML_FORMAT &&
+      typeof content.formatted_body === 'string'
+    ) {
+      formattedContentHtml = extractReplyFormattedHtml(content.formatted_body);
     }
   } else if (
-    !isMedia &&
     content.format === MATRIX_CUSTOM_HTML_FORMAT &&
     typeof content.formatted_body === 'string'
   ) {
@@ -300,103 +275,12 @@ export function messageFromRoomMessageEvent(
     throw new Error('Matrix room message event missing id or sender');
   }
 
-  if (isMedia) {
-    const spoilerVal = content[HYPHA_SPOILER_FIELD];
-    const mxcUrl =
-      typeof content.url === 'string' && content.url.startsWith('mxc://')
-        ? content.url
-        : undefined;
-    const info = content.info;
-
-    const mapWireToMediaInfo = (
-      wire: HyphaMediaBundleItemWire | typeof content,
-    ): Message['mediaInfo'] | undefined => {
-      const inf = 'info' in wire ? wire.info : undefined;
-      if (!inf || typeof inf !== 'object') return undefined;
-      const o = inf as Record<string, unknown>;
-      return {
-        mimetype: typeof o.mimetype === 'string' ? o.mimetype : undefined,
-        size: typeof o.size === 'number' ? o.size : undefined,
-        w: typeof o.w === 'number' ? o.w : undefined,
-        h: typeof o.h === 'number' ? o.h : undefined,
-      };
-    };
-
-    const parseBundleItem = (wire: unknown): MessageMediaBundleItem => {
-      const w = wire as HyphaMediaBundleItemWire;
-      const mt =
-        w.msgtype === 'm.file' || w.msgtype === 'm.image'
-          ? w.msgtype
-          : 'm.file';
-      const url =
-        typeof w.url === 'string' && w.url.startsWith('mxc://') ? w.url : '';
-      const fn =
-        typeof w.filename === 'string'
-          ? w.filename
-          : typeof w.body === 'string'
-          ? w.body
-          : '';
-      const sp = w[HYPHA_SPOILER_FIELD] === true;
-      return {
-        msgtype: mt,
-        mxcUrl: url || undefined,
-        filename: fn || undefined,
-        mediaInfo: mapWireToMediaInfo(w),
-        spoiler: sp,
-      };
-    };
-
-    const bundleRaw = content[HYPHA_MEDIA_BUNDLE_FIELD];
-    let mediaBundle: Message['mediaBundle'];
-    if (Array.isArray(bundleRaw) && bundleRaw.length > 0) {
-      const first = {
-        msgtype: msgtypeRaw as 'm.file' | 'm.image',
-        mxcUrl,
-        filename:
-          typeof content.filename === 'string'
-            ? content.filename
-            : rawBody || undefined,
-        mediaInfo: mapWireToMediaInfo(content),
-        spoiler: spoilerVal === true,
-      };
-      const rest = bundleRaw.map(parseBundleItem).filter((x) => x.mxcUrl);
-      mediaBundle = [first, ...rest];
-    } else {
-      mediaBundle = undefined;
-    }
-
-    return {
-      id,
-      sender,
-      msgtype: msgtypeRaw as Message['msgtype'],
-      content: rawBody,
-      formattedContentHtml,
-      timestamp: new Date(event.getTs()),
-      pinned,
-      inReplyToEventId: replyToId,
-      inReplyToSender,
-      inReplyToBodyPreview,
-      mxcUrl,
-      filename:
-        typeof content.filename === 'string'
-          ? content.filename
-          : rawBody || undefined,
-      mediaInfo: info
-        ? {
-            mimetype: info.mimetype,
-            size: info.size,
-            w: info.w,
-            h: info.h,
-          }
-        : undefined,
-      spoiler: spoilerVal === true,
-      mediaBundle,
-    };
-  }
-
   return {
     id,
     sender,
+    msgType,
+    mediaMxcUrl,
+    mediaFileName,
     content: displayBody,
     formattedContentHtml,
     timestamp: new Date(event.getTs()),

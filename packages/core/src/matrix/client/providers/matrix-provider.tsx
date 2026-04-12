@@ -12,133 +12,22 @@ import {
   matrixTextEventContentWithOptionalFormatting,
 } from '../../chat-markup';
 import {
-  HYPHA_MEDIA_BUNDLE_FIELD,
-  HYPHA_SPOILER_FIELD,
+  buildRichReplyPlainBody,
   messageFromRoomMessageEvent,
   resolveReplyTargetForSend,
-  type HyphaMediaBundleItemWire,
 } from '../../rich-reply';
 
-export interface SendAttachmentInput {
-  file: File;
-  /** Drives Matrix `msgtype`: `m.image` vs `m.file`. */
-  kind: 'file' | 'image';
-  /** Blur in timeline until clicked (`org.hypha.spoiler` on the event). */
-  spoiler?: boolean;
-}
-
-export type SendMessageUploadProgress = {
-  completed: number;
-  total: number;
-};
-
-interface SendMessageInput {
+export interface SendMessageInput {
   roomId: string;
+  /** Plain text (and optional chat markup). Ignored when only sending `attachment` with no text — falls back to file name. */
   message: string;
   /** Rich reply: target m.room.message event id (space chat; not m.thread). */
   replyToEventId?: string;
-  /** Uploaded to the homeserver and sent as separate `m.file` / `m.image` events before optional text. */
-  attachments?: SendAttachmentInput[];
-  /** Fires after each attachment finishes uploading (before the room message is sent). */
-  onUploadProgress?: (p: SendMessageUploadProgress) => void;
-}
-
-/**
- * Thrown when some attachment events were committed but a later send step failed.
- * Callers should restore only `attachments.slice(sentAttachmentCount)` and optionally caption text.
- */
-export class SendMessagePartialFailureError extends Error {
-  constructor(
-    message: string,
-    /** Number of `m.file` / `m.image` events successfully sent before the failure. */
-    public readonly sentAttachmentCount: number,
-    /** True when non-empty caption text should be restored (not yet committed). */
-    public readonly restoreCaption: boolean,
-  ) {
-    super(message);
-    this.name = 'SendMessagePartialFailureError';
-  }
-}
-
-/** Matrix `uploadContent` exceeded the configured timeout (see `MATRIX_UPLOAD_TIMEOUT_MS`). */
-export class MatrixUploadTimeoutError extends Error {
-  constructor(message = 'Matrix media upload timed out') {
-    super(message);
-    this.name = 'MatrixUploadTimeoutError';
-  }
-}
-
-/** Default max wait for `client.uploadContent` per attachment (ms). */
-export const MATRIX_UPLOAD_TIMEOUT_MS = 120_000;
-
-/**
- * Gap between sequential `uploadContent` calls when sending multiple attachments.
- * Parallel uploads hit homeserver rate limits (429); spacing keeps one in-flight upload.
- */
-const MATRIX_UPLOAD_STAGGER_MS = 400;
-
-const MATRIX_UPLOAD_RATE_LIMIT_MAX_ATTEMPTS = 4;
-
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
-/** True when the homeserver rejected the request for rate limiting (HTTP 429 / M_LIMIT_EXCEEDED). */
-export function isMatrixRateLimitedError(err: unknown): boolean {
-  if (!(err instanceof Error)) return false;
-  const e = err as Error & {
-    httpStatus?: number;
-    errcode?: string;
-    data?: { errcode?: string; retry_after_ms?: number };
-  };
-  if (e.httpStatus === 429) return true;
-  const msg = e.message;
-  if (msg.includes('[429]') || msg.includes(' 429 ')) return true;
-  if (e.errcode === 'M_LIMIT_EXCEEDED') return true;
-  if (e.data?.errcode === 'M_LIMIT_EXCEEDED') return true;
-  if (/too many requests/i.test(msg)) return true;
-  return false;
-}
-
-function matrixRateLimitBackoffMs(
-  err: unknown,
-  zeroBasedAttempt: number,
-): number {
-  const e = err as { data?: { retry_after_ms?: number } };
-  const ra = e.data?.retry_after_ms;
-  if (typeof ra === 'number' && Number.isFinite(ra) && ra > 0) {
-    return Math.min(Math.max(Math.ceil(ra), 500), 45_000);
-  }
-  return Math.min(1500 * 2 ** zeroBasedAttempt, 30_000);
-}
-
-/** Matrix room message with optional Hypha spoiler + multi-attach bundle extension. */
-type HyphaMediaEventContent = RoomMessageEventContent & {
-  [HYPHA_SPOILER_FIELD]?: boolean;
-  [HYPHA_MEDIA_BUNDLE_FIELD]?: HyphaMediaBundleItemWire[];
-};
-
-function loadImageDimensions(
-  file: File,
-): Promise<{ w: number; h: number } | undefined> {
-  if (!file.type.startsWith('image/')) {
-    return Promise.resolve(undefined);
-  }
-  return new Promise((resolve) => {
-    const url = URL.createObjectURL(file);
-    const img = new globalThis.Image();
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve({ w: img.naturalWidth, h: img.naturalHeight });
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      resolve(undefined);
-    };
-    img.src = url;
-  });
+  /**
+   * Optional file: uploaded via `uploadContent`, then sent as `m.image` / `m.video` / `m.file`.
+   * Rich reply + attachment: single media event with `m.in_reply_to` (caption uses `message` when non-empty).
+   */
+  attachment?: File;
 }
 
 export interface ToggleReactionInput {
@@ -369,8 +258,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       roomId,
       message,
       replyToEventId,
-      attachments,
-      onUploadProgress,
+      attachment,
     }: SendMessageInput) => {
       if (!client) {
         throw new Error('Client should be specified');
@@ -380,237 +268,140 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       }
 
       const trimmed = message.trim();
-      const list = attachments?.length ? attachments : [];
-      const hasAttachments = list.length > 0;
-      if (!trimmed && !hasAttachments) {
+      const hasText = trimmed.length > 0;
+      const hasFile = Boolean(attachment);
+
+      if (!hasText && !hasFile) {
         return;
       }
 
-      let replyContext:
-        | {
-            resolvedTargetId: string;
-            sender: string;
-            targetBody: string;
-          }
-        | undefined;
-
-      if (replyToEventId?.trim()) {
-        const resolved = await resolveReplyTargetForSend(
-          client,
-          roomId,
-          replyToEventId,
-        );
-        replyContext = {
-          resolvedTargetId: resolved.eventId,
-          sender: resolved.sender,
-          targetBody: resolved.body,
-        };
-      }
-
-      const prepareMediaPayload = async (
-        att: SendAttachmentInput,
-      ): Promise<HyphaMediaEventContent> => {
-        const abortController = new AbortController();
-        const timeoutMs = MATRIX_UPLOAD_TIMEOUT_MS;
-        const timeoutId = setTimeout(() => {
-          abortController.abort();
-        }, timeoutMs);
-        let upload: { content_uri: string };
-        try {
-          upload = await client.uploadContent(att.file, {
-            name: att.file.name,
-            type: att.file.type || undefined,
-            abortController,
-          });
-        } catch (e) {
-          if (abortController.signal.aborted) {
-            throw new MatrixUploadTimeoutError(
-              `Matrix media upload timed out after ${timeoutMs}ms`,
-            );
-          }
-          throw e;
-        } finally {
-          clearTimeout(timeoutId);
+      const inferMsgType = (file: File): string => {
+        const t = (file.type || '').toLowerCase();
+        if (t.startsWith('image/')) return MsgType.Image;
+        if (t.startsWith('video/')) return MsgType.Video;
+        if (
+          t === '' &&
+          /\.(avif|bmp|gif|jpe?g|png|svg|webp)$/i.test(file.name)
+        ) {
+          return MsgType.Image;
         }
-        const mxc = upload.content_uri;
-        const msgtype = att.kind === 'image' ? MsgType.Image : MsgType.File;
-        let info: {
-          mimetype?: string;
-          size?: number;
-          w?: number;
-          h?: number;
-        } = {
-          mimetype: att.file.type || undefined,
-          size: att.file.size,
-        };
-        if (msgtype === MsgType.Image) {
-          const dims = await loadImageDimensions(att.file);
-          if (dims) {
-            info = { ...info, w: dims.w, h: dims.h };
-          }
+        if (t === '' && /\.(avi|m4v|mov|mp4|mpeg|ogv|webm)$/i.test(file.name)) {
+          return MsgType.Video;
         }
-
-        const caption = att.file.name;
-        const base: HyphaMediaEventContent = {
-          msgtype,
-          body: caption,
-          filename: att.file.name,
-          url: mxc,
-          info,
-        } as HyphaMediaEventContent;
-        if (att.spoiler) {
-          base[HYPHA_SPOILER_FIELD] = true;
-        }
-        return base;
+        return MsgType.File;
       };
 
-      const mediaPayloads: HyphaMediaEventContent[] = [];
-      for (let i = 0; i < list.length; i++) {
-        if (i > 0) {
-          await delay(MATRIX_UPLOAD_STAGGER_MS);
-        }
-        const att = list[i]!;
-        let attempt = 0;
-        while (true) {
-          try {
-            mediaPayloads.push(await prepareMediaPayload(att));
-            onUploadProgress?.({
-              completed: mediaPayloads.length,
-              total: list.length,
-            });
-            break;
-          } catch (e) {
-            if (
-              !isMatrixRateLimitedError(e) ||
-              attempt >= MATRIX_UPLOAD_RATE_LIMIT_MAX_ATTEMPTS - 1
-            ) {
-              throw e;
-            }
-            await delay(matrixRateLimitBackoffMs(e, attempt));
-            attempt += 1;
-          }
-        }
-      }
+      type MediaCaptionContent = {
+        body: string;
+        format?: string;
+        formatted_body?: string;
+      };
 
-      let sentMediaCount = 0;
-      try {
-        if (mediaPayloads.length === 1) {
-          const base = mediaPayloads[0]!;
-          const eventContent = replyContext
-            ? {
-                ...base,
-                'm.relates_to': {
-                  'm.in_reply_to': {
-                    event_id: replyContext.resolvedTargetId,
-                  },
-                },
-              }
-            : base;
-          await client.sendEvent(
-            roomId,
-            EventType.RoomMessage,
-            eventContent as RoomMessageEventContent,
-          );
-          sentMediaCount = 1;
-        } else if (mediaPayloads.length > 1) {
-          const [first, ...rest] = mediaPayloads;
-          const bundleItems: HyphaMediaBundleItemWire[] = rest.map((item) => {
-            const spoiler = item[HYPHA_SPOILER_FIELD] === true;
-            const c = item as HyphaMediaBundleItemWire;
-            const { msgtype, body, filename, url, info } = c;
-            return {
-              msgtype,
-              body,
-              filename,
-              url,
-              info,
-              ...(spoiler ? { [HYPHA_SPOILER_FIELD]: true } : {}),
-            };
-          });
-          const combined: HyphaMediaEventContent = {
-            ...first!,
-            [HYPHA_MEDIA_BUNDLE_FIELD]: bundleItems,
-          };
-          const eventContent = replyContext
-            ? {
-                ...combined,
-                'm.relates_to': {
-                  'm.in_reply_to': {
-                    event_id: replyContext.resolvedTargetId,
-                  },
-                },
-              }
-            : combined;
-          await client.sendEvent(
-            roomId,
-            EventType.RoomMessage,
-            eventContent as RoomMessageEventContent,
-          );
-          sentMediaCount = list.length;
-        }
-      } catch (mediaErr) {
-        throw new SendMessagePartialFailureError(
-          mediaErr instanceof Error
-            ? mediaErr.message
-            : 'Failed to send attachment',
-          sentMediaCount,
-          true,
+      const sendMediaEvent = async (opts: {
+        file: File;
+        caption: MediaCaptionContent;
+        relatesTo?: { 'm.in_reply_to': { event_id: string } };
+      }) => {
+        const { content_uri: contentUri } = await client.uploadContent(
+          opts.file,
+          {
+            name: opts.file.name,
+            type: opts.file.type || undefined,
+          },
         );
-      }
+        const msgtype = inferMsgType(opts.file);
+        const info: Record<string, unknown> = {
+          mimetype: opts.file.type || 'application/octet-stream',
+          size: opts.file.size,
+        };
+        const base: Record<string, unknown> = {
+          msgtype,
+          body: opts.caption.body,
+          url: contentUri,
+          info,
+        };
+        if (opts.caption.format != null) {
+          base.format = opts.caption.format;
+        }
+        if (opts.caption.formatted_body != null) {
+          base.formatted_body = opts.caption.formatted_body;
+        }
+        if (msgtype === MsgType.File) {
+          base.filename = opts.file.name;
+        }
+        if (opts.relatesTo) {
+          base['m.relates_to'] = opts.relatesTo;
+        }
+        await client.sendEvent(
+          roomId,
+          EventType.RoomMessage,
+          base as unknown as RoomMessageEventContent,
+        );
+      };
 
-      if (!trimmed) {
+      if (hasFile && attachment) {
+        const replyId = replyToEventId?.trim();
+        if (replyId) {
+          const {
+            eventId: resolvedTargetId,
+            sender,
+            body: targetBody,
+          } = await resolveReplyTargetForSend(client, roomId, replyId);
+          const captionContent = hasText
+            ? buildRichReplyMatrixContent(sender, targetBody, trimmed)
+            : {
+                body: buildRichReplyPlainBody(
+                  sender,
+                  targetBody,
+                  attachment.name,
+                ),
+              };
+          await sendMediaEvent({
+            file: attachment,
+            caption: captionContent,
+            relatesTo: {
+              'm.in_reply_to': { event_id: resolvedTargetId },
+            },
+          });
+          return;
+        }
+        await sendMediaEvent({
+          file: attachment,
+          caption: hasText
+            ? matrixTextEventContentWithOptionalFormatting(trimmed)
+            : { body: attachment.name },
+        });
         return;
       }
 
-      try {
-        if (replyContext && !hasAttachments) {
-          const payload = buildRichReplyMatrixContent(
-            replyContext.sender,
-            replyContext.targetBody,
-            message,
-          );
-          await client.sendEvent(roomId, EventType.RoomMessage, {
-            msgtype: MsgType.Text,
-            ...payload,
-            'm.relates_to': {
-              'm.in_reply_to': {
-                event_id: replyContext.resolvedTargetId,
-              },
-            },
-          } as RoomMessageEventContent);
-          return;
-        }
-
-        if (replyContext && hasAttachments) {
-          const textPayload =
-            matrixTextEventContentWithOptionalFormatting(message);
-          await client.sendEvent(roomId, EventType.RoomMessage, {
-            msgtype: MsgType.Text,
-            ...textPayload,
-            'm.relates_to': {
-              'm.in_reply_to': {
-                event_id: replyContext.resolvedTargetId,
-              },
-            },
-          } as RoomMessageEventContent);
-          return;
-        }
-
-        const textPayload =
-          matrixTextEventContentWithOptionalFormatting(message);
+      if (replyToEventId?.trim()) {
+        const {
+          eventId: resolvedTargetId,
+          sender,
+          body: targetBody,
+        } = await resolveReplyTargetForSend(client, roomId, replyToEventId);
+        const payload = buildRichReplyMatrixContent(
+          sender,
+          targetBody,
+          message,
+        );
         await client.sendEvent(roomId, EventType.RoomMessage, {
           msgtype: MsgType.Text,
-          ...textPayload,
+          ...payload,
+          'm.relates_to': {
+            'm.in_reply_to': {
+              event_id: resolvedTargetId,
+            },
+          },
         } as RoomMessageEventContent);
-      } catch (textErr) {
-        throw new SendMessagePartialFailureError(
-          textErr instanceof Error
-            ? textErr.message
-            : 'Failed to send message text',
-          list.length,
-          true,
-        );
+        return;
       }
+
+      const textPayload = matrixTextEventContentWithOptionalFormatting(message);
+      await client.sendEvent(roomId, EventType.RoomMessage, {
+        msgtype: MsgType.Text,
+        ...textPayload,
+      } as RoomMessageEventContent);
     },
     [client],
   );
