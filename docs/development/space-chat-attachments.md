@@ -47,6 +47,7 @@ For timeline rows, `Message` may include:
 ### `HumanChatPanelChatBar`
 
 - Maintains **draft attachments** in parent state (`HumanRightPanel` passes `draftAttachments` and `onDraftAttachmentsChange`). Inline remove/spoiler/toggle are implemented inside the bar by updating that list.
+- **Object URL lifecycle:** `previewUrl` blobs are created here and **revoked in `HumanRightPanel`** (remove, send success/partial failure, space/mode resets, panel unmount). The chat bar does **not** revoke on its own unmount so switching tabs (e.g. Members) does not break previews when returning to Chat.
 - Hidden file inputs: `accept` for image picker vs broad file picker.
 
 ### `HumanChatPanelMessageBubble`

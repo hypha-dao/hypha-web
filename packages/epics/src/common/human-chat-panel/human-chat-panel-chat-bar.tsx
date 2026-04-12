@@ -107,8 +107,6 @@ export function HumanChatPanelChatBar({
   const imageInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const composerShellRef = useRef<HTMLDivElement>(null);
-  const draftAttachmentsRef = useRef(draftAttachments);
-  draftAttachmentsRef.current = draftAttachments;
   const replyPreviewWasOpenRef = useRef(false);
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const [colonOpen, setColonOpen] = useState(false);
@@ -161,14 +159,6 @@ export function HumanChatPanelChatBar({
     }
     replyPreviewWasOpenRef.current = isOpen;
   }, [replyPreview]);
-
-  useEffect(() => {
-    return () => {
-      for (const att of draftAttachmentsRef.current) {
-        URL.revokeObjectURL(att.previewUrl);
-      }
-    };
-  }, []);
 
   const autoResize = useCallback(() => {
     if (textareaRef.current) {
