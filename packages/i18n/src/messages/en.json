@@ -1641,6 +1641,7 @@
     "attachmentRemove": "Remove attachment",
     "attachmentSpoiler": "Mark as spoiler",
     "spoilerTapToReveal": "Spoiler — click to reveal",
+    "openAttachmentInNewTab": "Open attachment in new tab",
     "attachmentUnavailable": "Attachment unavailable",
     "attachment": "Attachment",
     "bold": "Bold",

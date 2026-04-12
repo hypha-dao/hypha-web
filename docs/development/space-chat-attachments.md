@@ -53,7 +53,7 @@ For timeline rows, `Message` may include:
 ### `HumanChatPanelMessageBubble`
 
 - Renders `message.media` when `msgtype` is `m.file` or `m.image`.
-- Uses `useMatrix().client` for `mxcUrlToHttp`: **download** URL (no width/height) for `m.file` links, **thumbnail** URL (e.g. 800×600, `scale`) for `m.image` previews.
+- Uses `useMatrix().client` for `mxcUrlToHttp` with **`useAuthentication: false`** so URLs hit `/_matrix/media/v3/...` and work in `<img>` and new-tab navigation (no `Authorization` header). **Download** URL (no width/height) for `m.file` / image open-in-tab; **thumbnail** URL (e.g. 800×600, `scale`) for `m.image` inline preview.
 
 ## Testing manually
 
@@ -66,4 +66,4 @@ For timeline rows, `Message` may include:
 ## Troubleshooting
 
 - **Upload fails:** check homeserver logs / max upload size; browser network tab for `/_matrix/media/v3/upload`.
-- **Image not showing:** confirm `mxcUrlToHttp` returns a URL (authenticated media may need `useAuthentication: true` in newer SDK versions — adjust if your HS requires auth for downloads).
+- **Image not showing / open tab shows `M_MISSING_TOKEN`:** do not use authenticated-only media URLs for `<img>` or `<a href>`; the UI uses unauthenticated v3 endpoints. If your homeserver disables unauthenticated media entirely, a follow-up would need a blob proxy or cookie-based access.

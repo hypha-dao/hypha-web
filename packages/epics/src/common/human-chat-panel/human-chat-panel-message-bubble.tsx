@@ -275,6 +275,11 @@ export function HumanChatPanelMessageBubble({
   const [inlineReactPickerOpen, setInlineReactPickerOpen] = useState(false);
   const [spoilerRevealed, setSpoilerRevealed] = useState(false);
 
+  /**
+   * Use **unauthenticated** v3 media URLs for `<img>` and `<a target="_blank">`.
+   * Authenticated v1 URLs require `Authorization: Bearer` — browsers do not send that
+   * for navigation or image loads, which yields `M_MISSING_TOKEN` on open.
+   */
   const mediaDownloadUrl = useMemo(() => {
     const mxc = message.media?.mxcUrl;
     if (!mxc || !client) return null;
@@ -284,15 +289,15 @@ export function HumanChatPanelMessageBubble({
       undefined,
       undefined,
       true,
-      true,
-      true,
+      false,
+      false,
     );
   }, [client, message.media?.mxcUrl]);
 
   const mediaPreviewUrl = useMemo(() => {
     const mxc = message.media?.mxcUrl;
     if (!mxc || !client) return null;
-    return client.mxcUrlToHttp(mxc, 800, 600, 'scale', true, true, true);
+    return client.mxcUrlToHttp(mxc, 800, 600, 'scale', true, false, false);
   }, [client, message.media?.mxcUrl]);
 
   // TODO: Handle non-text parts (file attachments, tool results, etc.)
@@ -391,23 +396,37 @@ export function HumanChatPanelMessageBubble({
                 : undefined
             }
           >
-            {mediaPreviewUrl ? (
+            {mediaPreviewUrl && mediaDownloadUrl ? (
               <>
-                {/* eslint-disable-next-line @next/next/no-img-element -- Matrix MXC HTTP URL */}
-                <img
-                  src={mediaPreviewUrl}
-                  alt={message.media.filename ?? ''}
-                  width={message.media.mediaInfo?.w}
-                  height={message.media.mediaInfo?.h}
+                <a
+                  href={mediaDownloadUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
                   className={cn(
-                    'max-h-72 w-full object-contain',
-                    message.media.spoiler && !spoilerRevealed && 'blur-2xl',
+                    'block cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+                    message.media.spoiler &&
+                      !spoilerRevealed &&
+                      'pointer-events-none',
                   )}
-                />
+                  aria-label={t('openAttachmentInNewTab')}
+                  title={t('openAttachmentInNewTab')}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element -- Matrix MXC HTTP URL */}
+                  <img
+                    src={mediaPreviewUrl}
+                    alt={message.media.filename ?? ''}
+                    width={message.media.mediaInfo?.w}
+                    height={message.media.mediaInfo?.h}
+                    className={cn(
+                      'max-h-72 w-full object-contain',
+                      message.media.spoiler && !spoilerRevealed && 'blur-2xl',
+                    )}
+                  />
+                </a>
                 {message.media.spoiler && !spoilerRevealed && (
                   <button
                     type="button"
-                    className="absolute inset-0 flex items-center justify-center bg-background/60 text-sm font-medium text-foreground"
+                    className="absolute inset-0 z-[1] flex items-center justify-center bg-background/60 text-sm font-medium text-foreground"
                     onClick={() => setSpoilerRevealed(true)}
                   >
                     {t('spoilerTapToReveal')}
