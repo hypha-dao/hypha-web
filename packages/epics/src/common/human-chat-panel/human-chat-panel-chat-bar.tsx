@@ -695,7 +695,7 @@ export function HumanChatPanelChatBar({
     'flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors';
 
   const fmtBtn =
-    'flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-popover-foreground transition-colors hover:bg-white/10';
+    'flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-popover-foreground transition-colors hover:bg-accent hover:text-accent-foreground dark:hover:bg-white/10 dark:hover:text-popover-foreground';
 
   return (
     <div className="flex w-full min-w-0 flex-shrink-0 flex-col border-t border-border bg-background-2 p-3">
@@ -716,12 +716,12 @@ export function HumanChatPanelChatBar({
               }}
               aria-hidden
             >
-              <div className="h-0 w-0 border-x-[6px] border-t-[7px] border-x-transparent border-t-zinc-900 dark:border-t-zinc-800" />
+              <div className="h-0 w-0 border-x-[6px] border-t-[7px] border-x-transparent border-t-popover" />
             </div>
             <div
               role="toolbar"
               aria-label={t('formatSelectionBar')}
-              className="absolute z-30 flex -translate-x-1/2 -translate-y-full items-center gap-0.5 rounded-lg bg-zinc-900 px-1 py-1 shadow-xl dark:bg-zinc-800"
+              className="absolute z-30 flex -translate-x-1/2 -translate-y-full items-center gap-0.5 rounded-lg border border-border bg-popover px-1 py-1 text-popover-foreground shadow-md"
               style={{
                 left: selectionBar.left,
                 top: Math.max(4, selectionBar.top - 10),
