@@ -34,6 +34,11 @@ interface SendMessageInput {
   attachments?: SendAttachmentInput[];
 }
 
+/** Matrix room message with optional Hypha spoiler extension. */
+type HyphaMediaEventContent = RoomMessageEventContent & {
+  [HYPHA_SPOILER_FIELD]?: boolean;
+};
+
 function loadImageDimensions(
   file: File,
 ): Promise<{ w: number; h: number } | undefined> {
@@ -344,13 +349,13 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         }
 
         const caption = att.file.name;
-        const base: Record<string, unknown> = {
+        const base: HyphaMediaEventContent = {
           msgtype,
           body: caption,
           filename: att.file.name,
           url: mxc,
           info,
-        };
+        } as HyphaMediaEventContent;
         if (att.spoiler) {
           base[HYPHA_SPOILER_FIELD] = true;
         }
@@ -368,7 +373,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           await client.sendEvent(
             roomId,
             EventType.RoomMessage,
-            base as unknown as RoomMessageEventContent,
+            base as RoomMessageEventContent,
           );
         }
       };
