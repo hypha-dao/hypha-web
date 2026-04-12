@@ -154,6 +154,11 @@ export interface ToggleReactionInput {
   key: string;
 }
 
+export interface RedactMessageInput {
+  roomId: string;
+  targetEventId: string;
+}
+
 export type MatrixEventListener = (
   event: MatrixSdk.MatrixEvent,
 ) => Promise<void>;
@@ -177,6 +182,7 @@ interface MatrixContextType {
   createRoom: (title: string) => Promise<{ roomId: string }>;
   sendMessage: (params: SendMessageInput) => Promise<void>;
   replaceMessage: (params: ReplaceMessageInput) => Promise<void>;
+  redactMessage: (params: RedactMessageInput) => Promise<void>;
   toggleReaction: (params: ToggleReactionInput) => Promise<void>;
   getRoomMessages: (roomId: string) => Message[] | null;
   getPinnedMessageIds: (roomId: string) => string[];
@@ -719,6 +725,46 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     [client],
   );
 
+  const redactMessage = React.useCallback(
+    async ({ roomId, targetEventId }: RedactMessageInput) => {
+      if (!client) {
+        throw new Error('Client should be specified');
+      }
+      if (!roomId?.trim() || !targetEventId?.trim()) {
+        return;
+      }
+
+      const room = client.getRoom(roomId);
+      if (!room) {
+        throw new Error('Room not found');
+      }
+
+      const targetEv =
+        room.findEventById(targetEventId) ??
+        (typeof room.getPendingEvent === 'function'
+          ? room.getPendingEvent(targetEventId)
+          : null);
+
+      if (!targetEv) {
+        throw new Error('Message to delete not found');
+      }
+      if (targetEv.getType() !== EventType.RoomMessage) {
+        throw new Error('Only chat messages can be deleted');
+      }
+      if (targetEv.isRedacted()) {
+        return;
+      }
+      const sender = targetEv.getSender();
+      const uid = client.getUserId();
+      if (!sender || !uid || sender !== uid) {
+        throw new Error('You can only delete your own messages');
+      }
+
+      await client.redactEvent(roomId, targetEventId);
+    },
+    [client],
+  );
+
   const getPinnedMessageIds = React.useCallback(
     (roomId: string): string[] => {
       if (!client) {
@@ -1035,6 +1081,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     createRoom,
     sendMessage,
     replaceMessage,
+    redactMessage,
     toggleReaction,
     getRoomMessages,
     getPinnedMessageIds,
@@ -1061,6 +1108,9 @@ const noopMatrixContext: MatrixContextType = {
     throw new Error('Matrix unavailable');
   },
   replaceMessage: async () => {
+    throw new Error('Matrix unavailable');
+  },
+  redactMessage: async () => {
     throw new Error('Matrix unavailable');
   },
   toggleReaction: async () => {

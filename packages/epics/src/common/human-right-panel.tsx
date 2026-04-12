@@ -274,6 +274,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [replyDraft, setReplyDraft] = useState<ReplyDraft | null>(null);
   const [editDraft, setEditDraft] = useState<EditDraft | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [quickReactionEmojis, setQuickReactionEmojis] = useState<string[]>(() =>
     typeof window === 'undefined'
       ? [...DEFAULT_QUICK_REACTION_EMOJIS]
@@ -393,6 +394,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setReplyDraft(null);
       setEditDraft(null);
       setEditError(null);
+      setDeleteError(null);
       setError(null);
       setSendingPending(null);
     }
@@ -491,6 +493,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setDraftAttachments([]);
       setEditDraft(null);
       setEditError(null);
+      setDeleteError(null);
       setError(null);
       setSendingPending(null);
     }
@@ -507,6 +510,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setDraftAttachments([]);
       setEditDraft(null);
       setEditError(null);
+      setDeleteError(null);
       setError(null);
       setSendingPending(null);
     }
@@ -530,6 +534,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setSendingPending(null);
       setEditDraft(null);
       setEditError(null);
+      setDeleteError(null);
       try {
         let targetRoomId = coherenceRoomId;
 
@@ -751,6 +756,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       const plain = getMessagePlainTextForEdit(target);
       if (!plain.trim()) return;
       setReplyDraft(null);
+      setDeleteError(null);
       setEditError(null);
       setEditDraft({
         messageId,
@@ -760,6 +766,28 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setInput(plain);
     },
     [messages],
+  );
+
+  const handleDeleteMessage = useCallback(
+    async (messageId: string) => {
+      if (!roomId) return;
+      setDeleteError(null);
+      if (editDraft?.messageId === messageId) {
+        setEditDraft(null);
+        setEditError(null);
+        setInput('');
+      }
+      try {
+        await matrixRef.current.redactMessage({
+          roomId,
+          targetEventId: messageId,
+        });
+      } catch (err) {
+        console.error('[HumanRightPanel] Failed to delete message:', err);
+        setDeleteError(t('deleteMessageFailed'));
+      }
+    },
+    [roomId, editDraft?.messageId, t],
   );
 
   const handleSend = useCallback(async () => {
@@ -955,6 +983,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 {editError}
               </div>
             )}
+            {deleteError && (
+              <div
+                role="alert"
+                className="mx-3 mt-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              >
+                {deleteError}
+              </div>
+            )}
             {isJoining ? (
               <div className="flex flex-1 items-center justify-center">
                 <div className="text-sm text-muted-foreground">
@@ -970,6 +1006,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 quickReactionEmojis={quickReactionEmojis}
                 matrixRoomId={roomId}
                 onEditMessage={handleEditMessage}
+                onDeleteMessage={handleDeleteMessage}
                 resolveReactionReactorLabel={(userId) =>
                   resolveMemberLabel(userId)
                 }

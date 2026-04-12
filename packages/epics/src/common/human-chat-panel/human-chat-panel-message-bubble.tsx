@@ -1,7 +1,17 @@
 'use client';
 
-import { Fragment, useCallback, useMemo, useRef, useState } from 'react';
-import { useFormatter, useTranslations } from 'next-intl';
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { useFormatter, useLocale, useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
+import Picker from '@emoji-mart/react';
+import data from '@emoji-mart/data';
 import type { TranslationValues } from 'next-intl';
 import {
   Smile,
@@ -16,6 +26,7 @@ import {
   ExternalLink,
   Image as ImageIcon,
   Loader2,
+  Trash2,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -25,6 +36,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@hypha-platform/ui';
 import { cn, copyToClipboard } from '@hypha-platform/ui-utils';
@@ -33,6 +47,7 @@ import { PersonAvatar } from '../../people/components/person-avatar';
 
 import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
 import { ChatMessageRichText } from './parse-simple-matrix-html';
+import { getEmojiMartI18n } from './emoji-mart-i18n';
 import {
   type ChatPanelAttachmentMedia,
   isChatPanelVideoFile,
@@ -544,6 +559,8 @@ type HumanChatPanelMessageBubbleProps = {
   quickReactionEmojis?: string[];
   /** When set, Edit is enabled (own text messages). */
   onEditMessage?: () => void;
+  /** When set, Delete is enabled (own messages; Matrix redaction). */
+  onDeleteMessage?: () => void | Promise<void>;
 };
 
 const MAX_VISIBLE_REACTIONS = 12;
@@ -772,6 +789,7 @@ export function HumanChatPanelMessageBubble({
   onReact,
   quickReactionEmojis,
   onEditMessage,
+  onDeleteMessage,
 }: HumanChatPanelMessageBubbleProps) {
   const t = useTranslations('HumanChatPanel');
   const format = useFormatter();
@@ -780,6 +798,12 @@ export function HumanChatPanelMessageBubble({
   const [inlineReactPickerOpen, setInlineReactPickerOpen] = useState(false);
   const [spoilerRevealed, setSpoilerRevealed] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const locale = useLocale();
+  const { resolvedTheme } = useTheme();
+  const [emojiMartMounted, setEmojiMartMounted] = useState(false);
+  useEffect(() => {
+    setEmojiMartMounted(true);
+  }, []);
 
   /**
    * Use **unauthenticated** v3 media URLs for `<img>` and `<a target="_blank">`.
@@ -865,6 +889,7 @@ export function HumanChatPanelMessageBubble({
       (textContent.trim().length > 0 ||
         Boolean(message.formattedContentHtml?.trim())),
   );
+  const canDelete = Boolean(onDeleteMessage);
   const quickStrip =
     canReact &&
     onReact &&
@@ -915,6 +940,12 @@ export function HumanChatPanelMessageBubble({
   }, [plainTextForActions]);
 
   const recentMenuEmojis = moreMenuOpen ? getRecentMenuEmojis(4) : [];
+
+  const pickerLocale = ['en', 'es', 'fr', 'de', 'pt'].includes(locale)
+    ? locale
+    : 'en';
+  const pickerTheme =
+    emojiMartMounted && resolvedTheme === 'dark' ? 'dark' : 'light';
 
   return (
     <div
@@ -1376,7 +1407,7 @@ export function HumanChatPanelMessageBubble({
         aria-hidden={!isActionBarVisible}
       >
         {quickStrip &&
-          quickReactionEmojis!.slice(0, 3).map((emoji) => (
+          quickReactionEmojis!.slice(0, 4).map((emoji) => (
             <button
               key={emoji}
               type="button"
@@ -1465,16 +1496,16 @@ export function HumanChatPanelMessageBubble({
           <DropdownMenuContent
             side="left"
             align="start"
-            className="min-w-[220px] border border-border p-2 shadow-lg"
+            className="w-[min(100vw-2rem,200px)] border border-border p-1.5 shadow-lg"
           >
             {canReact && onReact && recentMenuEmojis.length > 0 ? (
               <>
-                <div className="flex gap-1 px-1 pb-2">
+                <div className="flex justify-center gap-0.5 px-0.5 pb-1.5">
                   {recentMenuEmojis.map((emoji) => (
                     <button
                       key={emoji}
                       type="button"
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-muted/40 text-lg leading-none transition-colors hover:bg-muted"
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border bg-muted/50 text-[15px] leading-none transition-colors hover:bg-muted"
                       aria-label={t('quickReactWith', { emoji })}
                       onClick={() => {
                         recordRecentMenuEmoji(emoji);
@@ -1489,8 +1520,61 @@ export function HumanChatPanelMessageBubble({
                 <DropdownMenuSeparator className="my-1 bg-border" />
               </>
             ) : null}
+            {canReact && onReact ? (
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="flex h-8 w-full items-center justify-between gap-2 rounded-sm px-2 py-0 text-xs outline-none focus:bg-accent data-[state=open]:bg-accent">
+                  <span className="truncate">
+                    {t('messageMenuAddReaction')}
+                  </span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent
+                  className="border border-border p-0 shadow-lg"
+                  sideOffset={4}
+                >
+                  {emojiMartMounted ? (
+                    <div className="h-[min(320px,50vh)] w-[min(100vw-2rem,280px)] overflow-hidden">
+                      <Picker
+                        data={data}
+                        i18n={getEmojiMartI18n(pickerLocale)}
+                        onEmojiSelect={(emoji: { native: string }) => {
+                          recordRecentMenuEmoji(emoji.native);
+                          void onReact(emoji.native);
+                          setMoreMenuOpen(false);
+                        }}
+                        theme={pickerTheme}
+                        previewPosition="none"
+                        skinTonePosition="search"
+                        locale={pickerLocale}
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex h-40 w-[260px] items-center justify-center text-xs text-muted-foreground">
+                      {t('loading')}
+                    </div>
+                  )}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+            ) : null}
+            {canReact && onReact ? (
+              <DropdownMenuSeparator className="my-1 bg-border" />
+            ) : null}
             <DropdownMenuItem
-              className="gap-2 text-sm"
+              className="flex h-8 items-center justify-between gap-2 rounded-sm px-2 py-0 text-xs"
+              disabled={!canEdit}
+              onSelect={(e) => {
+                e.preventDefault();
+                onEditMessage?.();
+                setMoreMenuOpen(false);
+              }}
+            >
+              <span className="truncate">{t('messageMenuEdit')}</span>
+              <Pencil
+                className="h-3.5 w-3.5 shrink-0 opacity-70"
+                strokeWidth={2}
+              />
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="flex h-8 items-center justify-between gap-2 rounded-sm px-2 py-0 text-xs"
               disabled={!canReply}
               onSelect={(e) => {
                 e.preventDefault();
@@ -1498,11 +1582,15 @@ export function HumanChatPanelMessageBubble({
                 setMoreMenuOpen(false);
               }}
             >
-              <Reply className="h-4 w-4" strokeWidth={2} />
-              {t('messageMenuReply')}
+              <span className="truncate">{t('messageMenuReply')}</span>
+              <Reply
+                className="h-3.5 w-3.5 shrink-0 opacity-70"
+                strokeWidth={2}
+              />
             </DropdownMenuItem>
+            <DropdownMenuSeparator className="my-1 bg-border" />
             <DropdownMenuItem
-              className="gap-2 text-sm"
+              className="flex h-8 items-center justify-between gap-2 rounded-sm px-2 py-0 text-xs"
               disabled={!plainTextForActions.trim()}
               onSelect={(e) => {
                 e.preventDefault();
@@ -1510,11 +1598,14 @@ export function HumanChatPanelMessageBubble({
                 setMoreMenuOpen(false);
               }}
             >
-              <Copy className="h-4 w-4" strokeWidth={2} />
-              {t('messageMenuCopyText')}
+              <span className="truncate">{t('messageMenuCopyText')}</span>
+              <Copy
+                className="h-3.5 w-3.5 shrink-0 opacity-70"
+                strokeWidth={2}
+              />
             </DropdownMenuItem>
             <DropdownMenuItem
-              className="gap-2 text-sm"
+              className="flex h-8 items-center justify-between gap-2 rounded-sm px-2 py-0 text-xs"
               disabled={!canCopyMessageLink}
               onSelect={(e) => {
                 e.preventDefault();
@@ -1522,11 +1613,14 @@ export function HumanChatPanelMessageBubble({
                 setMoreMenuOpen(false);
               }}
             >
-              <Link2 className="h-4 w-4" strokeWidth={2} />
-              {t('messageMenuCopyLink')}
+              <span className="truncate">{t('messageMenuCopyLink')}</span>
+              <Link2
+                className="h-3.5 w-3.5 shrink-0 opacity-70"
+                strokeWidth={2}
+              />
             </DropdownMenuItem>
             <DropdownMenuItem
-              className="gap-2 text-sm"
+              className="flex h-8 items-center justify-between gap-2 rounded-sm px-2 py-0 text-xs"
               disabled={!plainTextForActions.trim()}
               onSelect={(e) => {
                 e.preventDefault();
@@ -1534,9 +1628,31 @@ export function HumanChatPanelMessageBubble({
                 setMoreMenuOpen(false);
               }}
             >
-              <Volume2 className="h-4 w-4" strokeWidth={2} />
-              {t('messageMenuSpeak')}
+              <span className="truncate">{t('messageMenuSpeak')}</span>
+              <Volume2
+                className="h-3.5 w-3.5 shrink-0 opacity-70"
+                strokeWidth={2}
+              />
             </DropdownMenuItem>
+            {canDelete ? (
+              <>
+                <DropdownMenuSeparator className="my-1 bg-border" />
+                <DropdownMenuItem
+                  className="flex h-8 items-center justify-between gap-2 rounded-sm px-2 py-0 text-xs text-destructive focus:bg-destructive/10 focus:text-destructive"
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    void onDeleteMessage?.();
+                    setMoreMenuOpen(false);
+                  }}
+                >
+                  <span className="truncate">{t('messageMenuDelete')}</span>
+                  <Trash2
+                    className="h-3.5 w-3.5 shrink-0 opacity-90"
+                    strokeWidth={2}
+                  />
+                </DropdownMenuItem>
+              </>
+            ) : null}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

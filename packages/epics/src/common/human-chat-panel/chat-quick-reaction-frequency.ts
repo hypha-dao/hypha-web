@@ -6,7 +6,7 @@ const STORAGE_KEY = 'hypha-chat-quick-reactions-v1';
 const RECENT_EMOJI_MENU_KEY = 'hypha-chat-recent-emojis-v1';
 
 /** Fallback when the user has not reacted yet (common chat defaults). */
-export const DEFAULT_QUICK_REACTION_EMOJIS = ['👍', '🎵', '🙏'] as const;
+export const DEFAULT_QUICK_REACTION_EMOJIS = ['👍', '🎵', '🙏', '✅'] as const;
 
 function readRecentEmojiList(): string[] {
   try {
@@ -98,10 +98,10 @@ export function recordUserReactionEmojiUse(emoji: string): void {
 }
 
 /**
- * Top three emoji by frequency for this user, oldest tie-breaker first.
- * Pads with {@link DEFAULT_QUICK_REACTION_EMOJIS} when fewer than three exist.
+ * Top emoji by frequency for this user, oldest tie-breaker first.
+ * Pads with {@link DEFAULT_QUICK_REACTION_EMOJIS} when fewer than `limit` exist.
  */
-export function getTopQuickReactionEmojis(limit = 3): string[] {
+export function getTopQuickReactionEmojis(limit = 4): string[] {
   const counts = readCounts();
   const ranked = Object.entries(counts)
     .filter(([k]) => k.length > 0)
