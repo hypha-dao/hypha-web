@@ -1,6 +1,7 @@
 'use client';
 
 import { Fragment, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
 import type { TranslationValues } from 'next-intl';
 import {
@@ -8,7 +9,6 @@ import {
   SmilePlus,
   Pencil,
   Reply,
-  MoreHorizontal,
   FileIcon,
   ExternalLink,
   Image as ImageIcon,
@@ -20,6 +20,10 @@ import { useMatrix } from '@hypha-platform/core/client';
 import { PersonAvatar } from '../../people/components/person-avatar';
 
 import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
+import {
+  HumanChatPanelMessageOverflow,
+  pushRecentChatReaction,
+} from './human-chat-panel-message-overflow';
 import { ChatMessageRichText } from './parse-simple-matrix-html';
 import {
   type ChatPanelAttachmentMedia,
@@ -490,12 +494,18 @@ type HumanChatPanelMessageBubbleProps = {
   onRowPointerLeave?: () => void;
   /** Notify when the hover-bar emoji picker opens/closes (parent may lock visibility). */
   onHoverReactPickerOpenChange?: (open: boolean) => void;
+  /** Active Matrix room (for message link + overflow). */
+  roomId?: string | null;
+  /** Logged-in Matrix user id (delete permission + recent reactions). */
+  currentUserId?: string | null;
   message: {
     id: string;
     role: 'user' | 'member';
     isSynthetic?: boolean;
     parts?: UIMessagePart[];
     senderName?: string;
+    /** Author MXID when known (overflow delete). */
+    senderMatrixId?: string;
     avatarUrl?: string;
     timestamp?: Date;
     reactions?: Reaction[];
@@ -520,6 +530,7 @@ type HumanChatPanelMessageBubbleProps = {
   onReply?: () => void;
   /** When set, Edit is enabled (own text messages only; parent omits otherwise). */
   onEdit?: () => void;
+  onDeleteMessage?: (messageId: string) => void | Promise<void>;
   /** When set, user can open react picker (omit for welcome). */
   onReact?: (emoji: string) => void | Promise<void>;
 };
@@ -708,8 +719,11 @@ export function HumanChatPanelMessageBubble({
   onHoverReactPickerOpenChange,
   message,
   isStreaming,
+  roomId,
+  currentUserId,
   onReply,
   onEdit,
+  onDeleteMessage,
   onReact,
 }: HumanChatPanelMessageBubbleProps) {
   const t = useTranslations('HumanChatPanel');
@@ -799,7 +813,7 @@ export function HumanChatPanelMessageBubble({
     reactions.length - MAX_VISIBLE_REACTIONS,
   );
 
-  return (
+  const row = (moreSlot: ReactNode | null) => (
     <div
       data-testid="chat-message"
       className={cn(
@@ -1227,6 +1241,7 @@ export function HumanChatPanelMessageBubble({
                 open={inlineReactPickerOpen}
                 onOpenChange={setInlineReactPickerOpen}
                 onEmojiSelect={(native) => {
+                  pushRecentChatReaction(native);
                   void onReact(native);
                 }}
                 ariaLabel={t('addReactionButton')}
@@ -1264,7 +1279,10 @@ export function HumanChatPanelMessageBubble({
             onHoverReactPickerOpenChange?.(open);
           }}
           onEmojiSelect={(native) => {
-            if (onReact) void onReact(native);
+            if (onReact) {
+              pushRecentChatReaction(native);
+              void onReact(native);
+            }
           }}
           ariaLabel={t('emojiPickerReactToMessage')}
           align="end"
@@ -1300,16 +1318,34 @@ export function HumanChatPanelMessageBubble({
         >
           <Reply className="h-3 w-3" strokeWidth={2} />
         </button>
-        <button
-          type="button"
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground [&_svg]:block"
-          aria-label={t('moreButton')}
-          disabled
-          aria-disabled
-        >
-          <MoreHorizontal className="h-3 w-3" strokeWidth={2} />
-        </button>
+        {moreSlot}
       </div>
     </div>
+  );
+
+  if (message.isSynthetic) {
+    return row(null);
+  }
+
+  return (
+    <HumanChatPanelMessageOverflow
+      roomId={roomId ?? null}
+      messageId={message.id}
+      disabled={false}
+      canReact={canReact}
+      onReact={onReact}
+      onEdit={onEdit}
+      onReply={onReply}
+      onDeleteMessage={onDeleteMessage}
+      currentUserId={currentUserId}
+      senderMatrixId={message.senderMatrixId}
+      message={{
+        parts: message.parts,
+        media: message.media,
+        mediaSlots: message.mediaSlots,
+      }}
+    >
+      {row}
+    </HumanChatPanelMessageOverflow>
   );
 }

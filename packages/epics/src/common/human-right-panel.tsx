@@ -279,6 +279,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [reactionError, setReactionError] = useState<string | null>(null);
   const [composerError, setComposerError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ChatPanelTab>('chat');
   /** Shown in timeline after a short delay while large attachment sends run. */
   const [sendingPending, setSendingPending] = useState<null | {
@@ -811,6 +812,27 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [messages],
   );
 
+  const handleDeleteMessage = useCallback(
+    async (messageId: string) => {
+      if (!roomId) return;
+      setDeleteError(null);
+      try {
+        await matrixRef.current.redactRoomEvent({ roomId, eventId: messageId });
+        if (editDraft?.messageId === messageId) {
+          setEditDraft(null);
+          setInput('');
+        }
+        if (replyDraft?.messageId === messageId) {
+          setReplyDraft(null);
+        }
+      } catch (err) {
+        console.error('[HumanRightPanel] Failed to delete message:', err);
+        setDeleteError(t('messageDeleteFailed'));
+      }
+    },
+    [roomId, editDraft?.messageId, replyDraft?.messageId, t],
+  );
+
   const handleSend = useCallback(async () => {
     if (!roomId) return;
     const trimmed = input.trim();
@@ -964,6 +986,14 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 {reactionError}
               </div>
             )}
+            {deleteError && (
+              <div
+                role="alert"
+                className="mx-3 mt-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              >
+                {deleteError}
+              </div>
+            )}
             {isJoining ? (
               <div className="flex flex-1 items-center justify-center">
                 <div className="text-sm text-muted-foreground">
@@ -973,8 +1003,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             ) : (
               <HumanChatPanelMessages
                 messages={mergedMessages}
+                roomId={roomId}
+                currentUserId={currentUserId}
                 onReply={handleReplyToMessage}
                 onEditMessage={handleEditMessage}
+                onDeleteMessage={handleDeleteMessage}
                 onToggleReaction={handleToggleReaction}
                 resolveReactionReactorLabel={(userId) =>
                   resolveMemberLabel(userId)
