@@ -49,7 +49,7 @@ function migrateLegacyEmojiStorage(userId: string | null | undefined): void {
 }
 
 /** Fallback when the user has not reacted yet (common chat defaults). */
-export const DEFAULT_QUICK_REACTION_EMOJIS = ['👍', '🎵', '🙏', '✅'] as const;
+export const DEFAULT_QUICK_REACTION_EMOJIS = ['👍', '🎵', '🙏'] as const;
 
 function readRecentEmojiList(userId: string | null | undefined): string[] {
   migrateLegacyEmojiStorage(userId);
@@ -168,7 +168,7 @@ export function recordUserReactionEmojiUse(
  * Pads with {@link DEFAULT_QUICK_REACTION_EMOJIS} when fewer than `limit` exist.
  */
 export function getTopQuickReactionEmojis(
-  limit = DEFAULT_QUICK_REACTION_EMOJIS.length,
+  limit = 3,
   userId?: string | null,
 ): string[] {
   const counts = readCounts(userId);

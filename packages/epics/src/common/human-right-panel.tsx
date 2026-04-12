@@ -278,7 +278,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [quickReactionEmojis, setQuickReactionEmojis] = useState<string[]>(() =>
     typeof window === 'undefined'
       ? [...DEFAULT_QUICK_REACTION_EMOJIS]
-      : getTopQuickReactionEmojis(undefined, null),
+      : getTopQuickReactionEmojis(3, null),
   );
   const [roomId, setRoomId] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
@@ -704,7 +704,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         });
         recordUserReactionEmojiUse(emoji, currentUserIdRef.current);
         setQuickReactionEmojis(
-          getTopQuickReactionEmojis(undefined, currentUserIdRef.current),
+          getTopQuickReactionEmojis(3, currentUserIdRef.current),
         );
       } catch (err) {
         console.error('[HumanRightPanel] Failed to toggle reaction:', err);
@@ -915,7 +915,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    setQuickReactionEmojis(getTopQuickReactionEmojis(undefined, currentUserId));
+    setQuickReactionEmojis(getTopQuickReactionEmojis(3, currentUserId));
   }, [roomId, currentUserId]);
 
   useEffect(() => {

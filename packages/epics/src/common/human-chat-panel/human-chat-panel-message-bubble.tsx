@@ -1482,7 +1482,7 @@ export function HumanChatPanelMessageBubble({
         inert={isActionBarVisible ? undefined : true}
       >
         {quickStrip &&
-          quickReactionEmojis!.slice(0, 4).map((emoji) => (
+          quickReactionEmojis!.slice(0, 3).map((emoji) => (
             <button
               key={emoji}
               type="button"
