@@ -49,9 +49,28 @@ export interface MessageReaction {
   reactorUserIds?: string[];
 }
 
+/** Matrix `m.room.message` media payload mapped for Hypha UI. */
+export type MessageMediaInfo = {
+  mimetype?: string;
+  size?: number;
+  w?: number;
+  h?: number;
+};
+
+/** One slot in a multi-attachment `org.hypha.media_bundle` message. */
+export type MessageMediaBundleItem = {
+  msgtype: 'm.file' | 'm.image';
+  mxcUrl?: string;
+  filename?: string;
+  mediaInfo?: MessageMediaInfo;
+  spoiler?: boolean;
+};
+
 export interface Message {
   id: string;
   sender: string;
+  /** Matrix msgtype for timeline rendering (`m.text` is implicit when omitted). */
+  msgtype?: 'm.text' | 'm.file' | 'm.image';
   /** Visible message text (reply fallback stripped when applicable). */
   content: string;
   /**
@@ -68,4 +87,16 @@ export interface Message {
   inReplyToBodyPreview?: string;
   /** Aggregated emoji reactions for this message. */
   reactions?: MessageReaction[];
+  /** Primary media URL (`mxc://`) for `m.file` / `m.image`. */
+  mxcUrl?: string;
+  /** Original filename when `msgtype` is file or image. */
+  filename?: string;
+  mediaInfo?: MessageMediaInfo;
+  /** Hypha extension: blur media until clicked. */
+  spoiler?: boolean;
+  /**
+   * Hypha `org.hypha.media_bundle`: multiple files/images in one timeline event.
+   * When set, index 0 matches root `msgtype`/`mxcUrl`/…; further indices are bundle slots.
+   */
+  mediaBundle?: MessageMediaBundleItem[];
 }
