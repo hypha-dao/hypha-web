@@ -957,7 +957,30 @@ export function HumanChatPanelMessageBubble({
     (e: MouseEvent<HTMLDivElement>) => {
       if (e.button !== 2 || !showMessageOverflowMenu) return;
       e.preventDefault();
-      setContextMenuAnchor({ x: e.clientX, y: e.clientY });
+      /** Radix positions `side="left"` content to the left of the anchor; keep anchor inset so the menu stays inside the chat scroll panel. */
+      const APPROX_MENU_WIDTH = 216;
+      const PAD = 8;
+      const scrollEl = (e.currentTarget as HTMLElement).closest(
+        '[data-chat-messages-scroll]',
+      ) as HTMLElement | null;
+      let x = e.clientX;
+      let y = e.clientY;
+      if (scrollEl) {
+        const r = scrollEl.getBoundingClientRect();
+        const minX = r.left + APPROX_MENU_WIDTH + PAD;
+        const maxX = r.right - PAD;
+        const minY = r.top + PAD;
+        const maxY = r.bottom - PAD;
+        if (minX <= maxX) {
+          x = Math.min(Math.max(x, minX), maxX);
+        } else {
+          x = (r.left + r.right) / 2;
+        }
+        if (minY <= maxY) {
+          y = Math.min(Math.max(y, minY), maxY);
+        }
+      }
+      setContextMenuAnchor({ x, y });
       setMoreMenuOpen(true);
       onMoreMenuOpenChange?.(true);
     },
@@ -1536,6 +1559,7 @@ export function HumanChatPanelMessageBubble({
           <DropdownMenuContent
             side="left"
             align="start"
+            collisionPadding={12}
             className="z-[60] w-[min(100vw-2rem,200px)] border border-border p-1.5 shadow-lg"
           >
             {canReact && onReact && recentMenuEmojis.length > 0 ? (

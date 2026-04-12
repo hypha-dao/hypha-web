@@ -105,7 +105,8 @@ export function HumanChatPanelMessages({
   return (
     <div
       ref={containerRef}
-      className="narrow-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto px-3 py-3"
+      data-chat-messages-scroll
+      className="narrow-scrollbar flex min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto px-3 py-3"
     >
       <div className="flex flex-col gap-4">
         {displayMessages.map((msg, index) => {
