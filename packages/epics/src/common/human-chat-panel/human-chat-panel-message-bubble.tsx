@@ -526,6 +526,8 @@ type HumanChatPanelMessageBubbleProps = {
   onMoreMenuOpenChange?: (open: boolean) => void;
   /** Matrix room id for “copy message link” (permalink with event anchor). */
   matrixRoomId?: string;
+  /** Matrix user id for scoping recent-emoji / frequency persistence. */
+  matrixUserId?: string | null;
   message: {
     id: string;
     role: 'user' | 'member';
@@ -791,6 +793,7 @@ export function HumanChatPanelMessageBubble({
   onHoverReactPickerOpenChange,
   onMoreMenuOpenChange,
   matrixRoomId,
+  matrixUserId,
   message,
   isStreaming,
   onReply,
@@ -946,7 +949,9 @@ export function HumanChatPanelMessageBubble({
     window.speechSynthesis.speak(u);
   }, [plainTextForActions]);
 
-  const recentMenuEmojis = moreMenuOpen ? getRecentMenuEmojis(4) : [];
+  const recentMenuEmojis = moreMenuOpen
+    ? getRecentMenuEmojis(4, matrixUserId)
+    : [];
 
   const closeMoreMenu = useCallback(() => {
     setMoreMenuOpen(false);
@@ -1444,7 +1449,7 @@ export function HumanChatPanelMessageBubble({
                 open={inlineReactPickerOpen}
                 onOpenChange={setInlineReactPickerOpen}
                 onEmojiSelect={(native) => {
-                  recordRecentMenuEmoji(native);
+                  recordRecentMenuEmoji(native, matrixUserId);
                   void onReact(native);
                 }}
                 ariaLabel={t('addReactionButton')}
@@ -1484,6 +1489,7 @@ export function HumanChatPanelMessageBubble({
               className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-[2px] p-0 text-[12px] leading-none transition-colors hover:bg-muted"
               aria-label={t('quickReactWith', { emoji })}
               onClick={() => {
+                recordRecentMenuEmoji(emoji, matrixUserId);
                 void onReact!(emoji);
               }}
             >
@@ -1504,7 +1510,7 @@ export function HumanChatPanelMessageBubble({
             onHoverReactPickerOpenChange?.(open);
           }}
           onEmojiSelect={(native) => {
-            recordRecentMenuEmoji(native);
+            recordRecentMenuEmoji(native, matrixUserId);
             if (onReact) void onReact(native);
           }}
           ariaLabel={t('emojiPickerReactToMessage')}
@@ -1590,7 +1596,7 @@ export function HumanChatPanelMessageBubble({
                       className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-border bg-muted/50 text-[13px] leading-none transition-colors hover:bg-muted"
                       aria-label={t('quickReactWith', { emoji })}
                       onClick={() => {
-                        recordRecentMenuEmoji(emoji);
+                        recordRecentMenuEmoji(emoji, matrixUserId);
                         void onReact(emoji);
                         closeMoreMenu();
                       }}
@@ -1616,7 +1622,7 @@ export function HumanChatPanelMessageBubble({
                   <HumanChatPanelEmojiMartBody
                     compact
                     onEmojiSelect={(native) => {
-                      recordRecentMenuEmoji(native);
+                      recordRecentMenuEmoji(native, matrixUserId);
                       void onReact(native);
                       closeMoreMenu();
                     }}
