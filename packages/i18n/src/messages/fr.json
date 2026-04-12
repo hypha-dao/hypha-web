@@ -808,6 +808,14 @@
       "funding": "Financement",
       "exchange": "Échange"
     },
+    "documentListBadges": {
+      "invite": "Invitation",
+      "redeemTokens": "Échanger des tokens",
+      "updateToken": "Mettre à jour le token",
+      "statusOnVoting": "En vote",
+      "statusAccepted": "Accepté",
+      "statusRejected": "Rejeté"
+    },
     "buttons": {
       "publish": "Publier"
     },

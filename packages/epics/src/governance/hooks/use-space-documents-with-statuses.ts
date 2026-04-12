@@ -2,6 +2,7 @@
 
 import React from 'react';
 import useSWR from 'swr';
+import { useTranslations } from 'next-intl';
 
 import {
   useSpaceProposalsWeb3Rpc,
@@ -12,12 +13,12 @@ import { DirectionType, Order, OrderField } from '@hypha-platform/core/client';
 import queryString from 'query-string';
 import { useAuthentication } from '@hypha-platform/authentication';
 
-const getDocumentBadges = (document: Document) => {
+const getDocumentBadges = (document: Document, t: (key: string) => string) => {
   const badges = [];
   switch (document.label) {
     case 'Contribution':
       badges.push({
-        label: 'Contribution',
+        label: t('labels.contribution'),
         className: 'capitalize',
         variant: 'solid',
         colorVariant: 'accent',
@@ -25,7 +26,7 @@ const getDocumentBadges = (document: Document) => {
       break;
     case 'Collective Agreement':
       badges.push({
-        label: 'Collective Agreement',
+        label: t('labels.collectiveAgreement'),
         className: 'capitalize',
         variant: 'solid',
         colorVariant: 'accent',
@@ -33,7 +34,7 @@ const getDocumentBadges = (document: Document) => {
       break;
     case 'Expenses':
       badges.push({
-        label: 'Expenses',
+        label: t('labels.expenses'),
         className: 'capitalize',
         variant: 'solid',
         colorVariant: 'accent',
@@ -41,7 +42,7 @@ const getDocumentBadges = (document: Document) => {
       break;
     case 'Funding':
       badges.push({
-        label: 'Funding',
+        label: t('labels.funding'),
         className: 'capitalize',
         variant: 'solid',
         colorVariant: 'accent',
@@ -49,7 +50,7 @@ const getDocumentBadges = (document: Document) => {
       break;
     case 'Exchange':
       badges.push({
-        label: 'Exchange',
+        label: t('labels.exchange'),
         className: 'capitalize',
         variant: 'solid',
         colorVariant: 'accent',
@@ -57,7 +58,7 @@ const getDocumentBadges = (document: Document) => {
       break;
     case 'Voting Method':
       badges.push({
-        label: 'Voting Method',
+        label: t('labels.votingMethod'),
         className: 'capitalize',
         variant: 'solid',
         colorVariant: 'accent',
@@ -65,7 +66,7 @@ const getDocumentBadges = (document: Document) => {
       break;
     case 'Entry Method':
       badges.push({
-        label: 'Entry Method',
+        label: t('labels.entryMethod'),
         className: 'capitalize',
         variant: 'solid',
         colorVariant: 'accent',
@@ -73,7 +74,7 @@ const getDocumentBadges = (document: Document) => {
       break;
     case 'Issue New Token':
       badges.push({
-        label: 'Issue New Token',
+        label: t('labels.issueNewToken'),
         className: 'capitalize',
         variant: 'solid',
         colorVariant: 'accent',
@@ -81,7 +82,7 @@ const getDocumentBadges = (document: Document) => {
       break;
     case 'Invite':
       badges.push({
-        label: 'Invite',
+        label: t('documentListBadges.invite'),
         className: 'capitalize',
         variant: 'solid',
         colorVariant: 'accent',
@@ -89,7 +90,7 @@ const getDocumentBadges = (document: Document) => {
       break;
     case 'Buy Hypha Tokens':
       badges.push({
-        label: 'Buy Hypha Tokens',
+        label: t('labels.buyHyphaTokensRewards'),
         className: 'capitalize',
         variant: 'solid',
         colorVariant: 'accent',
@@ -97,7 +98,7 @@ const getDocumentBadges = (document: Document) => {
       break;
     case 'Activate Spaces':
       badges.push({
-        label: 'Activate Spaces',
+        label: t('labels.activateSpaces'),
         className: 'capitalize',
         variant: 'solid',
         colorVariant: 'accent',
@@ -105,7 +106,7 @@ const getDocumentBadges = (document: Document) => {
       break;
     case 'Space To Space':
       badges.push({
-        label: 'Space To Space',
+        label: t('labels.spaceToSpace'),
         className: 'capitalize',
         variant: 'solid',
         colorVariant: 'accent',
@@ -113,7 +114,7 @@ const getDocumentBadges = (document: Document) => {
       break;
     case 'Space Transparency':
       badges.push({
-        label: 'Space Transparency',
+        label: t('labels.spaceTransparency'),
         className: 'capitalize',
         variant: 'solid',
         colorVariant: 'accent',
@@ -121,7 +122,7 @@ const getDocumentBadges = (document: Document) => {
       break;
     case 'Treasury Minting':
       badges.push({
-        label: 'Treasury Minting',
+        label: t('labels.treasuryMinting'),
         className: 'capitalize',
         variant: 'solid',
         colorVariant: 'accent',
@@ -129,7 +130,7 @@ const getDocumentBadges = (document: Document) => {
       break;
     case 'Backing Vault':
       badges.push({
-        label: 'Backing Vault',
+        label: t('labels.backingVault'),
         className: 'capitalize',
         variant: 'solid',
         colorVariant: 'accent',
@@ -137,7 +138,7 @@ const getDocumentBadges = (document: Document) => {
       break;
     case 'Redeem Tokens':
       badges.push({
-        label: 'Redeem Tokens',
+        label: t('documentListBadges.redeemTokens'),
         className: 'capitalize',
         variant: 'solid',
         colorVariant: 'accent',
@@ -145,7 +146,7 @@ const getDocumentBadges = (document: Document) => {
       break;
     case 'Token Purchase':
       badges.push({
-        label: 'Token Purchase',
+        label: t('labels.spaceTokenPurchase'),
         className: 'capitalize',
         variant: 'solid',
         colorVariant: 'accent',
@@ -153,7 +154,7 @@ const getDocumentBadges = (document: Document) => {
       break;
     case 'Update Token':
       badges.push({
-        label: 'Update Token',
+        label: t('documentListBadges.updateToken'),
         className: 'capitalize',
         variant: 'solid',
         colorVariant: 'accent',
@@ -165,7 +166,7 @@ const getDocumentBadges = (document: Document) => {
   switch (document.status) {
     case 'onVoting':
       badges.push({
-        label: 'On voting',
+        label: t('documentListBadges.statusOnVoting'),
         className: 'capitalize',
         variant: 'outline',
         colorVariant: 'warn',
@@ -173,7 +174,7 @@ const getDocumentBadges = (document: Document) => {
       break;
     case 'accepted':
       badges.push({
-        label: 'Accepted',
+        label: t('documentListBadges.statusAccepted'),
         className: 'capitalize',
         variant: 'outline',
         colorVariant: 'success',
@@ -181,7 +182,7 @@ const getDocumentBadges = (document: Document) => {
       break;
     case 'rejected':
       badges.push({
-        label: 'Rejected',
+        label: t('documentListBadges.statusRejected'),
         className: 'capitalize',
         variant: 'outline',
         colorVariant: 'error',
@@ -200,6 +201,7 @@ export const useSpaceDocumentsWithStatuses = ({
   spaceId: number;
   order?: Order<Document>;
 }) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { getAccessToken } = useAuthentication();
   const { spaceProposalsIds } = useSpaceProposalsWeb3Rpc({ spaceId: spaceId });
   const { withdrawnProposalsIds } = useWithdrawnProposalsWeb3Rpc({
@@ -288,7 +290,7 @@ export const useSpaceDocumentsWithStatuses = ({
         const documentWithStatus = { ...doc, status: 'accepted' } as Document;
         return {
           ...documentWithStatus,
-          badges: getDocumentBadges(documentWithStatus),
+          badges: getDocumentBadges(documentWithStatus, tAgreementFlow),
         };
       });
 
@@ -305,7 +307,7 @@ export const useSpaceDocumentsWithStatuses = ({
         const documentWithStatus = { ...doc, status: 'rejected' } as Document;
         return {
           ...documentWithStatus,
-          badges: getDocumentBadges(documentWithStatus),
+          badges: getDocumentBadges(documentWithStatus, tAgreementFlow),
         };
       });
 
@@ -325,7 +327,7 @@ export const useSpaceDocumentsWithStatuses = ({
         const documentWithStatus = { ...doc, status: 'onVoting' } as Document;
         return {
           ...documentWithStatus,
-          badges: getDocumentBadges(documentWithStatus),
+          badges: getDocumentBadges(documentWithStatus, tAgreementFlow),
         };
       });
     return {
@@ -333,7 +335,12 @@ export const useSpaceDocumentsWithStatuses = ({
       rejected: rejectedDocuments,
       onVoting: onVotingDocuments,
     };
-  }, [documentsFromDb, spaceProposalsIds, withdrawnProposalsIds]);
+  }, [
+    documentsFromDb,
+    spaceProposalsIds,
+    withdrawnProposalsIds,
+    tAgreementFlow,
+  ]);
   return {
     documents: response,
     isLoading,

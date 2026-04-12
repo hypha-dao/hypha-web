@@ -546,6 +546,14 @@
       "funding": "Financiamento",
       "exchange": "Troca"
     },
+    "documentListBadges": {
+      "invite": "Convite",
+      "redeemTokens": "Resgatar tokens",
+      "updateToken": "Atualizar token",
+      "statusOnVoting": "Em votação",
+      "statusAccepted": "Aceito",
+      "statusRejected": "Rejeitado"
+    },
     "buttons": {
       "publish": "Publicar"
     },

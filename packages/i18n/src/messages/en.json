@@ -804,6 +804,14 @@
       "funding": "Funding",
       "exchange": "Exchange"
     },
+    "documentListBadges": {
+      "invite": "Invite",
+      "redeemTokens": "Redeem Tokens",
+      "updateToken": "Update Token",
+      "statusOnVoting": "On voting",
+      "statusAccepted": "Accepted",
+      "statusRejected": "Rejected"
+    },
     "buttons": {
       "publish": "Publish"
     },

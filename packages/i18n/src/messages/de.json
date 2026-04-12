@@ -804,6 +804,14 @@
       "funding": "Finanzierung",
       "exchange": "Exchange"
     },
+    "documentListBadges": {
+      "invite": "Einladung",
+      "redeemTokens": "Tokens einlösen",
+      "updateToken": "Token aktualisieren",
+      "statusOnVoting": "In Abstimmung",
+      "statusAccepted": "Angenommen",
+      "statusRejected": "Abgelehnt"
+    },
     "buttons": {
       "publish": "Veröffentlichen"
     },
