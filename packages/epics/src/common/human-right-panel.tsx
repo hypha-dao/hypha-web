@@ -18,6 +18,7 @@ import {
   Message,
   firstLineForReplyPreview,
   RoomEvent,
+  SendMessagePartialFailureError,
   type MessageReaction,
 } from '@hypha-platform/core/client';
 import { UseMembers } from '../spaces';
@@ -668,6 +669,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setReplyDraft(null);
     } catch (err) {
       console.error('[HumanRightPanel] Failed to send message:', err);
+      if (err instanceof SendMessagePartialFailureError) {
+        const { sentAttachmentCount, restoreCaption } = err;
+        for (let i = 0; i < sentAttachmentCount; i++) {
+          const a = savedAttachments[i];
+          if (a) URL.revokeObjectURL(a.previewUrl);
+        }
+        setDraftAttachments(savedAttachments.slice(sentAttachmentCount));
+        setInput(restoreCaption ? text : '');
+        setReplyDraft(savedDraft);
+        return;
+      }
       setInput(text);
       setReplyDraft(savedDraft);
       setDraftAttachments(savedAttachments);
