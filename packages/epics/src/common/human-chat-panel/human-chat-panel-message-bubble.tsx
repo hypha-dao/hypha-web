@@ -442,6 +442,18 @@ export function HumanChatPanelMessageBubble({
                   href={mediaDownloadUrl}
                   target="_blank"
                   rel="noreferrer noopener"
+                  tabIndex={message.media.spoiler && !spoilerRevealed ? -1 : 0}
+                  aria-hidden={message.media.spoiler && !spoilerRevealed}
+                  onKeyDown={(e) => {
+                    if (
+                      message.media.spoiler &&
+                      !spoilerRevealed &&
+                      (e.key === 'Enter' || e.key === ' ')
+                    ) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }
+                  }}
                   className={cn(
                     'block cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
                     message.media.spoiler &&
