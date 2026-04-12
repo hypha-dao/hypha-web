@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const messages = parsed.data.messages as unknown as UIMessage[];
+  const messages = parsed.data.messages as UIMessage[];
   const spaceSlug = parsed.data.spaceSlug;
 
   let result;
