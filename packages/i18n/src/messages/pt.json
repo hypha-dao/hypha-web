@@ -515,6 +515,7 @@
       },
       "tokenPayoutFieldArray": {
         "paymentRequest": "Solicitação de pagamento",
+        "enterAmountAndToken": "Insira um valor e selecione um token.",
         "enterAmount": "Insira um valor.",
         "selectToken": "Selecione um token.",
         "add": "Adicionar"

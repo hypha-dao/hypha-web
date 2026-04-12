@@ -1396,6 +1396,7 @@
       },
       "tokenPayoutFieldArray": {
         "paymentRequest": "Payment Request",
+        "enterAmountAndToken": "Please enter an amount and select a token.",
         "enterAmount": "Please enter an amount.",
         "selectToken": "Please select a token.",
         "add": "Add"
