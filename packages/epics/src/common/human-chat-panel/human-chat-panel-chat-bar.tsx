@@ -791,7 +791,7 @@ export function HumanChatPanelChatBar({
         ref={composerShellRef}
         title={t('newlineHintExtended')}
         className={cn(
-          'relative flex min-w-0 flex-col overflow-hidden rounded-2xl bg-muted/40 shadow-sm',
+          'relative flex min-w-0 flex-col overflow-hidden rounded-lg bg-muted/40 shadow-sm',
           'ring-1 ring-border/70 dark:bg-muted/25 dark:ring-white/[0.08]',
           'transition-[box-shadow,ring-color] duration-200',
           'focus-within:shadow-md focus-within:ring-2 focus-within:ring-primary/35',
