@@ -90,8 +90,6 @@ export function HumanChatPanelMessages({
     persistHoverActionBarMessageId ?? lockActionMessageId;
   const combinedLockMessageIdRef = useRef<string | null>(null);
   combinedLockMessageIdRef.current = combinedLockMessageId;
-  /** Pointer left row while hover picker was open (portal); hide bar when picker closes. */
-  const leaveWhileLockedRef = useRef<string | null>(null);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -137,12 +135,10 @@ export function HumanChatPanelMessages({
               resolveReactionReactorLabel={resolveReactionReactorLabel}
               isActionBarVisible={isActionBarVisible}
               onRowPointerEnter={() => {
-                leaveWhileLockedRef.current = null;
                 setHoverActionMessageId(msg.id);
               }}
               onRowPointerLeave={() => {
                 if (combinedLockMessageIdRef.current === msg.id) {
-                  leaveWhileLockedRef.current = msg.id;
                   return;
                 }
                 setHoverActionMessageId((current) =>
@@ -155,12 +151,8 @@ export function HumanChatPanelMessages({
                   return;
                 }
                 setLockActionMessageId((cur) => (cur === msg.id ? null : cur));
-                if (leaveWhileLockedRef.current === msg.id) {
-                  leaveWhileLockedRef.current = null;
-                  setHoverActionMessageId((current) =>
-                    current === msg.id ? null : current,
-                  );
-                }
+                // Portal: pointer may not leave the row; reset hover when picker closes.
+                setHoverActionMessageId(null);
               }}
               onMoreMenuOpenChange={(open) => {
                 if (open) {
@@ -168,12 +160,8 @@ export function HumanChatPanelMessages({
                   return;
                 }
                 setLockActionMessageId((cur) => (cur === msg.id ? null : cur));
-                if (leaveWhileLockedRef.current === msg.id) {
-                  leaveWhileLockedRef.current = null;
-                  setHoverActionMessageId((current) =>
-                    current === msg.id ? null : current,
-                  );
-                }
+                // Portal: pointer may not leave the row; reset hover when menu closes.
+                setHoverActionMessageId(null);
               }}
               matrixRoomId={matrixRoomId ?? undefined}
               isStreaming={
