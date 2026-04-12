@@ -95,6 +95,14 @@ export const useAcceptInvestmentMutationsWeb3Rpc = ({
       const amountA = parseUnits(spaceReceive.amount, decimalsA);
       const amountB = parseUnits(investorSend.amount, decimalsB);
 
+      // Next escrow id after createEscrow (counter increments before assign).
+      const currentCounter = await publicClient.readContract({
+        address: escrowAddress,
+        abi: escrowImplementationAbi,
+        functionName: 'escrowCounter',
+      });
+      const newEscrowId = currentCounter + 1n;
+
       let pullFromTreasury = 0n;
       let mintShortfall = amountA;
 
@@ -153,6 +161,9 @@ export const useAcceptInvestmentMutationsWeb3Rpc = ({
         }),
       });
 
+      // createEscrow(..., false): do not pull party B (investor) tokens here — the
+      // investor funds tokenB later via receiveFunds from their wallet. Proposal
+      // execution only records the escrow and funds party A (space → escrow).
       transactions.push({
         target: escrowAddress,
         value: 0n,
@@ -165,8 +176,19 @@ export const useAcceptInvestmentMutationsWeb3Rpc = ({
             investorSend.token,
             amountA,
             amountB,
-            true,
+            false,
           ],
+        }),
+      });
+
+      // Party A (executor) deposits tokenA only, after the escrow exists.
+      transactions.push({
+        target: escrowAddress,
+        value: 0n,
+        data: encodeFunctionData({
+          abi: escrowImplementationAbi,
+          functionName: 'receiveFunds',
+          args: [newEscrowId],
         }),
       });
 

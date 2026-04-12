@@ -807,8 +807,7 @@ export const useProposalDetailsWeb3Rpc = ({
     if (
       escrowContractAddress &&
       exchangeEscrowData.tokenA &&
-      exchangeEscrowData.amountA !== undefined &&
-      exchangeEscrowData.sendFundsNow
+      exchangeEscrowData.amountA !== undefined
     ) {
       transfers.push({
         recipient: escrowContractAddress,
