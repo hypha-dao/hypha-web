@@ -65,11 +65,14 @@ export function createGetDocumentsBySpaceSlugTool(authToken: string) {
 
         return gated.result;
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Unknown error';
+        console.error(
+          '[chat-tool:get_documents_by_space_slug] execution failed',
+          err,
+        );
         return {
           found: false,
           space_slug: safe,
-          error: message,
+          error: 'Internal error while fetching documents',
         };
       }
     },
