@@ -522,6 +522,8 @@ export function HumanChatPanelChatBar({
           id={fileInputId}
           type="file"
           className="sr-only"
+          tabIndex={-1}
+          aria-hidden="true"
           multiple
           onChange={(e) => {
             if (e.target.files?.length) {
@@ -536,6 +538,8 @@ export function HumanChatPanelChatBar({
           type="file"
           accept="image/*"
           className="sr-only"
+          tabIndex={-1}
+          aria-hidden="true"
           multiple
           onChange={(e) => {
             if (e.target.files?.length) {
