@@ -30,6 +30,7 @@ import {
   HumanChatPanelTabs,
   HumanChatPanelMembers,
   type ChatDraftAttachment,
+  type ChatPanelAttachmentMedia,
 } from './human-chat-panel';
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
@@ -49,18 +50,7 @@ type UIMessage = {
     { type: 'text'; text: string } | { type: string; [k: string]: unknown }
   >;
   /** Matrix file/image attachment (timeline). */
-  media?: {
-    msgtype: 'm.file' | 'm.image';
-    mxcUrl?: string;
-    filename?: string;
-    mediaInfo?: {
-      mimetype?: string;
-      size?: number;
-      w?: number;
-      h?: number;
-    };
-    spoiler?: boolean;
-  };
+  media?: ChatPanelAttachmentMedia;
   senderName?: string;
   avatarUrl?: string;
   /** Matrix event time (origin_server_ts), for header timestamp */

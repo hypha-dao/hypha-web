@@ -19,6 +19,7 @@ import { PersonAvatar } from '../../people/components/person-avatar';
 
 import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
 import { ChatMessageRichText } from './parse-simple-matrix-html';
+import type { ChatPanelAttachmentMedia } from './chat-panel-media-types';
 
 type Reaction = {
   emoji: string;
@@ -106,18 +107,7 @@ type HumanChatPanelMessageBubbleProps = {
     reactions?: Reaction[];
     /** Matrix formatted_body (subset) for rich display */
     formattedContentHtml?: string;
-    media?: {
-      msgtype: 'm.file' | 'm.image';
-      mxcUrl?: string;
-      filename?: string;
-      mediaInfo?: {
-        mimetype?: string;
-        size?: number;
-        w?: number;
-        h?: number;
-      };
-      spoiler?: boolean;
-    };
+    media?: ChatPanelAttachmentMedia;
     /** Rich reply: quoted context above the new text */
     replyTo?: {
       authorLabel: string;

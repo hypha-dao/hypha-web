@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 
 import { HumanChatPanelMessageBubble } from './human-chat-panel-message-bubble';
+import type { ChatPanelAttachmentMedia } from './chat-panel-media-types';
 
 type UIMessage = {
   id: string;
@@ -13,18 +14,7 @@ type UIMessage = {
   parts?: Array<
     { type: 'text'; text: string } | { type: string; [k: string]: unknown }
   >;
-  media?: {
-    msgtype: 'm.file' | 'm.image';
-    mxcUrl?: string;
-    filename?: string;
-    mediaInfo?: {
-      mimetype?: string;
-      size?: number;
-      w?: number;
-      h?: number;
-    };
-    spoiler?: boolean;
-  };
+  media?: ChatPanelAttachmentMedia;
   senderName?: string;
   avatarUrl?: string;
   timestamp?: Date;
