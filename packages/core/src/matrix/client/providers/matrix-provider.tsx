@@ -325,7 +325,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         };
       }
 
-      const sendOneMedia = async (att: SendAttachmentInput) => {
+      const prepareMediaPayload = async (
+        att: SendAttachmentInput,
+      ): Promise<HyphaMediaEventContent> => {
         const upload = await client.uploadContent(att.file, {
           name: att.file.name,
           type: att.file.type || undefined,
@@ -359,27 +361,28 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         if (att.spoiler) {
           base[HYPHA_SPOILER_FIELD] = true;
         }
-
-        if (replyContext) {
-          await client.sendEvent(roomId, EventType.RoomMessage, {
-            ...base,
-            'm.relates_to': {
-              'm.in_reply_to': {
-                event_id: replyContext.resolvedTargetId,
-              },
-            },
-          } as RoomMessageEventContent);
-        } else {
-          await client.sendEvent(
-            roomId,
-            EventType.RoomMessage,
-            base as RoomMessageEventContent,
-          );
-        }
+        return base;
       };
 
-      for (const att of list) {
-        await sendOneMedia(att);
+      const mediaPayloads =
+        list.length > 0 ? await Promise.all(list.map(prepareMediaPayload)) : [];
+
+      for (const base of mediaPayloads) {
+        const eventContent = replyContext
+          ? {
+              ...base,
+              'm.relates_to': {
+                'm.in_reply_to': {
+                  event_id: replyContext.resolvedTargetId,
+                },
+              },
+            }
+          : base;
+        await client.sendEvent(
+          roomId,
+          EventType.RoomMessage,
+          eventContent as RoomMessageEventContent,
+        );
       }
 
       if (!trimmed) {
