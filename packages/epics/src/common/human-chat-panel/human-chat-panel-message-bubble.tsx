@@ -1474,6 +1474,7 @@ export function HumanChatPanelMessageBubble({
           isActionBarVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
         aria-hidden={!isActionBarVisible}
+        inert={isActionBarVisible ? undefined : true}
       >
         {quickStrip &&
           quickReactionEmojis!.slice(0, 3).map((emoji) => (
