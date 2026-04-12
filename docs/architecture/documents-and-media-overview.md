@@ -126,7 +126,7 @@ When a proposal (or other entity) is saved with attachments:
 |------|----------------|
 | Matrix send + upload | `packages/core/src/matrix/client/providers/matrix-provider.tsx` |
 | Timeline mapping | `packages/core/src/matrix/rich-reply.ts` |
-| Chat composer + drafts | `packages/epics/src/common/human-chat-panel/human-chat-panel-chat-bar.tsx`, `human-right-panel.tsx` |
+| Chat composer + drafts | `packages/epics/src/common/human-chat-panel/human-chat-panel-chat-bar.tsx`, `packages/epics/src/common/human-right-panel.tsx` |
 | Chat bubbles | `packages/epics/src/common/human-chat-panel/human-chat-panel-message-bubble.tsx` |
 | Proposal attachment list | `packages/ui/src/upload/attachments-list.tsx`, `packages/ui/src/upload/add-attachment.tsx` |
 
