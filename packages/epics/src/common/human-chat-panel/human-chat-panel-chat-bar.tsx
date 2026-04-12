@@ -1157,9 +1157,6 @@ export function HumanChatPanelChatBar({
           </div>
         </div>
       </div>
-      <span className="mt-1.5 px-1 text-xs text-muted-foreground">
-        {t('newlineHint')}
-      </span>
     </div>
   );
 }
