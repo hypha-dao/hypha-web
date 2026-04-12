@@ -43,6 +43,13 @@ interface SendMessageInput {
   onUploadProgress?: (p: SendMessageUploadProgress) => void;
 }
 
+export interface EditRoomMessageInput {
+  roomId: string;
+  /** Timeline id of the `m.room.message` to replace (not an edit event id). */
+  targetEventId: string;
+  message: string;
+}
+
 /**
  * Thrown when some attachment events were committed but a later send step failed.
  * Callers should restore only `attachments.slice(sentAttachmentCount)` and optionally caption text.
@@ -169,6 +176,7 @@ interface MatrixContextType {
   isAuthenticated: boolean;
   createRoom: (title: string) => Promise<{ roomId: string }>;
   sendMessage: (params: SendMessageInput) => Promise<void>;
+  editRoomMessage: (params: EditRoomMessageInput) => Promise<void>;
   toggleReaction: (params: ToggleReactionInput) => Promise<void>;
   getRoomMessages: (roomId: string) => Message[] | null;
   getPinnedMessageIds: (roomId: string) => string[];
@@ -615,6 +623,67 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     [client],
   );
 
+  const editRoomMessage = React.useCallback(
+    async ({ roomId, targetEventId, message }: EditRoomMessageInput) => {
+      if (!client) {
+        throw new Error('Client should be specified');
+      }
+      const trimmed = message.trim();
+      if (!trimmed || !targetEventId?.trim()) {
+        return;
+      }
+
+      const room = client.getRoom(roomId);
+      if (!room) {
+        throw new Error('Room not found');
+      }
+
+      const ev = room.findEventById(targetEventId);
+      if (!ev) {
+        throw new Error('Message not found');
+      }
+
+      const wireRel = ev.getWireContent()?.['m.relates_to'] as
+        | { rel_type?: string }
+        | undefined;
+      if (wireRel?.rel_type === MatrixSdk.RelationType.Replace) {
+        throw new Error('Cannot edit an edit event');
+      }
+
+      if (ev.getType() !== MatrixSdk.EventType.RoomMessage) {
+        throw new Error('Only room messages can be edited');
+      }
+
+      const orig = ev.getOriginalContent() as {
+        msgtype?: string;
+      };
+      const msgtype = orig.msgtype;
+      if (
+        msgtype !== MatrixSdk.MsgType.Text &&
+        msgtype !== MatrixSdk.MsgType.Emote &&
+        msgtype !== MatrixSdk.MsgType.Notice
+      ) {
+        throw new Error('Only text messages can be edited');
+      }
+
+      const newInner = {
+        msgtype: MatrixSdk.MsgType.Text,
+        ...matrixTextEventContentWithOptionalFormatting(message),
+      };
+
+      await client.sendEvent(roomId, MatrixSdk.EventType.RoomMessage, {
+        body: `* ${trimmed}`,
+        msgtype: MatrixSdk.MsgType.Text,
+        'm.new_content': newInner,
+        'm.relates_to': {
+          rel_type: MatrixSdk.RelationType.Replace,
+          event_id: targetEventId,
+        },
+      } as RoomMessageEventContent);
+    },
+    [client],
+  );
+
   const getPinnedMessageIds = React.useCallback(
     (roomId: string): string[] => {
       if (!client) {
@@ -905,6 +974,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     isAuthenticated,
     createRoom,
     sendMessage,
+    editRoomMessage,
     toggleReaction,
     getRoomMessages,
     getPinnedMessageIds,
@@ -928,6 +998,9 @@ const noopMatrixContext: MatrixContextType = {
     throw new Error('Matrix unavailable');
   },
   sendMessage: async () => {
+    throw new Error('Matrix unavailable');
+  },
+  editRoomMessage: async () => {
     throw new Error('Matrix unavailable');
   },
   toggleReaction: async () => {
