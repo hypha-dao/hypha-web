@@ -551,16 +551,16 @@ export function HumanChatPanelChatBar({
 
         {draftAttachments.length > 0 && (
           <div
-            className="narrow-scrollbar max-h-[220px] overflow-x-auto overflow-y-hidden border-b border-border px-3 py-2"
+            className="narrow-scrollbar max-h-[168px] shrink-0 overflow-x-auto overflow-y-hidden border-b border-border px-3 py-2"
             data-testid="chat-draft-attachments"
           >
-            <div className="flex w-max gap-2 pb-1">
+            <div className="flex w-max flex-nowrap items-stretch gap-2 pb-1">
               {draftAttachments.map((att) => (
                 <div
                   key={att.id}
                   className="relative flex w-[168px] shrink-0 flex-col gap-1 rounded-lg border border-border bg-muted/40 p-1.5"
                 >
-                  <div className="relative aspect-video w-full overflow-hidden rounded-md bg-background">
+                  <div className="relative h-24 w-full shrink-0 overflow-hidden rounded-md bg-background">
                     {att.kind === 'image' ? (
                       // eslint-disable-next-line @next/next/no-img-element -- local object URL preview
                       <img
@@ -572,7 +572,7 @@ export function HumanChatPanelChatBar({
                         )}
                       />
                     ) : (
-                      <div className="flex h-full min-h-[72px] items-center justify-center text-muted-foreground">
+                      <div className="flex h-full items-center justify-center text-muted-foreground">
                         <FileIcon className="h-10 w-10" strokeWidth={1.25} />
                       </div>
                     )}
