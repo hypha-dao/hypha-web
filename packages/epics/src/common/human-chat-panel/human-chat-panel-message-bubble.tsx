@@ -445,8 +445,9 @@ export function HumanChatPanelMessageBubble({
                   tabIndex={message.media.spoiler && !spoilerRevealed ? -1 : 0}
                   aria-hidden={message.media.spoiler && !spoilerRevealed}
                   onKeyDown={(e) => {
+                    const m = message.media;
                     if (
-                      message.media.spoiler &&
+                      m?.spoiler &&
                       !spoilerRevealed &&
                       (e.key === 'Enter' || e.key === ' ')
                     ) {
