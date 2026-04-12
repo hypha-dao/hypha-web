@@ -15,6 +15,8 @@ type UIMessage = {
     { type: 'text'; text: string } | { type: string; [k: string]: unknown }
   >;
   media?: ChatPanelAttachmentMedia;
+  /** Multiple attachments in one Matrix event (`org.hypha.media_bundle`). */
+  mediaSlots?: ChatPanelAttachmentMedia[];
   senderName?: string;
   avatarUrl?: string;
   timestamp?: Date;

@@ -50,8 +50,10 @@ type UIMessage = {
   parts?: Array<
     { type: 'text'; text: string } | { type: string; [k: string]: unknown }
   >;
-  /** Matrix file/image attachment (timeline). */
+  /** Matrix file/image attachment (timeline); first slot when `mediaSlots` is set. */
   media?: ChatPanelAttachmentMedia;
+  /** All attachment slots for one Matrix message (bundle). */
+  mediaSlots?: ChatPanelAttachmentMedia[];
   senderName?: string;
   avatarUrl?: string;
   /** Matrix event time (origin_server_ts), for header timestamp */
@@ -136,7 +138,7 @@ function toUIMessage(
       reactorUserIds: r.reactorUserIds,
     })) ?? undefined;
 
-  const media =
+  const mediaSingle =
     isMedia && msg.msgtype
       ? {
           msgtype: msg.msgtype as 'm.file' | 'm.image',
@@ -147,12 +149,26 @@ function toUIMessage(
         }
       : undefined;
 
+  const mediaSlots: ChatPanelAttachmentMedia[] | undefined =
+    isMedia && msg.msgtype && msg.mediaBundle && msg.mediaBundle.length > 1
+      ? msg.mediaBundle.map((b) => ({
+          msgtype: b.msgtype,
+          mxcUrl: b.mxcUrl,
+          filename: b.filename ?? '',
+          mediaInfo: b.mediaInfo,
+          spoiler: b.spoiler,
+        }))
+      : undefined;
+
+  const media = mediaSingle;
+
   return {
     id: msg.id,
     role: isCurrentUser ? 'user' : 'member',
     isSynthetic: false,
     parts: isMedia ? [] : [{ type: 'text', text: msg.content }],
     media,
+    mediaSlots,
     formattedContentHtml: isMedia ? undefined : msg.formattedContentHtml,
     senderName: isCurrentUser ? undefined : resolveMemberLabel(msg.sender),
     senderMatrixId: msg.sender,
@@ -170,6 +186,12 @@ function getMessagePlainText(m: UIMessage): string {
     ) ?? [];
   const fromParts = textParts.map((p) => p.text).join('');
   if (fromParts.trim()) return fromParts;
+  if (m.mediaSlots && m.mediaSlots.length > 0) {
+    const names = m.mediaSlots
+      .map((s) => s.filename)
+      .filter(Boolean) as string[];
+    if (names.length) return names.join(', ');
+  }
   if (m.media?.filename) return m.media.filename;
   return '';
 }

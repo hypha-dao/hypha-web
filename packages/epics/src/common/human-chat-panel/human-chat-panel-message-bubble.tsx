@@ -81,6 +81,190 @@ function MatrixTimelineImage({
   );
 }
 
+type MatrixClientLike = NonNullable<ReturnType<typeof useMatrix>['client']>;
+
+function useMxcUrls(
+  client: MatrixClientLike | null,
+  mxc: string | undefined,
+): { preview: string | null; download: string | null } {
+  return useMemo(() => {
+    if (!mxc || !client || !mxc.startsWith('mxc://')) {
+      return { preview: null, download: null };
+    }
+    const download =
+      client.mxcUrlToHttp(
+        mxc,
+        undefined,
+        undefined,
+        undefined,
+        true,
+        false,
+        false,
+      ) ?? null;
+    const preview =
+      client.mxcUrlToHttp(mxc, 800, 600, 'scale', true, false, false) ?? null;
+    return { preview, download };
+  }, [client, mxc]);
+}
+
+function TimelineImageSlot({
+  media,
+  tOpen,
+}: {
+  media: ChatPanelAttachmentMedia;
+  tOpen: (key: string) => string;
+}) {
+  const { client } = useMatrix();
+  const [spoilerRevealed, setSpoilerRevealed] = useState(false);
+  const { preview: mediaPreviewUrl, download: mediaDownloadUrl } = useMxcUrls(
+    client,
+    media.mxcUrl,
+  );
+
+  return (
+    <div
+      className="relative shrink-0 overflow-hidden rounded-lg border border-border bg-muted/30"
+      style={
+        media.mediaInfo?.w &&
+        media.mediaInfo?.h &&
+        media.mediaInfo.w > 0 &&
+        media.mediaInfo.h > 0
+          ? { aspectRatio: `${media.mediaInfo.w} / ${media.mediaInfo.h}` }
+          : { width: 'min(200px, 72vw)', minHeight: '120px' }
+      }
+    >
+      {mediaPreviewUrl && mediaDownloadUrl ? (
+        <>
+          <a
+            href={mediaDownloadUrl}
+            target="_blank"
+            rel="noreferrer noopener"
+            tabIndex={media.spoiler && !spoilerRevealed ? -1 : 0}
+            aria-hidden={media.spoiler && !spoilerRevealed}
+            onKeyDown={(e) => {
+              if (
+                media.spoiler &&
+                !spoilerRevealed &&
+                (e.key === 'Enter' || e.key === ' ')
+              ) {
+                e.preventDefault();
+                e.stopPropagation();
+              }
+            }}
+            className={cn(
+              'block h-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+              media.spoiler && !spoilerRevealed && 'pointer-events-none',
+            )}
+            aria-label={tOpen('openAttachmentInNewTab')}
+            title={tOpen('openAttachmentInNewTab')}
+          >
+            <MatrixTimelineImage
+              previewUrl={mediaPreviewUrl}
+              downloadUrl={mediaDownloadUrl}
+              alt={media.filename ?? ''}
+              className={cn(
+                'h-full max-h-48 w-full min-w-[160px] object-contain',
+                media.spoiler && !spoilerRevealed && 'blur-2xl',
+              )}
+            />
+          </a>
+          {media.spoiler && !spoilerRevealed && (
+            <button
+              type="button"
+              className="absolute inset-0 z-[1] flex items-center justify-center bg-background/60 text-sm font-medium text-foreground"
+              onClick={() => setSpoilerRevealed(true)}
+            >
+              {tOpen('spoilerTapToReveal')}
+            </button>
+          )}
+        </>
+      ) : (
+        <p className="p-3 text-sm text-muted-foreground">
+          {media.filename ?? tOpen('attachmentUnavailable')}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function TimelineFileSlot({
+  media,
+  t,
+  format,
+}: {
+  media: ChatPanelAttachmentMedia;
+  t: (key: string, values?: Record<string, string | number | Date>) => string;
+  format: ReturnType<typeof useFormatter>;
+}) {
+  const { client } = useMatrix();
+  const { download: mediaDownloadUrl } = useMxcUrls(client, media.mxcUrl);
+
+  const sizeLabel = useMemo(() => {
+    const size = media.mediaInfo?.size;
+    if (size == null) return null;
+    if (typeof size !== 'number' || !Number.isFinite(size) || size < 0) {
+      return t('attachmentSizeUnknown');
+    }
+    if (size < 1024) {
+      return format.number(size, {
+        style: 'unit',
+        unit: 'byte',
+        unitDisplay: 'narrow',
+        maximumFractionDigits: 0,
+      });
+    }
+    if (size < 1024 * 1024) {
+      return format.number(size / 1024, {
+        style: 'unit',
+        unit: 'kilobyte',
+        unitDisplay: 'narrow',
+        maximumFractionDigits: 1,
+      });
+    }
+    return format.number(size / (1024 * 1024), {
+      style: 'unit',
+      unit: 'megabyte',
+      unitDisplay: 'narrow',
+      maximumFractionDigits: 1,
+    });
+  }, [media.mediaInfo?.size, format, t]);
+
+  return (
+    <div
+      className="shrink-0 rounded-lg border border-border bg-card px-3 py-2"
+      style={{ width: 'min(240px, 85vw)' }}
+    >
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+          <FileIcon className="h-5 w-5" strokeWidth={1.5} />
+        </div>
+        <div className="min-w-0 flex-1">
+          {mediaDownloadUrl ? (
+            <a
+              href={mediaDownloadUrl}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+            >
+              <span className="truncate">
+                {media.filename ?? t('attachment')}
+              </span>
+              <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-70" />
+            </a>
+          ) : (
+            <span className="truncate text-sm font-medium text-foreground">
+              {media.filename ?? t('attachment')}
+            </span>
+          )}
+          {sizeLabel != null && (
+            <p className="text-xs text-muted-foreground">{sizeLabel}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 type HumanChatPanelMessageBubbleProps = {
   /** Map Matrix user id to display name for reaction hover tooltips. */
   resolveReactionReactorLabel?: (userId: string) => string;
@@ -102,6 +286,7 @@ type HumanChatPanelMessageBubbleProps = {
     /** Matrix formatted_body (subset) for rich display */
     formattedContentHtml?: string;
     media?: ChatPanelAttachmentMedia;
+    mediaSlots?: ChatPanelAttachmentMedia[];
     /** Rich reply: quoted context above the new text */
     replyTo?: {
       authorLabel: string;
@@ -416,145 +601,177 @@ export function HumanChatPanelMessageBubble({
           </div>
         )}
 
-        {message.media && message.media.msgtype === 'm.image' && (
+        {message.mediaSlots && message.mediaSlots.length > 1 && (
           <div
-            className="relative mt-1 max-w-md overflow-hidden rounded-lg border border-border bg-muted/30"
-            data-testid="chat-message-media-image"
-            style={
-              message.media.mediaInfo?.w &&
-              message.media.mediaInfo?.h &&
-              message.media.mediaInfo.w > 0 &&
-              message.media.mediaInfo.h > 0
-                ? {
-                    aspectRatio: `${message.media.mediaInfo.w} / ${message.media.mediaInfo.h}`,
-                  }
-                : undefined
-            }
+            className="narrow-scrollbar mt-1 max-w-md overflow-x-auto pb-1"
+            data-testid="chat-message-media-bundle"
           >
-            {mediaPreviewUrl && mediaDownloadUrl ? (
-              <>
-                <a
-                  href={mediaDownloadUrl}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  tabIndex={message.media.spoiler && !spoilerRevealed ? -1 : 0}
-                  aria-hidden={message.media.spoiler && !spoilerRevealed}
-                  onKeyDown={(e) => {
-                    const m = message.media;
-                    if (
-                      m?.spoiler &&
-                      !spoilerRevealed &&
-                      (e.key === 'Enter' || e.key === ' ')
-                    ) {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }
-                  }}
-                  className={cn(
-                    'block cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
-                    message.media.spoiler &&
-                      !spoilerRevealed &&
-                      'pointer-events-none',
-                  )}
-                  aria-label={t('openAttachmentInNewTab')}
-                  title={t('openAttachmentInNewTab')}
-                >
-                  <MatrixTimelineImage
-                    key={message.id}
-                    previewUrl={mediaPreviewUrl}
-                    downloadUrl={mediaDownloadUrl}
-                    alt={message.media.filename ?? ''}
-                    className={cn(
-                      'max-h-72 w-full object-contain',
-                      message.media.spoiler && !spoilerRevealed && 'blur-2xl',
-                    )}
+            <div className="flex w-max gap-2 pr-1">
+              {message.mediaSlots.map((slot, idx) =>
+                slot.msgtype === 'm.image' ? (
+                  <TimelineImageSlot
+                    key={`${message.id}-slot-${idx}`}
+                    media={slot}
+                    tOpen={t}
                   />
-                </a>
-                {message.media.spoiler && !spoilerRevealed && (
-                  <button
-                    type="button"
-                    className="absolute inset-0 z-[1] flex items-center justify-center bg-background/60 text-sm font-medium text-foreground"
-                    onClick={() => setSpoilerRevealed(true)}
-                  >
-                    {t('spoilerTapToReveal')}
-                  </button>
-                )}
-              </>
-            ) : (
-              <p className="p-3 text-sm text-muted-foreground">
-                {message.media.filename ?? t('attachmentUnavailable')}
-              </p>
-            )}
+                ) : (
+                  <TimelineFileSlot
+                    key={`${message.id}-slot-${idx}`}
+                    media={slot}
+                    t={t}
+                    format={format}
+                  />
+                ),
+              )}
+            </div>
           </div>
         )}
 
-        {message.media && message.media.msgtype === 'm.file' && (
-          <div
-            className="mt-1 max-w-md rounded-lg border border-border bg-card px-3 py-2"
-            data-testid="chat-message-media-file"
-          >
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
-                <FileIcon className="h-5 w-5" strokeWidth={1.5} />
-              </div>
-              <div className="min-w-0 flex-1">
-                {mediaDownloadUrl ? (
+        {!message.mediaSlots?.length &&
+          message.media &&
+          message.media.msgtype === 'm.image' && (
+            <div
+              className="relative mt-1 max-w-md overflow-hidden rounded-lg border border-border bg-muted/30"
+              data-testid="chat-message-media-image"
+              style={
+                message.media.mediaInfo?.w &&
+                message.media.mediaInfo?.h &&
+                message.media.mediaInfo.w > 0 &&
+                message.media.mediaInfo.h > 0
+                  ? {
+                      aspectRatio: `${message.media.mediaInfo.w} / ${message.media.mediaInfo.h}`,
+                    }
+                  : undefined
+              }
+            >
+              {mediaPreviewUrl && mediaDownloadUrl ? (
+                <>
                   <a
                     href={mediaDownloadUrl}
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                    tabIndex={
+                      message.media.spoiler && !spoilerRevealed ? -1 : 0
+                    }
+                    aria-hidden={message.media.spoiler && !spoilerRevealed}
+                    onKeyDown={(e) => {
+                      const m = message.media;
+                      if (
+                        m?.spoiler &&
+                        !spoilerRevealed &&
+                        (e.key === 'Enter' || e.key === ' ')
+                      ) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }
+                    }}
+                    className={cn(
+                      'block cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+                      message.media.spoiler &&
+                        !spoilerRevealed &&
+                        'pointer-events-none',
+                    )}
+                    aria-label={t('openAttachmentInNewTab')}
+                    title={t('openAttachmentInNewTab')}
                   >
-                    <span className="truncate">
+                    <MatrixTimelineImage
+                      key={message.id}
+                      previewUrl={mediaPreviewUrl}
+                      downloadUrl={mediaDownloadUrl}
+                      alt={message.media.filename ?? ''}
+                      className={cn(
+                        'max-h-72 w-full object-contain',
+                        message.media.spoiler && !spoilerRevealed && 'blur-2xl',
+                      )}
+                    />
+                  </a>
+                  {message.media.spoiler && !spoilerRevealed && (
+                    <button
+                      type="button"
+                      className="absolute inset-0 z-[1] flex items-center justify-center bg-background/60 text-sm font-medium text-foreground"
+                      onClick={() => setSpoilerRevealed(true)}
+                    >
+                      {t('spoilerTapToReveal')}
+                    </button>
+                  )}
+                </>
+              ) : (
+                <p className="p-3 text-sm text-muted-foreground">
+                  {message.media.filename ?? t('attachmentUnavailable')}
+                </p>
+              )}
+            </div>
+          )}
+
+        {!message.mediaSlots?.length &&
+          message.media &&
+          message.media.msgtype === 'm.file' && (
+            <div
+              className="mt-1 max-w-md rounded-lg border border-border bg-card px-3 py-2"
+              data-testid="chat-message-media-file"
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                  <FileIcon className="h-5 w-5" strokeWidth={1.5} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  {mediaDownloadUrl ? (
+                    <a
+                      href={mediaDownloadUrl}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                    >
+                      <span className="truncate">
+                        {message.media.filename ?? t('attachment')}
+                      </span>
+                      <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                    </a>
+                  ) : (
+                    <span className="truncate text-sm font-medium text-foreground">
                       {message.media.filename ?? t('attachment')}
                     </span>
-                    <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-70" />
-                  </a>
-                ) : (
-                  <span className="truncate text-sm font-medium text-foreground">
-                    {message.media.filename ?? t('attachment')}
-                  </span>
-                )}
-                {message.media.mediaInfo?.size != null && (
-                  <p className="text-xs text-muted-foreground">
-                    {(() => {
-                      const size = message.media.mediaInfo.size;
-                      if (
-                        typeof size !== 'number' ||
-                        !Number.isFinite(size) ||
-                        size < 0
-                      ) {
-                        return t('attachmentSizeUnknown');
-                      }
-                      if (size < 1024) {
-                        return format.number(size, {
+                  )}
+                  {message.media.mediaInfo?.size != null && (
+                    <p className="text-xs text-muted-foreground">
+                      {(() => {
+                        const size = message.media.mediaInfo.size;
+                        if (
+                          typeof size !== 'number' ||
+                          !Number.isFinite(size) ||
+                          size < 0
+                        ) {
+                          return t('attachmentSizeUnknown');
+                        }
+                        if (size < 1024) {
+                          return format.number(size, {
+                            style: 'unit',
+                            unit: 'byte',
+                            unitDisplay: 'narrow',
+                            maximumFractionDigits: 0,
+                          });
+                        }
+                        if (size < 1024 * 1024) {
+                          return format.number(size / 1024, {
+                            style: 'unit',
+                            unit: 'kilobyte',
+                            unitDisplay: 'narrow',
+                            maximumFractionDigits: 1,
+                          });
+                        }
+                        return format.number(size / (1024 * 1024), {
                           style: 'unit',
-                          unit: 'byte',
-                          unitDisplay: 'narrow',
-                          maximumFractionDigits: 0,
-                        });
-                      }
-                      if (size < 1024 * 1024) {
-                        return format.number(size / 1024, {
-                          style: 'unit',
-                          unit: 'kilobyte',
+                          unit: 'megabyte',
                           unitDisplay: 'narrow',
                           maximumFractionDigits: 1,
                         });
-                      }
-                      return format.number(size / (1024 * 1024), {
-                        style: 'unit',
-                        unit: 'megabyte',
-                        unitDisplay: 'narrow',
-                        maximumFractionDigits: 1,
-                      });
-                    })()}
-                  </p>
-                )}
+                      })()}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* Message text — Matrix HTML, or Discord-style jumboji, or plain + mentions */}
         {textContent &&

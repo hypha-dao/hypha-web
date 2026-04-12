@@ -551,62 +551,64 @@ export function HumanChatPanelChatBar({
 
         {draftAttachments.length > 0 && (
           <div
-            className="flex flex-wrap gap-2 border-b border-border px-3 py-2"
+            className="narrow-scrollbar max-h-[220px] overflow-x-auto overflow-y-hidden border-b border-border px-3 py-2"
             data-testid="chat-draft-attachments"
           >
-            {draftAttachments.map((att) => (
-              <div
-                key={att.id}
-                className="relative flex max-w-[200px] flex-col gap-1 rounded-lg border border-border bg-muted/40 p-1.5"
-              >
-                <div className="relative aspect-video w-full overflow-hidden rounded-md bg-background">
-                  {att.kind === 'image' ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- local object URL preview
-                    <img
-                      src={att.previewUrl}
-                      alt=""
-                      className={cn(
-                        'h-full w-full object-cover',
-                        att.spoiler && 'scale-105 blur-xl',
+            <div className="flex w-max gap-2 pb-1">
+              {draftAttachments.map((att) => (
+                <div
+                  key={att.id}
+                  className="relative flex w-[168px] shrink-0 flex-col gap-1 rounded-lg border border-border bg-muted/40 p-1.5"
+                >
+                  <div className="relative aspect-video w-full overflow-hidden rounded-md bg-background">
+                    {att.kind === 'image' ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- local object URL preview
+                      <img
+                        src={att.previewUrl}
+                        alt=""
+                        className={cn(
+                          'h-full w-full object-cover',
+                          att.spoiler && 'scale-105 blur-xl',
+                        )}
+                      />
+                    ) : (
+                      <div className="flex h-full min-h-[72px] items-center justify-center text-muted-foreground">
+                        <FileIcon className="h-10 w-10" strokeWidth={1.25} />
+                      </div>
+                    )}
+                    <div className="absolute right-1 top-1 flex gap-0.5 rounded-md bg-popover/95 p-0.5 shadow">
+                      {att.kind === 'image' && (
+                        <button
+                          type="button"
+                          className="rounded p-1 text-foreground hover:bg-muted"
+                          title={t('attachmentSpoiler')}
+                          aria-label={t('attachmentSpoiler')}
+                          aria-pressed={att.spoiler}
+                          onClick={() => toggleDraftSpoiler(att.id)}
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </button>
                       )}
-                    />
-                  ) : (
-                    <div className="flex h-full min-h-[72px] items-center justify-center text-muted-foreground">
-                      <FileIcon className="h-10 w-10" strokeWidth={1.25} />
-                    </div>
-                  )}
-                  <div className="absolute right-1 top-1 flex gap-0.5 rounded-md bg-popover/95 p-0.5 shadow">
-                    {att.kind === 'image' && (
                       <button
                         type="button"
-                        className="rounded p-1 text-foreground hover:bg-muted"
-                        title={t('attachmentSpoiler')}
-                        aria-label={t('attachmentSpoiler')}
-                        aria-pressed={att.spoiler}
-                        onClick={() => toggleDraftSpoiler(att.id)}
+                        className="rounded p-1 text-destructive hover:bg-destructive/10"
+                        title={t('attachmentRemove')}
+                        aria-label={t('attachmentRemove')}
+                        onClick={() => removeDraft(att.id)}
                       >
-                        <Eye className="h-3.5 w-3.5" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
-                    )}
-                    <button
-                      type="button"
-                      className="rounded p-1 text-destructive hover:bg-destructive/10"
-                      title={t('attachmentRemove')}
-                      aria-label={t('attachmentRemove')}
-                      onClick={() => removeDraft(att.id)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    </div>
                   </div>
+                  <p className="truncate px-0.5 text-xs text-muted-foreground">
+                    {att.file.name}
+                  </p>
+                  <p className="px-0.5 text-[10px] text-muted-foreground/80">
+                    {formatFileSize(att.file.size)}
+                  </p>
                 </div>
-                <p className="truncate px-0.5 text-xs text-muted-foreground">
-                  {att.file.name}
-                </p>
-                <p className="px-0.5 text-[10px] text-muted-foreground/80">
-                  {formatFileSize(att.file.size)}
-                </p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
 
