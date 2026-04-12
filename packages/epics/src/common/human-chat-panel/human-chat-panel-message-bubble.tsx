@@ -20,7 +20,10 @@ import { PersonAvatar } from '../../people/components/person-avatar';
 
 import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
 import { ChatMessageRichText } from './parse-simple-matrix-html';
-import type { ChatPanelAttachmentMedia } from './chat-panel-media-types';
+import {
+  type ChatPanelAttachmentMedia,
+  isChatPanelVideoFile,
+} from './chat-panel-media-types';
 
 type Reaction = {
   emoji: string;
@@ -293,7 +296,70 @@ function bundleImageGridClass(imageCount: number): string {
 function partitionBundleSlots(slots: ChatPanelAttachmentMedia[]) {
   const images = slots.filter((s) => s.msgtype === 'm.image');
   const files = slots.filter((s) => s.msgtype === 'm.file');
-  return { images, files };
+  const videos = files.filter((s) => isChatPanelVideoFile(s));
+  const otherFiles = files.filter((s) => !isChatPanelVideoFile(s));
+  return { images, videos, otherFiles };
+}
+
+/** Inline Matrix video (`m.file` + video/* or known extension). */
+function TimelineMatrixVideo({
+  media,
+  t,
+}: {
+  media: ChatPanelAttachmentMedia;
+  t: (key: string) => string;
+}) {
+  const { client } = useMatrix();
+  const { download: src } = useMxcUrls(client, media.mxcUrl);
+  const [spoilerRevealed, setSpoilerRevealed] = useState(false);
+
+  const boxStyle =
+    media.mediaInfo?.w &&
+    media.mediaInfo?.h &&
+    media.mediaInfo.w > 0 &&
+    media.mediaInfo.h > 0
+      ? { aspectRatio: `${media.mediaInfo.w} / ${media.mediaInfo.h}` }
+      : undefined;
+
+  if (!src) {
+    return (
+      <p className="p-3 text-sm text-muted-foreground">
+        {media.filename ?? t('attachmentUnavailable')}
+      </p>
+    );
+  }
+
+  return (
+    <div
+      className="relative mt-1 max-w-md overflow-hidden rounded-lg border border-border bg-black"
+      data-testid="chat-message-media-video"
+      style={boxStyle}
+    >
+      <video
+        src={src}
+        controls
+        playsInline
+        preload="metadata"
+        aria-label={media.filename ?? t('attachment')}
+        className={cn(
+          'max-h-72 w-full object-contain',
+          media.spoiler && !spoilerRevealed && 'pointer-events-none blur-2xl',
+        )}
+      />
+      {media.spoiler && !spoilerRevealed && (
+        <button
+          type="button"
+          className="absolute inset-0 z-[1] flex items-center justify-center bg-background/60 text-sm font-medium text-foreground"
+          onClick={() => setSpoilerRevealed(true)}
+        >
+          {t('spoilerTapToReveal')}
+        </button>
+      )}
+      <p className="truncate border-t border-border/40 bg-card px-2 py-1.5 text-xs text-muted-foreground">
+        {media.filename ?? t('attachment')}
+      </p>
+    </div>
+  );
 }
 
 function TimelineFileSlot({
@@ -808,7 +874,7 @@ export function HumanChatPanelMessageBubble({
             data-testid="chat-message-media-bundle"
           >
             {(() => {
-              const { images, files } = partitionBundleSlots(
+              const { images, videos, otherFiles } = partitionBundleSlots(
                 message.mediaSlots,
               );
               const gridClass = bundleImageGridClass(images.length);
@@ -830,9 +896,20 @@ export function HumanChatPanelMessageBubble({
                       ))}
                     </div>
                   )}
-                  {files.length > 0 && (
+                  {videos.length > 0 && (
                     <div className="flex flex-col gap-2">
-                      {files.map((slot, idx) => (
+                      {videos.map((slot, idx) => (
+                        <TimelineMatrixVideo
+                          key={`${message.id}-vid-${idx}`}
+                          media={slot}
+                          t={t}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  {otherFiles.length > 0 && (
+                    <div className="flex flex-col gap-2">
+                      {otherFiles.map((slot, idx) => (
                         <TimelineFileSlot
                           key={`${message.id}-file-${idx}`}
                           media={slot}
@@ -927,7 +1004,15 @@ export function HumanChatPanelMessageBubble({
 
         {!message.mediaSlots?.length &&
           message.media &&
-          message.media.msgtype === 'm.file' && (
+          message.media.msgtype === 'm.file' &&
+          isChatPanelVideoFile(message.media) && (
+            <TimelineMatrixVideo media={message.media} t={t} />
+          )}
+
+        {!message.mediaSlots?.length &&
+          message.media &&
+          message.media.msgtype === 'm.file' &&
+          !isChatPanelVideoFile(message.media) && (
             <div
               className="mt-1 max-w-md rounded-lg border border-border bg-card px-3 py-2"
               data-testid="chat-message-media-file"

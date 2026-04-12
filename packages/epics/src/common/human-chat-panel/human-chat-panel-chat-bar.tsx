@@ -17,6 +17,7 @@ import {
   Trash2,
   FileIcon,
   Play,
+  Loader2,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -30,6 +31,7 @@ import {
   type EmojiIndexEntry,
 } from './emoji-mart-index';
 import { getTextareaSelectionCenter } from './textarea-caret-position';
+import { looksLikeVideoMimeOrName } from './chat-panel-media-types';
 
 type ReplyPreview = {
   authorLabel: string;
@@ -66,28 +68,6 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-const VIDEO_EXTENSIONS = new Set([
-  'mov',
-  'mp4',
-  'webm',
-  'mkv',
-  'avi',
-  'm4v',
-  'mpeg',
-  'mpg',
-  'ogv',
-  '3gp',
-]);
-
-function fileLooksLikeVideo(file: File): boolean {
-  if (file.type.startsWith('video/')) return true;
-  const base = file.name.split(/[/\\]/).pop() ?? file.name;
-  const ext = base.includes('.')
-    ? base.split('.').pop()?.toLowerCase() ?? ''
-    : '';
-  return VIDEO_EXTENSIONS.has(ext);
-}
-
 function newAttachmentDraftId(): string {
   if (
     typeof globalThis.crypto !== 'undefined' &&
@@ -109,9 +89,10 @@ function ChatDraftVideoPreview({
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
+  const [hasFrame, setHasFrame] = useState(false);
 
   return (
-    <div className="relative h-full w-full bg-black/90">
+    <div className="relative h-full w-full bg-muted">
       <video
         ref={videoRef}
         src={url}
@@ -121,7 +102,20 @@ function ChatDraftVideoPreview({
         )}
         muted
         playsInline
-        preload="metadata"
+        preload="auto"
+        onLoadedData={() => {
+          const el = videoRef.current;
+          if (!el || hasFrame) return;
+          try {
+            if (el.readyState >= 2) {
+              el.currentTime = 0.001;
+            }
+          } catch {
+            // ignore seek errors on tiny clips
+          }
+          setHasFrame(true);
+        }}
+        onSeeked={() => setHasFrame(true)}
         onClick={() => {
           if (playing) videoRef.current?.pause();
         }}
@@ -129,10 +123,15 @@ function ChatDraftVideoPreview({
         onPause={() => setPlaying(false)}
         onEnded={() => setPlaying(false)}
       />
+      {!hasFrame && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-muted">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      )}
       {!playing && (
         <button
           type="button"
-          className="absolute inset-0 z-[1] flex items-center justify-center bg-black/25 outline-none transition-colors hover:bg-black/35 focus-visible:ring-2 focus-visible:ring-primary/50"
+          className="absolute inset-0 z-[1] flex items-center justify-center bg-black/20 outline-none transition-colors hover:bg-black/30 focus-visible:ring-2 focus-visible:ring-primary/50"
           aria-label={playLabel}
           title={playLabel}
           onClick={() => {
@@ -452,7 +451,8 @@ export function HumanChatPanelChatBar({
         if (kind === 'image' && !file.type.startsWith('image/')) {
           continue;
         }
-        const isVideo = kind === 'file' && fileLooksLikeVideo(file);
+        const isVideo =
+          kind === 'file' && looksLikeVideoMimeOrName(file.type, file.name);
         const slotKind: ChatDraftAttachment['kind'] = file.type.startsWith(
           'image/',
         )
