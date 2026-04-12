@@ -767,9 +767,12 @@ export function HumanChatPanelChatBar({
         ).webkitSpeechRecognition,
     );
 
-  /** Tight icon row: 28px hit box, minimal vertical padding on the toolbar strip. */
-  const iconButtonClass =
-    'flex h-7 w-7 shrink-0 touch-manipulation items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground active:bg-muted/80 transition-colors disabled:pointer-events-none disabled:opacity-40';
+  /** Unified toolbar control: light accent fill + icon color on hover (all actions + send). */
+  const toolbarIconButtonClass =
+    'flex h-7 w-7 shrink-0 touch-manipulation items-center justify-center rounded-md text-muted-foreground transition-colors ' +
+    'hover:bg-accent-3 hover:text-accent-11 active:bg-accent-4/90 active:text-accent-12 ' +
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 ' +
+    'disabled:pointer-events-none disabled:opacity-40';
 
   const fmtBtn =
     'flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-popover-foreground transition-colors hover:bg-white/10';
@@ -1071,7 +1074,7 @@ export function HumanChatPanelChatBar({
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className={iconButtonClass}
+                    className={toolbarIconButtonClass}
                     aria-label={t('attachMenu')}
                     title={t('attachMenu')}
                     disabled={isSending}
@@ -1131,7 +1134,7 @@ export function HumanChatPanelChatBar({
               >
                 <button
                   type="button"
-                  className={iconButtonClass}
+                  className={toolbarIconButtonClass}
                   aria-label={t('emoji')}
                   title={t('emoji')}
                   aria-expanded={emojiPickerOpen}
@@ -1145,7 +1148,7 @@ export function HumanChatPanelChatBar({
               </HumanChatPanelEmojiPicker>
               <button
                 type="button"
-                className={iconButtonClass}
+                className={toolbarIconButtonClass}
                 aria-label={t('mention')}
                 title={t('mention')}
                 disabled={isSending}
@@ -1160,7 +1163,7 @@ export function HumanChatPanelChatBar({
                 <button
                   type="button"
                   className={cn(
-                    iconButtonClass,
+                    toolbarIconButtonClass,
                     dictationActive && 'bg-accent-3 text-accent-11',
                   )}
                   aria-label={
@@ -1194,10 +1197,10 @@ export function HumanChatPanelChatBar({
               }}
               disabled={!canSend}
               className={cn(
-                iconButtonClass,
+                toolbarIconButtonClass,
                 'shrink-0',
                 canSend
-                  ? 'text-primary hover:bg-primary/15'
+                  ? 'text-primary'
                   : 'cursor-not-allowed text-muted-foreground/40',
               )}
               aria-label={t('sendButton')}
