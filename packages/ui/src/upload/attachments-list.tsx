@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { FileText, File as FileIcon, Image as ImageIcon } from 'lucide-react';
 import { Separator } from '../separator';
@@ -39,6 +39,9 @@ function extensionFromFileName(hint: string): string | undefined {
 
 function AttachmentRowImage({ src, alt }: { src: string; alt: string }) {
   const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
   if (failed) {
     return <ImageIcon className="h-5 w-5 shrink-0 text-neutral-11" />;
   }
