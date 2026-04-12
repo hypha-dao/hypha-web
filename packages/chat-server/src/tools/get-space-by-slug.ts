@@ -2,18 +2,29 @@ import { z } from 'zod';
 import { getSpaceBySlug } from '@hypha-platform/core/server';
 import type { ChatRouteTool } from './types';
 
+const getSpaceBySlugInputSchema = z.object({
+  slug: z
+    .string()
+    .trim()
+    .min(1)
+    .describe('Hypha space slug, for example "hypha"'),
+});
+
 export const getSpaceBySlugTool = {
   description:
     'Returns one Hypha space record: title, description, and aggregate counts (member count, document count, subspace count). Use for overview or "tell me about this space". Do not use for listing who the members are, names, roster, or join dates — use get_people_by_space_slug for any question about the member list or individuals.',
-  inputSchema: z.object({
-    slug: z
-      .string()
-      .trim()
-      .min(1)
-      .describe('Hypha space slug, for example "hypha"'),
-  }),
-  execute: async (args: unknown) => {
-    const { slug } = args as { slug: string };
+  inputSchema: getSpaceBySlugInputSchema,
+  execute: async (args) => {
+    const parsed = getSpaceBySlugInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        found: false,
+        slug: '',
+        space: null,
+        error: parsed.error.message,
+      };
+    }
+    const { slug } = parsed.data;
     let space;
     try {
       space = await getSpaceBySlug({ slug });
@@ -56,4 +67,4 @@ export const getSpaceBySlugTool = {
     };
     return result;
   },
-} satisfies ChatRouteTool;
+} satisfies ChatRouteTool<typeof getSpaceBySlugInputSchema>;

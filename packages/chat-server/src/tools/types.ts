@@ -1,8 +1,11 @@
 import type { z } from 'zod';
 
-/** Narrow contract for chat tools; `streamText` tools map is still cast (TS2589). */
-export type ChatRouteTool = {
+/**
+ * Chat tool contract for `streamText`. Generic over the Zod input schema so
+ * `execute` can use `z.infer<TSchema>` after validating with the same schema.
+ */
+export type ChatRouteTool<TSchema extends z.ZodTypeAny = z.ZodTypeAny> = {
   description: string;
-  inputSchema: z.ZodTypeAny;
-  execute: (args: unknown) => Promise<unknown>;
+  inputSchema: TSchema;
+  execute: (args: z.infer<TSchema>) => Promise<unknown>;
 };
