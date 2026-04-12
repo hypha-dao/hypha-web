@@ -152,52 +152,65 @@ server.registerTool(
 
     const { space_slug, page, page_size, searchTerm, state } = parsed.data;
 
-    const gated = await getDocumentsBySpaceSlug(
-      {
-        spaceSlug: space_slug,
-        page,
-        pageSize: page_size,
-        searchTerm,
-        state,
-      },
-      { db, authToken: process.env.HYPHA_MCP_AUTH_TOKEN },
-    );
+    try {
+      const gated = await getDocumentsBySpaceSlug(
+        {
+          spaceSlug: space_slug,
+          page,
+          pageSize: page_size,
+          searchTerm,
+          state,
+        },
+        { db, authToken: process.env.HYPHA_MCP_AUTH_TOKEN },
+      );
 
-    if (gated.access === 'denied') {
+      if (gated.access === 'denied') {
+        return {
+          content: [{ type: 'text', text: gated.message }],
+          isError: true,
+        };
+      }
+
+      const outParse = getDocumentsBySpaceSlugOutputSchema.safeParse(
+        gated.result,
+      );
+      if (!outParse.success) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Internal error: output validation failed: ${outParse.error.message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      const structured = outParse.data;
+      const summary = structured.found
+        ? `Space "${structured.space_slug}": page ${
+            structured.pagination.page
+          }/${Math.max(structured.pagination.total_pages, 1)} — ${
+            structured.documents.length
+          } documents (total ${structured.pagination.total}).`
+        : `No space found for slug "${structured.space_slug}".`;
+
       return {
-        content: [{ type: 'text', text: gated.message }],
-        isError: true,
+        content: [{ type: 'text', text: summary }],
+        structuredContent: structured,
       };
-    }
-
-    const outParse = getDocumentsBySpaceSlugOutputSchema.safeParse(
-      gated.result,
-    );
-    if (!outParse.success) {
+    } catch (err) {
+      console.error('[hypha-mcp:get_documents_by_space_slug] failed', err);
       return {
         content: [
           {
             type: 'text',
-            text: `Internal error: output validation failed: ${outParse.error.message}`,
+            text: 'Internal error while fetching documents',
           },
         ],
         isError: true,
       };
     }
-
-    const structured = outParse.data;
-    const summary = structured.found
-      ? `Space "${structured.space_slug}": page ${
-          structured.pagination.page
-        }/${Math.max(structured.pagination.total_pages, 1)} — ${
-          structured.documents.length
-        } documents (total ${structured.pagination.total}).`
-      : `No space found for slug "${structured.space_slug}".`;
-
-    return {
-      content: [{ type: 'text', text: summary }],
-      structuredContent: structured,
-    };
   },
 );
 
