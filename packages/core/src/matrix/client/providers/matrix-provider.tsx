@@ -439,7 +439,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             ? mediaErr.message
             : 'Failed to send attachment',
           sentMediaCount,
-          false,
+          true,
         );
       }
 
