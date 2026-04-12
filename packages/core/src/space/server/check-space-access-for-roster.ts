@@ -24,7 +24,7 @@ export type CheckSpaceAccessForRosterResult =
  * Used by MCP stdio server to mirror GET /api/v1/spaces/[spaceSlug]/members gating.
  */
 export async function checkSpaceAccessForSpace(
-  host: Space,
+  host: Pick<Space, 'web3SpaceId'>,
   authToken: string | undefined,
 ): Promise<CheckSpaceAccessForRosterResult> {
   if (host.web3SpaceId == null) {

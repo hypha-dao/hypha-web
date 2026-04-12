@@ -110,6 +110,19 @@ When a proposal (or other entity) is saved with attachments:
 - **E2EE rooms** — May require **client-assisted** registration or encrypted export; spec should call out if org memory must include E2EE attachments.  
 - **Deduplication** — Same file re-uploaded in chat vs proposal: optional `sha256` match to link rows.
 
+### 4.7 MCP and Hypha Chat AI
+
+Hypha exposes **read tools** so assistants can reason about a space without scraping the UI. **`get_documents_by_space_slug`** (MCP + Chat server; [PR #2141](https://github.com/hypha-dao/hypha-web/pull/2141), `docs/requirements/mcp-get-documents-by-space-slug-tech-spec.md`) lists **PostgreSQL `documents` rows** for the slug, including **`attachments`** and **`leadImage`**.
+
+| Consumer | What it can access **today** | What requires **§4 catalogue** (or a new tool) |
+|----------|------------------------------|------------------------------------------------|
+| **`get_documents_by_space_slug`** | All **governance documents** in the space + **upload / CDN URLs** on those rows (PDF, image, video links your pipeline stored). Same **access gating** as the web API (`checkSpaceAccessForSpace` / token parity). Paginate until `has_next_page` is false to enumerate **all** attachment URLs across the space. | **Matrix-only** files (`mxc://` on chat timeline) that never became a `documents` attachment |
+| **Model “understanding” file bytes** | Tool JSON carries **metadata + URLs**, not raw bytes. Hosts use **`web_fetch`**, multimodal attachments, or a **future authenticated fetch** tool. **Public or signed HTTPS** URLs work best; session-only URLs need server-side fetch or **pre-indexed text** in the catalogue (`indexed_text_ref` / §4.1). | **`mxc://`** resolution for AI must use a **server** Matrix token (or short-lived HTTPS the server mints) — not browser-only `mxcUrlToHttp` assumptions |
+
+**Contract direction:** Keep **`get_documents_by_space_slug`** stable for SQL **documents**. When the catalogue ships, add **`org_memory_assets[]`** or a sibling **`get_org_memory_by_space_slug`** (additive / read-only). See **§8** in the MCP tech spec on PR #2141.
+
+**Space Memory UI** (Coherence tab) and **MCP** should ultimately read the **same logical org memory** projection; until the catalogue exists, both rely on **`documents`** + embedded URLs for uploads only.
+
 ---
 
 ## 5. Security and limits (short)
@@ -129,5 +142,6 @@ When a proposal (or other entity) is saved with attachments:
 | Chat composer + drafts | `packages/epics/src/common/human-chat-panel/human-chat-panel-chat-bar.tsx`, `packages/epics/src/common/human-right-panel.tsx` |
 | Chat bubbles | `packages/epics/src/common/human-chat-panel/human-chat-panel-message-bubble.tsx` |
 | Proposal attachment list | `packages/ui/src/upload/attachments-list.tsx`, `packages/ui/src/upload/add-attachment.tsx` |
+| MCP **`get_documents_by_space_slug`** | `docs/requirements/mcp-get-documents-by-space-slug-tech-spec.md`, `packages/mcp-server`, `packages/core/src/governance/server/get-documents-by-space-slug.ts` |
 
 This file is the **high-level map**; the space-chat docs above go deeper on Matrix only.
