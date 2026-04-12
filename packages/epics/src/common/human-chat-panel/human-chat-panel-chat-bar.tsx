@@ -129,19 +129,23 @@ function ChatDraftVideoPreview({
         </div>
       )}
       {!playing && (
-        <button
-          type="button"
-          className="absolute inset-0 z-[1] flex items-center justify-center bg-black/20 outline-none transition-colors hover:bg-black/30 focus-visible:ring-2 focus-visible:ring-primary/50"
-          aria-label={playLabel}
-          title={playLabel}
-          onClick={() => {
-            void videoRef.current?.play();
-          }}
+        <div
+          className="absolute inset-0 z-[1] flex items-center justify-center bg-black/20 pointer-events-none"
+          aria-hidden
         >
-          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-black/55 text-white shadow-md ring-1 ring-white/20">
+          <button
+            type="button"
+            className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-black/55 text-white shadow-md ring-1 ring-white/20 outline-none transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-primary/50"
+            aria-label={playLabel}
+            title={playLabel}
+            onClick={(e) => {
+              e.stopPropagation();
+              void videoRef.current?.play();
+            }}
+          >
             <Play className="ml-0.5 h-5 w-5" fill="currentColor" aria-hidden />
-          </span>
-        </button>
+          </button>
+        </div>
       )}
     </div>
   );
@@ -663,25 +667,31 @@ export function HumanChatPanelChatBar({
                         <FileIcon className="h-10 w-10" strokeWidth={1.25} />
                       </div>
                     )}
-                    <div className="absolute right-1 top-1 flex gap-0.5 rounded-md bg-popover/95 p-0.5 shadow">
+                    <div className="absolute right-1 top-1 z-30 flex gap-0.5 rounded-md bg-popover/95 p-0.5 shadow">
                       {(att.kind === 'image' || att.kind === 'video') && (
                         <button
                           type="button"
-                          className="rounded p-1 text-foreground hover:bg-muted"
+                          className="relative z-30 rounded p-1 text-foreground hover:bg-muted"
                           title={t('attachmentSpoiler')}
                           aria-label={t('attachmentSpoiler')}
                           aria-pressed={att.spoiler}
-                          onClick={() => toggleDraftSpoiler(att.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleDraftSpoiler(att.id);
+                          }}
                         >
                           <Eye className="h-3.5 w-3.5" />
                         </button>
                       )}
                       <button
                         type="button"
-                        className="rounded p-1 text-destructive hover:bg-destructive/10"
+                        className="relative z-30 rounded p-1 text-destructive hover:bg-destructive/10"
                         title={t('attachmentRemove')}
                         aria-label={t('attachmentRemove')}
-                        onClick={() => removeDraft(att.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeDraft(att.id);
+                        }}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
