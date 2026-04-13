@@ -1617,7 +1617,7 @@
     "placeholder": "Tapez un message...",
     "placeholderChannel": "Message #{channel}",
     "sendButton": "Envoyer",
-    "newlineHint": "Entrée pour envoyer · Shift+Entrée pour nouvelle ligne · @ pour mentionner · :emoji:",
+    "newlineHint": "Entrée pour envoyer · Shift+Entrée pour nouvelle ligne · :emoji:",
     "loading": "Chargement...",
     "openPanel": "Ouvrir le panneau de chat",
     "hidePanel": "Masquer le panneau de chat",

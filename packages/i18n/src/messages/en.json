@@ -1617,7 +1617,7 @@
     "placeholder": "Type a message...",
     "placeholderChannel": "Message #{channel}",
     "sendButton": "Send",
-    "newlineHint": "Enter to send · Shift+Enter for newline · @ to mention · :emoji:",
+    "newlineHint": "Enter to send · Shift+Enter for newline · :emoji:",
     "loading": "Loading...",
     "openPanel": "Open chat panel",
     "hidePanel": "Hide chat panel",

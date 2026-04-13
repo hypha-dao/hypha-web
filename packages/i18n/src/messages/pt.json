@@ -1617,7 +1617,7 @@
     "placeholder": "Digite uma mensagem...",
     "placeholderChannel": "Mensagem #{channel}",
     "sendButton": "Enviar",
-    "newlineHint": "Enter para enviar · Shift+Enter para nova linha · @ para mencionar · :emoji:",
+    "newlineHint": "Enter para enviar · Shift+Enter para nova linha · :emoji:",
     "loading": "Carregando...",
     "openPanel": "Abrir painel de chat",
     "hidePanel": "Ocultar painel de chat",
