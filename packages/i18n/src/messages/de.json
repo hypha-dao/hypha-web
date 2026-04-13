@@ -1387,7 +1387,7 @@
         "sellerWillSend": "Der Verkäufer sendet",
         "buyerWillSend": "Käufer sendet",
         "loadingTokens": "Tokens werden geladen...",
-        "escrowNotice": "Dieser Vorschlag nutzt ein Treuhandkonto für den Tausch. Mit Ihrer Stimme werden nur die Bedingungen genehmigt — es werden keine Token von Ihnen oder anderen Mitgliedern bewegt. Die Space-Tresorerie führt die genehmigte Vorlage on-chain aus; danach sendet jede Partei ihre vereinbarten Token auf dasselbe Treuhandkonto, sobald sie an der Reihe ist. Die Vereinbarung ist abgeschlossen, sobald beide Seiten das Treuhandkonto finanziert haben.",
+        "escrowNotice": "Dieser Vorschlag nutzt Treuhand für den Tausch. Die Abstimmung genehmigt nur die Bedingungen und bewegt keine Token, es sei denn, die Treasury ist Käufer oder Verkäufer. Nach Genehmigung führt die Treasury on-chain aus und beide Parteien finanzieren die Treuhand; die Vereinbarung ist endgültig, sobald die Treuhand vollständig finanziert ist.",
         "escrowAccountAddress": "Treuhandkonto-Adresse",
         "escrowFunding": "Escrow-Finanzierung",
         "escrowStatus": "Escrow-Status",

@@ -1010,7 +1010,7 @@
         "sellerWillSend": "Le vendeur envoie",
         "buyerWillSend": "L’acheteur enverra",
         "loadingTokens": "Chargement des jetons...",
-        "escrowNotice": "Cette proposition utilise un compte séquestre pour l’échange. Le vote approuve uniquement les conditions — il ne déplace aucun jeton pour vous ni pour les autres membres. La trésorerie de l’espace exécute la proposition approuvée sur la chaîne ; ensuite, chaque partie envoie les jetons convenus vers ce même séquestre lorsque c’est son tour. L’accord est finalisé lorsque les deux parties ont alimenté le séquestre.",
+        "escrowNotice": "Cette proposition utilise un séquestre pour l’échange. Le vote n’approuve que les conditions et ne déplace pas les jetons, sauf si la trésorerie est l’acheteur ou le vendeur. Après approbation, la trésorerie exécute sur la chaîne et les deux parties financent le séquestre ; l’accord est définitif lorsque le séquestre est entièrement financé.",
         "escrowAccountAddress": "Adresse du compte séquestre",
         "escrowFunding": "Financement de l'escrow",
         "escrowStatus": "Statut de l'escrow",
