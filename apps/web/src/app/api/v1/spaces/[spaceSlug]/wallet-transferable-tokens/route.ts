@@ -105,8 +105,9 @@ export async function GET(
       allTokens.map(async (token) => {
         try {
           const meta = await getTokenMeta(token.address, dbTokens);
-          // Only list tokens explicitly marked transferable in DB (same rule as seller leg).
-          if (meta.transferable !== true) {
+          // Exclude only when DB/on-chain explicitly marks non-transferable; `undefined` means
+          // "not in DB for this address" and must not drop wallet-held catalogue tokens (e.g. TOA).
+          if (meta.transferable === false) {
             return null;
           }
           if (hasEmojiOrLink(meta.name) || hasEmojiOrLink(meta.symbol)) {

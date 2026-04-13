@@ -95,7 +95,7 @@ export function useWalletTransferableTokens({
   const tokens = React.useMemo(() => {
     if (!data?.assets) return [];
     return (data.assets as ExtendedToken[])
-      .filter((asset) => asset.transferable === true)
+      .filter((asset) => asset.transferable !== false)
       .map((asset) => ({
         address: asset.address,
         icon: asset.icon,

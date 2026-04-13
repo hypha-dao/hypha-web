@@ -176,15 +176,42 @@ export const ExchangeStakesAndTokensPlugin = ({
     }
   }, [sellerRecipientType, spaceExecutorAddress, setValue]);
 
-  const sellerTokenCandidates = React.useMemo(
+  const catalogueSellerTokens = React.useMemo(
     () =>
       (tokens as ExtendedToken[]).filter(
         (token) =>
-          token.transferable === true &&
+          token.transferable !== false &&
           token.space?.slug === activeSpaceCatalogueSlug,
       ),
     [tokens, activeSpaceCatalogueSlug],
   );
+
+  const { tokens: walletSellerTokens, isLoading: isLoadingWalletSellerTokens } =
+    useWalletTransferableTokens({
+      spaceSlug,
+      walletAddress:
+        sellerRecipientType === 'member' && isEvmAddress(sellerAddress)
+          ? sellerAddress
+          : undefined,
+    });
+
+  /** Member seller: union catalogue + any transferable wallet tokens (TOA may mint under another space). */
+  const sellerTokenCandidates = React.useMemo(() => {
+    if (sellerRecipientType !== 'member') {
+      return catalogueSellerTokens;
+    }
+    const byKey = new Map<string, ExtendedToken>();
+    for (const t of catalogueSellerTokens) {
+      byKey.set(t.address.toLowerCase(), t);
+    }
+    for (const t of walletSellerTokens) {
+      const k = t.address.toLowerCase();
+      if (!byKey.has(k)) {
+        byKey.set(k, t as ExtendedToken);
+      }
+    }
+    return Array.from(byKey.values());
+  }, [catalogueSellerTokens, sellerRecipientType, walletSellerTokens]);
 
   const { tokens: buyerTokenCandidates, isLoading: isLoadingBuyerTokenList } =
     useWalletTransferableTokens({
@@ -408,6 +435,7 @@ export const ExchangeStakesAndTokensPlugin = ({
       <Skeleton
         loading={
           isLoading ||
+          (sellerRecipientType === 'member' && isLoadingWalletSellerTokens) ||
           (sellerRecipientType === 'space' && isLoadingActiveSpaceChain) ||
           (isEvmAddress(sellerBalanceLookupAddress) &&
             isLoadingSellerBalances) ||
