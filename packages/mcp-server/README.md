@@ -1,10 +1,10 @@
 # `@hypha-platform/mcp-server`
 
-Stdio [Model Context Protocol](https://modelcontextprotocol.io) server exposing Hypha read tools (e.g. `get_people_by_space_slug`, `get_documents_by_space_slug`). **`get_org_memory_by_space_slug`** is specified in `docs/requirements/mcp-get-org-memory-by-space-slug-tech-spec.md` (implementation pending).
+Stdio [Model Context Protocol](https://modelcontextprotocol.io) server exposing Hypha read tools (e.g. `get_people_by_space_slug`, `get_org_memory_by_space_slug`, `get_documents_by_space_slug`). Spec: `docs/requirements/mcp-get-org-memory-by-space-slug-tech-spec.md`.
 
 ## Security and access control
 
-`get_people_by_space_slug`, **`get_documents_by_space_slug`**, and (once implemented) **`get_org_memory_by_space_slug`** call **`checkSpaceAccessForSpace`** in `@hypha-platform/core/server` (same transparency / membership rules as the web app) when the space exists in the database and has a **`web3SpaceId`**. Provide a **Privy JWT** (same kind the web client sends) via:
+`get_people_by_space_slug`, **`get_org_memory_by_space_slug`**, and **`get_documents_by_space_slug`** call **`checkSpaceAccessForSpace`** in `@hypha-platform/core/server` (same transparency / membership rules as the web app) when the space exists in the database and has a **`web3SpaceId`**. Provide a **Privy JWT** (same kind the web client sends) via:
 
 - **`HYPHA_MCP_AUTH_TOKEN`** — bearer token used to resolve the caller’s identity for non-public spaces.
 

@@ -4,7 +4,7 @@
 
 | Field | Value |
 |-------|--------|
-| **Status** | Ready for implementation |
+| **Status** | MCP **v1** implemented (`packages/mcp-server`); Chat integration pending separate change |
 | **Epic** | [Expand Hypha MCP read API coverage #2027](https://github.com/hypha-dao/hypha-web/issues/2027) |
 | **Scope** | Read-only MCP tool that returns the **organisation memory projection** for a space: **v1** = full **member roster** (people + spaces-as-members, `memberships` columns, join metadata) identical to `get_people_by_space_slug`, plus a **stable extension slot** `org_memory_assets` (empty until the org memory catalogue ships). **Does not** duplicate `get_documents_by_space_slug`; callers use both tools when they need documents + org memory. |
 | **Parity** | Same pattern as **`get_people_by_space_slug`** and **`get_documents_by_space_slug`**: Zod `inputSchema` / `outputSchema`, `structuredContent`, `readOnlyHint` / `idempotentHint`, `HYPHA_MCP_AUTH_TOKEN` for `checkSpaceAccessForSpace`, shared core entry `getSpaceMembersRoster` + `serializeSpaceMembersRosterDatesForJson` for the **members** slice |

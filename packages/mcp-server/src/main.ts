@@ -18,6 +18,10 @@ import {
   getDocumentsBySpaceSlugInputSchema,
   getDocumentsBySpaceSlugOutputSchema,
 } from './get-documents-by-space-slug-schema.js';
+import {
+  getOrgMemoryBySpaceSlugInputSchema,
+  getOrgMemoryBySpaceSlugOutputSchema,
+} from './get-org-memory-by-space-slug-schema.js';
 
 const server = new McpServer(
   {
@@ -26,7 +30,7 @@ const server = new McpServer(
   },
   {
     instructions:
-      'Hypha read-only tools: space members by slug; documents (proposals/discussions/agreements) in a space by slug.',
+      'Hypha read-only tools: space members by slug; org memory (roster + future catalogue assets) by slug; documents (proposals/discussions/agreements) in a space by slug.',
   },
 );
 
@@ -115,6 +119,101 @@ server.registerTool(
         )} — ${peopleCount} people, ${spaceCount} space members on this page (total ${
           structured.pagination.total
         }).`
+      : `No space found for slug "${structured.space_slug}".`;
+
+    return {
+      content: [{ type: 'text', text: summary }],
+      structuredContent: outParse.data,
+    };
+  },
+);
+
+server.registerTool(
+  'get_org_memory_by_space_slug',
+  {
+    description:
+      'Read-only: organisation memory projection for a space by slug. v1 returns the same member roster as get_people_by_space_slug (people + space-as-members, memberships fields, join metadata) plus org_memory_assets as an empty array until the org memory catalogue exists. Same access rules as the roster tool for non-public spaces.',
+    inputSchema: getOrgMemoryBySpaceSlugInputSchema,
+    outputSchema: getOrgMemoryBySpaceSlugOutputSchema,
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
+    },
+  },
+  async (args) => {
+    const parsed = getOrgMemoryBySpaceSlugInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Invalid input: ${parsed.error.message}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    const { space_slug, page, page_size, searchTerm } = parsed.data;
+
+    const host = await findSpaceBySlug({ slug: space_slug }, { db });
+    if (host) {
+      const authToken = process.env.HYPHA_MCP_AUTH_TOKEN;
+      const access = await checkSpaceAccessForSpace(host, authToken);
+      if (!access.hasAccess) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: access.message,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+
+    const raw = await getSpaceMembersRoster(
+      {
+        spaceSlug: space_slug,
+        page,
+        pageSize: page_size,
+        searchTerm,
+      },
+      { db },
+    );
+
+    const roster = serializeSpaceMembersRosterDatesForJson(raw);
+    const structured = { ...roster, org_memory_assets: [] as const };
+    const outParse = getOrgMemoryBySpaceSlugOutputSchema.safeParse(structured);
+    if (!outParse.success) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Internal error: output validation failed: ${outParse.error.message}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    const peopleCount = structured.found
+      ? structured.members.filter((m) => m.member_kind === 'person').length
+      : 0;
+    const spaceCount = structured.found
+      ? structured.members.filter((m) => m.member_kind === 'space').length
+      : 0;
+
+    const summary = structured.found
+      ? `Space "${structured.space_slug}" (org memory v1): page ${
+          structured.pagination.page
+        }/${Math.max(
+          structured.pagination.total_pages,
+          1,
+        )} — ${peopleCount} people, ${spaceCount} space members on this page (total ${
+          structured.pagination.total
+        }); org_memory_assets: 0 (catalogue not yet wired).`
       : `No space found for slug "${structured.space_slug}".`;
 
     return {
