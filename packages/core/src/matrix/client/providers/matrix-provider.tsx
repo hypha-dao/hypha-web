@@ -52,6 +52,10 @@ export interface EditRoomMessageInput {
   message: string;
 }
 
+export interface RedactRoomEventInput {
+  roomId: string;
+  eventId: string;
+}
 /**
  * Thrown when some attachment events were committed but a later send step failed.
  * Callers should restore only `attachments.slice(sentAttachmentCount)` and optionally caption text.
@@ -179,6 +183,7 @@ interface MatrixContextType {
   createRoom: (title: string) => Promise<{ roomId: string }>;
   sendMessage: (params: SendMessageInput) => Promise<void>;
   editRoomMessage: (params: EditRoomMessageInput) => Promise<void>;
+  redactRoomEvent: (params: RedactRoomEventInput) => Promise<void>;
   toggleReaction: (params: ToggleReactionInput) => Promise<void>;
   getRoomMessages: (roomId: string) => Message[] | null;
   getPinnedMessageIds: (roomId: string) => string[];
@@ -665,7 +670,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       const sender = targetEv.getSender();
       const uid = client.getUserId();
       if (!sender || !uid || sender !== uid) {
-        throw new Error('You can only edit your own messages');
+        throw new Error('Cannot edit events you do not own');
       }
 
       const originalContent = targetEv.getContent() as {
@@ -684,7 +689,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
 
       if (replyToId?.trim()) {
         const {
-          eventId: resolvedTargetId,
+          eventId: resolvedReplyTargetId,
           sender: replyTargetSender,
           body: targetBody,
         } = await resolveReplyTargetForSend(client, roomId, replyToId);
@@ -698,7 +703,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           ...rich,
           'm.relates_to': {
             'm.in_reply_to': {
-              event_id: resolvedTargetId,
+              event_id: resolvedReplyTargetId,
             },
           },
         } as RoomMessageEventContent;
@@ -726,6 +731,35 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     [client],
   );
 
+  const redactRoomEvent = React.useCallback(
+    async ({ roomId, eventId }: RedactRoomEventInput) => {
+      if (!client) {
+        throw new Error('Client should be specified');
+      }
+      if (!roomId?.trim() || !eventId?.trim()) {
+        return;
+      }
+      const room = client.getRoom(roomId);
+      if (!room) {
+        throw new Error('Room not found');
+      }
+      const ev =
+        room.findEventById(eventId) ??
+        (typeof room.getPendingEvent === 'function'
+          ? room.getPendingEvent(eventId)
+          : null);
+      if (!ev) {
+        throw new Error('Message not found');
+      }
+      const uid = client.getUserId();
+      const sender = ev.getSender();
+      if (!uid || !sender || sender !== uid) {
+        throw new Error('Cannot redact events you do not own');
+      }
+      await client.redactEvent(roomId, eventId);
+    },
+    [client],
+  );
   const getPinnedMessageIds = React.useCallback(
     (roomId: string): string[] => {
       if (!client) {
@@ -1079,6 +1113,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     createRoom,
     sendMessage,
     editRoomMessage,
+    redactRoomEvent,
     toggleReaction,
     getRoomMessages,
     getPinnedMessageIds,
@@ -1105,6 +1140,9 @@ const noopMatrixContext: MatrixContextType = {
     throw new Error('Matrix unavailable');
   },
   editRoomMessage: async () => {
+    throw new Error('Matrix unavailable');
+  },
+  redactRoomEvent: async () => {
     throw new Error('Matrix unavailable');
   },
   toggleReaction: async () => {

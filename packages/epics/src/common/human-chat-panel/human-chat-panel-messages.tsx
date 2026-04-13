@@ -23,6 +23,8 @@ type UIMessage = {
   /** Multiple attachments in one Matrix event (`org.hypha.media_bundle`). */
   mediaSlots?: ChatPanelAttachmentMedia[];
   senderName?: string;
+  /** Matrix author MXID when known. */
+  senderMatrixId?: string;
   avatarUrl?: string;
   timestamp?: Date;
   formattedContentHtml?: string;
@@ -41,8 +43,11 @@ type UIMessage = {
 type HumanChatPanelMessagesProps = {
   messages: UIMessage[];
   isStreaming?: boolean;
+  roomId?: string | null;
+  currentUserId?: string | null;
   onReply?: (messageId: string) => void;
   onEditMessage?: (messageId: string) => void;
+  onDeleteMessage?: (messageId: string) => void | Promise<void>;
   onToggleReaction?: (messageId: string, emoji: string) => void;
   /** Map Matrix user id to display name for reaction hover tooltips. */
   resolveReactionReactorLabel?: (userId: string) => string;
@@ -51,8 +56,11 @@ type HumanChatPanelMessagesProps = {
 export function HumanChatPanelMessages({
   messages,
   isStreaming = false,
+  roomId,
+  currentUserId,
   onReply,
   onEditMessage,
+  onDeleteMessage,
   onToggleReaction,
   resolveReactionReactorLabel,
 }: HumanChatPanelMessagesProps) {
@@ -102,6 +110,8 @@ export function HumanChatPanelMessages({
             <HumanChatPanelMessageBubble
               key={msg.id}
               message={msg}
+              roomId={roomId}
+              currentUserId={currentUserId}
               resolveReactionReactorLabel={resolveReactionReactorLabel}
               isActionBarVisible={isActionBarVisible}
               onRowPointerEnter={() => {
@@ -147,6 +157,9 @@ export function HumanChatPanelMessages({
                 !msg.sendPending
                   ? () => onEditMessage(msg.id)
                   : undefined
+              }
+              onDeleteMessage={
+                canInteract && onDeleteMessage ? onDeleteMessage : undefined
               }
               onReact={
                 canInteract && onToggleReaction
