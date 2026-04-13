@@ -20,3 +20,4 @@ export * from './create-signal-form';
 export * from './signal-grid';
 export * from './signal-section';
 export * from './space-memory-section';
+export * from './space-memory-asset-card';
