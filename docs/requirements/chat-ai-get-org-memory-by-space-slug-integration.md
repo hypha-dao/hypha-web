@@ -65,9 +65,20 @@ The model uses **`get_documents_by_space_slug`** when the user asks about **prop
 
 ---
 
-## 6) References
+## 6) Step 3 — Chat after catalogue (Matrix + proposals in `org_memory_assets`)
+
+When **`org_memory_assets`** is populated (see [space-memory-panel.md §1 Step 3](../plans/space-memory-panel.md#step-3--implementation-checklist-ready-for-tickets) and MCP spec **§8** [mcp-get-org-memory-by-space-slug-tech-spec.md](./mcp-get-org-memory-by-space-slug-tech-spec.md)):
+
+| ID | Requirement |
+|----|----------------|
+| **FR-OC7** | The tool return shape SHALL include the **same** **`org_memory_assets`** array the MCP tool exposes (parity object). |
+| **FR-OC8** | **`buildSystemPrompt`** SHALL instruct: for **“all files the space remembers”**, **“chat attachments + proposals”**, or **Space Memory** phrasing, call **`get_org_memory_by_space_slug`** and paginate **assets** per MCP **FR-13** when applicable; use **`get_documents_by_space_slug`** for **per-document governance** fields (`state`, `status`, creator). |
+
+---
+
+## 7) References
 
 - MCP spec: [mcp-get-org-memory-by-space-slug-tech-spec.md](./mcp-get-org-memory-by-space-slug-tech-spec.md)
 - People chat spec pattern: [chat-ai-get-documents-by-space-slug-integration.md](./chat-ai-get-documents-by-space-slug-integration.md)
 - Architecture: [documents-and-media-overview.md §4.7](../architecture/documents-and-media-overview.md#47-mcp-and-hypha-chat-ai)
-- Plan: [space-memory-panel.md §9](../plans/space-memory-panel.md#9-mcp--hypha-chat-ai)
+- Plan: [space-memory-panel.md §1](../plans/space-memory-panel.md#1-phased-delivery--panel-mcp-and-matrix-assets), [§9](../plans/space-memory-panel.md#9-mcp--hypha-chat-ai)

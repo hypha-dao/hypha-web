@@ -119,6 +119,8 @@ Update **`McpServer` `instructions`** string to mention the new tool.
 | Bad slug | Zod validation error |
 | Unknown slug | `found: false`, empty members and assets |
 | Output schema | Passes `getOrgMemoryBySpaceSlugOutputSchema.safeParse` |
+| **Step 3:** catalogue + Matrix row | At least one **`org_memory_assets`** item with **`source: matrix_chat`** and **`mxc_uri`**; restricted space without token → `isError` |
+| **Step 3:** proposal row in catalogue | Row with **`source`** proposal/upload and **`app_url`** or **`document_id`** |
 
 ---
 
@@ -127,5 +129,20 @@ Update **`McpServer` `instructions`** string to mention the new tool.
 - Epic: [#2027](https://github.com/hypha-dao/hypha-web/issues/2027)
 - Sibling tools: `mcp-get-people-by-space-slug-tech-spec.md`, `mcp-get-documents-by-space-slug-tech-spec.md` §8
 - Architecture: [documents-and-media-overview.md §4–§4.7](../architecture/documents-and-media-overview.md#47-mcp-and-hypha-chat-ai)
-- UI / plan cross-links: [space-memory-panel.md §9](../plans/space-memory-panel.md#9-mcp--hypha-chat-ai)
+- UI / plan cross-links: [space-memory-panel.md §1 (phased delivery — Step 3)](../plans/space-memory-panel.md#1-phased-delivery--panel-mcp-and-matrix-assets), [§9](../plans/space-memory-panel.md#9-mcp--hypha-chat-ai)
 - Chat integration: [chat-ai-get-org-memory-by-space-slug-integration.md](./chat-ai-get-org-memory-by-space-slug-integration.md)
+
+---
+
+## 8) Amendment — Step 3 (Space Memory panel + Matrix assets)
+
+When the **org memory catalogue** lists **Matrix** rows, update this spec and the Zod output schema as follows:
+
+| ID | Requirement |
+|----|----------------|
+| **FR-11** | **`org_memory_assets`** SHALL list catalogue rows for the space including **`source: matrix_chat`** (and proposal-backed rows as defined in architecture §4.3), each row matching the field set in [mcp-get-documents-by-space-slug-tech-spec.md §8.1](./mcp-get-documents-by-space-slug-tech-spec.md#81-unified-listing-target) (`filename`, `mime`, `mxc_uri` and/or `app_url`, optional `matrix_room_id`, `matrix_event_id`, `document_id`, optional `fetch_url` / `text_excerpt`). |
+| **FR-12** | The MCP server SHALL apply the **same** **`checkSpaceAccessForSpace`** gate **before** returning any **`org_memory_assets`** entry as for **`members`**. |
+| **FR-13** | **Pagination (assets):** If the combined asset count can exceed **`page_size`**, the implementation SHALL either (a) paginate **`org_memory_assets`** with explicit input fields **`assets_page`** / **`assets_page_size`** (defaults aligned with roster pagination), or (b) document a **cursor**-based follow-up in a minor spec revision — pick (a) or (b) in the implementing PR and update this table. **Roster pagination** (`page`, `page_size`) semantics for **`members`** remain unchanged from **`get_people_by_space_slug`**. |
+| **FR-14** | The **Space Memory panel** SHALL consume the **same core read** used to populate **`get_org_memory_by_space_slug`** (see [space-memory-panel.md §1 Step 3](../plans/space-memory-panel.md#step-3--implementation-checklist-ready-for-tickets)) so UI and MCP do not diverge. |
+
+Matrix-only bytes are still **not** inlined in JSON; **`mxc_uri`** is metadata unless **`fetch_url`** or excerpts are supplied by the catalogue pipeline.
