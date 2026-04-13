@@ -698,11 +698,11 @@ export function HumanChatPanelChatBar({
     'flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-popover-foreground transition-colors hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent dark:hover:text-accent-foreground';
 
   return (
-    <div className="flex w-full min-w-0 flex-shrink-0 flex-col border-t border-border bg-background-2 p-3">
+    <div className="flex w-full min-w-0 flex-shrink-0 flex-col border-t border-border bg-background-2 px-3 pt-3 pb-3">
       <div
         ref={composerShellRef}
         className={cn(
-          'relative flex min-w-0 flex-col rounded-2xl border border-border bg-muted/50',
+          'relative flex min-w-0 flex-col rounded-lg border border-border bg-muted/50',
           'transition-all duration-200 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20',
         )}
       >
@@ -1037,12 +1037,12 @@ export function HumanChatPanelChatBar({
           rows={1}
           className={cn(
             'min-h-[36px] min-w-0 max-h-[160px] w-full resize-none',
-            'bg-transparent px-3 pt-3 pb-1 text-sm leading-relaxed text-foreground',
+            'bg-transparent px-3 pt-3 pb-0 text-sm leading-relaxed text-foreground',
             'placeholder:text-muted-foreground focus:outline-none',
           )}
         />
 
-        <div className="flex min-w-0 flex-col gap-1 px-2 pb-2">
+        <div className="flex min-w-0 flex-col gap-1 px-2 pb-3">
           {voiceError && (
             <p role="alert" className="text-xs text-destructive">
               {voiceError}
@@ -1157,9 +1157,6 @@ export function HumanChatPanelChatBar({
           </div>
         </div>
       </div>
-      <span className="mt-1.5 px-1 text-xs text-muted-foreground">
-        {t('newlineHint')}
-      </span>
     </div>
   );
 }
