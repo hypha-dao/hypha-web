@@ -74,9 +74,9 @@ export class CoherencePage extends BasePage {
       /Search signals|Buscar señales|Pesquisar sinais|Rechercher des signaux|Signale suchen/i,
     );
 
-    // Unauthenticated sign-in prompt (CoherenceTab.signInToSee) — match distinctive tail phrases
+    // Unauthenticated sign-in prompt (CoherenceTab.signInToSee) — anchor on sign-in verb so we do not match the Space Memory heading alone
     this.signInMessage = page.getByText(
-      /signals and conversations|señales y conversaciones|sinais e conversas|signaux et les conversations|Signale und Gespräche/i,
+      /please,\s*sign\s+in\s+to\s+see|por\s+favor,\s+inicie\s+sesi[oó]n\s+para\s+ver|por\s+favor,\s+fa[cç]a\s+login\s+para\s+ver|veuillez\s+vous\s+connecter\s+pour\s+voir|bitte\s+melden\s+sie\s+sich\s+an/i,
     );
 
     // "All" filter badge: CoherenceTab.all + count (en All, es/pt Todos, fr Tous, de Alle)

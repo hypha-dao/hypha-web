@@ -12,6 +12,7 @@ import React from 'react';
 import { useTranslations } from 'next-intl';
 import { CoherenceOrder } from '../types';
 import { SignalSection } from './signal-section';
+import { SpaceMemorySection } from './space-memory-section';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 
 type CoherenceBlockProps = {
@@ -80,6 +81,7 @@ export function CoherenceBlock({
             refresh={refresh}
             onSignalClick={onSignalClick}
           />
+          <SpaceMemorySection spaceSlug={spaceSlug} />
         </>
       ) : (
         <Empty>
