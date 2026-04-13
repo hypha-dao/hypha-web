@@ -128,11 +128,11 @@ export function SpaceMemoryTimelineItem({
       />
       <time
         dateTime={item.uploadedAt}
-        className="text-[10px] font-medium leading-tight text-muted-foreground"
+        className="text-center text-[10px] font-medium leading-tight text-muted-foreground"
       >
         {uploaded}
       </time>
-      <p className="mt-0.5 line-clamp-2 text-[10px] leading-tight text-muted-foreground">
+      <p className="mt-0.5 line-clamp-2 text-center text-[10px] leading-tight text-muted-foreground">
         {contextLine}
       </p>
 
