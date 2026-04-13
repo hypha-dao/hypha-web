@@ -1,10 +1,10 @@
 # `@hypha-platform/mcp-server`
 
-Stdio [Model Context Protocol](https://modelcontextprotocol.io) server exposing Hypha read tools (e.g. `get_people_by_space_slug`, `get_documents_by_space_slug`).
+Stdio [Model Context Protocol](https://modelcontextprotocol.io) server exposing Hypha read tools (e.g. `get_people_by_space_slug`, `get_documents_by_space_slug`). **`get_org_memory_by_space_slug`** is specified in `docs/requirements/mcp-get-org-memory-by-space-slug-tech-spec.md` (implementation pending).
 
 ## Security and access control
 
-`get_people_by_space_slug` and **`get_documents_by_space_slug`** call **`checkSpaceAccessForSpace`** in `@hypha-platform/core/server` (same transparency / membership rules as the web app) when the space exists in the database and has a **`web3SpaceId`**. Provide a **Privy JWT** (same kind the web client sends) via:
+`get_people_by_space_slug`, **`get_documents_by_space_slug`**, and (once implemented) **`get_org_memory_by_space_slug`** call **`checkSpaceAccessForSpace`** in `@hypha-platform/core/server` (same transparency / membership rules as the web app) when the space exists in the database and has a **`web3SpaceId`**. Provide a **Privy JWT** (same kind the web client sends) via:
 
 - **`HYPHA_MCP_AUTH_TOKEN`** — bearer token used to resolve the caller’s identity for non-public spaces.
 
@@ -38,3 +38,4 @@ Add the server to your MCP host (e.g. Cursor **Settings → MCP** or `.cursor/mc
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | `get_people_by_space_slug` | Members of a space by slug (people + space-as-members), aligned with `getSpaceMembersRoster` in `@hypha-platform/core`. |
 | `get_documents_by_space_slug` | Documents in a space by slug (DB `documents` + creator), paginated search/filter; uses `getDocumentsBySpaceSlug` in `@hypha-platform/core`. |
+| `get_org_memory_by_space_slug` | Org memory projection: **v1** same roster as `get_people_by_space_slug` plus `org_memory_assets: []` until the catalogue exists. |

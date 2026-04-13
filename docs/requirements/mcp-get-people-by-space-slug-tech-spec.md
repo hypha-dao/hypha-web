@@ -202,6 +202,12 @@ Register the tool next to `get_spaces` using the **same server bootstrap** (tran
 
 ---
 
+## 5.1) Sibling tool — `get_org_memory_by_space_slug`
+
+The org-memory umbrella tool (**v1**) returns the **same `members` + `pagination` semantics** as this spec, plus **`org_memory_assets: []`** until the org memory catalogue exists. See [mcp-get-org-memory-by-space-slug-tech-spec.md](./mcp-get-org-memory-by-space-slug-tech-spec.md).
+
+---
+
 ## 6) Non-functional requirements
 
 | ID | Requirement |
