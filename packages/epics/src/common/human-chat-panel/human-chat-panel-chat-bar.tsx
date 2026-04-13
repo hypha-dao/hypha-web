@@ -245,7 +245,6 @@ export function HumanChatPanelChatBar({
   const videoInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
-  const recordedChunksRef = useRef<BlobPart[]>([]);
   const [isVoiceRecording, setIsVoiceRecording] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -613,7 +612,8 @@ export function HumanChatPanelChatBar({
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaStreamRef.current = stream;
-      recordedChunksRef.current = [];
+      /** One array per recorder so rapid stop/start cannot mix async `ondataavailable` chunks. */
+      const chunks: BlobPart[] = [];
       const preferredTypes = [
         'audio/webm;codecs=opus',
         'audio/webm',
@@ -630,7 +630,7 @@ export function HumanChatPanelChatBar({
       mediaRecorderRef.current = mr;
       mr.ondataavailable = (ev) => {
         if (ev.data && ev.data.size > 0) {
-          recordedChunksRef.current.push(ev.data);
+          chunks.push(ev.data);
         }
       };
       mr.onstop = () => {
@@ -639,8 +639,6 @@ export function HumanChatPanelChatBar({
         }
         mediaStreamRef.current = null;
         mediaRecorderRef.current = null;
-        const chunks = recordedChunksRef.current;
-        recordedChunksRef.current = [];
         const blob = new Blob(chunks, { type: mr.mimeType || 'audio/webm' });
         if (blob.size < 256) {
           return;
