@@ -23,6 +23,17 @@ function isLikelyPdf(url: string, filename: string): boolean {
   return /\.pdf(\?|$|#)/i.test(`${url} ${filename}`);
 }
 
+/**
+ * CDN PDFs often set `X-Frame-Options: sameorigin`, so embedding the file URL
+ * in an iframe fails. Google’s viewer loads in our allowed `frame-src` and
+ * fetches the PDF URL server-side (works for publicly reachable URLs).
+ */
+function googlePdfPreviewSrc(assetUrl: string): string {
+  return `https://docs.google.com/viewer?embedded=true&url=${encodeURIComponent(
+    assetUrl,
+  )}`;
+}
+
 type SpaceMemoryTimelineItemProps = {
   item: SpaceMemoryItem;
   contextLine: string;
@@ -93,10 +104,11 @@ export function SpaceMemoryTimelineItem({
     if (tryPdfEmbed) {
       return (
         <iframe
-          title=""
-          src={item.url}
+          title={item.name}
+          src={googlePdfPreviewSrc(item.url)}
           className="pointer-events-none h-[120%] w-full min-h-[7rem] border-0 bg-muted/20"
           loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
         />
       );
     }
