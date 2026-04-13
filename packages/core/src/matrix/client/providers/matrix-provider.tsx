@@ -738,6 +738,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         await client.joinRoom(roomId);
       } catch (error) {
         console.warn('Cannot join to room:', error);
+        throw error;
       }
     },
     [client],

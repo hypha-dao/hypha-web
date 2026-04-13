@@ -1,6 +1,7 @@
 export { useCreateSpaceOrchestrator } from './useCreateSpaceOrchestrator';
 export { useJoinSpaceWeb3Rpc } from './useJoinSpace.web3.rpc';
 export { useSpaceBySlug } from './useSpaceBySlug';
+export { useSpaceMutationsWeb2Rsc } from './useSpaceMutations.web2.rsc';
 export { useSpaceBySlugExists } from './useSpaceBySlugExists';
 export { useSpaceDetailsWeb3Rpc } from './useSpaceDetails.web3.rpc';
 export { useSpaceHasVoiceToken } from './useSpaceHasVoiceToken';

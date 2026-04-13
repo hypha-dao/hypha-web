@@ -40,6 +40,8 @@ export const spaces = pgTable(
       .$type<Array<(typeof spaceFlags.enumValues)[number]>>()
       .notNull()
       .default([]),
+    /** Canonical Matrix room id for space-level chat (!id:server). */
+    chatRoomId: text('chat_room_id'),
     ...commonDateFields,
   },
   (table) => [

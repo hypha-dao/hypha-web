@@ -37,6 +37,12 @@ export const spaceMembersHttpPaginationQuerySchema = z
     };
   });
 
+/** `!opaque:server` where server may include extra colons (ports, IPv6 literals). */
+const matrixRoomIdSchema = z
+  .string()
+  .trim()
+  .regex(/^![^:]+:.+$/, 'Invalid Matrix room id format');
+
 const createSpaceWeb2Props = {
   title: z
     .string()
@@ -119,6 +125,7 @@ export const updateSpaceProps = {
   categories: createSpaceWeb2Props.categories.optional(),
   links: createSpaceWeb2Props.links.optional(),
   flags: createSpaceWeb2Props.flags.optional(),
+  chatRoomId: matrixRoomIdSchema.nullable().optional(),
 };
 
 export const schemaUpdateSpace = z.object(updateSpaceProps);
