@@ -103,11 +103,13 @@ After `consumeEnergy` runs, every member has a credit balance — positive (earn
 Households consume energy   →  their balance goes negative (they owe money)
 Investors own sources       →  their balance goes positive (they earned money)
 Community/Aggregator fees   →  their balances go positive
-Grid export surplus         →  gridBalance goes positive (grid owes community)
-Grid import shortfall       →  gridBalance goes negative (community owes grid)
+Grid import shortfall       →  grid display goes positive  (community owes grid)
+Grid export surplus         →  grid display goes negative  (grid owes community)
 
 All balances always sum to zero.
 ```
+
+> **Sign convention note:** The contract internally stores `gridBalance` with the opposite sign (positive = grid owes community). The scripts display `−gridBalance` so that all rows sum to zero: positive = someone has money or is owed money, negative = someone owes money.
 
 ### Paying a debt (negative balance → stablecoin in)
 
