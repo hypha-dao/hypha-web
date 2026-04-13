@@ -11,6 +11,11 @@ import queryString from 'query-string';
 import React from 'react';
 import useSWR from 'swr';
 
+type DocumentDto = Omit<Document, 'createdAt' | 'updatedAt'> & {
+  createdAt: string;
+  updatedAt: string;
+};
+
 const queryParams = `?${queryString.stringify({
   order: '-updatedAt',
 })}`;
@@ -38,7 +43,12 @@ export function useSpaceMemoryOrg(spaceSlug: string | undefined) {
       if (!res.ok) {
         throw new Error(`Failed to fetch documents: ${res.status}`);
       }
-      return res.json() as Promise<Document[]>;
+      const payload = (await res.json()) as DocumentDto[];
+      return payload.map((doc) => ({
+        ...doc,
+        createdAt: new Date(doc.createdAt),
+        updatedAt: new Date(doc.updatedAt),
+      })) as Document[];
     },
     {
       revalidateOnFocus: true,
@@ -50,7 +60,7 @@ export function useSpaceMemoryOrg(spaceSlug: string | undefined) {
 
   const items = React.useMemo(() => {
     if (!data || !Array.isArray(data)) return [] as SpaceMemoryItem[];
-    return buildSpaceMemoryItemsFromDocuments(data as Document[]);
+    return buildSpaceMemoryItemsFromDocuments(data);
   }, [data]);
 
   const [searchTerm, setSearchTerm] = React.useState('');

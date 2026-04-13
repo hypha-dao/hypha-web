@@ -15,7 +15,7 @@ export type SpaceMemoryItem = {
   context: {
     documentId: number;
     documentTitle: string;
-    documentState: string;
+    documentState: DocumentState;
     documentSlug?: string;
     documentLabel?: string;
   };
@@ -44,15 +44,37 @@ function normalizeAttachment(raw: string | Attachment): {
   };
 }
 
+/** Only http(s) links are emitted to the UI (blocks `javascript:` etc.). */
+function normalizeHttpUrl(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return null;
+    }
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
 function inferKind(name: string, url: string): SpaceMemoryAssetKind {
-  const target = `${name} ${url}`.toLowerCase();
-  if (/\.(png|jpe?g|gif|webp|svg|avif)(\?|$)/i.test(target)) {
+  const has = (value: string, exts: string) =>
+    new RegExp(`\\.(${exts})(\\?|$)`, 'i').test(value);
+  if (
+    has(name, 'png|jpe?g|gif|webp|svg|avif') ||
+    has(url, 'png|jpe?g|gif|webp|svg|avif')
+  ) {
     return 'image';
   }
-  if (/\.(mp4|webm|mov|mkv|m4v)(\?|$)/i.test(target)) {
+  if (has(name, 'mp4|webm|mov|mkv|m4v') || has(url, 'mp4|webm|mov|mkv|m4v')) {
     return 'video';
   }
-  if (/\.(pdf|doc|docx|txt|md|csv|xls|xlsx|ppt|pptx|zip)(\?|$)/i.test(target)) {
+  if (
+    has(name, 'pdf|doc|docx|txt|md|csv|xls|xlsx|ppt|pptx|zip') ||
+    has(url, 'pdf|doc|docx|txt|md|csv|xls|xlsx|ppt|pptx|zip')
+  ) {
     return 'document';
   }
   return 'other';
@@ -82,18 +104,19 @@ function documentActivityIso(doc: Document): string {
   return new Date(0).toISOString();
 }
 
-function stateLabel(state: Document['state']): string {
-  if (typeof state === 'string') return state;
-  switch (state) {
-    case DocumentState.DISCUSSION:
-      return 'discussion';
-    case DocumentState.PROPOSAL:
-      return 'proposal';
-    case DocumentState.AGREEMENT:
-      return 'agreement';
-    default:
-      return String(state);
+function documentStateForContext(state: Document['state']): DocumentState {
+  if (
+    state === DocumentState.DISCUSSION ||
+    state === DocumentState.PROPOSAL ||
+    state === DocumentState.AGREEMENT
+  ) {
+    return state;
   }
+  const s = String(state).toLowerCase();
+  if (s === DocumentState.DISCUSSION) return DocumentState.DISCUSSION;
+  if (s === DocumentState.PROPOSAL) return DocumentState.PROPOSAL;
+  if (s === DocumentState.AGREEMENT) return DocumentState.AGREEMENT;
+  return DocumentState.PROPOSAL;
 }
 
 /**
@@ -109,11 +132,11 @@ export function buildSpaceMemoryItemsFromDocuments(
     const activityIso = documentActivityIso(doc);
     const attachmentUrls = new Set<string>();
     const docTitle = doc.title?.trim() || '';
-    const stateStr = stateLabel(doc.state);
+    const stateEnum = documentStateForContext(doc.state);
     const baseContext = {
       documentId: doc.id,
       documentTitle: docTitle,
-      documentState: stateStr,
+      documentState: stateEnum,
       documentSlug: doc.slug,
       documentLabel: doc.label?.trim() || undefined,
     };
@@ -121,20 +144,21 @@ export function buildSpaceMemoryItemsFromDocuments(
     const attachments = doc.attachments ?? [];
     attachments.forEach((raw, index) => {
       const { name, url } = normalizeAttachment(raw);
-      if (!url?.trim()) return;
-      attachmentUrls.add(url);
+      const safeUrl = normalizeHttpUrl(url);
+      if (!safeUrl) return;
+      attachmentUrls.add(safeUrl);
       items.push({
         id: `${doc.id}:attachment:${index}`,
         name,
-        url,
-        kind: inferKind(name, url),
+        url: safeUrl,
+        kind: inferKind(name, safeUrl),
         source: 'proposal_upload',
         uploadedAt: activityIso,
         context: { ...baseContext },
       });
     });
 
-    const lead = doc.leadImage?.trim();
+    const lead = doc.leadImage ? normalizeHttpUrl(doc.leadImage) : null;
     if (lead && !attachmentUrls.has(lead)) {
       const name = fileNameFromUrl(lead);
       items.push({

@@ -90,6 +90,36 @@ describe('buildSpaceMemoryItemsFromDocuments', () => {
     expect(rows[1].url).toBe('https://a/old.png');
   });
 
+  it('classifies image from filename when URL has no extension (signed URL)', () => {
+    const docs = [
+      baseDoc({
+        attachments: [
+          {
+            name: 'Screenshot 2026.png',
+            url: 'https://cdn.example/file?token=abc',
+          },
+        ],
+      }),
+    ];
+    const rows = buildSpaceMemoryItemsFromDocuments(docs);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].kind).toBe('image');
+  });
+
+  it('skips non-http(s) attachment URLs', () => {
+    const docs = [
+      baseDoc({
+        attachments: [
+          { name: 'evil', url: 'javascript:alert(1)' },
+          'https://cdn.example/ok.pdf',
+        ],
+      }),
+    ];
+    const rows = buildSpaceMemoryItemsFromDocuments(docs);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].url).toBe('https://cdn.example/ok.pdf');
+  });
+
   it('accepts ISO date strings from JSON (fetch / NextResponse)', () => {
     const docs = [
       {

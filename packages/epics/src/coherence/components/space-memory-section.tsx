@@ -6,6 +6,7 @@ import { Button, SectionFilter, Separator } from '@hypha-platform/ui';
 import { Empty } from '../../common';
 import React from 'react';
 import { useTranslations } from 'next-intl';
+import { DocumentState } from '@hypha-platform/core/client';
 import { useSpaceMemoryOrg } from '../hooks/use-space-memory-org';
 import { SpaceMemoryTimelineItem } from './space-memory-timeline-item';
 
@@ -27,7 +28,7 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
     setSearchTerm,
   } = useSpaceMemoryOrg(spaceSlug);
 
-  const stateLabel = (state: string) =>
+  const stateLabel = (state: DocumentState) =>
     t(
       `documentStates.${state}` as
         | 'documentStates.discussion'
