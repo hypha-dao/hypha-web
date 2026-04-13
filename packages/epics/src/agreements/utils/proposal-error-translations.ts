@@ -33,7 +33,6 @@ const PROPOSAL_ERROR_KEY_MAP: Record<string, string> = {
   'Invalid Ethereum address': 'proposalErrors.invalidEthereumAddress',
   'Amount must be greater than 0': 'proposalErrors.amountGreaterThanZero',
   'Please enter an amount.': 'proposalErrors.exchangeAmountRequired',
-  'Please select a token': 'proposalErrors.tokenRequired',
   'Amount is required': 'proposalErrors.amountRequired',
   'Token is required': 'proposalErrors.tokenRequired',
   'At least one payout is required': 'proposalErrors.atLeastOnePayoutRequired',

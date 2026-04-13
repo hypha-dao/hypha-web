@@ -166,7 +166,7 @@ const FormMessage = React.forwardRef<
     return null;
   }
 
-  /** Prefer resolver / setError messages; `custom` is only for helpers when there is no error */
+  /** Prefer resolver / setError messages; use `custom` only when there is no field error */
   const body = error ? (
     Array.isArray(error) ? (
       error.map((err, index) => (
@@ -190,7 +190,7 @@ const FormMessage = React.forwardRef<
           />
         ))
     )
-  ) : !error && custom ? (
+  ) : custom ? (
     custom
   ) : (
     children
