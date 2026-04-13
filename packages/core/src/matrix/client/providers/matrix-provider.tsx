@@ -670,7 +670,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       const sender = targetEv.getSender();
       const uid = client.getUserId();
       if (!sender || !uid || sender !== uid) {
-        throw new Error('You can only edit your own messages');
+        throw new Error('Cannot edit events you do not own');
       }
 
       const originalContent = targetEv.getContent() as {
@@ -754,7 +754,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       const uid = client.getUserId();
       const sender = ev.getSender();
       if (!uid || !sender || sender !== uid) {
-        throw new Error('You can only delete your own messages');
+        throw new Error('Cannot redact events you do not own');
       }
       await client.redactEvent(roomId, eventId);
     },

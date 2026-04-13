@@ -15,13 +15,13 @@ import {
 } from 'lucide-react';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  Button,
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
@@ -72,27 +72,13 @@ export function pushRecentChatReaction(emoji: string) {
   }
 }
 
-function getMessagePlainTextForCopy(m: {
-  parts?: UIMessagePart[];
-  media?: ChatPanelAttachmentMedia;
-  mediaSlots?: ChatPanelAttachmentMedia[];
-}): string {
+/** Plain message body for copy / TTS only (no attachment filename fallback). */
+function getMessagePlainTextBody(m: { parts?: UIMessagePart[] }): string {
   const textParts =
     m.parts?.filter(
       (p): p is { type: 'text'; text: string } => p.type === 'text',
     ) ?? [];
-  const fromParts = stripMatrixReplyFallback(
-    textParts.map((p) => p.text).join(''),
-  );
-  if (fromParts.trim()) return fromParts;
-  if (m.mediaSlots && m.mediaSlots.length > 0) {
-    const names = m.mediaSlots
-      .map((s) => s.filename)
-      .filter(Boolean) as string[];
-    if (names.length) return names.join(', ');
-  }
-  if (m.media?.filename) return m.media.filename;
-  return '';
+  return stripMatrixReplyFallback(textParts.map((p) => p.text).join(''));
 }
 
 export type HumanChatPanelMessageOverflowProps = {
@@ -104,6 +90,10 @@ export type HumanChatPanelMessageOverflowProps = {
   onReact?: (emoji: string) => void | Promise<void>;
   onEdit?: () => void;
   onReply?: () => void;
+  /** Match hover bar: disable Edit in overflow when false even if `onEdit` is set. */
+  menuCanEdit?: boolean;
+  /** Match hover bar: disable Reply in overflow when false even if `onReply` is set. */
+  menuCanReply?: boolean;
   onDeleteMessage?: (messageId: string) => void | Promise<void>;
   /** Current Matrix user id; used for delete permission. */
   currentUserId?: string | null;
@@ -164,6 +154,7 @@ function MenuSections({
   onEdit,
   onReply,
   canEdit,
+  canReply,
   canCopy,
   onCopyText,
   onCopyLink,
@@ -183,6 +174,7 @@ function MenuSections({
   onEdit?: () => void;
   onReply?: () => void;
   canEdit: boolean;
+  canReply: boolean;
   canCopy: boolean;
   onCopyText: () => void;
   onCopyLink: () => void;
@@ -249,7 +241,12 @@ function MenuSections({
         <span className="flex-1">{t('contextEditMessage')}</span>
         <Pencil className="size-4 shrink-0 opacity-70" aria-hidden />
       </Item>
-      <Item onSelect={() => onReply?.()}>
+      <Item
+        disabled={!canReply}
+        onSelect={() => {
+          if (canReply) onReply?.();
+        }}
+      >
         <span className="flex-1">{t('contextReply')}</span>
         <Reply className="size-4 shrink-0 opacity-70" aria-hidden />
       </Item>
@@ -272,7 +269,12 @@ function MenuSections({
         <span className="flex-1">{t('contextCopyMessageLink')}</span>
         <Link2 className="size-4 shrink-0 opacity-70" aria-hidden />
       </Item>
-      <Item onSelect={onSpeak}>
+      <Item
+        disabled={!canCopy}
+        onSelect={() => {
+          if (canCopy) onSpeak();
+        }}
+      >
         <span className="flex-1">{t('contextSpeakMessage')}</span>
         <Volume2 className="size-4 shrink-0 opacity-70" aria-hidden />
       </Item>
@@ -299,6 +301,8 @@ export function HumanChatPanelMessageOverflow({
   onReact,
   onEdit,
   onReply,
+  menuCanEdit,
+  menuCanReply,
   onDeleteMessage,
   currentUserId,
   senderMatrixId,
@@ -310,10 +314,13 @@ export function HumanChatPanelMessageOverflow({
   const [addReactionOpen, setAddReactionOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const plain = useMemo(() => getMessagePlainTextForCopy(message), [message]);
+  const plain = useMemo(() => getMessagePlainTextBody(message), [message]);
   const canCopy = plain.trim().length > 0;
-  const canEdit = Boolean(onEdit);
+  const canEdit = menuCanEdit ?? Boolean(onEdit);
+  const canReply = menuCanReply ?? Boolean(onReply);
   const canDelete =
     Boolean(onDeleteMessage) &&
     Boolean(roomId) &&
@@ -359,11 +366,19 @@ export function HumanChatPanelMessageOverflow({
   }, [plain]);
 
   const confirmDelete = useCallback(async () => {
-    if (!canDelete || !onDeleteMessage) return;
-    setDeleteOpen(false);
-    setDropdownOpen(false);
-    await onDeleteMessage(messageId);
-  }, [canDelete, messageId, onDeleteMessage]);
+    if (!canDelete || !onDeleteMessage || deleteBusy) return;
+    setDeleteError(null);
+    setDeleteBusy(true);
+    try {
+      await onDeleteMessage(messageId);
+      setDeleteOpen(false);
+      setDropdownOpen(false);
+    } catch {
+      setDeleteError(t('messageDeleteFailed'));
+    } finally {
+      setDeleteBusy(false);
+    }
+  }, [canDelete, deleteBusy, messageId, onDeleteMessage, t]);
 
   if (disabled) {
     return typeof children === 'function' ? (
@@ -383,6 +398,7 @@ export function HumanChatPanelMessageOverflow({
     onEdit,
     onReply,
     canEdit,
+    canReply,
     canCopy,
     onCopyText,
     onCopyLink,
@@ -446,7 +462,16 @@ export function HumanChatPanelMessageOverflow({
         </ContextMenuContent>
       </ContextMenu>
 
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+      <AlertDialog
+        open={deleteOpen}
+        onOpenChange={(open) => {
+          setDeleteOpen(open);
+          if (!open) {
+            setDeleteError(null);
+            setDeleteBusy(false);
+          }
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
@@ -456,14 +481,23 @@ export function HumanChatPanelMessageOverflow({
               {t('contextDeleteConfirmDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {deleteError ? (
+            <p role="alert" className="text-sm text-destructive">
+              {deleteError}
+            </p>
+          ) : null}
           <AlertDialogFooter>
-            <AlertDialogCancel>{t('contextDeleteCancel')}</AlertDialogCancel>
-            <AlertDialogAction
+            <AlertDialogCancel disabled={deleteBusy}>
+              {t('contextDeleteCancel')}
+            </AlertDialogCancel>
+            <Button
+              type="button"
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteBusy}
               onClick={() => void confirmDelete()}
             >
-              {t('contextDeleteConfirm')}
-            </AlertDialogAction>
+              {deleteBusy ? t('loading') : t('contextDeleteConfirm')}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

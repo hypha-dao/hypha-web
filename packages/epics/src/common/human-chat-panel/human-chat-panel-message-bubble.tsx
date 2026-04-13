@@ -1336,6 +1336,8 @@ export function HumanChatPanelMessageBubble({
       onReact={onReact}
       onEdit={onEdit}
       onReply={onReply}
+      menuCanEdit={canEdit}
+      menuCanReply={canReply}
       onDeleteMessage={onDeleteMessage}
       currentUserId={currentUserId}
       senderMatrixId={message.senderMatrixId}
