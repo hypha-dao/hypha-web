@@ -4,7 +4,7 @@
 
 | Field | Value |
 |-------|--------|
-| **Status** | Ready for implementation |
+| **Status** | Implemented (`packages/chat-server`: `createGetOrgMemoryBySpaceSlugTool`, `createChatTools`, `system-prompt.ts`) |
 | **Epic** | [Expand Hypha MCP read API coverage #2027](https://github.com/hypha-dao/hypha-web/issues/2027) |
 | **Depends on** | Core **`getSpaceMembersRoster`**, **`serializeSpaceMembersRosterDatesForJson`**, **`@hypha-platform/chat-server`** tool registration; mirrors [chat-ai-get-people-by-space-slug-integration.md](./chat-ai-get-people-by-space-slug-integration.md) patterns |
 | **MCP reference** | [mcp-get-org-memory-by-space-slug-tech-spec.md](./mcp-get-org-memory-by-space-slug-tech-spec.md) |
