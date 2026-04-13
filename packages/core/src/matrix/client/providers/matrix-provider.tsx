@@ -14,6 +14,7 @@ import {
 import {
   HYPHA_MEDIA_BUNDLE_FIELD,
   HYPHA_SPOILER_FIELD,
+  getMessageReplaceTargetEventId,
   messageFromRoomMessageEvent,
   resolveReplyTargetForSend,
   type HyphaMediaBundleItemWire,
@@ -126,19 +127,6 @@ type HyphaMediaEventContent = RoomMessageEventContent & {
   [HYPHA_SPOILER_FIELD]?: boolean;
   [HYPHA_MEDIA_BUNDLE_FIELD]?: HyphaMediaBundleItemWire[];
 };
-
-/** If `event` is an `m.replace` edit, return the **original** message event id; otherwise `null`. */
-function getRoomMessageReplaceTargetEventId(
-  event: MatrixSdk.MatrixEvent,
-): string | null {
-  if (event.getType() !== MatrixSdk.EventType.RoomMessage) return null;
-  const rel = event.getWireContent()?.['m.relates_to'] as
-    | { rel_type?: string; event_id?: string }
-    | undefined;
-  if (!rel || rel.rel_type !== MatrixSdk.RelationType.Replace) return null;
-  const id = rel.event_id;
-  return typeof id === 'string' && id.trim() !== '' ? id : null;
-}
 
 function loadImageDimensions(
   file: File,
@@ -641,8 +629,10 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       if (!client) {
         throw new Error('Client should be specified');
       }
-      const trimmed = message.trim();
-      if (!trimmed || !targetEventId?.trim()) {
+      if (!message.trim()) {
+        return;
+      }
+      if (!roomId?.trim() || !targetEventId?.trim()) {
         return;
       }
 
@@ -651,43 +641,76 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         throw new Error('Room not found');
       }
 
-      const ev = room.findEventById(targetEventId);
-      if (!ev) {
-        throw new Error('Message not found');
+      const targetEv =
+        room.findEventById(targetEventId) ??
+        (typeof room.getPendingEvent === 'function'
+          ? room.getPendingEvent(targetEventId)
+          : null);
+
+      if (!targetEv) {
+        throw new Error('Message to edit not found');
+      }
+      if (targetEv.getType() !== EventType.RoomMessage) {
+        throw new Error('Only chat messages can be edited');
+      }
+      if (targetEv.isRedacted()) {
+        throw new Error('Cannot edit a redacted message');
+      }
+      const sender = targetEv.getSender();
+      const uid = client.getUserId();
+      if (!sender || !uid || sender !== uid) {
+        throw new Error('You can only edit your own messages');
       }
 
-      const wireRel = ev.getWireContent()?.['m.relates_to'] as
-        | { rel_type?: string }
-        | undefined;
-      if (wireRel?.rel_type === MatrixSdk.RelationType.Replace) {
-        throw new Error('Cannot edit an edit event');
-      }
-
-      if (ev.getType() !== MatrixSdk.EventType.RoomMessage) {
-        throw new Error('Only room messages can be edited');
-      }
-
-      const orig = ev.getOriginalContent() as {
+      const originalContent = targetEv.getContent() as {
         msgtype?: string;
+        body?: string;
       };
-      const msgtype = orig.msgtype;
-      if (
-        msgtype !== MatrixSdk.MsgType.Text &&
-        msgtype !== MatrixSdk.MsgType.Emote &&
-        msgtype !== MatrixSdk.MsgType.Notice
-      ) {
-        throw new Error('Only text messages can be edited');
+      if (originalContent.msgtype !== MsgType.Text) {
+        throw new Error('Only text messages can be edited in this client');
       }
 
-      const newInner = {
-        msgtype: MatrixSdk.MsgType.Text,
-        ...matrixTextEventContentWithOptionalFormatting(message),
-      };
+      const replyToId = targetEv.getWireContent()?.['m.relates_to']?.[
+        'm.in_reply_to'
+      ]?.event_id as string | undefined;
 
-      await client.sendEvent(roomId, MatrixSdk.EventType.RoomMessage, {
-        body: `* ${trimmed}`,
-        msgtype: MatrixSdk.MsgType.Text,
-        'm.new_content': newInner,
+      let newContentPayload: RoomMessageEventContent;
+
+      if (replyToId?.trim()) {
+        const {
+          eventId: resolvedTargetId,
+          sender: replyTargetSender,
+          body: targetBody,
+        } = await resolveReplyTargetForSend(client, roomId, replyToId);
+        const rich = buildRichReplyMatrixContent(
+          replyTargetSender,
+          targetBody,
+          message,
+        );
+        newContentPayload = {
+          msgtype: MsgType.Text,
+          ...rich,
+          'm.relates_to': {
+            'm.in_reply_to': {
+              event_id: resolvedTargetId,
+            },
+          },
+        } as RoomMessageEventContent;
+      } else {
+        newContentPayload = {
+          msgtype: MsgType.Text,
+          ...matrixTextEventContentWithOptionalFormatting(message),
+        } as RoomMessageEventContent;
+      }
+
+      const newBody =
+        'body' in newContentPayload ? newContentPayload.body : message;
+      const fallbackBody = `* ${newBody}`;
+
+      await client.sendEvent(roomId, EventType.RoomMessage, {
+        ...newContentPayload,
+        body: fallbackBody,
+        'm.new_content': newContentPayload,
         'm.relates_to': {
           rel_type: MatrixSdk.RelationType.Replace,
           event_id: targetEventId,
@@ -741,9 +764,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             .getEvents()
             .filter((event) => event.getType() === EventType.RoomMessage)
             .filter((event) => event.getId() && event.getSender())
-            .filter(
-              (event) => getRoomMessageReplaceTargetEventId(event) == null,
-            )
+            .filter((event) => getMessageReplaceTargetEventId(event) == null)
             .map((event) => {
               const base = messageFromRoomMessageEvent(
                 client,
@@ -879,31 +900,33 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         const type = event.getType();
 
         if (type === EventType.RoomMessage) {
-          const replaceTargetId = getRoomMessageReplaceTargetEventId(event);
+          const replaceTargetId = getMessageReplaceTargetEventId(event);
           if (replaceTargetId && room) {
-            const targetEv = room.findEventById(replaceTargetId);
-            const targetId = targetEv?.getId();
-            const targetSender = targetEv?.getSender();
-            if (
-              targetEv &&
-              targetEv.getType() === EventType.RoomMessage &&
-              targetId &&
-              targetSender
-            ) {
-              const pinnedIds = getPinnedMessageIds(roomId);
-              let message = messageFromRoomMessageEvent(
-                client,
-                roomId,
-                targetEv,
-                pinnedIds.includes(targetId),
-              );
-              message = attachReactionsToMessage(
-                room,
-                message,
-                client.getUserId(),
-              );
-              await messageListener(message);
+            const targetEv =
+              room.findEventById(replaceTargetId) ??
+              (typeof room.getPendingEvent === 'function'
+                ? room.getPendingEvent(replaceTargetId)
+                : null);
+            if (!targetEv || targetEv.getType() !== EventType.RoomMessage) {
+              return;
             }
+            const pinnedIds = getPinnedMessageIds(roomId);
+            const targetEventId = targetEv.getId();
+            const targetSender = targetEv.getSender();
+            if (!targetEventId || !targetSender) return;
+            targetEv.makeReplaced(event);
+            let message = messageFromRoomMessageEvent(
+              client,
+              roomId,
+              targetEv,
+              pinnedIds.includes(targetEventId),
+            );
+            message = attachReactionsToMessage(
+              room,
+              message,
+              client.getUserId(),
+            );
+            await messageListener(message);
             return;
           }
 
