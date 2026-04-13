@@ -1756,6 +1756,7 @@
     "spaceMemoryError": "Space Memory konnte nicht geladen werden.",
     "spaceMemoryRetry": "Erneut versuchen",
     "spaceMemoryRefresh": "Aktualisieren",
+    "spaceMemoryTimelineLabel": "Space-Memory-Verlauf",
     "spaceMemoryContext": "Aus «{title}» · {state}",
     "spaceMemoryOpenAsset": "{name} öffnen",
     "untitledDocument": "Unbenanntes Dokument",

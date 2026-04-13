@@ -1756,6 +1756,7 @@
     "spaceMemoryError": "Não foi possível carregar a memória do espaço.",
     "spaceMemoryRetry": "Tentar novamente",
     "spaceMemoryRefresh": "Atualizar",
+    "spaceMemoryTimelineLabel": "Histórico da memória do espaço",
     "spaceMemoryContext": "De «{title}» · {state}",
     "spaceMemoryOpenAsset": "Abrir {name}",
     "untitledDocument": "Documento sem título",

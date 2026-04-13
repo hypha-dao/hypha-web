@@ -7,7 +7,7 @@ import { Empty } from '../../common';
 import React from 'react';
 import { useTranslations } from 'next-intl';
 import { useSpaceMemoryOrg } from '../hooks/use-space-memory-org';
-import { SpaceMemoryAssetCard } from './space-memory-asset-card';
+import { SpaceMemoryTimelineItem } from './space-memory-timeline-item';
 
 type SpaceMemorySectionProps = {
   spaceSlug: string;
@@ -86,20 +86,20 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
         </Empty>
       ) : (
         <ul
-          className="grid w-full list-none grid-cols-1 gap-4 p-0 m-0 md:grid-cols-2"
-          role="list"
+          className="m-0 w-full list-none p-0"
+          aria-label={t('spaceMemoryTimelineLabel')}
         >
-          {items.map((row) => (
-            <li key={row.id} role="listitem" className="min-w-0">
-              <SpaceMemoryAssetCard
-                item={row}
-                contextLine={t('spaceMemoryContext', {
-                  title: row.context.documentTitle || t('untitledDocument'),
-                  state: stateLabel(row.context.documentState),
-                })}
-                openLabel={t('spaceMemoryOpenAsset', { name: row.name })}
-              />
-            </li>
+          {items.map((row, index) => (
+            <SpaceMemoryTimelineItem
+              key={row.id}
+              item={row}
+              contextLine={t('spaceMemoryContext', {
+                title: row.context.documentTitle || t('untitledDocument'),
+                state: stateLabel(row.context.documentState),
+              })}
+              openLabel={t('spaceMemoryOpenAsset', { name: row.name })}
+              isLast={index === items.length - 1}
+            />
           ))}
         </ul>
       )}
