@@ -37,6 +37,25 @@ const assetsPaginationSchema = z.object({
   has_previous_page: z.boolean(),
 });
 
+const matrixFetchMetaSchema = z.object({
+  attempted: z.boolean(),
+  skipped_reason: z
+    .enum([
+      'missing_homeserver_url',
+      'missing_access_token',
+      'missing_chat_room_id',
+    ])
+    .nullable(),
+  chat_room_id: z.string().nullable(),
+  homeserver_configured: z.boolean(),
+  access_token_configured: z.boolean(),
+  http_status: z.number().nullable(),
+  events_in_chunk: z.number(),
+  media_events_yielded: z.number(),
+  hypha_media_bundle_slots: z.number(),
+  error: z.string().nullable(),
+});
+
 /**
  * Roster payload (ISO dates) plus `org_memory_assets` and separate asset pagination.
  */
@@ -44,6 +63,7 @@ export const getOrgMemoryBySpaceSlugOutputSchema =
   getPeopleBySpaceSlugOutputSchema.extend({
     org_memory_assets: z.array(orgMemoryAssetSchema),
     assets_pagination: assetsPaginationSchema,
+    matrix_fetch: matrixFetchMetaSchema,
   });
 
 export type GetOrgMemoryBySpaceSlugOutput = z.infer<

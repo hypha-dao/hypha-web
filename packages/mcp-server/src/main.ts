@@ -212,6 +212,20 @@ server.registerTool(
         ? structured.org_memory_assets.length
         : 0;
 
+      const mf = structured.found ? structured.matrix_fetch : null;
+      const matrixHint =
+        mf && mf.media_events_yielded === 0
+          ? ` Matrix: ${
+              mf.attempted
+                ? `attempted (HTTP ${mf.http_status ?? 'n/a'}, events ${
+                    mf.events_in_chunk
+                  })`
+                : 'not attempted'
+            }${mf.skipped_reason ? ` — ${mf.skipped_reason}` : ''}${
+              mf.error ? ` — ${mf.error}` : ''
+            }.`
+          : '';
+
       const summary = structured.found
         ? `Space "${structured.space_slug}": roster page ${
             structured.pagination.page
@@ -225,7 +239,7 @@ server.registerTool(
             1,
           )} — ${assetCount} asset(s) on this page (total assets ${
             structured.assets_pagination.total
-          }).`
+          }).${matrixHint}`
         : `No space found for slug "${structured.space_slug}".`;
 
       return {

@@ -146,3 +146,10 @@ When the **org memory catalogue** lists **Matrix** rows, update this spec and th
 | **FR-14** | The **Space Memory panel** SHALL consume the **same core read** used to populate **`get_org_memory_by_space_slug`** (see [space-memory-panel.md §1 Step 3](../plans/space-memory-panel.md#step-3--implementation-checklist-ready-for-tickets)) so UI and MCP do not diverge. |
 
 Matrix-only bytes are still **not** inlined in JSON; **`mxc_uri`** is metadata unless **`fetch_url`** or excerpts are supplied by the catalogue pipeline.
+
+### 8.1) Matrix discovery (implemented without catalogue table)
+
+- **Auth:** `HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN` must be a Matrix **access_token** (user joined to the space room), passed as **`access_token`** on the `/messages` request (not `Authorization: Bearer`, which Synapse rejects for Matrix tokens).
+- **Room:** `spaces.chat_room_id` (loaded via `findSpaceHostFieldsBySlug`).
+- **Events:** Standard `m.room.message` with `m.file` / `m.image` and **`org.hypha.media_bundle`** slots (same wire shape as Human Chat).
+- **Diagnostics:** Response field **`matrix_fetch`** reports skip reasons, HTTP status, chunk size, and parse counts when no `matrix_chat` rows appear.

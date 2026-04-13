@@ -15,6 +15,10 @@ import {
   attachProposalStatusToDocument,
   fetchProposalOutcomeSetsForSpace,
 } from './resolve-document-proposal-status';
+import {
+  HYPHA_MEDIA_BUNDLE_FIELD,
+  type HyphaMediaBundleItemWire,
+} from '../../matrix/rich-reply';
 
 /** Aligned with MCP §8.1 / architecture org memory rows. */
 export type OrgMemoryAsset = {
@@ -42,6 +46,24 @@ export type GetOrgMemoryBySpaceSlugInput = {
   assetsSearch?: string;
 };
 
+/** Why Matrix-backed rows may be empty (MCP / debugging — no secrets). */
+export type MatrixOrgMemoryFetchMeta = {
+  attempted: boolean;
+  skipped_reason:
+    | 'missing_homeserver_url'
+    | 'missing_access_token'
+    | 'missing_chat_room_id'
+    | null;
+  chat_room_id: string | null;
+  homeserver_configured: boolean;
+  access_token_configured: boolean;
+  http_status: number | null;
+  events_in_chunk: number;
+  media_events_yielded: number;
+  hypha_media_bundle_slots: number;
+  error: string | null;
+};
+
 export type OrgMemoryBySpaceSlugSuccess = {
   found: true;
   space_slug: string;
@@ -56,6 +78,7 @@ export type OrgMemoryBySpaceSlugSuccess = {
   asOf: string;
   members: SpaceMemberRosterEntryJson[];
   org_memory_assets: OrgMemoryAsset[];
+  matrix_fetch: MatrixOrgMemoryFetchMeta;
   pagination: {
     total: number;
     page: number;
@@ -83,6 +106,7 @@ export type OrgMemoryBySpaceSlugNotFound = {
   asOf: string;
   members: [];
   org_memory_assets: [];
+  matrix_fetch: MatrixOrgMemoryFetchMeta;
   pagination: OrgMemoryBySpaceSlugSuccess['pagination'];
   assets_pagination: OrgMemoryBySpaceSlugSuccess['assets_pagination'];
 };
@@ -183,66 +207,234 @@ type MatrixMessagesChunk = {
   }>;
 };
 
+function matrixEnvFlags(): Pick<
+  MatrixOrgMemoryFetchMeta,
+  'homeserver_configured' | 'access_token_configured'
+> {
+  return {
+    homeserver_configured: Boolean(
+      process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL?.trim(),
+    ),
+    access_token_configured: Boolean(
+      process.env.HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN?.trim(),
+    ),
+  };
+}
+
+function idleMatrixFetchMeta(): MatrixOrgMemoryFetchMeta {
+  return {
+    attempted: false,
+    skipped_reason: null,
+    chat_room_id: null,
+    ...matrixEnvFlags(),
+    http_status: null,
+    events_in_chunk: 0,
+    media_events_yielded: 0,
+    hypha_media_bundle_slots: 0,
+    error: null,
+  };
+}
+
+function pushMxcAsset(
+  out: OrgMemoryAsset[],
+  seen: Set<string>,
+  matrixRoomId: string,
+  eventId: string,
+  mxc: string,
+  filename: string,
+  mime: string | undefined,
+  tsIso: string,
+): void {
+  if (!mxc.startsWith('mxc://')) return;
+  const key = `${matrixRoomId}:${eventId}:${mxc}`;
+  if (seen.has(key)) return;
+  seen.add(key);
+  out.push({
+    source: 'matrix_chat',
+    filename: filename || 'attachment',
+    mime,
+    mxc_uri: mxc,
+    matrix_room_id: matrixRoomId,
+    matrix_event_id: eventId,
+    occurred_at: tsIso,
+  });
+}
+
+function extractMediaFromMessageEvent(
+  matrixRoomId: string,
+  ev: NonNullable<MatrixMessagesChunk['chunk']>[number],
+  out: OrgMemoryAsset[],
+  seen: Set<string>,
+  bundleSlotCounter: { n: number },
+): void {
+  if (ev.type !== 'm.room.message' || !ev.content || !ev.event_id) return;
+  const content = ev.content;
+  const msgtype = content.msgtype as string | undefined;
+  const ts = ev.origin_server_ts
+    ? new Date(ev.origin_server_ts).toISOString()
+    : new Date().toISOString();
+
+  if (msgtype === 'm.file' || msgtype === 'm.image') {
+    const urlField = content.url as string | undefined;
+    const bodyText = (content.body as string | undefined)?.trim();
+    const info = content.info as { mimetype?: string } | undefined;
+    const filename =
+      (typeof content.filename === 'string' ? content.filename : undefined) ||
+      bodyText ||
+      'attachment';
+    if (urlField?.startsWith('mxc://')) {
+      pushMxcAsset(
+        out,
+        seen,
+        matrixRoomId,
+        ev.event_id,
+        urlField,
+        filename,
+        info?.mimetype,
+        ts,
+      );
+    }
+  }
+
+  const bundleRaw = content[HYPHA_MEDIA_BUNDLE_FIELD];
+  if (!Array.isArray(bundleRaw)) return;
+  for (const item of bundleRaw) {
+    const w = item as HyphaMediaBundleItemWire;
+    if (w.msgtype !== 'm.file' && w.msgtype !== 'm.image') continue;
+    if (typeof w.url !== 'string' || !w.url.startsWith('mxc://')) continue;
+    bundleSlotCounter.n += 1;
+    const fn =
+      (typeof w.filename === 'string' ? w.filename : undefined) ||
+      (typeof w.body === 'string' ? w.body : undefined) ||
+      'attachment';
+    const mime = w.info?.mimetype;
+    pushMxcAsset(out, seen, matrixRoomId, ev.event_id, w.url, fn, mime, ts);
+  }
+}
+
 async function fetchMatrixChatAssets(
   matrixRoomId: string,
-): Promise<OrgMemoryAsset[]> {
+): Promise<{ assets: OrgMemoryAsset[]; meta: MatrixOrgMemoryFetchMeta }> {
+  const env = matrixEnvFlags();
   const homeserver = process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL?.replace(
     /\/?$/,
     '',
   );
   const token = process.env.HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN?.trim();
-  if (!homeserver || !token) {
-    return [];
+
+  if (!homeserver) {
+    return {
+      assets: [],
+      meta: {
+        attempted: false,
+        skipped_reason: 'missing_homeserver_url',
+        chat_room_id: matrixRoomId || null,
+        ...env,
+        http_status: null,
+        events_in_chunk: 0,
+        media_events_yielded: 0,
+        hypha_media_bundle_slots: 0,
+        error: null,
+      },
+    };
+  }
+  if (!token) {
+    return {
+      assets: [],
+      meta: {
+        attempted: false,
+        skipped_reason: 'missing_access_token',
+        chat_room_id: matrixRoomId || null,
+        ...env,
+        http_status: null,
+        events_in_chunk: 0,
+        media_events_yielded: 0,
+        hypha_media_bundle_slots: 0,
+        error: null,
+      },
+    };
+  }
+  if (!matrixRoomId.trim()) {
+    return {
+      assets: [],
+      meta: {
+        attempted: false,
+        skipped_reason: 'missing_chat_room_id',
+        chat_room_id: null,
+        ...env,
+        http_status: null,
+        events_in_chunk: 0,
+        media_events_yielded: 0,
+        hypha_media_bundle_slots: 0,
+        error: null,
+      },
+    };
   }
 
   const encodedRoom = encodeURIComponent(matrixRoomId);
-  const url = `${homeserver}/_matrix/client/v3/rooms/${encodedRoom}/messages?dir=b&limit=50`;
+  const limit = 100;
+  const params = new URLSearchParams({
+    dir: 'b',
+    limit: String(limit),
+    access_token: token,
+  });
+  const url = `${homeserver}/_matrix/client/v3/rooms/${encodedRoom}/messages?${params.toString()}`;
+
   try {
     const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}` },
-      signal: AbortSignal.timeout(12_000),
+      method: 'GET',
+      signal: AbortSignal.timeout(20_000),
     });
-    if (!res.ok) {
-      return [];
-    }
-    const body = (await res.json()) as MatrixMessagesChunk;
+    const body = (await res.json()) as MatrixMessagesChunk & {
+      errcode?: string;
+      error?: string;
+    };
     const chunk = body.chunk ?? [];
     const out: OrgMemoryAsset[] = [];
     const seen = new Set<string>();
+    const bundleStats = { n: 0 };
 
     for (const ev of chunk) {
-      if (ev.type !== 'm.room.message' || !ev.content || !ev.event_id) continue;
-      const msgtype = ev.content.msgtype as string | undefined;
-      if (msgtype !== 'm.file' && msgtype !== 'm.image') continue;
-      const urlField = ev.content.url as string | undefined;
-      if (!urlField?.startsWith('mxc://')) continue;
-      const bodyText = (ev.content.body as string | undefined)?.trim();
-      const info = ev.content.info as { mimetype?: string } | undefined;
-      const filename =
-        bodyText ||
-        (typeof ev.content.filename === 'string'
-          ? ev.content.filename
-          : undefined) ||
-        'attachment';
-      const ts = ev.origin_server_ts
-        ? new Date(ev.origin_server_ts).toISOString()
-        : new Date().toISOString();
-      const key = `${matrixRoomId}:${ev.event_id}:${urlField}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      out.push({
-        source: 'matrix_chat',
-        filename,
-        mime: info?.mimetype,
-        mxc_uri: urlField,
-        matrix_room_id: matrixRoomId,
-        matrix_event_id: ev.event_id,
-        occurred_at: ts,
-      });
+      extractMediaFromMessageEvent(matrixRoomId, ev, out, seen, bundleStats);
     }
-    return out;
-  } catch {
-    return [];
+
+    const errMsg =
+      !res.ok && (body.error || body.errcode)
+        ? `${body.errcode ?? 'M_UNKNOWN'}: ${body.error ?? res.statusText}`
+        : !res.ok
+        ? `HTTP ${res.status}`
+        : null;
+
+    return {
+      assets: out,
+      meta: {
+        attempted: true,
+        skipped_reason: null,
+        chat_room_id: matrixRoomId,
+        ...env,
+        http_status: res.status,
+        events_in_chunk: chunk.length,
+        media_events_yielded: out.length,
+        hypha_media_bundle_slots: bundleStats.n,
+        error: errMsg,
+      },
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return {
+      assets: [],
+      meta: {
+        attempted: true,
+        skipped_reason: null,
+        chat_room_id: matrixRoomId,
+        ...env,
+        http_status: null,
+        events_in_chunk: 0,
+        media_events_yielded: 0,
+        hypha_media_bundle_slots: 0,
+        error: msg,
+      },
+    };
   }
 }
 
@@ -263,7 +455,8 @@ function filterAssetsBySearch(
 /**
  * Organisation memory for a space: member roster (same as `getSpaceMembersRoster`)
  * plus `org_memory_assets` from proposal document attachments/lead images and,
- * when `HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN` is set, Matrix human-chat attachments.
+ * when `HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN` + `NEXT_PUBLIC_MATRIX_HOMESERVER_URL` are set,
+ * Matrix human-chat attachments (including `org.hypha.media_bundle` slots).
  */
 export async function getOrgMemoryBySpaceSlug(
   {
@@ -299,6 +492,7 @@ export async function getOrgMemoryBySpaceSlug(
         asOf,
         members: [],
         org_memory_assets: [],
+        matrix_fetch: idleMatrixFetchMeta(),
         pagination: emptyMemberPagination(safePage, safePageSize),
         assets_pagination: emptyAssetsPagination(
           safeAssetsPage,
@@ -344,6 +538,7 @@ export async function getOrgMemoryBySpaceSlug(
       result: {
         ...roster,
         org_memory_assets: [],
+        matrix_fetch: idleMatrixFetchMeta(),
         assets_pagination: emptyAssetsPagination(
           safeAssetsPage,
           safeAssetsPageSize,
@@ -375,8 +570,23 @@ export async function getOrgMemoryBySpaceSlug(
   const proposalAssets = collectProposalAssets(docsWithStatus);
 
   const matrixRoomId = host.chatRoomId?.trim() ?? '';
-  const matrixAssets =
-    matrixRoomId.length > 0 ? await fetchMatrixChatAssets(matrixRoomId) : [];
+  const { assets: matrixAssets, meta: matrixFetchMeta } =
+    matrixRoomId.length > 0
+      ? await fetchMatrixChatAssets(matrixRoomId)
+      : {
+          assets: [] as OrgMemoryAsset[],
+          meta: {
+            attempted: false,
+            skipped_reason: 'missing_chat_room_id' as const,
+            chat_room_id: null,
+            ...matrixEnvFlags(),
+            http_status: null,
+            events_in_chunk: 0,
+            media_events_yielded: 0,
+            hypha_media_bundle_slots: 0,
+            error: null,
+          } satisfies MatrixOrgMemoryFetchMeta,
+        };
 
   let combined = [...proposalAssets, ...matrixAssets].sort((a, b) =>
     a.occurred_at < b.occurred_at ? 1 : a.occurred_at > b.occurred_at ? -1 : 0,
@@ -399,6 +609,7 @@ export async function getOrgMemoryBySpaceSlug(
       asOf,
       members: roster.members,
       org_memory_assets: pageSlice,
+      matrix_fetch: matrixFetchMeta,
       pagination: roster.pagination,
       assets_pagination: {
         total,
