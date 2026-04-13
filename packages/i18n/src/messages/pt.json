@@ -125,7 +125,7 @@
         "sellerWillSend": "O vendedor envia",
         "buyerWillSend": "O comprador enviará",
         "loadingTokens": "A carregar tokens...",
-        "escrowNotice": "Esta proposta envia os tokens do vendedor para uma conta de escrow. O acordo só é finalizado quando o comprador transferir o montante acordado para essa mesma conta de escrow. Os detalhes serão fornecidos automaticamente ao comprador.",
+        "escrowNotice": "Esta proposta utiliza uma conta de escrow para a troca. Votar apenas aprova as condições — não move tokens de si nem de outros membros. A tesouraria do espaço executa a proposta aprovada na cadeia; em seguida, cada parte envia os tokens acordados para a mesma conta de escrow quando for a sua vez. O acordo só fica concluído quando ambos os lados tiverem depositado no escrow.",
         "escrowAccountAddress": "Endereço da conta de escrow",
         "escrowFunding": "Financiamento de escrow",
         "escrowStatus": "Status do escrow",

@@ -1006,7 +1006,7 @@
         "buyer": "Buyer (Wallet Address)",
         "buyerWillSend": "Buyer will send",
         "loadingTokens": "Loading tokens...",
-        "escrowNotice": "This proposal sends the seller's tokens to an escrow account. The agreement is only finalised once the buyer has transferred the agreed token amount to that same escrow account. Details will be automatically provided to the buyer.",
+        "escrowNotice": "This proposal uses an escrow account for the exchange. Voting approves the terms only — it does not move tokens from you or other members. The space treasury executes the approved proposal on chain; afterwards, each party sends their agreed tokens to the same escrow when it is their step. The agreement is finalised once both sides have funded the escrow.",
         "escrowAccountAddress": "Escrow account address",
         "escrowFunding": "Escrow Funding",
         "escrowStatus": "Escrow Status",

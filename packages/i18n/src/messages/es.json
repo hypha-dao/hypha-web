@@ -125,7 +125,7 @@
         "sellerWillSend": "El vendedor envía",
         "buyerWillSend": "El comprador enviará",
         "loadingTokens": "Cargando tokens...",
-        "escrowNotice": "Esta propuesta envía los tokens del vendedor a una cuenta de depósito en garantía. El acuerdo solo se finaliza cuando el comprador haya transferido el importe acordado a esa misma cuenta de depósito. Los detalles se proporcionarán automáticamente al comprador.",
+        "escrowNotice": "Esta propuesta utiliza una cuenta de depósito en garantía para el intercambio. Votar solo aprueba las condiciones: no mueve tokens de usted ni de otros miembros. La tesorería del espacio ejecuta la propuesta aprobada en cadena; después, cada parte envía los tokens acordados a la misma cuenta de depósito cuando le corresponda. El acuerdo se finaliza cuando ambas partes hayan aportado fondos al depósito.",
         "escrowAccountAddress": "Dirección de la cuenta de depósito en garantía",
         "escrowFunding": "Financiación de escrow",
         "escrowStatus": "Estado del escrow",
