@@ -40,6 +40,11 @@ type ReplyPreview = {
   onDismiss: () => void;
 };
 
+type EditPreview = {
+  excerpt: string;
+  onDismiss: () => void;
+};
+
 export type ChatDraftAttachment = {
   id: string;
   file: File;
@@ -56,6 +61,8 @@ type HumanChatPanelChatBarProps = {
   channelName?: string;
   /** Rich reply: composer preview above the textarea */
   replyPreview?: ReplyPreview;
+  /** Editing an existing own message (Matrix `m.replace`). */
+  editPreview?: EditPreview;
   draftAttachments?: ChatDraftAttachment[];
   onDraftAttachmentsChange?: (next: ChatDraftAttachment[]) => void;
 };
@@ -217,6 +224,7 @@ export function HumanChatPanelChatBar({
   placeholder,
   channelName,
   replyPreview,
+  editPreview,
   draftAttachments = [],
   onDraftAttachmentsChange,
 }: HumanChatPanelChatBarProps) {
@@ -228,6 +236,7 @@ export function HumanChatPanelChatBar({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const composerShellRef = useRef<HTMLDivElement>(null);
   const replyPreviewWasOpenRef = useRef(false);
+  const editPreviewWasOpenRef = useRef(false);
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const [colonOpen, setColonOpen] = useState(false);
   const [colonSuggestions, setColonSuggestions] = useState<EmojiIndexEntry[]>(
@@ -279,6 +288,14 @@ export function HumanChatPanelChatBar({
     }
     replyPreviewWasOpenRef.current = isOpen;
   }, [replyPreview]);
+
+  useEffect(() => {
+    const isOpen = Boolean(editPreview);
+    if (isOpen && !editPreviewWasOpenRef.current) {
+      textareaRef.current?.focus();
+    }
+    editPreviewWasOpenRef.current = isOpen;
+  }, [editPreview]);
 
   const autoResize = useCallback(() => {
     if (textareaRef.current) {
@@ -789,6 +806,31 @@ export function HumanChatPanelChatBar({
               aria-label={t('replyDismiss')}
               title={t('replyDismiss')}
               onClick={replyPreview.onDismiss}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+        {editPreview && (
+          <div
+            data-testid="chat-edit-preview"
+            className="flex items-start gap-2 border-b border-border px-3 py-2"
+          >
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">
+                  {t('editingMessage')}
+                </span>
+                <span className="text-muted-foreground"> — </span>
+                <span>{editPreview.excerpt}</span>
+              </p>
+            </div>
+            <button
+              type="button"
+              className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              aria-label={t('editDismiss')}
+              title={t('editDismiss')}
+              onClick={editPreview.onDismiss}
             >
               <X className="h-4 w-4" />
             </button>

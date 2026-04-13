@@ -19,6 +19,7 @@ import {
   useSpaceMutationsWeb2Rsc,
   Message,
   firstLineForReplyPreview,
+  stripMatrixReplyFallback,
   RoomEvent,
   MatrixUploadTimeoutError,
   SendMessagePartialFailureError,
@@ -88,6 +89,11 @@ type UIMessage = {
 type ReplyDraft = {
   messageId: string;
   authorLabel: string;
+  excerpt: string;
+};
+
+type EditDraft = {
+  messageId: string;
   excerpt: string;
 };
 
@@ -267,6 +273,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const sendOperationTokenRef = useRef<symbol | null>(null);
   const [messages, setMessages] = useState<UIMessage[]>([]);
   const [replyDraft, setReplyDraft] = useState<ReplyDraft | null>(null);
+  const [editDraft, setEditDraft] = useState<EditDraft | null>(null);
   const [roomId, setRoomId] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -379,6 +386,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       disposeDraftAttachmentUrls(draftAttachmentsRef.current);
       setDraftAttachments([]);
       setReplyDraft(null);
+      setEditDraft(null);
       setError(null);
       setSendingPending(null);
     }
@@ -520,6 +528,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setMessages([]);
       setRoomId(null);
       setReplyDraft(null);
+      setEditDraft(null);
+      setInput('');
+      setComposerError(null);
       disposeDraftAttachmentUrls(draftAttachmentsRef.current);
       setDraftAttachments([]);
       setError(null);
@@ -534,6 +545,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setMessages([]);
       setRoomId(null);
       setReplyDraft(null);
+      setEditDraft(null);
+      setInput('');
+      setComposerError(null);
       disposeDraftAttachmentUrls(draftAttachmentsRef.current);
       setDraftAttachments([]);
       setError(null);
@@ -554,6 +568,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setError(null);
       setMessages([]);
       setReplyDraft(null);
+      setEditDraft(null);
+      setInput('');
+      setComposerError(null);
       disposeDraftAttachmentUrls(draftAttachmentsRef.current);
       setDraftAttachments([]);
       setSendingPending(null);
@@ -701,6 +718,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           ? { ...draft, messageId: newId }
           : draft,
       );
+      setEditDraft((draft) =>
+        draft?.messageId === oldEventId
+          ? { ...draft, messageId: newId }
+          : draft,
+      );
     };
 
     room.on(RoomEvent.LocalEchoUpdated, onLocalEchoUpdated);
@@ -753,6 +775,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           ? t('you')
           : target.senderName ?? resolveMemberLabel(target.senderMatrixId);
       const excerpt = firstLineForReplyPreview(getMessagePlainText(target));
+      setEditDraft(null);
       setReplyDraft({
         messageId,
         authorLabel,
@@ -762,13 +785,41 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [messages, resolveMemberLabel, t],
   );
 
+  const handleEditMessage = useCallback(
+    (messageId: string) => {
+      const target = messages.find((m) => m.id === messageId);
+      if (!target || target.role !== 'user') return;
+      if (target.media || (target.mediaSlots && target.mediaSlots.length > 0)) {
+        return;
+      }
+      const textParts =
+        target.parts?.filter(
+          (p): p is { type: 'text'; text: string } => p.type === 'text',
+        ) ?? [];
+      const plain = stripMatrixReplyFallback(
+        textParts.map((p) => p.text).join(''),
+      );
+      setReplyDraft(null);
+      disposeDraftAttachmentUrls(draftAttachmentsRef.current);
+      setDraftAttachments([]);
+      setEditDraft({
+        messageId,
+        excerpt: firstLineForReplyPreview(plain),
+      });
+      setInput(plain);
+    },
+    [messages],
+  );
+
   const handleSend = useCallback(async () => {
     if (!roomId) return;
     const trimmed = input.trim();
     if (!trimmed && draftAttachments.length === 0) return;
     const text = input;
     const replyToEventId = replyDraft?.messageId;
+    const editTargetEventId = editDraft?.messageId;
     const savedDraft = replyDraft;
+    const savedEditDraft = editDraft;
     const savedAttachments = draftAttachments;
     const sendToken = Symbol('send');
     sendOperationTokenRef.current = sendToken;
@@ -786,34 +837,46 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       });
     }
     try {
-      await matrixRef.current.sendMessage({
-        roomId,
-        message: text,
-        ...(replyToEventId ? { replyToEventId } : {}),
-        ...(savedAttachments.length > 0
-          ? {
-              attachments: savedAttachments.map((a) => ({
-                file: a.file,
-                kind: a.kind === 'video' ? 'file' : a.kind,
-                spoiler: a.spoiler,
-              })),
-              onUploadProgress: ({ completed, total }) => {
-                setSendingPending((cur) =>
-                  cur && cur.id === pendingId
-                    ? {
-                        ...cur,
-                        attachmentCount: total,
-                        uploadedCount: completed,
-                      }
-                    : cur,
-                );
-              },
-            }
-          : {}),
-      });
+      if (editTargetEventId) {
+        if (savedAttachments.length > 0) {
+          throw new Error(t('editAttachmentsNotSupported'));
+        }
+        await matrixRef.current.editRoomMessage({
+          roomId,
+          targetEventId: editTargetEventId,
+          message: text,
+        });
+      } else {
+        await matrixRef.current.sendMessage({
+          roomId,
+          message: text,
+          ...(replyToEventId ? { replyToEventId } : {}),
+          ...(savedAttachments.length > 0
+            ? {
+                attachments: savedAttachments.map((a) => ({
+                  file: a.file,
+                  kind: a.kind === 'video' ? 'file' : a.kind,
+                  spoiler: a.spoiler,
+                })),
+                onUploadProgress: ({ completed, total }) => {
+                  setSendingPending((cur) =>
+                    cur && cur.id === pendingId
+                      ? {
+                          ...cur,
+                          attachmentCount: total,
+                          uploadedCount: completed,
+                        }
+                      : cur,
+                  );
+                },
+              }
+            : {}),
+        });
+      }
       setSendingPending(null);
       disposeDraftAttachmentUrls(savedAttachments);
       setReplyDraft(null);
+      setEditDraft(null);
       if (sendOperationTokenRef.current === sendToken) {
         sendOperationTokenRef.current = null;
       }
@@ -841,6 +904,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         setDraftAttachments(savedAttachments.slice(sentAttachmentCount));
         setInput(restoreCaption ? text : '');
         setReplyDraft(savedDraft);
+        setEditDraft(savedEditDraft);
         return;
       }
       const msg = isMatrixRateLimitedError(err)
@@ -853,9 +917,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setComposerError(msg);
       setInput(text);
       setReplyDraft(savedDraft);
+      setEditDraft(savedEditDraft);
       setDraftAttachments(savedAttachments);
     }
-  }, [input, roomId, replyDraft, draftAttachments, t]);
+  }, [input, roomId, replyDraft, editDraft, draftAttachments, t]);
 
   useEffect(() => {
     return () => {
@@ -909,6 +974,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               <HumanChatPanelMessages
                 messages={mergedMessages}
                 onReply={handleReplyToMessage}
+                onEditMessage={handleEditMessage}
                 onToggleReaction={handleToggleReaction}
                 resolveReactionReactorLabel={(userId) =>
                   resolveMemberLabel(userId)
@@ -938,6 +1004,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     authorLabel: replyDraft.authorLabel,
                     excerpt: replyDraft.excerpt,
                     onDismiss: () => setReplyDraft(null),
+                  }
+                : undefined
+            }
+            editPreview={
+              editDraft
+                ? {
+                    excerpt: editDraft.excerpt,
+                    onDismiss: () => {
+                      setEditDraft(null);
+                      setInput('');
+                    },
                   }
                 : undefined
             }
