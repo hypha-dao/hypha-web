@@ -1640,7 +1640,7 @@
     "contextReply": "Répondre",
     "contextCopyText": "Copier le texte",
     "contextCopyMessageLink": "Copier le lien du message",
-    "contextSpeakMessage": "Lire le message",
+    "contextSpeakMessage": "Lire à voix haute",
     "contextDeleteMessage": "Supprimer le message",
     "contextDeleteConfirmTitle": "Supprimer ce message ?",
     "contextDeleteConfirmDescription": "Le message sera supprimé pour tout le monde dans le chat. Cette action est irréversible.",

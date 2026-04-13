@@ -167,6 +167,7 @@ function MenuSections({
   canCopy,
   onCopyText,
   onCopyLink,
+  matrixToLink,
   onSpeak,
   canDelete,
   onRequestDelete,
@@ -185,6 +186,7 @@ function MenuSections({
   canCopy: boolean;
   onCopyText: () => void;
   onCopyLink: () => void;
+  matrixToLink: string;
   onSpeak: () => void;
   canDelete: boolean;
   onRequestDelete: () => void;
@@ -261,7 +263,12 @@ function MenuSections({
         <span className="flex-1">{t('contextCopyText')}</span>
         <Copy className="size-4 shrink-0 opacity-70" aria-hidden />
       </Item>
-      <Item onSelect={() => void onCopyLink()}>
+      <Item
+        disabled={!matrixToLink}
+        onSelect={() => {
+          if (matrixToLink) void onCopyLink();
+        }}
+      >
         <span className="flex-1">{t('contextCopyMessageLink')}</span>
         <Link2 className="size-4 shrink-0 opacity-70" aria-hidden />
       </Item>
@@ -379,6 +386,7 @@ export function HumanChatPanelMessageOverflow({
     canCopy,
     onCopyText,
     onCopyLink,
+    matrixToLink,
     onSpeak,
     canDelete,
     onRequestDelete: () => setDeleteOpen(true),

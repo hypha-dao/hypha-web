@@ -1640,7 +1640,7 @@
     "contextReply": "Responder",
     "contextCopyText": "Copiar texto",
     "contextCopyMessageLink": "Copiar link da mensagem",
-    "contextSpeakMessage": "Ler mensagem",
+    "contextSpeakMessage": "Ler em voz alta",
     "contextDeleteMessage": "Excluir mensagem",
     "contextDeleteConfirmTitle": "Excluir esta mensagem?",
     "contextDeleteConfirmDescription": "A mensagem será removida para todos no chat. Não é possível desfazer.",

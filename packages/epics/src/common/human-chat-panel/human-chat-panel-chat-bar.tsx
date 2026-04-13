@@ -281,22 +281,6 @@ export function HumanChatPanelChatBar({
     });
   }, [colonOpen]);
 
-  useEffect(() => {
-    const isOpen = Boolean(replyPreview);
-    if (isOpen && !replyPreviewWasOpenRef.current) {
-      textareaRef.current?.focus();
-    }
-    replyPreviewWasOpenRef.current = isOpen;
-  }, [replyPreview]);
-
-  useEffect(() => {
-    const isOpen = Boolean(editPreview);
-    if (isOpen && !editPreviewWasOpenRef.current) {
-      textareaRef.current?.focus();
-    }
-    editPreviewWasOpenRef.current = isOpen;
-  }, [editPreview]);
-
   const autoResize = useCallback(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -304,6 +288,28 @@ export function HumanChatPanelChatBar({
         Math.min(textareaRef.current.scrollHeight, 160) + 'px';
     }
   }, []);
+
+  useEffect(() => {
+    const isOpen = Boolean(replyPreview);
+    if (isOpen) {
+      if (!replyPreviewWasOpenRef.current) {
+        textareaRef.current?.focus();
+      }
+      autoResize();
+    }
+    replyPreviewWasOpenRef.current = isOpen;
+  }, [replyPreview, autoResize]);
+
+  useEffect(() => {
+    const isOpen = Boolean(editPreview);
+    if (isOpen) {
+      if (!editPreviewWasOpenRef.current) {
+        textareaRef.current?.focus();
+      }
+      autoResize();
+    }
+    editPreviewWasOpenRef.current = isOpen;
+  }, [editPreview, autoResize]);
 
   const syncColonState = useCallback((val: string, cursor: number) => {
     const requestId = ++colonRequestIdRef.current;
@@ -342,6 +348,10 @@ export function HumanChatPanelChatBar({
     }
     syncColonState(value, el.selectionStart ?? value.length);
   }, [value, syncColonState]);
+
+  useEffect(() => {
+    autoResize();
+  }, [value, autoResize]);
 
   const applyColonChoice = useCallback(
     (entry: EmojiIndexEntry) => {

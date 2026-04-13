@@ -739,6 +739,23 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       if (!roomId?.trim() || !eventId?.trim()) {
         return;
       }
+      const room = client.getRoom(roomId);
+      if (!room) {
+        throw new Error('Room not found');
+      }
+      const ev =
+        room.findEventById(eventId) ??
+        (typeof room.getPendingEvent === 'function'
+          ? room.getPendingEvent(eventId)
+          : null);
+      if (!ev) {
+        throw new Error('Message not found');
+      }
+      const uid = client.getUserId();
+      const sender = ev.getSender();
+      if (!uid || !sender || sender !== uid) {
+        throw new Error('You can only delete your own messages');
+      }
       await client.redactEvent(roomId, eventId);
     },
     [client],

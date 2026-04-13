@@ -1641,7 +1641,7 @@
     "contextReply": "Reply",
     "contextCopyText": "Copy text",
     "contextCopyMessageLink": "Copy message link",
-    "contextSpeakMessage": "Speak message",
+    "contextSpeakMessage": "Read message aloud",
     "contextDeleteMessage": "Delete message",
     "contextDeleteConfirmTitle": "Delete this message?",
     "contextDeleteConfirmDescription": "This removes the message for everyone in the chat. You cannot undo this.",
