@@ -376,10 +376,20 @@ export const ExchangeStakesAndTokensPlugin = ({
   ]);
 
   /** Buyer leg only — do not use seller `useTokens` `isLoading` here (it hid buyer loading behind an empty panel). */
+  const sellerBalancesPending =
+    isEvmAddress(sellerBalanceLookupAddress) &&
+    sellerTokenCandidates.length > 0 &&
+    sellerOwnedTokenSet === undefined;
+  const buyerBalancesPending =
+    isEvmAddress(buyerBalanceLookupAddress) &&
+    buyerTokenCandidates.length > 0 &&
+    buyerOwnedTokenSet === undefined;
+
   const isBuyerLegLoading =
     isLoadingBuyerTokenList ||
     (buyerRecipientType === 'space' && isLoadingBuyerSpaceChain) ||
     (isEvmAddress(buyerBalanceLookupAddress) && isLoadingBuyerBalances) ||
+    buyerBalancesPending ||
     (buyerTokensBeforeWhitelist.length > 0 && isLoadingBuyerWhitelist);
 
   return (
@@ -401,6 +411,7 @@ export const ExchangeStakesAndTokensPlugin = ({
           (sellerRecipientType === 'space' && isLoadingActiveSpaceChain) ||
           (isEvmAddress(sellerBalanceLookupAddress) &&
             isLoadingSellerBalances) ||
+          sellerBalancesPending ||
           (sellerTokensBeforeWhitelist.length > 0 && isLoadingSellerWhitelist)
         }
         width="100%"
