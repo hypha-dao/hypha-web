@@ -1,433 +1,262 @@
-# EnergyPPAv2 — Contract Documentation
+# EnergyPPAv2 & EnergyPPAv2Factory
 
 ## What Is This?
 
-EnergyPPAv2 is a smart contract that handles **energy billing and revenue sharing** for a community. Think of it as an on-chain ledger that:
+**EnergyPPAv2** is a smart contract that handles energy billing and revenue sharing for a community. It:
 
-1. **Charges consumers** for the energy they use.
-2. **Splits revenue** from each energy source (solar park, battery, etc.) to the people who own shares in that source.
-3. **Lets members claim** their positive balance as stablecoins, or settle debt by paying stablecoins.
+1. **Charges consumers** for the energy they use (solar, battery, or grid import).
+2. **Splits revenue** from each energy source to token holders proportionally.
+3. **Lets members settle debt** by paying stablecoins, or **claim credit** as stablecoins.
 
-Each energy source has its own ERC-20 ownership token, typically a **`RegularSpaceToken`** UUPS proxy (the same contract family used for Hypha space tokens). If you hold 30% of a source's token supply, you get 30% of that source's revenue after fees. The PPA contract only requires standard `IERC20` (`balanceOf` / `totalSupply`).
+Each energy source (e.g. a solar park) has its own ERC-20 ownership token (`RegularSpaceToken`). If you hold 30% of that token's supply, you get 30% of that source's revenue after fees.
 
-A **factory contract** (`EnergyPPAv2Factory`) can deploy a fully configured community in a single transaction.
+**Export** to the grid uses a designated export device ID. When the backend sends a reading with the export device ID, revenue goes to the source's token holders and `gridBalance` increases (grid owes the community).
 
----
-
-## Key Concepts
-
-| Concept | Meaning |
-|---|---|
-| **Source** | An energy source like a solar park or battery. Identified by a `bytes32` ID. |
-| **Ownership token (e.g. RegularSpaceToken)** | An ERC-20 (usually a `RegularSpaceToken` proxy) representing ownership of a specific source. Token balance = revenue share. |
-| **Member** | A community participant — either a consumer (has devices/meters) or a pure investor (no devices, just owns source tokens). |
-| **Device** | A smart meter identified by a numeric ID, linked to a member. |
-| **Import** | Energy bought from the external grid (not from a local source). |
-| **Export** | Energy sold back to the grid from a local source. |
-| **Energy Credit Balance** | A member's running balance. Positive = credit (claimable as stablecoins), negative = debt (payable in stablecoins). |
-| **Fees** | Community fee + aggregator fee, taken as a percentage (basis points) from each source's revenue before distributing to token holders. |
-| **Zero-Sum** | The contract enforces that all credits and debits always net to zero. |
-| **Stablecoin Pool** | Stablecoins accumulate in the contract when members settle debts. Members with positive balances can claim from this pool. |
+**EnergyPPAv2Factory** deploys a fully configured community in a single transaction — including the PPA contract, the EnergyToken, and all source ownership tokens.
 
 ---
 
-## Initialization
+## How It Works
 
-### `initialize(initialOwner, energyToken, stablecoin, paymentRecipient)`
+```
+Backend sends meter readings
+         │
+         ▼
+   consumeEnergy(readings)
+         │
+         ├── Phase 1: Charge each consumer (quantity × price)
+         │     • Local source → revenue accumulates per source
+         │     • Grid import  → gridBalance decreases (community owes grid)
+         │     • Export device → gridBalance increases (grid owes community)
+         │
+         └── Phase 2: Split each source's revenue
+               • Community fee (e.g. 5%)
+               • Aggregator fee (e.g. 3%)
+               • Remainder → proportional to ownership token balances
+               • Last holder gets the remainder (absorbs rounding dust)
 
-Sets up the contract for the first time. Called once after deployment.
+After consumption, members can:
+  • settleOwnDebt()  — pay stablecoins to reduce a negative balance
+  • claimCredit()    — withdraw a positive balance as stablecoins
+```
 
-- `initialOwner` — the admin address (contract owner).
-- `energyToken` — address of the EnergyToken ERC-20 used to represent positive balances.
-- `stablecoin` — address of the stablecoin ERC-20 used for debt settlement and credit claims.
-- `paymentRecipient` — address for legacy payment forwarding (unused in current flow).
+**Zero-sum invariant**: the sum of all member balances + fee balances − gridBalance + settledBalance always equals zero. Enforced automatically after every `consumeEnergy` call.
 
----
+**Conversion rate**: 1 internal unit = 10,000 stablecoin units (e.g. if stablecoin has 6 decimals, 1 internal unit = 0.01 USDC).
 
-## Source Registry
+**gridBalance**: a single value tracking the community's net position with the grid:
+- **Negative** = community imported more than exported (owes the grid)
+- **Positive** = community exported more than imported (grid owes the community)
 
-### `registerSource(sourceId, sourceType, ownershipToken, basePricePerKwh)`
-
-Registers a new energy source (e.g. "Solar Park A").
-
-- `sourceId` — unique identifier (bytes32).
-- `sourceType` — `SOLAR` or `BATTERY`.
-- `ownershipToken` — address of the ownership ERC-20 for this source (e.g. `RegularSpaceToken` proxy).
-- `basePricePerKwh` — the agreed PPA base price. Stored for transparency but **not enforced** — the backend can adjust the actual price per reading.
-
-**Access:** whitelisted callers only.
-
-### `updateSourceBasePrice(sourceId, newBasePrice)`
-
-Updates the reference base price for a source. Does not affect already-processed readings.
-
-**Access:** whitelisted callers only.
-
-### `deactivateSource(sourceId)`
-
-Marks a source as inactive. Deactivated sources cannot receive new consumption readings.
-
-**Access:** whitelisted callers only.
-
----
-
-## Core: Energy Consumption
-
-### `consumeEnergy(readings)`
-
-The main function. Processes an array of consumption readings for one time interval and distributes revenue. Works in two phases:
-
-**Phase 1 — Charge consumers:**
-
-For each reading:
-- Looks up which member owns the device.
-- Charges the member: `quantity × pricePerKwh` is subtracted from their balance.
-- If the source is `IMPORT` (grid), the charge goes to `importEnergyCreditBalance`.
-- If the source is a local source (solar/battery), the charge is added to that source's revenue pot.
-- If the device is the export meter, the reading is treated as an export sale — revenue goes to the source, and `exportEnergyCreditBalance` is debited.
-
-**Phase 2 — Distribute revenue per source:**
-
-For each source that earned revenue:
-1. Community fee is taken (% of total revenue) → credited to `communityAddress`.
-2. Aggregator fee is taken (% of total revenue) → credited to `aggregatorAddress`.
-3. Remaining revenue is split proportionally among all members who hold that source's ownership token.
-4. The last token holder absorbs any rounding dust.
-
-**Access:** whitelisted callers only. Enforces zero-sum invariant.
+**Pricing**:
+- **Source base price** (`basePricePerKwh`) — agreed PPA price for local production, stored on-chain for transparency.
+- **Import price** — NOT stored on-chain. The grid tariff is external; the backend decides.
+- **Export price** — decided by the backend. The export device sends readings at the negotiated rate.
 
 ---
 
-## Member Management
+## EnergyPPAv2 — Functions
 
-### `addMember(memberAddress, deviceIds, metadataHash)`
+### Initialization
 
-Adds a new community member.
+| Function | Access | What It Does |
+|---|---|---|
+| `initialize(initialOwner, energyToken, stablecoin, paymentRecipient)` | Once only | Sets up the contract. Called automatically by the UUPS proxy on deployment. Sets the owner, links the EnergyToken and stablecoin addresses. |
 
-- `memberAddress` — their wallet address.
-- `deviceIds` — array of smart meter IDs linked to this member. Pass an empty array for pure investors.
-- `metadataHash` — off-chain metadata reference (e.g. IPFS hash).
+### Source Registry
 
-**Access:** whitelisted callers only.
+| Function | Access | What It Does |
+|---|---|---|
+| `registerSource(sourceId, sourceType, ownershipToken, basePricePerKwh)` | Whitelisted | Adds a new energy source (solar, battery). Links it to an ERC-20 ownership token. `basePricePerKwh` is a reference price stored for transparency — the backend decides the actual price per reading. |
+| `updateSourceBasePrice(sourceId, newBasePrice)` | Whitelisted | Updates the reference base price for a source. Informational only — doesn't change actual billing. |
+| `deactivateSource(sourceId)` | Whitelisted | Disables a source. It can no longer receive consumption readings. |
 
-### `removeMember(memberAddress)`
+### Core
 
-Removes a member from the community. Unlinks all their devices, deletes their balance, and burns any energy tokens they hold.
+| Function | Access | What It Does |
+|---|---|---|
+| `consumeEnergy(readings[])` | Whitelisted | The main function. Takes an array of meter readings, charges each consumer, and distributes revenue to source owners. Each reading has: `deviceId`, `quantity`, `pricePerKwh`, `sourceId`. All devices — households, export buyers, etc. — are treated identically. Automatically enforces the zero-sum invariant. |
 
-**Access:** whitelisted callers only.
+### Members
 
----
+| Function | Access | What It Does |
+|---|---|---|
+| `addMember(address, deviceIds[], metadataHash)` | Whitelisted | Registers a community member. `deviceIds` links their smart meter(s) to their address. Pass empty `deviceIds` for pure investors (no meter, just revenue). External buyers (other communities) are added as regular members with devices. |
+| `removeMember(address)` | Whitelisted | Removes a member. Unlinks their devices, clears their balance, burns any EnergyToken they hold. |
 
-## Debt Settlement
+### Export
 
-### `settleDebt(debtor, stablecoinAmount)`
+| Function | Access | What It Does |
+|---|---|---|
+| `setExportDeviceId(deviceId)` | Whitelisted | Set the device ID used for grid export. When a reading targets this device, revenue goes to source owners and gridBalance increases. |
+| `getExportDeviceId()` | View | Returns the current export device ID. |
 
-Allows anyone to pay off a member's debt using stablecoins. The stablecoin is transferred from `msg.sender` into the contract (building the liquidity pool). The debtor's negative balance is reduced accordingly.
+### Settlement (Paying Debt)
 
-The conversion rate is `1 internal unit = 10,000 stablecoin units` (to handle decimal precision).
+| Function | Access | What It Does |
+|---|---|---|
+| `settleOwnDebt(stablecoinAmount)` | Anyone (own debt) | Pay off your negative energy credit balance using stablecoins. If you overpay, it's capped to your actual debt. Stablecoins are held by the contract as liquidity for credit claims. |
+| `settleDebt(debtor, stablecoinAmount)` | Anyone | Pay off someone else's debt. Same logic as `settleOwnDebt` but you specify the debtor address. |
 
-**Access:** anyone (uses reentrancy guard).
+### Credit Claiming (Withdrawing Earnings)
 
-### `settleOwnDebt(stablecoinAmount)`
+| Function | Access | What It Does |
+|---|---|---|
+| `claimCredit(internalAmount)` | Anyone (own credit) | Withdraw your positive energy credit balance as stablecoins. If you request more than your credit, it's capped. Requires the contract to hold sufficient stablecoin liquidity. |
+| `claimCreditFor(beneficiary, internalAmount)` | Whitelisted | Trigger a credit payout to any member. Useful for automated payouts. |
 
-Convenience function — same as `settleDebt` but the caller pays their own debt.
+### Admin — Owner Only
 
-**Access:** anyone (uses reentrancy guard).
+| Function | Access | What It Does |
+|---|---|---|
+| `updateWhitelist(account, bool)` | Owner | Grant or revoke whitelist access for an address. Whitelisted addresses can call `consumeEnergy`, `registerSource`, `addMember`, etc. |
+| `setCommunityAddress(addr)` | Owner | Set the address that receives community fees. |
+| `setAggregatorAddress(addr)` | Owner | Set the address that receives aggregator fees. |
+| `setCommunityFeeBps(bps)` | Owner | Set community fee in basis points (500 = 5%). Total fees cannot exceed 100%. |
+| `setAggregatorFeeBps(bps)` | Owner | Set aggregator fee in basis points (300 = 3%). |
+| `setPaymentRecipient(recipient)` | Owner | Set the payment recipient address (currently unused — stablecoins stay in contract). |
 
----
+### Admin — Whitelisted
 
-## Credit Claiming
+| Function | Access | What It Does |
+|---|---|---|
+| `setEnergyToken(address)` | Whitelisted | Change the EnergyToken contract address. |
+| `setStablecoin(address)` | Whitelisted | Change the stablecoin contract address. |
+| `emergencyReset()` | Whitelisted | Zeroes all balances for all members, fees, import, and settled. Use only in emergencies. |
 
-### `claimCredit(internalAmount)`
+### View Functions (Read-Only)
 
-Withdraw a positive energy credit balance as stablecoins. The contract must hold enough stablecoin liquidity (funded by debt settlements).
-
-- `internalAmount` — amount to claim in internal units. If this exceeds the available credit, only the available amount is claimed.
-- Conversion: `1 internal unit = 10,000 stablecoin units`.
-
-**Access:** anyone with a positive balance (uses reentrancy guard).
-
-### `claimCreditFor(beneficiary, internalAmount)`
-
-Same as `claimCredit`, but a whitelisted caller can trigger the payout for any member. Stablecoins are sent to the beneficiary.
-
-**Access:** whitelisted callers only (uses reentrancy guard).
-
----
-
-## Admin Functions
-
-### `updateWhitelist(account, isWhitelisted)`
-
-Grants or revokes whitelist access for an address. Whitelisted addresses can call core functions like `consumeEnergy`, `addMember`, `registerSource`, etc.
-
-**Access:** owner only.
-
-### `setEnergyToken(tokenAddress)`
-
-Changes the EnergyToken contract address.
-
-**Access:** whitelisted callers only.
-
-### `setStablecoin(tokenAddress)`
-
-Changes the stablecoin contract address used for settlement and claims.
-
-**Access:** whitelisted callers only.
-
-### `setExportDeviceId(deviceId)`
-
-Sets which device ID represents the community's export meter (energy sold to the grid).
-
-**Access:** whitelisted callers only.
-
-### `setCommunityAddress(addr)`
-
-Sets the address that receives community fees.
-
-**Access:** owner only.
-
-### `setAggregatorAddress(addr)`
-
-Sets the address that receives aggregator fees.
-
-**Access:** owner only.
-
-### `setCommunityFeeBps(bps)`
-
-Sets the community fee as basis points (e.g. 500 = 5%). Combined community + aggregator fees cannot exceed 100%.
-
-**Access:** owner only.
-
-### `setAggregatorFeeBps(bps)`
-
-Sets the aggregator fee as basis points. Combined community + aggregator fees cannot exceed 100%.
-
-**Access:** owner only.
-
-### `setPaymentRecipient(recipient)`
-
-Sets the payment recipient address (legacy).
-
-**Access:** owner only.
-
-### `emergencyReset()`
-
-Resets all balances to zero — all members, community, aggregator, import, export, and settled balances. Use only in emergencies.
-
-**Access:** whitelisted callers only.
-
----
-
-## View Functions (Read-Only)
-
-These functions don't change state — they just return data.
-
-| Function | Returns |
+| Function | What It Returns |
 |---|---|
 | `getSourceIds()` | Array of all registered source IDs. |
-| `getSource(sourceId)` | Full details of a source (type, token address, base price, active status). |
-| `getSourceOwnershipBps(sourceId, member)` | A member's ownership of a source in basis points (e.g. 3000 = 30%). |
-| `getAllSourceOwnerships(member)` | For every active source, returns the member's ownership in basis points. |
-| `getMember(memberAddress)` | Member details (address, device IDs, active status, metadata hash). |
+| `getSource(sourceId)` | Source details: type, ownership token address, base price, active status. |
+| `getSourceOwnershipBps(sourceId, member)` | How many basis points (out of 10000) a member owns of a specific source. |
+| `getAllSourceOwnerships(member)` | For each source, returns the member's ownership bps. |
+| `getMember(address)` | Member details: address, device IDs, active status, metadata hash. |
 | `getMemberAddresses()` | Array of all member addresses. |
-| `getEnergyCreditBalance(account)` | A member's current balance (positive = credit, negative = debt). |
-| `getTokenBalance(account)` | A member's EnergyToken balance (the token representation of positive credit). |
-| `getDebtInStablecoin(debtor)` | A member's debt converted to stablecoin units (internal debt × 10,000). |
-| `getCreditInStablecoin(account)` | A member's claimable credit in stablecoin units (internal credit × 10,000). |
-| `getContractStablecoinBalance()` | How many stablecoins are held in the contract (available for claims). |
-| `verifyZeroSum()` | Returns `(true, 0)` if the system is balanced, or `(false, drift)` if not. |
-| `getDeviceOwner(deviceId)` | The member address that owns a given device/meter. |
-| `getImportEnergyCreditBalance()` | Total accumulated grid import charges. |
-| `getExportEnergyCreditBalance()` | Total accumulated grid export balance. |
-| `getSettledBalance()` | Total amount settled/claimed via stablecoin (negative = debt paid in, positive = credit paid out). |
+| `getEnergyCreditBalance(account)` | The member's energy credit balance. Positive = credit (earned revenue), negative = debt (owes for consumption). |
+| `getTokenBalance(account)` | The member's EnergyToken balance (represents positive credit as an ERC-20). |
+| `getDebtInStablecoin(debtor)` | The member's debt converted to stablecoin units. Returns 0 if no debt. |
+| `getCreditInStablecoin(account)` | The member's credit converted to stablecoin units. Returns 0 if no credit. |
+| `getContractStablecoinBalance()` | How many stablecoins the contract currently holds (from debt settlements). |
+| `verifyZeroSum()` | Returns `(true, 0)` if all balances sum to zero. Useful for external auditing. |
+| `getDeviceOwner(deviceId)` | Which member address owns a specific device. |
+| `getGridBalance()` | Net grid position: negative = community imported more (owes grid), positive = community exported more (grid owes community). |
+| `getSettledBalance()` | Net stablecoin settlement tracking (negative = stablecoins received by contract). |
 | `getEnergyTokenAddress()` | Address of the EnergyToken contract. |
-| `isAddressWhitelisted(account)` | Whether an address is on the whitelist. |
+| `isAddressWhitelisted(account)` | Whether an address is whitelisted. |
 | `getCommunityFeeBps()` | Current community fee in basis points. |
 | `getAggregatorFeeBps()` | Current aggregator fee in basis points. |
+| `getExportDeviceId()` | The device ID designated for grid export. |
 
 ---
 
-## Access Control Summary
+## EnergyPPAv2Factory — Functions
 
-| Role | Can Do |
+The factory deploys a complete community in one transaction. It creates:
+- An **EnergyToken** (ERC-20 for positive credit balances)
+- A **UUPS proxy** for the EnergyPPAv2 contract
+- A **RegularSpaceToken proxy** per energy source (ownership tokens)
+- Mints and distributes ownership tokens to initial holders
+- Registers all sources, adds all members, sets fees, sets export device ID
+
+After deployment, the factory transfers all ownership to the `admin` address and removes itself from the whitelist.
+
+### Constructor
+
+| Parameter | What It Is |
 |---|---|
-| **Owner** | Manage whitelist, set fee addresses, set fee percentages, set payment recipient, authorize upgrades. |
-| **Whitelisted** | Register/deactivate sources, add/remove members, process consumption, set tokens, emergency reset, `claimCreditFor`. |
-| **Anyone** | Settle debt (own or others'), claim own credit, read all view functions. |
+| `_energyPPAImplementation` | Address of the deployed EnergyPPAv2 implementation (shared by all proxies). |
+| `_regularSpaceTokenImplementation` | Address of the deployed RegularSpaceToken implementation (shared by all source token proxies). |
 
----
+### Functions
 
-## Money Flow
-
-```
-Consumers pay energy bills
-        │
-        ▼
-┌──────────────────────────────┐
-│   EnergyPPAv2 Contract       │
-│                              │
-│  consumer balance goes DOWN  │  (negative = debt)
-│  source owners balance UP    │  (positive = credit)
-│  community/aggregator UP     │  (fee credit)
-│                              │
-│  ┌────────────────────────┐  │
-│  │  Stablecoin Pool       │  │
-│  │  (USDC held in contract)│  │
-│  └──────▲─────────┬───────┘  │
-│         │         │          │
-│   settleDebt  claimCredit    │
-│   (pays in)   (pays out)     │
-└──────────────────────────────┘
-```
-
----
-
-# EnergyPPAv2Factory
-
-## What Is This?
-
-A factory that deploys a fully configured EnergyPPAv2 community in **one transaction**. It creates:
-
-1. An **EnergyToken** for the community.
-2. A **RegularSpaceToken** UUPS proxy per energy source (using the shared Hypha implementation), with the factory as `executor` initially so it can mint the configured distribution to holders in the same tx.
-3. A **UUPS proxy** pointing at a shared EnergyPPAv2 implementation.
-4. Registers all sources, adds all members, configures fees, and hands PPA ownership to the admin.
-
-**Constructor:** `EnergyPPAv2Factory(ppaImplementation, regularSpaceTokenImplementation)` — both must be non-zero (deploy bare implementations once, reuse for every community).
-
-### `deployCommunity(params)`
-
-Deploys everything and returns `(communityId, proxyAddress)`.
-
-**Parameters** (passed as a single `CommunityParams` struct):
-
-| Field | Type | Description |
+| Function | Access | What It Does |
 |---|---|---|
-| `admin` | address | The community admin (receives ownership of all contracts). |
-| `stablecoin` | address | Stablecoin address for settlement/claims. |
+| `deployCommunity(params)` | Anyone | Deploys a complete community. See parameter details below. Returns `communityId` and `proxy` address. |
+| `setImplementation(newImpl)` | Owner | Update the EnergyPPAv2 implementation used for future deployments. Does not affect existing communities. |
+| `setRegularSpaceTokenImplementation(newImpl)` | Owner | Update the RegularSpaceToken implementation for future deployments. |
+| `getCommunityCount()` | Anyone | Number of communities deployed through this factory. |
+| `getAdminCommunities(admin)` | Anyone | Array of community IDs managed by a specific admin. |
+| `communities(index)` | Anyone | Returns a community record: proxy address, energy token address, admin, deployment timestamp. |
+
+### deployCommunity Parameters
+
+The `CommunityParams` struct:
+
+| Field | Type | What It Is |
+|---|---|---|
+| `admin` | address | Who will own the deployed PPA (receives ownership + whitelist access). |
+| `stablecoin` | address | ERC-20 stablecoin used for debt settlement and credit claims (e.g. USDC). |
 | `communityAddress` | address | Address that receives community fees. |
 | `aggregatorAddress` | address | Address that receives aggregator fees. |
-| `communityFeeBps` | uint16 | Community fee in basis points. |
-| `aggregatorFeeBps` | uint16 | Aggregator fee in basis points. |
-| `exportDeviceId` | uint256 | Device ID for the community export meter. |
-| `energyTokenName` | string | Name of the EnergyToken (e.g. "Community Energy"). |
-| `energyTokenSymbol` | string | Symbol of the EnergyToken (e.g. "CET"). |
-| `sources` | SourceConfig[] | Array of energy sources to create (see below). |
-| `members` | MemberConfig[] | Array of members to add (see below). |
+| `communityFeeBps` | uint16 | Community fee in basis points (500 = 5%). |
+| `aggregatorFeeBps` | uint16 | Aggregator fee in basis points (300 = 3%). |
+| `energyTokenName` | string | Name for the EnergyToken (e.g. "Community Energy"). |
+| `energyTokenSymbol` | string | Symbol for the EnergyToken (e.g. "CET"). |
+| `sources` | SourceConfig[] | Array of energy sources to register (see below). |
+| `members` | MemberConfig[] | Array of members to register (see below). |
+| `exportDeviceId` | uint256 | Device ID for grid export. Set to 0 to disable export. |
 
-**SourceConfig:**
+Each `SourceConfig`:
 
-| Field | Type | Description |
+| Field | Type | What It Is |
 |---|---|---|
-| `sourceId` | bytes32 | Unique identifier for the source. |
-| `sourceType` | SourceType | `SOLAR` (0) or `BATTERY` (1). |
-| `tokenName` | string | Name of the ownership token (e.g. "Solar Park Alpha"). |
+| `sourceId` | bytes32 | Unique identifier for this source (e.g. `keccak256("SOLAR_PARK_A")`). |
+| `sourceType` | SourceType | `0` = SOLAR, `1` = BATTERY. |
+| `tokenName` | string | Name for the ownership token (e.g. "Solar Park A"). |
 | `tokenSymbol` | string | Symbol (e.g. "SOLAR-A"). |
-| `basePricePerKwh` | uint256 | Reference PPA price. |
-| `holders` | address[] | Addresses that receive ownership tokens. |
-| `holderAmounts` | uint256[] | Token amounts per holder (must match `holders` length). |
+| `basePricePerKwh` | uint256 | Reference PPA price per kWh (what members charge each other for local production). |
+| `holders` | address[] | Addresses that will receive ownership tokens. |
+| `holderAmounts` | uint256[] | How many tokens each holder gets. The sum becomes the total supply. |
 
-**MemberConfig:**
+Each `MemberConfig`:
 
-| Field | Type | Description |
+| Field | Type | What It Is |
 |---|---|---|
-| `memberAddress` | address | Member's wallet. |
-| `deviceIds` | uint256[] | Smart meter IDs (empty for investors). |
-| `metadataHash` | bytes32 | Off-chain metadata reference. |
+| `memberAddress` | address | Member's wallet address. |
+| `deviceIds` | uint256[] | Their smart meter device IDs. Empty for pure investors. |
+| `metadataHash` | bytes32 | Optional metadata hash (e.g. IPFS hash of member details). |
 
-### Other Factory Functions
+### Deployment Flow (What Happens Inside)
 
-| Function | Description |
-|---|---|
-| `setImplementation(newImpl)` | Update the shared EnergyPPAv2 implementation (owner only). |
-| `getCommunityCount()` | How many communities have been deployed. |
-| `communities(id)` | Get the record for a community (proxy, energyToken, admin, timestamp). |
-| `getAdminCommunities(admin)` | Get all community IDs for an admin. |
+1. Deploy `EnergyToken` with factory as temporary owner
+2. Deploy `EnergyPPAv2` UUPS proxy with factory as temporary owner
+3. Authorize PPA on EnergyToken, transfer EnergyToken ownership to admin
+4. Whitelist factory on PPA (temporary, for setup)
+5. For each source: deploy a `RegularSpaceToken` UUPS proxy, mint tokens to holders
+6. Register each source on PPA
+7. Add all members
+8. Set fees, community/aggregator addresses
+9. Set export device ID if non-zero
+10. Whitelist admin, remove factory from whitelist, transfer PPA ownership to admin
+11. Record the deployment and emit `CommunityDeployed` event
+
+### Ownership After Deployment
+
+| Contract | Owner | Executor | Controller |
+|---|---|---|---|
+| EnergyPPAv2 (proxy) | `admin` | N/A (uses owner + whitelist) | `admin` |
+| EnergyToken | `admin` | N/A (uses `authorized` mapping) | `admin` |
+| RegularSpaceToken (per source) | Hardcoded in contract | Factory address | Factory (can be transferred later via `setExecutor` after upgrade) |
+
+The factory retains no authority over the PPA or EnergyToken after deployment. For source ownership tokens, the factory is the `executor` until a `RegularSpaceToken` upgrade adds `setExecutor` — at which point the executor can be transferred to the space treasury.
 
 ---
 
-## Gas Benchmarks
+## Batching for Large Communities
 
-Measured on Hardhat local network with optimizer (200 runs, viaIR).
+`consumeEnergy` gas cost scales as: `O(readings) + O(sources × members)`.
 
-### Per-Function Gas
-
-| Function | Gas |
-|---|---|
-| `registerSource` | ~127k |
-| `addMember` — 1 device | ~173k |
-| `addMember` — investor (0 devices) | ~108k |
-| `removeMember` | ~68k |
-| `settleOwnDebt` | ~99k |
-| `claimCredit` | ~92k |
-| `updateWhitelist` | ~53k |
-| `setCommunityFeeBps` | ~34k |
-| `emergencyReset` (5 members) | ~108k |
-| `deployCommunity` (2 sources, 4 members) | ~3.3M |
-
-### consumeEnergy — Scale Tests
-
-Base block gas limit is **30,000,000**.
-
-| Members | Sources | Readings | Gas | % of 30M |
-|---|---|---|---|---|
-| 5 | 2 | 1 | 384k | 1.3% |
-| 5 | 2 | 4 | 418k | 1.4% |
-| 5 | 2 | 8 | 707k | 2.4% |
-| 10 | 2 | 20 | 1.29M | 4.3% |
-| 20 | 2 | 40 | 2.32M | 7.7% |
-| 50 | 2 | 100 | 5.40M | 18.0% |
-| 50 | 4 | 200 | 10.33M | 34.4% |
-| 100 | 2 | 200 | 10.55M | 35.2% |
-| 100 | 4 | 400 | 20.22M | 67.4% |
-| 150 | 2 | 300 | 15.69M | 52.3% |
-| 200 | 2 | 400 | 20.84M | 69.5% |
-| 100 | 2 | 100 (sparse) | 8.32M | 27.7% |
-| 100 | 1+import | 100 (50+50) | 5.75M | 19.2% |
-
-### What Drives Gas Cost
-
-Gas is dominated by three factors:
-
-1. **Phase 1** — charging consumers: ~3–5k gas per reading
-2. **Phase 2** — revenue distribution: ~50–80k gas per (source × member)
-3. **Zero-sum check**: ~10–20k gas per member
-
-Phase 2 is the biggest cost because it iterates over all members for each source
-that earned revenue.
-
-### Batching for Large Communities
-
-`consumeEnergy` can be called **multiple times per interval**. For communities
-that exceed the gas limit in a single call, the backend simply splits the
-readings into batches:
+For large communities (100+ members), a single call may exceed the 30M gas block limit on Base. Split readings into multiple `consumeEnergy` calls:
 
 ```
-Interval T (e.g. every 15 minutes)
-  ├─ consumeEnergy(readings[0..99])     ← batch 1
-  ├─ consumeEnergy(readings[100..199])  ← batch 2
-  └─ consumeEnergy(readings[200..299])  ← batch 3
+// Instead of one call with 200 readings:
+consumeEnergy(allReadings)  // might exceed gas limit
+
+// Split into batches:
+consumeEnergy(readings[0..99])
+consumeEnergy(readings[100..199])
 ```
 
-Each call independently:
-- Charges the consumers in that batch.
-- Distributes revenue from that batch to token holders.
-- Verifies zero-sum for that batch.
-
-Balances accumulate across batches. There is no requirement to submit all
-readings in one transaction.
-
-**Practical guidance:**
-
-| Community Size | Sources | Recommended Batch Size |
-|---|---|---|
-| ≤50 members | 2 | All in one call (~5.4M gas) |
-| ≤100 members | 2 | All in one call (~10.5M gas) |
-| ≤200 members | 2 | All in one call (~20.8M gas) |
-| 200–400 members | 2 | 2 batches |
-| ≤100 members | 4 | All in one call (~20.2M gas) |
-| 200+ members | 4+ | Split into batches of ~100 members per source |
-
-Import-only readings are cheaper (no Phase 2 distribution), so mixed
-local+import batches use less gas than all-local batches.
+Each call independently charges consumers and distributes revenue. The zero-sum invariant is maintained per call.

@@ -1,0 +1,22 @@
+{
+  "description": "Example 2 from ENERGY_SYSTEM_README: export scenario. 10 kWh solar, 6 kWh demand, 4 kWh exported.",
+  "intervalReadings": [
+    { "interval_start": "2025-01-15T14:00:00Z", "meter_id": 1001, "community_id": 1, "energy_wh": 2000, "direction": "consumption" },
+    { "interval_start": "2025-01-15T14:00:00Z", "meter_id": 2001, "community_id": 1, "energy_wh": 2000, "direction": "consumption" },
+    { "interval_start": "2025-01-15T14:00:00Z", "meter_id": 3001, "community_id": 1, "energy_wh": 1000, "direction": "consumption" },
+    { "interval_start": "2025-01-15T14:00:00Z", "meter_id": 4001, "community_id": 1, "energy_wh": 1000, "direction": "consumption" }
+  ],
+  "production": [
+    { "interval_start": "2025-01-15T14:00:00Z", "meter_id": 5001, "community_id": 1, "energy_wh": 10000, "direction": "production" }
+  ],
+  "expected": {
+    "alice": { "solar": 2000, "grid": 0, "total": 2000 },
+    "bob":   { "solar": 2000, "grid": 0, "total": 2000 },
+    "carol": { "solar": 1000, "grid": 0, "total": 1000 },
+    "dave":  { "solar": 1000, "grid": 0, "total": 1000 },
+    "eve":   { "solar": 0, "grid": 0, "total": 0 },
+    "totalGridImport": 0,
+    "totalExport": 4000,
+    "exportSolar": 4000
+  }
+}

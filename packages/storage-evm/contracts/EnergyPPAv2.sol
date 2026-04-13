@@ -20,11 +20,17 @@ import './EnergyToken.sol';
 ///
 ///         Phase 1 — Charge consumers:
 ///           Each reading debits the consumer at the reading's price.
-///           Revenue accumulates per source. Import charges go to importBalance.
+///           Revenue accumulates per source. Import charges go to gridBalance.
+///           Export readings (from the designated export device) generate
+///           revenue for the source and credit gridBalance.
 ///
 ///         Phase 2 — Split revenue per source:
 ///           For each source: community fee → aggregator fee → remainder to
 ///           that source's ownership-token holders by balance proportion.
+///
+///         gridBalance tracks the community's net position with the grid:
+///           negative → community imported more than exported (owes the grid)
+///           positive → community exported more than imported (grid owes community)
 ///
 ///         The source registry stores a basePricePerKwh for each source as a
 ///         transparent reference (the agreed PPA price). The backend reads it,
@@ -68,7 +74,7 @@ contract EnergyPPAv2 is
 
   struct Member {
     address memberAddress;
-    uint256[] deviceIds; // empty for pure investors (e.g. Eve)
+    uint256[] deviceIds; // empty for pure investors
     bool isActive;
     bytes32 metadataHash;
   }
@@ -89,8 +95,12 @@ contract EnergyPPAv2 is
   // ── Balances ─────────────────────────────────────────────────────────
   EnergyToken internal energyToken;
   mapping(address => int256) internal energyCreditBalances;
-  int256 internal importEnergyCreditBalance;
-  int256 internal exportEnergyCreditBalance;
+
+  /// @notice Net grid position for the community.
+  ///         negative = community imported more (owes grid)
+  ///         positive = community exported more (grid owes community)
+  int256 internal gridBalance;
+
   int256 internal settledBalance;
 
   // ── Fee Config ───────────────────────────────────────────────────────
@@ -108,6 +118,9 @@ contract EnergyPPAv2 is
 
   // ── Access ───────────────────────────────────────────────────────────
   mapping(address => bool) internal isWhitelisted;
+
+  // ── Grid settlement ────────────────────────────────────────────
+  address internal gridOperatorAddress;
 
   uint256[30] private __gap;
 
@@ -158,6 +171,9 @@ contract EnergyPPAv2 is
   event WhitelistUpdated(address indexed account, bool isWhitelisted);
   event ExportDeviceIdSet(uint256 deviceId);
   event EmergencyReset();
+  event GridOperatorSet(address indexed operator);
+  event GridDebtSettled(address indexed payer, uint256 stablecoinAmount, int256 previousGrid, int256 newGrid);
+  event GridCreditClaimed(address indexed beneficiary, uint256 stablecoinAmount, int256 previousGrid, int256 newGrid);
 
   // ════════════════════════════════════════════════════════════════════════
   //  Init
@@ -172,7 +188,8 @@ contract EnergyPPAv2 is
     address initialOwner,
     address _energyToken,
     address _stablecoin,
-    address _paymentRecipient
+    address _paymentRecipient,
+    address _gridOperator
   ) public initializer {
     __Ownable_init(initialOwner);
     __UUPSUpgradeable_init();
@@ -181,6 +198,7 @@ contract EnergyPPAv2 is
     energyToken = EnergyToken(_energyToken);
     stablecoinAddress = _stablecoin;
     paymentRecipient = _paymentRecipient;
+    gridOperatorAddress = _gridOperator;
   }
 
   function _authorizeUpgrade(address) internal override onlyOwner {}
@@ -200,13 +218,6 @@ contract EnergyPPAv2 is
   //  Source Registry
   // ════════════════════════════════════════════════════════════════════════
 
-  /// @notice Register a new energy source. Deploy an ownership ERC-20 first
-  ///         distribute tokens to investors, then register the source here.
-  ///         The token's balance distribution determines revenue shares.
-  ///         basePricePerKwh is the agreed PPA reference price — stored on-chain
-  ///         for transparency but not enforced. The backend reads it, may adjust
-  ///         it (time-of-use, spot market, etc.), and passes the final price
-  ///         in each ConsumptionReading.
   function registerSource(
     bytes32 sourceId,
     SourceType sourceType,
@@ -273,7 +284,7 @@ contract EnergyPPAv2 is
         require(r.sourceId != IMPORT_SOURCE_ID, 'Cannot export import');
         uint256 revenue = r.quantity * r.pricePerKwh;
         _addSourceRevenue(srcRevenues, r.sourceId, revenue);
-        exportEnergyCreditBalance -= int256(revenue);
+        gridBalance += int256(revenue);
         emit EnergyExported(r.quantity, revenue, r.sourceId);
         continue;
       }
@@ -287,7 +298,7 @@ contract EnergyPPAv2 is
 
       // ── Grid import ──
       if (r.sourceId == IMPORT_SOURCE_ID) {
-        importEnergyCreditBalance += int256(charge);
+        gridBalance -= int256(charge);
       }
       // ── Local source (solar, battery, etc.) ──
       else {
@@ -351,13 +362,11 @@ contract EnergyPPAv2 is
 
     if (remaining == 0) return;
 
-    // Read this source's ownership token
     address tokenAddr = sources[sourceId].ownershipToken;
     IERC20 token = IERC20(tokenAddr);
     uint256 totalSupply = token.totalSupply();
     if (totalSupply == 0) return;
 
-    // Find the last member with a non-zero balance (gets the remainder)
     address lastHolder = address(0);
     for (uint256 i = 0; i < memberAddresses.length; i++) {
       if (token.balanceOf(memberAddresses[i]) > 0) {
@@ -366,7 +375,6 @@ contract EnergyPPAv2 is
     }
     if (lastHolder == address(0)) return;
 
-    // Distribute proportionally by token balance
     uint256 distributed = 0;
     for (uint256 i = 0; i < memberAddresses.length; i++) {
       address addr = memberAddresses[i];
@@ -392,9 +400,6 @@ contract EnergyPPAv2 is
   //  Members
   // ════════════════════════════════════════════════════════════════════════
 
-  /// @notice Add a community member or investor.
-  ///         Ownership is NOT stored here — it lives in the per-source ERC-20s.
-  ///         Pass empty deviceIds for pure investors (no meter, just revenue).
   function addMember(
     address memberAddress,
     uint256[] calldata deviceIds,
@@ -500,14 +505,10 @@ contract EnergyPPAv2 is
   //  Credit Claiming
   // ════════════════════════════════════════════════════════════════════════
 
-  /// @notice Withdraw a positive energy credit balance as stablecoins.
-  ///         The contract must hold enough stablecoin liquidity (funded by
-  ///         debt settlements). 1 internal unit = 10,000 stablecoin units.
   function claimCredit(uint256 internalAmount) external nonReentrant {
     _claim(msg.sender, internalAmount);
   }
 
-  /// @notice Whitelisted caller can trigger a credit payout to any member.
   function claimCreditFor(
     address beneficiary,
     uint256 internalAmount
@@ -544,6 +545,76 @@ contract EnergyPPAv2 is
     );
 
     emit CreditClaimed(beneficiary, stablecoinAmount, prev, newBal);
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  //  Grid Settlement
+  // ════════════════════════════════════════════════════════════════════════
+
+  /// @notice Settle a negative grid balance (community imported more than exported).
+  ///         Anyone can pay; stablecoins flow into the contract and gridBalance
+  ///         moves toward zero.  settledBalance adjusts to maintain zero-sum.
+  function settleGridDebt(uint256 stablecoinAmount) external nonReentrant {
+    require(stablecoinAmount > 0, 'Amount must be > 0');
+    require(stablecoinAddress != address(0), 'No stablecoin configured');
+    require(gridBalance < 0, 'No grid debt');
+
+    uint256 internalAmount = stablecoinAmount / 10000;
+    require(internalAmount > 0, 'Amount too small');
+
+    uint256 debt = uint256(-gridBalance);
+    uint256 settle = internalAmount > debt ? debt : internalAmount;
+    uint256 requiredStablecoin = settle * 10000;
+
+    IERC20 coin = IERC20(stablecoinAddress);
+    require(
+      coin.transferFrom(msg.sender, address(this), requiredStablecoin),
+      'Stablecoin transfer failed'
+    );
+
+    int256 prev = gridBalance;
+    gridBalance += int256(settle);
+    settledBalance -= int256(settle);
+
+    emit GridDebtSettled(msg.sender, requiredStablecoin, prev, gridBalance);
+  }
+
+  /// @notice Claim a positive grid balance (community exported more than imported).
+  ///         Only the grid operator or a whitelisted admin can claim.
+  ///         Stablecoins flow out of the contract to the beneficiary.
+  function claimGridCredit(
+    address beneficiary,
+    uint256 internalAmount
+  ) external nonReentrant {
+    require(
+      msg.sender == gridOperatorAddress || isWhitelisted[msg.sender],
+      'Not grid operator or whitelisted'
+    );
+    require(beneficiary != address(0), 'Invalid address');
+    require(internalAmount > 0, 'Amount must be > 0');
+    require(stablecoinAddress != address(0), 'No stablecoin configured');
+    require(gridBalance > 0, 'No grid credit');
+
+    uint256 available = uint256(gridBalance);
+    uint256 claim = internalAmount > available ? available : internalAmount;
+    uint256 stablecoinAmount = claim * 10000;
+
+    IERC20 coin = IERC20(stablecoinAddress);
+    require(
+      coin.balanceOf(address(this)) >= stablecoinAmount,
+      'Insufficient contract liquidity'
+    );
+
+    int256 prev = gridBalance;
+    gridBalance -= int256(claim);
+    settledBalance += int256(claim);
+
+    require(
+      coin.transfer(beneficiary, stablecoinAmount),
+      'Stablecoin transfer failed'
+    );
+
+    emit GridCreditClaimed(beneficiary, stablecoinAmount, prev, gridBalance);
   }
 
   // ════════════════════════════════════════════════════════════════════════
@@ -595,6 +666,11 @@ contract EnergyPPAv2 is
     paymentRecipient = recipient;
   }
 
+  function setGridOperator(address operator) external onlyOwner {
+    gridOperatorAddress = operator;
+    emit GridOperatorSet(operator);
+  }
+
   function emergencyReset() external onlyWhitelist {
     for (uint256 i = 0; i < memberAddresses.length; i++) {
       _setEnergyCreditBalance(memberAddresses[i], 0);
@@ -605,14 +681,13 @@ contract EnergyPPAv2 is
     if (aggregatorAddress != address(0)) {
       _setEnergyCreditBalance(aggregatorAddress, 0);
     }
-    importEnergyCreditBalance = 0;
-    exportEnergyCreditBalance = 0;
+    gridBalance = 0;
     settledBalance = 0;
     emit EmergencyReset();
   }
 
   // ════════════════════════════════════════════════════════════════════════
-  //  Internal: balance management (same dual representation as v1)
+  //  Internal: balance management
   // ════════════════════════════════════════════════════════════════════════
 
   function _getEnergyCreditBalance(
@@ -655,10 +730,10 @@ contract EnergyPPAv2 is
     if (aggregatorAddress != address(0)) {
       total += _getEnergyCreditBalance(aggregatorAddress);
     }
-    total +=
-      importEnergyCreditBalance +
-      exportEnergyCreditBalance +
-      settledBalance;
+    // gridBalance is negative for imports (member balances went down,
+    // so -gridBalance compensates), positive for exports (source owners
+    // went up, so -gridBalance compensates).
+    total += -gridBalance + settledBalance;
     return (total == 0, total);
   }
 
@@ -676,7 +751,6 @@ contract EnergyPPAv2 is
     return sources[sourceId];
   }
 
-  /// @notice Get a member's ownership of a specific source in basis points.
   function getSourceOwnershipBps(
     bytes32 sourceId,
     address member
@@ -686,7 +760,6 @@ contract EnergyPPAv2 is
     return _ownershipBpsOf(tokenAddr, member);
   }
 
-  /// @notice Bulk: for each source, return the member's ownership bps.
   function getAllSourceOwnerships(
     address member
   ) external view returns (bytes32[] memory ids, uint256[] memory bps) {
@@ -700,7 +773,6 @@ contract EnergyPPAv2 is
     }
   }
 
-  /// @dev `balanceOf * 10000 / totalSupply` (same as legacy EnergySourceToken).
   function _ownershipBpsOf(
     address tokenAddr,
     address account
@@ -765,12 +837,11 @@ contract EnergyPPAv2 is
     return deviceToMember[deviceId];
   }
 
-  function getImportEnergyCreditBalance() external view returns (int256) {
-    return importEnergyCreditBalance;
-  }
-
-  function getExportEnergyCreditBalance() external view returns (int256) {
-    return exportEnergyCreditBalance;
+  /// @notice Net grid balance.
+  ///         negative = community imported more (owes grid)
+  ///         positive = community exported more (grid owes community)
+  function getGridBalance() external view returns (int256) {
+    return gridBalance;
   }
 
   function getSettledBalance() external view returns (int256) {
@@ -787,11 +858,27 @@ contract EnergyPPAv2 is
     return isWhitelisted[account];
   }
 
+  function getCommunityAddress() external view returns (address) {
+    return communityAddress;
+  }
+
+  function getAggregatorAddress() external view returns (address) {
+    return aggregatorAddress;
+  }
+
   function getCommunityFeeBps() external view returns (uint16) {
     return communityFeeBps;
   }
 
   function getAggregatorFeeBps() external view returns (uint16) {
     return aggregatorFeeBps;
+  }
+
+  function getExportDeviceId() external view returns (uint256) {
+    return exportDeviceId;
+  }
+
+  function getGridOperator() external view returns (address) {
+    return gridOperatorAddress;
   }
 }

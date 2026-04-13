@@ -51062,6 +51062,1975 @@
           ]
         }
       }
+    },
+    "e3ba2d70d1ab6c78e6716a4ba0f68586ce0ca385943a9c9b2d32ecb859d94378": {
+      "address": "0xB15B9FaEEaDf206f3Dd4B3ECB3fD2a4B0FA0c60A",
+      "txHash": "0x4b5dc1998afc64f5fdea1111895f91e595947806db8ca91cba1ff31f7fbeca4c",
+      "layout": {
+        "solcVersion": "0.8.28",
+        "storage": [
+          {
+            "label": "sources",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_mapping(t_bytes32,t_struct(EnergySource)13372_storage)",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:105"
+          },
+          {
+            "label": "sourceIds",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_bytes32)dyn_storage",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:106"
+          },
+          {
+            "label": "members",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_mapping(t_address,t_struct(Member)13391_storage)",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:114"
+          },
+          {
+            "label": "memberAddresses",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_array(t_address)dyn_storage",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:114"
+          },
+          {
+            "label": "deviceToMember",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_mapping(t_uint256,t_address)",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:116"
+          },
+          {
+            "label": "energyToken",
+            "offset": 0,
+            "slot": "5",
+            "type": "t_contract(EnergyToken)17168",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:124"
+          },
+          {
+            "label": "energyCreditBalances",
+            "offset": 0,
+            "slot": "6",
+            "type": "t_mapping(t_address,t_int256)",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:124"
+          },
+          {
+            "label": "importEnergyCreditBalance",
+            "offset": 0,
+            "slot": "7",
+            "type": "t_int256",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:127"
+          },
+          {
+            "label": "exportEnergyCreditBalance",
+            "offset": 0,
+            "slot": "8",
+            "type": "t_int256",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:128"
+          },
+          {
+            "label": "settledBalance",
+            "offset": 0,
+            "slot": "9",
+            "type": "t_int256",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:130"
+          },
+          {
+            "label": "communityAddress",
+            "offset": 0,
+            "slot": "10",
+            "type": "t_address",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:137"
+          },
+          {
+            "label": "aggregatorAddress",
+            "offset": 0,
+            "slot": "11",
+            "type": "t_address",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:138"
+          },
+          {
+            "label": "communityFeeBps",
+            "offset": 20,
+            "slot": "11",
+            "type": "t_uint16",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:140"
+          },
+          {
+            "label": "aggregatorFeeBps",
+            "offset": 22,
+            "slot": "11",
+            "type": "t_uint16",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:140"
+          },
+          {
+            "label": "exportDeviceId",
+            "offset": 0,
+            "slot": "12",
+            "type": "t_uint256",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:145"
+          },
+          {
+            "label": "stablecoinAddress",
+            "offset": 0,
+            "slot": "13",
+            "type": "t_address",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:154"
+          },
+          {
+            "label": "paymentRecipient",
+            "offset": 0,
+            "slot": "14",
+            "type": "t_address",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:155"
+          },
+          {
+            "label": "isWhitelisted",
+            "offset": 0,
+            "slot": "15",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:162"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "16",
+            "type": "t_array(t_uint256)30_storage",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:164"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_struct(InitializableStorage)73_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(OwnableStorage)13_storage": {
+            "label": "struct OwnableUpgradeable.OwnableStorage",
+            "members": [
+              {
+                "label": "_owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(ReentrancyGuardStorage)452_storage": {
+            "label": "struct ReentrancyGuardUpgradeable.ReentrancyGuardStorage",
+            "members": [
+              {
+                "label": "_status",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_bytes32)dyn_storage": {
+            "label": "bytes32[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)30_storage": {
+            "label": "uint256[30]",
+            "numberOfBytes": "960"
+          },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]",
+            "numberOfBytes": "32"
+          },
+          "t_bytes32": {
+            "label": "bytes32",
+            "numberOfBytes": "32"
+          },
+          "t_contract(EnergyToken)17168": {
+            "label": "contract EnergyToken",
+            "numberOfBytes": "20"
+          },
+          "t_enum(SourceType)13362": {
+            "label": "enum EnergyPPAv2.SourceType",
+            "members": [
+              "SOLAR",
+              "BATTERY"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_int256": {
+            "label": "int256",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_int256)": {
+            "label": "mapping(address => int256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(Member)13391_storage)": {
+            "label": "mapping(address => struct EnergyPPAv2.Member)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_bytes32,t_struct(EnergySource)13372_storage)": {
+            "label": "mapping(bytes32 => struct EnergyPPAv2.EnergySource)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_address)": {
+            "label": "mapping(uint256 => address)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(EnergySource)13372_storage": {
+            "label": "struct EnergyPPAv2.EnergySource",
+            "members": [
+              {
+                "label": "sourceType",
+                "type": "t_enum(SourceType)13362",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "ownershipToken",
+                "type": "t_address",
+                "offset": 1,
+                "slot": "0"
+              },
+              {
+                "label": "basePricePerKwh",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "active",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "2"
+              }
+            ],
+            "numberOfBytes": "96"
+          },
+          "t_struct(Member)13391_storage": {
+            "label": "struct EnergyPPAv2.Member",
+            "members": [
+              {
+                "label": "memberAddress",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "deviceIds",
+                "type": "t_array(t_uint256)dyn_storage",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "isActive",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "metadataHash",
+                "type": "t_bytes32",
+                "offset": 0,
+                "slot": "3"
+              }
+            ],
+            "numberOfBytes": "128"
+          },
+          "t_uint16": {
+            "label": "uint16",
+            "numberOfBytes": "2"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.ReentrancyGuard": [
+            {
+              "contract": "ReentrancyGuardUpgradeable",
+              "label": "_status",
+              "type": "t_uint256",
+              "src": "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol:43",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Ownable": [
+            {
+              "contract": "OwnableUpgradeable",
+              "label": "_owner",
+              "type": "t_address",
+              "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:24",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
+    },
+    "c6fa6f589ec23d3dcdfd6112c68dedb57ee4691a678b664cce097ea565d327a8": {
+      "address": "0xfE9B59F092a966509478274d9b17DA58C04FBD6f",
+      "txHash": "0x42dd6d7796e1b63959fee759600d587650b47f287862e6f0278f1c8455e59d4e",
+      "layout": {
+        "solcVersion": "0.8.28",
+        "storage": [
+          {
+            "label": "spaceId",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint256",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:25"
+          },
+          {
+            "label": "maxSupply",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_uint256",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:26"
+          },
+          {
+            "label": "transferable",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_bool",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:27"
+          },
+          {
+            "label": "executor",
+            "offset": 1,
+            "slot": "2",
+            "type": "t_address",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:28"
+          },
+          {
+            "label": "transferHelper",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_address",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:29"
+          },
+          {
+            "label": "fixedMaxSupply",
+            "offset": 20,
+            "slot": "3",
+            "type": "t_bool",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:32"
+          },
+          {
+            "label": "autoMinting",
+            "offset": 21,
+            "slot": "3",
+            "type": "t_bool",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:33"
+          },
+          {
+            "label": "priceInUSD",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_uint256",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:34"
+          },
+          {
+            "label": "canTransfer",
+            "offset": 0,
+            "slot": "5",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:37"
+          },
+          {
+            "label": "canReceive",
+            "offset": 0,
+            "slot": "6",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:38"
+          },
+          {
+            "label": "useTransferWhitelist",
+            "offset": 0,
+            "slot": "7",
+            "type": "t_bool",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:39"
+          },
+          {
+            "label": "useReceiveWhitelist",
+            "offset": 1,
+            "slot": "7",
+            "type": "t_bool",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:40"
+          },
+          {
+            "label": "archived",
+            "offset": 2,
+            "slot": "7",
+            "type": "t_bool",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:43"
+          },
+          {
+            "label": "_transferWhitelistedSpaceIds",
+            "offset": 0,
+            "slot": "8",
+            "type": "t_array(t_uint256)dyn_storage",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:49"
+          },
+          {
+            "label": "_receiveWhitelistedSpaceIds",
+            "offset": 0,
+            "slot": "9",
+            "type": "t_array(t_uint256)dyn_storage",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:50"
+          },
+          {
+            "label": "isTransferWhitelistedSpace",
+            "offset": 0,
+            "slot": "10",
+            "type": "t_mapping(t_uint256,t_bool)",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:51"
+          },
+          {
+            "label": "isReceiveWhitelistedSpace",
+            "offset": 0,
+            "slot": "11",
+            "type": "t_mapping(t_uint256,t_bool)",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:52"
+          },
+          {
+            "label": "priceCurrencyFeed",
+            "offset": 0,
+            "slot": "12",
+            "type": "t_address",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:57"
+          },
+          {
+            "label": "tokenPrice",
+            "offset": 0,
+            "slot": "13",
+            "type": "t_uint256",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:62"
+          },
+          {
+            "label": "_customName",
+            "offset": 0,
+            "slot": "14",
+            "type": "t_string_storage",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:66"
+          },
+          {
+            "label": "_customSymbol",
+            "offset": 0,
+            "slot": "15",
+            "type": "t_string_storage",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:67"
+          },
+          {
+            "label": "defaultCreditLimit",
+            "offset": 0,
+            "slot": "16",
+            "type": "t_uint256",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:70"
+          },
+          {
+            "label": "creditBalanceOf",
+            "offset": 0,
+            "slot": "17",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:71"
+          },
+          {
+            "label": "_creditWhitelistedSpaceIds",
+            "offset": 0,
+            "slot": "18",
+            "type": "t_array(t_uint256)dyn_storage",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:72"
+          },
+          {
+            "label": "isCreditWhitelistedSpace",
+            "offset": 0,
+            "slot": "19",
+            "type": "t_mapping(t_uint256,t_bool)",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:73"
+          },
+          {
+            "label": "paymentToken",
+            "offset": 0,
+            "slot": "20",
+            "type": "t_address",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:76"
+          },
+          {
+            "label": "paymentTokenPricePerToken",
+            "offset": 0,
+            "slot": "21",
+            "type": "t_uint256",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:77"
+          },
+          {
+            "label": "tokensForSale",
+            "offset": 0,
+            "slot": "22",
+            "type": "t_uint256",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:78"
+          },
+          {
+            "label": "tokensSold",
+            "offset": 0,
+            "slot": "23",
+            "type": "t_uint256",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:79"
+          },
+          {
+            "label": "purchaseEligibilityMode",
+            "offset": 0,
+            "slot": "24",
+            "type": "t_uint8",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:80"
+          },
+          {
+            "label": "_purchaseWhitelistedSpaceIds",
+            "offset": 0,
+            "slot": "25",
+            "type": "t_array(t_uint256)dyn_storage",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:81"
+          },
+          {
+            "label": "isPurchaseWhitelistedSpace",
+            "offset": 0,
+            "slot": "26",
+            "type": "t_mapping(t_uint256,t_bool)",
+            "contract": "RegularSpaceToken",
+            "src": "contracts/RegularSpaceToken.sol:82"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_mapping(t_address,t_uint256))": {
+            "label": "mapping(address => mapping(address => uint256))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
+          },
+          "t_struct(ERC20Storage)222_storage": {
+            "label": "struct ERC20Upgradeable.ERC20Storage",
+            "members": [
+              {
+                "label": "_balances",
+                "type": "t_mapping(t_address,t_uint256)",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_allowances",
+                "type": "t_mapping(t_address,t_mapping(t_address,t_uint256))",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "_totalSupply",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "_name",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "_symbol",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "4"
+              }
+            ],
+            "numberOfBytes": "160"
+          },
+          "t_struct(InitializableStorage)73_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(OwnableStorage)13_storage": {
+            "label": "struct OwnableUpgradeable.OwnableStorage",
+            "members": [
+              {
+                "label": "_owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_bool)": {
+            "label": "mapping(uint256 => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.Ownable": [
+            {
+              "contract": "OwnableUpgradeable",
+              "label": "_owner",
+              "type": "t_address",
+              "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:24",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.ERC20": [
+            {
+              "contract": "ERC20Upgradeable",
+              "label": "_balances",
+              "type": "t_mapping(t_address,t_uint256)",
+              "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:33",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "ERC20Upgradeable",
+              "label": "_allowances",
+              "type": "t_mapping(t_address,t_mapping(t_address,t_uint256))",
+              "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:35",
+              "offset": 0,
+              "slot": "1"
+            },
+            {
+              "contract": "ERC20Upgradeable",
+              "label": "_totalSupply",
+              "type": "t_uint256",
+              "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:37",
+              "offset": 0,
+              "slot": "2"
+            },
+            {
+              "contract": "ERC20Upgradeable",
+              "label": "_name",
+              "type": "t_string_storage",
+              "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:39",
+              "offset": 0,
+              "slot": "3"
+            },
+            {
+              "contract": "ERC20Upgradeable",
+              "label": "_symbol",
+              "type": "t_string_storage",
+              "src": "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol:40",
+              "offset": 0,
+              "slot": "4"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
+    },
+    "75ef9b6addf3a7f9d4146f95c324c72cf22da9264b7d1c5e9902daf1dc82406d": {
+      "address": "0xB62fabb4C9c9E506144233b824c6656C5f5CFC87",
+      "txHash": "0x688e522f06018c4e9980d83a107dd88c0be586efed6b3269cc6be31bc7968bdf",
+      "layout": {
+        "solcVersion": "0.8.28",
+        "storage": [
+          {
+            "label": "sources",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_mapping(t_bytes32,t_struct(EnergySource)3848_storage)",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:110"
+          },
+          {
+            "label": "sourceIds",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_bytes32)dyn_storage",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:111"
+          },
+          {
+            "label": "members",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_mapping(t_address,t_struct(Member)3867_storage)",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:115"
+          },
+          {
+            "label": "memberAddresses",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_array(t_address)dyn_storage",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:116"
+          },
+          {
+            "label": "deviceToMember",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_mapping(t_uint256,t_address)",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:117"
+          },
+          {
+            "label": "energyToken",
+            "offset": 0,
+            "slot": "5",
+            "type": "t_contract(EnergyToken)7218",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:123"
+          },
+          {
+            "label": "energyCreditBalances",
+            "offset": 0,
+            "slot": "6",
+            "type": "t_mapping(t_address,t_int256)",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:125"
+          },
+          {
+            "label": "importEnergyCreditBalance",
+            "offset": 0,
+            "slot": "7",
+            "type": "t_int256",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:125"
+          },
+          {
+            "label": "settledBalance",
+            "offset": 0,
+            "slot": "8",
+            "type": "t_int256",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:128"
+          },
+          {
+            "label": "communityAddress",
+            "offset": 0,
+            "slot": "9",
+            "type": "t_address",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:134"
+          },
+          {
+            "label": "aggregatorAddress",
+            "offset": 0,
+            "slot": "10",
+            "type": "t_address",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:136"
+          },
+          {
+            "label": "communityFeeBps",
+            "offset": 20,
+            "slot": "10",
+            "type": "t_uint16",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:137"
+          },
+          {
+            "label": "aggregatorFeeBps",
+            "offset": 22,
+            "slot": "10",
+            "type": "t_uint16",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:139"
+          },
+          {
+            "label": "stablecoinAddress",
+            "offset": 0,
+            "slot": "11",
+            "type": "t_address",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:148"
+          },
+          {
+            "label": "paymentRecipient",
+            "offset": 0,
+            "slot": "12",
+            "type": "t_address",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:148"
+          },
+          {
+            "label": "isWhitelisted",
+            "offset": 0,
+            "slot": "13",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:153"
+          },
+          {
+            "label": "exportDevicePrices",
+            "offset": 0,
+            "slot": "14",
+            "type": "t_mapping(t_uint256,t_uint256)",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:169"
+          },
+          {
+            "label": "exportDeviceIds",
+            "offset": 0,
+            "slot": "15",
+            "type": "t_array(t_uint256)dyn_storage",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:171"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "16",
+            "type": "t_array(t_uint256)30_storage",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:171"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_struct(InitializableStorage)73_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(OwnableStorage)13_storage": {
+            "label": "struct OwnableUpgradeable.OwnableStorage",
+            "members": [
+              {
+                "label": "_owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(ReentrancyGuardStorage)452_storage": {
+            "label": "struct ReentrancyGuardUpgradeable.ReentrancyGuardStorage",
+            "members": [
+              {
+                "label": "_status",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_bytes32)dyn_storage": {
+            "label": "bytes32[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)30_storage": {
+            "label": "uint256[30]",
+            "numberOfBytes": "960"
+          },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]",
+            "numberOfBytes": "32"
+          },
+          "t_bytes32": {
+            "label": "bytes32",
+            "numberOfBytes": "32"
+          },
+          "t_contract(EnergyToken)7218": {
+            "label": "contract EnergyToken",
+            "numberOfBytes": "20"
+          },
+          "t_enum(SourceType)3838": {
+            "label": "enum EnergyPPAv2.SourceType",
+            "members": [
+              "SOLAR",
+              "BATTERY"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_int256": {
+            "label": "int256",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_int256)": {
+            "label": "mapping(address => int256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(Member)3867_storage)": {
+            "label": "mapping(address => struct EnergyPPAv2.Member)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_bytes32,t_struct(EnergySource)3848_storage)": {
+            "label": "mapping(bytes32 => struct EnergyPPAv2.EnergySource)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_address)": {
+            "label": "mapping(uint256 => address)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_uint256)": {
+            "label": "mapping(uint256 => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(EnergySource)3848_storage": {
+            "label": "struct EnergyPPAv2.EnergySource",
+            "members": [
+              {
+                "label": "sourceType",
+                "type": "t_enum(SourceType)3838",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "ownershipToken",
+                "type": "t_address",
+                "offset": 1,
+                "slot": "0"
+              },
+              {
+                "label": "basePricePerKwh",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "active",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "2"
+              }
+            ],
+            "numberOfBytes": "96"
+          },
+          "t_struct(Member)3867_storage": {
+            "label": "struct EnergyPPAv2.Member",
+            "members": [
+              {
+                "label": "memberAddress",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "deviceIds",
+                "type": "t_array(t_uint256)dyn_storage",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "isActive",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "metadataHash",
+                "type": "t_bytes32",
+                "offset": 0,
+                "slot": "3"
+              }
+            ],
+            "numberOfBytes": "128"
+          },
+          "t_uint16": {
+            "label": "uint16",
+            "numberOfBytes": "2"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.ReentrancyGuard": [
+            {
+              "contract": "ReentrancyGuardUpgradeable",
+              "label": "_status",
+              "type": "t_uint256",
+              "src": "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol:43",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Ownable": [
+            {
+              "contract": "OwnableUpgradeable",
+              "label": "_owner",
+              "type": "t_address",
+              "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:24",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
+    },
+    "edae5a0c6792fc20193da6a4068f56765f524adcf01e0a8cad60017023c78d75": {
+      "address": "0x734d176449eCdD716E5bfDCCaA727281385D22F0",
+      "txHash": "0x0f77cda0687c541f255a9a685f5fe2544d17e97e94043917f38777b77490eb72",
+      "layout": {
+        "solcVersion": "0.8.28",
+        "storage": [
+          {
+            "label": "sources",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_mapping(t_bytes32,t_struct(EnergySource)3848_storage)",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:112"
+          },
+          {
+            "label": "sourceIds",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_bytes32)dyn_storage",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:113"
+          },
+          {
+            "label": "members",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_mapping(t_address,t_struct(Member)3867_storage)",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:119"
+          },
+          {
+            "label": "memberAddresses",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_array(t_address)dyn_storage",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:120"
+          },
+          {
+            "label": "deviceToMember",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_mapping(t_uint256,t_address)",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:122"
+          },
+          {
+            "label": "energyToken",
+            "offset": 0,
+            "slot": "5",
+            "type": "t_contract(EnergyToken)7055",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:130"
+          },
+          {
+            "label": "energyCreditBalances",
+            "offset": 0,
+            "slot": "6",
+            "type": "t_mapping(t_address,t_int256)",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:131"
+          },
+          {
+            "label": "gridBalance",
+            "offset": 0,
+            "slot": "7",
+            "type": "t_int256",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:139"
+          },
+          {
+            "label": "settledBalance",
+            "offset": 0,
+            "slot": "8",
+            "type": "t_int256",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:140"
+          },
+          {
+            "label": "communityAddress",
+            "offset": 0,
+            "slot": "9",
+            "type": "t_address",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:147"
+          },
+          {
+            "label": "aggregatorAddress",
+            "offset": 0,
+            "slot": "10",
+            "type": "t_address",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:148"
+          },
+          {
+            "label": "communityFeeBps",
+            "offset": 20,
+            "slot": "10",
+            "type": "t_uint16",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:150"
+          },
+          {
+            "label": "aggregatorFeeBps",
+            "offset": 22,
+            "slot": "10",
+            "type": "t_uint16",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:150"
+          },
+          {
+            "label": "exportDeviceId",
+            "offset": 0,
+            "slot": "11",
+            "type": "t_uint256",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:155"
+          },
+          {
+            "label": "stablecoinAddress",
+            "offset": 0,
+            "slot": "12",
+            "type": "t_address",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:164"
+          },
+          {
+            "label": "paymentRecipient",
+            "offset": 0,
+            "slot": "13",
+            "type": "t_address",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:165"
+          },
+          {
+            "label": "isWhitelisted",
+            "offset": 0,
+            "slot": "14",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:172"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "15",
+            "type": "t_array(t_uint256)30_storage",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:174"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_struct(InitializableStorage)73_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(OwnableStorage)13_storage": {
+            "label": "struct OwnableUpgradeable.OwnableStorage",
+            "members": [
+              {
+                "label": "_owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(ReentrancyGuardStorage)452_storage": {
+            "label": "struct ReentrancyGuardUpgradeable.ReentrancyGuardStorage",
+            "members": [
+              {
+                "label": "_status",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_bytes32)dyn_storage": {
+            "label": "bytes32[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)30_storage": {
+            "label": "uint256[30]",
+            "numberOfBytes": "960"
+          },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]",
+            "numberOfBytes": "32"
+          },
+          "t_bytes32": {
+            "label": "bytes32",
+            "numberOfBytes": "32"
+          },
+          "t_contract(EnergyToken)7055": {
+            "label": "contract EnergyToken",
+            "numberOfBytes": "20"
+          },
+          "t_enum(SourceType)3838": {
+            "label": "enum EnergyPPAv2.SourceType",
+            "members": [
+              "SOLAR",
+              "BATTERY"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_int256": {
+            "label": "int256",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_int256)": {
+            "label": "mapping(address => int256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(Member)3867_storage)": {
+            "label": "mapping(address => struct EnergyPPAv2.Member)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_bytes32,t_struct(EnergySource)3848_storage)": {
+            "label": "mapping(bytes32 => struct EnergyPPAv2.EnergySource)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_address)": {
+            "label": "mapping(uint256 => address)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(EnergySource)3848_storage": {
+            "label": "struct EnergyPPAv2.EnergySource",
+            "members": [
+              {
+                "label": "sourceType",
+                "type": "t_enum(SourceType)3838",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "ownershipToken",
+                "type": "t_address",
+                "offset": 1,
+                "slot": "0"
+              },
+              {
+                "label": "basePricePerKwh",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "active",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "2"
+              }
+            ],
+            "numberOfBytes": "96"
+          },
+          "t_struct(Member)3867_storage": {
+            "label": "struct EnergyPPAv2.Member",
+            "members": [
+              {
+                "label": "memberAddress",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "deviceIds",
+                "type": "t_array(t_uint256)dyn_storage",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "isActive",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "metadataHash",
+                "type": "t_bytes32",
+                "offset": 0,
+                "slot": "3"
+              }
+            ],
+            "numberOfBytes": "128"
+          },
+          "t_uint16": {
+            "label": "uint16",
+            "numberOfBytes": "2"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.ReentrancyGuard": [
+            {
+              "contract": "ReentrancyGuardUpgradeable",
+              "label": "_status",
+              "type": "t_uint256",
+              "src": "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol:43",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Ownable": [
+            {
+              "contract": "OwnableUpgradeable",
+              "label": "_owner",
+              "type": "t_address",
+              "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:24",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
+    },
+    "8929632e2018ad5b5cc221803e6feb4dedbeba900e11f0c63d3ed306cb2c5927": {
+      "address": "0xbC01A73146a81ad18021188d3882946EA08E25ae",
+      "txHash": "0xc483ca49f3b8b5cbcae096f436615c2a167eafe6e64c673920dc925292334aa4",
+      "layout": {
+        "solcVersion": "0.8.28",
+        "storage": [
+          {
+            "label": "sources",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_mapping(t_bytes32,t_struct(EnergySource)13372_storage)",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:112"
+          },
+          {
+            "label": "sourceIds",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_bytes32)dyn_storage",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:113"
+          },
+          {
+            "label": "members",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_mapping(t_address,t_struct(Member)13391_storage)",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:119"
+          },
+          {
+            "label": "memberAddresses",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_array(t_address)dyn_storage",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:120"
+          },
+          {
+            "label": "deviceToMember",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_mapping(t_uint256,t_address)",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:122"
+          },
+          {
+            "label": "energyToken",
+            "offset": 0,
+            "slot": "5",
+            "type": "t_contract(EnergyToken)17474",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:129"
+          },
+          {
+            "label": "energyCreditBalances",
+            "offset": 0,
+            "slot": "6",
+            "type": "t_mapping(t_address,t_int256)",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:129"
+          },
+          {
+            "label": "gridBalance",
+            "offset": 0,
+            "slot": "7",
+            "type": "t_int256",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:138"
+          },
+          {
+            "label": "settledBalance",
+            "offset": 0,
+            "slot": "8",
+            "type": "t_int256",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:138"
+          },
+          {
+            "label": "communityAddress",
+            "offset": 0,
+            "slot": "9",
+            "type": "t_address",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:146"
+          },
+          {
+            "label": "aggregatorAddress",
+            "offset": 0,
+            "slot": "10",
+            "type": "t_address",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:147"
+          },
+          {
+            "label": "communityFeeBps",
+            "offset": 20,
+            "slot": "10",
+            "type": "t_uint16",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:149"
+          },
+          {
+            "label": "aggregatorFeeBps",
+            "offset": 22,
+            "slot": "10",
+            "type": "t_uint16",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:150"
+          },
+          {
+            "label": "exportDeviceId",
+            "offset": 0,
+            "slot": "11",
+            "type": "t_uint256",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:154"
+          },
+          {
+            "label": "stablecoinAddress",
+            "offset": 0,
+            "slot": "12",
+            "type": "t_address",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:162"
+          },
+          {
+            "label": "paymentRecipient",
+            "offset": 0,
+            "slot": "13",
+            "type": "t_address",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:164"
+          },
+          {
+            "label": "isWhitelisted",
+            "offset": 0,
+            "slot": "14",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:172"
+          },
+          {
+            "label": "gridOperatorAddress",
+            "offset": 0,
+            "slot": "15",
+            "type": "t_address",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:176"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "16",
+            "type": "t_array(t_uint256)30_storage",
+            "contract": "EnergyPPAv2",
+            "src": "contracts/EnergyPPAv2.sol:176"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_struct(InitializableStorage)73_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(OwnableStorage)13_storage": {
+            "label": "struct OwnableUpgradeable.OwnableStorage",
+            "members": [
+              {
+                "label": "_owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(ReentrancyGuardStorage)452_storage": {
+            "label": "struct ReentrancyGuardUpgradeable.ReentrancyGuardStorage",
+            "members": [
+              {
+                "label": "_status",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_bytes32)dyn_storage": {
+            "label": "bytes32[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)30_storage": {
+            "label": "uint256[30]",
+            "numberOfBytes": "960"
+          },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]",
+            "numberOfBytes": "32"
+          },
+          "t_bytes32": {
+            "label": "bytes32",
+            "numberOfBytes": "32"
+          },
+          "t_contract(EnergyToken)17474": {
+            "label": "contract EnergyToken",
+            "numberOfBytes": "20"
+          },
+          "t_enum(SourceType)13362": {
+            "label": "enum EnergyPPAv2.SourceType",
+            "members": [
+              "SOLAR",
+              "BATTERY"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_int256": {
+            "label": "int256",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_int256)": {
+            "label": "mapping(address => int256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(Member)13391_storage)": {
+            "label": "mapping(address => struct EnergyPPAv2.Member)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_bytes32,t_struct(EnergySource)13372_storage)": {
+            "label": "mapping(bytes32 => struct EnergyPPAv2.EnergySource)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_address)": {
+            "label": "mapping(uint256 => address)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(EnergySource)13372_storage": {
+            "label": "struct EnergyPPAv2.EnergySource",
+            "members": [
+              {
+                "label": "sourceType",
+                "type": "t_enum(SourceType)13362",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "ownershipToken",
+                "type": "t_address",
+                "offset": 1,
+                "slot": "0"
+              },
+              {
+                "label": "basePricePerKwh",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "active",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "2"
+              }
+            ],
+            "numberOfBytes": "96"
+          },
+          "t_struct(Member)13391_storage": {
+            "label": "struct EnergyPPAv2.Member",
+            "members": [
+              {
+                "label": "memberAddress",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "deviceIds",
+                "type": "t_array(t_uint256)dyn_storage",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "isActive",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "metadataHash",
+                "type": "t_bytes32",
+                "offset": 0,
+                "slot": "3"
+              }
+            ],
+            "numberOfBytes": "128"
+          },
+          "t_uint16": {
+            "label": "uint16",
+            "numberOfBytes": "2"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.ReentrancyGuard": [
+            {
+              "contract": "ReentrancyGuardUpgradeable",
+              "label": "_status",
+              "type": "t_uint256",
+              "src": "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol:43",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Ownable": [
+            {
+              "contract": "OwnableUpgradeable",
+              "label": "_owner",
+              "type": "t_address",
+              "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:24",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
     }
   }
 }

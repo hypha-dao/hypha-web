@@ -1,0 +1,21 @@
+{
+  "description": "Example 1 from ENERGY_SYSTEM_README: import scenario. 8 kWh solar, 2 kWh battery, 11 kWh demand, 1 kWh grid import.",
+  "intervalReadings": [
+    { "interval_start": "2025-01-15T14:00:00Z", "meter_id": 1001, "community_id": 1, "energy_wh": 2000, "direction": "consumption" },
+    { "interval_start": "2025-01-15T14:00:00Z", "meter_id": 2001, "community_id": 1, "energy_wh": 5000, "direction": "consumption" },
+    { "interval_start": "2025-01-15T14:00:00Z", "meter_id": 3001, "community_id": 1, "energy_wh": 1000, "direction": "consumption" },
+    { "interval_start": "2025-01-15T14:00:00Z", "meter_id": 4001, "community_id": 1, "energy_wh": 3000, "direction": "consumption" },
+    { "interval_start": "2025-01-15T14:00:00Z", "meter_id": 5001, "community_id": 1, "energy_wh": 8000, "direction": "production" },
+    { "interval_start": "2025-01-15T14:00:00Z", "meter_id": 5002, "community_id": 1, "energy_wh": 2000, "direction": "production" },
+    { "interval_start": "2025-01-15T14:00:00Z", "meter_id": 5003, "community_id": 1, "energy_wh": 1000, "direction": "import" }
+  ],
+  "expected": {
+    "alice": { "solar": 2000, "battery": 0, "grid": 0, "total": 2000 },
+    "bob":   { "solar": 3000, "battery": 1000, "grid": 1000, "total": 5000 },
+    "carol": { "solar": 1000, "battery": 0, "grid": 0, "total": 1000 },
+    "dave":  { "solar": 2000, "battery": 1000, "grid": 0, "total": 3000 },
+    "eve":   { "solar": 0, "battery": 0, "grid": 0, "total": 0 },
+    "totalGridImport": 1000,
+    "totalExport": 0
+  }
+}

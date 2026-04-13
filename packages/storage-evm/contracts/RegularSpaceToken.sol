@@ -130,6 +130,7 @@ contract RegularSpaceToken is
   event PurchaseEligibilityModeUpdated(uint8 mode);
   event PurchaseWhitelistSpaceAdded(uint256 indexed spaceId);
   event PurchaseWhitelistSpaceRemoved(uint256 indexed spaceId);
+  event ExecutorUpdated(address indexed oldExecutor, address indexed newExecutor);
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
@@ -404,6 +405,23 @@ contract RegularSpaceToken is
     );
     autoMinting = _autoMinting;
     emit AutoMintingUpdated(_autoMinting);
+  }
+
+  /**
+   * @dev Transfer the executor role to a new address.
+   * @param _newExecutor The address that will become the new executor
+   */
+  function setExecutor(address _newExecutor) external virtual {
+    require(
+      msg.sender == executor || msg.sender == owner(),
+      '!executor/owner'
+    );
+    require(_newExecutor != address(0), '!zero address');
+    address oldExecutor = executor;
+    executor = _newExecutor;
+    canTransfer[_newExecutor] = true;
+    canReceive[_newExecutor] = true;
+    emit ExecutorUpdated(oldExecutor, _newExecutor);
   }
 
   /**
