@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import {
-  Paperclip,
-  ImageIcon,
   Bold,
   Italic,
   Strikethrough,
@@ -19,9 +17,20 @@ import {
   FileIcon,
   Play,
   Loader2,
+  Plus,
+  ImageIcon,
+  Paperclip,
+  Video,
+  Mic,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
 import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
@@ -233,6 +242,11 @@ export function HumanChatPanelChatBar({
   const imageInputId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const [isVoiceRecording, setIsVoiceRecording] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const composerShellRef = useRef<HTMLDivElement>(null);
   const replyPreviewWasOpenRef = useRef(false);
@@ -563,8 +577,119 @@ export function HumanChatPanelChatBar({
   const handleAttachImage = () => {
     imageInputRef.current?.click();
   };
-  const handleBold = () => {};
-  const handleMention = () => {};
+  const handleAttachVideo = () => {
+    videoInputRef.current?.click();
+  };
+
+  const stopVoiceRecording = useCallback(() => {
+    const mr = mediaRecorderRef.current;
+    if (!mr || mr.state !== 'recording') {
+      setIsVoiceRecording(false);
+      return;
+    }
+    try {
+      mr.stop();
+    } catch {
+      // ignore
+    }
+    setIsVoiceRecording(false);
+  }, []);
+
+  const startVoiceRecording = useCallback(async () => {
+    if (!onDraftAttachmentsChange) return;
+    if (isVoiceRecording) {
+      stopVoiceRecording();
+      return;
+    }
+    if (
+      typeof globalThis.MediaRecorder === 'undefined' ||
+      !navigator.mediaDevices?.getUserMedia
+    ) {
+      setVoiceError(t('voiceRecordingNotSupported'));
+      return;
+    }
+    setVoiceError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+      /** One array per recorder so rapid stop/start cannot mix async `ondataavailable` chunks. */
+      const chunks: BlobPart[] = [];
+      const preferredTypes = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4',
+      ];
+      const mimeType = preferredTypes.find(
+        (mt) =>
+          typeof MediaRecorder !== 'undefined' &&
+          MediaRecorder.isTypeSupported(mt),
+      );
+      const mr = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
+      mediaRecorderRef.current = mr;
+      mr.ondataavailable = (ev) => {
+        if (ev.data && ev.data.size > 0) {
+          chunks.push(ev.data);
+        }
+      };
+      mr.onstop = () => {
+        for (const track of stream.getTracks()) {
+          track.stop();
+        }
+        mediaStreamRef.current = null;
+        mediaRecorderRef.current = null;
+        const blob = new Blob(chunks, { type: mr.mimeType || 'audio/webm' });
+        if (blob.size < 256) {
+          return;
+        }
+        const ext = blob.type.includes('mp4') ? 'm4a' : 'webm';
+        const name = `voice-message-${Date.now()}.${ext}`;
+        const file = new File([blob], name, {
+          type: blob.type || 'audio/webm',
+        });
+        pushDrafts([file], 'file');
+      };
+      mr.start();
+      setIsVoiceRecording(true);
+    } catch {
+      const s = mediaStreamRef.current;
+      if (s) {
+        for (const track of s.getTracks()) {
+          track.stop();
+        }
+        mediaStreamRef.current = null;
+      }
+      mediaRecorderRef.current = null;
+      setVoiceError(t('voiceMicPermissionDenied'));
+      setIsVoiceRecording(false);
+    }
+  }, [
+    isVoiceRecording,
+    onDraftAttachmentsChange,
+    pushDrafts,
+    stopVoiceRecording,
+    t,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      const mr = mediaRecorderRef.current;
+      if (mr && mr.state === 'recording') {
+        try {
+          mr.stop();
+        } catch {
+          // ignore
+        }
+      }
+      const s = mediaStreamRef.current;
+      if (s) {
+        for (const track of s.getTracks()) {
+          track.stop();
+        }
+      }
+    };
+  }, []);
 
   const iconButtonClass =
     'flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors';
@@ -687,6 +812,21 @@ export function HumanChatPanelChatBar({
           onChange={(e) => {
             if (e.target.files?.length) {
               pushDrafts(e.target.files, 'image');
+            }
+            e.target.value = '';
+          }}
+        />
+        <input
+          ref={videoInputRef}
+          type="file"
+          accept="video/*"
+          className="sr-only"
+          tabIndex={-1}
+          aria-hidden="true"
+          multiple
+          onChange={(e) => {
+            if (e.target.files?.length) {
+              pushDrafts(e.target.files, 'file');
             }
             e.target.value = '';
           }}
@@ -902,72 +1042,109 @@ export function HumanChatPanelChatBar({
           )}
         />
 
-        <div className="flex min-w-0 items-center justify-between px-2 pb-2">
-          {/* Left icons */}
-          <div className="flex items-center gap-0.5">
-            <button
-              type="button"
-              className={iconButtonClass}
-              aria-label={t('attachFile')}
-              title={t('attachFile')}
-              onClick={handleAttachFile}
-            >
-              <Paperclip className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              className={iconButtonClass}
-              aria-label={t('attachImage')}
-              title={t('attachImage')}
-              onClick={handleAttachImage}
-            >
-              <ImageIcon className="h-4 w-4" />
-            </button>
-          </div>
-
-          {/* Right icons */}
-          <div className="flex items-center gap-0.5">
-            <button
-              type="button"
-              className={iconButtonClass}
-              aria-label={t('bold')}
-              title={t('bold')}
-              onClick={handleBold}
-            >
-              <Bold className="h-4 w-4" />
-            </button>
-            <HumanChatPanelEmojiPicker
-              open={emojiPickerOpen}
-              onOpenChange={setEmojiPickerOpen}
-              onEmojiSelect={insertEmoji}
-              ariaLabel={t('emojiPickerComposer')}
-              align="end"
-            >
+        <div className="flex min-w-0 flex-col gap-1 px-2 pb-2">
+          {voiceError && (
+            <p role="alert" className="text-xs text-destructive">
+              {voiceError}
+            </p>
+          )}
+          <div className="flex min-w-0 items-center justify-between gap-2">
+            <div className="flex min-w-0 flex-1 items-center gap-0.5">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className={iconButtonClass}
+                    aria-label={t('composerAttachMenu')}
+                    title={t('composerAttachMenu')}
+                  >
+                    <Plus className="h-4 w-4" strokeWidth={2} />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="min-w-[200px]">
+                  <DropdownMenuItem
+                    className="cursor-pointer gap-2"
+                    onSelect={() => {
+                      requestAnimationFrame(() => handleAttachImage());
+                    }}
+                  >
+                    <ImageIcon className="h-4 w-4 shrink-0" aria-hidden />
+                    <span>{t('composerAttachImage')}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="cursor-pointer gap-2"
+                    onSelect={() => {
+                      requestAnimationFrame(() => handleAttachVideo());
+                    }}
+                  >
+                    <Video className="h-4 w-4 shrink-0" aria-hidden />
+                    <span>{t('composerAttachVideo')}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="cursor-pointer gap-2"
+                    onSelect={() => {
+                      requestAnimationFrame(() => handleAttachFile());
+                    }}
+                  >
+                    <Paperclip className="h-4 w-4 shrink-0" aria-hidden />
+                    <span>{t('composerAttachFile')}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <HumanChatPanelEmojiPicker
+                open={emojiPickerOpen}
+                onOpenChange={setEmojiPickerOpen}
+                onEmojiSelect={insertEmoji}
+                ariaLabel={t('emojiPickerComposer')}
+                align="end"
+              >
+                <button
+                  type="button"
+                  className={iconButtonClass}
+                  aria-label={t('emoji')}
+                  title={t('emoji')}
+                  aria-expanded={emojiPickerOpen}
+                >
+                  <Smile className="h-4 w-4" />
+                </button>
+              </HumanChatPanelEmojiPicker>
               <button
                 type="button"
-                className={iconButtonClass}
-                aria-label={t('emoji')}
-                title={t('emoji')}
-                aria-expanded={emojiPickerOpen}
+                disabled
+                className={cn(iconButtonClass, 'cursor-not-allowed opacity-50')}
+                aria-label={t('mentionNotAvailable')}
+                title={t('mentionNotAvailable')}
               >
-                <Smile className="h-4 w-4" />
+                <AtSign className="h-4 w-4" aria-hidden />
               </button>
-            </HumanChatPanelEmojiPicker>
-            <button
-              type="button"
-              className={iconButtonClass}
-              aria-label={t('mention')}
-              title={t('mention')}
-              onClick={handleMention}
-            >
-              <AtSign className="h-4 w-4" />
-            </button>
+              <button
+                type="button"
+                className={cn(
+                  iconButtonClass,
+                  isVoiceRecording && 'text-destructive hover:text-destructive',
+                )}
+                aria-label={
+                  isVoiceRecording
+                    ? t('composerVoiceStop')
+                    : t('composerVoiceRecord')
+                }
+                title={
+                  isVoiceRecording
+                    ? t('composerVoiceStop')
+                    : t('composerVoiceRecord')
+                }
+                aria-pressed={isVoiceRecording}
+                onClick={() => void startVoiceRecording()}
+              >
+                <Mic className="h-4 w-4" strokeWidth={2} />
+              </button>
+            </div>
             <button
               type="button"
               onClick={onSend}
               disabled={!canSend}
               className={cn(
-                'flex h-7 w-7 items-center justify-center rounded transition-colors',
+                'flex h-7 w-7 shrink-0 items-center justify-center rounded transition-colors',
                 canSend
                   ? 'text-primary hover:bg-primary/10'
                   : 'cursor-not-allowed text-muted-foreground/50',
