@@ -230,7 +230,7 @@ export function messageFromRoomMessageEvent(
   event: MatrixSdk.MatrixEvent,
   pinned: boolean,
 ): Message {
-  const content = event.getContent() as {
+  type RoomMessageWireContent = {
     body?: string;
     format?: string;
     formatted_body?: string;
@@ -245,6 +245,19 @@ export function messageFromRoomMessageEvent(
     };
     [key: string]: unknown;
   };
+
+  const rootContent = event.getContent() as RoomMessageWireContent;
+  const replacingEv = event.replacingEvent();
+  const newContent =
+    replacingEv?.getType() === 'm.room.message'
+      ? ((replacingEv.getContent() as { 'm.new_content'?: unknown })[
+          'm.new_content'
+        ] as Partial<RoomMessageWireContent> | undefined)
+      : undefined;
+  const content: RoomMessageWireContent =
+    newContent && typeof newContent === 'object' && !Array.isArray(newContent)
+      ? { ...rootContent, ...newContent }
+      : rootContent;
   const msgtypeRaw = content.msgtype;
   const isMedia = msgtypeRaw === 'm.file' || msgtypeRaw === 'm.image';
   const rawBody = content.body ?? '';
