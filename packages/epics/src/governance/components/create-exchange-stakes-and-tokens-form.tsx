@@ -75,6 +75,8 @@ export const CreateExchangeStakesAndTokensForm = ({
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
+    mode: 'onSubmit',
+    reValidateMode: 'onChange',
     resolver,
     defaultValues: {
       title: '',

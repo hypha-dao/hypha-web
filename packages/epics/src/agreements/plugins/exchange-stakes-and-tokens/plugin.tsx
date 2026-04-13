@@ -343,7 +343,10 @@ export const ExchangeStakesAndTokensPlugin = ({
     if (!escrowContractAddress) {
       return toPayoutTokens(sellerTokensBeforeWhitelist);
     }
-    if (!sellerEscrowWhitelistOk) return [];
+    /** SWR is undefined until resolved; do not treat as "no tokens" (that emptied the dropdown). */
+    if (sellerEscrowWhitelistOk === undefined) {
+      return toPayoutTokens(sellerTokensBeforeWhitelist);
+    }
     const matched = sellerTokensBeforeWhitelist.filter((token) =>
       sellerEscrowWhitelistOk.has(token.address.toLowerCase()),
     );
@@ -359,7 +362,9 @@ export const ExchangeStakesAndTokensPlugin = ({
     if (!escrowContractAddress) {
       return toPayoutTokens(buyerTokensBeforeWhitelist);
     }
-    if (!buyerEscrowWhitelistOk) return [];
+    if (buyerEscrowWhitelistOk === undefined) {
+      return toPayoutTokens(buyerTokensBeforeWhitelist);
+    }
     const matched = buyerTokensBeforeWhitelist.filter((token) =>
       buyerEscrowWhitelistOk.has(token.address.toLowerCase()),
     );

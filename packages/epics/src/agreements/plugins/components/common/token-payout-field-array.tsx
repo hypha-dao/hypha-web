@@ -54,7 +54,7 @@ function TokenPayoutFieldArrayInner({
     'AgreementFlow.plugins.tokenPayoutFieldArray',
   );
   const resolvedLabel = label ?? tPayoutRows('paymentRequest');
-  const { control } = useFormContext();
+  const { control, formState } = useFormContext();
   const { fields, append, remove } = useFieldArray({
     control,
     name,
@@ -91,26 +91,38 @@ function TokenPayoutFieldArrayInner({
                 <FormField
                   control={control}
                   name={`${name}.${index}`}
-                  render={({ field: { value, onChange } }) => (
-                    <FormItem>
-                      <FormControl>
-                        <TokenPayoutField
-                          value={value}
-                          onChange={onChange}
-                          tokens={tokens}
-                          showSelectedTokenBalanceHint={
-                            showSelectedTokenBalanceHint ||
-                            showTreasuryBalanceHint
-                          }
-                          useTreasuryBalanceLine={showTreasuryBalanceHint}
-                          selectedTokenPriceHint={selectedTokenPriceHint}
-                        />
-                      </FormControl>
-                      <FormMessage
-                        custom={tPayoutRows('enterAmountAndToken')}
-                      />
-                    </FormItem>
-                  )}
+                  render={({
+                    field: { value, onChange },
+                    fieldState: { error, isTouched, isDirty },
+                  }) => {
+                    const showRowError =
+                      Boolean(error) &&
+                      (isTouched ||
+                        isDirty ||
+                        (formState.submitCount ?? 0) > 0);
+                    return (
+                      <FormItem>
+                        <FormControl>
+                          <TokenPayoutField
+                            value={value}
+                            onChange={onChange}
+                            tokens={tokens}
+                            showSelectedTokenBalanceHint={
+                              showSelectedTokenBalanceHint ||
+                              showTreasuryBalanceHint
+                            }
+                            useTreasuryBalanceLine={showTreasuryBalanceHint}
+                            selectedTokenPriceHint={selectedTokenPriceHint}
+                          />
+                        </FormControl>
+                        {showRowError ? (
+                          <FormMessage
+                            custom={tPayoutRows('enterAmountAndToken')}
+                          />
+                        ) : null}
+                      </FormItem>
+                    );
+                  }}
                 />
               </div>
               {canAddRemove && (

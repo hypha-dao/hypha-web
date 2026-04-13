@@ -166,7 +166,10 @@ const FormMessage = React.forwardRef<
     return null;
   }
 
-  /** Prefer resolver / setError messages; use `custom` only when there is no field error */
+  /**
+   * Prefer resolver / setError messages. `custom` is only for helper copy when there is no error;
+   * if both exist, showing `custom` would hide the real validation message after the user fixes input.
+   */
   const body = error ? (
     Array.isArray(error) ? (
       error.map((err, index) => (
@@ -190,7 +193,7 @@ const FormMessage = React.forwardRef<
           />
         ))
     )
-  ) : custom ? (
+  ) : !error && custom ? (
     custom
   ) : (
     children
