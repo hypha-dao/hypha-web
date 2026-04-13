@@ -1005,6 +1005,37 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             );
             await messageListener(message);
           } else if (redacted.getType() === EventType.RoomMessage) {
+            const replaceTargetId = getMessageReplaceTargetEventId(redacted);
+
+            if (replaceTargetId) {
+              const targetEv =
+                room.findEventById(replaceTargetId) ??
+                (typeof room.getPendingEvent === 'function'
+                  ? room.getPendingEvent(replaceTargetId)
+                  : null);
+              if (!targetEv || targetEv.getType() !== EventType.RoomMessage) {
+                return;
+              }
+              const pinnedIds = getPinnedMessageIds(roomId);
+              const targetEventId = targetEv.getId();
+              const targetSender = targetEv.getSender();
+              if (!targetEventId || !targetSender) return;
+              targetEv.makeReplaced(undefined);
+              let message = messageFromRoomMessageEvent(
+                client,
+                roomId,
+                targetEv,
+                pinnedIds.includes(targetEventId),
+              );
+              message = attachReactionsToMessage(
+                room,
+                message,
+                client.getUserId(),
+              );
+              await messageListener(message);
+              return;
+            }
+
             const pinnedIds = getPinnedMessageIds(roomId);
             const mid = redacted.getId();
             const ms = redacted.getSender();

@@ -1634,6 +1634,7 @@
     "editButton": "Nachricht bearbeiten",
     "editingMessage": "Nachricht bearbeiten",
     "editDismiss": "Bearbeitung abbrechen",
+    "editAttachmentsNotSupported": "Anhänge werden beim Bearbeiten einer Nachricht nicht unterstützt",
     "replyingTo": "Antwort an {author}",
     "replyDismiss": "Antwort abbrechen",
     "replyOriginalUnavailable": "Ursprüngliche Nachricht nicht verfügbar",

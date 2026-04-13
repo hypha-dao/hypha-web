@@ -1634,6 +1634,7 @@
     "editButton": "Editar mensaje",
     "editingMessage": "Editando mensaje",
     "editDismiss": "Cancelar edición",
+    "editAttachmentsNotSupported": "No se admiten archivos adjuntos al editar un mensaje",
     "replyingTo": "Respondiendo a {author}",
     "replyDismiss": "Cancelar respuesta",
     "replyOriginalUnavailable": "Mensaje original no disponible",

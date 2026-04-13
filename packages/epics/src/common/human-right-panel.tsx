@@ -833,9 +833,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     try {
       if (editTargetEventId) {
         if (savedAttachments.length > 0) {
-          throw new Error(
-            'Attachments are not supported when editing a message',
-          );
+          throw new Error(t('editAttachmentsNotSupported'));
         }
         await matrixRef.current.editRoomMessage({
           roomId,
