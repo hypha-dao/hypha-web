@@ -1,12 +1,14 @@
 'use client';
 
 import type { SpaceMemoryItem } from '@hypha-platform/core/client';
+import { cn } from '@hypha-platform/ui-utils';
 import { ExternalLink, FileIcon, Image as ImageIcon } from 'lucide-react';
 import { formatDate } from '@hypha-platform/ui-utils';
 import React from 'react';
 
-const THUMB_CLASS =
-  'h-44 w-44 max-w-full overflow-hidden rounded-xl border border-border bg-muted/40';
+/** Matches Human Chat image slot: `rounded-lg border border-border bg-muted/30` + object-contain preview */
+const THUMB_SHELL =
+  'relative flex h-44 w-44 max-w-full shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted/30';
 
 function isSafeAssetUrl(url: string): boolean {
   try {
@@ -17,129 +19,138 @@ function isSafeAssetUrl(url: string): boolean {
   }
 }
 
+function isLikelyPdf(url: string, filename: string): boolean {
+  return /\.pdf(\?|$|#)/i.test(`${url} ${filename}`);
+}
+
 type SpaceMemoryTimelineItemProps = {
   item: SpaceMemoryItem;
   contextLine: string;
   openLabel: string;
-  isLast: boolean;
 };
 
 /**
- * Timeline row: connector + time/context + medium thumbnail + filename below (history overview).
+ * Horizontal timeline tile: dot + time + context + preview (Human Chat–style) + filename.
  */
 export function SpaceMemoryTimelineItem({
   item,
   contextLine,
   openLabel,
-  isLast,
 }: SpaceMemoryTimelineItemProps) {
   const safe = isSafeAssetUrl(item.url);
   const uploaded = formatDate(new Date(item.uploadedAt), true);
   const [imageFailed, setImageFailed] = React.useState(false);
 
-  const showImage = safe && item.kind === 'image' && !imageFailed;
-  const showVideo = safe && item.kind === 'video';
-  const showPdfOrDocThumb =
-    safe && (item.kind === 'document' || item.kind === 'other');
-  const showBrokenImage = safe && item.kind === 'image' && imageFailed;
+  const tryPdfEmbed =
+    safe &&
+    (item.kind === 'document' || item.kind === 'other') &&
+    isLikelyPdf(item.url, item.name);
 
-  const thumbInner = (
-    <div className={`${THUMB_CLASS} flex items-center justify-center`}>
-      {showImage ? (
+  const thumbPreview = (() => {
+    if (!safe) {
+      return (
+        <FileIcon
+          className="h-12 w-12 text-muted-foreground"
+          strokeWidth={1.25}
+        />
+      );
+    }
+    if (item.kind === 'image' && !imageFailed) {
+      return (
         // eslint-disable-next-line @next/next/no-img-element -- CDN / signed URLs
         <img
           src={item.url}
           alt=""
-          className="h-full w-full object-cover"
+          className="max-h-full max-w-full object-contain"
           loading="lazy"
           onError={() => setImageFailed(true)}
         />
-      ) : null}
-
-      {showBrokenImage ? (
-        <ImageIcon
-          className="h-12 w-12 text-muted-foreground"
-          strokeWidth={1.25}
-        />
-      ) : null}
-
-      {showVideo ? (
+      );
+    }
+    if (item.kind === 'image' && imageFailed) {
+      return (
+        <div className="flex min-h-[120px] w-full flex-col items-center justify-center gap-2 px-2 text-muted-foreground">
+          <ImageIcon className="h-8 w-8 opacity-70" strokeWidth={1.25} />
+          <span className="line-clamp-2 text-center text-[10px]">
+            {item.name}
+          </span>
+        </div>
+      );
+    }
+    if (item.kind === 'video') {
+      return (
         <video
           src={item.url}
           muted
           playsInline
           preload="metadata"
-          className="h-full w-full object-cover bg-black"
+          className="max-h-full max-w-full object-contain bg-black"
         >
           <track kind="captions" />
         </video>
-      ) : null}
-
-      {showPdfOrDocThumb ? (
-        <FileIcon
-          className="h-14 w-14 text-muted-foreground"
-          strokeWidth={1.25}
+      );
+    }
+    if (tryPdfEmbed) {
+      return (
+        <iframe
+          title=""
+          src={item.url}
+          className="pointer-events-none h-[120%] w-full min-h-[7rem] border-0 bg-muted/20"
+          loading="lazy"
         />
-      ) : null}
-
-      {!safe ? (
-        <FileIcon
-          className="h-14 w-14 text-muted-foreground"
-          strokeWidth={1.25}
-        />
-      ) : null}
-    </div>
-  );
+      );
+    }
+    return (
+      <FileIcon
+        className="h-12 w-12 text-muted-foreground"
+        strokeWidth={1.25}
+      />
+    );
+  })();
 
   return (
-    <li className="relative flex gap-4 pb-10 last:pb-0">
-      <div
-        className="relative flex w-5 shrink-0 flex-col items-center"
+    <li className="flex w-44 shrink-0 flex-col items-stretch">
+      <span
+        className="mb-1.5 h-2 w-2 shrink-0 self-center rounded-full border-2 border-background bg-accent-9 shadow-sm ring-1 ring-border"
         aria-hidden
+      />
+      <time
+        dateTime={item.uploadedAt}
+        className="text-[10px] font-medium leading-tight text-muted-foreground"
       >
-        <span className="z-10 mt-1.5 h-3 w-3 shrink-0 rounded-full border-2 border-background bg-accent-9 shadow-sm ring-1 ring-border" />
-        {!isLast ? (
-          <span className="absolute left-1/2 top-5 bottom-0 w-px -translate-x-1/2 bg-border" />
-        ) : null}
-      </div>
+        {uploaded}
+      </time>
+      <p className="mt-0.5 line-clamp-2 text-[10px] leading-tight text-muted-foreground">
+        {contextLine}
+      </p>
 
-      <div className="min-w-0 flex-1">
-        <time
-          dateTime={item.uploadedAt}
-          className="text-xs font-medium text-muted-foreground"
-        >
-          {uploaded}
-        </time>
-        <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
-          {contextLine}
-        </p>
-
-        <div className="mt-3 flex flex-col gap-2">
-          {safe ? (
-            <a
-              href={item.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group inline-flex w-fit max-w-full flex-col gap-2 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              aria-label={openLabel}
-            >
-              {thumbInner}
-              <span className="inline-flex items-start gap-1.5 text-sm font-medium text-foreground underline-offset-2 group-hover:text-primary group-hover:underline">
-                <span className="line-clamp-3 break-words text-left">
-                  {item.name}
-                </span>
-                <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-60" />
-              </span>
-            </a>
-          ) : (
-            <>
-              {thumbInner}
-              <span className="line-clamp-3 break-words text-sm font-medium text-foreground">
-                {item.name}
-              </span>
-            </>
-          )}
-        </div>
+      <div className="mt-2 flex flex-col gap-2">
+        {safe ? (
+          <a
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex flex-col gap-2 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            aria-label={openLabel}
+          >
+            <div className={cn(THUMB_SHELL, 'min-h-[120px]')}>
+              {thumbPreview}
+            </div>
+            <span className="inline-flex items-start gap-1 text-xs font-medium leading-snug text-foreground underline-offset-2 group-hover:text-primary group-hover:underline">
+              <span className="line-clamp-3 break-words">{item.name}</span>
+              <ExternalLink className="mt-0.5 h-3 w-3 shrink-0 opacity-60" />
+            </span>
+          </a>
+        ) : (
+          <>
+            <div className={cn(THUMB_SHELL, 'min-h-[120px]')}>
+              {thumbPreview}
+            </div>
+            <span className="line-clamp-3 break-words text-xs font-medium text-foreground">
+              {item.name}
+            </span>
+          </>
+        )}
       </div>
     </li>
   );

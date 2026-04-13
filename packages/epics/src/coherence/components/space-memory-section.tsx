@@ -86,10 +86,10 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
         </Empty>
       ) : (
         <ul
-          className="m-0 w-full list-none p-0"
+          className="m-0 flex w-full list-none flex-wrap justify-start gap-x-6 gap-y-10 p-0"
           aria-label={t('spaceMemoryTimelineLabel')}
         >
-          {items.map((row, index) => (
+          {items.map((row) => (
             <SpaceMemoryTimelineItem
               key={row.id}
               item={row}
@@ -98,7 +98,6 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
                 state: stateLabel(row.context.documentState),
               })}
               openLabel={t('spaceMemoryOpenAsset', { name: row.name })}
-              isLast={index === items.length - 1}
             />
           ))}
         </ul>
