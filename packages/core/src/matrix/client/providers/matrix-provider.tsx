@@ -14,6 +14,7 @@ import {
 import {
   HYPHA_MEDIA_BUNDLE_FIELD,
   HYPHA_SPOILER_FIELD,
+  awaitNonProvisionalMatrixEventId,
   getMessageReplaceTargetEventId,
   messageFromRoomMessageEvent,
   resolveReplyTargetForSend,
@@ -650,6 +651,11 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       if (!targetEv) {
         throw new Error('Message to edit not found');
       }
+      await awaitNonProvisionalMatrixEventId(targetEv);
+      const resolvedTargetId = targetEv.getId();
+      if (!resolvedTargetId?.trim()) {
+        throw new Error('Message to edit not found');
+      }
       if (targetEv.getType() !== EventType.RoomMessage) {
         throw new Error('Only chat messages can be edited');
       }
@@ -713,7 +719,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         'm.new_content': newContentPayload,
         'm.relates_to': {
           rel_type: MatrixSdk.RelationType.Replace,
-          event_id: targetEventId,
+          event_id: resolvedTargetId,
         },
       } as RoomMessageEventContent);
     },

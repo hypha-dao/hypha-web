@@ -529,6 +529,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setRoomId(null);
       setReplyDraft(null);
       setEditDraft(null);
+      setInput('');
+      setComposerError(null);
       disposeDraftAttachmentUrls(draftAttachmentsRef.current);
       setDraftAttachments([]);
       setError(null);
@@ -544,6 +546,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setRoomId(null);
       setReplyDraft(null);
       setEditDraft(null);
+      setInput('');
+      setComposerError(null);
       disposeDraftAttachmentUrls(draftAttachmentsRef.current);
       setDraftAttachments([]);
       setError(null);
@@ -565,6 +569,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setMessages([]);
       setReplyDraft(null);
       setEditDraft(null);
+      setInput('');
+      setComposerError(null);
       disposeDraftAttachmentUrls(draftAttachmentsRef.current);
       setDraftAttachments([]);
       setSendingPending(null);

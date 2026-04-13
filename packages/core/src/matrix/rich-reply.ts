@@ -55,6 +55,55 @@ export function isLocalProvisionalEventId(eventId: string): boolean {
 }
 
 /**
+ * Wait until a timeline event has a server-assigned id (not `~…`), e.g. before
+ * sending `m.relates_to.event_id` that the homeserver must accept.
+ */
+export async function awaitNonProvisionalMatrixEventId(
+  event: MatrixSdk.MatrixEvent,
+): Promise<void> {
+  const initial = event.getId();
+  if (!initial || !isLocalProvisionalEventId(initial)) {
+    return;
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const timeoutMs = 30_000;
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(
+        new Error('Message is still sending; wait a moment and try again'),
+      );
+    }, timeoutMs);
+
+    const cleanup = () => {
+      clearTimeout(timeout);
+      event.off(MatrixEventEvent.LocalEventIdReplaced, onReplaced);
+    };
+
+    const onReplaced = () => {
+      const cur = event.getId();
+      if (cur && !isLocalProvisionalEventId(cur)) {
+        cleanup();
+        resolve();
+      }
+    };
+
+    event.on(MatrixEventEvent.LocalEventIdReplaced, onReplaced);
+
+    const cur = event.getId();
+    if (cur && !isLocalProvisionalEventId(cur)) {
+      cleanup();
+      resolve();
+    }
+  });
+
+  const finalId = event.getId();
+  if (!finalId || isLocalProvisionalEventId(finalId)) {
+    throw new Error('Message is still sending; wait a moment and try again');
+  }
+}
+
+/**
  * When `event` is an `m.room.message` with `m.relates_to.rel_type === m.replace`,
  * returns the event id of the message being edited. Otherwise `undefined`.
  */
@@ -108,45 +157,9 @@ export async function resolveReplyTargetForSend(
     throw new Error('Reply target message not found');
   }
 
-  if (isLocalProvisionalEventId(target.getId()!)) {
-    await new Promise<void>((resolve, reject) => {
-      const timeoutMs = 30_000;
-      const timeout = setTimeout(() => {
-        cleanup();
-        reject(
-          new Error(
-            'Reply target is still sending; wait a moment and try again',
-          ),
-        );
-      }, timeoutMs);
-
-      const cleanup = () => {
-        clearTimeout(timeout);
-        target!.off(MatrixEventEvent.LocalEventIdReplaced, onReplaced);
-      };
-
-      const onReplaced = () => {
-        if (!isLocalProvisionalEventId(target!.getId()!)) {
-          cleanup();
-          resolve();
-        }
-      };
-
-      target.on(MatrixEventEvent.LocalEventIdReplaced, onReplaced);
-
-      if (!isLocalProvisionalEventId(target.getId()!)) {
-        cleanup();
-        resolve();
-      }
-    });
-  }
+  await awaitNonProvisionalMatrixEventId(target);
 
   const eventId = target.getId()!;
-  if (isLocalProvisionalEventId(eventId)) {
-    throw new Error(
-      'Reply target is still sending; wait a moment and try again',
-    );
-  }
 
   const sender = target.getSender();
   if (!sender) {
