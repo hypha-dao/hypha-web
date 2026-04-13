@@ -22,6 +22,8 @@ For stdio scripts that use `process` globals, ensure the compiler includes Node 
 
 Set the same environment variables required for DB and RPC access as the rest of the monorepo (e.g. `DEFAULT_DB_URL` or Neon/Postgres URLs, `NEXT_PUBLIC_RPC_URL` where `publicClient` reads the chain). For roster tools on restricted spaces, set **`HYPHA_MCP_AUTH_TOKEN`**.
 
+For **Matrix-backed** rows in `org_memory_assets`, set **`HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN`** (server-side Matrix access token with permission to read the space’s `chat_room_id` room) and **`NEXT_PUBLIC_MATRIX_HOMESERVER_URL`**. Without these, proposal-backed assets still appear; Matrix assets are omitted.
+
 ## Run locally
 
 From the repo root:
@@ -38,4 +40,4 @@ Add the server to your MCP host (e.g. Cursor **Settings → MCP** or `.cursor/mc
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | `get_people_by_space_slug` | Members of a space by slug (people + space-as-members), aligned with `getSpaceMembersRoster` in `@hypha-platform/core`. |
 | `get_documents_by_space_slug` | Documents in a space by slug (DB `documents` + creator), paginated search/filter; uses `getDocumentsBySpaceSlug` in `@hypha-platform/core`. |
-| `get_org_memory_by_space_slug` | Org memory projection: **v1** same roster as `get_people_by_space_slug` plus `org_memory_assets: []` until the catalogue exists. |
+| `get_org_memory_by_space_slug` | Org memory: roster + `org_memory_assets` (proposal attachments from documents; Matrix chat files when `HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN` + `NEXT_PUBLIC_MATRIX_HOMESERVER_URL` are set). Optional `assets_page`, `assets_page_size`, `assets_search`. |

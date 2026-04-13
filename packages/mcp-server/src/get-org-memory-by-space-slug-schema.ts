@@ -4,21 +4,46 @@ import {
   getPeopleBySpaceSlugOutputSchema,
 } from './get-people-by-space-slug-schema.js';
 
-/** Same inputs as `get_people_by_space_slug` (roster pagination + optional search). */
+/** Roster inputs plus optional pagination/filter for `org_memory_assets`. */
 export const getOrgMemoryBySpaceSlugInputSchema =
-  getPeopleBySpaceSlugInputSchema;
+  getPeopleBySpaceSlugInputSchema.extend({
+    assets_page: z.number().int().min(1).optional().default(1),
+    assets_page_size: z.number().int().min(1).max(100).optional().default(50),
+    assets_search: z.string().optional(),
+  });
 
 export type GetOrgMemoryBySpaceSlugInput = z.infer<
   typeof getOrgMemoryBySpaceSlugInputSchema
 >;
 
+const orgMemoryAssetSchema = z.object({
+  source: z.enum(['proposal_upload', 'matrix_chat']),
+  filename: z.string(),
+  mime: z.string().optional(),
+  app_url: z.string().optional(),
+  mxc_uri: z.string().optional(),
+  matrix_room_id: z.string().optional(),
+  matrix_event_id: z.string().optional(),
+  document_id: z.number().optional(),
+  occurred_at: z.string(),
+});
+
+const assetsPaginationSchema = z.object({
+  total: z.number(),
+  page: z.number(),
+  page_size: z.number(),
+  total_pages: z.number(),
+  has_next_page: z.boolean(),
+  has_previous_page: z.boolean(),
+});
+
 /**
- * v1: identical roster payload to `get_people_by_space_slug` plus `org_memory_assets`
- * (must be empty until the org memory catalogue ships — see docs/requirements).
+ * Roster payload (ISO dates) plus `org_memory_assets` and separate asset pagination.
  */
 export const getOrgMemoryBySpaceSlugOutputSchema =
   getPeopleBySpaceSlugOutputSchema.extend({
-    org_memory_assets: z.array(z.never()),
+    org_memory_assets: z.array(orgMemoryAssetSchema),
+    assets_pagination: assetsPaginationSchema,
   });
 
 export type GetOrgMemoryBySpaceSlugOutput = z.infer<

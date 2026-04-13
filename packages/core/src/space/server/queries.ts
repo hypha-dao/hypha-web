@@ -131,6 +131,7 @@ export const findSpaceHostFieldsBySlug = async (
       title: true,
       parentId: true,
       web3SpaceId: true,
+      chatRoomId: true,
     },
     where: (spaces, { eq }) => eq(spaces.slug, slug),
   });
