@@ -14,6 +14,7 @@ import {
   getSpaceMinProposalDuration,
   publicClient,
 } from '@hypha-platform/core/client';
+import { TOKENS } from '../../../common/web3/tokens';
 import { getDuration } from '@hypha-platform/ui-utils';
 import { getGovernanceChainId } from './governance-chain-id';
 import { EXCHANGE_ESCROW_CONTRACT_BY_CHAIN } from './exchange-escrow-contract';
@@ -233,10 +234,19 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
           throw new Error('EXCHANGE_MEMBER_SELLER_WALLET_MISMATCH');
         }
 
-        const firstSellerToken = sellerRows[0]?.token as `0x${string}`;
+        /**
+         * Proposal execution runs as the space **executor** (treasury), not the member seller.
+         * A no-op against an unrelated liquid token avoids `approve` on the seller's catalogue
+         * token (which can revert from the treasury) and still satisfies `NoTransactions` /
+         * `EmptyData` checks on-chain.
+         */
+        const noopToken =
+          (TOKENS.find((t) => t.symbol === 'USDC')?.address as
+            | `0x${string}`
+            | undefined) ?? (sellerRows[0]?.token as `0x${string}`);
         const dummyTransactions = [
           {
-            target: firstSellerToken,
+            target: noopToken,
             value: BigInt(0),
             data: encodeFunctionData({
               abi: erc20Abi,

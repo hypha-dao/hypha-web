@@ -748,6 +748,7 @@ export const ProposalDetail = ({
                 description: content,
                 executed: Boolean(proposalDetails?.executed),
                 parsedExchange: parsedExchangeDetails,
+                spaceExecutorAddress: spaceDetails?.executor ?? null,
               }
             : undefined
         }

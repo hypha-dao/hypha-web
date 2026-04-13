@@ -29,6 +29,7 @@ import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { formatUnits } from 'viem';
+import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 import { MemberExchangeEscrowAutoFund } from '../../governance/components/member-exchange-escrow-auto-fund';
 import type { ParsedExchangeDetails } from '../../governance/utils/exchange-details-parser';
 
@@ -174,6 +175,8 @@ export const FormVoting = ({
     description?: string | null;
     executed: boolean;
     parsedExchange: ParsedExchangeDetails | null;
+    /** Space treasury executor; only this wallet signs execution-time txs. */
+    spaceExecutorAddress?: `0x${string}` | null;
   };
 }) => {
   const tCommon = useTranslations('Common');
@@ -183,6 +186,7 @@ export const FormVoting = ({
   const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
   const { theme } = useTheme();
   const { person } = useMe();
+  const { client } = useSmartWallets();
   const { jwt } = useJwt();
   const router = useRouter();
   const params = useParams();
@@ -429,9 +433,28 @@ export const FormVoting = ({
   const isRejectDisabled = isDisabled || voteText === 'no';
   const isAcceptDisabled = isDisabled || voteText === 'yes';
 
+  const deferredMemberExchange =
+    typeof memberExchangeEscrow?.description === 'string' &&
+    memberExchangeEscrow.description.includes('exchange-funding:deferred');
+
+  const smartWalletLower = (
+    client as { account?: { address?: string } } | null
+  )?.account?.address?.toLowerCase();
+  const executorLower =
+    memberExchangeEscrow?.spaceExecutorAddress?.toLowerCase();
+  const isSpaceExecutorWallet = Boolean(
+    smartWalletLower && executorLower && smartWalletLower === executorLower,
+  );
+
+  const showMemberExchangeEscrowBlock =
+    memberExchangeEscrow &&
+    (!deferredMemberExchange ||
+      memberExchangeEscrow.executed ||
+      isSpaceExecutorWallet);
+
   return (
     <div className="flex flex-col gap-7 text-neutral-11">
-      {memberExchangeEscrow ? (
+      {showMemberExchangeEscrowBlock ? (
         <MemberExchangeEscrowAutoFund
           documentSlug={memberExchangeEscrow.documentSlug}
           description={memberExchangeEscrow.description}
