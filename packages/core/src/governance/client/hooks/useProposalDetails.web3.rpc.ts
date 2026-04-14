@@ -296,6 +296,7 @@ export const useProposalDetailsWeb3Rpc = ({
     } = {};
 
     let exchangeEscrowData: {
+      partyA?: string;
       partyB?: string;
       tokenA?: string;
       tokenB?: string;
@@ -752,6 +753,7 @@ export const useProposalDetailsWeb3Rpc = ({
 
         case 'exchangeEscrow': {
           const d = decoded.data as {
+            partyA?: string;
             partyB: string;
             tokenA: string;
             tokenB: string;
@@ -760,6 +762,7 @@ export const useProposalDetailsWeb3Rpc = ({
             sendFundsNow: boolean;
           };
           exchangeEscrowData = {
+            ...(d.partyA ? { partyA: d.partyA } : {}),
             partyB: d.partyB,
             tokenA: d.tokenA,
             tokenB: d.tokenB,

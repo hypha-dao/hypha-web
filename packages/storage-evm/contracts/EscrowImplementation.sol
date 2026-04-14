@@ -37,6 +37,7 @@ contract EscrowImplementation is
   ) internal override onlyOwner {}
 
   function createEscrow(
+    address _partyA,
     address _partyB,
     address _tokenA,
     address _tokenB,
@@ -44,7 +45,9 @@ contract EscrowImplementation is
     uint256 _amountB,
     bool _sendFundsNow
   ) external override nonReentrant returns (uint256) {
+    require(_partyA != address(0), 'Invalid party A address');
     require(_partyB != address(0), 'Invalid party B address');
+    require(_partyA != _partyB, 'Parties must be different');
     require(_tokenA != address(0), 'Invalid token A address');
     require(_tokenB != address(0), 'Invalid token B address');
     require(_amountA > 0, 'Amount A must be greater than 0');
@@ -55,7 +58,7 @@ contract EscrowImplementation is
 
     escrows[escrowId] = EscrowData({
       creator: msg.sender,
-      partyA: msg.sender,
+      partyA: _partyA,
       partyB: _partyB,
       tokenA: _tokenA,
       tokenB: _tokenB,
@@ -70,7 +73,7 @@ contract EscrowImplementation is
     emit EscrowCreated(
       escrowId,
       msg.sender,
-      msg.sender,
+      _partyA,
       _partyB,
       _tokenA,
       _tokenB,
@@ -78,7 +81,6 @@ contract EscrowImplementation is
       _amountB
     );
 
-    // If sender wants to fund right away
     if (_sendFundsNow) {
       _receiveFunds(escrowId);
     }
@@ -166,7 +168,9 @@ contract EscrowImplementation is
     require(!escrow.isCompleted, 'Escrow already completed');
     require(!escrow.isCancelled, 'Escrow already cancelled');
     require(
-      msg.sender == escrow.partyA || msg.sender == escrow.partyB,
+      msg.sender == escrow.creator ||
+        msg.sender == escrow.partyA ||
+        msg.sender == escrow.partyB,
       'Not authorized'
     );
 

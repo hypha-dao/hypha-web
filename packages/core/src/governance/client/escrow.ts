@@ -11,6 +11,7 @@ export const escrowImplementationAbi = [
     name: 'createEscrow',
     stateMutability: 'nonpayable',
     inputs: [
+      { name: '_partyA', type: 'address' },
       { name: '_partyB', type: 'address' },
       { name: '_tokenA', type: 'address' },
       { name: '_tokenB', type: 'address' },
@@ -45,6 +46,24 @@ export const escrowImplementationAbi = [
       { name: 'isCompleted', type: 'bool' },
       { name: 'isCancelled', type: 'bool' },
     ],
+  },
+] as const satisfies Abi;
+
+/** Legacy `createEscrow` (6 args) for decoding proposals created before explicit partyA. */
+export const escrowLegacyCreateEscrowAbi = [
+  {
+    type: 'function',
+    name: 'createEscrow',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: '_partyB', type: 'address' },
+      { name: '_tokenA', type: 'address' },
+      { name: '_tokenB', type: 'address' },
+      { name: '_amountA', type: 'uint256' },
+      { name: '_amountB', type: 'uint256' },
+      { name: '_sendFundsNow', type: 'bool' },
+    ],
+    outputs: [{ name: '', type: 'uint256' }],
   },
 ] as const satisfies Abi;
 

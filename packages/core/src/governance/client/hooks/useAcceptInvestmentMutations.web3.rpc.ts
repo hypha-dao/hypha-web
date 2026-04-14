@@ -153,10 +153,8 @@ export const useAcceptInvestmentMutationsWeb3Rpc = ({
         }),
       });
 
-      // IEscrow.createEscrow(partyB, tokenA, tokenB, amountA, amountB, sendFundsNow):
-      // partyA = msg.sender (space executor), partyB = investor. tokenA/amountA = space
-      // leg (deposited when sendFundsNow). tokenB/amountB = investor leg (later via
-      // investor's receiveFunds). Order matches form: spaceReceive → A, investorSend → B.
+      // Upgraded IEscrow: createEscrow(partyA, partyB, tokenA, tokenB, amountA, amountB, sendFundsNow).
+      // partyA = space executor (funds tokenA when sendFundsNow), partyB = investor (tokenB later).
       transactions.push({
         target: escrowAddress,
         value: 0n,
@@ -164,6 +162,7 @@ export const useAcceptInvestmentMutationsWeb3Rpc = ({
           abi: escrowImplementationAbi,
           functionName: 'createEscrow',
           args: [
+            executor,
             arg.investorAddress,
             spaceReceive.token,
             investorSend.token,

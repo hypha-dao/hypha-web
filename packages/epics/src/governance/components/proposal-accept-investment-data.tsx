@@ -15,6 +15,7 @@ import { useReadContract } from 'wagmi';
 import { erc20Abi } from 'viem';
 
 type ExchangeEscrowSummary = {
+  partyA?: string;
   partyB?: string;
   tokenA?: string;
   tokenB?: string;

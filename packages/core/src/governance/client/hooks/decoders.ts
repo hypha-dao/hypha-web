@@ -1,5 +1,8 @@
 import { decodeFunctionData, erc20Abi, type Abi } from 'viem';
-import { escrowImplementationAbi } from '../escrow';
+import {
+  escrowImplementationAbi,
+  escrowLegacyCreateEscrowAbi,
+} from '../escrow';
 import {
   regularTokenFactoryAbi,
   ownershipTokenFactoryAbi,
@@ -370,27 +373,49 @@ export function decodeTransaction(tx: Tx) {
     },
     {
       abi: escrowImplementationAbi,
-      handler: (decoded) =>
-        decoded.functionName === 'createEscrow'
-          ? {
-              type: 'exchangeEscrow',
-              data: {
-                partyB: decoded.args[0],
-                tokenA: decoded.args[1],
-                tokenB: decoded.args[2],
-                amountA: decoded.args[3],
-                amountB: decoded.args[4],
-                sendFundsNow: decoded.args[5],
-              },
-            }
-          : decoded.functionName === 'receiveFunds'
-          ? {
-              type: 'exchangeEscrowReceive',
-              data: {
-                escrowId: decoded.args[0],
-              },
-            }
-          : null,
+      handler: (decoded) => {
+        if (decoded.functionName === 'receiveFunds') {
+          return {
+            type: 'exchangeEscrowReceive',
+            data: {
+              escrowId: decoded.args[0],
+            },
+          };
+        }
+        if (decoded.functionName !== 'createEscrow') return null;
+        // Upgraded escrow: explicit partyA + partyB (7 args)
+        return {
+          type: 'exchangeEscrow',
+          data: {
+            partyA: decoded.args[0],
+            partyB: decoded.args[1],
+            tokenA: decoded.args[2],
+            tokenB: decoded.args[3],
+            amountA: decoded.args[4],
+            amountB: decoded.args[5],
+            sendFundsNow: decoded.args[6],
+          },
+        };
+      },
+    },
+    {
+      abi: escrowLegacyCreateEscrowAbi,
+      handler: (decoded) => {
+        if (decoded.functionName !== 'createEscrow') return null;
+        // Legacy: partyA was msg.sender (executor) at execution — not in calldata
+        return {
+          type: 'exchangeEscrow',
+          data: {
+            partyA: undefined,
+            partyB: decoded.args[0],
+            tokenA: decoded.args[1],
+            tokenB: decoded.args[2],
+            amountA: decoded.args[3],
+            amountB: decoded.args[4],
+            sendFundsNow: decoded.args[5],
+          },
+        };
+      },
     },
     {
       abi: regularTokenFactoryAbi,
