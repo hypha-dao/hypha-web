@@ -1759,6 +1759,8 @@
     "spaceMemoryTimelineLabel": "Space memory history",
     "spaceMemoryContext": "From «{title}» · {state}",
     "spaceMemoryContextMatrix": "From Matrix chat",
+    "spaceMemoryMatrixPreviewNeedsChat": "Preview needs Human Chat (Matrix)",
+    "spaceMemoryMatrixOpenHint": "Open Human Chat to connect Matrix, then refresh Space Memory to open this file.",
     "spaceMemoryOpenAsset": "Open {name}",
     "untitledDocument": "Untitled document",
     "documentStates": {

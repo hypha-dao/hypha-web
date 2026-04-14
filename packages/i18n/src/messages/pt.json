@@ -1759,6 +1759,8 @@
     "spaceMemoryTimelineLabel": "Histórico da memória do espaço",
     "spaceMemoryContext": "De «{title}» · {state}",
     "spaceMemoryContextMatrix": "Do chat Matrix",
+    "spaceMemoryMatrixPreviewNeedsChat": "A pré-visualização precisa do Human Chat (Matrix)",
+    "spaceMemoryMatrixOpenHint": "Abra o Human Chat para ligar o Matrix e atualize a memória do espaço para abrir este ficheiro.",
     "spaceMemoryOpenAsset": "Abrir {name}",
     "untitledDocument": "Documento sem título",
     "documentStates": {

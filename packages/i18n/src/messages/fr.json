@@ -1759,6 +1759,8 @@
     "spaceMemoryTimelineLabel": "Historique de la mémoire de l'espace",
     "spaceMemoryContext": "Depuis «{title}» · {state}",
     "spaceMemoryContextMatrix": "Depuis le chat Matrix",
+    "spaceMemoryMatrixPreviewNeedsChat": "L’aperçu nécessite Human Chat (Matrix)",
+    "spaceMemoryMatrixOpenHint": "Ouvrez Human Chat pour connecter Matrix, puis actualisez la mémoire d’espace pour ouvrir ce fichier.",
     "spaceMemoryOpenAsset": "Ouvrir {name}",
     "untitledDocument": "Document sans titre",
     "documentStates": {
