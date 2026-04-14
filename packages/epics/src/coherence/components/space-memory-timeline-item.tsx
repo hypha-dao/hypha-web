@@ -19,6 +19,10 @@ function isSafeAssetUrl(url: string): boolean {
   }
 }
 
+function looksLikePdf(name: string, url: string): boolean {
+  return /\.pdf(\?|#|$)/i.test(name) || /\.pdf(\?|#|$)/i.test(url);
+}
+
 type SpaceMemoryTimelineItemProps = {
   item: SpaceMemoryItem;
   contextLine: string;
@@ -47,6 +51,16 @@ export function SpaceMemoryTimelineItem({
       );
     }
     if (item.kind === 'image' && !imageFailed) {
+      // Signed PDF URLs are sometimes misclassified as "image"; never load them in <img>
+      // (can trigger a download or a broken preview).
+      if (looksLikePdf(item.name, item.url)) {
+        return (
+          <FileIcon
+            className="h-12 w-12 text-muted-foreground"
+            strokeWidth={1.25}
+          />
+        );
+      }
       return (
         // eslint-disable-next-line @next/next/no-img-element -- CDN / signed URLs
         <img
@@ -74,11 +88,21 @@ export function SpaceMemoryTimelineItem({
           src={item.url}
           muted
           playsInline
-          preload="metadata"
+          preload="none"
           className="max-h-full max-w-full object-contain bg-black"
         >
           <track kind="captions" />
         </video>
+      );
+    }
+    // Never embed PDFs in an iframe: many CDNs respond with Content-Disposition: attachment,
+    // which makes the browser save the file as soon as Coherence loads (regression guard).
+    if (safe && item.kind === 'document' && looksLikePdf(item.name, item.url)) {
+      return (
+        <FileIcon
+          className="h-12 w-12 text-muted-foreground"
+          strokeWidth={1.25}
+        />
       );
     }
     return (
