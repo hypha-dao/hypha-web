@@ -19,6 +19,11 @@ function isSafeAssetUrl(url: string): boolean {
   }
 }
 
+/** First-page preview in iframe works for most PDFs over https (CDN may block embedding — user still has open link). */
+function isPdfDocument(name: string, url: string): boolean {
+  return /\.pdf(\?|#|$)/i.test(name) || /\.pdf(\?|#|$)/i.test(url);
+}
+
 type SpaceMemoryTimelineItemProps = {
   item: SpaceMemoryItem;
   contextLine: string;
@@ -36,6 +41,8 @@ export function SpaceMemoryTimelineItem({
   const safe = isSafeAssetUrl(item.url);
   const uploaded = formatDate(new Date(item.uploadedAt), true);
   const [imageFailed, setImageFailed] = React.useState(false);
+  const showPdfPreview =
+    safe && item.kind === 'document' && isPdfDocument(item.name, item.url);
 
   const thumbPreview = (() => {
     if (!safe) {
@@ -81,6 +88,16 @@ export function SpaceMemoryTimelineItem({
         </video>
       );
     }
+    if (showPdfPreview) {
+      return (
+        <iframe
+          title=""
+          src={`${item.url}#view=FitH`}
+          className="h-full min-h-[112px] w-full border-0 bg-background"
+          loading="lazy"
+        />
+      );
+    }
     return (
       <FileIcon
         className="h-12 w-12 text-muted-foreground"
@@ -88,6 +105,11 @@ export function SpaceMemoryTimelineItem({
       />
     );
   })();
+
+  const linkClass =
+    'group flex flex-col gap-2 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
+  const filenameRowClass =
+    'inline-flex items-start gap-1 text-xs font-medium leading-snug text-foreground underline-offset-2 group-hover:text-primary group-hover:underline';
 
   return (
     <li className="flex w-44 shrink-0 flex-col items-stretch">
@@ -106,18 +128,37 @@ export function SpaceMemoryTimelineItem({
       </p>
 
       <div className="mt-2 flex flex-col gap-2">
-        {safe ? (
+        {safe && showPdfPreview ? (
+          <div className="group relative flex flex-col gap-2">
+            <div className={cn(THUMB_SHELL, 'min-h-[120px]')}>
+              {thumbPreview}
+            </div>
+            <span className={filenameRowClass}>
+              <span className="line-clamp-3 break-words">{item.name}</span>
+              <ExternalLink className="mt-0.5 h-3 w-3 shrink-0 opacity-60" />
+            </span>
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(linkClass, 'absolute inset-0 z-10')}
+              aria-label={openLabel}
+            >
+              <span className="sr-only">{openLabel}</span>
+            </a>
+          </div>
+        ) : safe ? (
           <a
             href={item.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex flex-col gap-2 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className={linkClass}
             aria-label={openLabel}
           >
             <div className={cn(THUMB_SHELL, 'min-h-[120px]')}>
               {thumbPreview}
             </div>
-            <span className="inline-flex items-start gap-1 text-xs font-medium leading-snug text-foreground underline-offset-2 group-hover:text-primary group-hover:underline">
+            <span className={filenameRowClass}>
               <span className="line-clamp-3 break-words">{item.name}</span>
               <ExternalLink className="mt-0.5 h-3 w-3 shrink-0 opacity-60" />
             </span>
