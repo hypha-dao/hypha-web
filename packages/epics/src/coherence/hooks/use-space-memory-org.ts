@@ -2,80 +2,124 @@
 
 import {
   buildSpaceMemoryItemsFromOrgMemoryPayload,
-  filterSpaceMemoryItems,
   type OrgMemorySpaceMemoryPayload,
   type SpaceMemoryItem,
 } from '@hypha-platform/core/client';
 import { useAuthentication } from '@hypha-platform/authentication';
 import queryString from 'query-string';
 import React from 'react';
-import useSWR from 'swr';
+import useSWRInfinite from 'swr/infinite';
 
-const ASSETS_PAGE_SIZE = 100;
+const ASSETS_PAGE_SIZE = 12;
 
-const queryParams = `?${queryString.stringify({
-  assetsPage: 1,
-  assetsPageSize: ASSETS_PAGE_SIZE,
-})}`;
+type SpaceMemoryFetcherKey = readonly [
+  'space-memory-org',
+  string,
+  number,
+  number,
+  string,
+];
 
 export function useSpaceMemoryOrg(spaceSlug: string | undefined) {
   const { getAccessToken } = useAuthentication();
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const searchKey = searchTerm.trim();
 
-  const endpoint = React.useMemo(
-    () =>
-      spaceSlug ? `/api/v1/spaces/${spaceSlug}/org-memory${queryParams}` : null,
-    [spaceSlug],
+  const getKey = React.useCallback(
+    (
+      pageIndex: number,
+      previousPageData: OrgMemorySpaceMemoryPayload | null,
+    ) => {
+      if (!spaceSlug) return null;
+      if (
+        pageIndex > 0 &&
+        previousPageData &&
+        !previousPageData.assets_pagination?.has_next_page
+      ) {
+        return null;
+      }
+      return [
+        'space-memory-org',
+        spaceSlug,
+        pageIndex + 1,
+        ASSETS_PAGE_SIZE,
+        searchKey,
+      ] as const;
+    },
+    [spaceSlug, searchKey],
   );
 
-  const { data, error, isLoading, mutate } = useSWR(
-    endpoint ? ['space-memory-org', endpoint] : null,
-    async ([, url]: [string, string]) => {
-      const token = await getAccessToken();
-      const headers: HeadersInit = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-      const res = await fetch(url, { headers });
-      if (!res.ok) {
-        throw new Error(`Failed to fetch org memory: ${res.status}`);
-      }
-      return (await res.json()) as OrgMemorySpaceMemoryPayload;
-    },
-    {
-      revalidateOnFocus: true,
-      refreshInterval: 60_000,
-      refreshWhenHidden: false,
-      refreshWhenOffline: false,
-    },
-  );
+  const { data, error, isLoading, isValidating, mutate, size, setSize } =
+    useSWRInfinite(
+      getKey,
+      async (key: SpaceMemoryFetcherKey) => {
+        const [, slug, assetsPage, assetsPageSize, search] = key;
+        const qs = queryString.stringify({
+          assetsPage,
+          assetsPageSize,
+          ...(search ? { assetsSearch: search } : {}),
+        });
+        const url = `/api/v1/spaces/${slug}/org-memory?${qs}`;
+        const token = await getAccessToken();
+        const headers: HeadersInit = {};
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+        const res = await fetch(url, { headers });
+        if (!res.ok) {
+          throw new Error(`Failed to fetch org memory: ${res.status}`);
+        }
+        return (await res.json()) as OrgMemorySpaceMemoryPayload;
+      },
+      {
+        revalidateOnFocus: true,
+        refreshInterval: 60_000,
+        refreshWhenHidden: false,
+        refreshWhenOffline: false,
+      },
+    );
+
+  React.useEffect(() => {
+    void setSize(1);
+  }, [searchKey, setSize]);
 
   const items = React.useMemo(() => {
-    if (!data?.org_memory_assets) return [] as SpaceMemoryItem[];
-    return buildSpaceMemoryItemsFromOrgMemoryPayload(data);
+    if (!data?.length) return [] as SpaceMemoryItem[];
+    return data.flatMap((page) =>
+      buildSpaceMemoryItemsFromOrgMemoryPayload(page),
+    );
   }, [data]);
 
-  const [searchTerm, setSearchTerm] = React.useState('');
-
-  const filteredItems = React.useMemo(
-    () => filterSpaceMemoryItems(items, searchTerm),
-    [items, searchTerm],
-  );
-
-  const totalAssetCount = React.useMemo(() => {
-    const fromPagination = data?.assets_pagination?.total;
+  const totalCount = React.useMemo(() => {
+    const first = data?.[0];
+    const fromPagination = first?.assets_pagination?.total;
     if (typeof fromPagination === 'number' && fromPagination >= 0) {
       return fromPagination;
     }
     return items.length;
-  }, [data?.assets_pagination?.total, items.length]);
+  }, [data, items.length]);
+
+  const hasMore = Boolean(
+    data?.length && data[data.length - 1]?.assets_pagination?.has_next_page,
+  );
+
+  const loadMore = React.useCallback(() => {
+    if (!hasMore || isValidating) return;
+    void setSize((n) => n + 1);
+  }, [hasMore, isValidating, setSize]);
+
+  const refresh = React.useCallback(() => mutate(), [mutate]);
 
   return {
-    items: filteredItems,
-    totalCount: totalAssetCount,
-    isLoading,
+    items,
+    totalCount,
+    isLoading: Boolean(isLoading && !data?.length),
+    isLoadingMore: Boolean(isValidating && data && data.length > 0),
     error,
-    refresh: mutate,
+    refresh,
     searchTerm,
     setSearchTerm,
+    hasMore,
+    loadMore,
   };
 }

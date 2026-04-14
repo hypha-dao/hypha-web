@@ -2,7 +2,12 @@
 
 import { FC } from 'react';
 import { Text } from '@radix-ui/themes';
-import { Button, SectionFilter, Separator } from '@hypha-platform/ui';
+import {
+  Button,
+  SectionFilter,
+  SectionLoadMore,
+  Separator,
+} from '@hypha-platform/ui';
 import { Empty } from '../../common';
 import React from 'react';
 import { useTranslations } from 'next-intl';
@@ -22,10 +27,13 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
     items,
     totalCount,
     isLoading,
+    isLoadingMore,
     error,
     refresh,
     searchTerm,
     setSearchTerm,
+    hasMore,
+    loadMore,
   } = useSpaceMemoryOrg(spaceSlug);
 
   const stateLabel = (state: DocumentState) =>
@@ -86,26 +94,40 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
           </p>
         </Empty>
       ) : (
-        <ul
-          className="m-0 flex w-full list-none flex-wrap justify-start gap-x-6 gap-y-10 p-0"
-          aria-label={t('spaceMemoryTimelineLabel')}
-        >
-          {items.map((row) => (
-            <SpaceMemoryTimelineItem
-              key={row.id}
-              item={row}
-              contextLine={
-                row.source === 'matrix_chat'
-                  ? t('spaceMemoryContextMatrix')
-                  : t('spaceMemoryContext', {
-                      title: row.context.documentTitle || t('untitledDocument'),
-                      state: stateLabel(row.context.documentState),
-                    })
-              }
-              openLabel={t('spaceMemoryOpenAsset', { name: row.name })}
-            />
-          ))}
-        </ul>
+        <>
+          <ul
+            className="m-0 flex w-full list-none flex-wrap justify-start gap-x-6 gap-y-10 p-0"
+            aria-label={t('spaceMemoryTimelineLabel')}
+          >
+            {items.map((row) => (
+              <SpaceMemoryTimelineItem
+                key={row.id}
+                item={row}
+                contextLine={
+                  row.source === 'matrix_chat'
+                    ? t('spaceMemoryContextMatrix')
+                    : t('spaceMemoryContext', {
+                        title:
+                          row.context.documentTitle || t('untitledDocument'),
+                        state: stateLabel(row.context.documentState),
+                      })
+                }
+                openLabel={t('spaceMemoryOpenAsset', { name: row.name })}
+              />
+            ))}
+          </ul>
+          {totalCount > 0 ? (
+            <SectionLoadMore
+              onClick={loadMore}
+              disabled={!hasMore}
+              isLoading={isLoadingMore}
+            >
+              <Text className="line-clamp-3 max-w-md text-center text-sm leading-snug">
+                {hasMore ? t('loadMore') : t('noMore')}
+              </Text>
+            </SectionLoadMore>
+          ) : null}
+        </>
       )}
     </section>
   );

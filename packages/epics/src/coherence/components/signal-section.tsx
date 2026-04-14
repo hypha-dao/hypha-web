@@ -239,7 +239,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
           disabled={pagination?.totalPages === pages}
           isLoading={isLoading}
         >
-          <Text>
+          <Text className="line-clamp-3 max-w-md text-center text-sm leading-snug">
             {pagination?.totalPages === pages ? t('noMore') : t('loadMore')}
           </Text>
         </SectionLoadMore>
