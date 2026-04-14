@@ -11,10 +11,12 @@
     "@hypha-platform/config-typescript": "workspace:*"
   },
   "dependencies": {
-    "@hypha-platform/cookie": "workspace:*"
+    "@hypha-platform/cookie": "workspace:*",
+    "flags": "^4.0.5"
   },
   "peerDependencies": {
-    "next": "^15"
+    "next": "^15",
+    "react": "^18 || ^19"
   },
   "exports": {
     ".": "./src/index.ts"

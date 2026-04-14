@@ -6,11 +6,20 @@ import {
   HYPHA_ENABLE_HUMAN_CHAT,
   HYPHA_SHOW_LANGUAGE_SELECT,
 } from '@hypha-platform/cookie';
+import {
+  getVercelToolbarFlagOverrides,
+  readBooleanOverride,
+} from './vercel-toolbar-overrides';
 
 /**
  * Static metadata for Vercel Flags discovery (`/.well-known/vercel/flags`).
- * Runtime reads use the `get*` functions below (cookies + env), not `flags/next`,
- * so SSR works without `FLAGS_SECRET` (which `flags@4` requires for serialization).
+ * Runtime reads use the `get*` functions below.
+ *
+ * **Vercel Toolbar:** When `FLAGS_SECRET` is set, `get*` reads the
+ * `vercel-flag-overrides` cookie (same as `flags/next`) so toolbar toggles apply.
+ * Hypha cookies / `NEXT_PUBLIC_*` are used when there is no override for that key.
+ * Without `FLAGS_SECRET`, SSR still works; toolbar overrides are ignored until the
+ * secret is configured on the project.
  */
 export const flagDefinitionsForDiscovery = {
   enableWeb3Auth: {
@@ -52,16 +61,28 @@ export const flagDefinitionsForDiscovery = {
 };
 
 export async function getEnableWeb3Auth(): Promise<boolean> {
+  const overrides = await getVercelToolbarFlagOverrides();
+  const o = readBooleanOverride(overrides, 'enable-web3-auth');
+  if (o !== undefined) return o;
+
   const store = await cookies();
   return store.get(HYPHA_AUTH_PROVIDER)?.value === 'web3auth';
 }
 
 export async function getShowLanguageSelect(): Promise<boolean> {
+  const overrides = await getVercelToolbarFlagOverrides();
+  const o = readBooleanOverride(overrides, 'show-language-select');
+  if (o !== undefined) return o;
+
   const store = await cookies();
   return store.get(HYPHA_SHOW_LANGUAGE_SELECT)?.value === 'true';
 }
 
 export async function getEnableAiChat(): Promise<boolean> {
+  const overrides = await getVercelToolbarFlagOverrides();
+  const o = readBooleanOverride(overrides, 'enable-ai-chat');
+  if (o !== undefined) return o;
+
   const store = await cookies();
   const cookieValue = store.get(HYPHA_ENABLE_AI_CHAT)?.value;
   if (cookieValue !== undefined) return cookieValue === 'true';
@@ -69,6 +90,10 @@ export async function getEnableAiChat(): Promise<boolean> {
 }
 
 export async function getEnableCoherence(): Promise<boolean> {
+  const overrides = await getVercelToolbarFlagOverrides();
+  const o = readBooleanOverride(overrides, 'enable-coherence');
+  if (o !== undefined) return o;
+
   const store = await cookies();
   const cookieValue = store.get(HYPHA_ENABLE_COHERENCE)?.value;
   if (cookieValue !== undefined) return cookieValue === 'true';
@@ -76,6 +101,10 @@ export async function getEnableCoherence(): Promise<boolean> {
 }
 
 export async function getEnableHumanChat(): Promise<boolean> {
+  const overrides = await getVercelToolbarFlagOverrides();
+  const o = readBooleanOverride(overrides, 'enable-human-chat');
+  if (o !== undefined) return o;
+
   const store = await cookies();
   const cookieValue = store.get(HYPHA_ENABLE_HUMAN_CHAT)?.value;
   if (cookieValue !== undefined) return cookieValue === 'true';

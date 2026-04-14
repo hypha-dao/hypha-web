@@ -2,16 +2,17 @@
 
 ## Architecture
 
-Feature flags are **async helpers** in `@hypha-platform/feature-flags` (e.g. `getEnableHumanChat()`). They read **`next/headers` cookies** during SSR in the root layout (`apps/web/src/app/layout.tsx`). This avoids `flags@4` runtime serialization, which required **`FLAGS_SECRET`** and caused **500** on Vercel previews when unset.
+Feature flags are **async helpers** in `@hypha-platform/feature-flags` (e.g. `getEnableHumanChat()`). They read **`next/headers` cookies** during SSR. **`FLAGS_SECRET`** is optional: without it, SSR still works. With it set on the deployment, the **Vercel Flags Toolbar** overrides in the **`vercel-flag-overrides`** cookie are decrypted (via the `flags` package) and applied **before** Hypha cookies / env — same order the old `flag()` runtime used.
 
 ### Evaluation Order
 
 Each `get*` function:
-1. Checks for a **cookie** by name (e.g., `HYPHA_ENABLE_HUMAN_CHAT`)
-2. Falls back to a **`NEXT_PUBLIC_*` env var** (e.g., `NEXT_PUBLIC_ENABLE_HUMAN_CHAT`)
-3. Uses the documented default (typically `false`) if neither is set
+1. If **`FLAGS_SECRET`** is set: use **Vercel toolbar override** for that flag key when present (`enable-human-chat`, `enable-coherence`, …).
+2. Else: check **Hypha cookie** (e.g. `HYPHA_ENABLE_HUMAN_CHAT`)
+3. Else: **`NEXT_PUBLIC_*` env var**
+4. Else: default **`false`**
 
-Source: `packages/feature-flags/src/index.ts`
+Source: `packages/feature-flags/src/index.ts`, `vercel-toolbar-overrides.ts`
 
 ### Cookie Constants
 
