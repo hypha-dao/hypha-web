@@ -14,6 +14,7 @@ import {
 import {
   HYPHA_MEDIA_BUNDLE_FIELD,
   HYPHA_SPOILER_FIELD,
+  MATRIX_CUSTOM_HTML_FORMAT,
   awaitNonProvisionalMatrixEventId,
   getMessageReplaceTargetEventId,
   isRedactedRoomMessageEvent,
@@ -521,7 +522,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             mediaPayloads[0] = {
               ...first,
               body: rich.body,
-              format: rich.format,
+              format: MATRIX_CUSTOM_HTML_FORMAT,
               formatted_body: rich.formatted_body,
             };
           } else {
