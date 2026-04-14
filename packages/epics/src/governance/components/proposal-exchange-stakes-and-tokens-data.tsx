@@ -241,6 +241,8 @@ export const ProposalExchangeStakesAndTokensData = ({
           })
         : leg.amount;
 
+      const tokenLabel = token?.name ?? token?.symbol;
+
       return (
         <div
           key={`${leg.tokenAddress}-${index}`}
@@ -248,14 +250,14 @@ export const ProposalExchangeStakesAndTokensData = ({
         >
           <Image
             src={token?.icon ?? '/placeholder/token-icon.svg'}
-            alt={token?.symbol ?? token?.name ?? 'token'}
+            alt={tokenLabel ?? 'token'}
             width={20}
             height={20}
             className="rounded-full"
           />
           <span className="text-nowrap">
-            {formattedAmount}{' '}
-            {token?.name ?? token?.symbol ?? leg.tokenAddress.slice(0, 8)}
+            {formattedAmount}
+            {tokenLabel ? ` ${tokenLabel}` : null}
           </span>
         </div>
       );
