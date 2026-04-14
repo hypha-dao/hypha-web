@@ -62,7 +62,7 @@ export function SpaceMemoryTimelineItem({
         );
       }
       return (
-        // eslint-disable-next-line @next/next/no-img-element -- CDN / signed URLs
+        // CDN / signed URLs — not using next/image (remote patterns / optimization)
         <img
           src={item.url}
           alt=""
