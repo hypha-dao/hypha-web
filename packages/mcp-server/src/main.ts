@@ -133,7 +133,7 @@ server.registerTool(
   'get_org_memory_by_space_slug',
   {
     description:
-      'Read-only: organisation memory for a space by slug — same member roster as get_people_by_space_slug plus org_memory_assets (proposal attachments and lead images from documents; Matrix m.file/m.image from the space chat room when HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN is configured). Optional assets_page, assets_page_size, assets_search paginate/filter assets separately from the roster.',
+      'Read-only: organisation memory for a space by slug — same member roster as get_people_by_space_slug plus org_memory_assets (proposal attachments and lead images from documents; Matrix m.file/m.image when HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN, NEXT_PUBLIC_MATRIX_HOMESERVER_URL, and space chat_room_id are set). structuredContent includes matrix_fetch (skipped_reason, http_status, events_in_chunk, media_events_yielded, error) to explain empty Matrix assets. Optional assets_page, assets_page_size, assets_search paginate/filter assets separately from the roster.',
     inputSchema: getOrgMemoryBySpaceSlugInputSchema,
     outputSchema: getOrgMemoryBySpaceSlugOutputSchema,
     annotations: {
