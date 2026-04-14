@@ -29,13 +29,6 @@ export const escrowImplementationAbi = [
   },
   {
     type: 'function',
-    name: 'escrowCounter',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    type: 'function',
     name: 'getEscrow',
     stateMutability: 'view',
     inputs: [{ name: '_escrowId', type: 'uint256' }],
