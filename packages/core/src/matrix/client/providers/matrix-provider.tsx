@@ -16,6 +16,7 @@ import {
   HYPHA_SPOILER_FIELD,
   awaitNonProvisionalMatrixEventId,
   getMessageReplaceTargetEventId,
+  isRedactedRoomMessageEvent,
   messageFromRoomMessageEvent,
   resolveReplyTargetForSend,
   type HyphaMediaBundleItemWire,
@@ -480,98 +481,126 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         return base;
       };
 
-      const mediaPayloads: HyphaMediaEventContent[] = [];
-      for (let i = 0; i < list.length; i++) {
-        if (i > 0) {
-          await delay(MATRIX_UPLOAD_STAGGER_MS);
-        }
-        const att = list[i]!;
-        let attempt = 0;
-        while (true) {
-          try {
-            mediaPayloads.push(await prepareMediaPayload(att));
-            onUploadProgress?.({
-              completed: mediaPayloads.length,
-              total: list.length,
-            });
-            break;
-          } catch (e) {
-            if (
-              !isMatrixRateLimitedError(e) ||
-              attempt >= MATRIX_UPLOAD_RATE_LIMIT_MAX_ATTEMPTS - 1
-            ) {
-              throw e;
+      if (hasAttachments) {
+        const mediaPayloads: HyphaMediaEventContent[] = [];
+        for (let i = 0; i < list.length; i++) {
+          if (i > 0) {
+            await delay(MATRIX_UPLOAD_STAGGER_MS);
+          }
+          const att = list[i]!;
+          let attempt = 0;
+          while (true) {
+            try {
+              mediaPayloads.push(await prepareMediaPayload(att));
+              onUploadProgress?.({
+                completed: mediaPayloads.length,
+                total: list.length,
+              });
+              break;
+            } catch (e) {
+              if (
+                !isMatrixRateLimitedError(e) ||
+                attempt >= MATRIX_UPLOAD_RATE_LIMIT_MAX_ATTEMPTS - 1
+              ) {
+                throw e;
+              }
+              await delay(matrixRateLimitBackoffMs(e, attempt));
+              attempt += 1;
             }
-            await delay(matrixRateLimitBackoffMs(e, attempt));
-            attempt += 1;
           }
         }
-      }
 
-      let sentMediaCount = 0;
-      try {
-        if (mediaPayloads.length === 1) {
-          const base = mediaPayloads[0]!;
-          const eventContent = replyContext
-            ? {
-                ...base,
-                'm.relates_to': {
-                  'm.in_reply_to': {
-                    event_id: replyContext.resolvedTargetId,
-                  },
-                },
-              }
-            : base;
-          await client.sendEvent(
-            roomId,
-            EventType.RoomMessage,
-            eventContent as RoomMessageEventContent,
-          );
-          sentMediaCount = 1;
-        } else if (mediaPayloads.length > 1) {
-          const [first, ...rest] = mediaPayloads;
-          const bundleItems: HyphaMediaBundleItemWire[] = rest.map((item) => {
-            const spoiler = item[HYPHA_SPOILER_FIELD] === true;
-            const c = item as HyphaMediaBundleItemWire;
-            const { msgtype, body, filename, url, info } = c;
-            return {
-              msgtype,
-              body,
-              filename,
-              url,
-              info,
-              ...(spoiler ? { [HYPHA_SPOILER_FIELD]: true } : {}),
+        if (trimmed) {
+          const first = mediaPayloads[0]!;
+          if (replyContext) {
+            const rich = buildRichReplyMatrixContent(
+              replyContext.sender,
+              replyContext.targetBody,
+              trimmed,
+            );
+            mediaPayloads[0] = {
+              ...first,
+              body: rich.body,
+              format: rich.format,
+              formatted_body: rich.formatted_body,
             };
-          });
-          const combined: HyphaMediaEventContent = {
-            ...first!,
-            [HYPHA_MEDIA_BUNDLE_FIELD]: bundleItems,
-          };
-          const eventContent = replyContext
-            ? {
-                ...combined,
-                'm.relates_to': {
-                  'm.in_reply_to': {
-                    event_id: replyContext.resolvedTargetId,
-                  },
-                },
-              }
-            : combined;
-          await client.sendEvent(
-            roomId,
-            EventType.RoomMessage,
-            eventContent as RoomMessageEventContent,
-          );
-          sentMediaCount = list.length;
+          } else {
+            const textExtras =
+              matrixTextEventContentWithOptionalFormatting(trimmed);
+            mediaPayloads[0] = {
+              ...first,
+              ...textExtras,
+              body: trimmed,
+            } as HyphaMediaEventContent;
+          }
         }
-      } catch (mediaErr) {
-        throw new SendMessagePartialFailureError(
-          mediaErr instanceof Error
-            ? mediaErr.message
-            : 'Failed to send attachment',
-          sentMediaCount,
-          true,
-        );
+
+        let sentMediaCount = 0;
+        try {
+          if (mediaPayloads.length === 1) {
+            const base = mediaPayloads[0]!;
+            const eventContent = replyContext
+              ? {
+                  ...base,
+                  'm.relates_to': {
+                    'm.in_reply_to': {
+                      event_id: replyContext.resolvedTargetId,
+                    },
+                  },
+                }
+              : base;
+            await client.sendEvent(
+              roomId,
+              EventType.RoomMessage,
+              eventContent as RoomMessageEventContent,
+            );
+            sentMediaCount = 1;
+          } else if (mediaPayloads.length > 1) {
+            const [first, ...rest] = mediaPayloads;
+            const bundleItems: HyphaMediaBundleItemWire[] = rest.map((item) => {
+              const spoiler = item[HYPHA_SPOILER_FIELD] === true;
+              const c = item as HyphaMediaBundleItemWire;
+              const { msgtype, body, filename, url, info } = c;
+              return {
+                msgtype,
+                body,
+                filename,
+                url,
+                info,
+                ...(spoiler ? { [HYPHA_SPOILER_FIELD]: true } : {}),
+              };
+            });
+            const combined: HyphaMediaEventContent = {
+              ...first!,
+              [HYPHA_MEDIA_BUNDLE_FIELD]: bundleItems,
+            };
+            const eventContent = replyContext
+              ? {
+                  ...combined,
+                  'm.relates_to': {
+                    'm.in_reply_to': {
+                      event_id: replyContext.resolvedTargetId,
+                    },
+                  },
+                }
+              : combined;
+            await client.sendEvent(
+              roomId,
+              EventType.RoomMessage,
+              eventContent as RoomMessageEventContent,
+            );
+            sentMediaCount = list.length;
+          }
+        } catch (mediaErr) {
+          throw new SendMessagePartialFailureError(
+            mediaErr instanceof Error
+              ? mediaErr.message
+              : 'Failed to send attachment',
+            sentMediaCount,
+            true,
+          );
+        }
+        return;
       }
 
       if (!trimmed) {
@@ -804,6 +833,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             .getLiveTimeline()
             .getEvents()
             .filter((event) => event.getType() === EventType.RoomMessage)
+            .filter((event) => !isRedactedRoomMessageEvent(event))
             .filter((event) => event.getId() && event.getSender())
             .filter((event) => getMessageReplaceTargetEventId(event) == null)
             .map((event) => {
@@ -954,6 +984,19 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         const type = event.getType();
 
         if (type === EventType.RoomMessage) {
+          if (isRedactedRoomMessageEvent(event)) {
+            const id = event.getId();
+            if (id) {
+              await messageListener({
+                id,
+                sender: event.getSender() ?? '',
+                content: '',
+                timestamp: new Date(event.getTs()),
+                redacted: true,
+              });
+            }
+            return;
+          }
           const replaceTargetId = getMessageReplaceTargetEventId(event);
           if (replaceTargetId && room) {
             const targetEv =

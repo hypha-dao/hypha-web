@@ -69,6 +69,8 @@ export type MessageMediaBundleItem = {
 export interface Message {
   id: string;
   sender: string;
+  /** Synthetic row from a redaction handler: remove this timeline id from UI. */
+  redacted?: boolean;
   /** Matrix msgtype for timeline rendering (`m.text` is implicit when omitted). */
   msgtype?: 'm.text' | 'm.file' | 'm.image';
   /** Visible message text (reply fallback stripped when applicable). */

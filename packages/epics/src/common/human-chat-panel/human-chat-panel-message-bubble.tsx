@@ -920,6 +920,55 @@ export function HumanChatPanelMessageBubble({
           </div>
         )}
 
+        {/* Message text above attachments (caption + media in one Matrix event) */}
+        {textContent &&
+          (message.formattedContentHtml ? (
+            <p
+              data-testid="chat-message-body"
+              className={cn(
+                'text-sm leading-snug text-foreground',
+                message.media ||
+                  (message.mediaSlots && message.mediaSlots.length > 0)
+                  ? 'mt-1'
+                  : 'mt-0',
+              )}
+            >
+              <ChatMessageRichText html={message.formattedContentHtml} />
+            </p>
+          ) : jumboLayout.mode === 'jumbo' ? (
+            <p
+              data-testid="chat-message-body"
+              className={cn(
+                'flex flex-wrap items-end text-foreground',
+                jumboLayout.sizeClass,
+                message.media ||
+                  (message.mediaSlots && message.mediaSlots.length > 0)
+                  ? 'mt-1'
+                  : 'mt-0',
+              )}
+              aria-label={textContent.trim()}
+            >
+              {jumboLayout.graphemes.map((g, i) => (
+                <span key={`${g}-${i}`} aria-hidden>
+                  {g}
+                </span>
+              ))}
+            </p>
+          ) : (
+            <p
+              data-testid="chat-message-body"
+              className={cn(
+                'text-sm leading-snug text-foreground',
+                message.media ||
+                  (message.mediaSlots && message.mediaSlots.length > 0)
+                  ? 'mt-1'
+                  : 'mt-0',
+              )}
+            >
+              {renderTextWithMentions(textContent)}
+            </p>
+          ))}
+
         {message.mediaSlots && message.mediaSlots.length > 1 && (
           <div
             className="mt-1 max-w-md space-y-2"
@@ -1128,39 +1177,6 @@ export function HumanChatPanelMessageBubble({
               </div>
             </div>
           )}
-
-        {/* Message text — Matrix HTML, or Discord-style jumboji, or plain + mentions */}
-        {textContent &&
-          (message.formattedContentHtml ? (
-            <p
-              data-testid="chat-message-body"
-              className="mt-0 text-sm leading-snug text-foreground"
-            >
-              <ChatMessageRichText html={message.formattedContentHtml} />
-            </p>
-          ) : jumboLayout.mode === 'jumbo' ? (
-            <p
-              data-testid="chat-message-body"
-              className={cn(
-                'mt-0 flex flex-wrap items-end text-foreground',
-                jumboLayout.sizeClass,
-              )}
-              aria-label={textContent.trim()}
-            >
-              {jumboLayout.graphemes.map((g, i) => (
-                <span key={`${g}-${i}`} aria-hidden>
-                  {g}
-                </span>
-              ))}
-            </p>
-          ) : (
-            <p
-              data-testid="chat-message-body"
-              className="mt-0 text-sm leading-snug text-foreground"
-            >
-              {renderTextWithMentions(textContent)}
-            </p>
-          ))}
 
         {/* Streaming indicator */}
         {isStreaming && (

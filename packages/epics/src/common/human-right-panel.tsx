@@ -139,6 +139,11 @@ function toUIMessage(
 
   const isMedia = msg.msgtype === 'm.file' || msg.msgtype === 'm.image';
 
+  const captionForMedia =
+    isMedia && msg.content.trim().length > 0
+      ? stripMatrixReplyFallback(msg.content).trim()
+      : '';
+
   let replyTo: UIMessage['replyTo'];
   if (msg.inReplyToEventId) {
     const authorLabel = resolveMemberLabel(msg.inReplyToSender);
@@ -189,10 +194,14 @@ function toUIMessage(
     id: msg.id,
     role: isCurrentUser ? 'user' : 'member',
     isSynthetic: false,
-    parts: isMedia ? [] : [{ type: 'text', text: msg.content }],
+    parts: isMedia
+      ? captionForMedia
+        ? [{ type: 'text', text: captionForMedia }]
+        : []
+      : [{ type: 'text', text: msg.content }],
     media,
     mediaSlots,
-    formattedContentHtml: isMedia ? undefined : msg.formattedContentHtml,
+    formattedContentHtml: msg.formattedContentHtml,
     senderName: isCurrentUser ? undefined : resolveMemberLabel(msg.sender),
     senderMatrixId: msg.sender,
     avatarUrl: isCurrentUser ? currentUserAvatarUrl : undefined,
@@ -666,6 +675,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       roomId,
       async (message: Message) => {
         setMessages((prev) => {
+          if (message.redacted) {
+            return prev.filter((m) => m.id !== message.id);
+          }
           const next = toUIMessage(
             message,
             currentUserIdRef.current,
@@ -819,6 +831,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setDeleteError(null);
       try {
         await matrixRef.current.redactRoomEvent({ roomId, eventId: messageId });
+        setMessages((prev) => prev.filter((m) => m.id !== messageId));
         if (editDraft?.messageId === messageId) {
           setEditDraft(null);
           setInput('');

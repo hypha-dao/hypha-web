@@ -1,6 +1,6 @@
 /** Matrix rich reply plaintext helpers (Client-Server API — rich replies). */
 
-import { MatrixEventEvent, RelationType } from 'matrix-js-sdk';
+import { EventType, MatrixEventEvent, RelationType } from 'matrix-js-sdk';
 import type * as MatrixSdk from 'matrix-js-sdk';
 
 import type { Message, MessageMediaBundleItem } from './types';
@@ -257,6 +257,18 @@ function parseReplyFallbackFirstLine(body: string): {
 /**
  * Map a timeline `m.room.message` event to Hypha `Message` (reply metadata + display body).
  */
+/**
+ * Redacted `m.room.message` events still exist on the timeline; skip them so the UI
+ * does not render empty rows (avatar + “You” with no body).
+ */
+export function isRedactedRoomMessageEvent(
+  event: MatrixSdk.MatrixEvent,
+): boolean {
+  return (
+    event.getType() === EventType.RoomMessage && event.isRedacted() === true
+  );
+}
+
 export function messageFromRoomMessageEvent(
   client: MatrixSdk.MatrixClient,
   roomId: string,
@@ -318,9 +330,20 @@ export function messageFromRoomMessageEvent(
           content.formatted_body,
         );
       }
+    } else if (
+      content.format === MATRIX_CUSTOM_HTML_FORMAT &&
+      typeof content.formatted_body === 'string'
+    ) {
+      formattedContentHtml = extractReplyFormattedHtml(content.formatted_body);
     }
   } else if (
     !isMedia &&
+    content.format === MATRIX_CUSTOM_HTML_FORMAT &&
+    typeof content.formatted_body === 'string'
+  ) {
+    formattedContentHtml = content.formatted_body;
+  } else if (
+    isMedia &&
     content.format === MATRIX_CUSTOM_HTML_FORMAT &&
     typeof content.formatted_body === 'string'
   ) {
