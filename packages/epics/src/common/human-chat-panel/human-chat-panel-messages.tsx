@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 
 import { HumanChatPanelMessageBubble } from './human-chat-panel-message-bubble';
@@ -74,6 +74,9 @@ export function HumanChatPanelMessages({
     senderName: t('systemSender'),
   };
   const containerRef = useRef<HTMLDivElement>(null);
+  const prevLenRef = useRef(0);
+  const prevLastIdRef = useRef<string | null>(null);
+  const stickToBottomRef = useRef(true);
   /** At most one floating action bar: pointer hover, or locked while that row's hover emoji picker is open. */
   const [hoverActionMessageId, setHoverActionMessageId] = useState<
     string | null
@@ -86,11 +89,29 @@ export function HumanChatPanelMessages({
   /** Pointer left row while hover picker was open (portal); hide bar when picker closes. */
   const leaveWhileLockedRef = useRef<string | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const container = containerRef.current;
-    if (container) {
+    if (!container) return;
+
+    const len = messages.length;
+    const lastId = len > 0 ? messages[len - 1]!.id : null;
+    const prevLen = prevLenRef.current;
+    const prevLastId = prevLastIdRef.current;
+
+    const appended =
+      len > prevLen ||
+      (len === prevLen && len > 0 && lastId != null && lastId !== prevLastId);
+
+    if (appended) {
+      stickToBottomRef.current = true;
+    }
+
+    if (stickToBottomRef.current || isStreaming) {
       container.scrollTop = container.scrollHeight;
     }
+
+    prevLenRef.current = len;
+    prevLastIdRef.current = lastId;
   }, [messages, isStreaming]);
 
   const displayMessages = messages.length > 0 ? messages : [welcomeMessage];
@@ -98,6 +119,14 @@ export function HumanChatPanelMessages({
   return (
     <div
       ref={containerRef}
+      onScroll={() => {
+        const el = containerRef.current;
+        if (!el) return;
+        const threshold = 80;
+        const distanceFromBottom =
+          el.scrollHeight - el.scrollTop - el.clientHeight;
+        stickToBottomRef.current = distanceFromBottom <= threshold;
+      }}
       className="narrow-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto px-3 py-3"
     >
       <div className="flex flex-col gap-4">
