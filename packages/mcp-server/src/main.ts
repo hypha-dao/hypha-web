@@ -229,8 +229,18 @@ server.registerTool(
                   })`
                 : 'not attempted'
             }${mf.skipped_reason ? ` — ${mf.skipped_reason}` : ''}${
-              mf.error ? ` — ${mf.error}` : ''
-            }.`
+              mf.used_session_matrix_token ? ' — used_session_matrix_token' : ''
+            }${
+              mf.session_matrix_token_unavailable
+                ? ' — session_matrix_token_unavailable (Human Chat Matrix link missing or expired)'
+                : ''
+            }${
+              mf.skipped_reason === 'missing_access_token' &&
+              !mf.used_session_matrix_token &&
+              !mf.session_matrix_token_unavailable
+                ? ' — set HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN (bot) or pass Privy JWT + app URL for per-user Matrix (Hypha Chat / MCP)'
+                : ''
+            }${mf.error ? ` — ${mf.error}` : ''}.`
           : '';
 
       const summary = structured.found
