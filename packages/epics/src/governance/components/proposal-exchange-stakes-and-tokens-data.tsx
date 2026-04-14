@@ -9,7 +9,10 @@ import { useTokens, ExtendedToken } from '../../treasury';
 import { CheckIcon, CopyIcon } from '@radix-ui/react-icons';
 import { copyToClipboard } from '@hypha-platform/ui-utils';
 import { useDbSpaces } from '../../hooks';
-import { EXCHANGE_ESCROW_CONTRACT_BY_CHAIN } from '@hypha-platform/core/client';
+import {
+  DbToken,
+  EXCHANGE_ESCROW_CONTRACT_BY_CHAIN,
+} from '@hypha-platform/core/client';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
@@ -101,6 +104,8 @@ interface ProposalExchangeStakesAndTokensDataProps {
   escrowId?: bigint;
   completed?: boolean;
   cancelled?: boolean;
+  /** Fallback when `useTokens` catalogue omits a minted token (seller leg). */
+  dbTokens?: DbToken[];
 }
 
 /**
@@ -116,6 +121,7 @@ export const ProposalExchangeStakesAndTokensData = ({
   fallbackBuyerAddress,
   sellerLeg,
   buyerLeg,
+  dbTokens,
 }: ProposalExchangeStakesAndTokensDataProps) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const tCommon = useTranslations('Common');
@@ -229,9 +235,12 @@ export const ProposalExchangeStakesAndTokensData = ({
     }
 
     return rows.map((leg, index) => {
+      const addrKey = leg.tokenAddress.toLowerCase();
       const token = tokens.find(
-        (item: ExtendedToken) =>
-          item.address.toLowerCase() === leg.tokenAddress.toLowerCase(),
+        (item: ExtendedToken) => item.address.toLowerCase() === addrKey,
+      );
+      const dbToken = dbTokens?.find(
+        (t) => t.address?.toLowerCase() === addrKey,
       );
       const parsedAmount = Number(leg.amount);
       const formattedAmount = Number.isFinite(parsedAmount)
@@ -241,7 +250,10 @@ export const ProposalExchangeStakesAndTokensData = ({
           })
         : leg.amount;
 
-      const tokenLabel = token?.name ?? token?.symbol;
+      const tokenLabel =
+        token?.name ?? token?.symbol ?? dbToken?.name ?? dbToken?.symbol;
+      const tokenIcon =
+        token?.icon ?? dbToken?.iconUrl ?? '/placeholder/token-icon.svg';
 
       return (
         <div
@@ -249,7 +261,7 @@ export const ProposalExchangeStakesAndTokensData = ({
           className="flex items-center gap-2 text-2"
         >
           <Image
-            src={token?.icon ?? '/placeholder/token-icon.svg'}
+            src={tokenIcon}
             alt={tokenLabel ?? 'token'}
             width={20}
             height={20}

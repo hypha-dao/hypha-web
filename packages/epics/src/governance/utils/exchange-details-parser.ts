@@ -103,9 +103,15 @@ export const parseExchangeDetailsFromDescription = (
       continue;
     }
 
-    const isLegHeading =
-      line.startsWith('**') && line.endsWith('**') && !line.includes('`0x');
-    if (isLegHeading) {
+    // Party rows include `` `0x...` ``. "Seller sends" / "Buyer will send" headings are
+    // `**…:**` (not `**…**`), so the old `endsWith('**')` check never matched and seller
+    // leg lines were dropped. First bold line without an address tick is seller sends,
+    // second is buyer sends (stable order from create form).
+    const isLegSendHeading =
+      line.startsWith('**') &&
+      !line.includes('`0x') &&
+      (line.endsWith('**') || line.endsWith(':**'));
+    if (isLegSendHeading) {
       legHeadingCount += 1;
       currentLeg = legHeadingCount === 1 ? 'seller' : 'buyer';
       continue;
