@@ -55,9 +55,9 @@ export function useSpaceMemoryOrg(spaceSlug: string | undefined) {
       async (key: SpaceMemoryFetcherKey) => {
         const [, slug, assetsPage, assetsPageSize, search] = key;
         const qs = queryString.stringify({
-          assetsPage,
-          assetsPageSize,
-          ...(search ? { assetsSearch: search } : {}),
+          assets_page: assetsPage,
+          assets_page_size: assetsPageSize,
+          ...(search ? { assets_search: search } : {}),
         });
         const url = `/api/v1/spaces/${slug}/org-memory?${qs}`;
         const token = await getAccessToken();
@@ -110,12 +110,16 @@ export function useSpaceMemoryOrg(spaceSlug: string | undefined) {
 
   const refresh = React.useCallback(() => mutate(), [mutate]);
 
+  const listError = !data?.length ? error : undefined;
+  const loadMoreError = data && data.length > 0 ? error : undefined;
+
   return {
     items,
     totalCount,
     isLoading: Boolean(isLoading && !data?.length),
     isLoadingMore: Boolean(isValidating && data && data.length > 0),
-    error,
+    error: listError,
+    loadMoreError,
     refresh,
     searchTerm,
     setSearchTerm,

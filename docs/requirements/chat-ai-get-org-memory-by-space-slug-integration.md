@@ -16,9 +16,9 @@
 Enable **Hypha Chat AI** to call a **single org-memory-oriented tool** that returns:
 
 - The **full member roster** for a space (people + spaces-as-members, **`memberships`** fields, **`joined_at`** / **`join_source`**) — **same payload slice as** `get_people_by_space_slug`.
-- **`org_memory_assets`**: **`[]` in v1**; later, catalogue-backed files for RAG-aware questions without renaming the tool.
+- **`org_memory_assets`**: proposal-backed rows from **`documents`** today; optional **Matrix-backed** rows and **`matrix_fetch`** diagnostics when the deployment supports them (catalogue work may extend rows further without renaming the tool).
 
-The model uses **`get_documents_by_space_slug`** when the user asks about **proposals / documents / attachments on document rows**. It uses **`get_org_memory_by_space_slug`** when the product intent is **“organisation memory”**, **roster + future indexed assets**, or **explicit “space memory”** wording (see system prompt rules below).
+The model uses **`get_documents_by_space_slug`** when the user asks about **proposals / documents / attachments on document rows**. It uses **`get_org_memory_by_space_slug`** when the product intent is **“organisation memory”**, **roster + space memory assets**, or **explicit “space memory”** wording (see system prompt rules below).
 
 ---
 
@@ -26,10 +26,10 @@ The model uses **`get_documents_by_space_slug`** when the user asks about **prop
 
 | Concern                   | Approach                                                                                                                                                                                                                                          |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Single implementation** | Chat tool calls **`getSpaceMembersRoster({ spaceSlug, page, pageSize, searchTerm }, { db })`** then **`serializeSpaceMembersRosterDatesForJson`**, identical to `createGetPeopleBySpaceSlugTool`, then attaches **`org_memory_assets: []`** (v1). |
+| **Single implementation** | Chat tool delegates to **`getOrgMemoryBySpaceSlug`** in `@hypha-platform/core/server` (same core as MCP), with **`sanitizeSlug`**, **`checkSpaceAccessForSpace`**, and **`requestUrlForSessionMatrix`** from the chat route URL for Matrix session parity. |
 | **Access**                | Same as people tool: **`findSpaceBySlug`** → if **`web3SpaceId`** set and convertible, **`checkSpaceAccessForSpace(host, authToken)`** with the chat route token; on denial return **`{ found: false, space_slug, error }`** (do not throw).      |
 | **Slug hygiene**          | **`sanitizeSlug`** from `system-prompt.ts` before any query.                                                                                                                                                                                      |
-| **Output**                | Return object matching MCP **`structuredContent`** shape: all roster fields + **`org_memory_assets: []`**.                                                                                                                                        |
+| **Output**                | Return object matching MCP **`structuredContent`** shape: roster fields + **`org_memory_assets`** + **`assets_pagination`** + **`matrix_fetch`** (and related pagination fields) as implemented in core.                                        |
 | **Errors**                | RPC/DB failures → **`{ found: false, space_slug, error }`** — match `get_people_by_space_slug` / `get_documents_by_space_slug` chat tools.                                                                                                        |
 
 ---
@@ -41,7 +41,7 @@ The model uses **`get_documents_by_space_slug`** when the user asks about **prop
 | **FR-OC1** | Register tool **`get_org_memory_by_space_slug`** in **`createChatTools`** (`packages/chat-server/src/tools/index.ts`).                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | **FR-OC2** | `inputSchema`: **`space_slug`**, **`page`**, **`page_size`**, optional **`searchTerm`** (Zod; same constraints as people tool).                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | **FR-OC3** | Export **`createGetOrgMemoryBySpaceSlugTool`** from `packages/chat-server/src/tools/get-org-memory-by-space-slug.ts` (new file).                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| **FR-OC4** | Tool description SHALL state: org memory projection; **v1** = roster + empty **`org_memory_assets`**; not a substitute for **`get_documents_by_space_slug`** for governance document lists.                                                                                                                                                                                                                                                                                                                                                                 |
+| **FR-OC4** | Tool description SHALL state: org memory projection (roster + **`org_memory_assets`** + **`matrix_fetch`**); not a substitute for **`get_documents_by_space_slug`** for per-document governance lists.                                                                                                                                                                                                                                                                                                                                                                 |
 | **FR-OC5** | **`buildSystemPrompt`** (space-scoped): when **`spaceSlug`** is present, add bullets: (a) use **`get_org_memory_by_space_slug`** for questions about **space memory**, **org memory**, **Coherence / Space Memory**, or **“what the space knows”** (roster today; assets when populated); (b) use **`get_people_by_space_slug`** for a plain **member list / roster / who joined** question without that framing — **same data** for the **`members`** slice in v1; (c) use **`get_documents_by_space_slug`** for governance documents and attachment URLs. |
 | **FR-OC6** | When the user asks to **paginate through all members** in org-memory context, the prompt SHALL instruct merging pages until **`has_next_page`** is false (same as documents tool instruction).                                                                                                                                                                                                                                                                                                                                                              |
 
@@ -49,7 +49,7 @@ The model uses **`get_documents_by_space_slug`** when the user asks about **prop
 
 ## 4) Implementation map
 
-1. **`packages/chat-server/src/tools/get-org-memory-by-space-slug.ts`** — `createGetOrgMemoryBySpaceSlugTool(authToken)` mirroring `get-people-by-space-slug.ts`, appending **`org_memory_assets: []`** to the successful serialized result.
+1. **`packages/chat-server/src/tools/get-org-memory-by-space-slug.ts`** — `createGetOrgMemoryBySpaceSlugTool(authToken, requestUrlForSessionMatrix)` calling **`getOrgMemoryBySpaceSlug`** with the same inputs/outputs as MCP.
 2. **`packages/chat-server/src/tools/index.ts`** — add **`get_org_memory_by_space_slug`** to the tools map.
 3. **`packages/chat-server/src/system-prompt.ts`** — extend the space-scoped bullet list with **`get_org_memory_by_space_slug`** and disambiguation vs documents and (optionally) people tool.
 
@@ -59,7 +59,7 @@ The model uses **`get_documents_by_space_slug`** when the user asks about **prop
 
 | Test   | Expected                                                                                                                                                                     |
 | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Manual | Space-scoped chat asks “who is in this space’s org memory”; model calls **`get_org_memory_by_space_slug`**; response includes **`members`** and **`org_memory_assets: []`**. |
+| Manual | Space-scoped chat asks “who is in this space’s org memory”; model calls **`get_org_memory_by_space_slug`**; response includes **`members`** and **`org_memory_assets`** (may be non-empty). |
 | Access | Restricted space without token → **`error`** string matching roster behaviour.                                                                                               |
 | Parity | Same **`members`** page as **`get_people_by_space_slug`** for identical inputs.                                                                                              |
 
@@ -80,6 +80,6 @@ When **`org_memory_assets`** is populated (see [space-memory-panel.md §1 Step 3
 ## 7) References
 
 - MCP spec: [mcp-get-org-memory-by-space-slug-tech-spec.md](./mcp-get-org-memory-by-space-slug-tech-spec.md)
-- People chat spec pattern: [chat-ai-get-documents-by-space-slug-integration.md](./chat-ai-get-documents-by-space-slug-integration.md)
+- People chat spec pattern: [chat-ai-get-people-by-space-slug-integration.md](./chat-ai-get-people-by-space-slug-integration.md)
 - Architecture: [documents-and-media-overview.md §4.7](../architecture/documents-and-media-overview.md#47-mcp-and-hypha-chat-ai)
 - Plan: [space-memory-panel.md §1](../plans/space-memory-panel.md#1-phased-delivery--panel-mcp-and-matrix-assets), [§9](../plans/space-memory-panel.md#9-mcp--hypha-chat-ai)

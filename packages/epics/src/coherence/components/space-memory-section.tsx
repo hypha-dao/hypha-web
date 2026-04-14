@@ -29,6 +29,7 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
     isLoading,
     isLoadingMore,
     error,
+    loadMoreError,
     refresh,
     searchTerm,
     setSearchTerm,
@@ -117,15 +118,24 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
             ))}
           </ul>
           {totalCount > 0 ? (
-            <SectionLoadMore
-              onClick={loadMore}
-              disabled={!hasMore}
-              isLoading={isLoadingMore}
-            >
-              <Text className="line-clamp-3 max-w-md text-center text-sm leading-snug">
-                {hasMore ? t('loadMore') : t('noMore')}
-              </Text>
-            </SectionLoadMore>
+            <div className="flex w-full flex-col items-center gap-2">
+              <SectionLoadMore
+                onClick={loadMore}
+                disabled={!hasMore}
+                isLoading={isLoadingMore}
+              >
+                <Text className="line-clamp-3 max-w-md text-center text-sm leading-snug">
+                  {hasMore ? t('loadMore') : t('noMore')}
+                </Text>
+              </SectionLoadMore>
+              {loadMoreError ? (
+                <Text className="max-w-md text-center text-sm text-destructive">
+                  {loadMoreError instanceof Error
+                    ? loadMoreError.message
+                    : String(loadMoreError)}
+                </Text>
+              ) : null}
+            </div>
           ) : null}
         </>
       )}

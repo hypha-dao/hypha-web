@@ -12,15 +12,19 @@ type Params = { spaceSlug: string };
 
 function parseIntParam(
   url: URL,
-  key: string,
+  keys: string | string[],
   fallback: number,
   max: number,
 ): number {
-  const raw = url.searchParams.get(key);
-  if (raw == null || raw === '') return fallback;
-  const n = Number.parseInt(raw, 10);
-  if (!Number.isFinite(n) || n < 1) return fallback;
-  return Math.min(max, n);
+  const keyList = Array.isArray(keys) ? keys : [keys];
+  for (const key of keyList) {
+    const raw = url.searchParams.get(key);
+    if (raw == null || raw === '') continue;
+    const n = Number.parseInt(raw, 10);
+    if (!Number.isFinite(n) || n < 1) continue;
+    return Math.min(max, n);
+  }
+  return fallback;
 }
 
 export async function GET(
@@ -47,16 +51,31 @@ export async function GET(
 
     const url = new URL(request.url);
     const authHeader = request.headers.get('authorization');
-    const bearer = authHeader?.startsWith('Bearer ')
-      ? authHeader.slice(7)
-      : undefined;
+    const bearerMatch = authHeader?.match(/^Bearer\s+(.+)$/i);
+    const bearer = bearerMatch?.[1]?.trim() || undefined;
 
     const page = parseIntParam(url, 'page', 1, 100);
-    const pageSize = parseIntParam(url, 'pageSize', 20, 100);
-    const assetsPage = parseIntParam(url, 'assetsPage', 1, 100);
-    const assetsPageSize = parseIntParam(url, 'assetsPageSize', 50, 100);
-    const searchTerm = url.searchParams.get('searchTerm') || undefined;
-    const assetsSearch = url.searchParams.get('assetsSearch') || undefined;
+    const pageSize = parseIntParam(url, ['pageSize', 'page_size'], 20, 100);
+    const assetsPage = parseIntParam(
+      url,
+      ['assetsPage', 'assets_page'],
+      1,
+      100,
+    );
+    const assetsPageSize = parseIntParam(
+      url,
+      ['assetsPageSize', 'assets_page_size'],
+      50,
+      100,
+    );
+    const searchTerm =
+      url.searchParams.get('searchTerm') ||
+      url.searchParams.get('search_term') ||
+      undefined;
+    const assetsSearch =
+      url.searchParams.get('assetsSearch') ||
+      url.searchParams.get('assets_search') ||
+      undefined;
 
     const gated = await getOrgMemoryBySpaceSlug(
       {
