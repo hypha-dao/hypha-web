@@ -53,6 +53,7 @@ import { hasUpdateTokenDataToDisplay } from '../utils/has-update-token-data-to-d
 import {
   parseExchangeDetailsFromDescription,
   parseExchangeEscrowIdFromDescription,
+  stripExchangeEscrowIdComment,
   stripExchangeDetailsBlock,
 } from '../../governance/utils';
 
@@ -413,7 +414,7 @@ export const ProposalDetail = ({
     parseExchangeEscrowIdFromDescription(content);
   const contentWithoutExchangeDetails = useMemo(() => {
     if (!content) return content;
-    return stripExchangeDetailsBlock(content);
+    return stripExchangeEscrowIdComment(stripExchangeDetailsBlock(content));
   }, [content]);
 
   const fallbackSellerAddress = proposalDetails?.exchangeEscrowData?.partyA;

@@ -54,3 +54,22 @@ export function parseExchangeEscrowIdFromDescription(
     return undefined;
   }
 }
+
+/** Removes persisted `<!-- exchange-escrow-id:n -->` from text shown in lists / previews. */
+export function stripExchangeEscrowIdComment(description: string): string {
+  let cleaned = description;
+  for (;;) {
+    const span = findEscrowIdSpan(cleaned);
+    if (!span) break;
+    const sliceStart =
+      span.start > 0 && cleaned[span.start - 1] === '\n'
+        ? span.start - 1
+        : span.start;
+    const sliceEnd =
+      span.end < cleaned.length && cleaned[span.end] === '\n'
+        ? span.end + 1
+        : span.end;
+    cleaned = `${cleaned.slice(0, sliceStart)}${cleaned.slice(sliceEnd)}`;
+  }
+  return cleaned.trimEnd();
+}

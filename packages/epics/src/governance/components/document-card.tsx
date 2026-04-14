@@ -15,6 +15,8 @@ import { stripMarkdown } from '@hypha-platform/ui-utils';
 import { DocumentStatus, useEvents } from '@hypha-platform/core/client';
 import React from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
+import { stripExchangeDetailsBlock } from '../utils/strip-exchange-details-block';
+import { stripExchangeEscrowIdComment } from '../utils/exchange-escrow-id-in-description';
 
 interface Document {
   id?: number;
@@ -49,7 +51,10 @@ function stripHtmlComments(text: string): string {
 
 function stripDescription(description: string): string {
   if (!description) return '';
-  return stripHtmlComments(description)
+  const withoutExchangeMetadata = stripExchangeEscrowIdComment(
+    stripExchangeDetailsBlock(description),
+  );
+  return stripHtmlComments(withoutExchangeMetadata)
     .replace(/\\([\[\]\(\)\{\}])/g, '$1')
     .replace(/&#x([0-9A-Fa-f]+);/gi, (full, hex) => {
       const codePoint = Number.parseInt(hex, 16);
