@@ -85,7 +85,6 @@ export const ExchangeStakesAndTokensPlugin = ({
   const escrowContractAddress = EXCHANGE_ESCROW_CONTRACT_BY_CHAIN[
     chainId as keyof typeof EXCHANGE_ESCROW_CONTRACT_BY_CHAIN
   ] as `0x${string}` | undefined;
-  const activeSpaceCatalogueSlug = activeSpace?.slug ?? currentSpaceSlug;
 
   const sellerBalanceLookupAddress =
     sellerRecipientType === 'space' && spaceExecutorAddress
@@ -176,14 +175,17 @@ export const ExchangeStakesAndTokensPlugin = ({
     }
   }, [sellerRecipientType, spaceExecutorAddress, setValue]);
 
+  /**
+   * Tokens for the active DHO come from `useTokens({ spaceSlug })` (same slug as the URL).
+   * Do not filter by `token.space?.slug`: on-chain space tokens often have no DB `spaceId`,
+   * so metadata omits `space` and would incorrectly drop COA/TOA/USDC from the seller list.
+   */
   const catalogueSellerTokens = React.useMemo(
     () =>
       (tokens as ExtendedToken[]).filter(
-        (token) =>
-          token.transferable !== false &&
-          token.space?.slug === activeSpaceCatalogueSlug,
+        (token) => token.transferable !== false,
       ),
-    [tokens, activeSpaceCatalogueSlug],
+    [tokens],
   );
 
   const { tokens: walletSellerTokens, isLoading: isLoadingWalletSellerTokens } =
@@ -195,23 +197,55 @@ export const ExchangeStakesAndTokensPlugin = ({
           : undefined,
     });
 
-  /** Member seller: union catalogue + any transferable wallet tokens (TOA may mint under another space). */
+  const {
+    tokens: walletSpaceExecutorTokens,
+    isLoading: isLoadingWalletSpaceExecutorTokens,
+  } = useWalletTransferableTokens({
+    spaceSlug,
+    walletAddress:
+      sellerRecipientType === 'space' && isEvmAddress(spaceExecutorAddress)
+        ? spaceExecutorAddress
+        : undefined,
+  });
+
+  /**
+   * Member seller: union space catalogue + personal wallet (other spaces' mints).
+   * Space seller: union on-chain catalogue for the space + executor treasury holdings (Alchemy).
+   */
   const sellerTokenCandidates = React.useMemo(() => {
-    if (sellerRecipientType !== 'member') {
-      return catalogueSellerTokens;
-    }
-    const byKey = new Map<string, ExtendedToken>();
-    for (const t of catalogueSellerTokens) {
-      byKey.set(t.address.toLowerCase(), t);
-    }
-    for (const t of walletSellerTokens) {
-      const k = t.address.toLowerCase();
-      if (!byKey.has(k)) {
-        byKey.set(k, t as ExtendedToken);
+    if (sellerRecipientType === 'member') {
+      const byKey = new Map<string, ExtendedToken>();
+      for (const t of catalogueSellerTokens) {
+        byKey.set(t.address.toLowerCase(), t);
       }
+      for (const t of walletSellerTokens) {
+        const k = t.address.toLowerCase();
+        if (!byKey.has(k)) {
+          byKey.set(k, t as ExtendedToken);
+        }
+      }
+      return Array.from(byKey.values());
     }
-    return Array.from(byKey.values());
-  }, [catalogueSellerTokens, sellerRecipientType, walletSellerTokens]);
+    if (sellerRecipientType === 'space') {
+      const byKey = new Map<string, ExtendedToken>();
+      for (const t of catalogueSellerTokens) {
+        byKey.set(t.address.toLowerCase(), t);
+      }
+      for (const t of walletSpaceExecutorTokens) {
+        const k = t.address.toLowerCase();
+        if (!byKey.has(k)) {
+          byKey.set(k, t as ExtendedToken);
+        }
+      }
+      return Array.from(byKey.values());
+    }
+    return catalogueSellerTokens;
+  }, [
+    catalogueSellerTokens,
+    sellerRecipientType,
+    walletSellerTokens,
+    walletSpaceExecutorTokens,
+  ]);
 
   const { tokens: buyerTokenCandidates, isLoading: isLoadingBuyerTokenList } =
     useWalletTransferableTokens({
@@ -436,7 +470,9 @@ export const ExchangeStakesAndTokensPlugin = ({
         loading={
           isLoading ||
           (sellerRecipientType === 'member' && isLoadingWalletSellerTokens) ||
-          (sellerRecipientType === 'space' && isLoadingActiveSpaceChain) ||
+          (sellerRecipientType === 'space' &&
+            (isLoadingActiveSpaceChain ||
+              isLoadingWalletSpaceExecutorTokens)) ||
           (isEvmAddress(sellerBalanceLookupAddress) &&
             isLoadingSellerBalances) ||
           sellerBalancesPending ||

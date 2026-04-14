@@ -58,8 +58,9 @@ const isEvmAddressParam = (value?: string): value is `0x${string}` =>
   typeof value === 'string' && /^0x[a-fA-F0-9]{40}$/i.test(value);
 
 /**
- * ERC-20 tokens with positive balance for a wallet, only when DB marks
- * `transferable: true`. Used for exchange buyer leg (catalogue-independent).
+ * ERC-20 tokens with positive balance for a wallet. Excludes tokens explicitly
+ * marked non-transferable in DB (`transferable === false`). Used for exchange
+ * legs (catalogue-independent where applicable).
  */
 export function useWalletTransferableTokens({
   spaceSlug,
