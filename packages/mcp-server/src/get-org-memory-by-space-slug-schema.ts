@@ -25,6 +25,10 @@ const orgMemoryAssetSchema = z.object({
   matrix_room_id: z.string().optional(),
   matrix_event_id: z.string().optional(),
   document_id: z.number().optional(),
+  document_title: z.string().optional(),
+  document_state: z.string().optional(),
+  document_slug: z.string().optional(),
+  document_label: z.string().optional(),
   occurred_at: z.string(),
 });
 

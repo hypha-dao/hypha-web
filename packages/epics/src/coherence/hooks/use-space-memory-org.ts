@@ -1,23 +1,21 @@
 'use client';
 
 import {
-  buildSpaceMemoryItemsFromDocuments,
+  buildSpaceMemoryItemsFromOrgMemoryPayload,
   filterSpaceMemoryItems,
+  type OrgMemorySpaceMemoryPayload,
   type SpaceMemoryItem,
 } from '@hypha-platform/core/client';
-import type { Document } from '@hypha-platform/core/client';
 import { useAuthentication } from '@hypha-platform/authentication';
 import queryString from 'query-string';
 import React from 'react';
 import useSWR from 'swr';
 
-type DocumentDto = Omit<Document, 'createdAt' | 'updatedAt'> & {
-  createdAt: string;
-  updatedAt: string;
-};
+const ASSETS_PAGE_SIZE = 100;
 
 const queryParams = `?${queryString.stringify({
-  order: '-updatedAt',
+  assetsPage: 1,
+  assetsPageSize: ASSETS_PAGE_SIZE,
 })}`;
 
 export function useSpaceMemoryOrg(spaceSlug: string | undefined) {
@@ -25,9 +23,7 @@ export function useSpaceMemoryOrg(spaceSlug: string | undefined) {
 
   const endpoint = React.useMemo(
     () =>
-      spaceSlug
-        ? `/api/v1/spaces/${spaceSlug}/documents/all${queryParams}`
-        : null,
+      spaceSlug ? `/api/v1/spaces/${spaceSlug}/org-memory${queryParams}` : null,
     [spaceSlug],
   );
 
@@ -41,14 +37,9 @@ export function useSpaceMemoryOrg(spaceSlug: string | undefined) {
       }
       const res = await fetch(url, { headers });
       if (!res.ok) {
-        throw new Error(`Failed to fetch documents: ${res.status}`);
+        throw new Error(`Failed to fetch org memory: ${res.status}`);
       }
-      const payload = (await res.json()) as DocumentDto[];
-      return payload.map((doc) => ({
-        ...doc,
-        createdAt: new Date(doc.createdAt),
-        updatedAt: new Date(doc.updatedAt),
-      })) as Document[];
+      return (await res.json()) as OrgMemorySpaceMemoryPayload;
     },
     {
       revalidateOnFocus: true,
@@ -59,8 +50,8 @@ export function useSpaceMemoryOrg(spaceSlug: string | undefined) {
   );
 
   const items = React.useMemo(() => {
-    if (!data || !Array.isArray(data)) return [] as SpaceMemoryItem[];
-    return buildSpaceMemoryItemsFromDocuments(data);
+    if (!data?.org_memory_assets) return [] as SpaceMemoryItem[];
+    return buildSpaceMemoryItemsFromOrgMemoryPayload(data);
   }, [data]);
 
   const [searchTerm, setSearchTerm] = React.useState('');

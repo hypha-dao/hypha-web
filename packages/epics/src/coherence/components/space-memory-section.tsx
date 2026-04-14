@@ -94,10 +94,14 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
             <SpaceMemoryTimelineItem
               key={row.id}
               item={row}
-              contextLine={t('spaceMemoryContext', {
-                title: row.context.documentTitle || t('untitledDocument'),
-                state: stateLabel(row.context.documentState),
-              })}
+              contextLine={
+                row.source === 'matrix_chat'
+                  ? t('spaceMemoryContextMatrix')
+                  : t('spaceMemoryContext', {
+                      title: row.context.documentTitle || t('untitledDocument'),
+                      state: stateLabel(row.context.documentState),
+                    })
+              }
               openLabel={t('spaceMemoryOpenAsset', { name: row.name })}
             />
           ))}

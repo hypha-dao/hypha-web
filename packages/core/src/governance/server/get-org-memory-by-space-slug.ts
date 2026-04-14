@@ -30,6 +30,11 @@ export type OrgMemoryAsset = {
   matrix_room_id?: string;
   matrix_event_id?: string;
   document_id?: number;
+  /** Proposal row only — lets clients show the same governance context as the documents API. */
+  document_title?: string;
+  document_state?: Document['state'];
+  document_slug?: string;
+  document_label?: string;
   occurred_at: string;
 };
 
@@ -143,6 +148,20 @@ function emptyAssetsPagination(
   };
 }
 
+function proposalDocContextFields(
+  doc: Document,
+): Pick<
+  OrgMemoryAsset,
+  'document_title' | 'document_state' | 'document_slug' | 'document_label'
+> {
+  return {
+    document_title: doc.title?.trim() || undefined,
+    document_state: doc.state,
+    document_slug: doc.slug,
+    document_label: doc.label?.trim() || undefined,
+  };
+}
+
 function normalizeAttachment(
   doc: Document,
   raw: string | { name: string; url: string },
@@ -160,6 +179,7 @@ function normalizeAttachment(
     app_url: url,
     document_id: doc.id,
     occurred_at: doc.updatedAt.toISOString(),
+    ...proposalDocContextFields(doc),
   };
 }
 
@@ -182,6 +202,7 @@ function collectProposalAssets(
           app_url: url,
           document_id: doc.id,
           occurred_at: doc.updatedAt.toISOString(),
+          ...proposalDocContextFields(doc),
         });
       }
     }

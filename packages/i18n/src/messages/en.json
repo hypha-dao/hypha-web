@@ -1758,6 +1758,7 @@
     "spaceMemoryRefresh": "Refresh",
     "spaceMemoryTimelineLabel": "Space memory history",
     "spaceMemoryContext": "From «{title}» · {state}",
+    "spaceMemoryContextMatrix": "From Matrix chat",
     "spaceMemoryOpenAsset": "Open {name}",
     "untitledDocument": "Untitled document",
     "documentStates": {
