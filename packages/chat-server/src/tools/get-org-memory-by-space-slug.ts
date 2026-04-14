@@ -4,7 +4,10 @@ import { db } from '@hypha-platform/storage-postgres';
 import type { ChatRouteTool } from './types';
 import { sanitizeSlug } from '../system-prompt';
 
-export function createGetOrgMemoryBySpaceSlugTool(authToken: string) {
+export function createGetOrgMemoryBySpaceSlugTool(
+  authToken: string,
+  requestUrlForSessionMatrix?: string,
+) {
   const inputSchema = z.object({
     space_slug: z
       .string()
@@ -21,7 +24,7 @@ export function createGetOrgMemoryBySpaceSlugTool(authToken: string) {
 
   return {
     description:
-      'Read-only: organisation memory for a Hypha space by slug — same member roster as get_people_by_space_slug plus org_memory_assets (proposal attachments and lead images from documents; Matrix chat m.file/m.image when the deployment sets HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN and NEXT_PUBLIC_MATRIX_HOMESERVER_URL and the space has chat_room_id). Each successful result includes matrix_fetch: use skipped_reason (missing_homeserver_url | missing_access_token | missing_chat_room_id), homeserver_configured, access_token_configured, http_status, events_in_chunk, media_events_yielded, hypha_media_bundle_slots, error — tell the user the concrete reason Matrix rows are empty; do not blame the user JWT or generic access permissions for missing Matrix assets. Optional assets_page, assets_page_size, assets_search paginate/filter assets separately from the roster. Not a substitute for get_documents_by_space_slug for governance workflow (state, status, creator) on each document row.',
+      'Read-only: organisation memory for a Hypha space by slug — same member roster as get_people_by_space_slug plus org_memory_assets (proposal attachments and lead images from documents; Matrix chat m.file/m.image when NEXT_PUBLIC_MATRIX_HOMESERVER_URL and chat_room_id are set, and either HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN is set **or** the signed-in user has a Matrix link from Human Chat — then used_session_matrix_token is true). Each successful result includes matrix_fetch: skipped_reason (missing_homeserver_url | missing_access_token | missing_chat_room_id), used_bot_access_token, used_session_matrix_token, session_matrix_token_unavailable (JWT ok but no Matrix session / expired token), homeserver_configured, access_token_configured (HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN only), http_status, events_in_chunk, media_events_yielded, hypha_media_bundle_slots, error — use these for why Matrix rows are empty; do not blame generic access permissions. Optional assets_page, assets_page_size, assets_search paginate/filter assets separately from the roster. Not a substitute for get_documents_by_space_slug for governance workflow (state, status, creator) on each document row.',
     inputSchema,
     execute: async (args) => {
       const parsedArgs = inputSchema.safeParse(args);
@@ -52,6 +55,7 @@ export function createGetOrgMemoryBySpaceSlugTool(authToken: string) {
             assetsPage: toolArgs.assets_page,
             assetsPageSize: toolArgs.assets_page_size,
             assetsSearch: toolArgs.assets_search,
+            requestUrlForSessionMatrix,
           },
           { db, authToken },
         );

@@ -41,6 +41,21 @@ export type OrgMemoryAssetWire = {
 
 export type OrgMemorySpaceMemoryPayload = {
   org_memory_assets: OrgMemoryAssetWire[];
+  assets_pagination?: {
+    total: number;
+    page: number;
+    page_size: number;
+    total_pages: number;
+    has_next_page: boolean;
+    has_previous_page: boolean;
+  };
+  matrix_fetch?: {
+    used_bot_access_token?: boolean;
+    used_session_matrix_token?: boolean;
+    session_matrix_token_unavailable?: boolean;
+    skipped_reason?: string | null;
+    access_token_configured?: boolean;
+  };
 };
 
 function fileNameFromUrl(url: string): string {

@@ -52,6 +52,7 @@ export async function POST(req: Request) {
   try {
     result = await createChatStreamResult(messages, spaceSlug, authToken, {
       debugRequestId,
+      requestUrlForSessionMatrix: req.url,
     });
   } catch (error) {
     console.error('[chat][route][stream-init-error]', {

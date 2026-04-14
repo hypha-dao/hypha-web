@@ -21,15 +21,17 @@ export function isAbortLikeError(error: unknown): error is AbortLikeCandidate {
 
 export type ChatStreamCallbacks = {
   debugRequestId: string;
+  /** Lets org memory resolve the viewer's Matrix token (same as Space Memory API). */
+  requestUrlForSessionMatrix?: string;
 };
 
 export async function createChatStreamResult(
   messages: ChatRequestPayload['messages'],
   spaceSlug: string | null | undefined,
   authToken: string,
-  { debugRequestId }: ChatStreamCallbacks,
+  { debugRequestId, requestUrlForSessionMatrix }: ChatStreamCallbacks,
 ): Promise<ReturnType<typeof streamText>> {
-  const tools = createChatTools(authToken);
+  const tools = createChatTools(authToken, requestUrlForSessionMatrix);
 
   if (OPENROUTER_DEBUG) {
     console.log('[chat][openrouter][start]', {

@@ -61,9 +61,17 @@ export function useSpaceMemoryOrg(spaceSlug: string | undefined) {
     [items, searchTerm],
   );
 
+  const totalAssetCount = React.useMemo(() => {
+    const fromPagination = data?.assets_pagination?.total;
+    if (typeof fromPagination === 'number' && fromPagination >= 0) {
+      return fromPagination;
+    }
+    return items.length;
+  }, [data?.assets_pagination?.total, items.length]);
+
   return {
     items: filteredItems,
-    totalCount: items.length,
+    totalCount: totalAssetCount,
     isLoading,
     error,
     refresh: mutate,

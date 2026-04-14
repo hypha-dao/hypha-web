@@ -149,7 +149,8 @@ Matrix-only bytes are still **not** inlined in JSON; **`mxc_uri`** is metadata u
 
 ### 8.1) Matrix discovery (implemented without catalogue table)
 
-- **Auth:** `HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN` must be a Matrix **access_token** (user joined to the space room), passed as **`access_token`** on the `/messages` request (not `Authorization: Bearer`, which Synapse rejects for Matrix tokens).
+- **Auth (bot / service):** `HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN` is a Matrix **access_token** (user joined to the space room), passed as **`access_token`** on the `/messages` request (not `Authorization: Bearer`, which Synapse rejects for Matrix tokens).
+- **Auth (session, web + Hypha Chat):** When the bot token is unset, org memory may use the **caller's** Matrix token from **`matrix_user_links`** (same store as `GET /api/matrix/token`) if a **Privy JWT** is available and a request URL is supplied for `determineEnvironment` (web: request URL; MCP: optional **`HYPHA_MCP_MATRIX_REQUEST_URL`** or **`VERCEL_URL`**).
 - **Room:** `spaces.chat_room_id` (loaded via `findSpaceHostFieldsBySlug`).
 - **Events:** Standard `m.room.message` with `m.file` / `m.image` and **`org.hypha.media_bundle`** slots (same wire shape as Human Chat).
-- **Diagnostics:** Response field **`matrix_fetch`** reports skip reasons, HTTP status, chunk size, and parse counts when no `matrix_chat` rows appear.
+- **Diagnostics:** Response field **`matrix_fetch`** reports skip reasons, **`used_bot_access_token`**, **`used_session_matrix_token`**, **`session_matrix_token_unavailable`**, HTTP status, chunk size, and parse counts when no `matrix_chat` rows appear.

@@ -49,6 +49,12 @@ export type GetOrgMemoryBySpaceSlugInput = {
   assetsPageSize?: number;
   /** Optional filter on asset filenames / URLs (does not affect roster search). */
   assetsSearch?: string;
+  /**
+   * When set with a valid Privy JWT, Matrix fetch may use this user's stored
+   * Matrix access token if `HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN` is unset
+   * (Space Memory / browser API parity with Human Chat).
+   */
+  requestUrlForSessionMatrix?: string;
 };
 
 /** Why Matrix-backed rows may be empty (MCP / debugging — no secrets). */
@@ -62,6 +68,15 @@ export type MatrixOrgMemoryFetchMeta = {
   chat_room_id: string | null;
   homeserver_configured: boolean;
   access_token_configured: boolean;
+  /** True when `HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN` is set (bot / service user). */
+  used_bot_access_token: boolean;
+  /**
+   * True when the caller supplied a Privy JWT and we resolved a valid Matrix
+   * token from `matrix_user_links` (same store as Human Chat).
+   */
+  used_session_matrix_token: boolean;
+  /** Privy JWT was present but no usable Matrix link / token (Human Chat never completed, or token expired). */
+  session_matrix_token_unavailable: boolean;
   http_status: number | null;
   events_in_chunk: number;
   media_events_yielded: number;
@@ -248,6 +263,9 @@ function idleMatrixFetchMeta(): MatrixOrgMemoryFetchMeta {
     skipped_reason: null,
     chat_room_id: null,
     ...matrixEnvFlags(),
+    used_bot_access_token: false,
+    used_session_matrix_token: false,
+    session_matrix_token_unavailable: false,
     http_status: null,
     events_in_chunk: 0,
     media_events_yielded: 0,
@@ -335,13 +353,41 @@ function extractMediaFromMessageEvent(
 
 async function fetchMatrixChatAssets(
   matrixRoomId: string,
+  options?: {
+    authToken?: string;
+    requestUrlForSessionMatrix?: string;
+  },
 ): Promise<{ assets: OrgMemoryAsset[]; meta: MatrixOrgMemoryFetchMeta }> {
   const env = matrixEnvFlags();
   const homeserver = process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL?.replace(
     /\/?$/,
     '',
   );
-  const token = process.env.HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN?.trim();
+  const botToken =
+    process.env.HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN?.trim() ?? '';
+
+  const sessionAuth = options?.authToken?.trim();
+  const sessionReqUrl = options?.requestUrlForSessionMatrix?.trim();
+  const triedSession =
+    !botToken && Boolean(sessionAuth) && Boolean(sessionReqUrl);
+
+  let sessionToken: string | undefined;
+  if (triedSession && sessionAuth && sessionReqUrl) {
+    const { resolveUserMatrixAccessTokenForOrgMemory } = await import(
+      './resolve-user-matrix-access-token-for-org-memory.js'
+    );
+    const resolved = await resolveUserMatrixAccessTokenForOrgMemory(
+      sessionAuth,
+      sessionReqUrl,
+    );
+    sessionToken = resolved ?? undefined;
+  }
+
+  const effectiveToken = (botToken || sessionToken || '').trim();
+  const usedBot = Boolean(botToken && effectiveToken === botToken);
+  const usedSession = Boolean(sessionToken && effectiveToken === sessionToken);
+  const sessionUnavailable =
+    triedSession && !sessionToken && effectiveToken.length === 0;
 
   if (!homeserver) {
     return {
@@ -351,6 +397,9 @@ async function fetchMatrixChatAssets(
         skipped_reason: 'missing_homeserver_url',
         chat_room_id: matrixRoomId || null,
         ...env,
+        used_bot_access_token: false,
+        used_session_matrix_token: false,
+        session_matrix_token_unavailable: false,
         http_status: null,
         events_in_chunk: 0,
         media_events_yielded: 0,
@@ -359,7 +408,7 @@ async function fetchMatrixChatAssets(
       },
     };
   }
-  if (!token) {
+  if (!effectiveToken) {
     return {
       assets: [],
       meta: {
@@ -367,6 +416,9 @@ async function fetchMatrixChatAssets(
         skipped_reason: 'missing_access_token',
         chat_room_id: matrixRoomId || null,
         ...env,
+        used_bot_access_token: false,
+        used_session_matrix_token: false,
+        session_matrix_token_unavailable: sessionUnavailable,
         http_status: null,
         events_in_chunk: 0,
         media_events_yielded: 0,
@@ -383,6 +435,9 @@ async function fetchMatrixChatAssets(
         skipped_reason: 'missing_chat_room_id',
         chat_room_id: null,
         ...env,
+        used_bot_access_token: false,
+        used_session_matrix_token: false,
+        session_matrix_token_unavailable: false,
         http_status: null,
         events_in_chunk: 0,
         media_events_yielded: 0,
@@ -397,7 +452,7 @@ async function fetchMatrixChatAssets(
   const params = new URLSearchParams({
     dir: 'b',
     limit: String(limit),
-    access_token: token,
+    access_token: effectiveToken,
   });
   const url = `${homeserver}/_matrix/client/v3/rooms/${encodedRoom}/messages?${params.toString()}`;
 
@@ -433,6 +488,9 @@ async function fetchMatrixChatAssets(
         skipped_reason: null,
         chat_room_id: matrixRoomId,
         ...env,
+        used_bot_access_token: usedBot,
+        used_session_matrix_token: usedSession,
+        session_matrix_token_unavailable: sessionUnavailable,
         http_status: res.status,
         events_in_chunk: chunk.length,
         media_events_yielded: out.length,
@@ -449,6 +507,9 @@ async function fetchMatrixChatAssets(
         skipped_reason: null,
         chat_room_id: matrixRoomId,
         ...env,
+        used_bot_access_token: usedBot,
+        used_session_matrix_token: usedSession,
+        session_matrix_token_unavailable: sessionUnavailable,
         http_status: null,
         events_in_chunk: 0,
         media_events_yielded: 0,
@@ -476,8 +537,11 @@ function filterAssetsBySearch(
 /**
  * Organisation memory for a space: member roster (same as `getSpaceMembersRoster`)
  * plus `org_memory_assets` from proposal document attachments/lead images and,
- * when `HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN` + `NEXT_PUBLIC_MATRIX_HOMESERVER_URL` are set,
- * Matrix human-chat attachments (including `org.hypha.media_bundle` slots).
+ * when `NEXT_PUBLIC_MATRIX_HOMESERVER_URL` is set and either
+ * `HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN` **or** (for HTTP with Privy JWT)
+ * the caller passes `requestUrlForSessionMatrix` so the user's Matrix token
+ * from `matrix_user_links` can be used — Matrix human-chat attachments
+ * (including `org.hypha.media_bundle` slots).
  */
 export async function getOrgMemoryBySpaceSlug(
   {
@@ -488,6 +552,7 @@ export async function getOrgMemoryBySpaceSlug(
     assetsPage = 1,
     assetsPageSize = 50,
     assetsSearch,
+    requestUrlForSessionMatrix,
   }: GetOrgMemoryBySpaceSlugInput,
   { db, authToken }: DbConfig & { authToken?: string },
 ): Promise<
@@ -593,7 +658,10 @@ export async function getOrgMemoryBySpaceSlug(
   const matrixRoomId = host.chatRoomId?.trim() ?? '';
   const { assets: matrixAssets, meta: matrixFetchMeta } =
     matrixRoomId.length > 0
-      ? await fetchMatrixChatAssets(matrixRoomId)
+      ? await fetchMatrixChatAssets(matrixRoomId, {
+          authToken,
+          requestUrlForSessionMatrix,
+        })
       : {
           assets: [] as OrgMemoryAsset[],
           meta: {
@@ -601,6 +669,9 @@ export async function getOrgMemoryBySpaceSlug(
             skipped_reason: 'missing_chat_room_id' as const,
             chat_room_id: null,
             ...matrixEnvFlags(),
+            used_bot_access_token: false,
+            used_session_matrix_token: false,
+            session_matrix_token_unavailable: false,
             http_status: null,
             events_in_chunk: 0,
             media_events_yielded: 0,
