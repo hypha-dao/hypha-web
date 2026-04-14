@@ -153,9 +153,10 @@ export const useAcceptInvestmentMutationsWeb3Rpc = ({
         }),
       });
 
-      // createEscrow(..., true): on execution the escrow contract calls _receiveFunds
-      // once, which only pulls tokenA from party A (the executor). Party B (investor)
-      // still funds tokenB later via their own receiveFunds(escrowId) call — not here.
+      // IEscrow.createEscrow(partyB, tokenA, tokenB, amountA, amountB, sendFundsNow):
+      // partyA = msg.sender (space executor), partyB = investor. tokenA/amountA = space
+      // leg (deposited when sendFundsNow). tokenB/amountB = investor leg (later via
+      // investor's receiveFunds). Order matches form: spaceReceive → A, investorSend → B.
       transactions.push({
         target: escrowAddress,
         value: 0n,
