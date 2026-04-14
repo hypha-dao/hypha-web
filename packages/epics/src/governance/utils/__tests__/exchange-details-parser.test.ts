@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { parseExchangeBuyerSettlementAddressFromDescription } from '../exchange-buyer-settlement-in-description';
 import { parseExchangeDetailsFromDescription } from '../exchange-details-parser';
 
 describe('parseExchangeDetailsFromDescription', () => {
@@ -34,5 +35,20 @@ describe('parseExchangeDetailsFromDescription', () => {
         tokenAddress: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
       },
     ]);
+  });
+
+  it('reads buyer settlement executor from embedded marker', () => {
+    const exec = '0xcccccccccccccccccccccccccccccccccccccccc';
+    const description = `x
+
+<!-- exchange-details:start -->
+<!-- exchange-buyer-settlement:${exec}-->
+
+### Exchange
+<!-- exchange-details:end -->
+`;
+    expect(
+      parseExchangeBuyerSettlementAddressFromDescription(description),
+    ).toBe(exec);
   });
 });

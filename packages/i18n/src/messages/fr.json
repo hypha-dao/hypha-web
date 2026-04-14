@@ -852,6 +852,7 @@
       "exchangeAmountRequired": "Veuillez saisir un montant.",
       "amountRequired": "Saisissez un montant pour continuer.",
       "tokenRequired": "Veuillez sélectionner un token",
+      "buyerSpaceTreasuryUnavailable": "Impossible de charger la trésorerie de l’espace acheteur. Attendez les données on-chain et réessayez, ou sélectionnez à nouveau l’espace acheteur.",
       "chooseTokenToBurn": "Choisissez un token à brûler",
       "atLeastOneBurnTargetRequired": "Au moins une cible de brûlage est requise",
       "atLeastOnePayoutRequired": "Au moins un paiement est requis",

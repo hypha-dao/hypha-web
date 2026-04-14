@@ -43,11 +43,14 @@ export function MemberExchangeEscrowAutoFund({
   description,
   executed,
   parsedExchange,
+  buyerPartyBForEscrow,
 }: {
   documentSlug: string;
   description?: string | null;
   executed: boolean;
   parsedExchange: ParsedExchangeDetails | null;
+  /** When buyer is a space, treasury executor address used as escrow party B */
+  buyerPartyBForEscrow?: string | null;
 }) {
   const t = useTranslations('AgreementFlow.plugins.exchangeStakesAndTokens');
   const { jwt } = useJwt();
@@ -107,6 +110,7 @@ export function MemberExchangeEscrowAutoFund({
         const escrowIds = await fundRef.current({
           sellerAddress: parsedExchange.sellerAddress!,
           buyerAddress: parsedExchange.buyerAddress!,
+          buyerPartyBForEscrow: buyerPartyBForEscrow ?? undefined,
           sellerLeg: toFundingLeg(parsedExchange.sellerLeg),
           buyerLeg: toFundingLeg(parsedExchange.buyerLeg),
         });
@@ -150,6 +154,7 @@ export function MemberExchangeEscrowAutoFund({
     legsStable,
     parsedExchange,
     router,
+    buyerPartyBForEscrow,
   ]);
 
   if (!deferred) return null;

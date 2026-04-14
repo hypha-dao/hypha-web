@@ -166,6 +166,20 @@ export const ExchangeStakesAndTokensPlugin = ({
   }, [buyerRecipientType, setValue]);
 
   React.useEffect(() => {
+    if (
+      buyerRecipientType === 'space' &&
+      buyerExecutorAddress &&
+      isEvmAddress(buyerExecutorAddress)
+    ) {
+      setValue('buyerExecutorAddressForSettlement', buyerExecutorAddress, {
+        shouldDirty: true,
+      });
+    } else {
+      setValue('buyerExecutorAddressForSettlement', '', { shouldDirty: true });
+    }
+  }, [buyerRecipientType, buyerExecutorAddress, setValue]);
+
+  React.useEffect(() => {
     if (sellerRecipientType === 'space' && spaceExecutorAddress) {
       setValue('spaceExecutorAddress', spaceExecutorAddress, {
         shouldDirty: true,

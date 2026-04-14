@@ -177,6 +177,7 @@ export const FormVoting = ({
     parsedExchange: ParsedExchangeDetails | null;
     /** Space treasury executor; only this wallet signs execution-time txs. */
     spaceExecutorAddress?: `0x${string}` | null;
+    buyerPartyBForEscrow?: string | null;
   };
 }) => {
   const tCommon = useTranslations('Common');
@@ -460,6 +461,7 @@ export const FormVoting = ({
           description={memberExchangeEscrow.description}
           executed={memberExchangeEscrow.executed}
           parsedExchange={memberExchangeEscrow.parsedExchange}
+          buyerPartyBForEscrow={memberExchangeEscrow.buyerPartyBForEscrow}
         />
       ) : null}
       <VoterList documentSlug={documentSlug} />

@@ -51,8 +51,10 @@ import { resolveTokenDecimals } from '../../governance/utils/token-decimals';
 import { useDbSpaces } from '../../hooks';
 import { hasUpdateTokenDataToDisplay } from '../utils/has-update-token-data-to-display';
 import {
+  parseExchangeBuyerSettlementAddressFromDescription,
   parseExchangeDetailsFromDescription,
   parseExchangeEscrowIdFromDescription,
+  stripExchangeBuyerSettlementComment,
   stripExchangeEscrowIdComment,
   stripExchangeDetailsBlock,
 } from '../../governance/utils';
@@ -414,7 +416,14 @@ export const ProposalDetail = ({
     parseExchangeEscrowIdFromDescription(content);
   const contentWithoutExchangeDetails = useMemo(() => {
     if (!content) return content;
-    return stripExchangeEscrowIdComment(stripExchangeDetailsBlock(content));
+    return stripExchangeBuyerSettlementComment(
+      stripExchangeEscrowIdComment(stripExchangeDetailsBlock(content)),
+    );
+  }, [content]);
+
+  const buyerPartyBForEscrow = useMemo(() => {
+    if (!content) return undefined;
+    return parseExchangeBuyerSettlementAddressFromDescription(content);
   }, [content]);
 
   const fallbackSellerAddress = proposalDetails?.exchangeEscrowData?.partyA;
@@ -751,6 +760,7 @@ export const ProposalDetail = ({
                 executed: Boolean(proposalDetails?.executed),
                 parsedExchange: parsedExchangeDetails,
                 spaceExecutorAddress: spaceDetails?.executor ?? null,
+                buyerPartyBForEscrow: buyerPartyBForEscrow ?? null,
               }
             : undefined
         }

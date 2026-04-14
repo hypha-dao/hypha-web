@@ -37,6 +37,8 @@ interface CreateExchangeStakesAndTokensFormProps {
 
 const EXCHANGE_DETAILS_START = '<!-- exchange-details:start -->';
 const EXCHANGE_DETAILS_END = '<!-- exchange-details:end -->';
+const BUYER_SETTLEMENT_PREFIX = '<!-- exchange-buyer-settlement:';
+const BUYER_SETTLEMENT_SUFFIX = '-->';
 
 const upsertExchangeDetailsSection = (
   description: string,
@@ -93,6 +95,7 @@ export const CreateExchangeStakesAndTokensForm = ({
       sellerRecipientType: 'member',
       buyerRecipientType: 'member',
       spaceExecutorAddress: '',
+      buyerExecutorAddressForSettlement: '',
     },
   });
 
@@ -169,11 +172,18 @@ export const CreateExchangeStakesAndTokensForm = ({
       )
       .join('\n');
 
+    const buyerSettlementMarker =
+      data.buyerRecipientType === 'space' &&
+      data.buyerExecutorAddressForSettlement?.trim()
+        ? `${BUYER_SETTLEMENT_PREFIX}${data.buyerExecutorAddressForSettlement.trim()}${BUYER_SETTLEMENT_SUFFIX}`
+        : '';
+
     const exchangeDetailsSection = [
       EXCHANGE_DETAILS_START,
       ...(data.sellerRecipientType === 'member'
         ? ['<!-- exchange-funding:deferred -->', '']
         : []),
+      ...(buyerSettlementMarker ? [buyerSettlementMarker, ''] : []),
       `### ${tAgreementFlow('labels.exchange')}`,
       '',
       `**${tAgreementFlow('plugins.exchangeStakesAndTokens.seller')}:** \`${
@@ -197,10 +207,18 @@ export const CreateExchangeStakesAndTokensForm = ({
     const createPayload = { ...data };
     delete createPayload.buyerRecipientType;
     delete createPayload.spaceExecutorAddress;
+    delete createPayload.buyerExecutorAddressForSettlement;
+
+    const buyerPartyBForEscrow =
+      data.buyerRecipientType === 'space' &&
+      data.buyerExecutorAddressForSettlement?.trim()
+        ? data.buyerExecutorAddressForSettlement.trim()
+        : data.buyerAddress;
 
     try {
       await createExchangeStakesAndTokens({
         ...createPayload,
+        buyerPartyBForEscrow,
         description: upsertExchangeDetailsSection(
           data.description,
           exchangeDetailsSection,

@@ -45,6 +45,8 @@ interface CreateExchangeStakesAndTokensInput {
   spaceId: number;
   sellerAddress: string;
   buyerAddress: string;
+  /** On-chain escrow party B (buyer space = treasury executor, not space contract) */
+  buyerPartyBForEscrow: string;
   sellerLeg: ExchangeLegInput[];
   buyerLeg: ExchangeLegInput[];
   /** Member: seller funds escrow from their wallet (before proposal). Space: treasury funds via proposal execution. */
@@ -173,7 +175,7 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
                 abi: escrowCreateAbi,
                 functionName: 'createEscrow',
                 args: [
-                  arg.buyerAddress as `0x${string}`,
+                  arg.buyerPartyBForEscrow as `0x${string}`,
                   sellerRow.token as `0x${string}`,
                   buyerRow.token as `0x${string}`,
                   sellerAmount,

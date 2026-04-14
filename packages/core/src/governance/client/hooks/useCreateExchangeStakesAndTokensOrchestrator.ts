@@ -19,6 +19,8 @@ import { useAgreementFileUploads } from './useAgreementFileUploads';
 
 type CreateExchangeArg = z.infer<typeof schemaExchangeStakesAndTokens> & {
   web3SpaceId?: number;
+  /** Escrow `partyB`: buyer executor when buyer is a space, else buyer wallet/space contract */
+  buyerPartyBForEscrow?: string;
 };
 
 type TaskName =
@@ -180,6 +182,7 @@ export const useCreateExchangeStakesAndTokensOrchestrator = ({
             buyerAddress: arg.buyerAddress,
             buyerLeg: arg.buyerLeg,
             sellerRecipientType: arg.sellerRecipientType,
+            buyerPartyBForEscrow: arg.buyerPartyBForEscrow ?? arg.buyerAddress,
           });
           completeTask('CREATE_WEB3_AGREEMENT');
         }

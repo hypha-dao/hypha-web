@@ -848,6 +848,7 @@
       "exchangeAmountRequired": "Bitte geben Sie einen Betrag ein.",
       "amountRequired": "Geben Sie einen Betrag ein, um fortzufahren.",
       "tokenRequired": "Bitte wählen Sie einen Token aus",
+      "buyerSpaceTreasuryUnavailable": "Die Schatzkammer des Käufer-Spaces konnte nicht geladen werden. Warten Sie auf die Chain-Daten und versuchen Sie es erneut, oder wählen Sie den Käufer-Space erneut.",
       "chooseTokenToBurn": "Bitte wählen Sie einen Token zum Verbrennen aus",
       "atLeastOneBurnTargetRequired": "Mindestens ein Verbrennungsziel ist erforderlich",
       "atLeastOnePayoutRequired": "Mindestens eine Auszahlung ist erforderlich",

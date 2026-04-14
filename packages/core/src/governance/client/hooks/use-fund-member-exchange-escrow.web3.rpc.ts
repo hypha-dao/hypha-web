@@ -58,6 +58,8 @@ const escrowCreateAbi = [
 export type FundMemberExchangeEscrowInput = {
   sellerAddress: string;
   buyerAddress: string;
+  /** Escrow `partyB` from proposal (buyer executor when buyer is a space) */
+  buyerPartyBForEscrow?: string;
   sellerLeg: { amount: string; token: string }[];
   buyerLeg: { amount: string; token: string }[];
 };
@@ -86,6 +88,9 @@ export const useFundMemberExchangeEscrowWeb3Rpc = () => {
       if (!client) {
         throw new Error('Smart wallet client not available');
       }
+
+      const partyB = (arg.buyerPartyBForEscrow?.trim() ||
+        arg.buyerAddress) as `0x${string}`;
 
       const smartWalletAddress = (
         client as { account?: { address?: `0x${string}` } } | null
@@ -196,7 +201,7 @@ export const useFundMemberExchangeEscrowWeb3Rpc = () => {
           abi: escrowCreateAbi,
           functionName: 'createEscrow',
           args: [
-            arg.buyerAddress as `0x${string}`,
+            partyB,
             sellerToken,
             buyerRow.token as `0x${string}`,
             sellerAmount,
@@ -211,7 +216,7 @@ export const useFundMemberExchangeEscrowWeb3Rpc = () => {
           abi: escrowCreateAbi,
           functionName: 'createEscrow',
           args: [
-            arg.buyerAddress as `0x${string}`,
+            partyB,
             sellerToken,
             buyerRow.token as `0x${string}`,
             sellerAmount,
