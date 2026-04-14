@@ -5,6 +5,9 @@ const IMAGE_HOSTS = process.env.NEXT_PUBLIC_IMAGE_HOSTS?.split(', ') ?? [];
 const CONNECT_SOURCES =
   process.env.NEXT_PUBLIC_CONNECT_SOURCES?.split(', ') ?? [];
 
+/** UploadThing / Vercel Blob file hosts (Space Memory PDF previews use iframes). */
+const UPLOADTHING_FRAME_HOST = 'https://*.ufs.sh';
+
 /** Origin of `NEXT_PUBLIC_MATRIX_HOMESERVER_URL` for CSP (timeline MXC → HTTP). */
 function matrixHomeserverImgSrc(): string {
   const raw = process.env.NEXT_PUBLIC_MATRIX_HOMESERVER_URL?.trim();
@@ -53,8 +56,8 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
       "base-uri 'self'",
       "form-action 'self'",
       "frame-ancestors 'none'",
-      'child-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org',
-      'frame-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com https://vercel.live',
+      `child-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org ${UPLOADTHING_FRAME_HOST}`,
+      `frame-src https://auth.privy.io https://privy.hypha.earth https://verify.walletconnect.com https://verify.walletconnect.org https://challenges.cloudflare.com https://vercel.live ${UPLOADTHING_FRAME_HOST}`,
       `connect-src 'self' ${connectSrc}`,
       "worker-src 'self'",
       "manifest-src 'self'",

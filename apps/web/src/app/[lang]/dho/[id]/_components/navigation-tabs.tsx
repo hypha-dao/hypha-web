@@ -10,7 +10,7 @@ import { getDhoPathMembers } from '../@tab/members/constants';
 import { getDhoPathTreasury } from '../@tab/treasury/constants';
 // import { getDhoPathOverview } from '../@tab/overview/constants'; // Overview tab removed
 import { ScrollArea, ScrollBar } from '@hypha-platform/ui';
-import { getActiveTabFromPath } from '@hypha-platform/epics';
+import { getEffectiveDhoTab } from '@hypha-platform/epics';
 import { getDhoPathCoherence } from '../@tab/coherence/constants';
 
 export function NavigationTabs({
@@ -24,7 +24,7 @@ export function NavigationTabs({
 }) {
   const t = useTranslations('Common');
   const pathname = usePathname();
-  const activeTab = getActiveTabFromPath(pathname);
+  const activeTab = getEffectiveDhoTab(pathname, { coherenceEnabled });
 
   const tabs = [
     // Overview tab removed - functionality replaced by space-visualization
