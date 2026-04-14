@@ -1655,6 +1655,7 @@
     "composerAttachImage": "Foto oder Bild",
     "composerAttachVideo": "Video",
     "composerAttachFile": "Datei",
+    "composerDropPrompt": "Dateien hier ablegen zum Anhängen",
     "mentionNotAvailable": "Erwähnungen (demnächst)",
     "composerVoiceRecord": "Sprachnachricht aufnehmen",
     "composerVoiceStop": "Aufnahme beenden",

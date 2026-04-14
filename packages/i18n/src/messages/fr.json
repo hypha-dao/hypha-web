@@ -1655,6 +1655,7 @@
     "composerAttachImage": "Photo ou image",
     "composerAttachVideo": "Vidéo",
     "composerAttachFile": "Fichier",
+    "composerDropPrompt": "Déposez des fichiers pour les joindre",
     "mentionNotAvailable": "Mentions (bientôt)",
     "composerVoiceRecord": "Enregistrer un message vocal",
     "composerVoiceStop": "Arrêter l’enregistrement",

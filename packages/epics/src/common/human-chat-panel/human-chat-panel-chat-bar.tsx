@@ -264,6 +264,8 @@ export function HumanChatPanelChatBar({
     top: number;
     left: number;
   } | null>(null);
+  const [composerDragDepth, setComposerDragDepth] = useState(0);
+  const isComposerDropActive = composerDragDepth > 0;
 
   const updateSelectionBar = useCallback(() => {
     const el = textareaRef.current;
@@ -704,8 +706,59 @@ export function HumanChatPanelChatBar({
         className={cn(
           'relative flex min-w-0 flex-col rounded-lg border border-border bg-muted/50',
           'transition-all duration-200 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20',
+          isComposerDropActive && 'border-primary/50 ring-2 ring-primary/25',
         )}
+        onDragEnter={(e) => {
+          if (
+            !onDraftAttachmentsChange ||
+            !e.dataTransfer?.types.includes('Files')
+          ) {
+            return;
+          }
+          e.preventDefault();
+          if (e.currentTarget.contains(e.relatedTarget as Node)) {
+            return;
+          }
+          setComposerDragDepth((d) => d + 1);
+        }}
+        onDragLeave={(e) => {
+          if (!onDraftAttachmentsChange) return;
+          if (e.currentTarget.contains(e.relatedTarget as Node)) {
+            return;
+          }
+          setComposerDragDepth((d) => Math.max(0, d - 1));
+        }}
+        onDragOver={(e) => {
+          if (
+            !onDraftAttachmentsChange ||
+            !e.dataTransfer?.types.includes('Files')
+          ) {
+            return;
+          }
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'copy';
+        }}
+        onDrop={(e) => {
+          if (!onDraftAttachmentsChange) {
+            return;
+          }
+          e.preventDefault();
+          setComposerDragDepth(0);
+          const files = e.dataTransfer?.files;
+          if (!files?.length) return;
+          pushDrafts(files, 'file');
+        }}
       >
+        {isComposerDropActive && (
+          <div
+            className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center rounded-lg bg-background/75 backdrop-blur-[2px]"
+            aria-hidden
+          >
+            <p className="rounded-md border border-primary/40 bg-popover/95 px-3 py-2 text-sm font-medium text-foreground shadow-sm">
+              {t('composerDropPrompt')}
+            </p>
+          </div>
+        )}
         {selectionBar && (
           <>
             <div
