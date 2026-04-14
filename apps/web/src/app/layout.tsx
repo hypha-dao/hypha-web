@@ -26,13 +26,16 @@ import { ConditionalMatrixProvider } from '@web/components/conditional-matrix-pr
 import { fileRouter } from '@hypha-platform/core/server';
 import { MenuTop, TooltipProvider } from '@hypha-platform/ui';
 import { ROOT_URL } from './constants';
-import { enableAiChat, enableHumanChat } from '@hypha-platform/feature-flags';
+import {
+  getEnableAiChat,
+  getEnableHumanChat,
+} from '@hypha-platform/feature-flags';
 import { NotificationSubscriber } from '@hypha-platform/notifications/client';
 
 import '@hypha-platform/ui-utils/global.css';
 import 'react-tooltip/dist/react-tooltip.css';
 import { ConnectedLanguageSelect } from '@web/components/connected-language-select';
-import { showLanguageSelect } from '@hypha-platform/feature-flags';
+import { getShowLanguageSelect } from '@hypha-platform/feature-flags';
 import ScrollUp from '@web/components/scroll-up';
 import SeamlessScrollPolyfill from '@web/components/seamless-scroll-polyfill';
 import '@web/utils/initialize-proxy';
@@ -95,7 +98,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const shouldInjectToolbar = process.env.NODE_ENV === 'development';
-  const isLanguageSelectVisible = await showLanguageSelect();
+  const isLanguageSelectVisible = await getShowLanguageSelect();
   const locale = await getLocale();
   const messages = await getMessages();
   const tNav = await getTranslations('Navigation');
@@ -103,8 +106,8 @@ export default async function RootLayout({
   const notificationAppId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ?? '';
   const safariWebId = process.env.NEXT_PUBLIC_ONESIGNAL_SAFARI_WEB_ID ?? '';
   const serviceWorkerPath = 'onesignal/OneSignalSDKWorker.js';
-  const aiChatEnabled = await enableAiChat();
-  const humanChatEnabled = await enableHumanChat();
+  const aiChatEnabled = await getEnableAiChat();
+  const humanChatEnabled = await getEnableHumanChat();
 
   return (
     <Html lang={locale} className={clsx(lato.variable, sourceSans.variable)}>

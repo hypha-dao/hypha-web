@@ -4,8 +4,8 @@ import {
   CoherenceOrder,
 } from '@hypha-platform/epics';
 import {
-  enableCoherence,
-  enableHumanChat,
+  getEnableCoherence,
+  getEnableHumanChat,
 } from '@hypha-platform/feature-flags';
 import { Locale } from '@hypha-platform/i18n';
 import { notFound } from 'next/navigation';
@@ -19,12 +19,12 @@ type PageProps = {
 };
 
 export default async function CoherencePage(props: PageProps) {
-  const coherenceEnabled = await enableCoherence();
+  const coherenceEnabled = await getEnableCoherence();
   if (!coherenceEnabled) {
     notFound();
   }
 
-  const humanChatEnabled = await enableHumanChat();
+  const humanChatEnabled = await getEnableHumanChat();
 
   const params = await props.params;
   const searchParams = await props.searchParams;
