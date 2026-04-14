@@ -425,17 +425,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
         let targetRoomId: string | null = canonicalRoomId || storedRoomId;
 
-        const ensureJoined = async (roomId: string) => {
-          await joinRoom(roomId);
-          const room = client?.getRoom(roomId);
+        const ensureJoined = async (roomIdOrAlias: string) => {
+          const canonicalId = await joinRoom(roomIdOrAlias);
+          const room = client?.getRoom(canonicalId);
           if (!room) {
             throw new Error('Room not available in Matrix client after join');
           }
+          return canonicalId;
         };
 
         if (targetRoomId) {
           try {
-            await ensureJoined(targetRoomId);
+            targetRoomId = await ensureJoined(targetRoomId);
           } catch (joinErr) {
             if (canonicalRoomId && targetRoomId === canonicalRoomId) {
               throw joinErr;
@@ -609,7 +610,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             );
           }
         } else {
-          await matrixRef.current.joinRoom(targetRoomId);
+          targetRoomId = await matrixRef.current.joinRoom(targetRoomId);
         }
 
         if (cancelled) return;

@@ -69,7 +69,7 @@ describe('buildSpaceMemoryItemsFromDocuments', () => {
     ];
     const rows = buildSpaceMemoryItemsFromDocuments(docs);
     expect(rows).toHaveLength(1);
-    expect(rows[0].id).toContain('attachment');
+    expect(rows[0]!.id).toContain('attachment');
   });
 
   it('sorts by updatedAt descending', () => {
@@ -86,8 +86,8 @@ describe('buildSpaceMemoryItemsFromDocuments', () => {
       }),
     ];
     const rows = buildSpaceMemoryItemsFromDocuments(docs);
-    expect(rows[0].url).toBe('https://a/new.png');
-    expect(rows[1].url).toBe('https://a/old.png');
+    expect(rows[0]!.url).toBe('https://a/new.png');
+    expect(rows[1]!.url).toBe('https://a/old.png');
   });
 
   it('classifies image from filename when URL has no extension (signed URL)', () => {
@@ -103,7 +103,7 @@ describe('buildSpaceMemoryItemsFromDocuments', () => {
     ];
     const rows = buildSpaceMemoryItemsFromDocuments(docs);
     expect(rows).toHaveLength(1);
-    expect(rows[0].kind).toBe('image');
+    expect(rows[0]!.kind).toBe('image');
   });
 
   it('skips non-http(s) attachment URLs', () => {
@@ -117,7 +117,7 @@ describe('buildSpaceMemoryItemsFromDocuments', () => {
     ];
     const rows = buildSpaceMemoryItemsFromDocuments(docs);
     expect(rows).toHaveLength(1);
-    expect(rows[0].url).toBe('https://cdn.example/ok.pdf');
+    expect(rows[0]!.url).toBe('https://cdn.example/ok.pdf');
   });
 
   it('accepts ISO date strings from JSON (fetch / NextResponse)', () => {
@@ -134,7 +134,7 @@ describe('buildSpaceMemoryItemsFromDocuments', () => {
       buildSpaceMemoryItemsFromDocuments(docs as Document[]),
     ).not.toThrow();
     const rows = buildSpaceMemoryItemsFromDocuments(docs as Document[]);
-    expect(rows[0].uploadedAt).toBe('2024-06-01T12:00:00.000Z');
+    expect(rows[0]!.uploadedAt).toBe('2024-06-01T12:00:00.000Z');
   });
 });
 
@@ -154,6 +154,6 @@ describe('filterSpaceMemoryItems', () => {
     ]);
     const filtered = filterSpaceMemoryItems(items, 'alpha');
     expect(filtered).toHaveLength(1);
-    expect(filtered[0].context.documentTitle).toBe('Alpha plan');
+    expect(filtered[0]!.context.documentTitle).toBe('Alpha plan');
   });
 });

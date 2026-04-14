@@ -49,6 +49,8 @@ export const ChatDetail = ({
     getRoomMembers,
   } = useMatrix();
 
+  const registeredMatrixRoomIdRef = React.useRef<string | null>(null);
+
   React.useEffect(() => {
     if (!isMatrixAvailable) {
       console.log('Matrix client is not initialized');
@@ -62,16 +64,18 @@ export const ChatDetail = ({
       return;
     }
 
-    const register = async (roomId: string) => {
+    const register = async (roomIdOrAlias: string) => {
+      let canonicalId = roomIdOrAlias;
       try {
-        await joinRoom(roomId);
+        canonicalId = await joinRoom(roomIdOrAlias);
+        registeredMatrixRoomIdRef.current = canonicalId;
 
         registerRoomListener(
-          roomId,
+          canonicalId,
           async (message: Message) => {
             setIsMessagesLoading(true);
             setMessages((prev) => [...prev, message]);
-            const members = await getRoomMembers(roomId);
+            const members = await getRoomMembers(canonicalId);
             setMembers(members);
             setIsMessagesLoading(false);
           },
@@ -88,15 +92,16 @@ export const ChatDetail = ({
         );
 
         setIsMessagesLoading(true);
-        const msgs = getRoomMessages(roomId);
+        const msgs = getRoomMessages(canonicalId);
         if (msgs) {
           setMessages(msgs);
         }
-        const roomMembers = await getRoomMembers(roomId);
+        const roomMembers = await getRoomMembers(canonicalId);
         setMembers(roomMembers);
         setIsMessagesLoading(false);
       } catch (error) {
-        unregisterRoomListener(roomId);
+        unregisterRoomListener(canonicalId);
+        registeredMatrixRoomIdRef.current = null;
         setIsMessagesLoading(false);
       }
     };
@@ -105,7 +110,9 @@ export const ChatDetail = ({
     register(rootId);
 
     return () => {
-      unregisterRoomListener(rootId);
+      const id = registeredMatrixRoomIdRef.current ?? rootId;
+      unregisterRoomListener(id);
+      registeredMatrixRoomIdRef.current = null;
     };
   }, [isMatrixAvailable, conversation?.roomId]);
 
