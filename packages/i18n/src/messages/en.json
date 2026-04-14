@@ -849,6 +849,7 @@
       "amountRequired": "Enter an amount to continue.",
       "tokenRequired": "Please select a token",
       "buyerSpaceTreasuryUnavailable": "Could not load the buyer space treasury. Wait for chain data and try again, or pick the buyer space again.",
+      "sellerSpaceTreasuryUnavailable": "Could not load the seller space treasury. Wait for chain data and try again, or pick the seller space again.",
       "atLeastOnePayoutRequired": "At least one payout is required",
       "purchaseAmountRequired": "Please enter a purchase amount.",
       "selectSpaceToActivate": "Please select a space to activate.",

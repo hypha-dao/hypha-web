@@ -196,7 +196,27 @@ const decayingTokenFactoryDeployLegacyAbi = [
   },
 ];
 
-const escrowCreateAbi = [
+/** Upgraded escrow: explicit party A + party B */
+const escrowCreateAbiV2 = [
+  {
+    type: 'function' as const,
+    name: 'createEscrow',
+    stateMutability: 'nonpayable' as const,
+    inputs: [
+      { name: '_partyA', type: 'address', internalType: 'address' },
+      { name: '_partyB', type: 'address', internalType: 'address' },
+      { name: '_tokenA', type: 'address', internalType: 'address' },
+      { name: '_tokenB', type: 'address', internalType: 'address' },
+      { name: '_amountA', type: 'uint256', internalType: 'uint256' },
+      { name: '_amountB', type: 'uint256', internalType: 'uint256' },
+      { name: '_sendFundsNow', type: 'bool', internalType: 'bool' },
+    ],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+  },
+] as const;
+
+/** Legacy escrow (party A implicit = msg.sender at deployment) */
+const escrowCreateAbiLegacy = [
   {
     type: 'function' as const,
     name: 'createEscrow',
@@ -211,7 +231,7 @@ const escrowCreateAbi = [
     ],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
   },
-];
+] as const;
 
 import {
   decayingSpaceTokenAbi,
@@ -395,14 +415,33 @@ export function decodeTransaction(tx: Tx) {
           : null,
     },
     {
-      abi: escrowCreateAbi,
+      abi: escrowCreateAbiV2,
       handler: (decoded, tx) =>
         decoded.functionName === 'createEscrow'
           ? {
               type: 'exchangeEscrow',
               data: {
-                /** Escrow contract that receives the `createEscrow` call (not a party). */
                 escrowContractAddress: tx.target,
+                partyA: decoded.args[0],
+                partyB: decoded.args[1],
+                tokenA: decoded.args[2],
+                tokenB: decoded.args[3],
+                amountA: decoded.args[4],
+                amountB: decoded.args[5],
+                sendFundsNow: decoded.args[6],
+              },
+            }
+          : null,
+    },
+    {
+      abi: escrowCreateAbiLegacy,
+      handler: (decoded, tx) =>
+        decoded.functionName === 'createEscrow'
+          ? {
+              type: 'exchangeEscrow',
+              data: {
+                escrowContractAddress: tx.target,
+                partyA: undefined,
                 partyB: decoded.args[0],
                 tokenA: decoded.args[1],
                 tokenB: decoded.args[2],
@@ -434,23 +473,6 @@ export function decodeTransaction(tx: Tx) {
                 rawAmount: decoded.args[1],
                 token: tx.target,
                 value: tx.value,
-              },
-            }
-          : null,
-    },
-    {
-      abi: escrowCreateAbi,
-      handler: (decoded) =>
-        decoded.functionName === 'createEscrow'
-          ? {
-              type: 'exchangeEscrow',
-              data: {
-                partyB: decoded.args[0],
-                tokenA: decoded.args[1],
-                tokenB: decoded.args[2],
-                amountA: decoded.args[3],
-                amountB: decoded.args[4],
-                sendFundsNow: decoded.args[5],
               },
             }
           : null,

@@ -48,6 +48,7 @@
       "amountRequired": "Ingresa un monto para continuar.",
       "tokenRequired": "Selecciona un token",
       "buyerSpaceTreasuryUnavailable": "No se pudo cargar la tesorería del espacio comprador. Espera a que carguen los datos de la cadena e inténtalo de nuevo, o vuelve a elegir el espacio comprador.",
+      "sellerSpaceTreasuryUnavailable": "No se pudo cargar la tesorería del espacio vendedor. Espera a que carguen los datos de la cadena e inténtalo de nuevo, o vuelve a elegir el espacio vendedor.",
       "atLeastOnePayoutRequired": "Se requiere al menos un pago",
       "purchaseAmountRequired": "Ingresa un monto de compra.",
       "selectSpaceToActivate": "Selecciona un espacio para activar.",

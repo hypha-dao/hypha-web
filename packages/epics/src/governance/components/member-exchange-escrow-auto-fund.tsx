@@ -44,6 +44,7 @@ export function MemberExchangeEscrowAutoFund({
   executed,
   parsedExchange,
   buyerPartyBForEscrow,
+  sellerPartyAForEscrow,
 }: {
   documentSlug: string;
   description?: string | null;
@@ -51,6 +52,8 @@ export function MemberExchangeEscrowAutoFund({
   parsedExchange: ParsedExchangeDetails | null;
   /** When buyer is a space, treasury executor address used as escrow party B */
   buyerPartyBForEscrow?: string | null;
+  /** When seller is a space, treasury executor used as escrow party A */
+  sellerPartyAForEscrow?: string | null;
 }) {
   const t = useTranslations('AgreementFlow.plugins.exchangeStakesAndTokens');
   const { jwt } = useJwt();
@@ -110,6 +113,7 @@ export function MemberExchangeEscrowAutoFund({
         const escrowIds = await fundRef.current({
           sellerAddress: parsedExchange.sellerAddress!,
           buyerAddress: parsedExchange.buyerAddress!,
+          sellerPartyAForEscrow: sellerPartyAForEscrow ?? undefined,
           buyerPartyBForEscrow: buyerPartyBForEscrow ?? undefined,
           sellerLeg: toFundingLeg(parsedExchange.sellerLeg),
           buyerLeg: toFundingLeg(parsedExchange.buyerLeg),
@@ -155,6 +159,7 @@ export function MemberExchangeEscrowAutoFund({
     parsedExchange,
     router,
     buyerPartyBForEscrow,
+    sellerPartyAForEscrow,
   ]);
 
   if (!deferred) return null;

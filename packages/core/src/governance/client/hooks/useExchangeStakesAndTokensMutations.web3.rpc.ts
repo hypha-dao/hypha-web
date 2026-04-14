@@ -45,6 +45,8 @@ interface CreateExchangeStakesAndTokensInput {
   spaceId: number;
   sellerAddress: string;
   buyerAddress: string;
+  /** Escrow party A — must match msg.sender when funding seller leg now (space = treasury executor) */
+  sellerPartyAForEscrow: string;
   /** On-chain escrow party B (buyer space = treasury executor, not space contract) */
   buyerPartyBForEscrow: string;
   sellerLeg: ExchangeLegInput[];
@@ -59,6 +61,7 @@ const escrowCreateAbi = [
     name: 'createEscrow',
     stateMutability: 'nonpayable',
     inputs: [
+      { name: '_partyA', type: 'address', internalType: 'address' },
       { name: '_partyB', type: 'address', internalType: 'address' },
       { name: '_tokenA', type: 'address', internalType: 'address' },
       { name: '_tokenB', type: 'address', internalType: 'address' },
@@ -175,6 +178,7 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
                 abi: escrowCreateAbi,
                 functionName: 'createEscrow',
                 args: [
+                  arg.sellerPartyAForEscrow as `0x${string}`,
                   arg.buyerPartyBForEscrow as `0x${string}`,
                   sellerRow.token as `0x${string}`,
                   buyerRow.token as `0x${string}`,

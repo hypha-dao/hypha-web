@@ -52,9 +52,11 @@ import { useDbSpaces } from '../../hooks';
 import { hasUpdateTokenDataToDisplay } from '../utils/has-update-token-data-to-display';
 import {
   parseExchangeBuyerSettlementAddressFromDescription,
+  parseExchangeSellerSettlementAddressFromDescription,
   parseExchangeDetailsFromDescription,
   parseExchangeEscrowIdFromDescription,
   stripExchangeBuyerSettlementComment,
+  stripExchangeSellerSettlementComment,
   stripExchangeEscrowIdComment,
   stripExchangeDetailsBlock,
 } from '../../governance/utils';
@@ -416,14 +418,21 @@ export const ProposalDetail = ({
     parseExchangeEscrowIdFromDescription(content);
   const contentWithoutExchangeDetails = useMemo(() => {
     if (!content) return content;
-    return stripExchangeBuyerSettlementComment(
-      stripExchangeEscrowIdComment(stripExchangeDetailsBlock(content)),
+    return stripExchangeSellerSettlementComment(
+      stripExchangeBuyerSettlementComment(
+        stripExchangeEscrowIdComment(stripExchangeDetailsBlock(content)),
+      ),
     );
   }, [content]);
 
   const buyerPartyBForEscrow = useMemo(() => {
     if (!content) return undefined;
     return parseExchangeBuyerSettlementAddressFromDescription(content);
+  }, [content]);
+
+  const sellerPartyAForEscrow = useMemo(() => {
+    if (!content) return undefined;
+    return parseExchangeSellerSettlementAddressFromDescription(content);
   }, [content]);
 
   const fallbackSellerAddress = proposalDetails?.exchangeEscrowData?.partyA;
@@ -761,6 +770,7 @@ export const ProposalDetail = ({
                 parsedExchange: parsedExchangeDetails,
                 spaceExecutorAddress: spaceDetails?.executor ?? null,
                 buyerPartyBForEscrow: buyerPartyBForEscrow ?? null,
+                sellerPartyAForEscrow: sellerPartyAForEscrow ?? null,
               }
             : undefined
         }

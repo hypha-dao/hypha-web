@@ -48,6 +48,7 @@
       "amountRequired": "Insira um valor para continuar.",
       "tokenRequired": "Selecione um token",
       "buyerSpaceTreasuryUnavailable": "Não foi possível carregar a tesouraria do espaço comprador. Aguarde os dados da cadeia e tente novamente, ou selecione novamente o espaço comprador.",
+      "sellerSpaceTreasuryUnavailable": "Não foi possível carregar a tesouraria do espaço vendedor. Aguarde os dados da cadeia e tente novamente, ou selecione novamente o espaço vendedor.",
       "chooseTokenToBurn": "Escolha um token para queimar",
       "atLeastOneBurnTargetRequired": "É necessário pelo menos um destino de queima",
       "atLeastOnePayoutRequired": "Pelo menos um pagamento é obrigatório",

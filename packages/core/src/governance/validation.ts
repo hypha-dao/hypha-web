@@ -788,14 +788,25 @@ export const schemaExchangeStakesAndTokens = z
       .min(1, { message: 'Please add at least one buyer token row' }),
   })
   .superRefine((data, ctx) => {
-    if (data.buyerRecipientType !== 'space') return;
-    const exec = data.buyerExecutorAddressForSettlement?.trim();
-    if (!exec || !isAddress(exec)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Buyer space treasury is unavailable',
-        path: ['buyerAddress'],
-      });
+    if (data.buyerRecipientType === 'space') {
+      const exec = data.buyerExecutorAddressForSettlement?.trim();
+      if (!exec || !isAddress(exec)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Buyer space treasury is unavailable',
+          path: ['buyerAddress'],
+        });
+      }
+    }
+    if (data.sellerRecipientType === 'space') {
+      const exec = data.spaceExecutorAddress?.trim();
+      if (!exec || !isAddress(exec)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Seller space treasury is unavailable',
+          path: ['sellerAddress'],
+        });
+      }
     }
   });
 

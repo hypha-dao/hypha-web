@@ -39,6 +39,8 @@ const EXCHANGE_DETAILS_START = '<!-- exchange-details:start -->';
 const EXCHANGE_DETAILS_END = '<!-- exchange-details:end -->';
 const BUYER_SETTLEMENT_PREFIX = '<!-- exchange-buyer-settlement:';
 const BUYER_SETTLEMENT_SUFFIX = '-->';
+const SELLER_SETTLEMENT_PREFIX = '<!-- exchange-seller-settlement:';
+const SELLER_SETTLEMENT_SUFFIX = '-->';
 
 const upsertExchangeDetailsSection = (
   description: string,
@@ -177,12 +179,17 @@ export const CreateExchangeStakesAndTokensForm = ({
       data.buyerExecutorAddressForSettlement?.trim()
         ? `${BUYER_SETTLEMENT_PREFIX}${data.buyerExecutorAddressForSettlement.trim()}${BUYER_SETTLEMENT_SUFFIX}`
         : '';
+    const sellerSettlementMarker =
+      data.sellerRecipientType === 'space' && data.spaceExecutorAddress?.trim()
+        ? `${SELLER_SETTLEMENT_PREFIX}${data.spaceExecutorAddress.trim()}${SELLER_SETTLEMENT_SUFFIX}`
+        : '';
 
     const exchangeDetailsSection = [
       EXCHANGE_DETAILS_START,
       ...(data.sellerRecipientType === 'member'
         ? ['<!-- exchange-funding:deferred -->', '']
         : []),
+      ...(sellerSettlementMarker ? [sellerSettlementMarker, ''] : []),
       ...(buyerSettlementMarker ? [buyerSettlementMarker, ''] : []),
       `### ${tAgreementFlow('labels.exchange')}`,
       '',
@@ -214,10 +221,15 @@ export const CreateExchangeStakesAndTokensForm = ({
       data.buyerExecutorAddressForSettlement?.trim()
         ? data.buyerExecutorAddressForSettlement.trim()
         : data.buyerAddress;
+    const sellerPartyAForEscrow =
+      data.sellerRecipientType === 'space' && data.spaceExecutorAddress?.trim()
+        ? data.spaceExecutorAddress.trim()
+        : data.sellerAddress;
 
     try {
       await createExchangeStakesAndTokens({
         ...createPayload,
+        sellerPartyAForEscrow,
         buyerPartyBForEscrow,
         description: upsertExchangeDetailsSection(
           data.description,

@@ -403,10 +403,11 @@ export const useProposalDetailsWeb3Rpc = ({
         case 'exchangeEscrow': {
           const escrowFromTx = decoded.data.escrowContractAddress as string;
           const nextEscrowIndex = exchangeEscrowData.escrows.length + 1;
+          const partyAFromCall = decoded.data.partyA as string | undefined;
           const nextEscrow = {
             index: nextEscrowIndex,
             creator: creator as string,
-            partyA: creator as string,
+            partyA: (partyAFromCall ?? creator) as string,
             partyB: decoded.data.partyB as string,
             tokenA: decoded.data.tokenA as string,
             tokenB: decoded.data.tokenB as string,

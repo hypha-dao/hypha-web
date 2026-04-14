@@ -18,6 +18,7 @@ import { useFormatter, useTranslations } from 'next-intl';
 import { stripExchangeDetailsBlock } from '../utils/strip-exchange-details-block';
 import { stripExchangeEscrowIdComment } from '../utils/exchange-escrow-id-in-description';
 import { stripExchangeBuyerSettlementComment } from '../utils/exchange-buyer-settlement-in-description';
+import { stripExchangeSellerSettlementComment } from '../utils/exchange-seller-settlement-in-description';
 
 interface Document {
   id?: number;
@@ -52,8 +53,10 @@ function stripHtmlComments(text: string): string {
 
 function stripDescription(description: string): string {
   if (!description) return '';
-  const withoutExchangeMetadata = stripExchangeBuyerSettlementComment(
-    stripExchangeEscrowIdComment(stripExchangeDetailsBlock(description)),
+  const withoutExchangeMetadata = stripExchangeSellerSettlementComment(
+    stripExchangeBuyerSettlementComment(
+      stripExchangeEscrowIdComment(stripExchangeDetailsBlock(description)),
+    ),
   );
   return stripHtmlComments(withoutExchangeMetadata)
     .replace(/\\([\[\]\(\)\{\}])/g, '$1')

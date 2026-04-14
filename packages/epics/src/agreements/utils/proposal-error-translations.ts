@@ -36,6 +36,8 @@ const PROPOSAL_ERROR_KEY_MAP: Record<string, string> = {
   'Please select a token': 'proposalErrors.tokenRequired',
   'Buyer space treasury is unavailable':
     'proposalErrors.buyerSpaceTreasuryUnavailable',
+  'Seller space treasury is unavailable':
+    'proposalErrors.sellerSpaceTreasuryUnavailable',
   'Amount is required': 'proposalErrors.amountRequired',
   'Token is required': 'proposalErrors.tokenRequired',
   'At least one payout is required': 'proposalErrors.atLeastOnePayoutRequired',
