@@ -1779,7 +1779,7 @@
   },
   "CoherenceTab": {
     "signals": "Señales",
-    "signInToSee": "Por favor, inicie sesión para ver señales y conversaciones",
+    "signInToSee": "Por favor, inicie sesión para ver señales, la memoria del espacio y conversaciones",
     "searchSignals": "Buscar señales...",
     "improve": "Mejorar",
     "newSignal": "Nueva señal",
@@ -1820,6 +1820,23 @@
     "archiveConfirm": "¿Realmente desea archivar esta conversación?",
     "yesArchive": "Sí, archivar",
     "errorCoherenceTab": "Vaya, algo salió mal. No se pudo cargar la pestaña de coherencia.",
+    "spaceMemory": "Memoria del espacio",
+    "searchSpaceMemory": "Buscar en la memoria del espacio...",
+    "spaceMemoryLoading": "Cargando archivos…",
+    "spaceMemoryEmpty": "Aún no hay archivos subidos. Los adjuntos en propuestas y acuerdos aparecen aquí.",
+    "spaceMemoryEmptySearch": "Ningún archivo coincide con tu búsqueda.",
+    "spaceMemoryError": "No se pudo cargar la memoria del espacio.",
+    "spaceMemoryRetry": "Reintentar",
+    "spaceMemoryRefresh": "Actualizar",
+    "spaceMemoryTimelineLabel": "Historial de memoria del espacio",
+    "spaceMemoryContext": "De «{title}» · {state}",
+    "spaceMemoryOpenAsset": "Abrir {name}",
+    "untitledDocument": "Documento sin título",
+    "documentStates": {
+      "discussion": "Discusión",
+      "proposal": "Propuesta",
+      "agreement": "Acuerdo"
+    },
     "types": {
       "Opportunity": "Oportunidad",
       "Risk": "Riesgo",

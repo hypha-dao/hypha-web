@@ -1770,7 +1770,7 @@
   },
   "CoherenceTab": {
     "signals": "Signaux",
-    "signInToSee": "Veuillez vous connecter pour voir les signaux et les conversations",
+    "signInToSee": "Veuillez vous connecter pour voir les signaux, la mémoire de l'espace et les conversations",
     "searchSignals": "Rechercher des signaux...",
     "improve": "Améliorer",
     "newSignal": "Nouveau signal",
@@ -1811,6 +1811,23 @@
     "archiveConfirm": "Voulez-vous vraiment archiver cette conversation ?",
     "yesArchive": "Oui, archiver",
     "errorCoherenceTab": "Oups, quelque chose s'est mal passé. Impossible de charger l'onglet cohérence.",
+    "spaceMemory": "Mémoire de l'espace",
+    "searchSpaceMemory": "Rechercher dans la mémoire de l'espace...",
+    "spaceMemoryLoading": "Chargement des fichiers…",
+    "spaceMemoryEmpty": "Aucun fichier téléchargé pour l'instant. Les pièces jointes des propositions et accords apparaissent ici.",
+    "spaceMemoryEmptySearch": "Aucun fichier ne correspond à votre recherche.",
+    "spaceMemoryError": "Impossible de charger la mémoire de l'espace.",
+    "spaceMemoryRetry": "Réessayer",
+    "spaceMemoryRefresh": "Actualiser",
+    "spaceMemoryTimelineLabel": "Historique de la mémoire de l'espace",
+    "spaceMemoryContext": "Depuis «{title}» · {state}",
+    "spaceMemoryOpenAsset": "Ouvrir {name}",
+    "untitledDocument": "Document sans titre",
+    "documentStates": {
+      "discussion": "Discussion",
+      "proposal": "Proposition",
+      "agreement": "Accord"
+    },
     "types": {
       "Opportunity": "Opportunité",
       "Risk": "Risque",

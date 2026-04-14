@@ -9,3 +9,4 @@ export * from './events';
 export * from './notifications';
 export * from './matrix';
 export * from './coherence';
+export * from './org-memory';
