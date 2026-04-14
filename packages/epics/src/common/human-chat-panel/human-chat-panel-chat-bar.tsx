@@ -709,13 +709,13 @@ export function HumanChatPanelChatBar({
           isComposerDropActive && 'border-primary/50 ring-2 ring-primary/25',
         )}
         onDragEnter={(e) => {
-          if (
-            !onDraftAttachmentsChange ||
-            !e.dataTransfer?.types.includes('Files')
-          ) {
+          if (!e.dataTransfer?.types.includes('Files')) {
             return;
           }
           e.preventDefault();
+          if (!onDraftAttachmentsChange) {
+            return;
+          }
           if (e.currentTarget.contains(e.relatedTarget as Node)) {
             return;
           }
@@ -729,21 +729,24 @@ export function HumanChatPanelChatBar({
           setComposerDragDepth((d) => Math.max(0, d - 1));
         }}
         onDragOver={(e) => {
-          if (
-            !onDraftAttachmentsChange ||
-            !e.dataTransfer?.types.includes('Files')
-          ) {
+          if (!e.dataTransfer?.types.includes('Files')) {
             return;
           }
           e.preventDefault();
+          if (!onDraftAttachmentsChange) {
+            return;
+          }
           e.dataTransfer.dropEffect = 'copy';
         }}
         onDrop={(e) => {
-          if (!onDraftAttachmentsChange) {
+          if (!e.dataTransfer?.types.includes('Files')) {
             return;
           }
           e.preventDefault();
           setComposerDragDepth(0);
+          if (!onDraftAttachmentsChange) {
+            return;
+          }
           const files = e.dataTransfer?.files;
           if (!files?.length) return;
           pushDrafts(files, 'file');

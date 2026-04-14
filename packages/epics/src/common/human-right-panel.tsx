@@ -139,9 +139,15 @@ function toUIMessage(
 
   const isMedia = msg.msgtype === 'm.file' || msg.msgtype === 'm.image';
 
+  const strippedMediaBody = isMedia
+    ? stripMatrixReplyFallback(msg.content).trim()
+    : '';
+  const mediaFilenameForCaption = (msg.filename ?? msg.content).trim();
   const captionForMedia =
-    isMedia && msg.content.trim().length > 0
-      ? stripMatrixReplyFallback(msg.content).trim()
+    isMedia &&
+    strippedMediaBody.length > 0 &&
+    strippedMediaBody !== mediaFilenameForCaption
+      ? strippedMediaBody
       : '';
 
   let replyTo: UIMessage['replyTo'];
@@ -201,7 +207,8 @@ function toUIMessage(
       : [{ type: 'text', text: msg.content }],
     media,
     mediaSlots,
-    formattedContentHtml: msg.formattedContentHtml,
+    formattedContentHtml:
+      isMedia && !captionForMedia ? undefined : msg.formattedContentHtml,
     senderName: isCurrentUser ? undefined : resolveMemberLabel(msg.sender),
     senderMatrixId: msg.sender,
     avatarUrl: isCurrentUser ? currentUserAvatarUrl : undefined,
