@@ -19,6 +19,7 @@ export type GetOrgMemoryBySpaceSlugInput = z.infer<
 const orgMemoryAssetSchema = z.object({
   source: z.enum(['proposal_upload', 'matrix_chat']),
   filename: z.string(),
+  asset_key: z.string().optional(),
   mime: z.string().optional(),
   app_url: z.string().optional(),
   mxc_uri: z.string().optional(),

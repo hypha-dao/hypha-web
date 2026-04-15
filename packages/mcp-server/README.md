@@ -1,10 +1,10 @@
 # `@hypha-platform/mcp-server`
 
-Stdio [Model Context Protocol](https://modelcontextprotocol.io) server exposing Hypha read tools (e.g. `get_people_by_space_slug`, `get_org_memory_by_space_slug`, `get_documents_by_space_slug`). Spec: `docs/requirements/mcp-get-org-memory-by-space-slug-tech-spec.md`.
+Stdio [Model Context Protocol](https://modelcontextprotocol.io) server exposing Hypha read tools (e.g. `get_people_by_space_slug`, `get_org_memory_by_space_slug`, `fetch_org_memory_asset`, `get_documents_by_space_slug`). Spec: `docs/requirements/mcp-get-org-memory-by-space-slug-tech-spec.md`.
 
 ## Security and access control
 
-`get_people_by_space_slug`, **`get_org_memory_by_space_slug`**, and **`get_documents_by_space_slug`** call **`checkSpaceAccessForSpace`** in `@hypha-platform/core/server` (same transparency / membership rules as the web app) when the space exists in the database and has a **`web3SpaceId`**. Provide a **Privy JWT** (same kind the web client sends) via:
+`get_people_by_space_slug`, **`get_org_memory_by_space_slug`**, **`fetch_org_memory_asset`**, and **`get_documents_by_space_slug`** call **`checkSpaceAccessForSpace`** in `@hypha-platform/core/server` (same transparency / membership rules as the web app) when the space exists in the database and has a **`web3SpaceId`**. Provide a **Privy JWT** (same kind the web client sends) via:
 
 - **`HYPHA_MCP_AUTH_TOKEN`** — bearer token used to resolve the caller’s identity for non-public spaces.
 
@@ -40,4 +40,5 @@ Add the server to your MCP host (e.g. Cursor **Settings → MCP** or `.cursor/mc
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | `get_people_by_space_slug` | Members of a space by slug (people + space-as-members), aligned with `getSpaceMembersRoster` in `@hypha-platform/core`. |
 | `get_documents_by_space_slug` | Documents in a space by slug (DB `documents` + creator), paginated search/filter; uses `getDocumentsBySpaceSlug` in `@hypha-platform/core`. |
-| `get_org_memory_by_space_slug` | Org memory: roster + `org_memory_assets` (proposal attachments from documents; Matrix chat files when `HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN` + `NEXT_PUBLIC_MATRIX_HOMESERVER_URL` are set). Optional `assets_page`, `assets_page_size`, `assets_search`. |
+| `get_org_memory_by_space_slug` | Org memory: roster + `org_memory_assets` (each row includes `asset_key` when fetchable). Proposal attachments from documents; Matrix chat files when Matrix env + room are set. Optional `assets_page`, `assets_page_size`, `assets_search`. |
+| `fetch_org_memory_asset` | Fetch one asset by `space_slug` + `asset_key`: text/PDF extraction or base64 images (see spec §2.3). Same access token rules; optional `return_mode`, `max_bytes`. |

@@ -19,11 +19,14 @@ import {
   HYPHA_MEDIA_BUNDLE_FIELD,
   type HyphaMediaBundleItemWire,
 } from '../../matrix/rich-reply';
+import { withOrgMemoryAssetKeys } from '../../org-memory/with-org-memory-asset-keys';
 
 /** Aligned with MCP §8.1 / architecture org memory rows. */
 export type OrgMemoryAsset = {
   source: 'proposal_upload' | 'matrix_chat';
   filename: string;
+  /** Opaque key for `fetch_org_memory_asset` (MCP / Chat). */
+  asset_key?: string;
   mime?: string;
   app_url?: string;
   mxc_uri?: string;
@@ -352,7 +355,7 @@ function extractMediaFromMessageEvent(
   }
 }
 
-async function fetchMatrixChatAssets(
+export async function fetchMatrixChatAssets(
   matrixRoomId: string,
   options?: {
     authToken?: string;
@@ -690,6 +693,7 @@ export async function getOrgMemoryBySpaceSlug(
   const totalPages = total === 0 ? 0 : Math.ceil(total / safeAssetsPageSize);
   const offset = (safeAssetsPage - 1) * safeAssetsPageSize;
   const pageSlice = combined.slice(offset, offset + safeAssetsPageSize);
+  const assetsWithKeys = withOrgMemoryAssetKeys(pageSlice);
 
   return {
     access: 'ok',
@@ -701,7 +705,7 @@ export async function getOrgMemoryBySpaceSlug(
       source_chain,
       asOf,
       members: roster.members,
-      org_memory_assets: pageSlice,
+      org_memory_assets: assetsWithKeys,
       matrix_fetch: matrixFetchMeta,
       pagination: roster.pagination,
       assets_pagination: {

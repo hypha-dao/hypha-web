@@ -8,4 +8,10 @@ export type ChatRouteTool<TSchema extends z.ZodTypeAny = z.ZodTypeAny> = {
   description: string;
   inputSchema: TSchema;
   execute: (args: z.infer<TSchema>) => Promise<unknown>;
+  /** AI SDK: map tool JSON to multimodal model parts (e.g. image-data). */
+  toModelOutput?: (options: {
+    toolCallId: string;
+    input: z.infer<TSchema>;
+    output: unknown;
+  }) => unknown;
 };

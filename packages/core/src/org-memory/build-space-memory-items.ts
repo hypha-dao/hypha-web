@@ -26,6 +26,7 @@ export type SpaceMemoryItem = {
 export type OrgMemoryAssetWire = {
   source: 'proposal_upload' | 'matrix_chat';
   filename: string;
+  asset_key?: string;
   mime?: string;
   app_url?: string;
   mxc_uri?: string;
