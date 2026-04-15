@@ -37,6 +37,8 @@ type UIMessage = {
   replyTo?: {
     authorLabel: string;
     excerpt?: string;
+    /** Matrix MXID of quoted author (for avatar refresh). */
+    sourceUserId?: string;
     authorAvatarUrl?: string;
   };
 };
@@ -46,6 +48,7 @@ type HumanChatPanelMessagesProps = {
   isStreaming?: boolean;
   roomId?: string | null;
   currentUserId?: string | null;
+  currentUserAvatarUrl?: string | null;
   onReply?: (messageId: string) => void;
   onEditMessage?: (messageId: string) => void;
   onDeleteMessage?: (messageId: string) => void | Promise<void>;
@@ -59,6 +62,7 @@ export function HumanChatPanelMessages({
   isStreaming = false,
   roomId,
   currentUserId,
+  currentUserAvatarUrl,
   onReply,
   onEditMessage,
   onDeleteMessage,
@@ -142,6 +146,7 @@ export function HumanChatPanelMessages({
               message={msg}
               roomId={roomId}
               currentUserId={currentUserId}
+              currentUserAvatarUrl={currentUserAvatarUrl}
               resolveReactionReactorLabel={resolveReactionReactorLabel}
               isActionBarVisible={isActionBarVisible}
               onRowPointerEnter={() => {

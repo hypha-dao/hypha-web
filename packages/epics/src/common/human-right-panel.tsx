@@ -206,11 +206,24 @@ function toUIMessage(
       msg.inReplyToBodyPreview != null && msg.inReplyToBodyPreview !== ''
         ? msg.inReplyToBodyPreview
         : undefined;
+    const replyAuthorId = msg.inReplyToSender;
+    const replyAvatar =
+      currentUserId &&
+      replyAuthorId &&
+      replyAuthorId === currentUserId &&
+      currentUserAvatarUrl
+        ? currentUserAvatarUrl
+        : matrixMemberAvatarSquare(
+            clientForAvatars ?? null,
+            roomIdForAvatars ?? null,
+            replyAuthorId,
+            64,
+          ) ?? resolveAvatarForUser(replyAuthorId);
     replyTo = {
       authorLabel,
       excerpt,
       sourceUserId: msg.inReplyToSender,
-      authorAvatarUrl: resolveAvatarForUser(msg.inReplyToSender),
+      authorAvatarUrl: replyAvatar,
     };
   }
 
@@ -475,12 +488,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 ...m.replyTo,
                 authorLabel: newAuthorLabel ?? m.replyTo.authorLabel,
                 authorAvatarUrl:
-                  matrixMemberAvatarSquare(
-                    matrixClientRef.current,
-                    roomIdRef.current,
-                    m.replyTo.sourceUserId,
-                    64,
-                  ) ?? m.replyTo.authorAvatarUrl,
+                  currentUserIdRef.current &&
+                  m.replyTo.sourceUserId === currentUserIdRef.current &&
+                  currentUserAvatarUrlRef.current
+                    ? currentUserAvatarUrlRef.current
+                    : matrixMemberAvatarSquare(
+                        matrixClientRef.current,
+                        roomIdRef.current,
+                        m.replyTo.sourceUserId,
+                        64,
+                      ) ?? m.replyTo.authorAvatarUrl,
               }
             : m.replyTo;
 
@@ -1248,6 +1265,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 messages={mergedMessages}
                 roomId={roomId}
                 currentUserId={currentUserId}
+                currentUserAvatarUrl={currentUserAvatarUrl}
                 onReply={handleReplyToMessage}
                 onEditMessage={handleEditMessage}
                 onDeleteMessage={handleDeleteMessage}

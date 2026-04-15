@@ -673,6 +673,8 @@ type HumanChatPanelMessageBubbleProps = {
   roomId?: string | null;
   /** Logged-in Matrix user id (delete permission + recent reactions). */
   currentUserId?: string | null;
+  /** Profile URL for current user (reply header when quoting self). */
+  currentUserAvatarUrl?: string | null;
   message: {
     id: string;
     role: 'user' | 'member';
@@ -698,6 +700,7 @@ type HumanChatPanelMessageBubbleProps = {
       authorLabel: string;
       /** When omitted, UI shows “original unavailable” */
       excerpt?: string;
+      sourceUserId?: string;
       authorAvatarUrl?: string;
     };
   };
@@ -877,17 +880,18 @@ function renderTextWithMentions(text: string): React.ReactNode[] {
  * Reply thread line: from top-center of main avatar up into the reply row,
  * then curves toward the quoted author avatar (coordinates tuned for w-10 + pl-[52px] layout).
  */
+/** Connector from main avatar (bottom) up to quoted author chip; tuned for w-10 + reply row layout. */
 function ChatReplyConnector() {
   return (
     <svg
       className="pointer-events-none absolute left-1/2 z-0 -translate-x-1/2 overflow-visible text-muted-foreground/40"
       width="48"
-      height="36"
-      viewBox="0 0 48 36"
+      height="52"
+      viewBox="0 0 48 52"
       aria-hidden
     >
       <path
-        d="M 24 36 L 24 14 C 24 8 26 5 31 4.5 L 44 4.5"
+        d="M 24 52 L 24 18 C 24 10 26 6 32 5.5 L 44 5.5"
         fill="none"
         stroke="currentColor"
         strokeWidth="1.25"
@@ -922,6 +926,7 @@ export function HumanChatPanelMessageBubble({
   isStreaming,
   roomId,
   currentUserId,
+  currentUserAvatarUrl,
   onReply,
   onEdit,
   onDeleteMessage,
@@ -1014,58 +1019,35 @@ export function HumanChatPanelMessageBubble({
     reactions.length - MAX_VISIBLE_REACTIONS,
   );
 
+  const replyHeaderAvatar =
+    replyTo &&
+    currentUserId &&
+    replyTo.sourceUserId &&
+    replyTo.sourceUserId === currentUserId
+      ? currentUserAvatarUrl ?? replyTo.authorAvatarUrl
+      : replyTo?.authorAvatarUrl;
+
   const row = (moreSlot: ReactNode | null) => (
     <div
       data-matrix-event-id={message.id}
       data-testid="chat-message"
       className={cn(
-        'group relative -mx-3 flex flex-col gap-1 rounded-sm px-3 py-0.5 transition-colors',
+        'group relative -mx-3 flex flex-col rounded-sm px-3 py-0.5 transition-colors',
         /* Discord-style row tint: hover (primary) + focus-within for keyboard/reactions */
         'hover:bg-muted/60 focus-within:bg-muted/60',
       )}
       onPointerEnter={onRowPointerEnter}
       onPointerLeave={onRowPointerLeave}
     >
-      {replyTo && (
-        <div
-          data-testid="chat-message-reply-context"
-          className="flex min-h-[22px] items-center gap-1.5 pl-[52px]"
-        >
-          <PersonAvatar
-            size="reply"
-            shape="circle"
-            avatarSrc={replyTo.authorAvatarUrl}
-            userName={replyTo.authorLabel}
-          />
-          <p className="flex min-w-0 flex-1 items-baseline gap-1 truncate text-xs leading-tight text-muted-foreground">
-            <span className="shrink-0 font-semibold text-muted-foreground">
-              {replyTo.authorLabel.startsWith('@')
-                ? replyTo.authorLabel
-                : `@${replyTo.authorLabel}`}
-            </span>
-            {replyTo.excerpt != null && replyTo.excerpt !== '' ? (
-              <span className="min-w-0 truncate font-normal">
-                {replyTo.excerpt}
-              </span>
-            ) : (
-              <span className="italic">{t('replyOriginalUnavailable')}</span>
-            )}
-          </p>
-        </div>
-      )}
-
       <div className="flex items-start gap-3">
-        {/* Avatar: circle; top aligns with sender name row (same as non-reply rows) */}
+        {/* Main avatar: top-aligned with sender name; connector spans up to reply row */}
         <div
-          className={cn(
-            'relative flex w-10 shrink-0 flex-col items-center',
-            replyTo ? 'pt-[1.625rem]' : 'pt-0.5',
-          )}
+          className="relative flex w-10 shrink-0 flex-col items-center pt-0.5"
           data-testid="chat-message-avatar"
         >
           {replyTo && (
             <div className="pointer-events-none absolute left-1/2 top-0 z-0 -translate-x-1/2">
-              <div className="relative -top-[calc(1.375rem+0.25rem)] h-[calc(1.375rem+0.25rem+2.25rem)] w-10 overflow-visible">
+              <div className="relative h-[44px] w-10 overflow-visible pt-0.5">
                 <ChatReplyConnector />
               </div>
             </div>
@@ -1082,6 +1064,35 @@ export function HumanChatPanelMessageBubble({
 
         {/* Content */}
         <div className="flex min-w-0 flex-1 flex-col">
+          {replyTo && (
+            <div
+              data-testid="chat-message-reply-context"
+              className="mb-1 flex min-h-[22px] items-center gap-1.5"
+            >
+              <PersonAvatar
+                size="sm"
+                shape="circle"
+                avatarSrc={replyHeaderAvatar}
+                userName={replyTo.authorLabel}
+              />
+              <p className="flex min-w-0 flex-1 items-baseline gap-1 truncate text-xs leading-tight text-muted-foreground">
+                <span className="shrink-0 font-semibold text-muted-foreground">
+                  {replyTo.authorLabel.startsWith('@')
+                    ? replyTo.authorLabel
+                    : `@${replyTo.authorLabel}`}
+                </span>
+                {replyTo.excerpt != null && replyTo.excerpt !== '' ? (
+                  <span className="min-w-0 truncate font-normal">
+                    {replyTo.excerpt}
+                  </span>
+                ) : (
+                  <span className="italic">
+                    {t('replyOriginalUnavailable')}
+                  </span>
+                )}
+              </p>
+            </div>
+          )}
           {/* Name + Timestamp */}
           <div className="flex items-baseline gap-2">
             <span className="font-semibold text-sm text-foreground">
@@ -1525,8 +1536,7 @@ export function HumanChatPanelMessageBubble({
       {/* Discord-style floating bar: compact height, tight to icon row */}
       <div
         className={cn(
-          'absolute right-3 z-10 flex h-6 -translate-y-1/2 items-center gap-0 rounded-md border border-border bg-popover px-0 py-0 leading-none text-popover-foreground shadow-md ring-1 ring-black/5 dark:ring-white/10 transition-opacity duration-150',
-          replyTo ? 'top-[calc(1.375rem+0.25rem+0.625rem)]' : 'top-0',
+          'absolute right-3 top-0 z-10 flex h-6 -translate-y-1/2 items-center gap-0 rounded-md border border-border bg-popover px-0 py-0 leading-none text-popover-foreground shadow-md ring-1 ring-black/5 dark:ring-white/10 transition-opacity duration-150',
           isActionBarVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
         aria-hidden={!isActionBarVisible}
