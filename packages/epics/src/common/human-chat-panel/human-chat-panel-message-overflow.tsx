@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import {
-  ChevronRight,
   Copy,
   Link2,
   MoreHorizontal,
@@ -26,17 +25,23 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
   ContextMenuTrigger,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { stripMatrixReplyFallback } from '@hypha-platform/core/client';
 
-import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
+import { HumanChatPanelEmojiMartSurface } from './human-chat-panel-emoji-mart-surface';
 import type { ChatPanelAttachmentMedia } from './chat-panel-media-types';
 
 const RECENT_REACTIONS_STORAGE_KEY = 'hypha-chat-recent-reactions';
@@ -147,8 +152,6 @@ function useQuickReactions(): string[] {
 function MenuSections({
   t,
   quickEmojis,
-  addReactionOpen,
-  setAddReactionOpen,
   canReact,
   onReact,
   onEdit,
@@ -162,13 +165,15 @@ function MenuSections({
   onSpeak,
   canDelete,
   onRequestDelete,
+  onAfterAddReaction,
+  Sub,
+  SubTrigger,
+  SubContent,
   Item,
   Separator,
 }: {
   t: (key: string, values?: Record<string, string | number>) => string;
   quickEmojis: string[];
-  addReactionOpen: boolean;
-  setAddReactionOpen: (o: boolean) => void;
   canReact: boolean;
   onReact?: (emoji: string) => void | Promise<void>;
   onEdit?: () => void;
@@ -182,6 +187,11 @@ function MenuSections({
   onSpeak: () => void;
   canDelete: boolean;
   onRequestDelete: () => void;
+  /** e.g. close ⋯ dropdown after picking from full picker */
+  onAfterAddReaction?: () => void;
+  Sub: typeof ContextMenuSub | typeof DropdownMenuSub;
+  SubTrigger: typeof ContextMenuSubTrigger | typeof DropdownMenuSubTrigger;
+  SubContent: typeof ContextMenuSubContent | typeof DropdownMenuSubContent;
   Item: typeof ContextMenuItem | typeof DropdownMenuItem;
   Separator: typeof ContextMenuSeparator | typeof DropdownMenuSeparator;
 }) {
@@ -210,27 +220,28 @@ function MenuSections({
           </button>
         ))}
       </div>
-      <HumanChatPanelEmojiPicker
-        open={addReactionOpen}
-        onOpenChange={setAddReactionOpen}
-        onEmojiSelect={(native) => {
-          pushRecentChatReaction(native);
-          if (onReact) void onReact(native);
-        }}
-        ariaLabel={t('addReactionButton')}
-        align="start"
-      >
-        <Item
-          className="flex cursor-pointer items-center justify-between gap-2 pr-1"
-          onSelect={(e) => {
-            e.preventDefault();
-            setAddReactionOpen(true);
-          }}
+      <Sub>
+        <SubTrigger
+          disabled={!canReact || !onReact}
+          className="flex cursor-pointer items-center gap-2 pr-1"
         >
-          <span>{t('addReactionButton')}</span>
-          <ChevronRight className="size-4 shrink-0 opacity-60" aria-hidden />
-        </Item>
-      </HumanChatPanelEmojiPicker>
+          <span className="flex-1">{t('addReactionButton')}</span>
+        </SubTrigger>
+        <SubContent
+          sideOffset={2}
+          className="w-auto max-w-[min(100vw-2rem,352px)] border-border p-0 shadow-lg"
+          onCloseAutoFocus={(e) => e.preventDefault()}
+        >
+          <HumanChatPanelEmojiMartSurface
+            ariaLabel={t('addReactionButton')}
+            onEmojiSelect={(native) => {
+              pushRecentChatReaction(native);
+              if (onReact) void onReact(native);
+              onAfterAddReaction?.();
+            }}
+          />
+        </SubContent>
+      </Sub>
       <Separator />
       <Item
         disabled={!canEdit}
@@ -311,7 +322,6 @@ export function HumanChatPanelMessageOverflow({
 }: HumanChatPanelMessageOverflowProps) {
   const t = useTranslations('HumanChatPanel');
   const quickEmojis = useQuickReactions();
-  const [addReactionOpen, setAddReactionOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
@@ -388,11 +398,9 @@ export function HumanChatPanelMessageOverflow({
     );
   }
 
-  const menuProps = {
+  const menuPropsBase = {
     t,
     quickEmojis,
-    addReactionOpen,
-    setAddReactionOpen,
     canReact,
     onReact,
     onEdit,
@@ -410,7 +418,11 @@ export function HumanChatPanelMessageOverflow({
 
   const contextMenu = (
     <MenuSections
-      {...menuProps}
+      {...menuPropsBase}
+      onAfterAddReaction={undefined}
+      Sub={ContextMenuSub}
+      SubTrigger={ContextMenuSubTrigger}
+      SubContent={ContextMenuSubContent}
       Item={ContextMenuItem}
       Separator={ContextMenuSeparator}
     />
@@ -418,7 +430,11 @@ export function HumanChatPanelMessageOverflow({
 
   const dropdownMenu = (
     <MenuSections
-      {...menuProps}
+      {...menuPropsBase}
+      onAfterAddReaction={() => setDropdownOpen(false)}
+      Sub={DropdownMenuSub}
+      SubTrigger={DropdownMenuSubTrigger}
+      SubContent={DropdownMenuSubContent}
       Item={DropdownMenuItem}
       Separator={DropdownMenuSeparator}
     />
