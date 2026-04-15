@@ -23,6 +23,7 @@ import {
   getOrgMemoryBySpaceSlugInputSchema,
   getOrgMemoryBySpaceSlugOutputSchema,
 } from './get-org-memory-by-space-slug-schema.js';
+import { buildMatrixDiagnosticHint } from './build-matrix-diagnostic-hint.js';
 
 const server = new McpServer(
   {
@@ -220,28 +221,7 @@ server.registerTool(
         : 0;
 
       const mf = structured.found ? structured.matrix_fetch : null;
-      const matrixHint =
-        mf && mf.media_events_yielded === 0
-          ? ` Matrix: ${
-              mf.attempted
-                ? `attempted (HTTP ${mf.http_status ?? 'n/a'}, events ${
-                    mf.events_in_chunk
-                  })`
-                : 'not attempted'
-            }${mf.skipped_reason ? ` — ${mf.skipped_reason}` : ''}${
-              mf.used_session_matrix_token ? ' — used_session_matrix_token' : ''
-            }${
-              mf.session_matrix_token_unavailable
-                ? ' — session_matrix_token_unavailable (Human Chat Matrix link missing or expired)'
-                : ''
-            }${
-              mf.skipped_reason === 'missing_access_token' &&
-              !mf.used_session_matrix_token &&
-              !mf.session_matrix_token_unavailable
-                ? ' — set HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN (bot) or pass Privy JWT + app URL for per-user Matrix (Hypha Chat / MCP)'
-                : ''
-            }${mf.error ? ` — ${mf.error}` : ''}.`
-          : '';
+      const matrixHint = buildMatrixDiagnosticHint(mf);
 
       const summary = structured.found
         ? `Space "${structured.space_slug}": roster page ${

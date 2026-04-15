@@ -338,6 +338,7 @@ function extractMediaFromMessageEvent(
   const bundleRaw = content[HYPHA_MEDIA_BUNDLE_FIELD];
   if (!Array.isArray(bundleRaw)) return;
   for (const item of bundleRaw) {
+    if (typeof item !== 'object' || item === null) continue;
     const w = item as HyphaMediaBundleItemWire;
     if (w.msgtype !== 'm.file' && w.msgtype !== 'm.image') continue;
     if (typeof w.url !== 'string' || !w.url.startsWith('mxc://')) continue;

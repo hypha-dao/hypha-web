@@ -78,35 +78,41 @@ export async function getShowLanguageSelect(): Promise<boolean> {
   return store.get(HYPHA_SHOW_LANGUAGE_SELECT)?.value === 'true';
 }
 
-export async function getEnableAiChat(): Promise<boolean> {
+async function getBooleanFlagFromToolbarCookieOrEnv(
+  toolbarKey: string,
+  cookieName: string,
+  envValue: string | undefined,
+): Promise<boolean> {
   const overrides = await getVercelToolbarFlagOverrides();
-  const o = readBooleanOverride(overrides, 'enable-ai-chat');
+  const o = readBooleanOverride(overrides, toolbarKey);
   if (o !== undefined) return o;
 
   const store = await cookies();
-  const cookieValue = store.get(HYPHA_ENABLE_AI_CHAT)?.value;
+  const cookieValue = store.get(cookieName)?.value;
   if (cookieValue !== undefined) return cookieValue === 'true';
-  return process.env.NEXT_PUBLIC_ENABLE_AI_CHAT === 'true';
+  return envValue === 'true';
+}
+
+export async function getEnableAiChat(): Promise<boolean> {
+  return getBooleanFlagFromToolbarCookieOrEnv(
+    'enable-ai-chat',
+    HYPHA_ENABLE_AI_CHAT,
+    process.env.NEXT_PUBLIC_ENABLE_AI_CHAT,
+  );
 }
 
 export async function getEnableCoherence(): Promise<boolean> {
-  const overrides = await getVercelToolbarFlagOverrides();
-  const o = readBooleanOverride(overrides, 'enable-coherence');
-  if (o !== undefined) return o;
-
-  const store = await cookies();
-  const cookieValue = store.get(HYPHA_ENABLE_COHERENCE)?.value;
-  if (cookieValue !== undefined) return cookieValue === 'true';
-  return process.env.NEXT_PUBLIC_ENABLE_COHERENCE === 'true';
+  return getBooleanFlagFromToolbarCookieOrEnv(
+    'enable-coherence',
+    HYPHA_ENABLE_COHERENCE,
+    process.env.NEXT_PUBLIC_ENABLE_COHERENCE,
+  );
 }
 
 export async function getEnableHumanChat(): Promise<boolean> {
-  const overrides = await getVercelToolbarFlagOverrides();
-  const o = readBooleanOverride(overrides, 'enable-human-chat');
-  if (o !== undefined) return o;
-
-  const store = await cookies();
-  const cookieValue = store.get(HYPHA_ENABLE_HUMAN_CHAT)?.value;
-  if (cookieValue !== undefined) return cookieValue === 'true';
-  return process.env.NEXT_PUBLIC_ENABLE_HUMAN_CHAT === 'true';
+  return getBooleanFlagFromToolbarCookieOrEnv(
+    'enable-human-chat',
+    HYPHA_ENABLE_HUMAN_CHAT,
+    process.env.NEXT_PUBLIC_ENABLE_HUMAN_CHAT,
+  );
 }

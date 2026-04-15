@@ -38,27 +38,29 @@ export async function resolveUserMatrixAccessTokenForOrgMemory(
   }
 
   const decoratedPrivyUserId = getDecoratedPrivyId(privyUserId, environment);
-  const existing = await getLinkByPrivyUserId({
-    privyUserId: decoratedPrivyUserId,
-    environment,
-  });
-  if (!existing?.encryptedAccessToken) {
-    return null;
-  }
-
-  const accessToken = decryptMatrixToken(existing.encryptedAccessToken);
-  if (!accessToken?.trim()) {
-    return null;
-  }
-
   try {
+    const existing = await getLinkByPrivyUserId({
+      privyUserId: decoratedPrivyUserId,
+      environment,
+    });
+    if (!existing?.encryptedAccessToken) {
+      return null;
+    }
+
+    const accessToken = decryptMatrixToken(
+      existing.encryptedAccessToken,
+    ).trim();
+    if (!accessToken) {
+      return null;
+    }
+
     const matrixAuthClient = new MatrixSharedSecret();
     if (!(await matrixAuthClient.validateToken(accessToken))) {
       return null;
     }
+
+    return accessToken;
   } catch {
     return null;
   }
-
-  return accessToken.trim();
 }
