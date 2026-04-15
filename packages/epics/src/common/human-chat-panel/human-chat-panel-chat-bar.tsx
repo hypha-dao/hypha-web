@@ -79,6 +79,16 @@ function stripTrailingZeroWidthSpaces(s: string): string {
   return i === s.length ? s : s.slice(0, i);
 }
 
+/** Join two strings with a single space when both are non-empty and lack boundary whitespace. */
+function joinWithSingleSpace(a: string, b: string): string {
+  const left = a.trimEnd();
+  const right = b.trimStart();
+  if (!left) return right;
+  if (!right) return left;
+  if (/\s$/.test(left) || /^\s/.test(right)) return left + right;
+  return `${left} ${right}`;
+}
+
 type ReplyPreview = {
   authorLabel: string;
   excerpt: string;
@@ -298,6 +308,8 @@ export function HumanChatPanelChatBar({
   /** When true, `MediaRecorder` stop should add an audio draft; when false (dictation), discard blob. */
   const voiceAsAttachmentRef = useRef(false);
   const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  /** Composer text before this dictation session (final + interim are appended live). */
+  const dictationPrefixRef = useRef('');
   const [isDictating, setIsDictating] = useState(false);
   const [micMenuOpen, setMicMenuOpen] = useState(false);
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
@@ -815,31 +827,49 @@ export function HumanChatPanelChatBar({
       stopDictation();
       return;
     }
+    dictationPrefixRef.current = stripTrailingZeroWidthSpaces(valueRef.current);
     const rec = new SR();
     rec.continuous = true;
     rec.interimResults = true;
     rec.lang = document.documentElement.lang || 'en';
     rec.onresult = (ev) => {
-      for (let i = ev.resultIndex; i < ev.results.length; i++) {
-        const res = ev.results[i];
-        if (!res?.[0] || !res.isFinal) continue;
-        const piece = res[0].transcript.trim();
-        if (!piece) continue;
-        const cur = stripTrailingZeroWidthSpaces(valueRef.current);
-        const space = cur.length > 0 && !/\s$/.test(cur) ? ' ' : '';
-        const next = cur + space + piece;
-        valueRef.current = next;
-        onChange(next);
+      const results = ev.results;
+      const committedParts: string[] = [];
+      let interimAccum = '';
+      for (let i = 0; i < results.length; i++) {
+        const res = results[i];
+        if (!res?.[0]) continue;
+        const t = res[0].transcript;
+        if (res.isFinal) {
+          const piece = t.trim();
+          if (piece) committedParts.push(piece);
+        } else {
+          interimAccum = joinWithSingleSpace(interimAccum, t);
+        }
       }
+      const committedStr = committedParts.join(' ');
+      const interimStr = interimAccum.trim();
+      const dictated = joinWithSingleSpace(committedStr, interimStr);
+      const next = joinWithSingleSpace(dictationPrefixRef.current, dictated);
+      valueRef.current = next;
+      onChange(next);
+      requestAnimationFrame(() => {
+        const el = textareaRef.current;
+        if (!el || document.activeElement !== el) return;
+        const end = valueRef.current.length;
+        el.setSelectionRange(end, end);
+      });
     };
     rec.onerror = () => {
       speechRecognitionRef.current = null;
+      dictationPrefixRef.current = '';
       setIsDictating(false);
       onChange(stripTrailingZeroWidthSpaces(valueRef.current));
       setVoiceError(t('dictationError'));
     };
     rec.onend = () => {
       speechRecognitionRef.current = null;
+      dictationPrefixRef.current = '';
       setIsDictating(false);
       onChange(stripTrailingZeroWidthSpaces(valueRef.current));
     };
