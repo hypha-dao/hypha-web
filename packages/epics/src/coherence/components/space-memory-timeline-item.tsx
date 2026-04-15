@@ -3,7 +3,7 @@
 import type { SpaceMemoryItem } from '@hypha-platform/core/client';
 import { useMatrix } from '@hypha-platform/core/client';
 import { cn } from '@hypha-platform/ui-utils';
-import { ExternalLink, FileIcon, Image as ImageIcon } from 'lucide-react';
+import { ExternalLink, FileIcon, Image as ImageIcon, Play } from 'lucide-react';
 import { formatDate } from '@hypha-platform/ui-utils';
 import React, { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
@@ -72,6 +72,10 @@ export function SpaceMemoryTimelineItem({
   const { client, isMatrixAvailable } = useMatrix();
   const uploaded = formatDate(new Date(item.uploadedAt), true);
   const [imageFailed, setImageFailed] = React.useState(false);
+  /** After a scaled thumbnail fails, retry full media (Synapse sometimes fails thumbnailing only). */
+  const [matrixImagePhase, setMatrixImagePhase] = React.useState<
+    'preview' | 'full'
+  >('preview');
 
   const mxc = isMxcUrl(item.url) ? item.url.trim() : null;
   const { download: mxcDownload, preview: mxcPreview } = useMemo(
@@ -80,13 +84,22 @@ export function SpaceMemoryTimelineItem({
     [client, mxc],
   );
 
+  const matrixThumbDistinct = Boolean(
+    mxcPreview && mxcDownload && mxcPreview !== mxcDownload,
+  );
+
   React.useEffect(() => {
     setImageFailed(false);
+    setMatrixImagePhase('preview');
   }, [mxc, client, item.id]);
 
   const httpSafe = isSafeAssetUrl(item.url);
   const imageSrcForMatrix =
-    item.kind === 'image' ? mxcPreview ?? mxcDownload : null;
+    item.kind === 'image' && mxc
+      ? matrixImagePhase === 'preview' && matrixThumbDistinct
+        ? mxcPreview
+        : mxcDownload
+      : null;
   const videoSrcForMatrix = item.kind === 'video' ? mxcDownload : null;
   const openHref = mxc ? mxcDownload : item.url;
   const canOpen = Boolean(openHref && isSafeAssetUrl(openHref));
@@ -115,11 +128,22 @@ export function SpaceMemoryTimelineItem({
         }
         return (
           <img
+            key={`${item.id}-${matrixImagePhase}`}
             src={src}
             alt=""
             className="max-h-full max-w-full object-contain"
             loading="lazy"
-            onError={() => setImageFailed(true)}
+            onError={() => {
+              if (
+                matrixImagePhase === 'preview' &&
+                matrixThumbDistinct &&
+                mxcDownload
+              ) {
+                setMatrixImagePhase('full');
+                return;
+              }
+              setImageFailed(true);
+            }}
           />
         );
       }
@@ -135,15 +159,24 @@ export function SpaceMemoryTimelineItem({
       }
       if (item.kind === 'video' && videoSrcForMatrix) {
         return (
-          <video
-            src={videoSrcForMatrix}
-            muted
-            playsInline
-            preload="none"
-            className="max-h-full max-w-full object-contain bg-black"
-          >
-            <track kind="captions" />
-          </video>
+          <div className="relative flex h-full w-full items-center justify-center">
+            <video
+              src={videoSrcForMatrix}
+              poster={mxcPreview ?? undefined}
+              muted
+              playsInline
+              preload="metadata"
+              className="max-h-full max-w-full object-contain bg-black"
+            >
+              <track kind="captions" />
+            </video>
+            <span className="pointer-events-none absolute bottom-1 left-1 right-1 flex items-center justify-center gap-1 rounded bg-black/55 px-1 py-0.5 text-[9px] font-medium text-white/95">
+              <Play className="h-3 w-3 shrink-0" aria-hidden />
+              <span className="line-clamp-1">
+                {t('spaceMemoryMatrixVideoPlayHint')}
+              </span>
+            </span>
+          </div>
         );
       }
       if (item.kind === 'document' && looksLikePdf(item.name, item.url)) {

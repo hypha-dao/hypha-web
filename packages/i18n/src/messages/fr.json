@@ -1761,6 +1761,7 @@
     "spaceMemoryContextMatrix": "Depuis le chat Matrix",
     "spaceMemoryMatrixPreviewNeedsChat": "L’aperçu nécessite Human Chat (Matrix)",
     "spaceMemoryMatrixOpenHint": "Ouvrez Human Chat pour connecter Matrix, puis actualisez la mémoire d’espace pour ouvrir ce fichier.",
+    "spaceMemoryMatrixVideoPlayHint": "Appuyez pour lire l’aperçu",
     "spaceMemoryOpenAsset": "Ouvrir {name}",
     "untitledDocument": "Document sans titre",
     "documentStates": {

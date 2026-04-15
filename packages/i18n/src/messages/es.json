@@ -1761,6 +1761,7 @@
     "spaceMemoryContextMatrix": "Del chat de Matrix",
     "spaceMemoryMatrixPreviewNeedsChat": "La vista previa requiere Human Chat (Matrix)",
     "spaceMemoryMatrixOpenHint": "Abre Human Chat para conectar Matrix y actualiza Space Memory para abrir este archivo.",
+    "spaceMemoryMatrixVideoPlayHint": "Toca para ver la vista previa",
     "spaceMemoryOpenAsset": "Abrir {name}",
     "untitledDocument": "Documento sin título",
     "documentStates": {
