@@ -950,7 +950,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
                   event_id: resolvedReplyTargetId,
                 },
               },
-            };
+            } as HyphaMediaEventContent;
           } else {
             const textExtras =
               matrixTextEventContentWithOptionalFormatting(trimmed);
@@ -981,16 +981,15 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
                 event_id: resolvedReplyTargetId,
               },
             },
-          };
+          } as HyphaMediaEventContent;
         } else {
           const fn =
-            (combined.filename as string | undefined) ??
-            (combined.body as string | undefined) ??
-            'attachment';
+            slots[0]?.filename?.trim() ||
+            String(rootFromSlot.body ?? 'attachment');
           combined = {
             ...combined,
             body: fn,
-          };
+          } as HyphaMediaEventContent;
         }
 
         const newBody =

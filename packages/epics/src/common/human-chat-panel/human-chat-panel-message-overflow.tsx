@@ -230,7 +230,6 @@ function MenuSections({
         <SubContent
           sideOffset={2}
           className="w-auto max-w-[min(100vw-2rem,352px)] border-border p-0 shadow-lg"
-          onCloseAutoFocus={(e) => e.preventDefault()}
         >
           <HumanChatPanelEmojiMartSurface
             ariaLabel={t('addReactionButton')}
