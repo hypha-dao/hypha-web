@@ -68,6 +68,17 @@ type SpeechRecognitionEventLike = {
   results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }>;
 };
 
+const ZWSP_CODE = 0x200b;
+
+/** Linear-time strip (avoids ReDoS from `/\\u200b+$/` on user-controlled strings). */
+function stripTrailingZeroWidthSpaces(s: string): string {
+  let i = s.length;
+  while (i > 0 && s.charCodeAt(i - 1) === ZWSP_CODE) {
+    i -= 1;
+  }
+  return i === s.length ? s : s.slice(0, i);
+}
+
 type ReplyPreview = {
   authorLabel: string;
   excerpt: string;
@@ -780,7 +791,7 @@ export function HumanChatPanelChatBar({
         if (!res?.[0] || !res.isFinal) continue;
         const piece = res[0].transcript.trim();
         if (!piece) continue;
-        const cur = valueRef.current.replace(/\u200b+$/, '');
+        const cur = stripTrailingZeroWidthSpaces(valueRef.current);
         const space = cur.length > 0 && !/\s$/.test(cur) ? ' ' : '';
         const next = cur + space + piece;
         valueRef.current = next;
@@ -790,13 +801,13 @@ export function HumanChatPanelChatBar({
     rec.onerror = () => {
       speechRecognitionRef.current = null;
       setIsDictating(false);
-      onChange(valueRef.current.replace(/\u200b$/, ''));
+      onChange(stripTrailingZeroWidthSpaces(valueRef.current));
       setVoiceError(t('dictationError'));
     };
     rec.onend = () => {
       speechRecognitionRef.current = null;
       setIsDictating(false);
-      onChange(valueRef.current.replace(/\u200b$/, ''));
+      onChange(stripTrailingZeroWidthSpaces(valueRef.current));
     };
     speechRecognitionRef.current = rec;
     try {
