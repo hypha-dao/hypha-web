@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import type { MatrixEvent, Room } from 'matrix-js-sdk';
+import type { MatrixClient, MatrixEvent, Room } from 'matrix-js-sdk';
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import {
@@ -89,6 +89,8 @@ type UIMessage = {
     excerpt?: string;
     /** Quoted author MXID when known (for label refresh). */
     sourceUserId?: string;
+    /** Matrix avatar thumbnail for reply header */
+    authorAvatarUrl?: string;
   };
 };
 
@@ -135,6 +137,26 @@ function clearStoredRoomId(spaceSlug: string): void {
 }
 
 /**
+ * Matrix room member avatar → HTTP thumbnail for `<img>` (unauthenticated media URL).
+ */
+function matrixMemberAvatarSquare(
+  client: MatrixClient | null | undefined,
+  roomId: string | null | undefined,
+  userId: string | undefined,
+  px: number,
+): string | undefined {
+  if (!client || !roomId || !userId) return undefined;
+  const room = client.getRoom(roomId);
+  const member = room?.getMember(userId);
+  if (!member) return undefined;
+  const mxc = member.getMxcAvatarUrl();
+  if (!mxc || !mxc.startsWith('mxc://')) return undefined;
+  return (
+    client.mxcUrlToHttp(mxc, px, px, 'crop', true, false, false) ?? undefined
+  );
+}
+
+/**
  * Convert a Matrix Message to the UIMessage format expected by panel components.
  */
 function toUIMessage(
@@ -142,7 +164,23 @@ function toUIMessage(
   currentUserId: string | null | undefined,
   resolveMemberLabel: (userId: string | undefined) => string,
   currentUserAvatarUrl?: string,
+  resolveMemberAvatar?: (userId: string | undefined) => string | undefined,
+  roomIdForAvatars?: string | null,
+  clientForAvatars?: MatrixClient | null,
 ): UIMessage {
+  const resolveAvatarForUser = (userId: string | undefined) => {
+    if (!userId) return undefined;
+    return (
+      resolveMemberAvatar?.(userId) ??
+      matrixMemberAvatarSquare(
+        clientForAvatars ?? null,
+        roomIdForAvatars ?? null,
+        userId,
+        96,
+      )
+    );
+  };
+
   const isCurrentUser = currentUserId ? msg.sender === currentUserId : false;
 
   const isMedia =
@@ -172,6 +210,7 @@ function toUIMessage(
       authorLabel,
       excerpt,
       sourceUserId: msg.inReplyToSender,
+      authorAvatarUrl: resolveAvatarForUser(msg.inReplyToSender),
     };
   }
 
@@ -207,6 +246,9 @@ function toUIMessage(
 
   const media = mediaSingle;
 
+  const memberAvatar =
+    !isCurrentUser && msg.sender ? resolveAvatarForUser(msg.sender) : undefined;
+
   return {
     id: msg.id,
     role: isCurrentUser ? 'user' : 'member',
@@ -222,7 +264,7 @@ function toUIMessage(
       isMedia && !captionForMedia ? undefined : msg.formattedContentHtml,
     senderName: isCurrentUser ? undefined : resolveMemberLabel(msg.sender),
     senderMatrixId: msg.sender,
-    avatarUrl: isCurrentUser ? currentUserAvatarUrl : undefined,
+    avatarUrl: isCurrentUser ? currentUserAvatarUrl : memberAvatar,
     timestamp: msg.timestamp,
     reactions,
     replyTo,
@@ -387,6 +429,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const currentUserId = client?.getUserId?.() ?? null;
   const currentUserIdRef = useRef(currentUserId);
   currentUserIdRef.current = currentUserId;
+  const roomIdRef = useRef(roomId);
+  roomIdRef.current = roomId;
+  const matrixClientRef = useRef(client);
+  matrixClientRef.current = client;
 
   const resolveMemberLabel = useCallback(
     (userId: string | undefined) => {
@@ -428,12 +474,31 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             ? {
                 ...m.replyTo,
                 authorLabel: newAuthorLabel ?? m.replyTo.authorLabel,
+                authorAvatarUrl:
+                  matrixMemberAvatarSquare(
+                    matrixClientRef.current,
+                    roomIdRef.current,
+                    m.replyTo.sourceUserId,
+                    64,
+                  ) ?? m.replyTo.authorAvatarUrl,
               }
             : m.replyTo;
 
+        const nextMemberAvatar =
+          m.role === 'member' && m.senderMatrixId
+            ? matrixMemberAvatarSquare(
+                matrixClientRef.current,
+                roomIdRef.current,
+                m.senderMatrixId,
+                96,
+              ) ?? m.avatarUrl
+            : m.avatarUrl;
+
         if (
           newSenderName === m.senderName &&
-          nextReply?.authorLabel === m.replyTo?.authorLabel
+          nextReply?.authorLabel === m.replyTo?.authorLabel &&
+          nextReply?.authorAvatarUrl === m.replyTo?.authorAvatarUrl &&
+          nextMemberAvatar === m.avatarUrl
         ) {
           return m;
         }
@@ -441,6 +506,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         return {
           ...m,
           senderName: newSenderName,
+          avatarUrl: nextMemberAvatar,
           replyTo: nextReply,
         };
       }),
@@ -578,6 +644,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 currentUserIdRef.current,
                 resolveMemberLabelRef.current,
                 currentUserAvatarUrlRef.current,
+                undefined,
+                targetRoomId,
+                matrixRef.current.client ?? null,
               ),
             ),
           );
@@ -718,6 +787,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 currentUserIdRef.current,
                 resolveMemberLabelRef.current,
                 currentUserAvatarUrlRef.current,
+                undefined,
+                targetRoomId,
+                matrixRef.current.client ?? null,
               ),
             ),
           );
@@ -768,6 +840,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             currentUserIdRef.current,
             resolveMemberLabelRef.current,
             currentUserAvatarUrlRef.current,
+            undefined,
+            roomId,
+            matrixRef.current.client ?? null,
           );
           const idx = prev.findIndex((m) => m.id === next.id);
           if (idx === -1) {
@@ -998,12 +1073,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             .filter((a) => !a.editSlot)
             .map((a) => ({
               file: a.file,
-              kind:
-                a.kind === 'image'
-                  ? 'image'
-                  : a.kind === 'audio'
-                  ? 'audio'
-                  : 'file',
+              kind: (a.kind === 'image'
+                ? 'image'
+                : a.kind === 'audio'
+                ? 'audio'
+                : 'file') as 'image' | 'audio' | 'file',
               spoiler: a.spoiler,
             }));
           await matrixRef.current.editRoomMessage({
@@ -1032,12 +1106,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             ? {
                 attachments: savedAttachments.map((a) => ({
                   file: a.file,
-                  kind:
-                    a.kind === 'image'
-                      ? 'image'
-                      : a.kind === 'audio'
-                      ? 'audio'
-                      : 'file',
+                  kind: (a.kind === 'image'
+                    ? 'image'
+                    : a.kind === 'audio'
+                    ? 'audio'
+                    : 'file') as 'image' | 'audio' | 'file',
                   spoiler: a.spoiler,
                 })),
                 onUploadProgress: ({ completed, total }) => {
