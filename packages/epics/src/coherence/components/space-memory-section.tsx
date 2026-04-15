@@ -11,9 +11,18 @@ import {
 import { Empty } from '../../common';
 import React from 'react';
 import { useTranslations } from 'next-intl';
-import { DocumentState } from '@hypha-platform/core/client';
+import {
+  DocumentState,
+  EventType,
+  RoomEvent,
+  useMatrix,
+  useSpaceBySlug,
+} from '@hypha-platform/core/client';
+import type { MatrixEvent, Room } from 'matrix-js-sdk';
 import { useSpaceMemoryOrg } from '../hooks/use-space-memory-org';
 import { SpaceMemoryTimelineItem } from './space-memory-timeline-item';
+
+const MATRIX_SPACE_MEMORY_REFRESH_DEBOUNCE_MS = 1_800;
 
 type SpaceMemorySectionProps = {
   spaceSlug: string;
@@ -23,6 +32,8 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
   spaceSlug,
 }) => {
   const t = useTranslations('CoherenceTab');
+  const { space } = useSpaceBySlug(spaceSlug);
+  const { client, isMatrixAvailable } = useMatrix();
   const {
     items,
     totalCount,
@@ -36,6 +47,48 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
     hasMore,
     loadMore,
   } = useSpaceMemoryOrg(spaceSlug);
+
+  const refreshTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+
+  React.useEffect(() => {
+    const chatRoomId = space?.chatRoomId?.trim();
+    if (!chatRoomId || !client || !isMatrixAvailable) return;
+
+    const scheduleRefresh = () => {
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+      refreshTimeoutRef.current = setTimeout(() => {
+        refreshTimeoutRef.current = null;
+        void refresh();
+      }, MATRIX_SPACE_MEMORY_REFRESH_DEBOUNCE_MS);
+    };
+
+    const onTimeline = (
+      event: MatrixEvent,
+      room: Room | undefined,
+      _toStart: boolean | undefined,
+      removed: boolean,
+      data: { liveEvent?: boolean },
+    ) => {
+      if (room?.roomId !== chatRoomId) return;
+      if (removed) return;
+      if (data?.liveEvent === false) return;
+      if (event.getType() !== EventType.RoomMessage) return;
+      scheduleRefresh();
+    };
+
+    client.on(RoomEvent.Timeline, onTimeline);
+    return () => {
+      client.removeListener(RoomEvent.Timeline, onTimeline);
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+        refreshTimeoutRef.current = null;
+      }
+    };
+  }, [space?.chatRoomId, client, isMatrixAvailable, refresh]);
 
   const stateLabel = (state: DocumentState) =>
     t(
