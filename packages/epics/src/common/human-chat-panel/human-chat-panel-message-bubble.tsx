@@ -426,7 +426,7 @@ function TimelineVoiceSlot({
   );
 }
 
-/** Inline Matrix video (`m.file` + video/* or known extension). */
+/** Inline Matrix video (`m.file` + video/*): poster frame + large play, then native controls while playing. */
 function TimelineMatrixVideo({
   media,
   t,
@@ -437,15 +437,17 @@ function TimelineMatrixVideo({
   const { client } = useMatrix();
   const { download: src } = useMxcUrls(client, media.mxcUrl);
   const [spoilerRevealed, setSpoilerRevealed] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const [muted, setMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  const boxStyle =
+  const knownAspect =
     media.mediaInfo?.w &&
     media.mediaInfo?.h &&
     media.mediaInfo.w > 0 &&
     media.mediaInfo.h > 0
-      ? { aspectRatio: `${media.mediaInfo.w} / ${media.mediaInfo.h}` }
-      : { minHeight: '200px' };
+      ? `${media.mediaInfo.w} / ${media.mediaInfo.h}`
+      : null;
 
   if (!src) {
     return (
@@ -455,44 +457,118 @@ function TimelineMatrixVideo({
     );
   }
 
+  const spoilerActive = media.spoiler && !spoilerRevealed;
+  const showYoutubeChrome = !spoilerActive && !playing;
+
   return (
     <div
-      className="relative mt-1 max-w-md overflow-hidden rounded-lg border border-border bg-black"
+      className="relative mt-1 w-full max-w-md overflow-hidden rounded-lg border border-border bg-black shadow-md"
       data-testid="chat-message-media-video"
-      style={boxStyle}
     >
-      <video
-        ref={videoRef}
-        src={src}
-        controls
-        playsInline
-        preload="auto"
-        aria-label={media.filename ?? t('attachment')}
+      <div
         className={cn(
-          'max-h-72 w-full min-h-[160px] object-contain',
-          media.spoiler && !spoilerRevealed && 'pointer-events-none blur-2xl',
+          'relative w-full overflow-hidden bg-black',
+          knownAspect ? '' : 'aspect-video max-h-72',
         )}
-        onLoadedMetadata={() => {
-          const el = videoRef.current;
-          if (!el || media.spoiler) return;
-          try {
-            if (el.readyState >= 1 && el.currentTime === 0) {
-              el.currentTime = 0.001;
+        style={knownAspect ? { aspectRatio: knownAspect } : undefined}
+      >
+        <video
+          ref={videoRef}
+          key={src}
+          src={src}
+          playsInline
+          preload="metadata"
+          muted={muted}
+          controls={playing && !spoilerActive}
+          aria-label={media.filename ?? t('attachment')}
+          className={cn(
+            'h-full w-full object-contain',
+            spoilerActive && 'pointer-events-none blur-2xl',
+          )}
+          onLoadedMetadata={() => {
+            const el = videoRef.current;
+            if (!el || spoilerActive) return;
+            try {
+              if (el.readyState >= 1 && el.currentTime === 0) {
+                el.currentTime = 0.001;
+              }
+            } catch {
+              // ignore
             }
-          } catch {
-            // ignore
-          }
-        }}
-      />
-      {media.spoiler && !spoilerRevealed && (
-        <TimelineSpoilerRevealOverlay
-          t={t}
-          onReveal={() => setSpoilerRevealed(true)}
+          }}
+          onPlay={() => setPlaying(true)}
+          onPause={() => setPlaying(false)}
+          onEnded={() => {
+            setPlaying(false);
+            setMuted(true);
+          }}
+          onVolumeChange={() => {
+            const el = videoRef.current;
+            if (el) setMuted(el.muted);
+          }}
         />
+        {spoilerActive && (
+          <TimelineSpoilerRevealOverlay
+            t={t}
+            onReveal={() => setSpoilerRevealed(true)}
+          />
+        )}
+        {showYoutubeChrome && (
+          <>
+            <div
+              className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/50"
+              aria-hidden
+            />
+            <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-[5] px-3 pb-2 pt-8">
+              <p className="truncate text-left text-xs font-medium text-white drop-shadow-sm">
+                {media.filename ?? t('attachment')}
+              </p>
+            </div>
+            <div className="absolute inset-0 z-10 flex items-center justify-center">
+              <button
+                type="button"
+                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-red-600 text-white shadow-lg ring-2 ring-white/25 outline-none transition-transform hover:scale-105 hover:bg-red-500 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                aria-label={t('videoPreviewPlay')}
+                title={t('videoPreviewPlay')}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const el = videoRef.current;
+                  if (!el) return;
+                  el.muted = true;
+                  setMuted(true);
+                  void el.play().catch(() => {});
+                }}
+              >
+                <Play
+                  className="ml-1 h-7 w-7"
+                  fill="currentColor"
+                  aria-hidden
+                />
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+      {playing && (
+        <div className="flex items-center justify-between gap-2 border-t border-border/40 bg-card/95 px-2 py-1">
+          <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+            {media.filename ?? t('attachment')}
+          </p>
+          <button
+            type="button"
+            className="shrink-0 rounded px-2 py-0.5 text-[11px] font-medium text-primary hover:underline"
+            onClick={() => {
+              const el = videoRef.current;
+              if (!el) return;
+              el.muted = !el.muted;
+              setMuted(el.muted);
+            }}
+          >
+            {muted ? t('videoUnmute') : t('videoMute')}
+          </button>
+        </div>
       )}
-      <p className="truncate border-t border-border/40 bg-card px-2 py-1.5 text-xs text-muted-foreground">
-        {media.filename ?? t('attachment')}
-      </p>
     </div>
   );
 }

@@ -198,15 +198,13 @@ function ChatDraftVideoPreview({
         </div>
       )}
       {!playing && !spoiler && (
-        <div
-          className="pointer-events-none absolute inset-0 z-[1] flex items-center justify-center bg-black/20"
-          aria-hidden
-        >
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/25">
           <button
             type="button"
-            className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-black/55 text-white shadow-md ring-1 ring-white/20 outline-none transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-primary/50"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-red-600 text-white shadow-lg ring-2 ring-white/30 outline-none transition-transform hover:scale-105 hover:bg-red-500 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             aria-label={playLabel}
             title={playLabel}
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();
               const el = videoRef.current;
@@ -215,7 +213,7 @@ function ChatDraftVideoPreview({
               void el.play().catch(() => {});
             }}
           >
-            <Play className="ml-0.5 h-5 w-5" fill="currentColor" aria-hidden />
+            <Play className="ml-1 h-6 w-6" fill="currentColor" aria-hidden />
           </button>
         </div>
       )}
