@@ -1248,12 +1248,12 @@ export function HumanChatPanelChatBar({
           rows={1}
           className={cn(
             'min-h-[36px] min-w-0 max-h-[160px] w-full resize-none',
-            'bg-transparent px-3 pt-3 pb-0 text-sm leading-relaxed text-foreground',
+            'bg-transparent px-3 py-2.5 text-sm leading-relaxed text-foreground',
             'placeholder:text-muted-foreground focus:outline-none',
           )}
         />
 
-        <div className="flex min-w-0 flex-col gap-1 px-2 pb-3">
+        <div className="flex min-w-0 flex-col gap-1 px-2 pb-2.5 pt-0">
           {voiceError && (
             <p role="alert" className="text-xs text-destructive">
               {voiceError}
