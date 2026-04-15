@@ -28,8 +28,8 @@ export const PersonAvatar = ({
   className?: string;
   isLoading?: boolean;
   size?: AvatarSize;
-  /** Discord-style “squircle” vs default rounded rect */
-  shape?: 'rounded' | 'squircle';
+  /** `circle` = full round; `squircle` ≈ Discord; `rounded` = default tile */
+  shape?: 'rounded' | 'squircle' | 'circle';
 }) => {
   const getFallbackContent = () => {
     if (!userName) {
@@ -45,7 +45,12 @@ export const PersonAvatar = ({
   };
 
   const { avatar: avatarSize, skeleton: skeletonSize } = sizeMap[size];
-  const radiusClass = shape === 'squircle' ? 'rounded-[35%]' : 'rounded-lg';
+  const radiusClass =
+    shape === 'circle'
+      ? 'rounded-full'
+      : shape === 'squircle'
+      ? 'rounded-[35%]'
+      : 'rounded-lg';
 
   return (
     <Skeleton

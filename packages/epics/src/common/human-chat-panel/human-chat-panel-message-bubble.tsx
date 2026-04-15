@@ -871,18 +871,21 @@ function renderTextWithMentions(text: string): React.ReactNode[] {
   return parts;
 }
 
-/** Discord-style hook from main avatar toward the quoted author row */
+/**
+ * Reply thread line: from top-center of main avatar up into the reply row,
+ * then curves toward the quoted author avatar (coordinates tuned for w-10 + pl-[52px] layout).
+ */
 function ChatReplyConnector() {
   return (
     <svg
-      className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 overflow-visible text-muted-foreground/45"
-      width="40"
-      height="28"
-      viewBox="0 0 40 28"
+      className="pointer-events-none absolute left-1/2 z-0 -translate-x-1/2 overflow-visible text-muted-foreground/40"
+      width="48"
+      height="36"
+      viewBox="0 0 48 36"
       aria-hidden
     >
       <path
-        d="M 20 28 V 10 C 20 5 22 3 26 3 H 38"
+        d="M 24 36 L 24 14 C 24 8 26 5 31 4.5 L 44 4.5"
         fill="none"
         stroke="currentColor"
         strokeWidth="1.25"
@@ -1013,391 +1016,122 @@ export function HumanChatPanelMessageBubble({
     <div
       data-testid="chat-message"
       className={cn(
-        'group relative -mx-3 flex gap-3 rounded-sm px-3 py-0.5 transition-colors',
+        'group relative -mx-3 flex flex-col gap-1 rounded-sm px-3 py-0.5 transition-colors',
         /* Discord-style row tint: hover (primary) + focus-within for keyboard/reactions */
         'hover:bg-muted/60 focus-within:bg-muted/60',
       )}
       onPointerEnter={onRowPointerEnter}
       onPointerLeave={onRowPointerLeave}
     >
-      {/* Avatar column: connector + squircle (Discord proportions) */}
-      <div
-        className={cn(
-          'relative flex w-10 shrink-0 flex-col items-center',
-          replyTo ? 'pt-0' : 'pt-0.5',
-        )}
-        data-testid="chat-message-avatar"
-      >
-        {replyTo && <ChatReplyConnector />}
-        <div className={cn('relative z-[1]', replyTo && 'mt-7')}>
+      {replyTo && (
+        <div
+          data-testid="chat-message-reply-context"
+          className="flex min-h-[22px] items-center gap-1.5 pl-[52px]"
+        >
           <PersonAvatar
-            size="chat"
-            shape="squircle"
-            avatarSrc={message.avatarUrl}
-            userName={senderName}
+            size="reply"
+            shape="circle"
+            avatarSrc={replyTo.authorAvatarUrl}
+            userName={replyTo.authorLabel}
           />
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        {replyTo && (
-          <div
-            data-testid="chat-message-reply-context"
-            className="mb-1 flex min-h-[22px] items-center gap-1.5"
-          >
-            <PersonAvatar
-              size="reply"
-              shape="squircle"
-              avatarSrc={replyTo.authorAvatarUrl}
-              userName={replyTo.authorLabel}
-            />
-            <p className="flex min-w-0 flex-1 items-baseline gap-1 truncate text-xs leading-tight text-muted-foreground">
-              <span className="shrink-0 font-semibold text-muted-foreground">
-                {replyTo.authorLabel.startsWith('@')
-                  ? replyTo.authorLabel
-                  : `@${replyTo.authorLabel}`}
+          <p className="flex min-w-0 flex-1 items-baseline gap-1 truncate text-xs leading-tight text-muted-foreground">
+            <span className="shrink-0 font-semibold text-muted-foreground">
+              {replyTo.authorLabel.startsWith('@')
+                ? replyTo.authorLabel
+                : `@${replyTo.authorLabel}`}
+            </span>
+            {replyTo.excerpt != null && replyTo.excerpt !== '' ? (
+              <span className="min-w-0 truncate font-normal">
+                {replyTo.excerpt}
               </span>
-              {replyTo.excerpt != null && replyTo.excerpt !== '' ? (
-                <span className="min-w-0 truncate font-normal">
-                  {replyTo.excerpt}
-                </span>
-              ) : (
-                <span className="italic">{t('replyOriginalUnavailable')}</span>
-              )}
-            </p>
-          </div>
-        )}
+            ) : (
+              <span className="italic">{t('replyOriginalUnavailable')}</span>
+            )}
+          </p>
+        </div>
+      )}
 
-        {/* Name + Timestamp */}
-        <div className="flex items-baseline gap-2">
-          <span className="font-semibold text-sm text-foreground">
-            {senderName}
-          </span>
-          {timestamp && (
-            <span className="text-xs text-muted-foreground">{timestamp}</span>
+      <div className="flex items-start gap-3">
+        {/* Avatar: circle; top aligns with sender name row (same as non-reply rows) */}
+        <div
+          className={cn(
+            'relative flex w-10 shrink-0 flex-col items-center',
+            replyTo ? 'pt-[1.625rem]' : 'pt-0.5',
           )}
+          data-testid="chat-message-avatar"
+        >
+          {replyTo && (
+            <div className="pointer-events-none absolute left-1/2 top-0 z-0 -translate-x-1/2">
+              <div className="relative -top-[calc(1.375rem+0.25rem)] h-[calc(1.375rem+0.25rem+2.25rem)] w-10 overflow-visible">
+                <ChatReplyConnector />
+              </div>
+            </div>
+          )}
+          <div className="relative z-[1]">
+            <PersonAvatar
+              size="chat"
+              shape="circle"
+              avatarSrc={message.avatarUrl}
+              userName={senderName}
+            />
+          </div>
         </div>
 
-        {message.sendPending && (
-          <div
-            role="status"
-            aria-live="polite"
-            aria-busy="true"
-            data-testid="chat-message-send-pending"
-            className="mt-1.5 max-w-md overflow-hidden rounded-xl border border-border bg-gradient-to-b from-card to-muted/30 shadow-sm"
-          >
-            <div className="flex gap-3 px-4 py-3">
-              <div
-                className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/12 dark:bg-primary/20"
-                aria-hidden
-              >
-                <Loader2 className="h-[18px] w-[18px] animate-spin text-primary" />
-              </div>
-              <div className="min-w-0 flex-1 space-y-2.5">
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <p className="text-sm font-medium leading-snug text-foreground">
-                    {sendPendingMainLabel}
-                  </p>
-                  <span className="rounded-md bg-muted/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    {t('messageSendFilesBadge', {
-                      count: message.sendPending.attachmentCount,
-                    })}
-                  </span>
-                </div>
-                {sendPendingProgress.showBar && (
-                  <div
-                    className="h-2 overflow-hidden rounded-full bg-muted/90 dark:bg-muted/50"
-                    aria-hidden
-                  >
-                    <div
-                      className={cn(
-                        'h-full rounded-full bg-gradient-to-r from-primary to-primary/80 transition-[width] duration-500 ease-out',
-                        sendPendingProgress.indeterminate && 'animate-pulse',
-                      )}
-                      style={{ width: `${sendPendingProgress.pct}%` }}
-                    />
-                  </div>
-                )}
-                {message.sendPending.captionPreview.trim() !== '' && (
-                  <p className="line-clamp-2 border-t border-border/60 pt-2 text-xs leading-relaxed text-muted-foreground">
-                    {message.sendPending.captionPreview.trim()}
-                  </p>
-                )}
-              </div>
-            </div>
+        {/* Content */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          {/* Name + Timestamp */}
+          <div className="flex items-baseline gap-2">
+            <span className="font-semibold text-sm text-foreground">
+              {senderName}
+            </span>
+            {timestamp && (
+              <span className="text-xs text-muted-foreground">{timestamp}</span>
+            )}
           </div>
-        )}
 
-        {/* Message text above attachments (caption + media in one Matrix event) */}
-        {textContent &&
-          (message.formattedContentHtml ? (
-            <p
-              data-testid="chat-message-body"
-              className={cn(
-                'text-sm leading-snug text-foreground',
-                message.media ||
-                  (message.mediaSlots && message.mediaSlots.length > 0)
-                  ? 'mt-1'
-                  : 'mt-0',
-              )}
-            >
-              <ChatMessageRichText html={message.formattedContentHtml} />
-            </p>
-          ) : jumboLayout.mode === 'jumbo' ? (
-            <p
-              data-testid="chat-message-body"
-              className={cn(
-                'flex flex-wrap items-end text-foreground',
-                jumboLayout.sizeClass,
-                message.media ||
-                  (message.mediaSlots && message.mediaSlots.length > 0)
-                  ? 'mt-1'
-                  : 'mt-0',
-              )}
-              aria-label={textContent.trim()}
-            >
-              {jumboLayout.graphemes.map((g, i) => (
-                <span key={`${g}-${i}`} aria-hidden>
-                  {g}
-                </span>
-              ))}
-            </p>
-          ) : (
-            <p
-              data-testid="chat-message-body"
-              className={cn(
-                'text-sm leading-snug text-foreground',
-                message.media ||
-                  (message.mediaSlots && message.mediaSlots.length > 0)
-                  ? 'mt-1'
-                  : 'mt-0',
-              )}
-            >
-              {renderTextWithMentions(textContent)}
-            </p>
-          ))}
-
-        {message.mediaSlots && message.mediaSlots.length > 1 && (
-          <div
-            className="mt-1 max-w-md space-y-2"
-            data-testid="chat-message-media-bundle"
-          >
-            {(() => {
-              const { images, audios, videos, otherFiles } =
-                partitionBundleSlots(message.mediaSlots);
-              const gridClass = bundleImageGridClass(images.length);
-              return (
-                <>
-                  {images.length > 0 && (
-                    <div
-                      className={cn(
-                        'grid auto-rows-[minmax(0,1fr)] gap-0.5 overflow-hidden rounded-lg border border-border bg-muted/20 p-0.5',
-                        gridClass,
-                      )}
-                    >
-                      {images.map((slot, idx) => (
-                        <TimelineCollageImageTile
-                          key={`${message.id}-img-${idx}`}
-                          media={slot}
-                          tOpen={t}
-                        />
-                      ))}
-                    </div>
-                  )}
-                  {audios.length > 0 && (
-                    <div className="flex flex-col gap-2">
-                      {audios.map((slot, idx) => (
-                        <TimelineVoiceSlot
-                          key={`${message.id}-aud-${idx}`}
-                          media={slot}
-                          t={t}
-                        />
-                      ))}
-                    </div>
-                  )}
-                  {videos.length > 0 && (
-                    <div className="flex flex-col gap-2">
-                      {videos.map((slot, idx) => (
-                        <TimelineMatrixVideo
-                          key={`${message.id}-vid-${idx}`}
-                          media={slot}
-                          t={t}
-                        />
-                      ))}
-                    </div>
-                  )}
-                  {otherFiles.length > 0 && (
-                    <div className="flex flex-col gap-2">
-                      {otherFiles.map((slot, idx) => (
-                        <TimelineFileSlot
-                          key={`${message.id}-file-${idx}`}
-                          media={slot}
-                          t={t}
-                          format={format}
-                          fullWidth
-                        />
-                      ))}
-                    </div>
-                  )}
-                </>
-              );
-            })()}
-          </div>
-        )}
-
-        {!message.mediaSlots?.length &&
-          message.media &&
-          message.media.msgtype === 'm.image' && (
+          {message.sendPending && (
             <div
-              className="relative mt-1 max-w-md overflow-hidden rounded-lg border border-border bg-muted/30"
-              data-testid="chat-message-media-image"
-              style={
-                message.media.mediaInfo?.w &&
-                message.media.mediaInfo?.h &&
-                message.media.mediaInfo.w > 0 &&
-                message.media.mediaInfo.h > 0
-                  ? {
-                      aspectRatio: `${message.media.mediaInfo.w} / ${message.media.mediaInfo.h}`,
-                    }
-                  : undefined
-              }
+              role="status"
+              aria-live="polite"
+              aria-busy="true"
+              data-testid="chat-message-send-pending"
+              className="mt-1.5 max-w-md overflow-hidden rounded-xl border border-border bg-gradient-to-b from-card to-muted/30 shadow-sm"
             >
-              {mediaPreviewUrl && mediaDownloadUrl ? (
-                <>
-                  <a
-                    href={mediaDownloadUrl}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    tabIndex={
-                      message.media.spoiler && !spoilerRevealed ? -1 : 0
-                    }
-                    aria-hidden={message.media.spoiler && !spoilerRevealed}
-                    onKeyDown={(e) => {
-                      const m = message.media;
-                      if (
-                        m?.spoiler &&
-                        !spoilerRevealed &&
-                        (e.key === 'Enter' || e.key === ' ')
-                      ) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }
-                    }}
-                    className={cn(
-                      'block cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
-                      message.media.spoiler &&
-                        !spoilerRevealed &&
-                        'pointer-events-none',
-                    )}
-                    aria-label={t('openAttachmentInNewTab')}
-                    title={t('openAttachmentInNewTab')}
-                  >
-                    <MatrixTimelineImage
-                      key={message.id}
-                      previewUrl={mediaPreviewUrl}
-                      downloadUrl={mediaDownloadUrl}
-                      alt={message.media.filename ?? ''}
-                      className={cn(
-                        'max-h-72 w-full object-contain',
-                        message.media.spoiler && !spoilerRevealed && 'blur-2xl',
-                      )}
-                    />
-                  </a>
-                  {message.media.spoiler && !spoilerRevealed && (
-                    <TimelineSpoilerRevealOverlay
-                      t={t}
-                      onReveal={() => setSpoilerRevealed(true)}
-                    />
-                  )}
-                </>
-              ) : (
-                <p className="p-3 text-sm text-muted-foreground">
-                  {message.media.filename ?? t('attachmentUnavailable')}
-                </p>
-              )}
-            </div>
-          )}
-
-        {!message.mediaSlots?.length &&
-          message.media &&
-          (message.media.msgtype === 'm.audio' ||
-            isChatPanelAudioFile(message.media)) && (
-            <TimelineVoiceSlot media={message.media} t={t} />
-          )}
-
-        {!message.mediaSlots?.length &&
-          message.media &&
-          message.media.msgtype === 'm.file' &&
-          isChatPanelVideoFile(message.media) && (
-            <TimelineMatrixVideo media={message.media} t={t} />
-          )}
-
-        {!message.mediaSlots?.length &&
-          message.media &&
-          message.media.msgtype === 'm.file' &&
-          !isChatPanelVideoFile(message.media) &&
-          !isChatPanelAudioFile(message.media) && (
-            <div
-              className="mt-1 max-w-md rounded-lg border border-border bg-card px-3 py-2"
-              data-testid="chat-message-media-file"
-            >
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
-                  <FileIcon className="h-5 w-5" strokeWidth={1.5} />
+              <div className="flex gap-3 px-4 py-3">
+                <div
+                  className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/12 dark:bg-primary/20"
+                  aria-hidden
+                >
+                  <Loader2 className="h-[18px] w-[18px] animate-spin text-primary" />
                 </div>
-                <div className="min-w-0 flex-1">
-                  {mediaDownloadUrl ? (
-                    <a
-                      href={mediaDownloadUrl}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-                    >
-                      <span className="truncate">
-                        {message.media.filename ?? t('attachment')}
-                      </span>
-                      <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-70" />
-                    </a>
-                  ) : (
-                    <span className="truncate text-sm font-medium text-foreground">
-                      {message.media.filename ?? t('attachment')}
+                <div className="min-w-0 flex-1 space-y-2.5">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <p className="text-sm font-medium leading-snug text-foreground">
+                      {sendPendingMainLabel}
+                    </p>
+                    <span className="rounded-md bg-muted/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {t('messageSendFilesBadge', {
+                        count: message.sendPending.attachmentCount,
+                      })}
                     </span>
+                  </div>
+                  {sendPendingProgress.showBar && (
+                    <div
+                      className="h-2 overflow-hidden rounded-full bg-muted/90 dark:bg-muted/50"
+                      aria-hidden
+                    >
+                      <div
+                        className={cn(
+                          'h-full rounded-full bg-gradient-to-r from-primary to-primary/80 transition-[width] duration-500 ease-out',
+                          sendPendingProgress.indeterminate && 'animate-pulse',
+                        )}
+                        style={{ width: `${sendPendingProgress.pct}%` }}
+                      />
+                    </div>
                   )}
-                  {message.media.mediaInfo?.size != null && (
-                    <p className="text-xs text-muted-foreground">
-                      {(() => {
-                        const size = message.media.mediaInfo.size;
-                        if (
-                          typeof size !== 'number' ||
-                          !Number.isFinite(size) ||
-                          size < 0
-                        ) {
-                          return t('attachmentSizeUnknown');
-                        }
-                        if (size < 1024) {
-                          return format.number(size, {
-                            style: 'unit',
-                            unit: 'byte',
-                            unitDisplay: 'narrow',
-                            maximumFractionDigits: 0,
-                          });
-                        }
-                        if (size < 1024 * 1024) {
-                          return format.number(size / 1024, {
-                            style: 'unit',
-                            unit: 'kilobyte',
-                            unitDisplay: 'narrow',
-                            maximumFractionDigits: 1,
-                          });
-                        }
-                        return format.number(size / (1024 * 1024), {
-                          style: 'unit',
-                          unit: 'megabyte',
-                          unitDisplay: 'narrow',
-                          maximumFractionDigits: 1,
-                        });
-                      })()}
+                  {message.sendPending.captionPreview.trim() !== '' && (
+                    <p className="line-clamp-2 border-t border-border/60 pt-2 text-xs leading-relaxed text-muted-foreground">
+                      {message.sendPending.captionPreview.trim()}
                     </p>
                   )}
                 </div>
@@ -1405,112 +1139,392 @@ export function HumanChatPanelMessageBubble({
             </div>
           )}
 
-        {/* Streaming indicator */}
-        {isStreaming && (
-          <span className="mt-1 inline-flex items-center gap-0.5">
-            <span className="inline-block h-1 w-1 animate-pulse rounded-full bg-primary" />
-            <span className="inline-block h-1 w-1 animate-pulse rounded-full bg-primary [animation-delay:0.2s]" />
-            <span className="inline-block h-1 w-1 animate-pulse rounded-full bg-primary [animation-delay:0.4s]" />
-          </span>
-        )}
-
-        {/* Reactions — Discord-style pills; inline add-reaction only when ≥1 reaction exists */}
-        {visibleReactions.length > 0 && (
-          <div
-            data-testid="chat-message-reactions"
-            className="mt-1 flex flex-wrap items-center gap-0.5"
-          >
-            {visibleReactions.map((reaction) => {
-              const tooltip =
-                resolveReactionReactorLabel &&
-                reactionTooltipText(reaction, resolveReactionReactorLabel, t);
-              const pill = (
-                <button
-                  type="button"
-                  disabled={!canReact}
-                  aria-pressed={Boolean(reaction.includesCurrentUser)}
-                  onClick={() => {
-                    if (canReact && onReact) {
-                      void onReact(reaction.emoji);
-                    }
-                  }}
-                  className={cn(
-                    /* Discord: rounded rectangle frame, not a full pill */
-                    'inline-flex h-5 min-w-0 shrink-0 items-center gap-0.5 rounded-md border px-1.5 text-xs tabular-nums leading-none transition-colors',
-                    reaction.includesCurrentUser
-                      ? 'border-[#5865f2]/50 bg-[#5865f2]/15 hover:bg-[#5865f2]/20 dark:border-[#5865f2]/40 dark:bg-[#5865f2]/20'
-                      : 'border-border bg-muted/80 hover:bg-muted',
-                    canReact ? 'cursor-pointer' : 'cursor-default opacity-80',
-                  )}
-                >
-                  <span className="text-[13px] leading-none" aria-hidden>
-                    {reaction.emoji}
+          {/* Message text above attachments (caption + media in one Matrix event) */}
+          {textContent &&
+            (message.formattedContentHtml ? (
+              <p
+                data-testid="chat-message-body"
+                className={cn(
+                  'text-sm leading-snug text-foreground',
+                  message.media ||
+                    (message.mediaSlots && message.mediaSlots.length > 0)
+                    ? 'mt-1'
+                    : 'mt-0',
+                )}
+              >
+                <ChatMessageRichText html={message.formattedContentHtml} />
+              </p>
+            ) : jumboLayout.mode === 'jumbo' ? (
+              <p
+                data-testid="chat-message-body"
+                className={cn(
+                  'flex flex-wrap items-end text-foreground',
+                  jumboLayout.sizeClass,
+                  message.media ||
+                    (message.mediaSlots && message.mediaSlots.length > 0)
+                    ? 'mt-1'
+                    : 'mt-0',
+                )}
+                aria-label={textContent.trim()}
+              >
+                {jumboLayout.graphemes.map((g, i) => (
+                  <span key={`${g}-${i}`} aria-hidden>
+                    {g}
                   </span>
-                  <span
+                ))}
+              </p>
+            ) : (
+              <p
+                data-testid="chat-message-body"
+                className={cn(
+                  'text-sm leading-snug text-foreground',
+                  message.media ||
+                    (message.mediaSlots && message.mediaSlots.length > 0)
+                    ? 'mt-1'
+                    : 'mt-0',
+                )}
+              >
+                {renderTextWithMentions(textContent)}
+              </p>
+            ))}
+
+          {message.mediaSlots && message.mediaSlots.length > 1 && (
+            <div
+              className="mt-1 max-w-md space-y-2"
+              data-testid="chat-message-media-bundle"
+            >
+              {(() => {
+                const { images, audios, videos, otherFiles } =
+                  partitionBundleSlots(message.mediaSlots);
+                const gridClass = bundleImageGridClass(images.length);
+                return (
+                  <>
+                    {images.length > 0 && (
+                      <div
+                        className={cn(
+                          'grid auto-rows-[minmax(0,1fr)] gap-0.5 overflow-hidden rounded-lg border border-border bg-muted/20 p-0.5',
+                          gridClass,
+                        )}
+                      >
+                        {images.map((slot, idx) => (
+                          <TimelineCollageImageTile
+                            key={`${message.id}-img-${idx}`}
+                            media={slot}
+                            tOpen={t}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    {audios.length > 0 && (
+                      <div className="flex flex-col gap-2">
+                        {audios.map((slot, idx) => (
+                          <TimelineVoiceSlot
+                            key={`${message.id}-aud-${idx}`}
+                            media={slot}
+                            t={t}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    {videos.length > 0 && (
+                      <div className="flex flex-col gap-2">
+                        {videos.map((slot, idx) => (
+                          <TimelineMatrixVideo
+                            key={`${message.id}-vid-${idx}`}
+                            media={slot}
+                            t={t}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    {otherFiles.length > 0 && (
+                      <div className="flex flex-col gap-2">
+                        {otherFiles.map((slot, idx) => (
+                          <TimelineFileSlot
+                            key={`${message.id}-file-${idx}`}
+                            media={slot}
+                            t={t}
+                            format={format}
+                            fullWidth
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          )}
+
+          {!message.mediaSlots?.length &&
+            message.media &&
+            message.media.msgtype === 'm.image' && (
+              <div
+                className="relative mt-1 max-w-md overflow-hidden rounded-lg border border-border bg-muted/30"
+                data-testid="chat-message-media-image"
+                style={
+                  message.media.mediaInfo?.w &&
+                  message.media.mediaInfo?.h &&
+                  message.media.mediaInfo.w > 0 &&
+                  message.media.mediaInfo.h > 0
+                    ? {
+                        aspectRatio: `${message.media.mediaInfo.w} / ${message.media.mediaInfo.h}`,
+                      }
+                    : undefined
+                }
+              >
+                {mediaPreviewUrl && mediaDownloadUrl ? (
+                  <>
+                    <a
+                      href={mediaDownloadUrl}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      tabIndex={
+                        message.media.spoiler && !spoilerRevealed ? -1 : 0
+                      }
+                      aria-hidden={message.media.spoiler && !spoilerRevealed}
+                      onKeyDown={(e) => {
+                        const m = message.media;
+                        if (
+                          m?.spoiler &&
+                          !spoilerRevealed &&
+                          (e.key === 'Enter' || e.key === ' ')
+                        ) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }
+                      }}
+                      className={cn(
+                        'block cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+                        message.media.spoiler &&
+                          !spoilerRevealed &&
+                          'pointer-events-none',
+                      )}
+                      aria-label={t('openAttachmentInNewTab')}
+                      title={t('openAttachmentInNewTab')}
+                    >
+                      <MatrixTimelineImage
+                        key={message.id}
+                        previewUrl={mediaPreviewUrl}
+                        downloadUrl={mediaDownloadUrl}
+                        alt={message.media.filename ?? ''}
+                        className={cn(
+                          'max-h-72 w-full object-contain',
+                          message.media.spoiler &&
+                            !spoilerRevealed &&
+                            'blur-2xl',
+                        )}
+                      />
+                    </a>
+                    {message.media.spoiler && !spoilerRevealed && (
+                      <TimelineSpoilerRevealOverlay
+                        t={t}
+                        onReveal={() => setSpoilerRevealed(true)}
+                      />
+                    )}
+                  </>
+                ) : (
+                  <p className="p-3 text-sm text-muted-foreground">
+                    {message.media.filename ?? t('attachmentUnavailable')}
+                  </p>
+                )}
+              </div>
+            )}
+
+          {!message.mediaSlots?.length &&
+            message.media &&
+            (message.media.msgtype === 'm.audio' ||
+              isChatPanelAudioFile(message.media)) && (
+              <TimelineVoiceSlot media={message.media} t={t} />
+            )}
+
+          {!message.mediaSlots?.length &&
+            message.media &&
+            message.media.msgtype === 'm.file' &&
+            isChatPanelVideoFile(message.media) && (
+              <TimelineMatrixVideo media={message.media} t={t} />
+            )}
+
+          {!message.mediaSlots?.length &&
+            message.media &&
+            message.media.msgtype === 'm.file' &&
+            !isChatPanelVideoFile(message.media) &&
+            !isChatPanelAudioFile(message.media) && (
+              <div
+                className="mt-1 max-w-md rounded-lg border border-border bg-card px-3 py-2"
+                data-testid="chat-message-media-file"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                    <FileIcon className="h-5 w-5" strokeWidth={1.5} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    {mediaDownloadUrl ? (
+                      <a
+                        href={mediaDownloadUrl}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                      >
+                        <span className="truncate">
+                          {message.media.filename ?? t('attachment')}
+                        </span>
+                        <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                      </a>
+                    ) : (
+                      <span className="truncate text-sm font-medium text-foreground">
+                        {message.media.filename ?? t('attachment')}
+                      </span>
+                    )}
+                    {message.media.mediaInfo?.size != null && (
+                      <p className="text-xs text-muted-foreground">
+                        {(() => {
+                          const size = message.media.mediaInfo.size;
+                          if (
+                            typeof size !== 'number' ||
+                            !Number.isFinite(size) ||
+                            size < 0
+                          ) {
+                            return t('attachmentSizeUnknown');
+                          }
+                          if (size < 1024) {
+                            return format.number(size, {
+                              style: 'unit',
+                              unit: 'byte',
+                              unitDisplay: 'narrow',
+                              maximumFractionDigits: 0,
+                            });
+                          }
+                          if (size < 1024 * 1024) {
+                            return format.number(size / 1024, {
+                              style: 'unit',
+                              unit: 'kilobyte',
+                              unitDisplay: 'narrow',
+                              maximumFractionDigits: 1,
+                            });
+                          }
+                          return format.number(size / (1024 * 1024), {
+                            style: 'unit',
+                            unit: 'megabyte',
+                            unitDisplay: 'narrow',
+                            maximumFractionDigits: 1,
+                          });
+                        })()}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+          {/* Streaming indicator */}
+          {isStreaming && (
+            <span className="mt-1 inline-flex items-center gap-0.5">
+              <span className="inline-block h-1 w-1 animate-pulse rounded-full bg-primary" />
+              <span className="inline-block h-1 w-1 animate-pulse rounded-full bg-primary [animation-delay:0.2s]" />
+              <span className="inline-block h-1 w-1 animate-pulse rounded-full bg-primary [animation-delay:0.4s]" />
+            </span>
+          )}
+
+          {/* Reactions — Discord-style pills; inline add-reaction only when ≥1 reaction exists */}
+          {visibleReactions.length > 0 && (
+            <div
+              data-testid="chat-message-reactions"
+              className="mt-1 flex flex-wrap items-center gap-0.5"
+            >
+              {visibleReactions.map((reaction) => {
+                const tooltip =
+                  resolveReactionReactorLabel &&
+                  reactionTooltipText(reaction, resolveReactionReactorLabel, t);
+                const pill = (
+                  <button
+                    type="button"
+                    disabled={!canReact}
+                    aria-pressed={Boolean(reaction.includesCurrentUser)}
+                    onClick={() => {
+                      if (canReact && onReact) {
+                        void onReact(reaction.emoji);
+                      }
+                    }}
                     className={cn(
-                      'text-[10px] font-medium leading-none',
+                      /* Discord: rounded rectangle frame, not a full pill */
+                      'inline-flex h-5 min-w-0 shrink-0 items-center gap-0.5 rounded-md border px-1.5 text-xs tabular-nums leading-none transition-colors',
                       reaction.includesCurrentUser
-                        ? 'text-[#5865f2] dark:text-[#949cf7]'
-                        : 'text-muted-foreground',
+                        ? 'border-[#5865f2]/50 bg-[#5865f2]/15 hover:bg-[#5865f2]/20 dark:border-[#5865f2]/40 dark:bg-[#5865f2]/20'
+                        : 'border-border bg-muted/80 hover:bg-muted',
+                      canReact ? 'cursor-pointer' : 'cursor-default opacity-80',
                     )}
                   >
-                    {reaction.count}
-                  </span>
-                </button>
-              );
-
-              if (tooltip) {
-                return (
-                  <Tooltip key={reaction.emoji} delayDuration={300}>
-                    <TooltipTrigger asChild>{pill}</TooltipTrigger>
-                    <TooltipContent
-                      side="top"
-                      className="max-w-xs text-left text-xs leading-snug"
+                    <span className="text-[13px] leading-none" aria-hidden>
+                      {reaction.emoji}
+                    </span>
+                    <span
+                      className={cn(
+                        'text-[10px] font-medium leading-none',
+                        reaction.includesCurrentUser
+                          ? 'text-[#5865f2] dark:text-[#949cf7]'
+                          : 'text-muted-foreground',
+                      )}
                     >
-                      {tooltip}
-                    </TooltipContent>
-                  </Tooltip>
+                      {reaction.count}
+                    </span>
+                  </button>
                 );
-              }
-              return <Fragment key={reaction.emoji}>{pill}</Fragment>;
-            })}
-            {hiddenReactionCount > 0 && (
-              <span className="text-xs text-muted-foreground">
-                {t('reactionsOverflow', { count: hiddenReactionCount })}
-              </span>
-            )}
-            {canReact && onReact && (
-              <HumanChatPanelEmojiPicker
-                open={inlineReactPickerOpen}
-                onOpenChange={setInlineReactPickerOpen}
-                onEmojiSelect={(native) => {
-                  pushRecentChatReaction(native);
-                  void onReact(native);
-                }}
-                ariaLabel={t('addReactionButton')}
-                align="start"
-              >
-                <button
-                  type="button"
-                  className={cn(
-                    'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-border',
-                    'bg-muted/80 text-muted-foreground transition-colors hover:bg-muted',
-                  )}
-                  aria-label={t('addReactionButton')}
-                  aria-expanded={inlineReactPickerOpen}
+
+                if (tooltip) {
+                  return (
+                    <Tooltip key={reaction.emoji} delayDuration={300}>
+                      <TooltipTrigger asChild>{pill}</TooltipTrigger>
+                      <TooltipContent
+                        side="top"
+                        className="max-w-xs text-left text-xs leading-snug"
+                      >
+                        {tooltip}
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                }
+                return <Fragment key={reaction.emoji}>{pill}</Fragment>;
+              })}
+              {hiddenReactionCount > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  {t('reactionsOverflow', { count: hiddenReactionCount })}
+                </span>
+              )}
+              {canReact && onReact && (
+                <HumanChatPanelEmojiPicker
+                  open={inlineReactPickerOpen}
+                  onOpenChange={setInlineReactPickerOpen}
+                  onEmojiSelect={(native) => {
+                    pushRecentChatReaction(native);
+                    void onReact(native);
+                  }}
+                  ariaLabel={t('addReactionButton')}
+                  align="start"
                 >
-                  <SmilePlus className="h-3 w-3" strokeWidth={2} />
-                </button>
-              </HumanChatPanelEmojiPicker>
-            )}
-          </div>
-        )}
+                  <button
+                    type="button"
+                    className={cn(
+                      'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-border',
+                      'bg-muted/80 text-muted-foreground transition-colors hover:bg-muted',
+                    )}
+                    aria-label={t('addReactionButton')}
+                    aria-expanded={inlineReactPickerOpen}
+                  >
+                    <SmilePlus className="h-3 w-3" strokeWidth={2} />
+                  </button>
+                </HumanChatPanelEmojiPicker>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Discord-style floating bar: compact height, tight to icon row */}
       <div
         className={cn(
-          'absolute right-3 top-0 z-10 flex h-6 -translate-y-1/2 items-center gap-0 rounded-md border border-border bg-popover px-0 py-0 leading-none text-popover-foreground shadow-md ring-1 ring-black/5 dark:ring-white/10 transition-opacity duration-150',
+          'absolute right-3 z-10 flex h-6 -translate-y-1/2 items-center gap-0 rounded-md border border-border bg-popover px-0 py-0 leading-none text-popover-foreground shadow-md ring-1 ring-black/5 dark:ring-white/10 transition-opacity duration-150',
+          replyTo ? 'top-[calc(1.375rem+0.25rem+0.625rem)]' : 'top-0',
           isActionBarVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
         aria-hidden={!isActionBarVisible}
