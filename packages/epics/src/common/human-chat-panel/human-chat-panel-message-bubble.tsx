@@ -877,18 +877,22 @@ function renderTextWithMentions(text: string): React.ReactNode[] {
   return parts;
 }
 
-/** Connector from main avatar up to quoted author chip (SVG tuned for w-10 + pl-[52px] reply row). */
+/**
+ * Connector from main timeline avatar (w-10, center x=20) to quoted author avatar
+ * (size sm = 24px, center x = 52 + 12 = 64 in the same coordinate origin) — delta +44px.
+ * SVG is 88px wide, centered on the main column, so x=64 maps to 64 - (20 - 44) = 88.
+ */
 function ChatReplyConnector() {
   return (
     <svg
-      className="pointer-events-none absolute left-1/2 z-0 -translate-x-1/2 overflow-visible text-muted-foreground/40"
-      width="48"
-      height="52"
-      viewBox="0 0 48 52"
+      className="pointer-events-none overflow-visible text-muted-foreground/40"
+      width="88"
+      height="56"
+      viewBox="0 0 88 56"
       aria-hidden
     >
       <path
-        d="M 24 52 L 24 18 C 24 10 26 6 32 5.5 L 44 5.5"
+        d="M 44 55 L 44 22 C 44 13 48 9 56 9 L 88 9"
         fill="none"
         stroke="currentColor"
         strokeWidth="1.25"
@@ -1071,7 +1075,7 @@ export function HumanChatPanelMessageBubble({
           data-testid="chat-message-avatar"
         >
           {replyTo && (
-            <div className="pointer-events-none absolute bottom-full left-1/2 z-0 mb-0.5 flex h-[52px] w-10 -translate-x-1/2 items-end justify-center overflow-visible">
+            <div className="pointer-events-none absolute bottom-full left-1/2 z-0 mb-0.5 flex h-[56px] w-[88px] max-w-none -translate-x-1/2 items-end justify-center overflow-visible">
               <ChatReplyConnector />
             </div>
           )}
