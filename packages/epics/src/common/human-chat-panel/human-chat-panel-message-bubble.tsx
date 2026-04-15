@@ -877,11 +877,7 @@ function renderTextWithMentions(text: string): React.ReactNode[] {
   return parts;
 }
 
-/**
- * Reply thread line: from top-center of main avatar up into the reply row,
- * then curves toward the quoted author avatar (coordinates tuned for w-10 + pl-[52px] layout).
- */
-/** Connector from main avatar (bottom) up to quoted author chip; tuned for w-10 + reply row layout. */
+/** Connector from main avatar up to quoted author chip (SVG tuned for w-10 + pl-[52px] reply row). */
 function ChatReplyConnector() {
   return (
     <svg
@@ -1040,17 +1036,43 @@ export function HumanChatPanelMessageBubble({
       onPointerEnter={onRowPointerEnter}
       onPointerLeave={onRowPointerLeave}
     >
+      {replyTo && (
+        <div
+          data-testid="chat-message-reply-context"
+          className="mb-1 flex min-h-[22px] items-center gap-1.5 pl-[52px]"
+        >
+          <PersonAvatar
+            size="sm"
+            shape="circle"
+            avatarSrc={replyHeaderAvatar}
+            userName={replyTo.authorLabel}
+          />
+          <p className="flex min-w-0 flex-1 items-baseline gap-1 truncate text-xs leading-tight text-muted-foreground">
+            <span className="shrink-0 font-semibold text-muted-foreground">
+              {replyTo.authorLabel.startsWith('@')
+                ? replyTo.authorLabel
+                : `@${replyTo.authorLabel}`}
+            </span>
+            {replyTo.excerpt != null && replyTo.excerpt !== '' ? (
+              <span className="min-w-0 truncate font-normal">
+                {replyTo.excerpt}
+              </span>
+            ) : (
+              <span className="italic">{t('replyOriginalUnavailable')}</span>
+            )}
+          </p>
+        </div>
+      )}
+
       <div className="flex items-start gap-3">
-        {/* Main avatar: top-aligned with sender name; connector spans up to reply row */}
+        {/* Main avatar: first row in this column is sender name — aligns with "You" */}
         <div
           className="relative flex w-10 shrink-0 flex-col items-center pt-0.5"
           data-testid="chat-message-avatar"
         >
           {replyTo && (
-            <div className="pointer-events-none absolute left-1/2 top-0 z-0 -translate-x-1/2">
-              <div className="relative h-[44px] w-10 overflow-visible pt-0.5">
-                <ChatReplyConnector />
-              </div>
+            <div className="pointer-events-none absolute bottom-full left-1/2 z-0 mb-0.5 flex h-[52px] w-10 -translate-x-1/2 items-end justify-center overflow-visible">
+              <ChatReplyConnector />
             </div>
           )}
           <div className="relative z-[1]">
@@ -1065,35 +1087,6 @@ export function HumanChatPanelMessageBubble({
 
         {/* Content */}
         <div className="flex min-w-0 flex-1 flex-col">
-          {replyTo && (
-            <div
-              data-testid="chat-message-reply-context"
-              className="mb-1 flex min-h-[22px] items-center gap-1.5"
-            >
-              <PersonAvatar
-                size="sm"
-                shape="circle"
-                avatarSrc={replyHeaderAvatar}
-                userName={replyTo.authorLabel}
-              />
-              <p className="flex min-w-0 flex-1 items-baseline gap-1 truncate text-xs leading-tight text-muted-foreground">
-                <span className="shrink-0 font-semibold text-muted-foreground">
-                  {replyTo.authorLabel.startsWith('@')
-                    ? replyTo.authorLabel
-                    : `@${replyTo.authorLabel}`}
-                </span>
-                {replyTo.excerpt != null && replyTo.excerpt !== '' ? (
-                  <span className="min-w-0 truncate font-normal">
-                    {replyTo.excerpt}
-                  </span>
-                ) : (
-                  <span className="italic">
-                    {t('replyOriginalUnavailable')}
-                  </span>
-                )}
-              </p>
-            </div>
-          )}
           {/* Name + Timestamp */}
           <div className="flex items-baseline gap-2">
             <span className="font-semibold text-sm text-foreground">
@@ -1537,7 +1530,8 @@ export function HumanChatPanelMessageBubble({
       {/* Discord-style floating bar: compact height, tight to icon row */}
       <div
         className={cn(
-          'absolute right-3 top-0 z-10 flex h-6 -translate-y-1/2 items-center gap-0 rounded-md border border-border bg-popover px-0 py-0 leading-none text-popover-foreground shadow-md ring-1 ring-black/5 dark:ring-white/10 transition-opacity duration-150',
+          'absolute right-3 z-10 flex h-6 -translate-y-1/2 items-center gap-0 rounded-md border border-border bg-popover px-0 py-0 leading-none text-popover-foreground shadow-md ring-1 ring-black/5 dark:ring-white/10 transition-opacity duration-150',
+          replyTo ? 'top-[calc(1.375rem+0.25rem)]' : 'top-0',
           isActionBarVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
         aria-hidden={!isActionBarVisible}
