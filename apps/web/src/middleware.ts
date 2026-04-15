@@ -36,6 +36,14 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
     ...(matrixImg ? [matrixImg] : []),
     ...IMAGE_HOSTS.map((host) => `https://${host}`),
   ].join(' ');
+  /** `<video>` / `<audio>` use `media-src`; if unset, `default-src` blocks cross-origin Matrix clips. */
+  const mediaSrc = [
+    "'self'",
+    'data:',
+    'blob:',
+    ...(matrixImg ? [matrixImg] : []),
+    ...IMAGE_HOSTS.map((host) => `https://${host}`),
+  ].join(' ');
   const connectSrc = [
     ...CONNECT_SOURCES,
     process.env.NEXT_PUBLIC_RPC_URL ?? '',
@@ -51,7 +59,8 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
       `script-src 'self' ${enableUnsafeScripts} https://challenges.cloudflare.com https://cdn.onesignal.com https://api.onesignal.com https://vercel.live`,
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://onesignal.com",
       `img-src 'self' ${imageSrc}`,
-      "font-src 'self' https://fonts.gstatic.com",
+      `media-src ${mediaSrc}`,
+      "font-src 'self' https://fonts.gstatic.com https://vercel.live",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
