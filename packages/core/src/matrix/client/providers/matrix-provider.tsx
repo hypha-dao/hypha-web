@@ -22,6 +22,7 @@ import {
   resolveReplyTargetForSend,
   type HyphaMediaBundleItemWire,
 } from '../../rich-reply';
+import { applyMediaEditCaptionAndReply } from '../../edit-room-message-media-caption';
 
 export interface SendAttachmentInput {
   file: File;
@@ -869,69 +870,16 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           };
         }
 
-        if (trimmed) {
-          if (replyToId?.trim()) {
-            const {
-              eventId: resolvedReplyTargetId,
-              sender: replyTargetSender,
-              body: targetBody,
-            } = await resolveReplyTargetForSend(client, roomId, replyToId);
-            const rich = buildRichReplyMatrixContent(
-              replyTargetSender,
-              targetBody,
-              trimmed,
-            );
-            combined = {
-              ...combined,
-              body: rich.body,
-              format: MATRIX_CUSTOM_HTML_FORMAT,
-              formatted_body: rich.formatted_body,
-              'm.relates_to': {
-                'm.in_reply_to': {
-                  event_id: resolvedReplyTargetId,
-                },
-              },
-            } as HyphaMediaEventContent;
-          } else {
-            const textExtras =
-              matrixTextEventContentWithOptionalFormatting(trimmed);
-            combined = {
-              ...combined,
-              ...textExtras,
-              body: trimmed,
-            } as HyphaMediaEventContent;
-          }
-        } else if (replyToId?.trim()) {
-          const {
-            eventId: resolvedReplyTargetId,
-            sender: replyTargetSender,
-            body: targetBody,
-          } = await resolveReplyTargetForSend(client, roomId, replyToId);
-          const quoted = buildRichReplyMatrixContent(
-            replyTargetSender,
-            targetBody,
-            ' ',
-          );
-          combined = {
-            ...combined,
-            body: quoted.body,
-            format: MATRIX_CUSTOM_HTML_FORMAT,
-            formatted_body: quoted.formatted_body,
-            'm.relates_to': {
-              'm.in_reply_to': {
-                event_id: resolvedReplyTargetId,
-              },
-            },
-          } as HyphaMediaEventContent;
-        } else {
-          const fn =
-            slots[0]?.filename?.trim() ||
-            String(rootFromSlot.body ?? 'attachment');
-          combined = {
-            ...combined,
-            body: fn,
-          } as HyphaMediaEventContent;
-        }
+        const filenameFallback =
+          slots[0]?.filename?.trim() ||
+          String(rootFromSlot.body ?? 'attachment');
+        combined = await applyMediaEditCaptionAndReply(
+          combined,
+          trimmed,
+          replyToId,
+          (id) => resolveReplyTargetForSend(client, roomId, id),
+          filenameFallback,
+        );
 
         const newBody =
           'body' in combined ? String(combined.body) : trimmed || 'attachment';
