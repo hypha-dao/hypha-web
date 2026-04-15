@@ -25,8 +25,8 @@ import {
 
 export interface SendAttachmentInput {
   file: File;
-  /** Drives Matrix `msgtype`: `m.image` vs `m.file`. */
-  kind: 'file' | 'image';
+  /** Drives Matrix `msgtype`: `m.image` vs `m.file` vs `m.audio`. */
+  kind: 'file' | 'image' | 'audio';
   /** Blur in timeline until clicked (`org.hypha.spoiler` on the event). */
   spoiler?: boolean;
 }
@@ -137,6 +137,35 @@ type HyphaMediaEventContent = RoomMessageEventContent & {
   format?: typeof MATRIX_CUSTOM_HTML_FORMAT;
   formatted_body?: string;
 };
+
+function loadAudioDurationMs(file: File): Promise<number | undefined> {
+  if (
+    !file.type.startsWith('audio/') &&
+    !/\.(webm|ogg|opus|mp3|m4a|wav)$/i.test(file.name)
+  ) {
+    return Promise.resolve(undefined);
+  }
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const el = document.createElement('audio');
+    const done = (ms?: number) => {
+      URL.revokeObjectURL(url);
+      el.src = '';
+      resolve(ms);
+    };
+    el.preload = 'metadata';
+    el.onloadedmetadata = () => {
+      const d = el.duration;
+      if (Number.isFinite(d) && d > 0) {
+        done(Math.round(d * 1000));
+      } else {
+        done(undefined);
+      }
+    };
+    el.onerror = () => done(undefined);
+    el.src = url;
+  });
+}
 
 function loadImageDimensions(
   file: File,
@@ -454,12 +483,18 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           clearTimeout(timeoutId);
         }
         const mxc = upload.content_uri;
-        const msgtype = att.kind === 'image' ? MsgType.Image : MsgType.File;
+        const msgtype =
+          att.kind === 'image'
+            ? MsgType.Image
+            : att.kind === 'audio'
+            ? MsgType.Audio
+            : MsgType.File;
         let info: {
           mimetype?: string;
           size?: number;
           w?: number;
           h?: number;
+          duration?: number;
         } = {
           mimetype: att.file.type || undefined,
           size: att.file.size,
@@ -468,6 +503,11 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           const dims = await loadImageDimensions(att.file);
           if (dims) {
             info = { ...info, w: dims.w, h: dims.h };
+          }
+        } else if (msgtype === MsgType.Audio) {
+          const dur = await loadAudioDurationMs(att.file);
+          if (dur != null) {
+            info = { ...info, duration: dur };
           }
         }
 

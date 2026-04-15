@@ -55,11 +55,13 @@ export type MessageMediaInfo = {
   size?: number;
   w?: number;
   h?: number;
+  /** Matrix `m.audio` / MSC1767: duration in milliseconds */
+  duration?: number;
 };
 
 /** One slot in a multi-attachment `org.hypha.media_bundle` message. */
 export type MessageMediaBundleItem = {
-  msgtype: 'm.file' | 'm.image';
+  msgtype: 'm.file' | 'm.image' | 'm.audio';
   mxcUrl?: string;
   filename?: string;
   mediaInfo?: MessageMediaInfo;
@@ -72,7 +74,7 @@ export interface Message {
   /** Synthetic row from a redaction handler: remove this timeline id from UI. */
   redacted?: boolean;
   /** Matrix msgtype for timeline rendering (`m.text` is implicit when omitted). */
-  msgtype?: 'm.text' | 'm.file' | 'm.image';
+  msgtype?: 'm.text' | 'm.file' | 'm.image' | 'm.audio';
   /** Visible message text (reply fallback stripped when applicable). */
   content: string;
   /**
