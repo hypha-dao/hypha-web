@@ -13,6 +13,8 @@ import {
   readBooleanOverride,
 } from './vercel-toolbar-overrides';
 
+const isPreviewEnvironment = () => process.env.VERCEL_ENV === 'preview';
+
 /**
  * **Guideline:** AI / Coherence / Space Memory / Human Chat default **off** until
  * enabled via cookie, `NEXT_PUBLIC_*=true`, or Vercel Flags Toolbar. Human Chat
@@ -33,30 +35,28 @@ import {
 export const flagDefinitionsForDiscovery = {
   enableWeb3Auth: {
     key: 'enable-web3-auth',
-    defaultValue: false,
-    description:
-      'Web3 auth — enabled only when HYPHA_AUTH_PROVIDER=web3auth (cookie) or toolbar override; not a global product default',
+    defaultValue: isPreviewEnvironment(),
+    description: 'Use Web3Auth as the auth provider when cookie matches',
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
   showLanguageSelect: {
     key: 'show-language-select',
-    defaultValue: true,
+    defaultValue: isPreviewEnvironment(),
     description: 'Show the i18n language select button in the menu bar',
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
   enableAiChat: {
     key: 'enable-ai-chat',
-    defaultValue: false,
-    description:
-      'AI Chat panel on space pages. Opt in: cookie or NEXT_PUBLIC_ENABLE_AI_CHAT=true',
+    defaultValue: isPreviewEnvironment(),
+    description: 'Enable the AI Chat panel in space pages',
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
   enableCoherence: {
     key: 'enable-coherence',
-    defaultValue: false,
+    defaultValue: isPreviewEnvironment(),
     description:
       'Coherence tab and signals. Opt in: HYPHA_ENABLE_COHERENCE cookie or NEXT_PUBLIC_ENABLE_COHERENCE=true. Space Memory uses enable-space-memory.',
     origin: 'hypha' as const,
@@ -76,9 +76,8 @@ export const flagDefinitionsForDiscovery = {
    */
   enableHumanChat: {
     key: 'enable-human-chat',
-    defaultValue: false,
-    description:
-      'Human Chat right panel (opt in: HYPHA_ENABLE_HUMAN_CHAT=true or NEXT_PUBLIC_ENABLE_HUMAN_CHAT=true, or Vercel toolbar). Kill switch: HYPHA_DISABLE_HUMAN_CHAT or NEXT_PUBLIC_DISABLE_HUMAN_CHAT=true',
+    defaultValue: isPreviewEnvironment(),
+    description: 'Enable the Human Chat panel in space pages',
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
@@ -90,7 +89,10 @@ export async function getEnableWeb3Auth(): Promise<boolean> {
   if (o !== undefined) return o;
 
   const store = await cookies();
-  return store.get(HYPHA_AUTH_PROVIDER)?.value === 'web3auth';
+  const provider = store.get(HYPHA_AUTH_PROVIDER)?.value;
+  if (provider === 'web3auth') return true;
+  if (provider !== undefined) return false;
+  return isPreviewEnvironment();
 }
 
 export async function getShowLanguageSelect(): Promise<boolean> {
@@ -99,9 +101,9 @@ export async function getShowLanguageSelect(): Promise<boolean> {
   if (o !== undefined) return o;
 
   const store = await cookies();
-  const cookieValue = store.get(HYPHA_SHOW_LANGUAGE_SELECT)?.value;
-  if (cookieValue === 'false') return false;
-  return true;
+  const v = store.get(HYPHA_SHOW_LANGUAGE_SELECT)?.value;
+  if (v !== undefined) return v === 'true';
+  return isPreviewEnvironment();
 }
 
 async function getBooleanFlagFromToolbarCookieOrEnv(
@@ -115,11 +117,9 @@ async function getBooleanFlagFromToolbarCookieOrEnv(
 
   const store = await cookies();
   const cookieValue = store.get(cookieName)?.value;
-  if (cookieValue === 'true') return true;
-  if (cookieValue === 'false') return false;
+  if (cookieValue !== undefined) return cookieValue === 'true';
   if (envValue === 'true') return true;
-  if (envValue === 'false') return false;
-  return false;
+  return isPreviewEnvironment();
 }
 
 export async function getEnableAiChat(): Promise<boolean> {
