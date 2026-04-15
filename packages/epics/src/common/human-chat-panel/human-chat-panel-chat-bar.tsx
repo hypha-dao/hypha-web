@@ -300,6 +300,7 @@ export function HumanChatPanelChatBar({
   const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const [isDictating, setIsDictating] = useState(false);
   const [micMenuOpen, setMicMenuOpen] = useState(false);
+  const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const valueRef = useRef(value);
   valueRef.current = value;
 
@@ -528,6 +529,25 @@ export function HumanChatPanelChatBar({
     [value, onChange, autoResize],
   );
 
+  const canSend =
+    (value.trim().length > 0 || draftAttachments.length > 0) &&
+    (!editMediaMode || draftAttachments.length > 0);
+
+  const handleAttachMenuContentEnter = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key !== 'Enter' || e.shiftKey) return;
+      const ne = e.nativeEvent as KeyboardEvent;
+      if (ne.isComposing) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setAttachMenuOpen(false);
+      if (canSend) {
+        onSend();
+      }
+    },
+    [canSend, onSend],
+  );
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (colonOpen && colonSuggestions.length > 0) {
       if (e.key === 'ArrowDown') {
@@ -564,15 +584,11 @@ export function HumanChatPanelChatBar({
 
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
-      if (value.trim().length > 0 || draftAttachments.length > 0) {
+      if (canSend) {
         onSend();
       }
     }
   };
-
-  const canSend =
-    (value.trim().length > 0 || draftAttachments.length > 0) &&
-    (!editMediaMode || draftAttachments.length > 0);
 
   const defaultPlaceholder = channelName
     ? t('placeholderChannel', { channel: channelName })
@@ -1272,18 +1288,26 @@ export function HumanChatPanelChatBar({
           )}
           <div className="flex min-w-0 items-center justify-between gap-2">
             <div className="flex min-w-0 flex-1 items-center gap-0.5">
-              <DropdownMenu>
+              <DropdownMenu
+                open={attachMenuOpen}
+                onOpenChange={setAttachMenuOpen}
+              >
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
                     className={iconButtonClass}
                     aria-label={t('composerAttachMenu')}
                     title={t('composerAttachMenu')}
+                    aria-expanded={attachMenuOpen}
                   >
                     <Plus className="h-4 w-4" strokeWidth={2} />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="min-w-[200px]">
+                <DropdownMenuContent
+                  align="start"
+                  className="min-w-[200px]"
+                  onKeyDownCapture={handleAttachMenuContentEnter}
+                >
                   <DropdownMenuItem
                     className="cursor-pointer gap-2"
                     onSelect={() => {
