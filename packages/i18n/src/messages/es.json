@@ -1635,6 +1635,7 @@
     "editingMessage": "Editando mensaje",
     "editDismiss": "Cancelar edición",
     "editAttachmentsNotSupported": "No se admiten archivos adjuntos al editar un mensaje",
+    "editMediaRequiresAttachment": "Conserva al menos un adjunto al editar este mensaje.",
     "contextReactWith": "Reaccionar con {emoji}",
     "contextEditMessage": "Editar mensaje",
     "contextReply": "Responder",

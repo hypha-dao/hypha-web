@@ -1635,6 +1635,7 @@
     "editingMessage": "Nachricht bearbeiten",
     "editDismiss": "Bearbeitung abbrechen",
     "editAttachmentsNotSupported": "Anhänge werden beim Bearbeiten einer Nachricht nicht unterstützt",
+    "editMediaRequiresAttachment": "Behalten Sie mindestens einen Anhang beim Bearbeiten dieser Nachricht.",
     "contextReactWith": "Reagieren mit {emoji}",
     "contextEditMessage": "Nachricht bearbeiten",
     "contextReply": "Antworten",

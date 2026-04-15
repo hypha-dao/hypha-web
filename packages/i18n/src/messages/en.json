@@ -1636,6 +1636,7 @@
     "editingMessage": "Editing message",
     "editDismiss": "Cancel edit",
     "editAttachmentsNotSupported": "Attachments are not supported when editing a message",
+    "editMediaRequiresAttachment": "Keep at least one attachment when editing this message.",
     "contextReactWith": "React with {emoji}",
     "contextEditMessage": "Edit message",
     "contextReply": "Reply",

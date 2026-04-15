@@ -181,8 +181,6 @@ export function HumanChatPanelMessages({
                 canInteract &&
                 onEditMessage &&
                 msg.role === 'user' &&
-                !msg.media &&
-                !msg.mediaSlots?.length &&
                 !msg.sendPending
                   ? () => onEditMessage(msg.id)
                   : undefined

@@ -26,6 +26,10 @@ import {
   isMatrixRateLimitedError,
   type MessageReaction,
 } from '@hypha-platform/core/client';
+import {
+  isChatPanelAudioFile,
+  isChatPanelVideoFile,
+} from './human-chat-panel/chat-panel-media-types';
 import { UseMembers } from '../spaces';
 
 import {
@@ -42,7 +46,9 @@ import { useHumanChatPanel } from './human-chat-panel-context';
 
 function disposeDraftAttachmentUrls(drafts: ChatDraftAttachment[]) {
   for (const a of drafts) {
-    URL.revokeObjectURL(a.previewUrl);
+    if (a.previewUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(a.previewUrl);
+    }
   }
 }
 
@@ -95,6 +101,8 @@ type ReplyDraft = {
 type EditDraft = {
   messageId: string;
   excerpt: string;
+  /** Editing a bundled / media Matrix message (caption + attachments). */
+  editMediaMode?: boolean;
 };
 
 const ROOM_STORAGE_KEY = 'hypha-chat-room-';
@@ -219,6 +227,73 @@ function toUIMessage(
     reactions,
     replyTo,
   };
+}
+
+function dummyEditFile(filename: string, mime?: string): File {
+  return new File([], filename || 'attachment', {
+    type: mime || 'application/octet-stream',
+  });
+}
+
+function buildEditMediaDraftAttachments(
+  m: UIMessage,
+  previewForMxc: (mxc: string) => string | null,
+): ChatDraftAttachment[] {
+  const slots: NonNullable<UIMessage['media']>[] = [];
+  if (m.media?.mxcUrl) {
+    slots.push(m.media);
+  }
+  if (m.mediaSlots && m.mediaSlots.length > 1) {
+    for (const s of m.mediaSlots.slice(1)) {
+      if (s.mxcUrl) slots.push(s);
+    }
+  }
+  const out: ChatDraftAttachment[] = [];
+  for (const slot of slots) {
+    const mxc = slot.mxcUrl!;
+    const thumb = previewForMxc(mxc) ?? EDIT_IMAGE_PLACEHOLDER;
+    const isVid = slot.msgtype === 'm.file' && isChatPanelVideoFile(slot);
+    const isAud = isChatPanelAudioFile(slot);
+    const kind: ChatDraftAttachment['kind'] =
+      slot.msgtype === 'm.image'
+        ? 'image'
+        : isAud
+        ? 'audio'
+        : isVid
+        ? 'video'
+        : 'file';
+    out.push({
+      id: newChatDraftAttachmentId(),
+      file: dummyEditFile(
+        slot.filename ?? 'attachment',
+        slot.mediaInfo?.mimetype,
+      ),
+      kind,
+      previewUrl: thumb || mxc,
+      spoiler: Boolean(slot.spoiler),
+      editSlot: {
+        mxcUrl: mxc,
+        msgtype: slot.msgtype,
+        filename: slot.filename,
+        mediaInfo: slot.mediaInfo,
+        spoiler: slot.spoiler,
+      },
+    });
+  }
+  return out;
+}
+
+const EDIT_IMAGE_PLACEHOLDER =
+  'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+function newChatDraftAttachmentId(): string {
+  if (
+    typeof globalThis.crypto !== 'undefined' &&
+    typeof globalThis.crypto.randomUUID === 'function'
+  ) {
+    return globalThis.crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 function getMessagePlainText(m: UIMessage): string {
@@ -813,9 +888,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     (messageId: string) => {
       const target = messages.find((m) => m.id === messageId);
       if (!target || target.role !== 'user') return;
-      if (target.media || (target.mediaSlots && target.mediaSlots.length > 0)) {
-        return;
-      }
       const textParts =
         target.parts?.filter(
           (p): p is { type: 'text'; text: string } => p.type === 'text',
@@ -826,13 +898,42 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setReplyDraft(null);
       disposeDraftAttachmentUrls(draftAttachmentsRef.current);
       setDraftAttachments([]);
+
+      const hasMedia =
+        Boolean(target.media?.mxcUrl) ||
+        (Boolean(target.mediaSlots?.length) &&
+          (target.mediaSlots?.length ?? 0) > 1);
+
+      if (hasMedia && !client) {
+        return;
+      }
+
+      if (hasMedia && client) {
+        const previewForMxc = (mxc: string) =>
+          mxc.startsWith('mxc://')
+            ? client.mxcUrlToHttp(mxc, 400, 300, 'scale', true, false, false) ??
+              null
+            : null;
+        setDraftAttachments(
+          buildEditMediaDraftAttachments(target, previewForMxc),
+        );
+        setEditDraft({
+          messageId,
+          excerpt: firstLineForReplyPreview(plain),
+          editMediaMode: true,
+        });
+        setInput(plain);
+        return;
+      }
+
+      setDraftAttachments([]);
       setEditDraft({
         messageId,
         excerpt: firstLineForReplyPreview(plain),
       });
       setInput(plain);
     },
-    [messages],
+    [messages, client],
   );
 
   const handleDeleteMessage = useCallback(
@@ -884,14 +985,44 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     }
     try {
       if (editTargetEventId) {
-        if (savedAttachments.length > 0) {
-          throw new Error(t('editAttachmentsNotSupported'));
+        if (savedEditDraft?.editMediaMode) {
+          const slots = savedAttachments
+            .map((a) => a.editSlot)
+            .filter((s): s is NonNullable<ChatDraftAttachment['editSlot']> =>
+              Boolean(s),
+            );
+          if (slots.length === 0) {
+            throw new Error(t('editMediaRequiresAttachment'));
+          }
+          const newFiles = savedAttachments
+            .filter((a) => !a.editSlot)
+            .map((a) => ({
+              file: a.file,
+              kind:
+                a.kind === 'image'
+                  ? 'image'
+                  : a.kind === 'audio'
+                  ? 'audio'
+                  : 'file',
+              spoiler: a.spoiler,
+            }));
+          await matrixRef.current.editRoomMessage({
+            roomId,
+            targetEventId: editTargetEventId,
+            message: text,
+            existingMediaSlots: slots,
+            ...(newFiles.length > 0 ? { newAttachments: newFiles } : {}),
+          });
+        } else {
+          if (savedAttachments.length > 0) {
+            throw new Error(t('editAttachmentsNotSupported'));
+          }
+          await matrixRef.current.editRoomMessage({
+            roomId,
+            targetEventId: editTargetEventId,
+            message: text,
+          });
         }
-        await matrixRef.current.editRoomMessage({
-          roomId,
-          targetEventId: editTargetEventId,
-          message: text,
-        });
       } else {
         await matrixRef.current.sendMessage({
           roomId,
@@ -1076,10 +1207,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     onDismiss: () => {
                       setEditDraft(null);
                       setInput('');
+                      disposeDraftAttachmentUrls(draftAttachmentsRef.current);
+                      setDraftAttachments([]);
                     },
                   }
                 : undefined
             }
+            editMediaMode={Boolean(editDraft?.editMediaMode)}
           />
         </SidebarFooter>
       )}

@@ -45,6 +45,7 @@ import {
 } from './emoji-mart-index';
 import { getTextareaSelectionCenter } from './textarea-caret-position';
 import {
+  type ChatPanelAttachmentMedia,
   looksLikeAudioMimeOrName,
   looksLikeVideoMimeOrName,
 } from './chat-panel-media-types';
@@ -79,18 +80,31 @@ type EditPreview = {
   onDismiss: () => void;
 };
 
+/** Existing server slot when editing a media message (no new upload). */
+export type ChatDraftEditSlot = {
+  mxcUrl: string;
+  msgtype: ChatPanelAttachmentMedia['msgtype'];
+  filename?: string;
+  mediaInfo?: ChatPanelAttachmentMedia['mediaInfo'];
+  spoiler?: boolean;
+};
+
 export type ChatDraftAttachment = {
   id: string;
   file: File;
   kind: 'file' | 'image' | 'video' | 'audio';
   previewUrl: string;
   spoiler: boolean;
+  /** When set, this row is an existing Matrix attachment (edit mode). */
+  editSlot?: ChatDraftEditSlot;
 };
 
 type HumanChatPanelChatBarProps = {
   value: string;
   onChange: (value: string) => void;
   onSend: () => void;
+  /** Editing a media message: keep at least one attachment row. */
+  editMediaMode?: boolean;
   placeholder?: string;
   channelName?: string;
   /** Rich reply: composer preview above the textarea */
@@ -253,6 +267,7 @@ export function HumanChatPanelChatBar({
   value,
   onChange,
   onSend,
+  editMediaMode = false,
   placeholder,
   channelName,
   replyPreview,
@@ -545,7 +560,9 @@ export function HumanChatPanelChatBar({
     }
   };
 
-  const canSend = value.trim().length > 0 || draftAttachments.length > 0;
+  const canSend =
+    (value.trim().length > 0 || draftAttachments.length > 0) &&
+    (!editMediaMode || draftAttachments.length > 0);
 
   const defaultPlaceholder = channelName
     ? t('placeholderChannel', { channel: channelName })
@@ -592,7 +609,9 @@ export function HumanChatPanelChatBar({
     (id: string) => {
       if (!onDraftAttachmentsChange) return;
       const att = draftAttachments.find((a) => a.id === id);
-      if (att) URL.revokeObjectURL(att.previewUrl);
+      if (att?.previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(att.previewUrl);
+      }
       onDraftAttachmentsChange(draftAttachments.filter((a) => a.id !== id));
     },
     [draftAttachments, onDraftAttachmentsChange],
@@ -1102,7 +1121,8 @@ export function HumanChatPanelChatBar({
                       )}
                       <button
                         type="button"
-                        className="relative z-30 rounded p-1 text-destructive hover:bg-destructive/10"
+                        disabled={editMediaMode && draftAttachments.length <= 1}
+                        className="relative z-30 rounded p-1 text-destructive hover:bg-destructive/10 disabled:pointer-events-none disabled:opacity-40"
                         title={t('attachmentRemove')}
                         aria-label={t('attachmentRemove')}
                         onClick={(e) => {
@@ -1115,10 +1135,12 @@ export function HumanChatPanelChatBar({
                     </div>
                   </div>
                   <p className="truncate px-0.5 text-xs text-muted-foreground">
-                    {att.file.name}
+                    {att.editSlot?.filename ?? att.file.name}
                   </p>
                   <p className="px-0.5 text-[10px] text-muted-foreground/80">
-                    {formatFileSize(att.file.size)}
+                    {formatFileSize(
+                      att.editSlot?.mediaInfo?.size ?? att.file.size,
+                    )}
                   </p>
                 </div>
               ))}

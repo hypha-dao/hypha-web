@@ -1635,6 +1635,7 @@
     "editingMessage": "Modification du message",
     "editDismiss": "Annuler la modification",
     "editAttachmentsNotSupported": "Les pièces jointes ne sont pas prises en charge lors de la modification d’un message",
+    "editMediaRequiresAttachment": "Conservez au moins une pièce jointe lors de la modification de ce message.",
     "contextReactWith": "Réagir avec {emoji}",
     "contextEditMessage": "Modifier le message",
     "contextReply": "Répondre",
