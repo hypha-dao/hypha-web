@@ -137,7 +137,10 @@ function toUIMessage(
 ): UIMessage {
   const isCurrentUser = currentUserId ? msg.sender === currentUserId : false;
 
-  const isMedia = msg.msgtype === 'm.file' || msg.msgtype === 'm.image';
+  const isMedia =
+    msg.msgtype === 'm.file' ||
+    msg.msgtype === 'm.image' ||
+    msg.msgtype === 'm.audio';
 
   const strippedMediaBody = isMedia
     ? stripMatrixReplyFallback(msg.content).trim()
@@ -175,7 +178,7 @@ function toUIMessage(
   const mediaSingle =
     isMedia && msg.msgtype
       ? {
-          msgtype: msg.msgtype as 'm.file' | 'm.image',
+          msgtype: msg.msgtype as 'm.file' | 'm.image' | 'm.audio',
           mxcUrl: msg.mxcUrl,
           filename: msg.filename ?? msg.content,
           mediaInfo: msg.mediaInfo,
@@ -898,7 +901,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             ? {
                 attachments: savedAttachments.map((a) => ({
                   file: a.file,
-                  kind: a.kind === 'video' ? 'file' : a.kind,
+                  kind:
+                    a.kind === 'image'
+                      ? 'image'
+                      : a.kind === 'audio'
+                      ? 'audio'
+                      : 'file',
                   spoiler: a.spoiler,
                 })),
                 onUploadProgress: ({ completed, total }) => {

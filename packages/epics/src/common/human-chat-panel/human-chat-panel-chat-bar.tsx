@@ -22,6 +22,8 @@ import {
   Paperclip,
   Video,
   Mic,
+  Keyboard,
+  Pause,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -29,6 +31,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
@@ -41,7 +44,29 @@ import {
   type EmojiIndexEntry,
 } from './emoji-mart-index';
 import { getTextareaSelectionCenter } from './textarea-caret-position';
-import { looksLikeVideoMimeOrName } from './chat-panel-media-types';
+import {
+  looksLikeAudioMimeOrName,
+  looksLikeVideoMimeOrName,
+} from './chat-panel-media-types';
+
+type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
+
+type SpeechRecognitionLike = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((ev: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((ev: { error?: string }) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+};
+
+type SpeechRecognitionEventLike = {
+  resultIndex: number;
+  results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }>;
+};
 
 type ReplyPreview = {
   authorLabel: string;
@@ -57,7 +82,7 @@ type EditPreview = {
 export type ChatDraftAttachment = {
   id: string;
   file: File;
-  kind: 'file' | 'image' | 'video';
+  kind: 'file' | 'image' | 'video' | 'audio';
   previewUrl: string;
   spoiler: boolean;
 };
@@ -247,6 +272,14 @@ export function HumanChatPanelChatBar({
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const [isVoiceRecording, setIsVoiceRecording] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
+  /** When true, `MediaRecorder` stop should add an audio draft; when false (dictation), discard blob. */
+  const voiceAsAttachmentRef = useRef(false);
+  const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const [isDictating, setIsDictating] = useState(false);
+  const [micMenuOpen, setMicMenuOpen] = useState(false);
+  const valueRef = useRef(value);
+  valueRef.current = value;
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const composerShellRef = useRef<HTMLDivElement>(null);
   const replyPreviewWasOpenRef = useRef(false);
@@ -529,14 +562,20 @@ export function HumanChatPanelChatBar({
         if (kind === 'image' && !file.type.startsWith('image/')) {
           continue;
         }
+        const isAudio =
+          kind === 'file' && looksLikeAudioMimeOrName(file.type, file.name);
         const isVideo =
-          kind === 'file' && looksLikeVideoMimeOrName(file.type, file.name);
+          kind === 'file' &&
+          !isAudio &&
+          looksLikeVideoMimeOrName(file.type, file.name);
         const slotKind: ChatDraftAttachment['kind'] = file.type.startsWith(
           'image/',
         )
           ? 'image'
           : isVideo
           ? 'video'
+          : isAudio
+          ? 'audio'
           : 'file';
         next.push({
           id: newAttachmentDraftId(),
@@ -597,7 +636,7 @@ export function HumanChatPanelChatBar({
     setIsVoiceRecording(false);
   }, []);
 
-  const startVoiceRecording = useCallback(async () => {
+  const startVoiceRecordingAsAttachment = useCallback(async () => {
     if (!onDraftAttachmentsChange) return;
     if (isVoiceRecording) {
       stopVoiceRecording();
@@ -610,7 +649,9 @@ export function HumanChatPanelChatBar({
       setVoiceError(t('voiceRecordingNotSupported'));
       return;
     }
+    setMicMenuOpen(false);
     setVoiceError(null);
+    voiceAsAttachmentRef.current = true;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaStreamRef.current = stream;
@@ -642,7 +683,9 @@ export function HumanChatPanelChatBar({
         mediaStreamRef.current = null;
         mediaRecorderRef.current = null;
         const blob = new Blob(chunks, { type: mr.mimeType || 'audio/webm' });
-        if (blob.size < 256) {
+        const asAttach = voiceAsAttachmentRef.current;
+        voiceAsAttachmentRef.current = false;
+        if (!asAttach || blob.size < 256) {
           return;
         }
         const ext = blob.type.includes('mp4') ? 'm4a' : 'webm';
@@ -655,6 +698,7 @@ export function HumanChatPanelChatBar({
       mr.start();
       setIsVoiceRecording(true);
     } catch {
+      voiceAsAttachmentRef.current = false;
       const s = mediaStreamRef.current;
       if (s) {
         for (const track of s.getTracks()) {
@@ -674,6 +718,80 @@ export function HumanChatPanelChatBar({
     t,
   ]);
 
+  const stopDictation = useCallback(() => {
+    const r = speechRecognitionRef.current;
+    if (r) {
+      try {
+        r.stop();
+      } catch {
+        try {
+          r.abort();
+        } catch {
+          // ignore
+        }
+      }
+      speechRecognitionRef.current = null;
+    }
+    setIsDictating(false);
+  }, []);
+
+  const startDictation = useCallback(() => {
+    setMicMenuOpen(false);
+    setVoiceError(null);
+    const SR =
+      (globalThis as unknown as { SpeechRecognition?: SpeechRecognitionCtor })
+        .SpeechRecognition ??
+      (
+        globalThis as unknown as {
+          webkitSpeechRecognition?: SpeechRecognitionCtor;
+        }
+      ).webkitSpeechRecognition;
+    if (!SR) {
+      setVoiceError(t('dictationNotSupported'));
+      return;
+    }
+    if (isDictating) {
+      stopDictation();
+      return;
+    }
+    const rec = new SR();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = document.documentElement.lang || 'en';
+    rec.onresult = (ev) => {
+      for (let i = ev.resultIndex; i < ev.results.length; i++) {
+        const res = ev.results[i];
+        if (!res?.[0] || !res.isFinal) continue;
+        const piece = res[0].transcript.trim();
+        if (!piece) continue;
+        const cur = valueRef.current.replace(/\u200b$/, '');
+        const space = cur.length > 0 && !/\s$/.test(cur) ? ' ' : '';
+        const next = cur + space + piece;
+        valueRef.current = next;
+        onChange(next);
+      }
+    };
+    rec.onerror = () => {
+      speechRecognitionRef.current = null;
+      setIsDictating(false);
+      onChange(valueRef.current.replace(/\u200b$/, ''));
+      setVoiceError(t('dictationError'));
+    };
+    rec.onend = () => {
+      speechRecognitionRef.current = null;
+      setIsDictating(false);
+      onChange(valueRef.current.replace(/\u200b$/, ''));
+    };
+    speechRecognitionRef.current = rec;
+    try {
+      rec.start();
+      setIsDictating(true);
+    } catch {
+      speechRecognitionRef.current = null;
+      setVoiceError(t('dictationNotSupported'));
+    }
+  }, [isDictating, onChange, stopDictation, t]);
+
   useEffect(() => {
     return () => {
       const mr = mediaRecorderRef.current;
@@ -689,6 +807,15 @@ export function HumanChatPanelChatBar({
         for (const track of s.getTracks()) {
           track.stop();
         }
+      }
+      const r = speechRecognitionRef.current;
+      if (r) {
+        try {
+          r.abort();
+        } catch {
+          // ignore
+        }
+        speechRecognitionRef.current = null;
       }
     };
   }, []);
@@ -929,13 +1056,22 @@ export function HumanChatPanelChatBar({
                         playLabel={t('videoPreviewPlay')}
                         spoilerBadge={t('draftSpoilerTag')}
                       />
+                    ) : att.kind === 'audio' ? (
+                      <div className="flex h-full flex-col items-center justify-center gap-1 bg-muted/60 text-muted-foreground">
+                        <Mic className="h-8 w-8" strokeWidth={1.25} />
+                        <span className="px-1 text-center text-[10px] leading-tight">
+                          {t('voiceMessage')}
+                        </span>
+                      </div>
                     ) : (
                       <div className="flex h-full items-center justify-center text-muted-foreground">
                         <FileIcon className="h-10 w-10" strokeWidth={1.25} />
                       </div>
                     )}
                     <div className="absolute right-1 top-1 z-30 flex gap-0.5 rounded-md bg-popover/95 p-0.5 shadow">
-                      {(att.kind === 'image' || att.kind === 'video') && (
+                      {(att.kind === 'image' ||
+                        att.kind === 'video' ||
+                        att.kind === 'audio') && (
                         <button
                           type="button"
                           className="relative z-30 rounded p-1 text-foreground hover:bg-muted"
@@ -1173,27 +1309,68 @@ export function HumanChatPanelChatBar({
               >
                 <AtSign className="h-4 w-4" aria-hidden />
               </button>
-              <button
-                type="button"
-                className={cn(
-                  iconButtonClass,
-                  isVoiceRecording && 'text-destructive hover:text-destructive',
-                )}
-                aria-label={
-                  isVoiceRecording
-                    ? t('composerVoiceStop')
-                    : t('composerVoiceRecord')
-                }
-                title={
-                  isVoiceRecording
-                    ? t('composerVoiceStop')
-                    : t('composerVoiceRecord')
-                }
-                aria-pressed={isVoiceRecording}
-                onClick={() => void startVoiceRecording()}
-              >
-                <Mic className="h-4 w-4" strokeWidth={2} />
-              </button>
+              <DropdownMenu open={micMenuOpen} onOpenChange={setMicMenuOpen}>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      iconButtonClass,
+                      (isVoiceRecording || isDictating) &&
+                        'text-destructive hover:text-destructive',
+                    )}
+                    aria-label={t('composerMicMenu')}
+                    title={t('composerMicMenu')}
+                    aria-haspopup="menu"
+                    aria-expanded={micMenuOpen}
+                  >
+                    {isDictating ? (
+                      <Keyboard className="h-4 w-4" strokeWidth={2} />
+                    ) : isVoiceRecording ? (
+                      <Pause className="h-4 w-4" strokeWidth={2} />
+                    ) : (
+                      <Mic className="h-4 w-4" strokeWidth={2} />
+                    )}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="min-w-[220px]">
+                  <DropdownMenuItem
+                    className="cursor-pointer gap-2"
+                    disabled={isVoiceRecording}
+                    onSelect={() => {
+                      requestAnimationFrame(() => startDictation());
+                    }}
+                  >
+                    <Keyboard className="h-4 w-4 shrink-0" aria-hidden />
+                    <span>{t('composerDictateMessage')}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="cursor-pointer gap-2"
+                    disabled={isDictating || !onDraftAttachmentsChange}
+                    onSelect={() => {
+                      requestAnimationFrame(
+                        () => void startVoiceRecordingAsAttachment(),
+                      );
+                    }}
+                  >
+                    <Mic className="h-4 w-4 shrink-0" aria-hidden />
+                    <span>{t('composerSendAudioMessage')}</span>
+                  </DropdownMenuItem>
+                  {(isVoiceRecording || isDictating) && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="cursor-pointer text-destructive focus:text-destructive"
+                        onSelect={() => {
+                          if (isVoiceRecording) stopVoiceRecording();
+                          if (isDictating) stopDictation();
+                        }}
+                      >
+                        {t('composerMicStop')}
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             <button
               type="button"

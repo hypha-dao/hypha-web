@@ -13,6 +13,9 @@ import {
   ExternalLink,
   Image as ImageIcon,
   Loader2,
+  Mic,
+  Pause,
+  Play,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
@@ -27,6 +30,7 @@ import {
 import { ChatMessageRichText } from './parse-simple-matrix-html';
 import {
   type ChatPanelAttachmentMedia,
+  isChatPanelAudioFile,
   isChatPanelVideoFile,
 } from './chat-panel-media-types';
 
@@ -323,10 +327,103 @@ function bundleImageGridClass(imageCount: number): string {
 
 function partitionBundleSlots(slots: ChatPanelAttachmentMedia[]) {
   const images = slots.filter((s) => s.msgtype === 'm.image');
-  const files = slots.filter((s) => s.msgtype === 'm.file');
-  const videos = files.filter((s) => isChatPanelVideoFile(s));
-  const otherFiles = files.filter((s) => !isChatPanelVideoFile(s));
-  return { images, videos, otherFiles };
+  const files = slots.filter(
+    (s) => s.msgtype === 'm.file' || s.msgtype === 'm.audio',
+  );
+  const audios = files.filter((s) => isChatPanelAudioFile(s));
+  const videos = files.filter(
+    (s) => !isChatPanelAudioFile(s) && isChatPanelVideoFile(s),
+  );
+  const otherFiles = files.filter(
+    (s) => !isChatPanelAudioFile(s) && !isChatPanelVideoFile(s),
+  );
+  return { images, audios, videos, otherFiles };
+}
+
+function formatAudioDurationMs(ms: number | undefined, tShort: string): string {
+  if (ms == null || !Number.isFinite(ms) || ms <= 0) return tShort;
+  const totalSec = Math.round(ms / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return m > 0
+    ? `${m}:${String(s).padStart(2, '0')}`
+    : `0:${String(s).padStart(2, '0')}`;
+}
+
+/** Telegram-style voice / audio row with working play (native audio, not video chrome). */
+function TimelineVoiceSlot({
+  media,
+  t,
+}: {
+  media: ChatPanelAttachmentMedia;
+  t: (key: string) => string;
+}) {
+  const { client } = useMatrix();
+  const { download: src } = useMxcUrls(client, media.mxcUrl);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const durationMs = media.mediaInfo?.duration;
+
+  const durationLabel = formatAudioDurationMs(
+    durationMs,
+    t('voiceMessageShort'),
+  );
+
+  if (!src) {
+    return (
+      <p className="p-2 text-xs text-muted-foreground">
+        {media.filename ?? t('attachmentUnavailable')}
+      </p>
+    );
+  }
+
+  return (
+    <div
+      className="mt-1 flex max-w-[min(320px,85vw)] items-center gap-2 rounded-full border border-border bg-muted/50 py-1.5 pl-2 pr-3"
+      data-testid="chat-message-media-audio"
+    >
+      <button
+        type="button"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
+        aria-label={playing ? t('voicePause') : t('voicePlay')}
+        title={playing ? t('voicePause') : t('voicePlay')}
+        onClick={() => {
+          const el = audioRef.current;
+          if (!el) return;
+          if (playing) {
+            el.pause();
+          } else {
+            void el.play().catch(() => {});
+          }
+        }}
+      >
+        {playing ? (
+          <Pause className="h-4 w-4" fill="currentColor" aria-hidden />
+        ) : (
+          <Play className="ml-0.5 h-4 w-4" fill="currentColor" aria-hidden />
+        )}
+      </button>
+      <Mic className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-xs font-medium text-foreground">
+          {media.filename?.replace(/^voice-message-\d+\./, '') ||
+            t('voiceMessage')}
+        </p>
+        <p className="text-[10px] text-muted-foreground tabular-nums">
+          {durationLabel}
+        </p>
+      </div>
+      <audio
+        ref={audioRef}
+        src={src}
+        preload="metadata"
+        className="hidden"
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={() => setPlaying(false)}
+      />
+    </div>
+  );
 }
 
 /** Inline Matrix video (`m.file` + video/* or known extension). */
@@ -975,9 +1072,8 @@ export function HumanChatPanelMessageBubble({
             data-testid="chat-message-media-bundle"
           >
             {(() => {
-              const { images, videos, otherFiles } = partitionBundleSlots(
-                message.mediaSlots,
-              );
+              const { images, audios, videos, otherFiles } =
+                partitionBundleSlots(message.mediaSlots);
               const gridClass = bundleImageGridClass(images.length);
               return (
                 <>
@@ -993,6 +1089,17 @@ export function HumanChatPanelMessageBubble({
                           key={`${message.id}-img-${idx}`}
                           media={slot}
                           tOpen={t}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  {audios.length > 0 && (
+                    <div className="flex flex-col gap-2">
+                      {audios.map((slot, idx) => (
+                        <TimelineVoiceSlot
+                          key={`${message.id}-aud-${idx}`}
+                          media={slot}
+                          t={t}
                         />
                       ))}
                     </div>
@@ -1102,6 +1209,13 @@ export function HumanChatPanelMessageBubble({
 
         {!message.mediaSlots?.length &&
           message.media &&
+          (message.media.msgtype === 'm.audio' ||
+            isChatPanelAudioFile(message.media)) && (
+            <TimelineVoiceSlot media={message.media} t={t} />
+          )}
+
+        {!message.mediaSlots?.length &&
+          message.media &&
           message.media.msgtype === 'm.file' &&
           isChatPanelVideoFile(message.media) && (
             <TimelineMatrixVideo media={message.media} t={t} />
@@ -1110,7 +1224,8 @@ export function HumanChatPanelMessageBubble({
         {!message.mediaSlots?.length &&
           message.media &&
           message.media.msgtype === 'm.file' &&
-          !isChatPanelVideoFile(message.media) && (
+          !isChatPanelVideoFile(message.media) &&
+          !isChatPanelAudioFile(message.media) && (
             <div
               className="mt-1 max-w-md rounded-lg border border-border bg-card px-3 py-2"
               data-testid="chat-message-media-file"
