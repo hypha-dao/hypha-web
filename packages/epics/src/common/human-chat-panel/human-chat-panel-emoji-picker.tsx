@@ -16,6 +16,11 @@ type HumanChatPanelEmojiPickerProps = {
   align?: 'start' | 'center' | 'end';
   /** Additional class on trigger wrapper */
   className?: string;
+  /**
+   * When false, outside clicks reach other controls (e.g. switching from attach
+   * menu to emoji in one click). Defaults to true for message reaction pickers.
+   */
+  modal?: boolean;
 };
 
 export function HumanChatPanelEmojiPicker({
@@ -26,9 +31,10 @@ export function HumanChatPanelEmojiPicker({
   ariaLabel,
   align = 'end',
   className,
+  modal = true,
 }: HumanChatPanelEmojiPickerProps) {
   return (
-    <Popover open={open} onOpenChange={onOpenChange}>
+    <Popover modal={modal} open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild className={cn('inline-flex', className)}>
         {children}
       </PopoverTrigger>

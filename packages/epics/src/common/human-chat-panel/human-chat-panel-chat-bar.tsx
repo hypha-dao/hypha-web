@@ -1289,6 +1289,7 @@ export function HumanChatPanelChatBar({
           <div className="flex min-w-0 items-center justify-between gap-2">
             <div className="flex min-w-0 flex-1 items-center gap-0.5">
               <DropdownMenu
+                modal={false}
                 open={attachMenuOpen}
                 onOpenChange={setAttachMenuOpen}
               >
@@ -1338,6 +1339,7 @@ export function HumanChatPanelChatBar({
                 </DropdownMenuContent>
               </DropdownMenu>
               <HumanChatPanelEmojiPicker
+                modal={false}
                 open={emojiPickerOpen}
                 onOpenChange={setEmojiPickerOpen}
                 onEmojiSelect={insertEmoji}
@@ -1383,7 +1385,11 @@ export function HumanChatPanelChatBar({
                   />
                 </button>
               ) : (
-                <DropdownMenu open={micMenuOpen} onOpenChange={setMicMenuOpen}>
+                <DropdownMenu
+                  modal={false}
+                  open={micMenuOpen}
+                  onOpenChange={setMicMenuOpen}
+                >
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
