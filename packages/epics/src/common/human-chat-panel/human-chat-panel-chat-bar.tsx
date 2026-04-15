@@ -548,6 +548,24 @@ export function HumanChatPanelChatBar({
     [canSend, onSend],
   );
 
+  /**
+   * Enter only bubbles to `textarea` when it is focused. After interacting with
+   * draft cards (spoiler/delete), focus can stay in the attachment strip — still
+   * send on Enter when there is something to send (e.g. voice-only).
+   */
+  const handleDraftAttachmentsKeyDownCapture = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key !== 'Enter' || e.shiftKey) return;
+      const ne = e.nativeEvent as KeyboardEvent;
+      if (ne.isComposing) return;
+      if (colonOpen && colonSuggestions.length > 0) return;
+      if (!canSend) return;
+      e.preventDefault();
+      onSend();
+    },
+    [colonOpen, colonSuggestions.length, canSend, onSend],
+  );
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (colonOpen && colonSuggestions.length > 0) {
       if (e.key === 'ArrowDown') {
@@ -1060,6 +1078,7 @@ export function HumanChatPanelChatBar({
 
         {draftAttachments.length > 0 && (
           <div
+            onKeyDownCapture={handleDraftAttachmentsKeyDownCapture}
             className="narrow-scrollbar max-h-[168px] shrink-0 overflow-x-auto overflow-y-hidden border-b border-border px-3 py-2"
             data-testid="chat-draft-attachments"
           >
