@@ -34,7 +34,7 @@ export function createFetchOrgMemoryAssetTool(
 ) {
   return tool({
     description:
-      'Fetch bytes for one space-memory / org-memory asset: use asset_key from get_org_memory_by_space_slug org_memory_assets[]. return_mode auto returns UTF-8 text, extracted PDF text, or base64 for images. Matrix uses server token (same as org memory listing), not browser mxcUrlToHttp. Respects max_bytes (default 2 MiB).',
+      'Fetch bytes for one org-memory asset (asset_key from get_org_memory_by_space_slug). auto: text files, PDF text extraction, base64 for images/video/Office for multimodal models. Matrix: verifies room+event references MXC via GET /event (not limited to last /messages page), then downloads media with Bearer. max_bytes default 2 MiB.',
     inputSchema,
     execute: async (args) => {
       const parsed = inputSchema.safeParse(args);
@@ -124,14 +124,19 @@ export function createFetchOrgMemoryAssetTool(
             ],
           };
         }
+        const kind = mime.startsWith('video/')
+          ? 'Video'
+          : mime.startsWith('audio/')
+          ? 'Audio'
+          : 'File';
         return {
           type: 'content',
           value: [
             {
               type: 'text',
-              text: `Binary: ${o.filename ?? 'file'} (${o.mime}, ${
+              text: `${kind}: ${o.filename ?? 'file'} (${o.mime}, ${
                 o.byte_length ?? 0
-              } bytes)`,
+              } bytes). Office/video are attached as file-data for the model (no auto transcription).`,
             },
             {
               type: 'file-data',

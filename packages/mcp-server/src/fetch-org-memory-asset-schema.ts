@@ -14,7 +14,7 @@ export const fetchOrgMemoryAssetInputSchema = z.object({
     .optional()
     .default('auto')
     .describe(
-      'auto: UTF-8 text + PDF text extraction + images as base64; text_only: text/PDF only; binary_as_base64: raw base64 for image/* and application/pdf',
+      'auto: UTF-8 text, PDF text, image/video/Office MIME as base64; text_only: text + PDF; binary_as_base64: image, video, pdf, Office MIME types',
     ),
   max_bytes: z
     .number()
