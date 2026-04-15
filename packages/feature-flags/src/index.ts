@@ -4,7 +4,11 @@ import {
 } from './vercel-toolbar-overrides';
 
 const isPreviewEnvironment = () => process.env.VERCEL_ENV === 'preview';
-const isEnabled = (value: string | undefined) => value === 'true';
+const isEnabled = (value: string | undefined) => {
+  if (!value) return false;
+  const normalized = value.trim().toLowerCase();
+  return ['true', '1', 'yes', 'y', 'on'].includes(normalized);
+};
 
 /**
  * **Guideline:** AI / Coherence / Space Memory / Human Chat default **off** until
@@ -26,7 +30,9 @@ const isEnabled = (value: string | undefined) => value === 'true';
 export const flagDefinitionsForDiscovery = {
   showLanguageSelect: {
     key: 'show-language-select',
-    defaultValue: isPreviewEnvironment(),
+    defaultValue:
+      isPreviewEnvironment() ||
+      isEnabled(process.env.NEXT_PUBLIC_ENABLE_SHOW_LANGUAGE_SELECT),
     description: 'Show the i18n language select button in the menu bar',
     origin: 'hypha' as const,
     options: undefined as undefined,
@@ -78,7 +84,10 @@ export async function getShowLanguageSelect(): Promise<boolean> {
   const o = readBooleanOverride(overrides, 'show-language-select');
   if (o !== undefined) return o;
 
-  return isPreviewEnvironment();
+  return (
+    isPreviewEnvironment() ||
+    isEnabled(process.env.NEXT_PUBLIC_ENABLE_SHOW_LANGUAGE_SELECT)
+  );
 }
 
 async function getBooleanFlagFromToolbarOrEnv(
