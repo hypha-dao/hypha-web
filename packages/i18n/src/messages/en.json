@@ -1754,6 +1754,7 @@
     "spaceMemoryEmpty": "No uploaded files yet. Attachments on proposals and agreements appear here.",
     "spaceMemoryEmptySearch": "No assets match your search.",
     "spaceMemoryError": "Could not load space memory.",
+    "spaceMemoryLoadMoreError": "Could not load more items. Try again.",
     "spaceMemoryRetry": "Retry",
     "spaceMemoryRefresh": "Refresh",
     "spaceMemoryTimelineLabel": "Space memory history",

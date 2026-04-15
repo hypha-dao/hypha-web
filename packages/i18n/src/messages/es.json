@@ -1754,6 +1754,7 @@
     "spaceMemoryEmpty": "Aún no hay archivos subidos. Los adjuntos en propuestas y acuerdos aparecen aquí.",
     "spaceMemoryEmptySearch": "Ningún archivo coincide con tu búsqueda.",
     "spaceMemoryError": "No se pudo cargar la memoria del espacio.",
+    "spaceMemoryLoadMoreError": "No se pudieron cargar más elementos. Inténtalo de nuevo.",
     "spaceMemoryRetry": "Reintentar",
     "spaceMemoryRefresh": "Actualizar",
     "spaceMemoryTimelineLabel": "Historial de memoria del espacio",

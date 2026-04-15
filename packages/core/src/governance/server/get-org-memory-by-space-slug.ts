@@ -244,6 +244,8 @@ type MatrixMessagesChunk = {
     event_id?: string;
     origin_server_ts?: number;
   }>;
+  /** Pagination token for `from=` on the next `/messages` request (dir=b). */
+  end?: string;
 };
 
 function matrixEnvFlags(): Pick<
@@ -453,37 +455,74 @@ export async function fetchMatrixChatAssets(
 
   const encodedRoom = encodeURIComponent(matrixRoomId);
   const limit = 100;
-  const params = new URLSearchParams({
-    dir: 'b',
-    limit: String(limit),
-    access_token: effectiveToken,
-  });
-  const url = `${homeserver}/_matrix/client/v3/rooms/${encodedRoom}/messages?${params.toString()}`;
+  /** Cap back-pagination so a huge room cannot exhaust time/memory in one request. */
+  const maxHistoryPages = 20;
 
   try {
-    const res = await fetch(url, {
-      method: 'GET',
-      signal: AbortSignal.timeout(20_000),
-    });
-    const body = (await res.json()) as MatrixMessagesChunk & {
-      errcode?: string;
-      error?: string;
-    };
-    const chunk = body.chunk ?? [];
     const out: OrgMemoryAsset[] = [];
     const seen = new Set<string>();
     const bundleStats = { n: 0 };
+    let fromToken: string | undefined;
+    let totalEvents = 0;
+    let lastStatus: number | null = null;
+    let lastErrMsg: string | null = null;
 
-    for (const ev of chunk) {
-      extractMediaFromMessageEvent(matrixRoomId, ev, out, seen, bundleStats);
+    for (let pageIdx = 0; pageIdx < maxHistoryPages; pageIdx++) {
+      const params = new URLSearchParams({
+        dir: 'b',
+        limit: String(limit),
+      });
+      if (fromToken) {
+        params.set('from', fromToken);
+      }
+      let url = `${homeserver}/_matrix/client/v3/rooms/${encodedRoom}/messages?${params.toString()}`;
+
+      let res = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${effectiveToken}`,
+        },
+        signal: AbortSignal.timeout(20_000),
+      });
+      if (res.status === 401) {
+        const qp = new URLSearchParams(params);
+        qp.set('access_token', effectiveToken);
+        url = `${homeserver}/_matrix/client/v3/rooms/${encodedRoom}/messages?${qp.toString()}`;
+        res = await fetch(url, {
+          method: 'GET',
+          signal: AbortSignal.timeout(20_000),
+        });
+      }
+      lastStatus = res.status;
+
+      const body = (await res.json()) as MatrixMessagesChunk & {
+        errcode?: string;
+        error?: string;
+      };
+      const chunk = body.chunk ?? [];
+      totalEvents += chunk.length;
+
+      for (const ev of chunk) {
+        extractMediaFromMessageEvent(matrixRoomId, ev, out, seen, bundleStats);
+      }
+
+      if (!res.ok) {
+        lastErrMsg =
+          body.error || body.errcode
+            ? `${body.errcode ?? 'M_UNKNOWN'}: ${body.error ?? res.statusText}`
+            : `HTTP ${res.status}`;
+        break;
+      }
+
+      const nextFrom =
+        typeof body.end === 'string' && body.end.length > 0
+          ? body.end
+          : undefined;
+      if (!chunk.length || !nextFrom) {
+        break;
+      }
+      fromToken = nextFrom;
     }
-
-    const errMsg =
-      !res.ok && (body.error || body.errcode)
-        ? `${body.errcode ?? 'M_UNKNOWN'}: ${body.error ?? res.statusText}`
-        : !res.ok
-        ? `HTTP ${res.status}`
-        : null;
 
     return {
       assets: out,
@@ -495,11 +534,11 @@ export async function fetchMatrixChatAssets(
         used_bot_access_token: usedBot,
         used_session_matrix_token: usedSession,
         session_matrix_token_unavailable: sessionUnavailable,
-        http_status: res.status,
-        events_in_chunk: chunk.length,
+        http_status: lastStatus,
+        events_in_chunk: totalEvents,
         media_events_yielded: out.length,
         hypha_media_bundle_slots: bundleStats.n,
-        error: errMsg,
+        error: lastErrMsg,
       },
     };
   } catch (e) {

@@ -1754,6 +1754,7 @@
     "spaceMemoryEmpty": "Aucun fichier téléchargé pour l'instant. Les pièces jointes des propositions et accords apparaissent ici.",
     "spaceMemoryEmptySearch": "Aucun fichier ne correspond à votre recherche.",
     "spaceMemoryError": "Impossible de charger la mémoire de l'espace.",
+    "spaceMemoryLoadMoreError": "Impossible de charger d'autres éléments. Veuillez réessayer.",
     "spaceMemoryRetry": "Réessayer",
     "spaceMemoryRefresh": "Actualiser",
     "spaceMemoryTimelineLabel": "Historique de la mémoire de l'espace",

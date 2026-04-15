@@ -130,9 +130,7 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
               </SectionLoadMore>
               {loadMoreError ? (
                 <Text className="max-w-md text-center text-sm text-destructive">
-                  {loadMoreError instanceof Error
-                    ? loadMoreError.message
-                    : String(loadMoreError)}
+                  {t('spaceMemoryLoadMoreError')}
                 </Text>
               ) : null}
             </div>

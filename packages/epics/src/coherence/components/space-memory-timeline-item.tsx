@@ -106,6 +106,14 @@ export function SpaceMemoryTimelineItem({
 
   const thumbPreview = (() => {
     if (mxc) {
+      if (looksLikePdf(item.name, item.url)) {
+        return (
+          <FileIcon
+            className="h-12 w-12 text-muted-foreground"
+            strokeWidth={1.25}
+          />
+        );
+      }
       if (!isMatrixAvailable || !client) {
         return (
           <div className="flex min-h-[120px] w-full flex-col items-center justify-center gap-1 px-2 text-center text-[10px] text-muted-foreground">

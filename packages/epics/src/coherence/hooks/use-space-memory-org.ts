@@ -83,25 +83,27 @@ export function useSpaceMemoryOrg(spaceSlug: string | undefined) {
     void setSize(1);
   }, [searchKey, setSize]);
 
+  const loadedPages =
+    data?.filter((page): page is OrgMemorySpaceMemoryPayload =>
+      Boolean(page),
+    ) ?? [];
+  const lastLoadedPage = loadedPages[loadedPages.length - 1];
+
   const items = React.useMemo(() => {
-    if (!data?.length) return [] as SpaceMemoryItem[];
-    return data.flatMap((page) =>
+    return loadedPages.flatMap((page) =>
       buildSpaceMemoryItemsFromOrgMemoryPayload(page),
     );
-  }, [data]);
+  }, [loadedPages]);
 
   const totalCount = React.useMemo(() => {
-    const first = data?.[0];
-    const fromPagination = first?.assets_pagination?.total;
+    const fromPagination = loadedPages[0]?.assets_pagination?.total;
     if (typeof fromPagination === 'number' && fromPagination >= 0) {
       return fromPagination;
     }
     return items.length;
-  }, [data, items.length]);
+  }, [loadedPages, items.length]);
 
-  const hasMore = Boolean(
-    data?.length && data[data.length - 1]?.assets_pagination?.has_next_page,
-  );
+  const hasMore = Boolean(lastLoadedPage?.assets_pagination?.has_next_page);
 
   const loadMore = React.useCallback(() => {
     if (!hasMore || isValidating) return;
@@ -110,14 +112,18 @@ export function useSpaceMemoryOrg(spaceSlug: string | undefined) {
 
   const refresh = React.useCallback(() => mutate(), [mutate]);
 
-  const listError = !data?.length ? error : undefined;
-  const loadMoreError = data && data.length > 0 ? error : undefined;
+  const loadedPageCount = loadedPages.length;
+  const listError = loadedPageCount === 0 ? error : undefined;
+  const loadMoreError =
+    loadedPageCount > 0 && Boolean(error) && size > loadedPageCount
+      ? error
+      : undefined;
 
   return {
     items,
     totalCount,
-    isLoading: Boolean(isLoading && !data?.length),
-    isLoadingMore: Boolean(isValidating && data && data.length > 0),
+    isLoading: Boolean(isLoading && loadedPageCount === 0),
+    isLoadingMore: Boolean(isValidating && size > loadedPageCount),
     error: listError,
     loadMoreError,
     refresh,

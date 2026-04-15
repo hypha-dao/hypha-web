@@ -1754,6 +1754,7 @@
     "spaceMemoryEmpty": "Ainda não há arquivos enviados. Anexos em propostas e acordos aparecem aqui.",
     "spaceMemoryEmptySearch": "Nenhum arquivo corresponde à sua pesquisa.",
     "spaceMemoryError": "Não foi possível carregar a memória do espaço.",
+    "spaceMemoryLoadMoreError": "Não foi possível carregar mais itens. Tente novamente.",
     "spaceMemoryRetry": "Tentar novamente",
     "spaceMemoryRefresh": "Atualizar",
     "spaceMemoryTimelineLabel": "Histórico da memória do espaço",
