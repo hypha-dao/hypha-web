@@ -1281,6 +1281,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           <HumanChatPanelMembers
             useMembers={useMembers}
             spaceSlug={spaceSlug}
+            roomId={roomId}
           />
         )}
       </SidebarContent>

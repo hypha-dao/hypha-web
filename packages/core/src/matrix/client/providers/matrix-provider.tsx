@@ -1129,10 +1129,13 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       const memberObjects =
         members?.map(async (member) => {
           try {
-            const presence = await client.getPresence(member.userId);
+            const status = await client.getPresence(member.userId);
+            /** `currently_active` is often unset; `presence: online` means the user is connected. */
+            const online =
+              status.presence === 'online' || Boolean(status.currently_active);
             return {
               userId: member.userId,
-              presence: presence.currently_active ?? false,
+              presence: online,
             } as ChatMember;
           } catch {
             return {

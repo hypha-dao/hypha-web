@@ -1,20 +1,27 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Skeleton } from '@hypha-platform/ui';
+import { useMatrix } from '@hypha-platform/core/client';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { UseMembers } from '../../spaces';
 
 type HumanChatPanelMembersProps = {
   useMembers: UseMembers;
   spaceSlug?: string;
+  /** Active Matrix room for presence (space or coherence chat). */
+  roomId?: string | null;
 };
 
 export function HumanChatPanelMembers({
   useMembers,
   spaceSlug,
+  roomId,
 }: HumanChatPanelMembersProps) {
   const t = useTranslations('HumanChatPanel');
+  const { getRoomMembers, isMatrixAvailable, isAuthenticated } = useMatrix();
+  const [onlineCount, setOnlineCount] = useState(0);
 
   const { persons, isLoading } = useMembers({
     spaceSlug,
@@ -24,6 +31,26 @@ export function HumanChatPanelMembers({
   const members = persons?.data ?? [];
   const totalCount = persons?.pagination?.total ?? members.length;
 
+  useEffect(() => {
+    if (!roomId || !isMatrixAvailable || !isAuthenticated) {
+      setOnlineCount(0);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const matrixMembers = await getRoomMembers(roomId);
+        if (cancelled) return;
+        setOnlineCount(matrixMembers.filter((m) => m.presence).length);
+      } catch {
+        if (!cancelled) setOnlineCount(0);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [roomId, isMatrixAvailable, isAuthenticated, getRoomMembers]);
+
   return (
     <div
       className="flex flex-col gap-1 px-3 py-3"
@@ -32,7 +59,7 @@ export function HumanChatPanelMembers({
       <div className="px-1 pb-2 text-xs font-medium text-muted-foreground">
         {t('membersCount', {
           count: totalCount,
-          online: 0,
+          online: onlineCount,
         })}
       </div>
       {isLoading && members.length === 0 && (
