@@ -204,6 +204,75 @@ function loadImageDimensions(
   });
 }
 
+async function prepareUploadedAttachmentMediaPayload(
+  client: MatrixSdk.MatrixClient,
+  att: SendAttachmentInput,
+): Promise<HyphaMediaEventContent> {
+  const abortController = new AbortController();
+  const timeoutMs = MATRIX_UPLOAD_TIMEOUT_MS;
+  const timeoutId = setTimeout(() => {
+    abortController.abort();
+  }, timeoutMs);
+  let upload: { content_uri: string };
+  try {
+    upload = await client.uploadContent(att.file, {
+      name: att.file.name,
+      type: att.file.type || undefined,
+      abortController,
+    });
+  } catch (e) {
+    if (abortController.signal.aborted) {
+      throw new MatrixUploadTimeoutError(
+        `Matrix media upload timed out after ${timeoutMs}ms`,
+      );
+    }
+    throw e;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+  const mxc = upload.content_uri;
+  const msgtype =
+    att.kind === 'image'
+      ? MatrixSdk.MsgType.Image
+      : att.kind === 'audio'
+      ? MatrixSdk.MsgType.Audio
+      : MatrixSdk.MsgType.File;
+  let info: {
+    mimetype?: string;
+    size?: number;
+    w?: number;
+    h?: number;
+    duration?: number;
+  } = {
+    mimetype: att.file.type || undefined,
+    size: att.file.size,
+  };
+  if (msgtype === MatrixSdk.MsgType.Image) {
+    const dims = await loadImageDimensions(att.file);
+    if (dims) {
+      info = { ...info, w: dims.w, h: dims.h };
+    }
+  } else if (msgtype === MatrixSdk.MsgType.Audio) {
+    const dur = await loadAudioDurationMs(att.file);
+    if (dur != null) {
+      info = { ...info, duration: dur };
+    }
+  }
+
+  const caption = att.file.name;
+  const base: HyphaMediaEventContent = {
+    msgtype,
+    body: caption,
+    filename: att.file.name,
+    url: mxc,
+    info,
+  } as HyphaMediaEventContent;
+  if (att.spoiler) {
+    base[HYPHA_SPOILER_FIELD] = true;
+  }
+  return base;
+}
+
 export interface ToggleReactionInput {
   roomId: string;
   targetEventId: string;
@@ -473,74 +542,6 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         };
       }
 
-      const prepareMediaPayload = async (
-        att: SendAttachmentInput,
-      ): Promise<HyphaMediaEventContent> => {
-        const abortController = new AbortController();
-        const timeoutMs = MATRIX_UPLOAD_TIMEOUT_MS;
-        const timeoutId = setTimeout(() => {
-          abortController.abort();
-        }, timeoutMs);
-        let upload: { content_uri: string };
-        try {
-          upload = await client.uploadContent(att.file, {
-            name: att.file.name,
-            type: att.file.type || undefined,
-            abortController,
-          });
-        } catch (e) {
-          if (abortController.signal.aborted) {
-            throw new MatrixUploadTimeoutError(
-              `Matrix media upload timed out after ${timeoutMs}ms`,
-            );
-          }
-          throw e;
-        } finally {
-          clearTimeout(timeoutId);
-        }
-        const mxc = upload.content_uri;
-        const msgtype =
-          att.kind === 'image'
-            ? MsgType.Image
-            : att.kind === 'audio'
-            ? MsgType.Audio
-            : MsgType.File;
-        let info: {
-          mimetype?: string;
-          size?: number;
-          w?: number;
-          h?: number;
-          duration?: number;
-        } = {
-          mimetype: att.file.type || undefined,
-          size: att.file.size,
-        };
-        if (msgtype === MsgType.Image) {
-          const dims = await loadImageDimensions(att.file);
-          if (dims) {
-            info = { ...info, w: dims.w, h: dims.h };
-          }
-        } else if (msgtype === MsgType.Audio) {
-          const dur = await loadAudioDurationMs(att.file);
-          if (dur != null) {
-            info = { ...info, duration: dur };
-          }
-        }
-
-        const caption = att.file.name;
-        const base: HyphaMediaEventContent = {
-          msgtype,
-          body: caption,
-          filename: att.file.name,
-          url: mxc,
-          info,
-        } as HyphaMediaEventContent;
-        if (att.spoiler) {
-          base[HYPHA_SPOILER_FIELD] = true;
-        }
-        return base;
-      };
-
       if (hasAttachments) {
         const mediaPayloads: HyphaMediaEventContent[] = [];
         for (let i = 0; i < list.length; i++) {
@@ -551,7 +552,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           let attempt = 0;
           while (true) {
             try {
-              mediaPayloads.push(await prepareMediaPayload(att));
+              mediaPayloads.push(
+                await prepareUploadedAttachmentMediaPayload(client, att),
+              );
               onUploadProgress?.({
                 completed: mediaPayloads.length,
                 total: list.length,
@@ -794,73 +797,6 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
 
       if (isMediaEdit) {
         const slots = existingMediaSlots!;
-        const prepareMediaPayload = async (
-          att: SendAttachmentInput,
-        ): Promise<HyphaMediaEventContent> => {
-          const abortController = new AbortController();
-          const timeoutMs = MATRIX_UPLOAD_TIMEOUT_MS;
-          const timeoutId = setTimeout(() => {
-            abortController.abort();
-          }, timeoutMs);
-          let upload: { content_uri: string };
-          try {
-            upload = await client.uploadContent(att.file, {
-              name: att.file.name,
-              type: att.file.type || undefined,
-              abortController,
-            });
-          } catch (e) {
-            if (abortController.signal.aborted) {
-              throw new MatrixUploadTimeoutError(
-                `Matrix media upload timed out after ${timeoutMs}ms`,
-              );
-            }
-            throw e;
-          } finally {
-            clearTimeout(timeoutId);
-          }
-          const mxc = upload.content_uri;
-          const msgtype =
-            att.kind === 'image'
-              ? MsgType.Image
-              : att.kind === 'audio'
-              ? MsgType.Audio
-              : MsgType.File;
-          let info: {
-            mimetype?: string;
-            size?: number;
-            w?: number;
-            h?: number;
-            duration?: number;
-          } = {
-            mimetype: att.file.type || undefined,
-            size: att.file.size,
-          };
-          if (msgtype === MsgType.Image) {
-            const dims = await loadImageDimensions(att.file);
-            if (dims) {
-              info = { ...info, w: dims.w, h: dims.h };
-            }
-          } else if (msgtype === MsgType.Audio) {
-            const dur = await loadAudioDurationMs(att.file);
-            if (dur != null) {
-              info = { ...info, duration: dur };
-            }
-          }
-          const caption = att.file.name;
-          const base: HyphaMediaEventContent = {
-            msgtype,
-            body: caption,
-            filename: att.file.name,
-            url: mxc,
-            info,
-          } as HyphaMediaEventContent;
-          if (att.spoiler) {
-            base[HYPHA_SPOILER_FIELD] = true;
-          }
-          return base;
-        };
-
         const slotToPayload = (
           slot: EditRoomMessageExistingSlot,
         ): HyphaMediaEventContent => {
@@ -887,7 +823,12 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           let attempt = 0;
           while (true) {
             try {
-              uploaded.push(await prepareMediaPayload(newList[i]!));
+              uploaded.push(
+                await prepareUploadedAttachmentMediaPayload(
+                  client,
+                  newList[i]!,
+                ),
+              );
               break;
             } catch (e) {
               if (

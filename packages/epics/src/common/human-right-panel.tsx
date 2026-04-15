@@ -831,10 +831,20 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     registerRoomListener(
       roomId,
       async (message: Message) => {
+        if (message.redacted) {
+          const id = message.id;
+          setMessages((prev) => prev.filter((m) => m.id !== id));
+          setReplyDraft((draft) => (draft?.messageId === id ? null : draft));
+          setEditDraft((draft) => {
+            if (draft?.messageId !== id) return draft;
+            disposeDraftAttachmentUrls(draftAttachmentsRef.current);
+            setDraftAttachments([]);
+            setInput('');
+            return null;
+          });
+          return;
+        }
         setMessages((prev) => {
-          if (message.redacted) {
-            return prev.filter((m) => m.id !== message.id);
-          }
           const next = toUIMessage(
             message,
             currentUserIdRef.current,

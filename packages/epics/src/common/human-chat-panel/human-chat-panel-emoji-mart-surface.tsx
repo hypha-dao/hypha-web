@@ -32,8 +32,9 @@ export function HumanChatPanelEmojiMartSurface({
     setMounted(true);
   }, []);
 
-  const pickerLocale = ['en', 'es', 'fr', 'de', 'pt'].includes(locale)
-    ? locale
+  const baseLocale = locale.toLowerCase().split(/[-_]/)[0] ?? 'en';
+  const pickerLocale = ['en', 'es', 'fr', 'de', 'pt'].includes(baseLocale)
+    ? baseLocale
     : 'en';
 
   const pickerTheme = mounted && resolvedTheme === 'dark' ? 'dark' : 'light';

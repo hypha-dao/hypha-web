@@ -16,7 +16,6 @@ export type ChatPanelAttachmentMedia = {
 };
 
 const AUDIO_FILE_EXTENSIONS = new Set([
-  'webm',
   'ogg',
   'oga',
   'opus',
@@ -54,6 +53,8 @@ export function looksLikeAudioMimeOrName(
   const mt = mimetype?.toLowerCase() ?? '';
   if (mt.startsWith('audio/')) return true;
   const ext = extensionFromFileNameHint(filename ?? '');
+  if (!ext) return false;
+  if (ext === 'webm') return false;
   return AUDIO_FILE_EXTENSIONS.has(ext);
 }
 

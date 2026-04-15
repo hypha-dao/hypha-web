@@ -492,8 +492,10 @@ function TimelineMatrixVideo({
               if (el.readyState >= 1 && el.currentTime === 0) {
                 el.currentTime = 0.001;
               }
-            } catch {
-              // ignore
+            } catch (e) {
+              if (process.env.NODE_ENV === 'development') {
+                console.debug('[TimelineMatrixVideo] seek failed:', e);
+              }
             }
           }}
           onPlay={() => setPlaying(true)}
@@ -1014,6 +1016,7 @@ export function HumanChatPanelMessageBubble({
 
   const row = (moreSlot: ReactNode | null) => (
     <div
+      data-matrix-event-id={message.id}
       data-testid="chat-message"
       className={cn(
         'group relative -mx-3 flex flex-col gap-1 rounded-sm px-3 py-0.5 transition-colors',
@@ -1333,8 +1336,7 @@ export function HumanChatPanelMessageBubble({
 
           {!message.mediaSlots?.length &&
             message.media &&
-            (message.media.msgtype === 'm.audio' ||
-              isChatPanelAudioFile(message.media)) && (
+            isChatPanelAudioFile(message.media) && (
               <TimelineVoiceSlot media={message.media} t={t} />
             )}
 
