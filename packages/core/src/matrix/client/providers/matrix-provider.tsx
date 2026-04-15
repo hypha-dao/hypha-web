@@ -5,7 +5,7 @@ import * as MatrixSdk from 'matrix-js-sdk';
 import type { RoomMessageEventContent } from 'matrix-js-sdk/lib/@types/events';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { MatrixTokenData, useMatrixToken } from '../hooks';
-import { Message } from '../../types';
+import type { Message, MessageMediaInfo } from '../../types';
 import { attachReactionsToMessage, isValidReactionKey } from '../../reactions';
 import {
   buildRichReplyMatrixContent,
@@ -47,11 +47,27 @@ interface SendMessageInput {
   onUploadProgress?: (p: SendMessageUploadProgress) => void;
 }
 
+/** Existing attachment slot when editing a media `m.room.message` (mxc stays on server). */
+export type EditRoomMessageExistingSlot = {
+  mxcUrl: string;
+  msgtype: 'm.file' | 'm.image' | 'm.audio';
+  filename?: string;
+  mediaInfo?: MessageMediaInfo;
+  spoiler?: boolean;
+};
+
 export interface EditRoomMessageInput {
   roomId: string;
   /** Timeline id of the `m.room.message` to replace (not an edit event id). */
   targetEventId: string;
   message: string;
+  /**
+   * When editing a media message: ordered slots to keep (first = root event).
+   * New files are uploaded and appended after these (see `newAttachments`).
+   */
+  existingMediaSlots?: EditRoomMessageExistingSlot[];
+  /** New files to append when editing a media message (uploaded after `existingMediaSlots`). */
+  newAttachments?: SendAttachmentInput[];
 }
 
 export interface RedactRoomEventInput {
@@ -705,11 +721,19 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   );
 
   const editRoomMessage = React.useCallback(
-    async ({ roomId, targetEventId, message }: EditRoomMessageInput) => {
+    async ({
+      roomId,
+      targetEventId,
+      message,
+      existingMediaSlots,
+      newAttachments,
+    }: EditRoomMessageInput) => {
       if (!client) {
         throw new Error('Client should be specified');
       }
-      if (!message.trim()) {
+      const trimmed = message.trim();
+      const newList = newAttachments?.length ? newAttachments : [];
+      if (!trimmed && newList.length === 0 && !existingMediaSlots?.length) {
         return;
       }
       if (!roomId?.trim() || !targetEventId?.trim()) {
@@ -750,14 +774,247 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       const originalContent = targetEv.getContent() as {
         msgtype?: string;
         body?: string;
+        url?: string;
+        filename?: string;
+        info?: Record<string, unknown>;
+        [key: string]: unknown;
       };
-      if (originalContent.msgtype !== MsgType.Text) {
-        throw new Error('Only text messages can be edited in this client');
-      }
+      const origMsgtype = originalContent.msgtype;
 
       const replyToId = targetEv.getWireContent()?.['m.relates_to']?.[
         'm.in_reply_to'
       ]?.event_id as string | undefined;
+
+      const isMediaEdit =
+        Array.isArray(existingMediaSlots) &&
+        existingMediaSlots.length > 0 &&
+        (origMsgtype === MsgType.File ||
+          origMsgtype === MsgType.Image ||
+          origMsgtype === MsgType.Audio);
+
+      if (isMediaEdit) {
+        const slots = existingMediaSlots!;
+        const prepareMediaPayload = async (
+          att: SendAttachmentInput,
+        ): Promise<HyphaMediaEventContent> => {
+          const abortController = new AbortController();
+          const timeoutMs = MATRIX_UPLOAD_TIMEOUT_MS;
+          const timeoutId = setTimeout(() => {
+            abortController.abort();
+          }, timeoutMs);
+          let upload: { content_uri: string };
+          try {
+            upload = await client.uploadContent(att.file, {
+              name: att.file.name,
+              type: att.file.type || undefined,
+              abortController,
+            });
+          } catch (e) {
+            if (abortController.signal.aborted) {
+              throw new MatrixUploadTimeoutError(
+                `Matrix media upload timed out after ${timeoutMs}ms`,
+              );
+            }
+            throw e;
+          } finally {
+            clearTimeout(timeoutId);
+          }
+          const mxc = upload.content_uri;
+          const msgtype =
+            att.kind === 'image'
+              ? MsgType.Image
+              : att.kind === 'audio'
+              ? MsgType.Audio
+              : MsgType.File;
+          let info: {
+            mimetype?: string;
+            size?: number;
+            w?: number;
+            h?: number;
+            duration?: number;
+          } = {
+            mimetype: att.file.type || undefined,
+            size: att.file.size,
+          };
+          if (msgtype === MsgType.Image) {
+            const dims = await loadImageDimensions(att.file);
+            if (dims) {
+              info = { ...info, w: dims.w, h: dims.h };
+            }
+          } else if (msgtype === MsgType.Audio) {
+            const dur = await loadAudioDurationMs(att.file);
+            if (dur != null) {
+              info = { ...info, duration: dur };
+            }
+          }
+          const caption = att.file.name;
+          const base: HyphaMediaEventContent = {
+            msgtype,
+            body: caption,
+            filename: att.file.name,
+            url: mxc,
+            info,
+          } as HyphaMediaEventContent;
+          if (att.spoiler) {
+            base[HYPHA_SPOILER_FIELD] = true;
+          }
+          return base;
+        };
+
+        const slotToPayload = (
+          slot: EditRoomMessageExistingSlot,
+        ): HyphaMediaEventContent => {
+          const base: HyphaMediaEventContent = {
+            msgtype: slot.msgtype,
+            body: slot.filename ?? 'attachment',
+            filename: slot.filename,
+            url: slot.mxcUrl,
+            info: slot.mediaInfo,
+          } as HyphaMediaEventContent;
+          if (slot.spoiler) {
+            base[HYPHA_SPOILER_FIELD] = true;
+          }
+          return base;
+        };
+
+        const rootFromSlot = slotToPayload(slots[0]!);
+        const restSlots = slots.slice(1).map(slotToPayload);
+        const uploaded: HyphaMediaEventContent[] = [];
+        for (let i = 0; i < newList.length; i++) {
+          if (i > 0) {
+            await delay(MATRIX_UPLOAD_STAGGER_MS);
+          }
+          let attempt = 0;
+          while (true) {
+            try {
+              uploaded.push(await prepareMediaPayload(newList[i]!));
+              break;
+            } catch (e) {
+              if (
+                !isMatrixRateLimitedError(e) ||
+                attempt >= MATRIX_UPLOAD_RATE_LIMIT_MAX_ATTEMPTS - 1
+              ) {
+                throw e;
+              }
+              await delay(matrixRateLimitBackoffMs(e, attempt));
+              attempt += 1;
+            }
+          }
+        }
+
+        const allAfterRoot = [...restSlots, ...uploaded];
+        let combined: HyphaMediaEventContent;
+        if (allAfterRoot.length === 0) {
+          combined = { ...rootFromSlot };
+        } else {
+          const bundleItems: HyphaMediaBundleItemWire[] = allAfterRoot.map(
+            (item) => {
+              const spoiler = item[HYPHA_SPOILER_FIELD] === true;
+              const c = item as HyphaMediaBundleItemWire;
+              const { msgtype, body, filename, url, info } = c;
+              return {
+                msgtype,
+                body,
+                filename,
+                url,
+                info,
+                ...(spoiler ? { [HYPHA_SPOILER_FIELD]: true } : {}),
+              };
+            },
+          );
+          combined = {
+            ...rootFromSlot,
+            [HYPHA_MEDIA_BUNDLE_FIELD]: bundleItems,
+          };
+        }
+
+        if (trimmed) {
+          if (replyToId?.trim()) {
+            const {
+              eventId: resolvedReplyTargetId,
+              sender: replyTargetSender,
+              body: targetBody,
+            } = await resolveReplyTargetForSend(client, roomId, replyToId);
+            const rich = buildRichReplyMatrixContent(
+              replyTargetSender,
+              targetBody,
+              trimmed,
+            );
+            combined = {
+              ...combined,
+              body: rich.body,
+              format: MATRIX_CUSTOM_HTML_FORMAT,
+              formatted_body: rich.formatted_body,
+              'm.relates_to': {
+                'm.in_reply_to': {
+                  event_id: resolvedReplyTargetId,
+                },
+              },
+            };
+          } else {
+            const textExtras =
+              matrixTextEventContentWithOptionalFormatting(trimmed);
+            combined = {
+              ...combined,
+              ...textExtras,
+              body: trimmed,
+            } as HyphaMediaEventContent;
+          }
+        } else if (replyToId?.trim()) {
+          const {
+            eventId: resolvedReplyTargetId,
+            sender: replyTargetSender,
+            body: targetBody,
+          } = await resolveReplyTargetForSend(client, roomId, replyToId);
+          const quoted = buildRichReplyMatrixContent(
+            replyTargetSender,
+            targetBody,
+            ' ',
+          );
+          combined = {
+            ...combined,
+            body: quoted.body,
+            format: MATRIX_CUSTOM_HTML_FORMAT,
+            formatted_body: quoted.formatted_body,
+            'm.relates_to': {
+              'm.in_reply_to': {
+                event_id: resolvedReplyTargetId,
+              },
+            },
+          };
+        } else {
+          const fn =
+            (combined.filename as string | undefined) ??
+            (combined.body as string | undefined) ??
+            'attachment';
+          combined = {
+            ...combined,
+            body: fn,
+          };
+        }
+
+        const newBody =
+          'body' in combined ? String(combined.body) : trimmed || 'attachment';
+        const fallbackBody = `* ${newBody}`;
+
+        await client.sendEvent(roomId, EventType.RoomMessage, {
+          ...combined,
+          body: fallbackBody,
+          'm.new_content': combined,
+          'm.relates_to': {
+            rel_type: MatrixSdk.RelationType.Replace,
+            event_id: resolvedTargetId,
+          },
+        } as RoomMessageEventContent);
+        return;
+      }
+
+      if (origMsgtype !== MsgType.Text) {
+        throw new Error('Only text messages can be edited in this client');
+      }
+      if (!trimmed) {
+        return;
+      }
 
       let newContentPayload: RoomMessageEventContent;
 
