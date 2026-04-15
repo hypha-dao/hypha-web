@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { applyMediaEditCaptionAndReply } from '../edit-room-message-media-caption';
 import { MATRIX_CUSTOM_HTML_FORMAT } from '../rich-reply';
 
+/** Covers `editRoomMessage` media branch in matrix-provider (empty caption + reply). */
 describe('applyMediaEditCaptionAndReply', () => {
   it('preserves m.in_reply_to when caption is cleared but replyToId is set', async () => {
     const combined = {
