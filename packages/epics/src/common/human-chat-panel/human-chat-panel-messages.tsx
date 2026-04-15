@@ -37,6 +37,7 @@ type UIMessage = {
   replyTo?: {
     authorLabel: string;
     excerpt?: string;
+    authorAvatarUrl?: string;
   };
 };
 

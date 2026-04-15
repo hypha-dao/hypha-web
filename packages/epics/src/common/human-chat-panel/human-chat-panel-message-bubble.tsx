@@ -696,6 +696,7 @@ type HumanChatPanelMessageBubbleProps = {
       authorLabel: string;
       /** When omitted, UI shows “original unavailable” */
       excerpt?: string;
+      authorAvatarUrl?: string;
     };
   };
   isStreaming?: boolean;
@@ -870,6 +871,28 @@ function renderTextWithMentions(text: string): React.ReactNode[] {
   return parts;
 }
 
+/** Discord-style hook from main avatar toward the quoted author row */
+function ChatReplyConnector() {
+  return (
+    <svg
+      className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 overflow-visible text-muted-foreground/45"
+      width="40"
+      height="28"
+      viewBox="0 0 40 28"
+      aria-hidden
+    >
+      <path
+        d="M 20 28 V 10 C 20 5 22 3 26 3 H 38"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function reactionTooltipText(
   reaction: Reaction,
   resolveLabel: (userId: string) => string,
@@ -997,17 +1020,55 @@ export function HumanChatPanelMessageBubble({
       onPointerEnter={onRowPointerEnter}
       onPointerLeave={onRowPointerLeave}
     >
-      {/* Avatar */}
-      <div className="mt-0.5 shrink-0" data-testid="chat-message-avatar">
-        <PersonAvatar
-          size="sm"
-          avatarSrc={message.avatarUrl}
-          userName={senderName}
-        />
+      {/* Avatar column: connector + squircle (Discord proportions) */}
+      <div
+        className={cn(
+          'relative flex w-10 shrink-0 flex-col items-center',
+          replyTo ? 'pt-0' : 'pt-0.5',
+        )}
+        data-testid="chat-message-avatar"
+      >
+        {replyTo && <ChatReplyConnector />}
+        <div className={cn('relative z-[1]', replyTo && 'mt-7')}>
+          <PersonAvatar
+            size="chat"
+            shape="squircle"
+            avatarSrc={message.avatarUrl}
+            userName={senderName}
+          />
+        </div>
       </div>
 
       {/* Content */}
       <div className="flex min-w-0 flex-1 flex-col">
+        {replyTo && (
+          <div
+            data-testid="chat-message-reply-context"
+            className="mb-1 flex min-h-[22px] items-center gap-1.5"
+          >
+            <PersonAvatar
+              size="reply"
+              shape="squircle"
+              avatarSrc={replyTo.authorAvatarUrl}
+              userName={replyTo.authorLabel}
+            />
+            <p className="flex min-w-0 flex-1 items-baseline gap-1 truncate text-xs leading-tight text-muted-foreground">
+              <span className="shrink-0 font-semibold text-muted-foreground">
+                {replyTo.authorLabel.startsWith('@')
+                  ? replyTo.authorLabel
+                  : `@${replyTo.authorLabel}`}
+              </span>
+              {replyTo.excerpt != null && replyTo.excerpt !== '' ? (
+                <span className="min-w-0 truncate font-normal">
+                  {replyTo.excerpt}
+                </span>
+              ) : (
+                <span className="italic">{t('replyOriginalUnavailable')}</span>
+              )}
+            </p>
+          </div>
+        )}
+
         {/* Name + Timestamp */}
         <div className="flex items-baseline gap-2">
           <span className="font-semibold text-sm text-foreground">
@@ -1065,31 +1126,6 @@ export function HumanChatPanelMessageBubble({
                 )}
               </div>
             </div>
-          </div>
-        )}
-
-        {replyTo && (
-          <div
-            data-testid="chat-message-reply-context"
-            className="mt-0.5 min-w-0 border-l-2 border-primary/40 pl-2 text-xs text-muted-foreground"
-          >
-            <p className="min-w-0 truncate">
-              <span className="font-medium text-foreground">
-                {replyTo.authorLabel}
-              </span>
-              {replyTo.excerpt != null && replyTo.excerpt !== '' ? (
-                <>
-                  <span className="text-muted-foreground"> — </span>
-                  <span className="text-muted-foreground">
-                    {replyTo.excerpt}
-                  </span>
-                </>
-              ) : (
-                <span className="ml-1 italic">
-                  {t('replyOriginalUnavailable')}
-                </span>
-              )}
-            </p>
           </div>
         )}
 
