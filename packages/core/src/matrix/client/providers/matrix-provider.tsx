@@ -133,6 +133,9 @@ function matrixRateLimitBackoffMs(
 type HyphaMediaEventContent = RoomMessageEventContent & {
   [HYPHA_SPOILER_FIELD]?: boolean;
   [HYPHA_MEDIA_BUNDLE_FIELD]?: HyphaMediaBundleItemWire[];
+  /** Caption with markup on the same event as media (not in Matrix's narrow image/file union). */
+  format?: typeof MATRIX_CUSTOM_HTML_FORMAT;
+  formatted_body?: string;
 };
 
 function loadImageDimensions(
