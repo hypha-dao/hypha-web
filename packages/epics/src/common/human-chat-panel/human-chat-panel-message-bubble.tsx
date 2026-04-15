@@ -406,8 +406,9 @@ function TimelineVoiceSlot({
       <Mic className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
       <div className="min-w-0 flex-1">
         <p className="truncate text-xs font-medium text-foreground">
-          {media.filename?.replace(/^voice-message-\d+\./, '') ||
-            t('voiceMessage')}
+          {/^voice-message-\d+\.[^.]+$/i.test(media.filename ?? '')
+            ? t('voiceMessage')
+            : media.filename ?? t('voiceMessage')}
         </p>
         <p className="text-[10px] text-muted-foreground tabular-nums">
           {durationLabel}

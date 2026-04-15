@@ -284,6 +284,10 @@ function toUIMessage(
   };
 }
 
+/**
+ * Empty `File` used only as a composer metadata carrier for existing Matrix
+ * slots (content stays on the homeserver via MXC).
+ */
 function dummyEditFile(filename: string, mime?: string): File {
   return new File([], filename || 'attachment', {
     type: mime || 'application/octet-stream',
@@ -1007,6 +1011,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           (target.mediaSlots?.length ?? 0) > 1);
 
       if (hasMedia && !client) {
+        console.warn(
+          '[HumanRightPanel] Cannot edit media message: Matrix client not available',
+        );
+        setComposerError(t('editMediaMatrixUnavailable'));
         return;
       }
 
@@ -1035,7 +1043,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       });
       setInput(plain);
     },
-    [messages, client],
+    [messages, client, t],
   );
 
   const handleDeleteMessage = useCallback(

@@ -780,7 +780,7 @@ export function HumanChatPanelChatBar({
         if (!res?.[0] || !res.isFinal) continue;
         const piece = res[0].transcript.trim();
         if (!piece) continue;
-        const cur = valueRef.current.replace(/\u200b$/, '');
+        const cur = valueRef.current.replace(/\u200b+$/, '');
         const space = cur.length > 0 && !/\s$/.test(cur) ? ' ' : '';
         const next = cur + space + piece;
         valueRef.current = next;

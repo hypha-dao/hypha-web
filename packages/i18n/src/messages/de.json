@@ -1636,6 +1636,7 @@
     "editDismiss": "Bearbeitung abbrechen",
     "editAttachmentsNotSupported": "Anhänge werden beim Bearbeiten einer Nachricht nicht unterstützt",
     "editMediaRequiresAttachment": "Behalten Sie mindestens einen Anhang beim Bearbeiten dieser Nachricht.",
+    "editMediaMatrixUnavailable": "Der Chat verbindet sich noch. Versuchen Sie es gleich erneut.",
     "contextReactWith": "Reagieren mit {emoji}",
     "contextEditMessage": "Nachricht bearbeiten",
     "contextReply": "Antworten",

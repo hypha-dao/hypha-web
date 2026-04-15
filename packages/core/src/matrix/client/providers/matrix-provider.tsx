@@ -157,7 +157,7 @@ type HyphaMediaEventContent = RoomMessageEventContent & {
 function loadAudioDurationMs(file: File): Promise<number | undefined> {
   if (
     !file.type.startsWith('audio/') &&
-    !/\.(webm|ogg|opus|mp3|m4a|wav)$/i.test(file.name)
+    !/\.(ogg|opus|mp3|m4a|wav)$/i.test(file.name)
   ) {
     return Promise.resolve(undefined);
   }

@@ -104,8 +104,9 @@ export function HumanChatPanelMessages({
     const prevLastId = prevLastIdRef.current;
 
     const appended =
-      len > prevLen ||
-      (len === prevLen && len > 0 && lastId != null && lastId !== prevLastId);
+      len > 0 &&
+      lastId != null &&
+      (prevLen === 0 || (len >= prevLen && lastId !== prevLastId));
 
     if (appended) {
       stickToBottomRef.current = true;

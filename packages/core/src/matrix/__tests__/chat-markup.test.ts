@@ -44,4 +44,20 @@ describe('buildRichReplyMatrixContent', () => {
     expect(r.formatted_body).toContain('<strong>');
     expect(r.formatted_body).toContain('&lt;@u:h&gt;');
   });
+
+  /**
+   * Media edit with cleared caption but existing reply: matrix-provider passes a
+   * single space so rich-reply markup stays valid (regression guard).
+   */
+  it('preserves reply thread with space-only reply text (empty caption placeholder)', () => {
+    const r = buildRichReplyMatrixContent(
+      '@alice:example.org',
+      'original',
+      ' ',
+    );
+    expect(r.body).toContain('> <@alice:example.org>');
+    expect(r.body).toContain('original');
+    expect(r.format).toBe('org.matrix.custom.html');
+    expect(r.formatted_body.length).toBeGreaterThan(0);
+  });
 });

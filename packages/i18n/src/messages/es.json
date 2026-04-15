@@ -1636,6 +1636,7 @@
     "editDismiss": "Cancelar edición",
     "editAttachmentsNotSupported": "No se admiten archivos adjuntos al editar un mensaje",
     "editMediaRequiresAttachment": "Conserva al menos un adjunto al editar este mensaje.",
+    "editMediaMatrixUnavailable": "El chat aún se está conectando. Vuelve a intentar editar en un momento.",
     "contextReactWith": "Reaccionar con {emoji}",
     "contextEditMessage": "Editar mensaje",
     "contextReply": "Responder",
