@@ -22,8 +22,8 @@ import {
   Paperclip,
   Video,
   Mic,
-  Keyboard,
-  Pause,
+  AudioLines,
+  Square,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -31,7 +31,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
@@ -1075,7 +1074,7 @@ export function HumanChatPanelChatBar({
                       />
                     ) : att.kind === 'audio' ? (
                       <div className="flex h-full flex-col items-center justify-center gap-1 bg-muted/60 text-muted-foreground">
-                        <Mic className="h-8 w-8" strokeWidth={1.25} />
+                        <AudioLines className="h-8 w-8" strokeWidth={1.25} />
                         <span className="px-1 text-center text-[10px] leading-tight">
                           {t('voiceMessage')}
                         </span>
@@ -1329,68 +1328,65 @@ export function HumanChatPanelChatBar({
               >
                 <AtSign className="h-4 w-4" aria-hidden />
               </button>
-              <DropdownMenu open={micMenuOpen} onOpenChange={setMicMenuOpen}>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className={cn(
-                      iconButtonClass,
-                      (isVoiceRecording || isDictating) &&
-                        'text-destructive hover:text-destructive',
-                    )}
-                    aria-label={t('composerMicMenu')}
-                    title={t('composerMicMenu')}
-                    aria-haspopup="menu"
-                    aria-expanded={micMenuOpen}
-                  >
-                    {isDictating ? (
-                      <Keyboard className="h-4 w-4" strokeWidth={2} />
-                    ) : isVoiceRecording ? (
-                      <Pause className="h-4 w-4" strokeWidth={2} />
-                    ) : (
-                      <Mic className="h-4 w-4" strokeWidth={2} />
-                    )}
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="min-w-[220px]">
-                  <DropdownMenuItem
-                    className="cursor-pointer gap-2"
-                    disabled={isVoiceRecording}
-                    onSelect={() => {
-                      requestAnimationFrame(() => startDictation());
-                    }}
-                  >
-                    <Keyboard className="h-4 w-4 shrink-0" aria-hidden />
-                    <span>{t('composerDictateMessage')}</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="cursor-pointer gap-2"
-                    disabled={isDictating || !onDraftAttachmentsChange}
-                    onSelect={() => {
-                      requestAnimationFrame(
-                        () => void startVoiceRecordingAsAttachment(),
-                      );
-                    }}
-                  >
-                    <Mic className="h-4 w-4 shrink-0" aria-hidden />
-                    <span>{t('composerSendAudioMessage')}</span>
-                  </DropdownMenuItem>
-                  {(isVoiceRecording || isDictating) && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="cursor-pointer text-destructive focus:text-destructive"
-                        onSelect={() => {
-                          if (isVoiceRecording) stopVoiceRecording();
-                          if (isDictating) stopDictation();
-                        }}
-                      >
-                        {t('composerMicStop')}
-                      </DropdownMenuItem>
-                    </>
+              {isVoiceRecording || isDictating ? (
+                <button
+                  type="button"
+                  className={cn(
+                    iconButtonClass,
+                    'text-destructive hover:bg-destructive/10 hover:text-destructive',
                   )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                  aria-label={t('composerMicStop')}
+                  title={t('composerMicStop')}
+                  onClick={() => {
+                    if (isVoiceRecording) stopVoiceRecording();
+                    if (isDictating) stopDictation();
+                  }}
+                >
+                  <Square
+                    className="h-3.5 w-3.5 fill-current"
+                    strokeWidth={2}
+                  />
+                </button>
+              ) : (
+                <DropdownMenu open={micMenuOpen} onOpenChange={setMicMenuOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className={iconButtonClass}
+                      aria-label={t('composerMicMenu')}
+                      title={t('composerMicMenu')}
+                      aria-haspopup="menu"
+                      aria-expanded={micMenuOpen}
+                    >
+                      <Mic className="h-4 w-4" strokeWidth={2} />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="min-w-[220px]">
+                    <DropdownMenuItem
+                      className="cursor-pointer gap-2"
+                      disabled={isVoiceRecording}
+                      onSelect={() => {
+                        requestAnimationFrame(() => startDictation());
+                      }}
+                    >
+                      <AudioLines className="h-4 w-4 shrink-0" aria-hidden />
+                      <span>{t('composerDictateMessage')}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer gap-2"
+                      disabled={isDictating || !onDraftAttachmentsChange}
+                      onSelect={() => {
+                        requestAnimationFrame(
+                          () => void startVoiceRecordingAsAttachment(),
+                        );
+                      }}
+                    >
+                      <Mic className="h-4 w-4 shrink-0" aria-hidden />
+                      <span>{t('composerSendAudioMessage')}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
             <button
               type="button"
