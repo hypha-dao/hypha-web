@@ -13,5 +13,6 @@ export {
   createChatTools,
   getSpaceBySlugTool,
   createGetPeopleBySpaceSlugTool,
+  createGetOrgMemoryBySpaceSlugTool,
 } from './tools/index';
 export type { ChatRouteTool } from './tools/types';

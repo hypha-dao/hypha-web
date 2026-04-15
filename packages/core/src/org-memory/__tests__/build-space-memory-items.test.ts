@@ -3,6 +3,7 @@ import { DocumentState } from '../../governance/types';
 import type { Document } from '../../governance/types';
 import {
   buildSpaceMemoryItemsFromDocuments,
+  buildSpaceMemoryItemsFromOrgMemoryPayload,
   filterSpaceMemoryItems,
 } from '../build-space-memory-items';
 
@@ -69,7 +70,7 @@ describe('buildSpaceMemoryItemsFromDocuments', () => {
     ];
     const rows = buildSpaceMemoryItemsFromDocuments(docs);
     expect(rows).toHaveLength(1);
-    expect(rows[0].id).toContain('attachment');
+    expect(rows[0]!.id).toContain('attachment');
   });
 
   it('sorts by updatedAt descending', () => {
@@ -86,8 +87,8 @@ describe('buildSpaceMemoryItemsFromDocuments', () => {
       }),
     ];
     const rows = buildSpaceMemoryItemsFromDocuments(docs);
-    expect(rows[0].url).toBe('https://a/new.png');
-    expect(rows[1].url).toBe('https://a/old.png');
+    expect(rows[0]!.url).toBe('https://a/new.png');
+    expect(rows[1]!.url).toBe('https://a/old.png');
   });
 
   it('classifies image from filename when URL has no extension (signed URL)', () => {
@@ -103,7 +104,7 @@ describe('buildSpaceMemoryItemsFromDocuments', () => {
     ];
     const rows = buildSpaceMemoryItemsFromDocuments(docs);
     expect(rows).toHaveLength(1);
-    expect(rows[0].kind).toBe('image');
+    expect(rows[0]!.kind).toBe('image');
   });
 
   it('skips non-http(s) attachment URLs', () => {
@@ -117,7 +118,7 @@ describe('buildSpaceMemoryItemsFromDocuments', () => {
     ];
     const rows = buildSpaceMemoryItemsFromDocuments(docs);
     expect(rows).toHaveLength(1);
-    expect(rows[0].url).toBe('https://cdn.example/ok.pdf');
+    expect(rows[0]!.url).toBe('https://cdn.example/ok.pdf');
   });
 
   it('accepts ISO date strings from JSON (fetch / NextResponse)', () => {
@@ -134,7 +135,65 @@ describe('buildSpaceMemoryItemsFromDocuments', () => {
       buildSpaceMemoryItemsFromDocuments(docs as Document[]),
     ).not.toThrow();
     const rows = buildSpaceMemoryItemsFromDocuments(docs as Document[]);
-    expect(rows[0].uploadedAt).toBe('2024-06-01T12:00:00.000Z');
+    expect(rows[0]!.uploadedAt).toBe('2024-06-01T12:00:00.000Z');
+  });
+});
+
+describe('buildSpaceMemoryItemsFromOrgMemoryPayload', () => {
+  it('maps proposal_upload rows with governance context', () => {
+    const rows = buildSpaceMemoryItemsFromOrgMemoryPayload({
+      org_memory_assets: [
+        {
+          source: 'proposal_upload',
+          filename: 'Spec.pdf',
+          app_url: 'https://cdn.example/spec.pdf',
+          document_id: 7,
+          document_title: 'Budget',
+          document_state: 'agreement',
+          occurred_at: '2024-06-01T12:00:00.000Z',
+        },
+      ],
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.source).toBe('proposal_upload');
+    expect(rows[0]!.context.documentId).toBe(7);
+    expect(rows[0]!.context.documentTitle).toBe('Budget');
+    expect(rows[0]!.context.documentState).toBe('agreement');
+    expect(rows[0]!.url).toBe('https://cdn.example/spec.pdf');
+  });
+
+  it('includes matrix_chat rows with mxc URL', () => {
+    const rows = buildSpaceMemoryItemsFromOrgMemoryPayload({
+      org_memory_assets: [
+        {
+          source: 'matrix_chat',
+          filename: 'photo.png',
+          mxc_uri: 'mxc://example.org/abc',
+          matrix_room_id: '!r:example.org',
+          matrix_event_id: '$ev1',
+          mime: 'image/png',
+          occurred_at: '2024-07-01T00:00:00.000Z',
+        },
+      ],
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.source).toBe('matrix_chat');
+    expect(rows[0]!.url).toBe('mxc://example.org/abc');
+    expect(rows[0]!.kind).toBe('image');
+  });
+
+  it('skips proposal rows without http(s) app_url', () => {
+    const rows = buildSpaceMemoryItemsFromOrgMemoryPayload({
+      org_memory_assets: [
+        {
+          source: 'proposal_upload',
+          filename: 'x',
+          app_url: 'javascript:alert(1)',
+          occurred_at: '2024-01-01T00:00:00.000Z',
+        },
+      ],
+    });
+    expect(rows).toHaveLength(0);
   });
 });
 
@@ -154,6 +213,21 @@ describe('filterSpaceMemoryItems', () => {
     ]);
     const filtered = filterSpaceMemoryItems(items, 'alpha');
     expect(filtered).toHaveLength(1);
-    expect(filtered[0].context.documentTitle).toBe('Alpha plan');
+    expect(filtered[0]!.context.documentTitle).toBe('Alpha plan');
+  });
+
+  it('filters matrix rows by mxc substring', () => {
+    const items = buildSpaceMemoryItemsFromOrgMemoryPayload({
+      org_memory_assets: [
+        {
+          source: 'matrix_chat',
+          filename: 'a.png',
+          mxc_uri: 'mxc://hs/uniqueid',
+          occurred_at: '2024-01-01T00:00:00.000Z',
+        },
+      ],
+    });
+    const filtered = filterSpaceMemoryItems(items, 'uniqueid');
+    expect(filtered).toHaveLength(1);
   });
 });

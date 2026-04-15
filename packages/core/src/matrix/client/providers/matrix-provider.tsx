@@ -189,7 +189,8 @@ interface MatrixContextType {
   getPinnedMessageIds: (roomId: string) => string[];
   togglePinnedMessage: (roomId: string, messageId: string) => Promise<void>;
   getRoomMembers: (roomId: string) => Promise<ChatMember[]>;
-  joinRoom: (roomId: string) => Promise<void>;
+  /** Resolves aliases; returns canonical room id once the room is visible to `client.getRoom`. */
+  joinRoom: (roomIdOrAlias: string) => Promise<string>;
   registerRoomListener: (
     roomId: string,
     messageListener: RoomMessageListener,
@@ -875,13 +876,26 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   );
 
   const joinRoom = React.useCallback(
-    async (roomId: string) => {
+    async (roomIdOrAlias: string): Promise<string> => {
       if (!client) {
         throw new Error('Client should be specified');
       }
 
       try {
-        await client.joinRoom(roomId);
+        const joined = await client.joinRoom(roomIdOrAlias);
+        const resolvedId = joined.roomId;
+        // `joinRoom` resolves before the lazy room store always exposes `getRoom`
+        // (race with sync / canonical id). Wait briefly for `getRoom` parity with listeners.
+        for (let i = 0; i < 40; i++) {
+          if (client.getRoom(resolvedId)) {
+            return resolvedId;
+          }
+          await new Promise((r) => setTimeout(r, 50));
+        }
+        if (!client.getRoom(resolvedId)) {
+          throw new Error('Room not available in Matrix client after join');
+        }
+        return resolvedId;
       } catch (error) {
         console.warn('Cannot join to room:', error);
         throw error;
@@ -1149,7 +1163,7 @@ const noopMatrixContext: MatrixContextType = {
     throw new Error('Matrix unavailable');
   },
   getRoomMessages: () => null,
-  joinRoom: async () => {
+  joinRoom: async (): Promise<string> => {
     throw new Error('Matrix unavailable');
   },
   registerRoomListener: () => {},

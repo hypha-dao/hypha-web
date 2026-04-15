@@ -76,7 +76,7 @@ export function CoherenceBlock({
             hasSearch={true}
             signals={signals ?? []}
             isLoading={isSpaceLoading || isSignalsLoading}
-            firstPageSize={6}
+            firstPageSize={3}
             pageSize={3}
             refresh={refresh}
             onSignalClick={onSignalClick}

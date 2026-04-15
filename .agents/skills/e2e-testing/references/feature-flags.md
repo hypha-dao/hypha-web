@@ -2,16 +2,17 @@
 
 ## Architecture
 
-Feature flags in hypha-web use the `flags/next` package (`flag()` function). They are **evaluated during SSR** in the root layout (`apps/web/src/app/layout.tsx`).
+Feature flags are **async helpers** in `@hypha-platform/feature-flags` (e.g. `getEnableHumanChat()`). They read **`next/headers` cookies** during SSR. **`FLAGS_SECRET`** is optional: without it, SSR still works. With it set on the deployment, the **Vercel Flags Toolbar** overrides in the **`vercel-flag-overrides`** cookie are decrypted (via the `flags` package) and applied **before** Hypha cookies / env — same order the old `flag()` runtime used.
 
 ### Evaluation Order
 
-Each flag's `decide()` function:
-1. Checks for a **cookie** by name (e.g., `HYPHA_ENABLE_HUMAN_CHAT`)
-2. Falls back to a **`NEXT_PUBLIC_*` env var** (e.g., `NEXT_PUBLIC_ENABLE_HUMAN_CHAT`)
-3. Uses the `defaultValue` (typically `false`) if neither is set
+Each `get*` function:
+1. If **`FLAGS_SECRET`** is set: use **Vercel toolbar override** for that flag key when present (`enable-human-chat`, `enable-coherence`, …).
+2. Else: check **Hypha cookie** (e.g. `HYPHA_ENABLE_HUMAN_CHAT`)
+3. Else: **`NEXT_PUBLIC_*` env var**
+4. Else: default **`false`**
 
-Source: `packages/feature-flags/src/index.ts`
+Source: `packages/feature-flags/src/index.ts`, `vercel-toolbar-overrides.ts`
 
 ### Cookie Constants
 
@@ -20,13 +21,14 @@ Canonical source: `packages/cookie/src/constants.ts`
 | Cookie Name | Env Var Fallback | Controls |
 |---|---|---|
 | `HYPHA_ENABLE_HUMAN_CHAT` | `NEXT_PUBLIC_ENABLE_HUMAN_CHAT` | Human Chat right panel |
+| `HYPHA_ENABLE_COHERENCE` | `NEXT_PUBLIC_ENABLE_COHERENCE` | Coherence tab (signals / conversations) |
 | `HYPHA_ENABLE_AI_CHAT` | `NEXT_PUBLIC_ENABLE_AI_CHAT` | AI Chat left panel |
 | `HYPHA_AUTH_PROVIDER` | *(none — cookie only)* | Auth provider selection (`web3auth`) |
 | `HYPHA_SHOW_LANGUAGE_SELECT` | *(none — cookie only)* | i18n language selector |
 
 ## Why Cookies Alone Don't Work in E2E
 
-The `flags/next` package reads cookies from the **incoming HTTP request headers** during SSR. Playwright's `context.addCookies()` sets cookies in the browser's cookie jar, but these are sent by the browser on **subsequent** requests — **not** on the first `page.goto()` navigation that was already in-flight when cookies were added.
+`next/headers` `cookies()` reads from the **incoming HTTP request** during SSR. Playwright's `context.addCookies()` sets cookies in the browser's cookie jar, but these are sent by the browser on **subsequent** requests — **not** on the first `page.goto()` navigation that was already in-flight when cookies were added.
 
 ### The Fix: Two-Layer Cookie Strategy
 

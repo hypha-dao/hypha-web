@@ -1,7 +1,7 @@
 import type { Attachment, Document } from '../governance/types';
 import { DocumentState } from '../governance/types';
 
-export type SpaceMemorySource = 'proposal_upload';
+export type SpaceMemorySource = 'proposal_upload' | 'matrix_chat';
 
 export type SpaceMemoryAssetKind = 'document' | 'image' | 'video' | 'other';
 
@@ -18,6 +18,44 @@ export type SpaceMemoryItem = {
     documentState: DocumentState;
     documentSlug?: string;
     documentLabel?: string;
+    matrixEventId?: string;
+  };
+};
+
+/** JSON shape of `org_memory_assets[]` from `/api/v1/spaces/.../org-memory` (dates are ISO strings). */
+export type OrgMemoryAssetWire = {
+  source: 'proposal_upload' | 'matrix_chat';
+  filename: string;
+  asset_key?: string;
+  mime?: string;
+  app_url?: string;
+  mxc_uri?: string;
+  matrix_room_id?: string;
+  matrix_event_id?: string;
+  document_id?: number;
+  document_title?: string;
+  document_state?: string;
+  document_slug?: string;
+  document_label?: string;
+  occurred_at: string;
+};
+
+export type OrgMemorySpaceMemoryPayload = {
+  org_memory_assets: OrgMemoryAssetWire[];
+  assets_pagination?: {
+    total: number;
+    page: number;
+    page_size: number;
+    total_pages: number;
+    has_next_page: boolean;
+    has_previous_page: boolean;
+  };
+  matrix_fetch?: {
+    used_bot_access_token?: boolean;
+    used_session_matrix_token?: boolean;
+    session_matrix_token_unavailable?: boolean;
+    skipped_reason?: string | null;
+    access_token_configured?: boolean;
   };
 };
 
@@ -104,7 +142,9 @@ function documentActivityIso(doc: Document): string {
   return new Date(0).toISOString();
 }
 
-function documentStateForContext(state: Document['state']): DocumentState {
+export function documentStateForContext(
+  state: Document['state'],
+): DocumentState {
   if (
     state === DocumentState.DISCUSSION ||
     state === DocumentState.PROPOSAL ||
@@ -186,6 +226,97 @@ export function buildSpaceMemoryItemsFromDocuments(
   return items;
 }
 
+function inferKindFromMime(
+  mime: string | undefined,
+  name: string,
+  url: string,
+): SpaceMemoryAssetKind {
+  const m = mime?.toLowerCase() ?? '';
+  if (m.startsWith('image/')) return 'image';
+  if (m.startsWith('video/')) return 'video';
+  if (m === 'application/pdf' || m.includes('pdf')) return 'document';
+  return inferKind(name, url);
+}
+
+/**
+ * Builds Space Memory rows from `getOrgMemoryBySpaceSlug` / org-memory HTTP payload
+ * (`org_memory_assets`), including Matrix rows with `mxc://` (no direct https URL).
+ */
+export function buildSpaceMemoryItemsFromOrgMemoryPayload(
+  payload: OrgMemorySpaceMemoryPayload,
+): SpaceMemoryItem[] {
+  const assets = payload.org_memory_assets ?? [];
+  const items: SpaceMemoryItem[] = [];
+  let matrixIdx = 0;
+
+  for (const a of assets) {
+    const uploadedAt = a.occurred_at?.trim()
+      ? a.occurred_at
+      : new Date(0).toISOString();
+
+    if (a.source === 'proposal_upload') {
+      const safeUrl = a.app_url ? normalizeHttpUrl(a.app_url) : null;
+      if (!safeUrl) continue;
+      const docId = a.document_id ?? 0;
+      const title = a.document_title?.trim() ?? '';
+      const stateEnum = documentStateForContext(
+        (a.document_state as Document['state']) ?? DocumentState.PROPOSAL,
+      );
+      items.push({
+        id: `proposal:${docId}:${safeUrl}`,
+        name: a.filename?.trim() ? a.filename : fileNameFromUrl(safeUrl),
+        url: safeUrl,
+        kind: inferKindFromMime(a.mime, a.filename, safeUrl),
+        source: 'proposal_upload',
+        uploadedAt,
+        context: {
+          documentId: docId,
+          documentTitle: title,
+          documentState: stateEnum,
+          documentSlug: a.document_slug,
+          documentLabel: a.document_label?.trim() || undefined,
+        },
+      });
+      continue;
+    }
+
+    if (a.source === 'matrix_chat') {
+      const mxc = a.mxc_uri?.trim() ?? '';
+      const room = a.matrix_room_id?.trim() ?? '';
+      const ev = a.matrix_event_id?.trim() ?? '';
+      if (!mxc.startsWith('mxc://')) continue;
+      matrixIdx += 1;
+      const id =
+        room && ev
+          ? `matrix:${room}:${ev}:${mxc}`
+          : `matrix:${matrixIdx}:${mxc}`;
+      items.push({
+        id,
+        name: a.filename?.trim() ? a.filename : 'attachment',
+        url: mxc,
+        kind: inferKindFromMime(a.mime, a.filename, mxc),
+        source: 'matrix_chat',
+        uploadedAt,
+        context: {
+          documentId: 0,
+          documentTitle: '',
+          documentState: DocumentState.PROPOSAL,
+          matrixEventId: ev || undefined,
+        },
+      });
+    }
+  }
+
+  items.sort((a, b) => {
+    const tb = new Date(b.uploadedAt).getTime();
+    const ta = new Date(a.uploadedAt).getTime();
+    if (tb !== ta) return tb - ta;
+    return a.id.localeCompare(b.id);
+  });
+
+  return items;
+}
+
 export function filterSpaceMemoryItems(
   items: SpaceMemoryItem[],
   searchTerm: string,
@@ -195,6 +326,7 @@ export function filterSpaceMemoryItems(
   return items.filter(
     (row) =>
       row.name.toLowerCase().includes(q) ||
+      row.url.toLowerCase().includes(q) ||
       row.context.documentTitle.toLowerCase().includes(q) ||
       (row.context.documentLabel?.toLowerCase().includes(q) ?? false),
   );

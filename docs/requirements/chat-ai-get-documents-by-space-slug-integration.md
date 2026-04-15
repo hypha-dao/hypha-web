@@ -76,7 +76,7 @@ using a **server-side tool** backed by the **same SQL and access rules** as the 
 
 - Add **`order`** parameter (reuse `PaginationParams` / `Order<Document>`) if product needs sort other than `createdAt DESC`.
 - Extend payload with **token / vote tallies** per document in a separate tool if needed beyond **`status`** (accepted / rejected / onVoting).
-- **Org memory catalogue:** extend MCP + Chat with **`org_memory_assets`** or **`get_org_memory_by_space_slug`** per MCP spec **§8.1** so **Matrix + uploads** appear in one surface for AI.
+- **Org memory catalogue:** extend MCP + Chat with **`org_memory_assets`** on **`get_documents_by_space_slug`** and/or **`get_org_memory_by_space_slug`** per MCP spec **§8.1** so **Matrix + uploads** appear in one surface for AI. **Sibling tool spec:** [mcp-get-org-memory-by-space-slug-tech-spec.md](./mcp-get-org-memory-by-space-slug-tech-spec.md); **Chat:** [chat-ai-get-org-memory-by-space-slug-integration.md](./chat-ai-get-org-memory-by-space-slug-integration.md).
 
 ---
 

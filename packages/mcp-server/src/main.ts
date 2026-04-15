@@ -7,6 +7,8 @@ import {
   checkSpaceAccessForSpace,
   findSpaceBySlug,
   getDocumentsBySpaceSlug,
+  getOrgMemoryBySpaceSlug,
+  fetchOrgMemoryAsset,
   getSpaceMembersRoster,
   serializeSpaceMembersRosterDatesForJson,
 } from '@hypha-platform/core/server';
@@ -18,6 +20,15 @@ import {
   getDocumentsBySpaceSlugInputSchema,
   getDocumentsBySpaceSlugOutputSchema,
 } from './get-documents-by-space-slug-schema.js';
+import {
+  getOrgMemoryBySpaceSlugInputSchema,
+  getOrgMemoryBySpaceSlugOutputSchema,
+} from './get-org-memory-by-space-slug-schema.js';
+import {
+  fetchOrgMemoryAssetInputSchema,
+  fetchOrgMemoryAssetOutputSchema,
+} from './fetch-org-memory-asset-schema.js';
+import { buildMatrixDiagnosticHint } from './build-matrix-diagnostic-hint.js';
 
 const server = new McpServer(
   {
@@ -26,7 +37,7 @@ const server = new McpServer(
   },
   {
     instructions:
-      'Hypha read-only tools: space members by slug; documents (proposals/discussions/agreements) in a space by slug.',
+      'Hypha read-only tools: space members by slug; org memory (roster + org_memory_assets with asset_key) by slug; fetch_org_memory_asset reads asset bytes (text/PDF; image/video/Office base64 in auto) with caps; documents in a space by slug.',
   },
 );
 
@@ -121,6 +132,227 @@ server.registerTool(
       content: [{ type: 'text', text: summary }],
       structuredContent: outParse.data,
     };
+  },
+);
+
+server.registerTool(
+  'get_org_memory_by_space_slug',
+  {
+    description:
+      'Read-only: organisation memory for a space by slug — same member roster as get_people_by_space_slug plus org_memory_assets (proposal attachments and lead images from documents; Matrix m.file/m.image when NEXT_PUBLIC_MATRIX_HOMESERVER_URL and chat_room_id are set, and either HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN or HYPHA_MCP_AUTH_TOKEN + HYPHA_MCP_MATRIX_REQUEST_URL / VERCEL_URL for session Matrix token resolution). structuredContent matrix_fetch includes used_bot_access_token, used_session_matrix_token, session_matrix_token_unavailable, skipped_reason, http_status, events_in_chunk, media_events_yielded, error. Optional assets_page, assets_page_size, assets_search paginate/filter assets separately from the roster.',
+    inputSchema: getOrgMemoryBySpaceSlugInputSchema,
+    outputSchema: getOrgMemoryBySpaceSlugOutputSchema,
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
+    },
+  },
+  async (args) => {
+    const parsed = getOrgMemoryBySpaceSlugInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Invalid input: ${parsed.error.message}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    const {
+      space_slug,
+      page,
+      page_size,
+      searchTerm,
+      assets_page,
+      assets_page_size,
+      assets_search,
+    } = parsed.data;
+
+    const mcpMatrixRequestUrl =
+      process.env.HYPHA_MCP_MATRIX_REQUEST_URL?.trim() ||
+      (process.env.VERCEL_URL?.trim()
+        ? `https://${process.env.VERCEL_URL.trim()}`
+        : undefined);
+
+    try {
+      const gated = await getOrgMemoryBySpaceSlug(
+        {
+          spaceSlug: space_slug,
+          page,
+          pageSize: page_size,
+          searchTerm,
+          assetsPage: assets_page,
+          assetsPageSize: assets_page_size,
+          assetsSearch: assets_search,
+          requestUrlForSessionMatrix: mcpMatrixRequestUrl,
+        },
+        { db, authToken: process.env.HYPHA_MCP_AUTH_TOKEN },
+      );
+
+      if (gated.access === 'denied') {
+        return {
+          content: [{ type: 'text', text: gated.message }],
+          isError: true,
+        };
+      }
+
+      const outParse = getOrgMemoryBySpaceSlugOutputSchema.safeParse(
+        gated.result,
+      );
+      if (!outParse.success) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Internal error: output validation failed: ${outParse.error.message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      const structured = outParse.data;
+      const peopleCount = structured.found
+        ? structured.members.filter((m) => m.member_kind === 'person').length
+        : 0;
+      const spaceCount = structured.found
+        ? structured.members.filter((m) => m.member_kind === 'space').length
+        : 0;
+      const assetCount = structured.found
+        ? structured.org_memory_assets.length
+        : 0;
+
+      const mf = structured.found ? structured.matrix_fetch : null;
+      const matrixHint = buildMatrixDiagnosticHint(mf);
+
+      const summary = structured.found
+        ? `Space "${structured.space_slug}": roster page ${
+            structured.pagination.page
+          }/${Math.max(
+            structured.pagination.total_pages,
+            1,
+          )} — ${peopleCount} people, ${spaceCount} space members (total members ${
+            structured.pagination.total
+          }); assets page ${structured.assets_pagination.page}/${Math.max(
+            structured.assets_pagination.total_pages,
+            1,
+          )} — ${assetCount} asset(s) on this page (total assets ${
+            structured.assets_pagination.total
+          }).${matrixHint}`
+        : `No space found for slug "${structured.space_slug}".`;
+
+      return {
+        content: [{ type: 'text', text: summary }],
+        structuredContent: structured,
+      };
+    } catch (err) {
+      console.error('[hypha-mcp:get_org_memory_by_space_slug] failed', err);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: 'Internal error while fetching org memory',
+          },
+        ],
+        isError: true,
+      };
+    }
+  },
+);
+
+server.registerTool(
+  'fetch_org_memory_asset',
+  {
+    description:
+      'Read-only: fetch content for one org-memory asset after listing with get_org_memory_by_space_slug. Input: space_slug + asset_key from org_memory_assets[]. Proposal files: HTTPS fetch with same access as org memory. Matrix: server-side media download with HYPHA_MATRIX_ORG_MEMORY_ACCESS_TOKEN or session Matrix (HYPHA_MCP_AUTH_TOKEN + HYPHA_MCP_MATRIX_REQUEST_URL). return_mode auto: UTF-8 text + PDF text extraction + image/* as base64; text_only skips images; binary_as_base64 returns raw base64 for images and PDF. max_bytes caps download (default 2 MiB, max 4 MiB).',
+    inputSchema: fetchOrgMemoryAssetInputSchema,
+    outputSchema: fetchOrgMemoryAssetOutputSchema,
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
+    },
+  },
+  async (args) => {
+    const parsed = fetchOrgMemoryAssetInputSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        content: [
+          { type: 'text', text: `Invalid input: ${parsed.error.message}` },
+        ],
+        isError: true,
+      };
+    }
+
+    const { space_slug, asset_key, return_mode, max_bytes } = parsed.data;
+    const mcpMatrixRequestUrl =
+      process.env.HYPHA_MCP_MATRIX_REQUEST_URL?.trim() ||
+      (process.env.VERCEL_URL?.trim()
+        ? `https://${process.env.VERCEL_URL.trim()}`
+        : undefined);
+
+    try {
+      const gated = await fetchOrgMemoryAsset(
+        {
+          spaceSlug: space_slug,
+          asset_key,
+          return_mode,
+          max_bytes,
+        },
+        {
+          db,
+          authToken: process.env.HYPHA_MCP_AUTH_TOKEN,
+          requestUrlForSessionMatrix: mcpMatrixRequestUrl,
+        },
+      );
+
+      if (gated.access === 'denied') {
+        return {
+          content: [{ type: 'text', text: gated.message }],
+          isError: true,
+        };
+      }
+
+      const outParse = fetchOrgMemoryAssetOutputSchema.safeParse(gated.result);
+      if (!outParse.success) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Internal error: output validation failed: ${outParse.error.message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      const r = outParse.data;
+      const summary = r.ok
+        ? r.mode === 'text'
+          ? `Fetched ${r.filename} (${r.mime}) — text mode, ${
+              r.byte_length
+            } bytes${r.text_truncated ? ', truncated' : ''}.`
+          : `Fetched ${r.filename} (${r.mime}) — binary base64, ${r.byte_length} bytes.`
+        : `Failed: ${r.error}${r.code ? ` (${r.code})` : ''}`;
+
+      return {
+        content: [{ type: 'text', text: summary }],
+        structuredContent: r,
+      };
+    } catch (err) {
+      console.error('[hypha-mcp:fetch_org_memory_asset] failed', err);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: 'Internal error while fetching org memory asset',
+          },
+        ],
+        isError: true,
+      };
+    }
   },
 );
 
