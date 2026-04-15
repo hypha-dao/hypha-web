@@ -1,6 +1,5 @@
 import { cookies } from 'next/headers';
 import {
-  HYPHA_AUTH_PROVIDER,
   HYPHA_DISABLE_HUMAN_CHAT,
   HYPHA_ENABLE_AI_CHAT,
   HYPHA_ENABLE_COHERENCE,
@@ -33,13 +32,6 @@ const isPreviewEnvironment = () => process.env.VERCEL_ENV === 'preview';
  * secret is configured on the project.
  */
 export const flagDefinitionsForDiscovery = {
-  enableWeb3Auth: {
-    key: 'enable-web3-auth',
-    defaultValue: isPreviewEnvironment(),
-    description: 'Use Web3Auth as the auth provider when cookie matches',
-    origin: 'hypha' as const,
-    options: undefined as undefined,
-  },
   showLanguageSelect: {
     key: 'show-language-select',
     defaultValue: isPreviewEnvironment(),
@@ -82,18 +74,6 @@ export const flagDefinitionsForDiscovery = {
     options: undefined as undefined,
   },
 };
-
-export async function getEnableWeb3Auth(): Promise<boolean> {
-  const overrides = await getVercelToolbarFlagOverrides();
-  const o = readBooleanOverride(overrides, 'enable-web3-auth');
-  if (o !== undefined) return o;
-
-  const store = await cookies();
-  const provider = store.get(HYPHA_AUTH_PROVIDER)?.value;
-  if (provider === 'web3auth') return true;
-  if (provider !== undefined) return false;
-  return isPreviewEnvironment();
-}
 
 export async function getShowLanguageSelect(): Promise<boolean> {
   const overrides = await getVercelToolbarFlagOverrides();
