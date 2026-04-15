@@ -1,7 +1,7 @@
 'use client';
 
-import { Fragment, useMemo, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
+import { Fragment, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
 import type { TranslationValues } from 'next-intl';
 import {
@@ -877,22 +877,93 @@ function renderTextWithMentions(text: string): React.ReactNode[] {
   return parts;
 }
 
+type ReplyConnectorGeometry = {
+  width: number;
+  height: number;
+  d: string;
+};
+
 /**
- * Connector from main timeline avatar (w-10, center x=20) to quoted author avatar
- * (size sm = 24px, center x = 52 + 12 = 64 in the same coordinate origin) — delta +44px.
- * SVG is 88px wide, centered on the main column, so x=64 maps to 64 - (20 - 44) = 88.
+ * Measured L-shaped thread line: bottom-center of main avatar → up → quoted avatar center.
+ * Must live in the same stacking context as the reply row + main row (not only above the avatar).
  */
-function ChatReplyConnector() {
+function ChatReplyConnectorMeasured({
+  rowRef,
+  replyAvatarRef,
+  mainAvatarRef,
+}: {
+  rowRef: RefObject<HTMLDivElement | null>;
+  replyAvatarRef: RefObject<HTMLDivElement | null>;
+  mainAvatarRef: RefObject<HTMLDivElement | null>;
+}) {
+  const [geom, setGeom] = useState<ReplyConnectorGeometry | null>(null);
+
+  useLayoutEffect(() => {
+    const row = rowRef.current;
+    const replyA = replyAvatarRef.current;
+    const mainA = mainAvatarRef.current;
+    if (!row || !replyA || !mainA) {
+      setGeom(null);
+      return;
+    }
+
+    const measure = () => {
+      const rEl = rowRef.current;
+      const rep = replyAvatarRef.current;
+      const main = mainAvatarRef.current;
+      if (!rEl || !rep || !main) {
+        setGeom(null);
+        return;
+      }
+      const rowRect = rEl.getBoundingClientRect();
+      const repRect = rep.getBoundingClientRect();
+      const mainRect = main.getBoundingClientRect();
+      const w = rowRect.width;
+      const h = rowRect.height;
+      if (w <= 0 || h <= 0) {
+        setGeom(null);
+        return;
+      }
+      const xMain = mainRect.left + mainRect.width / 2 - rowRect.left;
+      const yMainBottom = mainRect.bottom - rowRect.top;
+      const xSmall = repRect.left + repRect.width / 2 - rowRect.left;
+      const ySmall = repRect.top + repRect.height / 2 - rowRect.top;
+      const r = Math.min(6, Math.max(3, Math.abs(xSmall - xMain) * 0.12));
+      const turnX = xSmall >= xMain ? xMain + r : xMain - r;
+      const d =
+        Math.abs(xSmall - xMain) < 0.5
+          ? `M ${xMain} ${yMainBottom} L ${xMain} ${ySmall}`
+          : `M ${xMain} ${yMainBottom} L ${xMain} ${
+              ySmall + r
+            } Q ${xMain} ${ySmall} ${turnX} ${ySmall} L ${xSmall} ${ySmall}`;
+      setGeom({ width: w, height: h, d });
+    };
+
+    measure();
+    const ro = new ResizeObserver(() => measure());
+    ro.observe(row);
+    ro.observe(replyA);
+    ro.observe(mainA);
+    window.addEventListener('resize', measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [rowRef, replyAvatarRef, mainAvatarRef]);
+
+  if (!geom) return null;
+
   return (
     <svg
-      className="pointer-events-none overflow-visible text-muted-foreground/40"
-      width="88"
-      height="56"
-      viewBox="0 0 88 56"
+      className="pointer-events-none absolute inset-0 z-0 overflow-visible text-muted-foreground/40"
+      width={geom.width}
+      height={geom.height}
+      viewBox={`0 0 ${geom.width} ${geom.height}`}
+      preserveAspectRatio="none"
       aria-hidden
     >
       <path
-        d="M 44 55 L 44 22 C 44 13 48 9 56 9 L 88 9"
+        d={geom.d}
         fill="none"
         stroke="currentColor"
         strokeWidth="1.25"
@@ -1028,8 +1099,13 @@ export function HumanChatPanelMessageBubble({
       ? currentUserAvatarUrl ?? replyTo.authorAvatarUrl
       : replyTo?.authorAvatarUrl;
 
+  const messageRowRef = useRef<HTMLDivElement>(null);
+  const replyAvatarMeasureRef = useRef<HTMLDivElement>(null);
+  const mainAvatarMeasureRef = useRef<HTMLDivElement>(null);
+
   const row = (moreSlot: ReactNode | null) => (
     <div
+      ref={messageRowRef}
       data-matrix-event-id={message.id}
       data-testid="chat-message"
       className={cn(
@@ -1041,16 +1117,25 @@ export function HumanChatPanelMessageBubble({
       onPointerLeave={onRowPointerLeave}
     >
       {replyTo && (
+        <ChatReplyConnectorMeasured
+          rowRef={messageRowRef}
+          replyAvatarRef={replyAvatarMeasureRef}
+          mainAvatarRef={mainAvatarMeasureRef}
+        />
+      )}
+      {replyTo && (
         <div
           data-testid="chat-message-reply-context"
-          className="mb-1 flex min-h-[22px] items-center gap-1.5 pl-[52px]"
+          className="relative z-[1] mb-1 flex min-h-[22px] items-center gap-1.5 pl-[52px]"
         >
-          <PersonAvatar
-            size="sm"
-            shape="circle"
-            avatarSrc={replyHeaderAvatar}
-            userName={replyTo.authorLabel}
-          />
+          <div ref={replyAvatarMeasureRef} className="shrink-0">
+            <PersonAvatar
+              size="sm"
+              shape="circle"
+              avatarSrc={replyHeaderAvatar}
+              userName={replyTo.authorLabel}
+            />
+          </div>
           <p className="flex min-w-0 flex-1 items-baseline gap-1 truncate text-xs leading-tight text-muted-foreground">
             <span className="shrink-0 font-semibold text-muted-foreground">
               {replyTo.authorLabel.startsWith('@')
@@ -1071,15 +1156,10 @@ export function HumanChatPanelMessageBubble({
       <div className="flex items-start gap-3">
         {/* Main avatar: first row in this column is sender name — aligns with "You" */}
         <div
-          className="relative flex w-10 shrink-0 flex-col items-center pt-0.5"
+          className="relative z-[1] flex w-10 shrink-0 flex-col items-center pt-0.5"
           data-testid="chat-message-avatar"
         >
-          {replyTo && (
-            <div className="pointer-events-none absolute bottom-full left-1/2 z-0 mb-0.5 flex h-[56px] w-[88px] max-w-none -translate-x-1/2 items-end justify-center overflow-visible">
-              <ChatReplyConnector />
-            </div>
-          )}
-          <div className="relative z-[1]">
+          <div ref={mainAvatarMeasureRef} className="relative">
             <PersonAvatar
               size="chat"
               shape="circle"
@@ -1090,7 +1170,7 @@ export function HumanChatPanelMessageBubble({
         </div>
 
         {/* Content */}
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="relative z-[1] flex min-w-0 flex-1 flex-col">
           {/* Name + Timestamp */}
           <div className="flex items-baseline gap-2">
             <span className="font-semibold text-sm text-foreground">
