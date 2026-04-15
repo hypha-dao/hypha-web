@@ -697,7 +697,7 @@ export function HumanChatPanelChatBar({
     'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-primary/12 hover:text-primary active:bg-primary/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-0';
 
   const fmtBtn =
-    'flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-popover-foreground transition-colors hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent dark:hover:text-accent-foreground';
+    'flex h-6 w-6 shrink-0 items-center justify-center rounded text-popover-foreground transition-colors hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent dark:hover:text-accent-foreground';
 
   return (
     <div className="flex w-full min-w-0 flex-shrink-0 flex-col border-t border-border bg-background-2 px-3 pt-3 pb-3">
@@ -772,15 +772,15 @@ export function HumanChatPanelChatBar({
               }}
               aria-hidden
             >
-              <div className="h-0 w-0 border-x-[6px] border-t-[7px] border-x-transparent border-t-popover" />
+              <div className="h-0 w-0 border-x-[5px] border-t-[6px] border-x-transparent border-t-popover" />
             </div>
             <div
               role="toolbar"
               aria-label={t('formatSelectionBar')}
-              className="absolute z-30 flex -translate-x-1/2 -translate-y-full items-center gap-0.5 rounded-lg border border-border bg-popover px-1 py-1 text-popover-foreground shadow-md"
+              className="absolute z-30 flex -translate-x-1/2 -translate-y-full items-center gap-0 rounded-md border border-border bg-popover px-0.5 py-0.5 text-popover-foreground shadow-md"
               style={{
                 left: selectionBar.left,
-                top: Math.max(4, selectionBar.top - 10),
+                top: Math.max(4, selectionBar.top - 8),
               }}
               onMouseDown={(e) => e.preventDefault()}
             >
@@ -791,7 +791,7 @@ export function HumanChatPanelChatBar({
                 aria-label={t('bold')}
                 onClick={() => applyFormat('bold')}
               >
-                <Bold className="h-4 w-4" strokeWidth={2.5} />
+                <Bold className="h-3.5 w-3.5" strokeWidth={2} />
               </button>
               <button
                 type="button"
@@ -800,7 +800,7 @@ export function HumanChatPanelChatBar({
                 aria-label={t('italic')}
                 onClick={() => applyFormat('italic')}
               >
-                <Italic className="h-4 w-4" strokeWidth={2.5} />
+                <Italic className="h-3.5 w-3.5" strokeWidth={2} />
               </button>
               <button
                 type="button"
@@ -809,7 +809,7 @@ export function HumanChatPanelChatBar({
                 aria-label={t('strikethrough')}
                 onClick={() => applyFormat('strike')}
               >
-                <Strikethrough className="h-4 w-4" strokeWidth={2.5} />
+                <Strikethrough className="h-3.5 w-3.5" strokeWidth={2} />
               </button>
               <button
                 type="button"
@@ -818,7 +818,7 @@ export function HumanChatPanelChatBar({
                 aria-label={t('blockquote')}
                 onClick={() => applyFormat('blockquote')}
               >
-                <TextQuote className="h-4 w-4" strokeWidth={2.5} />
+                <TextQuote className="h-3.5 w-3.5" strokeWidth={2} />
               </button>
               <button
                 type="button"
@@ -827,7 +827,7 @@ export function HumanChatPanelChatBar({
                 aria-label={t('inlineCode')}
                 onClick={() => applyFormat('code')}
               >
-                <Code className="h-4 w-4" strokeWidth={2.5} />
+                <Code className="h-3.5 w-3.5" strokeWidth={2} />
               </button>
               <button
                 type="button"
@@ -836,7 +836,7 @@ export function HumanChatPanelChatBar({
                 aria-label={t('spoiler')}
                 onClick={() => applyFormat('spoiler')}
               >
-                <Eye className="h-4 w-4" strokeWidth={2.5} />
+                <Eye className="h-3.5 w-3.5" strokeWidth={2} />
               </button>
             </div>
           </>
