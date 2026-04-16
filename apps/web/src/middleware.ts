@@ -44,9 +44,6 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
     ...(matrixImg ? [matrixImg] : []),
     ...IMAGE_HOSTS.map((host) => `https://${host}`),
   ].join(' ');
-
-  // Allow local Hardhat/Anvil (127.0.0.1:8545) — wagmi may use this when the wallet
-  // or chain config points at a local node; without it connect-src blocks voting/RPC.
   const localChainRpc = [
     'http://127.0.0.1:8545',
     'http://localhost:8545',
@@ -89,18 +86,12 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
 }
 
 export function middleware(request: NextRequest) {
-  // Run i18n middleware first — it returns a NextResponse with the
-  // X-NEXT-INTL-LOCALE request header embedded. We must use this response
-  // as-is (or only append to its *response* headers) to avoid dropping the
-  // locale header that next-intl reads on the server side.
   const response = i18nMiddleware(request);
 
-  // Short-circuit on redirects — CSP is irrelevant for redirect responses
   if (response.status === 301 || response.status === 302) {
     return response;
   }
 
-  // Apply CSP headers on top of the i18n response
   return applyCsp(response, request);
 }
 
