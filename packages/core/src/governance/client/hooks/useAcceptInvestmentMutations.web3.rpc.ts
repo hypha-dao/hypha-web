@@ -95,13 +95,6 @@ export const useAcceptInvestmentMutationsWeb3Rpc = ({
       const amountA = parseUnits(spaceReceive.amount, decimalsA);
       const amountB = parseUnits(investorSend.amount, decimalsB);
 
-      const currentEscrowCounter = await publicClient.readContract({
-        address: escrowAddress,
-        abi: escrowImplementationAbi,
-        functionName: 'escrowCounter',
-      });
-      const nextEscrowId = currentEscrowCounter + 1n;
-
       let pullFromTreasury = 0n;
       let mintShortfall = amountA;
 
@@ -160,9 +153,6 @@ export const useAcceptInvestmentMutationsWeb3Rpc = ({
         }),
       });
 
-      // Upgraded escrow: createEscrow(..., false) does not auto-fund (avoids any path that
-      // could pull tokenB at execution). Record escrow then receiveFunds(nextId) so only
-      // party A (executor) deposits tokenA. Investor tokenB is off-chain / optional later.
       transactions.push({
         target: escrowAddress,
         value: 0n,
@@ -176,17 +166,8 @@ export const useAcceptInvestmentMutationsWeb3Rpc = ({
             investorSend.token,
             amountA,
             amountB,
-            false,
+            true,
           ],
-        }),
-      });
-      transactions.push({
-        target: escrowAddress,
-        value: 0n,
-        data: encodeFunctionData({
-          abi: escrowImplementationAbi,
-          functionName: 'receiveFunds',
-          args: [nextEscrowId],
         }),
       });
 
