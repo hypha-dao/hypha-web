@@ -14,3 +14,4 @@ export * from './membership-exit/plugin';
 export * from './space-transparency-settings/plugin';
 export * from './redeem-tokens/plugin';
 export * from './accept-investment/plugin';
+export * from './exchange-stakes-and-tokens/plugin';

@@ -856,9 +856,9 @@
         "title": "Aceitar investimento",
         "description": "Receba capital de investidores, membros ou espaços alinhados em troca de tokens nativos do espaço, liquidado via escrow."
       },
-      "exchangeOwnershipComingSoon": {
-        "title": "Propriedade de troca (em breve)",
-        "description": "Troque a propriedade entre membros ou espaços, seja vendendo uma participação ou trocando ativos."
+      "exchangeStakesAndTokens": {
+        "title": "Trocar participações e tokens",
+        "description": "Troque tokens entre membros e espaços, liquidado via escrow quando ambas as partes tiverem depositado."
       },
       "deployFunds": {
         "title": "Distribuir fundos",
@@ -1414,7 +1414,14 @@
     "rootSpace": "Espaço Raiz",
     "rootSpaceDescription": "Marcar este espaço como Root Space o tornará independente. Não estará mais vinculado à organização atual e todos os seus espaços vinculados se moverão com ele.",
     "search": "Procurar...",
-    "addYourUrl": "Adicione seu URL"
+    "addYourUrl": "Adicione seu URL",
+    "exchangeDepositProposalTitleBanner": "Complete o lado deste espaço na troca",
+    "exchangeDepositProposalBody": "Uma proposta de troca lista este espaço como contraparte (escrow #{escrowId}). Crie uma proposta para depositar <send></send> e receber <receive></receive> da outra parte.",
+    "exchangeDepositProposalCta": "Criar proposta de depósito",
+    "exchangeDepositProposalCreating": "Criando proposta...",
+    "exchangeDepositProposalConfirming": "Confirmando...",
+    "exchangeDepositProposalTitle": "Depositar {amount} {symbol} no escrow #{escrowId}",
+    "exchangeDepositProposalDescription": "Aprove e deposite {amount} {symbol} no escrow de troca #{escrowId} para que a troca possa ser concluída."
   },
   "ProposalDetails": {
     "investment": {

@@ -15,6 +15,11 @@ type RecipientProps = {
   members?: Person[];
   value?: string;
   defaultRecipientType?: RecipientType;
+  /** When provided, Recipient becomes a controlled component for its type tab. */
+  recipientType?: RecipientType;
+  onRecipientTypeChange?: (next: RecipientType) => void;
+  /** Disables the member/space tab switcher while keeping the selector editable. */
+  readOnlyDropdown?: boolean;
   onChange?: (selected: Person | Space | { address: string }) => void;
   readOnly?: boolean;
   emptyMembersMessage?: string;
@@ -29,6 +34,9 @@ export const Recipient = ({
   onChange,
   value,
   defaultRecipientType = 'member',
+  recipientType: controlledRecipientType,
+  onRecipientTypeChange,
+  readOnlyDropdown,
   readOnly,
   emptyMembersMessage,
   emptySpacesMessage,
@@ -36,8 +44,15 @@ export const Recipient = ({
   showTabs = true,
 }: RecipientProps) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
-  const [recipientType, setRecipientType] =
+  const [uncontrolledRecipientType, setUncontrolledRecipientType] =
     useState<RecipientType>(defaultRecipientType);
+  const recipientType = controlledRecipientType ?? uncontrolledRecipientType;
+  const setRecipientType = (next: RecipientType) => {
+    if (controlledRecipientType === undefined) {
+      setUncontrolledRecipientType(next);
+    }
+    onRecipientTypeChange?.(next);
+  };
   const [selected, setSelected] = useState<
     Person | Space | { address: string } | null
   >(null);
@@ -145,9 +160,11 @@ export const Recipient = ({
             <Tabs
               value={recipientType}
               onValueChange={(value) =>
-                !readOnly && setRecipientType(value as 'member' | 'space')
+                !readOnly &&
+                !readOnlyDropdown &&
+                setRecipientType(value as 'member' | 'space')
               }
-              disabled={readOnly}
+              disabled={readOnly || readOnlyDropdown}
             >
               <TabsList triggerVariant="switch">
                 <TabsTrigger variant="switch" value="member">

@@ -222,9 +222,9 @@
         "title": "Accept Investment",
         "description": "Receive capital from investors, members, or aligned spaces in exchange for native space tokens, settled via escrow."
       },
-      "exchangeOwnershipComingSoon": {
-        "title": "Exchange Ownership (Coming Soon)",
-        "description": "Swap ownership between members or spaces, whether selling a stake or exchanging assets."
+      "exchangeStakesAndTokens": {
+        "title": "Exchange Stakes & Tokens",
+        "description": "Swap tokens between members and spaces, settled via escrow when both sides have funded."
       },
       "deployFunds": {
         "title": "Deploy Funds",
@@ -780,7 +780,14 @@
     "rootSpace": "Root Space",
     "rootSpaceDescription": "Marking this space as a Root Space will make it independent. It will no longer be linked to the current organisation, and all of its linked spaces will move with it.",
     "search": "Search...",
-    "addYourUrl": "Add your URL"
+    "addYourUrl": "Add your URL",
+    "exchangeDepositProposalTitleBanner": "Complete this space's side of an exchange",
+    "exchangeDepositProposalBody": "An exchange proposal lists this space as counterparty (escrow #{escrowId}). Create a proposal to deposit <send></send> and receive <receive></receive> from the other party.",
+    "exchangeDepositProposalCta": "Create deposit proposal",
+    "exchangeDepositProposalCreating": "Creating proposal...",
+    "exchangeDepositProposalConfirming": "Confirming...",
+    "exchangeDepositProposalTitle": "Deposit {amount} {symbol} to escrow #{escrowId}",
+    "exchangeDepositProposalDescription": "Approve and deposit {amount} {symbol} into exchange escrow #{escrowId} so the swap can complete."
   },
   "AgreementFlow": {
     "labels": {
@@ -800,7 +807,8 @@
       "contribution": "Contribution",
       "expenses": "Expenses",
       "funding": "Funding",
-      "investment": "Investment"
+      "investment": "Investment",
+      "exchange": "Exchange"
     },
     "documentBadges": {
       "invite": "Invite",
@@ -1386,6 +1394,25 @@
         "notMemberRevert": "The chain rejected this transaction: the connected wallet is not a member or delegate of this space. Use a wallet that belongs to the space, or connect as a delegate.",
         "walletRejected": "The transaction was not signed or was rejected in your wallet. Try again and approve the request.",
         "escrowNotConfigured": "The escrow contract address is not configured. Set NEXT_PUBLIC_ESCROW_IMPLEMENTATION_ADDRESS in apps/web/.env to your deployed EscrowImplementation proxy on the governance chain (Base mainnet in production), restart the dev server or redeploy the app, then try again. Deploy the contract from packages/storage-evm (see scripts/escrow-proxy.deploy.ts) if you do not have an address yet."
+      },
+      "exchangeStakesAndTokens": {
+        "seller": "Seller (Wallet Address)",
+        "sellerWillSend": "Seller sends",
+        "buyer": "Buyer (Wallet Address)",
+        "buyerWillSend": "Buyer will send",
+        "loadingTokens": "Loading tokens...",
+        "escrowNotice": "This proposal uses escrow for the exchange. After approval, each member deposits their side into escrow from their profile; when the space is one of the parties, its deposit happens at execution.",
+        "escrowAccountAddress": "Escrow account address",
+        "errors": {
+          "sellerAmountExceedsBalance": "The entered amount is greater than the seller available balance.",
+          "sellerTreasuryUnavailable": "Could not load the space treasury. Wait for chain data and try again.",
+          "sellerBalanceCheckFailed": "Could not verify seller balance. Check your connection and try again.",
+          "memberSellerWalletMismatch": "Exchange funding uses your connected wallet. Connect the same wallet as the seller address, or choose the member seller whose address matches your wallet.",
+          "escrowTokenInvalid": "A token row uses the escrow contract address. Use the ERC-20 token contract for seller and buyer tokens.",
+          "insufficientSellerBalance": "The connected wallet does not hold enough seller tokens. Fund the smart wallet that matches the seller address.",
+          "tokenWhitelistBlocked": "This token's on-chain rules block sending it to escrow (e.g. transfer/receive whitelist). Choose another token or update the token's whitelist settings.",
+          "safeErc20TransferFailed": "The token contract rejected the transfer to escrow (often balance, allowance, or non-transferable rules). Check that your smart wallet holds enough tokens and that the token allows transfers to the escrow."
+        }
       },
       "paymentSchedule": {
         "label": "Payment Schedule",

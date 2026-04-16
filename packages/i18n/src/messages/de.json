@@ -222,9 +222,9 @@
         "title": "Investition annehmen",
         "description": "Erhalten Sie Kapital von Investoren, Mitgliedern oder ausgerichteten Spaces im Austausch für native Space-Token, abgewickelt über Escrow."
       },
-      "exchangeOwnershipComingSoon": {
-        "title": "Eigentum austauschen (Bald verfügbar)",
-        "description": "Tauschen Sie Eigentum zwischen Mitgliedern oder Spaces aus, sei es durch den Verkauf eines Anteils oder den Austausch von Vermögenswerten."
+      "exchangeStakesAndTokens": {
+        "title": "Anteile & Tokens tauschen",
+        "description": "Tauschen Sie Tokens zwischen Mitgliedern und Spaces aus — die Abwicklung erfolgt per Escrow, sobald beide Seiten ihre Mittel eingezahlt haben."
       },
       "deployFunds": {
         "title": "Mittel einsetzen",
@@ -780,7 +780,14 @@
     "rootSpace": "Root-Space",
     "rootSpaceDescription": "Wenn Sie diesen Space als Root-Space markieren, wird er unabhängig. Er ist dann nicht mehr mit der aktuellen Organisation verknüpft, und alle mit ihm verknüpften Spaces werden mitverschoben.",
     "search": "Suchen...",
-    "addYourUrl": "Füge deine URL hinzu"
+    "addYourUrl": "Füge deine URL hinzu",
+    "exchangeDepositProposalTitleBanner": "Die Seite dieses Spaces im Tausch abschließen",
+    "exchangeDepositProposalBody": "Ein Tauschvorschlag nennt diesen Space als Gegenpartei (Escrow #{escrowId}). Erstelle einen Vorschlag, um <send></send> einzuzahlen und <receive></receive> von der anderen Partei zu erhalten.",
+    "exchangeDepositProposalCta": "Einzahlungsvorschlag erstellen",
+    "exchangeDepositProposalCreating": "Vorschlag wird erstellt...",
+    "exchangeDepositProposalConfirming": "Bestätigung läuft...",
+    "exchangeDepositProposalTitle": "{amount} {symbol} in Escrow #{escrowId} einzahlen",
+    "exchangeDepositProposalDescription": "Genehmige und zahle {amount} {symbol} in den Tausch-Escrow #{escrowId} ein, damit der Swap abgeschlossen werden kann."
   },
   "AgreementFlow": {
     "labels": {

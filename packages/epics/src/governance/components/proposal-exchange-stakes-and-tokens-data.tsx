@@ -11,7 +11,7 @@ import { copyToClipboard } from '@hypha-platform/ui-utils';
 import { useDbSpaces } from '../../hooks';
 import {
   DbToken,
-  EXCHANGE_ESCROW_CONTRACT_BY_CHAIN,
+  getEscrowImplementationAddress,
 } from '@hypha-platform/core/client';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
@@ -125,11 +125,8 @@ export const ProposalExchangeStakesAndTokensData = ({
 }: ProposalExchangeStakesAndTokensDataProps) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const tCommon = useTranslations('Common');
-  const chainId = useChainId();
-  const escrowContractAddress =
-    EXCHANGE_ESCROW_CONTRACT_BY_CHAIN[
-      chainId as keyof typeof EXCHANGE_ESCROW_CONTRACT_BY_CHAIN
-    ];
+  useChainId();
+  const escrowContractAddress = getEscrowImplementationAddress();
   const { tokens } = useTokens({ spaceSlug });
   const { spaces: dbSpaces } = useDbSpaces({ parentOnly: false });
   const resolvedSellerAddress = getPreferredAddress(

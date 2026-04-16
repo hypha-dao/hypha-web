@@ -21,4 +21,6 @@ export const DOCUMENT_LABEL_BADGE_KEYS: Partial<Record<string, string>> = {
   'Redeem Tokens': 'documentBadges.redeemTokens',
   'Token Purchase': 'labels.spaceTokenPurchase',
   'Update Token': 'documentBadges.updateToken',
+  Investment: 'labels.investment',
+  Exchange: 'labels.exchange',
 };

@@ -24,6 +24,8 @@ export * from './space-mode-label';
 export * from './space-search';
 export * from './subspace-section';
 export * from './sales-banner';
+export * from './space-escrow-deposit-banner';
+export * from './space-escrow-deposit-banners';
 export * from './subscription-badge';
 export * from './transparency-level';
 export * from './space-discoverability-field';

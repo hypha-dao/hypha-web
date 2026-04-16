@@ -44,7 +44,10 @@ import {
   ProposalSpaceTokenPurchaseData,
   ProposalUpdateToken,
   ProposalAcceptInvestmentData,
+  ProposalExchangeStakesAndTokensData,
 } from '../../governance';
+import { parseExchangeDetailsFromDescription } from '../../governance/utils/exchange-details-parser';
+import { stripExchangeDetailsBlock } from '../../governance/utils/strip-exchange-details-block';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
 import { ButtonClose, ExpireProposalBanner } from '@hypha-platform/epics';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -1078,6 +1081,8 @@ export const ProposalDetail = ({
       <MarkdownSuspense>
         {label === 'Investment'
           ? stripHyphaInvestmentFormMarker(content ?? '')
+          : label === 'Exchange'
+          ? stripExchangeDetailsBlock(content ?? '')
           : content}
       </MarkdownSuspense>
       <AttachmentList attachments={attachments || []} />
@@ -1088,6 +1093,22 @@ export const ProposalDetail = ({
           exchangeEscrowData={proposalDetails?.exchangeEscrowData}
         />
       ) : null}
+      {label === 'Exchange'
+        ? (() => {
+            const parsed = parseExchangeDetailsFromDescription(content);
+            if (!parsed) return null;
+            return (
+              <ProposalExchangeStakesAndTokensData
+                spaceSlug={spaceSlug}
+                sellerAddress={parsed.sellerAddress}
+                buyerAddress={parsed.buyerAddress}
+                sellerLeg={parsed.sellerLeg}
+                buyerLeg={parsed.buyerLeg}
+                dbTokens={dbTokens}
+              />
+            );
+          })()
+        : null}
       {proposalDetails?.votingMethods.map((method, idx) => (
         <ProposalVotingInfo
           key={idx}
@@ -1113,6 +1134,7 @@ export const ProposalDetail = ({
         />
       ))}
       {label !== 'Investment' &&
+        label !== 'Exchange' &&
         proposalDetails?.tokens.map((token, idx) => (
           <ProposalTokenItem
             key={idx}
@@ -1134,7 +1156,8 @@ export const ProposalDetail = ({
           />
         ))}
       {Boolean(proposalDetails?.transfers?.length) &&
-        label !== 'Investment' && (
+        label !== 'Investment' &&
+        label !== 'Exchange' && (
           <div className="flex flex-col gap-4">
             <span className="text-neutral-11 text-2 font-medium">
               {tProposalDetails('sections.payment')}

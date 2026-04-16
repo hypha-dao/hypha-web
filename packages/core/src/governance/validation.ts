@@ -426,6 +426,100 @@ export const schemaAcceptInvestment = z.object({
   }),
 });
 
+/** v1: exchange escrow supports a single token pair on each side. */
+export const schemaExchangeStakesAndTokens = z
+  .object({
+    ...createAgreementWeb2Props,
+    ...createAgreementFiles,
+    label: z.literal('Exchange'),
+    /** Plugin-controlled hint for client-side balance checks. */
+    sellerRecipientType: z.enum(['member', 'space']).optional(),
+    buyerRecipientType: z.enum(['member', 'space']).optional(),
+    /** Buyer space treasury executor — used as on-chain escrow partyB when buyer is a space. */
+    buyerExecutorAddressForSettlement: z.string().optional(),
+    /** Active space treasury executor — used as on-chain escrow partyA when seller is a space. */
+    spaceExecutorAddress: z.string().optional(),
+    sellerAddress: z
+      .string()
+      .min(1, { message: 'Please add a recipient or wallet address' })
+      .refine(isAddress, { message: 'Invalid Ethereum address' }),
+    sellerLeg: z
+      .array(
+        z.object({
+          amount: z
+            .string()
+            .refine((value) => value.trim() !== '', {
+              message: 'Please enter an amount.',
+            })
+            .refine(
+              (value) => {
+                const normalized = value.trim();
+                const amount = Number(normalized);
+                return Number.isFinite(amount) && amount > 0;
+              },
+              { message: 'Amount must be greater than 0' },
+            ),
+          token: z
+            .string()
+            .min(1, { message: 'Please select a token' })
+            .refine(isAddress, { message: 'Invalid Ethereum address' }),
+        }),
+      )
+      .length(1, { message: 'Exactly one seller token row is required' }),
+    buyerAddress: z
+      .string()
+      .min(1, { message: 'Please add a recipient or wallet address' })
+      .refine(isAddress, { message: 'Invalid Ethereum address' }),
+    buyerLeg: z
+      .array(
+        z.object({
+          amount: z
+            .string()
+            .refine((value) => value.trim() !== '', {
+              message: 'Please enter an amount.',
+            })
+            .refine(
+              (value) => {
+                const normalized = value.trim();
+                const amount = Number(normalized);
+                return Number.isFinite(amount) && amount > 0;
+              },
+              { message: 'Amount must be greater than 0' },
+            ),
+          token: z
+            .string()
+            .min(1, { message: 'Please select a token' })
+            .refine(isAddress, { message: 'Invalid Ethereum address' }),
+        }),
+      )
+      .length(1, { message: 'Exactly one buyer token row is required' }),
+  })
+  .superRefine((data, ctx) => {
+    if (data.buyerRecipientType === 'space') {
+      const exec = data.buyerExecutorAddressForSettlement?.trim();
+      if (!exec || !isAddress(exec)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Buyer space treasury is unavailable',
+          path: ['buyerAddress'],
+        });
+      }
+    }
+    if (data.sellerRecipientType === 'space') {
+      const exec = data.spaceExecutorAddress?.trim();
+      if (!exec || !isAddress(exec)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Seller space treasury is unavailable',
+          path: ['sellerAddress'],
+        });
+      }
+    }
+    // Space↔space exchanges are supported: the proposing space funds its leg
+    // inline at createEscrow; the counterparty space funds via a follow-up
+    // proposal triggered from the space-page deposit banner.
+  });
+
 const schemaTokenBurningTarget = z
   .object({
     type: z.enum(['member', 'space']).default('member'),

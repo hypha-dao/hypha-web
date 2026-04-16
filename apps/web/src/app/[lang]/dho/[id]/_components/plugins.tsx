@@ -18,6 +18,7 @@ import {
   RedeemTokensPlugin,
   UpdateIssuedTokenPlugin,
   AcceptInvestmentPlugin,
+  ExchangeStakesAndTokensPlugin,
 } from '@hypha-platform/epics';
 import { useMembers } from '@web/hooks/use-members';
 import { Person, Space } from '@hypha-platform/core/client';
@@ -40,6 +41,7 @@ export const PLUGINS = {
   'redeem-tokens': RedeemTokensPlugin,
   'update-issued-token': UpdateIssuedTokenPlugin,
   'accept-investment': AcceptInvestmentPlugin,
+  'exchange-stakes-and-tokens': ExchangeStakesAndTokensPlugin,
 };
 
 type PluginProps = {

@@ -222,9 +222,9 @@
         "title": "Accepter un investissement",
         "description": "Recevez du capital d'investisseurs, de membres ou d'espaces alignés en échange des tokens natifs de l'espace, réglé via séquestre."
       },
-      "exchangeOwnershipComingSoon": {
-        "title": "Échanger la propriété (bientôt disponible)",
-        "description": "Échangez la propriété entre membres ou espaces, qu'il s'agisse de vendre une part ou d'échanger des actifs."
+      "exchangeStakesAndTokens": {
+        "title": "Échanger des parts et des jetons",
+        "description": "Échangez des jetons entre membres et espaces, réglés via séquestre lorsque les deux parties ont déposé leurs fonds."
       },
       "deployFunds": {
         "title": "Déployer des fonds",
@@ -780,7 +780,14 @@
     "rootSpace": "Espace racine",
     "rootSpaceDescription": "Marquer cet espace comme Espace racine le rendra indépendant. Il ne sera plus lié à l’organisation actuelle, et tous ses espaces liés seront déplacés avec lui.",
     "search": "Rechercher...",
-    "addYourUrl": "Ajoutez votre URL"
+    "addYourUrl": "Ajoutez votre URL",
+    "exchangeDepositProposalTitleBanner": "Finaliser la part de cet espace dans l'échange",
+    "exchangeDepositProposalBody": "Une proposition d'échange désigne cet espace comme contrepartie (escrow #{escrowId}). Créez une proposition pour déposer <send></send> et recevoir <receive></receive> de l'autre partie.",
+    "exchangeDepositProposalCta": "Créer une proposition de dépôt",
+    "exchangeDepositProposalCreating": "Création de la proposition...",
+    "exchangeDepositProposalConfirming": "Confirmation...",
+    "exchangeDepositProposalTitle": "Déposer {amount} {symbol} dans l'escrow #{escrowId}",
+    "exchangeDepositProposalDescription": "Approuvez et déposez {amount} {symbol} dans l'escrow d'échange #{escrowId} pour que l'échange puisse se terminer."
   },
   "AgreementFlow": {
     "labels": {

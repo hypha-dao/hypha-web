@@ -13,7 +13,7 @@ import {
   useMe,
   useSpaceBySlug,
   useSpaceDetailsWeb3Rpc,
-  EXCHANGE_ESCROW_CONTRACT_BY_CHAIN,
+  getEscrowImplementationAddress,
   canBuyerSendToEscrowForExchange,
   canExecutorSendToEscrowForExchange,
 } from '@hypha-platform/core/client';
@@ -82,9 +82,7 @@ export const ExchangeStakesAndTokensPlugin = ({
     | undefined;
   const { tokens, isLoading } = useTokens({ spaceSlug });
   const chainId = useChainId();
-  const escrowContractAddress = EXCHANGE_ESCROW_CONTRACT_BY_CHAIN[
-    chainId as keyof typeof EXCHANGE_ESCROW_CONTRACT_BY_CHAIN
-  ] as `0x${string}` | undefined;
+  const escrowContractAddress = getEscrowImplementationAddress();
 
   const sellerBalanceLookupAddress =
     sellerRecipientType === 'space' && spaceExecutorAddress

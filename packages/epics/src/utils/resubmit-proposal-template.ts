@@ -33,6 +33,7 @@ export function getCreateRouteSegmentForProposalLabel(
     'Token Purchase': 'space-token-purchase',
     'Space Transparency': 'space-settings-transparency',
     Investment: 'accept-investment',
+    Exchange: 'exchange-stakes-and-tokens',
   };
 
   return labelToRoute[label] ?? '';

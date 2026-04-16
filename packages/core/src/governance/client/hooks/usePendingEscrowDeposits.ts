@@ -13,41 +13,70 @@ const MAX_ESCROWS_SCAN = 500;
 
 export type PendingEscrowDeposit = {
   escrowId: bigint;
-  /** Party A (space executor) — funds tokenA into escrow and receives tokenB. */
+  /** Which side of the escrow the current user is on. */
+  side: 'A' | 'B';
   partyA: `0x${string}`;
-  /** Party B (investor = current user) — funds tokenB into escrow and receives tokenA. */
   partyB: `0x${string}`;
-  /** Token the space deposits (what the investor receives on completion). */
+  /** Raw escrow tokenA (always the A-side token regardless of user side). */
   tokenA: `0x${string}`;
-  /** Token the investor must deposit. */
+  /** Raw escrow tokenB (always the B-side token regardless of user side). */
   tokenB: `0x${string}`;
+  /** Raw escrow amountA. */
   amountA: bigint;
+  /** Raw escrow amountB. */
   amountB: bigint;
   isPartyAFunded: boolean;
-  /** Symbol/decimals for tokenB (what the user pays in). */
-  tokenBSymbol: string;
+  isPartyBFunded: boolean;
+  /**
+   * @deprecated Kept for backward compatibility with existing consumers. When
+   *   the user is on side B this mirrors `isPartyAFunded` (the counterparty).
+   *   Prefer `isCounterpartyFunded`.
+   */
+  /** Funding flag for the OPPOSITE side (useful for messaging "they have already deposited"). */
+  isCounterpartyFunded: boolean;
+  /** Token the user must deposit to complete their side. */
+  payToken: `0x${string}`;
+  /** Amount the user must deposit (raw units scaled by payToken decimals). */
+  payAmount: bigint;
+  /** Token the user will receive when both sides are funded. */
+  receiveToken: `0x${string}`;
+  /** Amount the user will receive. */
+  receiveAmount: bigint;
+  payTokenSymbol: string;
+  payTokenDecimals: number;
+  receiveTokenSymbol: string;
+  receiveTokenDecimals: number;
+  /** ERC20 allowance for `payToken` granted by the user to the escrow contract. */
+  payAllowance: bigint;
+  /** User's current `payToken` balance. */
+  payBalance: bigint;
+  // ── Back-compat aliases (kept so existing UI that reads amountB/tokenB etc. keeps working) ──
+  /** Back-compat: same as `payTokenDecimals`. */
   tokenBDecimals: number;
-  /** Symbol/decimals for tokenA (what the user will receive). */
-  tokenASymbol: string;
+  /** Back-compat: same as `payTokenSymbol`. */
+  tokenBSymbol: string;
+  /** Back-compat: same as `receiveTokenDecimals`. */
   tokenADecimals: number;
-  /** Current ERC20 allowance granted to the escrow contract by the user for tokenB. */
+  /** Back-compat: same as `receiveTokenSymbol`. */
+  tokenASymbol: string;
+  /** Back-compat: same as `payAllowance`. */
   allowanceB: bigint;
-  /** User's tokenB balance — used to decide whether the deposit button should be enabled. */
+  /** Back-compat: same as `payBalance`. */
   balanceB: bigint;
 };
 
 type RawEscrow = readonly [
-  `0x${string}`,
-  `0x${string}`,
-  `0x${string}`,
-  `0x${string}`,
-  `0x${string}`,
-  bigint,
-  bigint,
-  boolean,
-  boolean,
-  boolean,
-  boolean,
+  `0x${string}`, // creator
+  `0x${string}`, // partyA
+  `0x${string}`, // partyB
+  `0x${string}`, // tokenA
+  `0x${string}`, // tokenB
+  bigint, // amountA
+  bigint, // amountB
+  boolean, // isPartyAFunded
+  boolean, // isPartyBFunded
+  boolean, // isCompleted
+  boolean, // isCancelled
 ];
 
 export const usePendingEscrowDeposits = ({
@@ -75,7 +104,6 @@ export const usePendingEscrowDeposits = ({
 
       const total = Number(counter);
       const scanCount = Math.min(total, MAX_ESCROWS_SCAN);
-      // Scan most recent first so newest pending escrows surface quickly.
       const ids: bigint[] = Array.from({ length: scanCount }, (_, i) =>
         BigInt(total - i),
       );
@@ -91,19 +119,34 @@ export const usePendingEscrowDeposits = ({
         })),
       });
 
-      const candidates: {
-        escrowId: bigint;
-        raw: RawEscrow;
-      }[] = [];
+      type Candidate = { escrowId: bigint; raw: RawEscrow; side: 'A' | 'B' };
+      const candidates: Candidate[] = [];
       ids.forEach((id, idx) => {
         const res = escrowReads[idx];
         if (!res || res.status !== 'success' || !res.result) return;
         const raw = res.result as unknown as RawEscrow;
-        const [, , partyB, , , , , , isPartyBFunded, isCompleted, isCancelled] =
-          raw;
-        if (partyB.toLowerCase() !== userAddress.toLowerCase()) return;
-        if (isPartyBFunded || isCompleted || isCancelled) return;
-        candidates.push({ escrowId: id, raw });
+        const [
+          ,
+          partyA,
+          partyB,
+          ,
+          ,
+          ,
+          ,
+          isPartyAFunded,
+          isPartyBFunded,
+          isCompleted,
+          isCancelled,
+        ] = raw;
+        if (isCompleted || isCancelled) return;
+        const userLc = userAddress.toLowerCase();
+        if (partyB.toLowerCase() === userLc && !isPartyBFunded) {
+          candidates.push({ escrowId: id, raw, side: 'B' });
+          return;
+        }
+        if (partyA.toLowerCase() === userLc && !isPartyAFunded) {
+          candidates.push({ escrowId: id, raw, side: 'A' });
+        }
       });
 
       if (candidates.length === 0) return [] as PendingEscrowDeposit[];
@@ -152,60 +195,88 @@ export const usePendingEscrowDeposits = ({
       const allowanceBalanceReads = await publicClient.multicall({
         allowFailure: true,
         blockTag: 'latest',
-        contracts: candidates.flatMap(({ raw }) => [
-          {
-            address: raw[4],
-            abi: erc20Abi,
-            functionName: 'allowance' as const,
-            args: [userAddress, escrowContract] as const,
-          },
-          {
-            address: raw[4],
-            abi: erc20Abi,
-            functionName: 'balanceOf' as const,
-            args: [userAddress] as const,
-          },
-        ]),
+        contracts: candidates.flatMap(({ raw, side }) => {
+          const payToken = side === 'A' ? raw[3] : raw[4];
+          return [
+            {
+              address: payToken,
+              abi: erc20Abi,
+              functionName: 'allowance' as const,
+              args: [userAddress, escrowContract] as const,
+            },
+            {
+              address: payToken,
+              abi: erc20Abi,
+              functionName: 'balanceOf' as const,
+              args: [userAddress] as const,
+            },
+          ];
+        }),
       });
 
-      return candidates.map<PendingEscrowDeposit>(({ escrowId, raw }, idx) => {
-        const [
-          ,
-          partyA,
-          partyB,
-          tokenA,
-          tokenB,
-          amountA,
-          amountB,
-          isPartyAFunded,
-        ] = raw;
-        const allowanceRes = allowanceBalanceReads[idx * 2];
-        const balanceRes = allowanceBalanceReads[idx * 2 + 1];
-        const metaA = tokenMeta.get(tokenA);
-        const metaB = tokenMeta.get(tokenB);
-        return {
-          escrowId,
-          partyA,
-          partyB,
-          tokenA,
-          tokenB,
-          amountA,
-          amountB,
-          isPartyAFunded,
-          tokenASymbol: metaA?.symbol ?? '',
-          tokenADecimals: metaA?.decimals ?? 18,
-          tokenBSymbol: metaB?.symbol ?? '',
-          tokenBDecimals: metaB?.decimals ?? 18,
-          allowanceB:
+      return candidates.map<PendingEscrowDeposit>(
+        ({ escrowId, raw, side }, idx) => {
+          const [
+            ,
+            partyA,
+            partyB,
+            tokenA,
+            tokenB,
+            amountA,
+            amountB,
+            isPartyAFunded,
+            isPartyBFunded,
+          ] = raw;
+          const allowanceRes = allowanceBalanceReads[idx * 2];
+          const balanceRes = allowanceBalanceReads[idx * 2 + 1];
+          const payToken = side === 'A' ? tokenA : tokenB;
+          const payAmount = side === 'A' ? amountA : amountB;
+          const receiveToken = side === 'A' ? tokenB : tokenA;
+          const receiveAmount = side === 'A' ? amountB : amountA;
+          const isCounterpartyFunded =
+            side === 'A' ? isPartyBFunded : isPartyAFunded;
+          const payMeta = tokenMeta.get(payToken);
+          const receiveMeta = tokenMeta.get(receiveToken);
+          const payAllowance =
             allowanceRes?.status === 'success'
               ? (allowanceRes.result as bigint)
-              : 0n,
-          balanceB:
+              : 0n;
+          const payBalance =
             balanceRes?.status === 'success'
               ? (balanceRes.result as bigint)
-              : 0n,
-        };
-      });
+              : 0n;
+          return {
+            escrowId,
+            side,
+            partyA,
+            partyB,
+            tokenA,
+            tokenB,
+            amountA,
+            amountB,
+            isPartyAFunded,
+            isPartyBFunded,
+            isCounterpartyFunded,
+            payToken,
+            payAmount,
+            receiveToken,
+            receiveAmount,
+            payTokenSymbol: payMeta?.symbol ?? '',
+            payTokenDecimals: payMeta?.decimals ?? 18,
+            receiveTokenSymbol: receiveMeta?.symbol ?? '',
+            receiveTokenDecimals: receiveMeta?.decimals ?? 18,
+            payAllowance,
+            payBalance,
+            // back-compat
+            tokenBSymbol: payMeta?.symbol ?? '',
+            tokenBDecimals: payMeta?.decimals ?? 18,
+            tokenASymbol: receiveMeta?.symbol ?? '',
+            tokenADecimals: receiveMeta?.decimals ?? 18,
+            allowanceB: payAllowance,
+            balanceB: payBalance,
+          };
+        },
+      );
     },
     {
       revalidateOnFocus: true,

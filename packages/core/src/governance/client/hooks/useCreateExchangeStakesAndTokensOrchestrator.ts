@@ -179,14 +179,22 @@ export const useCreateExchangeStakesAndTokensOrchestrator = ({
           startTask('CREATE_WEB3_AGREEMENT');
           await web3.createExchangeStakesAndTokens({
             spaceId: web3SpaceId,
-            sellerAddress: arg.sellerAddress,
-            sellerLeg: arg.sellerLeg,
-            buyerAddress: arg.buyerAddress,
-            buyerLeg: arg.buyerLeg,
+            sellerAddress: arg.sellerAddress as `0x${string}`,
+            buyerAddress: arg.buyerAddress as `0x${string}`,
+            sellerLeg: arg.sellerLeg as {
+              token: `0x${string}`;
+              amount: string;
+            }[],
+            buyerLeg: arg.buyerLeg as {
+              token: `0x${string}`;
+              amount: string;
+            }[],
             sellerRecipientType: arg.sellerRecipientType,
-            sellerPartyAForEscrow:
-              arg.sellerPartyAForEscrow ?? arg.sellerAddress,
-            buyerPartyBForEscrow: arg.buyerPartyBForEscrow ?? arg.buyerAddress,
+            buyerRecipientType: arg.buyerRecipientType,
+            sellerPartyAForEscrow: (arg.sellerPartyAForEscrow ??
+              arg.sellerAddress) as `0x${string}`,
+            buyerPartyBForEscrow: (arg.buyerPartyBForEscrow ??
+              arg.buyerAddress) as `0x${string}`,
           });
           completeTask('CREATE_WEB3_AGREEMENT');
         }
