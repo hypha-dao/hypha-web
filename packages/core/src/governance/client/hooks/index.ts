@@ -10,6 +10,8 @@ export * from './useCreateAgreementOrchestrator';
 export * from './useCreateDeployFundsOrchestrator';
 export * from './useAcceptInvestmentMutations.web3.rpc';
 export * from './useCreateAcceptInvestmentOrchestrator';
+export * from './usePendingEscrowDeposits';
+export * from './useEscrowDepositMutation';
 export * from './useCreateRedeemTokensOrchestrator';
 export * from './useCreatePayForExpensesOrchestrator';
 export * from './useCreateProposeAContributionOrchestrator';
