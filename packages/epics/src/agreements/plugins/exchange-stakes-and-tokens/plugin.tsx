@@ -62,13 +62,6 @@ export const ExchangeStakesAndTokensPlugin = ({
   const params = useParams();
   const currentSpaceSlug = params.id as string;
   const { space: activeSpace } = useSpaceBySlug(currentSpaceSlug);
-  const { spaceDetails, isLoading: isLoadingActiveSpaceChain } =
-    useSpaceDetailsWeb3Rpc({
-      spaceId: activeSpace?.web3SpaceId ?? null,
-    });
-  /** On execution, batched approve/escrow run as space executor — balance checks use this when available. */
-  const spaceExecutorAddress = spaceDetails?.executor as string | undefined;
-  const currentSpaceAddress = activeSpace?.address ?? undefined;
   const { person: creator } = useMe();
   const [sellerRecipientType, setSellerRecipientType] =
     React.useState<RecipientType>('member');
@@ -84,11 +77,6 @@ export const ExchangeStakesAndTokensPlugin = ({
   const chainId = useChainId();
   const escrowContractAddress = getEscrowImplementationAddress();
 
-  const sellerBalanceLookupAddress =
-    sellerRecipientType === 'space' && spaceExecutorAddress
-      ? spaceExecutorAddress
-      : sellerAddress;
-
   const sellerSpaces = React.useMemo(() => {
     if (!activeSpace?.address) return spaces;
     if (!spaces?.length) return [activeSpace];
@@ -101,20 +89,49 @@ export const ExchangeStakesAndTokensPlugin = ({
 
   const buyerSpaces = sellerSpaces;
 
+  /**
+   * Resolve which space (from `sellerSpaces`) the user has selected as seller,
+   * so we can look up the correct executor for balance/whitelist checks. The
+   * selected space may be the active DHO or any other — the form is free.
+   */
+  const sellerSpaceMeta = React.useMemo(() => {
+    if (sellerRecipientType !== 'space') return null;
+    if (!sellerAddress) return null;
+    const lower = sellerAddress.toLowerCase();
+    return (
+      sellerSpaces?.find((s) => s.address?.toLowerCase() === lower) ?? null
+    );
+  }, [sellerAddress, sellerRecipientType, sellerSpaces]);
+
+  const {
+    spaceDetails: sellerSpaceChainDetails,
+    isLoading: isLoadingSellerSpaceChain,
+  } = useSpaceDetailsWeb3Rpc({
+    spaceId: sellerSpaceMeta?.web3SpaceId ?? null,
+  });
+
+  /** On execution, batched approve/escrow run as the selected seller-space executor. */
+  const sellerExecutorAddress = sellerSpaceChainDetails?.executor as
+    | string
+    | undefined;
+
+  const sellerBalanceLookupAddress =
+    sellerRecipientType === 'space' && sellerExecutorAddress
+      ? sellerExecutorAddress
+      : sellerAddress;
+
   const buyerSpaceMeta = React.useMemo(() => {
+    if (buyerRecipientType !== 'space') return null;
     if (!buyerAddress) return null;
     const lower = buyerAddress.toLowerCase();
     return buyerSpaces?.find((s) => s.address?.toLowerCase() === lower) ?? null;
-  }, [buyerAddress, buyerSpaces]);
+  }, [buyerAddress, buyerRecipientType, buyerSpaces]);
 
   const {
     spaceDetails: buyerSpaceChainDetails,
     isLoading: isLoadingBuyerSpaceChain,
   } = useSpaceDetailsWeb3Rpc({
-    spaceId:
-      buyerRecipientType === 'space' && buyerSpaceMeta?.web3SpaceId
-        ? buyerSpaceMeta.web3SpaceId
-        : null,
+    spaceId: buyerSpaceMeta?.web3SpaceId ?? null,
   });
 
   const buyerExecutorAddress = buyerSpaceChainDetails?.executor as
@@ -126,38 +143,34 @@ export const ExchangeStakesAndTokensPlugin = ({
       ? buyerExecutorAddress
       : buyerAddress;
 
+  /**
+   * Helpful default: on first mount, prefill seller with the current member so
+   * the form starts in a usable state. We never overwrite a user-picked value.
+   */
+  const didSeedSeller = React.useRef(false);
   React.useEffect(() => {
+    if (didSeedSeller.current) return;
+    if (sellerAddress) {
+      didSeedSeller.current = true;
+      return;
+    }
     const creatorAddress =
       creator?.address ||
       members.find((member) => member.id === creator?.id)?.address;
-
-    if (sellerRecipientType === 'space') {
-      if (currentSpaceAddress && sellerAddress !== currentSpaceAddress) {
-        setValue('sellerAddress', currentSpaceAddress, {
-          shouldDirty: true,
-          shouldValidate: true,
-        });
-      }
-      setValue('sellerRecipientType', 'space', { shouldDirty: true });
-      return;
-    }
-
-    setValue('sellerRecipientType', 'member', { shouldDirty: true });
-    if (creatorAddress && sellerAddress !== creatorAddress) {
+    if (creatorAddress) {
       setValue('sellerAddress', creatorAddress, {
         shouldDirty: true,
-        shouldValidate: true,
+        shouldValidate: false,
       });
+      didSeedSeller.current = true;
     }
-  }, [
-    creator?.address,
-    creator?.id,
-    currentSpaceAddress,
-    members,
-    sellerAddress,
-    sellerRecipientType,
-    setValue,
-  ]);
+  }, [creator?.address, creator?.id, members, sellerAddress, setValue]);
+
+  React.useEffect(() => {
+    setValue('sellerRecipientType', sellerRecipientType, {
+      shouldDirty: true,
+    });
+  }, [sellerRecipientType, setValue]);
 
   React.useEffect(() => {
     setValue('buyerRecipientType', buyerRecipientType, { shouldDirty: true });
@@ -178,14 +191,18 @@ export const ExchangeStakesAndTokensPlugin = ({
   }, [buyerRecipientType, buyerExecutorAddress, setValue]);
 
   React.useEffect(() => {
-    if (sellerRecipientType === 'space' && spaceExecutorAddress) {
-      setValue('spaceExecutorAddress', spaceExecutorAddress, {
+    if (
+      sellerRecipientType === 'space' &&
+      sellerExecutorAddress &&
+      isEvmAddress(sellerExecutorAddress)
+    ) {
+      setValue('spaceExecutorAddress', sellerExecutorAddress, {
         shouldDirty: true,
       });
     } else {
       setValue('spaceExecutorAddress', '', { shouldDirty: true });
     }
-  }, [sellerRecipientType, spaceExecutorAddress, setValue]);
+  }, [sellerRecipientType, sellerExecutorAddress, setValue]);
 
   /**
    * Tokens for the active DHO come from `useTokens({ spaceSlug })` (same slug as the URL).
@@ -215,8 +232,8 @@ export const ExchangeStakesAndTokensPlugin = ({
   } = useWalletTransferableTokens({
     spaceSlug,
     walletAddress:
-      sellerRecipientType === 'space' && isEvmAddress(spaceExecutorAddress)
-        ? spaceExecutorAddress
+      sellerRecipientType === 'space' && isEvmAddress(sellerExecutorAddress)
+        ? sellerExecutorAddress
         : undefined,
   });
 
@@ -475,7 +492,6 @@ export const ExchangeStakesAndTokensPlugin = ({
         name="sellerAddress"
         recipientType={sellerRecipientType}
         onRecipientTypeChange={setSellerRecipientType}
-        readOnlyDropdown={true}
       />
       <Separator />
       <Skeleton
@@ -483,7 +499,7 @@ export const ExchangeStakesAndTokensPlugin = ({
           isLoading ||
           (sellerRecipientType === 'member' && isLoadingWalletSellerTokens) ||
           (sellerRecipientType === 'space' &&
-            (isLoadingActiveSpaceChain ||
+            (isLoadingSellerSpaceChain ||
               isLoadingWalletSpaceExecutorTokens)) ||
           (isEvmAddress(sellerBalanceLookupAddress) &&
             isLoadingSellerBalances) ||

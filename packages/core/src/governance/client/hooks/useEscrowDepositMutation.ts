@@ -45,6 +45,42 @@ export const useEscrowDepositMutation = () => {
         throw new Error('HYPHA_ESCROW_ADDRESS_MISSING');
       }
 
+      // If a previous attempt actually landed on-chain (even when the UI
+      // surfaced an error, e.g. a retried simulation), the user's side of this
+      // escrow may already be funded. Calling `receiveFunds` again reverts with
+      // "Party already funded or invalid state". Detect and short-circuit.
+      const userAddress = client.account?.address as `0x${string}` | undefined;
+      if (userAddress) {
+        try {
+          const raw = (await publicClient.readContract({
+            address: escrowAddress,
+            abi: escrowImplementationAbi,
+            functionName: 'getEscrow',
+            args: [arg.escrowId],
+          })) as readonly unknown[];
+          const partyA = (raw[1] as string)?.toLowerCase?.();
+          const partyB = (raw[2] as string)?.toLowerCase?.();
+          const isPartyAFunded = raw[7] as boolean;
+          const isPartyBFunded = raw[8] as boolean;
+          const isCompleted = raw[9] as boolean;
+          const isCancelled = raw[10] as boolean;
+          const userLc = userAddress.toLowerCase();
+          const alreadyFunded =
+            isCompleted ||
+            isCancelled ||
+            (partyA === userLc && isPartyAFunded) ||
+            (partyB === userLc && isPartyBFunded);
+          if (alreadyFunded) {
+            // Hash = null signals "already settled, nothing to submit". The
+            // banner will refresh its pending-deposits list and disappear.
+            return null;
+          }
+        } catch {
+          // If the precheck fails for any reason, fall through and let the
+          // actual transaction attempt surface the error.
+        }
+      }
+
       if (arg.currentAllowance < arg.amount) {
         const approveHash = await client.writeContract({
           address: arg.token,

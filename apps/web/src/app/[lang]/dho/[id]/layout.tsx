@@ -188,6 +188,7 @@ export default async function DhoLayout({
           <SalesBanner web3SpaceId={spaceFromDb.web3SpaceId as number} />
           <SpaceEscrowDepositBanners
             web3SpaceId={spaceFromDb.web3SpaceId as number}
+            spaceDbId={spaceFromDb.id}
             spaceAddress={
               (spaceFromDb.address as `0x${string}` | null | undefined) ?? null
             }

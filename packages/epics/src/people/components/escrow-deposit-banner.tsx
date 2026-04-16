@@ -19,18 +19,34 @@ type Props = {
 const formatAmount = (raw: bigint, decimals: number) =>
   formatCurrencyValue(formatUnits(raw, decimals));
 
+/** True when a wallet/RPC error is actually the escrow telling us the
+ * user's side is already funded — a harmless race condition we want to
+ * surface as success rather than as a scary stack trace. */
+const isAlreadyFundedError = (err: unknown): boolean => {
+  const msg =
+    err instanceof Error ? `${err.message} ${err.stack ?? ''}` : String(err);
+  return (
+    /Party already funded/i.test(msg) ||
+    // ASCII-hex payload of the revert string — present in raw RPC responses.
+    /506172747920616c72656164792066756e646564/i.test(msg)
+  );
+};
+
 export const EscrowDepositBanner = ({ deposit, onDeposited }: Props) => {
   const {
     deposit: sendDeposit,
     isDepositing,
     depositError,
+    resetDeposit,
   } = useEscrowDepositMutation();
   const [isWaitingReceipt, setIsWaitingReceipt] = React.useState(false);
+  const [errorOverride, setErrorOverride] = React.useState<string | null>(null);
 
   const needsApprove = deposit.payAllowance < deposit.payAmount;
   const insufficientBalance = deposit.payBalance < deposit.payAmount;
 
   const handleClick = React.useCallback(async () => {
+    setErrorOverride(null);
     try {
       const hash = await sendDeposit({
         escrowId: deposit.escrowId,
@@ -44,11 +60,23 @@ export const EscrowDepositBanner = ({ deposit, onDeposited }: Props) => {
       }
       onDeposited?.();
     } catch (err) {
+      if (isAlreadyFundedError(err)) {
+        // The on-chain state already reflects our deposit — surface a success
+        // outcome so the banner disappears on next refresh instead of a scary
+        // red error.
+        console.warn(
+          'Escrow deposit already settled on-chain; treating as success.',
+        );
+        resetDeposit();
+        onDeposited?.();
+        return;
+      }
       console.error('Escrow deposit failed:', err);
+      setErrorOverride(err instanceof Error ? err.message : String(err));
     } finally {
       setIsWaitingReceipt(false);
     }
-  }, [deposit, sendDeposit, onDeposited]);
+  }, [deposit, sendDeposit, onDeposited, resetDeposit]);
 
   const sendLabel = `${formatAmount(
     deposit.payAmount,
@@ -69,11 +97,13 @@ export const EscrowDepositBanner = ({ deposit, onDeposited }: Props) => {
     ? 'Approve & Deposit'
     : 'Deposit to Escrow';
 
-  const errorMessage = depositError
-    ? depositError instanceof Error
-      ? depositError.message
-      : String(depositError)
-    : null;
+  const mutationError =
+    depositError && !isAlreadyFundedError(depositError)
+      ? depositError instanceof Error
+        ? depositError.message
+        : String(depositError)
+      : null;
+  const errorMessage = errorOverride ?? mutationError;
 
   const title =
     deposit.side === 'A'

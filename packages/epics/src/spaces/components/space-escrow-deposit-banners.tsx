@@ -10,6 +10,8 @@ import { SpaceEscrowDepositBanner } from './space-escrow-deposit-banner';
 
 type Props = {
   web3SpaceId?: number | null;
+  /** Postgres DB id of the space — used as `spaceId` on the linked web2 agreement. */
+  spaceDbId: number;
   /** On-chain space contract address (treasury source for `transferFrom`). */
   spaceAddress?: `0x${string}` | null;
   /** Dho URL slug for navigation back to agreements after proposal creation. */
@@ -28,6 +30,7 @@ type Props = {
  */
 export const SpaceEscrowDepositBanners = ({
   web3SpaceId,
+  spaceDbId,
   spaceAddress,
   spaceSlug,
   lang,
@@ -54,6 +57,7 @@ export const SpaceEscrowDepositBanners = ({
           key={deposit.escrowId.toString()}
           deposit={deposit}
           web3SpaceId={web3SpaceId}
+          spaceDbId={spaceDbId}
           spaceAddress={spaceAddress ?? null}
           executorAddress={executorAddress}
           spaceSlug={spaceSlug}
