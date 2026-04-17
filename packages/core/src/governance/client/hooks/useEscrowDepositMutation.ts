@@ -89,6 +89,31 @@ export const useEscrowDepositMutation = () => {
           args: [escrowAddress, arg.amount],
         });
         await publicClient.waitForTransactionReceipt({ hash: approveHash });
+
+        /**
+         * Smart wallet / bundler flows can race here: `waitForTransactionReceipt`
+         * returns as soon as the approve tx is included, but the bundler's
+         * simulation for the next userOp may still see pre-approve state and
+         * revert with `ERC20InsufficientAllowance` (selector `0xfb8f41b2`).
+         *
+         * Poll the live allowance until it catches up to the required amount
+         * before submitting `receiveFunds`. Mirrors the
+         * `waitForSufficientAllowance` pattern used by `useBuySpaceTokensMutation`.
+         */
+        if (userAddress) {
+          const maxAttempts = 45;
+          const delayMs = 1000;
+          for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            const live = await publicClient.readContract({
+              address: arg.token,
+              abi: erc20Abi,
+              functionName: 'allowance',
+              args: [userAddress, escrowAddress],
+            });
+            if (live >= arg.amount) break;
+            await new Promise((r) => setTimeout(r, delayMs));
+          }
+        }
       }
 
       const txHash = await client.writeContract({

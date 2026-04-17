@@ -9,6 +9,17 @@ type MarkdownProps = {
   components?: MDXComponents;
   ProseWrapper?: React.ComponentType<{ children: React.ReactNode }>;
 };
+
+/**
+ * MDX rejects HTML-style comments (`<!-- ... -->`) with a hard parser error,
+ * which breaks the whole page when the source contains any. We use HTML
+ * comments elsewhere as invisible data markers (e.g. escrow id anchors on
+ * agreement descriptions), so strip them here before compilation. The
+ * resulting text behaves the same way in both MDX and plain markdown renders.
+ */
+const stripHtmlComments = (source: string) =>
+  source.replace(/<!--[\s\S]*?-->/g, '');
+
 export const Markdown = ({
   children = '',
   components = ComponentMap,
@@ -16,7 +27,7 @@ export const Markdown = ({
 }: MarkdownProps) => {
   return (
     <ProseWrapper>
-      <MDXRemote source={children} components={components} />
+      <MDXRemote source={stripHtmlComments(children)} components={components} />
     </ProseWrapper>
   );
 };
