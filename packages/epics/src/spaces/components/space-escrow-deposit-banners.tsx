@@ -4,6 +4,7 @@ import React from 'react';
 import {
   useSpaceDetailsWeb3Rpc,
   usePendingEscrowDeposits,
+  useSpaceExchangeDepositAgreements,
 } from '@hypha-platform/core/client';
 import { useSpaceMember } from '../hooks';
 import { SpaceEscrowDepositBanner } from './space-escrow-deposit-banner';
@@ -12,8 +13,6 @@ type Props = {
   web3SpaceId?: number | null;
   /** Postgres DB id of the space — used as `spaceId` on the linked web2 agreement. */
   spaceDbId: number;
-  /** On-chain space contract address (treasury source for `transferFrom`). */
-  spaceAddress?: `0x${string}` | null;
   /** Dho URL slug for navigation back to agreements after proposal creation. */
   spaceSlug: string;
   /** Locale prefix for navigation (e.g. `en`). */
@@ -31,7 +30,6 @@ type Props = {
 export const SpaceEscrowDepositBanners = ({
   web3SpaceId,
   spaceDbId,
-  spaceAddress,
   spaceSlug,
   lang,
 }: Props) => {
@@ -45,24 +43,48 @@ export const SpaceEscrowDepositBanners = ({
   const { pendingDeposits, refresh } = usePendingEscrowDeposits({
     user: executorAddress,
   });
+  const {
+    escrowIds: escrowIdsWithOpenProposal,
+    refresh: refreshDepositAgreements,
+  } = useSpaceExchangeDepositAgreements(spaceDbId);
+
+  const existingProposalEscrowIds = React.useMemo(
+    () => new Set(escrowIdsWithOpenProposal),
+    [escrowIdsWithOpenProposal],
+  );
+
+  /**
+   * Hide a banner as soon as there is a matching Exchange-Deposit agreement
+   * for the escrow. This prevents the "click → proposal created → banner
+   * still there → click again = duplicate" race the user hit.
+   */
+  const visibleDeposits = React.useMemo(
+    () =>
+      pendingDeposits.filter(
+        (deposit) =>
+          !existingProposalEscrowIds.has(deposit.escrowId.toString()),
+      ),
+    [existingProposalEscrowIds, pendingDeposits],
+  );
 
   if (!isMember) return null;
   if (!executorAddress || typeof web3SpaceId !== 'number') return null;
-  if (pendingDeposits.length === 0) return null;
+  if (visibleDeposits.length === 0) return null;
 
   return (
     <div className="flex flex-col gap-3">
-      {pendingDeposits.map((deposit) => (
+      {visibleDeposits.map((deposit) => (
         <SpaceEscrowDepositBanner
           key={deposit.escrowId.toString()}
           deposit={deposit}
           web3SpaceId={web3SpaceId}
           spaceDbId={spaceDbId}
-          spaceAddress={spaceAddress ?? null}
-          executorAddress={executorAddress}
           spaceSlug={spaceSlug}
           lang={lang}
-          onProposalCreated={() => refresh()}
+          onProposalCreated={() => {
+            refresh();
+            refreshDepositAgreements();
+          }}
         />
       ))}
     </div>

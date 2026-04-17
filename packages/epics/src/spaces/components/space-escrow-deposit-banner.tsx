@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@hypha-platform/ui';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import {
+  buildExchangeDepositEscrowMarker,
   getProposalFromLogs,
   PendingEscrowDeposit,
   publicClient,
@@ -26,10 +27,6 @@ type Props = {
   web3SpaceId: number;
   /** Postgres DB id of the space — attached to the linked web2 agreement. */
   spaceDbId: number;
-  /** On-chain space contract address (treasury source). */
-  spaceAddress?: `0x${string}` | null;
-  /** Space executor — target of `transferFrom` / `mint` inside the proposal. */
-  executorAddress: `0x${string}`;
   /** Dho URL slug used to navigate to the newly created agreement. */
   spaceSlug: string;
   /** Locale prefix for navigation (e.g. `en`). */
@@ -44,8 +41,6 @@ export const SpaceEscrowDepositBanner = ({
   deposit,
   web3SpaceId,
   spaceDbId,
-  spaceAddress,
-  executorAddress,
   spaceSlug,
   lang,
   onProposalCreated,
@@ -81,11 +76,11 @@ export const SpaceEscrowDepositBanner = ({
       symbol: deposit.payTokenSymbol || 'tokens',
       escrowId: deposit.escrowId.toString(),
     });
-    const description = t('exchangeDepositProposalDescription', {
+    const description = `${t('exchangeDepositProposalDescription', {
       amount: formatAmount(deposit.payAmount, deposit.payTokenDecimals),
       symbol: deposit.payTokenSymbol || 'tokens',
       escrowId: deposit.escrowId.toString(),
-    });
+    })}\n\n${buildExchangeDepositEscrowMarker(deposit.escrowId)}`;
 
     // Create the web2 agreement FIRST so the proposal shows up in the
     // agreements tab. If anything fails downstream we delete it again to keep
@@ -106,8 +101,6 @@ export const SpaceEscrowDepositBanner = ({
         escrowId: deposit.escrowId,
         payToken: deposit.payToken,
         payAmount: deposit.payAmount,
-        treasuryAddress: spaceAddress ?? null,
-        executorAddress,
         title,
         description,
       });
@@ -157,13 +150,11 @@ export const SpaceEscrowDepositBanner = ({
     createDepositProposal,
     deleteAgreementBySlug,
     deposit,
-    executorAddress,
     jwt,
     lang,
     onProposalCreated,
     person?.id,
     router,
-    spaceAddress,
     spaceDbId,
     spaceSlug,
     t,

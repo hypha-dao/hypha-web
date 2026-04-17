@@ -9,6 +9,7 @@ import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import {
   Person,
   Space,
+  TOKENS,
   getBalance,
   useMe,
   useSpaceBySlug,
@@ -276,11 +277,68 @@ export const ExchangeStakesAndTokensPlugin = ({
     walletSpaceExecutorTokens,
   ]);
 
-  const { tokens: buyerTokenCandidates, isLoading: isLoadingBuyerTokenList } =
+  const { tokens: buyerWalletTokens, isLoading: isLoadingBuyerTokenList } =
     useWalletTransferableTokens({
       spaceSlug,
       walletAddress: buyerBalanceLookupAddress,
     });
+
+  /**
+   * When the buyer is a space, pull that space's own token catalogue (the
+   * tokens the space has created) so they appear in the picker even when the
+   * executor currently holds a zero balance.
+   */
+  const {
+    tokens: buyerSpaceCatalogueTokens,
+    isLoading: isLoadingBuyerSpaceCatalogue,
+  } = useTokens({
+    spaceSlug:
+      buyerRecipientType === 'space' && buyerSpaceMeta?.slug
+        ? buyerSpaceMeta.slug
+        : '',
+  });
+
+  /**
+   * Space buyers get: `TOKENS` defaults (USDC/EURC/WETH/cbBTC/HYPHA) ∪ the
+   * space's own minted tokens ∪ anything the executor currently holds.
+   * Member buyers keep the previous behaviour — only their transferable wallet
+   * tokens.
+   */
+  const buyerTokenCandidates = React.useMemo(() => {
+    if (buyerRecipientType !== 'space') return buyerWalletTokens;
+    const byKey = new Map<string, ExtendedToken>();
+    const push = (token: ExtendedToken | undefined) => {
+      if (!token) return;
+      const k = token.address.toLowerCase();
+      if (!byKey.has(k)) byKey.set(k, token);
+    };
+    for (const t of TOKENS) {
+      push({
+        address: t.address,
+        icon: t.icon,
+        name: t.name,
+        symbol: t.symbol,
+        type: t.type,
+        transferable: t.transferable,
+      } as ExtendedToken);
+    }
+    if (buyerSpaceMeta?.slug === spaceSlug) {
+      // Active space as buyer — reuse the catalogue we already fetched for the
+      // seller path to avoid a duplicate HTTP call.
+      for (const t of catalogueSellerTokens) push(t);
+    } else {
+      for (const t of buyerSpaceCatalogueTokens) push(t as ExtendedToken);
+    }
+    for (const t of buyerWalletTokens) push(t as ExtendedToken);
+    return Array.from(byKey.values());
+  }, [
+    buyerRecipientType,
+    buyerSpaceCatalogueTokens,
+    buyerSpaceMeta?.slug,
+    buyerWalletTokens,
+    catalogueSellerTokens,
+    spaceSlug,
+  ]);
 
   const { data: sellerOwnedTokenSet, isLoading: isLoadingSellerBalances } =
     useSWR(
@@ -318,7 +376,11 @@ export const ExchangeStakesAndTokensPlugin = ({
 
   const { data: buyerOwnedTokenSet, isLoading: isLoadingBuyerBalances } =
     useSWR(
-      isEvmAddress(buyerBalanceLookupAddress) && buyerTokenCandidates.length
+      // Only gate the buyer picker on balances for member buyers. Space buyers
+      // may legitimately select tokens they don't currently hold, so skip.
+      buyerRecipientType === 'member' &&
+        isEvmAddress(buyerBalanceLookupAddress) &&
+        buyerTokenCandidates.length
         ? [
             'exchangeBuyerOwnedTokens',
             buyerBalanceLookupAddress,
@@ -357,12 +419,23 @@ export const ExchangeStakesAndTokensPlugin = ({
   }, [sellerBalanceLookupAddress, sellerOwnedTokenSet, sellerTokenCandidates]);
 
   const buyerTokensBeforeWhitelist = React.useMemo(() => {
+    // Space buyers can legitimately pick tokens they don't currently hold —
+    // they may mint their own token, or receive funds before the proposal
+    // executes. So skip the "owned balance" gate for spaces.
+    if (buyerRecipientType === 'space') {
+      return buyerTokenCandidates;
+    }
     if (!isEvmAddress(buyerBalanceLookupAddress) || !buyerOwnedTokenSet)
       return [];
     return buyerTokenCandidates.filter((token) =>
       buyerOwnedTokenSet.has(token.address.toLowerCase()),
     );
-  }, [buyerBalanceLookupAddress, buyerOwnedTokenSet, buyerTokenCandidates]);
+  }, [
+    buyerBalanceLookupAddress,
+    buyerOwnedTokenSet,
+    buyerRecipientType,
+    buyerTokenCandidates,
+  ]);
 
   const { data: sellerEscrowWhitelistOk, isLoading: isLoadingSellerWhitelist } =
     useSWR(
@@ -471,14 +544,18 @@ export const ExchangeStakesAndTokensPlugin = ({
     sellerTokenCandidates.length > 0 &&
     sellerOwnedTokenSet === undefined;
   const buyerBalancesPending =
+    buyerRecipientType === 'member' &&
     isEvmAddress(buyerBalanceLookupAddress) &&
     buyerTokenCandidates.length > 0 &&
     buyerOwnedTokenSet === undefined;
 
   const isBuyerLegLoading =
     isLoadingBuyerTokenList ||
-    (buyerRecipientType === 'space' && isLoadingBuyerSpaceChain) ||
-    (isEvmAddress(buyerBalanceLookupAddress) && isLoadingBuyerBalances) ||
+    (buyerRecipientType === 'space' &&
+      (isLoadingBuyerSpaceChain || isLoadingBuyerSpaceCatalogue)) ||
+    (buyerRecipientType === 'member' &&
+      isEvmAddress(buyerBalanceLookupAddress) &&
+      isLoadingBuyerBalances) ||
     buyerBalancesPending ||
     (buyerTokensBeforeWhitelist.length > 0 && isLoadingBuyerWhitelist);
 

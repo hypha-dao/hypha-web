@@ -17,6 +17,7 @@ export * from './exchange-token-whitelist-eligibility';
 export * from './usePendingEscrowDeposits';
 export * from './useEscrowDepositMutation';
 export * from './useSpaceExchangeDepositProposalMutation';
+export * from './useSpaceExchangeDepositAgreements';
 export * from './useCreateRedeemTokensOrchestrator';
 export * from './useCreatePayForExpensesOrchestrator';
 export * from './useCreateProposeAContributionOrchestrator';

@@ -8,7 +8,6 @@ import { encodeFunctionData, erc20Abi } from 'viem';
 import {
   daoProposalsImplementationAbi,
   daoProposalsImplementationAddress,
-  decayingSpaceTokenAbi,
 } from '@hypha-platform/core/generated';
 import {
   getSpaceMinProposalDuration,
@@ -32,16 +31,6 @@ export interface SpaceExchangeDepositProposalInput {
   payToken: `0x${string}`;
   /** Amount in raw token units (already scaled by payToken decimals). */
   payAmount: bigint;
-  /**
-   * The space's treasury / on-chain space contract address. When present and
-   * holding the pay token, funds are pulled via `transferFrom(treasury → executor)`
-   * before the approve/receiveFunds calls. When missing or short, a `mint(executor)`
-   * call is added for any shortfall (only works for DecayingSpaceToken legs; reverts
-   * otherwise at execution time — which is the desired behaviour).
-   */
-  treasuryAddress?: `0x${string}` | null;
-  /** The space's executor address — target of `transferFrom`/`mint`. */
-  executorAddress: `0x${string}`;
   /** Proposal title (shown in the counterparty space's agreements tab). */
   title?: string;
   /** Proposal description (plain text / markdown). */
@@ -85,87 +74,57 @@ export const useSpaceExchangeDepositProposalMutation = () => {
         ),
       ]);
 
+      /**
+       * Minimal, correct tx set: approve the escrow and call `receiveFunds`.
+       *
+       * The space's executor IS the treasury in current Hypha deployments
+       * (`space.address === executor`), so there is no separate treasury to
+       * pull from — a `transferFrom(treasury, executor, …)` call would be a
+       * self-to-self transferFrom that reverts during simulation.
+       *
+       * For space-issued tokens that support auto-minting (see
+       * `RegularSpaceToken._autoMintIfNeeded`), the token mints any shortfall
+       * automatically inside its own `transferFrom`, which the escrow invokes
+       * from `receiveFunds`. For external tokens (USDC, DADA, etc.) a
+       * shortfall reverts there with a clear "insufficient balance" error —
+       * emitting a client-side `mint` call would just revert earlier with a
+       * less informative error, so we omit it.
+       */
       const transactions: {
         target: `0x${string}`;
         value: bigint;
         data: `0x${string}`;
-      }[] = [];
-
-      let pullFromTreasury = 0n;
-      let mintShortfall = arg.payAmount;
-
-      if (arg.treasuryAddress) {
-        try {
-          const treasuryBalance = await publicClient.readContract({
-            address: arg.payToken,
-            abi: erc20Abi,
-            functionName: 'balanceOf',
-            args: [arg.treasuryAddress],
-          });
-          pullFromTreasury =
-            treasuryBalance >= arg.payAmount ? arg.payAmount : treasuryBalance;
-          mintShortfall = arg.payAmount - pullFromTreasury;
-        } catch {
-          // if balance read fails, fall back to mint-only path
-          pullFromTreasury = 0n;
-          mintShortfall = arg.payAmount;
-        }
-      }
-
-      if (pullFromTreasury > 0n && arg.treasuryAddress) {
-        transactions.push({
+      }[] = [
+        // Reset-then-approve pattern for tokens that reject non-zero →
+        // non-zero allowance changes (e.g. USDT-style ERC20s).
+        {
           target: arg.payToken,
           value: 0n,
           data: encodeFunctionData({
             abi: erc20Abi,
-            functionName: 'transferFrom',
-            args: [arg.treasuryAddress, arg.executorAddress, pullFromTreasury],
+            functionName: 'approve',
+            args: [escrowAddress, 0n],
           }),
-        });
-      }
-
-      if (mintShortfall > 0n) {
-        transactions.push({
+        },
+        {
           target: arg.payToken,
           value: 0n,
           data: encodeFunctionData({
-            abi: decayingSpaceTokenAbi,
-            functionName: 'mint',
-            args: [arg.executorAddress, mintShortfall],
+            abi: erc20Abi,
+            functionName: 'approve',
+            args: [escrowAddress, arg.payAmount],
           }),
-        });
-      }
-
-      // Reset-then-approve pattern for tokens that reject non-zero → non-zero
-      // allowance changes (e.g. USDT-style ERC20s).
-      transactions.push({
-        target: arg.payToken,
-        value: 0n,
-        data: encodeFunctionData({
-          abi: erc20Abi,
-          functionName: 'approve',
-          args: [escrowAddress, 0n],
-        }),
-      });
-      transactions.push({
-        target: arg.payToken,
-        value: 0n,
-        data: encodeFunctionData({
-          abi: erc20Abi,
-          functionName: 'approve',
-          args: [escrowAddress, arg.payAmount],
-        }),
-      });
-
-      transactions.push({
-        target: escrowAddress,
-        value: 0n,
-        data: encodeFunctionData({
-          abi: escrowImplementationAbi,
-          functionName: 'receiveFunds',
-          args: [arg.escrowId],
-        }),
-      });
+        },
+        {
+          target: escrowAddress,
+          value: 0n,
+          data: encodeFunctionData({
+            abi: escrowImplementationAbi,
+            functionName: 'receiveFunds',
+            args: [arg.escrowId],
+          }),
+        },
+      ];
 
       const proposalParams = {
         spaceId: BigInt(arg.spaceId),

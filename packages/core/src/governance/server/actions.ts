@@ -27,6 +27,7 @@ import {
 // TODO: #602 Define RLS Policies for Agreement Table
 import { db } from '@hypha-platform/storage-postgres';
 import {
+  findExchangeDepositEscrowIdsBySpaceId,
   findTokenUpdateByAddress,
   findTokenUpdateByDocumentId,
   findTokenUpdateForSpaceTokenAddress,
@@ -56,6 +57,18 @@ export async function deleteAgreementBySlugAction(
   // TODO: #602 Define RLS Policies for Spaces Table
   // const db = getDb({ authToken });
   return deleteAgreementBySlug(data, { db });
+}
+
+/**
+ * Return the set of escrow ids that already have an Exchange-Deposit
+ * agreement for the given space. Consumed by the space-page deposit banner
+ * to hide itself once a proposal has been created and prevent duplicate
+ * submissions.
+ */
+export async function findExchangeDepositEscrowIdsBySpaceIdAction(
+  spaceId: number,
+): Promise<string[]> {
+  return findExchangeDepositEscrowIdsBySpaceId(spaceId, { db });
 }
 
 export async function createChangeEntryMethodAction(
