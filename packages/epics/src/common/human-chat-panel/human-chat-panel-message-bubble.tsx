@@ -37,7 +37,10 @@ import {
   pushRecentChatReaction,
 } from './human-chat-panel-message-overflow';
 import { ChatMessageRichText } from './parse-simple-matrix-html';
-import { matrixMemberDisplayLabelFromRoom } from './matrix-room-member-display';
+import {
+  matrixMemberDisplayLabelFromRoom,
+  needsHyphaProfileResolutionForMatrixLabel,
+} from './matrix-room-member-display';
 import {
   type ChatPanelAttachmentMedia,
   isChatPanelAudioFile,
@@ -1067,8 +1070,8 @@ function ChatReplyConnectorMeasured({
 }
 
 /**
- * Matrix often exposes the raw localpart (e.g. `prev_privy_did_…`, `prod_privy_did_…`)
- * as displayname; resolve Hypha profile via matrix_user_links when the label still looks technical.
+ * Matrix often exposes bridged localparts as displaynames (sometimes with a leading `@`).
+ * Resolve Hypha profile via `matrix_user_links` when the label still looks technical.
  */
 function needsHyphaProfileForMatrixLabel(
   label: string | undefined,
@@ -1078,11 +1081,7 @@ function needsHyphaProfileForMatrixLabel(
   const l = label?.trim() ?? '';
   if (!l) return true;
   if (l === matrixId) return true;
-  if (/^prev_privy_/i.test(l)) return true;
-  if (/^prod_privy_/i.test(l)) return true;
-  /** Embedded Privy DID in localpart / displayname (prod vs stage prefixes). */
-  if (/privy_did_privy/i.test(l)) return true;
-  return false;
+  return needsHyphaProfileResolutionForMatrixLabel(label);
 }
 
 function formatPersonDisplayName(p: {
