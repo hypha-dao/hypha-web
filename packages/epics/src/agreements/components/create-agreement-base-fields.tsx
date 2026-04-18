@@ -394,7 +394,7 @@ export function CreateAgreementBaseFields({
                     )}
                   </div>
                   <div className="flex justify-between w-full gap-4">
-                    <div className="flex flex-col gap-4 w-full">
+                    <div className="flex flex-col gap-1.5 w-full sm:gap-2">
                       <FormField
                         control={form.control}
                         name="title"
@@ -402,13 +402,14 @@ export function CreateAgreementBaseFields({
                           <FormItem>
                             <FormControl>
                               <Input
+                                rootClassName="!h-auto min-h-10 w-full sm:min-h-11"
                                 placeholder={tAgreementFlow(
                                   'createAgreementBaseFields.proposalTitlePlaceholder',
                                 )}
-                                className="border-0 bg-inherit p-0 text-4 font-semibold tracking-tight placeholder:text-muted-foreground placeholder:font-normal"
+                                className="!h-auto min-h-10 w-full border-0 bg-inherit p-0 py-1 text-lg font-semibold leading-snug tracking-tight text-foreground !placeholder:text-base placeholder:font-medium placeholder:leading-snug placeholder:text-muted-foreground/80 sm:min-h-11 sm:text-xl sm:!placeholder:text-lg"
                                 disabled={isLoading}
                                 rightIcon={
-                                  <RequirementMark className="text-4" />
+                                  <RequirementMark className="h-4 w-4 text-muted-foreground sm:h-4 sm:w-4" />
                                 }
                                 {...field}
                               />
