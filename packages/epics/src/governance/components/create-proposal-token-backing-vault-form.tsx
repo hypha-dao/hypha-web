@@ -108,7 +108,7 @@ export const CreateProposalTokenBackingVaultForm = ({
     BACKING_VAULT_RESUBMIT_SEGMENT,
   );
 
-  useClearResubmitOnSuccess(progress, isError);
+  useClearResubmitOnSuccess(progress === 100 && !isError);
 
   const handleCreate = async (data: FormValues) => {
     setFormError(null);

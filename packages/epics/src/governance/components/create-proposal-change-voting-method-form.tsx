@@ -106,7 +106,7 @@ export const CreateProposalChangeVotingMethodForm = ({
     VOTING_RESUBMIT_SEGMENT,
   );
 
-  useClearResubmitOnSuccess(progress, isError);
+  useClearResubmitOnSuccess(progress === 100 && !isError);
 
   const { quorum = 0, unity = 0 } = form.watch('quorumAndUnity') ?? {};
 

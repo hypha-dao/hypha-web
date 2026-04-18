@@ -113,7 +113,7 @@ export const ActivateSpacesFormSpace = ({
     ACTIVATE_SPACES_RESUBMIT_SEGMENT,
   );
 
-  useClearResubmitOnSuccess(progress, isError);
+  useClearResubmitOnSuccess(progress === 100 && !isError);
 
   React.useEffect(() => {
     if (spaceDetails?.executor && web3SpaceId) {

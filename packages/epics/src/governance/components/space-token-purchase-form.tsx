@@ -99,7 +99,7 @@ export const SpaceTokenPurchaseForm = ({
     STP_RESUBMIT_SEGMENT,
   );
 
-  useClearResubmitOnSuccess(progress, isError);
+  useClearResubmitOnSuccess(progress === 100 && !isError);
 
   React.useEffect(() => {
     const proposalLabel = tAgreementFlow('labels.spaceTokenPurchase');

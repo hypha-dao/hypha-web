@@ -800,6 +800,15 @@
       "expenses": "Dépenses",
       "funding": "Financement"
     },
+    "documentBadges": {
+      "invite": "Invitation",
+      "buyHyphaTokens": "Acheter des tokens Hypha",
+      "redeemTokens": "Échanger des tokens",
+      "updateToken": "Mettre à jour le token",
+      "statusOnVoting": "En vote",
+      "statusAccepted": "Accepté",
+      "statusRejected": "Rejeté"
+    },
     "buttons": {
       "publish": "Publier"
     },

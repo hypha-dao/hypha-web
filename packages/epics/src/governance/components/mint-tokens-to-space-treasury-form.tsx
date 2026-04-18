@@ -97,7 +97,7 @@ export const MintTokensToSpaceTreasuryForm = ({
     MINT_RESUBMIT_SEGMENT,
   );
 
-  useClearResubmitOnSuccess(progress, isError);
+  useClearResubmitOnSuccess(progress === 100 && !isError);
 
   const handleCreate = async (data: FormValues) => {
     setFormError(null);

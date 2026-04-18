@@ -49,7 +49,7 @@ export const IssueNewTokenPlugin = ({
 
   const resubmitHydrationRef = useRef(false);
   useEffect(() => {
-    if (resubmitKey === undefined) return;
+    if (resubmitKey === undefined || resubmitKey <= 0) return;
     // `resubmitKey` bumps only after `useResubmitProposalData` finishes applying
     // resubmit payload (reset + setValue). The requestAnimationFrame window skips
     // clearing side-effects in the same paint so hydrated values are not wiped.
@@ -82,7 +82,7 @@ export const IssueNewTokenPlugin = ({
   const tokenIconUrl = watch('iconUrl');
 
   useEffect(() => {
-    if (resubmitKey === undefined) return;
+    if (resubmitKey === undefined || resubmitKey <= 0) return;
     const lim = getValues('enableLimitedSupply');
     const adv = getValues('enableAdvancedTransferControls');
     const price = getValues('enableTokenPrice');

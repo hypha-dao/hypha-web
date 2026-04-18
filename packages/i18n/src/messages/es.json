@@ -511,6 +511,15 @@
       "expenses": "Gastos",
       "funding": "Fondos"
     },
+    "documentBadges": {
+      "invite": "Invitación",
+      "buyHyphaTokens": "Comprar tokens Hypha",
+      "redeemTokens": "Canjear tokens",
+      "updateToken": "Actualizar token",
+      "statusOnVoting": "En votación",
+      "statusAccepted": "Aceptado",
+      "statusRejected": "Rechazado"
+    },
     "buttons": {
       "publish": "Publicar"
     },

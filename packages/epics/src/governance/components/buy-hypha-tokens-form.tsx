@@ -100,7 +100,7 @@ export const BuyHyphaTokensForm = ({
     BUY_HYPHA_RESUBMIT_SEGMENT,
   );
 
-  useClearResubmitOnSuccess(progress, isError);
+  useClearResubmitOnSuccess(progress === 100 && !isError);
 
   React.useEffect(() => {
     if (spaceDetails?.executor && web3SpaceId) {

@@ -123,7 +123,7 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
     TRANSPARENCY_RESUBMIT_SEGMENT,
   );
 
-  useClearResubmitOnSuccess(progress, isError);
+  useClearResubmitOnSuccess(progress === 100 && !isError);
 
   const handleCreate = async (data: FormValues) => {
     await createChangeSpaceTransparencySettings({

@@ -48,6 +48,14 @@ import {
   isLegacyGenericResubmitSegment,
 } from '../../utils/resubmit-proposal-template';
 
+/** Session payload for `RESUBMIT_FORM_DATA_KEY` (lead image / attachments bridge). */
+export type ResubmitFormData = {
+  resubmitTemplateSegment?: string;
+  leadImage?: string;
+  attachments?: (string | { name: string; url: string })[];
+  applied?: boolean;
+};
+
 type Creator = { avatar: string; name: string; surname: string };
 
 const schemaCreateAgreementForm =
@@ -130,13 +138,7 @@ export function CreateAgreementBaseFields({
       const data = sessionStorage.getItem(RESUBMIT_FORM_DATA_KEY);
       if (!data) return;
 
-      const parsed = JSON.parse(data) as {
-        resubmitTemplateSegment?: string;
-        leadImage?: string;
-        attachments?: (string | { name: string; url: string })[];
-        applied?: boolean;
-        [key: string]: any;
-      };
+      const parsed = JSON.parse(data) as ResubmitFormData;
 
       if (parsed.applied) {
         sessionStorage.removeItem(RESUBMIT_FORM_DATA_KEY);

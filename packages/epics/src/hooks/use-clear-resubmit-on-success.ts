@@ -3,14 +3,15 @@
 import React from 'react';
 import { clearResubmitProposalSessionStorage } from './use-resubmit-proposal-data';
 
-/** Clears resubmit session draft after a proposal flow completes successfully. */
-export function useClearResubmitOnSuccess(
-  progress: number,
-  isError: boolean,
-): void {
+/**
+ * Clears resubmit session draft after a proposal flow completes successfully.
+ * Pass an explicit terminal success flag from the orchestrator consumer (e.g.
+ * `progress === 100 && !isError` once all tasks finished without error).
+ */
+export function useClearResubmitOnSuccess(isSuccess: boolean): void {
   React.useEffect(() => {
-    if (progress === 100 && !isError) {
+    if (isSuccess) {
       clearResubmitProposalSessionStorage();
     }
-  }, [progress, isError]);
+  }, [isSuccess]);
 }

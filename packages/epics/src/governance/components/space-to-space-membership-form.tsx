@@ -90,7 +90,7 @@ export const SpaceToSpaceMembershipForm = ({
     progress,
   } = useSpaceToSpaceMembershipOrchestrator({ authToken: jwt, config, spaces });
 
-  useClearResubmitOnSuccess(progress, isError);
+  useClearResubmitOnSuccess(progress === 100 && !isError);
 
   const spaceAddress = form.watch('space');
 

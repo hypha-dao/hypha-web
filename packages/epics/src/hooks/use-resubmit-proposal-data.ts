@@ -276,27 +276,47 @@ export const useResubmitProposalData = <
           },
         );
 
-        form.setValue('title' as any, (parsed.title || '') as any, {
-          shouldDirty: true,
-          shouldValidate: true,
-        });
-        form.setValue('description' as any, (parsed.description || '') as any, {
-          shouldDirty: true,
-          shouldValidate: true,
-        });
+        const titlePath = 'title' as Path<T>;
+        form.setValue(
+          titlePath,
+          (parsed.title || '') as PathValue<T, typeof titlePath>,
+          {
+            shouldDirty: true,
+            shouldValidate: true,
+          },
+        );
+        const descriptionPath = 'description' as Path<T>;
+        form.setValue(
+          descriptionPath,
+          (parsed.description || '') as PathValue<T, typeof descriptionPath>,
+          {
+            shouldDirty: true,
+            shouldValidate: true,
+          },
+        );
 
         if (parsed.attachments && parsed.attachments.length > 0) {
-          form.setValue('attachments' as any, parsed.attachments as any, {
-            shouldDirty: true,
-            shouldValidate: false,
-          });
+          const attachmentsPath = 'attachments' as Path<T>;
+          form.setValue(
+            attachmentsPath,
+            parsed.attachments as PathValue<T, typeof attachmentsPath>,
+            {
+              shouldDirty: true,
+              shouldValidate: false,
+            },
+          );
         }
 
         if (parsed.leadImage && typeof parsed.leadImage === 'string') {
-          form.setValue('leadImage' as any, parsed.leadImage as any, {
-            shouldDirty: true,
-            shouldValidate: false,
-          });
+          const leadImagePath = 'leadImage' as Path<T>;
+          form.setValue(
+            leadImagePath,
+            parsed.leadImage as PathValue<T, typeof leadImagePath>,
+            {
+              shouldDirty: true,
+              shouldValidate: false,
+            },
+          );
         }
 
         if (parsed.spaceDiscoverability !== undefined) {

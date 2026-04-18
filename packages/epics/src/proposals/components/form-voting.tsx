@@ -13,7 +13,6 @@ import {
   useWithdrawProposal,
   useJwt,
   useAgreementMutationsWeb2Rsc,
-  TOKENS,
   useSpaceMinProposalDuration,
 } from '@hypha-platform/core/client';
 import { getTokenUpdateByDocumentIdAction } from '@hypha-platform/core/governance/server/actions';
@@ -190,24 +189,21 @@ export const FormVoting = ({
 
   const handleResubmit = async () => {
     try {
-      const paymentTokenAddress =
-        spaceTokenPurchaseData?.paymentToken?.toLowerCase();
-      const purchaseCurrency =
-        paymentTokenAddress === EURC_ADDRESS
-          ? 'EUR'
-          : paymentTokenAddress === USDC_ADDRESS
-          ? 'USD'
+      const tokenPurchaseFromTemplate =
+        label === 'Token Purchase' && proposalTemplateData
+          ? (
+              proposalTemplateData as {
+                spaceTokenPurchaseForm?: {
+                  tokenAddress?: string;
+                  activatePurchase?: boolean;
+                  purchaseCurrency?: string;
+                  purchasePrice?: number;
+                  tokensAvailableForPurchase?: number;
+                };
+              }
+            ).spaceTokenPurchaseForm
           : undefined;
-      const purchasePrice =
-        spaceTokenPurchaseData?.paymentTokenPricePerToken !== undefined
-          ? Number(
-              formatUnits(spaceTokenPurchaseData.paymentTokenPricePerToken, 6),
-            )
-          : undefined;
-      const tokensAvailableForPurchase =
-        spaceTokenPurchaseData?.tokensForSale !== undefined
-          ? Number(formatUnits(spaceTokenPurchaseData.tokensForSale, 18))
-          : undefined;
+
       let updateIssuedTokenResubmitPayload: ReturnType<
         typeof buildUpdateIssuedTokenResubmitPayload
       > = null;
@@ -247,19 +243,34 @@ export const FormVoting = ({
         ...(redeemResubmitPayload
           ? { redeemResubmit: redeemResubmitPayload }
           : {}),
-        ...(label === 'Token Purchase'
+        ...(tokenPurchaseFromTemplate
           ? {
-              tokenAddress: spaceTokenPurchaseData?.tokenAddress || '',
-              activatePurchase: Boolean(spaceTokenPurchaseData?.isActive),
-              purchaseCurrency,
-              purchasePrice: Number.isFinite(purchasePrice)
-                ? purchasePrice
-                : undefined,
-              tokensAvailableForPurchase: Number.isFinite(
-                tokensAvailableForPurchase,
+              tokenAddress: tokenPurchaseFromTemplate.tokenAddress || '',
+              activatePurchase: Boolean(
+                tokenPurchaseFromTemplate.activatePurchase,
+              ),
+              ...(tokenPurchaseFromTemplate.purchaseCurrency !== undefined
+                ? {
+                    purchaseCurrency:
+                      tokenPurchaseFromTemplate.purchaseCurrency as
+                        | 'USD'
+                        | 'EUR',
+                  }
+                : {}),
+              ...(tokenPurchaseFromTemplate.purchasePrice !== undefined &&
+              Number.isFinite(tokenPurchaseFromTemplate.purchasePrice)
+                ? { purchasePrice: tokenPurchaseFromTemplate.purchasePrice }
+                : {}),
+              ...(tokenPurchaseFromTemplate.tokensAvailableForPurchase !==
+                undefined &&
+              Number.isFinite(
+                tokenPurchaseFromTemplate.tokensAvailableForPurchase,
               )
-                ? tokensAvailableForPurchase
-                : undefined,
+                ? {
+                    tokensAvailableForPurchase:
+                      tokenPurchaseFromTemplate.tokensAvailableForPurchase,
+                  }
+                : {}),
             }
           : {}),
         ...(label === 'Update Token' && updateIssuedTokenResubmitPayload

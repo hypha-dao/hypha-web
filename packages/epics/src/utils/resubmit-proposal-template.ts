@@ -47,10 +47,12 @@ export function getProposalTemplateSegmentFromPathname(
   const marker = '/agreements/create';
   const idx = pathname.indexOf(marker);
   if (idx === -1) return null;
-  const tail = pathname.slice(idx + marker.length);
-  const trimmed = tail.replace(/^\//, '');
-  if (!trimmed) return '';
-  return trimmed.split('/')[0] ?? '';
+  const afterMarker = pathname.slice(idx + marker.length);
+  // Require `/agreements/create` as a path segment (not `/agreements/createX`).
+  if (afterMarker !== '' && afterMarker[0] !== '/') return null;
+  const tail = afterMarker.replace(/^\//, '');
+  if (!tail) return '';
+  return tail.split('/')[0] ?? '';
 }
 
 /** For session payloads saved before template scoping was added. */

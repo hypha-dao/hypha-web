@@ -61,7 +61,7 @@ export const SpaceTokenPurchasePlugin = ({
 
   const resubmitHydrationRef = React.useRef(false);
   React.useEffect(() => {
-    if (resubmitKey === undefined) return;
+    if (resubmitKey === undefined || resubmitKey <= 0) return;
     resubmitHydrationRef.current = true;
     const id = requestAnimationFrame(() => {
       resubmitHydrationRef.current = false;

@@ -97,7 +97,7 @@ const CreateRedeemTokensFormInner = ({
     REDEEM_TOKENS_RESUBMIT_SEGMENT,
   );
 
-  useClearResubmitOnSuccess(progress, isError);
+  useClearResubmitOnSuccess(progress === 100 && !isError);
 
   React.useEffect(() => {
     if (person?.id) {

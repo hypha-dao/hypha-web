@@ -354,7 +354,7 @@ export const IssueNewTokenForm = ({
     ISSUE_TOKEN_RESUBMIT_SEGMENT,
   );
 
-  useClearResubmitOnSuccess(progress, isError);
+  useClearResubmitOnSuccess(progress === 100 && !isError);
 
   const { tokens: dbTokens, refetchDbTokens } = useDbTokens();
 

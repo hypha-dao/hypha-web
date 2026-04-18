@@ -94,7 +94,7 @@ export const MembershipExitForm = ({
     progress,
   } = useMembershipExitOrchestrator({ authToken: jwt, config });
 
-  useClearResubmitOnSuccess(progress, isError);
+  useClearResubmitOnSuccess(progress === 100 && !isError);
 
   const handleCreate = React.useCallback(
     async (data: FormValues) => {

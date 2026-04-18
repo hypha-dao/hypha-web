@@ -94,7 +94,7 @@ export const CreateProposeAContributionForm = ({
     CONTRIBUTION_RESUBMIT_SEGMENT,
   );
 
-  useClearResubmitOnSuccess(progress, isError);
+  useClearResubmitOnSuccess(progress === 100 && !isError);
 
   React.useEffect(() => {
     if (progress === 100 && successfulUrl) {
