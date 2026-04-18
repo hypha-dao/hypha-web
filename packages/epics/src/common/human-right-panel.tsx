@@ -85,6 +85,8 @@ type UIMessage = {
   avatarUrl?: string;
   /** Matrix event time (origin_server_ts), for header timestamp */
   timestamp?: Date;
+  /** MSC3952 intentional mentions on this event (`m.mentions.user_ids`). */
+  mentionedUserIds?: string[];
   /** Matrix custom HTML for visible body (when sent with formatting). */
   formattedContentHtml?: string;
   /** MXID of the message author (for reply target resolution). */
@@ -292,6 +294,9 @@ function toUIMessage(
     timestamp: msg.timestamp,
     reactions,
     replyTo,
+    ...(msg.mentionedUserIds?.length
+      ? { mentionedUserIds: msg.mentionedUserIds }
+      : {}),
   };
 }
 
