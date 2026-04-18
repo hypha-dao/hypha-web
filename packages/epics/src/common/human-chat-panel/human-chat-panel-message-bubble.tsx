@@ -867,6 +867,24 @@ type ReplyConnectorGeometry = {
 };
 
 /**
+ * L-shaped path in row-local px: vertical from main-avatar top-center to the reply-row
+ * height, then horizontal toward the small avatar. Uses only `L` segments so the path
+ * cannot degenerate like the previous quadratic branch when yRep ≪ yMainTop.
+ */
+function buildReplyConnectorPolylineD(params: {
+  xMain: number;
+  yMainTop: number;
+  yRep: number;
+  xEnd: number;
+}): string {
+  const { xMain, yMainTop, yRep, xEnd } = params;
+  if (Math.abs(xEnd - xMain) < 0.75) {
+    return `M ${xMain} ${yMainTop} L ${xMain} ${yRep}`;
+  }
+  return `M ${xMain} ${yMainTop} L ${xMain} ${yRep} L ${xEnd} ${yRep}`;
+}
+
+/**
  * Measured Discord-style connector: stem from **top-center** of main avatar, vertical to
  * reply row, rounded corner, horizontal ending just **left** of the small avatar.
  */
@@ -921,20 +939,12 @@ function ChatReplyConnectorMeasured({
         smallLeft >= xMain
           ? Math.min(xEndTarget, smallLeft - 2)
           : Math.max(xEndTarget, smallRight + 2);
-      const span = Math.abs(xEnd - xMain);
-      const cornerR = Math.min(8, Math.max(4, span * 0.14));
-      const goingRight = xEnd > xMain;
-      const turnX = goingRight ? xMain + cornerR : xMain - cornerR;
-      const yStemEnd = yRep + cornerR;
-      let d: string;
-      if (span < 1.5 && Math.abs(yMainTop - yRep) < 2) {
-        d = `M ${xMain} ${yMainTop} L ${xMain} ${yRep}`;
-      } else if (yStemEnd >= yMainTop - 0.5) {
-        const yJoin = Math.min(yMainTop + cornerR * 2, yRep + cornerR);
-        d = `M ${xMain} ${yMainTop} L ${xMain} ${yJoin} Q ${xMain} ${yRep} ${turnX} ${yRep} L ${xEnd} ${yRep}`;
-      } else {
-        d = `M ${xMain} ${yMainTop} L ${xMain} ${yStemEnd} Q ${xMain} ${yRep} ${turnX} ${yRep} L ${xEnd} ${yRep}`;
-      }
+      const d = buildReplyConnectorPolylineD({
+        xMain,
+        yMainTop,
+        yRep,
+        xEnd,
+      });
       setGeom({ width: w, height: h, d });
     };
 
@@ -954,7 +964,7 @@ function ChatReplyConnectorMeasured({
 
   return (
     <svg
-      className="pointer-events-none absolute inset-0 z-[5] overflow-visible text-muted-foreground/55 dark:text-muted-foreground/60"
+      className="pointer-events-none absolute inset-0 z-[8] overflow-visible text-muted-foreground/60 dark:text-muted-foreground/70"
       width={geom.width}
       height={geom.height}
       viewBox={`0 0 ${geom.width} ${geom.height}`}
@@ -965,7 +975,7 @@ function ChatReplyConnectorMeasured({
         d={geom.d}
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.25"
+        strokeWidth={1.75}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -1192,7 +1202,7 @@ export function HumanChatPanelMessageBubble({
       data-matrix-event-id={message.id}
       data-testid="chat-message"
       className={cn(
-        'group relative -mx-3 flex flex-col rounded-sm px-3 py-0.5 transition-colors',
+        'group relative -mx-3 flex flex-col overflow-visible rounded-sm px-3 py-0.5 transition-colors',
         /* Discord-style row tint: hover (primary) + focus-within for keyboard/reactions */
         'hover:bg-muted/60 focus-within:bg-muted/60',
         unreadBoundary &&
