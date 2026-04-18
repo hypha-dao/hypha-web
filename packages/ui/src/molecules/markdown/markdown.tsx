@@ -65,7 +65,7 @@ const stripHtmlComments = (source: string): string => {
     ) {
       consume = 4;
     } else {
-      out.push(source[i]);
+      out.push(source.charAt(i));
       i++;
       continue;
     }
