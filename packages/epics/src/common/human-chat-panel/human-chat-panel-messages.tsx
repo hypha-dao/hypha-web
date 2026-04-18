@@ -141,6 +141,8 @@ type HumanChatPanelMessagesProps = {
   resolveReactionReactorLabel?: (userId: string) => string;
   /** Map Matrix user id to display name inside @mention pills (body + formatted HTML). */
   resolveMatrixMemberLabel?: (userId: string) => string;
+  /** Roster-first labels for message sender / reply headers (Hypha Members tab names). */
+  resolveSenderDisplayLabel?: (matrixUserId: string | undefined) => string;
   onCancelSendPending?: () => void;
   /** Oldest unread Matrix event id (from read receipt); scroll + divider. */
   firstUnreadMessageId?: string | null;
@@ -169,6 +171,7 @@ export function HumanChatPanelMessages({
   onToggleReaction,
   resolveReactionReactorLabel,
   resolveMatrixMemberLabel,
+  resolveSenderDisplayLabel,
   onCancelSendPending,
   firstUnreadMessageId,
   unreadCountIsCapped = false,
@@ -423,6 +426,7 @@ export function HumanChatPanelMessages({
                 currentUserAvatarUrl={currentUserAvatarUrl}
                 resolveReactionReactorLabel={resolveReactionReactorLabel}
                 resolveMatrixMemberLabel={resolveMatrixMemberLabel}
+                resolveSenderDisplayLabel={resolveSenderDisplayLabel}
                 isActionBarVisible={isActionBarVisible}
                 unreadBoundary={row.isFirstUnread}
                 onRowPointerEnter={() => {

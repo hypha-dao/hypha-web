@@ -614,6 +614,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [mentionLabelByUserId, resolveMemberLabel],
   );
 
+  /** Same roster merge as pills — timeline sender/reply headers use this first. */
+  const resolveSenderDisplayLabel = useCallback(
+    (matrixUserId: string | undefined) => {
+      const id = matrixUserId?.trim();
+      if (!id) return t('unknownMember');
+      return resolveMentionMemberLabel(id);
+    },
+    [resolveMentionMemberLabel, t],
+  );
+
   /** `@` when there is anyone to mention (joined members and/or roster-linked MXIDs). */
   const mentionPickerEnabled = mentionCandidates.length > 0;
 
@@ -1673,6 +1683,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   resolveMemberLabel(userId)
                 }
                 resolveMatrixMemberLabel={resolveMentionMemberLabel}
+                resolveSenderDisplayLabel={resolveSenderDisplayLabel}
                 onCancelSendPending={cancelSendInFlight}
                 firstUnreadMessageId={unreadChatState.firstUnreadMessageId}
                 unreadNotificationCount={
