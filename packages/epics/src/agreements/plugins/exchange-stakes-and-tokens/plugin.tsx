@@ -318,13 +318,14 @@ export const ExchangeStakesAndTokensPlugin = ({
    */
   const sellerSpaceCatalogueAddresses = React.useMemo(() => {
     if (sellerRecipientType !== 'space') return [] as `0x${string}`[];
-    const source =
+    const source = (
       sellerSpaceMeta?.slug && sellerSpaceMeta.slug !== spaceSlug
         ? sellerSpaceCatalogueTokens
-        : catalogueSellerTokens;
+        : catalogueSellerTokens
+    ) as ExtendedToken[];
     return source
-      .map((t) => t.address as `0x${string}`)
-      .filter((addr): addr is `0x${string}` =>
+      .map((t: ExtendedToken) => t.address as `0x${string}`)
+      .filter((addr: `0x${string}`): addr is `0x${string}` =>
         /^0x[a-fA-F0-9]{40}$/.test(addr),
       );
   }, [
@@ -340,26 +341,32 @@ export const ExchangeStakesAndTokensPlugin = ({
       sellerSpaceCatalogueAddresses.length > 0
         ? [
             'exchangeSellerAutoMintFlags',
-            ...sellerSpaceCatalogueAddresses.map((a) => a.toLowerCase()),
+            ...sellerSpaceCatalogueAddresses.map((a: `0x${string}`) =>
+              a.toLowerCase(),
+            ),
           ]
         : null,
       async () => {
         const reads = await publicClient.multicall({
           allowFailure: true,
           blockTag: 'latest',
-          contracts: sellerSpaceCatalogueAddresses.map((address) => ({
-            address,
-            abi: decayingSpaceTokenAbi,
-            functionName: 'autoMinting' as const,
-          })),
+          contracts: sellerSpaceCatalogueAddresses.map(
+            (address: `0x${string}`) => ({
+              address,
+              abi: decayingSpaceTokenAbi,
+              functionName: 'autoMinting' as const,
+            }),
+          ),
         });
         const enabled = new Set<string>();
-        sellerSpaceCatalogueAddresses.forEach((address, idx) => {
-          const r = reads[idx];
-          if (r?.status === 'success' && r.result === true) {
-            enabled.add(address.toLowerCase());
-          }
-        });
+        sellerSpaceCatalogueAddresses.forEach(
+          (address: `0x${string}`, idx: number) => {
+            const r = reads[idx];
+            if (r?.status === 'success' && r.result === true) {
+              enabled.add(address.toLowerCase());
+            }
+          },
+        );
         return enabled;
       },
       { revalidateOnFocus: false },
