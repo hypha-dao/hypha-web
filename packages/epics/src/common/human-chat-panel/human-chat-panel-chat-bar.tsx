@@ -524,12 +524,26 @@ export function HumanChatPanelChatBar({
   const autoResize = useCallback(() => {
     const ta = textareaRef.current;
     const bd = composerBackdropRef.current;
-    if (ta) {
-      ta.style.height = 'auto';
-      const h = Math.min(ta.scrollHeight, 160);
-      ta.style.height = `${h}px`;
-      if (bd) {
-        bd.style.height = `${h}px`;
+    if (!ta) return;
+    const content = valueRef.current;
+    /**
+     * After send we clear to `''`. With only `height='auto'`, some browsers keep the
+     * previous large scrollHeight — force a shrink before measuring.
+     */
+    if (content.length === 0) {
+      ta.style.height = '0px';
+      void ta.offsetHeight;
+    }
+    ta.style.height = 'auto';
+    const h = Math.min(ta.scrollHeight, 160);
+    ta.style.height = `${h}px`;
+    if (content.length === 0) {
+      ta.scrollTop = 0;
+    }
+    if (bd) {
+      bd.style.height = `${h}px`;
+      if (content.length === 0) {
+        bd.scrollTop = 0;
       }
     }
   }, []);
