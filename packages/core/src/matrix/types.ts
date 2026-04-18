@@ -103,4 +103,8 @@ export interface Message {
    * When set, index 0 matches root `msgtype`/`mxcUrl`/…; further indices are bundle slots.
    */
   mediaBundle?: MessageMediaBundleItem[];
+  /**
+   * Matrix MSC3952 intentional mentions (`content.m.mentions.user_ids`).
+   */
+  mentionedUserIds?: string[];
 }
