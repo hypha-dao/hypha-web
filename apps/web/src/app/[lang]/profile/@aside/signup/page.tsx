@@ -6,8 +6,10 @@ import { useCreateProfile } from '@web/hooks/use-create-profile';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useParams } from 'next/navigation';
 import { LoadingBackdrop } from '@hypha-platform/ui';
+import { useTranslations } from 'next-intl';
 
 export default function SignupPage() {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { createProfile, isCreating, error } = useCreateProfile();
   const { user, isLoading } = useAuthentication();
   const { lang } = useParams();
@@ -41,6 +43,7 @@ export default function SignupPage() {
   return (
     <LoadingBackdrop
       showKeepWindowOpenMessage={true}
+      keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       fullHeight={true}
       isLoading={isLoading || !user?.wallet?.address}
       message={<span>Loading...</span>}

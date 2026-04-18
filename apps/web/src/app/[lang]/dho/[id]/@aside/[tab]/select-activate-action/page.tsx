@@ -20,7 +20,7 @@ export default async function SelectActivateActions({
         <ModalStickyNavigation
           contextTitle={tModalAside('activateSpace')}
           closeDropSegment={PATH_SELECT_ACTIVATE_ACTION}
-          backToParent
+          showBack={false}
         />
         <SelectActivateAction lang={lang} daoSlug={daoSlug} activeTab={tab} />
       </div>

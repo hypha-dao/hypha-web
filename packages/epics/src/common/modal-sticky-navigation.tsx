@@ -42,9 +42,17 @@ export function ModalStickyNavigation({
   const pathname = usePathname();
   const tCommon = useTranslations('Common');
 
+  const normalizedCloseDropSegment = closeDropSegment
+    ? closeDropSegment.startsWith('/')
+      ? closeDropSegment
+      : `/${closeDropSegment}`
+    : undefined;
+
   const closeUrl =
     closeUrlProp ??
-    (closeDropSegment ? pathname.replace(closeDropSegment, '') : undefined);
+    (normalizedCloseDropSegment && pathname.endsWith(normalizedCloseDropSegment)
+      ? pathname.slice(0, -normalizedCloseDropSegment.length) || '/'
+      : undefined);
 
   const backUrl =
     backUrlProp ??
@@ -86,10 +94,10 @@ export function ModalStickyNavigation({
             <ButtonBack
               label={resolvedBackLabel}
               backUrl={backUrl}
-              className="px-0 md:px-3 align-top"
+              className="px-0 md:px-3"
             />
           ) : null}
-          <ButtonClose closeUrl={closeUrl} className="px-0 md:px-3 align-top" />
+          <ButtonClose closeUrl={closeUrl} className="px-0 md:px-3" />
         </div>
       </div>
     </div>

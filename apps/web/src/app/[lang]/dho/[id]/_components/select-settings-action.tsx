@@ -217,6 +217,7 @@ export const SelectSettingsAction = ({
       icon: <RadiobuttonIcon />,
       baseTab: 'agreements',
       disabled: true,
+      comingSoon: true,
     },
     {
       group: t('groups.ecosystemVerticals'),

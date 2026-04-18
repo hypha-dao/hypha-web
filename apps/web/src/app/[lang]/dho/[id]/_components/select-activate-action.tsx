@@ -18,9 +18,6 @@ import {
   useSpaceDetailsWeb3Rpc,
 } from '@hypha-platform/core/client';
 
-const ZERO_ADDRESS =
-  '0x0000000000000000000000000000000000000000' as `0x${string}`;
-
 function normalizeTreasuryAddress(
   candidate: string | null | undefined,
 ): `0x${string}` | undefined {
@@ -56,7 +53,7 @@ export const SelectActivateAction = ({
   }, [space?.address, spaceDetails?.executor]);
 
   const { fundWallet } = useFundWallet({
-    address: treasuryAddress ?? ZERO_ADDRESS,
+    address: treasuryAddress,
   });
   const t = useTranslations('SelectActivateAction');
 

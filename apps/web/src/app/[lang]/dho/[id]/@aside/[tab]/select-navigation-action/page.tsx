@@ -20,7 +20,7 @@ export default async function SelectNavigationActions({
         <ModalStickyNavigation
           contextTitle={tModalAside('spaceNavigation')}
           closeDropSegment={PATH_SELECT_NAVIGATION_ACTION}
-          backToParent
+          showBack={false}
         />
         <SelectNavigationAction lang={lang} daoSlug={daoSlug} />
       </div>
