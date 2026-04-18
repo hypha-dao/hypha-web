@@ -1635,6 +1635,7 @@
     "copiedButton": "¡Copiado!",
     "tabChat": "Chat",
     "tabMembers": "Miembros",
+    "tabMentions": "Menciones",
     "membersCount": "{count, plural, one {# miembro} other {# miembros}} · {online} en línea",
     "you": "Tú",
     "reactButton": "Reaccionar",

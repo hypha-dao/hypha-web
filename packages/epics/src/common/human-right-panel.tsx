@@ -52,7 +52,7 @@ import {
   HumanChatPanelChatBar,
   HumanChatPanelTabs,
   HumanChatPanelMembers,
-  HumanChatPanelMentionInbox,
+  HumanChatPanelMentionTab,
   type ChatDraftAttachment,
   type ChatMentionCandidate,
   type ChatPanelAttachmentMedia,
@@ -493,7 +493,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [composerError, setComposerError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ChatPanelTab>('chat');
-  const [mentionInboxOpen, setMentionInboxOpen] = useState(false);
   const [scrollToEventId, setScrollToEventId] = useState<string | null>(null);
   /** Shown in timeline after a short delay while large attachment sends run. */
   const [sendingPending, setSendingPending] = useState<null | {
@@ -1507,33 +1506,24 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         <HumanChatPanelHeader
           title={mode === 'coherence' ? coherenceTitle ?? undefined : undefined}
           onBack={mode === 'coherence' ? closeCoherenceChat : undefined}
-          trailingStart={
-            roomId ? (
-              <HumanChatPanelMentionInbox
-                open={mentionInboxOpen}
-                onOpenChange={setMentionInboxOpen}
-                notificationCentreHref={notificationCentreHref}
-                client={client}
-                roomId={roomId}
-                currentUserId={currentUserId}
-                unreadCount={unreadChatState.unreadMentionCount}
-                countIsCapped={unreadChatState.mentionCountIsCapped}
-                resolveMemberLabel={(id) => resolveMemberLabel(id)}
-                onSelectMessage={handleSelectMentionFromInbox}
-              />
-            ) : null
-          }
         />
         <HumanChatPanelTabs
           activeTab={activeTab}
           onTabChange={setActiveTab}
           chatMentionCount={unreadChatState.unreadMentionCount}
           chatMentionCountCapped={unreadChatState.mentionCountIsCapped}
+          mentionTabBadgeCount={unreadChatState.unreadMentionCount}
+          mentionTabBadgeCapped={unreadChatState.mentionCountIsCapped}
+          notificationCentreHref={notificationCentreHref}
         />
       </SidebarHeader>
-      <SidebarContent className="bg-background-2 min-h-0">
+      <SidebarContent className="bg-background-2 flex min-h-0 flex-col">
         {activeTab === 'chat' && (
-          <div className="flex min-h-0 flex-1 flex-col">
+          <div
+            className="flex min-h-0 flex-1 flex-col"
+            role="tabpanel"
+            id="chat-tabpanel-chat"
+          >
             {error && (
               <div
                 role="alert"
@@ -1600,11 +1590,32 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           </div>
         )}
         {activeTab === 'members' && (
-          <HumanChatPanelMembers
-            useMembers={useMembers}
-            spaceSlug={spaceSlug}
-            roomId={roomId}
-          />
+          <div
+            className="flex min-h-0 flex-1 flex-col overflow-hidden"
+            role="tabpanel"
+            id="chat-tabpanel-members"
+          >
+            <HumanChatPanelMembers
+              useMembers={useMembers}
+              spaceSlug={spaceSlug}
+              roomId={roomId}
+            />
+          </div>
+        )}
+        {activeTab === 'mentions' && (
+          <div
+            className="flex min-h-0 flex-1 flex-col overflow-hidden"
+            role="tabpanel"
+            id="chat-tabpanel-mentions"
+          >
+            <HumanChatPanelMentionTab
+              client={client}
+              roomId={roomId}
+              currentUserId={currentUserId}
+              resolveMemberLabel={(id) => resolveMemberLabel(id)}
+              onSelectMessage={handleSelectMentionFromInbox}
+            />
+          </div>
         )}
       </SidebarContent>
       {activeTab === 'chat' && (
