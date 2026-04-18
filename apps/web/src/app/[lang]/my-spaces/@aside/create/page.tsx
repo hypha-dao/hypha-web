@@ -2,7 +2,7 @@
 
 import {
   SpaceForm,
-  SidePanel,
+  ProposalOverlayShell,
   getDhoPathAgreements,
 } from '@hypha-platform/epics';
 import { useParams, useRouter, usePathname } from 'next/navigation';
@@ -47,7 +47,7 @@ export default function AsideCreateSpacePage() {
   const closeUrl = pathname.split('/').slice(0, -1).join('/') || '/';
 
   return progress !== 100 ? (
-    <SidePanel>
+    <ProposalOverlayShell>
       <LoadingBackdrop
         fullHeight={true}
         showKeepWindowOpenMessage={true}
@@ -78,6 +78,6 @@ export default function AsideCreateSpacePage() {
           slugIncorrectMessage={tSpaces('slugAlreadyExistsLong')}
         />
       </LoadingBackdrop>
-    </SidePanel>
+    </ProposalOverlayShell>
   ) : null;
 }
