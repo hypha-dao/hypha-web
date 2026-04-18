@@ -79,8 +79,10 @@ export function ProposalOverlayShell({
           'fixed z-20',
           // Mobile / tablet portrait: docked sheet (same as SidePanel)
           'max-md:bottom-0 max-md:top-[var(--menu-top-height,65px)] max-md:right-[var(--sidebar-right-width,0px)] max-md:w-full max-md:overflow-y-auto max-md:bg-background-2',
-          // Desktop: overlay host (content centered; scrim behind)
-          'md:inset-0 md:flex md:items-center md:justify-center md:overflow-y-auto md:bg-transparent md:p-4 md:pt-[max(1rem,calc(var(--menu-top-height,65px)+0.5rem))]',
+          // Desktop: overlay host (content centered; scrim behind). Scroll only the inner card —
+          // if this outer layer scrolls, fixed LoadingBackdrop inside the card tracks the wrong
+          // scrollport and the progress UI scrolls away with long forms.
+          'md:inset-0 md:flex md:items-center md:justify-center md:overflow-hidden md:bg-transparent md:p-4 md:pt-[max(1rem,calc(var(--menu-top-height,65px)+0.5rem))]',
         )}
       >
         <div
