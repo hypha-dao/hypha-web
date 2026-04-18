@@ -668,7 +668,7 @@
       }
     },
     "loadingBackdrop": {
-      "keepWindowOpen": "Mantenga esta ventana abierta hasta que se complete la barra de progreso."
+      "keepWindowOpen": "Mantén esta ventana abierta hasta que terminemos."
     },
     "spaceTokenPurchaseProgress": {
       "CREATE_WEB2_AGREEMENT": "Creando acuerdo...",
@@ -714,7 +714,7 @@
   "NotificationCentre": {
     "title": "Centro de notificaciones",
     "loading": {
-      "keepWindowOpen": "Mantén esta ventana abierta hasta que se complete la barra de progreso."
+      "keepWindowOpen": "Mantén esta ventana abierta hasta que terminemos."
     },
     "subscribe": {
       "title": "Suscríbete a notificaciones",
@@ -1900,7 +1900,7 @@
       "medium": "Supervisar y actuar pronto",
       "low": "Informativo, sin prisa"
     },
-    "keepWindowOpenWhileCreating": "Mantenga esta ventana abierta hasta que la barra de progreso termine.",
+    "keepWindowOpenWhileCreating": "Mantén esta ventana abierta hasta que terminemos.",
     "tagLabels": {
       "Strategy": "Estrategia",
       "Culture": "Cultura",

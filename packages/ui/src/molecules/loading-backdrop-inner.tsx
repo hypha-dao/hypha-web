@@ -20,6 +20,7 @@ export type LoadingBackdropInnerProps = {
   fullHeightVariant?: 'auto' | 'docked-panel' | 'responsive-modal-shell';
 };
 
+/** Legacy card — docked side panel & inline overlays (unchanged layout). */
 function ProgressCard({
   progress,
   showKeepWindowOpenMessage,
@@ -55,6 +56,48 @@ function ProgressCard({
   );
 }
 
+/** Compact glass status — portaled modal-shell overlay (no nested white sheet). */
+function ModalShellLoadingStatus({
+  progress,
+  showKeepWindowOpenMessage,
+  keepWindowOpenMessage,
+  message,
+}: {
+  progress: number;
+  showKeepWindowOpenMessage: boolean;
+  keepWindowOpenMessage: React.ReactNode;
+  message?: React.ReactElement;
+}) {
+  const trackPulse = progress === 0;
+
+  return (
+    <div
+      className={cn(
+        'mx-auto w-full max-w-sm space-y-3 rounded-2xl px-5 py-4',
+        'ring-1 ring-border/40 bg-muted/25 backdrop-blur-md',
+        'dark:bg-white/5 dark:ring-white/15',
+      )}
+    >
+      <Progress
+        value={progress}
+        className={cn(
+          'h-2 w-full rounded-full bg-muted/70 dark:bg-white/15',
+          trackPulse && 'motion-safe:animate-pulse',
+        )}
+        indicatorColor="bg-accent-9"
+      />
+      {showKeepWindowOpenMessage && (
+        <p className="text-center text-sm font-semibold leading-snug text-foreground">
+          {keepWindowOpenMessage}
+        </p>
+      )}
+      <div className="text-center text-xs leading-relaxed text-muted-foreground">
+        {message}
+      </div>
+    </div>
+  );
+}
+
 export function LoadingBackdropInner({
   isLoading = false,
   progress = 0,
@@ -62,7 +105,7 @@ export function LoadingBackdropInner({
   className,
   message,
   showKeepWindowOpenMessage = false,
-  keepWindowOpenMessage = 'Please keep this window open until the progress bar completes.',
+  keepWindowOpenMessage = "Keep this window open until we're finished.",
   fullHeight = false,
   fullHeightVariant = 'auto',
 }: LoadingBackdropInnerProps) {
@@ -84,14 +127,16 @@ export function LoadingBackdropInner({
   const modalShellOverlayInner = (
     <div
       className={cn(
-        'fixed inset-0 z-[45] flex flex-col items-center justify-center gap-4 bg-background/80 p-4 backdrop-blur-md supports-[backdrop-filter]:bg-background/65 lg:p-8',
+        'fixed inset-0 z-[45] flex flex-col items-center justify-center p-4 lg:p-8',
+        'bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70',
+        'dark:bg-black/45 dark:supports-[backdrop-filter]:bg-black/35',
         'max-md:top-[var(--menu-top-height,65px)] max-md:right-[var(--sidebar-right-width,0px)]',
         className,
       )}
       aria-live="polite"
       aria-busy="true"
     >
-      <ProgressCard
+      <ModalShellLoadingStatus
         progress={progress}
         showKeepWindowOpenMessage={showKeepWindowOpenMessage}
         keepWindowOpenMessage={keepWindowOpenMessage}

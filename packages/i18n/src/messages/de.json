@@ -77,7 +77,7 @@
   "NotificationCentre": {
     "title": "Benachrichtigungszentrum",
     "loading": {
-      "keepWindowOpen": "Bitte lassen Sie dieses Fenster geöffnet, bis der Fortschrittsbalken abgeschlossen ist."
+      "keepWindowOpen": "Lassen Sie dieses Fenster geöffnet, bis wir fertig sind."
     },
     "subscribe": {
       "title": "Benachrichtigungen abonnieren",
@@ -984,7 +984,7 @@
       }
     },
     "loadingBackdrop": {
-      "keepWindowOpen": "Bitte lassen Sie dieses Fenster geöffnet, bis der Fortschrittsbalken abgeschlossen ist."
+      "keepWindowOpen": "Lassen Sie dieses Fenster geöffnet, bis wir fertig sind."
     },
     "spaceTokenPurchaseProgress": {
       "CREATE_WEB2_AGREEMENT": "Vereinbarung wird erstellt...",
@@ -1901,7 +1901,7 @@
       "medium": "Beobachten und bald handeln",
       "low": "Informativ, keine Eile"
     },
-    "keepWindowOpenWhileCreating": "Bitte lassen Sie dieses Fenster offen, bis die Fortschrittsanzeige abgeschlossen ist.",
+    "keepWindowOpenWhileCreating": "Lassen Sie dieses Fenster geöffnet, bis wir fertig sind.",
     "tagLabels": {
       "Strategy": "Strategie",
       "Culture": "Kultur",
