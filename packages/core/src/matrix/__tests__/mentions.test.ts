@@ -19,6 +19,15 @@ describe('extractMentionUserIdsFromPlainBody', () => {
     ]);
   });
 
+  it('does not treat a sentence-punctuation colon after the homeserver as part of the MXID', () => {
+    expect(
+      extractMentionUserIdsFromPlainBody('ping @alice:matrix.org: hello'),
+    ).toEqual(['@alice:matrix.org']);
+    expect(
+      extractMentionUserIdsFromPlainBody('ping @alice:matrix.org, hello'),
+    ).toEqual(['@alice:matrix.org']);
+  });
+
   it('dedupes', () => {
     expect(
       extractMentionUserIdsFromPlainBody(

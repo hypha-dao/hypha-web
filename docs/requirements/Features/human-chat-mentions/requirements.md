@@ -69,9 +69,9 @@ The Matrix-backed **human chat** composer historically shipped with **@ mention*
 
 **FR-COMP-1** When the caret is in the message composer and the user inserts **`@`** (or activates the previously disabled At toolbar control), the system SHALL open a **member suggestion list** filtered by **characters typed after `@`** (case-insensitive substring on display name and localpart).
 
-**FR-COMP-2** The suggestion list SHALL include **only members applicable to the current chat context**:
+**FR-COMP-2** The suggestion list SHALL include **only members applicable to the current chat context**, merging Matrix room membership with Hypha profile roster data where available:
 
-- **Space room chat:** joined members of the Matrix room backing the space (`room.getJoinedMembers()` or equivalent). **v1:** the current user SHALL be **excluded** from suggestions (§10).
+- **Space room chat:** joined members of the Matrix room backing the space (`room.getJoinedMembers()` or equivalent) **plus** Members-tab / space-roster people that can be mapped to Matrix MXIDs through `matrix_user_links` (`Person.sub → matrixUserId`). When no roster mapping exists, `room.getJoinedMembers()` remains the source. **v1:** the current user SHALL be **excluded** from suggestions (§10).
 
 **FR-COMP-3** **Signal / thread chat:** suggestions SHALL be the same membership **or** a subset explicitly defined by coherence (if thread participants are tracked separately, filter to **room members** still in the thread policy document—default to **room members** for v1).
 

@@ -84,6 +84,17 @@ type SpeechRecognitionEventLike = {
 
 const ZWSP_CODE = 0x200b;
 
+function isKeyboardActivationTarget(target: EventTarget | null): boolean {
+  return (
+    target instanceof HTMLElement &&
+    Boolean(
+      target.closest(
+        'button,a,input,textarea,select,[role="button"],[role="menuitem"],[role="option"],[contenteditable="true"]',
+      ),
+    )
+  );
+}
+
 /** Linear-time strip (avoids ReDoS from `/\\u200b+$/` on user-controlled strings). */
 function stripTrailingZeroWidthSpaces(s: string): string {
   let i = s.length;
@@ -750,7 +761,11 @@ export function HumanChatPanelChatBar({
     const after = value.slice(cur);
     const needsSpace =
       before.length > 0 && !/\s$/.test(before) && !before.endsWith('@');
-    const prefix = needsSpace ? `${before} @` : `${before}@`;
+    const prefix = before.endsWith('@')
+      ? before
+      : needsSpace
+      ? `${before} @`
+      : `${before}@`;
     const next = prefix + after;
     const caret = prefix.length;
     onChange(next);
@@ -1185,6 +1200,7 @@ export function HumanChatPanelChatBar({
   const handleAttachMenuContentEnter = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key !== 'Enter' || e.shiftKey) return;
+      if (isKeyboardActivationTarget(e.target)) return;
       const ne = e.nativeEvent as KeyboardEvent;
       if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
         return;
@@ -1207,6 +1223,7 @@ export function HumanChatPanelChatBar({
   const handleDraftAttachmentsKeyDownCapture = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
       if (e.key !== 'Enter' || e.shiftKey) return;
+      if (isKeyboardActivationTarget(e.target)) return;
       const ne = e.nativeEvent as KeyboardEvent;
       if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
         return;
@@ -1252,8 +1269,7 @@ export function HumanChatPanelChatBar({
       )
         return;
       if (attachMenuOpen || emojiPickerOpen) return;
-      const el = e.target;
-      if (el instanceof HTMLTextAreaElement) return;
+      if (isKeyboardActivationTarget(e.target)) return;
       if (!canSend) return;
       e.preventDefault();
       sendMessage();

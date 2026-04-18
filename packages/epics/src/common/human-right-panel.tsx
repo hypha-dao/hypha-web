@@ -597,16 +597,25 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     mentionMembershipEpoch,
   ]);
 
-  /** `@` active only when another user is joined in Matrix (not roster-only suggestions). */
-  const mentionPickerEnabled = useMemo(() => {
-    if (!client || !roomId) return false;
-    const room = client.getRoom(roomId);
-    if (!room) return false;
-    const others = room
-      .getJoinedMembers()
-      .filter((m) => m.userId && m.userId !== currentUserId);
-    return others.length > 0;
-  }, [client, roomId, currentUserId, mentionMembershipEpoch]);
+  const mentionLabelByUserId = useMemo(
+    () =>
+      new Map(
+        mentionCandidates.map((candidate) => [
+          candidate.userId,
+          candidate.displayLabel,
+        ]),
+      ),
+    [mentionCandidates],
+  );
+
+  const resolveMentionMemberLabel = useCallback(
+    (userId: string) =>
+      mentionLabelByUserId.get(userId) ?? resolveMemberLabel(userId),
+    [mentionLabelByUserId, resolveMemberLabel],
+  );
+
+  /** `@` when there is anyone to mention (joined members and/or roster-linked MXIDs). */
+  const mentionPickerEnabled = mentionCandidates.length > 0;
 
   useEffect(() => {
     if (!client || !roomId) return;
@@ -1663,9 +1672,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 resolveReactionReactorLabel={(userId) =>
                   resolveMemberLabel(userId)
                 }
-                resolveMatrixMemberLabel={(userId) =>
-                  resolveMemberLabel(userId)
-                }
+                resolveMatrixMemberLabel={resolveMentionMemberLabel}
                 onCancelSendPending={cancelSendInFlight}
                 firstUnreadMessageId={unreadChatState.firstUnreadMessageId}
                 unreadNotificationCount={
