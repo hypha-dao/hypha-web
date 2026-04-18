@@ -1037,23 +1037,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [client, roomId]);
 
   const unreadChatState = useMemo(() => {
-    if (!client || !roomId || !currentUserId || activeTab !== 'chat') {
+    if (!client || !roomId || !currentUserId) {
       return {
         firstUnreadMessageId: null as string | null,
         unreadNotificationCount: 0,
         unreadCountIsCapped: false,
+        unreadMentionCount: 0,
+        mentionCountIsCapped: false,
       };
     }
     const room = client.getRoom(roomId);
     return computeHumanChatUnreadState(room ?? undefined, currentUserId);
-  }, [
-    client,
-    roomId,
-    currentUserId,
-    activeTab,
-    unreadBump,
-    mergedMessages.length,
-  ]);
+  }, [client, roomId, currentUserId, unreadBump, mergedMessages.length]);
 
   const markChatTimelineRead = useCallback(async () => {
     if (!client || !roomId || !currentUserId) return;
@@ -1447,7 +1442,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           title={mode === 'coherence' ? coherenceTitle ?? undefined : undefined}
           onBack={mode === 'coherence' ? closeCoherenceChat : undefined}
         />
-        <HumanChatPanelTabs activeTab={activeTab} onTabChange={setActiveTab} />
+        <HumanChatPanelTabs
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          chatMentionCount={unreadChatState.unreadMentionCount}
+          chatMentionCountCapped={unreadChatState.mentionCountIsCapped}
+        />
       </SidebarHeader>
       <SidebarContent className="bg-background-2 min-h-0">
         {activeTab === 'chat' && (
