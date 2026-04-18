@@ -1,5 +1,5 @@
 import {
-  SidePanel,
+  ProposalOverlayShell,
   SpaceTokenPurchaseForm,
   SpaceTokenPurchasePlugin,
 } from '@hypha-platform/epics';
@@ -9,7 +9,6 @@ import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
-
 type PageProps = {
   params: Promise<{ lang: Locale; id: string; tab: string }>;
   searchParams: Promise<{ hideBack?: string }>;
@@ -36,7 +35,7 @@ export default async function SpaceTokenPurchasePage({
     : `${closeUrl}${PATH_SELECT_SETTINGS_ACTION}`;
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <SpaceTokenPurchaseForm
         spaceId={spaceId}
         web3SpaceId={web3SpaceId}
@@ -51,6 +50,6 @@ export default async function SpaceTokenPurchasePage({
           />
         }
       />
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }
