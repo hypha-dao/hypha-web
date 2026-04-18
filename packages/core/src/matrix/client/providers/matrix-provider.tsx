@@ -665,7 +665,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
               roomId,
               EventType.RoomMessage,
               mergeMatrixMentionsIntoContent(
-                eventContent as Record<string, unknown>,
+                eventContent,
                 mentionIds,
               ) as RoomMessageEventContent,
             );
@@ -704,7 +704,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
               roomId,
               EventType.RoomMessage,
               mergeMatrixMentionsIntoContent(
-                eventContent as Record<string, unknown>,
+                eventContent,
                 mentionIds,
               ) as RoomMessageEventContent,
             );
@@ -748,9 +748,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
                     event_id: replyContext.resolvedTargetId,
                   },
                 },
-              },
+              } as RoomMessageEventContent,
               mentionIds,
-            ) as RoomMessageEventContent,
+            ),
           );
           return;
         }
@@ -771,9 +771,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
                     event_id: replyContext.resolvedTargetId,
                   },
                 },
-              },
+              } as RoomMessageEventContent,
               mentionIds,
-            ) as RoomMessageEventContent,
+            ),
           );
           return;
         }
@@ -788,9 +788,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             {
               msgtype: MsgType.Text,
               ...textPayload,
-            },
+            } as RoomMessageEventContent,
             mentionIds,
-          ) as RoomMessageEventContent,
+          ),
         );
       } catch (textErr) {
         throw new SendMessagePartialFailureError(
@@ -1015,17 +1015,17 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
                 event_id: resolvedReplyTargetId,
               },
             },
-          },
+          } as RoomMessageEventContent,
           mentionIds,
-        ) as RoomMessageEventContent;
+        );
       } else {
         newContentPayload = mergeMatrixMentionsIntoContent(
           {
             msgtype: MsgType.Text,
             ...matrixTextEventContentWithOptionalFormatting(message),
-          },
+          } as RoomMessageEventContent,
           mentionIds,
-        ) as RoomMessageEventContent;
+        );
       }
 
       const newBody =
