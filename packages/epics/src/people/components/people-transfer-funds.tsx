@@ -2,7 +2,7 @@
 
 import React from 'react';
 import {
-  SidePanel,
+  ProposalOverlayShell,
   ButtonClose,
   ButtonBack,
   useUserAssets,
@@ -59,7 +59,7 @@ export const ProfileTransferFunds = ({
     }));
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <div className="flex flex-col gap-5">
         <div className="flex gap-5 justify-between">
           <h2 className="text-4 text-secondary-foreground justify-start items-center">
@@ -84,6 +84,6 @@ export const ProfileTransferFunds = ({
           updateAssets={manualUpdate}
         />
       </div>
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 };

@@ -1,6 +1,6 @@
 import { getAllSpaces, Space } from '@hypha-platform/core/server';
 import {
-  SidePanel,
+  ProposalOverlayShell,
   ButtonBack,
   ButtonClose,
   ProfilePageParams,
@@ -36,7 +36,7 @@ export default async function PurchaseHyphaTokensProfile(props: PageProps) {
   );
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <div className="flex flex-col gap-5">
         <div className="flex gap-5 justify-between">
           <h2 className="text-4 text-secondary-foreground justify-start items-center">
@@ -64,6 +64,6 @@ export default async function PurchaseHyphaTokensProfile(props: PageProps) {
           />
         )}
       </div>
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

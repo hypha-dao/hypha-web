@@ -1,7 +1,7 @@
 'use client';
 
 import {
-  SidePanel,
+  ProposalOverlayShell,
   EditPersonSection,
   ProfilePageParams,
 } from '@hypha-platform/epics';
@@ -51,7 +51,7 @@ export default function EditProfilePage() {
   };
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <LoadingBackdrop
         showKeepWindowOpenMessage={true}
         keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
@@ -78,6 +78,6 @@ export default function EditProfilePage() {
           error={error}
         />
       </LoadingBackdrop>
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

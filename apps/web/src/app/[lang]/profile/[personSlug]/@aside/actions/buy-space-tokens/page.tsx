@@ -1,5 +1,5 @@
 import {
-  SidePanel,
+  ProposalOverlayShell,
   ButtonBack,
   ButtonClose,
   ProfilePageParams,
@@ -22,7 +22,7 @@ export default async function BuySpaceTokensProfile(props: PageProps) {
   const closeUrl = `/${lang}/profile/${personSlug}`;
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <div className="flex flex-col gap-5">
         <div className="flex gap-5 justify-between">
           <h2 className="text-4 text-secondary-foreground justify-start items-center">
@@ -41,6 +41,6 @@ export default async function BuySpaceTokensProfile(props: PageProps) {
         </span>
         <PeopleBuySpaceTokens personSlug={personSlug} closeUrl={closeUrl} />
       </div>
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }
