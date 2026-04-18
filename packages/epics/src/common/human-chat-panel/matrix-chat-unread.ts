@@ -9,6 +9,9 @@ export type HumanChatUnreadState = {
   firstUnreadMessageId: string | null;
   unreadNotificationCount: number;
   unreadCountIsCapped: boolean;
+  /** Matrix highlight notifications only (@mentions etc.); use for tab/bell badges. */
+  unreadMentionCount: number;
+  mentionCountIsCapped: boolean;
 };
 
 /**
@@ -37,6 +40,8 @@ export function computeHumanChatUnreadState(
     firstUnreadMessageId: null,
     unreadNotificationCount: 0,
     unreadCountIsCapped: false,
+    unreadMentionCount: 0,
+    mentionCountIsCapped: false,
   };
 
   if (!room || !userId) return empty;
@@ -49,6 +54,10 @@ export function computeHumanChatUnreadState(
     typeof highlight === 'number' && highlight > 0 ? highlight : total ?? 0;
 
   const unreadCountIsCapped = unreadNotificationCount >= 100;
+
+  const unreadMentionCount =
+    typeof highlight === 'number' && highlight > 0 ? highlight : 0;
+  const mentionCountIsCapped = unreadMentionCount >= 100;
 
   const readUpToId = effectiveReadCursorEventId(room, userId);
 
@@ -82,6 +91,8 @@ export function computeHumanChatUnreadState(
       firstUnreadMessageId: id,
       unreadNotificationCount,
       unreadCountIsCapped,
+      unreadMentionCount,
+      mentionCountIsCapped,
     };
   }
 
@@ -89,5 +100,7 @@ export function computeHumanChatUnreadState(
     firstUnreadMessageId: null,
     unreadNotificationCount,
     unreadCountIsCapped,
+    unreadMentionCount,
+    mentionCountIsCapped,
   };
 }
