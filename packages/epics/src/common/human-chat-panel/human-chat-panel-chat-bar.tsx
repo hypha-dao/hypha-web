@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -563,13 +564,20 @@ export function HumanChatPanelChatBar({
     const content = valueRef.current;
     /**
      * After send we clear to `''`. With only `height='auto'`, some browsers keep the
-     * previous large scrollHeight — force a shrink before measuring.
+     * previous large scrollHeight — force a shrink on both layers before measuring.
      */
     if (content.length === 0) {
+      if (bd) {
+        bd.style.height = '0px';
+        bd.style.minHeight = '0';
+      }
       ta.style.height = '0px';
+      ta.style.minHeight = '0';
       void ta.offsetHeight;
+      if (bd) void bd.offsetHeight;
     }
     ta.style.height = 'auto';
+    ta.style.minHeight = '';
     const h = Math.min(ta.scrollHeight, 160);
     ta.style.height = `${h}px`;
     if (content.length === 0) {
@@ -577,6 +585,7 @@ export function HumanChatPanelChatBar({
     }
     if (bd) {
       bd.style.height = `${h}px`;
+      bd.style.minHeight = '';
       if (content.length === 0) {
         bd.scrollTop = 0;
       }
@@ -691,7 +700,8 @@ export function HumanChatPanelChatBar({
     syncAtState(value, el.selectionStart ?? value.length);
   }, [mentionCandidates, value, syncAtState]);
 
-  useEffect(() => {
+  /** Run before paint when `value` clears so height doesn’t flash stuck tall (dictation/send race). */
+  useLayoutEffect(() => {
     autoResize();
   }, [value, autoResize]);
 
