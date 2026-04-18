@@ -16,6 +16,7 @@ type PageProps = {
 
 export default async function CreateAgreementPage({ params }: PageProps) {
   const tAgreementFlow = await getTranslations('AgreementFlow');
+  const tModalAside = await getTranslations('ModalAside');
   const { lang, id } = await params;
 
   // TODO: implement authorization
@@ -35,6 +36,7 @@ export default async function CreateAgreementPage({ params }: PageProps) {
         spaceId={spaceId}
         web3SpaceId={web3SpaceId}
         label={tAgreementFlow('labels.collectiveAgreement')}
+        stickyHeaderTitle={tModalAside('createProposal')}
       />
     </ProposalOverlayShell>
   );

@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ButtonBack } from './button-back';
@@ -7,6 +8,8 @@ import { ButtonClose } from './button-close';
 import { cn } from '@hypha-platform/ui-utils';
 
 export type ModalStickyNavigationProps = {
+  /** Title only (no subtitle), e.g. “Create Space” — shown left like upload-image dialogs. */
+  contextTitle?: ReactNode;
   /** Full URL to navigate on close (wins over `closeDropSegment`). */
   closeUrl?: string;
   /** Path segment to strip from the current pathname for close (e.g. `/select-settings-action`). */
@@ -23,10 +26,11 @@ export type ModalStickyNavigationProps = {
 };
 
 /**
- * Sticky top bar with Back / Close aligned to proposal create flows — stays visible while the
+ * Sticky top bar with optional context title + Back / Close — stays visible while the
  * modal body scrolls (`ProposalOverlayShell` inner scroller).
  */
 export function ModalStickyNavigation({
+  contextTitle,
   closeUrl: closeUrlProp,
   closeDropSegment,
   backUrl: backUrlProp,
@@ -61,15 +65,32 @@ export function ModalStickyNavigation({
         className,
       )}
     >
-      <div className="flex h-11 shrink-0 items-center justify-end gap-1 border-b border-border px-4 lg:px-7">
-        {showBack && backUrl ? (
-          <ButtonBack
-            label={resolvedBackLabel}
-            backUrl={backUrl}
-            className="px-0 md:px-3 align-top"
-          />
-        ) : null}
-        <ButtonClose closeUrl={closeUrl} className="px-0 md:px-3 align-top" />
+      <div
+        className={cn(
+          'flex min-h-11 shrink-0 items-center gap-2 border-b border-border/80 px-4 lg:px-7',
+          contextTitle ? 'justify-between' : 'justify-end',
+        )}
+      >
+        {contextTitle ? (
+          <h2
+            className="min-w-0 flex-1 truncate text-base font-semibold leading-tight tracking-tight text-foreground"
+            id="modal-aside-context-title"
+          >
+            {contextTitle}
+          </h2>
+        ) : (
+          <span className="min-w-0 flex-1" aria-hidden />
+        )}
+        <div className="flex shrink-0 items-center justify-end gap-1">
+          {showBack && backUrl ? (
+            <ButtonBack
+              label={resolvedBackLabel}
+              backUrl={backUrl}
+              className="px-0 md:px-3 align-top"
+            />
+          ) : null}
+          <ButtonClose closeUrl={closeUrl} className="px-0 md:px-3 align-top" />
+        </div>
       </div>
     </div>
   );

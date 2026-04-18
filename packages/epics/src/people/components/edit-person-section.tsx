@@ -64,6 +64,7 @@ export const EditPersonSection = ({
 }: EditPersonSectionProps) => {
   const tProfile = useTranslations('Profile');
   const tSpaces = useTranslations('Spaces');
+  const tModalAside = useTranslations('ModalAside');
   const baseResolver = useMemo(() => zodResolver(schemaEditPersonForm), []);
 
   const translateEditProfileError = useCallback(
@@ -205,7 +206,11 @@ export const EditPersonSection = ({
 
   return (
     <div className="flex flex-col gap-5">
-      <ModalStickyNavigation closeUrl={closeUrl} showBack={false} />
+      <ModalStickyNavigation
+        contextTitle={tModalAside('editProfile')}
+        closeUrl={closeUrl}
+        showBack={false}
+      />
       <Form {...form}>
         <form
           ref={formRef}

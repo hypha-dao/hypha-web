@@ -71,6 +71,8 @@ export type CreateAgreementFormProps = {
   backUrl?: string;
   backLabel?: string;
   label?: string;
+  /** When set, shown in sticky header instead of `label` (web3 submission still uses `label`). */
+  stickyHeaderTitle?: string;
   progress: number;
 };
 
@@ -85,6 +87,7 @@ export function CreateAgreementBaseFields({
   backUrl,
   backLabel,
   label,
+  stickyHeaderTitle,
   progress,
 }: CreateAgreementFormProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
@@ -350,15 +353,23 @@ export function CreateAgreementBaseFields({
     <>
       {/* Sticky header: compact toolbar row (fixed height) like legacy layout, then avatar + badges + title */}
       <div className="sticky top-0 z-[5] -mx-4 mb-4 border-b border-border/90 bg-background-2/95 backdrop-blur-md supports-[backdrop-filter]:bg-background-2/80 lg:-mx-7">
-        <div className="flex h-11 shrink-0 items-center justify-end gap-1 border-b border-border/80 px-4 lg:px-7">
-          {backUrl && (
-            <ButtonBack
-              label={resolvedBackLabel}
-              backUrl={backUrl}
+        <div className="flex min-h-11 shrink-0 items-center gap-2 border-b border-border/80 px-4 lg:px-7">
+          <h2 className="min-w-0 flex-1 truncate text-base font-semibold leading-tight tracking-tight text-foreground">
+            {stickyHeaderTitle ?? resolvedLabel}
+          </h2>
+          <div className="flex shrink-0 items-center justify-end gap-1">
+            {backUrl && (
+              <ButtonBack
+                label={resolvedBackLabel}
+                backUrl={backUrl}
+                className="px-0 md:px-3 align-top"
+              />
+            )}
+            <ButtonClose
+              closeUrl={closeUrl}
               className="px-0 md:px-3 align-top"
             />
-          )}
-          <ButtonClose closeUrl={closeUrl} className="px-0 md:px-3 align-top" />
+          </div>
         </div>
         <div className="px-4 pb-3 pt-3 lg:px-7">
           <div className="flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-2">
@@ -372,9 +383,6 @@ export function CreateAgreementBaseFields({
               <div className="flex w-full min-w-0">
                 <div className="flex flex-col w-full justify-between gap-4">
                   <div className="flex flex-row flex-wrap items-center gap-x-2 gap-y-2">
-                    <Badge className="w-fit" colorVariant="accent">
-                      {resolvedLabel}
-                    </Badge>
                     {isDelegate && (
                       <Badge
                         variant="outline"

@@ -38,6 +38,7 @@ export const ProfileTransferFunds = ({
   personSlug,
 }: ProfileTransferFundsProps) => {
   const tActions = useTranslations('ProfileActions');
+  const tModalAside = useTranslations('ModalAside');
   const { assets, manualUpdate } = useUserAssets({
     personSlug,
     refreshInterval: 10000,
@@ -61,6 +62,7 @@ export const ProfileTransferFunds = ({
     <ProposalOverlayShell>
       <div className="flex flex-col gap-5">
         <ModalStickyNavigation
+          contextTitle={tModalAside('transferFunds')}
           closeUrl={`/${lang}/profile/${personSlug}`}
           backUrl={`/${lang}/profile/${personSlug}/actions`}
           backLabel={tActions('backToActions')}

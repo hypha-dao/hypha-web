@@ -26,6 +26,7 @@ const MIGRATE_HYPHA_TOKENS_URL = 'https://hypha-react-demo.vercel.app';
 export default function ProfileWallet() {
   const tProfile = useTranslations('Profile');
   const tActions = useTranslations('ProfileActions');
+  const tModalAside = useTranslations('ModalAside');
   const { lang, personSlug: personSlugRaw } = useParams<ProfilePageParams>();
   const personSlug = tryDecodeUriPart(personSlugRaw);
   const { person } = useMemberBySlug(personSlug);
@@ -91,6 +92,7 @@ export default function ProfileWallet() {
     <ProposalOverlayShell>
       <div className="flex flex-col gap-5">
         <ModalStickyNavigation
+          contextTitle={tModalAside('profileActions')}
           closeUrl={`/${lang}/profile/${personSlug}`}
           backToParent
         />

@@ -122,6 +122,7 @@ export const SpaceForm = ({
   }
 
   const tSpaces = useTranslations('Spaces');
+  const tModalAside = useTranslations('ModalAside');
 
   const resolvedSubmitLabel = submitLabel ?? tSpaces('createSpace');
   const resolvedSubmitLoadingLabel = submitLoadingLabel ?? tSpaces('creating');
@@ -395,6 +396,17 @@ export const SpaceForm = ({
     }
   }, [label, tSpaces]);
 
+  const modalContextTitle = React.useMemo(() => {
+    switch (label) {
+      case 'add':
+        return tModalAside('addSpace');
+      case 'create':
+        return tModalAside('createSpace');
+      case 'configure':
+        return tModalAside('configureSpace');
+    }
+  }, [label, tModalAside]);
+
   return (
     <Form {...form}>
       <form
@@ -433,6 +445,7 @@ export const SpaceForm = ({
         className={clsx('flex flex-col gap-5', isLoading && 'opacity-50')}
       >
         <ModalStickyNavigation
+          contextTitle={modalContextTitle}
           closeUrl={closeUrl}
           backUrl={backUrl}
           backLabel={backLabel}
