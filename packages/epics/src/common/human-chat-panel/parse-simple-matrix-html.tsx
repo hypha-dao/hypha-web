@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { useState } from 'react';
 
 import { cn } from '@hypha-platform/ui-utils';
@@ -109,12 +110,18 @@ function SpoilerSpan({ children }: { children: React.ReactNode }) {
 export function renderSimpleHtmlNodes(
   nodes: SimpleHtmlNode[],
   keyPrefix = '',
+  /** Rewrite plain text segments (e.g. resolve `@user:host` Matrix IDs to display names). */
+  transformText?: (fragment: string) => ReactNode,
 ): React.ReactNode[] {
   return nodes.map((n, i) => {
     const k = `${keyPrefix}${i}`;
     switch (n.type) {
       case 'text':
-        return <span key={k}>{n.value}</span>;
+        return (
+          <span key={k}>
+            {transformText ? transformText(n.value) : n.value}
+          </span>
+        );
       case 'linebreak':
         return <br key={k} />;
       case 'code':
@@ -129,25 +136,25 @@ export function renderSimpleHtmlNodes(
       case 'bold':
         return (
           <strong key={k} className="font-semibold">
-            {renderSimpleHtmlNodes(n.children, `${k}-`)}
+            {renderSimpleHtmlNodes(n.children, `${k}-`, transformText)}
           </strong>
         );
       case 'italic':
         return (
           <em key={k} className="italic">
-            {renderSimpleHtmlNodes(n.children, `${k}-`)}
+            {renderSimpleHtmlNodes(n.children, `${k}-`, transformText)}
           </em>
         );
       case 'strike':
         return (
           <del key={k} className="line-through opacity-90">
-            {renderSimpleHtmlNodes(n.children, `${k}-`)}
+            {renderSimpleHtmlNodes(n.children, `${k}-`, transformText)}
           </del>
         );
       case 'spoiler':
         return (
           <SpoilerSpan key={k}>
-            {renderSimpleHtmlNodes(n.children, `${k}-`)}
+            {renderSimpleHtmlNodes(n.children, `${k}-`, transformText)}
           </SpoilerSpan>
         );
       case 'blockquote':
@@ -156,7 +163,7 @@ export function renderSimpleHtmlNodes(
             key={k}
             className="my-0.5 block border-l-2 border-muted-foreground/40 pl-2 text-muted-foreground"
           >
-            {renderSimpleHtmlNodes(n.children, `${k}-`)}
+            {renderSimpleHtmlNodes(n.children, `${k}-`, transformText)}
           </span>
         );
       default:
@@ -165,7 +172,13 @@ export function renderSimpleHtmlNodes(
   });
 }
 
-export function ChatMessageRichText({ html }: { html: string }) {
+export function ChatMessageRichText({
+  html,
+  transformText,
+}: {
+  html: string;
+  transformText?: (fragment: string) => ReactNode;
+}) {
   const nodes = parseSimpleMatrixHtml(html);
-  return <>{renderSimpleHtmlNodes(nodes)}</>;
+  return <>{renderSimpleHtmlNodes(nodes, '', transformText)}</>;
 }
