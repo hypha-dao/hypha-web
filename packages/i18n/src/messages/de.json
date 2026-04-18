@@ -1668,6 +1668,8 @@
     "composerAttachFile": "Datei",
     "composerDropPrompt": "Dateien hier ablegen zum Anhängen",
     "mentionNotAvailable": "Erwähnungen (demnächst)",
+    "mentionNoMembers": "Noch keine Mitglieder geladen — kurz später erneut versuchen",
+    "mentionListLabel": "Jemanden erwähnen",
     "composerVoiceRecord": "Sprachnachricht aufnehmen",
     "composerVoiceStop": "Aufnahme beenden",
     "composerMicMenu": "Stimme und Diktat",
