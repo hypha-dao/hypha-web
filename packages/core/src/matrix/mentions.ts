@@ -10,10 +10,43 @@ export const MATRIX_MENTIONS_FIELD = 'm.mentions' as const;
  * Match `@localpart:homeserver` Matrix IDs in plaintext (`body`, composer).
  * Export for UI mention pills (must not truncate at the first `:` inside localpart).
  *
+ * The homeserver segment may itself contain `:` (bridged / Privy-style locals). The
+ * capture can still greedily absorb a **sentence punctuation** colon after the server
+ * (e.g. `@alice:matrix.org: hello`) — normalize with {@link normalizePlainTextMxidCapture}.
+ *
  * Clone with `new RegExp(MATRIX_MXID_IN_PLAIN_TEXT.source, 'g')` before `.exec` loops.
  */
 export const MATRIX_MXID_IN_PLAIN_TEXT =
   /@([A-Za-z0-9._=\-/]+:[A-Za-z0-9.\-:\[\]]+(?::\d+)?)/g;
+
+/**
+ * Strip a trailing `:` wrongly included in the regex capture when it is **sentence
+ * punctuation** before whitespace or clause punctuation — not part of the MXID (e.g.
+ * bridged locals or `:port`).
+ */
+export function normalizePlainTextMxidCaptureFromMatch(
+  mid: string,
+  plain: string,
+  matchStart: number,
+  /** Full `@…` match length from `MATRIX_MXID_IN_PLAIN_TEXT.exec` (`m[0].length`). */
+  matchLen: number,
+): string {
+  const after = plain.slice(matchStart + matchLen);
+  const punctuationBoundary =
+    after.length === 0 || /^\s/.test(after) || /^[.,!?;]/.test(after);
+  if (!punctuationBoundary || !mid.endsWith(':')) return mid;
+
+  let m = mid;
+  while (m.endsWith(':')) {
+    const without = m.slice(0, -1);
+    /** `:8448` style port — do not strip the colon before digits. */
+    if (/:\d+$/.test(without)) break;
+    m = without;
+    /** Stop once we removed the stray punctuation colon (single strip is enough for `@user:hs: hello`). */
+    break;
+  }
+  return m;
+}
 
 export function isLikelyMatrixUserId(id: string): boolean {
   return /^@[^\s:]+:.+/.test(id);
@@ -28,7 +61,13 @@ export function extractMentionUserIdsFromPlainBody(plain: string): string[] {
   let m: RegExpExecArray | null;
   const re = new RegExp(MATRIX_MXID_IN_PLAIN_TEXT.source, 'g');
   while ((m = re.exec(plain)) !== null) {
-    const mid = m[1];
+    const rawMid = m[1] ?? '';
+    const mid = normalizePlainTextMxidCaptureFromMatch(
+      rawMid,
+      plain,
+      m.index,
+      m[0].length,
+    );
     if (!mid) continue;
     const full = `@${mid}`;
     if (!isLikelyMatrixUserId(full)) continue;
