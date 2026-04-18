@@ -23,7 +23,7 @@ import {
   Video,
   Mic,
   AudioLines,
-  Square,
+  StopCircle,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -1558,7 +1558,9 @@ export function HumanChatPanelChatBar({
                   type="button"
                   className={cn(
                     iconButtonClass,
-                    'text-destructive hover:bg-destructive/10 hover:text-destructive',
+                    'relative text-destructive shadow-sm ring-1 ring-inset ring-destructive/25',
+                    'bg-destructive/[0.07] hover:bg-destructive/14 hover:text-destructive',
+                    'hover:ring-destructive/35 active:bg-destructive/20',
                   )}
                   aria-label={t('composerMicStop')}
                   title={t('composerMicStop')}
@@ -1567,9 +1569,10 @@ export function HumanChatPanelChatBar({
                     if (isDictating) stopDictation();
                   }}
                 >
-                  <Square
-                    className="h-3.5 w-3.5 fill-current"
-                    strokeWidth={2}
+                  <StopCircle
+                    className="h-[18px] w-[18px]"
+                    strokeWidth={2.25}
+                    aria-hidden
                   />
                 </button>
               ) : (
