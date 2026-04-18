@@ -365,6 +365,8 @@ export function HumanChatPanelChatBar({
     top: number;
     left: number;
   } | null>(null);
+  /** While true, user is dragging a selection — hide format bar until pointerup. */
+  const pointerSelectingRef = useRef(false);
   const [composerDragDepth, setComposerDragDepth] = useState(0);
   const isComposerDropActive = composerDragDepth > 0;
 
@@ -372,6 +374,9 @@ export function HumanChatPanelChatBar({
     const el = textareaRef.current;
     if (!el || document.activeElement !== el) {
       setSelectionBar(null);
+      return;
+    }
+    if (pointerSelectingRef.current) {
       return;
     }
     const start = el.selectionStart ?? 0;
@@ -397,6 +402,22 @@ export function HumanChatPanelChatBar({
       left: local.left + (taRect.left - wrapRect.left),
     });
   }, [colonOpen]);
+
+  useEffect(() => {
+    const endPointerSelect = () => {
+      if (!pointerSelectingRef.current) return;
+      pointerSelectingRef.current = false;
+      requestAnimationFrame(() => {
+        updateSelectionBar();
+      });
+    };
+    window.addEventListener('pointerup', endPointerSelect);
+    window.addEventListener('pointercancel', endPointerSelect);
+    return () => {
+      window.removeEventListener('pointerup', endPointerSelect);
+      window.removeEventListener('pointercancel', endPointerSelect);
+    };
+  }, [updateSelectionBar]);
 
   const autoResize = useCallback(() => {
     if (textareaRef.current) {
@@ -1417,6 +1438,11 @@ export function HumanChatPanelChatBar({
         <textarea
           ref={textareaRef}
           value={value}
+          onPointerDown={(e) => {
+            if (e.button !== 0) return;
+            pointerSelectingRef.current = true;
+            setSelectionBar(null);
+          }}
           onChange={(e) => {
             onChange(e.target.value);
             autoResize();
@@ -1427,7 +1453,6 @@ export function HumanChatPanelChatBar({
           onSelect={(e) => {
             const el = e.currentTarget;
             syncColonState(el.value, el.selectionStart ?? 0);
-            updateSelectionBar();
           }}
           onKeyUp={updateSelectionBar}
           onMouseUp={updateSelectionBar}
