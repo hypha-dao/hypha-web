@@ -48,6 +48,10 @@ import {
   looksLikeAudioMimeOrName,
   looksLikeVideoMimeOrName,
 } from './chat-panel-media-types';
+import {
+  ChatVoiceAudioRow,
+  useDraftVoiceDuration,
+} from './human-chat-panel-voice-audio-row';
 
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
 
@@ -152,6 +156,29 @@ function newAttachmentDraftId(): string {
     return globalThis.crypto.randomUUID();
   }
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function DraftVoicePreview({
+  previewUrl,
+  voiceLabel,
+  unknownDurationLabel,
+}: {
+  previewUrl: string;
+  voiceLabel: string;
+  unknownDurationLabel: string;
+}) {
+  const durationLabel = useDraftVoiceDuration({
+    objectUrl: previewUrl,
+    fallbackLabel: unknownDurationLabel,
+  });
+  return (
+    <ChatVoiceAudioRow
+      audioSrc={previewUrl}
+      durationLabel={durationLabel}
+      voiceLabel={voiceLabel}
+      variant="draft"
+    />
+  );
 }
 
 function ChatDraftVideoPreview({
@@ -1190,9 +1217,17 @@ export function HumanChatPanelChatBar({
               {draftAttachments.map((att) => (
                 <div
                   key={att.id}
-                  className="relative flex w-[168px] shrink-0 flex-col gap-1 rounded-lg border border-border bg-muted/40 p-1.5"
+                  className={cn(
+                    'relative flex shrink-0 flex-col gap-1 rounded-lg border border-border bg-muted/40 p-1.5',
+                    att.kind === 'audio' ? 'w-[220px]' : 'w-[168px]',
+                  )}
                 >
-                  <div className="relative h-24 w-full shrink-0 overflow-hidden rounded-md bg-background">
+                  <div
+                    className={cn(
+                      'relative w-full shrink-0 overflow-hidden rounded-md bg-background',
+                      att.kind === 'audio' ? 'min-h-[52px]' : 'h-24',
+                    )}
+                  >
                     {att.kind === 'image' ? (
                       <>
                         {/* eslint-disable-next-line @next/next/no-img-element -- local object URL preview */}
@@ -1223,11 +1258,12 @@ export function HumanChatPanelChatBar({
                         spoilerBadge={t('draftSpoilerTag')}
                       />
                     ) : att.kind === 'audio' ? (
-                      <div className="flex h-full flex-col items-center justify-center gap-1 bg-muted/60 text-muted-foreground">
-                        <AudioLines className="h-8 w-8" strokeWidth={1.25} />
-                        <span className="px-1 text-center text-[10px] leading-tight">
-                          {t('voiceMessage')}
-                        </span>
+                      <div className="flex h-full min-h-[52px] items-center px-1 py-1">
+                        <DraftVoicePreview
+                          previewUrl={att.previewUrl}
+                          voiceLabel={t('voiceMessage')}
+                          unknownDurationLabel="0:00"
+                        />
                       </div>
                     ) : (
                       <div className="flex h-full items-center justify-center text-muted-foreground">

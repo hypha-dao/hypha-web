@@ -13,8 +13,6 @@ import {
   ExternalLink,
   Image as ImageIcon,
   Loader2,
-  Mic,
-  Pause,
   Play,
 } from 'lucide-react';
 import {
@@ -42,6 +40,10 @@ import {
   isChatPanelAudioFile,
   isChatPanelVideoFile,
 } from './chat-panel-media-types';
+import {
+  ChatVoiceAudioRow,
+  formatVoiceDurationLabel,
+} from './human-chat-panel-voice-audio-row';
 
 type Reaction = {
   emoji: string;
@@ -349,16 +351,6 @@ function partitionBundleSlots(slots: ChatPanelAttachmentMedia[]) {
   return { images, audios, videos, otherFiles };
 }
 
-function formatAudioDurationMs(ms: number | undefined, tShort: string): string {
-  if (ms == null || !Number.isFinite(ms) || ms <= 0) return tShort;
-  const totalSec = Math.round(ms / 1000);
-  const m = Math.floor(totalSec / 60);
-  const s = totalSec % 60;
-  return m > 0
-    ? `${m}:${String(s).padStart(2, '0')}`
-    : `0:${String(s).padStart(2, '0')}`;
-}
-
 /** Telegram-style voice / audio row with working play (native audio, not video chrome). */
 function TimelineVoiceSlot({
   media,
@@ -369,14 +361,16 @@ function TimelineVoiceSlot({
 }) {
   const { client } = useMatrix();
   const { download: src } = useMxcUrls(client, media.mxcUrl);
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const [playing, setPlaying] = useState(false);
   const durationMs = media.mediaInfo?.duration;
 
-  const durationLabel = formatAudioDurationMs(
+  const durationLabel = formatVoiceDurationLabel(
     durationMs,
     t('voiceMessageShort'),
   );
+
+  const voiceLabel = /^voice-message-\d+\.[^.]+$/i.test(media.filename ?? '')
+    ? t('voiceMessage')
+    : media.filename ?? t('voiceMessage');
 
   if (!src) {
     return (
@@ -387,50 +381,12 @@ function TimelineVoiceSlot({
   }
 
   return (
-    <div
-      className="mt-1 flex max-w-[min(320px,85vw)] items-center gap-2 rounded-full border border-border bg-muted/50 py-1.5 pl-2 pr-3"
-      data-testid="chat-message-media-audio"
-    >
-      <button
-        type="button"
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
-        aria-label={playing ? t('voicePause') : t('voicePlay')}
-        title={playing ? t('voicePause') : t('voicePlay')}
-        onClick={() => {
-          const el = audioRef.current;
-          if (!el) return;
-          if (playing) {
-            el.pause();
-          } else {
-            void el.play().catch(() => {});
-          }
-        }}
-      >
-        {playing ? (
-          <Pause className="h-4 w-4" fill="currentColor" aria-hidden />
-        ) : (
-          <Play className="ml-0.5 h-4 w-4" fill="currentColor" aria-hidden />
-        )}
-      </button>
-      <Mic className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-xs font-medium text-foreground">
-          {/^voice-message-\d+\.[^.]+$/i.test(media.filename ?? '')
-            ? t('voiceMessage')
-            : media.filename ?? t('voiceMessage')}
-        </p>
-        <p className="text-[10px] text-muted-foreground tabular-nums">
-          {durationLabel}
-        </p>
-      </div>
-      <audio
-        ref={audioRef}
-        src={src}
-        preload="metadata"
-        className="hidden"
-        onPlay={() => setPlaying(true)}
-        onPause={() => setPlaying(false)}
-        onEnded={() => setPlaying(false)}
+    <div className="mt-1" data-testid="chat-message-media-audio">
+      <ChatVoiceAudioRow
+        audioSrc={src}
+        durationLabel={durationLabel}
+        voiceLabel={voiceLabel}
+        variant="timeline"
       />
     </div>
   );
