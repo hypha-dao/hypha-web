@@ -109,6 +109,7 @@ export const SelectActivateAction = ({
     <SelectAction
       title={t('title')}
       content={t('content')}
+      showTitle={false}
       actions={SELECT_ACTIVATE_ACTIONS.map((action) => {
         const href = computeHref(action);
         return {

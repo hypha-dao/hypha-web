@@ -99,6 +99,7 @@ export default function ProfileWallet() {
         <SelectAction
           title={tProfile('actions')}
           content={tActions('content')}
+          showTitle={false}
           actions={WALLET_ACTIONS.map((action) => ({
             ...action,
             href:
