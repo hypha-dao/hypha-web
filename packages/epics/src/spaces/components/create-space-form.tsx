@@ -17,7 +17,6 @@ import {
   MultiSelect,
   RequirementMark,
   Card,
-  Badge,
   COMBOBOX_TITLE,
   COMBOBOX_DELIMITER,
 } from '@hypha-platform/ui';
@@ -47,7 +46,8 @@ import {
   useMemberWeb3SpaceIds,
   useScrollToErrors,
   useFilterSpacesListWithDiscoverability,
-  ModalStickyNavigation,
+  ButtonBack,
+  ButtonClose,
 } from '@hypha-platform/epics';
 import slugify from 'slugify';
 import { cn } from '@hypha-platform/ui-utils';
@@ -385,17 +385,6 @@ export const SpaceForm = ({
     });
   }, [form, tSpaces]);
 
-  const labelText = React.useMemo(() => {
-    switch (label) {
-      case 'add':
-        return tSpaces('addSpace');
-      case 'create':
-        return tSpaces('createSpace');
-      case 'configure':
-        return tSpaces('configureSpace');
-    }
-  }, [label, tSpaces]);
-
   const modalContextTitle = React.useMemo(() => {
     switch (label) {
       case 'add':
@@ -444,47 +433,52 @@ export const SpaceForm = ({
         )}
         className={clsx('flex flex-col gap-5', isLoading && 'opacity-50')}
       >
-        <ModalStickyNavigation
-          contextTitle={modalContextTitle}
-          closeUrl={closeUrl}
-          backUrl={backUrl}
-          backLabel={backLabel}
-          showBack={Boolean(backUrl)}
-        />
-        <div className="flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-2">
-          <div className="flex flex-grow gap-3">
-            <FormField
-              control={form.control}
-              name="logoUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <UploadAvatar
-                      {...field}
-                      maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
-                      defaultImage={
-                        typeof values?.logoUrl === 'string'
-                          ? values?.logoUrl
-                          : typeof defaultValues?.logoUrl === 'string'
-                          ? defaultValues?.logoUrl
-                          : undefined
-                      }
-                      required={true}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="flex flex-col w-full">
-              <div className="flex flex-row w-full">
-                <Badge className="w-fit" colorVariant="accent">
-                  {labelText}
-                </Badge>
-                <div className="flex grow"></div>
-              </div>
-              <div className="flex flex-row w-full">
-                <div className="flex flex-col w-full">
+        <div className="sticky top-0 z-[5] -mx-4 mb-4 border-b border-border/90 bg-background-2/95 backdrop-blur-md supports-[backdrop-filter]:bg-background-2/80 lg:-mx-7">
+          <div className="flex min-h-11 shrink-0 items-center gap-2 border-b border-border/80 px-4 lg:px-7">
+            <h2 className="min-w-0 flex-1 truncate text-base font-semibold leading-tight tracking-tight text-foreground">
+              {modalContextTitle}
+            </h2>
+            <div className="flex shrink-0 items-center justify-end gap-1">
+              {backUrl ? (
+                <ButtonBack
+                  label={backLabel}
+                  backUrl={backUrl}
+                  className="px-0 md:px-3 align-top"
+                />
+              ) : null}
+              <ButtonClose
+                closeUrl={closeUrl}
+                className="px-0 md:px-3 align-top"
+              />
+            </div>
+          </div>
+          <div className="px-4 pb-3 pt-3 lg:px-7">
+            <div className="flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-2">
+              <div className="flex flex-grow gap-3">
+                <FormField
+                  control={form.control}
+                  name="logoUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <UploadAvatar
+                          {...field}
+                          maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
+                          defaultImage={
+                            typeof values?.logoUrl === 'string'
+                              ? values?.logoUrl
+                              : typeof defaultValues?.logoUrl === 'string'
+                              ? defaultValues?.logoUrl
+                              : undefined
+                          }
+                          required={true}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex min-w-0 flex-1 flex-col w-full">
                   <FormField
                     control={form.control}
                     name="title"
@@ -494,7 +488,7 @@ export const SpaceForm = ({
                           <Input
                             rightIcon={!field.value && <RequirementMark />}
                             placeholder={tSpaces('nameYourSpace')}
-                            className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
+                            className="border-0 bg-inherit p-0 text-4 font-semibold tracking-tight placeholder:text-muted-foreground placeholder:font-normal"
                             disabled={isLoading}
                             {...field}
                             onChange={(
@@ -520,7 +514,7 @@ export const SpaceForm = ({
                       )}
                     />
                   )}
-                  <span className="flex items-center">
+                  <span className="flex items-center mt-1">
                     <Text className="text-1 text-foreground mr-1">
                       {tSpaces('createdBy')}
                     </Text>
@@ -532,6 +526,7 @@ export const SpaceForm = ({
               </div>
             </div>
           </div>
+          <Separator />
         </div>
         <FormField
           control={form.control}
