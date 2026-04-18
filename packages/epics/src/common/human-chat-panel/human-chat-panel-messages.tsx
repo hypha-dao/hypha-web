@@ -344,7 +344,7 @@ export function HumanChatPanelMessages({
             </p>
             <Button
               type="button"
-              variant="secondary"
+              variant="outline"
               size="sm"
               className="h-7 shrink-0 border-0 bg-primary-foreground/15 text-xs text-primary-foreground hover:bg-primary-foreground/25"
               onClick={() => {

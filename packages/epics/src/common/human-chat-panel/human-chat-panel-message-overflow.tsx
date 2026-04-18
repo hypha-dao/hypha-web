@@ -330,7 +330,6 @@ export function HumanChatPanelMessageOverflow({
   const quickEmojis = useQuickReactions();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [contextMenuOpen, setContextMenuOpen] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -425,7 +424,15 @@ export function HumanChatPanelMessageOverflow({
     <MenuSections
       {...menuPropsBase}
       onAfterAddReaction={undefined}
-      onAfterQuickReaction={() => setContextMenuOpen(false)}
+      onAfterQuickReaction={() => {
+        window.dispatchEvent(
+          new KeyboardEvent('keydown', {
+            key: 'Escape',
+            code: 'Escape',
+            bubbles: true,
+          }),
+        );
+      }}
       Sub={ContextMenuSub}
       SubTrigger={ContextMenuSubTrigger}
       SubContent={ContextMenuSubContent}
@@ -478,7 +485,7 @@ export function HumanChatPanelMessageOverflow({
 
   return (
     <>
-      <ContextMenu open={contextMenuOpen} onOpenChange={setContextMenuOpen}>
+      <ContextMenu>
         <ContextMenuTrigger asChild>{rowInner}</ContextMenuTrigger>
         <ContextMenuContent className="min-w-[220px] p-1">
           {contextMenu}

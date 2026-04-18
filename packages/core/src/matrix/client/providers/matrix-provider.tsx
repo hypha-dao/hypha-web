@@ -1206,7 +1206,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       if (!room) {
         throw new Error('Room not found');
       }
-      await client.setRoomReadMarkers(roomId, eventId, eventId);
+      await client.setRoomReadMarkersHttpRequest(roomId, eventId, eventId);
     },
     [client],
   );

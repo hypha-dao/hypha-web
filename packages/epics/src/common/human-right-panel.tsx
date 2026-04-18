@@ -1017,7 +1017,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       };
     }
     const room = client.getRoom(roomId);
-    return computeHumanChatUnreadState(room, currentUserId);
+    return computeHumanChatUnreadState(room ?? undefined, currentUserId);
   }, [
     client,
     roomId,
@@ -1035,6 +1035,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     const timeline = room.getLiveTimeline().getEvents();
     for (let i = timeline.length - 1; i >= 0; i--) {
       const ev = timeline[i];
+      if (!ev) continue;
       if (ev.getType() !== EventType.RoomMessage) continue;
       const id = ev.getId();
       if (!id || !ev.getSender()) continue;
