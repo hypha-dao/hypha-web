@@ -14,7 +14,6 @@ export default function AsideCreateAgreementPage() {
         showKeepWindowOpenMessage={true}
         keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
         fullHeight={true}
-        fullHeightVariant="responsive-modal-shell"
         progress={0}
         isLoading={true}
         message={<></>}
