@@ -5,6 +5,28 @@ import { useEffect } from 'react';
 import { AsideOverlayLayoutProvider } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
+/** Reference-counted body scroll lock for desktop modal stacks — avoids stomping other overlays. */
+let activeDesktopBodyLocks = 0;
+let previousBodyOverflow: string | undefined;
+
+const lockBodyScroll = () => {
+  if (activeDesktopBodyLocks === 0) {
+    previousBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+  }
+  activeDesktopBodyLocks += 1;
+};
+
+const unlockBodyScroll = () => {
+  if (activeDesktopBodyLocks === 0) return;
+
+  activeDesktopBodyLocks -= 1;
+  if (activeDesktopBodyLocks === 0) {
+    document.body.style.overflow = previousBodyOverflow ?? '';
+    previousBodyOverflow = undefined;
+  }
+};
+
 type ProposalOverlayShellProps = {
   children: ReactNode;
   className?: string;
@@ -24,14 +46,27 @@ export function ProposalOverlayShell({
 }: ProposalOverlayShellProps) {
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 768px)');
+    let isBodyScrollLocked = false;
+
     const sync = () => {
-      document.body.style.overflow = mq.matches ? 'hidden' : '';
+      if (mq.matches && !isBodyScrollLocked) {
+        lockBodyScroll();
+        isBodyScrollLocked = true;
+      }
+
+      if (!mq.matches && isBodyScrollLocked) {
+        unlockBodyScroll();
+        isBodyScrollLocked = false;
+      }
     };
+
     sync();
     mq.addEventListener('change', sync);
     return () => {
       mq.removeEventListener('change', sync);
-      document.body.style.overflow = '';
+      if (isBodyScrollLocked) {
+        unlockBodyScroll();
+      }
     };
   }, []);
 
