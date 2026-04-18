@@ -454,9 +454,18 @@ export function HumanChatPanelChatBar({
   const [voiceError, setVoiceError] = useState<string | null>(null);
   /** When true, `MediaRecorder` stop should add an audio draft; when false (dictation), discard blob. */
   const voiceAsAttachmentRef = useRef(false);
+  /** When true, drop the next voice blob from MediaRecorder `onstop` (user sent text instead). */
+  const discardVoiceDraftIfIdleRef = useRef(false);
   const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
   /** Composer text before this dictation session (final + interim are appended live). */
   const dictationPrefixRef = useRef('');
+  /**
+   * When aborting SpeechRecognition for send, `onend`/`onerror` must not call `onChange`
+   * or they would repopulate the composer after `setInput('')` in the parent.
+   */
+  const dictationInterruptForSendRef = useRef(false);
+  /** Avoid duplicate finalize if both `onerror` and `onend` run after abort. */
+  const dictationSessionFinalizedRef = useRef(false);
   const [isDictating, setIsDictating] = useState(false);
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const valueRef = useRef(value);
@@ -836,23 +845,6 @@ export function HumanChatPanelChatBar({
     (value.trim().length > 0 || draftAttachments.length > 0) &&
     (!editMediaMode || draftAttachments.length > 0);
 
-  const handleAttachMenuContentEnter = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key !== 'Enter' || e.shiftKey) return;
-      const ne = e.nativeEvent as KeyboardEvent;
-      if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
-        return;
-      }
-      e.preventDefault();
-      e.stopPropagation();
-      setAttachMenuOpen(false);
-      if (canSend) {
-        onSend();
-      }
-    },
-    [canSend, draftAttachments.length, onSend],
-  );
-
   const focusComposerTextarea = useCallback(() => {
     requestAnimationFrame(() => {
       const el = textareaRef.current;
@@ -877,156 +869,6 @@ export function HumanChatPanelChatBar({
       focusComposerTextarea();
     }
   }, [draftAttachments.length, focusComposerTextarea]);
-
-  /**
-   * Enter only bubbles to `textarea` when it is focused. After interacting with
-   * draft cards (spoiler/delete), focus can stay in the attachment strip — still
-   * send on Enter when there is something to send (e.g. voice-only).
-   */
-  const handleDraftAttachmentsKeyDownCapture = useCallback(
-    (e: React.KeyboardEvent<HTMLDivElement>) => {
-      if (e.key !== 'Enter' || e.shiftKey) return;
-      const ne = e.nativeEvent as KeyboardEvent;
-      if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
-        return;
-      }
-      if (
-        atOpen ||
-        colonOpen ||
-        colonSuggestions.length > 0 ||
-        atSuggestions.length > 0
-      )
-        return;
-      if (!canSend) return;
-      e.preventDefault();
-      onSend();
-    },
-    [
-      atOpen,
-      colonOpen,
-      colonSuggestions.length,
-      atSuggestions.length,
-      canSend,
-      draftAttachments.length,
-      onSend,
-    ],
-  );
-
-  /**
-   * Enter often targets the attach (+) or mic trigger after menus/files — send from
-   * anywhere in the composer shell unless a popover menu is open.
-   */
-  const handleComposerShellKeyDownCapture = useCallback(
-    (e: React.KeyboardEvent<HTMLDivElement>) => {
-      if (e.key !== 'Enter' || e.shiftKey) return;
-      const ne = e.nativeEvent as KeyboardEvent;
-      if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
-        return;
-      }
-      if (
-        atOpen ||
-        colonOpen ||
-        colonSuggestions.length > 0 ||
-        atSuggestions.length > 0
-      )
-        return;
-      if (attachMenuOpen || emojiPickerOpen) return;
-      const el = e.target;
-      if (el instanceof HTMLTextAreaElement) return;
-      if (!canSend) return;
-      e.preventDefault();
-      onSend();
-    },
-    [
-      atOpen,
-      colonOpen,
-      colonSuggestions.length,
-      atSuggestions.length,
-      attachMenuOpen,
-      emojiPickerOpen,
-      canSend,
-      draftAttachments.length,
-      onSend,
-    ],
-  );
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (atOpen && atSuggestions.length > 0) {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setAtActive((i) => (i + 1) % atSuggestions.length);
-        return;
-      }
-      if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setAtActive(
-          (i) => (i - 1 + atSuggestions.length) % atSuggestions.length,
-        );
-        return;
-      }
-      if (e.key === 'Enter' || e.key === 'Tab') {
-        e.preventDefault();
-        const safeIndex = Math.max(
-          0,
-          Math.min(atActive, atSuggestions.length - 1),
-        );
-        const pick = atSuggestions[safeIndex];
-        if (pick) applyAtChoice(pick);
-        return;
-      }
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        setAtOpen(false);
-        setAtSuggestions([]);
-        atTokenRef.current = null;
-        return;
-      }
-    }
-
-    if (colonOpen && colonSuggestions.length > 0) {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setColonActive((i) => (i + 1) % colonSuggestions.length);
-        return;
-      }
-      if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setColonActive(
-          (i) => (i - 1 + colonSuggestions.length) % colonSuggestions.length,
-        );
-        return;
-      }
-      if (e.key === 'Enter' || e.key === 'Tab') {
-        e.preventDefault();
-        const safeIndex = Math.max(
-          0,
-          Math.min(colonActive, colonSuggestions.length - 1),
-        );
-        const entry = colonSuggestions[safeIndex];
-        if (entry) applyColonChoice(entry);
-        return;
-      }
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        colonRequestIdRef.current += 1;
-        setColonOpen(false);
-        setColonSuggestions([]);
-        colonTokenRef.current = null;
-        return;
-      }
-    }
-
-    if (e.key === 'Enter' && !e.shiftKey) {
-      const composing = e.nativeEvent.isComposing;
-      if (composing && !(canSend && draftAttachments.length > 0)) {
-        return;
-      }
-      e.preventDefault();
-      if (canSend) {
-        onSend();
-      }
-    }
-  };
 
   const defaultPlaceholder = channelName
     ? t('placeholderChannel', { channel: channelName })
@@ -1132,6 +974,7 @@ export function HumanChatPanelChatBar({
     }
     setVoiceError(null);
     voiceAsAttachmentRef.current = true;
+    discardVoiceDraftIfIdleRef.current = false;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaStreamRef.current = stream;
@@ -1166,6 +1009,10 @@ export function HumanChatPanelChatBar({
         const asAttach = voiceAsAttachmentRef.current;
         voiceAsAttachmentRef.current = false;
         if (!asAttach || blob.size < 256) {
+          return;
+        }
+        if (discardVoiceDraftIfIdleRef.current) {
+          discardVoiceDraftIfIdleRef.current = false;
           return;
         }
         const ext = blob.type.includes('mp4') ? 'm4a' : 'webm';
@@ -1204,18 +1051,32 @@ export function HumanChatPanelChatBar({
     const r = speechRecognitionRef.current;
     if (r) {
       try {
-        r.stop();
+        r.abort();
       } catch {
         try {
-          r.abort();
+          r.stop();
         } catch {
           // ignore
         }
       }
       speechRecognitionRef.current = null;
     }
+    dictationPrefixRef.current = '';
     setIsDictating(false);
   }, []);
+
+  const prepareSendSession = useCallback(() => {
+    dictationInterruptForSendRef.current = true;
+    discardVoiceDraftIfIdleRef.current = true;
+    voiceAsAttachmentRef.current = false;
+    stopDictation();
+    stopVoiceRecording();
+  }, [stopDictation, stopVoiceRecording]);
+
+  const sendMessage = useCallback(() => {
+    prepareSendSession();
+    onSend();
+  }, [prepareSendSession, onSend]);
 
   const startDictation = useCallback(() => {
     setVoiceError(null);
@@ -1235,12 +1096,15 @@ export function HumanChatPanelChatBar({
       stopDictation();
       return;
     }
+    dictationInterruptForSendRef.current = false;
+    dictationSessionFinalizedRef.current = false;
     dictationPrefixRef.current = stripTrailingZeroWidthSpaces(valueRef.current);
     const rec = new SR();
     rec.continuous = true;
     rec.interimResults = true;
     rec.lang = document.documentElement.lang || 'en';
     rec.onresult = (ev) => {
+      if (dictationInterruptForSendRef.current) return;
       const results = ev.results;
       const committedParts: string[] = [];
       let interimAccum = '';
@@ -1268,18 +1132,42 @@ export function HumanChatPanelChatBar({
         el.setSelectionRange(end, end);
       });
     };
-    rec.onerror = () => {
+    const finalizeDictationFromBrowser = (opts: {
+      syncValue: boolean;
+      showError: boolean;
+    }) => {
+      if (dictationSessionFinalizedRef.current) return;
+      dictationSessionFinalizedRef.current = true;
       speechRecognitionRef.current = null;
       dictationPrefixRef.current = '';
       setIsDictating(false);
-      onChange(stripTrailingZeroWidthSpaces(valueRef.current));
-      setVoiceError(t('dictationError'));
+      if (opts.syncValue) {
+        onChange(stripTrailingZeroWidthSpaces(valueRef.current));
+      }
+      if (opts.showError) {
+        setVoiceError(t('dictationError'));
+      }
+    };
+
+    rec.onerror = () => {
+      const interrupted = dictationInterruptForSendRef.current;
+      if (interrupted) {
+        dictationInterruptForSendRef.current = false;
+      }
+      finalizeDictationFromBrowser({
+        syncValue: !interrupted,
+        showError: !interrupted,
+      });
     };
     rec.onend = () => {
-      speechRecognitionRef.current = null;
-      dictationPrefixRef.current = '';
-      setIsDictating(false);
-      onChange(stripTrailingZeroWidthSpaces(valueRef.current));
+      const interrupted = dictationInterruptForSendRef.current;
+      if (interrupted) {
+        dictationInterruptForSendRef.current = false;
+      }
+      finalizeDictationFromBrowser({
+        syncValue: !interrupted,
+        showError: false,
+      });
     };
     speechRecognitionRef.current = rec;
     try {
@@ -1291,6 +1179,188 @@ export function HumanChatPanelChatBar({
       setVoiceError(t('dictationNotSupported'));
     }
   }, [isDictating, onChange, stopDictation, focusComposerTextarea, t]);
+
+  const handleAttachMenuContentEnter = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key !== 'Enter' || e.shiftKey) return;
+      const ne = e.nativeEvent as KeyboardEvent;
+      if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
+        return;
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      setAttachMenuOpen(false);
+      if (canSend) {
+        sendMessage();
+      }
+    },
+    [canSend, draftAttachments.length, sendMessage],
+  );
+
+  /**
+   * Enter only bubbles to `textarea` when it is focused. After interacting with
+   * draft cards (spoiler/delete), focus can stay in the attachment strip — still
+   * send on Enter when there is something to send (e.g. voice-only).
+   */
+  const handleDraftAttachmentsKeyDownCapture = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key !== 'Enter' || e.shiftKey) return;
+      const ne = e.nativeEvent as KeyboardEvent;
+      if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
+        return;
+      }
+      if (
+        atOpen ||
+        colonOpen ||
+        colonSuggestions.length > 0 ||
+        atSuggestions.length > 0
+      )
+        return;
+      if (!canSend) return;
+      e.preventDefault();
+      sendMessage();
+    },
+    [
+      atOpen,
+      colonOpen,
+      colonSuggestions.length,
+      atSuggestions.length,
+      canSend,
+      draftAttachments.length,
+      sendMessage,
+    ],
+  );
+
+  /**
+   * Enter often targets the attach (+) or mic trigger after menus/files — send from
+   * anywhere in the composer shell unless a popover menu is open.
+   */
+  const handleComposerShellKeyDownCapture = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key !== 'Enter' || e.shiftKey) return;
+      const ne = e.nativeEvent as KeyboardEvent;
+      if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
+        return;
+      }
+      if (
+        atOpen ||
+        colonOpen ||
+        colonSuggestions.length > 0 ||
+        atSuggestions.length > 0
+      )
+        return;
+      if (attachMenuOpen || emojiPickerOpen) return;
+      const el = e.target;
+      if (el instanceof HTMLTextAreaElement) return;
+      if (!canSend) return;
+      e.preventDefault();
+      sendMessage();
+    },
+    [
+      atOpen,
+      colonOpen,
+      colonSuggestions.length,
+      atSuggestions.length,
+      attachMenuOpen,
+      emojiPickerOpen,
+      canSend,
+      draftAttachments.length,
+      sendMessage,
+    ],
+  );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (atOpen && atSuggestions.length > 0) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setAtActive((i) => (i + 1) % atSuggestions.length);
+          return;
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setAtActive(
+            (i) => (i - 1 + atSuggestions.length) % atSuggestions.length,
+          );
+          return;
+        }
+        if (e.key === 'Enter' || e.key === 'Tab') {
+          e.preventDefault();
+          const safeIndex = Math.max(
+            0,
+            Math.min(atActive, atSuggestions.length - 1),
+          );
+          const pick = atSuggestions[safeIndex];
+          if (pick) applyAtChoice(pick);
+          return;
+        }
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          setAtOpen(false);
+          setAtSuggestions([]);
+          atTokenRef.current = null;
+          return;
+        }
+      }
+
+      if (colonOpen && colonSuggestions.length > 0) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setColonActive((i) => (i + 1) % colonSuggestions.length);
+          return;
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setColonActive(
+            (i) => (i - 1 + colonSuggestions.length) % colonSuggestions.length,
+          );
+          return;
+        }
+        if (e.key === 'Enter' || e.key === 'Tab') {
+          e.preventDefault();
+          const safeIndex = Math.max(
+            0,
+            Math.min(colonActive, colonSuggestions.length - 1),
+          );
+          const entry = colonSuggestions[safeIndex];
+          if (entry) applyColonChoice(entry);
+          return;
+        }
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          colonRequestIdRef.current += 1;
+          setColonOpen(false);
+          setColonSuggestions([]);
+          colonTokenRef.current = null;
+          return;
+        }
+      }
+
+      if (e.key === 'Enter' && !e.shiftKey) {
+        const composing = e.nativeEvent.isComposing;
+        if (composing && !(canSend && draftAttachments.length > 0)) {
+          return;
+        }
+        e.preventDefault();
+        if (canSend) {
+          sendMessage();
+        }
+      }
+    },
+    [
+      atOpen,
+      atSuggestions,
+      atActive,
+      applyAtChoice,
+      colonOpen,
+      colonSuggestions,
+      colonActive,
+      applyColonChoice,
+      canSend,
+      draftAttachments.length,
+      sendMessage,
+    ],
+  );
 
   useEffect(() => {
     return () => {
@@ -1954,7 +2024,7 @@ export function HumanChatPanelChatBar({
             </div>
             <button
               type="button"
-              onClick={onSend}
+              onClick={sendMessage}
               disabled={!canSend}
               className={cn(
                 'flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-0',
