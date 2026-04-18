@@ -42,6 +42,7 @@ export default function AsideCreateSpacePage() {
   }, [progress, spaceSlug]);
 
   const tSpaces = useTranslations('Spaces');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const tCommon = useTranslations('Common');
 
   const closeUrl = pathname.split('/').slice(0, -1).join('/') || '/';
@@ -51,6 +52,7 @@ export default function AsideCreateSpacePage() {
       <LoadingBackdrop
         fullHeight={true}
         showKeepWindowOpenMessage={true}
+        keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
         progress={progress}
         isLoading={isPending}
         message={

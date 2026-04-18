@@ -13,6 +13,7 @@ export type LoadingBackdropInnerProps = {
   progress?: number;
   className?: string;
   message?: React.ReactElement;
+  /** When true, pass localized `keepWindowOpenMessage` (no default copy in this component). */
   showKeepWindowOpenMessage?: boolean;
   keepWindowOpenMessage?: React.ReactNode;
   fullHeight?: boolean;
@@ -46,11 +47,11 @@ function ProgressCard({
         className="h-2 w-full bg-muted"
         indicatorColor="bg-accent-9"
       />
-      {showKeepWindowOpenMessage && (
+      {showKeepWindowOpenMessage && keepWindowOpenMessage ? (
         <p className="text-center text-sm font-medium leading-snug text-foreground">
           {keepWindowOpenMessage}
         </p>
-      )}
+      ) : null}
       <div className="text-center text-sm text-muted-foreground">{message}</div>
     </div>
   );
@@ -86,11 +87,11 @@ function ModalShellLoadingStatus({
         )}
         indicatorColor="bg-accent-9"
       />
-      {showKeepWindowOpenMessage && (
+      {showKeepWindowOpenMessage && keepWindowOpenMessage ? (
         <p className="text-center text-sm font-semibold leading-snug text-foreground">
           {keepWindowOpenMessage}
         </p>
-      )}
+      ) : null}
       <div className="text-center text-xs leading-relaxed text-muted-foreground">
         {message}
       </div>
@@ -105,7 +106,7 @@ export function LoadingBackdropInner({
   className,
   message,
   showKeepWindowOpenMessage = false,
-  keepWindowOpenMessage = "Keep this window open until we're finished.",
+  keepWindowOpenMessage,
   fullHeight = false,
   fullHeightVariant = 'auto',
 }: LoadingBackdropInnerProps) {

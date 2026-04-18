@@ -58,6 +58,7 @@ export const SelectCreateAction = ({
       href: '#',
       icon: <PlusCircledIcon />,
       disabled: true,
+      comingSoon: true,
     },
     {
       defaultDurationDays: 7,
@@ -66,6 +67,7 @@ export const SelectCreateAction = ({
       href: '#',
       icon: <PlusCircledIcon />,
       disabled: true,
+      comingSoon: true,
     },
     {
       defaultDurationDays: 7,

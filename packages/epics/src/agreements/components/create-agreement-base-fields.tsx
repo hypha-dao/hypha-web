@@ -219,15 +219,23 @@ export function CreateAgreementBaseFields({
     hasAppliedSpaceBannerDefaultRef.current = true;
   }, [space?.leadImage, resubmitFormData, form]);
 
-  const spaceIdBigInt = space?.web3SpaceId ? BigInt(space.web3SpaceId) : null;
+  const spaceIdBigInt =
+    typeof space?.web3SpaceId === 'number'
+      ? BigInt(space.web3SpaceId)
+      : undefined;
 
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({
     spaceId: space?.web3SpaceId as number,
   });
 
   const { duration } = useSpaceMinProposalDuration({
-    spaceId: spaceIdBigInt as bigint,
+    spaceId: spaceIdBigInt ?? 0n,
+    enabled: !!spaceIdBigInt,
   });
+
+  const durationNumber =
+    duration !== undefined && duration !== null ? Number(duration) : NaN;
+  const hasVotingDuration = Number.isFinite(durationNumber);
 
   const quorumPct =
     spaceDetails?.quorum != null ? Number(spaceDetails.quorum) : NaN;
@@ -406,7 +414,7 @@ export function CreateAgreementBaseFields({
                                 placeholder={tAgreementFlow(
                                   'createAgreementBaseFields.proposalTitlePlaceholder',
                                 )}
-                                className="!h-auto min-h-10 w-full border-0 bg-inherit p-0 py-1 text-lg font-semibold leading-snug tracking-tight text-foreground !placeholder:text-base placeholder:font-medium placeholder:leading-snug placeholder:text-muted-foreground/80 sm:min-h-11 sm:text-xl sm:!placeholder:text-lg"
+                                className="!h-auto min-h-10 w-full border-0 bg-inherit p-0 py-1 text-lg font-semibold leading-snug tracking-tight text-foreground placeholder:!text-base placeholder:font-medium placeholder:leading-snug placeholder:text-muted-foreground/80 sm:min-h-11 sm:text-xl sm:placeholder:!text-lg"
                                 disabled={isLoading}
                                 rightIcon={
                                   <RequirementMark className="h-4 w-4 text-muted-foreground sm:h-4 sm:w-4" />
@@ -422,7 +430,7 @@ export function CreateAgreementBaseFields({
                         {creator?.name} {creator?.surname}
                       </Text>
                     </div>
-                    {Number(duration) === 0 ? (
+                    {hasVotingDuration && durationNumber === 0 ? (
                       <div className="flex gap-2 h-fit items-center pr-3">
                         <Image
                           className="max-w-[32px] max-h-[32px] min-w-[32px] min-h-[32px]"
@@ -450,7 +458,7 @@ export function CreateAgreementBaseFields({
                           ) : null}
                         </div>
                       </div>
-                    ) : (
+                    ) : hasVotingDuration ? (
                       <div className="flex gap-2 h-fit items-center pr-3">
                         <Image
                           className="max-w-[32px] max-h-[32px] min-w-[32px] min-h-[32px]"
@@ -470,7 +478,7 @@ export function CreateAgreementBaseFields({
                             {tAgreementFlow(
                               'createAgreementBaseFields.toVote',
                               {
-                                duration: formatDuration(Number(duration)),
+                                duration: formatDuration(durationNumber),
                               },
                             )}
                           </span>
@@ -481,7 +489,7 @@ export function CreateAgreementBaseFields({
                           ) : null}
                         </div>
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               </div>

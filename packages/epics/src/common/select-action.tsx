@@ -4,6 +4,7 @@ import { Card, Separator, Skeleton, TextWithLinks } from '@hypha-platform/ui';
 import clsx from 'clsx';
 import Link from 'next/link';
 import React from 'react';
+import { useTranslations } from 'next-intl';
 
 export type ActionProps = {
   title: string;
@@ -14,6 +15,8 @@ export type ActionProps = {
   baseTab?: string;
   icon: React.ReactNode;
   disabled?: boolean;
+  /** True when this action is disabled pending release; do not infer from title text (i18n). */
+  comingSoon?: boolean;
   target?: string;
   defaultDurationDays?: number;
   onAction?: () => void;
@@ -41,6 +44,7 @@ export const SelectAction = ({
   children,
   showTitle = true,
 }: SelectActionProps) => {
+  const tCommon = useTranslations('Common');
   const groupedActions = React.useMemo(
     () =>
       actions?.reduce<GroupedActions>((groups, action) => {
@@ -97,8 +101,7 @@ export const SelectAction = ({
                   action.onAction();
                 }
               };
-              const comingSoon =
-                action.disabled && /\bcoming soon\b/i.test(action.title ?? '');
+              const comingSoon = action.disabled && action.comingSoon === true;
               const card = (
                 <Card
                   className={clsx(
@@ -130,7 +133,7 @@ export const SelectAction = ({
                       {action.title}
                       {comingSoon ? (
                         <span className="rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                          Soon
+                          {tCommon('comingSoonBadge')}
                         </span>
                       ) : null}
                     </span>
