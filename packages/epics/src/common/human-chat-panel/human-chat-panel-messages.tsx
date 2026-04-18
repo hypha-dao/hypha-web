@@ -150,6 +150,9 @@ type HumanChatPanelMessagesProps = {
   onReachedTimelineBottom?: () => void;
   /** User clicked “Mark as read” in the banner. */
   onMarkAsReadFromBanner?: () => void;
+  /** Scroll this Matrix event id into view when set (e.g. mention inbox). */
+  scrollTargetEventId?: string | null;
+  onConsumedScrollTarget?: () => void;
 };
 
 export function HumanChatPanelMessages({
@@ -169,6 +172,8 @@ export function HumanChatPanelMessages({
   unreadNotificationCount = 0,
   onReachedTimelineBottom,
   onMarkAsReadFromBanner,
+  scrollTargetEventId,
+  onConsumedScrollTarget,
 }: HumanChatPanelMessagesProps) {
   const t = useTranslations('HumanChatPanel');
   const formatter = useFormatter();
@@ -296,6 +301,21 @@ export function HumanChatPanelMessages({
     prevLenRef.current = len;
     prevLastIdRef.current = lastId;
   }, [messages, isStreaming, firstUnreadMessageId, scrollToUnread]);
+
+  useLayoutEffect(() => {
+    if (!scrollTargetEventId) return;
+    const root = containerRef.current;
+    if (!root) return;
+    const esc =
+      typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+        ? CSS.escape(scrollTargetEventId)
+        : scrollTargetEventId.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    const row = root.querySelector(`[data-matrix-event-id="${esc}"]`);
+    if (row instanceof HTMLElement) {
+      row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+    onConsumedScrollTarget?.();
+  }, [scrollTargetEventId, onConsumedScrollTarget, timelineRows.length]);
 
   useEffect(() => {
     const root = containerRef.current;
