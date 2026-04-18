@@ -168,7 +168,7 @@ export function HumanChatPanelMentionInbox({
 
       <button
         type="button"
-        className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         aria-label={
           unreadCount > 0
             ? t('mentionInboxBellAria', {
@@ -179,9 +179,9 @@ export function HumanChatPanelMentionInbox({
         title={t('mentionInboxTitle')}
         onClick={() => onOpenChange(true)}
       >
-        <Bell className="h-4 w-4" aria-hidden />
+        <Bell className="h-3.5 w-3.5" aria-hidden />
         {badgeLabel != null && (
-          <span className="absolute right-1 top-1 flex h-4 min-w-[15px] items-center justify-center rounded-full bg-primary px-[5px] text-[10px] font-semibold leading-none text-primary-foreground">
+          <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-semibold leading-none text-primary-foreground">
             {badgeLabel}
           </span>
         )}
