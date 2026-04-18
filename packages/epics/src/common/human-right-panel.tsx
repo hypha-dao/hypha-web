@@ -60,6 +60,7 @@ import {
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
 import { computeHumanChatUnreadState } from './human-chat-panel/matrix-chat-unread';
+import { getActiveTabFromPath } from './get-active-tab-from-path';
 
 function disposeDraftAttachmentUrls(drafts: ChatDraftAttachment[]) {
   for (const a of drafts) {
@@ -1044,8 +1045,19 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     const parts = pathname.split('/').filter(Boolean);
     if (parts.length === 0) return '/notification-centre';
     const lang = parts[0];
-    if (parts[1] === 'dho' && parts.length >= 3) {
-      return `/${lang}/dho/${parts[2]}/notification-centre`;
+
+    /** Match `ConnectedButtonProfile` / aside routes under `apps/web/src/app/[lang]/…/@aside/`. */
+    if (pathname.includes('/network')) {
+      return `/${lang}/network/notification-centre`;
+    }
+    if (pathname.includes('/my-spaces')) {
+      return `/${lang}/my-spaces/notification-centre`;
+    }
+    if (pathname.includes('/dho/')) {
+      const dhoId = spaceSlug ?? params?.id ?? parts[2];
+      if (!dhoId) return `/${lang}/notification-centre`;
+      const activeTab = getActiveTabFromPath(pathname);
+      return `/${lang}/dho/${dhoId}/${activeTab}/notification-centre`;
     }
     if (parts[1] === 'profile' && parts.length >= 3) {
       return `/${lang}/profile/${parts[2]}/notification-centre`;
@@ -1054,7 +1066,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       return `/${lang}/${parts[1]}/notification-centre`;
     }
     return `/${lang}/notification-centre`;
-  }, [pathname]);
+  }, [pathname, params?.id, spaceSlug]);
 
   const handleSelectMentionFromInbox = useCallback((eventId: string) => {
     setActiveTab('chat');
