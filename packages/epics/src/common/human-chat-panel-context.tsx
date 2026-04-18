@@ -30,6 +30,8 @@ export function useAiPanel() {
 export type HumanChatPanelContextValue = {
   open: boolean;
   toggle: () => void;
+  /** Opens the Human Chat sidebar (right panel) without toggling closed if already open. */
+  openHumanChatPanel: () => void;
   // Coherence mode
   mode: 'space' | 'coherence';
   coherenceRoomId: string | null;
@@ -46,6 +48,7 @@ export type HumanChatPanelContextValue = {
 const HumanChatPanelContext = createContext<HumanChatPanelContextValue>({
   open: false,
   toggle: () => {},
+  openHumanChatPanel: () => {},
   mode: 'space',
   coherenceRoomId: null,
   coherenceTitle: null,
@@ -94,11 +97,16 @@ export function HumanChatPanelProvider({
     setCoherenceSlug(null);
   }, []);
 
+  const openHumanChatPanel = useCallback(() => {
+    setOpen(true);
+  }, [setOpen]);
+
   return (
     <HumanChatPanelContext.Provider
       value={{
         open,
         toggle,
+        openHumanChatPanel,
         mode,
         coherenceRoomId,
         coherenceTitle,

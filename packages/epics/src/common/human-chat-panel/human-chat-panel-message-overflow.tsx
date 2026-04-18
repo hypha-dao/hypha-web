@@ -40,9 +40,11 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { stripMatrixReplyFallback } from '@hypha-platform/core/client';
+import { usePathname } from 'next/navigation';
 
 import { HumanChatPanelEmojiMartSurface } from './human-chat-panel-emoji-mart-surface';
 import type { ChatPanelAttachmentMedia } from './chat-panel-media-types';
+import { buildHyphaChatMessageUrl } from './human-chat-message-link';
 
 const RECENT_REACTIONS_STORAGE_KEY = 'hypha-chat-recent-reactions';
 const RECENT_REACTIONS_BUMP_EVENT = 'hypha-chat-recent-reactions-bump';
@@ -161,7 +163,7 @@ function MenuSections({
   canCopy,
   onCopyText,
   onCopyLink,
-  matrixToLink,
+  copyMessageLinkTarget,
   onSpeak,
   canDelete,
   onRequestDelete,
@@ -183,7 +185,7 @@ function MenuSections({
   canCopy: boolean;
   onCopyText: () => void;
   onCopyLink: () => void;
-  matrixToLink: string;
+  copyMessageLinkTarget: string;
   onSpeak: () => void;
   canDelete: boolean;
   onRequestDelete: () => void;
@@ -271,9 +273,9 @@ function MenuSections({
         <Copy className="size-4 shrink-0 opacity-70" aria-hidden />
       </Item>
       <Item
-        disabled={!matrixToLink}
+        disabled={!copyMessageLinkTarget}
         onSelect={() => {
-          if (matrixToLink) void onCopyLink();
+          if (copyMessageLinkTarget) void onCopyLink();
         }}
       >
         <span className="flex-1">{t('contextCopyMessageLink')}</span>
@@ -320,6 +322,7 @@ export function HumanChatPanelMessageOverflow({
   children,
 }: HumanChatPanelMessageOverflowProps) {
   const t = useTranslations('HumanChatPanel');
+  const pathname = usePathname() ?? '';
   const quickEmojis = useQuickReactions();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -339,12 +342,10 @@ export function HumanChatPanelMessageOverflow({
     !messageId.startsWith('hypha-send-pending') &&
     messageId !== 'welcome';
 
-  const matrixToLink = useMemo(() => {
+  const copyMessageLinkTarget = useMemo(() => {
     if (!roomId || !messageId || messageId === 'welcome') return '';
-    const encRoom = encodeURIComponent(roomId);
-    const encEv = encodeURIComponent(messageId);
-    return `https://matrix.to/#/${encRoom}/${encEv}`;
-  }, [roomId, messageId]);
+    return buildHyphaChatMessageUrl(pathname, roomId, messageId) ?? '';
+  }, [pathname, roomId, messageId]);
 
   const onCopyText = useCallback(async () => {
     if (!canCopy) return;
@@ -356,13 +357,13 @@ export function HumanChatPanelMessageOverflow({
   }, [canCopy, plain]);
 
   const onCopyLink = useCallback(async () => {
-    if (!matrixToLink) return;
+    if (!copyMessageLinkTarget) return;
     try {
-      await navigator.clipboard.writeText(matrixToLink);
+      await navigator.clipboard.writeText(copyMessageLinkTarget);
     } catch {
       // ignore
     }
-  }, [matrixToLink]);
+  }, [copyMessageLinkTarget]);
 
   const onSpeak = useCallback(() => {
     if (!plain.trim() || typeof globalThis.speechSynthesis === 'undefined') {
@@ -409,7 +410,7 @@ export function HumanChatPanelMessageOverflow({
     canCopy,
     onCopyText,
     onCopyLink,
-    matrixToLink,
+    copyMessageLinkTarget,
     onSpeak,
     canDelete,
     onRequestDelete: () => setDeleteOpen(true),

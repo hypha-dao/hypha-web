@@ -3,7 +3,12 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { MatrixClient, MatrixEvent, Room } from 'matrix-js-sdk';
 import { useTranslations } from 'next-intl';
-import { useParams } from 'next/navigation';
+import {
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from 'next/navigation';
 import {
   SidebarHeader,
   SidebarContent,
@@ -380,6 +385,9 @@ type HumanRightPanelProps = {
 export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const t = useTranslations('HumanChatPanel');
   const params = useParams<{ id?: string }>();
+  const pathname = usePathname() ?? '';
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const spaceSlug = params?.id;
 
   const matrix = useMatrix();
@@ -400,6 +408,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     coherenceSlug,
     closeCoherenceChat,
     openCoherenceChat,
+    openHumanChatPanel,
   } = useHumanChatPanel();
   const { jwt: authToken } = useJwt();
   const { person: me } = useMe();
@@ -972,6 +981,84 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     };
     return [...messages, pendingRow];
   }, [messages, sendingPending, currentUserAvatarUrl]);
+
+  useEffect(() => {
+    if (mode !== 'space') return;
+    const qpChat = searchParams?.get('chat')?.trim();
+    const qpMsg = searchParams?.get('msg')?.trim();
+    if (!qpChat || !qpMsg || !roomId || qpChat !== roomId) return;
+
+    openHumanChatPanel();
+    setActiveTab('chat');
+
+    let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 120;
+    let found = false;
+
+    const stripChatQueryFromUrl = () => {
+      const next = new URLSearchParams(searchParams?.toString() ?? '');
+      next.delete('chat');
+      next.delete('msg');
+      const qs = next.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    };
+
+    const highlightRow = (el: HTMLElement) => {
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      el.classList.add(
+        'ring-2',
+        'ring-primary',
+        'rounded-sm',
+        'transition-shadow',
+      );
+      window.setTimeout(() => {
+        el.classList.remove(
+          'ring-2',
+          'ring-primary',
+          'rounded-sm',
+          'transition-shadow',
+        );
+      }, 2400);
+      stripChatQueryFromUrl();
+    };
+
+    const tryLocate = () => {
+      if (cancelled || found) return;
+      attempts += 1;
+      const escaped =
+        typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+          ? CSS.escape(qpMsg)
+          : qpMsg.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+      const el = document.querySelector(
+        `[data-matrix-event-id="${escaped}"]`,
+      ) as HTMLElement | null;
+
+      if (el) {
+        found = true;
+        highlightRow(el);
+        return;
+      }
+
+      if (attempts < maxAttempts) {
+        window.requestAnimationFrame(tryLocate);
+      }
+    };
+
+    window.requestAnimationFrame(tryLocate);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    mode,
+    roomId,
+    pathname,
+    router,
+    searchParams,
+    mergedMessages.length,
+    openHumanChatPanel,
+  ]);
 
   const handleReplyToMessage = useCallback(
     (messageId: string) => {
