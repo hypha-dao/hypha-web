@@ -564,17 +564,12 @@ export function HumanChatPanelChatBar({
     const content = valueRef.current;
     /**
      * After send we clear to `''`. With only `height='auto'`, some browsers keep the
-     * previous large scrollHeight — force a shrink on both layers before measuring.
+     * previous large scrollHeight — force a shrink before measuring.
      */
     if (content.length === 0) {
-      if (bd) {
-        bd.style.height = '0px';
-        bd.style.minHeight = '0';
-      }
       ta.style.height = '0px';
       ta.style.minHeight = '0';
       void ta.offsetHeight;
-      if (bd) void bd.offsetHeight;
     }
     ta.style.height = 'auto';
     ta.style.minHeight = '';
@@ -583,12 +578,9 @@ export function HumanChatPanelChatBar({
     if (content.length === 0) {
       ta.scrollTop = 0;
     }
-    if (bd) {
-      bd.style.height = `${h}px`;
-      bd.style.minHeight = '';
-      if (content.length === 0) {
-        bd.scrollTop = 0;
-      }
+    /** Backdrop is `absolute inset-0` — no explicit height; mirrors textarea box via layout. */
+    if (bd && content.length === 0) {
+      bd.scrollTop = 0;
     }
   }, []);
 
@@ -1831,13 +1823,18 @@ export function HumanChatPanelChatBar({
             ))}
           </div>
         )}
-        <div className="relative isolate grid min-h-[36px] min-w-0 max-h-[160px] w-full [&>textarea]:col-start-1 [&>textarea]:row-start-1 [&>textarea]:col-end-2 [&>textarea]:row-end-2">
+        {/*
+          Single-flow textarea sets height. Mirrored backdrop is absolute so it never
+          participates in CSS Grid row sizing (grid + two stacked cells kept the row
+          stuck at max height after send).
+        */}
+        <div className="relative isolate min-h-[36px] min-w-0 max-h-[160px] w-full overflow-hidden rounded-sm">
           <div
             ref={composerBackdropRef}
             aria-hidden
             className={cn(
-              'pointer-events-none col-start-1 row-start-1 min-h-[36px] max-h-[160px] w-full',
-              'overflow-y-auto overflow-x-hidden whitespace-pre-wrap break-words px-3 py-2.5 text-sm leading-relaxed text-foreground',
+              'pointer-events-none absolute inset-0 z-0 overflow-y-auto overflow-x-hidden',
+              'whitespace-pre-wrap break-words px-3 py-2.5 text-sm leading-relaxed text-foreground',
               'selection:bg-transparent narrow-scrollbar',
             )}
           >
@@ -1876,7 +1873,7 @@ export function HumanChatPanelChatBar({
             placeholder={placeholder ?? defaultPlaceholder}
             rows={1}
             className={cn(
-              'relative z-[1] col-start-1 row-start-1 min-h-[36px] min-w-0 max-h-[160px] w-full resize-none',
+              'relative z-[1] block min-h-[36px] min-w-0 max-h-[160px] w-full resize-none',
               'overflow-y-auto whitespace-pre-wrap break-words bg-transparent px-3 py-2.5 text-sm leading-relaxed',
               'text-transparent caret-foreground',
               'placeholder:text-muted-foreground focus:outline-none',
