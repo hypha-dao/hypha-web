@@ -694,6 +694,8 @@ type HumanChatPanelMessageBubbleProps = {
   onReact?: (emoji: string) => void | Promise<void>;
   /** Cancel in-flight attachment send (pending row only). */
   onCancelSendPending?: () => void;
+  /** Timeline chrome: first unread row (Discord-style emphasis). */
+  unreadBoundary?: boolean;
 };
 
 const MAX_VISIBLE_REACTIONS = 12;
@@ -1028,6 +1030,7 @@ export function HumanChatPanelMessageBubble({
   onDeleteMessage,
   onReact,
   onCancelSendPending,
+  unreadBoundary = false,
 }: HumanChatPanelMessageBubbleProps) {
   const t = useTranslations('HumanChatPanel');
   const format = useFormatter();
@@ -1192,6 +1195,8 @@ export function HumanChatPanelMessageBubble({
         'group relative -mx-3 flex flex-col rounded-sm px-3 py-0.5 transition-colors',
         /* Discord-style row tint: hover (primary) + focus-within for keyboard/reactions */
         'hover:bg-muted/60 focus-within:bg-muted/60',
+        unreadBoundary &&
+          'border-l-[3px] border-l-amber-700/90 bg-amber-50/90 dark:border-l-amber-600 dark:bg-amber-950/35',
       )}
       onPointerEnter={onRowPointerEnter}
       onPointerLeave={onRowPointerLeave}

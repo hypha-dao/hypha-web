@@ -1719,7 +1719,13 @@
     "messageSendFinishing": "Publication du message…",
     "messageSendFilesBadge": "{count, plural, one {# fichier} other {# fichiers}}",
     "messageSendCancel": "Annuler l’envoi",
-    "sendPartialFailed": "L’envoi s’est arrêté après {sent, plural, one {# pièce jointe} other {# pièces jointes}}. {detail}"
+    "sendPartialFailed": "L’envoi s’est arrêté après {sent, plural, one {# pièce jointe} other {# pièces jointes}}. {detail}",
+    "unreadDividerBadge": "Nouveau",
+    "unreadDividerAria": "Nouveaux messages ci-dessous",
+    "unreadBannerSince": "Nouveaux messages depuis {time} le {date}",
+    "unreadBannerCount": "{count, plural, one {# nouveau message depuis {time} le {date}} other {# nouveaux messages depuis {time} le {date}}}",
+    "unreadBannerCapped": "Beaucoup de nouveaux messages depuis {time} le {date}",
+    "markAsRead": "Marquer comme lu"
   },
   "CoherenceTab": {
     "signals": "Signaux",

@@ -1719,7 +1719,13 @@
     "messageSendFinishing": "Publicando mensaje…",
     "messageSendFilesBadge": "{count, plural, one {# archivo} other {# archivos}}",
     "messageSendCancel": "Cancelar envío",
-    "sendPartialFailed": "El envío se detuvo tras {sent, plural, one {# archivo adjunto} other {# archivos adjuntos}}. {detail}"
+    "sendPartialFailed": "El envío se detuvo tras {sent, plural, one {# archivo adjunto} other {# archivos adjuntos}}. {detail}",
+    "unreadDividerBadge": "Nuevo",
+    "unreadDividerAria": "Mensajes nuevos abajo",
+    "unreadBannerSince": "Mensajes nuevos desde las {time} del {date}",
+    "unreadBannerCount": "{count, plural, one {# mensaje nuevo desde las {time} del {date}} other {# mensajes nuevos desde las {time} del {date}}}",
+    "unreadBannerCapped": "Muchos mensajes nuevos desde las {time} del {date}",
+    "markAsRead": "Marcar como leído"
   },
   "CoherenceTab": {
     "signals": "Señales",

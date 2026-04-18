@@ -1719,7 +1719,13 @@
     "messageSendFinishing": "Nachricht wird gesendet…",
     "messageSendFilesBadge": "{count, plural, one {# Datei} other {# Dateien}}",
     "messageSendCancel": "Senden abbrechen",
-    "sendPartialFailed": "Senden wurde nach {sent} Anhang(en) abgebrochen. {detail}"
+    "sendPartialFailed": "Senden wurde nach {sent} Anhang(en) abgebrochen. {detail}",
+    "unreadDividerBadge": "Neu",
+    "unreadDividerAria": "Neue Nachrichten unten",
+    "unreadBannerSince": "Neue Nachrichten seit {time} am {date}",
+    "unreadBannerCount": "{count, plural, one {# neue Nachricht seit {time} am {date}} other {# neue Nachrichten seit {time} am {date}}}",
+    "unreadBannerCapped": "Viele neue Nachrichten seit {time} am {date}",
+    "markAsRead": "Als gelesen markieren"
   },
   "CoherenceTab": {
     "signals": "Signale",

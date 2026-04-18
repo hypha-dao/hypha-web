@@ -1719,7 +1719,13 @@
     "messageSendFinishing": "Posting message…",
     "messageSendFilesBadge": "{count, plural, one {# file} other {# files}}",
     "messageSendCancel": "Cancel sending",
-    "sendPartialFailed": "Send stopped after {sent} attachment(s). {detail}"
+    "sendPartialFailed": "Send stopped after {sent} attachment(s). {detail}",
+    "unreadDividerBadge": "New",
+    "unreadDividerAria": "New messages below",
+    "unreadBannerSince": "New messages since {time} on {date}",
+    "unreadBannerCount": "{count, plural, one {# new message since {time} on {date}} other {# new messages since {time} on {date}}}",
+    "unreadBannerCapped": "Many new messages since {time} on {date}",
+    "markAsRead": "Mark as read"
   },
   "CoherenceTab": {
     "signals": "Signals",

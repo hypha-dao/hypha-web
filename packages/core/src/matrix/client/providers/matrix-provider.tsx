@@ -336,6 +336,11 @@ interface MatrixContextType {
   ) => void;
   unregisterRoomListener: (roomId: string) => void;
   registeredRoomListeners: RoomMessageListenerRecord[];
+  /**
+   * Advance the user's read receipt + fully-read marker to `eventId` (Matrix
+   * “mark as read” for Human Chat).
+   */
+  markRoomRead: (roomId: string, eventId: string) => Promise<void>;
 }
 
 const MatrixContext = React.createContext<MatrixContextType | null>(null);
@@ -1192,6 +1197,20 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     [client],
   );
 
+  const markRoomRead = React.useCallback(
+    async (roomId: string, eventId: string) => {
+      if (!client) {
+        throw new Error('Client should be specified');
+      }
+      const room = client.getRoom(roomId);
+      if (!room) {
+        throw new Error('Room not found');
+      }
+      await client.setRoomReadMarkers(roomId, eventId, eventId);
+    },
+    [client],
+  );
+
   const registerRoomListener = React.useCallback(
     (
       roomId: string,
@@ -1409,6 +1428,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     registerRoomListener,
     unregisterRoomListener,
     registeredRoomListeners,
+    markRoomRead,
   };
   return (
     <MatrixContext.Provider value={value}>{children}</MatrixContext.Provider>
@@ -1444,6 +1464,9 @@ const noopMatrixContext: MatrixContextType = {
   getPinnedMessageIds: () => [],
   togglePinnedMessage: async () => {},
   getRoomMembers: async () => [],
+  markRoomRead: async () => {
+    throw new Error('Matrix unavailable');
+  },
 };
 
 export const useMatrix = () => {

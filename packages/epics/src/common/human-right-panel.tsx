@@ -26,10 +26,13 @@ import {
   firstLineForReplyPreview,
   stripMatrixReplyFallback,
   RoomEvent,
+  EventType,
   MatrixUploadTimeoutError,
   SendMessageCancelledError,
   SendMessagePartialFailureError,
   isMatrixRateLimitedError,
+  getMessageReplaceTargetEventId,
+  isRedactedRoomMessageEvent,
   type MessageReaction,
 } from '@hypha-platform/core/client';
 import {
@@ -49,6 +52,7 @@ import {
 } from './human-chat-panel';
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
+import { computeHumanChatUnreadState } from './human-chat-panel/matrix-chat-unread';
 
 function disposeDraftAttachmentUrls(drafts: ChatDraftAttachment[]) {
   for (const a of drafts) {
@@ -395,6 +399,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     client,
     isMatrixAvailable,
     isAuthenticated: isMatrixAuthenticated,
+    markRoomRead,
   } = matrix;
 
   // Store matrix methods in a ref to avoid infinite re-render loops.
@@ -453,6 +458,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     uploadedCount?: number;
   }>(null);
   const joinedRef = useRef<string | null>(null);
+  const [unreadBump, setUnreadBump] = useState(0);
+  const lastAutoMarkReadAtRef = useRef(0);
 
   const currentUserId = client?.getUserId?.() ?? null;
   const currentUserIdRef = useRef(currentUserId);
@@ -983,6 +990,78 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [messages, sendingPending, currentUserAvatarUrl]);
 
   useEffect(() => {
+    if (!client || !roomId) return;
+    const room = client.getRoom(roomId);
+    if (!room) return;
+
+    const bumpUnread = () => setUnreadBump((n) => n + 1);
+    room.on(RoomEvent.Receipt, bumpUnread);
+    room.on(RoomEvent.AccountData, bumpUnread);
+    room.on(RoomEvent.UnreadNotifications, bumpUnread);
+    room.on(RoomEvent.Timeline, bumpUnread);
+
+    return () => {
+      room.off(RoomEvent.Receipt, bumpUnread);
+      room.off(RoomEvent.AccountData, bumpUnread);
+      room.off(RoomEvent.UnreadNotifications, bumpUnread);
+      room.off(RoomEvent.Timeline, bumpUnread);
+    };
+  }, [client, roomId]);
+
+  const unreadChatState = useMemo(() => {
+    if (!client || !roomId || !currentUserId || activeTab !== 'chat') {
+      return {
+        firstUnreadMessageId: null as string | null,
+        unreadNotificationCount: 0,
+        unreadCountIsCapped: false,
+      };
+    }
+    const room = client.getRoom(roomId);
+    return computeHumanChatUnreadState(room, currentUserId);
+  }, [
+    client,
+    roomId,
+    currentUserId,
+    activeTab,
+    unreadBump,
+    mergedMessages.length,
+  ]);
+
+  const markChatTimelineRead = useCallback(async () => {
+    if (!client || !roomId || !currentUserId) return;
+    const room = client.getRoom(roomId);
+    if (!room) return;
+
+    const timeline = room.getLiveTimeline().getEvents();
+    for (let i = timeline.length - 1; i >= 0; i--) {
+      const ev = timeline[i];
+      if (ev.getType() !== EventType.RoomMessage) continue;
+      const id = ev.getId();
+      if (!id || !ev.getSender()) continue;
+      if (isRedactedRoomMessageEvent(ev)) continue;
+      if (getMessageReplaceTargetEventId(ev) != null) continue;
+      try {
+        await markRoomRead(roomId, id);
+      } catch {
+        // ignore
+      }
+      return;
+    }
+  }, [client, roomId, currentUserId, markRoomRead]);
+
+  const handleReachedTimelineBottom = useCallback(() => {
+    if (!unreadChatState.firstUnreadMessageId) return;
+    const now = Date.now();
+    if (now - lastAutoMarkReadAtRef.current < 800) return;
+    lastAutoMarkReadAtRef.current = now;
+    void markChatTimelineRead();
+  }, [markChatTimelineRead, unreadChatState.firstUnreadMessageId]);
+
+  const handleMarkAsReadFromBanner = useCallback(() => {
+    void markChatTimelineRead();
+  }, [markChatTimelineRead]);
+
+  useEffect(() => {
     if (mode !== 'space') return;
     const qpChat = searchParams?.get('chat')?.trim();
     const qpMsg = searchParams?.get('msg')?.trim();
@@ -1343,7 +1422,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       </SidebarHeader>
       <SidebarContent className="bg-background-2 min-h-0">
         {activeTab === 'chat' && (
-          <>
+          <div className="flex min-h-0 flex-1 flex-col">
             {error && (
               <div
                 role="alert"
@@ -1396,9 +1475,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   resolveMemberLabel(userId)
                 }
                 onCancelSendPending={cancelSendInFlight}
+                firstUnreadMessageId={unreadChatState.firstUnreadMessageId}
+                unreadNotificationCount={
+                  unreadChatState.unreadNotificationCount
+                }
+                unreadCountIsCapped={unreadChatState.unreadCountIsCapped}
+                onReachedTimelineBottom={handleReachedTimelineBottom}
+                onMarkAsReadFromBanner={handleMarkAsReadFromBanner}
               />
             )}
-          </>
+          </div>
         )}
         {activeTab === 'members' && (
           <HumanChatPanelMembers
