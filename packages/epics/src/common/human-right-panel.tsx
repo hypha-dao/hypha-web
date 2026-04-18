@@ -52,6 +52,7 @@ import {
   HumanChatPanelChatBar,
   HumanChatPanelTabs,
   HumanChatPanelMembers,
+  HumanChatPanelMentionBell,
   HumanChatPanelMentionTab,
   type ChatDraftAttachment,
   type ChatMentionCandidate,
@@ -1518,6 +1519,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         <HumanChatPanelHeader
           title={mode === 'coherence' ? coherenceTitle ?? undefined : undefined}
           onBack={mode === 'coherence' ? closeCoherenceChat : undefined}
+          trailingStart={
+            roomId ? (
+              <HumanChatPanelMentionBell
+                unreadCount={unreadChatState.unreadMentionCount}
+                countIsCapped={unreadChatState.mentionCountIsCapped}
+                onOpenMentions={() => setActiveTab('mentions')}
+              />
+            ) : null
+          }
         />
         <HumanChatPanelTabs
           activeTab={activeTab}
