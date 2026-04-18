@@ -1,7 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import type { MatrixClient, MatrixEvent, Room } from 'matrix-js-sdk';
+import type {
+  MatrixClient,
+  MatrixEvent,
+  Room,
+  RoomMember,
+} from 'matrix-js-sdk';
 import { useTranslations } from 'next-intl';
 import {
   useParams,
@@ -168,6 +173,37 @@ function matrixMemberAvatarSquare(
   return (
     client.mxcUrlToHttp(mxc, px, px, 'crop', true, false, false) ?? undefined
   );
+}
+
+/** Shorten ugly synthetic MXIDs (e.g. Privy bridged IDs) for UI when no display name exists. */
+function shortenMatrixIdForDisplay(mxid: string): string {
+  if (!mxid.startsWith('@')) return mxid;
+  const rest = mxid.slice(1);
+  const colonIdx = rest.indexOf(':');
+  if (colonIdx <= 0) return mxid;
+  const local = rest.slice(0, colonIdx);
+  const domain = rest.slice(colonIdx + 1);
+  const looksSynthetic = /privy|_did_/i.test(local) || local.length > 28;
+  if (!looksSynthetic) return mxid;
+  const shortLocal =
+    local.length <= 18 ? local : `${local.slice(0, 10)}…${local.slice(-6)}`;
+  return `@${shortLocal}:${domain}`;
+}
+
+function matrixMemberDisplayLabel(
+  member: RoomMember,
+  fallbackUserId: string,
+): string {
+  const roomName = member.name?.trim();
+  /** SDK often sets `name` to the MXID when no display name exists — treat as absent. */
+  if (roomName && roomName !== fallbackUserId) {
+    return roomName;
+  }
+  const profileName = member.user?.displayName?.trim();
+  if (profileName && profileName !== fallbackUserId) return profileName;
+  const raw = member.rawDisplayName?.trim();
+  if (raw && raw !== fallbackUserId) return raw;
+  return shortenMatrixIdForDisplay(fallbackUserId);
 }
 
 /**
@@ -488,11 +524,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       if (roomId && client) {
         const room = client.getRoom(roomId);
         const member = room?.getMember(userId);
-        if (member?.name && member.name !== userId) {
-          return member.name;
+        if (member) {
+          return matrixMemberDisplayLabel(member, userId);
         }
       }
-      return userId;
+      return shortenMatrixIdForDisplay(userId);
     },
     [client, roomId, currentUserId, me?.name, me?.surname, t],
   );
@@ -509,7 +545,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       if (currentUserId && userId === currentUserId) continue;
       list.push({
         userId,
-        displayLabel: resolveMemberLabel(userId),
+        displayLabel: matrixMemberDisplayLabel(member, userId),
+        avatarUrl: matrixMemberAvatarSquare(client, roomId, userId, 64),
       });
     }
     list.sort((a, b) =>
@@ -518,7 +555,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       }),
     );
     return list;
-  }, [client, roomId, currentUserId, resolveMemberLabel]);
+  }, [client, roomId, currentUserId]);
 
   const resolveMemberLabelRef = useRef(resolveMemberLabel);
   resolveMemberLabelRef.current = resolveMemberLabel;
