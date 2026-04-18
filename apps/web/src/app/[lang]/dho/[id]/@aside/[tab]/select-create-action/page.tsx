@@ -1,7 +1,7 @@
 import {
   ActivateProposalsBanner,
   ButtonClose,
-  SidePanel,
+  ProposalOverlayShell,
 } from '@hypha-platform/epics';
 import { SelectCreateAction } from '../../../_components/select-create-action';
 import { Locale } from '@hypha-platform/i18n';
@@ -17,7 +17,7 @@ export default async function SelectCreateActions({
 }) {
   const { id: daoSlug, lang } = await params;
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <div className="relative">
         <ButtonClose
           dropSegment={PATH_SELECT_CREATE_ACTION}
@@ -30,6 +30,6 @@ export default async function SelectCreateActions({
           />
         </SelectCreateAction>
       </div>
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

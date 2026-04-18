@@ -1,12 +1,12 @@
 'use client';
 
-import { SpaceForm, SidePanel } from '@hypha-platform/epics';
+import { SpaceForm, ProposalOverlayShell } from '@hypha-platform/epics';
 import React from 'react';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 
 export default function AsideCreateSubspacePage() {
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <LoadingBackdrop
         showKeepWindowOpenMessage={true}
         fullHeight={true}
@@ -26,6 +26,6 @@ export default function AsideCreateSubspacePage() {
           isLoading={true}
         />
       </LoadingBackdrop>
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

@@ -1,4 +1,4 @@
-import { ButtonClose, SidePanel } from '@hypha-platform/epics';
+import { ButtonClose, ProposalOverlayShell } from '@hypha-platform/epics';
 import { SelectNavigationAction } from '../../../_components/select-navigation-action';
 import { Locale } from '@hypha-platform/i18n';
 import { PATH_SELECT_NAVIGATION_ACTION } from '@web/app/constants';
@@ -10,7 +10,7 @@ export default async function SelectNavigationActions({
 }) {
   const { id: daoSlug, lang } = await params;
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <div className="relative">
         <ButtonClose
           dropSegment={PATH_SELECT_NAVIGATION_ACTION}
@@ -18,6 +18,6 @@ export default async function SelectNavigationActions({
         />
         <SelectNavigationAction lang={lang} daoSlug={daoSlug} />
       </div>
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }
