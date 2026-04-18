@@ -15,7 +15,10 @@ import { useRouter } from 'next/navigation';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useConfig } from 'wagmi';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
-import { CreateAgreementBaseFields } from '../../agreements';
+import {
+  CreateAgreementBaseFields,
+  type BridgeInitialValues,
+} from '../../agreements';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
 
@@ -30,14 +33,19 @@ interface CreateProposeAContributionFormProps {
   successfulUrl: string;
   backUrl?: string;
   plugin: React.ReactNode;
+  /** Pre-fill values from an external bridge (e.g. ReGen Civics quest submission). */
+  initialValues?: BridgeInitialValues;
+  /** Bridge key embedded in the proposal title marker (e.g. "rc:abc12345"). */
+  bridgeKey?: string;
 }
-
 export const CreateProposeAContributionForm = ({
   successfulUrl,
   backUrl,
   spaceId,
   web3SpaceId,
   plugin,
+  initialValues,
+  bridgeKey,
 }: CreateProposeAContributionFormProps) => {
   const tSpaces = useTranslations('Spaces');
   const tAgreementFlow = useTranslations('AgreementFlow');
@@ -62,8 +70,8 @@ export const CreateProposeAContributionForm = ({
   const form = useForm<FormValues>({
     resolver,
     defaultValues: {
-      title: '',
-      description: '',
+      title: initialValues?.title ?? '',
+      description: initialValues?.description ?? '',
       leadImage: undefined,
       attachments: undefined,
       spaceId: spaceId ?? undefined,
@@ -82,18 +90,23 @@ export const CreateProposeAContributionForm = ({
   useScrollToErrors(form, formRef);
   const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
 
+  // Pre-fill payouts from bridge initialValues on first render.
+  React.useEffect(() => {
+    if (!initialValues?.payouts?.length) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    form.setValue('payouts', initialValues.payouts as any);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   React.useEffect(() => {
     if (progress === 100 && successfulUrl) {
       router.push(successfulUrl);
     }
   }, [progress, successfulUrl, router]);
-
   const handleCreate = async (data: FormValues) => {
     if (!data.recipient || !data.payouts || data.payouts.length === 0) {
       console.error('Recipient or payouts are missing');
       return;
     }
-
     await createProposeAContribution({
       ...data,
       spaceId: spaceId as number,
@@ -143,6 +156,8 @@ export const CreateProposeAContributionForm = ({
             isLoading={false}
             label={tAgreementFlow('labels.contribution')}
             progress={progress}
+            initialValues={initialValues}
+            bridgeKey={bridgeKey}
           />
           {plugin}
           <Separator />

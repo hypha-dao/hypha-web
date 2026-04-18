@@ -50,6 +50,19 @@ const schemaCreateAgreementForm =
 
 export type CreateAgreementFormData = z.infer<typeof schemaCreateAgreementForm>;
 
+/**
+ * Pre-fill values passed in from an external bridge (e.g. ReGen Civics quest
+ * submission). These arrive via URL searchParams, not sessionStorage, so they
+ * need their own code path alongside the existing resubmit flow.
+ */
+export interface BridgeInitialValues {
+  title?: string;
+  description?: string;
+  leadImage?: string;
+  attachments?: Array<{ url: string; filename: string }>;
+  payouts?: Array<{ amount: string; token: string }>;
+}
+
 export type CreateAgreementFormProps = {
   creator?: Creator;
   isLoading?: boolean;
@@ -59,11 +72,20 @@ export type CreateAgreementFormProps = {
   backLabel?: string;
   label?: string;
   progress: number;
+  /** Pre-fill values from an external bridge (e.g. ReGen Civics). */
+  initialValues?: BridgeInitialValues;
+  /** Bridge key embedded in the proposal title marker (e.g. "rc:abc12345"). */
+  bridgeKey?: string;
 };
+
+interface ResubmitFormData {
+  leadImage?: string;
+  attachments?: (string | { name: string; url: string })[];
+  applied?: boolean;
+}
 
 type Callback = () => Promise<void>;
 type CallbackList = Array<Callback>;
-
 export function CreateAgreementBaseFields({
   creator,
   isLoading = false,
@@ -73,6 +95,8 @@ export function CreateAgreementBaseFields({
   backLabel,
   label,
   progress,
+  initialValues,
+  bridgeKey,
 }: CreateAgreementFormProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const translateEditor = React.useCallback(
@@ -109,27 +133,36 @@ export function CreateAgreementBaseFields({
     );
   }
 
-  const [resubmitFormData, setResubmitFormData] = React.useState<{
-    leadImage?: string;
-    attachments?: (string | { name: string; url: string })[];
-  } | null>(null);
+  const [resubmitFormData, setResubmitFormData] = React.useState<ResubmitFormData | null>(null);
   const [existingAttachments, setExistingAttachments] = React.useState<
     (string | { name: string; url: string })[]
   >([]);
 
   React.useEffect(() => {
+    if (!initialValues) return;
+    if (initialValues.title) {
+      form.setValue('title', initialValues.title);
+    }
+    if (initialValues.description) {
+      form.setValue('description', initialValues.description);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  React.useEffect(() => {
     if (typeof window === 'undefined') return;
+
+    if (initialValues?.attachments?.length) {
+      const mapped = initialValues.attachments.map(
+        ({ url, filename }) => ({ url, name: filename }),
+      );
+      setExistingAttachments(mapped);
+    }
 
     try {
       const data = sessionStorage.getItem('resubmitFormData');
       if (!data) return;
 
-      const parsed = JSON.parse(data) as {
-        leadImage?: string;
-        attachments?: (string | { name: string; url: string })[];
-        applied?: boolean;
-        [key: string]: any;
-      };
+      const parsed = JSON.parse(data) as ResubmitFormData;
 
       if (parsed.applied) {
         sessionStorage.removeItem('resubmitFormData');
@@ -138,7 +171,9 @@ export function CreateAgreementBaseFields({
 
       setResubmitFormData(parsed);
       if (parsed.attachments && parsed.attachments.length > 0) {
-        setExistingAttachments(parsed.attachments);
+        if (!initialValues?.attachments?.length) {
+          setExistingAttachments(parsed.attachments);
+        }
       }
 
       sessionStorage.setItem(
@@ -153,7 +188,6 @@ export function CreateAgreementBaseFields({
       sessionStorage.removeItem('resubmitFormData');
     }
   }, []);
-
   const { space } = useSpaceBySlug(spaceSlug as string);
 
   const spaceIdBigInt = space?.web3SpaceId ? BigInt(space.web3SpaceId) : null;
@@ -235,7 +269,6 @@ export function CreateAgreementBaseFields({
         if (progressRef.current < 100) {
           setDelayedCallbacks((prev) => {
             if (prev.length > 0) {
-              // Normally should be called at most once
               return prev;
             }
             return [
@@ -271,7 +304,6 @@ export function CreateAgreementBaseFields({
     authToken,
     postProposalCreated,
   });
-
   return (
     <>
       <div className="flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-2">
@@ -337,6 +369,7 @@ export function CreateAgreementBaseFields({
                     {creator?.name} {creator?.surname}
                   </Text>
                 </div>
+                </div>
                 {Number(duration) === 0 ? (
                   <div className="flex gap-2 h-fit items-center pr-3">
                     <Image
@@ -401,7 +434,12 @@ export function CreateAgreementBaseFields({
       <FormField
         control={form.control}
         name="leadImage"
-        render={({ field }) => (
+        render={({ field }) => {
+          const resolvedDefaultImage =
+            initialValues?.leadImage ||
+            (typeof field.value === 'string' ? field.value : undefined) ||
+            resubmitFormData?.leadImage;
+          return (
           <FormItem>
             <FormControl>
               <UploadLeadImage
@@ -416,18 +454,13 @@ export function CreateAgreementBaseFields({
                     ),
                   },
                 )}
-                defaultImage={
-                  resubmitFormData?.leadImage || field.value
-                    ? typeof field.value === 'string'
-                      ? field.value
-                      : resubmitFormData?.leadImage
-                    : undefined
-                }
+                defaultImage={resolvedDefaultImage}
               />
             </FormControl>
             <FormMessage />
           </FormItem>
-        )}
+          );
+        }}
       />
       <FormField
         control={form.control}
