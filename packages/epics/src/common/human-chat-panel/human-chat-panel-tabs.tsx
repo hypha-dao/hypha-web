@@ -8,13 +8,25 @@ export type ChatPanelTab = 'chat' | 'members';
 type HumanChatPanelTabsProps = {
   activeTab: ChatPanelTab;
   onTabChange: (tab: ChatPanelTab) => void;
+  /** Unread @mention (highlight) count for the Chat tab badge. */
+  chatMentionCount?: number;
+  chatMentionCountCapped?: boolean;
 };
 
 export function HumanChatPanelTabs({
   activeTab,
   onTabChange,
+  chatMentionCount = 0,
+  chatMentionCountCapped = false,
 }: HumanChatPanelTabsProps) {
   const t = useTranslations('HumanChatPanel');
+
+  const chatBadgeLabel =
+    chatMentionCount > 0
+      ? chatMentionCountCapped || chatMentionCount >= 100
+        ? '99+'
+        : String(chatMentionCount)
+      : null;
 
   const tabs: { key: ChatPanelTab; label: string }[] = [
     { key: 'chat', label: t('tabChat') },
@@ -64,7 +76,17 @@ export function HumanChatPanelTabs({
               : 'text-muted-foreground hover:text-foreground hover:bg-muted',
           )}
         >
-          {tab.label}
+          <span className="inline-flex items-center gap-1.5">
+            <span>{tab.label}</span>
+            {tab.key === 'chat' && chatBadgeLabel != null && (
+              <span
+                aria-hidden
+                className="inline-flex min-h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold leading-none text-primary-foreground tabular-nums"
+              >
+                {chatBadgeLabel}
+              </span>
+            )}
+          </span>
         </button>
       ))}
     </div>
