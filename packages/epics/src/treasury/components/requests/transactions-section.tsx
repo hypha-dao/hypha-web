@@ -48,7 +48,10 @@ export const TransactionsSection: FC<TransactionsSectionProps> = ({
         onChangeSearch={setSearchTerm}
       />
 
-      <RefundableEscrowsList user={executorAddress} />
+      <RefundableEscrowsList
+        user={executorAddress}
+        spaceId={space?.web3SpaceId as number | undefined}
+      />
 
       {transfers.length === 0 && !isLoading ? (
         <Empty>
