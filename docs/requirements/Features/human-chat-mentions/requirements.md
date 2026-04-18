@@ -1,6 +1,6 @@
 # Human chat — @mentions, highlights, and notification center
 
-**Status:** Awaiting approval (specs only; no implementation in this change)  
+**Status:** Implementation in progress (mention pipeline, UI, inbox shipped; per-room notification policy UI pending)  
 **Traceability**
 
 | Item | Value |
@@ -12,7 +12,7 @@
 
 ## 1. Problem statement
 
-In the Matrix-backed **human chat** composer, **@ mention** is intentionally **inactive** (`mentionNotAvailable`). Users cannot pick members or send protocol-correct mentions. There is **no client-side highlight** for “this message mentions me,” **no aggregated mention inbox**, and **no per-room / per-thread notification policy UI** aligned with standard chat expectations (Discord-style highlights, unread mention badges, bell + side panel).
+The Matrix-backed **human chat** composer historically shipped with **@ mention** disabled; current work enables member pickers, **`m.mentions`** on send, **self-only row highlights**, **mention badges**, and a **mention inbox** with routing to the aside notification centre. **Per-room notification policy UI** (mute / all messages / mentions-only) remains to be implemented (§8).
 
 **Stakeholder impact:** Anyone using space chat or signal threads who expects @mentions, mention notifications, and channel notification controls.
 
@@ -71,7 +71,7 @@ In the Matrix-backed **human chat** composer, **@ mention** is intentionally **i
 
 **FR-COMP-2** The suggestion list SHALL include **only members applicable to the current chat context**:
 
-- **Space room chat:** joined members of the Matrix room backing the space (`room.getJoinedMembers()` or equivalent), excluding the current user from suggestions if product prefers no self-mention (default: **allow** self-mention only if Matrix rules allow; otherwise exclude—**decision at implementation**: recommend **exclude self** from picker).
+- **Space room chat:** joined members of the Matrix room backing the space (`room.getJoinedMembers()` or equivalent). **v1:** the current user SHALL be **excluded** from suggestions (§10).
 
 **FR-COMP-3** **Signal / thread chat:** suggestions SHALL be the same membership **or** a subset explicitly defined by coherence (if thread participants are tracked separately, filter to **room members** still in the thread policy document—default to **room members** for v1).
 
@@ -93,7 +93,7 @@ In the Matrix-backed **human chat** composer, **@ mention** is intentionally **i
 
 **FR-BADGE-1** The **Chat** tab (`HumanChatPanelTabs`) SHALL show a **numeric badge** when **unread mention count for that context** &gt; 0 (see §7). Badge MAY cap display (`99+`) consistent with existing unread patterns.
 
-**FR-BADGE-2** `HumanChatPanelHeader` SHALL include a **bell** icon button showing the **same count** (global to the active chat panel context: room + thread mode as applicable).
+**FR-BADGE-2** `HumanChatPanelHeader` SHALL include a **bell** icon button showing the **same count** as the Chat tab badge (computed for the active chat panel context). In **thread / coherence mode (v1)**, that count SHALL remain **room-scoped** because Matrix highlight counters are **per room**, not per MSC thread id—same value as space chat for that room.
 
 **FR-BADGE-3** Clicking the bell SHALL open the **mention side panel** (§5.4). Bell SHALL expose `aria-label` including count when &gt; 0.
 
@@ -156,8 +156,8 @@ For **every** text send (including rich replies and optional edits):
 }
 ```
 
-3. When **also** replying (`m.in_reply_to`), **preserve** reply relation; mentions are orthogonal.
-4. **Media-only** sends with captions: merge `m.mentions` into the **caption text event** payload for the first text-bearing part per existing bundle rules.
+- When **also** replying (`m.in_reply_to`), **preserve** reply relation; mentions are orthogonal.
+- **Media-only** sends with captions: merge `m.mentions` into the **caption text event** payload for the first text-bearing part per existing bundle rules.
 
 **HTML:** Ensure `formatted_body` contains `<a href=\"https://matrix.to/#/@user:server\">` pills where Element-compatible, if the project HTML pipeline supports it—otherwise plaintext `body` must still contain `@localpart` for readability.
 
@@ -182,7 +182,7 @@ Pass into `HumanChatPanelMessageBubble` as `highlightReason: 'mention' | null`.
 
 Today `computeHumanChatUnreadState` prefers **highlight** count when &gt; 0. Formalize:
 
-**FR-UNREAD-1** **Tab + bell badge number** SHALL use **`room.getUnreadNotificationCount(NotificationCountType.Highlight)`** when the SDK returns a non-zero value; otherwise **0** for mention-specific badges (do **not** fall back to total unread for **mention** badge—prevents confusion).
+**FR-UNREAD-1** **Tab + bell badge number** SHALL use **`room.getUnreadNotificationCount(NotificationCountType.Highlight)`** when the SDK returns a non-zero value; otherwise **0** for mention-specific badges (do **not** fall back to total unread for **mention** badge—prevents confusion). For **thread views (v1)**, this count is explicitly **room-level**, not filtered to the active thread—Matrix does not expose per-thread highlight totals.
 
 **FR-UNREAD-2** If highlight is **unavailable** for a homeserver, document **degraded mode**: optional client-side scan of unread events with `m.mentions` **after** read receipt—**performance flag**, off by default for large rooms.
 
@@ -209,9 +209,10 @@ Today `computeHumanChatUnreadState` prefers **highlight** count when &gt; 0. For
 
 | UI option | Expected Matrix behaviour (conceptual) |
 |-----------|----------------------------------------|
-| Only @mentions / category default | Push / highlight rules match **mentions** (default policy). |
-| All messages | Room-level rule to notify on **all messages** in room. |
-| Nothing | Room muted: **no** notifications for room (and optionally suppress counts—align with Element: muted rooms often still show unread but no push). |
+| **Use category default** | Inherit configured **category** policy when categories exist; until then inherit **server / user default** push rules (typically mention-forward). |
+| **Only @mentions** | Explicit override: **mentions / highlights only** for this room (distinct from “inherit default”). |
+| **All messages** | Room-level rule to notify on **all messages** in room. |
+| **Nothing** | Room muted: **no** notifications for room (and optionally suppress counts—align with Element: muted rooms often still show unread but no push). |
 
 ### 8.2 Implementation approaches (pick one in implementation PR)
 
@@ -240,12 +241,12 @@ Matrix notification granularity is primarily **per room**, not per MSC thread id
 
 ---
 
-## 10. Open points (resolve before / during implementation)
+## 10. Decisions (resolved for v1 implementation)
 
-1. **Self-mention:** Allowed in picker or excluded?  
-2. **Category default:** Where is “category” configured in Hypha until first-class categories exist?  
-3. **Bell panel vs aside route:** Prefer embedded `NotificationCentreForm` vs navigate to `@aside/notification-centre`.  
-4. **Thread notification:** Accept room-level only for v1 or invest in client-side filtering.
+1. **Self-mention:** **Excluded** from the member picker (FR-COMP-2 recommendation); users cannot `@`-pick themselves in v1.  
+2. **Category default:** Until first-class channel categories exist in Hypha config, **“Use category default”** SHALL mean **inherit server / user Matrix defaults** (same practical effect as Matrix’s default mention-forward behaviour).  
+3. **Bell panel vs aside route:** **Aside navigation** to `…/notification-centre` (path derived from current locale + app section) for `NotificationCentreForm`—single canonical UX; mention **Sheet** lists mentions only.  
+4. **Thread notification:** **Room-level policy only** in v1; thread-specific overrides are **non-goal** until Matrix or product defines them—UI copy SHALL note the limitation when opened from coherence / thread context.
 
 ---
 
