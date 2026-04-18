@@ -15,9 +15,15 @@ function escapeHtml(s: string): string {
     .replace(/"/g, '&quot;');
 }
 
-/** Trim common trailing punctuation from URL matches. */
+const TRAILING_PUNCT = new Set([',', ')', '.', ';', ':']);
+
+/** Trim common trailing punctuation from URL matches (linear; avoid ReDoS-prone regex). */
 function trimUrlMatch(raw: string): string {
-  return raw.replace(/[),.;:]+$/u, '');
+  let end = raw.length;
+  while (end > 0 && TRAILING_PUNCT.has(raw[end - 1]!)) {
+    end -= 1;
+  }
+  return raw.slice(0, end);
 }
 
 /**
