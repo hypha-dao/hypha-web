@@ -6,6 +6,15 @@ function displayNameStem(label: string): string {
   return t.startsWith('@') ? t.slice(1) : t;
 }
 
+/**
+ * `shortenMatrixIdForDisplay` truncates long localparts with "…" (e.g. `prev_privy…abc123`),
+ * so we must not require the underscore after `privy_` — only the prefix.
+ */
+function stemLooksLikeBridgedPrivyLocalpart(stem: string): boolean {
+  if (/^prev_privy/i.test(stem) || /^prod_privy/i.test(stem)) return true;
+  return false;
+}
+
 /** Matrix `m.room.member` displayname can mirror the ugly localpart — treat as absent. */
 export function looksLikeTechnicalMatrixDisplayName(
   label: string | undefined,
@@ -14,8 +23,7 @@ export function looksLikeTechnicalMatrixDisplayName(
   const l = label?.trim() ?? '';
   if (!l || l === matrixUserId) return true;
   const stem = displayNameStem(l);
-  if (/^prev_privy_/i.test(stem)) return true;
-  if (/^prod_privy_/i.test(stem)) return true;
+  if (stemLooksLikeBridgedPrivyLocalpart(stem)) return true;
   if (/privy_did_privy/i.test(l)) return true;
   return false;
 }
@@ -30,8 +38,7 @@ export function needsHyphaProfileResolutionForMatrixLabel(
   const l = label?.trim() ?? '';
   if (!l) return true;
   const stem = displayNameStem(l);
-  if (/^prev_privy_/i.test(stem)) return true;
-  if (/^prod_privy_/i.test(stem)) return true;
+  if (stemLooksLikeBridgedPrivyLocalpart(stem)) return true;
   if (/privy_did_privy/i.test(l)) return true;
   return false;
 }
@@ -56,10 +63,9 @@ export function matrixMemberDisplayLabel(
   fallbackUserId: string,
 ): string {
   const roomName = member.name?.trim();
-  /** SDK often sets `name` to the MXID when no display name exists — treat as absent. */
+  /** SDK often sets `name` to the MXID when no display name exists — still run technical check. */
   if (
     roomName &&
-    roomName !== fallbackUserId &&
     !looksLikeTechnicalMatrixDisplayName(roomName, fallbackUserId)
   ) {
     return roomName;
@@ -67,17 +73,12 @@ export function matrixMemberDisplayLabel(
   const profileName = member.user?.displayName?.trim();
   if (
     profileName &&
-    profileName !== fallbackUserId &&
     !looksLikeTechnicalMatrixDisplayName(profileName, fallbackUserId)
   ) {
     return profileName;
   }
   const raw = member.rawDisplayName?.trim();
-  if (
-    raw &&
-    raw !== fallbackUserId &&
-    !looksLikeTechnicalMatrixDisplayName(raw, fallbackUserId)
-  ) {
+  if (raw && !looksLikeTechnicalMatrixDisplayName(raw, fallbackUserId)) {
     return raw;
   }
   return shortenMatrixIdForDisplay(fallbackUserId);
