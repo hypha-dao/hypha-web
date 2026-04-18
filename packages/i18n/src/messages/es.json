@@ -1718,6 +1718,8 @@
     "composerAttachFile": "Archivo",
     "composerDropPrompt": "Suelta archivos para adjuntarlos",
     "mentionNotAvailable": "Menciones (próximamente)",
+    "mentionNoMembers": "Aún no hay miembros cargados — inténtalo en un momento",
+    "mentionListLabel": "Mencionar a alguien",
     "composerVoiceRecord": "Grabar mensaje de voz",
     "composerVoiceStop": "Detener grabación",
     "composerMicMenu": "Voz y dictado",

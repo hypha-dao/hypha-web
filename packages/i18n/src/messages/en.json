@@ -1750,6 +1750,8 @@
     "composerAttachFile": "File",
     "composerDropPrompt": "Drop files to attach",
     "mentionNotAvailable": "Mentions (coming soon)",
+    "mentionNoMembers": "No members loaded yet — try again in a moment",
+    "mentionListLabel": "Mention someone",
     "composerVoiceRecord": "Record voice message",
     "composerVoiceStop": "Stop recording",
     "composerMicMenu": "Voice and dictation",
