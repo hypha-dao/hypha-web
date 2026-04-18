@@ -158,6 +158,11 @@ type HumanChatPanelChatBarProps = {
   onDraftAttachmentsChange?: (next: ChatDraftAttachment[]) => void;
   /** Joined room members for `@` suggestions (omit when unavailable). */
   mentionCandidates?: ChatMentionCandidate[];
+  /**
+   * When set, controls whether `@` is clickable (Matrix has another joined member).
+   * Falls back to `mentionCandidates.length > 0` when omitted.
+   */
+  mentionPickerEnabled?: boolean;
 };
 
 /** Blinking REC dot (“on-air”) for active voice recording / dictation controls. */
@@ -417,8 +422,12 @@ export function HumanChatPanelChatBar({
   draftAttachments = [],
   onDraftAttachmentsChange,
   mentionCandidates = [],
+  mentionPickerEnabled,
 }: HumanChatPanelChatBarProps) {
   const t = useTranslations('HumanChatPanel');
+
+  const atMentionInteractable =
+    mentionPickerEnabled ?? mentionCandidates.length > 0;
   const fileInputId = useId();
   const imageInputId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -623,7 +632,7 @@ export function HumanChatPanelChatBar({
         setAtActive(0);
         return;
       }
-      if (!mentionCandidates.length) {
+      if (!atMentionInteractable || !mentionCandidates.length) {
         setAtOpen(false);
         setAtSuggestions([]);
         setAtActive(0);
@@ -634,7 +643,7 @@ export function HumanChatPanelChatBar({
       setAtActive(0);
       setAtOpen(sug.length > 0);
     },
-    [mentionCandidates],
+    [mentionCandidates, atMentionInteractable],
   );
 
   useEffect(() => {
@@ -707,6 +716,7 @@ export function HumanChatPanelChatBar({
   );
 
   const openMentionPicker = useCallback(() => {
+    if (!atMentionInteractable) return;
     const el = textareaRef.current;
     if (!el) return;
     const cur = el.selectionStart ?? value.length;
@@ -724,7 +734,7 @@ export function HumanChatPanelChatBar({
       autoResize();
       syncAtState(next, caret);
     });
-  }, [value, onChange, autoResize, syncAtState]);
+  }, [value, onChange, autoResize, syncAtState, atMentionInteractable]);
 
   useEffect(() => {
     if (colonOpen || atOpen) setSelectionBar(null);
@@ -1845,17 +1855,14 @@ export function HumanChatPanelChatBar({
               </HumanChatPanelEmojiPicker>
               <button
                 type="button"
-                disabled={mentionCandidates.length === 0}
+                disabled={!atMentionInteractable}
                 className={cn(
                   iconButtonClass,
-                  mentionCandidates.length === 0 &&
-                    'cursor-not-allowed opacity-50',
+                  !atMentionInteractable && 'cursor-not-allowed opacity-50',
                 )}
                 aria-label={t('mention')}
                 title={
-                  mentionCandidates.length === 0
-                    ? t('mentionNoMembers')
-                    : t('mention')
+                  !atMentionInteractable ? t('mentionNoMembers') : t('mention')
                 }
                 onClick={() => openMentionPicker()}
               >
