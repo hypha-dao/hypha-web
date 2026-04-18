@@ -24,6 +24,7 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import {
+  MATRIX_MXID_IN_PLAIN_TEXT,
   useMatrix,
   usePersonBySub,
   useUserPrivyIdByMatrixId,
@@ -36,6 +37,7 @@ import {
   pushRecentChatReaction,
 } from './human-chat-panel-message-overflow';
 import { ChatMessageRichText } from './parse-simple-matrix-html';
+import { matrixMemberDisplayLabelFromRoom } from './matrix-room-member-display';
 import {
   type ChatPanelAttachmentMedia,
   isChatPanelAudioFile,
@@ -643,6 +645,8 @@ function TimelineFileSlot({
 type HumanChatPanelMessageBubbleProps = {
   /** Map Matrix user id to display name for reaction hover tooltips. */
   resolveReactionReactorLabel?: (userId: string) => string;
+  /** Resolve `@localpart:homeserver` pills in message body (room member display names). */
+  resolveMatrixMemberLabel?: (matrixUserId: string) => string;
   /** Parent list ensures at most one message shows the floating action bar. */
   isActionBarVisible?: boolean;
   onRowPointerEnter?: () => void;
@@ -832,34 +836,111 @@ function formatTimestamp(
 }
 
 /**
- * Render text content with @mentions highlighted.
+ * Split plaintext into runs of literal text vs full Matrix MXIDs (`@local:homeserver`).
+ * A naive `@(\w+)…` regex breaks on the colon inside bridged Privy locals — root cause of ugly pills.
  */
-function renderTextWithMentions(text: string): React.ReactNode[] {
-  const mentionRegex = /@([\w\s]+?)(?=\s|$|[.,!?;:])/g;
-  const parts: React.ReactNode[] = [];
+function splitPlainTextMatrixMentions(
+  text: string,
+): Array<{ kind: 'text'; value: string } | { kind: 'mxid'; full: string }> {
+  const out: Array<
+    { kind: 'text'; value: string } | { kind: 'mxid'; full: string }
+  > = [];
+  const re = new RegExp(MATRIX_MXID_IN_PLAIN_TEXT.source, 'g');
   let lastIndex = 0;
-  let match;
-
-  while ((match = mentionRegex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(text.slice(lastIndex, match.index));
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    const mid = m[1];
+    if (!mid) continue;
+    const full = `@${mid}`;
+    if (m.index > lastIndex) {
+      out.push({ kind: 'text', value: text.slice(lastIndex, m.index) });
     }
-    parts.push(
-      <span
-        key={match.index}
-        className="bg-primary/20 text-primary rounded px-1 font-medium"
-      >
-        @{match[1]}
-      </span>,
-    );
-    lastIndex = match.index + match[0].length;
+    out.push({ kind: 'mxid', full });
+    lastIndex = m.index + full.length;
   }
-
   if (lastIndex < text.length) {
-    parts.push(text.slice(lastIndex));
+    out.push({ kind: 'text', value: text.slice(lastIndex) });
   }
+  return out;
+}
 
+/**
+ * Render plaintext with Matrix MXIDs as pills showing room display names (`resolveMx`).
+ * Non‑MXID `@handles` keep optional Discord-style pills (no colon in capture).
+ */
+function renderTextWithMentions(
+  text: string,
+  resolveMx: (matrixUserId: string) => string,
+): React.ReactNode[] {
+  const segments = splitPlainTextMatrixMentions(text);
+  /** `@nickname` segments that are not full `@localpart:homeserver` MXIDs (Discord-style pills). */
+  const localHandleRe = /@([^\s@]{1,100}?)(?=\s|$|[.,!?;:])/g;
+
+  const mapPlainFragment = (
+    fragment: string,
+    keyBase: string,
+  ): React.ReactNode[] => {
+    const chunks: React.ReactNode[] = [];
+    let last = 0;
+    let mh: RegExpExecArray | null;
+    const reLocal = new RegExp(localHandleRe.source, localHandleRe.flags);
+    let keyN = 0;
+    while ((mh = reLocal.exec(fragment)) !== null) {
+      if (mh.index > last) {
+        chunks.push(
+          <span key={`${keyBase}-t-${keyN++}`}>
+            {fragment.slice(last, mh.index)}
+          </span>,
+        );
+      }
+      chunks.push(
+        <span
+          key={`${keyBase}-at-${keyN++}`}
+          className="rounded bg-primary/20 px-1 font-medium text-primary"
+        >
+          @{mh[1]?.trim()}
+        </span>,
+      );
+      last = mh.index + mh[0].length;
+    }
+    if (last < fragment.length) {
+      chunks.push(
+        <span key={`${keyBase}-t-${keyN++}`}>{fragment.slice(last)}</span>,
+      );
+    }
+    if (chunks.length === 0 && fragment) {
+      return [<span key={keyBase}>{fragment}</span>];
+    }
+    return chunks;
+  };
+
+  const parts: React.ReactNode[] = [];
+  let segIdx = 0;
+  for (const seg of segments) {
+    if (seg.kind === 'mxid') {
+      const label = resolveMx(seg.full);
+      parts.push(
+        <span
+          key={`mx-${segIdx}-${seg.full}`}
+          title={seg.full}
+          className="rounded bg-primary/20 px-1 font-medium text-primary"
+        >
+          @{label}
+        </span>,
+      );
+    } else if (seg.value) {
+      parts.push(...mapPlainFragment(seg.value, `seg-${segIdx}`));
+    }
+    segIdx += 1;
+  }
   return parts;
+}
+
+function resolveMatrixPlainAndHtmlFragments(
+  fragment: string,
+  resolveMx: (matrixUserId: string) => string,
+): React.ReactNode[] {
+  return renderTextWithMentions(fragment, resolveMx);
 }
 
 type ReplyConnectorGeometry = {
@@ -1031,6 +1112,7 @@ function reactionTooltipText(
 
 export function HumanChatPanelMessageBubble({
   resolveReactionReactorLabel,
+  resolveMatrixMemberLabel,
   isActionBarVisible = false,
   onRowPointerEnter,
   onRowPointerLeave,
@@ -1050,6 +1132,13 @@ export function HumanChatPanelMessageBubble({
   const t = useTranslations('HumanChatPanel');
   const format = useFormatter();
   const { client } = useMatrix();
+  const bodyResolveMx = useMemo(
+    () =>
+      resolveMatrixMemberLabel ??
+      ((matrixUserId: string) =>
+        matrixMemberDisplayLabelFromRoom(client, roomId ?? null, matrixUserId)),
+    [resolveMatrixMemberLabel, client, roomId],
+  );
   const [hoverReactPickerOpen, setHoverReactPickerOpen] = useState(false);
   const [inlineReactPickerOpen, setInlineReactPickerOpen] = useState(false);
   const [spoilerRevealed, setSpoilerRevealed] = useState(false);
@@ -1373,7 +1462,12 @@ export function HumanChatPanelMessageBubble({
                     : 'mt-0',
                 )}
               >
-                <ChatMessageRichText html={message.formattedContentHtml} />
+                <ChatMessageRichText
+                  html={message.formattedContentHtml}
+                  transformText={(fragment) =>
+                    resolveMatrixPlainAndHtmlFragments(fragment, bodyResolveMx)
+                  }
+                />
               </p>
             ) : jumboLayout.mode === 'jumbo' ? (
               <p
@@ -1405,7 +1499,7 @@ export function HumanChatPanelMessageBubble({
                     : 'mt-0',
                 )}
               >
-                {renderTextWithMentions(textContent)}
+                {renderTextWithMentions(textContent, bodyResolveMx)}
               </p>
             ))}
 

@@ -1,12 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import type {
-  MatrixClient,
-  MatrixEvent,
-  Room,
-  RoomMember,
-} from 'matrix-js-sdk';
+import type { MatrixClient, MatrixEvent, Room } from 'matrix-js-sdk';
 import { useTranslations } from 'next-intl';
 import {
   useParams,
@@ -61,6 +56,10 @@ import {
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
 import { computeHumanChatUnreadState } from './human-chat-panel/matrix-chat-unread';
+import {
+  matrixMemberDisplayLabel,
+  shortenMatrixIdForDisplay,
+} from './human-chat-panel/matrix-room-member-display';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
 
 function disposeDraftAttachmentUrls(drafts: ChatDraftAttachment[]) {
@@ -175,37 +174,6 @@ function matrixMemberAvatarSquare(
   return (
     client.mxcUrlToHttp(mxc, px, px, 'crop', true, false, false) ?? undefined
   );
-}
-
-/** Shorten ugly synthetic MXIDs (e.g. Privy bridged IDs) for UI when no display name exists. */
-function shortenMatrixIdForDisplay(mxid: string): string {
-  if (!mxid.startsWith('@')) return mxid;
-  const rest = mxid.slice(1);
-  const colonIdx = rest.indexOf(':');
-  if (colonIdx <= 0) return mxid;
-  const local = rest.slice(0, colonIdx);
-  const domain = rest.slice(colonIdx + 1);
-  const looksSynthetic = /privy|_did_/i.test(local) || local.length > 28;
-  if (!looksSynthetic) return mxid;
-  const shortLocal =
-    local.length <= 18 ? local : `${local.slice(0, 10)}…${local.slice(-6)}`;
-  return `@${shortLocal}:${domain}`;
-}
-
-function matrixMemberDisplayLabel(
-  member: RoomMember,
-  fallbackUserId: string,
-): string {
-  const roomName = member.name?.trim();
-  /** SDK often sets `name` to the MXID when no display name exists — treat as absent. */
-  if (roomName && roomName !== fallbackUserId) {
-    return roomName;
-  }
-  const profileName = member.user?.displayName?.trim();
-  if (profileName && profileName !== fallbackUserId) return profileName;
-  const raw = member.rawDisplayName?.trim();
-  if (raw && raw !== fallbackUserId) return raw;
-  return shortenMatrixIdForDisplay(fallbackUserId);
 }
 
 /**
@@ -1595,6 +1563,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 onDeleteMessage={handleDeleteMessage}
                 onToggleReaction={handleToggleReaction}
                 resolveReactionReactorLabel={(userId) =>
+                  resolveMemberLabel(userId)
+                }
+                resolveMatrixMemberLabel={(userId) =>
                   resolveMemberLabel(userId)
                 }
                 onCancelSendPending={cancelSendInFlight}
