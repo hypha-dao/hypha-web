@@ -1,7 +1,7 @@
 import {
   ActivateProposalsBanner,
   ButtonClose,
-  SidePanel,
+  ProposalOverlayShell,
 } from '@hypha-platform/epics';
 import { SelectSettingsAction } from '../../../_components/select-settings-action';
 import { Locale } from '@hypha-platform/i18n';
@@ -17,7 +17,7 @@ export default async function SelectSettingsActions({
 }) {
   const { id: daoSlug, lang, tab } = await params;
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <div className="relative">
         <ButtonClose
           dropSegment={PATH_SELECT_SETTINGS_ACTION}
@@ -30,6 +30,6 @@ export default async function SelectSettingsActions({
           />
         </SelectSettingsAction>
       </div>
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

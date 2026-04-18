@@ -177,11 +177,13 @@ test.describe('Panel Layout', () => {
     expect(after.y).toBe(before.y);
   });
 
-  // ─── Requirement 5: Context SidePanel (@aside) respects right panel boundary ───
+  // ─── Requirement 5: Context aside docked shell (@aside, max-md) respects right panel ───
 
   test('SidePanel right edge aligns with center column, not viewport', async ({
     page,
   }) => {
+    // Below md the aside uses the docked SidePanel geometry; centered modal otherwise.
+    await page.setViewportSize({ width: 767, height: 900 });
     await layout.open('/en/dho/hypha/coherence/select-settings-action');
 
     // Wait for the SidePanel to render — use the heading inside the panel
@@ -219,9 +221,12 @@ test.describe('Panel Layout', () => {
     expect(sidePanelBoxAfter!.x + sidePanelBoxAfter!.width).toBeLessThanOrEqual(
       rightSidebarBox!.x + 2,
     );
+
+    await page.setViewportSize({ width: 1440, height: 900 });
   });
 
   test('SidePanel top aligns with bottom of MenuTop', async ({ page }) => {
+    await page.setViewportSize({ width: 767, height: 900 });
     await layout.open('/en/dho/hypha/coherence/select-settings-action');
 
     const spaceSettingsHeading = page.getByText('Space Settings');
@@ -261,5 +266,7 @@ test.describe('Panel Layout', () => {
       sidePanelBox!.y - (menuTopBox!.y + menuTopBox!.height),
     );
     expect(diff).toBeLessThanOrEqual(5);
+
+    await page.setViewportSize({ width: 1440, height: 900 });
   });
 });

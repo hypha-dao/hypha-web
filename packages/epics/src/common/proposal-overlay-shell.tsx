@@ -10,11 +10,12 @@ type ProposalOverlayShellProps = {
 };
 
 /**
- * Presentation shell for proposal flows in the @aside parallel route:
+ * Presentation shell for primary @aside flows (proposals, space settings menus,
+ * configure space, etc.):
  * — below `md`: matches legacy {@link SidePanel} (docked sheet, respects
  *   --menu-top-height and --sidebar-right-width).
  * — `md` and up: full-viewport overlay with blurred scrim and a centered,
- *   scrollable surface so primary content stays visually focused on desktop.
+ *   scrollable surface. Stack below Radix portaled UI (`z-50`) and Privy modals.
  */
 export function ProposalOverlayShell({
   children,
