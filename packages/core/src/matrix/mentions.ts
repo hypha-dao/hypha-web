@@ -7,10 +7,13 @@
 export const MATRIX_MENTIONS_FIELD = 'm.mentions' as const;
 
 /**
- * Match `@localpart:domain` tokens in plaintext (Matrix MXID).
- * Homeserver part is intentionally permissive for subdomains and ports.
+ * Match `@localpart:homeserver` Matrix IDs in plaintext (`body`, composer).
+ * Export for UI mention pills (must not truncate at the first `:` inside localpart).
+ *
+ * Clone with `new RegExp(MATRIX_MXID_IN_PLAIN_TEXT.source, 'g')` before `.exec` loops.
  */
-const MXID_IN_TEXT_RE = /@([A-Za-z0-9._=\-/]+:[A-Za-z0-9.\-:\[\]]+(?::\d+)?)/g;
+export const MATRIX_MXID_IN_PLAIN_TEXT =
+  /@([A-Za-z0-9._=\-/]+:[A-Za-z0-9.\-:\[\]]+(?::\d+)?)/g;
 
 export function isLikelyMatrixUserId(id: string): boolean {
   return /^@[^\s:]+:.+/.test(id);
@@ -23,7 +26,7 @@ export function extractMentionUserIdsFromPlainBody(plain: string): string[] {
   const out: string[] = [];
   const seen = new Set<string>();
   let m: RegExpExecArray | null;
-  const re = new RegExp(MXID_IN_TEXT_RE);
+  const re = new RegExp(MATRIX_MXID_IN_PLAIN_TEXT.source, 'g');
   while ((m = re.exec(plain)) !== null) {
     const mid = m[1];
     if (!mid) continue;
