@@ -25,6 +25,8 @@ type SelectActionProps = {
   content: string;
   actions: ActionProps[];
   children?: React.ReactNode;
+  /** Set false when the modal sticky header already shows the same title. */
+  showTitle?: boolean;
 };
 
 type GroupedActions = {
@@ -37,6 +39,7 @@ export const SelectAction = ({
   content,
   actions,
   children,
+  showTitle = true,
 }: SelectActionProps) => {
   const groupedActions = React.useMemo(
     () =>
@@ -53,13 +56,15 @@ export const SelectAction = ({
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-2">
-        <Skeleton width="100px" height="24px" loading={isLoading}>
-          <span className="text-4 font-semibold tracking-tight text-foreground">
-            {title}
-          </span>
-        </Skeleton>
-      </header>
+      {showTitle ? (
+        <header className="flex flex-col gap-2">
+          <Skeleton width="100px" height="24px" loading={isLoading}>
+            <span className="text-4 font-semibold tracking-tight text-foreground">
+              {title}
+            </span>
+          </Skeleton>
+        </header>
+      ) : null}
       <Skeleton
         width="100%"
         height="72px"

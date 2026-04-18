@@ -254,6 +254,7 @@ export const SelectSettingsAction = ({
     <SelectAction
       title={t('title')}
       content={t('content')}
+      showTitle={false}
       actions={SETTINGS_ACTIONS.map((action) => {
         const href = computeHref(action);
         return {

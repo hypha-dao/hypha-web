@@ -89,6 +89,7 @@ export const SelectCreateAction = ({
     <SelectAction
       title={t('title')}
       content={t('content')}
+      showTitle={false}
       actions={CREATE_ACTIONS.map((action) => ({
         ...action,
         ...(action.href && {
