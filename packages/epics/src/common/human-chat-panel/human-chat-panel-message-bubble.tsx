@@ -1218,17 +1218,17 @@ export function HumanChatPanelMessageBubble({
     return replyTo.authorLabel;
   }, [replyPerson, replyTo]);
 
+  /**
+   * Show header skeleton only while SWR is in flight. If the person record is missing after load
+   * (deleted profile, fetch error), fall back to Matrix `senderName` — never keep the grey bar stuck.
+   */
   const senderProfileLoading =
     resolveSenderProfile &&
-    (isLoadingSenderLink ||
-      isLoadingSenderPerson ||
-      (Boolean(senderPrivySub) && !senderPerson));
+    (isLoadingSenderLink || (Boolean(senderPrivySub) && isLoadingSenderPerson));
 
   const replyProfileLoading =
     resolveReplyProfile &&
-    (isLoadingReplyLink ||
-      isLoadingReplyPerson ||
-      (Boolean(replyPrivySub) && !replyPerson));
+    (isLoadingReplyLink || (Boolean(replyPrivySub) && isLoadingReplyPerson));
 
   const senderName = resolvedSenderName;
   const replyAuthorLabelForUi = replyTo ? resolvedReplyAuthorLabel : '';
