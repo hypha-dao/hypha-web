@@ -334,6 +334,16 @@ export function CreateAgreementBaseFields({
 
   return (
     <>
+      <div className="sticky top-0 z-[5] -mx-4 mb-4 flex flex-shrink-0 justify-end gap-1 border-b border-border bg-background-2 px-4 py-2 lg:-mx-7 lg:px-7">
+        {backUrl && (
+          <ButtonBack
+            label={resolvedBackLabel}
+            backUrl={backUrl}
+            className="px-0 md:px-3 align-top"
+          />
+        )}
+        <ButtonClose closeUrl={closeUrl} className="px-0 md:px-3 align-top" />
+      </div>
       <div className="flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-2">
         <div className="flex flex-grow gap-3">
           <PersonAvatar
@@ -344,7 +354,7 @@ export function CreateAgreementBaseFields({
           />
           <div className="flex w-full">
             <div className="flex flex-col w-full justify-between gap-4">
-              <div className="flex flex-row w-full">
+              <div className="flex flex-row flex-wrap items-center gap-x-2 gap-y-2">
                 <Badge className="w-fit" colorVariant="accent">
                   {resolvedLabel}
                 </Badge>
@@ -353,23 +363,10 @@ export function CreateAgreementBaseFields({
                     variant="outline"
                     colorVariant="accent"
                     isLoading={isLoading}
-                    className="ml-2"
                   >
                     {tAgreementFlow('createAgreementBaseFields.delegate')}
                   </Badge>
                 )}
-                <div className="flex grow"></div>
-                {backUrl && (
-                  <ButtonBack
-                    label={resolvedBackLabel}
-                    backUrl={backUrl}
-                    className="px-0 md:px-3 align-top"
-                  />
-                )}
-                <ButtonClose
-                  closeUrl={closeUrl}
-                  className="px-0 md:px-3 align-top"
-                />
               </div>
               <div className="flex justify-between w-full gap-4">
                 <div className="flex flex-col gap-4 w-full">
