@@ -1717,6 +1717,7 @@
     "copiedButton": "Copied!",
     "tabChat": "Chat",
     "tabMembers": "Members",
+    "tabMentions": "Mentions",
     "membersCount": "{count, plural, one {# member} other {# members}} · {online} online",
     "you": "You",
     "reactButton": "React",

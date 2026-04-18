@@ -1,6 +1,5 @@
 'use client';
 
-import type { ReactNode } from 'react';
 import { ArrowLeft, MessageCircle, PanelRightClose } from 'lucide-react';
 import { useSidebar } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
@@ -9,15 +8,12 @@ type HumanChatPanelHeaderProps = {
   title?: string;
   description?: string;
   onBack?: () => void;
-  /** Optional bell / notification controls (e.g. mention inbox trigger). */
-  trailingStart?: ReactNode;
 };
 
 export function HumanChatPanelHeader({
   title,
   description,
   onBack,
-  trailingStart,
 }: HumanChatPanelHeaderProps) {
   const { toggleSidebar } = useSidebar();
   const t = useTranslations('HumanChatPanel');
@@ -48,7 +44,6 @@ export function HumanChatPanelHeader({
             <PanelRightClose className="h-3.5 w-3.5" />
           </button>
         )}
-        {trailingStart}
       </div>
       <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
         {displayDescription && (
