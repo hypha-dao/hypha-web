@@ -4,6 +4,7 @@ import { EventType, MatrixEventEvent, RelationType } from 'matrix-js-sdk';
 import type * as MatrixSdk from 'matrix-js-sdk';
 
 import type { Message, MessageMediaBundleItem } from './types';
+import { parseMentionUserIdsFromWireContent } from './mentions';
 
 /** Element / Hypha custom HTML for `m.room.message` (with plaintext `body` fallback). */
 export const MATRIX_CUSTOM_HTML_FORMAT = 'org.matrix.custom.html';
@@ -290,6 +291,7 @@ export function messageFromRoomMessageEvent(
     };
     [key: string]: unknown;
   };
+  const mentionedUserIds = parseMentionUserIdsFromWireContent(content);
   const msgtypeRaw = content.msgtype;
   const isMedia =
     msgtypeRaw === 'm.file' ||
@@ -453,6 +455,7 @@ export function messageFromRoomMessageEvent(
         : undefined,
       spoiler: spoilerVal === true,
       mediaBundle,
+      ...(mentionedUserIds ? { mentionedUserIds } : {}),
     };
   }
 
@@ -466,5 +469,6 @@ export function messageFromRoomMessageEvent(
     inReplyToEventId: replyToId,
     inReplyToSender,
     inReplyToBodyPreview,
+    ...(mentionedUserIds ? { mentionedUserIds } : {}),
   };
 }
