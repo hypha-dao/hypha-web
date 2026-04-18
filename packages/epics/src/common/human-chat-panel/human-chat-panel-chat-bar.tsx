@@ -276,7 +276,7 @@ function ChatDraftVideoPreview({
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/25">
           <button
             type="button"
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-red-600 text-white shadow-lg ring-2 ring-white/30 outline-none transition-transform hover:scale-105 hover:bg-red-500 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-black text-white shadow-lg ring-1 ring-white/20 outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:ring-white/15"
             aria-label={playLabel}
             title={playLabel}
             onPointerDown={(e) => e.stopPropagation()}
