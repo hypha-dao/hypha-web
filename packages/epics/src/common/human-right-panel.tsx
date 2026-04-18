@@ -506,6 +506,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     for (const member of joined) {
       const userId = member.userId;
       if (!userId) continue;
+      if (currentUserId && userId === currentUserId) continue;
       list.push({
         userId,
         displayLabel: resolveMemberLabel(userId),
@@ -517,7 +518,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       }),
     );
     return list;
-  }, [client, roomId, resolveMemberLabel]);
+  }, [client, roomId, currentUserId, resolveMemberLabel]);
 
   const resolveMemberLabelRef = useRef(resolveMemberLabel);
   resolveMemberLabelRef.current = resolveMemberLabel;
