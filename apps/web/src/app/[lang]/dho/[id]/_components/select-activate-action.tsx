@@ -1,5 +1,7 @@
 'use client';
 
+import { useMemo } from 'react';
+
 import { SelectAction } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { isAbsoluteUrl } from '@hypha-platform/ui-utils';
@@ -11,7 +13,10 @@ import {
 } from '@radix-ui/react-icons';
 import { useFundWallet } from '@hypha-platform/epics';
 import { useParams } from 'next/navigation';
-import { useSpaceBySlug } from '@hypha-platform/core/client';
+import {
+  useSpaceBySlug,
+  useSpaceDetailsWeb3Rpc,
+} from '@hypha-platform/core/client';
 
 export const SelectActivateAction = ({
   daoSlug,
@@ -24,8 +29,31 @@ export const SelectActivateAction = ({
 }) => {
   const { id: spaceSlug } = useParams();
   const { space } = useSpaceBySlug(spaceSlug as string);
+  const web3SpaceId =
+    typeof space?.web3SpaceId === 'number' ? space.web3SpaceId : undefined;
+  const { spaceDetails } = useSpaceDetailsWeb3Rpc({
+    spaceId: web3SpaceId,
+  });
+
+  /** DB `address` or on-chain executor (treasury); either may be populated first. */
+  const treasuryAddress = useMemo(() => {
+    const fromDb = space?.address?.trim();
+    if (fromDb) return fromDb as `0x${string}`;
+    const executor = spaceDetails?.executor;
+    if (
+      executor &&
+      typeof executor === 'string' &&
+      executor.startsWith('0x') &&
+      executor.length === 42
+    ) {
+      return executor as `0x${string}`;
+    }
+    return undefined;
+  }, [space?.address, spaceDetails?.executor]);
+
+  const ZERO = '0x0000000000000000000000000000000000000000' as `0x${string}`;
   const { fundWallet } = useFundWallet({
-    address: space?.address as `0x${string}`,
+    address: treasuryAddress ?? ZERO,
   });
   const t = useTranslations('SelectActivateAction');
 
@@ -36,9 +64,10 @@ export const SelectActivateAction = ({
       icon: <ArrowDownIcon />,
       baseTab: 'treasury',
       onAction: () => {
+        if (!treasuryAddress) return;
         fundWallet();
       },
-      disabled: !space?.address,
+      disabled: !treasuryAddress,
     },
     {
       title: t('actions.buyHyphaTokensRewards.title'),
