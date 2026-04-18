@@ -51,7 +51,7 @@ export function mentionsContentFromUserIds(
 /**
  * Adds `m.mentions` when `@mxid` tokens appear in the given plaintext segment.
  */
-export function mergeMatrixMentionsFromPlain<T extends Record<string, unknown>>(
+export function mergeMatrixMentionsFromPlain<T extends object>(
   content: T,
   plainForMentions: string,
 ): T {
@@ -59,15 +59,16 @@ export function mergeMatrixMentionsFromPlain<T extends Record<string, unknown>>(
     extractMentionUserIdsFromPlainBody(plainForMentions),
   );
   if (!extra) return content;
-  return { ...content, ...extra };
+  return { ...content, ...extra } as T;
 }
 
-export function mergeMatrixMentionsIntoContent<
-  T extends Record<string, unknown>,
->(content: T, userIds: string[]): T {
+export function mergeMatrixMentionsIntoContent<T extends object>(
+  content: T,
+  userIds: string[],
+): T {
   const extra = mentionsContentFromUserIds(userIds);
   if (!extra) return content;
-  return { ...content, ...extra };
+  return { ...content, ...extra } as T;
 }
 
 /**
