@@ -18,6 +18,9 @@ import {
   useSpaceDetailsWeb3Rpc,
 } from '@hypha-platform/core/client';
 
+const ZERO_ADDRESS =
+  '0x0000000000000000000000000000000000000000' as `0x${string}`;
+
 function normalizeTreasuryAddress(
   candidate: string | null | undefined,
 ): `0x${string}` | undefined {
