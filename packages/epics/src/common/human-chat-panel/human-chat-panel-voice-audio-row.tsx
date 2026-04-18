@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Pause, Play } from 'lucide-react';
+import { Mic, Pause } from 'lucide-react';
 
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -63,7 +63,7 @@ export type ChatVoiceAudioRowProps = {
 };
 
 /**
- * Telegram-style compact row: play • waveform • duration — matches composer chrome.
+ * Telegram-style compact row: mic (idle) / pause (playing) • waveform • duration.
  */
 export function ChatVoiceAudioRow({
   audioSrc,
@@ -131,11 +131,7 @@ export function ChatVoiceAudioRow({
         {playing ? (
           <Pause className="h-3.5 w-3.5" fill="currentColor" aria-hidden />
         ) : (
-          <Play
-            className="ml-0.5 h-3.5 w-3.5"
-            fill="currentColor"
-            aria-hidden
-          />
+          <Mic className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
         )}
       </button>
       <VoiceWaveform active={playing && !spoilerPreview} />
