@@ -7,11 +7,17 @@ function displayNameStem(label: string): string {
 }
 
 /**
- * `shortenMatrixIdForDisplay` truncates long localparts with "…" (e.g. `prev_privy…abc123`),
- * so we must not require the underscore after `privy_` — only the prefix.
+ * Bridged Privy / Hypha locals: preview (`prev_privy…`), production (`prod_…`),
+ * and generic `prod_*` prefixes used on some homeservers for prod Matrix users.
+ *
+ * `shortenMatrixIdForDisplay` truncates long localparts with "…", so prefix checks
+ * must not require characters after `prod_`/`prev_` that might be ellipsis-truncated.
  */
 function stemLooksLikeBridgedPrivyLocalpart(stem: string): boolean {
-  if (/^prev_privy/i.test(stem) || /^prod_privy/i.test(stem)) return true;
+  const s = stem.trim();
+  if (/^prev_privy/i.test(s) || /^prod_privy/i.test(s)) return true;
+  /** Production Matrix bridge locals often start with `prod_` (not always `prod_privy`). */
+  if (/^prod_/i.test(s)) return true;
   return false;
 }
 
@@ -51,7 +57,9 @@ export function shortenMatrixIdForDisplay(mxid: string): string {
   if (colonIdx <= 0) return mxid;
   const local = rest.slice(0, colonIdx);
   const domain = rest.slice(colonIdx + 1);
-  const looksSynthetic = /privy|_did_/i.test(local) || local.length > 28;
+  const looksSynthetic =
+    /privy|_did_|^prod_|^prev_privy|^prod_privy/i.test(local) ||
+    local.length > 28;
   if (!looksSynthetic) return mxid;
   const shortLocal =
     local.length <= 18 ? local : `${local.slice(0, 10)}…${local.slice(-6)}`;
