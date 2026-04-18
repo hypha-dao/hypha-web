@@ -7,7 +7,7 @@ import { test, expect } from '@playwright/test';
  * rendered within a space context (/[lang]/dho/[id]/...) and are absent
  * on non-space pages (network, my-spaces, profile).
  *
- * Uses two-layer cookie strategy for feature flags:
+ * Uses two-layer cookie strategy for AI Chat:
  * - extraHTTPHeaders for SSR
  * - addCookies for client-side navigation
  */
@@ -18,18 +18,12 @@ const AI_TRIGGER = /open hypha ai panel/i;
 test.describe('Panels visible on space pages', () => {
   test.use({
     extraHTTPHeaders: {
-      Cookie: 'HYPHA_ENABLE_HUMAN_CHAT=true; HYPHA_ENABLE_AI_CHAT=true',
+      Cookie: 'HYPHA_ENABLE_AI_CHAT=true',
     },
   });
 
   test.beforeEach(async ({ context }) => {
     await context.addCookies([
-      {
-        name: 'HYPHA_ENABLE_HUMAN_CHAT',
-        value: 'true',
-        domain: '127.0.0.1',
-        path: '/',
-      },
       {
         name: 'HYPHA_ENABLE_AI_CHAT',
         value: 'true',
@@ -59,18 +53,12 @@ test.describe('Panels visible on space pages', () => {
 test.describe('Panels hidden on non-space pages', () => {
   test.use({
     extraHTTPHeaders: {
-      Cookie: 'HYPHA_ENABLE_HUMAN_CHAT=true; HYPHA_ENABLE_AI_CHAT=true',
+      Cookie: 'HYPHA_ENABLE_AI_CHAT=true',
     },
   });
 
   test.beforeEach(async ({ context }) => {
     await context.addCookies([
-      {
-        name: 'HYPHA_ENABLE_HUMAN_CHAT',
-        value: 'true',
-        domain: '127.0.0.1',
-        path: '/',
-      },
       {
         name: 'HYPHA_ENABLE_AI_CHAT',
         value: 'true',
@@ -127,18 +115,12 @@ test.describe('Panels hidden on non-space pages', () => {
 test.describe('Panels appear after navigating into a space', () => {
   test.use({
     extraHTTPHeaders: {
-      Cookie: 'HYPHA_ENABLE_HUMAN_CHAT=true; HYPHA_ENABLE_AI_CHAT=true',
+      Cookie: 'HYPHA_ENABLE_AI_CHAT=true',
     },
   });
 
   test.beforeEach(async ({ context }) => {
     await context.addCookies([
-      {
-        name: 'HYPHA_ENABLE_HUMAN_CHAT',
-        value: 'true',
-        domain: '127.0.0.1',
-        path: '/',
-      },
       {
         name: 'HYPHA_ENABLE_AI_CHAT',
         value: 'true',
