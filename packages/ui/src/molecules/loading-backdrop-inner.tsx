@@ -49,7 +49,7 @@ export function LoadingBackdropInner({
               'fixed bottom-0 flex flex-col items-center justify-center space-y-2 bg-background/75 z-10 w-full md:w-container-sm p-4 lg:p-7',
             fullHeight &&
               resolvedFullHeightVariant === 'responsive-modal-shell' &&
-              'z-[15] flex flex-col items-center justify-center space-y-2 bg-background/75 p-4 lg:p-7 max-md:fixed max-md:bottom-0 max-md:left-0 max-md:w-full max-md:top-[var(--menu-top-height,65px)] max-md:right-[var(--sidebar-right-width,0px)] md:fixed md:inset-0',
+              'z-[15] flex flex-col items-center justify-center gap-4 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/65 p-4 lg:p-7 max-md:fixed max-md:bottom-0 max-md:left-0 max-md:w-full max-md:top-[var(--menu-top-height,65px)] max-md:right-[var(--sidebar-right-width,0px)] md:fixed md:inset-0 md:p-8',
             !fullHeight &&
               'absolute inset-0 flex flex-col items-center justify-center space-y-2 bg-background/75 z-10 min-h-full',
             className,
@@ -63,13 +63,27 @@ export function LoadingBackdropInner({
               : undefined
           }
         >
-          <Progress value={progress} className="h-2 w-3/4 max-w-md" />
-          {showKeepWindowOpenMessage && (
-            <div className="text-center text-sm font-medium">
-              {keepWindowOpenMessage}
+          <div
+            className={cn(
+              'flex w-full max-w-md flex-col gap-4 rounded-xl border border-border bg-card px-6 py-5 text-card-foreground shadow-lg ring-1 ring-accent-9/12 dark:ring-accent-9/20',
+              resolvedFullHeightVariant === 'responsive-modal-shell' &&
+                'md:max-w-lg',
+            )}
+          >
+            <Progress
+              value={progress}
+              className="h-2 w-full bg-muted"
+              indicatorColor="bg-accent-9"
+            />
+            {showKeepWindowOpenMessage && (
+              <p className="text-center text-sm font-medium leading-snug text-foreground">
+                {keepWindowOpenMessage}
+              </p>
+            )}
+            <div className="text-center text-sm text-muted-foreground">
+              {message}
             </div>
-          )}
-          <div className="text-center text-sm">{message}</div>
+          </div>
         </div>
       )}
     </div>

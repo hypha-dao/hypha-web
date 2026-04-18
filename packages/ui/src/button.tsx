@@ -5,12 +5,13 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@hypha-platform/ui-utils';
 
 const buttonVariants = cva(
-  'cursor-pointer rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
+  'cursor-pointer rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-semibold ring-offset-background transition-[color,box-shadow,transform,background-color] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
         default: '',
-        outline: 'border bg-transparent shadow-sm',
+        outline:
+          'border bg-transparent shadow-sm hover:shadow-md active:shadow-sm',
         link: 'underline-offset-4 hover:underline bg-transparent font-medium',
         ghost: 'bg-transparent font-medium',
       },
@@ -39,7 +40,8 @@ const buttonVariants = cva(
       {
         variant: 'default',
         colorVariant: 'accent',
-        className: 'bg-accent-9 text-accent-contrast hover:bg-accent-10',
+        className:
+          'bg-accent-9 text-accent-contrast shadow-sm hover:bg-accent-10 hover:shadow-md active:scale-[0.99] active:shadow-sm dark:shadow-black/25',
       },
       {
         variant: 'default',
@@ -60,7 +62,7 @@ const buttonVariants = cva(
         variant: 'outline',
         colorVariant: 'accent',
         className:
-          'border-accent-9 text-accent-11 hover:bg-accent-2 hover:text-accent-12',
+          'border-accent-8 text-accent-11 hover:bg-accent-3 hover:text-accent-12 hover:border-accent-9 active:scale-[0.99]',
       },
       {
         variant: 'outline',
