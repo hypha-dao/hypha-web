@@ -17,6 +17,7 @@ import {
   MultiSelect,
   RequirementMark,
   Card,
+  Separator,
   COMBOBOX_TITLE,
   COMBOBOX_DELIMITER,
 } from '@hypha-platform/ui';
