@@ -1,7 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import type { MatrixClient, MatrixEvent, Room } from 'matrix-js-sdk';
+import {
+  RoomStateEvent,
+  type MatrixClient,
+  type MatrixEvent,
+  type Room,
+} from 'matrix-js-sdk';
 import { useTranslations } from 'next-intl';
 import {
   useParams,
@@ -497,6 +502,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const matrixClientRef = useRef(client);
   matrixClientRef.current = client;
 
+  /** Bumps when Matrix room membership changes so `@` mention candidates + button state refresh without reload. */
+  const [mentionMembershipEpoch, setMentionMembershipEpoch] = useState(0);
+
   const resolveMemberLabel = useCallback(
     (userId: string | undefined) => {
       if (!userId) return t('unknownMember');
@@ -579,7 +587,31 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       }),
     );
     return list;
-  }, [client, roomId, currentUserId, spaceMembers, subToMatrixUserId, t]);
+  }, [
+    client,
+    roomId,
+    currentUserId,
+    spaceMembers,
+    subToMatrixUserId,
+    t,
+    mentionMembershipEpoch,
+  ]);
+
+  useEffect(() => {
+    if (!client || !roomId) return;
+    const room = client.getRoom(roomId);
+    if (!room) return;
+
+    const bumpMembership = () => setMentionMembershipEpoch((n) => n + 1);
+
+    room.on(RoomStateEvent.Members, bumpMembership);
+    room.on(RoomStateEvent.NewMember, bumpMembership);
+
+    return () => {
+      room.off(RoomStateEvent.Members, bumpMembership);
+      room.off(RoomStateEvent.NewMember, bumpMembership);
+    };
+  }, [client, roomId]);
 
   const resolveMemberLabelRef = useRef(resolveMemberLabel);
   resolveMemberLabelRef.current = resolveMemberLabel;
