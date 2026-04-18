@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import {
   HYPHA_AUTH_PROVIDER,
+  HYPHA_DISABLE_HUMAN_CHAT,
   HYPHA_ENABLE_AI_CHAT,
   HYPHA_ENABLE_COHERENCE,
   HYPHA_ENABLE_HUMAN_CHAT,
@@ -48,13 +49,6 @@ export const flagDefinitionsForDiscovery = {
     defaultValue: false,
     description:
       'Enable Coherence signals, threads, and conversation features in space pages',
-    origin: 'hypha' as const,
-    options: undefined as undefined,
-  },
-  enableHumanChat: {
-    key: 'enable-human-chat',
-    defaultValue: false,
-    description: 'Enable the Human Chat panel in space pages',
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
@@ -109,10 +103,30 @@ export async function getEnableCoherence(): Promise<boolean> {
   );
 }
 
+/**
+ * Human Chat is **on by default** (including production). Rollback uses a kill switch:
+ * - Cookie `HYPHA_DISABLE_HUMAN_CHAT=true`
+ * - Or legacy opt-out: `HYPHA_ENABLE_HUMAN_CHAT=false`
+ * - Or env: `NEXT_PUBLIC_DISABLE_HUMAN_CHAT=true` / `NEXT_PUBLIC_ENABLE_HUMAN_CHAT=false`
+ * - Or Vercel Flags Toolbar override `enable-human-chat` → `false` (when FLAGS_SECRET is set)
+ */
 export async function getEnableHumanChat(): Promise<boolean> {
-  return getBooleanFlagFromToolbarCookieOrEnv(
-    'enable-human-chat',
-    HYPHA_ENABLE_HUMAN_CHAT,
-    process.env.NEXT_PUBLIC_ENABLE_HUMAN_CHAT,
-  );
+  const overrides = await getVercelToolbarFlagOverrides();
+  const toolbarHumanChat = readBooleanOverride(overrides, 'enable-human-chat');
+  if (toolbarHumanChat === true) return true;
+  if (toolbarHumanChat === false) return false;
+
+  const store = await cookies();
+
+  if (store.get(HYPHA_DISABLE_HUMAN_CHAT)?.value === 'true') {
+    return false;
+  }
+
+  const legacyEnable = store.get(HYPHA_ENABLE_HUMAN_CHAT)?.value;
+  if (legacyEnable === 'false') return false;
+
+  if (process.env.NEXT_PUBLIC_DISABLE_HUMAN_CHAT === 'true') return false;
+  if (process.env.NEXT_PUBLIC_ENABLE_HUMAN_CHAT === 'false') return false;
+
+  return true;
 }
