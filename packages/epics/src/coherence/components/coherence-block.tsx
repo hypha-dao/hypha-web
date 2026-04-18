@@ -19,14 +19,12 @@ type CoherenceBlockProps = {
   lang: Locale;
   spaceSlug: string;
   order?: CoherenceOrder;
-  humanChatEnabled?: boolean;
 };
 
 export function CoherenceBlock({
   lang,
   spaceSlug,
   order,
-  humanChatEnabled = false,
 }: CoherenceBlockProps) {
   const t = useTranslations('CoherenceTab');
   const [hideArchived, setHideArchived] = React.useState(true);
@@ -64,8 +62,6 @@ export function CoherenceBlock({
     [openCoherenceChat],
   );
 
-  const onSignalClick = humanChatEnabled ? handleSignalClick : undefined;
-
   return (
     <div className="flex flex-col gap-6 py-4">
       {isAuthenticated ? (
@@ -79,7 +75,7 @@ export function CoherenceBlock({
             firstPageSize={3}
             pageSize={3}
             refresh={refresh}
-            onSignalClick={onSignalClick}
+            onSignalClick={handleSignalClick}
           />
           <SpaceMemorySection spaceSlug={spaceSlug} />
         </>
