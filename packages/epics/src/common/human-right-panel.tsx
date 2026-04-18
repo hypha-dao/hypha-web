@@ -47,6 +47,7 @@ import {
   HumanChatPanelChatBar,
   HumanChatPanelTabs,
   HumanChatPanelMembers,
+  HumanChatPanelMentionInbox,
   type ChatDraftAttachment,
   type ChatMentionCandidate,
   type ChatPanelAttachmentMedia,
@@ -456,6 +457,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [composerError, setComposerError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ChatPanelTab>('chat');
+  const [mentionInboxOpen, setMentionInboxOpen] = useState(false);
+  const [scrollToEventId, setScrollToEventId] = useState<string | null>(null);
   /** Shown in timeline after a short delay while large attachment sends run. */
   const [sendingPending, setSendingPending] = useState<null | {
     id: string;
@@ -1000,6 +1003,31 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [roomId, t],
   );
 
+  const notificationCentreHref = useMemo(() => {
+    const parts = pathname.split('/').filter(Boolean);
+    if (parts.length === 0) return '/notification-centre';
+    const lang = parts[0];
+    if (parts[1] === 'dho' && parts.length >= 3) {
+      return `/${lang}/dho/${parts[2]}/notification-centre`;
+    }
+    if (parts[1] === 'profile' && parts.length >= 3) {
+      return `/${lang}/profile/${parts[2]}/notification-centre`;
+    }
+    if (parts.length >= 2) {
+      return `/${lang}/${parts[1]}/notification-centre`;
+    }
+    return `/${lang}/notification-centre`;
+  }, [pathname]);
+
+  const handleSelectMentionFromInbox = useCallback((eventId: string) => {
+    setActiveTab('chat');
+    setScrollToEventId(eventId);
+  }, []);
+
+  const handleConsumedScrollTarget = useCallback(() => {
+    setScrollToEventId(null);
+  }, []);
+
   const mergedMessages = useMemo(() => {
     if (!sendingPending) return messages;
     const pendingRow: UIMessage = {
@@ -1441,6 +1469,22 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         <HumanChatPanelHeader
           title={mode === 'coherence' ? coherenceTitle ?? undefined : undefined}
           onBack={mode === 'coherence' ? closeCoherenceChat : undefined}
+          trailingStart={
+            roomId ? (
+              <HumanChatPanelMentionInbox
+                open={mentionInboxOpen}
+                onOpenChange={setMentionInboxOpen}
+                notificationCentreHref={notificationCentreHref}
+                client={client}
+                roomId={roomId}
+                currentUserId={currentUserId}
+                unreadCount={unreadChatState.unreadMentionCount}
+                countIsCapped={unreadChatState.mentionCountIsCapped}
+                resolveMemberLabel={(id) => resolveMemberLabel(id)}
+                onSelectMessage={handleSelectMentionFromInbox}
+              />
+            ) : null
+          }
         />
         <HumanChatPanelTabs
           activeTab={activeTab}
@@ -1511,6 +1555,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 unreadCountIsCapped={unreadChatState.unreadCountIsCapped}
                 onReachedTimelineBottom={handleReachedTimelineBottom}
                 onMarkAsReadFromBanner={handleMarkAsReadFromBanner}
+                scrollTargetEventId={scrollToEventId}
+                onConsumedScrollTarget={handleConsumedScrollTarget}
               />
             )}
           </div>
