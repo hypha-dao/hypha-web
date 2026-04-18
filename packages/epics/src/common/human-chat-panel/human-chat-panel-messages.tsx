@@ -316,8 +316,9 @@ export function HumanChatPanelMessages({
     const row = root.querySelector(`[data-matrix-event-id="${esc}"]`);
     if (row instanceof HTMLElement) {
       row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      stickToBottomRef.current = false;
+      onConsumedScrollTarget?.();
     }
-    onConsumedScrollTarget?.();
   }, [scrollTargetEventId, onConsumedScrollTarget, timelineRows.length]);
 
   useEffect(() => {

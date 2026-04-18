@@ -35,7 +35,8 @@ export function getActiveAtToken(
   if (/\s/.test(afterAt)) return null;
 
   const query = afterAt.slice(0, MAX_QUERY_LEN);
-  if (!/^[\w.=\-/:@]*$/i.test(query)) return null;
+  /** Unicode letters / marks / numbers — `\w` is ASCII-only and rejects José, Zoë, etc. */
+  if (!/^[\p{L}\p{M}\p{N}_.=\-/:']*$/u.test(query)) return null;
 
   return { start: atIdx, query };
 }
