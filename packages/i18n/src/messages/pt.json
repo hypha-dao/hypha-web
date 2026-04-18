@@ -35,15 +35,20 @@
     "errorLoadTreasuryTab": "Ops, algo deu errado. Não foi possível carregar a aba de tesouraria.",
     "publish": "Publicar",
     "invalidTransactions": "Transações inválidas",
-    "Coherence": "Coerência"
+    "Coherence": "Coerência",
+    "copyEscrowAddress": "Copiar endereço do escrow",
+    "copiedToClipboard": "Copiado!"
   },
   "AgreementFlow": {
     "proposalErrors": {
       "recipientRequired": "Adicione um destinatário ou endereço de carteira",
       "invalidEthereumAddress": "Endereço Ethereum inválido",
       "amountGreaterThanZero": "O valor deve ser maior que 0",
+      "exchangeAmountRequired": "Insira um valor.",
       "amountRequired": "Insira um valor para continuar.",
       "tokenRequired": "Selecione um token",
+      "buyerSpaceTreasuryUnavailable": "Não foi possível carregar a tesouraria do espaço comprador. Aguarde os dados da cadeia e tente novamente, ou selecione novamente o espaço comprador.",
+      "sellerSpaceTreasuryUnavailable": "Não foi possível carregar a tesouraria do espaço vendedor. Aguarde os dados da cadeia e tente novamente, ou selecione novamente o espaço vendedor.",
       "chooseTokenToBurn": "Escolha um token para queimar",
       "atLeastOneBurnTargetRequired": "É necessário pelo menos um destino de queima",
       "atLeastOnePayoutRequired": "Pelo menos um pagamento é obrigatório",
@@ -105,6 +110,36 @@
         "receiveHyphaTokens": "Nosso espaço receberá {amount} tokens HYPHA (1 HYPHA = {price} USD)",
         "hyphaSentTo": "HYPHA enviado para",
         "usdcPaidTo": "USDC pago a"
+      },
+      "exchangeStakesAndTokens": {
+        "errors": {
+          "sellerAmountExceedsBalance": "O valor inserido é superior ao saldo disponível do vendedor.",
+          "sellerTreasuryUnavailable": "Não foi possível carregar a tesouraria do espaço. Aguarde os dados on-chain e tente novamente.",
+          "sellerBalanceCheckFailed": "Não foi possível verificar o saldo do vendedor. Verifique a conexão e tente novamente.",
+          "memberSellerWalletMismatch": "O financiamento da troca usa a sua carteira ligada. Ligue a mesma carteira que o endereço do vendedor ou escolha o membro vendedor cujo endereço corresponda à sua carteira.",
+          "escrowTokenInvalid": "Uma linha de token usa o endereço do contrato de escrow. Use o contrato ERC-20 do token para vendedor e comprador.",
+          "insufficientSellerBalance": "A carteira ligada não tem tokens suficientes do vendedor. Envie fundos para a smart wallet que corresponde ao endereço do vendedor.",
+          "tokenWhitelistBlocked": "As regras on-chain deste token impedem o envio para o escrow (ex.: lista de permissão de transferência/receção). Escolha outro token ou atualize as permissões do token.",
+          "safeErc20TransferFailed": "O contrato do token rejeitou a transferência para o escrow (saldo, permissão ou regras de não transferibilidade). Verifique se a smart wallet tem tokens suficientes e se o token permite transferências para o escrow."
+        },
+        "seller": "Vendedor (endereço da carteira)",
+        "buyer": "Comprador (endereço da carteira)",
+        "sellerWillSend": "O vendedor envia",
+        "buyerWillSend": "O comprador enviará",
+        "loadingTokens": "A carregar tokens...",
+        "escrowNotice": "Esta proposta utiliza escrow para a troca. A votação apenas aprova as condições e não move tokens, exceto se a tesouraria for o comprador ou o vendedor. Após a aprovação, a tesouraria executa on-chain e ambas as partes financiam o escrow; o acordo fica definitivo quando o escrow estiver totalmente financiado.",
+        "escrowAccountAddress": "Endereço da conta de escrow",
+        "escrowFunding": "Financiamento de escrow",
+        "escrowStatus": "Status do escrow",
+        "escrowPendingBuyerFunding": "Aguardando financiamento do comprador",
+        "escrowCompleted": "Concluído",
+        "escrowCancelled": "Cancelado",
+        "approveAndFundPrompt": "O comprador deve aprovar o token e chamar receiveFunds({escrowId}) para concluir a troca.",
+        "memberEscrowPendingVote": "Os tokens do vendedor só vão para o escrow depois desta proposta ser aceite. Quando for aprovada, são enviados automaticamente se a carteira do vendedor estiver ligada.",
+        "memberEscrowFundingAuto": "A transferir tokens do vendedor para o escrow…",
+        "memberEscrowFunded": "Escrow #{escrowId} financiado. O comprador pode completar a sua parte quando estiver pronto.",
+        "connectSellerWalletAuto": "Ligue a carteira do vendedor neste dispositivo para concluir a transferência para o escrow.",
+        "memberEscrowFundError": "Não foi possível enviar tokens para o escrow: {message}"
       },
       "tokenBackingVault": {
         "title": "Cofre de lastro de token",
@@ -483,6 +518,8 @@
       "tokenPayoutFieldArray": {
         "paymentRequest": "Solicitação de pagamento",
         "enterAmountAndToken": "Insira um valor e selecione um token.",
+        "enterAmount": "Insira um valor.",
+        "selectToken": "Selecione um token.",
         "add": "Adicionar"
       },
       "milestoneField": {
@@ -509,7 +546,16 @@
       "collectiveAgreement": "Acordo Coletivo",
       "contribution": "Contribuição",
       "expenses": "Despesas",
-      "funding": "Financiamento"
+      "funding": "Financiamento",
+      "exchange": "Troca"
+    },
+    "documentListBadges": {
+      "invite": "Convite",
+      "redeemTokens": "Resgatar tokens",
+      "updateToken": "Atualizar token",
+      "statusOnVoting": "Em votação",
+      "statusAccepted": "Aceito",
+      "statusRejected": "Rejeitado"
     },
     "buttons": {
       "publish": "Publicar"
@@ -826,9 +872,9 @@
         "title": "Aceitar investimento (em breve)",
         "description": "Receba capital de investidores, membros ou espaços alinhados em troca de tokens espaciais nativos."
       },
-      "exchangeOwnershipComingSoon": {
-        "title": "Propriedade de troca (em breve)",
-        "description": "Troque a propriedade entre membros ou espaços, seja vendendo uma participação ou trocando ativos."
+      "exchangeStakesAndTokens": {
+        "title": "Trocar participações e tokens",
+        "description": "Troque participações de propriedade, tokens ou outros ativos entre membros ou espaços."
       },
       "deployFunds": {
         "title": "Distribuir fundos",
@@ -961,6 +1007,7 @@
     },
     "transactionCard": {
       "tokenIconAlt": "Ícone de token",
+      "escrowAccountName": "Conta de custódia",
       "memo": "Memorando",
       "type": {
         "transfer": "Transferir",
@@ -1405,6 +1452,7 @@
       "toWhitelist": "Para colocar na lista de permissões"
     },
     "labels": {
+      "toEscrowAccount": "Para: Conta de escrow",
       "unknown": "Desconhecido",
       "custom": "Personalizado",
       "token": "Símbolo",
@@ -1483,6 +1531,32 @@
       "whitelistEnforcementInactive": "Inativo",
       "spaceWhitelistMembersSuffix": "(Space e membros)",
       "spaceWhitelistOnlySuffix": "(Apenas space)"
+    },
+    "exchange": {
+      "escrowId": "ID do escrow",
+      "status": {
+        "label": "Status do escrow",
+        "pendingFunding": "Aguardando financiamento",
+        "completed": "Concluído",
+        "cancelled": "Cancelado"
+      },
+      "leg": "Perna de troca",
+      "from": "De",
+      "to": "Para",
+      "funded": "Financiado"
+    },
+    "exchange": {
+      "escrowId": "ID do escrow",
+      "status": {
+        "label": "Status do escrow",
+        "pendingFunding": "Aguardando financiamento",
+        "completed": "Concluído",
+        "cancelled": "Cancelado"
+      },
+      "leg": "Perna de troca",
+      "from": "De",
+      "to": "Para",
+      "funded": "Financiado"
     },
     "entryMethods": {
       "openAccess": "Acesso aberto",

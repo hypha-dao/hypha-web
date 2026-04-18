@@ -61,11 +61,11 @@ export const SelectCreateAction = ({
     },
     {
       defaultDurationDays: 7,
-      title: t('actions.exchangeOwnershipComingSoon.title'),
-      description: t('actions.exchangeOwnershipComingSoon.description'),
-      href: '#',
+      title: t('actions.exchangeStakesAndTokens.title'),
+      description: t('actions.exchangeStakesAndTokens.description'),
+      href: 'agreements/create/exchange-stakes-and-tokens',
       icon: <PlusCircledIcon />,
-      disabled: true,
+      disabled: isPaymentExpired,
     },
     {
       defaultDurationDays: 7,

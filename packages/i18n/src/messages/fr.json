@@ -35,7 +35,9 @@
     "errorLoadTreasuryTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet trésorerie.",
     "publish": "Publier",
     "invalidTransactions": "Transactions invalides",
-    "Coherence": "Cohérence"
+    "Coherence": "Cohérence",
+    "copyEscrowAddress": "Copier l’adresse du séquestre",
+    "copiedToClipboard": "Copié !"
   },
   "Navigation": {
     "network": "Réseau",
@@ -226,6 +228,10 @@
         "title": "Échanger la propriété (bientôt disponible)",
         "description": "Échangez la propriété entre membres ou espaces, qu'il s'agisse de vendre une part ou d'échanger des actifs."
       },
+      "exchangeStakesAndTokens": {
+        "title": "Échanger des participations et des jetons",
+        "description": "Échangez des participations, des jetons ou d'autres actifs entre membres ou espaces."
+      },
       "deployFunds": {
         "title": "Déployer des fonds",
         "description": "Allouez des fonds de trésorerie à des investissements dans d'autres espaces du réseau ou à la distribution de ressources entre les espaces de votre organisation."
@@ -357,6 +363,7 @@
     },
     "transactionCard": {
       "tokenIconAlt": "Icône du token",
+      "escrowAccountName": "Compte séquestre",
       "memo": "Mémo",
       "type": {
         "transfer": "Transfert",
@@ -798,7 +805,16 @@
       "collectiveAgreement": "Accord collectif",
       "contribution": "Contribution",
       "expenses": "Dépenses",
-      "funding": "Financement"
+      "funding": "Financement",
+      "exchange": "Échange"
+    },
+    "documentListBadges": {
+      "invite": "Invitation",
+      "redeemTokens": "Échanger des tokens",
+      "updateToken": "Mettre à jour le token",
+      "statusOnVoting": "En vote",
+      "statusAccepted": "Accepté",
+      "statusRejected": "Rejeté"
     },
     "buttons": {
       "publish": "Publier"
@@ -833,8 +849,11 @@
       "recipientRequired": "Veuillez ajouter un destinataire ou une adresse de portefeuille",
       "invalidEthereumAddress": "Adresse Ethereum invalide",
       "amountGreaterThanZero": "Le montant doit être supérieur à 0",
+      "exchangeAmountRequired": "Veuillez saisir un montant.",
       "amountRequired": "Saisissez un montant pour continuer.",
       "tokenRequired": "Veuillez sélectionner un token",
+      "buyerSpaceTreasuryUnavailable": "Impossible de charger la trésorerie de l’espace acheteur. Attendez les données on-chain et réessayez, ou sélectionnez à nouveau l’espace acheteur.",
+      "sellerSpaceTreasuryUnavailable": "Impossible de charger la trésorerie de l’espace vendeur. Attendez les données on-chain et réessayez, ou sélectionnez à nouveau l’espace vendeur.",
       "chooseTokenToBurn": "Choisissez un token à brûler",
       "atLeastOneBurnTargetRequired": "Au moins une cible de brûlage est requise",
       "atLeastOnePayoutRequired": "Au moins un paiement est requis",
@@ -976,6 +995,36 @@
         "receiveHyphaTokens": "Notre espace recevra {amount} tokens HYPHA (1 HYPHA = {price} USD)",
         "hyphaSentTo": "HYPHA envoyé à",
         "usdcPaidTo": "USDC payé à"
+      },
+      "exchangeStakesAndTokens": {
+        "errors": {
+          "sellerAmountExceedsBalance": "Le montant saisi est supérieur au solde disponible du vendeur.",
+          "sellerTreasuryUnavailable": "Impossible de charger la trésorerie de l'espace. Attendez les données on-chain et réessayez.",
+          "sellerBalanceCheckFailed": "Impossible de vérifier le solde du vendeur. Vérifiez votre connexion et réessayez.",
+          "memberSellerWalletMismatch": "Le financement de l’échange utilise votre portefeuille connecté. Connectez le même portefeuille que l’adresse vendeur, ou choisissez le membre vendeur dont l’adresse correspond à votre portefeuille.",
+          "escrowTokenInvalid": "Une ligne de jeton utilise l’adresse du contrat d’escrow. Utilisez le contrat ERC-20 du jeton pour le vendeur et l’acheteur.",
+          "insufficientSellerBalance": "Le portefeuille connecté n’a pas assez de jetons vendeur. Alimentez le smart wallet qui correspond à l’adresse vendeur.",
+          "tokenWhitelistBlocked": "Les règles on-chain de ce jeton bloquent l’envoi vers l’escrow (liste blanche transfert/réception). Choisissez un autre jeton ou mettez à jour la liste blanche.",
+          "safeErc20TransferFailed": "Le contrat du jeton a rejeté le transfert vers l’escrow (solde, allowance ou règles de non-transférabilité). Vérifiez le solde sur le smart wallet et les transferts vers l’escrow."
+        },
+        "seller": "Vendeur (adresse du portefeuille)",
+        "buyer": "Acheteur (adresse du portefeuille)",
+        "sellerWillSend": "Le vendeur envoie",
+        "buyerWillSend": "L’acheteur enverra",
+        "loadingTokens": "Chargement des jetons...",
+        "escrowNotice": "Cette proposition utilise un séquestre pour l’échange. Le vote n’approuve que les conditions et ne déplace pas les jetons, sauf si la trésorerie est l’acheteur ou le vendeur. Après approbation, la trésorerie exécute sur la chaîne et les deux parties financent le séquestre ; l’accord est définitif lorsque le séquestre est entièrement financé.",
+        "escrowAccountAddress": "Adresse du compte séquestre",
+        "escrowFunding": "Financement de l'escrow",
+        "escrowStatus": "Statut de l'escrow",
+        "escrowPendingBuyerFunding": "En attente du financement de l'acheteur",
+        "escrowCompleted": "Terminé",
+        "escrowCancelled": "Annulé",
+        "approveAndFundPrompt": "L’acheteur doit approuver le token puis appeler receiveFunds({escrowId}) pour terminer l’échange.",
+        "memberEscrowPendingVote": "Les jetons du vendeur vont à l’escrow seulement après acceptation de cette proposition. Une fois adoptée, ils sont envoyés automatiquement si le portefeuille vendeur est connecté.",
+        "memberEscrowFundingAuto": "Transfert des jetons du vendeur vers l’escrow…",
+        "memberEscrowFunded": "Escrow n°{escrowId} alimenté. L’acheteur peut compléter son côté quand il est prêt.",
+        "connectSellerWalletAuto": "Connectez le portefeuille vendeur sur cet appareil pour finaliser le transfert vers l’escrow.",
+        "memberEscrowFundError": "Impossible d’envoyer les jetons vers l’escrow : {message}"
       },
       "tokenBackingVault": {
         "title": "Coffre de garantie de token",
@@ -1354,6 +1403,8 @@
       "tokenPayoutFieldArray": {
         "paymentRequest": "Demande de paiement",
         "enterAmountAndToken": "Veuillez saisir un montant et sélectionner un token.",
+        "enterAmount": "Veuillez saisir un montant.",
+        "selectToken": "Veuillez sélectionner un token.",
         "add": "Ajouter"
       },
       "paymentSchedule": {
@@ -1405,6 +1456,7 @@
       "toWhitelist": "Vers la liste blanche"
     },
     "labels": {
+      "toEscrowAccount": "Vers : compte séquestre",
       "unknown": "Inconnu",
       "custom": "Personnalisé",
       "token": "Jeton",
@@ -1483,6 +1535,19 @@
       "whitelistEnforcementInactive": "Inactif",
       "spaceWhitelistMembersSuffix": "(Space et membres)",
       "spaceWhitelistOnlySuffix": "(Space uniquement)"
+    },
+    "exchange": {
+      "escrowId": "ID d’entiercement",
+      "status": {
+        "label": "Statut de l’entiercement",
+        "pendingFunding": "En attente du financement de l’acheteur",
+        "completed": "Terminé",
+        "cancelled": "Annulé"
+      },
+      "leg": "Échange",
+      "from": "De",
+      "to": "Vers",
+      "funded": "Financé"
     },
     "entryMethods": {
       "openAccess": "Accès libre",

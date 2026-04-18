@@ -33,6 +33,8 @@ interface TokenPayoutFieldArrayProps {
   name?: string;
   label?: string;
   allowAddOrRemove?: boolean;
+  /** When true, same as `allowAddOrRemove={false}` (exchange plugin). */
+  disableAddRemove?: boolean;
   showSelectedTokenBalanceHint?: boolean;
   showTreasuryBalanceHint?: boolean;
   selectedTokenPriceHint?: string;
@@ -43,18 +45,22 @@ function TokenPayoutFieldArrayInner({
   name = 'payouts',
   label,
   allowAddOrRemove = true,
+  disableAddRemove = false,
   showSelectedTokenBalanceHint = false,
   showTreasuryBalanceHint = false,
   selectedTokenPriceHint,
 }: TokenPayoutFieldArrayProps) {
-  const tAgreementFlow = useTranslations('AgreementFlow');
-  const resolvedLabel =
-    label ?? tAgreementFlow('plugins.tokenPayoutFieldArray.paymentRequest');
-  const { control } = useFormContext();
+  const tPayoutRows = useTranslations(
+    'AgreementFlow.plugins.tokenPayoutFieldArray',
+  );
+  const resolvedLabel = label ?? tPayoutRows('paymentRequest');
+  const { control, formState } = useFormContext();
   const { fields, append, remove } = useFieldArray({
     control,
     name,
   });
+
+  const canAddRemove = !disableAddRemove && allowAddOrRemove;
 
   const handleAddField = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -66,6 +72,7 @@ function TokenPayoutFieldArrayInner({
     index: number,
   ) => {
     e.preventDefault();
+    if (!canAddRemove) return;
     if (fields.length > 1) {
       remove(index);
     }
@@ -84,31 +91,41 @@ function TokenPayoutFieldArrayInner({
                 <FormField
                   control={control}
                   name={`${name}.${index}`}
-                  render={({ field: { value, onChange } }) => (
-                    <FormItem>
-                      <FormControl>
-                        <TokenPayoutField
-                          value={value}
-                          onChange={onChange}
-                          tokens={tokens}
-                          showSelectedTokenBalanceHint={
-                            showSelectedTokenBalanceHint ||
-                            showTreasuryBalanceHint
-                          }
-                          useTreasuryBalanceLine={showTreasuryBalanceHint}
-                          selectedTokenPriceHint={selectedTokenPriceHint}
-                        />
-                      </FormControl>
-                      <FormMessage
-                        custom={tAgreementFlow(
-                          'plugins.tokenPayoutFieldArray.enterAmountAndToken',
-                        )}
-                      />
-                    </FormItem>
-                  )}
+                  render={({
+                    field: { value, onChange },
+                    fieldState: { error, isTouched, isDirty },
+                  }) => {
+                    const showRowError =
+                      Boolean(error) &&
+                      (isTouched ||
+                        isDirty ||
+                        (formState.submitCount ?? 0) > 0);
+                    return (
+                      <FormItem>
+                        <FormControl>
+                          <TokenPayoutField
+                            value={value}
+                            onChange={onChange}
+                            tokens={tokens}
+                            showSelectedTokenBalanceHint={
+                              showSelectedTokenBalanceHint ||
+                              showTreasuryBalanceHint
+                            }
+                            useTreasuryBalanceLine={showTreasuryBalanceHint}
+                            selectedTokenPriceHint={selectedTokenPriceHint}
+                          />
+                        </FormControl>
+                        {showRowError ? (
+                          <FormMessage
+                            custom={tPayoutRows('enterAmountAndToken')}
+                          />
+                        ) : null}
+                      </FormItem>
+                    );
+                  }}
                 />
               </div>
-              {allowAddOrRemove && (
+              {canAddRemove && (
                 <Button
                   variant="ghost"
                   onClick={(ev) => handleDeleteField(ev, index)}
@@ -121,11 +138,11 @@ function TokenPayoutFieldArrayInner({
           ))}
         </div>
       </div>
-      {allowAddOrRemove && (
+      {canAddRemove && (
         <div className="flex justify-end w-full">
           <Button className="w-fit" onClick={handleAddField} variant="ghost">
             <PlusIcon />
-            {tAgreementFlow('plugins.tokenPayoutFieldArray.add')}
+            {tPayoutRows('add')}
           </Button>
         </div>
       )}
@@ -133,4 +150,4 @@ function TokenPayoutFieldArrayInner({
   );
 }
 
-export const TokenPayoutFieldArray = React.memo(TokenPayoutFieldArrayInner);
+export const TokenPayoutFieldArray = TokenPayoutFieldArrayInner;

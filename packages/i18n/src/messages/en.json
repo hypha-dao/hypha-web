@@ -35,7 +35,9 @@
     "errorLoadTreasuryTab": "Oops, something went wrong. Couldn't load treasury tab.",
     "publish": "Publish",
     "invalidTransactions": "Invalid transactions",
-    "Coherence": "Coherence"
+    "Coherence": "Coherence",
+    "copyEscrowAddress": "Copy escrow address",
+    "copiedToClipboard": "Copied!"
   },
   "Navigation": {
     "network": "Network",
@@ -222,9 +224,9 @@
         "title": "Accept Investment (Coming Soon)",
         "description": "Receive capital from investors, members, or aligned spaces in exchange for native space tokens."
       },
-      "exchangeOwnershipComingSoon": {
-        "title": "Exchange Ownership (Coming Soon)",
-        "description": "Swap ownership between members or spaces, whether selling a stake or exchanging assets."
+      "exchangeStakesAndTokens": {
+        "title": "Exchange Stakes & Tokens",
+        "description": "Swap ownership stakes, tokens, or other assets between members or spaces."
       },
       "deployFunds": {
         "title": "Deploy Funds",
@@ -357,6 +359,7 @@
     },
     "transactionCard": {
       "tokenIconAlt": "Token icon",
+      "escrowAccountName": "Escrow Account",
       "memo": "Memo",
       "type": {
         "transfer": "Transfer",
@@ -798,7 +801,16 @@
       "collectiveAgreement": "Collective Agreement",
       "contribution": "Contribution",
       "expenses": "Expenses",
-      "funding": "Funding"
+      "funding": "Funding",
+      "exchange": "Exchange"
+    },
+    "documentListBadges": {
+      "invite": "Invite",
+      "redeemTokens": "Redeem Tokens",
+      "updateToken": "Update Token",
+      "statusOnVoting": "On voting",
+      "statusAccepted": "Accepted",
+      "statusRejected": "Rejected"
     },
     "buttons": {
       "publish": "Publish"
@@ -833,8 +845,11 @@
       "recipientRequired": "Please add a recipient or wallet address",
       "invalidEthereumAddress": "Invalid Ethereum address",
       "amountGreaterThanZero": "Amount must be greater than 0",
+      "exchangeAmountRequired": "Please enter an amount.",
       "amountRequired": "Enter an amount to continue.",
       "tokenRequired": "Please select a token",
+      "buyerSpaceTreasuryUnavailable": "Could not load the buyer space treasury. Wait for chain data and try again, or pick the buyer space again.",
+      "sellerSpaceTreasuryUnavailable": "Could not load the seller space treasury. Wait for chain data and try again, or pick the seller space again.",
       "atLeastOnePayoutRequired": "At least one payout is required",
       "purchaseAmountRequired": "Please enter a purchase amount.",
       "selectSpaceToActivate": "Please select a space to activate.",
@@ -976,6 +991,36 @@
         "receiveHyphaTokens": "Our space will receive {amount} HYPHA tokens (1 HYPHA = {price} USD)",
         "hyphaSentTo": "HYPHA sent to",
         "usdcPaidTo": "USDC paid to"
+      },
+      "exchangeStakesAndTokens": {
+        "errors": {
+          "sellerAmountExceedsBalance": "The entered amount is greater than the seller available balance.",
+          "sellerTreasuryUnavailable": "Could not load the space treasury. Wait for chain data and try again.",
+          "sellerBalanceCheckFailed": "Could not verify seller balance. Check your connection and try again.",
+          "memberSellerWalletMismatch": "Exchange funding uses your connected wallet. Connect the same wallet as the seller address, or choose the member seller whose address matches your wallet.",
+          "escrowTokenInvalid": "A token row uses the escrow contract address. Use the ERC-20 token contract for seller and buyer tokens.",
+          "insufficientSellerBalance": "The connected wallet does not hold enough seller tokens. Fund the smart wallet that matches the seller address.",
+          "tokenWhitelistBlocked": "This token’s on-chain rules block sending it to escrow (e.g. transfer/receive whitelist). Choose another token or update the token’s whitelist settings.",
+          "safeErc20TransferFailed": "The token contract rejected the transfer to escrow (often balance, allowance, or non-transferable rules). Check that your smart wallet holds enough tokens and that the token allows transfers to the escrow."
+        },
+        "seller": "Seller (Wallet Address)",
+        "sellerWillSend": "Seller sends",
+        "buyer": "Buyer (Wallet Address)",
+        "buyerWillSend": "Buyer will send",
+        "loadingTokens": "Loading tokens...",
+        "escrowNotice": "This proposal uses escrow for the exchange. Voting only approves terms and does not move tokens, unless the treasury is the buyer or seller. After approval, the treasury executes on-chain and both parties fund escrow; the agreement is final once escrow is fully funded.",
+        "escrowAccountAddress": "Escrow account address",
+        "escrowFunding": "Escrow Funding",
+        "escrowStatus": "Escrow Status",
+        "escrowPendingBuyerFunding": "Waiting for buyer funding",
+        "escrowCompleted": "Completed",
+        "escrowCancelled": "Cancelled",
+        "approveAndFundPrompt": "Buyer should approve token and call receiveFunds({escrowId}) to complete the exchange.",
+        "memberEscrowPendingVote": "Seller tokens move to escrow only after this proposal is accepted. When it passes, they are sent automatically if the seller wallet is connected.",
+        "memberEscrowFundingAuto": "Transferring seller tokens to escrow…",
+        "memberEscrowFunded": "Escrow #{escrowId} is funded. The buyer can complete their side when ready.",
+        "connectSellerWalletAuto": "Connect the seller wallet on this device to complete the transfer to escrow.",
+        "memberEscrowFundError": "Could not send tokens to escrow: {message}"
       },
       "tokenBackingVault": {
         "title": "Token Backing Vault",
@@ -1354,6 +1399,8 @@
       "tokenPayoutFieldArray": {
         "paymentRequest": "Payment Request",
         "enterAmountAndToken": "Please enter an amount and select a token.",
+        "enterAmount": "Please enter an amount.",
+        "selectToken": "Please select a token.",
         "add": "Add"
       },
       "paymentSchedule": {
@@ -1405,6 +1452,7 @@
       "toWhitelist": "To Whitelist"
     },
     "labels": {
+      "toEscrowAccount": "To: Escrow account",
       "unknown": "Unknown",
       "custom": "Custom",
       "token": "Token",
@@ -1483,6 +1531,32 @@
       "whitelistEnforcementInactive": "Inactive",
       "spaceWhitelistMembersSuffix": "(Space & Members)",
       "spaceWhitelistOnlySuffix": "(Space only)"
+    },
+    "exchange": {
+      "escrowId": "Escrow ID",
+      "status": {
+        "label": "Escrow Status",
+        "pendingFunding": "Pending buyer funding",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      },
+      "leg": "Exchange Leg",
+      "from": "From",
+      "to": "To",
+      "funded": "Funded"
+    },
+    "exchange": {
+      "escrowId": "Escrow ID",
+      "status": {
+        "label": "Escrow Status",
+        "pendingFunding": "Pending buyer funding",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      },
+      "leg": "Exchange Leg",
+      "from": "From",
+      "to": "To",
+      "funded": "Funded"
     },
     "entryMethods": {
       "openAccess": "Open Access",

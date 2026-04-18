@@ -3,6 +3,7 @@
 import {
   ProposeContributionPlugin,
   PayForExpensesPlugin,
+  ExchangeStakesAndTokensPlugin,
   DeployFundsPlugin,
   ChangeVotingMethodPlugin,
   ChangeEntryMethodPlugin,
@@ -24,6 +25,7 @@ import { Person, Space } from '@hypha-platform/core/client';
 export const PLUGINS = {
   'propose-contribution': ProposeContributionPlugin,
   'pay-for-expenses': PayForExpensesPlugin,
+  'exchange-stakes-and-tokens': ExchangeStakesAndTokensPlugin,
   'deploy-funds': DeployFundsPlugin,
   'change-voting-method': ChangeVotingMethodPlugin,
   'change-entry-method': ChangeEntryMethodPlugin,
@@ -49,6 +51,7 @@ type PluginProps = {
   /** Full space list (incl. current DHO) for mapping on-chain space ids → addresses */
   spacesForChainMapping?: Space[];
   members?: Person[];
+  currentSpaceAddress?: string;
 };
 
 export const Plugin = ({
@@ -59,6 +62,7 @@ export const Plugin = ({
   spaces,
   spacesForChainMapping,
   members,
+  currentSpaceAddress,
 }: PluginProps) => {
   const { persons, spaces: memberSpaces } = useMembers({
     spaceSlug,
@@ -72,6 +76,7 @@ export const Plugin = ({
     spaceId,
     members: members ?? persons?.data,
     spaces: spaces ?? memberSpaces?.data,
+    currentSpaceAddress,
   };
 
   /**

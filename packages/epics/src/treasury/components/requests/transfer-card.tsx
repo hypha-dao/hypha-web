@@ -6,6 +6,7 @@ import { CalendarIcon } from '@radix-ui/react-icons';
 import { Amount } from '@hypha-platform/ui/server';
 import { ZeroAddress } from 'ethers';
 import { useFormatter, useTranslations } from 'next-intl';
+import { isExchangeEscrowContractAddress } from '@hypha-platform/core/client';
 
 type TransferCardProps = {
   name?: string;
@@ -44,13 +45,15 @@ export const TransferCard: React.FC<TransferCardProps> = ({
 }) => {
   const tTreasury = useTranslations('TreasuryTab');
   const format = useFormatter();
+  const counterpartyAddress = counterparty === 'from' ? from : to;
+  const escrowLabel = tTreasury('transactionCard.escrowAccountName');
   const displayName = title
     ? title
+    : isExchangeEscrowContractAddress(counterpartyAddress)
+    ? escrowLabel
     : name
     ? `${name || ''} ${surname || ''}`.trim()
-    : counterparty === 'from'
-    ? from
-    : to;
+    : counterpartyAddress;
 
   const isBurn = () => {
     return to === ZeroAddress && counterparty === 'to';

@@ -720,6 +720,96 @@ export const schemaBuyHyphaTokens = z.object({
     .refine(isAddress, { message: 'Invalid Ethereum address' }),
 });
 
+export const schemaExchangeStakesAndTokens = z
+  .object({
+    ...createAgreementWeb2Props,
+    ...createAgreementFiles,
+    label: z.literal('Exchange'),
+    /** Set by exchange plugin; used only for client-side seller balance validation */
+    sellerRecipientType: z.enum(['member', 'space']).optional(),
+    buyerRecipientType: z.enum(['member', 'space']).optional(),
+    /** Buyer space treasury executor — used as on-chain escrow party B when buyer is a space */
+    buyerExecutorAddressForSettlement: z.string().optional(),
+    /** On-chain executor for the active space (treasury) when seller is space */
+    spaceExecutorAddress: z.string().optional(),
+    sellerAddress: z
+      .string()
+      .min(1, { message: 'Please add a recipient or wallet address' })
+      .refine(isAddress, { message: 'Invalid Ethereum address' }),
+    sellerLeg: z
+      .array(
+        z.object({
+          amount: z
+            .string()
+            .refine((value) => value.trim() !== '', {
+              message: 'Please enter an amount.',
+            })
+            .refine(
+              (value) => {
+                const normalized = value.trim();
+                const amount = Number(normalized);
+                return Number.isFinite(amount) && amount > 0;
+              },
+              { message: 'Amount must be greater than 0' },
+            ),
+          token: z
+            .string()
+            .min(1, { message: 'Please select a token' })
+            .refine(isAddress, { message: 'Invalid Ethereum address' }),
+        }),
+      )
+      .min(1, { message: 'Please add at least one seller token row' }),
+    buyerAddress: z
+      .string()
+      .min(1, { message: 'Please add a recipient or wallet address' })
+      .refine(isAddress, { message: 'Invalid Ethereum address' }),
+    buyerLeg: z
+      .array(
+        z.object({
+          amount: z
+            .string()
+            .refine((value) => value.trim() !== '', {
+              message: 'Please enter an amount.',
+            })
+            .refine(
+              (value) => {
+                const normalized = value.trim();
+                const amount = Number(normalized);
+                return Number.isFinite(amount) && amount > 0;
+              },
+              { message: 'Amount must be greater than 0' },
+            ),
+          token: z
+            .string()
+            .min(1, { message: 'Please select a token' })
+            .refine(isAddress, { message: 'Invalid Ethereum address' }),
+        }),
+      )
+      .min(1, { message: 'Please add at least one buyer token row' }),
+  })
+  .superRefine((data, ctx) => {
+    if (data.buyerRecipientType === 'space') {
+      const exec = data.buyerExecutorAddressForSettlement?.trim();
+      if (!exec || !isAddress(exec)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Buyer space treasury is unavailable',
+          path: ['buyerAddress'],
+        });
+      }
+    }
+    if (data.sellerRecipientType === 'space') {
+      const exec = data.spaceExecutorAddress?.trim();
+      if (!exec || !isAddress(exec)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Seller space treasury is unavailable',
+          path: ['sellerAddress'],
+        });
+      }
+    }
+  });
+
 export const schemaActivateSpaces = z.object({
   ...createAgreementWeb2Props,
   ...createAgreementFiles,

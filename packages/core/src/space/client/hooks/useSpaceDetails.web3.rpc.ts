@@ -10,8 +10,13 @@ export const useSpaceDetailsWeb3Rpc = ({
 }: {
   spaceId?: number | null;
 }) => {
+  const isValidSpaceId =
+    typeof spaceId === 'number' &&
+    Number.isFinite(spaceId) &&
+    Number.isInteger(spaceId) &&
+    spaceId > 0;
   const { data, isLoading, error } = useSWR(
-    spaceId != null ? [spaceId, 'spaceDetails'] : null,
+    isValidSpaceId ? [spaceId, 'spaceDetails'] : null,
     async ([spaceId]) =>
       publicClient.readContract(getSpaceDetails({ spaceId: BigInt(spaceId) })),
     { revalidateOnFocus: true },

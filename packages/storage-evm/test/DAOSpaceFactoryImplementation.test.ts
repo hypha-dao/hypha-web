@@ -5563,6 +5563,7 @@ describe('DAOSpaceFactoryImplementation', function () {
         const createTx = await escrow
           .connect(partyA)
           .createEscrow(
+            await partyA.getAddress(),
             await partyB.getAddress(),
             await tokenA.getAddress(),
             await tokenB.getAddress(),
@@ -5665,6 +5666,7 @@ describe('DAOSpaceFactoryImplementation', function () {
         // Create escrow with immediate funding
         console.log('\nCreating escrow with immediate funding...');
         const createTx = await escrow.connect(partyA).createEscrow(
+          await partyA.getAddress(),
           await partyB.getAddress(),
           await tokenA.getAddress(),
           await tokenB.getAddress(),
@@ -5772,6 +5774,7 @@ describe('DAOSpaceFactoryImplementation', function () {
         await escrow
           .connect(partyA)
           .createEscrow(
+            await partyA.getAddress(),
             await partyB.getAddress(),
             await tokenA.getAddress(),
             await tokenB.getAddress(),
@@ -5981,6 +5984,7 @@ describe('DAOSpaceFactoryImplementation', function () {
         await escrow
           .connect(partyA)
           .createEscrow(
+            await partyA.getAddress(),
             await partyB.getAddress(),
             await tokenA.getAddress(),
             await tokenB.getAddress(),
@@ -6101,6 +6105,7 @@ describe('DAOSpaceFactoryImplementation', function () {
         await escrow
           .connect(partyA)
           .createEscrow(
+            await partyA.getAddress(),
             await partyB.getAddress(),
             await tokenA.getAddress(),
             await tokenB.getAddress(),
@@ -6154,6 +6159,7 @@ describe('DAOSpaceFactoryImplementation', function () {
         await escrow
           .connect(partyA)
           .createEscrow(
+            await partyA.getAddress(),
             await partyB.getAddress(),
             await tokenA.getAddress(),
             await tokenB.getAddress(),
@@ -6216,6 +6222,7 @@ describe('DAOSpaceFactoryImplementation', function () {
         await escrow
           .connect(partyA)
           .createEscrow(
+            await partyA.getAddress(),
             await partyB.getAddress(),
             await tokenA.getAddress(),
             await tokenB.getAddress(),
@@ -6232,6 +6239,7 @@ describe('DAOSpaceFactoryImplementation', function () {
         await escrow
           .connect(partyA)
           .createEscrow(
+            await partyA.getAddress(),
             await other.getAddress(),
             await tokenA.getAddress(),
             await tokenB.getAddress(),
@@ -6246,6 +6254,7 @@ describe('DAOSpaceFactoryImplementation', function () {
           .mint(await other.getAddress(), ethers.parseEther('100'));
 
         await escrow.connect(partyB).createEscrow(
+          await partyB.getAddress(),
           await other.getAddress(),
           await tokenB.getAddress(),
           await tokenA.getAddress(),
@@ -6562,6 +6571,7 @@ describe('DAOSpaceFactoryImplementation', function () {
       const createEscrowTx = await actualEscrow
         .connect(executorSigner)
         .createEscrow(
+          executorAddress, // partyA (seller / first leg signer)
           await voter2.getAddress(), // partyB
           await voter1.getAddress(), // use voter1 address as dummy tokenA
           await voter2.getAddress(), // use voter2 address as dummy tokenB
@@ -6589,6 +6599,7 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // Create another escrow with a different creator (voter1)
       const createEscrowTx2 = await actualEscrow.connect(voter1).createEscrow(
+        await voter1.getAddress(), // partyA
         await voter2.getAddress(), // partyB
         await owner.getAddress(), // use owner address as dummy tokenA
         await voter1.getAddress(), // use voter1 address as dummy tokenB

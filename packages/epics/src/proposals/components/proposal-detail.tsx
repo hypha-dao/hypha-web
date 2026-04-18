@@ -35,6 +35,7 @@ import {
   ProposalRedeemTokensData,
   ProposalSpaceTokenPurchaseData,
   ProposalUpdateToken,
+  ProposalExchangeStakesAndTokensData,
 } from '../../governance';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
 import { ButtonClose, ExpireProposalBanner } from '@hypha-platform/epics';
@@ -49,6 +50,16 @@ import { formatUnits } from 'viem';
 import { resolveTokenDecimals } from '../../governance/utils/token-decimals';
 import { useDbSpaces } from '../../hooks';
 import { hasUpdateTokenDataToDisplay } from '../utils/has-update-token-data-to-display';
+import {
+  parseExchangeBuyerSettlementAddressFromDescription,
+  parseExchangeSellerSettlementAddressFromDescription,
+  parseExchangeDetailsFromDescription,
+  parseExchangeEscrowIdFromDescription,
+  stripExchangeBuyerSettlementComment,
+  stripExchangeSellerSettlementComment,
+  stripExchangeEscrowIdComment,
+  stripExchangeDetailsBlock,
+} from '../../governance/utils';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
@@ -402,6 +413,62 @@ export const ProposalDetail = ({
     return undefined;
   })();
 
+  const parsedExchangeDetails = parseExchangeDetailsFromDescription(content);
+  const documentExchangeEscrowId =
+    parseExchangeEscrowIdFromDescription(content);
+  const contentWithoutExchangeDetails = useMemo(() => {
+    if (!content) return content;
+    return stripExchangeSellerSettlementComment(
+      stripExchangeBuyerSettlementComment(
+        stripExchangeEscrowIdComment(stripExchangeDetailsBlock(content)),
+      ),
+    );
+  }, [content]);
+
+  const buyerPartyBForEscrow = useMemo(() => {
+    if (!content) return undefined;
+    return parseExchangeBuyerSettlementAddressFromDescription(content);
+  }, [content]);
+
+  const sellerPartyAForEscrow = useMemo(() => {
+    if (!content) return undefined;
+    return parseExchangeSellerSettlementAddressFromDescription(content);
+  }, [content]);
+
+  const fallbackSellerAddress = proposalDetails?.exchangeEscrowData?.partyA;
+  const fallbackBuyerAddress = proposalDetails?.exchangeEscrowData?.partyB;
+  const fallbackSellerLeg = useMemo(() => {
+    const partyA = fallbackSellerAddress?.toLowerCase();
+    const legs = proposalDetails?.exchangeEscrowData?.legs ?? [];
+    return legs
+      .filter((leg) => (partyA ? leg.from.toLowerCase() === partyA : true))
+      .map((leg) => ({
+        amount: formatUnits(leg.amount, resolveTokenDecimals(leg.tokenAddress)),
+        tokenAddress: leg.tokenAddress,
+      }));
+  }, [fallbackSellerAddress, proposalDetails?.exchangeEscrowData?.legs]);
+  const fallbackBuyerLeg = useMemo(() => {
+    const partyB = fallbackBuyerAddress?.toLowerCase();
+    const legs = proposalDetails?.exchangeEscrowData?.legs ?? [];
+    return legs
+      .filter((leg) => (partyB ? leg.from.toLowerCase() === partyB : true))
+      .map((leg) => ({
+        amount: formatUnits(leg.amount, resolveTokenDecimals(leg.tokenAddress)),
+        tokenAddress: leg.tokenAddress,
+      }));
+  }, [fallbackBuyerAddress, proposalDetails?.exchangeEscrowData?.legs]);
+
+  const sellerAddressForDisplay =
+    parsedExchangeDetails?.sellerAddress ?? fallbackSellerAddress;
+  const buyerAddressForDisplay =
+    parsedExchangeDetails?.buyerAddress ?? fallbackBuyerAddress;
+  const sellerLegForDisplay = parsedExchangeDetails?.sellerLeg.length
+    ? parsedExchangeDetails.sellerLeg
+    : fallbackSellerLeg;
+  const buyerLegForDisplay = parsedExchangeDetails?.buyerLeg.length
+    ? parsedExchangeDetails.buyerLeg
+    : fallbackBuyerLeg;
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex gap-2 justify-between">
@@ -447,7 +514,7 @@ export const ProposalDetail = ({
         isExpiring={isExpiring}
         web3SpaceId={proposalDetails?.spaceId}
       />
-      <MarkdownSuspense>{content}</MarkdownSuspense>
+      <MarkdownSuspense>{contentWithoutExchangeDetails}</MarkdownSuspense>
       <AttachmentList attachments={attachments || []} />
       {proposalDetails?.votingMethods.map((method, idx) => (
         <ProposalVotingInfo
@@ -631,6 +698,27 @@ export const ProposalDetail = ({
           fixedMaxSupply={proposalDetails.updateTokenData.fixedMaxSupply}
         />
       ) : null}
+      {(parsedExchangeDetails ||
+        proposalDetails?.exchangeEscrowData?.legs?.length) && (
+        <ProposalExchangeStakesAndTokensData
+          spaceSlug={spaceSlug}
+          dbTokens={dbTokens}
+          sellerAddress={sellerAddressForDisplay}
+          buyerAddress={buyerAddressForDisplay}
+          sellerLeg={sellerLegForDisplay}
+          buyerLeg={buyerLegForDisplay}
+          escrowId={
+            proposalDetails?.exchangeEscrowData?.escrowId ??
+            documentExchangeEscrowId
+          }
+          completed={
+            proposalDetails?.exchangeEscrowData?.status === 'completed'
+          }
+          cancelled={
+            proposalDetails?.exchangeEscrowData?.status === 'cancelled'
+          }
+        />
+      )}
       {label === 'Token Purchase' && proposalDetails?.spaceTokenPurchaseData ? (
         <ProposalSpaceTokenPurchaseData
           dbTokens={dbTokens}
@@ -657,7 +745,7 @@ export const ProposalDetail = ({
         proposalId={proposalId ?? null}
         proposalCreator={proposalDetails?.creator ?? null}
         documentTitle={title}
-        documentDescription={content}
+        documentDescription={contentWithoutExchangeDetails}
         documentLeadImage={leadImage}
         documentAttachments={attachments}
         spaceSlug={spaceSlug}
@@ -673,6 +761,19 @@ export const ProposalDetail = ({
         redeemResubmitPayload={redeemResubmitPayloadResolved}
         proposalTemplateData={resubmitTemplateData}
         spaceTokenPurchaseData={proposalDetails?.spaceTokenPurchaseData}
+        memberExchangeEscrow={
+          label === 'Exchange'
+            ? {
+                documentSlug,
+                description: content,
+                executed: Boolean(proposalDetails?.executed),
+                parsedExchange: parsedExchangeDetails,
+                spaceExecutorAddress: spaceDetails?.executor ?? null,
+                buyerPartyBForEscrow: buyerPartyBForEscrow ?? null,
+                sellerPartyAForEscrow: sellerPartyAForEscrow ?? null,
+              }
+            : undefined
+        }
       />
     </div>
   );

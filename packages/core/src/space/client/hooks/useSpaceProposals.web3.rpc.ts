@@ -6,8 +6,9 @@ import { getSpaceProposals } from '../web3';
 import React from 'react';
 
 export const useSpaceProposalsWeb3Rpc = ({ spaceId }: { spaceId: number }) => {
+  const isValidSpaceId = Number.isFinite(spaceId) && spaceId > 0;
   const { data, isLoading, error, mutate } = useSWR(
-    [spaceId, 'spaceProposals'],
+    isValidSpaceId ? [spaceId, 'spaceProposals'] : null,
     async ([spaceId]) =>
       publicClient.readContract(
         getSpaceProposals({ spaceId: BigInt(spaceId) }),

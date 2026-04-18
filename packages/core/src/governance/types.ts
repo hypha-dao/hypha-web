@@ -66,6 +66,7 @@ export interface UpdateAgreementInput {
   leadImage?: string;
   slug?: string;
   attachments?: (string | Attachment)[];
+  description?: string;
   web3ProposalId?: number | null;
 }
 

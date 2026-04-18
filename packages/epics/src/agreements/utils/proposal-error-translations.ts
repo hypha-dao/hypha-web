@@ -32,6 +32,12 @@ const PROPOSAL_ERROR_KEY_MAP: Record<string, string> = {
   'Recipient is required': 'proposalErrors.recipientRequired',
   'Invalid Ethereum address': 'proposalErrors.invalidEthereumAddress',
   'Amount must be greater than 0': 'proposalErrors.amountGreaterThanZero',
+  'Please enter an amount.': 'proposalErrors.exchangeAmountRequired',
+  'Please select a token': 'proposalErrors.tokenRequired',
+  'Buyer space treasury is unavailable':
+    'proposalErrors.buyerSpaceTreasuryUnavailable',
+  'Seller space treasury is unavailable':
+    'proposalErrors.sellerSpaceTreasuryUnavailable',
   'Amount is required': 'proposalErrors.amountRequired',
   'Token is required': 'proposalErrors.tokenRequired',
   'At least one payout is required': 'proposalErrors.atLeastOnePayoutRequired',
