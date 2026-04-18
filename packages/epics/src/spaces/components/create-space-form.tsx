@@ -43,12 +43,11 @@ import {
 } from '@hypha-platform/core/client';
 import { Links } from '../../common/links';
 import {
-  ButtonClose,
-  ButtonBack,
   ParentSpaceSelector,
   useMemberWeb3SpaceIds,
   useScrollToErrors,
   useFilterSpacesListWithDiscoverability,
+  ModalStickyNavigation,
 } from '@hypha-platform/epics';
 import slugify from 'slugify';
 import { cn } from '@hypha-platform/ui-utils';
@@ -433,6 +432,12 @@ export const SpaceForm = ({
         )}
         className={clsx('flex flex-col gap-5', isLoading && 'opacity-50')}
       >
+        <ModalStickyNavigation
+          closeUrl={closeUrl}
+          backUrl={backUrl}
+          backLabel={backLabel}
+          showBack={Boolean(backUrl)}
+        />
         <div className="flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-2">
           <div className="flex flex-grow gap-3">
             <FormField
@@ -464,12 +469,6 @@ export const SpaceForm = ({
                   {labelText}
                 </Badge>
                 <div className="flex grow"></div>
-                <div className="flex justify-between gap-4">
-                  {backUrl && (
-                    <ButtonBack label={backLabel} backUrl={backUrl} />
-                  )}
-                  <ButtonClose closeUrl={closeUrl} />
-                </div>
               </div>
               <div className="flex flex-row w-full">
                 <div className="flex flex-col w-full">

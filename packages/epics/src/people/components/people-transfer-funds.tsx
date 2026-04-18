@@ -3,8 +3,7 @@
 import React from 'react';
 import {
   ProposalOverlayShell,
-  ButtonClose,
-  ButtonBack,
+  ModalStickyNavigation,
   useUserAssets,
 } from '@hypha-platform/epics';
 import { PeopleTransferForm } from '@hypha-platform/epics';
@@ -61,17 +60,15 @@ export const ProfileTransferFunds = ({
   return (
     <ProposalOverlayShell>
       <div className="flex flex-col gap-5">
+        <ModalStickyNavigation
+          closeUrl={`/${lang}/profile/${personSlug}`}
+          backUrl={`/${lang}/profile/${personSlug}/actions`}
+          backLabel={tActions('backToActions')}
+        />
         <div className="flex gap-5 justify-between">
           <h2 className="text-4 text-secondary-foreground justify-start items-center">
             {tActions('transferFunds.title')}
           </h2>
-          <div className="flex gap-5 justify-end items-center">
-            <ButtonBack
-              label={tActions('backToActions')}
-              backUrl={`/${lang}/profile/${personSlug}/actions`}
-            />
-            <ButtonClose closeUrl={`/${lang}/profile/${personSlug}`} />
-          </div>
         </div>
         <span className="text-2 text-neutral-11">
           {tActions('transferFunds.content')}

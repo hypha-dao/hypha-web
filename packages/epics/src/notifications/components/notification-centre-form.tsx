@@ -25,7 +25,7 @@ import {
   TAG_SUB_NEW_PROPOSAL_OPEN,
   TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED,
 } from '@hypha-platform/notifications/client';
-import { ButtonClose } from '../../common/button-close';
+import { ModalStickyNavigation } from '../../common/modal-sticky-navigation';
 import { useRouter } from 'next/navigation';
 import { Person } from '@hypha-platform/core/client';
 import { useTranslations } from 'next-intl';
@@ -181,13 +181,13 @@ export const NotificationCentreForm = ({
   );
 
   return (
-    <div className="relative">
+    <div className="flex flex-col gap-5">
+      <ModalStickyNavigation closeUrl={closeUrl} showBack={false} />
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(handleSubmit, handleInvalid)}
           className="space-y-8"
         >
-          <ButtonClose closeUrl={closeUrl} className="absolute top-0 right-0" />
           <div className="flex flex-col gap-5">
             <div className="flex gap-5 justify-between">
               <Skeleton width="100px" height="24px" loading={isLoading}>

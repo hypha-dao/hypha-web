@@ -1,4 +1,7 @@
-import { ButtonClose, ProposalOverlayShell } from '@hypha-platform/epics';
+import {
+  ModalStickyNavigation,
+  ProposalOverlayShell,
+} from '@hypha-platform/epics';
 import { SelectActivateAction } from '../../../_components/select-activate-action';
 import { Locale } from '@hypha-platform/i18n';
 import { PATH_SELECT_ACTIVATE_ACTION } from '@web/app/constants';
@@ -11,10 +14,10 @@ export default async function SelectActivateActions({
   const { id: daoSlug, lang, tab } = await params;
   return (
     <ProposalOverlayShell>
-      <div className="relative">
-        <ButtonClose
-          dropSegment={PATH_SELECT_ACTIVATE_ACTION}
-          className="absolute top-0 right-0"
+      <div className="flex flex-col gap-5">
+        <ModalStickyNavigation
+          closeDropSegment={PATH_SELECT_ACTIVATE_ACTION}
+          backToParent
         />
         <SelectActivateAction lang={lang} daoSlug={daoSlug} activeTab={tab} />
       </div>
