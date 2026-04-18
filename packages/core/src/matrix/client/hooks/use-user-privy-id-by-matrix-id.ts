@@ -6,7 +6,8 @@ import useSWR from 'swr';
 import { getLinkByMatrixUserIdAction } from '../../server/actions';
 
 export interface UseUserPrivyIdByMatrixIdInput {
-  matrixUserId: string;
+  /** When omitted or empty, no request is made (safe for conditional resolution). */
+  matrixUserId?: string;
 }
 
 export const useUserPrivyIdByMatrixId = ({
@@ -19,7 +20,11 @@ export const useUserPrivyIdByMatrixId = ({
     if (typeof window === 'undefined') return undefined;
     return determineEnvironment(window.location.href);
   }, []);
-  const arg = isLoadingJwt ? null : { matrixUserId, environment };
+  const trimmedId = matrixUserId?.trim();
+  const arg =
+    isLoadingJwt || !trimmedId
+      ? null
+      : { matrixUserId: trimmedId, environment };
 
   const { data: privyUserId, isLoading } = useSWR(
     [jwt ? arg : null, 'getLinkByMatrixUserId'],

@@ -17,9 +17,18 @@ import {
   Pause,
   Play,
 } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@hypha-platform/ui';
+import {
+  Skeleton,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { useMatrix } from '@hypha-platform/core/client';
+import {
+  useMatrix,
+  usePersonBySub,
+  useUserPrivyIdByMatrixId,
+} from '@hypha-platform/core/client';
 import { PersonAvatar } from '../../people/components/person-avatar';
 
 import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
@@ -974,6 +983,33 @@ function ChatReplyConnectorMeasured({
   );
 }
 
+/**
+ * Matrix often exposes the raw localpart (e.g. `prev_privy_did_…`) as displayname;
+ * resolve Hypha profile via matrix_user_links when the label still looks technical.
+ */
+function needsHyphaProfileForMatrixLabel(
+  label: string | undefined,
+  matrixId: string | undefined,
+): boolean {
+  if (!matrixId?.trim()) return false;
+  const l = label?.trim() ?? '';
+  if (!l) return true;
+  if (l === matrixId) return true;
+  if (/^prev_privy_/i.test(l)) return true;
+  return false;
+}
+
+function formatPersonDisplayName(p: {
+  name?: string | null;
+  surname?: string | null;
+  nickname?: string | null;
+}): string {
+  const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
+  if (full) return full;
+  if (p.nickname?.trim()) return p.nickname.trim();
+  return '';
+}
+
 function reactionTooltipText(
   reaction: Reaction,
   resolveLabel: (userId: string) => string,
@@ -1047,7 +1083,70 @@ export function HumanChatPanelMessageBubble({
     ? getEmojiOnlyJumboLayout(textContent, Boolean(replyTo))
     : { mode: 'normal' as const };
 
-  const senderName = message.senderName ?? t('you');
+  const resolveSenderProfile =
+    message.role === 'member' &&
+    needsHyphaProfileForMatrixLabel(message.senderName, message.senderMatrixId);
+  const resolveReplyProfile =
+    replyTo?.sourceUserId != null &&
+    needsHyphaProfileForMatrixLabel(replyTo.authorLabel, replyTo.sourceUserId);
+
+  const { privyUserId: senderPrivySub, isLoading: isLoadingSenderLink } =
+    useUserPrivyIdByMatrixId({
+      matrixUserId: resolveSenderProfile ? message.senderMatrixId : undefined,
+    });
+  const { privyUserId: replyPrivySub, isLoading: isLoadingReplyLink } =
+    useUserPrivyIdByMatrixId({
+      matrixUserId: resolveReplyProfile ? replyTo?.sourceUserId : undefined,
+    });
+
+  const { person: senderPerson, isLoading: isLoadingSenderPerson } =
+    usePersonBySub({ sub: senderPrivySub });
+  const { person: replyPerson, isLoading: isLoadingReplyPerson } =
+    usePersonBySub({ sub: replyPrivySub });
+
+  const resolvedSenderName = useMemo(() => {
+    if (message.role === 'user') {
+      return message.senderName ?? t('you');
+    }
+    const fromPerson = senderPerson
+      ? formatPersonDisplayName(senderPerson)
+      : '';
+    if (fromPerson) return fromPerson;
+    return message.senderName ?? t('unknownMember');
+  }, [message.role, message.senderName, senderPerson, t]);
+
+  const resolvedReplyAuthorLabel = useMemo(() => {
+    if (!replyTo) return '';
+    const fromPerson = replyPerson ? formatPersonDisplayName(replyPerson) : '';
+    if (fromPerson) return fromPerson;
+    return replyTo.authorLabel;
+  }, [replyPerson, replyTo]);
+
+  const senderProfileLoading =
+    resolveSenderProfile &&
+    (isLoadingSenderLink ||
+      isLoadingSenderPerson ||
+      (Boolean(senderPrivySub) && !senderPerson));
+
+  const replyProfileLoading =
+    resolveReplyProfile &&
+    (isLoadingReplyLink ||
+      isLoadingReplyPerson ||
+      (Boolean(replyPrivySub) && !replyPerson));
+
+  const senderName = resolvedSenderName;
+  const replyAuthorLabelForUi = replyTo ? resolvedReplyAuthorLabel : '';
+  const mainAvatarSrc =
+    message.role === 'member' && senderPerson?.avatarUrl
+      ? senderPerson.avatarUrl
+      : message.avatarUrl;
+  const replyHeaderAvatarResolved =
+    replyTo &&
+    currentUserId &&
+    replyTo.sourceUserId &&
+    replyTo.sourceUserId === currentUserId
+      ? currentUserAvatarUrl ?? replyTo.authorAvatarUrl
+      : replyPerson?.avatarUrl ?? replyTo?.authorAvatarUrl;
   const timestamp = message.timestamp
     ? formatTimestamp(message.timestamp, t)
     : undefined;
@@ -1091,14 +1190,6 @@ export function HumanChatPanelMessageBubble({
     reactions.length - MAX_VISIBLE_REACTIONS,
   );
 
-  const replyHeaderAvatar =
-    replyTo &&
-    currentUserId &&
-    replyTo.sourceUserId &&
-    replyTo.sourceUserId === currentUserId
-      ? currentUserAvatarUrl ?? replyTo.authorAvatarUrl
-      : replyTo?.authorAvatarUrl;
-
   const messageRowRef = useRef<HTMLDivElement>(null);
   const replyAvatarMeasureRef = useRef<HTMLDivElement>(null);
   const mainAvatarMeasureRef = useRef<HTMLDivElement>(null);
@@ -1132,15 +1223,16 @@ export function HumanChatPanelMessageBubble({
             <PersonAvatar
               size="sm"
               shape="circle"
-              avatarSrc={replyHeaderAvatar}
-              userName={replyTo.authorLabel}
+              avatarSrc={replyHeaderAvatarResolved}
+              userName={replyAuthorLabelForUi}
+              isLoading={replyProfileLoading}
             />
           </div>
           <p className="flex min-w-0 flex-1 items-baseline gap-1 truncate text-xs leading-tight text-muted-foreground">
             <span className="shrink-0 font-semibold text-muted-foreground">
-              {replyTo.authorLabel.startsWith('@')
-                ? replyTo.authorLabel
-                : `@${replyTo.authorLabel}`}
+              {replyAuthorLabelForUi.startsWith('@')
+                ? replyAuthorLabelForUi
+                : `@${replyAuthorLabelForUi}`}
             </span>
             {replyTo.excerpt != null && replyTo.excerpt !== '' ? (
               <span className="min-w-0 truncate font-normal">
@@ -1163,8 +1255,9 @@ export function HumanChatPanelMessageBubble({
             <PersonAvatar
               size="chat"
               shape="circle"
-              avatarSrc={message.avatarUrl}
+              avatarSrc={mainAvatarSrc}
               userName={senderName}
+              isLoading={senderProfileLoading}
             />
           </div>
         </div>
@@ -1173,9 +1266,16 @@ export function HumanChatPanelMessageBubble({
         <div className="relative z-[1] flex min-w-0 flex-1 flex-col">
           {/* Name + Timestamp */}
           <div className="flex items-baseline gap-2">
-            <span className="font-semibold text-sm text-foreground">
-              {senderName}
-            </span>
+            <Skeleton
+              className="inline-block rounded"
+              loading={senderProfileLoading}
+              width={120}
+              height={14}
+            >
+              <span className="font-semibold text-sm text-foreground">
+                {senderName}
+              </span>
+            </Skeleton>
             {timestamp && (
               <span className="text-xs text-muted-foreground">{timestamp}</span>
             )}
