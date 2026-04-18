@@ -69,9 +69,10 @@ function getCoords(
   span.textContent = element.value.slice(position) || '\u200b';
   div.appendChild(span);
 
-  const lineHeight = parseFloat(computed.lineHeight) || 20;
-  const top = span.offsetTop + lineHeight;
-  const left = span.offsetLeft;
+  /** Top of the line containing this index (not the baseline / line bottom). */
+  const top = span.offsetTop;
+  const spanWidth = span.offsetWidth || 1;
+  const left = span.offsetLeft + spanWidth / 2;
 
   doc.body.removeChild(div);
 

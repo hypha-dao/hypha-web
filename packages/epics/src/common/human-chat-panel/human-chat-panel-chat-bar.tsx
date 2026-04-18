@@ -1156,25 +1156,18 @@ export function HumanChatPanelChatBar({
           </div>
         )}
         {selectionBar && (
-          <>
-            <div
-              className="pointer-events-none absolute z-30 w-0 -translate-x-1/2"
-              style={{
-                left: selectionBar.left,
-                top: Math.max(4, selectionBar.top - 8),
-              }}
-              aria-hidden
-            >
-              <div className="h-0 w-0 border-x-[5px] border-t-[6px] border-x-transparent border-t-popover" />
-            </div>
+          <div
+            className="absolute z-30 flex -translate-x-1/2 -translate-y-full flex-col items-center gap-0"
+            style={{
+              left: selectionBar.left,
+              /* Bottom of this stack sits here; subtract gap so arrow tip clears selected text */
+              top: Math.max(4, selectionBar.top - 4),
+            }}
+          >
             <div
               role="toolbar"
               aria-label={t('formatSelectionBar')}
-              className="absolute z-30 flex -translate-x-1/2 -translate-y-full items-center gap-0 rounded-md border border-border bg-popover px-0.5 py-0.5 text-popover-foreground shadow-md"
-              style={{
-                left: selectionBar.left,
-                top: Math.max(4, selectionBar.top - 8),
-              }}
+              className="flex items-center gap-0 rounded-md border border-border bg-popover px-0.5 py-0.5 text-popover-foreground shadow-md"
               onMouseDown={(e) => e.preventDefault()}
             >
               <button
@@ -1232,7 +1225,13 @@ export function HumanChatPanelChatBar({
                 <Eye className="h-3.5 w-3.5" strokeWidth={2} />
               </button>
             </div>
-          </>
+            <div
+              className="pointer-events-none flex justify-center"
+              aria-hidden
+            >
+              <div className="h-0 w-0 border-x-[5px] border-b-[6px] border-x-transparent border-b-popover" />
+            </div>
+          </div>
         )}
         <input
           ref={fileInputRef}
