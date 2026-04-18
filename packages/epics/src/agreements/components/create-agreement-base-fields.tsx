@@ -1,6 +1,6 @@
 'use client';
 
-import { useFormContext, useWatch } from 'react-hook-form';
+import { useFormContext } from 'react-hook-form';
 import {
   Input,
   FormControl,
@@ -176,6 +176,45 @@ export function CreateAgreementBaseFields({
   }, [pathname]);
 
   const { space } = useSpaceBySlug(spaceSlug as string);
+
+  /** Pre-fill proposal banner from space hero image once (users can still replace it). */
+  const hasAppliedSpaceBannerDefaultRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (resubmitFormData?.leadImage?.trim()) {
+      return;
+    }
+
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = sessionStorage.getItem('resubmitFormData');
+        if (raw) {
+          const parsed = JSON.parse(raw) as { leadImage?: string };
+          if (parsed?.leadImage?.trim()) {
+            return;
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+
+    const bannerUrl = space?.leadImage?.trim();
+    if (!bannerUrl || hasAppliedSpaceBannerDefaultRef.current) {
+      return;
+    }
+
+    const current = form.getValues('leadImage');
+    if (typeof current === 'string' && current.trim().length > 0) {
+      return;
+    }
+    if (current instanceof File) {
+      return;
+    }
+
+    form.setValue('leadImage', bannerUrl, { shouldValidate: true });
+    hasAppliedSpaceBannerDefaultRef.current = true;
+  }, [space?.leadImage, resubmitFormData, form]);
 
   const spaceIdBigInt = space?.web3SpaceId ? BigInt(space.web3SpaceId) : null;
 
