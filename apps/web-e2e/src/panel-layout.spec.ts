@@ -6,7 +6,7 @@ test.describe('Panel Layout', () => {
 
   test.use({
     extraHTTPHeaders: {
-      Cookie: 'HYPHA_ENABLE_AI_CHAT=true; HYPHA_ENABLE_HUMAN_CHAT=true',
+      Cookie: 'HYPHA_ENABLE_AI_CHAT=true',
     },
   });
 
@@ -14,12 +14,6 @@ test.describe('Panel Layout', () => {
     await context.addCookies([
       {
         name: 'HYPHA_ENABLE_AI_CHAT',
-        value: 'true',
-        domain: '127.0.0.1',
-        path: '/',
-      },
-      {
-        name: 'HYPHA_ENABLE_HUMAN_CHAT',
         value: 'true',
         domain: '127.0.0.1',
         path: '/',

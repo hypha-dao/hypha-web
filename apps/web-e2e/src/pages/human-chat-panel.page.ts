@@ -1,11 +1,5 @@
-import { Page, Locator, BrowserContext } from '@playwright/test';
+import { Page, Locator } from '@playwright/test';
 import { BasePage } from './base.page';
-
-/**
- * Cookie name for the Human Chat feature flag.
- * Canonical source: packages/cookie/src/constants.ts → HYPHA_ENABLE_HUMAN_CHAT
- */
-const HYPHA_ENABLE_HUMAN_CHAT = 'HYPHA_ENABLE_HUMAN_CHAT';
 
 export class HumanChatPanelPage extends BasePage {
   readonly openButton: Locator;
@@ -62,26 +56,6 @@ export class HumanChatPanelPage extends BasePage {
       .getByRole('button', { name: /^chat$/i });
     this.membersContainer = page.getByTestId('chat-panel-members');
     this.memberItems = page.getByTestId('chat-panel-member-item');
-  }
-
-  /**
-   * Enable the Human Chat feature flag.
-   *
-   * The flag is evaluated during SSR via cookie, so we set
-   * browser cookies for client-side navigations.
-   *
-   * Call this BEFORE open() in test setup, or use the static helper.
-   */
-  static async enableHumanChat(context: BrowserContext) {
-    await context.addCookies([
-      {
-        name: HYPHA_ENABLE_HUMAN_CHAT,
-        value: 'true',
-        domain: new URL(process.env.BASE_URL || 'http://127.0.0.1:4200')
-          .hostname,
-        path: '/',
-      },
-    ]);
   }
 
   /** Navigate to a space's agreements page. Defaults to 'hypha'. */
