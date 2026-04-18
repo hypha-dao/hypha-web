@@ -168,6 +168,7 @@ function MenuSections({
   canDelete,
   onRequestDelete,
   onAfterAddReaction,
+  onAfterQuickReaction,
   Sub,
   SubTrigger,
   SubContent,
@@ -191,6 +192,8 @@ function MenuSections({
   onRequestDelete: () => void;
   /** e.g. close ⋯ dropdown after picking from full picker */
   onAfterAddReaction?: () => void;
+  /** Close menu after tapping a quick emoji (top row). */
+  onAfterQuickReaction?: () => void;
   Sub: typeof ContextMenuSub | typeof DropdownMenuSub;
   SubTrigger: typeof ContextMenuSubTrigger | typeof DropdownMenuSubTrigger;
   SubContent: typeof ContextMenuSubContent | typeof DropdownMenuSubContent;
@@ -201,6 +204,7 @@ function MenuSections({
     if (!onReact) return;
     pushRecentChatReaction(emoji);
     void onReact(emoji);
+    onAfterQuickReaction?.();
   };
 
   return (
@@ -326,6 +330,7 @@ export function HumanChatPanelMessageOverflow({
   const quickEmojis = useQuickReactions();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [contextMenuOpen, setContextMenuOpen] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -420,6 +425,7 @@ export function HumanChatPanelMessageOverflow({
     <MenuSections
       {...menuPropsBase}
       onAfterAddReaction={undefined}
+      onAfterQuickReaction={() => setContextMenuOpen(false)}
       Sub={ContextMenuSub}
       SubTrigger={ContextMenuSubTrigger}
       SubContent={ContextMenuSubContent}
@@ -432,6 +438,7 @@ export function HumanChatPanelMessageOverflow({
     <MenuSections
       {...menuPropsBase}
       onAfterAddReaction={() => setDropdownOpen(false)}
+      onAfterQuickReaction={() => setDropdownOpen(false)}
       Sub={DropdownMenuSub}
       SubTrigger={DropdownMenuSubTrigger}
       SubContent={DropdownMenuSubContent}
@@ -471,7 +478,7 @@ export function HumanChatPanelMessageOverflow({
 
   return (
     <>
-      <ContextMenu>
+      <ContextMenu open={contextMenuOpen} onOpenChange={setContextMenuOpen}>
         <ContextMenuTrigger asChild>{rowInner}</ContextMenuTrigger>
         <ContextMenuContent className="min-w-[220px] p-1">
           {contextMenu}
