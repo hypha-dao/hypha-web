@@ -39,9 +39,9 @@ export function ProposalOverlayShell({
     <AsideOverlayLayoutProvider mode="modal-shell">
       <div
         className={cn(
-          // Stay below Radix portaled layers (Select/Popover/Dropdown use z-50 in @hypha-platform/ui)
-          // so dropdowns remain clickable; higher z-index caused the backdrop to steal pointer events.
-          'fixed z-40',
+          // Below sticky MenuTop (z-30 in root layout) so nav/profile stays clickable.
+          // Below Radix portaled layers (z-50). Above normal page content.
+          'fixed z-20',
           // Mobile / tablet portrait: docked sheet (same as SidePanel)
           'max-md:bottom-0 max-md:top-[var(--menu-top-height,65px)] max-md:right-[var(--sidebar-right-width,0px)] max-md:w-full max-md:overflow-y-auto max-md:bg-background-2',
           // Desktop: overlay host (content centered; scrim behind)
