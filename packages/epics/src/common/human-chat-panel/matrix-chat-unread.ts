@@ -3,6 +3,7 @@ import { EventType, NotificationCountType, type Room } from 'matrix-js-sdk';
 import {
   getMessageReplaceTargetEventId,
   isRedactedRoomMessageEvent,
+  parseMentionUserIdsFromWireContent,
 } from '@hypha-platform/core/client';
 
 export type HumanChatUnreadState = {
@@ -32,6 +33,48 @@ function effectiveReadCursorEventId(room: Room, userId: string): string | null {
   return receiptId ?? fullyReadId ?? null;
 }
 
+/**
+ * Count room messages that @-mention the viewer and are still unread by read-receipt
+ * cursor. Used when `NotificationCountType.Highlight` from the server is 0 (some
+ * homeservers do not populate highlight counts reliably).
+ */
+function countUnreadMentionMessagesForUser(
+  room: Room,
+  viewerId: string,
+  readUpToId: string | null,
+): number {
+  const timeline = room.getLiveTimeline().getEvents();
+  let n = 0;
+  for (const ev of timeline) {
+    if (ev.getType() !== EventType.RoomMessage) continue;
+    if (!ev.getId() || !ev.getSender()) continue;
+    if (isRedactedRoomMessageEvent(ev)) continue;
+    if (getMessageReplaceTargetEventId(ev) != null) continue;
+
+    const id = ev.getId()!;
+    const sender = ev.getSender()!;
+    if (sender === viewerId) continue;
+
+    const ids = parseMentionUserIdsFromWireContent(ev.getContent());
+    if (!ids?.includes(viewerId)) continue;
+
+    if (readUpToId) {
+      const cmp = room.compareEventOrdering(readUpToId, id);
+      if (cmp !== null && cmp >= 0) continue;
+    }
+
+    if (
+      typeof room.hasUserReadEvent === 'function' &&
+      room.hasUserReadEvent(viewerId, id)
+    ) {
+      continue;
+    }
+
+    n += 1;
+  }
+  return n;
+}
+
 export function computeHumanChatUnreadState(
   room: Room | undefined,
   userId: string | null,
@@ -55,11 +98,17 @@ export function computeHumanChatUnreadState(
 
   const unreadCountIsCapped = unreadNotificationCount >= 100;
 
-  const unreadMentionCount =
-    typeof highlight === 'number' && highlight > 0 ? highlight : 0;
-  const mentionCountIsCapped = unreadMentionCount >= 100;
-
   const readUpToId = effectiveReadCursorEventId(room, userId);
+
+  const serverHighlightCount =
+    typeof highlight === 'number' && highlight > 0 ? highlight : 0;
+  const localMentionCount = countUnreadMentionMessagesForUser(
+    room,
+    userId,
+    readUpToId,
+  );
+  const unreadMentionCount = Math.max(serverHighlightCount, localMentionCount);
+  const mentionCountIsCapped = unreadMentionCount >= 100;
 
   const timeline = room.getLiveTimeline().getEvents();
 

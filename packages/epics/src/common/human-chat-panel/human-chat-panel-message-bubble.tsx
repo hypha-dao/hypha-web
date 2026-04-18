@@ -651,6 +651,12 @@ type HumanChatPanelMessageBubbleProps = {
   resolveReactionReactorLabel?: (userId: string) => string;
   /** Resolve `@localpart:homeserver` pills in message body (room member display names). */
   resolveMatrixMemberLabel?: (matrixUserId: string) => string;
+  /**
+   * Hypha roster / merged labels for timeline headers (sender + reply). When set,
+   * used before `message.senderName` so senders match Members tab without requiring
+   * `matrix_user_links` for every MXID.
+   */
+  resolveSenderDisplayLabel?: (matrixUserId: string | undefined) => string;
   /** Parent list ensures at most one message shows the floating action bar. */
   isActionBarVisible?: boolean;
   onRowPointerEnter?: () => void;
@@ -1118,6 +1124,7 @@ function reactionTooltipText(
 export function HumanChatPanelMessageBubble({
   resolveReactionReactorLabel,
   resolveMatrixMemberLabel,
+  resolveSenderDisplayLabel,
   isActionBarVisible = false,
   onRowPointerEnter,
   onRowPointerLeave,
@@ -1184,12 +1191,27 @@ export function HumanChatPanelMessageBubble({
     ? getEmojiOnlyJumboLayout(textContent, Boolean(replyTo))
     : { mode: 'normal' as const };
 
+  const rosterSenderLabel =
+    message.role === 'member' && message.senderMatrixId
+      ? resolveSenderDisplayLabel?.(message.senderMatrixId)
+      : undefined;
+  const rosterReplyLabel =
+    replyTo?.sourceUserId != null
+      ? resolveSenderDisplayLabel?.(replyTo.sourceUserId)
+      : undefined;
+
   const resolveSenderProfile =
     message.role === 'member' &&
-    needsHyphaProfileForMatrixLabel(message.senderName, message.senderMatrixId);
+    needsHyphaProfileForMatrixLabel(
+      rosterSenderLabel ?? message.senderName,
+      message.senderMatrixId,
+    );
   const resolveReplyProfile =
     replyTo?.sourceUserId != null &&
-    needsHyphaProfileForMatrixLabel(replyTo.authorLabel, replyTo.sourceUserId);
+    needsHyphaProfileForMatrixLabel(
+      rosterReplyLabel ?? replyTo.authorLabel,
+      replyTo.sourceUserId,
+    );
 
   const { privyUserId: senderPrivySub, isLoading: isLoadingSenderLink } =
     useUserPrivyIdByMatrixId({
@@ -1213,15 +1235,17 @@ export function HumanChatPanelMessageBubble({
       ? formatPersonDisplayName(senderPerson)
       : '';
     if (fromPerson) return fromPerson;
+    if (rosterSenderLabel?.trim()) return rosterSenderLabel.trim();
     return message.senderName ?? t('unknownMember');
-  }, [message.role, message.senderName, senderPerson, t]);
+  }, [message.role, message.senderName, rosterSenderLabel, senderPerson, t]);
 
   const resolvedReplyAuthorLabel = useMemo(() => {
     if (!replyTo) return '';
     const fromPerson = replyPerson ? formatPersonDisplayName(replyPerson) : '';
     if (fromPerson) return fromPerson;
+    if (rosterReplyLabel?.trim()) return rosterReplyLabel.trim();
     return replyTo.authorLabel;
-  }, [replyPerson, replyTo]);
+  }, [replyPerson, replyTo, rosterReplyLabel]);
 
   /**
    * Show header skeleton only while SWR is in flight. If the person record is missing after load
