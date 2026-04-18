@@ -12,6 +12,13 @@ describe('extractMentionUserIdsFromPlainBody', () => {
     ]);
   });
 
+  it('extracts MXIDs when localpart contains colons (bridged / Privy-style)', () => {
+    const body = 'hey @prev_privy_did_privy_foo:bar:baz:matrix.org welcome';
+    expect(extractMentionUserIdsFromPlainBody(body)).toEqual([
+      '@prev_privy_did_privy_foo:bar:baz:matrix.org',
+    ]);
+  });
+
   it('dedupes', () => {
     expect(
       extractMentionUserIdsFromPlainBody(

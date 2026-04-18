@@ -139,6 +139,8 @@ type HumanChatPanelMessagesProps = {
   onToggleReaction?: (messageId: string, emoji: string) => void;
   /** Map Matrix user id to display name for reaction hover tooltips. */
   resolveReactionReactorLabel?: (userId: string) => string;
+  /** Map Matrix user id to display name inside @mention pills (body + formatted HTML). */
+  resolveMatrixMemberLabel?: (userId: string) => string;
   onCancelSendPending?: () => void;
   /** Oldest unread Matrix event id (from read receipt); scroll + divider. */
   firstUnreadMessageId?: string | null;
@@ -166,6 +168,7 @@ export function HumanChatPanelMessages({
   onDeleteMessage,
   onToggleReaction,
   resolveReactionReactorLabel,
+  resolveMatrixMemberLabel,
   onCancelSendPending,
   firstUnreadMessageId,
   unreadCountIsCapped = false,
@@ -418,6 +421,7 @@ export function HumanChatPanelMessages({
                 currentUserId={currentUserId}
                 currentUserAvatarUrl={currentUserAvatarUrl}
                 resolveReactionReactorLabel={resolveReactionReactorLabel}
+                resolveMatrixMemberLabel={resolveMatrixMemberLabel}
                 isActionBarVisible={isActionBarVisible}
                 unreadBoundary={row.isFirstUnread}
                 onRowPointerEnter={() => {
