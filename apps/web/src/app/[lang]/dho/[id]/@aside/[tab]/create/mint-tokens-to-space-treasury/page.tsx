@@ -1,7 +1,7 @@
 import {
-  SidePanel,
   MintTokensToSpaceTreasuryForm,
   MintTokensToSpaceTreasuryPlugin,
+  ProposalOverlayShell,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { notFound } from 'next/navigation';
@@ -9,7 +9,6 @@ import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
-
 type PageProps = {
   params: Promise<{ lang: Locale; id: string; tab: string }>;
   searchParams: Promise<{ hideBack?: string }>;
@@ -36,7 +35,7 @@ export default async function MintTokensToSpaceTreasuryPage({
     : `${closeUrl}${PATH_SELECT_SETTINGS_ACTION}`;
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <MintTokensToSpaceTreasuryForm
         spaceId={spaceId}
         web3SpaceId={web3SpaceId}
@@ -45,6 +44,6 @@ export default async function MintTokensToSpaceTreasuryPage({
         closeUrl={closeUrl}
         plugin={<MintTokensToSpaceTreasuryPlugin spaceSlug={slug} />}
       />
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }
