@@ -83,6 +83,19 @@ export function HumanChatPanelTabs({
             id={`chat-tab-${tab.key}`}
             type="button"
             role="tab"
+            aria-label={
+              tab.key === 'chat' && chatBadgeLabel != null
+                ? t('tabChatWithMentionCount', {
+                    tabLabel: tab.label,
+                    count: chatBadgeLabel,
+                  })
+                : tab.key === 'mentions' && mentionBadgeLabel != null
+                ? t('tabMentionsWithMentionCount', {
+                    tabLabel: tab.label,
+                    count: mentionBadgeLabel,
+                  })
+                : undefined
+            }
             aria-selected={activeTab === tab.key}
             aria-controls={`chat-tabpanel-${tab.key}`}
             tabIndex={activeTab === tab.key ? 0 : -1}

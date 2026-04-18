@@ -25,6 +25,7 @@ import {
 import { cn } from '@hypha-platform/ui-utils';
 import {
   MATRIX_MXID_IN_PLAIN_TEXT,
+  normalizePlainTextMxidCaptureFromMatch,
   useMatrix,
   usePersonBySub,
   useUserPrivyIdByMatrixId,
@@ -852,7 +853,12 @@ function splitPlainTextMatrixMentions(
   let lastIndex = 0;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
-    const mid = m[1];
+    const mid = normalizePlainTextMxidCaptureFromMatch(
+      m[1] ?? '',
+      text,
+      m.index,
+      m[0].length,
+    );
     if (!mid) continue;
     const full = `@${mid}`;
     if (m.index > lastIndex) {
