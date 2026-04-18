@@ -1760,6 +1760,7 @@
     "copiedButton": "Copiado!",
     "tabChat": "Chat",
     "tabMembers": "Membros",
+    "tabMentions": "Menções",
     "membersCount": "{count, plural, one {# membro} other {# membros}} · {online} online",
     "you": "Você",
     "reactButton": "Reagir",
