@@ -75,7 +75,7 @@ export const SelectAction = ({
         loading={isLoading}
         className="rounded-lg"
       >
-        <p className="w-full min-w-0 text-2 leading-relaxed text-muted-foreground md:whitespace-nowrap md:overflow-x-auto md:[scrollbar-width:thin]">
+        <p className="w-full min-w-0 text-balance text-2 leading-relaxed text-muted-foreground">
           {content}
         </p>
       </Skeleton>
