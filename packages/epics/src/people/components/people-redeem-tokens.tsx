@@ -81,6 +81,7 @@ export const ProfileRedeemTokens = ({
 }: ProfileRedeemTokensProps) => {
   const tRedeem = useTranslations('ProfileActions.redeemTokens');
   const tActions = useTranslations('ProfileActions');
+  const tModalAside = useTranslations('ModalAside');
   const chainId = 8453 as keyof typeof tokenBackingVaultImplementationAddress;
   const vaultAddress = tokenBackingVaultImplementationAddress[chainId];
   const { assets: userAssets, manualUpdate } = useUserAssets({
@@ -600,6 +601,7 @@ export const ProfileRedeemTokens = ({
     <ProposalOverlayShell>
       <div className="flex flex-col gap-5">
         <ModalStickyNavigation
+          contextTitle={tModalAside('redeemTokens')}
           closeUrl={`/${lang}/profile/${personSlug}`}
           backUrl={`/${lang}/profile/${personSlug}/actions`}
           backLabel={tActions('backToActions')}

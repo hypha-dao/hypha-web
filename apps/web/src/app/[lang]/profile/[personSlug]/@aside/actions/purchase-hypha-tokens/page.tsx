@@ -15,6 +15,7 @@ type PageProps = {
 export default async function PurchaseHyphaTokensProfile(props: PageProps) {
   const { lang, personSlug: personSlugRaw } = await props.params;
   const tActions = await getTranslations('ProfileActions');
+  const tModalAside = await getTranslations('ModalAside');
   const personSlug = tryDecodeUriPart(personSlugRaw);
 
   let spaces = [] as Space[];
@@ -38,6 +39,7 @@ export default async function PurchaseHyphaTokensProfile(props: PageProps) {
     <ProposalOverlayShell>
       <div className="flex flex-col gap-5">
         <ModalStickyNavigation
+          contextTitle={tModalAside('buyHyphaTokens')}
           closeUrl={`/${lang}/profile/${personSlug}`}
           backUrl={`/${lang}/profile/${personSlug}/actions`}
           backLabel={tActions('backToActions')}

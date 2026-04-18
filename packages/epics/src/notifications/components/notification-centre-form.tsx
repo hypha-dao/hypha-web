@@ -80,6 +80,7 @@ export const NotificationCentreForm = ({
   saveConfigurations,
 }: NotificationCentreFormProps) => {
   const tNotificationCentre = useTranslations('NotificationCentre');
+  const tModalAside = useTranslations('ModalAside');
   const form = useForm<NotificationCentreFormValues>({
     resolver: zodResolver(schemaNotificationCentreForm),
     defaultValues: {
@@ -182,7 +183,11 @@ export const NotificationCentreForm = ({
 
   return (
     <div className="flex flex-col gap-5">
-      <ModalStickyNavigation closeUrl={closeUrl} showBack={false} />
+      <ModalStickyNavigation
+        contextTitle={tModalAside('notificationCentre')}
+        closeUrl={closeUrl}
+        showBack={false}
+      />
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(handleSubmit, handleInvalid)}

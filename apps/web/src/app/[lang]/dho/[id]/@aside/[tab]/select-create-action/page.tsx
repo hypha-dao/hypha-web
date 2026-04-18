@@ -5,6 +5,7 @@ import {
 } from '@hypha-platform/epics';
 import { SelectCreateAction } from '../../../_components/select-create-action';
 import { Locale } from '@hypha-platform/i18n';
+import { getTranslations } from 'next-intl/server';
 import {
   PATH_SELECT_ACTIVATE_ACTION,
   PATH_SELECT_CREATE_ACTION,
@@ -16,10 +17,12 @@ export default async function SelectCreateActions({
   params: Promise<{ id: string; lang: Locale }>;
 }) {
   const { id: daoSlug, lang } = await params;
+  const tModalAside = await getTranslations('ModalAside');
   return (
     <ProposalOverlayShell>
       <div className="flex flex-col gap-5">
         <ModalStickyNavigation
+          contextTitle={tModalAside('createProposal')}
           closeDropSegment={PATH_SELECT_CREATE_ACTION}
           backToParent
         />

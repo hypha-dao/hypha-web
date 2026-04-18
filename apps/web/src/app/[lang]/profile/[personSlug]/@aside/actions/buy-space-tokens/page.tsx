@@ -17,6 +17,7 @@ export default async function BuySpaceTokensProfile(props: PageProps) {
     locale: lang,
     namespace: 'ProfileActions',
   });
+  const tModalAside = await getTranslations('ModalAside');
   const personSlug = tryDecodeUriPart(personSlugRaw);
   const closeUrl = `/${lang}/profile/${personSlug}`;
 
@@ -24,6 +25,7 @@ export default async function BuySpaceTokensProfile(props: PageProps) {
     <ProposalOverlayShell>
       <div className="flex flex-col gap-5">
         <ModalStickyNavigation
+          contextTitle={tModalAside('buySpaceTokens')}
           closeUrl={closeUrl}
           backUrl={`/${lang}/profile/${personSlug}/actions`}
           backLabel={t('actions.buySpaceTokens.backLabel')}

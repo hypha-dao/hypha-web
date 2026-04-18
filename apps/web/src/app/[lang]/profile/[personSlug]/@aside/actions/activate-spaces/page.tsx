@@ -17,6 +17,7 @@ type PageProps = {
 export default async function ActivateSpacesProfile(props: PageProps) {
   const { lang, personSlug: personSlugRaw } = await props.params;
   const tActions = await getTranslations('ProfileActions');
+  const tModalAside = await getTranslations('ModalAside');
   const tFooter = await getTranslations('Footer');
   const personSlug = tryDecodeUriPart(personSlugRaw);
 
@@ -41,6 +42,7 @@ export default async function ActivateSpacesProfile(props: PageProps) {
     <ProposalOverlayShell>
       <div className="flex flex-col gap-5">
         <ModalStickyNavigation
+          contextTitle={tModalAside('activateSpacesProfile')}
           closeUrl={`/${lang}/profile/${personSlug}`}
           backUrl={`/${lang}/profile/${personSlug}/actions`}
           backLabel={tActions('backToActions')}
