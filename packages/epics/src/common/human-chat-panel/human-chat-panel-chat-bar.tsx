@@ -549,7 +549,9 @@ export function HumanChatPanelChatBar({
     (e: React.KeyboardEvent) => {
       if (e.key !== 'Enter' || e.shiftKey) return;
       const ne = e.nativeEvent as KeyboardEvent;
-      if (ne.isComposing) return;
+      if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
+        return;
+      }
       e.preventDefault();
       e.stopPropagation();
       setAttachMenuOpen(false);
@@ -557,8 +559,33 @@ export function HumanChatPanelChatBar({
         onSend();
       }
     },
-    [canSend, onSend],
+    [canSend, draftAttachments.length, onSend],
   );
+
+  const focusComposerTextarea = useCallback(() => {
+    requestAnimationFrame(() => {
+      const el = textareaRef.current;
+      if (!el) return;
+      el.focus();
+      const len = valueRef.current.length;
+      try {
+        el.setSelectionRange(len, len);
+      } catch {
+        // ignore
+      }
+      autoResize();
+    });
+  }, [autoResize]);
+
+  const prevDraftCountRef = useRef(0);
+  useEffect(() => {
+    const n = draftAttachments.length;
+    const prev = prevDraftCountRef.current;
+    prevDraftCountRef.current = n;
+    if (n > prev) {
+      focusComposerTextarea();
+    }
+  }, [draftAttachments.length, focusComposerTextarea]);
 
   /**
    * Enter only bubbles to `textarea` when it is focused. After interacting with
@@ -569,13 +596,52 @@ export function HumanChatPanelChatBar({
     (e: React.KeyboardEvent<HTMLDivElement>) => {
       if (e.key !== 'Enter' || e.shiftKey) return;
       const ne = e.nativeEvent as KeyboardEvent;
-      if (ne.isComposing) return;
+      if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
+        return;
+      }
       if (colonOpen && colonSuggestions.length > 0) return;
       if (!canSend) return;
       e.preventDefault();
       onSend();
     },
-    [colonOpen, colonSuggestions.length, canSend, onSend],
+    [
+      colonOpen,
+      colonSuggestions.length,
+      canSend,
+      draftAttachments.length,
+      onSend,
+    ],
+  );
+
+  /**
+   * Enter often targets the attach (+) or mic trigger after menus/files — send from
+   * anywhere in the composer shell unless a popover menu is open.
+   */
+  const handleComposerShellKeyDownCapture = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key !== 'Enter' || e.shiftKey) return;
+      const ne = e.nativeEvent as KeyboardEvent;
+      if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
+        return;
+      }
+      if (colonOpen && colonSuggestions.length > 0) return;
+      if (attachMenuOpen || micMenuOpen || emojiPickerOpen) return;
+      const el = e.target;
+      if (el instanceof HTMLTextAreaElement) return;
+      if (!canSend) return;
+      e.preventDefault();
+      onSend();
+    },
+    [
+      colonOpen,
+      colonSuggestions.length,
+      attachMenuOpen,
+      micMenuOpen,
+      emojiPickerOpen,
+      canSend,
+      draftAttachments.length,
+      onSend,
+    ],
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -612,7 +678,11 @@ export function HumanChatPanelChatBar({
       }
     }
 
-    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      const composing = e.nativeEvent.isComposing;
+      if (composing && !(canSend && draftAttachments.length > 0)) {
+        return;
+      }
       e.preventDefault();
       if (canSend) {
         onSend();
@@ -770,6 +840,7 @@ export function HumanChatPanelChatBar({
       };
       mr.start();
       setIsVoiceRecording(true);
+      focusComposerTextarea();
     } catch {
       voiceAsAttachmentRef.current = false;
       const s = mediaStreamRef.current;
@@ -788,6 +859,7 @@ export function HumanChatPanelChatBar({
     onDraftAttachmentsChange,
     pushDrafts,
     stopVoiceRecording,
+    focusComposerTextarea,
     t,
   ]);
 
@@ -877,11 +949,12 @@ export function HumanChatPanelChatBar({
     try {
       rec.start();
       setIsDictating(true);
+      focusComposerTextarea();
     } catch {
       speechRecognitionRef.current = null;
       setVoiceError(t('dictationNotSupported'));
     }
-  }, [isDictating, onChange, stopDictation, t]);
+  }, [isDictating, onChange, stopDictation, focusComposerTextarea, t]);
 
   useEffect(() => {
     return () => {
@@ -921,6 +994,7 @@ export function HumanChatPanelChatBar({
     <div className="flex w-full min-w-0 flex-shrink-0 flex-col border-t border-border bg-background-2 px-3 pt-3 pb-3">
       <div
         ref={composerShellRef}
+        onKeyDownCapture={handleComposerShellKeyDownCapture}
         className={cn(
           'relative flex min-w-0 flex-col rounded-lg border border-border bg-muted/50',
           'transition-all duration-200 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20',
