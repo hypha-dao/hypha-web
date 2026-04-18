@@ -1,6 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   Bold,
   Italic,
@@ -43,6 +50,7 @@ import {
   type EmojiIndexEntry,
 } from './emoji-mart-index';
 import { getTextareaSelectionCenter } from './textarea-caret-position';
+import { highlightComposerUrlsForBackdrop } from './human-chat-panel-composer-url-highlight';
 import {
   type ChatPanelAttachmentMedia,
   looksLikeAudioMimeOrName,
@@ -349,6 +357,13 @@ export function HumanChatPanelChatBar({
   valueRef.current = value;
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  /** Mirrored backdrop for Discord-style URL coloring (textarea text is transparent). */
+  const composerBackdropRef = useRef<HTMLDivElement>(null);
+
+  const composerHighlightBackdrop = useMemo(
+    () => highlightComposerUrlsForBackdrop(value),
+    [value],
+  );
   const composerShellRef = useRef<HTMLDivElement>(null);
   const replyPreviewWasOpenRef = useRef(false);
   const editPreviewWasOpenRef = useRef(false);
@@ -420,10 +435,15 @@ export function HumanChatPanelChatBar({
   }, [updateSelectionBar]);
 
   const autoResize = useCallback(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height =
-        Math.min(textareaRef.current.scrollHeight, 160) + 'px';
+    const ta = textareaRef.current;
+    const bd = composerBackdropRef.current;
+    if (ta) {
+      ta.style.height = 'auto';
+      const h = Math.min(ta.scrollHeight, 160);
+      ta.style.height = `${h}px`;
+      if (bd) {
+        bd.style.height = `${h}px`;
+      }
     }
   }, []);
 
@@ -1435,38 +1455,56 @@ export function HumanChatPanelChatBar({
             ))}
           </div>
         )}
-        <textarea
-          ref={textareaRef}
-          value={value}
-          onPointerDown={(e) => {
-            if (e.button !== 0) return;
-            pointerSelectingRef.current = true;
-            setSelectionBar(null);
-          }}
-          onChange={(e) => {
-            onChange(e.target.value);
-            autoResize();
-            const cursor = e.target.selectionStart ?? e.target.value.length;
-            syncColonState(e.target.value, cursor);
-            requestAnimationFrame(updateSelectionBar);
-          }}
-          onSelect={(e) => {
-            const el = e.currentTarget;
-            syncColonState(el.value, el.selectionStart ?? 0);
-          }}
-          onKeyUp={updateSelectionBar}
-          onMouseUp={updateSelectionBar}
-          onBlur={() => setSelectionBar(null)}
-          onKeyDown={handleKeyDown}
-          aria-label={placeholder ?? defaultPlaceholder}
-          placeholder={placeholder ?? defaultPlaceholder}
-          rows={1}
-          className={cn(
-            'min-h-[36px] min-w-0 max-h-[160px] w-full resize-none',
-            'bg-transparent px-3 py-2.5 text-sm leading-relaxed text-foreground',
-            'placeholder:text-muted-foreground focus:outline-none',
-          )}
-        />
+        <div className="relative isolate grid min-h-[36px] min-w-0 max-h-[160px] w-full [&>textarea]:col-start-1 [&>textarea]:row-start-1 [&>textarea]:col-end-2 [&>textarea]:row-end-2">
+          <div
+            ref={composerBackdropRef}
+            aria-hidden
+            className={cn(
+              'pointer-events-none col-start-1 row-start-1 min-h-[36px] max-h-[160px] w-full',
+              'overflow-y-auto overflow-x-hidden whitespace-pre-wrap break-words px-3 py-2.5 text-sm leading-relaxed text-foreground',
+              'selection:bg-transparent narrow-scrollbar',
+            )}
+          >
+            {composerHighlightBackdrop}
+          </div>
+          <textarea
+            ref={textareaRef}
+            value={value}
+            onScroll={(e) => {
+              const bd = composerBackdropRef.current;
+              if (bd) bd.scrollTop = e.currentTarget.scrollTop;
+            }}
+            onPointerDown={(e) => {
+              if (e.button !== 0) return;
+              pointerSelectingRef.current = true;
+              setSelectionBar(null);
+            }}
+            onChange={(e) => {
+              onChange(e.target.value);
+              autoResize();
+              const cursor = e.target.selectionStart ?? e.target.value.length;
+              syncColonState(e.target.value, cursor);
+              requestAnimationFrame(updateSelectionBar);
+            }}
+            onSelect={(e) => {
+              const el = e.currentTarget;
+              syncColonState(el.value, el.selectionStart ?? 0);
+            }}
+            onKeyUp={updateSelectionBar}
+            onMouseUp={updateSelectionBar}
+            onBlur={() => setSelectionBar(null)}
+            onKeyDown={handleKeyDown}
+            aria-label={placeholder ?? defaultPlaceholder}
+            placeholder={placeholder ?? defaultPlaceholder}
+            rows={1}
+            className={cn(
+              'relative z-[1] col-start-1 row-start-1 min-h-[36px] min-w-0 max-h-[160px] w-full resize-none',
+              'overflow-y-auto whitespace-pre-wrap break-words bg-transparent px-3 py-2.5 text-sm leading-relaxed',
+              'text-transparent caret-foreground',
+              'placeholder:text-muted-foreground focus:outline-none',
+            )}
+          />
+        </div>
 
         <div className="flex min-w-0 flex-col gap-1 px-2 pb-2.5 pt-0">
           {voiceError && (
