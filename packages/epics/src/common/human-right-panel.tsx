@@ -19,6 +19,7 @@ import {
   useMatrix,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
+  useMatrixUserIdsByPrivySubs,
   useMe,
   useSpaceBySlug,
   useSpaceMutationsWeb2Rsc,
@@ -34,6 +35,7 @@ import {
   getMessageReplaceTargetEventId,
   isRedactedRoomMessageEvent,
   type MessageReaction,
+  type Person,
 } from '@hypha-platform/core/client';
 import {
   isChatPanelAudioFile,
@@ -61,6 +63,13 @@ import {
   shortenMatrixIdForDisplay,
 } from './human-chat-panel/matrix-room-member-display';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
+
+function personRosterLabel(p: Person, unknownLabel: string): string {
+  const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
+  if (full) return full;
+  if (p.nickname?.trim()) return p.nickname.trim();
+  return unknownLabel;
+}
 
 function disposeDraftAttachmentUrls(drafts: ChatDraftAttachment[]) {
   for (const a of drafts) {
@@ -430,6 +439,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   } = useHumanChatPanel();
   const { jwt: authToken } = useJwt();
   const { person: me } = useMe();
+  const { persons: spaceMembersResult } = useMembers({
+    spaceSlug,
+    paginationDisabled: true,
+  });
+  const spaceMembers = spaceMembersResult?.data ?? [];
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug ?? '');
   const { updateSpaceBySlug } = useSpaceMutationsWeb2Rsc(authToken);
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
@@ -502,29 +516,70 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [client, roomId, currentUserId, me?.name, me?.surname, t],
   );
 
+  const rosterSubs = useMemo(
+    () =>
+      spaceMembers
+        .map((p) => p.sub?.trim())
+        .filter((s): s is string => Boolean(s)),
+    [spaceMembers],
+  );
+
+  const { subToMatrixUserId } = useMatrixUserIdsByPrivySubs({
+    privySubs: rosterSubs,
+  });
+
   const mentionCandidates = useMemo((): ChatMentionCandidate[] => {
     if (!client || !roomId) return [];
     const room = client.getRoom(roomId);
     if (!room) return [];
-    const joined = room.getJoinedMembers();
-    const list: ChatMentionCandidate[] = [];
-    for (const member of joined) {
+
+    const byUserId = new Map<
+      string,
+      { displayLabel: string; avatarUrl?: string; privySub?: string }
+    >();
+
+    for (const member of room.getJoinedMembers()) {
       const userId = member.userId;
       if (!userId) continue;
       if (currentUserId && userId === currentUserId) continue;
-      list.push({
-        userId,
+      byUserId.set(userId, {
         displayLabel: matrixMemberDisplayLabel(member, userId),
         avatarUrl: matrixMemberAvatarSquare(client, roomId, userId, 64),
       });
     }
+
+    /** Same names as Members tab — overrides Matrix-only technical displaynames. */
+    for (const p of spaceMembers) {
+      const sub = p.sub?.trim();
+      if (!sub) continue;
+      const mxid = subToMatrixUserId[sub];
+      if (!mxid) continue;
+      if (currentUserId && mxid === currentUserId) continue;
+      const prev = byUserId.get(mxid);
+      byUserId.set(mxid, {
+        displayLabel: personRosterLabel(p, t('unknownMember')),
+        avatarUrl: p.avatarUrl ?? prev?.avatarUrl,
+        privySub: sub,
+      });
+    }
+
+    const list: ChatMentionCandidate[] = [];
+    for (const [userId, v] of byUserId) {
+      list.push({
+        userId,
+        displayLabel: v.displayLabel,
+        avatarUrl: v.avatarUrl,
+        ...(v.privySub ? { privySub: v.privySub } : {}),
+      });
+    }
+
     list.sort((a, b) =>
       a.displayLabel.localeCompare(b.displayLabel, undefined, {
         sensitivity: 'base',
       }),
     );
     return list;
-  }, [client, roomId, currentUserId]);
+  }, [client, roomId, currentUserId, spaceMembers, subToMatrixUserId, t]);
 
   const resolveMemberLabelRef = useRef(resolveMemberLabel);
   resolveMemberLabelRef.current = resolveMemberLabel;

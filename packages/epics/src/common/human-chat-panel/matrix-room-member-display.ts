@@ -1,5 +1,18 @@
 import type { MatrixClient, RoomMember } from 'matrix-js-sdk';
 
+/** Matrix `m.room.member` displayname can mirror the ugly localpart — treat as absent. */
+export function looksLikeTechnicalMatrixDisplayName(
+  label: string | undefined,
+  matrixUserId: string,
+): boolean {
+  const l = label?.trim() ?? '';
+  if (!l || l === matrixUserId) return true;
+  if (/^prev_privy_/i.test(l)) return true;
+  if (/^prod_privy_/i.test(l)) return true;
+  if (/privy_did_privy/i.test(l)) return true;
+  return false;
+}
+
 /** Shorten ugly synthetic MXIDs for UI when no display name exists. */
 export function shortenMatrixIdForDisplay(mxid: string): string {
   if (!mxid.startsWith('@')) return mxid;
@@ -21,13 +34,29 @@ export function matrixMemberDisplayLabel(
 ): string {
   const roomName = member.name?.trim();
   /** SDK often sets `name` to the MXID when no display name exists — treat as absent. */
-  if (roomName && roomName !== fallbackUserId) {
+  if (
+    roomName &&
+    roomName !== fallbackUserId &&
+    !looksLikeTechnicalMatrixDisplayName(roomName, fallbackUserId)
+  ) {
     return roomName;
   }
   const profileName = member.user?.displayName?.trim();
-  if (profileName && profileName !== fallbackUserId) return profileName;
+  if (
+    profileName &&
+    profileName !== fallbackUserId &&
+    !looksLikeTechnicalMatrixDisplayName(profileName, fallbackUserId)
+  ) {
+    return profileName;
+  }
   const raw = member.rawDisplayName?.trim();
-  if (raw && raw !== fallbackUserId) return raw;
+  if (
+    raw &&
+    raw !== fallbackUserId &&
+    !looksLikeTechnicalMatrixDisplayName(raw, fallbackUserId)
+  ) {
+    return raw;
+  }
   return shortenMatrixIdForDisplay(fallbackUserId);
 }
 
