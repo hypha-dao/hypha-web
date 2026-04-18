@@ -2,6 +2,7 @@
 
 import type { MatrixClient, MatrixEvent } from 'matrix-js-sdk';
 import { EventType } from 'matrix-js-sdk';
+import { Bell } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import {
@@ -114,5 +115,50 @@ export function HumanChatPanelMentionTab({
         )}
       </div>
     </div>
+  );
+}
+
+/** Compact bell for the chat panel top row: opens Mentions tab (same unread count as tabs). */
+export type HumanChatPanelMentionBellProps = {
+  unreadCount: number;
+  countIsCapped: boolean;
+  onOpenMentions: () => void;
+};
+
+export function HumanChatPanelMentionBell({
+  unreadCount,
+  countIsCapped,
+  onOpenMentions,
+}: HumanChatPanelMentionBellProps) {
+  const t = useTranslations('HumanChatPanel');
+
+  const badgeLabel =
+    unreadCount <= 0
+      ? undefined
+      : countIsCapped || unreadCount >= 100
+      ? '99+'
+      : String(unreadCount);
+
+  return (
+    <button
+      type="button"
+      className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      aria-label={
+        unreadCount > 0
+          ? t('mentionInboxBellAria', {
+              count: countIsCapped ? '99+' : unreadCount,
+            })
+          : t('mentionInboxBellAriaEmpty')
+      }
+      title={t('mentionInboxTitle')}
+      onClick={onOpenMentions}
+    >
+      <Bell className="h-3.5 w-3.5" aria-hidden />
+      {badgeLabel != null && (
+        <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-semibold leading-none text-primary-foreground">
+          {badgeLabel}
+        </span>
+      )}
+    </button>
   );
 }
