@@ -9,9 +9,8 @@ type LoadingBackdropProps = Omit<LoadingBackdropInnerProps, 'children'> & {
 };
 
 /**
- * Loading overlay for forms. In modal-shell layout, the overlay is portaled to
- * `document.body` with `fixed inset-0` so it stays visible while long forms scroll
- * inside the modal card (not clipped by `overflow-y-auto`).
+ * Loading overlay for forms. Modal-shell mode: portaled full-viewport scrim with
+ * blur + compact status chip (no heavy white card). Docked / inline: legacy card.
  */
 export function LoadingBackdrop(props: LoadingBackdropProps) {
   return <LoadingBackdropInner {...props} />;

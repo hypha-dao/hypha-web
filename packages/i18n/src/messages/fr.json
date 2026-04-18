@@ -77,7 +77,7 @@
   "NotificationCentre": {
     "title": "Centre de notifications",
     "loading": {
-      "keepWindowOpen": "Veuillez laisser cette fenêtre ouverte jusqu’à la fin de la barre de progression."
+      "keepWindowOpen": "Gardez cette fenêtre ouverte jusqu’à la fin."
     },
     "subscribe": {
       "title": "S’abonner aux notifications",
@@ -972,7 +972,7 @@
       }
     },
     "loadingBackdrop": {
-      "keepWindowOpen": "Veuillez laisser cette fenêtre ouverte jusqu’à la fin de la barre de progression."
+      "keepWindowOpen": "Gardez cette fenêtre ouverte jusqu’à la fin."
     },
     "spaceTokenPurchaseProgress": {
       "CREATE_WEB2_AGREEMENT": "Création de l'accord...",
@@ -1850,7 +1850,7 @@
       "medium": "Surveiller et agir bientôt",
       "low": "Informatif, pas urgent"
     },
-    "keepWindowOpenWhileCreating": "Veuillez garder cette fenêtre ouverte jusqu'à la fin de la barre de progression.",
+    "keepWindowOpenWhileCreating": "Gardez cette fenêtre ouverte jusqu’à la fin.",
     "tagLabels": {
       "Strategy": "Stratégie",
       "Culture": "Culture",

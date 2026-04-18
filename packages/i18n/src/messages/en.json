@@ -77,7 +77,7 @@
   "NotificationCentre": {
     "title": "Notification Centre",
     "loading": {
-      "keepWindowOpen": "Please keep this window open until the progress bar completes."
+      "keepWindowOpen": "Keep this window open until we're finished."
     },
     "subscribe": {
       "title": "Subscribe to Notifications",
@@ -972,7 +972,7 @@
       }
     },
     "loadingBackdrop": {
-      "keepWindowOpen": "Please keep this window open until the progress bar completes."
+      "keepWindowOpen": "Keep this window open until we're finished."
     },
     "spaceTokenPurchaseProgress": {
       "CREATE_WEB2_AGREEMENT": "Creating agreement...",
@@ -1850,7 +1850,7 @@
       "medium": "Monitor and act soon",
       "low": "Informational, no rush"
     },
-    "keepWindowOpenWhileCreating": "Please keep this window open until the progress bar completes.",
+    "keepWindowOpenWhileCreating": "Keep this window open until we're finished.",
     "tagLabels": {
       "Strategy": "Strategy",
       "Culture": "Culture",
