@@ -226,6 +226,20 @@ export function CreateAgreementBaseFields({
     spaceId: spaceIdBigInt as bigint,
   });
 
+  const quorumPct =
+    spaceDetails?.quorum != null ? Number(spaceDetails.quorum) : NaN;
+  const unityPct =
+    spaceDetails?.unity != null ? Number(spaceDetails.unity) : NaN;
+  const votingThresholdSummary =
+    Number.isFinite(quorumPct) && Number.isFinite(unityPct)
+      ? tAgreementFlow('createAgreementBaseFields.quorumUnityLine', {
+          quorumPercent: quorumPct,
+          unityPercent: unityPct,
+          quorumLabel: tAgreementFlow('createAgreementBaseFields.quorumLabel'),
+          unityLabel: tAgreementFlow('createAgreementBaseFields.unityLabel'),
+        })
+      : null;
+
   const { theme } = useTheme();
 
   const { isDelegate } = useIsDelegate({
@@ -420,10 +434,11 @@ export function CreateAgreementBaseFields({
                               'createAgreementBaseFields.autoExecution',
                             )}
                           </span>
-                          <span className="text-[9px] text-accent-11 text-nowrap font-medium">
-                            {spaceDetails?.quorum}% Quorum |{' '}
-                            {spaceDetails?.unity}% Unity
-                          </span>
+                          {votingThresholdSummary ? (
+                            <span className="text-[9px] text-accent-11 text-nowrap font-medium">
+                              {votingThresholdSummary}
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                     ) : (
@@ -450,10 +465,11 @@ export function CreateAgreementBaseFields({
                               },
                             )}
                           </span>
-                          <span className="text-[9px] text-accent-11 text-nowrap font-medium">
-                            {spaceDetails?.quorum}% Quorum |{' '}
-                            {spaceDetails?.unity}% Unity
-                          </span>
+                          {votingThresholdSummary ? (
+                            <span className="text-[9px] text-accent-11 text-nowrap font-medium">
+                              {votingThresholdSummary}
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                     )}

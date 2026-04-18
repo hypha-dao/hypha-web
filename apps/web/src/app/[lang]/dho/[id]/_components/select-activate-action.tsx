@@ -18,6 +18,19 @@ import {
   useSpaceDetailsWeb3Rpc,
 } from '@hypha-platform/core/client';
 
+const ZERO_ADDRESS =
+  '0x0000000000000000000000000000000000000000' as `0x${string}`;
+
+function normalizeTreasuryAddress(
+  candidate: string | null | undefined,
+): `0x${string}` | undefined {
+  if (!candidate) return undefined;
+  const trimmed = candidate.trim();
+  if (!/^0x[0-9a-fA-F]{40}$/.test(trimmed)) return undefined;
+  if (trimmed.toLowerCase() === ZERO_ADDRESS.toLowerCase()) return undefined;
+  return trimmed as `0x${string}`;
+}
+
 export const SelectActivateAction = ({
   daoSlug,
   activeTab,
@@ -37,23 +50,13 @@ export const SelectActivateAction = ({
 
   /** DB `address` or on-chain executor (treasury); either may be populated first. */
   const treasuryAddress = useMemo(() => {
-    const fromDb = space?.address?.trim();
-    if (fromDb) return fromDb as `0x${string}`;
-    const executor = spaceDetails?.executor;
-    if (
-      executor &&
-      typeof executor === 'string' &&
-      executor.startsWith('0x') &&
-      executor.length === 42
-    ) {
-      return executor as `0x${string}`;
-    }
-    return undefined;
+    const fromDb = normalizeTreasuryAddress(space?.address);
+    if (fromDb) return fromDb;
+    return normalizeTreasuryAddress(spaceDetails?.executor);
   }, [space?.address, spaceDetails?.executor]);
 
-  const ZERO = '0x0000000000000000000000000000000000000000' as `0x${string}`;
   const { fundWallet } = useFundWallet({
-    address: treasuryAddress ?? ZERO,
+    address: treasuryAddress ?? ZERO_ADDRESS,
   });
   const t = useTranslations('SelectActivateAction');
 

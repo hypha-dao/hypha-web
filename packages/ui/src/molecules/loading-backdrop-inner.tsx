@@ -13,7 +13,8 @@ export type LoadingBackdropInnerProps = {
   showKeepWindowOpenMessage?: boolean;
   keepWindowOpenMessage?: React.ReactNode;
   fullHeight?: boolean;
-  fullHeightVariant?: 'docked-panel' | 'responsive-modal-shell';
+  /** `auto`: follow Aside overlay context (modal shell vs side panel). */
+  fullHeightVariant?: 'auto' | 'docked-panel' | 'responsive-modal-shell';
 };
 
 export function LoadingBackdropInner({
@@ -25,12 +26,14 @@ export function LoadingBackdropInner({
   showKeepWindowOpenMessage = false,
   keepWindowOpenMessage = 'Please keep this window open until the progress bar completes.',
   fullHeight = false,
-  fullHeightVariant = 'docked-panel',
+  fullHeightVariant = 'auto',
 }: LoadingBackdropInnerProps) {
   const asideLayout = useAsideOverlayLayout();
   const resolvedFullHeightVariant =
     fullHeightVariant === 'responsive-modal-shell'
       ? 'responsive-modal-shell'
+      : fullHeightVariant === 'docked-panel'
+      ? 'docked-panel'
       : asideLayout === 'modal-shell'
       ? 'responsive-modal-shell'
       : 'docked-panel';
