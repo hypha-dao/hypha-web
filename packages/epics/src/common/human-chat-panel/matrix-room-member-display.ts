@@ -1,5 +1,11 @@
 import type { MatrixClient, RoomMember } from 'matrix-js-sdk';
 
+/** Matrix often prefixes displaynames with `@` — strip for localpart-style checks. */
+function displayNameStem(label: string): string {
+  const t = label.trim();
+  return t.startsWith('@') ? t.slice(1) : t;
+}
+
 /** Matrix `m.room.member` displayname can mirror the ugly localpart — treat as absent. */
 export function looksLikeTechnicalMatrixDisplayName(
   label: string | undefined,
@@ -7,8 +13,25 @@ export function looksLikeTechnicalMatrixDisplayName(
 ): boolean {
   const l = label?.trim() ?? '';
   if (!l || l === matrixUserId) return true;
-  if (/^prev_privy_/i.test(l)) return true;
-  if (/^prod_privy_/i.test(l)) return true;
+  const stem = displayNameStem(l);
+  if (/^prev_privy_/i.test(stem)) return true;
+  if (/^prod_privy_/i.test(stem)) return true;
+  if (/privy_did_privy/i.test(l)) return true;
+  return false;
+}
+
+/**
+ * Timeline header: trigger Hypha profile resolution (`matrix_user_links` → Person) when the
+ * Matrix-derived label still looks like a bridged Privy slug (often `@prev_privy_…` or MXID).
+ */
+export function needsHyphaProfileResolutionForMatrixLabel(
+  label: string | undefined,
+): boolean {
+  const l = label?.trim() ?? '';
+  if (!l) return true;
+  const stem = displayNameStem(l);
+  if (/^prev_privy_/i.test(stem)) return true;
+  if (/^prod_privy_/i.test(stem)) return true;
   if (/privy_did_privy/i.test(l)) return true;
   return false;
 }
