@@ -13,22 +13,37 @@ const WAVE_BARS = [
 function VoiceWaveform({ active }: { active: boolean }) {
   return (
     <div
+      data-hypha-voice-waveform=""
       className="flex h-6 min-w-0 flex-1 items-center justify-center gap-0.5"
       aria-hidden
     >
-      {WAVE_BARS.map((h, i) => (
-        <span
-          // eslint-disable-next-line react/no-array-index-key -- static pattern
-          key={i}
-          className={cn(
-            'w-0.5 min-w-[2px] max-w-[3px] rounded-full transition-colors',
-            active ? 'bg-primary/65' : 'bg-muted-foreground/40',
-          )}
-          style={{
-            height: `${Math.round(12 + h * 14)}px`,
-          }}
-        />
-      ))}
+      {WAVE_BARS.map((h, i) => {
+        const heightPx = Math.round(12 + h * 14);
+        return (
+          <span
+            // eslint-disable-next-line react/no-array-index-key -- static pattern
+            key={i}
+            className={cn(
+              'inline-block w-0.5 min-w-[2px] max-w-[3px] origin-center rounded-full transition-colors',
+              active
+                ? 'bg-primary/70 motion-safe:will-change-transform'
+                : 'bg-muted-foreground/40',
+            )}
+            style={{
+              height: `${heightPx}px`,
+              ...(active
+                ? {
+                    animationName: 'hypha-voice-wave-bar',
+                    animationDuration: '0.55s',
+                    animationTimingFunction: 'ease-in-out',
+                    animationIterationCount: 'infinite',
+                    animationDelay: `${i * 42}ms`,
+                  }
+                : {}),
+            }}
+          />
+        );
+      })}
     </div>
   );
 }
@@ -82,6 +97,17 @@ export function ChatVoiceAudioRow({
       )}
       data-testid="chat-voice-audio-row"
     >
+      <style>{`
+        @keyframes hypha-voice-wave-bar {
+          0%, 100% { transform: scaleY(0.42); }
+          50% { transform: scaleY(1.18); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          [data-hypha-voice-waveform] span {
+            animation: none !important;
+          }
+        }
+      `}</style>
       <button
         type="button"
         disabled={spoilerPreview}
