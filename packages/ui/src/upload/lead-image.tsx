@@ -125,6 +125,10 @@ export const UploadLeadImage = ({
     },
   });
 
+  /** Prefer in-component preview (upload/crop); fall through to parent default URL immediately so we never flash an empty dashed box while defaultImage hydrates. */
+  const displaySrc = preview ?? defaultImage ?? null;
+  const showEmptyPlaceholder = !displaySrc && !imageSrc;
+
   return (
     <>
       <AspectRatio
@@ -134,12 +138,12 @@ export const UploadLeadImage = ({
           'group cursor-pointer relative',
           'flex justify-center items-center overflow-hidden',
           'rounded-xl bg-accent-2',
-          !preview && 'border border-neutral-11 border-dashed',
+          showEmptyPlaceholder && 'border border-neutral-11 border-dashed',
         )}
       >
         <input {...getInputProps()} />
-        {preview && <PreviewImg src={preview} />}
-        <PreviewOverlay isVisible={!preview || isDragActive}>
+        {displaySrc && <PreviewImg src={displaySrc} />}
+        <PreviewOverlay isVisible={!displaySrc || isDragActive}>
           {isDragActive ? (
             <span>Drop the image here</span>
           ) : (
