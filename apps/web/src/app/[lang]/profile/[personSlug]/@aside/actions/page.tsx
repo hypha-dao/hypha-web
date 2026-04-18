@@ -2,7 +2,7 @@
 
 import React from 'react';
 import {
-  ButtonClose,
+  ModalStickyNavigation,
   ProfilePageParams,
   SelectAction,
   ProposalOverlayShell,
@@ -90,9 +90,10 @@ export default function ProfileWallet() {
   return (
     <ProposalOverlayShell>
       <div className="flex flex-col gap-5">
-        <div className="flex gap-5 justify-end items-center">
-          <ButtonClose closeUrl={`/${lang}/profile/${personSlug}`} />
-        </div>
+        <ModalStickyNavigation
+          closeUrl={`/${lang}/profile/${personSlug}`}
+          backToParent
+        />
         <SelectAction
           title={tProfile('actions')}
           content={tActions('content')}

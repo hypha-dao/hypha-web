@@ -21,12 +21,11 @@ import {
   UploadAvatar,
   RequirementMark,
 } from '@hypha-platform/ui';
-import { RxCross1 } from 'react-icons/rx';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/ui-utils';
-import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { Links } from '../../common';
+import { ModalStickyNavigation } from '../../common/modal-sticky-navigation';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useEffect, useRef } from 'react';
 import { useScrollToErrors } from '../../hooks';
@@ -86,6 +85,7 @@ export const SignupPanel = ({
         onSubmit={form.handleSubmit(onSave)}
         className="space-y-8"
       >
+        <ModalStickyNavigation closeUrl={closeUrl} showBack={false} />
         <div className="flex flex-col gap-5">
           <div className="flex gap-5 justify-between">
             <div className="flex items-center space-x-2">

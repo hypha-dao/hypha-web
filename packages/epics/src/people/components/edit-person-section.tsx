@@ -22,7 +22,8 @@ import {
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { cn } from '@hypha-platform/ui-utils';
-import { ButtonClose, Links } from '../../common';
+import { Links } from '../../common';
+import { ModalStickyNavigation } from '../../common/modal-sticky-navigation';
 import { useScrollToErrors } from '../../hooks';
 import { useCallback, useMemo, useRef } from 'react';
 import { useTranslations } from 'next-intl';
@@ -203,7 +204,8 @@ export const EditPersonSection = ({
   };
 
   return (
-    <div className="relative">
+    <div className="flex flex-col gap-5">
+      <ModalStickyNavigation closeUrl={closeUrl} showBack={false} />
       <Form {...form}>
         <form
           ref={formRef}
@@ -308,9 +310,6 @@ export const EditPersonSection = ({
                     />
                   </div>
                 </div>
-              </div>
-              <div className="flex justify-end">
-                <ButtonClose closeUrl={closeUrl} className="px-0 md:px-3" />
               </div>
             </div>
             <Separator />

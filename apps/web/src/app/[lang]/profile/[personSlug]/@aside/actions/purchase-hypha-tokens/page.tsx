@@ -1,8 +1,7 @@
 import { getAllSpaces, Space } from '@hypha-platform/core/server';
 import {
   ProposalOverlayShell,
-  ButtonBack,
-  ButtonClose,
+  ModalStickyNavigation,
   ProfilePageParams,
 } from '@hypha-platform/epics';
 import { PeoplePurchaseHyphaTokens } from '@hypha-platform/epics';
@@ -38,17 +37,15 @@ export default async function PurchaseHyphaTokensProfile(props: PageProps) {
   return (
     <ProposalOverlayShell>
       <div className="flex flex-col gap-5">
+        <ModalStickyNavigation
+          closeUrl={`/${lang}/profile/${personSlug}`}
+          backUrl={`/${lang}/profile/${personSlug}/actions`}
+          backLabel={tActions('backToActions')}
+        />
         <div className="flex gap-5 justify-between">
           <h2 className="text-4 text-secondary-foreground justify-start items-center">
             {tActions('purchaseHypha.title')}
           </h2>
-          <div className="flex gap-5 justify-end items-center">
-            <ButtonBack
-              label={tActions('backToActions')}
-              backUrl={`/${lang}/profile/${personSlug}/actions`}
-            />
-            <ButtonClose closeUrl={`/${lang}/profile/${personSlug}`} />
-          </div>
         </div>
         <span className="text-2 text-neutral-11">
           {tActions('purchaseHypha.content')}
