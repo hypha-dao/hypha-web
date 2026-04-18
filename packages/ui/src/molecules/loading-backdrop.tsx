@@ -10,7 +10,7 @@ type LoadingBackdropProps = Omit<LoadingBackdropInnerProps, 'children'> & {
 
 /**
  * Loading overlay for forms. When rendered inside {@link AsideOverlayLayoutProvider}
- * (`ProposalOverlayShell`), full-height loading uses `absolute inset-0` on desktop
+ * (`ProposalOverlayShell`), full-height loading follows the responsive modal shell
  * so it covers the centered modal instead of the legacy fixed side-panel strip.
  */
 export function LoadingBackdrop(props: LoadingBackdropProps) {
