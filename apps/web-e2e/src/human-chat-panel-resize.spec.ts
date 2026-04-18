@@ -9,7 +9,6 @@ import { HumanChatPanelPage } from './pages/human-chat-panel.page';
  * drag-to-resize, keyboard support, double-click reset, and layout
  * integration.
  *
- * Uses the two-layer cookie strategy for the feature flag.
  */
 
 // Source: packages/ui/src/sidebar.tsx — SIDEBAR_RESIZE_DEFAULT, SIDEBAR_RESIZE_STEP
@@ -19,12 +18,7 @@ const RESIZE_STEP = 10;
 test.describe('Human Chat Panel — Resize Handle', () => {
   let chatPanel: HumanChatPanelPage;
 
-  test.use({
-    extraHTTPHeaders: { Cookie: 'HYPHA_ENABLE_HUMAN_CHAT=true' },
-  });
-
-  test.beforeEach(async ({ page, context }) => {
-    await HumanChatPanelPage.enableHumanChat(context);
+  test.beforeEach(async ({ page }) => {
     chatPanel = new HumanChatPanelPage(page);
     await chatPanel.open();
     await chatPanel.openPanel();

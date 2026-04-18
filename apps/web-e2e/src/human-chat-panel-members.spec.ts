@@ -71,13 +71,7 @@ test.describe('Human Chat Panel – Members Tab', () => {
 
   let chatPanel: HumanChatPanelPage;
 
-  test.use({
-    extraHTTPHeaders: { Cookie: 'HYPHA_ENABLE_HUMAN_CHAT=true' },
-  });
-
-  test.beforeEach(async ({ page, context }) => {
-    await HumanChatPanelPage.enableHumanChat(context);
-
+  test.beforeEach(async ({ page }) => {
     // Intercept the members API to return deterministic mock data
     await page.route('**/api/v1/spaces/*/members*', (route) => {
       route.fulfill({
