@@ -334,127 +334,137 @@ export function CreateAgreementBaseFields({
 
   return (
     <>
-      <div className="sticky top-0 z-[5] -mx-4 mb-4 flex flex-shrink-0 justify-end gap-1 border-b border-border bg-background-2 px-4 py-2 lg:-mx-7 lg:px-7">
-        {backUrl && (
-          <ButtonBack
-            label={resolvedBackLabel}
-            backUrl={backUrl}
-            className="px-0 md:px-3 align-top"
-          />
-        )}
-        <ButtonClose closeUrl={closeUrl} className="px-0 md:px-3 align-top" />
-      </div>
-      <div className="flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-2">
-        <div className="flex flex-grow gap-3">
-          <PersonAvatar
-            size="lg"
-            isLoading={isLoading}
-            avatarSrc={creator?.avatar}
-            userName={`${creator?.name} ${creator?.surname}`}
-          />
-          <div className="flex w-full">
-            <div className="flex flex-col w-full justify-between gap-4">
-              <div className="flex flex-row flex-wrap items-center gap-x-2 gap-y-2">
-                <Badge className="w-fit" colorVariant="accent">
-                  {resolvedLabel}
-                </Badge>
-                {isDelegate && (
-                  <Badge
-                    variant="outline"
-                    colorVariant="accent"
-                    isLoading={isLoading}
-                  >
-                    {tAgreementFlow('createAgreementBaseFields.delegate')}
-                  </Badge>
-                )}
-              </div>
-              <div className="flex justify-between w-full gap-4">
-                <div className="flex flex-col gap-4 w-full">
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            placeholder={tAgreementFlow(
-                              'createAgreementBaseFields.proposalTitlePlaceholder',
-                            )}
-                            className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
-                            disabled={isLoading}
-                            rightIcon={<RequirementMark className="text-4" />}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
+      {/* Sticky header: compact toolbar row (fixed height) like legacy layout, then avatar + badges + title */}
+      <div className="sticky top-0 z-[5] -mx-4 mb-4 border-b border-border bg-background-2 lg:-mx-7">
+        <div className="flex h-11 shrink-0 items-center justify-end gap-1 border-b border-border px-4 lg:px-7">
+          {backUrl && (
+            <ButtonBack
+              label={resolvedBackLabel}
+              backUrl={backUrl}
+              className="px-0 md:px-3 align-top"
+            />
+          )}
+          <ButtonClose closeUrl={closeUrl} className="px-0 md:px-3 align-top" />
+        </div>
+        <div className="px-4 pb-3 pt-3 lg:px-7">
+          <div className="flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-2">
+            <div className="flex flex-grow gap-3">
+              <PersonAvatar
+                size="lg"
+                isLoading={isLoading}
+                avatarSrc={creator?.avatar}
+                userName={`${creator?.name} ${creator?.surname}`}
+              />
+              <div className="flex w-full min-w-0">
+                <div className="flex flex-col w-full justify-between gap-4">
+                  <div className="flex flex-row flex-wrap items-center gap-x-2 gap-y-2">
+                    <Badge className="w-fit" colorVariant="accent">
+                      {resolvedLabel}
+                    </Badge>
+                    {isDelegate && (
+                      <Badge
+                        variant="outline"
+                        colorVariant="accent"
+                        isLoading={isLoading}
+                      >
+                        {tAgreementFlow('createAgreementBaseFields.delegate')}
+                      </Badge>
                     )}
-                  />
-                  <Text className="text-1 text-neutral-11">
-                    {creator?.name} {creator?.surname}
-                  </Text>
-                </div>
-                {Number(duration) === 0 ? (
-                  <div className="flex gap-2 h-fit items-center pr-3">
-                    <Image
-                      className="max-w-[32px] max-h-[32px] min-w-[32px] min-h-[32px]"
-                      width={32}
-                      height={32}
-                      src={
-                        theme === 'light'
-                          ? '/placeholder/auto-execution-icon-light.svg'
-                          : '/placeholder/auto-execution-icon.svg'
-                      }
-                      alt={tAgreementFlow(
-                        'createAgreementBaseFields.proposalMinimumVotingIconAlt',
-                      )}
-                    />
-                    <div className="flex flex-col">
-                      <span className="text-3 text-accent-11 text-nowrap font-medium">
-                        {tAgreementFlow(
-                          'createAgreementBaseFields.autoExecution',
+                  </div>
+                  <div className="flex justify-between w-full gap-4">
+                    <div className="flex flex-col gap-4 w-full">
+                      <FormField
+                        control={form.control}
+                        name="title"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input
+                                placeholder={tAgreementFlow(
+                                  'createAgreementBaseFields.proposalTitlePlaceholder',
+                                )}
+                                className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
+                                disabled={isLoading}
+                                rightIcon={
+                                  <RequirementMark className="text-4" />
+                                }
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
                         )}
-                      </span>
-                      <span className="text-[9px] text-accent-11 text-nowrap font-medium">
-                        {spaceDetails?.quorum}% Quorum | {spaceDetails?.unity}%
-                        Unity
-                      </span>
+                      />
+                      <Text className="text-1 text-neutral-11">
+                        {creator?.name} {creator?.surname}
+                      </Text>
                     </div>
+                    {Number(duration) === 0 ? (
+                      <div className="flex gap-2 h-fit items-center pr-3">
+                        <Image
+                          className="max-w-[32px] max-h-[32px] min-w-[32px] min-h-[32px]"
+                          width={32}
+                          height={32}
+                          src={
+                            theme === 'light'
+                              ? '/placeholder/auto-execution-icon-light.svg'
+                              : '/placeholder/auto-execution-icon.svg'
+                          }
+                          alt={tAgreementFlow(
+                            'createAgreementBaseFields.proposalMinimumVotingIconAlt',
+                          )}
+                        />
+                        <div className="flex flex-col">
+                          <span className="text-3 text-accent-11 text-nowrap font-medium">
+                            {tAgreementFlow(
+                              'createAgreementBaseFields.autoExecution',
+                            )}
+                          </span>
+                          <span className="text-[9px] text-accent-11 text-nowrap font-medium">
+                            {spaceDetails?.quorum}% Quorum |{' '}
+                            {spaceDetails?.unity}% Unity
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2 h-fit items-center pr-3">
+                        <Image
+                          className="max-w-[32px] max-h-[32px] min-w-[32px] min-h-[32px]"
+                          width={32}
+                          height={32}
+                          src={
+                            theme === 'light'
+                              ? '/placeholder/non-auto-execution-icon-light.svg'
+                              : '/placeholder/non-auto-execution-icon.svg'
+                          }
+                          alt={tAgreementFlow(
+                            'createAgreementBaseFields.proposalMinimumVotingIconAlt',
+                          )}
+                        />
+                        <div className="flex flex-col">
+                          <span className="text-2 text-accent-11 text-nowrap font-medium">
+                            {tAgreementFlow(
+                              'createAgreementBaseFields.toVote',
+                              {
+                                duration: formatDuration(Number(duration)),
+                              },
+                            )}
+                          </span>
+                          <span className="text-[9px] text-accent-11 text-nowrap font-medium">
+                            {spaceDetails?.quorum}% Quorum |{' '}
+                            {spaceDetails?.unity}% Unity
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="flex gap-2 h-fit items-center pr-3">
-                    <Image
-                      className="max-w-[32px] max-h-[32px] min-w-[32px] min-h-[32px]"
-                      width={32}
-                      height={32}
-                      src={
-                        theme === 'light'
-                          ? '/placeholder/non-auto-execution-icon-light.svg'
-                          : '/placeholder/non-auto-execution-icon.svg'
-                      }
-                      alt={tAgreementFlow(
-                        'createAgreementBaseFields.proposalMinimumVotingIconAlt',
-                      )}
-                    />
-                    <div className="flex flex-col">
-                      <span className="text-2 text-accent-11 text-nowrap font-medium">
-                        {tAgreementFlow('createAgreementBaseFields.toVote', {
-                          duration: formatDuration(Number(duration)),
-                        })}
-                      </span>
-                      <span className="text-[9px] text-accent-11 text-nowrap font-medium">
-                        {spaceDetails?.quorum}% Quorum | {spaceDetails?.unity}%
-                        Unity
-                      </span>
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
         </div>
+        <Separator />
       </div>
-      <Separator />
       <FormField
         control={form.control}
         name="leadImage"
