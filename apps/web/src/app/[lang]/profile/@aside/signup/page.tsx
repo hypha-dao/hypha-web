@@ -1,6 +1,6 @@
 'use client';
 
-import { SidePanel, SignupPanel } from '@hypha-platform/epics';
+import { ProposalOverlayShell, SignupPanel } from '@hypha-platform/epics';
 import React, { useEffect, useState } from 'react';
 import { useCreateProfile } from '@web/hooks/use-create-profile';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -45,20 +45,14 @@ export default function SignupPage() {
       isLoading={isLoading || !user?.wallet?.address}
       message={<span>Loading...</span>}
     >
-      <>
-        <div
-          style={{ backdropFilter: 'blur(3px)' }}
-          className="fixed inset-0 z-40"
+      <ProposalOverlayShell>
+        <SignupPanel
+          closeUrl={`/${lang}/profile`}
+          onSave={handleSave}
+          isCreating={isCreating}
+          error={error}
         />
-        <SidePanel className="z-50">
-          <SignupPanel
-            closeUrl={`/${lang}/profile`}
-            onSave={handleSave}
-            isCreating={isCreating}
-            error={error}
-          />
-        </SidePanel>
-      </>
+      </ProposalOverlayShell>
     </LoadingBackdrop>
   );
 }

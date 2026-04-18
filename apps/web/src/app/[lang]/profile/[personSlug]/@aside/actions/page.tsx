@@ -5,7 +5,7 @@ import {
   ButtonClose,
   ProfilePageParams,
   SelectAction,
-  SidePanel,
+  ProposalOverlayShell,
 } from '@hypha-platform/epics';
 import { useParams } from 'next/navigation';
 import {
@@ -88,7 +88,7 @@ export default function ProfileWallet() {
   ];
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <div className="flex flex-col gap-5">
         <div className="flex gap-5 justify-end items-center">
           <ButtonClose closeUrl={`/${lang}/profile/${personSlug}`} />
@@ -108,6 +108,6 @@ export default function ProfileWallet() {
           }))}
         />
       </div>
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }
