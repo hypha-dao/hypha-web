@@ -18,6 +18,7 @@ import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
 import {
   validateExchangeSellerLegBalances,
+  EXCHANGE_SELLER_AMOUNT_TOO_SMALL,
   EXCHANGE_SELLER_BALANCE_EXCEEDED,
 } from '../utils/validate-exchange-seller-balances';
 import { stripExchangeDetailsBlock } from '../utils/strip-exchange-details-block';
@@ -139,6 +140,16 @@ export const CreateExchangeStakesAndTokensForm = ({
           type: 'manual',
           message: tAgreementFlow(
             'plugins.exchangeStakesAndTokens.errors.sellerAmountExceedsBalance',
+          ),
+        });
+        return;
+      }
+      if (err.message === EXCHANGE_SELLER_AMOUNT_TOO_SMALL) {
+        const idx = typeof err.legIndex === 'number' ? err.legIndex : 0;
+        form.setError(`sellerLeg.${idx}.amount` as const, {
+          type: 'manual',
+          message: tAgreementFlow(
+            'plugins.exchangeStakesAndTokens.errors.sellerAmountTooSmall',
           ),
         });
         return;

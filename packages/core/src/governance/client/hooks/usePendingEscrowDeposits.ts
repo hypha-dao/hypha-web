@@ -15,6 +15,12 @@ export type PendingEscrowDeposit = {
   escrowId: bigint;
   /** Which side of the escrow the current user is on. */
   side: 'A' | 'B';
+  /**
+   * Address that called `createEscrow`. The proposer/seller in the
+   * common flow where partyA pre-funds the offer; investment proposals
+   * surface the issuing space as creator while the investor sits on side B.
+   */
+  creator: `0x${string}`;
   partyA: `0x${string}`;
   partyB: `0x${string}`;
   /** Raw escrow tokenA (always the A-side token regardless of user side). */
@@ -127,7 +133,7 @@ export const usePendingEscrowDeposits = ({
         const raw = res.result as unknown as RawEscrow;
         const [
           ,
-          partyA,
+          /* creator */ partyA,
           partyB,
           ,
           ,
@@ -217,7 +223,7 @@ export const usePendingEscrowDeposits = ({
       return candidates.map<PendingEscrowDeposit>(
         ({ escrowId, raw, side }, idx) => {
           const [
-            ,
+            creator,
             partyA,
             partyB,
             tokenA,
@@ -248,6 +254,7 @@ export const usePendingEscrowDeposits = ({
           return {
             escrowId,
             side,
+            creator,
             partyA,
             partyB,
             tokenA,

@@ -107,6 +107,22 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
       const amountA = parseUnits(sellerLeg.amount, decimalsA);
       const amountB = parseUnits(buyerLeg.amount, decimalsB);
 
+      // viem's `parseUnits` silently rounds tiny fractional inputs down to 0n
+      // when the entered fraction has more digits than the token supports
+      // (e.g. `parseUnits('0.001', 2) === 0n`). Catch this client-side so
+      // the user gets a meaningful error instead of an opaque on-chain
+      // "Amount … must be greater than 0" revert from `createEscrow`.
+      if (amountA === 0n) {
+        throw new Error(
+          `Seller amount "${sellerLeg.amount}" rounds to 0 for tokens with ${decimalsA} decimals — please increase it.`,
+        );
+      }
+      if (amountB === 0n) {
+        throw new Error(
+          `Buyer amount "${buyerLeg.amount}" rounds to 0 for tokens with ${decimalsB} decimals — please increase it.`,
+        );
+      }
+
       const transactions: {
         target: `0x${string}`;
         value: bigint;

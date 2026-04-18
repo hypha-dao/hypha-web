@@ -1405,6 +1405,8 @@
         "escrowAccountAddress": "Escrow account address",
         "errors": {
           "sellerAmountExceedsBalance": "The entered amount is greater than the seller available balance.",
+          "sellerAmountTooSmall": "Amount is too small for this token's decimals. Try a larger value.",
+          "buyerAmountTooSmall": "Amount is too small for this token's decimals. Try a larger value.",
           "sellerTreasuryUnavailable": "Could not load the space treasury. Wait for chain data and try again.",
           "sellerBalanceCheckFailed": "Could not verify seller balance. Check your connection and try again.",
           "memberSellerWalletMismatch": "Exchange funding uses your connected wallet. Connect the same wallet as the seller address, or choose the member seller whose address matches your wallet.",

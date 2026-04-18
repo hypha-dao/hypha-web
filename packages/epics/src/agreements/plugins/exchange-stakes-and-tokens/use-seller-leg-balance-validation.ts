@@ -16,6 +16,11 @@ type FormSlice = {
   spaceExecutorAddress?: string;
 };
 
+type Messages = {
+  exceedsBalance: string;
+  amountTooSmall: string;
+};
+
 const DEBOUNCE_MS = 450;
 
 /**
@@ -23,9 +28,12 @@ const DEBOUNCE_MS = 450;
  * set `sellerLeg[i].amount` error (shown under the row).
  * Debounced and disabled during submit so RPC does not race the wallet flow.
  */
-export function useSellerLegBalanceValidation(
-  tSellerAmountExceedsBalance: string,
-) {
+export function useSellerLegBalanceValidation(messages: Messages | string) {
+  // Backwards-compat: legacy callers pass a single "exceeds balance" string.
+  const normalizedMessages: Messages =
+    typeof messages === 'string'
+      ? { exceedsBalance: messages, amountTooSmall: messages }
+      : messages;
   const { control, setError, clearErrors, getFieldState, formState } =
     useFormContext<FormSlice>();
   const { isSubmitting } = useFormState({ control });
@@ -61,8 +69,8 @@ export function useSellerLegBalanceValidation(
     name: 'spaceExecutorAddress',
   }) as string | undefined;
 
-  const messageRef = React.useRef(tSellerAmountExceedsBalance);
-  messageRef.current = tSellerAmountExceedsBalance;
+  const messagesRef = React.useRef(normalizedMessages);
+  messagesRef.current = normalizedMessages;
 
   const validationKey = React.useMemo(
     () =>
@@ -116,11 +124,16 @@ export function useSellerLegBalanceValidation(
           const result = await checkSingleSellerLegBalance(owner, leg);
           if (seq !== runSeqRef.current) return;
 
-          const msg = messageRef.current;
+          const { exceedsBalance, amountTooSmall } = messagesRef.current;
           if (result === 'exceeds') {
             setError(`sellerLeg.${i}.amount` as const, {
               type: 'manual',
-              message: msg,
+              message: exceedsBalance,
+            });
+          } else if (result === 'amount_too_small') {
+            setError(`sellerLeg.${i}.amount` as const, {
+              type: 'manual',
+              message: amountTooSmall,
             });
           } else {
             clearManualSellerLegAmountError(i);

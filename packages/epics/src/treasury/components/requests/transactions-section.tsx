@@ -1,11 +1,16 @@
 'use client';
 import { FC } from 'react';
 import { TransactionsList } from './transactions-list';
+import { RefundableEscrowsList } from './refundable-escrows-list';
 import { Text } from '@radix-ui/themes';
 import { useTransfersSection } from '../../hooks/use-transfers-section';
 import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
 import { Empty } from '../../../common';
 import { useTranslations } from 'next-intl';
+import {
+  useSpaceBySlug,
+  useSpaceDetailsWeb3Rpc,
+} from '@hypha-platform/core/client';
 
 type TransactionsSectionProps = {
   spaceSlug?: string;
@@ -28,6 +33,12 @@ export const TransactionsSection: FC<TransactionsSectionProps> = ({
     pageSize: usedPageSize,
   } = useTransfersSection({ spaceSlug: spaceSlug as string, pageSize });
 
+  const { space } = useSpaceBySlug(spaceSlug || '');
+  const { spaceDetails } = useSpaceDetailsWeb3Rpc({
+    spaceId: space?.web3SpaceId as number,
+  });
+  const executorAddress = spaceDetails?.executor as `0x${string}` | undefined;
+
   return (
     <div className="flex flex-col w-full justify-center items-center gap-4">
       <SectionFilter
@@ -36,6 +47,8 @@ export const TransactionsSection: FC<TransactionsSectionProps> = ({
         searchPlaceholder={tTreasury('searchTransactions')}
         onChangeSearch={setSearchTerm}
       />
+
+      <RefundableEscrowsList user={executorAddress} />
 
       {transfers.length === 0 && !isLoading ? (
         <Empty>

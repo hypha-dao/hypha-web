@@ -23,6 +23,8 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 
 export const EXCHANGE_SELLER_BALANCE_EXCEEDED =
   'EXCHANGE_SELLER_BALANCE_EXCEEDED';
+export const EXCHANGE_SELLER_AMOUNT_TOO_SMALL =
+  'EXCHANGE_SELLER_AMOUNT_TOO_SMALL';
 
 type SellerLeg = { amount: string; token: string };
 
@@ -68,7 +70,7 @@ export function resolveSellerBalanceOwner(
 export async function checkSingleSellerLegBalance(
   owner: `0x${string}`,
   leg: SellerLeg,
-): Promise<'ok' | 'exceeds' | 'skip' | 'rpc_error'> {
+): Promise<'ok' | 'exceeds' | 'skip' | 'rpc_error' | 'amount_too_small'> {
   if (!leg?.token || !isEvmAddress(leg.token)) return 'skip';
 
   const trimmed = leg.amount?.trim() ?? '';
@@ -87,6 +89,14 @@ export async function checkSingleSellerLegBalance(
   } catch {
     return 'rpc_error';
   }
+
+  // viem's `parseUnits` silently rounds down when the input has more
+  // fractional digits than the token supports. e.g. parseUnits('0.001', 2)
+  // returns 0n. The on-chain `createEscrow` then reverts with
+  // "Amount … must be greater than 0", which surfaces as a confusing
+  // proposal failure for the user. Treat this as a validation error so
+  // we can show actionable copy under the amount field.
+  if (amountWei === 0n) return 'amount_too_small';
 
   let balanceWei: bigint;
   try {
@@ -125,6 +135,11 @@ export async function validateExchangeSellerLegBalances(
     const result = await checkSingleSellerLegBalance(owner, leg);
     if (result === 'rpc_error') {
       throw new Error('EXCHANGE_SELLER_BALANCE_CHECK_FAILED');
+    }
+    if (result === 'amount_too_small') {
+      const err = new Error(EXCHANGE_SELLER_AMOUNT_TOO_SMALL);
+      (err as Error & { legIndex: number }).legIndex = i;
+      throw err;
     }
     if (result === 'exceeds') {
       const err = new Error(EXCHANGE_SELLER_BALANCE_EXCEEDED);

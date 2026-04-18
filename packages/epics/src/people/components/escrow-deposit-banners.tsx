@@ -27,6 +27,7 @@ export const EscrowDepositBanners = ({ personSlug, personAddress }: Props) => {
           key={deposit.escrowId.toString()}
           deposit={deposit}
           onDeposited={() => refresh()}
+          onRefused={() => refresh()}
         />
       ))}
     </div>

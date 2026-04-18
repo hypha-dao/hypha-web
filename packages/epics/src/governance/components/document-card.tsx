@@ -17,6 +17,7 @@ import {
   stripHyphaInvestmentFormMarker,
   useEvents,
 } from '@hypha-platform/core/client';
+import { stripExchangeDetailsBlock } from '../utils/strip-exchange-details-block';
 import React from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
 
@@ -55,7 +56,16 @@ function stripDescription(description: string): string {
   if (!description) return '';
   // Strip investment marker before markdown — markdown can mangle `__` delimiters.
   const withoutInvestmentMarker = stripHyphaInvestmentFormMarker(description);
-  return stripHtmlComments(withoutInvestmentMarker)
+  // Exchange proposals embed a block of structured details between
+  // `<!-- exchange-details:start -->` / `<!-- exchange-details:end -->`. The
+  // content between those markers is plain markdown (wallet addresses, leg
+  // tables) so `stripHtmlComments` alone leaves it on the card preview. Drop
+  // the whole block so the card only shows the user-written description.
+  const withoutExchangeDetails = stripExchangeDetailsBlock(
+    withoutInvestmentMarker,
+    { replaceWith: '\n' },
+  );
+  return stripHtmlComments(withoutExchangeDetails)
     .replace(/\\([\[\]\(\)\{\}])/g, '$1')
     .replace(/&#x([0-9A-Fa-f]+);/gi, (full, hex) => {
       const codePoint = Number.parseInt(hex, 16);

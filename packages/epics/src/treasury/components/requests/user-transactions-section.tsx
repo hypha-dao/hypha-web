@@ -1,11 +1,13 @@
 'use client';
 import { FC } from 'react';
 import { TransactionsList } from './transactions-list';
+import { RefundableEscrowsList } from './refundable-escrows-list';
 import { Text } from '@radix-ui/themes';
 import { useUserTransfersSection } from '../../hooks';
 import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
 import { Empty } from '../../../common';
 import { useTranslations } from 'next-intl';
+import { useMe } from '@hypha-platform/core/client';
 
 type TransactionsSectionProps = {
   personSlug?: string;
@@ -28,6 +30,9 @@ export const UserTransactionsSection: FC<TransactionsSectionProps> = ({
     pageSize: usedPageSize,
   } = useUserTransfersSection({ personSlug, pageSize });
 
+  const { person } = useMe();
+  const personAddress = person?.address as `0x${string}` | undefined;
+
   return (
     <div className="flex flex-col w-full justify-center items-center gap-4">
       <SectionFilter
@@ -36,6 +41,8 @@ export const UserTransactionsSection: FC<TransactionsSectionProps> = ({
         searchPlaceholder={tTreasury('searchTransactions')}
         onChangeSearch={setSearchTerm}
       />
+
+      <RefundableEscrowsList user={personAddress} />
 
       {transfers.length === 0 && !isLoading ? (
         <Empty>

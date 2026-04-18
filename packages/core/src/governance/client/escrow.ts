@@ -37,6 +37,20 @@ export const escrowImplementationAbi = [
   },
   {
     type: 'function',
+    name: 'cancelEscrow',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: '_escrowId', type: 'uint256' }],
+    outputs: [{ name: '', type: 'bool' }],
+  },
+  {
+    type: 'function',
+    name: 'withdrawFromCancelled',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: '_escrowId', type: 'uint256' }],
+    outputs: [{ name: '', type: 'bool' }],
+  },
+  {
+    type: 'function',
     name: 'getEscrow',
     stateMutability: 'view',
     inputs: [{ name: '_escrowId', type: 'uint256' }],

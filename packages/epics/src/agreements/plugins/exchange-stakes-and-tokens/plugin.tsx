@@ -11,6 +11,7 @@ import {
   Space,
   TOKENS,
   getBalance,
+  publicClient,
   useMe,
   useSpaceBySlug,
   useSpaceDetailsWeb3Rpc,
@@ -18,6 +19,7 @@ import {
   canBuyerSendToEscrowForExchange,
   canExecutorSendToEscrowForExchange,
 } from '@hypha-platform/core/client';
+import { decayingSpaceTokenAbi } from '@hypha-platform/core/generated';
 import { useChainId } from 'wagmi';
 import {
   useTokens,
@@ -58,7 +60,13 @@ export const ExchangeStakesAndTokensPlugin = ({
   const sellerAmountExceedsMessage = tAgreementFlow(
     'plugins.exchangeStakesAndTokens.errors.sellerAmountExceedsBalance',
   );
-  useSellerLegBalanceValidation(sellerAmountExceedsMessage);
+  const sellerAmountTooSmallMessage = tAgreementFlow(
+    'plugins.exchangeStakesAndTokens.errors.sellerAmountTooSmall',
+  );
+  useSellerLegBalanceValidation({
+    exceedsBalance: sellerAmountExceedsMessage,
+    amountTooSmall: sellerAmountTooSmallMessage,
+  });
   const { control, setValue } = useFormContext();
   const params = useParams();
   const currentSpaceSlug = params.id as string;
@@ -239,6 +247,24 @@ export const ExchangeStakesAndTokensPlugin = ({
   });
 
   /**
+   * When the seller is a *different* space than the active one (the URL-bound
+   * space whose catalogue we already fetched as `catalogueSellerTokens`),
+   * pull that other space's token catalogue too — otherwise picking that
+   * space as the seller would only show the executor's spot balances.
+   */
+  const {
+    tokens: sellerSpaceCatalogueTokens,
+    isLoading: isLoadingSellerSpaceCatalogue,
+  } = useTokens({
+    spaceSlug:
+      sellerRecipientType === 'space' &&
+      sellerSpaceMeta?.slug &&
+      sellerSpaceMeta.slug !== spaceSlug
+        ? sellerSpaceMeta.slug
+        : '',
+  });
+
+  /**
    * Member seller: union space catalogue + personal wallet (other spaces' mints).
    * Space seller: union on-chain catalogue for the space + executor treasury holdings (Alchemy).
    */
@@ -258,8 +284,12 @@ export const ExchangeStakesAndTokensPlugin = ({
     }
     if (sellerRecipientType === 'space') {
       const byKey = new Map<string, ExtendedToken>();
-      for (const t of catalogueSellerTokens) {
-        byKey.set(t.address.toLowerCase(), t);
+      const sellerCatalogue =
+        sellerSpaceMeta?.slug && sellerSpaceMeta.slug !== spaceSlug
+          ? sellerSpaceCatalogueTokens
+          : catalogueSellerTokens;
+      for (const t of sellerCatalogue) {
+        byKey.set(t.address.toLowerCase(), t as ExtendedToken);
       }
       for (const t of walletSpaceExecutorTokens) {
         const k = t.address.toLowerCase();
@@ -273,9 +303,67 @@ export const ExchangeStakesAndTokensPlugin = ({
   }, [
     catalogueSellerTokens,
     sellerRecipientType,
+    sellerSpaceCatalogueTokens,
+    sellerSpaceMeta?.slug,
+    spaceSlug,
     walletSellerTokens,
     walletSpaceExecutorTokens,
   ]);
+
+  /**
+   * Tokens issued by the seller-space (its own catalogue) — these are the
+   * candidates whose `autoMinting` flag we care about. A space-seller may
+   * legitimately fund an exchange even when its executor's balance is 0,
+   * provided the token contract auto-mints on demand from the executor.
+   */
+  const sellerSpaceCatalogueAddresses = React.useMemo(() => {
+    if (sellerRecipientType !== 'space') return [] as `0x${string}`[];
+    const source =
+      sellerSpaceMeta?.slug && sellerSpaceMeta.slug !== spaceSlug
+        ? sellerSpaceCatalogueTokens
+        : catalogueSellerTokens;
+    return source
+      .map((t) => t.address as `0x${string}`)
+      .filter((addr): addr is `0x${string}` =>
+        /^0x[a-fA-F0-9]{40}$/.test(addr),
+      );
+  }, [
+    catalogueSellerTokens,
+    sellerRecipientType,
+    sellerSpaceCatalogueTokens,
+    sellerSpaceMeta?.slug,
+    spaceSlug,
+  ]);
+
+  const { data: sellerAutoMintEnabledSet, isLoading: isLoadingSellerAutoMint } =
+    useSWR(
+      sellerSpaceCatalogueAddresses.length > 0
+        ? [
+            'exchangeSellerAutoMintFlags',
+            ...sellerSpaceCatalogueAddresses.map((a) => a.toLowerCase()),
+          ]
+        : null,
+      async () => {
+        const reads = await publicClient.multicall({
+          allowFailure: true,
+          blockTag: 'latest',
+          contracts: sellerSpaceCatalogueAddresses.map((address) => ({
+            address,
+            abi: decayingSpaceTokenAbi,
+            functionName: 'autoMinting' as const,
+          })),
+        });
+        const enabled = new Set<string>();
+        sellerSpaceCatalogueAddresses.forEach((address, idx) => {
+          const r = reads[idx];
+          if (r?.status === 'success' && r.result === true) {
+            enabled.add(address.toLowerCase());
+          }
+        });
+        return enabled;
+      },
+      { revalidateOnFocus: false },
+    );
 
   const { tokens: buyerWalletTokens, isLoading: isLoadingBuyerTokenList } =
     useWalletTransferableTokens({
@@ -413,10 +501,27 @@ export const ExchangeStakesAndTokensPlugin = ({
   const sellerTokensBeforeWhitelist = React.useMemo(() => {
     if (!isEvmAddress(sellerBalanceLookupAddress) || !sellerOwnedTokenSet)
       return [];
-    return sellerTokenCandidates.filter((token) =>
-      sellerOwnedTokenSet.has(token.address.toLowerCase()),
-    );
-  }, [sellerBalanceLookupAddress, sellerOwnedTokenSet, sellerTokenCandidates]);
+    return sellerTokenCandidates.filter((token) => {
+      const key = token.address.toLowerCase();
+      if (sellerOwnedTokenSet.has(key)) return true;
+      // Space-seller variant: tokens minted by the seller space with
+      // `autoMinting` active can fund the escrow even with a zero spot
+      // balance — the executor mints on demand at proposal-execution time.
+      if (
+        sellerRecipientType === 'space' &&
+        sellerAutoMintEnabledSet?.has(key)
+      ) {
+        return true;
+      }
+      return false;
+    });
+  }, [
+    sellerBalanceLookupAddress,
+    sellerOwnedTokenSet,
+    sellerTokenCandidates,
+    sellerRecipientType,
+    sellerAutoMintEnabledSet,
+  ]);
 
   const buyerTokensBeforeWhitelist = React.useMemo(() => {
     // Space buyers can legitimately pick tokens they don't currently hold —
@@ -577,7 +682,9 @@ export const ExchangeStakesAndTokensPlugin = ({
           (sellerRecipientType === 'member' && isLoadingWalletSellerTokens) ||
           (sellerRecipientType === 'space' &&
             (isLoadingSellerSpaceChain ||
-              isLoadingWalletSpaceExecutorTokens)) ||
+              isLoadingWalletSpaceExecutorTokens ||
+              isLoadingSellerSpaceCatalogue ||
+              isLoadingSellerAutoMint)) ||
           (isEvmAddress(sellerBalanceLookupAddress) &&
             isLoadingSellerBalances) ||
           sellerBalancesPending ||
