@@ -195,17 +195,11 @@ export const NotificationCentreForm = ({
         >
           <div className="flex flex-col gap-5">
             <div className="flex gap-5 justify-between">
-              <Skeleton width="100px" height="24px" loading={isLoading}>
-                <span className="text-4 text-secondary-foreground">
-                  {tNotificationCentre('title')}
-                </span>
+              <Skeleton width="100%" height="24px" loading={isLoading}>
+                <h3 className="text-3 font-medium text-neutral-11">
+                  {tNotificationCentre('subscribe.title')}
+                </h3>
               </Skeleton>
-            </div>
-            <Separator />
-            <div className="flex gap-5 justify-between">
-              <h3 className="text-3 font-medium text-neutral-11">
-                {tNotificationCentre('subscribe.title')}
-              </h3>
             </div>
             <span className="text-2 text-neutral-11">
               {subscribed ? (
