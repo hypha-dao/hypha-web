@@ -954,7 +954,7 @@ function ChatReplyConnectorMeasured({
 
   return (
     <svg
-      className="pointer-events-none absolute inset-0 z-0 overflow-visible text-muted-foreground/40"
+      className="pointer-events-none absolute inset-0 z-[5] overflow-visible text-muted-foreground/55 dark:text-muted-foreground/60"
       width={geom.width}
       height={geom.height}
       viewBox={`0 0 ${geom.width} ${geom.height}`}
