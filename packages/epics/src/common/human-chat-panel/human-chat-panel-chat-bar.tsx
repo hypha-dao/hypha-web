@@ -60,7 +60,7 @@ import {
   ChatVoiceAudioRow,
   useDraftVoiceDuration,
 } from './human-chat-panel-voice-audio-row';
-import { PersonAvatar } from '../../people/components/person-avatar';
+import { HumanChatMentionCandidateRow } from './human-chat-mention-candidate-row';
 
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
 
@@ -128,6 +128,8 @@ export type ChatMentionCandidate = {
   displayLabel: string;
   /** Optional thumbnail for the mention picker (Matrix room avatar HTTP URL). */
   avatarUrl?: string;
+  /** When known from space roster (`Person.sub`), resolves profile without Matrix→Privy lookup. */
+  privySub?: string;
 };
 
 export type ChatDraftAttachment = {
@@ -1673,37 +1675,15 @@ export function HumanChatPanelChatBar({
             className="absolute bottom-full left-2 right-2 z-20 mb-1 max-h-52 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
           >
             {atSuggestions.map((m, idx) => (
-              <button
+              <HumanChatMentionCandidateRow
                 key={m.userId}
-                type="button"
-                role="option"
-                aria-selected={idx === atActive}
-                title={m.userId}
-                className={cn(
-                  'flex w-full min-w-0 items-center gap-2.5 rounded-sm px-2 py-1.5 text-left text-sm',
-                  idx === atActive
-                    ? 'bg-muted text-foreground'
-                    : 'text-foreground hover:bg-muted/80',
-                )}
-                onMouseDown={(ev) => ev.preventDefault()}
-                onClick={() => applyAtChoice(m)}
-              >
-                <PersonAvatar
-                  avatarSrc={m.avatarUrl}
-                  userName={m.displayLabel}
-                  size="sm"
-                  shape="squircle"
-                  className="shrink-0"
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate font-medium leading-snug">
-                    {m.displayLabel}
-                  </span>
-                  <span className="block truncate font-mono text-[11px] text-muted-foreground">
-                    {m.userId}
-                  </span>
-                </span>
-              </button>
+                matrixUserId={m.userId}
+                matrixFallbackLabel={m.displayLabel}
+                matrixFallbackAvatarUrl={m.avatarUrl}
+                privySub={m.privySub}
+                isActive={idx === atActive}
+                onPick={() => applyAtChoice(m)}
+              />
             ))}
           </div>
         )}
