@@ -338,7 +338,6 @@ export function HumanChatPanelChatBar({
   /** Composer text before this dictation session (final + interim are appended live). */
   const dictationPrefixRef = useRef('');
   const [isDictating, setIsDictating] = useState(false);
-  const [micMenuOpen, setMicMenuOpen] = useState(false);
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const valueRef = useRef(value);
   valueRef.current = value;
@@ -652,7 +651,7 @@ export function HumanChatPanelChatBar({
         return;
       }
       if (colonOpen && colonSuggestions.length > 0) return;
-      if (attachMenuOpen || micMenuOpen || emojiPickerOpen) return;
+      if (attachMenuOpen || emojiPickerOpen) return;
       const el = e.target;
       if (el instanceof HTMLTextAreaElement) return;
       if (!canSend) return;
@@ -663,7 +662,6 @@ export function HumanChatPanelChatBar({
       colonOpen,
       colonSuggestions.length,
       attachMenuOpen,
-      micMenuOpen,
       emojiPickerOpen,
       canSend,
       draftAttachments.length,
@@ -819,7 +817,6 @@ export function HumanChatPanelChatBar({
       setVoiceError(t('voiceRecordingNotSupported'));
       return;
     }
-    setMicMenuOpen(false);
     setVoiceError(null);
     voiceAsAttachmentRef.current = true;
     try {
@@ -908,7 +905,6 @@ export function HumanChatPanelChatBar({
   }, []);
 
   const startDictation = useCallback(() => {
-    setMicMenuOpen(false);
     setVoiceError(null);
     const SR =
       (globalThis as unknown as { SpeechRecognition?: SpeechRecognitionCtor })
@@ -1544,48 +1540,45 @@ export function HumanChatPanelChatBar({
                   />
                 </button>
               ) : (
-                <DropdownMenu
-                  modal={false}
-                  open={micMenuOpen}
-                  onOpenChange={setMicMenuOpen}
-                >
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      className={iconButtonClass}
-                      aria-label={t('composerMicMenu')}
-                      title={t('composerMicMenu')}
-                      aria-haspopup="menu"
-                      aria-expanded={micMenuOpen}
-                    >
-                      <Mic className="h-4 w-4" strokeWidth={2} />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="min-w-[220px]">
-                    <DropdownMenuItem
-                      className="cursor-pointer gap-2"
-                      disabled={isVoiceRecording}
-                      onSelect={() => {
-                        requestAnimationFrame(() => startDictation());
-                      }}
-                    >
-                      <AudioLines className="h-4 w-4 shrink-0" aria-hidden />
-                      <span>{t('composerDictateMessage')}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="cursor-pointer gap-2"
-                      disabled={isDictating || !onDraftAttachmentsChange}
-                      onSelect={() => {
-                        requestAnimationFrame(
-                          () => void startVoiceRecordingAsAttachment(),
-                        );
-                      }}
-                    >
-                      <Mic className="h-4 w-4 shrink-0" aria-hidden />
-                      <span>{t('composerSendAudioMessage')}</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <>
+                  <button
+                    type="button"
+                    disabled={isDictating || !onDraftAttachmentsChange}
+                    className={cn(
+                      iconButtonClass,
+                      (!onDraftAttachmentsChange || isDictating) &&
+                        'cursor-not-allowed opacity-50',
+                    )}
+                    aria-label={t('composerSendAudioMessage')}
+                    title={t('composerSendAudioMessage')}
+                    onClick={() =>
+                      requestAnimationFrame(
+                        () => void startVoiceRecordingAsAttachment(),
+                      )
+                    }
+                  >
+                    <Mic className="h-4 w-4" strokeWidth={2} aria-hidden />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isVoiceRecording}
+                    className={cn(
+                      iconButtonClass,
+                      isVoiceRecording && 'cursor-not-allowed opacity-50',
+                    )}
+                    aria-label={t('composerDictateMessage')}
+                    title={t('composerDictateMessage')}
+                    onClick={() =>
+                      requestAnimationFrame(() => startDictation())
+                    }
+                  >
+                    <AudioLines
+                      className="h-4 w-4"
+                      strokeWidth={2}
+                      aria-hidden
+                    />
+                  </button>
+                </>
               )}
             </div>
             <button
