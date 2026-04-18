@@ -893,8 +893,8 @@ type ReplyConnectorGeometry = {
 };
 
 /**
- * Measured L-shaped thread line: bottom-center of main avatar → up → quoted avatar center.
- * Must live in the same stacking context as the reply row + main row (not only above the avatar).
+ * Measured Discord-style connector: stem from **top-center** of main avatar, vertical to
+ * reply row, rounded corner, horizontal ending just **left** of the small avatar.
  */
 function ChatReplyConnectorMeasured({
   rowRef,
@@ -934,17 +934,33 @@ function ChatReplyConnectorMeasured({
         return;
       }
       const xMain = mainRect.left + mainRect.width / 2 - rowRect.left;
-      const yMainBottom = mainRect.bottom - rowRect.top;
-      const xSmall = repRect.left + repRect.width / 2 - rowRect.left;
-      const ySmall = repRect.top + repRect.height / 2 - rowRect.top;
-      const r = Math.min(6, Math.max(3, Math.abs(xSmall - xMain) * 0.12));
-      const turnX = xSmall >= xMain ? xMain + r : xMain - r;
-      const d =
-        Math.abs(xSmall - xMain) < 0.5
-          ? `M ${xMain} ${yMainBottom} L ${xMain} ${ySmall}`
-          : `M ${xMain} ${yMainBottom} L ${xMain} ${
-              ySmall + r
-            } Q ${xMain} ${ySmall} ${turnX} ${ySmall} L ${xSmall} ${ySmall}`;
+      const yRep = repRect.top - rowRect.top + repRect.height / 2;
+      /** Stem starts at main avatar top-center (Discord-style). */
+      const yMainTop =
+        mainRect.top - rowRect.top + Math.min(4, mainRect.height * 0.06);
+      const gapPx = 6;
+      const smallLeft = repRect.left - rowRect.left;
+      const smallRight = repRect.right - rowRect.left;
+      const xEndTarget =
+        smallLeft >= xMain ? smallLeft - gapPx : smallRight + gapPx;
+      const xEnd =
+        smallLeft >= xMain
+          ? Math.min(xEndTarget, smallLeft - 2)
+          : Math.max(xEndTarget, smallRight + 2);
+      const span = Math.abs(xEnd - xMain);
+      const cornerR = Math.min(8, Math.max(4, span * 0.14));
+      const goingRight = xEnd > xMain;
+      const turnX = goingRight ? xMain + cornerR : xMain - cornerR;
+      const yStemEnd = yRep + cornerR;
+      let d: string;
+      if (span < 1.5 && Math.abs(yMainTop - yRep) < 2) {
+        d = `M ${xMain} ${yMainTop} L ${xMain} ${yRep}`;
+      } else if (yStemEnd >= yMainTop - 0.5) {
+        const yJoin = Math.min(yMainTop + cornerR * 2, yRep + cornerR);
+        d = `M ${xMain} ${yMainTop} L ${xMain} ${yJoin} Q ${xMain} ${yRep} ${turnX} ${yRep} L ${xEnd} ${yRep}`;
+      } else {
+        d = `M ${xMain} ${yMainTop} L ${xMain} ${yStemEnd} Q ${xMain} ${yRep} ${turnX} ${yRep} L ${xEnd} ${yRep}`;
+      }
       setGeom({ width: w, height: h, d });
     };
 
