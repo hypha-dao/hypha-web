@@ -42,9 +42,14 @@ export const UploadLeadImage = ({
     defaultImage || null,
   );
 
+  // Sync remote/string defaults only. Do not clear preview when `defaultImage`
+  // becomes undefined because the parent form value is a File — that transition
+  // would wipe the crop/local preview right after the first upload.
   React.useEffect(() => {
-    setPreview(defaultImage || null);
-  }, [defaultImage, setPreview]);
+    if (typeof defaultImage === 'string' && defaultImage.trim().length > 0) {
+      setPreview(defaultImage);
+    }
+  }, [defaultImage]);
 
   const [imageSrc, setImageSrc] = React.useState<string | null>(null);
   const [crop, setCrop] = React.useState({ x: 0, y: 0 });
