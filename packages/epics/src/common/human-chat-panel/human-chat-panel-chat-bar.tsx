@@ -60,6 +60,7 @@ import {
   ChatVoiceAudioRow,
   useDraftVoiceDuration,
 } from './human-chat-panel-voice-audio-row';
+import { PersonAvatar } from '../../people/components/person-avatar';
 
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
 
@@ -125,6 +126,8 @@ export type ChatDraftEditSlot = {
 export type ChatMentionCandidate = {
   userId: string;
   displayLabel: string;
+  /** Optional thumbnail for the mention picker (Matrix room avatar HTTP URL). */
+  avatarUrl?: string;
 };
 
 export type ChatDraftAttachment = {
@@ -1653,7 +1656,7 @@ export function HumanChatPanelChatBar({
           <div
             role="listbox"
             aria-label={t('mentionListLabel')}
-            className="absolute bottom-full left-2 right-2 z-20 mb-1 max-h-48 overflow-y-auto rounded-md border border-border bg-popover shadow-md"
+            className="absolute bottom-full left-2 right-2 z-20 mb-1 max-h-52 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
           >
             {atSuggestions.map((m, idx) => (
               <button
@@ -1661,8 +1664,9 @@ export function HumanChatPanelChatBar({
                 type="button"
                 role="option"
                 aria-selected={idx === atActive}
+                title={m.userId}
                 className={cn(
-                  'flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left text-sm',
+                  'flex w-full min-w-0 items-center gap-2.5 rounded-sm px-2 py-1.5 text-left text-sm',
                   idx === atActive
                     ? 'bg-muted text-foreground'
                     : 'text-foreground hover:bg-muted/80',
@@ -1670,11 +1674,20 @@ export function HumanChatPanelChatBar({
                 onMouseDown={(ev) => ev.preventDefault()}
                 onClick={() => applyAtChoice(m)}
               >
-                <span className="font-medium leading-tight">
-                  {m.displayLabel}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {m.userId}
+                <PersonAvatar
+                  avatarSrc={m.avatarUrl}
+                  userName={m.displayLabel}
+                  size="sm"
+                  shape="squircle"
+                  className="shrink-0"
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium leading-snug">
+                    {m.displayLabel}
+                  </span>
+                  <span className="block truncate font-mono text-[11px] text-muted-foreground">
+                    {m.userId}
+                  </span>
                 </span>
               </button>
             ))}
