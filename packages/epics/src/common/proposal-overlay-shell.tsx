@@ -55,7 +55,9 @@ export function ProposalOverlayShell({
         <div
           className={cn(
             'relative w-full min-h-0',
-            'md:z-10 md:max-h-[min(720px,calc(100dvh-var(--menu-top-height,65px)-2rem))] md:w-full md:max-w-[min(896px,calc(100vw-2rem))] md:overflow-y-auto md:rounded-2xl md:border md:border-border md:bg-background-2 md:shadow-xl',
+            // transform establishes a containing block so `position:fixed` LoadingBackdrop anchors to this modal
+            // (visible card) instead of the viewport — progress overlay stays centered while scrolling long forms.
+            'md:z-10 md:[transform:translateZ(0)] md:max-h-[min(720px,calc(100dvh-var(--menu-top-height,65px)-2rem))] md:w-full md:max-w-[min(896px,calc(100vw-2rem))] md:overflow-y-auto md:rounded-2xl md:border md:border-border md:bg-background-2 md:shadow-xl',
             className,
           )}
         >
