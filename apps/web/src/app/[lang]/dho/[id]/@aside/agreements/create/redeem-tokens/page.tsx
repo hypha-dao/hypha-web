@@ -1,4 +1,7 @@
-import { CreateRedeemTokensForm, SidePanel } from '@hypha-platform/epics';
+import {
+  CreateRedeemTokensForm,
+  ProposalOverlayShell,
+} from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 import { Plugin } from '../../../../_components/plugins';
@@ -29,7 +32,7 @@ export default async function CreateRedeemTokensPage({ params }: PageProps) {
   });
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <CreateRedeemTokensForm
         successfulUrl={successfulUrl}
         backUrl={`${successfulUrl}${PATH_SELECT_CREATE_ACTION}`}
@@ -44,6 +47,6 @@ export default async function CreateRedeemTokensPage({ params }: PageProps) {
           />
         }
       />
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

@@ -5,7 +5,7 @@ import {
   ButtonClose,
   FullVoterList,
   ProposalHead,
-  SidePanel,
+  ProposalOverlayShell,
   ButtonBack,
   getDhoPathAgreements,
 } from '@hypha-platform/epics';
@@ -24,7 +24,7 @@ export default function VotersOverlay() {
   });
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <div className="flex flex-col gap-5">
         <div className="flex gap-5 justify-between">
           <ProposalHead
@@ -58,6 +58,6 @@ export default function VotersOverlay() {
         <Separator />
         <FullVoterList documentSlug={documentSlug as string} />
       </div>
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }
