@@ -1,6 +1,6 @@
 /** Matrix rich reply plaintext helpers (Client-Server API — rich replies). */
 
-import { MatrixEventEvent, RelationType } from 'matrix-js-sdk';
+import { EventType, MatrixEventEvent, RelationType } from 'matrix-js-sdk';
 import type * as MatrixSdk from 'matrix-js-sdk';
 
 import type { Message, MessageMediaBundleItem } from './types';
@@ -18,7 +18,7 @@ export const HYPHA_SPOILER_FIELD = 'org.hypha.spoiler';
 export const HYPHA_MEDIA_BUNDLE_FIELD = 'org.hypha.media_bundle';
 
 export type HyphaMediaBundleItemWire = {
-  msgtype: 'm.file' | 'm.image';
+  msgtype: 'm.file' | 'm.image' | 'm.audio';
   url: string;
   body?: string;
   filename?: string;
@@ -257,6 +257,18 @@ function parseReplyFallbackFirstLine(body: string): {
 /**
  * Map a timeline `m.room.message` event to Hypha `Message` (reply metadata + display body).
  */
+/**
+ * Redacted `m.room.message` events still exist on the timeline; skip them so the UI
+ * does not render empty rows (avatar + “You” with no body).
+ */
+export function isRedactedRoomMessageEvent(
+  event: MatrixSdk.MatrixEvent,
+): boolean {
+  return (
+    event.getType() === EventType.RoomMessage && event.isRedacted() === true
+  );
+}
+
 export function messageFromRoomMessageEvent(
   client: MatrixSdk.MatrixClient,
   roomId: string,
@@ -279,7 +291,10 @@ export function messageFromRoomMessageEvent(
     [key: string]: unknown;
   };
   const msgtypeRaw = content.msgtype;
-  const isMedia = msgtypeRaw === 'm.file' || msgtypeRaw === 'm.image';
+  const isMedia =
+    msgtypeRaw === 'm.file' ||
+    msgtypeRaw === 'm.image' ||
+    msgtypeRaw === 'm.audio';
   const rawBody = content.body ?? '';
   const replyToId = event.getWireContent()?.['m.relates_to']?.['m.in_reply_to']
     ?.event_id as string | undefined;
@@ -318,9 +333,20 @@ export function messageFromRoomMessageEvent(
           content.formatted_body,
         );
       }
+    } else if (
+      content.format === MATRIX_CUSTOM_HTML_FORMAT &&
+      typeof content.formatted_body === 'string'
+    ) {
+      formattedContentHtml = extractReplyFormattedHtml(content.formatted_body);
     }
   } else if (
     !isMedia &&
+    content.format === MATRIX_CUSTOM_HTML_FORMAT &&
+    typeof content.formatted_body === 'string'
+  ) {
+    formattedContentHtml = content.formatted_body;
+  } else if (
+    isMedia &&
     content.format === MATRIX_CUSTOM_HTML_FORMAT &&
     typeof content.formatted_body === 'string'
   ) {
@@ -352,13 +378,16 @@ export function messageFromRoomMessageEvent(
         size: typeof o.size === 'number' ? o.size : undefined,
         w: typeof o.w === 'number' ? o.w : undefined,
         h: typeof o.h === 'number' ? o.h : undefined,
+        duration: typeof o.duration === 'number' ? o.duration : undefined,
       };
     };
 
     const parseBundleItem = (wire: unknown): MessageMediaBundleItem => {
       const w = wire as HyphaMediaBundleItemWire;
       const mt =
-        w.msgtype === 'm.file' || w.msgtype === 'm.image'
+        w.msgtype === 'm.file' ||
+        w.msgtype === 'm.image' ||
+        w.msgtype === 'm.audio'
           ? w.msgtype
           : 'm.file';
       const url =
@@ -383,7 +412,7 @@ export function messageFromRoomMessageEvent(
     let mediaBundle: Message['mediaBundle'];
     if (Array.isArray(bundleRaw) && bundleRaw.length > 0) {
       const first = {
-        msgtype: msgtypeRaw as 'm.file' | 'm.image',
+        msgtype: msgtypeRaw as 'm.file' | 'm.image' | 'm.audio',
         mxcUrl,
         filename:
           typeof content.filename === 'string'

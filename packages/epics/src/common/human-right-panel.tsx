@@ -1,9 +1,14 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import type { MatrixEvent, Room } from 'matrix-js-sdk';
+import type { MatrixClient, MatrixEvent, Room } from 'matrix-js-sdk';
 import { useTranslations } from 'next-intl';
-import { useParams } from 'next/navigation';
+import {
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from 'next/navigation';
 import {
   SidebarHeader,
   SidebarContent,
@@ -21,11 +26,19 @@ import {
   firstLineForReplyPreview,
   stripMatrixReplyFallback,
   RoomEvent,
+  EventType,
   MatrixUploadTimeoutError,
+  SendMessageCancelledError,
   SendMessagePartialFailureError,
   isMatrixRateLimitedError,
+  getMessageReplaceTargetEventId,
+  isRedactedRoomMessageEvent,
   type MessageReaction,
 } from '@hypha-platform/core/client';
+import {
+  isChatPanelAudioFile,
+  isChatPanelVideoFile,
+} from './human-chat-panel/chat-panel-media-types';
 import { UseMembers } from '../spaces';
 
 import {
@@ -39,10 +52,13 @@ import {
 } from './human-chat-panel';
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
+import { computeHumanChatUnreadState } from './human-chat-panel/matrix-chat-unread';
 
 function disposeDraftAttachmentUrls(drafts: ChatDraftAttachment[]) {
   for (const a of drafts) {
-    URL.revokeObjectURL(a.previewUrl);
+    if (a.previewUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(a.previewUrl);
+    }
   }
 }
 
@@ -83,6 +99,8 @@ type UIMessage = {
     excerpt?: string;
     /** Quoted author MXID when known (for label refresh). */
     sourceUserId?: string;
+    /** Matrix avatar thumbnail for reply header */
+    authorAvatarUrl?: string;
   };
 };
 
@@ -95,6 +113,8 @@ type ReplyDraft = {
 type EditDraft = {
   messageId: string;
   excerpt: string;
+  /** Editing a bundled / media Matrix message (caption + attachments). */
+  editMediaMode?: boolean;
 };
 
 const ROOM_STORAGE_KEY = 'hypha-chat-room-';
@@ -127,6 +147,26 @@ function clearStoredRoomId(spaceSlug: string): void {
 }
 
 /**
+ * Matrix room member avatar → HTTP thumbnail for `<img>` (unauthenticated media URL).
+ */
+function matrixMemberAvatarSquare(
+  client: MatrixClient | null | undefined,
+  roomId: string | null | undefined,
+  userId: string | undefined,
+  px: number,
+): string | undefined {
+  if (!client || !roomId || !userId) return undefined;
+  const room = client.getRoom(roomId);
+  const member = room?.getMember(userId);
+  if (!member) return undefined;
+  const mxc = member.getMxcAvatarUrl();
+  if (!mxc || !mxc.startsWith('mxc://')) return undefined;
+  return (
+    client.mxcUrlToHttp(mxc, px, px, 'crop', true, false, false) ?? undefined
+  );
+}
+
+/**
  * Convert a Matrix Message to the UIMessage format expected by panel components.
  */
 function toUIMessage(
@@ -134,10 +174,40 @@ function toUIMessage(
   currentUserId: string | null | undefined,
   resolveMemberLabel: (userId: string | undefined) => string,
   currentUserAvatarUrl?: string,
+  resolveMemberAvatar?: (userId: string | undefined) => string | undefined,
+  roomIdForAvatars?: string | null,
+  clientForAvatars?: MatrixClient | null,
 ): UIMessage {
+  const resolveAvatarForUser = (userId: string | undefined) => {
+    if (!userId) return undefined;
+    return (
+      resolveMemberAvatar?.(userId) ??
+      matrixMemberAvatarSquare(
+        clientForAvatars ?? null,
+        roomIdForAvatars ?? null,
+        userId,
+        96,
+      )
+    );
+  };
+
   const isCurrentUser = currentUserId ? msg.sender === currentUserId : false;
 
-  const isMedia = msg.msgtype === 'm.file' || msg.msgtype === 'm.image';
+  const isMedia =
+    msg.msgtype === 'm.file' ||
+    msg.msgtype === 'm.image' ||
+    msg.msgtype === 'm.audio';
+
+  const strippedMediaBody = isMedia
+    ? stripMatrixReplyFallback(msg.content).trim()
+    : '';
+  const mediaFilenameForCaption = (msg.filename ?? msg.content).trim();
+  const captionForMedia =
+    isMedia &&
+    strippedMediaBody.length > 0 &&
+    strippedMediaBody !== mediaFilenameForCaption
+      ? strippedMediaBody
+      : '';
 
   let replyTo: UIMessage['replyTo'];
   if (msg.inReplyToEventId) {
@@ -146,10 +216,24 @@ function toUIMessage(
       msg.inReplyToBodyPreview != null && msg.inReplyToBodyPreview !== ''
         ? msg.inReplyToBodyPreview
         : undefined;
+    const replyAuthorId = msg.inReplyToSender;
+    const replyAvatar =
+      currentUserId &&
+      replyAuthorId &&
+      replyAuthorId === currentUserId &&
+      currentUserAvatarUrl
+        ? currentUserAvatarUrl
+        : matrixMemberAvatarSquare(
+            clientForAvatars ?? null,
+            roomIdForAvatars ?? null,
+            replyAuthorId,
+            64,
+          ) ?? resolveAvatarForUser(replyAuthorId);
     replyTo = {
       authorLabel,
       excerpt,
       sourceUserId: msg.inReplyToSender,
+      authorAvatarUrl: replyAvatar,
     };
   }
 
@@ -164,7 +248,7 @@ function toUIMessage(
   const mediaSingle =
     isMedia && msg.msgtype
       ? {
-          msgtype: msg.msgtype as 'm.file' | 'm.image',
+          msgtype: msg.msgtype as 'm.file' | 'm.image' | 'm.audio',
           mxcUrl: msg.mxcUrl,
           filename: msg.filename ?? msg.content,
           mediaInfo: msg.mediaInfo,
@@ -185,21 +269,100 @@ function toUIMessage(
 
   const media = mediaSingle;
 
+  const memberAvatar =
+    !isCurrentUser && msg.sender ? resolveAvatarForUser(msg.sender) : undefined;
+
   return {
     id: msg.id,
     role: isCurrentUser ? 'user' : 'member',
     isSynthetic: false,
-    parts: isMedia ? [] : [{ type: 'text', text: msg.content }],
+    parts: isMedia
+      ? captionForMedia
+        ? [{ type: 'text', text: captionForMedia }]
+        : []
+      : [{ type: 'text', text: msg.content }],
     media,
     mediaSlots,
-    formattedContentHtml: isMedia ? undefined : msg.formattedContentHtml,
+    formattedContentHtml:
+      isMedia && !captionForMedia ? undefined : msg.formattedContentHtml,
     senderName: isCurrentUser ? undefined : resolveMemberLabel(msg.sender),
     senderMatrixId: msg.sender,
-    avatarUrl: isCurrentUser ? currentUserAvatarUrl : undefined,
+    avatarUrl: isCurrentUser ? currentUserAvatarUrl : memberAvatar,
     timestamp: msg.timestamp,
     reactions,
     replyTo,
   };
+}
+
+/**
+ * Empty `File` used only as a composer metadata carrier for existing Matrix
+ * slots (content stays on the homeserver via MXC).
+ */
+function dummyEditFile(filename: string, mime?: string): File {
+  return new File([], filename || 'attachment', {
+    type: mime || 'application/octet-stream',
+  });
+}
+
+function buildEditMediaDraftAttachments(
+  m: UIMessage,
+  previewForMxc: (mxc: string) => string | null,
+): ChatDraftAttachment[] {
+  const slots: NonNullable<UIMessage['media']>[] = [];
+  if (m.media?.mxcUrl) {
+    slots.push(m.media);
+  }
+  if (m.mediaSlots && m.mediaSlots.length > 1) {
+    for (const s of m.mediaSlots.slice(1)) {
+      if (s.mxcUrl) slots.push(s);
+    }
+  }
+  const out: ChatDraftAttachment[] = [];
+  for (const slot of slots) {
+    const mxc = slot.mxcUrl!;
+    const thumb = previewForMxc(mxc) ?? EDIT_IMAGE_PLACEHOLDER;
+    const isVid = slot.msgtype === 'm.file' && isChatPanelVideoFile(slot);
+    const isAud = isChatPanelAudioFile(slot);
+    const kind: ChatDraftAttachment['kind'] =
+      slot.msgtype === 'm.image'
+        ? 'image'
+        : isAud
+        ? 'audio'
+        : isVid
+        ? 'video'
+        : 'file';
+    out.push({
+      id: newChatDraftAttachmentId(),
+      file: dummyEditFile(
+        slot.filename ?? 'attachment',
+        slot.mediaInfo?.mimetype,
+      ),
+      kind,
+      previewUrl: thumb || mxc,
+      spoiler: Boolean(slot.spoiler),
+      editSlot: {
+        mxcUrl: mxc,
+        msgtype: slot.msgtype,
+        filename: slot.filename,
+        mediaInfo: slot.mediaInfo,
+        spoiler: slot.spoiler,
+      },
+    });
+  }
+  return out;
+}
+
+const EDIT_IMAGE_PLACEHOLDER =
+  'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+function newChatDraftAttachmentId(): string {
+  if (
+    typeof globalThis.crypto !== 'undefined' &&
+    typeof globalThis.crypto.randomUUID === 'function'
+  ) {
+    return globalThis.crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 function getMessagePlainText(m: UIMessage): string {
@@ -226,6 +389,9 @@ type HumanRightPanelProps = {
 export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const t = useTranslations('HumanChatPanel');
   const params = useParams<{ id?: string }>();
+  const pathname = usePathname() ?? '';
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const spaceSlug = params?.id;
 
   const matrix = useMatrix();
@@ -233,6 +399,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     client,
     isMatrixAvailable,
     isAuthenticated: isMatrixAuthenticated,
+    markRoomRead,
   } = matrix;
 
   // Store matrix methods in a ref to avoid infinite re-render loops.
@@ -246,6 +413,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     coherenceSlug,
     closeCoherenceChat,
     openCoherenceChat,
+    openHumanChatPanel,
   } = useHumanChatPanel();
   const { jwt: authToken } = useJwt();
   const { person: me } = useMe();
@@ -271,6 +439,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   draftAttachmentsRef.current = draftAttachments;
   /** Latest in-flight send; used so error recovery does not clobber edits from a newer send. */
   const sendOperationTokenRef = useRef<symbol | null>(null);
+  const sendAbortControllerRef = useRef<AbortController | null>(null);
   const [messages, setMessages] = useState<UIMessage[]>([]);
   const [replyDraft, setReplyDraft] = useState<ReplyDraft | null>(null);
   const [editDraft, setEditDraft] = useState<EditDraft | null>(null);
@@ -289,10 +458,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     uploadedCount?: number;
   }>(null);
   const joinedRef = useRef<string | null>(null);
+  const [unreadBump, setUnreadBump] = useState(0);
+  const lastAutoMarkReadAtRef = useRef(0);
 
   const currentUserId = client?.getUserId?.() ?? null;
   const currentUserIdRef = useRef(currentUserId);
   currentUserIdRef.current = currentUserId;
+  const roomIdRef = useRef(roomId);
+  roomIdRef.current = roomId;
+  const matrixClientRef = useRef(client);
+  matrixClientRef.current = client;
 
   const resolveMemberLabel = useCallback(
     (userId: string | undefined) => {
@@ -334,12 +509,35 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             ? {
                 ...m.replyTo,
                 authorLabel: newAuthorLabel ?? m.replyTo.authorLabel,
+                authorAvatarUrl:
+                  currentUserIdRef.current &&
+                  m.replyTo.sourceUserId === currentUserIdRef.current &&
+                  currentUserAvatarUrlRef.current
+                    ? currentUserAvatarUrlRef.current
+                    : matrixMemberAvatarSquare(
+                        matrixClientRef.current,
+                        roomIdRef.current,
+                        m.replyTo.sourceUserId,
+                        64,
+                      ) ?? m.replyTo.authorAvatarUrl,
               }
             : m.replyTo;
 
+        const nextMemberAvatar =
+          m.role === 'member' && m.senderMatrixId
+            ? matrixMemberAvatarSquare(
+                matrixClientRef.current,
+                roomIdRef.current,
+                m.senderMatrixId,
+                96,
+              ) ?? m.avatarUrl
+            : m.avatarUrl;
+
         if (
           newSenderName === m.senderName &&
-          nextReply?.authorLabel === m.replyTo?.authorLabel
+          nextReply?.authorLabel === m.replyTo?.authorLabel &&
+          nextReply?.authorAvatarUrl === m.replyTo?.authorAvatarUrl &&
+          nextMemberAvatar === m.avatarUrl
         ) {
           return m;
         }
@@ -347,6 +545,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         return {
           ...m,
           senderName: newSenderName,
+          avatarUrl: nextMemberAvatar,
           replyTo: nextReply,
         };
       }),
@@ -484,6 +683,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 currentUserIdRef.current,
                 resolveMemberLabelRef.current,
                 currentUserAvatarUrlRef.current,
+                undefined,
+                targetRoomId,
+                matrixRef.current.client ?? null,
               ),
             ),
           );
@@ -624,6 +826,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 currentUserIdRef.current,
                 resolveMemberLabelRef.current,
                 currentUserAvatarUrlRef.current,
+                undefined,
+                targetRoomId,
+                matrixRef.current.client ?? null,
               ),
             ),
           );
@@ -665,12 +870,28 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     registerRoomListener(
       roomId,
       async (message: Message) => {
+        if (message.redacted) {
+          const id = message.id;
+          setMessages((prev) => prev.filter((m) => m.id !== id));
+          setReplyDraft((draft) => (draft?.messageId === id ? null : draft));
+          setEditDraft((draft) => {
+            if (draft?.messageId !== id) return draft;
+            disposeDraftAttachmentUrls(draftAttachmentsRef.current);
+            setDraftAttachments([]);
+            setInput('');
+            return null;
+          });
+          return;
+        }
         setMessages((prev) => {
           const next = toUIMessage(
             message,
             currentUserIdRef.current,
             resolveMemberLabelRef.current,
             currentUserAvatarUrlRef.current,
+            undefined,
+            roomId,
+            matrixRef.current.client ?? null,
           );
           const idx = prev.findIndex((m) => m.id === next.id);
           if (idx === -1) {
@@ -768,6 +989,157 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     return [...messages, pendingRow];
   }, [messages, sendingPending, currentUserAvatarUrl]);
 
+  useEffect(() => {
+    if (!client || !roomId) return;
+    const room = client.getRoom(roomId);
+    if (!room) return;
+
+    const bumpUnread = () => setUnreadBump((n) => n + 1);
+    room.on(RoomEvent.Receipt, bumpUnread);
+    room.on(RoomEvent.AccountData, bumpUnread);
+    room.on(RoomEvent.UnreadNotifications, bumpUnread);
+    room.on(RoomEvent.Timeline, bumpUnread);
+
+    return () => {
+      room.off(RoomEvent.Receipt, bumpUnread);
+      room.off(RoomEvent.AccountData, bumpUnread);
+      room.off(RoomEvent.UnreadNotifications, bumpUnread);
+      room.off(RoomEvent.Timeline, bumpUnread);
+    };
+  }, [client, roomId]);
+
+  const unreadChatState = useMemo(() => {
+    if (!client || !roomId || !currentUserId || activeTab !== 'chat') {
+      return {
+        firstUnreadMessageId: null as string | null,
+        unreadNotificationCount: 0,
+        unreadCountIsCapped: false,
+      };
+    }
+    const room = client.getRoom(roomId);
+    return computeHumanChatUnreadState(room ?? undefined, currentUserId);
+  }, [
+    client,
+    roomId,
+    currentUserId,
+    activeTab,
+    unreadBump,
+    mergedMessages.length,
+  ]);
+
+  const markChatTimelineRead = useCallback(async () => {
+    if (!client || !roomId || !currentUserId) return;
+    const room = client.getRoom(roomId);
+    if (!room) return;
+
+    const timeline = room.getLiveTimeline().getEvents();
+    for (let i = timeline.length - 1; i >= 0; i--) {
+      const ev = timeline[i];
+      if (!ev) continue;
+      if (ev.getType() !== EventType.RoomMessage) continue;
+      const id = ev.getId();
+      if (!id || !ev.getSender()) continue;
+      if (isRedactedRoomMessageEvent(ev)) continue;
+      if (getMessageReplaceTargetEventId(ev) != null) continue;
+      try {
+        await markRoomRead(roomId, id);
+      } catch {
+        // ignore
+      }
+      return;
+    }
+  }, [client, roomId, currentUserId, markRoomRead]);
+
+  const handleReachedTimelineBottom = useCallback(() => {
+    if (!unreadChatState.firstUnreadMessageId) return;
+    const now = Date.now();
+    if (now - lastAutoMarkReadAtRef.current < 800) return;
+    lastAutoMarkReadAtRef.current = now;
+    void markChatTimelineRead();
+  }, [markChatTimelineRead, unreadChatState.firstUnreadMessageId]);
+
+  const handleMarkAsReadFromBanner = useCallback(() => {
+    void markChatTimelineRead();
+  }, [markChatTimelineRead]);
+
+  useEffect(() => {
+    if (mode !== 'space') return;
+    const qpChat = searchParams?.get('chat')?.trim();
+    const qpMsg = searchParams?.get('msg')?.trim();
+    if (!qpChat || !qpMsg || !roomId || qpChat !== roomId) return;
+
+    openHumanChatPanel();
+    setActiveTab('chat');
+
+    let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 120;
+    let found = false;
+
+    const stripChatQueryFromUrl = () => {
+      const next = new URLSearchParams(searchParams?.toString() ?? '');
+      next.delete('chat');
+      next.delete('msg');
+      const qs = next.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    };
+
+    const highlightRow = (el: HTMLElement) => {
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      el.classList.add(
+        'ring-2',
+        'ring-primary',
+        'rounded-sm',
+        'transition-shadow',
+      );
+      window.setTimeout(() => {
+        el.classList.remove(
+          'ring-2',
+          'ring-primary',
+          'rounded-sm',
+          'transition-shadow',
+        );
+      }, 2400);
+      stripChatQueryFromUrl();
+    };
+
+    const tryLocate = () => {
+      if (cancelled || found) return;
+      attempts += 1;
+      const escaped =
+        typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+          ? CSS.escape(qpMsg)
+          : qpMsg.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+      const el = document.querySelector(
+        `[data-matrix-event-id="${escaped}"]`,
+      ) as HTMLElement | null;
+
+      if (el) {
+        found = true;
+        highlightRow(el);
+        return;
+      }
+
+      if (attempts < maxAttempts) {
+        window.requestAnimationFrame(tryLocate);
+      }
+    };
+
+    window.requestAnimationFrame(tryLocate);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    mode,
+    roomId,
+    pathname,
+    router,
+    searchParams,
+    mergedMessages.length,
+    openHumanChatPanel,
+  ]);
+
   const handleReplyToMessage = useCallback(
     (messageId: string) => {
       const target = messages.find((m) => m.id === messageId);
@@ -791,9 +1163,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     (messageId: string) => {
       const target = messages.find((m) => m.id === messageId);
       if (!target || target.role !== 'user') return;
-      if (target.media || (target.mediaSlots && target.mediaSlots.length > 0)) {
-        return;
-      }
       const textParts =
         target.parts?.filter(
           (p): p is { type: 'text'; text: string } => p.type === 'text',
@@ -804,13 +1173,46 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setReplyDraft(null);
       disposeDraftAttachmentUrls(draftAttachmentsRef.current);
       setDraftAttachments([]);
+
+      const hasMedia =
+        Boolean(target.media?.mxcUrl) ||
+        (Boolean(target.mediaSlots?.length) &&
+          (target.mediaSlots?.length ?? 0) > 1);
+
+      if (hasMedia && !client) {
+        console.warn(
+          '[HumanRightPanel] Cannot edit media message: Matrix client not available',
+        );
+        setComposerError(t('editMediaMatrixUnavailable'));
+        return;
+      }
+
+      if (hasMedia && client) {
+        const previewForMxc = (mxc: string) =>
+          mxc.startsWith('mxc://')
+            ? client.mxcUrlToHttp(mxc, 400, 300, 'scale', true, false, false) ??
+              null
+            : null;
+        setDraftAttachments(
+          buildEditMediaDraftAttachments(target, previewForMxc),
+        );
+        setEditDraft({
+          messageId,
+          excerpt: firstLineForReplyPreview(plain),
+          editMediaMode: true,
+        });
+        setInput(plain);
+        return;
+      }
+
+      setDraftAttachments([]);
       setEditDraft({
         messageId,
         excerpt: firstLineForReplyPreview(plain),
       });
       setInput(plain);
     },
-    [messages],
+    [messages, client, t],
   );
 
   const handleDeleteMessage = useCallback(
@@ -819,6 +1221,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setDeleteError(null);
       try {
         await matrixRef.current.redactRoomEvent({ roomId, eventId: messageId });
+        setMessages((prev) => prev.filter((m) => m.id !== messageId));
         if (editDraft?.messageId === messageId) {
           setEditDraft(null);
           setInput('');
@@ -834,6 +1237,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [roomId, editDraft?.messageId, replyDraft?.messageId, t],
   );
 
+  const cancelSendInFlight = useCallback(() => {
+    sendAbortControllerRef.current?.abort();
+  }, []);
+
   const handleSend = useCallback(async () => {
     if (!roomId) return;
     const trimmed = input.trim();
@@ -844,6 +1251,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     const savedDraft = replyDraft;
     const savedEditDraft = editDraft;
     const savedAttachments = draftAttachments;
+    sendAbortControllerRef.current?.abort();
+    const abortController = new AbortController();
+    sendAbortControllerRef.current = abortController;
+    const signal = abortController.signal;
+
     const sendToken = Symbol('send');
     sendOperationTokenRef.current = sendToken;
     setComposerError(null);
@@ -861,24 +1273,59 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     }
     try {
       if (editTargetEventId) {
-        if (savedAttachments.length > 0) {
-          throw new Error(t('editAttachmentsNotSupported'));
+        if (savedEditDraft?.editMediaMode) {
+          const slots = savedAttachments
+            .map((a) => a.editSlot)
+            .filter((s): s is NonNullable<ChatDraftAttachment['editSlot']> =>
+              Boolean(s),
+            );
+          if (slots.length === 0) {
+            throw new Error(t('editMediaRequiresAttachment'));
+          }
+          const newFiles = savedAttachments
+            .filter((a) => !a.editSlot)
+            .map((a) => ({
+              file: a.file,
+              kind: (a.kind === 'image'
+                ? 'image'
+                : a.kind === 'audio'
+                ? 'audio'
+                : 'file') as 'image' | 'audio' | 'file',
+              spoiler: a.spoiler,
+            }));
+          await matrixRef.current.editRoomMessage({
+            roomId,
+            targetEventId: editTargetEventId,
+            message: text,
+            existingMediaSlots: slots,
+            ...(newFiles.length > 0 ? { newAttachments: newFiles } : {}),
+            ...(newFiles.length > 0 ? { signal } : {}),
+          });
+        } else {
+          if (savedAttachments.length > 0) {
+            throw new Error(t('editAttachmentsNotSupported'));
+          }
+          await matrixRef.current.editRoomMessage({
+            roomId,
+            targetEventId: editTargetEventId,
+            message: text,
+          });
         }
-        await matrixRef.current.editRoomMessage({
-          roomId,
-          targetEventId: editTargetEventId,
-          message: text,
-        });
       } else {
         await matrixRef.current.sendMessage({
           roomId,
           message: text,
+          signal,
           ...(replyToEventId ? { replyToEventId } : {}),
           ...(savedAttachments.length > 0
             ? {
                 attachments: savedAttachments.map((a) => ({
                   file: a.file,
-                  kind: a.kind === 'video' ? 'file' : a.kind,
+                  kind: (a.kind === 'image'
+                    ? 'image'
+                    : a.kind === 'audio'
+                    ? 'audio'
+                    : 'file') as 'image' | 'audio' | 'file',
                   spoiler: a.spoiler,
                 })),
                 onUploadProgress: ({ completed, total }) => {
@@ -903,6 +1350,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       if (sendOperationTokenRef.current === sendToken) {
         sendOperationTokenRef.current = null;
       }
+      if (sendAbortControllerRef.current === abortController) {
+        sendAbortControllerRef.current = null;
+      }
     } catch (err) {
       console.error('[HumanRightPanel] Failed to send message:', err);
       if (sendOperationTokenRef.current !== sendToken) {
@@ -912,6 +1362,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       }
       sendOperationTokenRef.current = null;
       setSendingPending(null);
+      if (sendAbortControllerRef.current === abortController) {
+        sendAbortControllerRef.current = null;
+      }
+      if (err instanceof SendMessageCancelledError) {
+        disposeDraftAttachmentUrls(savedAttachments);
+        setInput(text);
+        setDraftAttachments(savedAttachments);
+        setReplyDraft(savedDraft);
+        setEditDraft(savedEditDraft);
+        return;
+      }
       if (err instanceof SendMessagePartialFailureError) {
         const { sentAttachmentCount, restoreCaption, message } = err;
         setComposerError(
@@ -962,7 +1423,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       </SidebarHeader>
       <SidebarContent className="bg-background-2 min-h-0">
         {activeTab === 'chat' && (
-          <>
+          <div className="flex min-h-0 flex-1 flex-col">
             {error && (
               <div
                 role="alert"
@@ -1006,6 +1467,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 messages={mergedMessages}
                 roomId={roomId}
                 currentUserId={currentUserId}
+                currentUserAvatarUrl={currentUserAvatarUrl}
                 onReply={handleReplyToMessage}
                 onEditMessage={handleEditMessage}
                 onDeleteMessage={handleDeleteMessage}
@@ -1013,14 +1475,23 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 resolveReactionReactorLabel={(userId) =>
                   resolveMemberLabel(userId)
                 }
+                onCancelSendPending={cancelSendInFlight}
+                firstUnreadMessageId={unreadChatState.firstUnreadMessageId}
+                unreadNotificationCount={
+                  unreadChatState.unreadNotificationCount
+                }
+                unreadCountIsCapped={unreadChatState.unreadCountIsCapped}
+                onReachedTimelineBottom={handleReachedTimelineBottom}
+                onMarkAsReadFromBanner={handleMarkAsReadFromBanner}
               />
             )}
-          </>
+          </div>
         )}
         {activeTab === 'members' && (
           <HumanChatPanelMembers
             useMembers={useMembers}
             spaceSlug={spaceSlug}
+            roomId={roomId}
           />
         )}
       </SidebarContent>
@@ -1048,10 +1519,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                     onDismiss: () => {
                       setEditDraft(null);
                       setInput('');
+                      disposeDraftAttachmentUrls(draftAttachmentsRef.current);
+                      setDraftAttachments([]);
                     },
                   }
                 : undefined
             }
+            editMediaMode={Boolean(editDraft?.editMediaMode)}
           />
         </SidebarFooter>
       )}

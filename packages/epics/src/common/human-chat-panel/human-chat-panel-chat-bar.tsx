@@ -1,6 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   Bold,
   Italic,
@@ -22,6 +29,7 @@ import {
   Paperclip,
   Video,
   Mic,
+  AudioLines,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -41,7 +49,56 @@ import {
   type EmojiIndexEntry,
 } from './emoji-mart-index';
 import { getTextareaSelectionCenter } from './textarea-caret-position';
-import { looksLikeVideoMimeOrName } from './chat-panel-media-types';
+import { highlightComposerUrlsForBackdrop } from './human-chat-panel-composer-url-highlight';
+import {
+  type ChatPanelAttachmentMedia,
+  looksLikeAudioMimeOrName,
+  looksLikeVideoMimeOrName,
+} from './chat-panel-media-types';
+import {
+  ChatVoiceAudioRow,
+  useDraftVoiceDuration,
+} from './human-chat-panel-voice-audio-row';
+
+type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
+
+type SpeechRecognitionLike = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((ev: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((ev: { error?: string }) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+};
+
+type SpeechRecognitionEventLike = {
+  resultIndex: number;
+  results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }>;
+};
+
+const ZWSP_CODE = 0x200b;
+
+/** Linear-time strip (avoids ReDoS from `/\\u200b+$/` on user-controlled strings). */
+function stripTrailingZeroWidthSpaces(s: string): string {
+  let i = s.length;
+  while (i > 0 && s.charCodeAt(i - 1) === ZWSP_CODE) {
+    i -= 1;
+  }
+  return i === s.length ? s : s.slice(0, i);
+}
+
+/** Join two strings with a single space when both are non-empty and lack boundary whitespace. */
+function joinWithSingleSpace(a: string, b: string): string {
+  const left = a.trimEnd();
+  const right = b.trimStart();
+  if (!left) return right;
+  if (!right) return left;
+  if (/\s$/.test(left) || /^\s/.test(right)) return left + right;
+  return `${left} ${right}`;
+}
 
 type ReplyPreview = {
   authorLabel: string;
@@ -54,18 +111,31 @@ type EditPreview = {
   onDismiss: () => void;
 };
 
+/** Existing server slot when editing a media message (no new upload). */
+export type ChatDraftEditSlot = {
+  mxcUrl: string;
+  msgtype: ChatPanelAttachmentMedia['msgtype'];
+  filename?: string;
+  mediaInfo?: ChatPanelAttachmentMedia['mediaInfo'];
+  spoiler?: boolean;
+};
+
 export type ChatDraftAttachment = {
   id: string;
   file: File;
-  kind: 'file' | 'image' | 'video';
+  kind: 'file' | 'image' | 'video' | 'audio';
   previewUrl: string;
   spoiler: boolean;
+  /** When set, this row is an existing Matrix attachment (edit mode). */
+  editSlot?: ChatDraftEditSlot;
 };
 
 type HumanChatPanelChatBarProps = {
   value: string;
   onChange: (value: string) => void;
   onSend: () => void;
+  /** Editing a media message: keep at least one attachment row. */
+  editMediaMode?: boolean;
   placeholder?: string;
   channelName?: string;
   /** Rich reply: composer preview above the textarea */
@@ -75,6 +145,38 @@ type HumanChatPanelChatBarProps = {
   draftAttachments?: ChatDraftAttachment[];
   onDraftAttachmentsChange?: (next: ChatDraftAttachment[]) => void;
 };
+
+/** Blinking REC dot (“on-air”) for active voice recording / dictation controls. */
+function ComposerRecOnAirIndicator() {
+  return (
+    <>
+      <style>{`
+        @keyframes hypha-rec-on-air {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.35; transform: scale(0.92); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          [data-hypha-rec-on-air] {
+            animation: none !important;
+          }
+        }
+      `}</style>
+      <span className="relative flex h-[18px] w-[18px] items-center justify-center">
+        <span
+          data-hypha-rec-on-air=""
+          className="motion-safe:inline-block h-2.5 w-2.5 rounded-full bg-red-600 shadow-[0_0_0_1px_rgba(254,202,202,0.35)]"
+          style={{
+            animationName: 'hypha-rec-on-air',
+            animationDuration: '1s',
+            animationTimingFunction: 'ease-in-out',
+            animationIterationCount: 'infinite',
+          }}
+          aria-hidden
+        />
+      </span>
+    </>
+  );
+}
 
 function formatFileSize(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes < 0) {
@@ -93,6 +195,35 @@ function newAttachmentDraftId(): string {
     return globalThis.crypto.randomUUID();
   }
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function DraftVoicePreview({
+  previewUrl,
+  voiceLabel,
+  unknownDurationLabel,
+  spoiler,
+  spoilerBadgeLabel,
+}: {
+  previewUrl: string;
+  voiceLabel: string;
+  unknownDurationLabel: string;
+  spoiler: boolean;
+  spoilerBadgeLabel: string;
+}) {
+  const durationLabel = useDraftVoiceDuration({
+    objectUrl: previewUrl,
+    fallbackLabel: unknownDurationLabel,
+  });
+  return (
+    <ChatVoiceAudioRow
+      audioSrc={previewUrl}
+      durationLabel={durationLabel}
+      voiceLabel={voiceLabel}
+      variant="draft"
+      spoilerPreview={spoiler}
+      spoilerBadgeLabel={spoilerBadgeLabel}
+    />
+  );
 }
 
 function ChatDraftVideoPreview({
@@ -173,15 +304,13 @@ function ChatDraftVideoPreview({
         </div>
       )}
       {!playing && !spoiler && (
-        <div
-          className="pointer-events-none absolute inset-0 z-[1] flex items-center justify-center bg-black/20"
-          aria-hidden
-        >
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/25">
           <button
             type="button"
-            className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-black/55 text-white shadow-md ring-1 ring-white/20 outline-none transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-primary/50"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-black text-white shadow-lg ring-1 ring-white/20 outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:ring-white/15"
             aria-label={playLabel}
             title={playLabel}
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();
               const el = videoRef.current;
@@ -190,7 +319,7 @@ function ChatDraftVideoPreview({
               void el.play().catch(() => {});
             }}
           >
-            <Play className="ml-0.5 h-5 w-5" fill="currentColor" aria-hidden />
+            <Play className="ml-1 h-6 w-6" fill="currentColor" aria-hidden />
           </button>
         </div>
       )}
@@ -230,6 +359,7 @@ export function HumanChatPanelChatBar({
   value,
   onChange,
   onSend,
+  editMediaMode = false,
   placeholder,
   channelName,
   replyPreview,
@@ -247,7 +377,24 @@ export function HumanChatPanelChatBar({
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const [isVoiceRecording, setIsVoiceRecording] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
+  /** When true, `MediaRecorder` stop should add an audio draft; when false (dictation), discard blob. */
+  const voiceAsAttachmentRef = useRef(false);
+  const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  /** Composer text before this dictation session (final + interim are appended live). */
+  const dictationPrefixRef = useRef('');
+  const [isDictating, setIsDictating] = useState(false);
+  const [attachMenuOpen, setAttachMenuOpen] = useState(false);
+  const valueRef = useRef(value);
+  valueRef.current = value;
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  /** Mirrored backdrop for Discord-style URL coloring (textarea text is transparent). */
+  const composerBackdropRef = useRef<HTMLDivElement>(null);
+
+  const composerHighlightBackdrop = useMemo(
+    () => highlightComposerUrlsForBackdrop(value),
+    [value],
+  );
   const composerShellRef = useRef<HTMLDivElement>(null);
   const replyPreviewWasOpenRef = useRef(false);
   const editPreviewWasOpenRef = useRef(false);
@@ -264,11 +411,18 @@ export function HumanChatPanelChatBar({
     top: number;
     left: number;
   } | null>(null);
+  /** While true, user is dragging a selection — hide format bar until pointerup. */
+  const pointerSelectingRef = useRef(false);
+  const [composerDragDepth, setComposerDragDepth] = useState(0);
+  const isComposerDropActive = composerDragDepth > 0;
 
   const updateSelectionBar = useCallback(() => {
     const el = textareaRef.current;
     if (!el || document.activeElement !== el) {
       setSelectionBar(null);
+      return;
+    }
+    if (pointerSelectingRef.current) {
       return;
     }
     const start = el.selectionStart ?? 0;
@@ -295,11 +449,32 @@ export function HumanChatPanelChatBar({
     });
   }, [colonOpen]);
 
+  useEffect(() => {
+    const endPointerSelect = () => {
+      if (!pointerSelectingRef.current) return;
+      pointerSelectingRef.current = false;
+      requestAnimationFrame(() => {
+        updateSelectionBar();
+      });
+    };
+    window.addEventListener('pointerup', endPointerSelect);
+    window.addEventListener('pointercancel', endPointerSelect);
+    return () => {
+      window.removeEventListener('pointerup', endPointerSelect);
+      window.removeEventListener('pointercancel', endPointerSelect);
+    };
+  }, [updateSelectionBar]);
+
   const autoResize = useCallback(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height =
-        Math.min(textareaRef.current.scrollHeight, 160) + 'px';
+    const ta = textareaRef.current;
+    const bd = composerBackdropRef.current;
+    if (ta) {
+      ta.style.height = 'auto';
+      const h = Math.min(ta.scrollHeight, 160);
+      ta.style.height = `${h}px`;
+      if (bd) {
+        bd.style.height = `${h}px`;
+      }
     }
   }, []);
 
@@ -470,6 +645,108 @@ export function HumanChatPanelChatBar({
     [value, onChange, autoResize],
   );
 
+  const canSend =
+    (value.trim().length > 0 || draftAttachments.length > 0) &&
+    (!editMediaMode || draftAttachments.length > 0);
+
+  const handleAttachMenuContentEnter = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key !== 'Enter' || e.shiftKey) return;
+      const ne = e.nativeEvent as KeyboardEvent;
+      if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
+        return;
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      setAttachMenuOpen(false);
+      if (canSend) {
+        onSend();
+      }
+    },
+    [canSend, draftAttachments.length, onSend],
+  );
+
+  const focusComposerTextarea = useCallback(() => {
+    requestAnimationFrame(() => {
+      const el = textareaRef.current;
+      if (!el) return;
+      el.focus();
+      const len = valueRef.current.length;
+      try {
+        el.setSelectionRange(len, len);
+      } catch {
+        // ignore
+      }
+      autoResize();
+    });
+  }, [autoResize]);
+
+  const prevDraftCountRef = useRef(0);
+  useEffect(() => {
+    const n = draftAttachments.length;
+    const prev = prevDraftCountRef.current;
+    prevDraftCountRef.current = n;
+    if (n > prev) {
+      focusComposerTextarea();
+    }
+  }, [draftAttachments.length, focusComposerTextarea]);
+
+  /**
+   * Enter only bubbles to `textarea` when it is focused. After interacting with
+   * draft cards (spoiler/delete), focus can stay in the attachment strip — still
+   * send on Enter when there is something to send (e.g. voice-only).
+   */
+  const handleDraftAttachmentsKeyDownCapture = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key !== 'Enter' || e.shiftKey) return;
+      const ne = e.nativeEvent as KeyboardEvent;
+      if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
+        return;
+      }
+      if (colonOpen && colonSuggestions.length > 0) return;
+      if (!canSend) return;
+      e.preventDefault();
+      onSend();
+    },
+    [
+      colonOpen,
+      colonSuggestions.length,
+      canSend,
+      draftAttachments.length,
+      onSend,
+    ],
+  );
+
+  /**
+   * Enter often targets the attach (+) or mic trigger after menus/files — send from
+   * anywhere in the composer shell unless a popover menu is open.
+   */
+  const handleComposerShellKeyDownCapture = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key !== 'Enter' || e.shiftKey) return;
+      const ne = e.nativeEvent as KeyboardEvent;
+      if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
+        return;
+      }
+      if (colonOpen && colonSuggestions.length > 0) return;
+      if (attachMenuOpen || emojiPickerOpen) return;
+      const el = e.target;
+      if (el instanceof HTMLTextAreaElement) return;
+      if (!canSend) return;
+      e.preventDefault();
+      onSend();
+    },
+    [
+      colonOpen,
+      colonSuggestions.length,
+      attachMenuOpen,
+      emojiPickerOpen,
+      canSend,
+      draftAttachments.length,
+      onSend,
+    ],
+  );
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (colonOpen && colonSuggestions.length > 0) {
       if (e.key === 'ArrowDown') {
@@ -504,15 +781,17 @@ export function HumanChatPanelChatBar({
       }
     }
 
-    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      const composing = e.nativeEvent.isComposing;
+      if (composing && !(canSend && draftAttachments.length > 0)) {
+        return;
+      }
       e.preventDefault();
-      if (value.trim().length > 0 || draftAttachments.length > 0) {
+      if (canSend) {
         onSend();
       }
     }
   };
-
-  const canSend = value.trim().length > 0 || draftAttachments.length > 0;
 
   const defaultPlaceholder = channelName
     ? t('placeholderChannel', { channel: channelName })
@@ -527,14 +806,20 @@ export function HumanChatPanelChatBar({
         if (kind === 'image' && !file.type.startsWith('image/')) {
           continue;
         }
+        const isAudio =
+          kind === 'file' && looksLikeAudioMimeOrName(file.type, file.name);
         const isVideo =
-          kind === 'file' && looksLikeVideoMimeOrName(file.type, file.name);
+          kind === 'file' &&
+          !isAudio &&
+          looksLikeVideoMimeOrName(file.type, file.name);
         const slotKind: ChatDraftAttachment['kind'] = file.type.startsWith(
           'image/',
         )
           ? 'image'
           : isVideo
           ? 'video'
+          : isAudio
+          ? 'audio'
           : 'file';
         next.push({
           id: newAttachmentDraftId(),
@@ -553,7 +838,9 @@ export function HumanChatPanelChatBar({
     (id: string) => {
       if (!onDraftAttachmentsChange) return;
       const att = draftAttachments.find((a) => a.id === id);
-      if (att) URL.revokeObjectURL(att.previewUrl);
+      if (att?.previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(att.previewUrl);
+      }
       onDraftAttachmentsChange(draftAttachments.filter((a) => a.id !== id));
     },
     [draftAttachments, onDraftAttachmentsChange],
@@ -595,7 +882,7 @@ export function HumanChatPanelChatBar({
     setIsVoiceRecording(false);
   }, []);
 
-  const startVoiceRecording = useCallback(async () => {
+  const startVoiceRecordingAsAttachment = useCallback(async () => {
     if (!onDraftAttachmentsChange) return;
     if (isVoiceRecording) {
       stopVoiceRecording();
@@ -609,6 +896,7 @@ export function HumanChatPanelChatBar({
       return;
     }
     setVoiceError(null);
+    voiceAsAttachmentRef.current = true;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaStreamRef.current = stream;
@@ -640,7 +928,9 @@ export function HumanChatPanelChatBar({
         mediaStreamRef.current = null;
         mediaRecorderRef.current = null;
         const blob = new Blob(chunks, { type: mr.mimeType || 'audio/webm' });
-        if (blob.size < 256) {
+        const asAttach = voiceAsAttachmentRef.current;
+        voiceAsAttachmentRef.current = false;
+        if (!asAttach || blob.size < 256) {
           return;
         }
         const ext = blob.type.includes('mp4') ? 'm4a' : 'webm';
@@ -652,7 +942,9 @@ export function HumanChatPanelChatBar({
       };
       mr.start();
       setIsVoiceRecording(true);
+      focusComposerTextarea();
     } catch {
+      voiceAsAttachmentRef.current = false;
       const s = mediaStreamRef.current;
       if (s) {
         for (const track of s.getTracks()) {
@@ -669,8 +961,101 @@ export function HumanChatPanelChatBar({
     onDraftAttachmentsChange,
     pushDrafts,
     stopVoiceRecording,
+    focusComposerTextarea,
     t,
   ]);
+
+  const stopDictation = useCallback(() => {
+    const r = speechRecognitionRef.current;
+    if (r) {
+      try {
+        r.stop();
+      } catch {
+        try {
+          r.abort();
+        } catch {
+          // ignore
+        }
+      }
+      speechRecognitionRef.current = null;
+    }
+    setIsDictating(false);
+  }, []);
+
+  const startDictation = useCallback(() => {
+    setVoiceError(null);
+    const SR =
+      (globalThis as unknown as { SpeechRecognition?: SpeechRecognitionCtor })
+        .SpeechRecognition ??
+      (
+        globalThis as unknown as {
+          webkitSpeechRecognition?: SpeechRecognitionCtor;
+        }
+      ).webkitSpeechRecognition;
+    if (!SR) {
+      setVoiceError(t('dictationNotSupported'));
+      return;
+    }
+    if (isDictating) {
+      stopDictation();
+      return;
+    }
+    dictationPrefixRef.current = stripTrailingZeroWidthSpaces(valueRef.current);
+    const rec = new SR();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = document.documentElement.lang || 'en';
+    rec.onresult = (ev) => {
+      const results = ev.results;
+      const committedParts: string[] = [];
+      let interimAccum = '';
+      for (let i = 0; i < results.length; i++) {
+        const res = results[i];
+        if (!res?.[0]) continue;
+        const t = res[0].transcript;
+        if (res.isFinal) {
+          const piece = t.trim();
+          if (piece) committedParts.push(piece);
+        } else {
+          interimAccum = joinWithSingleSpace(interimAccum, t);
+        }
+      }
+      const committedStr = committedParts.join(' ');
+      const interimStr = interimAccum.trim();
+      const dictated = joinWithSingleSpace(committedStr, interimStr);
+      const next = joinWithSingleSpace(dictationPrefixRef.current, dictated);
+      valueRef.current = next;
+      onChange(next);
+      requestAnimationFrame(() => {
+        const el = textareaRef.current;
+        if (!el || document.activeElement !== el) return;
+        const end = valueRef.current.length;
+        el.setSelectionRange(end, end);
+      });
+    };
+    rec.onerror = () => {
+      speechRecognitionRef.current = null;
+      dictationPrefixRef.current = '';
+      setIsDictating(false);
+      onChange(stripTrailingZeroWidthSpaces(valueRef.current));
+      setVoiceError(t('dictationError'));
+    };
+    rec.onend = () => {
+      speechRecognitionRef.current = null;
+      dictationPrefixRef.current = '';
+      setIsDictating(false);
+      onChange(stripTrailingZeroWidthSpaces(valueRef.current));
+    };
+    speechRecognitionRef.current = rec;
+    try {
+      rec.start();
+      setIsDictating(true);
+      focusComposerTextarea();
+    } catch {
+      speechRecognitionRef.current = null;
+      setVoiceError(t('dictationNotSupported'));
+    }
+  }, [isDictating, onChange, stopDictation, focusComposerTextarea, t]);
 
   useEffect(() => {
     return () => {
@@ -688,6 +1073,15 @@ export function HumanChatPanelChatBar({
           track.stop();
         }
       }
+      const r = speechRecognitionRef.current;
+      if (r) {
+        try {
+          r.abort();
+        } catch {
+          // ignore
+        }
+        speechRecognitionRef.current = null;
+      }
     };
   }, []);
 
@@ -695,37 +1089,85 @@ export function HumanChatPanelChatBar({
     'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-primary/12 hover:text-primary active:bg-primary/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-0';
 
   const fmtBtn =
-    'flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-popover-foreground transition-colors hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent dark:hover:text-accent-foreground';
+    'flex h-6 w-6 shrink-0 items-center justify-center rounded text-popover-foreground transition-colors hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent dark:hover:text-accent-foreground';
 
   return (
     <div className="flex w-full min-w-0 flex-shrink-0 flex-col border-t border-border bg-background-2 px-3 pt-3 pb-3">
       <div
         ref={composerShellRef}
+        onKeyDownCapture={handleComposerShellKeyDownCapture}
         className={cn(
           'relative flex min-w-0 flex-col rounded-lg border border-border bg-muted/50',
           'transition-all duration-200 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20',
+          isComposerDropActive && 'border-primary/50 ring-2 ring-primary/25',
         )}
+        onDragEnter={(e) => {
+          if (!e.dataTransfer?.types.includes('Files')) {
+            return;
+          }
+          e.preventDefault();
+          if (!onDraftAttachmentsChange) {
+            return;
+          }
+          if (e.currentTarget.contains(e.relatedTarget as Node)) {
+            return;
+          }
+          setComposerDragDepth((d) => d + 1);
+        }}
+        onDragLeave={(e) => {
+          if (!onDraftAttachmentsChange) return;
+          if (e.currentTarget.contains(e.relatedTarget as Node)) {
+            return;
+          }
+          setComposerDragDepth((d) => Math.max(0, d - 1));
+        }}
+        onDragOver={(e) => {
+          if (!e.dataTransfer?.types.includes('Files')) {
+            return;
+          }
+          e.preventDefault();
+          if (!onDraftAttachmentsChange) {
+            return;
+          }
+          e.dataTransfer.dropEffect = 'copy';
+        }}
+        onDrop={(e) => {
+          if (!e.dataTransfer?.types.includes('Files')) {
+            return;
+          }
+          e.preventDefault();
+          setComposerDragDepth(0);
+          if (!onDraftAttachmentsChange) {
+            return;
+          }
+          const files = e.dataTransfer?.files;
+          if (!files?.length) return;
+          pushDrafts(files, 'file');
+        }}
       >
+        {isComposerDropActive && (
+          <div
+            className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center rounded-lg bg-background/75 backdrop-blur-[2px]"
+            aria-hidden
+          >
+            <p className="rounded-md border border-primary/40 bg-popover/95 px-3 py-2 text-sm font-medium text-foreground shadow-sm">
+              {t('composerDropPrompt')}
+            </p>
+          </div>
+        )}
         {selectionBar && (
-          <>
-            <div
-              className="pointer-events-none absolute z-30 w-0 -translate-x-1/2"
-              style={{
-                left: selectionBar.left,
-                top: Math.max(4, selectionBar.top - 8),
-              }}
-              aria-hidden
-            >
-              <div className="h-0 w-0 border-x-[6px] border-t-[7px] border-x-transparent border-t-popover" />
-            </div>
+          <div
+            className="absolute z-30 flex -translate-x-1/2 -translate-y-full flex-col items-center gap-0"
+            style={{
+              left: selectionBar.left,
+              /* Bottom of this stack sits here; subtract gap so arrow tip clears selected text */
+              top: Math.max(4, selectionBar.top - 4),
+            }}
+          >
             <div
               role="toolbar"
               aria-label={t('formatSelectionBar')}
-              className="absolute z-30 flex -translate-x-1/2 -translate-y-full items-center gap-0.5 rounded-lg border border-border bg-popover px-1 py-1 text-popover-foreground shadow-md"
-              style={{
-                left: selectionBar.left,
-                top: Math.max(4, selectionBar.top - 10),
-              }}
+              className="flex items-center gap-0 rounded-md border border-border bg-popover px-0.5 py-0.5 text-popover-foreground shadow-md"
               onMouseDown={(e) => e.preventDefault()}
             >
               <button
@@ -735,7 +1177,7 @@ export function HumanChatPanelChatBar({
                 aria-label={t('bold')}
                 onClick={() => applyFormat('bold')}
               >
-                <Bold className="h-4 w-4" strokeWidth={2.5} />
+                <Bold className="h-3.5 w-3.5" strokeWidth={2} />
               </button>
               <button
                 type="button"
@@ -744,7 +1186,7 @@ export function HumanChatPanelChatBar({
                 aria-label={t('italic')}
                 onClick={() => applyFormat('italic')}
               >
-                <Italic className="h-4 w-4" strokeWidth={2.5} />
+                <Italic className="h-3.5 w-3.5" strokeWidth={2} />
               </button>
               <button
                 type="button"
@@ -753,7 +1195,7 @@ export function HumanChatPanelChatBar({
                 aria-label={t('strikethrough')}
                 onClick={() => applyFormat('strike')}
               >
-                <Strikethrough className="h-4 w-4" strokeWidth={2.5} />
+                <Strikethrough className="h-3.5 w-3.5" strokeWidth={2} />
               </button>
               <button
                 type="button"
@@ -762,7 +1204,7 @@ export function HumanChatPanelChatBar({
                 aria-label={t('blockquote')}
                 onClick={() => applyFormat('blockquote')}
               >
-                <TextQuote className="h-4 w-4" strokeWidth={2.5} />
+                <TextQuote className="h-3.5 w-3.5" strokeWidth={2} />
               </button>
               <button
                 type="button"
@@ -771,7 +1213,7 @@ export function HumanChatPanelChatBar({
                 aria-label={t('inlineCode')}
                 onClick={() => applyFormat('code')}
               >
-                <Code className="h-4 w-4" strokeWidth={2.5} />
+                <Code className="h-3.5 w-3.5" strokeWidth={2} />
               </button>
               <button
                 type="button"
@@ -780,10 +1222,16 @@ export function HumanChatPanelChatBar({
                 aria-label={t('spoiler')}
                 onClick={() => applyFormat('spoiler')}
               >
-                <Eye className="h-4 w-4" strokeWidth={2.5} />
+                <Eye className="h-3.5 w-3.5" strokeWidth={2} />
               </button>
             </div>
-          </>
+            <div
+              className="pointer-events-none flex justify-center"
+              aria-hidden
+            >
+              <div className="h-0 w-0 border-x-[5px] border-b-[6px] border-x-transparent border-b-popover" />
+            </div>
+          </div>
         )}
         <input
           ref={fileInputRef}
@@ -834,6 +1282,7 @@ export function HumanChatPanelChatBar({
 
         {draftAttachments.length > 0 && (
           <div
+            onKeyDownCapture={handleDraftAttachmentsKeyDownCapture}
             className="narrow-scrollbar max-h-[168px] shrink-0 overflow-x-auto overflow-y-hidden border-b border-border px-3 py-2"
             data-testid="chat-draft-attachments"
           >
@@ -841,9 +1290,17 @@ export function HumanChatPanelChatBar({
               {draftAttachments.map((att) => (
                 <div
                   key={att.id}
-                  className="relative flex w-[168px] shrink-0 flex-col gap-1 rounded-lg border border-border bg-muted/40 p-1.5"
+                  className={cn(
+                    'relative flex shrink-0 flex-col gap-1 rounded-lg border border-border bg-muted/40 p-1.5',
+                    att.kind === 'audio' ? 'w-[220px]' : 'w-[168px]',
+                  )}
                 >
-                  <div className="relative h-24 w-full shrink-0 overflow-hidden rounded-md bg-background">
+                  <div
+                    className={cn(
+                      'relative w-full shrink-0 overflow-hidden rounded-md bg-background',
+                      att.kind === 'audio' ? 'min-h-[52px]' : 'h-24',
+                    )}
+                  >
                     {att.kind === 'image' ? (
                       <>
                         {/* eslint-disable-next-line @next/next/no-img-element -- local object URL preview */}
@@ -873,13 +1330,25 @@ export function HumanChatPanelChatBar({
                         playLabel={t('videoPreviewPlay')}
                         spoilerBadge={t('draftSpoilerTag')}
                       />
+                    ) : att.kind === 'audio' ? (
+                      <div className="flex h-full min-h-[52px] items-center px-1 py-1">
+                        <DraftVoicePreview
+                          previewUrl={att.previewUrl}
+                          voiceLabel={t('voiceMessage')}
+                          unknownDurationLabel="0:00"
+                          spoiler={att.spoiler}
+                          spoilerBadgeLabel={t('draftSpoilerTag')}
+                        />
+                      </div>
                     ) : (
                       <div className="flex h-full items-center justify-center text-muted-foreground">
                         <FileIcon className="h-10 w-10" strokeWidth={1.25} />
                       </div>
                     )}
                     <div className="absolute right-1 top-1 z-30 flex gap-0.5 rounded-md bg-popover/95 p-0.5 shadow">
-                      {(att.kind === 'image' || att.kind === 'video') && (
+                      {(att.kind === 'image' ||
+                        att.kind === 'video' ||
+                        att.kind === 'audio') && (
                         <button
                           type="button"
                           className="relative z-30 rounded p-1 text-foreground hover:bg-muted"
@@ -912,7 +1381,8 @@ export function HumanChatPanelChatBar({
                       )}
                       <button
                         type="button"
-                        className="relative z-30 rounded p-1 text-destructive hover:bg-destructive/10"
+                        disabled={editMediaMode && draftAttachments.length <= 1}
+                        className="relative z-30 rounded p-1 text-destructive hover:bg-destructive/10 disabled:pointer-events-none disabled:opacity-40"
                         title={t('attachmentRemove')}
                         aria-label={t('attachmentRemove')}
                         onClick={(e) => {
@@ -925,10 +1395,12 @@ export function HumanChatPanelChatBar({
                     </div>
                   </div>
                   <p className="truncate px-0.5 text-xs text-muted-foreground">
-                    {att.file.name}
+                    {att.editSlot?.filename ?? att.file.name}
                   </p>
                   <p className="px-0.5 text-[10px] text-muted-foreground/80">
-                    {formatFileSize(att.file.size)}
+                    {formatFileSize(
+                      att.editSlot?.mediaInfo?.size ?? att.file.size,
+                    )}
                   </p>
                 </div>
               ))}
@@ -1013,36 +1485,58 @@ export function HumanChatPanelChatBar({
             ))}
           </div>
         )}
-        <textarea
-          ref={textareaRef}
-          value={value}
-          onChange={(e) => {
-            onChange(e.target.value);
-            autoResize();
-            const cursor = e.target.selectionStart ?? e.target.value.length;
-            syncColonState(e.target.value, cursor);
-            requestAnimationFrame(updateSelectionBar);
-          }}
-          onSelect={(e) => {
-            const el = e.currentTarget;
-            syncColonState(el.value, el.selectionStart ?? 0);
-            updateSelectionBar();
-          }}
-          onKeyUp={updateSelectionBar}
-          onMouseUp={updateSelectionBar}
-          onBlur={() => setSelectionBar(null)}
-          onKeyDown={handleKeyDown}
-          aria-label={placeholder ?? defaultPlaceholder}
-          placeholder={placeholder ?? defaultPlaceholder}
-          rows={1}
-          className={cn(
-            'min-h-[36px] min-w-0 max-h-[160px] w-full resize-none',
-            'bg-transparent px-3 pt-3 pb-0 text-sm leading-relaxed text-foreground',
-            'placeholder:text-muted-foreground focus:outline-none',
-          )}
-        />
+        <div className="relative isolate grid min-h-[36px] min-w-0 max-h-[160px] w-full [&>textarea]:col-start-1 [&>textarea]:row-start-1 [&>textarea]:col-end-2 [&>textarea]:row-end-2">
+          <div
+            ref={composerBackdropRef}
+            aria-hidden
+            className={cn(
+              'pointer-events-none col-start-1 row-start-1 min-h-[36px] max-h-[160px] w-full',
+              'overflow-y-auto overflow-x-hidden whitespace-pre-wrap break-words px-3 py-2.5 text-sm leading-relaxed text-foreground',
+              'selection:bg-transparent narrow-scrollbar',
+            )}
+          >
+            {composerHighlightBackdrop}
+          </div>
+          <textarea
+            ref={textareaRef}
+            value={value}
+            onScroll={(e) => {
+              const bd = composerBackdropRef.current;
+              if (bd) bd.scrollTop = e.currentTarget.scrollTop;
+            }}
+            onPointerDown={(e) => {
+              if (e.button !== 0) return;
+              pointerSelectingRef.current = true;
+              setSelectionBar(null);
+            }}
+            onChange={(e) => {
+              onChange(e.target.value);
+              autoResize();
+              const cursor = e.target.selectionStart ?? e.target.value.length;
+              syncColonState(e.target.value, cursor);
+              requestAnimationFrame(updateSelectionBar);
+            }}
+            onSelect={(e) => {
+              const el = e.currentTarget;
+              syncColonState(el.value, el.selectionStart ?? 0);
+            }}
+            onKeyUp={updateSelectionBar}
+            onMouseUp={updateSelectionBar}
+            onBlur={() => setSelectionBar(null)}
+            onKeyDown={handleKeyDown}
+            aria-label={placeholder ?? defaultPlaceholder}
+            placeholder={placeholder ?? defaultPlaceholder}
+            rows={1}
+            className={cn(
+              'relative z-[1] col-start-1 row-start-1 min-h-[36px] min-w-0 max-h-[160px] w-full resize-none',
+              'overflow-y-auto whitespace-pre-wrap break-words bg-transparent px-3 py-2.5 text-sm leading-relaxed',
+              'text-transparent caret-foreground',
+              'placeholder:text-muted-foreground focus:outline-none',
+            )}
+          />
+        </div>
 
-        <div className="flex min-w-0 flex-col gap-1 px-2 pb-3">
+        <div className="flex min-w-0 flex-col gap-1 px-2 pb-2.5 pt-0">
           {voiceError && (
             <p role="alert" className="text-xs text-destructive">
               {voiceError}
@@ -1050,18 +1544,27 @@ export function HumanChatPanelChatBar({
           )}
           <div className="flex min-w-0 items-center justify-between gap-2">
             <div className="flex min-w-0 flex-1 items-center gap-0.5">
-              <DropdownMenu>
+              <DropdownMenu
+                modal={false}
+                open={attachMenuOpen}
+                onOpenChange={setAttachMenuOpen}
+              >
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
                     className={iconButtonClass}
                     aria-label={t('composerAttachMenu')}
                     title={t('composerAttachMenu')}
+                    aria-expanded={attachMenuOpen}
                   >
                     <Plus className="h-4 w-4" strokeWidth={2} />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="min-w-[200px]">
+                <DropdownMenuContent
+                  align="start"
+                  className="min-w-[200px]"
+                  onKeyDownCapture={handleAttachMenuContentEnter}
+                >
                   <DropdownMenuItem
                     className="cursor-pointer gap-2"
                     onSelect={() => {
@@ -1092,6 +1595,7 @@ export function HumanChatPanelChatBar({
                 </DropdownMenuContent>
               </DropdownMenu>
               <HumanChatPanelEmojiPicker
+                modal={false}
                 open={emojiPickerOpen}
                 onOpenChange={setEmojiPickerOpen}
                 onEmojiSelect={insertEmoji}
@@ -1117,27 +1621,70 @@ export function HumanChatPanelChatBar({
               >
                 <AtSign className="h-4 w-4" aria-hidden />
               </button>
-              <button
-                type="button"
-                className={cn(
-                  iconButtonClass,
-                  isVoiceRecording && 'text-destructive hover:text-destructive',
-                )}
-                aria-label={
-                  isVoiceRecording
-                    ? t('composerVoiceStop')
-                    : t('composerVoiceRecord')
-                }
-                title={
-                  isVoiceRecording
-                    ? t('composerVoiceStop')
-                    : t('composerVoiceRecord')
-                }
-                aria-pressed={isVoiceRecording}
-                onClick={() => void startVoiceRecording()}
-              >
-                <Mic className="h-4 w-4" strokeWidth={2} />
-              </button>
+              {/* Order: audio message (waves) left, dictate (mic) right; stop replaces the slot used */}
+              {isVoiceRecording ? (
+                <button
+                  type="button"
+                  className={cn(
+                    iconButtonClass,
+                    'rounded-sm border-2 border-red-500/85 bg-red-950/25 text-red-600 shadow-sm',
+                    'hover:border-red-400 hover:bg-red-950/35 active:bg-red-950/45 dark:border-red-500 dark:bg-red-950/40',
+                  )}
+                  aria-label={t('composerStopRecording')}
+                  title={t('composerStopRecording')}
+                  onClick={() => stopVoiceRecording()}
+                >
+                  <ComposerRecOnAirIndicator />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={isDictating || !onDraftAttachmentsChange}
+                  className={cn(
+                    iconButtonClass,
+                    (!onDraftAttachmentsChange || isDictating) &&
+                      'cursor-not-allowed opacity-50',
+                  )}
+                  aria-label={t('composerSendAudioMessage')}
+                  title={t('composerSendAudioMessage')}
+                  onClick={() =>
+                    requestAnimationFrame(
+                      () => void startVoiceRecordingAsAttachment(),
+                    )
+                  }
+                >
+                  <AudioLines className="h-4 w-4" strokeWidth={2} aria-hidden />
+                </button>
+              )}
+              {isDictating ? (
+                <button
+                  type="button"
+                  className={cn(
+                    iconButtonClass,
+                    'rounded-sm border-2 border-red-500/85 bg-red-950/25 text-red-600 shadow-sm',
+                    'hover:border-red-400 hover:bg-red-950/35 active:bg-red-950/45 dark:border-red-500 dark:bg-red-950/40',
+                  )}
+                  aria-label={t('composerStopDictation')}
+                  title={t('composerStopDictation')}
+                  onClick={() => stopDictation()}
+                >
+                  <ComposerRecOnAirIndicator />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={isVoiceRecording}
+                  className={cn(
+                    iconButtonClass,
+                    isVoiceRecording && 'cursor-not-allowed opacity-50',
+                  )}
+                  aria-label={t('composerDictateMessage')}
+                  title={t('composerDictateMessage')}
+                  onClick={() => requestAnimationFrame(() => startDictation())}
+                >
+                  <Mic className="h-4 w-4" strokeWidth={2} aria-hidden />
+                </button>
+              )}
             </div>
             <button
               type="button"

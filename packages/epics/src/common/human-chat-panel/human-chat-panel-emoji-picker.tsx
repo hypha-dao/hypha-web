@@ -1,14 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useLocale } from 'next-intl';
-import { useTheme } from 'next-themes';
-import Picker from '@emoji-mart/react';
-import data from '@emoji-mart/data';
 import { Popover, PopoverContent, PopoverTrigger } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
-import { getEmojiMartI18n } from './emoji-mart-i18n';
+import { HumanChatPanelEmojiMartSurface } from './human-chat-panel-emoji-mart-surface';
 
 type HumanChatPanelEmojiPickerProps = {
   children: React.ReactNode;
@@ -21,6 +16,11 @@ type HumanChatPanelEmojiPickerProps = {
   align?: 'start' | 'center' | 'end';
   /** Additional class on trigger wrapper */
   className?: string;
+  /**
+   * When false, outside clicks reach other controls (e.g. switching from attach
+   * menu to emoji in one click). Defaults to true for message reaction pickers.
+   */
+  modal?: boolean;
 };
 
 export function HumanChatPanelEmojiPicker({
@@ -31,24 +31,10 @@ export function HumanChatPanelEmojiPicker({
   ariaLabel,
   align = 'end',
   className,
+  modal = true,
 }: HumanChatPanelEmojiPickerProps) {
-  const locale = useLocale();
-  const { resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const pickerLocale = ['en', 'es', 'fr', 'de', 'pt'].includes(locale)
-    ? locale
-    : 'en';
-
-  /** emoji-mart v5 + shadow DOM: avoid `theme="auto"` inside Radix portal — wrong root can yield invisible UI. */
-  const pickerTheme = mounted && resolvedTheme === 'dark' ? 'dark' : 'light';
-
   return (
-    <Popover open={open} onOpenChange={onOpenChange}>
+    <Popover modal={modal} open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild className={cn('inline-flex', className)}>
         {children}
       </PopoverTrigger>
@@ -58,22 +44,13 @@ export function HumanChatPanelEmojiPicker({
         aria-label={ariaLabel}
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        {mounted && (
-          <div className="max-h-[min(420px,70vh)] w-[min(100vw-2rem,352px)] min-h-[230px] overflow-hidden">
-            <Picker
-              data={data}
-              i18n={getEmojiMartI18n(pickerLocale)}
-              onEmojiSelect={(emoji: { native: string }) => {
-                onEmojiSelect(emoji.native);
-                onOpenChange(false);
-              }}
-              theme={pickerTheme}
-              previewPosition="none"
-              skinTonePosition="search"
-              locale={pickerLocale}
-            />
-          </div>
-        )}
+        <HumanChatPanelEmojiMartSurface
+          ariaLabel={ariaLabel}
+          onEmojiSelect={(native) => {
+            onEmojiSelect(native);
+            onOpenChange(false);
+          }}
+        />
       </PopoverContent>
     </Popover>
   );

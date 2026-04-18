@@ -5,7 +5,7 @@ import * as MatrixSdk from 'matrix-js-sdk';
 import type { RoomMessageEventContent } from 'matrix-js-sdk/lib/@types/events';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { MatrixTokenData, useMatrixToken } from '../hooks';
-import { Message } from '../../types';
+import type { Message, MessageMediaInfo } from '../../types';
 import { attachReactionsToMessage, isValidReactionKey } from '../../reactions';
 import {
   buildRichReplyMatrixContent,
@@ -14,17 +14,20 @@ import {
 import {
   HYPHA_MEDIA_BUNDLE_FIELD,
   HYPHA_SPOILER_FIELD,
+  MATRIX_CUSTOM_HTML_FORMAT,
   awaitNonProvisionalMatrixEventId,
   getMessageReplaceTargetEventId,
+  isRedactedRoomMessageEvent,
   messageFromRoomMessageEvent,
   resolveReplyTargetForSend,
   type HyphaMediaBundleItemWire,
 } from '../../rich-reply';
+import { applyMediaEditCaptionAndReply } from '../../edit-room-message-media-caption';
 
 export interface SendAttachmentInput {
   file: File;
-  /** Drives Matrix `msgtype`: `m.image` vs `m.file`. */
-  kind: 'file' | 'image';
+  /** Drives Matrix `msgtype`: `m.image` vs `m.file` vs `m.audio`. */
+  kind: 'file' | 'image' | 'audio';
   /** Blur in timeline until clicked (`org.hypha.spoiler` on the event). */
   spoiler?: boolean;
 }
@@ -43,13 +46,33 @@ interface SendMessageInput {
   attachments?: SendAttachmentInput[];
   /** Fires after each attachment finishes uploading (before the room message is sent). */
   onUploadProgress?: (p: SendMessageUploadProgress) => void;
+  /** Aborts upload/send between attachment steps (UI cancel). */
+  signal?: AbortSignal;
 }
+
+/** Existing attachment slot when editing a media `m.room.message` (mxc stays on server). */
+export type EditRoomMessageExistingSlot = {
+  mxcUrl: string;
+  msgtype: 'm.file' | 'm.image' | 'm.audio';
+  filename?: string;
+  mediaInfo?: MessageMediaInfo;
+  spoiler?: boolean;
+};
 
 export interface EditRoomMessageInput {
   roomId: string;
   /** Timeline id of the `m.room.message` to replace (not an edit event id). */
   targetEventId: string;
   message: string;
+  /**
+   * When editing a media message: ordered slots to keep (first = root event).
+   * New files are uploaded and appended after these (see `newAttachments`).
+   */
+  existingMediaSlots?: EditRoomMessageExistingSlot[];
+  /** New files to append when editing a media message (uploaded after `existingMediaSlots`). */
+  newAttachments?: SendAttachmentInput[];
+  /** Aborts new attachment uploads before the replace event is sent. */
+  signal?: AbortSignal;
 }
 
 export interface RedactRoomEventInput {
@@ -70,6 +93,20 @@ export class SendMessagePartialFailureError extends Error {
   ) {
     super(message);
     this.name = 'SendMessagePartialFailureError';
+  }
+}
+
+/** Thrown when `AbortSignal` aborts an in-flight `sendMessage` / media edit upload. */
+export class SendMessageCancelledError extends Error {
+  constructor() {
+    super('Send cancelled');
+    this.name = 'SendMessageCancelledError';
+  }
+}
+
+function throwIfAborted(signal: AbortSignal | undefined): void {
+  if (signal?.aborted) {
+    throw new SendMessageCancelledError();
   }
 }
 
@@ -131,7 +168,39 @@ function matrixRateLimitBackoffMs(
 type HyphaMediaEventContent = RoomMessageEventContent & {
   [HYPHA_SPOILER_FIELD]?: boolean;
   [HYPHA_MEDIA_BUNDLE_FIELD]?: HyphaMediaBundleItemWire[];
+  /** Caption with markup on the same event as media (not in Matrix's narrow image/file union). */
+  format?: typeof MATRIX_CUSTOM_HTML_FORMAT;
+  formatted_body?: string;
 };
+
+function loadAudioDurationMs(file: File): Promise<number | undefined> {
+  if (
+    !file.type.startsWith('audio/') &&
+    !/\.(ogg|opus|mp3|m4a|wav)$/i.test(file.name)
+  ) {
+    return Promise.resolve(undefined);
+  }
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const el = document.createElement('audio');
+    const done = (ms?: number) => {
+      URL.revokeObjectURL(url);
+      el.src = '';
+      resolve(ms);
+    };
+    el.preload = 'metadata';
+    el.onloadedmetadata = () => {
+      const d = el.duration;
+      if (Number.isFinite(d) && d > 0) {
+        done(Math.round(d * 1000));
+      } else {
+        done(undefined);
+      }
+    };
+    el.onerror = () => done(undefined);
+    el.src = url;
+  });
+}
 
 function loadImageDimensions(
   file: File,
@@ -152,6 +221,75 @@ function loadImageDimensions(
     };
     img.src = url;
   });
+}
+
+async function prepareUploadedAttachmentMediaPayload(
+  client: MatrixSdk.MatrixClient,
+  att: SendAttachmentInput,
+): Promise<HyphaMediaEventContent> {
+  const abortController = new AbortController();
+  const timeoutMs = MATRIX_UPLOAD_TIMEOUT_MS;
+  const timeoutId = setTimeout(() => {
+    abortController.abort();
+  }, timeoutMs);
+  let upload: { content_uri: string };
+  try {
+    upload = await client.uploadContent(att.file, {
+      name: att.file.name,
+      type: att.file.type || undefined,
+      abortController,
+    });
+  } catch (e) {
+    if (abortController.signal.aborted) {
+      throw new MatrixUploadTimeoutError(
+        `Matrix media upload timed out after ${timeoutMs}ms`,
+      );
+    }
+    throw e;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+  const mxc = upload.content_uri;
+  const msgtype =
+    att.kind === 'image'
+      ? MatrixSdk.MsgType.Image
+      : att.kind === 'audio'
+      ? MatrixSdk.MsgType.Audio
+      : MatrixSdk.MsgType.File;
+  let info: {
+    mimetype?: string;
+    size?: number;
+    w?: number;
+    h?: number;
+    duration?: number;
+  } = {
+    mimetype: att.file.type || undefined,
+    size: att.file.size,
+  };
+  if (msgtype === MatrixSdk.MsgType.Image) {
+    const dims = await loadImageDimensions(att.file);
+    if (dims) {
+      info = { ...info, w: dims.w, h: dims.h };
+    }
+  } else if (msgtype === MatrixSdk.MsgType.Audio) {
+    const dur = await loadAudioDurationMs(att.file);
+    if (dur != null) {
+      info = { ...info, duration: dur };
+    }
+  }
+
+  const caption = att.file.name;
+  const base: HyphaMediaEventContent = {
+    msgtype,
+    body: caption,
+    filename: att.file.name,
+    url: mxc,
+    info,
+  } as HyphaMediaEventContent;
+  if (att.spoiler) {
+    base[HYPHA_SPOILER_FIELD] = true;
+  }
+  return base;
 }
 
 export interface ToggleReactionInput {
@@ -198,6 +336,11 @@ interface MatrixContextType {
   ) => void;
   unregisterRoomListener: (roomId: string) => void;
   registeredRoomListeners: RoomMessageListenerRecord[];
+  /**
+   * Advance the user's read receipt + fully-read marker to `eventId` (Matrix
+   * “mark as read” for Human Chat).
+   */
+  markRoomRead: (roomId: string, eventId: string) => Promise<void>;
 }
 
 const MatrixContext = React.createContext<MatrixContextType | null>(null);
@@ -387,6 +530,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       replyToEventId,
       attachments,
       onUploadProgress,
+      signal,
     }: SendMessageInput) => {
       if (!client) {
         throw new Error('Client should be specified');
@@ -402,6 +546,8 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         return;
       }
 
+      throwIfAborted(signal);
+
       let replyContext:
         | {
             resolvedTargetId: string;
@@ -411,6 +557,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         | undefined;
 
       if (replyToEventId?.trim()) {
+        throwIfAborted(signal);
         const resolved = await resolveReplyTargetForSend(
           client,
           roomId,
@@ -423,160 +570,140 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         };
       }
 
-      const prepareMediaPayload = async (
-        att: SendAttachmentInput,
-      ): Promise<HyphaMediaEventContent> => {
-        const abortController = new AbortController();
-        const timeoutMs = MATRIX_UPLOAD_TIMEOUT_MS;
-        const timeoutId = setTimeout(() => {
-          abortController.abort();
-        }, timeoutMs);
-        let upload: { content_uri: string };
-        try {
-          upload = await client.uploadContent(att.file, {
-            name: att.file.name,
-            type: att.file.type || undefined,
-            abortController,
-          });
-        } catch (e) {
-          if (abortController.signal.aborted) {
-            throw new MatrixUploadTimeoutError(
-              `Matrix media upload timed out after ${timeoutMs}ms`,
-            );
+      if (hasAttachments) {
+        const mediaPayloads: HyphaMediaEventContent[] = [];
+        for (let i = 0; i < list.length; i++) {
+          throwIfAborted(signal);
+          if (i > 0) {
+            await delay(MATRIX_UPLOAD_STAGGER_MS);
           }
-          throw e;
-        } finally {
-          clearTimeout(timeoutId);
-        }
-        const mxc = upload.content_uri;
-        const msgtype = att.kind === 'image' ? MsgType.Image : MsgType.File;
-        let info: {
-          mimetype?: string;
-          size?: number;
-          w?: number;
-          h?: number;
-        } = {
-          mimetype: att.file.type || undefined,
-          size: att.file.size,
-        };
-        if (msgtype === MsgType.Image) {
-          const dims = await loadImageDimensions(att.file);
-          if (dims) {
-            info = { ...info, w: dims.w, h: dims.h };
-          }
-        }
-
-        const caption = att.file.name;
-        const base: HyphaMediaEventContent = {
-          msgtype,
-          body: caption,
-          filename: att.file.name,
-          url: mxc,
-          info,
-        } as HyphaMediaEventContent;
-        if (att.spoiler) {
-          base[HYPHA_SPOILER_FIELD] = true;
-        }
-        return base;
-      };
-
-      const mediaPayloads: HyphaMediaEventContent[] = [];
-      for (let i = 0; i < list.length; i++) {
-        if (i > 0) {
-          await delay(MATRIX_UPLOAD_STAGGER_MS);
-        }
-        const att = list[i]!;
-        let attempt = 0;
-        while (true) {
-          try {
-            mediaPayloads.push(await prepareMediaPayload(att));
-            onUploadProgress?.({
-              completed: mediaPayloads.length,
-              total: list.length,
-            });
-            break;
-          } catch (e) {
-            if (
-              !isMatrixRateLimitedError(e) ||
-              attempt >= MATRIX_UPLOAD_RATE_LIMIT_MAX_ATTEMPTS - 1
-            ) {
-              throw e;
+          const att = list[i]!;
+          let attempt = 0;
+          while (true) {
+            try {
+              mediaPayloads.push(
+                await prepareUploadedAttachmentMediaPayload(client, att),
+              );
+              onUploadProgress?.({
+                completed: mediaPayloads.length,
+                total: list.length,
+              });
+              break;
+            } catch (e) {
+              if (
+                !isMatrixRateLimitedError(e) ||
+                attempt >= MATRIX_UPLOAD_RATE_LIMIT_MAX_ATTEMPTS - 1
+              ) {
+                throw e;
+              }
+              await delay(matrixRateLimitBackoffMs(e, attempt));
+              attempt += 1;
             }
-            await delay(matrixRateLimitBackoffMs(e, attempt));
-            attempt += 1;
           }
         }
-      }
 
-      let sentMediaCount = 0;
-      try {
-        if (mediaPayloads.length === 1) {
-          const base = mediaPayloads[0]!;
-          const eventContent = replyContext
-            ? {
-                ...base,
-                'm.relates_to': {
-                  'm.in_reply_to': {
-                    event_id: replyContext.resolvedTargetId,
-                  },
-                },
-              }
-            : base;
-          await client.sendEvent(
-            roomId,
-            EventType.RoomMessage,
-            eventContent as RoomMessageEventContent,
-          );
-          sentMediaCount = 1;
-        } else if (mediaPayloads.length > 1) {
-          const [first, ...rest] = mediaPayloads;
-          const bundleItems: HyphaMediaBundleItemWire[] = rest.map((item) => {
-            const spoiler = item[HYPHA_SPOILER_FIELD] === true;
-            const c = item as HyphaMediaBundleItemWire;
-            const { msgtype, body, filename, url, info } = c;
-            return {
-              msgtype,
-              body,
-              filename,
-              url,
-              info,
-              ...(spoiler ? { [HYPHA_SPOILER_FIELD]: true } : {}),
+        throwIfAborted(signal);
+
+        if (trimmed) {
+          const first = mediaPayloads[0]!;
+          if (replyContext) {
+            const rich = buildRichReplyMatrixContent(
+              replyContext.sender,
+              replyContext.targetBody,
+              trimmed,
+            );
+            mediaPayloads[0] = {
+              ...first,
+              body: rich.body,
+              format: MATRIX_CUSTOM_HTML_FORMAT,
+              formatted_body: rich.formatted_body,
             };
-          });
-          const combined: HyphaMediaEventContent = {
-            ...first!,
-            [HYPHA_MEDIA_BUNDLE_FIELD]: bundleItems,
-          };
-          const eventContent = replyContext
-            ? {
-                ...combined,
-                'm.relates_to': {
-                  'm.in_reply_to': {
-                    event_id: replyContext.resolvedTargetId,
-                  },
-                },
-              }
-            : combined;
-          await client.sendEvent(
-            roomId,
-            EventType.RoomMessage,
-            eventContent as RoomMessageEventContent,
-          );
-          sentMediaCount = list.length;
+          } else {
+            const textExtras =
+              matrixTextEventContentWithOptionalFormatting(trimmed);
+            mediaPayloads[0] = {
+              ...first,
+              ...textExtras,
+              body: trimmed,
+            } as HyphaMediaEventContent;
+          }
         }
-      } catch (mediaErr) {
-        throw new SendMessagePartialFailureError(
-          mediaErr instanceof Error
-            ? mediaErr.message
-            : 'Failed to send attachment',
-          sentMediaCount,
-          true,
-        );
+
+        let sentMediaCount = 0;
+        try {
+          if (mediaPayloads.length === 1) {
+            const base = mediaPayloads[0]!;
+            const eventContent = replyContext
+              ? {
+                  ...base,
+                  'm.relates_to': {
+                    'm.in_reply_to': {
+                      event_id: replyContext.resolvedTargetId,
+                    },
+                  },
+                }
+              : base;
+            throwIfAborted(signal);
+            await client.sendEvent(
+              roomId,
+              EventType.RoomMessage,
+              eventContent as RoomMessageEventContent,
+            );
+            sentMediaCount = 1;
+          } else if (mediaPayloads.length > 1) {
+            const [first, ...rest] = mediaPayloads;
+            const bundleItems: HyphaMediaBundleItemWire[] = rest.map((item) => {
+              const spoiler = item[HYPHA_SPOILER_FIELD] === true;
+              const c = item as HyphaMediaBundleItemWire;
+              const { msgtype, body, filename, url, info } = c;
+              return {
+                msgtype,
+                body,
+                filename,
+                url,
+                info,
+                ...(spoiler ? { [HYPHA_SPOILER_FIELD]: true } : {}),
+              };
+            });
+            const combined: HyphaMediaEventContent = {
+              ...first!,
+              [HYPHA_MEDIA_BUNDLE_FIELD]: bundleItems,
+            };
+            const eventContent = replyContext
+              ? {
+                  ...combined,
+                  'm.relates_to': {
+                    'm.in_reply_to': {
+                      event_id: replyContext.resolvedTargetId,
+                    },
+                  },
+                }
+              : combined;
+            throwIfAborted(signal);
+            await client.sendEvent(
+              roomId,
+              EventType.RoomMessage,
+              eventContent as RoomMessageEventContent,
+            );
+            sentMediaCount = list.length;
+          }
+        } catch (mediaErr) {
+          throw new SendMessagePartialFailureError(
+            mediaErr instanceof Error
+              ? mediaErr.message
+              : 'Failed to send attachment',
+            sentMediaCount,
+            true,
+          );
+        }
+        return;
       }
 
       if (!trimmed) {
         return;
       }
+
+      throwIfAborted(signal);
 
       try {
         if (replyContext && !hasAttachments) {
@@ -585,6 +712,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             replyContext.targetBody,
             message,
           );
+          throwIfAborted(signal);
           await client.sendEvent(roomId, EventType.RoomMessage, {
             msgtype: MsgType.Text,
             ...payload,
@@ -600,6 +728,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         if (replyContext && hasAttachments) {
           const textPayload =
             matrixTextEventContentWithOptionalFormatting(message);
+          throwIfAborted(signal);
           await client.sendEvent(roomId, EventType.RoomMessage, {
             msgtype: MsgType.Text,
             ...textPayload,
@@ -614,6 +743,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
 
         const textPayload =
           matrixTextEventContentWithOptionalFormatting(message);
+        throwIfAborted(signal);
         await client.sendEvent(roomId, EventType.RoomMessage, {
           msgtype: MsgType.Text,
           ...textPayload,
@@ -632,11 +762,20 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
   );
 
   const editRoomMessage = React.useCallback(
-    async ({ roomId, targetEventId, message }: EditRoomMessageInput) => {
+    async ({
+      roomId,
+      targetEventId,
+      message,
+      existingMediaSlots,
+      newAttachments,
+      signal,
+    }: EditRoomMessageInput) => {
       if (!client) {
         throw new Error('Client should be specified');
       }
-      if (!message.trim()) {
+      const trimmed = message.trim();
+      const newList = newAttachments?.length ? newAttachments : [];
+      if (!trimmed && newList.length === 0 && !existingMediaSlots?.length) {
         return;
       }
       if (!roomId?.trim() || !targetEventId?.trim()) {
@@ -677,14 +816,135 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       const originalContent = targetEv.getContent() as {
         msgtype?: string;
         body?: string;
+        url?: string;
+        filename?: string;
+        info?: Record<string, unknown>;
+        [key: string]: unknown;
       };
-      if (originalContent.msgtype !== MsgType.Text) {
-        throw new Error('Only text messages can be edited in this client');
-      }
+      const origMsgtype = originalContent.msgtype;
 
       const replyToId = targetEv.getWireContent()?.['m.relates_to']?.[
         'm.in_reply_to'
       ]?.event_id as string | undefined;
+
+      const isMediaEdit =
+        Array.isArray(existingMediaSlots) &&
+        existingMediaSlots.length > 0 &&
+        (origMsgtype === MsgType.File ||
+          origMsgtype === MsgType.Image ||
+          origMsgtype === MsgType.Audio);
+
+      if (isMediaEdit) {
+        const slots = existingMediaSlots!;
+        const slotToPayload = (
+          slot: EditRoomMessageExistingSlot,
+        ): HyphaMediaEventContent => {
+          const base: HyphaMediaEventContent = {
+            msgtype: slot.msgtype,
+            body: slot.filename ?? 'attachment',
+            filename: slot.filename,
+            url: slot.mxcUrl,
+            info: slot.mediaInfo,
+          } as HyphaMediaEventContent;
+          if (slot.spoiler) {
+            base[HYPHA_SPOILER_FIELD] = true;
+          }
+          return base;
+        };
+
+        const rootFromSlot = slotToPayload(slots[0]!);
+        const restSlots = slots.slice(1).map(slotToPayload);
+        const uploaded: HyphaMediaEventContent[] = [];
+        for (let i = 0; i < newList.length; i++) {
+          throwIfAborted(signal);
+          if (i > 0) {
+            await delay(MATRIX_UPLOAD_STAGGER_MS);
+          }
+          let attempt = 0;
+          while (true) {
+            try {
+              uploaded.push(
+                await prepareUploadedAttachmentMediaPayload(
+                  client,
+                  newList[i]!,
+                ),
+              );
+              break;
+            } catch (e) {
+              if (
+                !isMatrixRateLimitedError(e) ||
+                attempt >= MATRIX_UPLOAD_RATE_LIMIT_MAX_ATTEMPTS - 1
+              ) {
+                throw e;
+              }
+              await delay(matrixRateLimitBackoffMs(e, attempt));
+              attempt += 1;
+            }
+          }
+        }
+
+        const allAfterRoot = [...restSlots, ...uploaded];
+        let combined: HyphaMediaEventContent;
+        if (allAfterRoot.length === 0) {
+          combined = { ...rootFromSlot };
+        } else {
+          const bundleItems: HyphaMediaBundleItemWire[] = allAfterRoot.map(
+            (item) => {
+              const spoiler = item[HYPHA_SPOILER_FIELD] === true;
+              const c = item as HyphaMediaBundleItemWire;
+              const { msgtype, body, filename, url, info } = c;
+              return {
+                msgtype,
+                body,
+                filename,
+                url,
+                info,
+                ...(spoiler ? { [HYPHA_SPOILER_FIELD]: true } : {}),
+              };
+            },
+          );
+          combined = {
+            ...rootFromSlot,
+            [HYPHA_MEDIA_BUNDLE_FIELD]: bundleItems,
+          };
+        }
+
+        const filenameFallback =
+          slots[0]?.filename?.trim() ||
+          String(rootFromSlot.body ?? 'attachment');
+        throwIfAborted(signal);
+        combined = await applyMediaEditCaptionAndReply(
+          combined,
+          trimmed,
+          replyToId,
+          (id) => resolveReplyTargetForSend(client, roomId, id),
+          filenameFallback,
+        );
+
+        const newBody =
+          'body' in combined ? String(combined.body) : trimmed || 'attachment';
+        const fallbackBody = `* ${newBody}`;
+
+        throwIfAborted(signal);
+
+        await client.sendEvent(roomId, EventType.RoomMessage, {
+          ...combined,
+          body: fallbackBody,
+          'm.new_content': combined,
+          'm.relates_to': {
+            rel_type: MatrixSdk.RelationType.Replace,
+            event_id: resolvedTargetId,
+          },
+        } as RoomMessageEventContent);
+        return;
+      }
+
+      if (origMsgtype !== MsgType.Text) {
+        throw new Error('Only text messages can be edited in this client');
+      }
+      if (!trimmed) {
+        return;
+      }
 
       let newContentPayload: RoomMessageEventContent;
 
@@ -804,6 +1064,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             .getLiveTimeline()
             .getEvents()
             .filter((event) => event.getType() === EventType.RoomMessage)
+            .filter((event) => !isRedactedRoomMessageEvent(event))
             .filter((event) => event.getId() && event.getSender())
             .filter((event) => getMessageReplaceTargetEventId(event) == null)
             .map((event) => {
@@ -858,10 +1119,13 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       const memberObjects =
         members?.map(async (member) => {
           try {
-            const presence = await client.getPresence(member.userId);
+            const status = await client.getPresence(member.userId);
+            /** `currently_active` is often unset; `presence: online` means the user is connected. */
+            const online =
+              status.presence === 'online' || Boolean(status.currently_active);
             return {
               userId: member.userId,
-              presence: presence.currently_active ?? false,
+              presence: online,
             } as ChatMember;
           } catch {
             return {
@@ -933,6 +1197,20 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     [client],
   );
 
+  const markRoomRead = React.useCallback(
+    async (roomId: string, eventId: string) => {
+      if (!client) {
+        throw new Error('Client should be specified');
+      }
+      const room = client.getRoom(roomId);
+      if (!room) {
+        throw new Error('Room not found');
+      }
+      await client.setRoomReadMarkersHttpRequest(roomId, eventId, eventId);
+    },
+    [client],
+  );
+
   const registerRoomListener = React.useCallback(
     (
       roomId: string,
@@ -954,6 +1232,19 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         const type = event.getType();
 
         if (type === EventType.RoomMessage) {
+          if (isRedactedRoomMessageEvent(event)) {
+            const id = event.getId();
+            if (id) {
+              await messageListener({
+                id,
+                sender: event.getSender() ?? '',
+                content: '',
+                timestamp: new Date(event.getTs()),
+                redacted: true,
+              });
+            }
+            return;
+          }
           const replaceTargetId = getMessageReplaceTargetEventId(event);
           if (replaceTargetId && room) {
             const targetEv =
@@ -1137,6 +1428,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     registerRoomListener,
     unregisterRoomListener,
     registeredRoomListeners,
+    markRoomRead,
   };
   return (
     <MatrixContext.Provider value={value}>{children}</MatrixContext.Provider>
@@ -1172,6 +1464,9 @@ const noopMatrixContext: MatrixContextType = {
   getPinnedMessageIds: () => [],
   togglePinnedMessage: async () => {},
   getRoomMembers: async () => [],
+  markRoomRead: async () => {
+    throw new Error('Matrix unavailable');
+  },
 };
 
 export const useMatrix = () => {
