@@ -683,6 +683,8 @@ type HumanChatPanelMessageBubbleProps = {
       sourceUserId?: string;
       authorAvatarUrl?: string;
     };
+    /** Matrix `m.mentions.user_ids` when present on the event. */
+    mentionedUserIds?: string[];
   };
   isStreaming?: boolean;
   /** When set, Reply is enabled (omit for synthetic messages like welcome). */
@@ -1195,6 +1197,12 @@ export function HumanChatPanelMessageBubble({
     reactions.length - MAX_VISIBLE_REACTIONS,
   );
 
+  const highlightMentionForViewer = Boolean(
+    currentUserId &&
+      message.mentionedUserIds?.length &&
+      message.mentionedUserIds.includes(currentUserId),
+  );
+
   const messageRowRef = useRef<HTMLDivElement>(null);
   const replyAvatarMeasureRef = useRef<HTMLDivElement>(null);
   const mainAvatarMeasureRef = useRef<HTMLDivElement>(null);
@@ -1208,7 +1216,10 @@ export function HumanChatPanelMessageBubble({
         'group relative -mx-3 flex flex-col overflow-visible rounded-sm px-3 py-0.5 transition-colors',
         /* Discord-style row tint: hover (primary) + focus-within for keyboard/reactions */
         'hover:bg-muted/60 focus-within:bg-muted/60',
+        highlightMentionForViewer &&
+          'border-l-[3px] border-l-amber-500/95 bg-amber-100/85 dark:border-l-amber-400 dark:bg-amber-950/45',
         unreadBoundary &&
+          !highlightMentionForViewer &&
           'border-l-[3px] border-l-amber-700/90 bg-amber-50/90 dark:border-l-amber-600 dark:bg-amber-950/35',
       )}
       onPointerEnter={onRowPointerEnter}
