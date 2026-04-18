@@ -3,6 +3,7 @@ export { HumanChatPanelMessageBubble } from './human-chat-panel-message-bubble';
 export {
   HumanChatPanelChatBar,
   type ChatDraftAttachment,
+  type ChatMentionCandidate,
 } from './human-chat-panel-chat-bar';
 export { HumanChatPanelMessages } from './human-chat-panel-messages';
 export { HumanChatPanelTabs } from './human-chat-panel-tabs';

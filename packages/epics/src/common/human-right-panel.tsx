@@ -48,6 +48,7 @@ import {
   HumanChatPanelTabs,
   HumanChatPanelMembers,
   type ChatDraftAttachment,
+  type ChatMentionCandidate,
   type ChatPanelAttachmentMedia,
 } from './human-chat-panel';
 import type { ChatPanelTab } from './human-chat-panel';
@@ -487,6 +488,28 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     },
     [client, roomId, currentUserId, me?.name, me?.surname, t],
   );
+
+  const mentionCandidates = useMemo((): ChatMentionCandidate[] => {
+    if (!client || !roomId) return [];
+    const room = client.getRoom(roomId);
+    if (!room) return [];
+    const joined = room.getJoinedMembers();
+    const list: ChatMentionCandidate[] = [];
+    for (const member of joined) {
+      const userId = member.userId;
+      if (!userId) continue;
+      list.push({
+        userId,
+        displayLabel: resolveMemberLabel(userId),
+      });
+    }
+    list.sort((a, b) =>
+      a.displayLabel.localeCompare(b.displayLabel, undefined, {
+        sensitivity: 'base',
+      }),
+    );
+    return list;
+  }, [client, roomId, resolveMemberLabel]);
 
   const resolveMemberLabelRef = useRef(resolveMemberLabel);
   resolveMemberLabelRef.current = resolveMemberLabel;
@@ -1501,6 +1524,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             value={input}
             onChange={setInput}
             onSend={handleSend}
+            mentionCandidates={mentionCandidates}
             draftAttachments={draftAttachments}
             onDraftAttachmentsChange={setDraftAttachments}
             replyPreview={

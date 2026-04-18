@@ -55,6 +55,7 @@ import {
   looksLikeAudioMimeOrName,
   looksLikeVideoMimeOrName,
 } from './chat-panel-media-types';
+import { getActiveAtToken } from './human-chat-mention-token';
 import {
   ChatVoiceAudioRow,
   useDraftVoiceDuration,
@@ -120,6 +121,12 @@ export type ChatDraftEditSlot = {
   spoiler?: boolean;
 };
 
+/** Matrix room member for `@` autocomplete (MXID + display label). */
+export type ChatMentionCandidate = {
+  userId: string;
+  displayLabel: string;
+};
+
 export type ChatDraftAttachment = {
   id: string;
   file: File;
@@ -144,6 +151,8 @@ type HumanChatPanelChatBarProps = {
   editPreview?: EditPreview;
   draftAttachments?: ChatDraftAttachment[];
   onDraftAttachmentsChange?: (next: ChatDraftAttachment[]) => void;
+  /** Joined room members for `@` suggestions (omit when unavailable). */
+  mentionCandidates?: ChatMentionCandidate[];
 };
 
 /** Blinking REC dot (“on-air”) for active voice recording / dictation controls. */
@@ -340,6 +349,42 @@ function insertAtCaret(
   return { next, caret };
 }
 
+const MAX_MENTION_SUGGESTIONS = 24;
+
+function filterMentionCandidates(
+  all: ChatMentionCandidate[],
+  query: string,
+): ChatMentionCandidate[] {
+  const q = query.trim().toLowerCase();
+  if (!q) {
+    return all.slice(0, MAX_MENTION_SUGGESTIONS);
+  }
+
+  const starts: ChatMentionCandidate[] = [];
+  const contains: ChatMentionCandidate[] = [];
+  for (const m of all) {
+    const label = m.displayLabel.toLowerCase();
+    const id = m.userId.toLowerCase();
+    const local = m.userId.startsWith('@')
+      ? m.userId.slice(1).split(':')[0]?.toLowerCase() ?? ''
+      : '';
+    if (
+      label.startsWith(q) ||
+      id.startsWith(`@${q}`) ||
+      id.startsWith(q) ||
+      (local && local.startsWith(q))
+    ) {
+      starts.push(m);
+    } else if (label.includes(q) || id.includes(q)) {
+      contains.push(m);
+    }
+    if (starts.length + contains.length >= MAX_MENTION_SUGGESTIONS * 2) {
+      break;
+    }
+  }
+  return [...starts, ...contains].slice(0, MAX_MENTION_SUGGESTIONS);
+}
+
 function wrapSelection(
   value: string,
   start: number,
@@ -366,6 +411,7 @@ export function HumanChatPanelChatBar({
   editPreview,
   draftAttachments = [],
   onDraftAttachmentsChange,
+  mentionCandidates = [],
 }: HumanChatPanelChatBarProps) {
   const t = useTranslations('HumanChatPanel');
   const fileInputId = useId();
@@ -407,6 +453,13 @@ export function HumanChatPanelChatBar({
   const colonTokenRef = useRef<{ start: number; query: string } | null>(null);
   const colonRequestIdRef = useRef(0);
 
+  const [atOpen, setAtOpen] = useState(false);
+  const [atSuggestions, setAtSuggestions] = useState<ChatMentionCandidate[]>(
+    [],
+  );
+  const [atActive, setAtActive] = useState(0);
+  const atTokenRef = useRef<ReturnType<typeof getActiveAtToken>>(null);
+
   const [selectionBar, setSelectionBar] = useState<{
     top: number;
     left: number;
@@ -427,7 +480,7 @@ export function HumanChatPanelChatBar({
     }
     const start = el.selectionStart ?? 0;
     const end = el.selectionEnd ?? 0;
-    if (start === end || colonOpen) {
+    if (start === end || colonOpen || atOpen) {
       setSelectionBar(null);
       return;
     }
@@ -447,7 +500,7 @@ export function HumanChatPanelChatBar({
       top: local.top + (taRect.top - wrapRect.top),
       left: local.left + (taRect.left - wrapRect.left),
     });
-  }, [colonOpen]);
+  }, [colonOpen, atOpen]);
 
   useEffect(() => {
     const endPointerSelect = () => {
@@ -502,6 +555,13 @@ export function HumanChatPanelChatBar({
 
   const syncColonState = useCallback((val: string, cursor: number) => {
     const requestId = ++colonRequestIdRef.current;
+    if (getActiveAtToken(val, cursor)) {
+      colonTokenRef.current = null;
+      setColonOpen(false);
+      setColonSuggestions([]);
+      setColonActive(0);
+      return;
+    }
     const tok = getActiveColonToken(val, cursor);
     colonTokenRef.current = tok;
     if (!tok) {
@@ -527,16 +587,57 @@ export function HumanChatPanelChatBar({
     });
   }, []);
 
+  const syncAtState = useCallback(
+    (val: string, cursor: number) => {
+      if (getActiveColonToken(val, cursor)) {
+        atTokenRef.current = null;
+        setAtOpen(false);
+        setAtSuggestions([]);
+        setAtActive(0);
+        return;
+      }
+      const tok = getActiveAtToken(val, cursor);
+      atTokenRef.current = tok;
+      if (!tok) {
+        setAtOpen(false);
+        setAtSuggestions([]);
+        setAtActive(0);
+        return;
+      }
+      if (!mentionCandidates.length) {
+        setAtOpen(false);
+        setAtSuggestions([]);
+        setAtActive(0);
+        return;
+      }
+      const sug = filterMentionCandidates(mentionCandidates, tok.query);
+      setAtSuggestions(sug);
+      setAtActive(0);
+      setAtOpen(sug.length > 0);
+    },
+    [mentionCandidates],
+  );
+
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) {
       setColonOpen(false);
       setColonSuggestions([]);
       colonTokenRef.current = null;
+      setAtOpen(false);
+      setAtSuggestions([]);
+      atTokenRef.current = null;
       return;
     }
     syncColonState(value, el.selectionStart ?? value.length);
-  }, [value, syncColonState]);
+    syncAtState(value, el.selectionStart ?? value.length);
+  }, [value, syncColonState, syncAtState]);
+
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    syncAtState(value, el.selectionStart ?? value.length);
+  }, [mentionCandidates, value, syncAtState]);
 
   useEffect(() => {
     autoResize();
@@ -564,9 +665,51 @@ export function HumanChatPanelChatBar({
     [value, onChange, autoResize],
   );
 
+  const applyAtChoice = useCallback(
+    (member: ChatMentionCandidate) => {
+      const el = textareaRef.current;
+      const tok = atTokenRef.current;
+      if (!el || !tok) return;
+      const insertion = `${member.userId} `;
+      const start = tok.start;
+      const end = el.selectionStart ?? value.length;
+      const { next, caret } = insertAtCaret(value, start, end, insertion);
+      onChange(next);
+      setAtOpen(false);
+      setAtSuggestions([]);
+      atTokenRef.current = null;
+      requestAnimationFrame(() => {
+        el.focus();
+        el.setSelectionRange(caret, caret);
+        autoResize();
+      });
+    },
+    [value, onChange, autoResize],
+  );
+
+  const openMentionPicker = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    const cur = el.selectionStart ?? value.length;
+    const before = value.slice(0, cur);
+    const after = value.slice(cur);
+    const needsSpace =
+      before.length > 0 && !/\s$/.test(before) && !before.endsWith('@');
+    const prefix = needsSpace ? `${before} @` : `${before}@`;
+    const next = prefix + after;
+    const caret = prefix.length;
+    onChange(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(caret, caret);
+      autoResize();
+      syncAtState(next, caret);
+    });
+  }, [value, onChange, autoResize, syncAtState]);
+
   useEffect(() => {
-    if (colonOpen) setSelectionBar(null);
-  }, [colonOpen]);
+    if (colonOpen || atOpen) setSelectionBar(null);
+  }, [colonOpen, atOpen]);
 
   useEffect(() => {
     const onSel = () => updateSelectionBar();
@@ -703,14 +846,22 @@ export function HumanChatPanelChatBar({
       if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
         return;
       }
-      if (colonOpen && colonSuggestions.length > 0) return;
+      if (
+        atOpen ||
+        colonOpen ||
+        colonSuggestions.length > 0 ||
+        atSuggestions.length > 0
+      )
+        return;
       if (!canSend) return;
       e.preventDefault();
       onSend();
     },
     [
+      atOpen,
       colonOpen,
       colonSuggestions.length,
+      atSuggestions.length,
       canSend,
       draftAttachments.length,
       onSend,
@@ -728,7 +879,13 @@ export function HumanChatPanelChatBar({
       if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
         return;
       }
-      if (colonOpen && colonSuggestions.length > 0) return;
+      if (
+        atOpen ||
+        colonOpen ||
+        colonSuggestions.length > 0 ||
+        atSuggestions.length > 0
+      )
+        return;
       if (attachMenuOpen || emojiPickerOpen) return;
       const el = e.target;
       if (el instanceof HTMLTextAreaElement) return;
@@ -737,8 +894,10 @@ export function HumanChatPanelChatBar({
       onSend();
     },
     [
+      atOpen,
       colonOpen,
       colonSuggestions.length,
+      atSuggestions.length,
       attachMenuOpen,
       emojiPickerOpen,
       canSend,
@@ -748,6 +907,38 @@ export function HumanChatPanelChatBar({
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (atOpen && atSuggestions.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setAtActive((i) => (i + 1) % atSuggestions.length);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setAtActive(
+          (i) => (i - 1 + atSuggestions.length) % atSuggestions.length,
+        );
+        return;
+      }
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        const safeIndex = Math.max(
+          0,
+          Math.min(atActive, atSuggestions.length - 1),
+        );
+        const pick = atSuggestions[safeIndex];
+        if (pick) applyAtChoice(pick);
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setAtOpen(false);
+        setAtSuggestions([]);
+        atTokenRef.current = null;
+        return;
+      }
+    }
+
     if (colonOpen && colonSuggestions.length > 0) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -1458,6 +1649,37 @@ export function HumanChatPanelChatBar({
             </button>
           </div>
         )}
+        {atOpen && atSuggestions.length > 0 && (
+          <div
+            role="listbox"
+            aria-label={t('mentionListLabel')}
+            className="absolute bottom-full left-2 right-2 z-20 mb-1 max-h-48 overflow-y-auto rounded-md border border-border bg-popover shadow-md"
+          >
+            {atSuggestions.map((m, idx) => (
+              <button
+                key={m.userId}
+                type="button"
+                role="option"
+                aria-selected={idx === atActive}
+                className={cn(
+                  'flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left text-sm',
+                  idx === atActive
+                    ? 'bg-muted text-foreground'
+                    : 'text-foreground hover:bg-muted/80',
+                )}
+                onMouseDown={(ev) => ev.preventDefault()}
+                onClick={() => applyAtChoice(m)}
+              >
+                <span className="font-medium leading-tight">
+                  {m.displayLabel}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {m.userId}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
         {colonOpen && colonSuggestions.length > 0 && (
           <div
             role="listbox"
@@ -1514,11 +1736,13 @@ export function HumanChatPanelChatBar({
               autoResize();
               const cursor = e.target.selectionStart ?? e.target.value.length;
               syncColonState(e.target.value, cursor);
+              syncAtState(e.target.value, cursor);
               requestAnimationFrame(updateSelectionBar);
             }}
             onSelect={(e) => {
               const el = e.currentTarget;
               syncColonState(el.value, el.selectionStart ?? 0);
+              syncAtState(el.value, el.selectionStart ?? 0);
             }}
             onKeyUp={updateSelectionBar}
             onMouseUp={updateSelectionBar}
@@ -1614,10 +1838,19 @@ export function HumanChatPanelChatBar({
               </HumanChatPanelEmojiPicker>
               <button
                 type="button"
-                disabled
-                className={cn(iconButtonClass, 'cursor-not-allowed opacity-50')}
-                aria-label={t('mentionNotAvailable')}
-                title={t('mentionNotAvailable')}
+                disabled={mentionCandidates.length === 0}
+                className={cn(
+                  iconButtonClass,
+                  mentionCandidates.length === 0 &&
+                    'cursor-not-allowed opacity-50',
+                )}
+                aria-label={t('mention')}
+                title={
+                  mentionCandidates.length === 0
+                    ? t('mentionNoMembers')
+                    : t('mention')
+                }
+                onClick={() => openMentionPicker()}
               >
                 <AtSign className="h-4 w-4" aria-hidden />
               </button>
