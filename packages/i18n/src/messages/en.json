@@ -1666,6 +1666,8 @@
     "composerDictateMessage": "Dictate message",
     "composerSendAudioMessage": "Send audio message",
     "composerMicStop": "Stop",
+    "composerStopRecording": "Stop recording",
+    "composerStopDictation": "Stop dictation",
     "dictationNotSupported": "Dictation is not supported in this browser.",
     "dictationError": "Dictation stopped due to an error. Try again.",
     "voiceMessage": "Voice message",

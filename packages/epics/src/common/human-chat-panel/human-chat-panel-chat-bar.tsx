@@ -1591,7 +1591,8 @@ export function HumanChatPanelChatBar({
               >
                 <AtSign className="h-4 w-4" aria-hidden />
               </button>
-              {isVoiceRecording || isDictating ? (
+              {/* Order: audio message (waves) left, dictate (mic) right; stop replaces the slot used */}
+              {isVoiceRecording ? (
                 <button
                   type="button"
                   className={cn(
@@ -1600,12 +1601,9 @@ export function HumanChatPanelChatBar({
                     'bg-destructive/[0.07] hover:bg-destructive/14 hover:text-destructive',
                     'hover:ring-destructive/35 active:bg-destructive/20',
                   )}
-                  aria-label={t('composerMicStop')}
-                  title={t('composerMicStop')}
-                  onClick={() => {
-                    if (isVoiceRecording) stopVoiceRecording();
-                    if (isDictating) stopDictation();
-                  }}
+                  aria-label={t('composerStopRecording')}
+                  title={t('composerStopRecording')}
+                  onClick={() => stopVoiceRecording()}
                 >
                   <StopCircle
                     className="h-[18px] w-[18px]"
@@ -1614,45 +1612,58 @@ export function HumanChatPanelChatBar({
                   />
                 </button>
               ) : (
-                <>
-                  <button
-                    type="button"
-                    disabled={isDictating || !onDraftAttachmentsChange}
-                    className={cn(
-                      iconButtonClass,
-                      (!onDraftAttachmentsChange || isDictating) &&
-                        'cursor-not-allowed opacity-50',
-                    )}
-                    aria-label={t('composerSendAudioMessage')}
-                    title={t('composerSendAudioMessage')}
-                    onClick={() =>
-                      requestAnimationFrame(
-                        () => void startVoiceRecordingAsAttachment(),
-                      )
-                    }
-                  >
-                    <Mic className="h-4 w-4" strokeWidth={2} aria-hidden />
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isVoiceRecording}
-                    className={cn(
-                      iconButtonClass,
-                      isVoiceRecording && 'cursor-not-allowed opacity-50',
-                    )}
-                    aria-label={t('composerDictateMessage')}
-                    title={t('composerDictateMessage')}
-                    onClick={() =>
-                      requestAnimationFrame(() => startDictation())
-                    }
-                  >
-                    <AudioLines
-                      className="h-4 w-4"
-                      strokeWidth={2}
-                      aria-hidden
-                    />
-                  </button>
-                </>
+                <button
+                  type="button"
+                  disabled={isDictating || !onDraftAttachmentsChange}
+                  className={cn(
+                    iconButtonClass,
+                    (!onDraftAttachmentsChange || isDictating) &&
+                      'cursor-not-allowed opacity-50',
+                  )}
+                  aria-label={t('composerSendAudioMessage')}
+                  title={t('composerSendAudioMessage')}
+                  onClick={() =>
+                    requestAnimationFrame(
+                      () => void startVoiceRecordingAsAttachment(),
+                    )
+                  }
+                >
+                  <AudioLines className="h-4 w-4" strokeWidth={2} aria-hidden />
+                </button>
+              )}
+              {isDictating ? (
+                <button
+                  type="button"
+                  className={cn(
+                    iconButtonClass,
+                    'relative text-destructive shadow-sm ring-1 ring-inset ring-destructive/25',
+                    'bg-destructive/[0.07] hover:bg-destructive/14 hover:text-destructive',
+                    'hover:ring-destructive/35 active:bg-destructive/20',
+                  )}
+                  aria-label={t('composerStopDictation')}
+                  title={t('composerStopDictation')}
+                  onClick={() => stopDictation()}
+                >
+                  <StopCircle
+                    className="h-[18px] w-[18px]"
+                    strokeWidth={2.25}
+                    aria-hidden
+                  />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={isVoiceRecording}
+                  className={cn(
+                    iconButtonClass,
+                    isVoiceRecording && 'cursor-not-allowed opacity-50',
+                  )}
+                  aria-label={t('composerDictateMessage')}
+                  title={t('composerDictateMessage')}
+                  onClick={() => requestAnimationFrame(() => startDictation())}
+                >
+                  <Mic className="h-4 w-4" strokeWidth={2} aria-hidden />
+                </button>
               )}
             </div>
             <button

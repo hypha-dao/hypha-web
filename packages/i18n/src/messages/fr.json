@@ -1665,6 +1665,8 @@
     "composerDictateMessage": "Dicter un message",
     "composerSendAudioMessage": "Envoyer un message audio",
     "composerMicStop": "Arrêter",
+    "composerStopRecording": "Arrêter l’enregistrement",
+    "composerStopDictation": "Arrêter la dictée",
     "dictationNotSupported": "La dictée n’est pas prise en charge dans ce navigateur.",
     "dictationError": "La dictée s’est arrêtée à cause d’une erreur. Réessayez.",
     "voiceMessage": "Message vocal",
