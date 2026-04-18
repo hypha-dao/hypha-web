@@ -132,7 +132,6 @@ export default function SpaceConfiguration() {
         showKeepWindowOpenMessage={true}
         keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
         fullHeight={true}
-        fullHeightVariant="responsive-modal-shell"
         progress={progress}
         isLoading={isBusy}
         message={
