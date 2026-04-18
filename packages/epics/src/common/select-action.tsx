@@ -52,19 +52,23 @@ export const SelectAction = ({
   );
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex gap-5 justify-between">
+    <div className="flex flex-col gap-6">
+      <header className="flex flex-col gap-2">
         <Skeleton width="100px" height="24px" loading={isLoading}>
-          <span className="text-4 text-secondary-foreground">{title}</span>
+          <span className="text-4 font-semibold tracking-tight text-foreground">
+            {title}
+          </span>
         </Skeleton>
-      </div>
+      </header>
       <Skeleton
         width="100%"
         height="72px"
         loading={isLoading}
         className="rounded-lg"
       >
-        <span className="text-2 text-neutral-11">{content}</span>
+        <p className="max-w-prose text-2 leading-relaxed text-muted-foreground">
+          {content}
+        </p>
       </Skeleton>
       {children}
       <Separator />
@@ -88,21 +92,44 @@ export const SelectAction = ({
                   action.onAction();
                 }
               };
+              const comingSoon =
+                action.disabled && /\bcoming soon\b/i.test(action.title ?? '');
               const card = (
                 <Card
                   className={clsx(
-                    'flex p-6 cursor-pointer space-x-4 items-center',
+                    'group flex cursor-pointer items-start gap-4 border-border/80 p-5 shadow-sm transition-[border-color,box-shadow,background-color] duration-200 ease-out md:p-6',
+                    !action.disabled &&
+                      'hover:border-accent-8/60 hover:bg-accent-2/40 hover:shadow-md',
+                    !action.disabled &&
+                      'focus-within:border-accent-9 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background-2',
                     {
-                      'opacity-50 cursor-not-allowed': action.disabled,
+                      'pointer-events-none cursor-not-allowed opacity-55 saturate-50':
+                        action.disabled,
                     },
                   )}
                   aria-disabled={action.disabled}
                   onClick={handleClick}
                 >
-                  <div>{action.icon}</div>
-                  <div className="flex flex-col">
-                    <span className="text-2 font-medium">{action.title}</span>
-                    <span className="text-1 text-neutral-11">
+                  <div
+                    className={clsx(
+                      'flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-muted/40 text-accent-11 transition-colors duration-200',
+                      !action.disabled &&
+                        'group-hover:border-accent-8/50 group-hover:bg-accent-3/50',
+                    )}
+                    aria-hidden
+                  >
+                    {action.icon}
+                  </div>
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                    <span className="flex flex-wrap items-center gap-2 text-2 font-semibold leading-snug text-foreground">
+                      {action.title}
+                      {comingSoon ? (
+                        <span className="rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                          Soon
+                        </span>
+                      ) : null}
+                    </span>
+                    <span className="text-1 leading-relaxed text-muted-foreground">
                       <TextWithLinks text={action.description} />
                     </span>
                   </div>

@@ -349,8 +349,8 @@ export function CreateAgreementBaseFields({
   return (
     <>
       {/* Sticky header: compact toolbar row (fixed height) like legacy layout, then avatar + badges + title */}
-      <div className="sticky top-0 z-[5] -mx-4 mb-4 border-b border-border bg-background-2 lg:-mx-7">
-        <div className="flex h-11 shrink-0 items-center justify-end gap-1 border-b border-border px-4 lg:px-7">
+      <div className="sticky top-0 z-[5] -mx-4 mb-4 border-b border-border/90 bg-background-2/95 backdrop-blur-md supports-[backdrop-filter]:bg-background-2/80 lg:-mx-7">
+        <div className="flex h-11 shrink-0 items-center justify-end gap-1 border-b border-border/80 px-4 lg:px-7">
           {backUrl && (
             <ButtonBack
               label={resolvedBackLabel}
@@ -397,7 +397,7 @@ export function CreateAgreementBaseFields({
                                 placeholder={tAgreementFlow(
                                   'createAgreementBaseFields.proposalTitlePlaceholder',
                                 )}
-                                className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
+                                className="border-0 bg-inherit p-0 text-4 font-semibold tracking-tight placeholder:text-muted-foreground placeholder:font-normal"
                                 disabled={isLoading}
                                 rightIcon={
                                   <RequirementMark className="text-4" />
@@ -435,7 +435,7 @@ export function CreateAgreementBaseFields({
                             )}
                           </span>
                           {votingThresholdSummary ? (
-                            <span className="text-[9px] text-accent-11 text-nowrap font-medium">
+                            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground text-nowrap tabular-nums">
                               {votingThresholdSummary}
                             </span>
                           ) : null}
@@ -466,7 +466,7 @@ export function CreateAgreementBaseFields({
                             )}
                           </span>
                           {votingThresholdSummary ? (
-                            <span className="text-[9px] text-accent-11 text-nowrap font-medium">
+                            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground text-nowrap tabular-nums">
                               {votingThresholdSummary}
                             </span>
                           ) : null}
@@ -481,113 +481,125 @@ export function CreateAgreementBaseFields({
         </div>
         <Separator />
       </div>
-      <FormField
-        control={form.control}
-        name="leadImage"
-        render={({ field }) => (
-          <FormItem>
-            <FormControl>
-              <UploadLeadImage
-                onChange={field.onChange}
-                maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
-                enableImageResizer={true}
-                uploadText={tAgreementFlow.rich(
-                  'createAgreementBaseFields.uploadImageLabel',
-                  {
-                    accent: (chunks) => (
-                      <span className="text-accent-11">{chunks}</span>
-                    ),
-                  },
-                )}
-                defaultImage={
-                  resubmitFormData?.leadImage || field.value
-                    ? typeof field.value === 'string'
-                      ? field.value
-                      : resubmitFormData?.leadImage
-                    : undefined
-                }
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={form.control}
-        name="description"
-        render={({ field }) => {
-          const descriptionValue = field.value || '';
+      <div className="flex flex-col gap-6">
+        <section className="rounded-xl border border-border/70 bg-muted/20 p-4 shadow-sm ring-1 ring-black/[0.03] dark:bg-muted/12 dark:ring-white/[0.06] lg:p-6">
+          <FormField
+            control={form.control}
+            name="leadImage"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <UploadLeadImage
+                    onChange={field.onChange}
+                    maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
+                    enableImageResizer={true}
+                    uploadText={tAgreementFlow.rich(
+                      'createAgreementBaseFields.uploadImageLabel',
+                      {
+                        accent: (chunks) => (
+                          <span className="text-accent-11">{chunks}</span>
+                        ),
+                      },
+                    )}
+                    defaultImage={
+                      resubmitFormData?.leadImage || field.value
+                        ? typeof field.value === 'string'
+                          ? field.value
+                          : resubmitFormData?.leadImage
+                        : undefined
+                    }
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </section>
+        <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-black/[0.03] dark:bg-muted/10 dark:ring-white/[0.06] lg:p-6">
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => {
+              const descriptionValue = field.value || '';
 
-          return (
-            <FormItem>
-              <FormLabel className="text-foreground gap-1">
-                {tAgreementFlow('createAgreementBaseFields.proposalContent')}{' '}
-                <RequirementMark />
-              </FormLabel>
-              <FormControl>
-                <RichTextEditor
-                  editorRef={null}
-                  markdown={descriptionValue}
-                  translation={translateEditor}
-                  placeholder={tAgreementFlow(
-                    'createAgreementBaseFields.proposalContentPlaceholder',
-                  )}
-                  onChange={(markdown) => field.onChange(markdown)}
-                />
-              </FormControl>
-              <FormDescription />
-              <FormMessage />
-            </FormItem>
-          );
-        }}
-      />
-      <FormField
-        control={form.control}
-        name="attachments"
-        render={({ field }) => {
-          const fieldValue = field.value || [];
-          const newFiles = Array.isArray(fieldValue)
-            ? fieldValue.filter((item) => item instanceof File)
-            : [];
-          const allAttachments = [...existingAttachments, ...newFiles];
+              return (
+                <FormItem>
+                  <FormLabel className="gap-1 text-foreground">
+                    {tAgreementFlow(
+                      'createAgreementBaseFields.proposalContent',
+                    )}{' '}
+                    <RequirementMark />
+                  </FormLabel>
+                  <FormControl>
+                    <div className="overflow-hidden rounded-lg border border-border/80 bg-background-2 shadow-inner focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background-2">
+                      <RichTextEditor
+                        editorRef={null}
+                        markdown={descriptionValue}
+                        translation={translateEditor}
+                        placeholder={tAgreementFlow(
+                          'createAgreementBaseFields.proposalContentPlaceholder',
+                        )}
+                        onChange={(markdown) => field.onChange(markdown)}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormDescription />
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
+          />
+          <FormField
+            control={form.control}
+            name="attachments"
+            render={({ field }) => {
+              const fieldValue = field.value || [];
+              const newFiles = Array.isArray(fieldValue)
+                ? fieldValue.filter((item) => item instanceof File)
+                : [];
+              const allAttachments = [...existingAttachments, ...newFiles];
 
-          return (
-            <FormItem>
-              <FormControl>
-                <AddAttachment
-                  label={tAgreementFlow(
-                    'createAgreementBaseFields.addAttachmentLabel',
-                  )}
-                  onChange={(files) => {
-                    field.onChange(files);
-                    form.setValue(
-                      'attachments',
-                      [...existingAttachments, ...files] as any,
-                      { shouldValidate: false },
-                    );
-                  }}
-                  onExistingAttachmentsChange={(updated) => {
-                    setExistingAttachments(updated);
-                    form.setValue(
-                      'attachments',
-                      [...updated, ...newFiles] as any,
-                      { shouldValidate: false },
-                    );
-                  }}
-                  value={allAttachments.length > 0 ? allAttachments : undefined}
-                  defaultAttachments={
-                    existingAttachments.length > 0
-                      ? existingAttachments
-                      : undefined
-                  }
-                />
-              </FormControl>
-              <FormDescription />
-              <FormMessage />
-            </FormItem>
-          );
-        }}
-      />
+              return (
+                <FormItem className="mt-6">
+                  <FormControl>
+                    <AddAttachment
+                      label={tAgreementFlow(
+                        'createAgreementBaseFields.addAttachmentLabel',
+                      )}
+                      onChange={(files) => {
+                        field.onChange(files);
+                        form.setValue(
+                          'attachments',
+                          [...existingAttachments, ...files] as any,
+                          { shouldValidate: false },
+                        );
+                      }}
+                      onExistingAttachmentsChange={(updated) => {
+                        setExistingAttachments(updated);
+                        form.setValue(
+                          'attachments',
+                          [...updated, ...newFiles] as any,
+                          { shouldValidate: false },
+                        );
+                      }}
+                      value={
+                        allAttachments.length > 0 ? allAttachments : undefined
+                      }
+                      defaultAttachments={
+                        existingAttachments.length > 0
+                          ? existingAttachments
+                          : undefined
+                      }
+                    />
+                  </FormControl>
+                  <FormDescription />
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
+          />
+        </section>
+      </div>
     </>
   );
 }
