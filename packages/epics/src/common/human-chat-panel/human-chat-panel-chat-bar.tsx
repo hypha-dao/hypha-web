@@ -171,19 +171,34 @@ function ComposerRecOnAirIndicator() {
     <>
       <style>{`
         @keyframes hypha-rec-on-air {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.35; transform: scale(0.92); }
+          0%, 100% { opacity: 1; transform: scale(1); filter: brightness(1); }
+          50% { opacity: 0.88; transform: scale(0.94); filter: brightness(1.08); }
+        }
+        @keyframes hypha-rec-halo {
+          0%, 100% { opacity: 0.55; transform: scale(1); }
+          50% { opacity: 0.2; transform: scale(1.35); }
         }
         @media (prefers-reduced-motion: reduce) {
-          [data-hypha-rec-on-air] {
+          [data-hypha-rec-on-air], [data-hypha-rec-halo] {
             animation: none !important;
           }
         }
       `}</style>
       <span className="relative flex h-[18px] w-[18px] items-center justify-center">
         <span
+          data-hypha-rec-halo=""
+          className="pointer-events-none absolute h-3 w-3 rounded-full bg-red-500/35 blur-[2px]"
+          style={{
+            animationName: 'hypha-rec-halo',
+            animationDuration: '1.2s',
+            animationTimingFunction: 'ease-in-out',
+            animationIterationCount: 'infinite',
+          }}
+          aria-hidden
+        />
+        <span
           data-hypha-rec-on-air=""
-          className="motion-safe:inline-block h-2.5 w-2.5 rounded-full bg-red-600 shadow-[0_0_0_1px_rgba(254,202,202,0.35)]"
+          className="motion-safe:relative inline-block h-2 w-2 rounded-full bg-gradient-to-br from-red-400 to-red-600 shadow-[0_0_10px_rgba(239,68,68,0.55),inset_0_1px_0_rgba(255,255,255,0.35)] ring-1 ring-white/25 dark:ring-white/15"
           style={{
             animationName: 'hypha-rec-on-air',
             animationDuration: '1s',
@@ -1308,6 +1323,18 @@ export function HumanChatPanelChatBar({
   const iconButtonClass =
     'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-primary/12 hover:text-primary active:bg-primary/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-0';
 
+  /** Recording / dictation “stop” — calm broadcast UI (no harsh outline-on-grey). */
+  const recordingStopButtonClass =
+    'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-red-600 transition-all duration-200 ease-out ' +
+    'border border-red-500/25 bg-gradient-to-b from-red-500/[0.14] via-red-500/[0.08] to-red-950/[0.06] ' +
+    'shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_1px_3px_rgba(220,38,38,0.14)] ' +
+    'hover:border-red-500/40 hover:from-red-500/[0.2] hover:via-red-500/[0.12] hover:to-red-950/[0.1] hover:text-red-700 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_2px_8px_rgba(220,38,38,0.18)] ' +
+    'active:scale-[0.96] active:from-red-500/[0.24] active:via-red-600/[0.14] ' +
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background ' +
+    'dark:border-red-400/22 dark:from-red-500/[0.16] dark:via-red-600/[0.1] dark:to-red-950/40 dark:text-red-400 ' +
+    'dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_1px_4px_rgba(0,0,0,0.35)] ' +
+    'dark:hover:border-red-400/38 dark:hover:text-red-300';
+
   const fmtBtn =
     'flex h-6 w-6 shrink-0 items-center justify-center rounded text-popover-foreground transition-colors hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent dark:hover:text-accent-foreground';
 
@@ -1872,11 +1899,7 @@ export function HumanChatPanelChatBar({
               {isVoiceRecording ? (
                 <button
                   type="button"
-                  className={cn(
-                    iconButtonClass,
-                    'rounded-sm border-2 border-red-500/85 bg-red-950/25 text-red-600 shadow-sm',
-                    'hover:border-red-400 hover:bg-red-950/35 active:bg-red-950/45 dark:border-red-500 dark:bg-red-950/40',
-                  )}
+                  className={recordingStopButtonClass}
                   aria-label={t('composerStopRecording')}
                   title={t('composerStopRecording')}
                   onClick={() => stopVoiceRecording()}
@@ -1906,11 +1929,7 @@ export function HumanChatPanelChatBar({
               {isDictating ? (
                 <button
                   type="button"
-                  className={cn(
-                    iconButtonClass,
-                    'rounded-sm border-2 border-red-500/85 bg-red-950/25 text-red-600 shadow-sm',
-                    'hover:border-red-400 hover:bg-red-950/35 active:bg-red-950/45 dark:border-red-500 dark:bg-red-950/40',
-                  )}
+                  className={recordingStopButtonClass}
                   aria-label={t('composerStopDictation')}
                   title={t('composerStopDictation')}
                   onClick={() => stopDictation()}
