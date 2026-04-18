@@ -30,7 +30,6 @@ import {
   Video,
   Mic,
   AudioLines,
-  StopCircle,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -146,6 +145,38 @@ type HumanChatPanelChatBarProps = {
   draftAttachments?: ChatDraftAttachment[];
   onDraftAttachmentsChange?: (next: ChatDraftAttachment[]) => void;
 };
+
+/** Blinking REC dot (“on-air”) for active voice recording / dictation controls. */
+function ComposerRecOnAirIndicator() {
+  return (
+    <>
+      <style>{`
+        @keyframes hypha-rec-on-air {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.35; transform: scale(0.92); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          [data-hypha-rec-on-air] {
+            animation: none !important;
+          }
+        }
+      `}</style>
+      <span className="relative flex h-[18px] w-[18px] items-center justify-center">
+        <span
+          data-hypha-rec-on-air=""
+          className="motion-safe:inline-block h-2.5 w-2.5 rounded-full bg-red-600 shadow-[0_0_0_1px_rgba(254,202,202,0.35)]"
+          style={{
+            animationName: 'hypha-rec-on-air',
+            animationDuration: '1s',
+            animationTimingFunction: 'ease-in-out',
+            animationIterationCount: 'infinite',
+          }}
+          aria-hidden
+        />
+      </span>
+    </>
+  );
+}
 
 function formatFileSize(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes < 0) {
@@ -1597,19 +1628,14 @@ export function HumanChatPanelChatBar({
                   type="button"
                   className={cn(
                     iconButtonClass,
-                    'relative text-destructive shadow-sm ring-1 ring-inset ring-destructive/25',
-                    'bg-destructive/[0.07] hover:bg-destructive/14 hover:text-destructive',
-                    'hover:ring-destructive/35 active:bg-destructive/20',
+                    'rounded-sm border-2 border-red-500/85 bg-red-950/25 text-red-600 shadow-sm',
+                    'hover:border-red-400 hover:bg-red-950/35 active:bg-red-950/45 dark:border-red-500 dark:bg-red-950/40',
                   )}
                   aria-label={t('composerStopRecording')}
                   title={t('composerStopRecording')}
                   onClick={() => stopVoiceRecording()}
                 >
-                  <StopCircle
-                    className="h-[18px] w-[18px]"
-                    strokeWidth={2.25}
-                    aria-hidden
-                  />
+                  <ComposerRecOnAirIndicator />
                 </button>
               ) : (
                 <button
@@ -1636,19 +1662,14 @@ export function HumanChatPanelChatBar({
                   type="button"
                   className={cn(
                     iconButtonClass,
-                    'relative text-destructive shadow-sm ring-1 ring-inset ring-destructive/25',
-                    'bg-destructive/[0.07] hover:bg-destructive/14 hover:text-destructive',
-                    'hover:ring-destructive/35 active:bg-destructive/20',
+                    'rounded-sm border-2 border-red-500/85 bg-red-950/25 text-red-600 shadow-sm',
+                    'hover:border-red-400 hover:bg-red-950/35 active:bg-red-950/45 dark:border-red-500 dark:bg-red-950/40',
                   )}
                   aria-label={t('composerStopDictation')}
                   title={t('composerStopDictation')}
                   onClick={() => stopDictation()}
                 >
-                  <StopCircle
-                    className="h-[18px] w-[18px]"
-                    strokeWidth={2.25}
-                    aria-hidden
-                  />
+                  <ComposerRecOnAirIndicator />
                 </button>
               ) : (
                 <button
