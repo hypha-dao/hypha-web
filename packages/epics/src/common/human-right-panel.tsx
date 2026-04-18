@@ -597,6 +597,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     mentionMembershipEpoch,
   ]);
 
+  /** `@` active only when another user is joined in Matrix (not roster-only suggestions). */
+  const mentionPickerEnabled = useMemo(() => {
+    if (!client || !roomId) return false;
+    const room = client.getRoom(roomId);
+    if (!room) return false;
+    const others = room
+      .getJoinedMembers()
+      .filter((m) => m.userId && m.userId !== currentUserId);
+    return others.length > 0;
+  }, [client, roomId, currentUserId, mentionMembershipEpoch]);
+
   useEffect(() => {
     if (!client || !roomId) return;
     const room = client.getRoom(roomId);
@@ -1705,6 +1716,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             onChange={setInput}
             onSend={handleSend}
             mentionCandidates={mentionCandidates}
+            mentionPickerEnabled={mentionPickerEnabled}
             draftAttachments={draftAttachments}
             onDraftAttachmentsChange={setDraftAttachments}
             replyPreview={
