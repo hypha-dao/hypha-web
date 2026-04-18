@@ -7,6 +7,7 @@ import type { TranslationValues } from 'next-intl';
 import {
   Smile,
   SmilePlus,
+  X,
   Pencil,
   Reply,
   FileIcon,
@@ -691,6 +692,8 @@ type HumanChatPanelMessageBubbleProps = {
   onDeleteMessage?: (messageId: string) => void | Promise<void>;
   /** When set, user can open react picker (omit for welcome). */
   onReact?: (emoji: string) => void | Promise<void>;
+  /** Cancel in-flight attachment send (pending row only). */
+  onCancelSendPending?: () => void;
 };
 
 const MAX_VISIBLE_REACTIONS = 12;
@@ -1024,6 +1027,7 @@ export function HumanChatPanelMessageBubble({
   onEdit,
   onDeleteMessage,
   onReact,
+  onCancelSendPending,
 }: HumanChatPanelMessageBubbleProps) {
   const t = useTranslations('HumanChatPanel');
   const format = useFormatter();
@@ -1272,9 +1276,20 @@ export function HumanChatPanelMessageBubble({
               aria-live="polite"
               aria-busy="true"
               data-testid="chat-message-send-pending"
-              className="mt-1.5 max-w-md overflow-hidden rounded-xl border border-border bg-gradient-to-b from-card to-muted/30 shadow-sm"
+              className="relative mt-1.5 max-w-md overflow-hidden rounded-xl border border-border bg-gradient-to-b from-card to-muted/30 shadow-sm"
             >
-              <div className="flex gap-3 px-4 py-3">
+              {onCancelSendPending && (
+                <button
+                  type="button"
+                  onClick={onCancelSendPending}
+                  className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  aria-label={t('messageSendCancel')}
+                  title={t('messageSendCancel')}
+                >
+                  <X className="h-4 w-4" strokeWidth={2} aria-hidden />
+                </button>
+              )}
+              <div className="flex gap-3 px-4 py-3 pr-12">
                 <div
                   className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/12 dark:bg-primary/20"
                   aria-hidden

@@ -1718,6 +1718,7 @@
     "messageSendUploadProgress": "Téléversement de {completed} sur {total}…",
     "messageSendFinishing": "Publication du message…",
     "messageSendFilesBadge": "{count, plural, one {# fichier} other {# fichiers}}",
+    "messageSendCancel": "Annuler l’envoi",
     "sendPartialFailed": "L’envoi s’est arrêté après {sent, plural, one {# pièce jointe} other {# pièces jointes}}. {detail}"
   },
   "CoherenceTab": {

@@ -1718,6 +1718,7 @@
     "messageSendUploadProgress": "A carregar {completed} de {total}…",
     "messageSendFinishing": "A publicar a mensagem…",
     "messageSendFilesBadge": "{count, plural, one {# ficheiro} other {# ficheiros}}",
+    "messageSendCancel": "Cancelar envio",
     "sendPartialFailed": "O envio parou após {sent} anexo(s). {detail}"
   },
   "CoherenceTab": {

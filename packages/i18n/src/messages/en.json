@@ -1718,6 +1718,7 @@
     "messageSendUploadProgress": "Uploading {completed} of {total}…",
     "messageSendFinishing": "Posting message…",
     "messageSendFilesBadge": "{count, plural, one {# file} other {# files}}",
+    "messageSendCancel": "Cancel sending",
     "sendPartialFailed": "Send stopped after {sent} attachment(s). {detail}"
   },
   "CoherenceTab": {

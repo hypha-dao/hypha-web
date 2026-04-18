@@ -1718,6 +1718,7 @@
     "messageSendUploadProgress": "Lade {completed} von {total} hoch…",
     "messageSendFinishing": "Nachricht wird gesendet…",
     "messageSendFilesBadge": "{count, plural, one {# Datei} other {# Dateien}}",
+    "messageSendCancel": "Senden abbrechen",
     "sendPartialFailed": "Senden wurde nach {sent} Anhang(en) abgebrochen. {detail}"
   },
   "CoherenceTab": {

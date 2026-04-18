@@ -46,6 +46,8 @@ interface SendMessageInput {
   attachments?: SendAttachmentInput[];
   /** Fires after each attachment finishes uploading (before the room message is sent). */
   onUploadProgress?: (p: SendMessageUploadProgress) => void;
+  /** Aborts upload/send between attachment steps (UI cancel). */
+  signal?: AbortSignal;
 }
 
 /** Existing attachment slot when editing a media `m.room.message` (mxc stays on server). */
@@ -69,6 +71,8 @@ export interface EditRoomMessageInput {
   existingMediaSlots?: EditRoomMessageExistingSlot[];
   /** New files to append when editing a media message (uploaded after `existingMediaSlots`). */
   newAttachments?: SendAttachmentInput[];
+  /** Aborts new attachment uploads before the replace event is sent. */
+  signal?: AbortSignal;
 }
 
 export interface RedactRoomEventInput {
@@ -89,6 +93,20 @@ export class SendMessagePartialFailureError extends Error {
   ) {
     super(message);
     this.name = 'SendMessagePartialFailureError';
+  }
+}
+
+/** Thrown when `AbortSignal` aborts an in-flight `sendMessage` / media edit upload. */
+export class SendMessageCancelledError extends Error {
+  constructor() {
+    super('Send cancelled');
+    this.name = 'SendMessageCancelledError';
+  }
+}
+
+function throwIfAborted(signal: AbortSignal | undefined): void {
+  if (signal?.aborted) {
+    throw new SendMessageCancelledError();
   }
 }
 
@@ -507,6 +525,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       replyToEventId,
       attachments,
       onUploadProgress,
+      signal,
     }: SendMessageInput) => {
       if (!client) {
         throw new Error('Client should be specified');
@@ -522,6 +541,8 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         return;
       }
 
+      throwIfAborted(signal);
+
       let replyContext:
         | {
             resolvedTargetId: string;
@@ -531,6 +552,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         | undefined;
 
       if (replyToEventId?.trim()) {
+        throwIfAborted(signal);
         const resolved = await resolveReplyTargetForSend(
           client,
           roomId,
@@ -546,6 +568,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       if (hasAttachments) {
         const mediaPayloads: HyphaMediaEventContent[] = [];
         for (let i = 0; i < list.length; i++) {
+          throwIfAborted(signal);
           if (i > 0) {
             await delay(MATRIX_UPLOAD_STAGGER_MS);
           }
@@ -573,6 +596,8 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             }
           }
         }
+
+        throwIfAborted(signal);
 
         if (trimmed) {
           const first = mediaPayloads[0]!;
@@ -613,6 +638,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
                   },
                 }
               : base;
+            throwIfAborted(signal);
             await client.sendEvent(
               roomId,
               EventType.RoomMessage,
@@ -648,6 +674,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
                   },
                 }
               : combined;
+            throwIfAborted(signal);
             await client.sendEvent(
               roomId,
               EventType.RoomMessage,
@@ -671,6 +698,8 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         return;
       }
 
+      throwIfAborted(signal);
+
       try {
         if (replyContext && !hasAttachments) {
           const payload = buildRichReplyMatrixContent(
@@ -678,6 +707,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             replyContext.targetBody,
             message,
           );
+          throwIfAborted(signal);
           await client.sendEvent(roomId, EventType.RoomMessage, {
             msgtype: MsgType.Text,
             ...payload,
@@ -693,6 +723,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         if (replyContext && hasAttachments) {
           const textPayload =
             matrixTextEventContentWithOptionalFormatting(message);
+          throwIfAborted(signal);
           await client.sendEvent(roomId, EventType.RoomMessage, {
             msgtype: MsgType.Text,
             ...textPayload,
@@ -707,6 +738,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
 
         const textPayload =
           matrixTextEventContentWithOptionalFormatting(message);
+        throwIfAborted(signal);
         await client.sendEvent(roomId, EventType.RoomMessage, {
           msgtype: MsgType.Text,
           ...textPayload,
@@ -731,6 +763,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       message,
       existingMediaSlots,
       newAttachments,
+      signal,
     }: EditRoomMessageInput) => {
       if (!client) {
         throw new Error('Client should be specified');
@@ -818,6 +851,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         const restSlots = slots.slice(1).map(slotToPayload);
         const uploaded: HyphaMediaEventContent[] = [];
         for (let i = 0; i < newList.length; i++) {
+          throwIfAborted(signal);
           if (i > 0) {
             await delay(MATRIX_UPLOAD_STAGGER_MS);
           }
@@ -873,6 +907,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         const filenameFallback =
           slots[0]?.filename?.trim() ||
           String(rootFromSlot.body ?? 'attachment');
+        throwIfAborted(signal);
         combined = await applyMediaEditCaptionAndReply(
           combined,
           trimmed,
@@ -884,6 +919,8 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         const newBody =
           'body' in combined ? String(combined.body) : trimmed || 'attachment';
         const fallbackBody = `* ${newBody}`;
+
+        throwIfAborted(signal);
 
         await client.sendEvent(roomId, EventType.RoomMessage, {
           ...combined,

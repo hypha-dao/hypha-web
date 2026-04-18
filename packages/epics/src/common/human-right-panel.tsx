@@ -22,6 +22,7 @@ import {
   stripMatrixReplyFallback,
   RoomEvent,
   MatrixUploadTimeoutError,
+  SendMessageCancelledError,
   SendMessagePartialFailureError,
   isMatrixRateLimitedError,
   type MessageReaction,
@@ -424,6 +425,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   draftAttachmentsRef.current = draftAttachments;
   /** Latest in-flight send; used so error recovery does not clobber edits from a newer send. */
   const sendOperationTokenRef = useRef<symbol | null>(null);
+  const sendAbortControllerRef = useRef<AbortController | null>(null);
   const [messages, setMessages] = useState<UIMessage[]>([]);
   const [replyDraft, setReplyDraft] = useState<ReplyDraft | null>(null);
   const [editDraft, setEditDraft] = useState<EditDraft | null>(null);
@@ -1068,6 +1070,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [roomId, editDraft?.messageId, replyDraft?.messageId, t],
   );
 
+  const cancelSendInFlight = useCallback(() => {
+    sendAbortControllerRef.current?.abort();
+  }, []);
+
   const handleSend = useCallback(async () => {
     if (!roomId) return;
     const trimmed = input.trim();
@@ -1078,6 +1084,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     const savedDraft = replyDraft;
     const savedEditDraft = editDraft;
     const savedAttachments = draftAttachments;
+    sendAbortControllerRef.current?.abort();
+    const abortController = new AbortController();
+    sendAbortControllerRef.current = abortController;
+    const signal = abortController.signal;
+
     const sendToken = Symbol('send');
     sendOperationTokenRef.current = sendToken;
     setComposerError(null);
@@ -1121,6 +1132,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             message: text,
             existingMediaSlots: slots,
             ...(newFiles.length > 0 ? { newAttachments: newFiles } : {}),
+            ...(newFiles.length > 0 ? { signal } : {}),
           });
         } else {
           if (savedAttachments.length > 0) {
@@ -1136,6 +1148,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         await matrixRef.current.sendMessage({
           roomId,
           message: text,
+          signal,
           ...(replyToEventId ? { replyToEventId } : {}),
           ...(savedAttachments.length > 0
             ? {
@@ -1170,6 +1183,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       if (sendOperationTokenRef.current === sendToken) {
         sendOperationTokenRef.current = null;
       }
+      if (sendAbortControllerRef.current === abortController) {
+        sendAbortControllerRef.current = null;
+      }
     } catch (err) {
       console.error('[HumanRightPanel] Failed to send message:', err);
       if (sendOperationTokenRef.current !== sendToken) {
@@ -1179,6 +1195,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       }
       sendOperationTokenRef.current = null;
       setSendingPending(null);
+      if (sendAbortControllerRef.current === abortController) {
+        sendAbortControllerRef.current = null;
+      }
+      if (err instanceof SendMessageCancelledError) {
+        disposeDraftAttachmentUrls(savedAttachments);
+        setInput(text);
+        setDraftAttachments(savedAttachments);
+        setReplyDraft(savedDraft);
+        setEditDraft(savedEditDraft);
+        return;
+      }
       if (err instanceof SendMessagePartialFailureError) {
         const { sentAttachmentCount, restoreCaption, message } = err;
         setComposerError(
@@ -1281,6 +1308,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 resolveReactionReactorLabel={(userId) =>
                   resolveMemberLabel(userId)
                 }
+                onCancelSendPending={cancelSendInFlight}
               />
             )}
           </>

@@ -86,7 +86,7 @@ export function ChatVoiceAudioRow({
         type="button"
         disabled={spoilerPreview}
         className={cn(
-          'flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-opacity hover:opacity-90',
+          'flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black text-white shadow-sm ring-1 ring-black/10 transition-opacity hover:opacity-90 dark:bg-black dark:text-white dark:ring-white/15',
           spoilerPreview && 'pointer-events-none opacity-80',
         )}
         aria-label={

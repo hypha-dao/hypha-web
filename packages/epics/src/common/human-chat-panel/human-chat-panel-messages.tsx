@@ -55,6 +55,7 @@ type HumanChatPanelMessagesProps = {
   onToggleReaction?: (messageId: string, emoji: string) => void;
   /** Map Matrix user id to display name for reaction hover tooltips. */
   resolveReactionReactorLabel?: (userId: string) => string;
+  onCancelSendPending?: () => void;
 };
 
 export function HumanChatPanelMessages({
@@ -68,6 +69,7 @@ export function HumanChatPanelMessages({
   onDeleteMessage,
   onToggleReaction,
   resolveReactionReactorLabel,
+  onCancelSendPending,
 }: HumanChatPanelMessagesProps) {
   const t = useTranslations('HumanChatPanel');
 
@@ -198,6 +200,11 @@ export function HumanChatPanelMessages({
               onReact={
                 canInteract && onToggleReaction
                   ? (emoji: string) => onToggleReaction(msg.id, emoji)
+                  : undefined
+              }
+              onCancelSendPending={
+                msg.sendPending && onCancelSendPending
+                  ? onCancelSendPending
                   : undefined
               }
             />
