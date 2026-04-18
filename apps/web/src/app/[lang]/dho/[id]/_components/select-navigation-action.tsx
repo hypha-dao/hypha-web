@@ -140,6 +140,7 @@ export const SelectNavigationAction = ({
     <SelectAction
       title={t('title')}
       content={t('content')}
+      showTitle={false}
       actions={[]}
       isLoading={isLoading}
     >
