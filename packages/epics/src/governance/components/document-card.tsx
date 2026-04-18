@@ -52,6 +52,29 @@ function stripHtmlComments(text: string): string {
   return result;
 }
 
+/**
+ * MDX comments (`{/* … *\/}`) are invisible when the description is rendered
+ * via `<Markdown>` on the proposal detail page, but the card preview shows the
+ * description as plain text via `stripMarkdown(stripDescription(...))`, which
+ * leaves the literal `{/* … *\/}` syntax visible. We embed structured markers
+ * with this syntax (e.g. `buildExchangeDepositEscrowMarker`) so they need to
+ * be removed from the card preview too.
+ */
+function stripMdxComments(text: string): string {
+  let result = text;
+  for (;;) {
+    const start = result.indexOf('{/*');
+    if (start === -1) break;
+    const end = result.indexOf('*/}', start + 3);
+    if (end === -1) {
+      result = result.slice(0, start);
+      break;
+    }
+    result = result.slice(0, start) + result.slice(end + 3);
+  }
+  return result;
+}
+
 function stripDescription(description: string): string {
   if (!description) return '';
   // Strip investment marker before markdown — markdown can mangle `__` delimiters.
@@ -65,7 +88,7 @@ function stripDescription(description: string): string {
     withoutInvestmentMarker,
     { replaceWith: '\n' },
   );
-  return stripHtmlComments(withoutExchangeDetails)
+  return stripMdxComments(stripHtmlComments(withoutExchangeDetails))
     .replace(/\\([\[\]\(\)\{\}])/g, '$1')
     .replace(/&#x([0-9A-Fa-f]+);/gi, (full, hex) => {
       const codePoint = Number.parseInt(hex, 16);

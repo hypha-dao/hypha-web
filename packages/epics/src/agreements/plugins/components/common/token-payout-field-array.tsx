@@ -96,11 +96,18 @@ function TokenPayoutFieldArrayInner({
                   selectedTokenPriceHint={selectedTokenPriceHint}
                 />
               </FormControl>
-              <FormMessage
-                custom={tAgreementFlow(
-                  'plugins.tokenPayoutFieldArray.enterAmountAndToken',
-                )}
-              />
+              {/*
+                Render the actual amount/token error messages instead of a
+                single consolidated copy. The previous `custom` override (i18n
+                key `enterAmountAndToken`) hid every row-level error behind
+                "Please enter an amount and select a token." — including
+                async manual errors set by `useSellerLegBalanceValidation`
+                like "Seller amount exceeds balance" / "Amount too small".
+                Specific messages are clearer; an empty row simply shows the
+                two leaf messages ("Please enter an amount." and "Please
+                select a token") on separate lines.
+              */}
+              <FormMessage />
             </FormItem>
           )}
         />
