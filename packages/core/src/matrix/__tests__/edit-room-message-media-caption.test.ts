@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { applyMediaEditCaptionAndReply } from '../edit-room-message-media-caption';
-import { MATRIX_CUSTOM_HTML_FORMAT } from '../rich-reply';
+import {
+  MATRIX_CUSTOM_HTML_FORMAT,
+  splitRichReplyPlainBody,
+} from '../rich-reply';
 
 /** Covers `editRoomMessage` media branch in matrix-provider (empty caption + reply). */
 describe('applyMediaEditCaptionAndReply', () => {
@@ -35,6 +38,11 @@ describe('applyMediaEditCaptionAndReply', () => {
     expect(out.formatted_body!.length).toBeGreaterThan(0);
     expect(out.body).toContain('> <@alice:example.org>');
     expect(out.body).toContain('original');
+    /** Same path as matrix-provider: `buildRichReplyMatrixContent(..., ' ')`. */
+    const split = splitRichReplyPlainBody(out.body);
+    expect(split.reply).toBe('');
+    expect(split.quoted).toContain('@alice:example.org');
+    expect(split.quoted).toContain('original');
   });
 
   it('uses filename fallback when caption and reply are absent', async () => {

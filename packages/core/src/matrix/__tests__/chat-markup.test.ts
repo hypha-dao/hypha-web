@@ -6,6 +6,7 @@ import {
   matrixTextEventContentWithOptionalFormatting,
   parseChatMarkup,
 } from '../chat-markup';
+import { splitRichReplyPlainBody } from '../rich-reply';
 
 describe('chatMarkupLooksFormatted', () => {
   it('is false for plain text', () => {
@@ -59,5 +60,8 @@ describe('buildRichReplyMatrixContent', () => {
     expect(r.body).toContain('original');
     expect(r.format).toBe('org.matrix.custom.html');
     expect(r.formatted_body.length).toBeGreaterThan(0);
+    const split = splitRichReplyPlainBody(r.body);
+    expect(split.reply).toBe('');
+    expect(split.quoted).toContain('@alice:example.org');
   });
 });
