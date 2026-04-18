@@ -145,10 +145,36 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
           | `0x${string}`
           | undefined;
 
+        // In current Hypha deployments `space.address === executor`, so a
+        // `transferFrom(treasury, executor, …)` would be a self-to-self call
+        // that reverts (allowance(executor, executor) == 0). When the treasury
+        // IS the executor, skip the pull and read the executor's own balance
+        // to size the mint shortfall — the executor already holds the funds
+        // (or we mint the difference). This matches the comment / behaviour in
+        // `useSpaceExchangeDepositProposalMutation`. Without this guard, the
+        // proposal contains a doomed `transferFrom(executor, executor, X)` whenever
+        // the executor already has any balance of the buyer-side token, and the
+        // first vote that pushes thresholds over the line auto-executes →
+        // ERC20InsufficientAllowance → the voter's tx reverts.
+        const isSelfTreasury =
+          !!treasuryAddress &&
+          treasuryAddress.toLowerCase() === executor.toLowerCase();
+
         let pullFromTreasury = 0n;
         let mintShortfall = amountToFund;
 
-        if (treasuryAddress) {
+        if (isSelfTreasury) {
+          const executorBalance = await publicClient.readContract({
+            address: tokenToFund,
+            abi: erc20Abi,
+            functionName: 'balanceOf',
+            args: [executor],
+          });
+          mintShortfall =
+            executorBalance >= amountToFund
+              ? 0n
+              : amountToFund - executorBalance;
+        } else if (treasuryAddress) {
           const treasuryBalance = await publicClient.readContract({
             address: tokenToFund,
             abi: erc20Abi,
@@ -160,7 +186,7 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
           mintShortfall = amountToFund - pullFromTreasury;
         }
 
-        if (pullFromTreasury > 0n && treasuryAddress) {
+        if (pullFromTreasury > 0n && treasuryAddress && !isSelfTreasury) {
           transactions.push({
             target: tokenToFund,
             value: 0n,
