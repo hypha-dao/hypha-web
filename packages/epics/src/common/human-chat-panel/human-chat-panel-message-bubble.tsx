@@ -362,6 +362,7 @@ function TimelineVoiceSlot({
   const { client } = useMatrix();
   const { download: src } = useMxcUrls(client, media.mxcUrl);
   const durationMs = media.mediaInfo?.duration;
+  const [spoilerRevealed, setSpoilerRevealed] = useState(false);
 
   const durationLabel = formatVoiceDurationLabel(
     durationMs,
@@ -380,14 +381,26 @@ function TimelineVoiceSlot({
     );
   }
 
+  const spoilerActive = Boolean(media.spoiler && !spoilerRevealed);
+
   return (
-    <div className="mt-1" data-testid="chat-message-media-audio">
+    <div
+      className="relative mt-1 overflow-hidden rounded-[9999px]"
+      data-testid="chat-message-media-audio"
+    >
       <ChatVoiceAudioRow
         audioSrc={src}
         durationLabel={durationLabel}
         voiceLabel={voiceLabel}
         variant="timeline"
+        spoilerPreview={spoilerActive}
       />
+      {spoilerActive && (
+        <TimelineSpoilerRevealOverlay
+          t={t}
+          onReveal={() => setSpoilerRevealed(true)}
+        />
+      )}
     </div>
   );
 }

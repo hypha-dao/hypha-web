@@ -162,10 +162,14 @@ function DraftVoicePreview({
   previewUrl,
   voiceLabel,
   unknownDurationLabel,
+  spoiler,
+  spoilerBadgeLabel,
 }: {
   previewUrl: string;
   voiceLabel: string;
   unknownDurationLabel: string;
+  spoiler: boolean;
+  spoilerBadgeLabel: string;
 }) {
   const durationLabel = useDraftVoiceDuration({
     objectUrl: previewUrl,
@@ -177,6 +181,8 @@ function DraftVoicePreview({
       durationLabel={durationLabel}
       voiceLabel={voiceLabel}
       variant="draft"
+      spoilerPreview={spoiler}
+      spoilerBadgeLabel={spoilerBadgeLabel}
     />
   );
 }
@@ -1259,6 +1265,8 @@ export function HumanChatPanelChatBar({
                           previewUrl={att.previewUrl}
                           voiceLabel={t('voiceMessage')}
                           unknownDurationLabel="0:00"
+                          spoiler={att.spoiler}
+                          spoilerBadgeLabel={t('draftSpoilerTag')}
                         />
                       </div>
                     ) : (

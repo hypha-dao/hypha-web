@@ -42,6 +42,9 @@ export type ChatVoiceAudioRowProps = {
   /** Wider cap in timeline; drafts sit in narrow cards — use tighter max. */
   variant?: 'timeline' | 'draft';
   className?: string;
+  /** Draft preview: blur row + badge (timeline reveal uses parent overlay). */
+  spoilerPreview?: boolean;
+  spoilerBadgeLabel?: string;
 };
 
 /**
@@ -53,6 +56,8 @@ export function ChatVoiceAudioRow({
   voiceLabel,
   variant = 'timeline',
   className,
+  spoilerPreview = false,
+  spoilerBadgeLabel,
 }: ChatVoiceAudioRowProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
@@ -65,20 +70,25 @@ export function ChatVoiceAudioRow({
     setPlaying(false);
   }, [audioSrc]);
 
-  return (
+  const row = (
     <div
       className={cn(
         'flex items-center gap-2 rounded-full border border-border/80 bg-muted/40 py-1 pl-1.5 pr-2.5 dark:bg-muted/25',
         variant === 'timeline'
           ? 'max-w-[min(280px,85vw)]'
           : 'w-full max-w-full',
+        spoilerPreview && 'scale-[1.02] blur-xl saturate-50',
         className,
       )}
       data-testid="chat-voice-audio-row"
     >
       <button
         type="button"
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
+        disabled={spoilerPreview}
+        className={cn(
+          'flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-opacity hover:opacity-90',
+          spoilerPreview && 'pointer-events-none opacity-80',
+        )}
         aria-label={
           playing ? `Pause ${voiceLabel}` : `${voiceLabel}: play audio`
         }
@@ -102,7 +112,7 @@ export function ChatVoiceAudioRow({
           />
         )}
       </button>
-      <VoiceWaveform active={playing} />
+      <VoiceWaveform active={playing && !spoilerPreview} />
       <span className="shrink-0 tabular-nums text-[11px] font-medium text-muted-foreground">
         {durationLabel}
       </span>
@@ -117,6 +127,24 @@ export function ChatVoiceAudioRow({
       />
     </div>
   );
+
+  if (spoilerPreview && spoilerBadgeLabel && variant === 'draft') {
+    return (
+      <div className="relative w-full">
+        {row}
+        <div
+          className="pointer-events-none absolute inset-0 z-[5] flex items-center justify-center rounded-full bg-muted/75"
+          aria-hidden
+        >
+          <span className="rounded-full bg-foreground px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-background shadow-sm">
+            {spoilerBadgeLabel}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  return row;
 }
 
 /** Resolve mm:ss from optional duration ms; fallback for unknown length. */
