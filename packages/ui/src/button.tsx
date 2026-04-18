@@ -5,20 +5,23 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@hypha-platform/ui-utils';
 
 const buttonVariants = cva(
-  'cursor-pointer rounded inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
+  'cursor-pointer rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
   {
     variants: {
       variant: {
         default: '',
-        outline: 'border bg-transparent',
-        link: 'underline-offset-4 hover:underline bg-transparent',
-        ghost: 'bg-transparent',
+        outline: 'border bg-transparent shadow-sm',
+        link: 'underline-offset-4 hover:underline bg-transparent font-medium',
+        ghost: 'bg-transparent font-medium',
       },
       size: {
-        default: 'h-6 font-medium px-3',
-        sm: 'h-4 px-3',
-        lg: 'h-11 px-8',
-        icon: 'h-10 w-10',
+        /** Standard actions — matches modal/footer CTAs (touch-friendly min height). */
+        default: 'min-h-10 px-5 py-2 font-semibold',
+        /** Compact toolbar / auxiliary actions. */
+        sm: 'min-h-8 px-3 py-1.5 text-xs font-semibold',
+        /** Primary emphasis (hero / dialog primary). */
+        lg: 'min-h-11 px-8 py-2.5 text-base font-semibold',
+        icon: 'h-10 min-h-10 min-w-10 shrink-0 p-0 font-semibold',
       },
       colorVariant: {
         accent: '',
