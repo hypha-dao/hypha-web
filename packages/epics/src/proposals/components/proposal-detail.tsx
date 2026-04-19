@@ -1031,6 +1031,19 @@ export const ProposalDetail = ({
       ? { ...resubmitTemplateData, ...investmentResubmit }
       : resubmitTemplateData;
 
+  // Description handed to FormVoting → resubmit session storage. Strip
+  // template-specific markers (investment JSON / exchange-details block) so
+  // the resubmit form's editor only shows the user-authored prose. The
+  // create form re-emits its own marker on submit; carrying the marker
+  // through the editor caused doubled-marker descriptions and a JSON-in-MDX
+  // crash when the resubmitted proposal was opened.
+  const resubmitDescription =
+    label === 'Investment'
+      ? stripHyphaInvestmentFormMarker(content ?? '')
+      : label === 'Exchange'
+      ? stripExchangeDetailsBlock(content ?? '')
+      : content;
+
   const escrowAddr = getEscrowImplementationAddress();
 
   return (
@@ -1322,7 +1335,7 @@ export const ProposalDetail = ({
         proposalId={proposalId ?? null}
         proposalCreator={proposalDetails?.creator ?? null}
         documentTitle={title}
-        documentDescription={content}
+        documentDescription={resubmitDescription}
         documentLeadImage={leadImage}
         documentAttachments={attachments}
         spaceSlug={spaceSlug}

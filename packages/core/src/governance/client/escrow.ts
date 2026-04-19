@@ -169,8 +169,12 @@ export function appendHyphaInvestmentFormMarker(
   description: string,
   payload: HyphaInvestmentFormPayloadV1,
 ): string {
+  // Strip any pre-existing marker first so resubmitted descriptions do not
+  // accumulate stacked marker blocks (which then leak JSON into the rendered
+  // markdown and crash the MDX renderer when it tries to parse `{...}` as JSX).
+  const cleanedDescription = stripHyphaInvestmentFormMarker(description);
   return (
-    description +
+    cleanedDescription +
     HYPHA_INVESTMENT_FORM_START +
     JSON.stringify(payload) +
     HYPHA_INVESTMENT_FORM_END
@@ -199,45 +203,71 @@ export function parseHyphaInvestmentFormFromDescription(
 
 /**
  * Removes embedded investment JSON from proposal description for display.
- * Handles canonical markers and mangled text (e.g. markdown stripping `__` or newlines).
+ *
+ * Handles three variants:
+ *   1. Canonical marker block (`__hypha_investment__\n{json}\n__end_hypha_investment__`).
+ *   2. Markdown-escaped variant the editor produces when re-saving a
+ *      resubmitted description (`\_\_hypha\_investment\_\_...\_\_end\_hypha\_investment\_\_`).
+ *   3. Orphan end-marker payloads where the start delimiter was mangled away
+ *      by markdown stripping (legacy data).
+ *
+ * The regex pass is global so stacked marker blocks (created when older
+ * resubmits double-appended the marker) are all removed in one pass. This
+ * matters because leftover JSON inside an MDX-rendered description trips
+ * the parser when it tries to read `{...}` as a JS expression and crashes
+ * the proposal detail page.
  */
 export function stripHyphaInvestmentFormMarker(
   description: string | undefined | null,
 ): string {
   if (!description) return '';
 
-  const endMarker = '__end_hypha_investment__';
-  const endLen = endMarker.length;
+  // 1) Greedy global removal of canonical AND markdown-escaped marker blocks.
+  //    `(?:\\?_)` matches an optional backslash followed by `_`, so the same
+  //    pattern catches `__hypha_investment__` and `\_\_hypha\_investment\_\_`.
+  const blockRe =
+    /\n*(?:\\?_){2}hypha(?:\\?_)investment(?:\\?_){2}[\s\S]*?(?:\\?_){2}end(?:\\?_)hypha(?:\\?_)investment(?:\\?_){2}\n?/g;
+  let result = description.replace(blockRe, '');
 
-  // 1) Canonical block
-  const canonStart = description.indexOf(HYPHA_INVESTMENT_FORM_START);
-  if (canonStart !== -1) {
-    const canonEnd = description.indexOf(HYPHA_INVESTMENT_FORM_END, canonStart);
-    if (canonEnd !== -1) {
-      return (
-        description.slice(0, canonStart) +
-        description.slice(canonEnd + HYPHA_INVESTMENT_FORM_END.length)
-      ).trimEnd();
-    }
-    return description.slice(0, canonStart).trimEnd();
+  // 2) Orphan-end-marker fallback for legacy mangled payloads. Run a few
+  //    times so multiple residues get fully stripped.
+  for (let i = 0; i < 3; i += 1) {
+    const before = result;
+    result = stripOrphanEndInvestmentMarker(result);
+    if (result === before) break;
   }
 
-  // 2) End marker present — strip from payload (prefer JSON start; avoids matching
-  //    "hypha_investment" inside user-authored description text)
-  const endIdx = description.lastIndexOf(endMarker);
-  if (endIdx !== -1) {
+  return result.trimEnd();
+}
+
+function stripOrphanEndInvestmentMarker(description: string): string {
+  const endMarkers = [
+    '__end_hypha_investment__',
+    '\\_\\_end\\_hypha\\_investment\\_\\_',
+  ];
+
+  for (const marker of endMarkers) {
+    const endIdx = description.lastIndexOf(marker);
+    if (endIdx === -1) continue;
+
     const before = description.slice(0, endIdx);
     const jsonAt = before.search(/\{\s*"version"\s*:\s*1/);
     const tagged = before.lastIndexOf('__hypha_investment__');
+    const escTagged = before.lastIndexOf('\\_\\_hypha\\_investment\\_\\_');
 
     let blockStart = -1;
     if (jsonAt !== -1) blockStart = jsonAt;
     else if (tagged !== -1) blockStart = tagged;
+    else if (escTagged !== -1) blockStart = escTagged;
     else {
-      const looseHypha = before.search(/\bhypha_investment\b/);
+      // Loose `hypha_investment` (with or without an escaped underscore)
+      // immediately followed by a JSON-looking object.
+      const looseHypha = before.search(/\bhypha\\?_investment\b/);
       if (looseHypha !== -1) {
-        const afterWord = before.slice(looseHypha + 'hypha_investment'.length);
-        if (/^\s*\{/.test(afterWord)) blockStart = looseHypha;
+        const afterStart = before.indexOf('{', looseHypha);
+        if (afterStart !== -1 && /^\s*\{\s*"/.test(before.slice(afterStart))) {
+          blockStart = looseHypha;
+        }
       }
     }
 
@@ -247,8 +277,9 @@ export function stripHyphaInvestmentFormMarker(
         userEnd -= 1;
       }
       return (
-        description.slice(0, userEnd) + description.slice(endIdx + endLen)
-      ).trimEnd();
+        description.slice(0, userEnd) +
+        description.slice(endIdx + marker.length)
+      );
     }
   }
 

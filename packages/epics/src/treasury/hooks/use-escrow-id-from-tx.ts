@@ -2,10 +2,8 @@
 
 import useSWR from 'swr';
 import { parseEventLogs } from 'viem';
-import {
-  escrowImplementationAbi,
-  publicClient,
-} from '@hypha-platform/core/client';
+import { usePublicClient } from 'wagmi';
+import { escrowImplementationAbi } from '@hypha-platform/core/client';
 
 const ESCROW_EVENT_NAMES = [
   'EscrowCreated',
@@ -21,6 +19,11 @@ const ESCROW_EVENT_NAMES = [
  * the treasury list which only needs to label the counterparty as
  * "Escrow Account (#N)".
  *
+ * Uses wagmi's `usePublicClient` so the lookup follows the active chain
+ * (local dev / testnet / production base) instead of being hard-pinned to
+ * the singleton `publicClient`, which is what kept the label from showing
+ * up on non-base chains.
+ *
  * Returns `undefined` while loading or when the tx had no escrow event (e.g.
  * a plain ERC-20 transfer that happened to involve the escrow address as a
  * relay).
@@ -28,13 +31,15 @@ const ESCROW_EVENT_NAMES = [
 export const useEscrowIdFromTx = (
   hash: string | null | undefined,
 ): { escrowId?: bigint; isLoading: boolean } => {
-  const key = hash ? `escrow-id-from-tx:${hash}` : null;
+  const client = usePublicClient();
+  const chainId = client?.chain?.id;
+  const key = hash && client ? `escrow-id-from-tx:${chainId}:${hash}` : null;
   const { data, isLoading } = useSWR(
     key,
     async () => {
-      if (!hash) return undefined;
+      if (!hash || !client) return undefined;
       try {
-        const receipt = await publicClient.getTransactionReceipt({
+        const receipt = await client.getTransactionReceipt({
           hash: hash as `0x${string}`,
         });
         for (const eventName of ESCROW_EVENT_NAMES) {
