@@ -10,12 +10,12 @@ import {
 import { useParams } from 'next/navigation';
 import {
   ArrowLeftRight,
-  Banknote,
-  CircleDollarSign,
+  Building2,
   Gift,
   HandCoins,
   Rocket,
   Send,
+  Sparkles,
 } from 'lucide-react';
 import { useMemberBySlug } from '@web/hooks/use-member-by-slug';
 import { useFundWallet } from '@hypha-platform/epics';
@@ -62,16 +62,14 @@ export default function ProfileWallet() {
       title: tActions('actions.buyHyphaTokensRewards.title'),
       description: tActions('actions.buyHyphaTokensRewards.description'),
       href: 'purchase-hypha-tokens',
-      icon: (
-        <CircleDollarSign className="size-[22px] shrink-0" strokeWidth={1.75} />
-      ),
+      icon: <Sparkles className="size-[22px] shrink-0" strokeWidth={1.75} />,
     },
     {
       id: 'buySpaceTokens',
       title: tActions('actions.buySpaceTokens.title'),
       description: tActions('actions.buySpaceTokens.description'),
       href: 'buy-space-tokens',
-      icon: <Banknote className="size-[22px] shrink-0" strokeWidth={1.75} />,
+      icon: <Building2 className="size-[22px] shrink-0" strokeWidth={1.75} />,
     },
     {
       id: 'activateSpaces',
