@@ -20,6 +20,10 @@ import { Breadcrumbs } from './breadcrumbs';
 import { canConvertToBigInt, cn, formatDate } from '@hypha-platform/ui-utils';
 import { getTranslations } from 'next-intl/server';
 
+/** Banner height — full-frame hero within the layout (tighter than legacy 270px). */
+const BANNER_HEIGHT =
+  'min-h-[200px] h-[clamp(11rem,28vw,17rem)] sm:min-h-[240px]';
+
 export type SpaceHeaderProps = {
   lang: Locale;
   daoSlug: string;
@@ -68,76 +72,65 @@ export async function SpaceHeader({
 
       <div
         className={cn(
-          'overflow-hidden rounded-2xl border border-neutral-6',
-          'bg-card shadow-lg',
+          'overflow-visible rounded-2xl border border-neutral-6 bg-card shadow-lg',
         )}
       >
-        {/* Brand strip — full-width cover + layered gradients for depth */}
-        <div className="relative isolate h-[92px] sm:h-[104px] md:h-[118px]">
-          <Image
-            src={leadSrc}
-            alt=""
-            fill
-            priority
-            className="object-cover object-center"
-            sizes="100vw"
-            aria-hidden
-          />
+        {/* Full-width banner + circular avatar overlapping bottom edge (prod pattern) */}
+        <div className="relative">
           <div
-            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-neutral-2 from-[8%] via-neutral-3/55 via-[55%] to-transparent"
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute inset-0 bg-gradient-to-br from-accent-11/35 via-transparent to-accent-9/25"
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_90%_at_80%_-10%,rgba(99,102,241,0.28),transparent_55%)]"
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-neutral-8/80 to-transparent"
-            aria-hidden
-          />
+            className={cn(
+              'relative isolate w-full overflow-hidden rounded-t-2xl',
+              BANNER_HEIGHT,
+            )}
+          >
+            <Image
+              src={leadSrc}
+              alt=""
+              fill
+              priority
+              className="object-cover object-center"
+              sizes="(max-width: 1280px) 100vw, 1280px"
+              aria-hidden
+            />
+            <div
+              className="pointer-events-none absolute inset-0 bg-gradient-to-t from-neutral-2/90 via-neutral-2/20 to-transparent"
+              aria-hidden
+            />
+            <div
+              className="pointer-events-none absolute inset-0 bg-gradient-to-br from-accent-11/20 via-transparent to-transparent"
+              aria-hidden
+            />
+          </div>
+
+          <Avatar
+            className={cn(
+              'absolute bottom-0 left-4 z-10 h-[104px] w-[104px] translate-y-1/2 rounded-full',
+              'ring-[4px] ring-neutral-2 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.75)] sm:left-6 sm:h-[112px] sm:w-[112px]',
+            )}
+          >
+            <AvatarImage
+              src={logoUrl || DEFAULT_SPACE_AVATAR_IMAGE}
+              alt=""
+              aria-hidden
+              className="object-cover"
+            />
+          </Avatar>
         </div>
 
-        <div className="relative px-4 pb-4 pt-1 sm:px-5 sm:pb-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-5">
-            <Avatar
-              className={cn(
-                'z-10 -mt-12 h-[72px] w-[72px] shrink-0 rounded-2xl ring-[3px] ring-neutral-2 shadow-[0_8px_30px_-6px_rgba(0,0,0,0.65)] sm:-mt-14 sm:h-[84px] sm:w-[84px] sm:ring-4',
-              )}
-            >
-              <AvatarImage
-                src={logoUrl || DEFAULT_SPACE_AVATAR_IMAGE}
-                alt=""
-                aria-hidden
-                className="object-cover"
-              />
-            </Avatar>
+        {/* Content: padding clears overlapping avatar — no nested bordered panels */}
+        <div className="relative rounded-b-2xl px-4 pb-5 pt-[4.5rem] sm:px-6 sm:pt-[4.75rem]">
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between xl:gap-8">
+            <div className="min-w-0 flex-1 space-y-3 pl-32 sm:pl-36 lg:min-h-[4.25rem]">
+              <Text
+                id="space-title"
+                className="text-balance text-6 font-semibold tracking-tight sm:text-7"
+              >
+                {title}
+              </Text>
+              <WebLinks links={links} />
 
-            <div className="min-w-0 flex-1 space-y-3 sm:pt-1">
-              <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between xl:gap-6">
-                <div className="min-w-0 flex-1 space-y-1">
-                  <Text
-                    id="space-title"
-                    className="text-balance text-6 font-semibold tracking-tight sm:text-7"
-                  >
-                    {title}
-                  </Text>
-                  <WebLinks links={links} />
-                </div>
-                <div className="flex shrink-0 flex-wrap gap-2 xl:justify-end">
-                  {typeof web3SpaceId === 'number' ? (
-                    <JoinSpace web3SpaceId={web3SpaceId} spaceId={spaceId} />
-                  ) : null}
-                  <ActionButtons web3SpaceId={web3SpaceId as number} />
-                </div>
-              </div>
-
-              {/* Purpose — explicit label + body copy for clarity */}
-              <div className="rounded-xl border border-neutral-6 bg-neutral-2/80 px-3 py-2.5 sm:px-4 sm:py-3">
-                <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-neutral-11">
+              <div className="space-y-1">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-neutral-11">
                   {tSpaces('purpose')}
                 </div>
                 {hasPurpose ? (
@@ -145,56 +138,65 @@ export async function SpaceHeader({
                     {purposeText}
                   </p>
                 ) : (
-                  <p className="text-2 italic leading-relaxed text-neutral-10">
+                  <p className="text-pretty text-2 italic leading-relaxed text-neutral-10">
                     {tSpaces('purposeEmptyPublic')}
                   </p>
                 )}
               </div>
 
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-2 border-t border-neutral-6 pt-3">
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-1 text-neutral-11">
-                  <span className="inline-flex items-baseline gap-1 rounded-md bg-neutral-3/80 px-2 py-0.5">
-                    <span className="font-semibold tabular-nums text-foreground">
-                      {spaceMembers}
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-2 border-t border-neutral-6 pt-4 text-1">
+                <span className="text-neutral-11">
+                  <span className="font-semibold tabular-nums text-foreground">
+                    {spaceMembers}
+                  </span>{' '}
+                  {tCommon('Members')}
+                </span>
+                <span className="text-neutral-8" aria-hidden>
+                  ·
+                </span>
+                <span className="text-neutral-11">
+                  <span className="font-semibold tabular-nums text-foreground">
+                    {spaceAgreements}
+                  </span>{' '}
+                  {tCommon('Agreements')}
+                </span>
+                <span className="text-neutral-8" aria-hidden>
+                  ·
+                </span>
+                <span className="text-neutral-11">
+                  {tCommon('createdOn', {
+                    date: formatDate(createdAt, true),
+                  })}
+                </span>
+                {canConvertToBigInt(web3SpaceId) ? (
+                  <>
+                    <span
+                      className="hidden text-neutral-8 sm:inline"
+                      aria-hidden
+                    >
+                      ·
                     </span>
-                    <span>{tCommon('Members')}</span>
-                  </span>
-                  <span className="text-neutral-8" aria-hidden>
-                    ·
-                  </span>
-                  <span className="inline-flex items-baseline gap-1 rounded-md bg-neutral-3/80 px-2 py-0.5">
-                    <span className="font-semibold tabular-nums text-foreground">
-                      {spaceAgreements}
-                    </span>
-                    <span>{tCommon('Agreements')}</span>
-                  </span>
-                  <span className="text-neutral-8" aria-hidden>
-                    ·
-                  </span>
-                  <span className="text-neutral-11">
-                    {tCommon('createdOn', {
-                      date: formatDate(createdAt, true),
-                    })}
-                  </span>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  {canConvertToBigInt(web3SpaceId) ? (
                     <SubscriptionBadge web3SpaceId={web3SpaceId as number} />
-                  ) : null}
-                  <SpaceModeLabel
-                    web3SpaceId={web3SpaceId as number}
-                    isSandbox={flags.includes('sandbox')}
-                    isDemo={flags.includes('demo')}
-                    isArchived={
-                      flags.includes('archived') || spaceMembers === 0
-                    }
-                    configPath={`${getDhoPathAgreements(
-                      lang,
-                      daoSlug,
-                    )}/space-configuration`}
-                  />
-                </div>
+                  </>
+                ) : null}
+                <SpaceModeLabel
+                  web3SpaceId={web3SpaceId as number}
+                  isSandbox={flags.includes('sandbox')}
+                  isDemo={flags.includes('demo')}
+                  isArchived={flags.includes('archived') || spaceMembers === 0}
+                  configPath={`${getDhoPathAgreements(
+                    lang,
+                    daoSlug,
+                  )}/space-configuration`}
+                />
               </div>
+            </div>
+
+            <div className="flex shrink-0 flex-wrap gap-2 xl:justify-end xl:pt-1">
+              {typeof web3SpaceId === 'number' ? (
+                <JoinSpace web3SpaceId={web3SpaceId} spaceId={spaceId} />
+              ) : null}
+              <ActionButtons web3SpaceId={web3SpaceId as number} />
             </div>
           </div>
         </div>
