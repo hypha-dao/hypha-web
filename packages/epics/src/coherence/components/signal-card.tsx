@@ -31,6 +31,7 @@ import React from 'react';
 import type { BadgeProps } from '@hypha-platform/ui';
 import { useLocale, useTranslations } from 'next-intl';
 import { Users } from 'lucide-react';
+import { cn } from '@hypha-platform/ui-utils';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
 
 type SignalCardProps = {
@@ -121,7 +122,14 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   }, [slug, refresh, updateCoherenceBySlug]);
 
   return (
-    <Card className="h-full w-full space-y-5 pt-5">
+    <Card
+      className={cn(
+        'h-full w-full space-y-5 rounded-2xl border-border/70 bg-card pt-5 shadow-sm',
+        'transition-[border-color,box-shadow] duration-200 ease-out',
+        'hover:border-accent-8/75 hover:shadow-md',
+        'focus-within:border-accent-8/75 focus-within:shadow-md',
+      )}
+    >
       <CardContent className="relative space-y-4">
         <div className="flex flex-col items-start space-y-2">
           <div className="flex flex-row gap-3 w-full">

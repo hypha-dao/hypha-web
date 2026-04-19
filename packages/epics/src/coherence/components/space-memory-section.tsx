@@ -100,7 +100,7 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
 
   return (
     <section
-      className="flex flex-col justify-around items-center gap-4 w-full"
+      className="flex w-full flex-col gap-5 border-t border-border/50 pt-10"
       aria-label={t('spaceMemory')}
     >
       <SectionFilter
@@ -121,7 +121,7 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
           {t('spaceMemoryRefresh')}
         </Button>
       </SectionFilter>
-      <Separator />
+      <Separator className="bg-border/70" />
 
       {error ? (
         <div className="flex flex-col items-center gap-2 w-full px-4">
