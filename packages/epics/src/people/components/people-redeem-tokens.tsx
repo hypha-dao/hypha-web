@@ -606,11 +606,6 @@ export const ProfileRedeemTokens = ({
           backUrl={`/${lang}/profile/${personSlug}/actions`}
           backLabel={tActions('backToActions')}
         />
-        <div className="flex gap-5 justify-between">
-          <h2 className="text-4 text-secondary-foreground justify-start items-center">
-            {tRedeem('title')}
-          </h2>
-        </div>
         <span className="text-2 text-neutral-11">{tRedeem('content')}</span>
         {hasVaultAccessIssues && (
           <div className="text-2 text-red-11">
