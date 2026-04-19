@@ -6,7 +6,6 @@ import {
   SubscriptionBadge,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
-import { Avatar, AvatarImage } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import Image from 'next/image';
 import {
@@ -17,13 +16,14 @@ import { getDhoPathAgreements } from '../@tab/agreements/constants';
 import { ActionButtons } from './action-buttons';
 import { NestedSpacesButton } from './nested-spaces-button';
 import { Breadcrumbs } from './breadcrumbs';
+import { SpaceHeaderAvatar } from './space-header-avatar';
 import { canConvertToBigInt, cn, formatDate } from '@hypha-platform/ui-utils';
 import { getTranslations } from 'next-intl/server';
 
 const PURPOSE_MAX_CHARS = 300;
 
-/** Left inset for text so it never sits under the circular avatar column */
-const INSET_CLEAR_AVATAR = 'pl-[152px] sm:pl-[164px]';
+/** Left inset: avatar is centred on left edge with ~34% bleed — keep copy clear */
+const INSET_CLEAR_AVATAR = 'pl-[104px] sm:pl-[118px] md:pl-[124px]';
 
 /** Option D: purpose wraps in a left column; right side of banner stays visible for lead art */
 const PURPOSE_WRAP =
@@ -79,39 +79,41 @@ export async function SpaceHeader({
         )}
       </div>
 
-      {/* Banner + overlapping avatar (avatar sibling = not clipped; positive translateY = hangs below) */}
-      <div className="relative mb-16 sm:mb-[4.25rem]">
+      <div className="relative mb-8 overflow-visible pl-3 sm:mb-10 sm:pl-5">
         <div
           className={cn(
-            'relative isolate flex h-[270px] min-h-[270px] max-h-[270px] w-full flex-col overflow-hidden rounded-2xl border border-neutral-6 shadow-md',
+            'relative isolate flex h-[270px] min-h-[270px] max-h-[270px] w-full flex-col overflow-visible rounded-2xl border border-neutral-6 shadow-md',
           )}
         >
-          <Image
-            src={leadSrc}
-            alt=""
-            fill
-            priority
-            className="object-cover object-center"
-            sizes="(max-width: 1280px) 100vw, 1280px"
-            aria-hidden
-          />
+          <div className="absolute inset-0 z-0 overflow-hidden rounded-2xl">
+            <Image
+              src={leadSrc}
+              alt=""
+              fill
+              priority
+              className="object-cover object-center"
+              sizes="(max-width: 1280px) 100vw, 1280px"
+              aria-hidden
+            />
+            <div
+              className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/88 via-black/42 via-[52%] to-black/22"
+              aria-hidden
+            />
+            <div
+              className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/58 via-transparent to-black/40"
+              aria-hidden
+            />
+            <div
+              className="pointer-events-none absolute inset-0 bg-gradient-to-br from-accent-11/18 via-transparent to-transparent"
+              aria-hidden
+            />
+          </div>
 
-          <div
-            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/88 via-black/42 via-[52%] to-black/22"
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/58 via-transparent to-black/40"
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute inset-0 bg-gradient-to-br from-accent-11/18 via-transparent to-transparent"
-            aria-hidden
-          />
+          <SpaceHeaderAvatar src={logoUrl || DEFAULT_SPACE_AVATAR_IMAGE} />
 
           <div
             className={cn(
-              'relative z-[1] flex h-full min-h-0 flex-col px-5 py-5 sm:px-7 sm:py-6',
+              'relative z-[25] flex h-full min-h-0 flex-col overflow-hidden rounded-2xl px-5 py-5 sm:px-7 sm:py-6',
               INSET_CLEAR_AVATAR,
             )}
           >
@@ -200,21 +202,6 @@ export async function SpaceHeader({
             </div>
           </div>
         </div>
-
-        <Avatar
-          className={cn(
-            /* bottom-0 + translate-y-1/2: half the circle extends below the banner */
-            'absolute bottom-0 left-4 z-30 h-[128px] w-[128px] translate-y-1/2 rounded-full sm:left-6',
-            'shadow-[0_18px_44px_-10px_rgba(0,0,0,0.88)] ring-[4px] ring-neutral-2 dark:ring-neutral-3',
-          )}
-        >
-          <AvatarImage
-            src={logoUrl || DEFAULT_SPACE_AVATAR_IMAGE}
-            alt=""
-            aria-hidden
-            className="object-cover"
-          />
-        </Avatar>
       </div>
 
       {/* Original placement: actions below the banner, right-aligned */}
