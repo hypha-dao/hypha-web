@@ -2,6 +2,7 @@
 
 import { useFormContext } from 'react-hook-form';
 import {
+  Button,
   Input,
   FormControl,
   FormDescription,
@@ -42,6 +43,7 @@ import { ButtonBack, ButtonClose } from '../../common';
 import { useProposalNotifications } from '../../governance/hooks';
 import React from 'react';
 import { useTranslations } from 'next-intl';
+import { RotateCcw } from 'lucide-react';
 import {
   RESUBMIT_FORM_DATA_KEY,
   getProposalTemplateSegmentFromPathname,
@@ -190,7 +192,7 @@ export function CreateAgreementBaseFields({
 
     if (typeof window !== 'undefined') {
       try {
-        const raw = sessionStorage.getItem('resubmitFormData');
+        const raw = sessionStorage.getItem(RESUBMIT_FORM_DATA_KEY);
         if (raw) {
           const parsed = JSON.parse(raw) as { leadImage?: string };
           if (parsed?.leadImage?.trim()) {
@@ -357,6 +359,18 @@ export function CreateAgreementBaseFields({
     postProposalCreated,
   });
 
+  const handleResetForm = React.useCallback(() => {
+    form.reset();
+    setExistingAttachments([]);
+    setResubmitFormData(null);
+    try {
+      sessionStorage.removeItem(RESUBMIT_FORM_DATA_KEY);
+    } catch {
+      /* ignore */
+    }
+    hasAppliedSpaceBannerDefaultRef.current = false;
+  }, [form]);
+
   return (
     <>
       {/* Sticky header: compact toolbar row (fixed height) like legacy layout, then avatar + badges + title */}
@@ -366,6 +380,18 @@ export function CreateAgreementBaseFields({
             {stickyHeaderTitle ?? resolvedLabel}
           </h2>
           <div className="flex shrink-0 items-center justify-end gap-1">
+            {form.formState.isDirty ? (
+              <Button
+                type="button"
+                variant="ghost"
+                colorVariant="neutral"
+                className="inline-flex items-center gap-1 px-0 text-neutral-10 md:px-3"
+                onClick={handleResetForm}
+              >
+                <RotateCcw className="size-4 shrink-0" aria-hidden />
+                {tAgreementFlow('createAgreementBaseFields.resetForm')}
+              </Button>
+            ) : null}
             {backUrl && (
               <ButtonBack
                 label={resolvedBackLabel}

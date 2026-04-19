@@ -939,6 +939,7 @@
     "createAgreementBaseFields": {
       "agreementLabel": "Agreement",
       "backToCreate": "Back to Create",
+      "resetForm": "Reset",
       "formContextMissing": "Form context is missing!",
       "delegate": "Delegate",
       "proposalTitlePlaceholder": "Proposal title...",
