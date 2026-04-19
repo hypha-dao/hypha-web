@@ -129,7 +129,7 @@ export async function SpaceHeader({
               </div>
             </div>
 
-            <div className="flex min-h-0 flex-1 flex-col items-start justify-center py-3 sm:py-4">
+            <div className="flex min-h-0 flex-1 flex-col items-start justify-center py-3 pb-6 sm:py-4 sm:pb-8">
               <div className={cn('space-y-1.5', PURPOSE_WRAP)}>
                 <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-white/60 sm:text-[11px]">
                   {tSpaces('purpose')}
@@ -154,7 +154,7 @@ export async function SpaceHeader({
               </div>
             </div>
 
-            <div className="shrink-0 border-t border-white/15 pt-3 sm:pt-4">
+            <div className="shrink-0 border-t border-white/15 pt-4 sm:pt-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                 <div className="min-w-0 flex flex-wrap items-center gap-x-2.5 gap-y-2 text-[13px] leading-snug text-white/88 sm:text-1">
                   <span>
