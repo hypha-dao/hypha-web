@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   extractMentionUserIdsFromPlainBody,
+  isLikelyMatrixUserId,
   mentionsContentFromUserIds,
+  parseMentionUserIdsFromWireContent,
 } from '../mentions';
 
 describe('extractMentionUserIdsFromPlainBody', () => {
@@ -44,6 +46,27 @@ describe('extractMentionUserIdsFromPlainBody', () => {
 
   it('returns empty when no mentions', () => {
     expect(extractMentionUserIdsFromPlainBody('hello')).toEqual([]);
+  });
+});
+
+describe('isLikelyMatrixUserId', () => {
+  it('rejects values with junk after the homeserver (not a single MXID string)', () => {
+    expect(isLikelyMatrixUserId('@alice:matrix.org extra')).toBe(false);
+  });
+  it('accepts a normal MXID', () => {
+    expect(isLikelyMatrixUserId('@alice:matrix.org')).toBe(true);
+  });
+});
+
+describe('parseMentionUserIdsFromWireContent', () => {
+  it('drops invalid wire ids', () => {
+    expect(
+      parseMentionUserIdsFromWireContent({
+        'm.mentions': {
+          user_ids: ['@good:matrix.org', '@bad junk', 'nope'],
+        },
+      }),
+    ).toEqual(['@good:matrix.org']);
   });
 });
 

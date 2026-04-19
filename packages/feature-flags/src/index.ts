@@ -62,7 +62,7 @@ export const flagDefinitionsForDiscovery = {
     options: undefined as undefined,
   },
   enableSpaceMemory: {
-    key: 'enable-Space-Memory',
+    key: 'enable-space-memory',
     defaultValue: false,
     description: 'Show the Space Memory panel on the Coherence tab',
     origin: 'hypha' as const,
@@ -170,7 +170,7 @@ export async function getEnableHumanChat(): Promise<boolean> {
 
 export async function getEnableSpaceMemory(): Promise<boolean> {
   return getBooleanFlagFromToolbarCookieOrEnv(
-    'enable-Space-Memory',
+    'enable-space-memory',
     HYPHA_ENABLE_SPACE_MEMORY,
     process.env.NEXT_PUBLIC_ENABLE_SPACE_MEMORY,
   );
