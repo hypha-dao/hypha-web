@@ -26,7 +26,7 @@ export function HumanChatPanelHeader({
   const displayDescription = description;
 
   return (
-    <div className="flex min-w-0 items-center gap-2 border-b border-border bg-background-2 px-4 py-3">
+    <div className="flex min-w-0 items-center gap-2 border-b border-border/60 bg-transparent px-4 py-3">
       <div className="flex shrink-0 items-center gap-1">
         {onBack ? (
           <button
@@ -59,8 +59,8 @@ export function HumanChatPanelHeader({
         <span className="font-semibold text-sm text-foreground truncate min-w-0">
           {displayTitle}
         </span>
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-primary">
-          <MessageCircle className="h-3.5 w-3.5 text-primary-foreground" />
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-accent-9/35 bg-accent-9/12 shadow-sm ring-1 ring-inset ring-accent-9/25 dark:bg-accent-9/18 dark:ring-accent-9/35">
+          <MessageCircle className="h-3.5 w-3.5 text-accent-11 dark:text-accent-11" />
         </div>
       </div>
     </div>

@@ -90,7 +90,7 @@ export function HumanChatPanelMentionTab({
                 <li key={id}>
                   <button
                     type="button"
-                    className="flex w-full flex-col gap-1 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-left transition-colors hover:bg-muted/70"
+                    className="flex w-full flex-col gap-1 rounded-xl border border-border/70 bg-muted/35 px-3 py-2.5 text-left shadow-sm transition-[border-color,background-color,box-shadow] duration-150 hover:border-accent-8/80 hover:bg-accent-2/90 hover:shadow-md"
                     onClick={() => onSelectMessage(id)}
                   >
                     <div className="flex items-baseline justify-between gap-2">
@@ -106,7 +106,7 @@ export function HumanChatPanelMentionTab({
                         })}
                       </span>
                     </div>
-                    <p className="border-l-2 border-border pl-2 text-xs leading-snug text-muted-foreground">
+                    <p className="border-l-2 border-accent-8/70 pl-2 text-xs leading-snug text-muted-foreground">
                       {excerpt || t('mentionInboxNoPreview')}
                     </p>
                   </button>
@@ -144,7 +144,7 @@ export function HumanChatPanelMentionBell({
   return (
     <button
       type="button"
-      className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent-2 hover:text-accent-12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-9/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       aria-label={
         unreadCount > 0
           ? t('mentionInboxBellAria', {
@@ -157,7 +157,7 @@ export function HumanChatPanelMentionBell({
     >
       <Bell className="h-3.5 w-3.5" aria-hidden />
       {badgeLabel != null && (
-        <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-semibold leading-none text-primary-foreground">
+        <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full border border-accent-9/40 bg-accent-9 px-0.5 text-[9px] font-semibold leading-none text-accent-contrast shadow-sm">
           {badgeLabel}
         </span>
       )}
