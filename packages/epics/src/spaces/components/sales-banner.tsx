@@ -69,19 +69,21 @@ export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
   const { title, subtitle, actionText } = bannerStates[status];
 
   return (
-    <div className="rounded-[8px] p-5 border-1 bg-accent-surface border-accent-6 bg-center flex flex-col md:flex-row gap-4 md:gap-5 items-start md:items-center justify-between">
-      <div className="flex items-center gap-3 md:gap-5 w-full md:w-auto">
+    <div className="flex flex-col items-stretch justify-between gap-3 rounded-[8px] border-1 border-accent-6 bg-accent-surface bg-center p-3 sm:p-4 md:flex-row md:items-center md:gap-4">
+      <div className="flex w-full min-w-0 items-start gap-2.5 sm:gap-3 md:w-auto md:max-w-[min(100%,42rem)]">
         <ExclamationTriangleIcon
           width={16}
           height={16}
-          className="text-foreground flex-shrink-0 mt-0.5"
+          className="mt-0.5 flex-shrink-0 text-foreground"
         />
-        <div className="flex flex-col gap-2 flex-1">
-          <span className="text-2 text-foreground font-bold">{title}</span>
-          <span className="text-2 text-foreground">{subtitle}</span>
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5 sm:gap-1">
+          <span className="text-2 font-bold text-foreground">{title}</span>
+          <span className="line-clamp-2 text-2 text-foreground sm:line-clamp-none">
+            {subtitle}
+          </span>
         </div>
       </div>
-      <div className="flex gap-2 w-full md:w-auto justify-between md:justify-normal">
+      <div className="flex w-full justify-between gap-2 md:w-auto md:shrink-0 md:justify-end">
         <Link
           title={tooltipMessage || ''}
           className={
