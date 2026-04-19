@@ -19,6 +19,8 @@ export const CoherenceTypeButton = ({
 }: CoherenceTypeButtonProps) => {
   const textColor = ((variant) => {
     switch (variant) {
+      case 'subtle':
+        return 'text-foreground';
       case 'accent':
         return 'text-accent-9';
       case 'error':
@@ -50,7 +52,13 @@ export const CoherenceTypeButton = ({
         </div>
         <div className="flex flex-col">
           <span className={cn('text-2 font-medium', textColor)}>{title}</span>
-          <span className="text-1 text-neutral-11">
+          <span
+            className={
+              colorVariant === 'subtle'
+                ? 'text-1 text-muted-foreground'
+                : 'text-1 text-neutral-11'
+            }
+          >
             <span>{description}</span>
           </span>
         </div>

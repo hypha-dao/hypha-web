@@ -43,7 +43,7 @@ type ProposalOverlayShellProps = {
 
 /**
  * Presentation shell for primary @aside flows (proposals, space settings menus,
- * configure space, etc.).
+ * configure space, create signal modal, etc.).
  *
  * Mobile / tablet portrait: docked sheet (respects `--menu-top-height` and
  * `--sidebar-right-width`).
