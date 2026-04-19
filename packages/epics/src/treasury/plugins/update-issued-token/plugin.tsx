@@ -558,7 +558,7 @@ export const UpdateIssuedTokenPlugin = ({
             ? safeRefFromDb
             : undefined,
           tokenPrice: shouldShowAdvancedFromDb
-            ? (selectedToken.referencePrice ?? undefined)
+            ? selectedToken.referencePrice ?? undefined
             : undefined,
           enableTokenPrice: shouldShowAdvancedFromDb,
           enableProposalAutoMinting: true,
@@ -940,10 +940,10 @@ export const UpdateIssuedTokenPlugin = ({
             'plugins.issueNewToken.supply.maxSupplyTypeOptions.immutable',
           )
         : onChainData?.fixedMaxSupply === false
-          ? tAgreementFlow(
-              'plugins.issueNewToken.supply.maxSupplyTypeOptions.updatable',
-            )
-          : null;
+        ? tAgreementFlow(
+            'plugins.issueNewToken.supply.maxSupplyTypeOptions.updatable',
+          )
+        : null;
     return (
       <div className="flex flex-col items-end gap-0.5 text-right text-2 text-neutral-11">
         <span className="text-nowrap">

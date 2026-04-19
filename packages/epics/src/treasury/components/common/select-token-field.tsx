@@ -220,8 +220,8 @@ export function SelectTokenField({
                                 src={
                                   brokenIcons[normalized!]
                                     ? '/placeholder/token-icon.svg'
-                                    : (selectedToken.iconUrl?.trim() ??
-                                      '/placeholder/token-icon.svg')
+                                    : selectedToken.iconUrl?.trim() ??
+                                      '/placeholder/token-icon.svg'
                                 }
                                 width={20}
                                 height={20}

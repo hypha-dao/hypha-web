@@ -9,8 +9,9 @@ async function main(): Promise<void> {
   console.log('Upgrading with admin address:', adminAddress);
   console.log('Proxy address:', PROXY_ADDRESS);
 
-  const currentImpl =
-    await upgrades.erc1967.getImplementationAddress(PROXY_ADDRESS);
+  const currentImpl = await upgrades.erc1967.getImplementationAddress(
+    PROXY_ADDRESS,
+  );
   console.log('Current implementation address:', currentImpl);
 
   const RegularTokenFactory = await ethers.getContractFactory(
@@ -25,8 +26,9 @@ async function main(): Promise<void> {
 
   await upgradedContract.waitForDeployment();
 
-  const newImpl =
-    await upgrades.erc1967.getImplementationAddress(PROXY_ADDRESS);
+  const newImpl = await upgrades.erc1967.getImplementationAddress(
+    PROXY_ADDRESS,
+  );
   console.log('New implementation address:', newImpl);
 
   if (currentImpl.toLowerCase() === newImpl.toLowerCase()) {

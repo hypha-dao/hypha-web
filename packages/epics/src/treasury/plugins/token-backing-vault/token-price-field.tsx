@@ -32,13 +32,13 @@ export function TokenPriceField({
   const placeholder = isRequired
     ? tAgreementFlow('plugins.tokenBackingVault.enterRedemptionPrice')
     : tokenReferencePrice != null
-      ? tAgreementFlow('plugins.tokenBackingVault.leaveBlankUseTokenPrice', {
-          price: formatCurrencyValue(tokenReferencePrice),
-          currency: tokenReferenceCurrency ?? 'USD',
-        })
-      : tAgreementFlow(
-          'plugins.tokenBackingVault.leaveBlankForTokenContractPrice',
-        );
+    ? tAgreementFlow('plugins.tokenBackingVault.leaveBlankUseTokenPrice', {
+        price: formatCurrencyValue(tokenReferencePrice),
+        currency: tokenReferenceCurrency ?? 'USD',
+      })
+    : tAgreementFlow(
+        'plugins.tokenBackingVault.leaveBlankForTokenContractPrice',
+      );
 
   return (
     <FormField

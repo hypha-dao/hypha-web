@@ -4,9 +4,8 @@ import * as React from 'react';
 import * as TabsPrimitive from '@radix-ui/react-tabs';
 import { cn } from '@hypha-platform/ui-utils';
 
-interface TabsProps extends React.ComponentPropsWithoutRef<
-  typeof TabsPrimitive.Root
-> {
+interface TabsProps
+  extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.Root> {
   disabled?: boolean;
 }
 

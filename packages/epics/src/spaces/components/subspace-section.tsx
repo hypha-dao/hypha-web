@@ -54,8 +54,8 @@ export const SubspaceSection = ({
               isLoading
                 ? 'Loading...'
                 : !hasAccess
-                  ? 'You do not have access to add spaces to this organization.'
-                  : 'Add Space'
+                ? 'You do not have access to add spaces to this organization.'
+                : 'Add Space'
             }
           >
             <Button

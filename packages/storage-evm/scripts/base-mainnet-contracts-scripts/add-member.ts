@@ -181,8 +181,8 @@ async function main(): Promise<void> {
       warning: isAlreadyMember
         ? 'Member is already in the space!'
         : !isOwner && !isExecutor
-          ? 'Caller is not authorized (not owner or executor)!'
-          : null,
+        ? 'Caller is not authorized (not owner or executor)!'
+        : null,
     } as const;
 
     // Replace any stray BigInt values just in case

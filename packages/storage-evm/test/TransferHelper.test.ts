@@ -41,8 +41,9 @@ describe('TransferHelper with Real Tokens', function () {
     [owner, user1, user2, user3, nonMember] = await ethers.getSigners();
 
     // Deploy TransferHelper
-    const TransferHelperFactory =
-      await ethers.getContractFactory('TransferHelper');
+    const TransferHelperFactory = await ethers.getContractFactory(
+      'TransferHelper',
+    );
     transferHelper = await TransferHelperFactory.deploy();
     await transferHelper.waitForDeployment();
 
@@ -217,8 +218,8 @@ describe('TransferHelper with Real Tokens', function () {
         type === 'regular'
           ? 'RegularSpaceToken'
           : type === 'decaying'
-            ? 'DecayingSpaceToken'
-            : 'OwnershipSpaceToken',
+          ? 'DecayingSpaceToken'
+          : 'OwnershipSpaceToken',
         tokenAddress,
       );
     };

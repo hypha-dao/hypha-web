@@ -127,8 +127,8 @@ export function createFetchOrgMemoryAssetTool(
         const kind = mime.startsWith('video/')
           ? 'Video'
           : mime.startsWith('audio/')
-            ? 'Audio'
-            : 'File';
+          ? 'Audio'
+          : 'File';
         return {
           type: 'content',
           value: [

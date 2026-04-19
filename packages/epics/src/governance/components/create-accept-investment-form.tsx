@@ -85,8 +85,8 @@ export const CreateAcceptInvestmentForm = ({
       first instanceof Error
         ? first.message
         : typeof first === 'string'
-          ? first
-          : '';
+        ? first
+        : '';
     if (!raw) return '';
     if (/NotMember/i.test(raw)) return tAcceptForm('notMemberRevert');
     if (/rejected|denied|user rejected|cancelled/i.test(raw))

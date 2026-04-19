@@ -42,8 +42,8 @@ export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
   const tooltipMessage = !isAuthenticated
     ? tCommon('signIn')
     : !isMember && !isDelegate
-      ? tCommon('joinSpaceToUse')
-      : '';
+    ? tCommon('joinSpaceToUse')
+    : '';
 
   const bannerStates: Record<
     'trial' | 'beforeExpiry' | 'expired',

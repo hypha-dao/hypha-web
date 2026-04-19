@@ -12,8 +12,9 @@ async function main(): Promise<void> {
   console.log('Proxy address:', PROXY_ADDRESS);
 
   // Get the current implementation address before upgrade
-  const currentImpl =
-    await upgrades.erc1967.getImplementationAddress(PROXY_ADDRESS);
+  const currentImpl = await upgrades.erc1967.getImplementationAddress(
+    PROXY_ADDRESS,
+  );
   console.log('Current implementation address:', currentImpl);
 
   const RegularTokenFactory = await ethers.getContractFactory(
@@ -41,8 +42,9 @@ async function main(): Promise<void> {
     await upgradedContract.waitForDeployment();
 
     // Get the new implementation address after upgrade
-    const newImpl =
-      await upgrades.erc1967.getImplementationAddress(PROXY_ADDRESS);
+    const newImpl = await upgrades.erc1967.getImplementationAddress(
+      PROXY_ADDRESS,
+    );
     console.log('New implementation address:', newImpl);
 
     // Verify the upgrade actually happened
@@ -88,8 +90,9 @@ async function main(): Promise<void> {
         await upgradedContract.waitForDeployment();
 
         // Get the new implementation address after upgrade
-        const newImpl =
-          await upgrades.erc1967.getImplementationAddress(PROXY_ADDRESS);
+        const newImpl = await upgrades.erc1967.getImplementationAddress(
+          PROXY_ADDRESS,
+        );
         console.log('New implementation address:', newImpl);
 
         // Verify the upgrade actually happened

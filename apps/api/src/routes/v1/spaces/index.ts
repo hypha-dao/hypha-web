@@ -84,7 +84,7 @@ export default async function spacesRoutes(app: FastifyInstance) {
               abi: daoSpaceFactoryImplementationAbi,
               functionName: 'getSpaceDetails',
               args: [id],
-            }) as const,
+            } as const),
         ),
       });
       const dirtyDelegatedSpaces = await Promise.all(

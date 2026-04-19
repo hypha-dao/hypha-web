@@ -396,8 +396,8 @@ export function messageFromRoomMessageEvent(
         typeof w.filename === 'string'
           ? w.filename
           : typeof w.body === 'string'
-            ? w.body
-            : '';
+          ? w.body
+          : '';
       const sp = w[HYPHA_SPOILER_FIELD] === true;
       return {
         msgtype: mt,

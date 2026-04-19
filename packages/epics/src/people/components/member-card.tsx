@@ -63,8 +63,8 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   const tooltipMessage = !isAuthenticated
     ? 'Please sign in to use this feature.'
     : !isMember
-      ? 'Please join this space to use this feature.'
-      : '';
+    ? 'Please join this space to use this feature.'
+    : '';
 
   const { events, isLoadingEvents } = useEvents({
     type: 'joinSpace',

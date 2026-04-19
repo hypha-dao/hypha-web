@@ -180,8 +180,9 @@ describe('DAOSpaceFactoryImplementation - Invite System', function () {
   });
 
   it('Should prevent creating multiple active invites within 24 hours', async function () {
-    const { voter1, daoSpaceFactory, spaceId } =
-      await loadFixture(createInviteSpace);
+    const { voter1, daoSpaceFactory, spaceId } = await loadFixture(
+      createInviteSpace,
+    );
 
     // Create first invite proposal
     await daoSpaceFactory.connect(voter1).joinSpace(spaceId);
@@ -241,8 +242,9 @@ describe('DAOSpaceFactoryImplementation - Invite System', function () {
   });
 
   it('Should enforce 24-hour cooldown between invites', async function () {
-    const { voter1, daoSpaceFactory, spaceId } =
-      await loadFixture(createInviteSpace);
+    const { voter1, daoSpaceFactory, spaceId } = await loadFixture(
+      createInviteSpace,
+    );
 
     // Create first invite proposal
     await daoSpaceFactory.connect(voter1).joinSpace(spaceId);
@@ -266,8 +268,9 @@ describe('DAOSpaceFactoryImplementation - Invite System', function () {
   });
 
   it('Should track invite timestamps correctly', async function () {
-    const { voter1, daoSpaceFactory, spaceId } =
-      await loadFixture(createInviteSpace);
+    const { voter1, daoSpaceFactory, spaceId } = await loadFixture(
+      createInviteSpace,
+    );
 
     const beforeTime = await time.latest();
 
@@ -286,8 +289,9 @@ describe('DAOSpaceFactoryImplementation - Invite System', function () {
   });
 
   it('Should allow different members to create invites simultaneously', async function () {
-    const { voter1, voter2, daoSpaceFactory, spaceId } =
-      await loadFixture(createInviteSpace);
+    const { voter1, voter2, daoSpaceFactory, spaceId } = await loadFixture(
+      createInviteSpace,
+    );
 
     // Both members create invite proposals
     await daoSpaceFactory.connect(voter1).joinSpace(spaceId);
@@ -319,8 +323,9 @@ describe('DAOSpaceFactoryImplementation - Invite System', function () {
   });
 
   it('Should prevent members who are already in the space from creating invites', async function () {
-    const { owner, daoSpaceFactory, spaceId } =
-      await loadFixture(createInviteSpace);
+    const { owner, daoSpaceFactory, spaceId } = await loadFixture(
+      createInviteSpace,
+    );
 
     // Owner is already a member (creator)
     expect(await daoSpaceFactory.isMember(spaceId, owner.address)).to.equal(

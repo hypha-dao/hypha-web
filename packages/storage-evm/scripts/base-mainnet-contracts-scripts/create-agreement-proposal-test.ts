@@ -488,8 +488,9 @@ async function testAgreementProposal(): Promise<void> {
       );
 
       // Check the proposal status
-      const proposalData =
-        await daoProposals.getProposalCore(agreementProposalId);
+      const proposalData = await daoProposals.getProposalCore(
+        agreementProposalId,
+      );
 
       console.log('Proposal status:');
       console.log(`- Executed: ${proposalData.executed}`);
@@ -592,8 +593,9 @@ async function testAgreementProposal(): Promise<void> {
 
       // Final status report
       console.log('\n==== FINAL STATUS ====');
-      const finalProposalData =
-        await daoProposals.getProposalCore(agreementProposalId);
+      const finalProposalData = await daoProposals.getProposalCore(
+        agreementProposalId,
+      );
       const finalHasProposal = await agreements.hasProposal(
         spaceId,
         proposalIdToAccept,

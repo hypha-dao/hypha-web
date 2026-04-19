@@ -372,7 +372,7 @@ function TimelineVoiceSlot({
 
   const voiceLabel = /^voice-message-\d+\.[^.]+$/i.test(media.filename ?? '')
     ? t('voiceMessage')
-    : (media.filename ?? t('voiceMessage'));
+    : media.filename ?? t('voiceMessage');
 
   if (!src) {
     return (
@@ -1150,8 +1150,8 @@ export function HumanChatPanelMessageBubble({
     currentUserId &&
     replyTo.sourceUserId &&
     replyTo.sourceUserId === currentUserId
-      ? (currentUserAvatarUrl ?? replyTo.authorAvatarUrl)
-      : (replyPerson?.avatarUrl ?? replyTo?.authorAvatarUrl);
+      ? currentUserAvatarUrl ?? replyTo.authorAvatarUrl
+      : replyPerson?.avatarUrl ?? replyTo?.authorAvatarUrl;
   const timestamp = message.timestamp
     ? formatTimestamp(message.timestamp, t)
     : undefined;

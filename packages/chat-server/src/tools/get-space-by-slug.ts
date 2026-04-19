@@ -50,14 +50,14 @@ export const getSpaceBySlugTool = {
           typeof space.memberCount === 'number'
             ? space.memberCount
             : Array.isArray(space.members)
-              ? space.members.length
-              : 0,
+            ? space.members.length
+            : 0,
         documentCount:
           typeof space.documentCount === 'number'
             ? space.documentCount
             : Array.isArray(space.documents)
-              ? space.documents.length
-              : 0,
+            ? space.documents.length
+            : 0,
         subspaceCount: Array.isArray(space.subspaces)
           ? space.subspaces.length
           : 0,

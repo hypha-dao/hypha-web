@@ -1,8 +1,9 @@
 import { ethers, upgrades } from 'hardhat';
 
 async function main(): Promise<void> {
-  const RegularSpaceToken =
-    await ethers.getContractFactory('RegularSpaceToken');
+  const RegularSpaceToken = await ethers.getContractFactory(
+    'RegularSpaceToken',
+  );
   console.log('Deploying RegularSpaceToken implementation...');
 
   const implementationAddress = await upgrades.deployImplementation(

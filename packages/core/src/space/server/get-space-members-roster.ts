@@ -134,11 +134,11 @@ export async function computeSpaceMemberEntries(
       err instanceof Error
         ? err.message
         : err &&
-            typeof err === 'object' &&
-            'shortMessage' in err &&
-            typeof (err as { shortMessage?: unknown }).shortMessage === 'string'
-          ? (err as { shortMessage: string }).shortMessage
-          : String(err);
+          typeof err === 'object' &&
+          'shortMessage' in err &&
+          typeof (err as { shortMessage?: unknown }).shortMessage === 'string'
+        ? (err as { shortMessage: string }).shortMessage
+        : String(err);
     if (msg.includes('rate limit') || msg.includes('429')) {
       throw err;
     }

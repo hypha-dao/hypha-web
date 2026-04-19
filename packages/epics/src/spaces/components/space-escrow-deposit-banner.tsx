@@ -239,10 +239,10 @@ export const SpaceEscrowDepositBanner = ({
   const actionLabel = isWaitingReceipt
     ? t('exchangeDepositProposalConfirming')
     : isCreatingDepositProposal
-      ? t('exchangeDepositProposalCreating')
-      : investment
-        ? 'Confirm Investment'
-        : t('exchangeDepositProposalCta');
+    ? t('exchangeDepositProposalCreating')
+    : investment
+    ? 'Confirm Investment'
+    : t('exchangeDepositProposalCta');
 
   const bannerTitle = investment
     ? 'Accept Investment'

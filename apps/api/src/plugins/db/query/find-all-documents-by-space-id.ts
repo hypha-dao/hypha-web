@@ -3,9 +3,8 @@ import { schema, spaces, documents, people, type Document } from '../schema';
 import type { DbConfig, PaginationParams, FilterParams } from './type';
 import { mapToDocument } from './map-to-document';
 
-export interface FindAllDocumentsBySpaceIdConfig extends DbConfig<
-  typeof schema
-> {
+export interface FindAllDocumentsBySpaceIdConfig
+  extends DbConfig<typeof schema> {
   pagination: PaginationParams<Document>;
   filter: FilterParams<Document>;
 }

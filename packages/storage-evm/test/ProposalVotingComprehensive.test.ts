@@ -185,16 +185,18 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
     );
 
     // Deploy RegularSpaceToken implementation
-    const RegularSpaceToken =
-      await ethers.getContractFactory('RegularSpaceToken');
+    const RegularSpaceToken = await ethers.getContractFactory(
+      'RegularSpaceToken',
+    );
     const regularSpaceTokenImpl = await RegularSpaceToken.deploy();
     await regularTokenFactory.setSpaceTokenImplementation(
       await regularSpaceTokenImpl.getAddress(),
     );
 
     // Deploy DecayingSpaceToken implementation
-    const DecayingSpaceToken =
-      await ethers.getContractFactory('DecayingSpaceToken');
+    const DecayingSpaceToken = await ethers.getContractFactory(
+      'DecayingSpaceToken',
+    );
     const decayingSpaceTokenImpl = await DecayingSpaceToken.deploy();
     await decayingTokenFactory.setDecayingTokenImplementation(
       await decayingSpaceTokenImpl.getAddress(),
@@ -1337,8 +1339,9 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         );
 
         // Verify that the default duration was set to 72 hours (contract default for q < 20)
-        const minDuration =
-          await daoProposals.spaceMinProposalDuration(spaceId);
+        const minDuration = await daoProposals.spaceMinProposalDuration(
+          spaceId,
+        );
         expect(minDuration).to.equal(259200); // 72 hours in seconds
 
         console.log('✅ Default minimum duration correctly set to 72 hours');
@@ -1396,8 +1399,9 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         );
 
         // Verify that the default duration was set to 72 hours (contract default for q < 20)
-        const minDuration =
-          await daoProposals.spaceMinProposalDuration(spaceId);
+        const minDuration = await daoProposals.spaceMinProposalDuration(
+          spaceId,
+        );
         expect(minDuration).to.equal(259200); // 72 hours in seconds
 
         console.log(

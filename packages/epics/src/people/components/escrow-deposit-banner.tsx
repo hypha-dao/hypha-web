@@ -210,26 +210,26 @@ export const EscrowDepositBanner = ({
   const actionLabel = isWaitingReceipt
     ? 'Confirming...'
     : isDepositing
-      ? needsApprove
-        ? 'Approving...'
-        : investment
-          ? 'Confirming...'
-          : 'Depositing...'
-      : isSubmittingDeposit
-        ? // Click registered but the SWR mutation hasn't yet flipped its own
-          // `isMutating` flag (e.g. precheck readContract still running). Show
-          // a generic in-flight label so the user gets immediate feedback.
-          investment
-          ? 'Confirming...'
-          : needsApprove
-            ? 'Approving...'
-            : 'Depositing...'
-        : investment
-          ? 'Confirm Investment'
-          : // Non-investment case == "Proposed Token Exchange". The CTA is the
-            // same label whether or not an ERC20 approve is needed first, so the
-            // user is not surprised by a label change after approval.
-            'Confirm Exchange';
+    ? needsApprove
+      ? 'Approving...'
+      : investment
+      ? 'Confirming...'
+      : 'Depositing...'
+    : isSubmittingDeposit
+    ? // Click registered but the SWR mutation hasn't yet flipped its own
+      // `isMutating` flag (e.g. precheck readContract still running). Show
+      // a generic in-flight label so the user gets immediate feedback.
+      investment
+      ? 'Confirming...'
+      : needsApprove
+      ? 'Approving...'
+      : 'Depositing...'
+    : investment
+    ? 'Confirm Investment'
+    : // Non-investment case == "Proposed Token Exchange". The CTA is the
+      // same label whether or not an ERC20 approve is needed first, so the
+      // user is not surprised by a label change after approval.
+      'Confirm Exchange';
 
   const refuseLabel = refuseInFlight ? 'Refusing...' : 'Refuse';
 

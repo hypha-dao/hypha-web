@@ -34,8 +34,9 @@ async function main() {
     votingPowerSourceId.toString(),
   );
 
-  const votingPowerAddress =
-    await directory.getVotingPowerSourceContract(votingPowerSourceId);
+  const votingPowerAddress = await directory.getVotingPowerSourceContract(
+    votingPowerSourceId,
+  );
   console.log('Voting power contract:', votingPowerAddress);
   console.log();
 

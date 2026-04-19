@@ -48,8 +48,8 @@ export const useDocumentsSection = ({
       total === 0
         ? 0
         : total <= firstPageSize
-          ? 1
-          : 1 + Math.ceil((total - firstPageSize) / pageSize);
+        ? 1
+        : 1 + Math.ceil((total - firstPageSize) / pageSize);
     const hasNextPage = pages < totalPages;
 
     return {

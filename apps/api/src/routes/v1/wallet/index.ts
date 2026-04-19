@@ -92,7 +92,7 @@ export default async function walletRoutes(app: FastifyInstance) {
     const formingResults = (await fetchingDbTokens).map(async (token) => {
       const normalizedAddress = token.address?.toLowerCase();
       const balance =
-        normalizedAddress != null ? (balances.get(normalizedAddress) ?? 0) : 0;
+        normalizedAddress != null ? balances.get(normalizedAddress) ?? 0 : 0;
 
       const base = {
         balance,

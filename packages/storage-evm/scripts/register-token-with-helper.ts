@@ -50,8 +50,9 @@ async function main() {
   console.log('TransferHelper address:', config.transferHelperAddress);
 
   // Get TransferHelper contract
-  const TransferHelperFactory =
-    await ethers.getContractFactory('TransferHelper');
+  const TransferHelperFactory = await ethers.getContractFactory(
+    'TransferHelper',
+  );
   const transferHelper = TransferHelperFactory.attach(
     config.transferHelperAddress,
   );

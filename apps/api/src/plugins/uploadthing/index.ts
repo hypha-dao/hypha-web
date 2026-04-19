@@ -8,7 +8,8 @@ import { createRouteHandler } from 'uploadthing/fastify';
 import { newUploadRouter, type uploadRouterParams } from './router';
 
 export interface UploadthingOptions
-  extends uploadRouterParams, FastifyPluginOptions {
+  extends uploadRouterParams,
+    FastifyPluginOptions {
   token: string;
 }
 

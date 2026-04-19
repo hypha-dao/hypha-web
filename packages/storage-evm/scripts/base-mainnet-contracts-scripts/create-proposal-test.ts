@@ -380,8 +380,9 @@ async function testProposalCreationAndExecution(): Promise<void> {
     console.log('Submitting proposal creation transaction...');
     try {
       // Try to manually estimate gas first to get more detailed error
-      const estimatedGas =
-        await daoProposals.createProposal.estimateGas(proposalParams);
+      const estimatedGas = await daoProposals.createProposal.estimateGas(
+        proposalParams,
+      );
       console.log(`Estimated gas: ${estimatedGas.toString()}`);
 
       // If gas estimation succeeds, proceed with the transaction

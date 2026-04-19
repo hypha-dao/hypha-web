@@ -116,14 +116,15 @@ test.describe('Coherence Screen', () => {
   // TODO: Add auth setup (cookie/JWT) and remove fixme.
   // ---------------------------------------------------------------------------
   test.describe('Signal Section (authenticated)', () => {
-    test.fixme('signal section label "Signals" is rendered', async ({
-      page,
-    }) => {
-      const coherencePage = new CoherencePage(page, SPACE_SLUG);
-      await coherencePage.openCoherencePage();
+    test.fixme(
+      'signal section label "Signals" is rendered',
+      async ({ page }) => {
+        const coherencePage = new CoherencePage(page, SPACE_SLUG);
+        await coherencePage.openCoherencePage();
 
-      await expect(coherencePage.signalsSectionHeading).toBeVisible();
-    });
+        await expect(coherencePage.signalsSectionHeading).toBeVisible();
+      },
+    );
 
     test.fixme('"New Signal" button is visible', async ({ page }) => {
       const coherencePage = new CoherencePage(page, SPACE_SLUG);
@@ -140,27 +141,30 @@ test.describe('Coherence Screen', () => {
       await expect(coherencePage.allFilterBadge).toBeVisible();
     });
 
-    test.fixme('all signal type filter options are rendered', async ({
-      page,
-    }) => {
-      const coherencePage = new CoherencePage(page, SPACE_SLUG);
-      await coherencePage.openCoherencePage();
+    test.fixme(
+      'all signal type filter options are rendered',
+      async ({ page }) => {
+        const coherencePage = new CoherencePage(page, SPACE_SLUG);
+        await coherencePage.openCoherencePage();
 
-      // Expected: All + 6 signal types = 7 filter options
-      const expectedTypes = [
-        'All',
-        'Opportunity',
-        'Risk',
-        'Tension',
-        'Insight',
-        'Trend',
-        'Proposal',
-      ];
+        // Expected: All + 6 signal types = 7 filter options
+        const expectedTypes = [
+          'All',
+          'Opportunity',
+          'Risk',
+          'Tension',
+          'Insight',
+          'Trend',
+          'Proposal',
+        ];
 
-      for (const typeName of expectedTypes) {
-        await expect(page.getByText(typeName, { exact: false })).toBeVisible();
-      }
-    });
+        for (const typeName of expectedTypes) {
+          await expect(
+            page.getByText(typeName, { exact: false }),
+          ).toBeVisible();
+        }
+      },
+    );
 
     test.fixme('search input is visible', async ({ page }) => {
       const coherencePage = new CoherencePage(page, SPACE_SLUG);
@@ -177,20 +181,21 @@ test.describe('Coherence Screen', () => {
       await expect(coherencePage.searchInput).toHaveValue('test search query');
     });
 
-    test.fixme('signal section renders empty state or cards', async ({
-      page,
-    }) => {
-      const coherencePage = new CoherencePage(page, SPACE_SLUG);
-      await coherencePage.openCoherencePage();
+    test.fixme(
+      'signal section renders empty state or cards',
+      async ({ page }) => {
+        const coherencePage = new CoherencePage(page, SPACE_SLUG);
+        await coherencePage.openCoherencePage();
 
-      const emptyState = page.getByText('List is empty', { exact: false });
-      const signalCards = page.locator('[data-testid="signal-card"]');
+        const emptyState = page.getByText('List is empty', { exact: false });
+        const signalCards = page.locator('[data-testid="signal-card"]');
 
-      const emptyVisible = await emptyState.isVisible();
-      const cardsCount = await signalCards.count();
+        const emptyVisible = await emptyState.isVisible();
+        const cardsCount = await signalCards.count();
 
-      expect(emptyVisible || cardsCount > 0).toBeTruthy();
-    });
+        expect(emptyVisible || cardsCount > 0).toBeTruthy();
+      },
+    );
   });
 
   // ---------------------------------------------------------------------------
@@ -210,68 +215,75 @@ test.describe('Coherence Screen', () => {
   // TODO: Add an auth fixture (JWT/cookie) and remove fixme.
   // ---------------------------------------------------------------------------
   test.describe('Create Signal Form', () => {
-    test.fixme('"New Signal" button navigates to aside form panel (requires auth)', async ({
-      page,
-    }) => {
-      // With auth: click "New Signal" → soft navigation to /coherence/new-signal
-      // → @tab shows coherence content, @aside renders CreateSignalForm in SidePanel
-      const coherencePage = new CoherencePage(page, SPACE_SLUG);
-      await coherencePage.openCoherencePage();
+    test.fixme(
+      '"New Signal" button navigates to aside form panel (requires auth)',
+      async ({ page }) => {
+        // With auth: click "New Signal" → soft navigation to /coherence/new-signal
+        // → @tab shows coherence content, @aside renders CreateSignalForm in SidePanel
+        const coherencePage = new CoherencePage(page, SPACE_SLUG);
+        await coherencePage.openCoherencePage();
 
-      await coherencePage.newSignalButton.click();
-      await expect(page).toHaveURL(new RegExp(`${COHERENCE_PATH}/new-signal`));
-    });
+        await coherencePage.newSignalButton.click();
+        await expect(page).toHaveURL(
+          new RegExp(`${COHERENCE_PATH}/new-signal`),
+        );
+      },
+    );
 
-    test.fixme('create-signal form is visible after clicking New Signal (requires auth)', async ({
-      page,
-    }) => {
-      // Form is rendered in the @aside SidePanel slot after soft navigation.
-      // Direct URL navigation (/coherence/new-signal) 404s — test via click.
-      const coherencePage = new CoherencePage(page, SPACE_SLUG);
-      await coherencePage.openCoherencePage();
+    test.fixme(
+      'create-signal form is visible after clicking New Signal (requires auth)',
+      async ({ page }) => {
+        // Form is rendered in the @aside SidePanel slot after soft navigation.
+        // Direct URL navigation (/coherence/new-signal) 404s — test via click.
+        const coherencePage = new CoherencePage(page, SPACE_SLUG);
+        await coherencePage.openCoherencePage();
 
-      await coherencePage.newSignalButton.click();
+        await coherencePage.newSignalButton.click();
 
-      // Form heading from CoherenceTab.creatingNewSignal i18n key
-      await expect(coherencePage.createSignalHeading).toBeVisible();
-    });
+        // Form heading from CoherenceTab.creatingNewSignal i18n key
+        await expect(coherencePage.createSignalHeading).toBeVisible();
+      },
+    );
 
-    test.fixme('create-signal form has type selection buttons (requires auth)', async ({
-      page,
-    }) => {
-      const coherencePage = new CoherencePage(page, SPACE_SLUG);
-      await coherencePage.openCoherencePage();
-      await coherencePage.newSignalButton.click();
+    test.fixme(
+      'create-signal form has type selection buttons (requires auth)',
+      async ({ page }) => {
+        const coherencePage = new CoherencePage(page, SPACE_SLUG);
+        await coherencePage.openCoherencePage();
+        await coherencePage.newSignalButton.click();
 
-      // COHERENCE_TYPE_OPTIONS renders CoherenceTypeButton for each type
-      const typeButtons = page.getByRole('button', {
-        name: /Opportunity|Risk|Tension|Insight|Trend|Proposal/i,
-      });
-      await expect(typeButtons.first()).toBeVisible();
-    });
+        // COHERENCE_TYPE_OPTIONS renders CoherenceTypeButton for each type
+        const typeButtons = page.getByRole('button', {
+          name: /Opportunity|Risk|Tension|Insight|Trend|Proposal/i,
+        });
+        await expect(typeButtons.first()).toBeVisible();
+      },
+    );
 
-    test.fixme('create-signal form has title input (requires auth)', async ({
-      page,
-    }) => {
-      const coherencePage = new CoherencePage(page, SPACE_SLUG);
-      await coherencePage.openCoherencePage();
-      await coherencePage.newSignalButton.click();
+    test.fixme(
+      'create-signal form has title input (requires auth)',
+      async ({ page }) => {
+        const coherencePage = new CoherencePage(page, SPACE_SLUG);
+        await coherencePage.openCoherencePage();
+        await coherencePage.newSignalButton.click();
 
-      // Signal title placeholder from CoherenceTab.signalTitle i18n key
-      const titleInput = page.getByPlaceholder('Signal title...');
-      await expect(titleInput).toBeVisible();
-    });
+        // Signal title placeholder from CoherenceTab.signalTitle i18n key
+        const titleInput = page.getByPlaceholder('Signal title...');
+        await expect(titleInput).toBeVisible();
+      },
+    );
 
-    test.fixme('create-signal form has publish button (requires auth)', async ({
-      page,
-    }) => {
-      const coherencePage = new CoherencePage(page, SPACE_SLUG);
-      await coherencePage.openCoherencePage();
-      await coherencePage.newSignalButton.click();
+    test.fixme(
+      'create-signal form has publish button (requires auth)',
+      async ({ page }) => {
+        const coherencePage = new CoherencePage(page, SPACE_SLUG);
+        await coherencePage.openCoherencePage();
+        await coherencePage.newSignalButton.click();
 
-      // Publish button from CoherenceTab.publish i18n key
-      const publishButton = page.getByRole('button', { name: /publish/i });
-      await expect(publishButton).toBeVisible();
-    });
+        // Publish button from CoherenceTab.publish i18n key
+        const publishButton = page.getByRole('button', { name: /publish/i });
+        await expect(publishButton).toBeVisible();
+      },
+    );
   });
 });

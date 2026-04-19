@@ -71,8 +71,9 @@ async function main(): Promise<void> {
     hyphaTokenAbi,
     provider,
   );
-  const isWhitelisted: boolean =
-    await hyphaToken.isMintTransferWhitelisted(addr);
+  const isWhitelisted: boolean = await hyphaToken.isMintTransferWhitelisted(
+    addr,
+  );
 
   console.log(
     JSON.stringify(

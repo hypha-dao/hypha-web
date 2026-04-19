@@ -360,16 +360,16 @@ async function main(): Promise<void> {
         tokenInfo.maxSupply === null
           ? 'N/A (Standard ERC20)'
           : tokenInfo.maxSupply === 0n
-            ? 'Unlimited'
-            : ethers.formatUnits(tokenInfo.maxSupply, tokenInfo.decimals),
+          ? 'Unlimited'
+          : ethers.formatUnits(tokenInfo.maxSupply, tokenInfo.decimals),
       );
       console.log(
         'Utilization:',
         tokenInfo.maxSupply === null
           ? 'N/A (Standard ERC20)'
           : tokenInfo.maxSupply === 0n
-            ? 'N/A (unlimited)'
-            : `${tokenInfo.utilization.toFixed(2)}%`,
+          ? 'N/A (unlimited)'
+          : `${tokenInfo.utilization.toFixed(2)}%`,
       );
       console.log('===============\n');
     } catch (error: any) {
@@ -429,8 +429,9 @@ async function main(): Promise<void> {
       currentSpaceId++
     ) {
       try {
-        const spaceDetails =
-          await daoSpaceFactory.getSpaceDetails(currentSpaceId);
+        const spaceDetails = await daoSpaceFactory.getSpaceDetails(
+          currentSpaceId,
+        );
 
         // Check if this is a valid space (has a creator address)
         if (spaceDetails.creator === ethers.ZeroAddress) {
@@ -477,19 +478,16 @@ async function main(): Promise<void> {
                 tokenInfo.maxSupply === null
                   ? 'N/A (Standard ERC20)'
                   : tokenInfo.maxSupply === 0n
-                    ? 'Unlimited'
-                    : ethers.formatUnits(
-                        tokenInfo.maxSupply,
-                        tokenInfo.decimals,
-                      ),
+                  ? 'Unlimited'
+                  : ethers.formatUnits(tokenInfo.maxSupply, tokenInfo.decimals),
               );
               console.log(
                 'Utilization:',
                 tokenInfo.maxSupply === null
                   ? 'N/A (Standard ERC20)'
                   : tokenInfo.maxSupply === 0n
-                    ? 'N/A (unlimited)'
-                    : `${tokenInfo.utilization.toFixed(2)}%`,
+                  ? 'N/A (unlimited)'
+                  : `${tokenInfo.utilization.toFixed(2)}%`,
               );
             } catch (error: any) {
               tokenErrors++;

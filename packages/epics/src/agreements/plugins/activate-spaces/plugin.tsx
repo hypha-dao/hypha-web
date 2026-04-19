@@ -57,7 +57,7 @@ export const ActivateSpacesPlugin = ({
   const { spaces: organisationSpaces, isLoading: isOrganisationLoading } =
     useOrganisationSpacesBySingleSlug(spaceSlug ?? '');
   const orgSpaces = React.useMemo(
-    () => (!isOrganisationLoading ? (organisationSpaces ?? []) : []),
+    () => (!isOrganisationLoading ? organisationSpaces ?? [] : []),
     [organisationSpaces, isOrganisationLoading],
   );
 

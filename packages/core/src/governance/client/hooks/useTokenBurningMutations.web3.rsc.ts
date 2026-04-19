@@ -41,8 +41,8 @@ const toTokenAmount = (amount: string) => {
   const canonicalAmount = normalizedAmount.startsWith('.')
     ? `0${normalizedAmount}`
     : normalizedAmount.endsWith('.')
-      ? `${normalizedAmount}0`
-      : normalizedAmount;
+    ? `${normalizedAmount}0`
+    : normalizedAmount;
 
   if (canonicalAmount.length === 0) {
     throw new Error('Enter an amount to continue.');

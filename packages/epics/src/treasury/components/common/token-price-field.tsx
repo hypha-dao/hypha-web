@@ -38,8 +38,8 @@ export const TokenPriceField = () => {
           draft !== null
             ? draft
             : field.value === undefined || field.value === null
-              ? ''
-              : String(field.value);
+            ? ''
+            : String(field.value);
 
         const commitFromText = (raw: string) => {
           const t = raw.trim().replace(',', '.');

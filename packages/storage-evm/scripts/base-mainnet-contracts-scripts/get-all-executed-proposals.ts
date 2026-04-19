@@ -444,8 +444,9 @@ async function getAllExecutedProposals(): Promise<void> {
         `Fetching details and voters for proposal ID: ${specificProposalId}`,
       );
       try {
-        const proposalDataRaw =
-          await daoProposals.getProposalCore(specificProposalId);
+        const proposalDataRaw = await daoProposals.getProposalCore(
+          specificProposalId,
+        );
         const proposalData = processProposalData(proposalDataRaw);
         await displayProposalInfo(
           specificProposalId,
@@ -465,8 +466,9 @@ async function getAllExecutedProposals(): Promise<void> {
     if (spaceId !== null) {
       // Get executed proposals for a specific space
       console.log(`Fetching executed proposals for space ID: ${spaceId}`);
-      executedProposals =
-        await daoProposals.getExecutedProposalsBySpace(spaceId);
+      executedProposals = await daoProposals.getExecutedProposalsBySpace(
+        spaceId,
+      );
       console.log(
         `\nFound ${executedProposals.length} executed proposals for space ${spaceId}:`,
       );
@@ -499,8 +501,9 @@ async function getAllExecutedProposals(): Promise<void> {
       for (let i = 0; i < executedProposals.length; i++) {
         const proposalId = Number(executedProposals[i]);
         try {
-          const proposalDataRaw =
-            await daoProposals.getProposalCore(proposalId);
+          const proposalDataRaw = await daoProposals.getProposalCore(
+            proposalId,
+          );
           const proposalData = processProposalData(proposalDataRaw);
           const votersForThisProposal = await displayProposalInfo(
             proposalId,

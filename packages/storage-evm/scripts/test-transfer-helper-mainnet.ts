@@ -107,8 +107,9 @@ async function main() {
   }
 
   // Get contracts
-  const TransferHelperFactory =
-    await ethers.getContractFactory('TransferHelper');
+  const TransferHelperFactory = await ethers.getContractFactory(
+    'TransferHelper',
+  );
   const transferHelper = TransferHelperFactory.attach(
     config.transferHelperAddress,
   );

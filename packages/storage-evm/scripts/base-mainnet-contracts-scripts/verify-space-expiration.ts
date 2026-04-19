@@ -160,8 +160,9 @@ async function main(): Promise<void> {
   // --- Logic to verify expiration date ---
 
   // 1. Get current expiration date
-  const currentExpiryTimestamp =
-    await spacePaymentTracker.getSpaceExpiryTime(spaceId);
+  const currentExpiryTimestamp = await spacePaymentTracker.getSpaceExpiryTime(
+    spaceId,
+  );
   const currentExpiryDate = new Date(Number(currentExpiryTimestamp) * 1000);
   console.log(
     `Current on-chain expiration date: ${currentExpiryDate.toUTCString()}`,
@@ -194,8 +195,9 @@ async function main(): Promise<void> {
 
     // --- Verify new expiration date ---
     console.log('\n--- VERIFYING NEW EXPIRATION ---');
-    const newExpiryTimestamp =
-      await spacePaymentTracker.getSpaceExpiryTime(spaceId);
+    const newExpiryTimestamp = await spacePaymentTracker.getSpaceExpiryTime(
+      spaceId,
+    );
     const newExpiryDate = new Date(Number(newExpiryTimestamp) * 1000);
 
     console.log(`Old expiration date: ${currentExpiryDate.toUTCString()}`);

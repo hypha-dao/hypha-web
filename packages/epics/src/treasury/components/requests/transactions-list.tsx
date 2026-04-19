@@ -100,7 +100,7 @@ export const TransactionsList: FC<TransactionsListProps> = ({
           !!escrowLower && counterpartyAddress?.toLowerCase() === escrowLower;
         const vaultDisplayName = matchedVault
           ? `${matchedVault.tokenSymbol} Backing Vault`
-          : (singleVaultName ?? 'Token Backing Vault');
+          : singleVaultName ?? 'Token Backing Vault';
 
         if (isEscrowCounterparty && !transfer.space?.title) {
           return (

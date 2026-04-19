@@ -326,8 +326,9 @@ export const useJoinSpaceProposalHandler = ({
                 let createdProposalId: number | null = null;
 
                 if (txHash) {
-                  createdProposalId =
-                    await getCreatedProposalIdFromReceipt(txHash);
+                  createdProposalId = await getCreatedProposalIdFromReceipt(
+                    txHash,
+                  );
                 }
 
                 if (!createdProposalId) {

@@ -572,8 +572,9 @@ async function testOwnershipTokenCreationAndMinting(): Promise<void> {
 
     // Check if deploy proposal was executed
     console.log('Checking deploy proposal status...');
-    const deployProposalData =
-      await daoProposals.getProposalCore(deployProposalId);
+    const deployProposalData = await daoProposals.getProposalCore(
+      deployProposalId,
+    );
 
     if (deployProposalData.executed) {
       console.log('✅ Deploy proposal was executed!');

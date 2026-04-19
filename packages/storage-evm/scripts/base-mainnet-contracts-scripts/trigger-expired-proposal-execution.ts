@@ -210,8 +210,9 @@ async function findAndTriggerProposal(): Promise<void> {
 
   try {
     console.log('Fetching latest proposal ID...');
-    const latestProposalId =
-      await getLatestProposalIdWithFallback(daoProposals);
+    const latestProposalId = await getLatestProposalIdWithFallback(
+      daoProposals,
+    );
     console.log(`Latest proposal ID: ${latestProposalId}`);
 
     if (latestProposalId === 0) {

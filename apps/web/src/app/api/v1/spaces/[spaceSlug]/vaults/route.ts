@@ -408,7 +408,7 @@ export async function GET(
       const redemptionPriceResult = redemptionPriceResults[vaultIdx];
       const redemptionPriceRaw =
         redemptionPriceResult?.status === 'success'
-          ? (redemptionPriceResult.result?.[0] ?? 0n)
+          ? redemptionPriceResult.result?.[0] ?? 0n
           : 0n;
       const redemptionPrice =
         Number(redemptionPriceRaw) > 0
@@ -421,7 +421,7 @@ export async function GET(
       const maxRedemptionResult = maxRedemptionResults[vaultIdx];
       const maxRedemptionBps =
         maxRedemptionResult?.status === 'success'
-          ? (maxRedemptionResult.result?.[0] ?? 0n)
+          ? maxRedemptionResult.result?.[0] ?? 0n
           : 0n;
       const maxRedemptionPeriodDays =
         maxRedemptionResult?.status === 'success'

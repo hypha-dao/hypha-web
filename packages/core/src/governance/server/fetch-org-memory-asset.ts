@@ -193,8 +193,9 @@ async function resolveMatrixAccessToken(
   const sessionReqUrl = requestUrlForSessionMatrix?.trim();
   if (!sessionAuth || !sessionReqUrl) return null;
 
-  const { resolveUserMatrixAccessTokenForOrgMemory } =
-    await import('./resolve-user-matrix-access-token-for-org-memory');
+  const { resolveUserMatrixAccessTokenForOrgMemory } = await import(
+    './resolve-user-matrix-access-token-for-org-memory'
+  );
   const resolved = await resolveUserMatrixAccessTokenForOrgMemory(
     sessionAuth,
     sessionReqUrl,

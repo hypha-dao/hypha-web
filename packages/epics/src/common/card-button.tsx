@@ -107,8 +107,7 @@ const cardButtonVariants = cva(
 );
 
 export interface CardButtonProps
-  extends
-    React.HTMLAttributes<HTMLDivElement>,
+  extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof cardButtonVariants> {
   title?: string;
   description?: string;

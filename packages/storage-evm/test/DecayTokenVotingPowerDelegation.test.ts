@@ -104,8 +104,9 @@ describe('Decay Token Voting Power with Delegation - Comprehensive Tests', funct
     );
 
     // Deploy DecayingTokenFactory
-    const DecayingSpaceToken =
-      await ethers.getContractFactory('DecayingSpaceToken');
+    const DecayingSpaceToken = await ethers.getContractFactory(
+      'DecayingSpaceToken',
+    );
     const decayingTokenImpl = await DecayingSpaceToken.deploy();
 
     const DecayingTokenFactory = await ethers.getContractFactory(
@@ -268,8 +269,9 @@ describe('Decay Token Voting Power with Delegation - Comprehensive Tests', funct
       .setSpaceToken(spaceId, tokenAddress);
 
     // Get token contract instance
-    const DecayingSpaceToken =
-      await ethers.getContractFactory('DecayingSpaceToken');
+    const DecayingSpaceToken = await ethers.getContractFactory(
+      'DecayingSpaceToken',
+    );
     const token = DecayingSpaceToken.attach(tokenAddress);
 
     // Mint tokens to members
@@ -332,8 +334,9 @@ describe('Decay Token Voting Power with Delegation - Comprehensive Tests', funct
       );
       expect(member0Power).to.equal(INITIAL_TOKEN_AMOUNT);
 
-      const totalPower =
-        await decayTokenVotingPower.getTotalVotingPower(spaceId);
+      const totalPower = await decayTokenVotingPower.getTotalVotingPower(
+        spaceId,
+      );
       expect(totalPower).to.equal(INITIAL_TOKEN_AMOUNT * 4n); // owner + 3 members
 
       console.log('✅ Initial voting power calculated correctly');
@@ -485,15 +488,17 @@ describe('Decay Token Voting Power with Delegation - Comprehensive Tests', funct
         decayInterval: 3600,
       });
 
-      const initialTotal =
-        await decayTokenVotingPower.getTotalVotingPower(spaceId);
+      const initialTotal = await decayTokenVotingPower.getTotalVotingPower(
+        spaceId,
+      );
       expect(initialTotal).to.equal(INITIAL_TOKEN_AMOUNT * 4n); // 4 members
 
       // Fast forward 1 hour
       await time.increase(3600);
 
-      const decayedTotal =
-        await decayTokenVotingPower.getTotalVotingPower(spaceId);
+      const decayedTotal = await decayTokenVotingPower.getTotalVotingPower(
+        spaceId,
+      );
       const expectedTotal = (INITIAL_TOKEN_AMOUNT * 4n * 9800n) / 10000n; // 98% of total
 
       expect(decayedTotal).to.equal(expectedTotal);

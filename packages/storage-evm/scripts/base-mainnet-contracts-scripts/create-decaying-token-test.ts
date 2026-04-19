@@ -516,8 +516,9 @@ async function testDecayingTokenCreationAndVoting(): Promise<void> {
 
     // Check if deploy proposal was executed
     console.log('Checking deploy proposal status...');
-    const deployProposalData =
-      await daoProposals.getProposalCore(deployProposalId);
+    const deployProposalData = await daoProposals.getProposalCore(
+      deployProposalId,
+    );
 
     if (deployProposalData.executed) {
       console.log('✅ Deploy proposal was executed!');
@@ -901,8 +902,9 @@ async function testDecayingTokenCreationAndVoting(): Promise<void> {
 
     // Step 13: Check second mint proposal status
     console.log('\n=== Step 13: Checking second mint proposal status ===');
-    const secondMintProposalData =
-      await daoProposals.getProposalCore(secondMintProposalId);
+    const secondMintProposalData = await daoProposals.getProposalCore(
+      secondMintProposalId,
+    );
 
     console.log('Second mint proposal data:');
     console.log(`- Space ID: ${secondMintProposalData.spaceId}`);
