@@ -72,7 +72,7 @@ export function HumanChatPanelTabs({
   };
 
   return (
-    <div className="flex items-center gap-2 border-b border-border bg-background-2 px-4 py-2">
+    <div className="flex items-center gap-2 border-b border-border/60 bg-transparent px-4 py-2">
       <div
         role="tablist"
         className="flex min-w-0 flex-1 flex-wrap items-center gap-1"
@@ -102,10 +102,10 @@ export function HumanChatPanelTabs({
             onClick={() => onTabChange(tab.key)}
             onKeyDown={(e) => handleKeyDown(e, index)}
             className={cn(
-              'rounded-full px-3 py-1 text-xs font-medium transition-colors',
+              'rounded-full px-3 py-1 text-xs font-medium transition-colors duration-150',
               activeTab === tab.key
-                ? 'border border-border bg-secondary text-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                ? 'border border-accent-8 bg-accent-3 text-accent-12 shadow-sm ring-1 ring-inset ring-accent-9/20 dark:bg-accent-4/90 dark:text-accent-12'
+                : 'border border-transparent text-muted-foreground hover:border-border/70 hover:bg-muted/80 hover:text-foreground',
             )}
           >
             <span className="inline-flex items-center gap-1.5">
@@ -113,7 +113,7 @@ export function HumanChatPanelTabs({
               {tab.key === 'chat' && chatBadgeLabel != null && (
                 <span
                   aria-hidden
-                  className="inline-flex min-h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold leading-none text-primary-foreground tabular-nums"
+                  className="inline-flex min-h-[18px] min-w-[18px] items-center justify-center rounded-full border border-accent-9/35 bg-accent-9 px-1.5 text-[10px] font-semibold leading-none text-accent-contrast tabular-nums shadow-sm"
                 >
                   {chatBadgeLabel}
                 </span>
@@ -121,7 +121,7 @@ export function HumanChatPanelTabs({
               {tab.key === 'mentions' && mentionBadgeLabel != null && (
                 <span
                   aria-hidden
-                  className="inline-flex min-h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold leading-none text-primary-foreground tabular-nums"
+                  className="inline-flex min-h-[18px] min-w-[18px] items-center justify-center rounded-full border border-accent-9/35 bg-accent-9 px-1.5 text-[10px] font-semibold leading-none text-accent-contrast tabular-nums shadow-sm"
                 >
                   {mentionBadgeLabel}
                 </span>
