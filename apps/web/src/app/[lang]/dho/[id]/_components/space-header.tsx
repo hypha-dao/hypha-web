@@ -25,6 +25,10 @@ const PURPOSE_MAX_CHARS = 300;
 /** Left inset for text so it never sits under the circular avatar column */
 const INSET_CLEAR_AVATAR = 'pl-[152px] sm:pl-[164px]';
 
+/** Option D: purpose wraps in a left column; right side of banner stays visible for lead art */
+const PURPOSE_WRAP =
+  'w-full min-w-0 max-w-full sm:max-w-[min(28rem,92%)] md:max-w-[min(30rem,50%)] lg:max-w-[min(34rem,48%)]';
+
 export type SpaceHeaderProps = {
   lang: Locale;
   daoSlug: string;
@@ -123,8 +127,8 @@ export async function SpaceHeader({
               </div>
             </div>
 
-            <div className="flex min-h-0 flex-1 flex-col justify-center py-3 sm:py-4">
-              <div className="w-full min-w-0 space-y-1.5">
+            <div className="flex min-h-0 flex-1 flex-col items-start justify-center py-3 sm:py-4">
+              <div className={cn('space-y-1.5', PURPOSE_WRAP)}>
                 <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-white/60 sm:text-[11px]">
                   {tSpaces('purpose')}
                 </div>
