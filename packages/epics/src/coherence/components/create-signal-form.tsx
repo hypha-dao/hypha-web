@@ -17,7 +17,6 @@ import {
   MultiSelect,
   RequirementMark,
   RichTextEditor,
-  Separator,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
@@ -273,7 +272,7 @@ export const CreateSignalForm = ({
           className="flex flex-col gap-0"
         >
           {/* Sticky like proposal aside: header stays visible while the modal body scrolls */}
-          <div className="sticky top-0 z-30 -mx-4 border-b border-border/80 bg-background-2 px-4 pb-4 pt-0 shadow-[0_1px_0_rgba(15,23,42,0.06)] supports-[backdrop-filter]:bg-background-2/95 supports-[backdrop-filter]:backdrop-blur-sm dark:border-border/60 dark:shadow-[0_1px_0_rgba(0,0,0,0.35)] lg:-mx-7 lg:px-7">
+          <div className="sticky top-0 z-30 -mx-4 bg-background-2 px-4 pb-4 pt-0 supports-[backdrop-filter]:bg-background-2/95 supports-[backdrop-filter]:backdrop-blur-sm lg:-mx-7 lg:px-7">
             <div className="flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-2">
               <div className="flex flex-grow gap-3">
                 <PersonAvatar
@@ -400,10 +399,9 @@ export const CreateSignalForm = ({
                 </div>
               </div>
             </div>
-            <Separator className="mt-4 bg-border/70" />
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col gap-5 pt-4">
+          <div className="flex min-h-0 flex-1 flex-col gap-5 pt-5">
             <FormField
               control={form.control}
               name="type"
