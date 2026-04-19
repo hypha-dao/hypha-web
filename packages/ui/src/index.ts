@@ -4,6 +4,8 @@ export * from './molecules';
 export * from './organisms';
 export * from './theme';
 
+export * from './context/aside-overlay-layout';
+
 export * from './upload/add-attachment';
 export * from './upload/attachments-list';
 export * from './upload/avatar';
