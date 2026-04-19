@@ -65,6 +65,10 @@ const schemaCreateAgreementForm =
 
 export type CreateAgreementFormData = z.infer<typeof schemaCreateAgreementForm>;
 
+type AttachmentListItem = NonNullable<
+  CreateAgreementFormData['attachments']
+>[number];
+
 export type CreateAgreementFormProps = {
   creator?: Creator;
   isLoading?: boolean;
@@ -600,7 +604,10 @@ export function CreateAgreementBaseFields({
               const newFiles = Array.isArray(fieldValue)
                 ? fieldValue.filter((item) => item instanceof File)
                 : [];
-              const allAttachments = [...existingAttachments, ...newFiles];
+              const mergedAttachments: AttachmentListItem[] = [
+                ...existingAttachments,
+                ...newFiles,
+              ];
 
               return (
                 <FormItem className="mt-6">
@@ -613,7 +620,7 @@ export function CreateAgreementBaseFields({
                         field.onChange(files);
                         form.setValue(
                           'attachments',
-                          [...existingAttachments, ...files] as any,
+                          [...existingAttachments, ...files],
                           { shouldValidate: false },
                         );
                       }}
@@ -621,12 +628,14 @@ export function CreateAgreementBaseFields({
                         setExistingAttachments(updated);
                         form.setValue(
                           'attachments',
-                          [...updated, ...newFiles] as any,
+                          [...updated, ...newFiles],
                           { shouldValidate: false },
                         );
                       }}
                       value={
-                        allAttachments.length > 0 ? allAttachments : undefined
+                        mergedAttachments.length > 0
+                          ? mergedAttachments
+                          : undefined
                       }
                       defaultAttachments={
                         existingAttachments.length > 0

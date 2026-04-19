@@ -21,6 +21,7 @@
     "@hypha-platform/notifications": "workspace:*",
     "@hypha-platform/ui": "workspace:*",
     "@hypha-platform/ui-utils": "workspace:*",
+    "@radix-ui/react-dialog": "^1.1.15",
     "ai": "^6.0.105",
     "date-fns": "^4.1.0",
     "emoji-mart": "^5.6.0",

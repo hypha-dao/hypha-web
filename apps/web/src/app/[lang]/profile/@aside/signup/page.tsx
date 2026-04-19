@@ -10,6 +10,7 @@ import { useTranslations } from 'next-intl';
 
 export default function SignupPage() {
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const tProfileSignup = useTranslations('Profile.signup');
   const { createProfile, isCreating, error } = useCreateProfile();
   const { user, isLoading } = useAuthentication();
   const { lang } = useParams();
@@ -46,7 +47,7 @@ export default function SignupPage() {
       keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       fullHeight={true}
       isLoading={isLoading || !user?.wallet?.address}
-      message={<span>Loading...</span>}
+      message={<span>{tProfileSignup('loading')}</span>}
     >
       <ProposalOverlayShell>
         <SignupPanel
