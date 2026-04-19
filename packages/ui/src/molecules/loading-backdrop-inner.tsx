@@ -7,19 +7,27 @@ import { cn } from '@hypha-platform/ui-utils';
 import { useAsideOverlayLayout } from '../context/aside-overlay-layout';
 import { Progress } from '../progress';
 
-export type LoadingBackdropInnerProps = {
+type LoadingBackdropInnerPropsBase = {
   children: React.ReactElement;
   isLoading?: boolean;
   progress?: number;
   className?: string;
   message?: React.ReactElement;
-  /** When true, pass localized `keepWindowOpenMessage` (no default copy in this component). */
-  showKeepWindowOpenMessage?: boolean;
-  keepWindowOpenMessage?: React.ReactNode;
   fullHeight?: boolean;
   /** `auto`: follow Aside overlay context (modal shell vs side panel). */
   fullHeightVariant?: 'auto' | 'docked-panel' | 'responsive-modal-shell';
 };
+
+/** When `showKeepWindowOpenMessage` is true, localized `keepWindowOpenMessage` is required (no English default in this component). */
+export type LoadingBackdropInnerProps =
+  | (LoadingBackdropInnerPropsBase & {
+      showKeepWindowOpenMessage?: false;
+      keepWindowOpenMessage?: undefined;
+    })
+  | (LoadingBackdropInnerPropsBase & {
+      showKeepWindowOpenMessage: true;
+      keepWindowOpenMessage: React.ReactNode;
+    });
 
 /** Legacy card — docked side panel & inline overlays (unchanged layout). */
 function ProgressCard({
