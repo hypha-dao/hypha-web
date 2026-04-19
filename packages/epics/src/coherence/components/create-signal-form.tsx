@@ -318,7 +318,7 @@ export const CreateSignalForm = ({
                       <FormControl>
                         <Input
                           placeholder={t('signalTitle')}
-                          className="rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground"
+                          className="min-h-10 bg-background py-2.5 text-sm text-foreground shadow-sm placeholder:text-muted-foreground"
                           disabled={isCreatingCoherence}
                           rightIcon={<RequirementMark className="text-4" />}
                           {...field}
