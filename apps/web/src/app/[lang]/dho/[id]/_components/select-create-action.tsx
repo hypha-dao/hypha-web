@@ -5,12 +5,12 @@ import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import {
   FileText,
-  Landmark,
   Package,
   PiggyBank,
   Rocket,
   TrendingUp,
   Wallet,
+  Workflow,
 } from 'lucide-react';
 
 type SelectCreateActionProps = {
@@ -75,7 +75,7 @@ export const SelectCreateAction = ({
       title: t('actions.deployFunds.title'),
       description: t('actions.deployFunds.description'),
       href: 'agreements/create/deploy-funds',
-      icon: <Landmark className="size-[22px] shrink-0" strokeWidth={1.75} />,
+      icon: <Workflow className="size-[22px] shrink-0" strokeWidth={1.75} />,
       disabled: isPaymentExpired,
     },
     {
