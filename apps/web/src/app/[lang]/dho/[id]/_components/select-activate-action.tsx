@@ -6,7 +6,7 @@ import { SelectAction } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { isAbsoluteUrl } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
-import { Banknote, Rocket, Wallet } from 'lucide-react';
+import { Rocket, Sparkles, Wallet } from 'lucide-react';
 import { useFundWallet } from '@hypha-platform/epics';
 import { useParams } from 'next/navigation';
 import {
@@ -74,7 +74,7 @@ export const SelectActivateAction = ({
       description: t('actions.buyHyphaTokensRewards.description'),
       href: 'create/buy-hypha-tokens',
       baseTab: 'agreements',
-      icon: <Banknote className="size-[22px] shrink-0" strokeWidth={1.75} />,
+      icon: <Sparkles className="size-[22px] shrink-0" strokeWidth={1.75} />,
     },
     {
       title: t('actions.activateSpaces.title'),
