@@ -21,6 +21,7 @@ import {
 const ZERO_ADDRESS =
   '0x0000000000000000000000000000000000000000' as `0x${string}`;
 
+/** Strict `0x` + 40 hex + non–zero-address guard for DB + on-chain treasury sources. */
 function normalizeTreasuryAddress(
   candidate: string | null | undefined,
 ): `0x${string}` | undefined {
