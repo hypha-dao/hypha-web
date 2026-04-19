@@ -22,12 +22,12 @@ import {
   Leaf,
   Link2,
   LogOut,
-  PenLine,
   Puzzle,
   Rocket,
   Sparkles,
   Vault,
   Wallet,
+  Workflow,
   Zap,
 } from 'lucide-react';
 
@@ -143,7 +143,7 @@ export const SelectSettingsAction = ({
       title: t('actions.updateIssuedToken.title'),
       description: t('actions.updateIssuedToken.description'),
       href: 'create/update-issued-token',
-      icon: <PenLine className="size-[22px] shrink-0" strokeWidth={1.75} />,
+      icon: <Workflow className="size-[22px] shrink-0" strokeWidth={1.75} />,
       disabled: isPaymentExpired,
     },
     {
