@@ -30,11 +30,6 @@ export default async function BuySpaceTokensProfile(props: PageProps) {
           backUrl={`/${lang}/profile/${personSlug}/actions`}
           backLabel={t('actions.buySpaceTokens.backLabel')}
         />
-        <div className="flex gap-5 justify-between">
-          <h2 className="text-4 text-secondary-foreground justify-start items-center">
-            {t('actions.buySpaceTokens.title')}
-          </h2>
-        </div>
         <span className="text-2 text-neutral-11">
           {t('actions.buySpaceTokens.description')}
         </span>

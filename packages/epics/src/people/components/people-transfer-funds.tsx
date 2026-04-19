@@ -67,11 +67,6 @@ export const ProfileTransferFunds = ({
           backUrl={`/${lang}/profile/${personSlug}/actions`}
           backLabel={tActions('backToActions')}
         />
-        <div className="flex gap-5 justify-between">
-          <h2 className="text-4 text-secondary-foreground justify-start items-center">
-            {tActions('transferFunds.title')}
-          </h2>
-        </div>
         <span className="text-2 text-neutral-11">
           {tActions('transferFunds.content')}
         </span>
