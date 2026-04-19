@@ -27,7 +27,7 @@ import {
 import { useSpaceMember } from '../../spaces';
 import { formatDuration } from '@hypha-platform/ui-utils';
 import { useTheme } from 'next-themes';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
@@ -147,7 +147,7 @@ export const FormVoting = ({
 }) => {
   const tCommon = useTranslations('Common');
   const tProposalDetails = useTranslations('ProposalDetails');
-  const { myVote } = useMyVote(documentSlug);
+  const { myVote, mutate: mutateMyVote } = useMyVote(documentSlug);
   const { isMember } = useSpaceMember({ spaceId: web3SpaceId as number });
   const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId as number });
   const { theme } = useTheme();
@@ -162,6 +162,15 @@ export const FormVoting = ({
   const { deleteAgreementBySlug } = useAgreementMutationsWeb2Rsc(jwt);
 
   const [localVote, setLocalVote] = useState<'no' | 'yes' | null>(null);
+  const wasVotingRef = useRef(false);
+
+  useEffect(() => {
+    const voting = Boolean(isVoting);
+    if (wasVotingRef.current && !voting && mutateMyVote) {
+      void mutateMyVote();
+    }
+    wasVotingRef.current = voting;
+  }, [isVoting, mutateMyVote]);
 
   const isCreator = Boolean(
     proposalCreator &&
@@ -415,8 +424,15 @@ export const FormVoting = ({
   const showVotedMessage = myVote || localVote;
   const voteText = myVote || localVote;
 
-  const isRejectDisabled = isDisabled || voteText === 'no';
-  const isAcceptDisabled = isDisabled || voteText === 'yes';
+  const votingInProgress =
+    Boolean(isVoting) &&
+    proposalStatus === 'onVoting' &&
+    !executed &&
+    !expired &&
+    !isPast(new Date(endTime));
+
+  const isRejectDisabled = isDisabled || votingInProgress || voteText === 'no';
+  const isAcceptDisabled = isDisabled || votingInProgress || voteText === 'yes';
 
   return (
     <div className="flex flex-col gap-7 text-neutral-11">
@@ -424,7 +440,7 @@ export const FormVoting = ({
       <div className="flex flex-col gap-6">
         <Skeleton
           width="100%"
-          height="28px"
+          height="48px"
           loading={isLoading}
           className="rounded-lg"
         >
@@ -440,7 +456,7 @@ export const FormVoting = ({
         </Skeleton>
         <Skeleton
           width="100%"
-          height="28px"
+          height="48px"
           loading={isLoading}
           className="rounded-lg"
         >
@@ -455,6 +471,17 @@ export const FormVoting = ({
           />
         </Skeleton>
       </div>
+      {votingInProgress ? (
+        <div
+          className="rounded-lg border border-accent-6/40 bg-accent-surface/80 px-4 py-3 text-sm text-foreground backdrop-blur-sm"
+          role="status"
+          aria-live="polite"
+        >
+          <span className="font-medium">
+            {tProposalDetails('voting.submittingVote')}
+          </span>
+        </div>
+      ) : null}
       <div className="flex items-end justify-between">
         <Skeleton
           width="100%"
