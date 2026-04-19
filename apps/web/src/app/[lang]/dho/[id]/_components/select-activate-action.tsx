@@ -6,11 +6,7 @@ import { SelectAction } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { isAbsoluteUrl } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
-import {
-  ArrowDownIcon,
-  ArrowLeftIcon,
-  ArrowRightIcon,
-} from '@radix-ui/react-icons';
+import { Banknote, Rocket, Wallet } from 'lucide-react';
 import { useFundWallet } from '@hypha-platform/epics';
 import { useParams } from 'next/navigation';
 import {
@@ -65,7 +61,7 @@ export const SelectActivateAction = ({
     {
       title: t('actions.depositFunds.title'),
       description: t('actions.depositFunds.description'),
-      icon: <ArrowDownIcon />,
+      icon: <Wallet className="size-[22px] shrink-0" strokeWidth={1.75} />,
       baseTab: 'treasury',
       onAction: () => {
         if (!treasuryAddress) return;
@@ -78,14 +74,14 @@ export const SelectActivateAction = ({
       description: t('actions.buyHyphaTokensRewards.description'),
       href: 'create/buy-hypha-tokens',
       baseTab: 'agreements',
-      icon: <ArrowLeftIcon />,
+      icon: <Banknote className="size-[22px] shrink-0" strokeWidth={1.75} />,
     },
     {
       title: t('actions.activateSpaces.title'),
       description: t('actions.activateSpaces.description'),
       href: 'create/activate-spaces',
       baseTab: 'agreements',
-      icon: <ArrowRightIcon />,
+      icon: <Rocket className="size-[22px] shrink-0" strokeWidth={1.75} />,
     },
   ];
 
