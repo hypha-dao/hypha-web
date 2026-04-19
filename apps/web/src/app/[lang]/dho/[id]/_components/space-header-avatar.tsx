@@ -67,7 +67,7 @@ export function SpaceHeaderAvatar({ src }: SpaceHeaderAvatarProps) {
         <Avatar
           className={cn(
             'h-[128px] w-[128px] rounded-full',
-            'shadow-[0_22px_52px_-14px_rgba(0,0,0,0.88)] ring-[4px] ring-neutral-2 dark:ring-neutral-3',
+            'shadow-[0_22px_52px_-14px_rgba(0,0,0,0.88)]',
           )}
         >
           <AvatarImage src={src} alt="" aria-hidden className="object-cover" />
