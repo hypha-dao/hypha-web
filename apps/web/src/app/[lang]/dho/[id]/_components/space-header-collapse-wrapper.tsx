@@ -45,7 +45,7 @@ function MorphCompactBarPortal({
     () => smoothstep(0.12, 0.48, progress),
     [progress],
   );
-  const barLift = useMemo(() => (1 - progress) * 18, [progress]);
+  const barLift = useMemo(() => (1 - progress) * 6, [progress]);
 
   if (!mounted || progress <= 0.02) return null;
 
@@ -61,7 +61,7 @@ function MorphCompactBarPortal({
         transform: reducedMotion ? undefined : `translateY(${barLift}px)`,
         transition: reducedMotion
           ? undefined
-          : 'opacity 0.22s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1)',
+          : 'opacity 0.18s ease-out, transform 0.2s ease-out',
         pointerEvents: progress > 0.16 ? 'auto' : 'none',
       }}
       role="region"
@@ -149,7 +149,7 @@ export function SpaceHeaderCollapseWrapper({
       />
 
       {nestedSlot ? (
-        <div className="mb-3 flex flex-wrap justify-end gap-x-4 gap-y-2">
+        <div className="mb-1 flex flex-wrap justify-end gap-x-4 gap-y-2 sm:mb-2">
           {nestedSlot}
         </div>
       ) : null}

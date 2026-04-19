@@ -60,7 +60,7 @@ export function NavigationTabs({
   ];
 
   return (
-    <Tabs value={activeTab} className="w-full mt-16 overflow-hidden">
+    <Tabs value={activeTab} className="w-full mt-7 overflow-hidden md:mt-8">
       <ScrollArea>
         <div className="w-full relative h-10 mb-4">
           <TabsList className="flex absolute h-10 md:w-full">
