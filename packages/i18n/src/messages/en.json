@@ -1448,6 +1448,7 @@
   "ProposalDetails": {
     "investment": {
       "title": "Investment terms",
+      "investor": "Investor",
       "investingMember": "Investing member",
       "investorWillSend": "Investing member will send",
       "investorWillSendLine1": "Investing member",

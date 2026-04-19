@@ -11,6 +11,7 @@ import {
   useEscrowCancelMutation,
   publicClient,
 } from '@hypha-platform/core/client';
+import { useDbSpaces } from '../../hooks';
 
 type Props = {
   deposit: PendingEscrowDeposit;
@@ -153,9 +154,10 @@ export const EscrowDepositBanner = ({
       : 'Depositing...'
     : investment
     ? 'Confirm Investment'
-    : needsApprove
-    ? 'Approve & Deposit'
-    : 'Deposit to Escrow';
+    : // Non-investment case == "Proposed Token Exchange". The CTA is the same
+      // label whether or not an ERC20 approve is needed first, so the user is
+      // not surprised by a label change after approval.
+      'Confirm Exchange';
 
   const refuseLabel = isCancellingEscrow ? 'Refusing...' : 'Refuse';
 
@@ -176,7 +178,19 @@ export const EscrowDepositBanner = ({
     ? 'Investment Transaction'
     : 'Proposed Token Exchange';
 
-  const sellerLabel = shortAddress(deposit.partyA);
+  // The seller (partyA) on an investment is the space's executor. In current
+  // Hypha deployments `space.address === executor`, so we can match the
+  // executor address against the DB `spaces.address` column. Falling back to
+  // the short address keeps the banner working for unindexed counterparties
+  // (e.g. external wallets running an exchange via the same escrow).
+  const { spaces: dbSpaces } = useDbSpaces({ parentOnly: false });
+  const sellerSpace = React.useMemo(() => {
+    const partyA = deposit.partyA?.toLowerCase?.();
+    if (!partyA) return undefined;
+    return dbSpaces.find((s) => s.address?.toLowerCase() === partyA);
+  }, [dbSpaces, deposit.partyA]);
+  const sellerLabel =
+    sellerSpace?.title?.trim() || shortAddress(deposit.partyA);
 
   return (
     <div className="rounded-[8px] p-5 border-1 bg-accent-surface border-accent-6 bg-center flex flex-col md:flex-row gap-4 md:gap-5 items-start md:items-center justify-between">

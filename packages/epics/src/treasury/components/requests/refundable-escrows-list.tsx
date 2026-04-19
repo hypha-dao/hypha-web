@@ -7,10 +7,16 @@ import { ArrowRightIcon, Loader2 } from 'lucide-react';
 import { Button, ConfirmDialog } from '@hypha-platform/ui';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import {
+  getProposalFromLogs,
+  publicClient,
   RefundableEscrow,
+  useAgreementMutationsWeb2Rsc,
   useEscrowCancelMutation,
   useEscrowRefundProposalMutation,
+  useJwt,
+  useMe,
   useRefundableEscrows,
+  web3ProposalIdForDb,
 } from '@hypha-platform/core/client';
 
 type Props = {
@@ -31,6 +37,13 @@ type Props = {
    */
   spaceId?: number | null;
   /**
+   * Postgres DB id of the space — required when `spaceId` is set so the
+   * generated refund proposal also creates a linked web2 agreement that
+   * shows up under the space's "agreements" tab. Without it, the on-chain
+   * proposal exists but is invisible in the UI listings.
+   */
+  spaceDbId?: number | null;
+  /**
    * Heading shown above the list. Defaults to "Refundable escrow deposits".
    * Pass an empty string to hide.
    */
@@ -43,6 +56,7 @@ const formatAmount = (raw: bigint, decimals: number) =>
 type RefundRowProps = {
   escrow: RefundableEscrow;
   spaceId?: number | null;
+  spaceDbId?: number | null;
   onRefunded: () => void;
 };
 
@@ -99,11 +113,9 @@ const DirectRefundRow: React.FC<RefundRowProps> = ({ escrow, onRefunded }) => {
   );
 };
 
-const ProposalRefundRow: React.FC<RefundRowProps & { spaceId: number }> = ({
-  escrow,
-  spaceId,
-  onRefunded,
-}) => {
+const ProposalRefundRow: React.FC<
+  RefundRowProps & { spaceId: number; spaceDbId?: number | null }
+> = ({ escrow, spaceId, spaceDbId, onRefunded }) => {
   const {
     createRefundProposal,
     isCreatingRefundProposal,
@@ -111,24 +123,104 @@ const ProposalRefundRow: React.FC<RefundRowProps & { spaceId: number }> = ({
     refundProposalHash,
     resetRefundProposal,
   } = useEscrowRefundProposalMutation();
+  const { jwt } = useJwt();
+  const { person } = useMe();
+  const { createAgreement, updateAgreementBySlug, deleteAgreementBySlug } =
+    useAgreementMutationsWeb2Rsc(jwt);
   const [localError, setLocalError] = React.useState<string | null>(null);
   const [didSubmit, setDidSubmit] = React.useState(false);
+  const [isLinkingAgreement, setIsLinkingAgreement] = React.useState(false);
+
+  const refundLabelForCopy = `${formatAmount(
+    escrow.refundAmount,
+    escrow.refundTokenDecimals,
+  )} ${escrow.refundTokenSymbol || 'tokens'}`;
 
   const handleRefund = React.useCallback(async () => {
     setLocalError(null);
+
+    // The web2 agreement gives the proposal a row in the space's "Agreements"
+    // tab — without it the on-chain proposal exists but is invisible in the
+    // UI listings (which read the web2 table). Mirror the deposit flow:
+    // create the agreement first, then create the on-chain proposal, then
+    // link them. If anything fails downstream we delete the agreement so the
+    // DB stays in sync with chain.
+    const canCreateAgreement = !!jwt && !!person?.id && !!spaceDbId;
+    const title = `Refund escrow #${escrow.escrowId.toString()} (${refundLabelForCopy})`;
+    const description = `Cancel escrow #${escrow.escrowId.toString()} and return ${refundLabelForCopy} to the space treasury.`;
+
+    let createdSlug: string | undefined;
     try {
-      await createRefundProposal({
+      if (canCreateAgreement) {
+        const created = await createAgreement({
+          title,
+          description,
+          creatorId: person.id,
+          spaceId: spaceDbId,
+          label: 'Refund',
+        });
+        createdSlug = created?.slug ?? undefined;
+      }
+
+      const hash = await createRefundProposal({
         spaceId,
         escrowId: escrow.escrowId,
         withdrawAfterCancel: true,
       });
       setDidSubmit(true);
+
+      if (hash && createdSlug) {
+        setIsLinkingAgreement(true);
+        try {
+          const { logs } = await publicClient.waitForTransactionReceipt({
+            hash,
+          });
+          const event = getProposalFromLogs(logs);
+          const web3ProposalId = web3ProposalIdForDb(
+            event?.proposalId as bigint | undefined,
+          );
+          await updateAgreementBySlug({
+            slug: createdSlug,
+            web3ProposalId,
+          });
+        } catch (linkErr) {
+          // Linking failure is non-fatal: the proposal still exists on-chain
+          // and the agreement still exists in the DB, just unlinked. We log
+          // and surface a softer warning rather than rolling back.
+          console.error(
+            'Failed to link refund proposal to agreement:',
+            linkErr,
+          );
+        } finally {
+          setIsLinkingAgreement(false);
+        }
+      }
+
       onRefunded();
     } catch (err) {
       console.error('Escrow refund proposal failed:', err);
+      if (createdSlug) {
+        try {
+          await deleteAgreementBySlug({ slug: createdSlug });
+        } catch (cleanupErr) {
+          console.error('Failed to clean up orphaned agreement:', cleanupErr);
+        }
+      }
       setLocalError(err instanceof Error ? err.message : String(err));
     }
-  }, [createRefundProposal, escrow.escrowId, onRefunded, spaceId]);
+  }, [
+    createAgreement,
+    createRefundProposal,
+    deleteAgreementBySlug,
+    escrow.escrowId,
+    jwt,
+    onRefunded,
+    person?.id,
+    refundLabelForCopy,
+    spaceDbId,
+    spaceId,
+    updateAgreementBySlug,
+  ]);
 
   React.useEffect(() => {
     return () => {
@@ -152,9 +244,11 @@ const ProposalRefundRow: React.FC<RefundRowProps & { spaceId: number }> = ({
     ? 'Refund proposal created. Once members approve it, the deposit will be returned to the treasury.'
     : null;
 
-  const isBusy = isCreatingRefundProposal;
+  const isBusy = isCreatingRefundProposal || isLinkingAgreement;
   const buttonLabel = isCreatingRefundProposal
     ? 'Submitting proposal...'
+    : isLinkingAgreement
+    ? 'Linking agreement...'
     : proposalSubmitted
     ? 'Proposal submitted'
     : 'Propose refund';
@@ -258,6 +352,7 @@ const RefundRowShell: React.FC<{
 export const RefundableEscrowsList: React.FC<Props> = ({
   user,
   spaceId,
+  spaceDbId,
   heading = 'Refundable escrow deposits',
 }) => {
   const { refundableEscrows, refresh } = useRefundableEscrows({ user });
@@ -277,6 +372,7 @@ export const RefundableEscrowsList: React.FC<Props> = ({
               key={escrow.escrowId.toString()}
               escrow={escrow}
               spaceId={spaceId}
+              spaceDbId={spaceDbId ?? null}
               onRefunded={() => refresh()}
             />
           ) : (

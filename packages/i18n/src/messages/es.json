@@ -1426,6 +1426,7 @@
   "ProposalDetails": {
     "investment": {
       "title": "Términos de inversión",
+      "investor": "Inversor",
       "investingMember": "Miembro inversor",
       "investorWillSend": "El miembro inversor enviará",
       "investorWillSendLine1": "El miembro inversor",

@@ -51,6 +51,7 @@ export const TransactionsSection: FC<TransactionsSectionProps> = ({
       <RefundableEscrowsList
         user={executorAddress}
         spaceId={space?.web3SpaceId as number | undefined}
+        spaceDbId={space?.id as number | undefined}
       />
 
       {transfers.length === 0 && !isLoading ? (

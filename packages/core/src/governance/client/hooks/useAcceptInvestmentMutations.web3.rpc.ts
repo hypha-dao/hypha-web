@@ -95,10 +95,35 @@ export const useAcceptInvestmentMutationsWeb3Rpc = ({
       const amountA = parseUnits(spaceReceive.amount, decimalsA);
       const amountB = parseUnits(investorSend.amount, decimalsB);
 
+      // In current Hypha deployments `space.address === executor`, so a
+      // `transferFrom(treasury, executor, …)` would be a self-to-self call
+      // that reverts at execution time (allowance(executor, executor) == 0).
+      // When the treasury IS the executor, skip the pull and read the
+      // executor's own balance to size the mint shortfall — the executor
+      // already holds the funds (or we mint the difference). Without this
+      // guard, an investment proposal whose receive-token sits in the
+      // executor's own wallet contains a doomed `transferFrom(executor,
+      // executor, X)`; the first vote that pushes thresholds over the line
+      // auto-executes → ERC20InsufficientAllowance → the voter's tx reverts
+      // and the proposal stays stuck in "On Voting" forever (see the FFFF
+      // exchange-tokens fix in `useExchangeStakesAndTokensMutations`).
+      const isSelfTreasury =
+        !!treasuryAddress &&
+        treasuryAddress.toLowerCase() === executor.toLowerCase();
+
       let pullFromTreasury = 0n;
       let mintShortfall = amountA;
 
-      if (treasuryAddress) {
+      if (isSelfTreasury) {
+        const executorBalance = await publicClient.readContract({
+          address: spaceReceive.token,
+          abi: erc20Abi,
+          functionName: 'balanceOf',
+          args: [executor],
+        });
+        mintShortfall =
+          executorBalance >= amountA ? 0n : amountA - executorBalance;
+      } else if (treasuryAddress) {
         const treasuryBalance = await publicClient.readContract({
           address: spaceReceive.token,
           abi: erc20Abi,
@@ -110,7 +135,7 @@ export const useAcceptInvestmentMutationsWeb3Rpc = ({
         mintShortfall = amountA - pullFromTreasury;
       }
 
-      if (pullFromTreasury > 0n && treasuryAddress) {
+      if (pullFromTreasury > 0n && treasuryAddress && !isSelfTreasury) {
         transactions.push({
           target: spaceReceive.token,
           value: 0n,

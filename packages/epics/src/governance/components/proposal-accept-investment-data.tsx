@@ -13,6 +13,8 @@ import { Token } from '@hypha-platform/core/client';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { useReadContract } from 'wagmi';
 import { erc20Abi } from 'viem';
+import { usePersonByWeb3Address } from '../hooks';
+import { useDbSpaces } from '../../hooks';
 
 type ExchangeEscrowSummary = {
   partyA?: string;
@@ -23,6 +25,65 @@ type ExchangeEscrowSummary = {
   amountB?: bigint;
   sendFundsNow?: boolean;
 };
+
+const ZERO_ADDRESS =
+  '0x0000000000000000000000000000000000000000' as `0x${string}`;
+
+const isEvmAddress = (value: string | undefined | null): value is string =>
+  !!value && /^0x[a-fA-F0-9]{40}$/.test(value);
+
+/**
+ * Resolves the investor (partyB) address from either the embedded marker
+ * (preferred — survives even after partial markdown stripping) or the
+ * on-chain escrow summary as a fallback.
+ */
+function InvestorRow({ investorAddress }: { investorAddress: string }) {
+  // Skip the lookup for the zero address (used as a sentinel when the
+  // upstream resolver hasn't decided yet) — it would otherwise resolve to
+  // the burn-address person record on some seeds.
+  const lookupAddress = isEvmAddress(investorAddress)
+    ? (investorAddress as `0x${string}`)
+    : ZERO_ADDRESS;
+  const { person } = usePersonByWeb3Address(lookupAddress);
+  const { spaces: dbSpaces } = useDbSpaces({ parentOnly: false });
+  const space = dbSpaces.find(
+    (s) =>
+      isEvmAddress(investorAddress) &&
+      s.address?.toLowerCase() === investorAddress.toLowerCase(),
+  );
+
+  const personLabel = person
+    ? [person.name, person.surname].filter(Boolean).join(' ')
+    : '';
+  const label = personLabel || space?.title || '';
+  const avatarUrl =
+    person?.avatarUrl || space?.logoUrl || '/placeholder/default-profile.svg';
+
+  if (!isEvmAddress(investorAddress)) {
+    return <span className="text-1 text-neutral-9">-</span>;
+  }
+
+  if (label) {
+    return (
+      <div className="flex items-center justify-end gap-2 text-1 text-neutral-9">
+        <Image
+          src={avatarUrl}
+          alt={label}
+          width={24}
+          height={24}
+          className="rounded-full w-6 h-6 object-cover"
+        />
+        <span className="text-nowrap">{label}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center justify-end">
+      <EthAddress address={investorAddress} />
+    </div>
+  );
+}
 
 function InvestmentSection({
   label,
@@ -154,20 +215,19 @@ export function ProposalAcceptInvestmentData({
 
   const showBothSections = Boolean(sendFromMarker && receiveFromMarker);
   const escrowAddr = getEscrowImplementationAddress();
+  // Prefer the marker payload (set when the proposal is created so it
+  // survives even if the on-chain escrow record is missing); fall back to
+  // partyB from the indexed escrow snapshot.
+  const investorAddress = parsed?.investorAddress ?? exchangeEscrowData?.partyB;
 
   return (
     <div className="flex flex-col gap-5">
       <span className="text-neutral-11 text-2 font-medium">{t('title')}</span>
 
-      {escrowAddr ? (
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between w-full gap-x-4">
-          <span className="text-1 text-neutral-11 shrink-0">
-            {t('escrowAccountAddress')}
-          </span>
-          <div className="min-w-0 sm:max-w-[min(100%,20rem)] sm:ml-auto">
-            <EthAddress address={escrowAddr} />
-          </div>
-        </div>
+      {investorAddress ? (
+        <InvestmentSection label={t('investor')}>
+          <InvestorRow investorAddress={investorAddress} />
+        </InvestmentSection>
       ) : null}
 
       {sendFromMarker ? (
@@ -182,6 +242,17 @@ export function ProposalAcceptInvestmentData({
         <InvestmentSection label={receiveLabel}>
           {receiveFromMarker}
         </InvestmentSection>
+      ) : null}
+
+      {escrowAddr ? (
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between w-full gap-x-4">
+          <span className="text-1 text-neutral-11 shrink-0">
+            {t('escrowAccountAddress')}
+          </span>
+          <div className="min-w-0 sm:max-w-[min(100%,20rem)] sm:ml-auto">
+            <EthAddress address={escrowAddr} />
+          </div>
+        </div>
       ) : null}
     </div>
   );

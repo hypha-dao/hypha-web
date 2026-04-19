@@ -19,6 +19,7 @@ import {
   web3ProposalIdForDb,
 } from '@hypha-platform/core/client';
 import { useTranslations } from 'next-intl';
+import { useDbSpaces } from '../../hooks';
 
 type Props = {
   /** Escrow slot waiting for this space to fund. */
@@ -216,7 +217,18 @@ export const SpaceEscrowDepositBanner = ({
     : null;
   const errorMessage = localError ?? mutationError;
 
-  const sellerLabel = shortAddress(deposit.partyA);
+  // Counterparty (partyA) on an investment proposal is another space's
+  // executor. In current Hypha deployments `space.address === executor`,
+  // so we can resolve the friendly name via the DB. Fall back to the short
+  // address for unindexed addresses.
+  const { spaces: dbSpaces } = useDbSpaces({ parentOnly: false });
+  const sellerSpace = React.useMemo(() => {
+    const partyA = deposit.partyA?.toLowerCase?.();
+    if (!partyA) return undefined;
+    return dbSpaces.find((s) => s.address?.toLowerCase() === partyA);
+  }, [dbSpaces, deposit.partyA]);
+  const sellerLabel =
+    sellerSpace?.title?.trim() || shortAddress(deposit.partyA);
 
   return (
     <div className="rounded-[8px] p-5 border-1 bg-accent-surface border-accent-6 bg-center flex flex-col md:flex-row gap-4 md:gap-5 items-start md:items-center justify-between relative">
