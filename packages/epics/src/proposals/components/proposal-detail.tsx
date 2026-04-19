@@ -21,6 +21,8 @@ import {
   CURRENCY_FEEDS,
   REFERENCE_CURRENCIES,
   TOKENS,
+  type Person,
+  type Space,
 } from '@hypha-platform/core/client';
 import {
   ProposalTransactionItem,
@@ -53,6 +55,7 @@ import { resolveTokenDecimals } from '../../governance/utils/token-decimals';
 import { useDbSpaces } from '../../hooks';
 import { hasUpdateTokenDataToDisplay } from '../utils/has-update-token-data-to-display';
 import { normalizeVotingDurationForResubmitSelect } from '../../agreements/plugins/change-voting-method/voting-duration-resubmit';
+import { buildTransferWhitelistFromBaselineAddresses } from '../../treasury/utils/whitelist-baseline-to-form';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
@@ -202,6 +205,13 @@ function buildIssueNewTokenResubmitPayload(
   token: ProposalTokenFromProposalDetails,
   proposalSpaceId: number,
   dbTokens: DbToken[],
+  options?: {
+    /** Agreement document id — used to pick the draft token row (icon URL from Web2 before mint). */
+    documentId?: number | null;
+    /** Space members / nested spaces for mapping whitelist addresses to combobox selections. */
+    membersForWhitelist?: Person[];
+    spacesForWhitelist?: Space[];
+  },
 ): Record<string, unknown> {
   const humanSupply = Number(formatUnits(token.maxSupply, 18));
   const enableLimitedSupply = humanSupply > 0;
@@ -223,8 +233,35 @@ function buildIssueNewTokenResubmitPayload(
 
   const fromList = token.initialTransferWhitelist ?? [];
   const toList = token.initialReceiveWhitelist ?? [];
-  const transferWhitelist = enableAdvancedTransferControls
-    ? {
+
+  let transferWhitelist:
+    | ReturnType<typeof buildTransferWhitelistFromBaselineAddresses>
+    | {
+        from: { type: 'member'; address: string }[];
+        to: { type: 'member'; address: string }[];
+      }
+    | undefined;
+
+  if (enableAdvancedTransferControls) {
+    const members = options?.membersForWhitelist ?? [];
+    const spaces = options?.spacesForWhitelist ?? [];
+    const fromAddrs = fromList as `0x${string}`[];
+    const toAddrs = toList as `0x${string}`[];
+    const isOwnershipToken =
+      token.tokenType === 'ownership' ||
+      matchedDb?.type === 'ownership' ||
+      draftTokenForAgreement?.type === 'ownership';
+
+    if (members.length > 0 || spaces.length > 0) {
+      transferWhitelist = buildTransferWhitelistFromBaselineAddresses({
+        from: fromAddrs,
+        to: toAddrs,
+        members,
+        spaces,
+        isOwnershipToken,
+      });
+    } else {
+      transferWhitelist = {
         from: fromList.map((addr) => ({
           type: 'member' as const,
           address: addr,
@@ -233,8 +270,9 @@ function buildIssueNewTokenResubmitPayload(
           type: 'member' as const,
           address: addr,
         })),
-      }
-    : undefined;
+      };
+    }
+  }
 
   const priceMicro =
     token.priceInUSD !== undefined ? Number(token.priceInUSD) : 0;
@@ -255,6 +293,11 @@ function buildIssueNewTokenResubmitPayload(
         t.spaceId === proposalSpaceId &&
         t.symbol?.toUpperCase() === token.symbol.toUpperCase(),
     );
+
+  const draftTokenForAgreement =
+    options?.documentId != null
+      ? dbTokens.find((t) => t.agreementId === options.documentId)
+      : undefined;
 
   let referenceCurrencyResolved = referenceCurrencyFromChain;
   if (enableTokenPrice && matchedDb?.referenceCurrency) {
@@ -290,7 +333,10 @@ function buildIssueNewTokenResubmitPayload(
         };
 
   const iconUrl =
-    typeof matchedDb?.iconUrl === 'string' && matchedDb.iconUrl.length > 0
+    typeof draftTokenForAgreement?.iconUrl === 'string' &&
+    draftTokenForAgreement.iconUrl.length > 0
+      ? draftTokenForAgreement.iconUrl
+      : typeof matchedDb?.iconUrl === 'string' && matchedDb.iconUrl.length > 0
       ? matchedDb.iconUrl
       : undefined;
 
@@ -336,6 +382,9 @@ type ProposalDetailProps = ProposalHeadProps & {
   isCheckingExpiration?: boolean;
   isVoting?: boolean;
   onWithdrawSuccess?: () => Promise<void>;
+  /** Used to map whitelist addresses to member/space rows when resubmitting Issue New Token. */
+  membersForWhitelist?: Person[];
+  spacesForWhitelist?: Space[];
 };
 
 type DocumentsArrays = {
@@ -367,6 +416,8 @@ export const ProposalDetail = ({
   isCheckingExpiration: externalIsCheckingExpiration,
   isVoting: externalIsVoting,
   onWithdrawSuccess,
+  membersForWhitelist,
+  spacesForWhitelist,
 }: ProposalDetailProps) => {
   const tProposalDetails = useTranslations('ProposalDetails');
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
@@ -826,6 +877,11 @@ export const ProposalDetail = ({
           tok as ProposalTokenFromProposalDetails,
           proposalDetails.spaceId,
           dbTokens ?? [],
+          {
+            documentId,
+            membersForWhitelist,
+            spacesForWhitelist,
+          },
         ),
       };
     }

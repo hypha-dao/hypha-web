@@ -7,6 +7,7 @@ import {
   useDbTokens,
 } from '@hypha-platform/epics';
 import { useParams } from 'next/navigation';
+import { useMembers } from '@web/hooks/use-members';
 import { Locale } from '@hypha-platform/i18n';
 import { useDocumentSlug } from '@web/hooks/use-document-slug';
 import { useDocumentBySlug } from '@web/hooks/use-document-by-slug';
@@ -68,6 +69,10 @@ export default function Agreements() {
     tokenSymbol: proposalDetails?.tokens[0]?.symbol,
   });
   const { space } = useSpaceBySlug(id as string);
+  const { persons: resubmitPersons, spaces: resubmitSpaces } = useMembers({
+    spaceSlug: space?.slug as string,
+    paginationDisabled: true,
+  });
   const { update } = useSpaceDocumentsWithStatuses({
     spaceSlug: space?.slug as string,
     spaceId: space?.web3SpaceId as number,
@@ -168,6 +173,8 @@ export default function Agreements() {
       >
         <ProposalDetail
           documentId={document?.id}
+          membersForWhitelist={resubmitPersons?.data}
+          spacesForWhitelist={resubmitSpaces?.data}
           closeUrl={getDhoPathAgreements(lang as Locale, id as string)}
           onAccept={handleOnAccept}
           onReject={handleOnReject}
