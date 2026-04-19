@@ -1,30 +1,13 @@
-import {
-  JoinSpace,
-  SalesBanner,
-  SpaceCard,
-  SpaceEscrowDepositBanners,
-  SpaceModeLabel,
-  WebLinks,
-  SubscriptionBadge,
-} from '@hypha-platform/epics';
+import { SpaceCard, SpaceEscrowDepositBanners } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
-import {
-  Container,
-  Card,
-  Avatar,
-  AvatarImage,
-  Separator,
-} from '@hypha-platform/ui';
+import { Container, Separator } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
-import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { getAllSpaces, findSpaceBySlug } from '@hypha-platform/core/server';
 import { getDhoPathAgreements } from './@tab/agreements/constants';
-import { ActionButtons } from './_components/action-buttons';
-import { NestedSpacesButton } from './_components/nested-spaces-button';
+import { SpaceHeader } from './_components/space-header';
 import {
-  DEFAULT_SPACE_AVATAR_IMAGE,
   DEFAULT_SPACE_LEAD_IMAGE,
   fetchSpaceDetails,
   fetchSpaceProposalsIds,
@@ -32,8 +15,7 @@ import {
 } from '@hypha-platform/core/client';
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
-import { Breadcrumbs } from './_components/breadcrumbs';
-import { canConvertToBigInt, formatDate } from '@hypha-platform/ui-utils';
+import { canConvertToBigInt } from '@hypha-platform/ui-utils';
 import { getTranslations } from 'next-intl/server';
 
 export default async function DhoLayout({
@@ -48,7 +30,6 @@ export default async function DhoLayout({
   params: Promise<{ id: string; lang: Locale }>;
 }) {
   const { id: daoSlug, lang } = await params;
-  const tCommon = await getTranslations('Common');
   const tSpaces = await getTranslations('Spaces');
 
   const spaceFromDb = await findSpaceBySlug({ slug: daoSlug }, { db });
@@ -96,105 +77,39 @@ export default async function DhoLayout({
   return (
     <div className="flex max-w-container-2xl mx-auto">
       <Container className="flex-grow min-w-0">
-        <div className="mb-6 flex items-center">
-          <Breadcrumbs spaceId={spaceFromDb.id} lang={lang} />
-        </div>
-        <div className="relative flex justify-end mb-2">
-          {typeof spaceFromDb.web3SpaceId === 'number' && (
-            <NestedSpacesButton
-              web3SpaceId={spaceFromDb.web3SpaceId as number}
-              spaceSlug={daoSlug}
-            />
-          )}
-        </div>
-        <Card className="relative">
-          <Image
-            width={768}
-            height={270}
-            className="rounded-xl min-h-[270px] max-h-[270px] w-full object-cover"
-            src={spaceFromDb.leadImage || DEFAULT_SPACE_LEAD_IMAGE}
-            alt={spaceFromDb.title}
-          ></Image>
-          <Avatar className="w-[128px] h-[128px] absolute bottom-[-35px] left-[15px]">
-            <AvatarImage
-              src={spaceFromDb.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE}
-              alt="logo"
-            />
-          </Avatar>
-        </Card>
-        <div className="flex justify-end mt-2 gap-2">
-          {typeof spaceFromDb.web3SpaceId === 'number' && (
-            <JoinSpace
+        <SpaceHeader
+          lang={lang}
+          daoSlug={daoSlug}
+          spaceId={spaceFromDb.id}
+          web3SpaceId={
+            typeof spaceFromDb.web3SpaceId === 'number'
+              ? spaceFromDb.web3SpaceId
+              : null
+          }
+          title={spaceFromDb.title as string}
+          description={spaceFromDb.description}
+          links={spaceFromDb.links}
+          logoUrl={spaceFromDb.logoUrl}
+          leadImage={spaceFromDb.leadImage}
+          createdAt={spaceFromDb.createdAt}
+          flags={spaceFromDb.flags}
+          spaceMembers={spaceMembers}
+          spaceAgreements={spaceAgreements}
+        />
+        {typeof spaceFromDb.web3SpaceId === 'number' ? (
+          <div className="mt-2">
+            <SpaceEscrowDepositBanners
               web3SpaceId={spaceFromDb.web3SpaceId}
-              spaceId={spaceFromDb.id}
+              spaceDbId={spaceFromDb.id}
+              spaceSlug={daoSlug}
+              lang={lang}
             />
-          )}
-          <ActionButtons web3SpaceId={spaceFromDb.web3SpaceId as number} />
-        </div>
-
-        <div className="flex flex-col mt-4 gap-2">
-          <Text className="text-7">{spaceFromDb.title}</Text>
-          <WebLinks links={spaceFromDb.links} />
-        </div>
-        <div className="mt-6">
-          <Text className="text-2">{spaceFromDb.description}</Text>
-        </div>
-        <div className="flex gap-4 items-start mt-6 flex-wrap">
-          <div className="flex flex-col gap-y-2 gap-x-4">
-            <div className="flex flex-row gap-y-2 gap-x-4">
-              <div className="flex">
-                <div className="font-bold text-1">{spaceMembers}</div>
-                <div className="text-gray-500 ml-1 text-1">
-                  {tCommon('Members')}
-                </div>
-              </div>
-              <div className="flex">
-                <div className="font-bold text-1">
-                  {/* @ts-ignore: TODO: infer types from relations */}
-                  {spaceAgreements}
-                </div>
-                <div className="text-gray-500 ml-1 text-1">
-                  {tCommon('Agreements')}
-                </div>
-              </div>
-            </div>
-            <div className="flex">
-              <div className="text-gray-500 text-1">
-                {tCommon('createdOn', {
-                  date: formatDate(spaceFromDb.createdAt, true),
-                })}
-              </div>
-            </div>
           </div>
-          {canConvertToBigInt(spaceFromDb.web3SpaceId) && (
-            <SubscriptionBadge
-              web3SpaceId={spaceFromDb.web3SpaceId as number}
-            />
-          )}
-          <SpaceModeLabel
-            web3SpaceId={spaceFromDb.web3SpaceId as number}
-            isSandbox={spaceFromDb.flags.includes('sandbox')}
-            isDemo={spaceFromDb.flags.includes('demo')}
-            isArchived={
-              spaceFromDb.flags.includes('archived') || spaceMembers === 0
-            }
-            configPath={`${getDhoPathAgreements(
-              lang,
-              daoSlug,
-            )}/space-configuration`}
-          />
+        ) : null}
+        <div style={{ paddingTop: 'var(--dho-sticky-pad, 0px)' }}>
+          {tab}
+          {children}
         </div>
-        <div className="mt-8 flex flex-col gap-3">
-          <SalesBanner web3SpaceId={spaceFromDb.web3SpaceId as number} />
-          <SpaceEscrowDepositBanners
-            web3SpaceId={spaceFromDb.web3SpaceId as number}
-            spaceDbId={spaceFromDb.id}
-            spaceSlug={daoSlug}
-            lang={lang}
-          />
-        </div>
-        {tab}
-        {children}
         <div className="space-y-9">
           <Separator />
           <div className="border-primary-foreground">
