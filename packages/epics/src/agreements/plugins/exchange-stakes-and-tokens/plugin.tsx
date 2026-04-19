@@ -748,7 +748,9 @@ export const ExchangeStakesAndTokensPlugin = ({
           aria-hidden
         />
         <p className="text-2 text-foreground flex-1 min-w-0">
-          {tAgreementFlow('plugins.exchangeStakesAndTokens.escrowNotice')}
+          {tAgreementFlow('plugins.exchangeStakesAndTokens.escrowNotice', {
+            activeSpace: activeSpace?.title?.trim() || 'this space',
+          })}
         </p>
       </div>
     </div>

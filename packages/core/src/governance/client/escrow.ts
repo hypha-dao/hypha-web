@@ -68,6 +68,49 @@ export const escrowImplementationAbi = [
       { name: 'isCancelled', type: 'bool' },
     ],
   },
+  // Events — kept in the same ABI so callers can decode receipt logs without
+  // a second import. Mirrors `interfaces/IEscrow.sol`.
+  {
+    type: 'event',
+    name: 'EscrowCreated',
+    inputs: [
+      { indexed: true, name: 'escrowId', type: 'uint256' },
+      { indexed: true, name: 'creator', type: 'address' },
+      { indexed: true, name: 'partyA', type: 'address' },
+      { indexed: false, name: 'partyB', type: 'address' },
+      { indexed: false, name: 'tokenA', type: 'address' },
+      { indexed: false, name: 'tokenB', type: 'address' },
+      { indexed: false, name: 'amountA', type: 'uint256' },
+      { indexed: false, name: 'amountB', type: 'uint256' },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'EscrowCompleted',
+    inputs: [
+      { indexed: true, name: 'escrowId', type: 'uint256' },
+      { indexed: true, name: 'partyA', type: 'address' },
+      { indexed: true, name: 'partyB', type: 'address' },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'EscrowCancelled',
+    inputs: [
+      { indexed: true, name: 'escrowId', type: 'uint256' },
+      { indexed: false, name: 'cancelledBy', type: 'address' },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'FundsWithdrawn',
+    inputs: [
+      { indexed: true, name: 'escrowId', type: 'uint256' },
+      { indexed: true, name: 'by', type: 'address' },
+      { indexed: false, name: 'token', type: 'address' },
+      { indexed: false, name: 'amount', type: 'uint256' },
+    ],
+  },
 ] as const satisfies Abi;
 
 /** Legacy `createEscrow` (6 args) for decoding proposals created before explicit partyA. */

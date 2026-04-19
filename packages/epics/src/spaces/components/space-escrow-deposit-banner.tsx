@@ -15,11 +15,12 @@ import {
   useAgreementMutationsWeb2Rsc,
   useJwt,
   useMe,
+  useSpaceBySlug,
   useSpaceExchangeDepositProposalMutation,
   web3ProposalIdForDb,
 } from '@hypha-platform/core/client';
 import { useTranslations } from 'next-intl';
-import { useDbSpaces } from '../../hooks';
+import { useNameForAddress } from '../../governance/hooks';
 
 type Props = {
   /** Escrow slot waiting for this space to fund. */
@@ -44,9 +45,6 @@ type Props = {
 
 const formatAmount = (raw: bigint, decimals: number) =>
   formatCurrencyValue(formatUnits(raw, decimals));
-
-const shortAddress = (addr: string | undefined | null): string =>
-  !addr ? '' : `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 
 /**
  * Investment heuristic: partyA is the creator and has pre-funded — meaning
@@ -73,6 +71,7 @@ export const SpaceEscrowDepositBanner = ({
   const t = useTranslations('Spaces');
   const { jwt } = useJwt();
   const { person } = useMe();
+  const { space: activeSpace } = useSpaceBySlug(spaceSlug);
   const {
     createDepositProposal,
     isCreatingDepositProposal,
@@ -83,6 +82,12 @@ export const SpaceEscrowDepositBanner = ({
   const [isWaitingReceipt, setIsWaitingReceipt] = React.useState(false);
   const [localError, setLocalError] = React.useState<string | null>(null);
   const router = useRouter();
+
+  const investment = isInvestmentDeposit(deposit);
+  // The active space is partyB (the one that owes the deposit). The "other
+  // party" the proposal copy refers to is therefore partyA.
+  const { label: counterpartyLabel } = useNameForAddress(deposit.partyA);
+  const activeSpaceTitle = activeSpace?.title?.trim() || 'this space';
 
   const handleClick = React.useCallback(async () => {
     setLocalError(null);
@@ -96,16 +101,48 @@ export const SpaceEscrowDepositBanner = ({
       return;
     }
 
+    const payAmountText = formatAmount(
+      deposit.payAmount,
+      deposit.payTokenDecimals,
+    );
+    const paySymbol = deposit.payTokenSymbol || 'tokens';
+    // For the SPACE-side deposit, the active space is partyB and will receive
+    // partyA's leg (tokenA / amountA) once both sides are funded and the
+    // escrow auto-completes.
+    const receiveAmountText = formatAmount(
+      deposit.amountA,
+      deposit.tokenADecimals,
+    );
+    const receiveSymbol = deposit.tokenASymbol || 'tokens';
+    const otherParty = counterpartyLabel || 'the other party';
+
     const title = t('exchangeDepositProposalTitle', {
-      amount: formatAmount(deposit.payAmount, deposit.payTokenDecimals),
-      symbol: deposit.payTokenSymbol || 'tokens',
+      amount: payAmountText,
+      symbol: paySymbol,
       escrowId: deposit.escrowId.toString(),
     });
-    const description = `${t('exchangeDepositProposalDescription', {
-      amount: formatAmount(deposit.payAmount, deposit.payTokenDecimals),
-      symbol: deposit.payTokenSymbol || 'tokens',
-      escrowId: deposit.escrowId.toString(),
-    })}\n\n${buildExchangeDepositEscrowMarker(deposit.escrowId)}`;
+    const descriptionBody = investment
+      ? t('investmentDepositProposalDescription', {
+          payAmount: payAmountText,
+          paySymbol,
+          escrowId: deposit.escrowId.toString(),
+          otherParty,
+          activeSpace: activeSpaceTitle,
+          receiveAmount: receiveAmountText,
+          receiveSymbol,
+        })
+      : t('exchangeDepositProposalDescription', {
+          payAmount: payAmountText,
+          paySymbol,
+          escrowId: deposit.escrowId.toString(),
+          otherParty,
+          activeSpace: activeSpaceTitle,
+          receiveAmount: receiveAmountText,
+          receiveSymbol,
+        });
+    const description = `${descriptionBody}\n\n${buildExchangeDepositEscrowMarker(
+      deposit.escrowId,
+    )}`;
 
     // Create the web2 agreement FIRST so the proposal shows up in the
     // agreements tab. If anything fails downstream we delete it again to keep
@@ -171,10 +208,13 @@ export const SpaceEscrowDepositBanner = ({
       setIsWaitingReceipt(false);
     }
   }, [
+    activeSpaceTitle,
+    counterpartyLabel,
     createAgreement,
     createDepositProposal,
     deleteAgreementBySlug,
     deposit,
+    investment,
     jwt,
     lang,
     onProposalCreated,
@@ -196,8 +236,6 @@ export const SpaceEscrowDepositBanner = ({
     deposit.tokenBDecimals,
   )} ${deposit.tokenBSymbol || 'tokens'}`;
 
-  const investment = isInvestmentDeposit(deposit);
-
   const actionLabel = isWaitingReceipt
     ? t('exchangeDepositProposalConfirming')
     : isCreatingDepositProposal
@@ -206,9 +244,9 @@ export const SpaceEscrowDepositBanner = ({
     ? 'Confirm Investment'
     : t('exchangeDepositProposalCta');
 
-  const title = investment
-    ? 'Investment Transaction'
-    : 'Proposed Token Exchange';
+  const bannerTitle = investment
+    ? 'Accept Investment'
+    : 'Exchange Stakes & Tokens';
 
   const mutationError = depositProposalError
     ? depositProposalError instanceof Error
@@ -217,18 +255,7 @@ export const SpaceEscrowDepositBanner = ({
     : null;
   const errorMessage = localError ?? mutationError;
 
-  // Counterparty (partyA) on an investment proposal is another space's
-  // executor. In current Hypha deployments `space.address === executor`,
-  // so we can resolve the friendly name via the DB. Fall back to the short
-  // address for unindexed addresses.
-  const { spaces: dbSpaces } = useDbSpaces({ parentOnly: false });
-  const sellerSpace = React.useMemo(() => {
-    const partyA = deposit.partyA?.toLowerCase?.();
-    if (!partyA) return undefined;
-    return dbSpaces.find((s) => s.address?.toLowerCase() === partyA);
-  }, [dbSpaces, deposit.partyA]);
-  const sellerLabel =
-    sellerSpace?.title?.trim() || shortAddress(deposit.partyA);
+  const sellerLabel = counterpartyLabel;
 
   return (
     <div className="rounded-[8px] p-5 border-1 bg-accent-surface border-accent-6 bg-center flex flex-col md:flex-row gap-4 md:gap-5 items-start md:items-center justify-between relative">
@@ -249,12 +276,26 @@ export const SpaceEscrowDepositBanner = ({
           className="text-foreground flex-shrink-0 mt-1"
         />
         <div className="flex flex-col gap-2 flex-1 pr-6">
-          <span className="text-2 text-foreground font-bold">{title}</span>
+          <span className="text-2 text-foreground font-bold">
+            {bannerTitle}
+          </span>
           <span className="text-2 text-foreground">
-            <span className="font-bold">{sellerLabel}</span> has proposed to
-            exchange <span className="font-bold">{sellerAmountLabel}</span> for{' '}
-            <span className="font-bold">{buyerAmountLabel}</span> from your
-            space.
+            {investment ? (
+              <>
+                <span className="font-bold">{sellerLabel}</span> has accepted
+                your space's investment of{' '}
+                <span className="font-bold">{buyerAmountLabel}</span> and offers{' '}
+                <span className="font-bold">{sellerAmountLabel}</span> in
+                return.
+              </>
+            ) : (
+              <>
+                <span className="font-bold">{sellerLabel}</span> has proposed to
+                exchange <span className="font-bold">{sellerAmountLabel}</span>{' '}
+                for <span className="font-bold">{buyerAmountLabel}</span> from
+                your space.
+              </>
+            )}
           </span>
           {errorMessage ? (
             <span className="text-2 text-error-11 break-all">

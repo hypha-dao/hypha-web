@@ -786,8 +786,9 @@
     "exchangeDepositProposalCta": "Create deposit proposal",
     "exchangeDepositProposalCreating": "Creating proposal...",
     "exchangeDepositProposalConfirming": "Confirming...",
-    "exchangeDepositProposalTitle": "Deposit {amount} {symbol} to escrow #{escrowId}",
-    "exchangeDepositProposalDescription": "Approve and deposit {amount} {symbol} into exchange escrow #{escrowId} so the swap can complete."
+    "exchangeDepositProposalTitle": "Deposit {amount} {symbol} – Settle escrow (#{escrowId})",
+    "exchangeDepositProposalDescription": "Approve and deposit {payAmount} {paySymbol} into escrow (#{escrowId}) to complete the exchange with {otherParty}. In return, {activeSpace} will receive {receiveAmount} {receiveSymbol}.",
+    "investmentDepositProposalDescription": "Approve and deposit {payAmount} {paySymbol} into escrow (#{escrowId}) to complete the investment into {otherParty}. In return, {activeSpace} will receive {receiveAmount} {receiveSymbol}."
   },
   "AgreementFlow": {
     "labels": {
@@ -1388,7 +1389,8 @@
         "source": "Source",
         "sourcePlaceholder": "Select source",
         "sourceMint": "Mint new tokens",
-        "sourceTreasury": "Use available tokens in treasury"
+        "sourceTreasury": "Use available tokens in treasury",
+        "escrowNotice": "This proposal uses escrow for the investment. Once it is approved, the investor ({investor}) deposits their side into escrow from their profile or space page, and {activeSpace}'s deposit is made when the proposal is approved and executed."
       },
       "acceptInvestmentForm": {
         "notMemberRevert": "The chain rejected this transaction: the connected wallet is not a member or delegate of this space. Use a wallet that belongs to the space, or connect as a delegate.",
@@ -1401,7 +1403,7 @@
         "buyer": "Buyer (Wallet Address)",
         "buyerWillSend": "Buyer will send",
         "loadingTokens": "Loading tokens...",
-        "escrowNotice": "This proposal uses escrow for the exchange. After approval, each member deposits their side into escrow from their profile; when the space is one of the parties, its deposit happens at execution.",
+        "escrowNotice": "This proposal uses escrow for the exchange. Once it is approved, each member deposits their side into escrow from their profile; if {activeSpace} is one of the parties, its deposit is made when the proposal is approved and executed.",
         "escrowAccountAddress": "Escrow account address",
         "errors": {
           "sellerAmountExceedsBalance": "The entered amount is greater than the seller available balance.",

@@ -9,3 +9,4 @@ export * from './use-user-transfers-section';
 export * from './use-fund-wallet';
 export * from './use-token-supply';
 export * from './use-vaults';
+export * from './use-escrow-id-from-tx';

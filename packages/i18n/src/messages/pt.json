@@ -1420,8 +1420,9 @@
     "exchangeDepositProposalCta": "Criar proposta de depósito",
     "exchangeDepositProposalCreating": "Criando proposta...",
     "exchangeDepositProposalConfirming": "Confirmando...",
-    "exchangeDepositProposalTitle": "Depositar {amount} {symbol} no escrow #{escrowId}",
-    "exchangeDepositProposalDescription": "Aprove e deposite {amount} {symbol} no escrow de troca #{escrowId} para que a troca possa ser concluída."
+    "exchangeDepositProposalTitle": "Depositar {amount} {symbol} – Liquidar escrow (#{escrowId})",
+    "exchangeDepositProposalDescription": "Aprove e deposite {payAmount} {paySymbol} no escrow (#{escrowId}) para concluir a troca com {otherParty}. Em troca, {activeSpace} receberá {receiveAmount} {receiveSymbol}.",
+    "investmentDepositProposalDescription": "Aprove e deposite {payAmount} {paySymbol} no escrow (#{escrowId}) para concluir o investimento em {otherParty}. Em troca, {activeSpace} receberá {receiveAmount} {receiveSymbol}."
   },
   "ProposalDetails": {
     "investment": {

@@ -18,6 +18,7 @@ import {
   useRefundableEscrows,
   web3ProposalIdForDb,
 } from '@hypha-platform/core/client';
+import { useNameForAddress } from '../../../governance/hooks';
 
 type Props = {
   /**
@@ -295,6 +296,13 @@ const RefundRowShell: React.FC<{
   isDisabled = false,
   onConfirm,
 }) => {
+  // The "other party" of an unsettled escrow is whichever leg is NOT us.
+  const counterpartyAddress =
+    escrow.side === 'A' ? escrow.partyB : escrow.partyA;
+  const { label: resolvedCounterparty } =
+    useNameForAddress(counterpartyAddress);
+  const counterpartyLabel = resolvedCounterparty || 'the other party';
+
   return (
     <div className="rounded-[8px] p-4 border-1 bg-accent-surface border-accent-6 flex flex-col md:flex-row gap-3 md:gap-5 md:items-center justify-between">
       <div className="flex items-start gap-3 md:gap-4 w-full md:w-auto">
@@ -305,9 +313,10 @@ const RefundRowShell: React.FC<{
         />
         <div className="flex flex-col gap-1 flex-1">
           <span className="text-2 text-foreground">
-            Escrow #{escrow.escrowId.toString()} — you deposited{' '}
-            <span className="font-bold">{refundLabel}</span> and the swap is
-            still open.
+            You deposited <span className="font-bold">{refundLabel}</span> into
+            escrow (#{escrow.escrowId.toString()}) and the transaction with{' '}
+            <span className="font-bold">{counterpartyLabel}</span> is not yet
+            settled, so the amount is still refundable.
           </span>
           {escrow.isCounterpartyFunded ? (
             <span className="text-1 text-warning-11">

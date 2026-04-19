@@ -11,7 +11,7 @@ import {
   useEscrowCancelMutation,
   publicClient,
 } from '@hypha-platform/core/client';
-import { useDbSpaces } from '../../hooks';
+import { useNameForAddress } from '../../governance/hooks';
 
 type Props = {
   deposit: PendingEscrowDeposit;
@@ -21,9 +21,6 @@ type Props = {
 
 const formatAmount = (raw: bigint, decimals: number) =>
   formatCurrencyValue(formatUnits(raw, decimals));
-
-const shortAddress = (addr: string | undefined | null): string =>
-  !addr ? '' : `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 
 /** True when a wallet/RPC error is actually the escrow telling us the
  * user's side is already funded — a harmless race condition we want to
@@ -174,23 +171,18 @@ export const EscrowDepositBanner = ({
     : null;
   const errorMessage = errorOverride ?? mutationError ?? cancelMutationError;
 
-  const title = investment
-    ? 'Investment Transaction'
-    : 'Proposed Token Exchange';
+  const title = investment ? 'Accept Investment' : 'Exchange Stakes & Tokens';
 
-  // The seller (partyA) on an investment is the space's executor. In current
-  // Hypha deployments `space.address === executor`, so we can match the
-  // executor address against the DB `spaces.address` column. Falling back to
-  // the short address keeps the banner working for unindexed counterparties
-  // (e.g. external wallets running an exchange via the same escrow).
-  const { spaces: dbSpaces } = useDbSpaces({ parentOnly: false });
-  const sellerSpace = React.useMemo(() => {
-    const partyA = deposit.partyA?.toLowerCase?.();
-    if (!partyA) return undefined;
-    return dbSpaces.find((s) => s.address?.toLowerCase() === partyA);
-  }, [dbSpaces, deposit.partyA]);
-  const sellerLabel =
-    sellerSpace?.title?.trim() || shortAddress(deposit.partyA);
+  // Resolve partyA into a friendly name (person OR space). Handles both
+  // investment proposals (partyA is always a space's executor) and ordinary
+  // peer-to-peer exchanges (partyA can be a member's smart wallet).
+  const { label: sellerLabel } = useNameForAddress(deposit.partyA);
+
+  // For non-investment exchanges we identify the proposer side: the user
+  // viewing this banner is whichever side they are NOT yet funded on, so
+  // the COUNTERPARTY is the one who created the proposal. For copy purposes
+  // we keep referring to partyA ("seller") which matches how the escrow
+  // contract orders the legs.
 
   return (
     <div className="rounded-[8px] p-5 border-1 bg-accent-surface border-accent-6 bg-center flex flex-col md:flex-row gap-4 md:gap-5 items-start md:items-center justify-between">
@@ -203,9 +195,22 @@ export const EscrowDepositBanner = ({
         <div className="flex flex-col gap-2 flex-1">
           <span className="text-2 text-foreground font-bold">{title}</span>
           <span className="text-2 text-foreground">
-            <span className="font-bold">{sellerLabel}</span> has proposed to
-            exchange <span className="font-bold">{sellerAmountLabel}</span> for{' '}
-            <span className="font-bold">{buyerAmountLabel}</span> from you.
+            {investment ? (
+              <>
+                <span className="font-bold">{sellerLabel}</span> has accepted
+                your investment of{' '}
+                <span className="font-bold">{buyerAmountLabel}</span> and offers{' '}
+                <span className="font-bold">{sellerAmountLabel}</span> in
+                return.
+              </>
+            ) : (
+              <>
+                <span className="font-bold">{sellerLabel}</span> has proposed to
+                exchange <span className="font-bold">{sellerAmountLabel}</span>{' '}
+                for <span className="font-bold">{buyerAmountLabel}</span> from
+                you.
+              </>
+            )}
           </span>
           {insufficientBalance ? (
             <span className="text-2 text-error-11">

@@ -786,8 +786,9 @@
     "exchangeDepositProposalCta": "Einzahlungsvorschlag erstellen",
     "exchangeDepositProposalCreating": "Vorschlag wird erstellt...",
     "exchangeDepositProposalConfirming": "Bestätigung läuft...",
-    "exchangeDepositProposalTitle": "{amount} {symbol} in Escrow #{escrowId} einzahlen",
-    "exchangeDepositProposalDescription": "Genehmige und zahle {amount} {symbol} in den Tausch-Escrow #{escrowId} ein, damit der Swap abgeschlossen werden kann."
+    "exchangeDepositProposalTitle": "{amount} {symbol} einzahlen – Escrow abschließen (#{escrowId})",
+    "exchangeDepositProposalDescription": "Genehmige und zahle {payAmount} {paySymbol} in den Escrow (#{escrowId}) ein, um den Tausch mit {otherParty} abzuschließen. Im Gegenzug erhält {activeSpace} {receiveAmount} {receiveSymbol}.",
+    "investmentDepositProposalDescription": "Genehmige und zahle {payAmount} {paySymbol} in den Escrow (#{escrowId}) ein, um die Investition in {otherParty} abzuschließen. Im Gegenzug erhält {activeSpace} {receiveAmount} {receiveSymbol}."
   },
   "AgreementFlow": {
     "labels": {
@@ -1387,7 +1388,8 @@
         "source": "Quelle",
         "sourcePlaceholder": "Quelle wählen",
         "sourceMint": "Neue Token prägen",
-        "sourceTreasury": "Verfügbare Token in der Treasury nutzen"
+        "sourceTreasury": "Verfügbare Token in der Treasury nutzen",
+        "escrowNotice": "Dieser Vorschlag verwendet Escrow für die Investition. Sobald er genehmigt ist, zahlt der Investor ({investor}) seinen Anteil aus seinem Profil oder seiner Space-Seite ein, und die Einzahlung von {activeSpace} erfolgt, wenn der Vorschlag genehmigt und ausgeführt wird."
       },
       "acceptInvestmentForm": {
         "notMemberRevert": "Die Transaktion wurde abgelehnt: Die verbundene Wallet ist kein Mitglied oder Delegierter dieses Spaces. Verwenden Sie eine Wallet, die zum Space gehört, oder verbinden Sie sich als Delegierter.",
