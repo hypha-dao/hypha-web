@@ -37,6 +37,25 @@
     "invalidTransactions": "Ungültige Transaktionen",
     "Coherence": "Kohärenz"
   },
+  "ModalAside": {
+    "spaceSettings": "Space-Einstellungen",
+    "createProposal": "Vorschlag erstellen",
+    "activateSpace": "Space aktivieren",
+    "spaceNavigation": "Space-Navigation",
+    "profileActions": "Aktionen",
+    "transferFunds": "Mittel überweisen",
+    "redeemTokens": "Tokens einlösen",
+    "buyHyphaTokens": "Hypha Tokens kaufen (Rewards)",
+    "buySpaceTokens": "Space-Tokens kaufen",
+    "activateSpacesProfile": "Space(s) aktivieren",
+    "notificationCentre": "Benachrichtigungszentrale",
+    "editProfile": "Profil bearbeiten",
+    "createAccount": "Konto erstellen",
+    "createSpace": "Space erstellen",
+    "addSpace": "Space hinzufügen",
+    "configureSpace": "Space konfigurieren",
+    "panelAccessibleName": "Hypha-Panel"
+  },
   "Navigation": {
     "network": "Netzwerk",
     "mySpaces": "Meine Spaces",

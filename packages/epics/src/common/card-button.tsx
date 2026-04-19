@@ -18,6 +18,8 @@ const cardButtonVariants = cva(
         success: '',
         tension: '',
         insight: '',
+        /** Muted border; selected uses accent (aligned with proposal / overlay forms). */
+        subtle: '',
       },
     },
     compoundVariants: [
@@ -64,6 +66,19 @@ const cardButtonVariants = cva(
         colorVariant: 'neutral',
         selected: false,
         className: 'hover:border-neutral-5',
+      },
+      // Subtle — single accent tone when selected (create signal, overlay-style forms)
+      {
+        colorVariant: 'subtle',
+        selected: true,
+        className:
+          'border-accent-9 bg-accent-3 shadow-sm ring-1 ring-inset ring-accent-9/15',
+      },
+      {
+        colorVariant: 'subtle',
+        selected: false,
+        className:
+          'border-border/70 bg-background/85 hover:border-accent-6 hover:bg-muted/60',
       },
       // Success variants
       {
