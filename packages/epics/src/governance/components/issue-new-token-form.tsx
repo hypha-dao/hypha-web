@@ -334,6 +334,7 @@ export const IssueNewTokenForm = ({
       isVotingToken: false,
       transferable: true,
       enableAdvancedTransferControls: false,
+      /** Listed so `form.reset()` clears whitelist rows (incl. blockchain addresses). */
       transferWhitelist: undefined,
       enableProposalAutoMinting: true,
       enableLimitedSupply: false,

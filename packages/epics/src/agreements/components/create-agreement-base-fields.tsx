@@ -46,6 +46,7 @@ import { useTranslations } from 'next-intl';
 import { RotateCcw } from 'lucide-react';
 import {
   RESUBMIT_FORM_DATA_KEY,
+  RESUBMIT_PROPOSAL_DATA_KEY,
   getProposalTemplateSegmentFromPathname,
   isLegacyGenericResubmitSegment,
 } from '../../utils/resubmit-proposal-template';
@@ -369,6 +370,7 @@ export function CreateAgreementBaseFields({
     setResubmitFormData(null);
     try {
       sessionStorage.removeItem(RESUBMIT_FORM_DATA_KEY);
+      sessionStorage.removeItem(RESUBMIT_PROPOSAL_DATA_KEY);
     } catch {
       /* ignore */
     }
