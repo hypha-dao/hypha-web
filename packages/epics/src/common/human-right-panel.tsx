@@ -1601,28 +1601,32 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   return (
     <>
       <SidebarHeader className="bg-background-2 p-0">
-        <HumanChatPanelHeader
-          title={mode === 'coherence' ? coherenceTitle ?? undefined : undefined}
-          onBack={mode === 'coherence' ? closeCoherenceChat : undefined}
-          trailingStart={
-            roomId ? (
-              <HumanChatPanelMentionBell
-                unreadCount={unreadChatState.unreadMentionCount}
-                countIsCapped={unreadChatState.mentionCountIsCapped}
-                onOpenMentions={() => setActiveTab('mentions')}
-              />
-            ) : null
-          }
-        />
-        <HumanChatPanelTabs
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          chatMentionCount={unreadChatState.unreadMentionCount}
-          chatMentionCountCapped={unreadChatState.mentionCountIsCapped}
-          mentionTabBadgeCount={unreadChatState.unreadMentionCount}
-          mentionTabBadgeCapped={unreadChatState.mentionCountIsCapped}
-          notificationCentreHref={notificationCentreHref}
-        />
+        <div className="rounded-b-2xl border-x border-b border-border/60 bg-card/35 shadow-sm backdrop-blur-[1px] supports-[backdrop-filter]:bg-card/25 dark:bg-card/45 dark:supports-[backdrop-filter]:bg-card/35">
+          <HumanChatPanelHeader
+            title={
+              mode === 'coherence' ? coherenceTitle ?? undefined : undefined
+            }
+            onBack={mode === 'coherence' ? closeCoherenceChat : undefined}
+            trailingStart={
+              roomId ? (
+                <HumanChatPanelMentionBell
+                  unreadCount={unreadChatState.unreadMentionCount}
+                  countIsCapped={unreadChatState.mentionCountIsCapped}
+                  onOpenMentions={() => setActiveTab('mentions')}
+                />
+              ) : null
+            }
+          />
+          <HumanChatPanelTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            chatMentionCount={unreadChatState.unreadMentionCount}
+            chatMentionCountCapped={unreadChatState.mentionCountIsCapped}
+            mentionTabBadgeCount={unreadChatState.unreadMentionCount}
+            mentionTabBadgeCapped={unreadChatState.mentionCountIsCapped}
+            notificationCentreHref={notificationCentreHref}
+          />
+        </div>
       </SidebarHeader>
       <SidebarContent className="flex min-h-0 flex-col bg-background-2">
         {activeTab === 'chat' && (
