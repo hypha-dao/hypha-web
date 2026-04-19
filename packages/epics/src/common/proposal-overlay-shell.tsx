@@ -50,6 +50,11 @@ type ProposalOverlayShellProps = {
  * `DialogPrimitive.Overlay` is not used here: when `modal={false}` Radix omits
  * it; we render an equivalent scrim div. Scroll lock on desktop is handled
  * below so the page does not scroll behind the panel.
+ *
+ * **MenuTop must stay clickable:** `apps/web` renders {@link MenuTop} at
+ * `z-30`. The scrim and dialog host use `top: var(--menu-top-height)` (not
+ * `inset-0`) and stay at `z-20` / `z-[21]` so they never stack above the nav.
+ * A full-viewport overlay at `z-40+` was a regression that blocked the header.
  */
 export function ProposalOverlayShell({
   children,
@@ -87,10 +92,11 @@ export function ProposalOverlayShell({
     <AsideOverlayLayoutProvider mode="modal-shell">
       <DialogPrimitive.Root modal={false} defaultOpen open>
         <DialogPrimitive.Portal>
-          {/* Plain scrim — Radix Dialog overlay is not rendered when modal=false */}
+          {/* Plain scrim below MenuTop (z-30); starts under --menu-top-height */}
           <div
             className={cn(
-              'fixed inset-0 z-[40] hidden bg-black/50 backdrop-blur-xl supports-[backdrop-filter]:bg-black/40 md:block',
+              'fixed inset-x-0 bottom-0 z-20 hidden bg-black/50 backdrop-blur-xl supports-[backdrop-filter]:bg-black/40 md:block',
+              'top-[var(--menu-top-height,65px)]',
             )}
             aria-hidden
           />
@@ -99,7 +105,9 @@ export function ProposalOverlayShell({
             onInteractOutside={(e) => e.preventDefault()}
             onEscapeKeyDown={(e) => e.preventDefault()}
             className={cn(
-              'fixed z-[41] outline-none max-md:inset-auto max-md:bottom-0 max-md:top-[var(--menu-top-height,65px)] max-md:right-[var(--sidebar-right-width,0px)] max-md:h-auto max-md:w-full max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:bg-background-2 max-md:shadow-none md:inset-0 md:z-[41] md:flex md:items-center md:justify-center md:overflow-hidden md:bg-transparent md:p-4 md:pt-[max(1rem,calc(var(--menu-top-height,65px)+0.5rem))]',
+              'fixed z-[21] outline-none max-md:inset-auto max-md:bottom-0 max-md:top-[var(--menu-top-height,65px)] max-md:right-[var(--sidebar-right-width,0px)] max-md:h-auto max-md:w-full max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:bg-background-2 max-md:shadow-none',
+              // Host fills only below MenuTop so the nav strip is never covered.
+              'md:inset-x-0 md:bottom-0 md:top-[var(--menu-top-height,65px)] md:flex md:items-center md:justify-center md:overflow-hidden md:bg-transparent md:p-4 md:pt-4',
             )}
           >
             <DialogPrimitive.Title className="sr-only">
