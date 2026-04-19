@@ -87,12 +87,12 @@ export function HumanChatPanelTabs({
               tab.key === 'chat' && chatBadgeLabel != null
                 ? t('tabChatWithMentionCount', {
                     tabLabel: tab.label,
-                    count: chatBadgeLabel,
+                    count: Math.min(chatMentionCount, 99),
                   })
                 : tab.key === 'mentions' && mentionBadgeLabel != null
                 ? t('tabMentionsWithMentionCount', {
                     tabLabel: tab.label,
-                    count: mentionBadgeLabel,
+                    count: Math.min(mentionTabBadgeCount, 99),
                   })
                 : undefined
             }

@@ -50,7 +50,8 @@ export function normalizePlainTextMxidCaptureFromMatch(
 }
 
 export function isLikelyMatrixUserId(id: string): boolean {
-  return /^@[^\s:]+:.+/.test(id);
+  /** Whole-string MXID only — reject `@alice:matrix.org trailing junk`. */
+  return /^@[^\s:]+:[^\s]+$/.test(id.trim());
 }
 
 /**
@@ -136,6 +137,13 @@ export function parseMentionUserIdsFromWireContent(
   if (!raw || typeof raw !== 'object') return undefined;
   const ids = (raw as { user_ids?: unknown }).user_ids;
   if (!Array.isArray(ids)) return undefined;
-  const out = ids.filter((id): id is string => typeof id === 'string');
+  const out = [
+    ...new Set(
+      ids.filter(
+        (id): id is string =>
+          typeof id === 'string' && isLikelyMatrixUserId(id),
+      ),
+    ),
+  ];
   return out.length > 0 ? out : undefined;
 }
