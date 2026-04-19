@@ -54,7 +54,8 @@
     "createAccount": "Créer un compte",
     "createSpace": "Créer un espace",
     "addSpace": "Ajouter un espace",
-    "configureSpace": "Configurer l’espace"
+    "configureSpace": "Configurer l’espace",
+    "panelAccessibleName": "Boîte de dialogue modale"
   },
   "Navigation": {
     "network": "Réseau",

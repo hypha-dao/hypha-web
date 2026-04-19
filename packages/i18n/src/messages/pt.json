@@ -54,7 +54,8 @@
     "createAccount": "Criar conta",
     "createSpace": "Criar espaço",
     "addSpace": "Adicionar espaço",
-    "configureSpace": "Configurar espaço"
+    "configureSpace": "Configurar espaço",
+    "panelAccessibleName": "Caixa de diálogo modal"
   },
   "AgreementFlow": {
     "proposalErrors": {
