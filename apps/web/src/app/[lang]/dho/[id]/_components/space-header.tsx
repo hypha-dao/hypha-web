@@ -129,28 +129,36 @@ export async function SpaceHeader({
               </div>
             </div>
 
-            <div className="flex min-h-0 flex-1 flex-col items-start justify-center py-3 pb-6 sm:py-4 sm:pb-8">
-              <div className={cn('space-y-1.5', PURPOSE_WRAP)}>
-                <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-white/60 sm:text-[11px]">
-                  {tSpaces('purpose')}
-                </div>
-                {hasPurpose ? (
-                  <p
-                    className="max-h-[9.5rem] w-full overflow-y-auto text-pretty text-[15px] leading-relaxed text-white/95 sm:text-2 sm:leading-relaxed"
-                    style={{ scrollbarWidth: 'thin' }}
-                    title={
-                      rawPurpose.length > PURPOSE_MAX_CHARS
-                        ? rawPurpose
-                        : undefined
-                    }
-                  >
-                    {purposeDisplay}
-                  </p>
-                ) : (
-                  <p className="text-pretty text-2 italic leading-relaxed text-white/60">
-                    {tSpaces('purposeEmptyPublic')}
-                  </p>
+            {/* flex-1 + min-h-0 + nested scroll: up to 300 chars cannot push title or stats */}
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden py-3 pb-4 sm:py-4 sm:pb-5">
+              <div
+                className={cn(
+                  'min-h-0 flex-1 overflow-y-auto overscroll-y-contain pr-1',
+                  PURPOSE_WRAP,
                 )}
+                style={{ scrollbarWidth: 'thin' }}
+              >
+                <div className="space-y-1.5">
+                  <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-white/60 sm:text-[11px]">
+                    {tSpaces('purpose')}
+                  </div>
+                  {hasPurpose ? (
+                    <p
+                      className="text-pretty text-[15px] leading-relaxed text-white/95 sm:text-2 sm:leading-relaxed"
+                      title={
+                        rawPurpose.length > PURPOSE_MAX_CHARS
+                          ? rawPurpose
+                          : undefined
+                      }
+                    >
+                      {purposeDisplay}
+                    </p>
+                  ) : (
+                    <p className="text-pretty text-2 italic leading-relaxed text-white/60">
+                      {tSpaces('purposeEmptyPublic')}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
