@@ -9,6 +9,8 @@ import clsx from 'clsx';
 
 type MenuTopProps = {
   children?: React.ReactNode;
+  /** Optional center slot (e.g. space breadcrumbs on DHO routes) */
+  breadcrumbSlot?: React.ReactNode;
   leadingAction?: React.ReactNode;
   trailingAction?: React.ReactNode;
   logoHref?: string;
@@ -19,6 +21,7 @@ type MenuTopProps = {
 
 export const MenuTop = ({
   children,
+  breadcrumbSlot,
   leadingAction,
   trailingAction,
   logoHref,
@@ -42,22 +45,33 @@ export const MenuTop = ({
     >
       <div
         className={clsx(
-          'w-full mx-auto flex items-center',
-          children ? 'justify-between' : 'justify-center',
+          'mx-auto flex w-full min-w-0 items-center gap-2 sm:gap-3',
+          !breadcrumbSlot && (children ? 'justify-between' : 'justify-center'),
         )}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {leadingAction}
           {!!logoHref && (
             <Logo width={110} href={logoHref} target={hrefTarget} />
           )}
         </div>
 
+        {breadcrumbSlot ? (
+          <div className="hidden min-h-[1.25rem] min-w-0 flex-1 overflow-hidden md:flex md:justify-center md:px-2">
+            <div className="max-w-full min-w-0 text-muted-foreground [&_a]:text-foreground [&_a:hover]:text-accent-11">
+              {breadcrumbSlot}
+            </div>
+          </div>
+        ) : null}
+
         {/* Desktop Nav + Trailing action (right-aligned group) */}
         {(children || trailingAction) && (
           <div
             id="menu-top-actions"
-            className="hidden md:flex items-center gap-2"
+            className={clsx(
+              'hidden shrink-0 items-center gap-2 md:flex',
+              breadcrumbSlot && 'ml-auto',
+            )}
           >
             {children}
             {trailingAction}

@@ -10,22 +10,18 @@ import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 
 import { Footer, Html, ThemeProvider } from '@hypha-platform/ui/server';
 import { AuthProvider } from '@hypha-platform/authentication';
-import { useAuthentication } from '@hypha-platform/authentication';
 import {
   AiLeftPanel,
   PanelProviders,
   PanelWrapLayout,
-  AiSidebarTrigger,
-  HumanSidebarTrigger,
-  ConnectedButtonProfile,
 } from '@hypha-platform/epics';
 import { ConnectedHumanRightPanel } from '@web/components/connected-human-right-panel';
 import { EvmProvider } from '@hypha-platform/evm';
-import { useMe } from '@hypha-platform/core/client';
 import { ConditionalMatrixProvider } from '@web/components/conditional-matrix-provider';
 import { fileRouter } from '@hypha-platform/core/server';
-import { MenuTop, TooltipProvider } from '@hypha-platform/ui';
-import { ROOT_URL } from './constants';
+import { TooltipProvider } from '@hypha-platform/ui';
+import { AppChromeWithMenu } from '@web/components/app-chrome-with-menu';
+import { MenuBreadcrumbProvider } from '@web/components/menu-breadcrumb-context';
 import {
   getEnableAiChat,
   getEnableHumanChat,
@@ -34,7 +30,6 @@ import { NotificationSubscriber } from '@hypha-platform/notifications/client';
 
 import '@hypha-platform/ui-utils/global.css';
 import 'react-tooltip/dist/react-tooltip.css';
-import { ConnectedLanguageSelect } from '@web/components/connected-language-select';
 import { getShowLanguageSelect } from '@hypha-platform/feature-flags';
 import ScrollUp from '@web/components/scroll-up';
 import SeamlessScrollPolyfill from '@web/components/seamless-scroll-polyfill';
@@ -134,75 +129,58 @@ export default async function RootLayout({
                 >
                   <ConditionalMatrixProvider enabled={humanChatEnabled}>
                     <PanelProviders>
-                      <PanelWrapLayout
-                        left={
-                          aiChatEnabled
-                            ? { content: <AiLeftPanel /> }
-                            : undefined
-                        }
-                        right={
-                          humanChatEnabled
-                            ? { content: <ConnectedHumanRightPanel /> }
-                            : undefined
-                        }
-                      >
-                        {/* Fixed menu bar — clamped to center column by SidebarInset */}
-                        <div className="sticky top-0 z-30 shrink-0">
-                          <MenuTop
-                            logoHref={ROOT_URL}
+                      <MenuBreadcrumbProvider>
+                        <PanelWrapLayout
+                          left={
+                            aiChatEnabled
+                              ? { content: <AiLeftPanel /> }
+                              : undefined
+                          }
+                          right={
+                            humanChatEnabled
+                              ? { content: <ConnectedHumanRightPanel /> }
+                              : undefined
+                          }
+                        >
+                          <AppChromeWithMenu
                             openMenuLabel={tNav('openMenu')}
                             closeMenuLabel={tNav('closeMenu')}
-                            leadingAction={
-                              aiChatEnabled ? <AiSidebarTrigger /> : undefined
-                            }
-                            trailingAction={
-                              humanChatEnabled ? (
-                                <HumanSidebarTrigger />
-                              ) : undefined
-                            }
+                            aiChatEnabled={aiChatEnabled}
+                            humanChatEnabled={humanChatEnabled}
+                            isLanguageSelectVisible={isLanguageSelectVisible}
+                            navItems={[
+                              {
+                                label: tNav('network'),
+                                href: `/${locale}/network`,
+                              },
+                              {
+                                label: tNav('mySpaces'),
+                                href: `/${locale}/my-spaces`,
+                              },
+                            ]}
                           >
-                            <ConnectedButtonProfile
-                              useAuthentication={useAuthentication}
-                              useMe={useMe}
-                              newUserRedirectPath="/profile/signup"
-                              baseRedirectPath="/my-spaces"
-                              navItems={[
-                                {
-                                  label: tNav('network'),
-                                  href: `/${locale}/network`,
-                                },
-                                {
-                                  label: tNav('mySpaces'),
-                                  href: `/${locale}/my-spaces`,
-                                },
-                              ]}
+                            <NextSSRPlugin
+                              routerConfig={extractRouterConfig(fileRouter)}
                             />
-                            {isLanguageSelectVisible && (
-                              <ConnectedLanguageSelect />
-                            )}
-                          </MenuTop>
-                        </div>
-                        {/* Scrollable content area */}
-                        <NextSSRPlugin
-                          routerConfig={extractRouterConfig(fileRouter)}
-                        />
-                        <div className="mb-auto pb-8">
-                          <div className="pt-9 h-full flex justify-normal">
-                            <div className="w-full h-full">{children}</div>
-                          </div>
-                        </div>
-                        <Footer
-                          networkLabel={tFooter('network')}
-                          legalLabel={tFooter('legal')}
-                          hyphaServicesLabel={tFooter('hyphaServices')}
-                          hyphaTokenomicsLabel={tFooter('hyphaTokenomics')}
-                          licensingPolicyLabel={tFooter('licensingPolicy')}
-                          termsAndConditionsLabel={tFooter(
-                            'termsAndConditions',
-                          )}
-                          privacyPolicyLabel={tFooter('privacyPolicy')}
-                        />
-                      </PanelWrapLayout>
+                            <div className="mb-auto pb-8">
+                              <div className="flex h-full justify-normal pt-9">
+                                <div className="h-full w-full">{children}</div>
+                              </div>
+                            </div>
+                            <Footer
+                              networkLabel={tFooter('network')}
+                              legalLabel={tFooter('legal')}
+                              hyphaServicesLabel={tFooter('hyphaServices')}
+                              hyphaTokenomicsLabel={tFooter('hyphaTokenomics')}
+                              licensingPolicyLabel={tFooter('licensingPolicy')}
+                              termsAndConditionsLabel={tFooter(
+                                'termsAndConditions',
+                              )}
+                              privacyPolicyLabel={tFooter('privacyPolicy')}
+                            />
+                          </AppChromeWithMenu>
+                        </PanelWrapLayout>
+                      </MenuBreadcrumbProvider>
                     </PanelProviders>
                   </ConditionalMatrixProvider>
                 </NotificationSubscriber>
