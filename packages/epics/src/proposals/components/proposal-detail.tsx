@@ -55,7 +55,6 @@ import { resolveTokenDecimals } from '../../governance/utils/token-decimals';
 import { useDbSpaces } from '../../hooks';
 import { hasUpdateTokenDataToDisplay } from '../utils/has-update-token-data-to-display';
 import { normalizeVotingDurationForResubmitSelect } from '../../agreements/plugins/change-voting-method/voting-duration-resubmit';
-import { buildTransferWhitelistFromBaselineAddresses } from '../../treasury/utils/whitelist-baseline-to-form';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
@@ -208,9 +207,6 @@ function buildIssueNewTokenResubmitPayload(
   options?: {
     /** Agreement document id — used to pick the draft token row (icon URL from Web2 before mint). */
     documentId?: number | null;
-    /** Space members / nested spaces for mapping whitelist addresses to combobox selections. */
-    membersForWhitelist?: Person[];
-    spacesForWhitelist?: Space[];
   },
 ): Record<string, unknown> {
   const humanSupply = Number(formatUnits(token.maxSupply, 18));
@@ -227,12 +223,14 @@ function buildIssueNewTokenResubmitPayload(
 
   const enableProposalAutoMinting = token.autoMinting ?? true;
   const transferable = token.transferable ?? true;
-  const enableAdvancedTransferControls = Boolean(
-    token.useTransferWhitelist || token.useReceiveWhitelist,
-  );
 
   const fromList = token.initialTransferWhitelist ?? [];
   const toList = token.initialReceiveWhitelist ?? [];
+  const hasWhitelistAddresses = fromList.length > 0 || toList.length > 0;
+  const enableAdvancedTransferControls = Boolean(
+    (token.useTransferWhitelist || token.useReceiveWhitelist) &&
+      hasWhitelistAddresses,
+  );
 
   const matchedDb =
     (token.address
@@ -251,43 +249,30 @@ function buildIssueNewTokenResubmitPayload(
       ? dbTokens.find((t) => t.agreementId === options.documentId)
       : undefined;
 
+  /**
+   * Resubmit must mirror a normal create: pass decoded contract addresses only.
+   * Avoid member/space classification from UI lists — incomplete mapping broke web3 encode / create flow.
+   */
   let transferWhitelist:
-    | ReturnType<typeof buildTransferWhitelistFromBaselineAddresses>
     | {
-        from: { type: 'member'; address: string }[];
-        to: { type: 'member'; address: string }[];
+        from?: { type: 'member'; address: string }[];
+        to?: { type: 'member'; address: string }[];
       }
     | undefined;
 
-  if (enableAdvancedTransferControls) {
-    const members = options?.membersForWhitelist ?? [];
-    const spaces = options?.spacesForWhitelist ?? [];
-    const fromAddrs = fromList as `0x${string}`[];
-    const toAddrs = toList as `0x${string}`[];
-    const isOwnershipToken =
-      token.tokenType === 'ownership' ||
-      matchedDb?.type === 'ownership' ||
-      draftTokenForAgreement?.type === 'ownership';
-
-    if (members.length > 0 || spaces.length > 0) {
-      transferWhitelist = buildTransferWhitelistFromBaselineAddresses({
-        from: fromAddrs,
-        to: toAddrs,
-        members,
-        spaces,
-        isOwnershipToken,
-      });
-    } else {
-      transferWhitelist = {
-        from: fromList.map((addr) => ({
-          type: 'member' as const,
-          address: addr,
-        })),
-        to: toList.map((addr) => ({
-          type: 'member' as const,
-          address: addr,
-        })),
-      };
+  if (enableAdvancedTransferControls && hasWhitelistAddresses) {
+    transferWhitelist = {};
+    if (fromList.length > 0) {
+      transferWhitelist.from = fromList.map((addr) => ({
+        type: 'member' as const,
+        address: addr,
+      }));
+    }
+    if (toList.length > 0) {
+      transferWhitelist.to = toList.map((addr) => ({
+        type: 'member' as const,
+        address: addr,
+      }));
     }
   }
 
@@ -890,11 +875,7 @@ export const ProposalDetail = ({
           tok as ProposalTokenFromProposalDetails,
           proposalDetails.spaceId,
           dbTokens ?? [],
-          {
-            documentId,
-            membersForWhitelist,
-            spacesForWhitelist,
-          },
+          { documentId },
         ),
       };
     }
