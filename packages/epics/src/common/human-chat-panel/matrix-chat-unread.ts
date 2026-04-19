@@ -1,4 +1,9 @@
-import { EventType, NotificationCountType, type Room } from 'matrix-js-sdk';
+import {
+  EventType,
+  NotificationCountType,
+  type MatrixEvent,
+  type Room,
+} from 'matrix-js-sdk';
 
 import {
   getMessageReplaceTargetEventId,
@@ -38,6 +43,33 @@ function effectiveReadCursorEventId(room: Room, userId: string): string | null {
  * cursor. Used when `NotificationCountType.Highlight` from the server is 0 (some
  * homeservers do not populate highlight counts reliably).
  */
+/** Latest message content for mention parsing (`m.replace` edits target the root id). */
+function wireContentForMentionParse(
+  room: Room,
+  rootEvent: MatrixEvent,
+): Record<string, unknown> | undefined {
+  const rootId = rootEvent.getId();
+  if (!rootId) return undefined;
+
+  let latest = rootEvent;
+  let latestTs = rootEvent.getTs();
+
+  for (const cand of room.getLiveTimeline().getEvents()) {
+    if (getMessageReplaceTargetEventId(cand) !== rootId) continue;
+    if (isRedactedRoomMessageEvent(cand)) continue;
+    const ts = cand.getTs();
+    if (ts >= latestTs) {
+      latestTs = ts;
+      latest = cand;
+    }
+  }
+
+  const content = latest.getContent();
+  return content && typeof content === 'object'
+    ? (content as Record<string, unknown>)
+    : undefined;
+}
+
 function countUnreadMentionMessagesForUser(
   room: Room,
   viewerId: string,
@@ -55,7 +87,9 @@ function countUnreadMentionMessagesForUser(
     const sender = ev.getSender()!;
     if (sender === viewerId) continue;
 
-    const ids = parseMentionUserIdsFromWireContent(ev.getContent());
+    const ids = parseMentionUserIdsFromWireContent(
+      wireContentForMentionParse(room, ev),
+    );
     if (!ids?.includes(viewerId)) continue;
 
     if (readUpToId) {
