@@ -1557,6 +1557,7 @@
       "quorumMinParticipation": "Quorum (Min. Participation)",
       "unityMinAlignment": "Unity (Min. Alignment)",
       "currentScore": "Current",
+      "voteScore": "Vote",
       "requiredScore": "Required {percent}%",
       "submittingVote": "Submitting your vote — waiting for confirmation…",
       "proposalVotingIconAlt": "Proposal minimum voting icon",
