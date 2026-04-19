@@ -209,13 +209,20 @@ export function parseHyphaInvestmentFormFromDescription(
     }
 
     // Validate investorSendLegs
-    if (!Array.isArray(parsed.investorSendLegs) || parsed.investorSendLegs.length === 0) {
+    if (
+      !Array.isArray(parsed.investorSendLegs) ||
+      parsed.investorSendLegs.length === 0
+    ) {
       return null;
     }
 
     for (const leg of parsed.investorSendLegs) {
       if (!leg || typeof leg !== 'object') return null;
-      if (!leg.token || typeof leg.token !== 'string' || !/^0x[a-fA-F0-9]{40}$/.test(leg.token)) {
+      if (
+        !leg.token ||
+        typeof leg.token !== 'string' ||
+        !/^0x[a-fA-F0-9]{40}$/.test(leg.token)
+      ) {
         return null;
       }
       if (!leg.amount || typeof leg.amount !== 'string') return null;
@@ -230,7 +237,11 @@ export function parseHyphaInvestmentFormFromDescription(
 
       for (const leg of parsed.spaceReceiveLegs) {
         if (!leg || typeof leg !== 'object') return null;
-        if (!leg.token || typeof leg.token !== 'string' || !/^0x[a-fA-F0-9]{40}$/.test(leg.token)) {
+        if (
+          !leg.token ||
+          typeof leg.token !== 'string' ||
+          !/^0x[a-fA-F0-9]{40}$/.test(leg.token)
+        ) {
           return null;
         }
         if (!leg.amount || typeof leg.amount !== 'string') return null;
@@ -238,7 +249,11 @@ export function parseHyphaInvestmentFormFromDescription(
         const numAmount = Number(leg.amount);
         if (isNaN(numAmount) || numAmount <= 0) return null;
         // Validate source if present
-        if (leg.source !== undefined && leg.source !== 'mint' && leg.source !== 'treasury') {
+        if (
+          leg.source !== undefined &&
+          leg.source !== 'mint' &&
+          leg.source !== 'treasury'
+        ) {
           return null;
         }
       }

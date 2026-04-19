@@ -179,15 +179,15 @@ export function ProposalAcceptInvestmentData({
         />
       ))
     : exchangeEscrowData?.tokenB && exchangeEscrowData.amountB !== undefined
-    ? [
-        <OnChainTokenRow
-          key="onchain-send"
-          spaceSlug={spaceSlug}
-          tokenAddress={exchangeEscrowData.tokenB}
-          rawAmount={exchangeEscrowData.amountB}
-        />,
-      ]
-    : null;
+      ? [
+          <OnChainTokenRow
+            key="onchain-send"
+            spaceSlug={spaceSlug}
+            tokenAddress={exchangeEscrowData.tokenB}
+            rawAmount={exchangeEscrowData.amountB}
+          />,
+        ]
+      : null;
 
   const receiveFromMarker = parsed?.spaceReceiveLegs?.length
     ? parsed.spaceReceiveLegs.map((leg, i) => (
@@ -199,15 +199,15 @@ export function ProposalAcceptInvestmentData({
         />
       ))
     : exchangeEscrowData?.tokenA && exchangeEscrowData.amountA !== undefined
-    ? [
-        <OnChainTokenRow
-          key="onchain-recv"
-          spaceSlug={spaceSlug}
-          tokenAddress={exchangeEscrowData.tokenA}
-          rawAmount={exchangeEscrowData.amountA}
-        />,
-      ]
-    : null;
+      ? [
+          <OnChainTokenRow
+            key="onchain-recv"
+            spaceSlug={spaceSlug}
+            tokenAddress={exchangeEscrowData.tokenA}
+            rawAmount={exchangeEscrowData.amountA}
+          />,
+        ]
+      : null;
 
   if (!sendFromMarker && !receiveFromMarker) {
     return null;
