@@ -102,6 +102,9 @@ export const useResubmitProposalData = <
     tokenAddress?: string;
     spaceDiscoverability?: number;
     spaceActivityAccess?: number;
+    recipient?: string;
+    investorSendLegs?: Array<{ amount?: string; token?: string }>;
+    spaceReceiveLegs?: Array<{ amount?: string; token?: string }>;
   },
 >(
   form: UseFormReturn<T>,
@@ -563,10 +566,15 @@ export const useResubmitProposalData = <
             });
           }
           if (bht.recipient !== undefined) {
-            form.setValue('recipient' as any, bht.recipient as any, {
-              shouldDirty: true,
-              shouldValidate: true,
-            });
+            const recipientPath = 'recipient' as Path<T>;
+            form.setValue(
+              recipientPath,
+              bht.recipient as PathValue<T, typeof recipientPath>,
+              {
+                shouldDirty: true,
+                shouldValidate: true,
+              },
+            );
           }
         }
 
@@ -574,10 +582,15 @@ export const useResubmitProposalData = <
         if (deployFundsInj && typeof deployFundsInj === 'object') {
           const df = deployFundsInj as Record<string, unknown>;
           if (df.recipient !== undefined) {
-            form.setValue('recipient' as any, df.recipient as any, {
-              shouldDirty: true,
-              shouldValidate: true,
-            });
+            const recipientPath = 'recipient' as Path<T>;
+            form.setValue(
+              recipientPath,
+              df.recipient as PathValue<T, typeof recipientPath>,
+              {
+                shouldDirty: true,
+                shouldValidate: true,
+              },
+            );
           }
           if (Array.isArray(df.payouts)) {
             form.setValue('payouts' as any, df.payouts as any, {
@@ -592,10 +605,15 @@ export const useResubmitProposalData = <
         if (contributionLikeInj && typeof contributionLikeInj === 'object') {
           const cl = contributionLikeInj as Record<string, unknown>;
           if (cl.recipient !== undefined) {
-            form.setValue('recipient' as any, cl.recipient as any, {
-              shouldDirty: true,
-              shouldValidate: true,
-            });
+            const recipientPath = 'recipient' as Path<T>;
+            form.setValue(
+              recipientPath,
+              cl.recipient as PathValue<T, typeof recipientPath>,
+              {
+                shouldDirty: true,
+                shouldValidate: true,
+              },
+            );
           }
           if (Array.isArray(cl.payouts)) {
             form.setValue('payouts' as any, cl.payouts as any, {
@@ -636,13 +654,19 @@ export const useResubmitProposalData = <
         }
 
         if (parsed.recipient && parsed.investorSendLegs) {
-          form.setValue('recipient' as any, parsed.recipient as any, {
-            shouldDirty: true,
-            shouldValidate: true,
-          });
+          const recipientPath = 'recipient' as Path<T>;
           form.setValue(
-            'investorSendLegs' as any,
-            parsed.investorSendLegs as any,
+            recipientPath,
+            parsed.recipient as PathValue<T, typeof recipientPath>,
+            {
+              shouldDirty: true,
+              shouldValidate: true,
+            },
+          );
+          const investorSendLegsPath = 'investorSendLegs' as Path<T>;
+          form.setValue(
+            investorSendLegsPath,
+            parsed.investorSendLegs as PathValue<T, typeof investorSendLegsPath>,
             {
               shouldDirty: true,
               shouldValidate: true,
@@ -650,9 +674,13 @@ export const useResubmitProposalData = <
           );
         }
         if (parsed.spaceReceiveLegs?.length) {
+          const spaceReceiveLegsPath = 'spaceReceiveLegs' as Path<T>;
           form.setValue(
-            'spaceReceiveLegs' as any,
-            parsed.spaceReceiveLegs as any,
+            spaceReceiveLegsPath,
+            parsed.spaceReceiveLegs as PathValue<
+              T,
+              typeof spaceReceiveLegsPath
+            >,
             {
               shouldDirty: true,
               shouldValidate: true,

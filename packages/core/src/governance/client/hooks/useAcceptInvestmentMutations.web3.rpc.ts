@@ -59,6 +59,18 @@ export const useAcceptInvestmentMutationsWeb3Rpc = ({
         throw new Error('Smart wallet client not available');
       }
 
+      // Validate array lengths early
+      if (arg.investorSendLegs.length !== 1) {
+        throw new Error(
+          `Investment requires exactly one investor send leg, received ${arg.investorSendLegs.length}`,
+        );
+      }
+      if (arg.spaceReceiveLegs.length !== 1) {
+        throw new Error(
+          `Investment requires exactly one space receive leg, received ${arg.spaceReceiveLegs.length}`,
+        );
+      }
+
       const escrowAddress = getEscrowImplementationAddress();
       if (!escrowAddress) {
         throw new Error('HYPHA_ESCROW_ADDRESS_MISSING');

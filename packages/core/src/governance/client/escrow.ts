@@ -194,7 +194,56 @@ export function parseHyphaInvestmentFormFromDescription(
   );
   try {
     const parsed = JSON.parse(json) as HyphaInvestmentFormPayloadV1;
+
+    // Validate the payload structure
     if (parsed?.version !== 1) return null;
+
+    // Validate required fields
+    if (!parsed.investorAddress || typeof parsed.investorAddress !== 'string') {
+      return null;
+    }
+
+    // Validate investorAddress format (Ethereum address)
+    if (!/^0x[a-fA-F0-9]{40}$/.test(parsed.investorAddress)) {
+      return null;
+    }
+
+    // Validate investorSendLegs
+    if (!Array.isArray(parsed.investorSendLegs) || parsed.investorSendLegs.length === 0) {
+      return null;
+    }
+
+    for (const leg of parsed.investorSendLegs) {
+      if (!leg || typeof leg !== 'object') return null;
+      if (!leg.token || typeof leg.token !== 'string' || !/^0x[a-fA-F0-9]{40}$/.test(leg.token)) {
+        return null;
+      }
+      if (!leg.amount || typeof leg.amount !== 'string') return null;
+      // Validate amount is numeric and positive
+      const numAmount = Number(leg.amount);
+      if (isNaN(numAmount) || numAmount <= 0) return null;
+    }
+
+    // Validate spaceReceiveLegs if present
+    if (parsed.spaceReceiveLegs !== undefined) {
+      if (!Array.isArray(parsed.spaceReceiveLegs)) return null;
+
+      for (const leg of parsed.spaceReceiveLegs) {
+        if (!leg || typeof leg !== 'object') return null;
+        if (!leg.token || typeof leg.token !== 'string' || !/^0x[a-fA-F0-9]{40}$/.test(leg.token)) {
+          return null;
+        }
+        if (!leg.amount || typeof leg.amount !== 'string') return null;
+        // Validate amount is numeric and positive
+        const numAmount = Number(leg.amount);
+        if (isNaN(numAmount) || numAmount <= 0) return null;
+        // Validate source if present
+        if (leg.source !== undefined && leg.source !== 'mint' && leg.source !== 'treasury') {
+          return null;
+        }
+      }
+    }
+
     return parsed;
   } catch {
     return null;

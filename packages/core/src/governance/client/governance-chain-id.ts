@@ -9,6 +9,11 @@ const parseConfiguredChainId = (value?: string): number | null => {
     return null;
   }
 
+  // Validate that the string contains only digits
+  if (!/^\d+$/.test(value)) {
+    return null;
+  }
+
   const parsed = Number.parseInt(value, 10);
   return Number.isSafeInteger(parsed) ? parsed : null;
 };

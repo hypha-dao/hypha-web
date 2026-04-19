@@ -12,7 +12,7 @@ import { useTokens } from '../../treasury';
 import { Token } from '@hypha-platform/core/client';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { useReadContract } from 'wagmi';
-import { erc20Abi } from 'viem';
+import { erc20Abi, formatUnits } from 'viem';
 import { usePersonByWeb3Address } from '../hooks';
 import { useDbSpaces } from '../../hooks';
 
@@ -274,8 +274,9 @@ function OnChainTokenRow({
   });
   const decimals =
     decimalsData && typeof decimalsData === 'number' ? decimalsData : 18;
-  const human = Number(rawAmount) / 10 ** decimals;
-  const formatted = human.toFixed(Math.min(decimals, 6));
+  const humanString = formatUnits(rawAmount, decimals);
+  // Limit displayed precision to max 6 decimals
+  const formatted = parseFloat(humanString).toFixed(Math.min(decimals, 6));
 
   return (
     <TokenAmountRow

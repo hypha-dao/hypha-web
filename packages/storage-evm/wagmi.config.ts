@@ -14,6 +14,7 @@ export default defineConfig({
         'DAOSpaceFactoryImplementation.sol/**',
         'AgreementsImplementation.sol/**',
         'DAOProposalsImplementation.sol/**',
+        'EscrowImplementation.sol/**',
         'RegularTokenFactory.sol/**',
         'DecayingTokenFactory.sol/**',
         'OwnershipTokenFactory.sol/**',
@@ -37,6 +38,9 @@ export default defineConfig({
         },
         DAOProposalsImplementation: {
           [base.id]: '0x001bA7a00a259Fb12d7936455e292a60FC2bef14',
+        },
+        EscrowImplementation: {
+          [base.id]: '0x447A317cA5516933264Cdd6aeee0633Fa954B576',
         },
         RegularTokenFactory: {
           [base.id]: '0x95A33EC94de2189893884DaD63eAa19f7390144a',

@@ -201,6 +201,7 @@ export const useCreateAcceptInvestmentOrchestrator = ({
 
       const web2Slug = createAgreement?.slug ?? web2.createdAgreement?.slug;
       const web3SpaceId = arg.web3SpaceId;
+      let createdOnChain = false;
 
       try {
         if (config && typeof web3SpaceId === 'number') {
@@ -217,6 +218,11 @@ export const useCreateAcceptInvestmentOrchestrator = ({
               amount: leg.amount,
             })),
           });
+          createdOnChain = true;
+          completeTask('CREATE_WEB3_AGREEMENT');
+        } else if (config) {
+          // Web2-only path: mark Web3 task as complete to keep task progress balanced
+          startTask('CREATE_WEB3_AGREEMENT');
           completeTask('CREATE_WEB3_AGREEMENT');
         }
         const files = schemaCreateAgreementFiles.parse(arg);
@@ -229,7 +235,8 @@ export const useCreateAcceptInvestmentOrchestrator = ({
           completeTask('UPLOAD_FILES');
         }
       } catch (err) {
-        if (web2Slug) {
+        // Only delete the Web2 agreement if the on-chain write hasn't occurred yet
+        if (web2Slug && !createdOnChain) {
           await web2.deleteAgreementBySlug({ slug: web2Slug });
         }
         throw err;

@@ -44,12 +44,15 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
     ...(matrixImg ? [matrixImg] : []),
     ...IMAGE_HOSTS.map((host) => `https://${host}`),
   ].join(' ');
-  const localChainRpc = [
-    'http://127.0.0.1:8545',
-    'http://localhost:8545',
-    'ws://127.0.0.1:8545',
-    'ws://localhost:8545',
-  ].join(' ');
+  const localChainRpc =
+    process.env.NODE_ENV !== 'production'
+      ? [
+          'http://127.0.0.1:8545',
+          'http://localhost:8545',
+          'ws://127.0.0.1:8545',
+          'ws://localhost:8545',
+        ].join(' ')
+      : '';
 
   const connectSrc = [
     ...CONNECT_SOURCES,
