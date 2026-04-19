@@ -98,24 +98,26 @@ function TokenPayoutFieldInner({
 
   return (
     <div className="flex flex-col gap-1 w-full">
-      <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 md:justify-end items-end w-full">
-        <div className="flex top-0 m-0 p-0 flex-1 min-w-0">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch sm:gap-3 w-full">
+        <div className="flex min-w-0 flex-1">
           <Input
+            rootClassName="min-h-10 w-full items-stretch"
             value={value.amount ?? ''}
             type="text"
             inputMode="decimal"
             placeholder={tAgreementFlow('plugins.tokenPayoutField.amount')}
             onChange={(e) => handleAmountChange(e.target.value)}
+            className="h-10 min-h-10"
           />
         </div>
-        <div className="flex top-0 w-full sm:w-60 shrink-0 min-w-0 m-0 p-0">
+        <div className="flex w-full min-w-0 shrink-0 sm:max-w-[min(18rem,42%)]">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
                 colorVariant="neutral"
                 role="combobox"
-                className="w-full text-2 md:w-72 justify-between py-2 font-normal"
+                className="h-10 min-h-10 w-full justify-between px-3 py-0 text-sm font-normal"
               >
                 <div className="flex items-center gap-2">
                   {selectedToken ? (
