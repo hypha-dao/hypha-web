@@ -4,8 +4,8 @@ import { useEffect } from 'react';
 
 import { useSpaceHeaderMorph } from './space-header-morph-context';
 
-/** Approx max height of fixed strip (breadcrumb row + compact bar). */
-const MAX_STICKY_STACK_PX = 108;
+/** Approx max height of compact bar portal only (breadcrumbs live in MenuTop). */
+const MAX_STICKY_STACK_PX = 72;
 
 function smoothPad(p: number) {
   /* Ease padding in so content pushes down before strip fully occludes cards */
