@@ -879,6 +879,10 @@ function splitPlainTextMatrixMentions(
   return out;
 }
 
+/** Lexical `@user` pills — accent scale (avatar-indigo family), not primary (avoids muddy brown on amber highlight rows). */
+const CHAT_MENTION_PILL_CLASS =
+  'rounded-md border border-accent-8/35 bg-accent-3 px-1 py-px font-medium text-accent-11 dark:border-accent-8/45 dark:bg-accent-4 dark:text-accent-11';
+
 /**
  * Render plaintext with Matrix MXIDs as pills showing room display names (`resolveMx`).
  * Non‑MXID `@handles` keep optional Discord-style pills (no colon in capture).
@@ -917,7 +921,7 @@ function renderTextWithMentions(
       chunks.push(
         <span
           key={`${keyBase}-at-${keyN++}`}
-          className="rounded bg-primary/20 px-1 font-medium text-primary"
+          className={CHAT_MENTION_PILL_CLASS}
         >
           @{handle}
         </span>,
@@ -949,7 +953,7 @@ function renderTextWithMentions(
         <span
           key={`mx-${segIdx}-${seg.full}`}
           title={seg.full}
-          className="rounded bg-primary/20 px-1 font-medium text-primary"
+          className={CHAT_MENTION_PILL_CLASS}
         >
           {displayLabel}
         </span>,
