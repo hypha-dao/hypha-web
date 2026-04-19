@@ -2,77 +2,132 @@
 
 import * as React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { DayPicker } from 'react-day-picker';
+import {
+  DayPicker,
+  DayFlag,
+  type DayPickerProps,
+  getDefaultClassNames,
+  SelectionState,
+  UI,
+} from 'react-day-picker';
 
 import { cn } from '@hypha-platform/ui-utils';
 import { buttonVariants } from './button';
 
-export type CalendarProps = React.ComponentProps<typeof DayPicker>;
+export type CalendarProps = DayPickerProps;
 
 function Calendar({
   className,
-  classNames,
+  classNames: classNamesProp,
+  components: componentsProp,
   showOutsideDays = true,
+  disabled: disabledProp,
   ...props
 }: CalendarProps) {
-  const today = new Date();
-  const isPastDay = (day: Date) => {
-    const dayDate = new Date(day.setHours(0, 0, 0, 0));
-    const todayDate = new Date(today.setHours(0, 0, 0, 0));
-    return dayDate < todayDate;
-  };
+  const defaults = React.useMemo(() => getDefaultClassNames(), []);
+
+  const disabled = React.useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const past = { before: today };
+    if (disabledProp === undefined) {
+      return past;
+    }
+    return [
+      past,
+      ...(Array.isArray(disabledProp) ? disabledProp : [disabledProp]),
+    ];
+  }, [disabledProp]);
 
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
+      navLayout="around"
+      disabled={disabled}
       className={cn('p-3', className)}
-      disabled={isPastDay}
       classNames={{
-        months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0',
-        month: 'space-y-4',
-        caption: 'flex justify-center pt-1 pb-4 relative items-center border-b',
-        caption_label: 'text-sm font-medium',
-        nav: 'space-x-1 flex items-center',
-        nav_button: cn(
+        ...defaults,
+        [UI.Months]: cn(
+          defaults[UI.Months],
+          'flex flex-col gap-4 sm:flex-row sm:gap-4',
+        ),
+        [UI.Month]: cn(defaults[UI.Month], 'relative space-y-4'),
+        [UI.MonthCaption]: cn(
+          defaults[UI.MonthCaption],
+          'flex justify-center border-b pb-4 pt-1',
+        ),
+        [UI.CaptionLabel]: cn(defaults[UI.CaptionLabel], 'text-sm font-medium'),
+        [UI.Nav]: cn(defaults[UI.Nav], 'flex items-center gap-1'),
+        [UI.PreviousMonthButton]: cn(
           buttonVariants({ variant: 'ghost', colorVariant: 'neutral' }),
-          'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
+          defaults[UI.PreviousMonthButton],
+          'absolute left-1 top-1 z-[1] h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
         ),
-        nav_button_previous: 'absolute left-1',
-        nav_button_next: 'absolute right-1',
-        /** Native table rows — `flex` here breaks weekday alignment (react-day-picker v8 table DOM). */
-        table: 'w-full border-collapse',
-        head_row: 'table-row',
-        head_cell:
-          'table-cell align-middle text-secondary-foreground rounded-md w-9 min-w-9 px-0 text-center font-normal text-[11px] uppercase text-muted-foreground',
-        row: 'table-row',
-        cell: cn(
-          'relative table-cell align-middle p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent [&:has([aria-selected].day-outside)]:bg-accent [&:has([aria-selected].day-range-end)]:rounded-r-full [&:has([aria-selected].day-range-end)]:rounded-r-full',
-          props.mode === 'range'
-            ? '[&:has(>.day-range-end)]:rounded-r-full [&:has(>.day-range-start)]:rounded-l-full first:[&:has([aria-selected])]:rounded-l-full last:[&:has([aria-selected])]:rounded-r-full'
-            : '[&:has([aria-selected])]:rounded-full',
+        [UI.NextMonthButton]: cn(
+          buttonVariants({ variant: 'ghost', colorVariant: 'neutral' }),
+          defaults[UI.NextMonthButton],
+          'absolute right-1 top-1 z-[1] h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
         ),
-        day: cn(
+        [UI.MonthGrid]: cn(defaults[UI.MonthGrid], 'w-full border-collapse'),
+        [UI.Weekdays]: cn(defaults[UI.Weekdays]),
+        [UI.Weekday]: cn(
+          defaults[UI.Weekday],
+          'w-9 min-w-9 px-0 text-center font-normal text-[11px] uppercase text-muted-foreground',
+        ),
+        [UI.Week]: cn(defaults[UI.Week]),
+        [UI.Weeks]: cn(defaults[UI.Weeks]),
+        [UI.Day]: cn(
+          defaults[UI.Day],
+          'relative p-0 text-center text-sm focus-within:relative focus-within:z-20',
+        ),
+        [UI.DayButton]: cn(
           buttonVariants({ variant: 'ghost' }),
-          'h-8 w-8 p-0 font-normal aria-selected:opacity-100 rounded-full text-1 text-secondary-foreground',
+          defaults[UI.DayButton],
+          'h-8 w-8 rounded-full p-0 font-normal text-secondary-foreground aria-selected:opacity-100',
         ),
-        day_range_start: 'day-range-start',
-        day_range_end: 'day-range-end',
-        day_selected:
+        [DayFlag.today]: cn(
+          defaults[DayFlag.today],
+          'bg-accent text-accent-foreground data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground',
+        ),
+        [DayFlag.outside]: cn(
+          defaults[DayFlag.outside],
+          'text-neutral-11 opacity-50 data-[selected=true]:bg-accent-9 data-[selected=true]:text-secondary-foreground',
+        ),
+        [DayFlag.disabled]: cn(defaults[DayFlag.disabled], 'opacity-50'),
+        [SelectionState.selected]: cn(
+          defaults[SelectionState.selected],
           'rounded-full text-secondary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-accent-9 focus:text-secondary-foreground',
-        day_today: 'bg-accent text-accent-foreground',
-        day_outside:
-          'text-neutral-11 opacity-50 day-outside last:[&:has([aria-selected])]:bg-accent-9 aria-selected:text-secondary-foreground',
-        day_disabled: 'text-neutral-11 opacity-50 cursor-not-allowed',
-        day_range_middle:
-          'aria-selected:bg-accent aria-selected:text-accent-foreground',
-        day_hidden: 'invisible',
-        ...classNames,
+        ),
+        [SelectionState.range_start]: cn(
+          defaults[SelectionState.range_start],
+          'rounded-l-full',
+        ),
+        [SelectionState.range_end]: cn(
+          defaults[SelectionState.range_end],
+          'rounded-r-full',
+        ),
+        [SelectionState.range_middle]: cn(
+          defaults[SelectionState.range_middle],
+          'rounded-none aria-selected:bg-accent aria-selected:text-accent-foreground',
+        ),
+        ...classNamesProp,
       }}
       components={{
-        Chevron: ({ className, orientation, ...props }) => {
+        Chevron: ({
+          className: chevronClass,
+          orientation,
+          ...chevronProps
+        }) => {
           const Icon = orientation === 'left' ? ChevronLeft : ChevronRight;
-          return <Icon className={cn('h-4 w-4', className)} {...props} />;
+          return (
+            <Icon
+              className={cn('size-4', chevronClass)}
+              aria-hidden
+              {...chevronProps}
+            />
+          );
         },
+        ...componentsProp,
       }}
       {...props}
     />
