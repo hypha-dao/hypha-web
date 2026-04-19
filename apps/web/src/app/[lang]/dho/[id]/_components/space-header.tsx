@@ -15,7 +15,7 @@ import {
 import { getDhoPathAgreements } from '../@tab/agreements/constants';
 import { ActionButtons } from './action-buttons';
 import { NestedSpacesButton } from './nested-spaces-button';
-import { Breadcrumbs } from './breadcrumbs';
+import { Breadcrumbs, getSpaceBreadcrumbTrail } from './breadcrumbs';
 import { SpaceHeaderAvatar } from './space-header-avatar';
 import { SpaceHeaderCollapseWrapper } from './space-header-collapse-wrapper';
 import { SpaceHeaderHeroClip } from './space-header-hero-clip';
@@ -64,6 +64,10 @@ export async function SpaceHeader({
 }: SpaceHeaderProps) {
   const tCommon = await getTranslations('Common');
   const tSpaces = await getTranslations('Spaces');
+  const tNavigation = await getTranslations('Navigation');
+  const breadcrumbTrail = await getSpaceBreadcrumbTrail(spaceId);
+  const rootHref = `/${lang}/my-spaces`;
+  const rootLabel = tNavigation('mySpaces');
   const leadSrc = leadImage || DEFAULT_SPACE_LEAD_IMAGE;
   const rawPurpose = description?.trim() ?? '';
   const purposeDisplay =
@@ -74,19 +78,22 @@ export async function SpaceHeader({
 
   return (
     <header className="mb-5 space-y-3" aria-labelledby="space-title">
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <Breadcrumbs spaceId={spaceId} lang={lang} />
-        {typeof web3SpaceId === 'number' && (
-          <NestedSpacesButton web3SpaceId={web3SpaceId} spaceSlug={daoSlug} />
-        )}
-      </div>
-
       <SpaceHeaderCollapseWrapper
+        breadcrumbSlot={<Breadcrumbs spaceId={spaceId} lang={lang} />}
+        nestedSlot={
+          typeof web3SpaceId === 'number' ? (
+            <NestedSpacesButton web3SpaceId={web3SpaceId} spaceSlug={daoSlug} />
+          ) : undefined
+        }
         title={title}
         logoUrl={logoUrl ?? null}
         spaceMembers={spaceMembers}
         web3SpaceId={web3SpaceId}
         spaceId={spaceId}
+        lang={lang}
+        rootHref={rootHref}
+        rootLabel={rootLabel}
+        breadcrumbTrail={breadcrumbTrail}
       >
         <div className="relative mb-0 overflow-visible pl-3 sm:pl-5">
           <div
