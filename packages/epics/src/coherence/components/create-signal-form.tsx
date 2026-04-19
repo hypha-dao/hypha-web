@@ -2,7 +2,6 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  Badge,
   Button,
   Form,
   FormControl,
@@ -17,8 +16,10 @@ import {
   MultiSelect,
   RequirementMark,
   RichTextEditor,
+  Separator,
 } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
+import { RefreshCw } from 'lucide-react';
 import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -29,21 +30,14 @@ import {
   CoherenceType,
   schemaCreateCoherenceForm,
   useCoherenceMutationsWeb2Rsc,
-  useIsDelegate,
   useJwt,
   useMatrix,
   useMe,
-  useSpaceBySlug,
-  useSpaceDetailsWeb3Rpc,
-  useSpaceMinProposalDuration,
 } from '@hypha-platform/core/client';
 import React from 'react';
 import { useScrollToErrors } from '../../hooks';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useTheme } from 'next-themes';
-import { formatDuration } from '@hypha-platform/ui-utils';
-import { Locale } from '@hypha-platform/i18n';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { CoherenceTypeButton } from './coherence-type-button';
 import { CoherencePriorityButton } from './coherence-priority-button';
@@ -57,7 +51,6 @@ interface CreateSignalFormProps {
   spaceId: number;
   successfulUrl: string;
   closeUrl?: string;
-  /** Same pattern as proposal create flows (e.g. space-settings-transparency). */
   backUrl?: string;
 }
 
@@ -69,7 +62,7 @@ export const CreateSignalForm = ({
 }: CreateSignalFormProps) => {
   const t = useTranslations('CoherenceTab');
   const tAgreementFlow = useTranslations('AgreementFlow');
-  const { id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
+  const tSpaces = useTranslations('Spaces');
   const translateEditor = React.useCallback(
     (
       key: string,
@@ -77,30 +70,17 @@ export const CreateSignalForm = ({
       interpolations?: Record<string, string | number>,
     ) => {
       const translationKey = `createAgreementBaseFields.editor.${key}`;
-
       if (!tAgreementFlow.has(translationKey)) {
         return defaultValue ?? key;
       }
-
       return tAgreementFlow(translationKey, interpolations);
     },
     [tAgreementFlow],
   );
+
   const { person } = useMe();
   const { jwt: authToken } = useJwt();
   const router = useRouter();
-  const { theme } = useTheme();
-  const { space } = useSpaceBySlug(spaceSlug as string);
-  const spaceIdBigInt = space?.web3SpaceId ? BigInt(space.web3SpaceId) : null;
-  const { spaceDetails } = useSpaceDetailsWeb3Rpc({
-    spaceId: space?.web3SpaceId as number,
-  });
-  const { duration } = useSpaceMinProposalDuration({
-    spaceId: spaceIdBigInt as bigint,
-  });
-  const { isDelegate } = useIsDelegate({
-    spaceId: space?.web3SpaceId as number,
-  });
 
   const {
     createCoherence,
@@ -125,6 +105,9 @@ export const CreateSignalForm = ({
       creatorId: person?.id,
       spaceId,
       archived: false,
+      type: 'Opportunity',
+      priority: 'medium',
+      tags: [],
     },
   });
 
@@ -215,6 +198,19 @@ export const CreateSignalForm = ({
     }
   }, [spaceId, form]);
 
+  const handleResetForm = React.useCallback(() => {
+    form.reset({
+      title: '',
+      description: '',
+      creatorId: person?.id,
+      spaceId,
+      archived: false,
+      type: 'Opportunity',
+      priority: 'medium',
+      tags: [],
+    });
+  }, [form, person?.id, spaceId]);
+
   const handleCreate = React.useCallback(
     async (data: FormValues) => {
       try {
@@ -244,8 +240,8 @@ export const CreateSignalForm = ({
     console.warn('form errors:', err);
   };
 
-  const resolvedLabel = tAgreementFlow('labels.newSignal');
   const resolvedBackLabel = backUrl != null ? t('backToCoherence') : undefined;
+  const isDirty = form.formState.isDirty;
 
   return (
     <SpaceLoadingBackdrop
@@ -271,148 +267,88 @@ export const CreateSignalForm = ({
           onSubmit={form.handleSubmit(handleCreate, handleInvalid)}
           className="flex flex-col gap-0"
         >
-          {/* Sticky like proposal aside: header stays visible while the modal body scrolls */}
-          <div className="sticky top-0 z-30 -mx-4 bg-background-2 px-4 pb-4 pt-0 supports-[backdrop-filter]:bg-background-2/95 supports-[backdrop-filter]:backdrop-blur-sm lg:-mx-7 lg:px-7">
-            <div className="flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-2">
-              <div className="flex flex-grow gap-3">
-                <PersonAvatar
-                  size="lg"
-                  isLoading={isCreatingCoherence}
-                  avatarSrc={person?.avatarUrl || ''}
-                  userName={`${person?.name ?? ''} ${person?.surname ?? ''}`}
+          <div className="sticky top-0 z-30 -mx-4 bg-background-2 supports-[backdrop-filter]:bg-background-2/95 supports-[backdrop-filter]:backdrop-blur-sm lg:-mx-7">
+            {/* Token-burning style: modal title row + delimiter */}
+            <div className="flex flex-row flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border px-4 pb-4 pt-2 lg:px-7">
+              <span className="text-lg font-semibold leading-none text-foreground">
+                {t('signals')}
+              </span>
+              <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1">
+                {backUrl ? (
+                  <ButtonBack
+                    label={resolvedBackLabel}
+                    backUrl={backUrl}
+                    className="px-0 md:px-3 align-top"
+                  />
+                ) : null}
+                {isDirty ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    colorVariant="neutral"
+                    className="gap-1.5 px-2 md:px-3"
+                    onClick={handleResetForm}
+                    disabled={isCreatingCoherence}
+                  >
+                    <RefreshCw className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                    <span>{tSpaces('reset')}</span>
+                  </Button>
+                ) : null}
+                <ButtonClose
+                  closeUrl={closeUrl}
+                  className="px-0 md:px-3 align-top"
                 />
-                <div className="flex w-full">
-                  <div className="flex flex-col w-full justify-between gap-4">
-                    <div className="flex flex-row w-full">
-                      <Badge className="w-fit" colorVariant="accent">
-                        {resolvedLabel}
-                      </Badge>
-                      {isDelegate && (
-                        <Badge
-                          variant="outline"
-                          colorVariant="accent"
-                          isLoading={isCreatingCoherence}
-                          className="ml-2"
-                        >
-                          {tAgreementFlow('createAgreementBaseFields.delegate')}
-                        </Badge>
-                      )}
-                      <div className="flex grow"></div>
-                      {backUrl ? (
-                        <ButtonBack
-                          label={resolvedBackLabel}
-                          backUrl={backUrl}
-                          className="px-0 md:px-3 align-top"
-                        />
-                      ) : null}
-                      <ButtonClose
-                        closeUrl={closeUrl}
-                        className="px-0 md:px-3 align-top"
-                      />
-                    </div>
-                    <div className="flex justify-between w-full gap-4">
-                      <div className="flex flex-col gap-4 w-full">
-                        <FormField
-                          control={form.control}
-                          name="title"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormControl>
-                                <Input
-                                  placeholder={t('signalTitle')}
-                                  className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
-                                  disabled={isCreatingCoherence}
-                                  rightIcon={
-                                    <RequirementMark className="text-4" />
-                                  }
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <Text className="text-1 text-neutral-11">
-                          {person?.name} {person?.surname}
-                        </Text>
-                      </div>
-                      {Number(duration) === 0 ? (
-                        <div className="flex gap-2 h-fit items-center pr-3">
-                          <Image
-                            className="max-w-[32px] max-h-[32px] min-w-[32px] min-h-[32px]"
-                            width={32}
-                            height={32}
-                            src={
-                              theme === 'light'
-                                ? '/placeholder/auto-execution-icon-light.svg'
-                                : '/placeholder/auto-execution-icon.svg'
-                            }
-                            alt={tAgreementFlow(
-                              'createAgreementBaseFields.proposalMinimumVotingIconAlt',
-                            )}
-                          />
-                          <div className="flex flex-col">
-                            <span className="text-3 text-accent-11 text-nowrap font-medium">
-                              {tAgreementFlow(
-                                'createAgreementBaseFields.autoExecution',
-                              )}
-                            </span>
-                            <span className="text-[9px] text-accent-11 text-nowrap font-medium">
-                              {spaceDetails?.quorum}% Quorum |{' '}
-                              {spaceDetails?.unity}% Unity
-                            </span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex gap-2 h-fit items-center pr-3">
-                          <Image
-                            className="max-w-[32px] max-h-[32px] min-w-[32px] min-h-[32px]"
-                            width={32}
-                            height={32}
-                            src={
-                              theme === 'light'
-                                ? '/placeholder/non-auto-execution-icon-light.svg'
-                                : '/placeholder/non-auto-execution-icon.svg'
-                            }
-                            alt={tAgreementFlow(
-                              'createAgreementBaseFields.proposalMinimumVotingIconAlt',
-                            )}
-                          />
-                          <div className="flex flex-col">
-                            <span className="text-2 text-accent-11 text-nowrap font-medium">
-                              {tAgreementFlow(
-                                'createAgreementBaseFields.toVote',
-                                {
-                                  duration: formatDuration(Number(duration)),
-                                },
-                              )}
-                            </span>
-                            <span className="text-[9px] text-accent-11 text-nowrap font-medium">
-                              {spaceDetails?.quorum}% Quorum |{' '}
-                              {spaceDetails?.unity}% Unity
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
+
+            {/* Avatar + title field — items-start aligns avatar with input (token burning layout) */}
+            <div className="flex flex-row items-start gap-3 px-4 pb-4 pt-5 lg:px-7">
+              <PersonAvatar
+                size="lg"
+                isLoading={isCreatingCoherence}
+                avatarSrc={person?.avatarUrl || ''}
+                userName=""
+              />
+              <div className="flex min-w-0 flex-1 flex-col gap-3">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input
+                          placeholder={t('signalTitle')}
+                          className="rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground"
+                          disabled={isCreatingCoherence}
+                          rightIcon={<RequirementMark className="text-4" />}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Text className="text-1 text-neutral-11">
+                  {person?.name} {person?.surname}
+                </Text>
+              </div>
+            </div>
+
+            <Separator className="bg-border" />
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col gap-5 pt-5">
+          <div className="flex min-h-0 flex-1 flex-col gap-5 px-0 pt-5">
             <FormField
               control={form.control}
               name="type"
               render={({ field }) => (
                 <FormItem>
-                  <div className="w-full flex flex-col gap-3">
+                  <div className="flex w-full flex-col gap-3">
                     <FormLabel className="text-foreground">
                       {t('type')} <RequirementMark />
                     </FormLabel>
                     <FormControl>
-                      <span className="w-full grid grid-cols-2 gap-2">
+                      <span className="grid w-full grid-cols-2 gap-2">
                         {typeOptions.map((option, index) => (
                           <CoherenceTypeButton
                             key={`type-option-${index}`}
@@ -444,12 +380,12 @@ export const CreateSignalForm = ({
               name="priority"
               render={({ field }) => (
                 <FormItem>
-                  <div className="w-full flex flex-col gap-3">
+                  <div className="flex w-full flex-col gap-3">
                     <FormLabel className="text-foreground">
                       {t('priority')} <RequirementMark />
                     </FormLabel>
                     <FormControl>
-                      <span className="w-full flex flex-row gap-2">
+                      <span className="flex w-full flex-row gap-2">
                         {priorityOptions.map((option, index) => (
                           <CoherencePriorityButton
                             key={`priority-option-${index}`}
@@ -517,7 +453,7 @@ export const CreateSignalForm = ({
               }}
             />
 
-            <div className="flex justify-end w-full">
+            <div className="flex w-full justify-end">
               <Button type="submit" disabled={isCreatingCoherence}>
                 {tAgreementFlow('buttons.publish')}
               </Button>
