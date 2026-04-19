@@ -211,26 +211,68 @@ export function parseHyphaInvestmentFormFromDescription(
  *   3. Orphan end-marker payloads where the start delimiter was mangled away
  *      by markdown stripping (legacy data).
  *
- * The regex pass is global so stacked marker blocks (created when older
- * resubmits double-appended the marker) are all removed in one pass. This
+ * Stacked marker blocks (created when older resubmits double-appended the
+ * marker) are all removed by iterating until no more matches remain. This
  * matters because leftover JSON inside an MDX-rendered description trips
  * the parser when it tries to read `{...}` as a JS expression and crashes
  * the proposal detail page.
+ *
+ * Implementation note: this used to be a single `String.prototype.replace`
+ * with a regex that combined `\n*` and `[\s\S]*?` — CodeQL flagged it as a
+ * polynomial-time regular expression on user-controlled input. The current
+ * `indexOf` loop is linear in the input size, has no backtracking, and is
+ * easier to reason about per-variant.
  */
 export function stripHyphaInvestmentFormMarker(
   description: string | undefined | null,
 ): string {
   if (!description) return '';
 
-  // 1) Greedy global removal of canonical AND markdown-escaped marker blocks.
-  //    `(?:\\?_)` matches an optional backslash followed by `_`, so the same
-  //    pattern catches `__hypha_investment__` and `\_\_hypha\_investment\_\_`.
-  const blockRe =
-    /\n*(?:\\?_){2}hypha(?:\\?_)investment(?:\\?_){2}[\s\S]*?(?:\\?_){2}end(?:\\?_)hypha(?:\\?_)investment(?:\\?_){2}\n?/g;
-  let result = description.replace(blockRe, '');
+  const variants: Array<{ start: string; end: string }> = [
+    { start: '__hypha_investment__', end: '__end_hypha_investment__' },
+    {
+      start: '\\_\\_hypha\\_investment\\_\\_',
+      end: '\\_\\_end\\_hypha\\_investment\\_\\_',
+    },
+  ];
 
-  // 2) Orphan-end-marker fallback for legacy mangled payloads. Run a few
-  //    times so multiple residues get fully stripped.
+  let result = description;
+  // Hard cap on iterations to defend against pathological inputs; in normal
+  // use we expect at most 1–2 stacked blocks.
+  const maxIterations = 32;
+  for (let iter = 0; iter < maxIterations; iter += 1) {
+    let changed = false;
+    for (const { start, end } of variants) {
+      const sIdx = result.indexOf(start);
+      if (sIdx === -1) continue;
+      const eIdx = result.indexOf(end, sIdx + start.length);
+      if (eIdx === -1) continue;
+
+      // Eat any leading newlines (up to a bounded count) that were inserted
+      // by `HYPHA_INVESTMENT_FORM_START` so we don't leave a stack of blank
+      // lines behind after the block is removed.
+      let trimStart = sIdx;
+      let leading = 0;
+      while (
+        trimStart > 0 &&
+        result.charCodeAt(trimStart - 1) === 10 &&
+        leading < 8
+      ) {
+        trimStart -= 1;
+        leading += 1;
+      }
+
+      let trimEnd = eIdx + end.length;
+      if (result.charCodeAt(trimEnd) === 10) trimEnd += 1;
+
+      result = result.slice(0, trimStart) + result.slice(trimEnd);
+      changed = true;
+    }
+    if (!changed) break;
+  }
+
+  // Orphan-end-marker fallback for legacy mangled payloads. Run a few
+  // times so multiple residues get fully stripped.
   for (let i = 0; i < 3; i += 1) {
     const before = result;
     result = stripOrphanEndInvestmentMarker(result);
