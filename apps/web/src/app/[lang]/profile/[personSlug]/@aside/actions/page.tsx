@@ -10,12 +10,12 @@ import {
 import { useParams } from 'next/navigation';
 import {
   ArrowLeftRight,
-  Building2,
   Gift,
   HandCoins,
   Rocket,
   Send,
   Sparkles,
+  Sprout,
 } from 'lucide-react';
 import { useMemberBySlug } from '@web/hooks/use-member-by-slug';
 import { useFundWallet } from '@hypha-platform/epics';
@@ -69,7 +69,7 @@ export default function ProfileWallet() {
       title: tActions('actions.buySpaceTokens.title'),
       description: tActions('actions.buySpaceTokens.description'),
       href: 'buy-space-tokens',
-      icon: <Building2 className="size-[22px] shrink-0" strokeWidth={1.75} />,
+      icon: <Sprout className="size-[22px] shrink-0" strokeWidth={1.75} />,
     },
     {
       id: 'activateSpaces',
