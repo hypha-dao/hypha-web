@@ -55,7 +55,7 @@
     "createSpace": "Space erstellen",
     "addSpace": "Space hinzufügen",
     "configureSpace": "Space konfigurieren",
-    "panelAccessibleName": "Modal-Dialog"
+    "panelAccessibleName": "Hypha-Panel"
   },
   "Navigation": {
     "network": "Netzwerk",
@@ -409,6 +409,9 @@
     "privacyPolicy": "Datenschutzrichtlinie"
   },
   "Profile": {
+    "signup": {
+      "loading": "Wird geladen …"
+    },
     "profilePage": "Profilseite",
     "personNotFound": "Person nicht gefunden",
     "redirectingToProfile": "Weiterleitung zum Profil...",

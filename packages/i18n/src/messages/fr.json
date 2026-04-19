@@ -55,7 +55,7 @@
     "createSpace": "Créer un espace",
     "addSpace": "Ajouter un espace",
     "configureSpace": "Configurer l’espace",
-    "panelAccessibleName": "Boîte de dialogue modale"
+    "panelAccessibleName": "Panneau Hypha"
   },
   "Navigation": {
     "network": "Réseau",
@@ -409,6 +409,9 @@
     "privacyPolicy": "Politique de confidentialité"
   },
   "Profile": {
+    "signup": {
+      "loading": "Chargement…"
+    },
     "profilePage": "Page de profil",
     "personNotFound": "Personne introuvable",
     "redirectingToProfile": "Redirection vers le profil...",

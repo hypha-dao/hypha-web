@@ -200,7 +200,7 @@ export function LoadingBackdropInner({
   return (
     <div className={cn('relative w-full', fullHeight && 'h-full')}>
       {children}
-      {useModalPortal && isLoading
+      {useModalPortal
         ? canUseDom
           ? createPortal(modalShellOverlayInner, document.body)
           : null

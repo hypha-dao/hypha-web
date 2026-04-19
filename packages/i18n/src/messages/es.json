@@ -55,7 +55,7 @@
     "createSpace": "Crear espacio",
     "addSpace": "Añadir espacio",
     "configureSpace": "Configurar espacio",
-    "panelAccessibleName": "Cuadro de diálogo modal"
+    "panelAccessibleName": "Panel de Hypha"
   },
   "AgreementFlow": {
     "proposalErrors": {
@@ -1026,6 +1026,9 @@
     "privacyPolicy": "Política de privacidad"
   },
   "Profile": {
+    "signup": {
+      "loading": "Cargando..."
+    },
     "profilePage": "Página de perfil",
     "personNotFound": "Persona no encontrada",
     "redirectingToProfile": "Redirigiendo al perfil...",

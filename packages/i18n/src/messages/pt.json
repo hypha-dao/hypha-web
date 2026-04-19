@@ -55,7 +55,7 @@
     "createSpace": "Criar espaço",
     "addSpace": "Adicionar espaço",
     "configureSpace": "Configurar espaço",
-    "panelAccessibleName": "Caixa de diálogo modal"
+    "panelAccessibleName": "Painel Hypha"
   },
   "AgreementFlow": {
     "proposalErrors": {
@@ -614,7 +614,7 @@
     "createAgreementBaseFields": {
       "agreementLabel": "Acordo",
       "backToCreate": "Voltar para criar",
-      "resetForm": "Repor",
+      "resetForm": "Redefinir",
       "formContextMissing": "O contexto do formulário está faltando!",
       "delegate": "Delegar",
       "proposalTitlePlaceholder": "Título da proposta...",
@@ -1026,6 +1026,9 @@
     "privacyPolicy": "Política de Privacidade"
   },
   "Profile": {
+    "signup": {
+      "loading": "A carregar..."
+    },
     "profilePage": "Página de perfil",
     "personNotFound": "Pessoa não encontrada",
     "redirectingToProfile": "Redirecionando para o perfil...",
