@@ -9,6 +9,7 @@ import { Locale } from '@hypha-platform/i18n';
 import { isAbsoluteUrl } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 import {
+  Building2,
   Coins,
   Code2,
   DoorOpen,
@@ -16,14 +17,13 @@ import {
   Eye,
   Flame,
   FolderPlus,
-  Landmark,
+  Gift,
   LayoutDashboard,
   Leaf,
   Link2,
   LogOut,
   PenLine,
   Puzzle,
-  Receipt,
   Rocket,
   Sparkles,
   Vault,
@@ -179,14 +179,14 @@ export const SelectSettingsAction = ({
       href: 'create/redeem-tokens',
       baseTab: 'agreements',
       disabled: isPaymentExpired,
-      icon: <Landmark className="size-[22px] shrink-0" strokeWidth={1.75} />,
+      icon: <Gift className="size-[22px] shrink-0" strokeWidth={1.75} />,
     },
     {
       group: t('groups.treasury'),
       title: t('actions.spaceTokenPurchase.title'),
       description: t('actions.spaceTokenPurchase.description'),
       href: 'create/space-token-purchase',
-      icon: <Receipt className="size-[22px] shrink-0" strokeWidth={1.75} />,
+      icon: <Building2 className="size-[22px] shrink-0" strokeWidth={1.75} />,
       disabled: isPaymentExpired,
     },
     {
