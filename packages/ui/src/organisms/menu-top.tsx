@@ -35,18 +35,24 @@ export const MenuTop = ({
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
+  /** Publish measured height so side panels / overlays align with this bar (see e2e menu-top-consistent-height). */
   useLayoutEffect(() => {
     const el = headerRef.current;
     if (!el || typeof document === 'undefined') return;
 
-    const sync = () => {
-      const h = el.offsetHeight;
-      setHeaderHeight(h);
-      document.documentElement.style.setProperty('--menu-top-height', `${h}px`);
+    const publish = () => {
+      const h = Math.round(el.getBoundingClientRect().height);
+      if (h > 0) {
+        document.documentElement.style.setProperty(
+          '--menu-top-height',
+          `${h}px`,
+        );
+        setHeaderHeight(h);
+      }
     };
 
-    sync();
-    const ro = new ResizeObserver(sync);
+    publish();
+    const ro = new ResizeObserver(publish);
     ro.observe(el);
     return () => {
       ro.disconnect();
