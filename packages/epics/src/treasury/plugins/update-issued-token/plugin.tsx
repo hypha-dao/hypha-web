@@ -858,36 +858,35 @@ export const UpdateIssuedTokenPlugin = ({
           shouldValidate: false,
         });
 
-        if (resubmitHydratedRef.current) {
-          return;
-        }
-
         if (
           baselineWhitelistAppliedForTokenRef.current === selectedTokenAddress
         ) {
           return;
         }
 
-        const isOwnershipToken = selectedToken?.type === 'ownership';
-        const wl = buildTransferWhitelistFromBaselineAddresses({
-          from,
-          to,
-          members,
-          spaces: chainMappingSpaces,
-          isOwnershipToken,
-        });
+        /** After resubmit hydration, session payload already has transferWhitelist — only sync baseline refs above. */
+        if (!resubmitHydratedRef.current) {
+          const isOwnershipToken = selectedToken?.type === 'ownership';
+          const wl = buildTransferWhitelistFromBaselineAddresses({
+            from,
+            to,
+            members,
+            spaces: chainMappingSpaces,
+            isOwnershipToken,
+          });
 
-        const hasAddresses = from.length > 0 || to.length > 0;
-        if (hasAddresses && wl) {
-          setValue('transferWhitelist', wl, {
-            shouldDirty: false,
-            shouldValidate: false,
-          });
-          setValue('enableAdvancedTransferControls', true, {
-            shouldDirty: false,
-            shouldValidate: false,
-          });
-          setShowAdvancedSettings(true);
+          const hasAddresses = from.length > 0 || to.length > 0;
+          if (hasAddresses && wl) {
+            setValue('transferWhitelist', wl, {
+              shouldDirty: false,
+              shouldValidate: false,
+            });
+            setValue('enableAdvancedTransferControls', true, {
+              shouldDirty: false,
+              shouldValidate: false,
+            });
+            setShowAdvancedSettings(true);
+          }
         }
 
         baselineWhitelistAppliedForTokenRef.current = selectedTokenAddress;

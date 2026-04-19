@@ -234,6 +234,23 @@ function buildIssueNewTokenResubmitPayload(
   const fromList = token.initialTransferWhitelist ?? [];
   const toList = token.initialReceiveWhitelist ?? [];
 
+  const matchedDb =
+    (token.address
+      ? dbTokens.find(
+          (t) => t.address?.toLowerCase() === token.address?.toLowerCase(),
+        )
+      : undefined) ??
+    dbTokens.find(
+      (t) =>
+        t.spaceId === proposalSpaceId &&
+        t.symbol?.toUpperCase() === token.symbol.toUpperCase(),
+    );
+
+  const draftTokenForAgreement =
+    options?.documentId != null
+      ? dbTokens.find((t) => t.agreementId === options.documentId)
+      : undefined;
+
   let transferWhitelist:
     | ReturnType<typeof buildTransferWhitelistFromBaselineAddresses>
     | {
@@ -281,23 +298,6 @@ function buildIssueNewTokenResubmitPayload(
 
   const feedAddr = token.priceCurrencyFeed as string | undefined;
   const referenceCurrencyFromChain = referenceCurrencyFromPriceFeed(feedAddr);
-
-  const matchedDb =
-    (token.address
-      ? dbTokens.find(
-          (t) => t.address?.toLowerCase() === token.address?.toLowerCase(),
-        )
-      : undefined) ??
-    dbTokens.find(
-      (t) =>
-        t.spaceId === proposalSpaceId &&
-        t.symbol?.toUpperCase() === token.symbol.toUpperCase(),
-    );
-
-  const draftTokenForAgreement =
-    options?.documentId != null
-      ? dbTokens.find((t) => t.agreementId === options.documentId)
-      : undefined;
 
   let referenceCurrencyResolved = referenceCurrencyFromChain;
   if (enableTokenPrice && matchedDb?.referenceCurrency) {
@@ -447,6 +447,19 @@ export const ProposalDetail = ({
     const normalized = addr.toLowerCase();
     return dbTokens.find((t) => t.address?.toLowerCase() === normalized)?.type;
   }, [proposalDetails?.updateTokenData?.address, dbTokens]);
+
+  const isUpdateTokenOwnershipForResubmit = useMemo(() => {
+    if (
+      label !== 'Update Token' ||
+      !proposalDetails?.updateTokenData?.address
+    ) {
+      return undefined;
+    }
+    const t = updateTokenTypeFromDb as string | undefined;
+    if (t === 'ownership') return true;
+    if (t !== undefined && t !== 'ownership') return false;
+    return undefined;
+  }, [label, proposalDetails?.updateTokenData?.address, updateTokenTypeFromDb]);
 
   const spacesForWhitelistDisplay = useMemo(() => {
     const u = proposalDetails?.updateTokenData;
@@ -1257,6 +1270,28 @@ export const ProposalDetail = ({
           label === 'Update Token'
             ? proposalDetails?.updateTokenData ?? null
             : undefined
+        }
+        updateTokenDecodedWhitelist={
+          label === 'Update Token' && proposalDetails?.updateTokenData
+            ? {
+                initialTransferWhitelist:
+                  proposalDetails.updateTokenData.initialTransferWhitelist,
+                initialReceiveWhitelist:
+                  proposalDetails.updateTokenData.initialReceiveWhitelist,
+                initialTransferWhitelistSpaceIds:
+                  proposalDetails.updateTokenData
+                    .initialTransferWhitelistSpaceIds,
+                initialReceiveWhitelistSpaceIds:
+                  proposalDetails.updateTokenData
+                    .initialReceiveWhitelistSpaceIds,
+              }
+            : undefined
+        }
+        membersForUpdateTokenResubmit={membersForWhitelist}
+        spacesForUpdateTokenResubmit={spacesForWhitelist}
+        dbSpacesForUpdateTokenResubmit={dbSpaces}
+        isOwnershipTokenForUpdateTokenResubmit={
+          isUpdateTokenOwnershipForResubmit
         }
         redeemResubmitPayload={redeemResubmitPayloadResolved}
         proposalTemplateData={resubmitTemplateData}

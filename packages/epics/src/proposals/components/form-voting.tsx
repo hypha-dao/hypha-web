@@ -14,11 +14,14 @@ import {
   useJwt,
   useAgreementMutationsWeb2Rsc,
   useSpaceMinProposalDuration,
+  type Person,
+  type Space,
 } from '@hypha-platform/core/client';
 import { getTokenUpdateByDocumentIdAction } from '@hypha-platform/core/governance/server/actions';
 import {
   buildUpdateIssuedTokenResubmitPayload,
   RESUBMIT_UPDATE_ISSUED_TOKEN_EMBEDDED_FIELD,
+  type DecodedUpdateTokenWhitelist,
   type UpdateTokenProposalSnapshot,
 } from '../update-issued-token-resubmit';
 import { useSpaceMember } from '../../spaces';
@@ -94,6 +97,11 @@ export const FormVoting = ({
   updateTokenProposalSnapshot,
   redeemResubmitPayload,
   proposalTemplateData,
+  updateTokenDecodedWhitelist,
+  membersForUpdateTokenResubmit,
+  spacesForUpdateTokenResubmit,
+  dbSpacesForUpdateTokenResubmit,
+  isOwnershipTokenForUpdateTokenResubmit,
 }: {
   unity: number;
   quorum: number;
@@ -129,6 +137,13 @@ export const FormVoting = ({
     conversions: { asset: string; percentage: string }[];
   };
   proposalTemplateData?: Record<string, unknown>;
+  /** Decoded whitelist addresses from the update-token proposal transactions */
+  updateTokenDecodedWhitelist?: DecodedUpdateTokenWhitelist | null;
+  membersForUpdateTokenResubmit?: Person[];
+  spacesForUpdateTokenResubmit?: Space[];
+  dbSpacesForUpdateTokenResubmit?: Space[];
+  /** When DB has no type yet, use for whitelist from/to mapping (ownership = receive-only UI) */
+  isOwnershipTokenForUpdateTokenResubmit?: boolean;
 }) => {
   const tCommon = useTranslations('Common');
   const tProposalDetails = useTranslations('ProposalDetails');
@@ -230,6 +245,13 @@ export const FormVoting = ({
                 }
               : null,
             snapshot: updateTokenProposalSnapshot ?? null,
+            decodedWhitelistFromProposal:
+              updateTokenDecodedWhitelist ?? undefined,
+            dbSpacesForWhitelistMapping: dbSpacesForUpdateTokenResubmit,
+            membersForWhitelistMapping: membersForUpdateTokenResubmit,
+            spacesForWhitelistMapping: spacesForUpdateTokenResubmit,
+            isOwnershipTokenForWhitelist:
+              isOwnershipTokenForUpdateTokenResubmit,
           });
       }
 

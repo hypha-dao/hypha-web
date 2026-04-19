@@ -2,13 +2,17 @@ import {
   getPriceCurrencyCode,
   type TokenUpdateData,
   type TransferWhitelistFormValue,
+  type Person,
+  type Space,
   isTokenUpdateData,
   sanitizeTokenPriceReferenceCurrency,
   decayBasisPointsToFormPercent,
 } from '@hypha-platform/core/client';
 import type { Dispatch, SetStateAction } from 'react';
 import type { UseFormSetValue, FieldValues } from 'react-hook-form';
+import { getAddress } from 'viem';
 import { normalizeMaxSupplyHuman } from '../treasury/utils/normalize-max-supply-human';
+import { buildTransferWhitelistFromBaselineAddresses } from '../treasury/utils/whitelist-baseline-to-form';
 
 /** Field on `resubmitProposalData` JSON — avoids a second sessionStorage key race with the plugin. */
 export const RESUBMIT_UPDATE_ISSUED_TOKEN_EMBEDDED_FIELD =
@@ -144,7 +148,94 @@ export type UpdateTokenProposalSnapshot = {
   useTransferWhitelist?: boolean;
   useReceiveWhitelist?: boolean;
   archiveToken?: boolean;
+  /** Decoded from proposal transactions (`batchSet*` calldata) */
+  initialTransferWhitelist?: `0x${string}`[];
+  initialReceiveWhitelist?: `0x${string}`[];
+  initialTransferWhitelistSpaceIds?: number[];
+  initialReceiveWhitelistSpaceIds?: number[];
 };
+
+/** Whitelist address lists as decoded from the on-chain update-token proposal (not necessarily checksummed). */
+export type DecodedUpdateTokenWhitelist = {
+  initialTransferWhitelist?: `0x${string}`[];
+  initialReceiveWhitelist?: `0x${string}`[];
+  initialTransferWhitelistSpaceIds?: number[];
+  initialReceiveWhitelistSpaceIds?: number[];
+};
+
+function spaceAddressesFromWeb3Ids(
+  ids: number[] | undefined,
+  dbSpaces: Space[],
+): `0x${string}`[] {
+  if (!ids?.length || !dbSpaces.length) return [];
+  const want = new Set(ids.filter((n) => Number.isFinite(n)));
+  const out: `0x${string}`[] = [];
+  for (const s of dbSpaces) {
+    if (
+      s.web3SpaceId != null &&
+      want.has(Number(s.web3SpaceId)) &&
+      s.address?.startsWith('0x')
+    ) {
+      try {
+        out.push(getAddress(s.address as `0x${string}`));
+      } catch {
+        /* skip */
+      }
+    }
+  }
+  return out;
+}
+
+function mergeWhitelistFromDecodedProposal(
+  payload: UpdateIssuedTokenResubmitPayload,
+  decoded: DecodedUpdateTokenWhitelist | undefined,
+  dbSpaces: Space[] | undefined,
+  members: Person[] | undefined,
+  spaces: Space[] | undefined,
+  tokenType: TokenUpdateData['type'] | undefined,
+  /** When tokenType is unknown (snapshot-only path), infer from DB token row */
+  isOwnershipTokenHint?: boolean,
+): void {
+  const hasRows =
+    (payload.transferWhitelist?.from?.length ?? 0) > 0 ||
+    (payload.transferWhitelist?.to?.length ?? 0) > 0;
+  if (hasRows || !decoded) return;
+
+  const fromFlat = [
+    ...(decoded.initialTransferWhitelist ?? []),
+    ...spaceAddressesFromWeb3Ids(
+      decoded.initialTransferWhitelistSpaceIds,
+      dbSpaces ?? [],
+    ),
+  ] as `0x${string}`[];
+  const toFlat = [
+    ...(decoded.initialReceiveWhitelist ?? []),
+    ...spaceAddressesFromWeb3Ids(
+      decoded.initialReceiveWhitelistSpaceIds,
+      dbSpaces ?? [],
+    ),
+  ] as `0x${string}`[];
+
+  if (fromFlat.length === 0 && toFlat.length === 0) return;
+
+  const memberList = members ?? [];
+  const spaceList = [...(spaces ?? []), ...(dbSpaces ?? [])];
+  const isOwnershipToken =
+    tokenType !== undefined
+      ? tokenType === 'ownership'
+      : Boolean(isOwnershipTokenHint);
+
+  const wl = buildTransferWhitelistFromBaselineAddresses({
+    from: fromFlat,
+    to: toFlat,
+    members: memberList,
+    spaces: spaceList,
+    isOwnershipToken,
+  });
+  if (wl) {
+    payload.transferWhitelist = wl;
+  }
+}
 
 const MAX_SUPPLY_TYPE_LABEL: Record<'immutable' | 'updatable', string> = {
   immutable: 'Forever Immutable',
@@ -194,9 +285,21 @@ function bigintToNumber(v: bigint | undefined): number | undefined {
 export function buildUpdateIssuedTokenResubmitPayload({
   dbRow,
   snapshot,
+  decodedWhitelistFromProposal,
+  dbSpacesForWhitelistMapping,
+  membersForWhitelistMapping,
+  spacesForWhitelistMapping,
+  isOwnershipTokenForWhitelist,
 }: {
   dbRow: TokenUpdateDbRow | null;
   snapshot?: UpdateTokenProposalSnapshot | null;
+  /** Optional: decoded whitelist addresses from RPC proposal transactions when DB draft lacks rows */
+  decodedWhitelistFromProposal?: DecodedUpdateTokenWhitelist | null;
+  dbSpacesForWhitelistMapping?: Space[];
+  membersForWhitelistMapping?: Person[];
+  spacesForWhitelistMapping?: Space[];
+  /** When DB row / snapshot omit type, infer ownership for whitelist from→to mapping */
+  isOwnershipTokenForWhitelist?: boolean;
 }): UpdateIssuedTokenResubmitPayload | null {
   if (dbRow && isTokenUpdateData(dbRow.data)) {
     const data = dbRow.data;
@@ -212,7 +315,7 @@ export function buildUpdateIssuedTokenResubmitPayload({
           : ('updatable' as const)
         : undefined;
     const resolvedValue = fromDbType ?? fromSnapshot;
-    return {
+    const payload: UpdateIssuedTokenResubmitPayload = {
       tokenAddress: dbRow.tokenAddress,
       name: data.name ?? '',
       symbol: data.symbol ?? '',
@@ -260,6 +363,30 @@ export function buildUpdateIssuedTokenResubmitPayload({
           }
         : {}),
     };
+    mergeWhitelistFromDecodedProposal(
+      payload,
+      decodedWhitelistFromProposal ?? undefined,
+      dbSpacesForWhitelistMapping,
+      membersForWhitelistMapping,
+      spacesForWhitelistMapping,
+      data.type,
+      isOwnershipTokenForWhitelist,
+    );
+    const wlAny =
+      (payload.transferWhitelist?.from?.length ?? 0) > 0 ||
+      (payload.transferWhitelist?.to?.length ?? 0) > 0;
+    if (
+      wlAny &&
+      !payload.enableAdvancedTransferControls &&
+      (decodedWhitelistFromProposal?.initialTransferWhitelist?.length ||
+        decodedWhitelistFromProposal?.initialReceiveWhitelist?.length ||
+        decodedWhitelistFromProposal?.initialTransferWhitelistSpaceIds
+          ?.length ||
+        decodedWhitelistFromProposal?.initialReceiveWhitelistSpaceIds?.length)
+    ) {
+      payload.enableAdvancedTransferControls = true;
+    }
+    return payload;
   }
 
   if (!snapshot?.address) {
@@ -285,7 +412,15 @@ export function buildUpdateIssuedTokenResubmitPayload({
         : ('updatable' as const)
       : undefined;
 
-  return {
+  const decoded = decodedWhitelistFromProposal ?? undefined;
+  const decodedHasLists = !!(
+    decoded?.initialTransferWhitelist?.length ||
+    decoded?.initialReceiveWhitelist?.length ||
+    decoded?.initialTransferWhitelistSpaceIds?.length ||
+    decoded?.initialReceiveWhitelistSpaceIds?.length
+  );
+
+  const payload: UpdateIssuedTokenResubmitPayload = {
     tokenAddress: snapshot.address as string,
     name: snapshot.name ?? '',
     symbol: snapshot.symbol ?? '',
@@ -315,8 +450,22 @@ export function buildUpdateIssuedTokenResubmitPayload({
     tokenPrice,
     referenceCurrency,
     enableAdvancedTransferControls: !!(
-      snapshot.useTransferWhitelist || snapshot.useReceiveWhitelist
+      snapshot.useTransferWhitelist ||
+      snapshot.useReceiveWhitelist ||
+      decodedHasLists
     ),
     archiveToken: snapshot.archiveToken ?? false,
   };
+
+  mergeWhitelistFromDecodedProposal(
+    payload,
+    decoded,
+    dbSpacesForWhitelistMapping,
+    membersForWhitelistMapping,
+    spacesForWhitelistMapping,
+    undefined,
+    isOwnershipTokenForWhitelist,
+  );
+
+  return payload;
 }
