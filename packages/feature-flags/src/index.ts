@@ -4,6 +4,7 @@ import {
   HYPHA_ENABLE_AI_CHAT,
   HYPHA_ENABLE_COHERENCE,
   HYPHA_ENABLE_HUMAN_CHAT,
+  HYPHA_ENABLE_SPACE_MEMORY,
   HYPHA_SHOW_LANGUAGE_SELECT,
 } from '@hypha-platform/cookie';
 import {
@@ -47,7 +48,14 @@ export const flagDefinitionsForDiscovery = {
     key: 'enable-coherence',
     defaultValue: false,
     description:
-      'Enable Coherence signals, threads, and conversation features in space pages',
+      'Legacy opt-in for Coherence (no longer gates the Coherence tab or route)',
+    origin: 'hypha' as const,
+    options: undefined as undefined,
+  },
+  enableSpaceMemory: {
+    key: 'enable-Space-Memory',
+    defaultValue: false,
+    description: 'Show the Space Memory panel on the Coherence tab',
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
@@ -114,5 +122,13 @@ export async function getEnableHumanChat(): Promise<boolean> {
     'enable-human-chat',
     HYPHA_ENABLE_HUMAN_CHAT,
     process.env.NEXT_PUBLIC_ENABLE_HUMAN_CHAT,
+  );
+}
+
+export async function getEnableSpaceMemory(): Promise<boolean> {
+  return getBooleanFlagFromToolbarCookieOrEnv(
+    'enable-Space-Memory',
+    HYPHA_ENABLE_SPACE_MEMORY,
+    process.env.NEXT_PUBLIC_ENABLE_SPACE_MEMORY,
   );
 }
