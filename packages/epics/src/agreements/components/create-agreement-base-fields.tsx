@@ -384,6 +384,13 @@ export function CreateAgreementBaseFields({
             {stickyHeaderTitle ?? resolvedLabel}
           </h2>
           <div className="flex shrink-0 items-center justify-end gap-1">
+            {backUrl && (
+              <ButtonBack
+                label={resolvedBackLabel}
+                backUrl={backUrl}
+                className="px-0 md:px-3 align-top"
+              />
+            )}
             {form.formState.isDirty ? (
               <Button
                 type="button"
@@ -396,13 +403,6 @@ export function CreateAgreementBaseFields({
                 {tAgreementFlow('createAgreementBaseFields.resetForm')}
               </Button>
             ) : null}
-            {backUrl && (
-              <ButtonBack
-                label={resolvedBackLabel}
-                backUrl={backUrl}
-                className="px-0 md:px-3 align-top"
-              />
-            )}
             <ButtonClose
               closeUrl={closeUrl}
               className="px-0 md:px-3 align-top"
