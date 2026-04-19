@@ -52,6 +52,7 @@ import { formatUnits } from 'viem';
 import { resolveTokenDecimals } from '../../governance/utils/token-decimals';
 import { useDbSpaces } from '../../hooks';
 import { hasUpdateTokenDataToDisplay } from '../utils/has-update-token-data-to-display';
+import { normalizeVotingDurationForResubmitSelect } from '../../agreements/plugins/change-voting-method/voting-duration-resubmit';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
@@ -712,20 +713,30 @@ export const ProposalDetail = ({
           : '';
 
       const durationRaw = proposalDetails.minimumProposalDurationData?.duration;
-      const votingDuration =
+      const durationSeconds =
         durationRaw !== undefined ? Number(durationRaw) : undefined;
       const autoExecution =
-        votingDuration !== undefined ? votingDuration === 0 : true;
+        durationSeconds !== undefined ? durationSeconds === 0 : true;
+      let votingDuration: number | undefined;
+      if (durationSeconds === undefined) {
+        votingDuration = undefined;
+      } else if (durationSeconds === 0) {
+        votingDuration = 0;
+      } else {
+        votingDuration =
+          normalizeVotingDurationForResubmitSelect(durationSeconds);
+      }
 
       let members: { member: string; number: number }[] = [];
       if (votingMethod === '1t1v' || votingMethod === '1v1v') {
         if (token) {
           const tokenLc = token.toLowerCase();
+          const dec = resolveTokenDecimals(token);
           members = proposalDetails.transfers
             .filter((tx) => tx.token?.toLowerCase() === tokenLc)
             .map((tx) => ({
               member: tx.recipient,
-              number: Number(formatUnits(tx.rawAmount, 18)),
+              number: Number(formatUnits(tx.rawAmount, dec)),
             }))
             .filter(
               (m) => m.member && Number.isFinite(m.number) && m.number > 0,

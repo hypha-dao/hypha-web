@@ -69,9 +69,9 @@ export const CreateProposalChangeVotingMethodForm = ({
     spaceId: BigInt(web3SpaceId as number),
   });
 
-  const skipLiveVotingSyncForResubmit = React.useMemo(
-    () => hasResubmitDataForTemplate(VOTING_RESUBMIT_SEGMENT),
-    [],
+  /** Re-read each render so first paint after sessionStorage write still skips live sync. */
+  const skipLiveVotingSyncForResubmit = hasResubmitDataForTemplate(
+    VOTING_RESUBMIT_SEGMENT,
   );
 
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -216,7 +216,12 @@ export const CreateProposalChangeVotingMethodForm = ({
             label={tAgreementFlow('labels.votingMethod')}
             progress={progress}
           />
-          {plugin}
+          {React.isValidElement(plugin)
+            ? React.cloneElement(
+                plugin as React.ReactElement<{ resubmitKey?: number }>,
+                { resubmitKey },
+              )
+            : plugin}
           <Separator />
           <div className="flex justify-end w-full">
             <Button type="submit" disabled={isButtonDisabled}>
