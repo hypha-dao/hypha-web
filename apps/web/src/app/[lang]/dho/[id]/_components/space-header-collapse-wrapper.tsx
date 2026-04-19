@@ -44,7 +44,9 @@ export function SpaceHeaderCollapseWrapper({
     if (!el) return;
 
     const observer = new IntersectionObserver(
-      ([entry]) => {
+      (entries) => {
+        const entry = entries[0];
+        if (!entry) return;
         setShowCompact(!entry.isIntersecting);
       },
       {
