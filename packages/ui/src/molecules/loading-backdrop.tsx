@@ -4,7 +4,15 @@ import {
   type LoadingBackdropInnerProps,
 } from './loading-backdrop-inner';
 
-type LoadingBackdropProps = Omit<LoadingBackdropInnerProps, 'children'> & {
+/** `Omit` on a union is not distributive; use this so `showKeepWindowOpenMessage` + `keepWindowOpenMessage` types flow through. */
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown
+  ? Omit<T, K>
+  : never;
+
+type LoadingBackdropProps = DistributiveOmit<
+  LoadingBackdropInnerProps,
+  'children'
+> & {
   children: ReactElement;
 };
 
