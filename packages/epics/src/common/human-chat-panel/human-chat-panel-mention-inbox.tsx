@@ -6,6 +6,7 @@ import { Bell } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import {
+  getMessageReplaceTargetEventId,
   isRedactedRoomMessageEvent,
   parseMentionUserIdsFromWireContent,
   stripMatrixReplyFallback,
@@ -43,6 +44,7 @@ function gatherMentionEvents(
     if (!ev.getId()) continue;
     if (ev.getSender() === currentUserId) continue;
     if (isRedactedRoomMessageEvent(ev)) continue;
+    if (getMessageReplaceTargetEventId(ev) != null) continue;
 
     const ids = parseMentionUserIdsFromWireContent(ev.getContent());
     if (!ids?.includes(currentUserId)) continue;

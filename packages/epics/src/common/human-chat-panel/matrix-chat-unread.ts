@@ -43,26 +43,36 @@ function effectiveReadCursorEventId(room: Room, userId: string): string | null {
  * cursor. Used when `NotificationCountType.Highlight` from the server is 0 (some
  * homeservers do not populate highlight counts reliably).
  */
+
+/** Latest non-redacted replacement per root event id (single timeline pass). */
+function latestReplacementByRootId(
+  timeline: MatrixEvent[],
+): Map<string, MatrixEvent> {
+  const latestByRootId = new Map<string, MatrixEvent>();
+
+  for (const cand of timeline) {
+    const rootId = getMessageReplaceTargetEventId(cand);
+    if (!rootId) continue;
+    if (isRedactedRoomMessageEvent(cand)) continue;
+
+    const prev = latestByRootId.get(rootId);
+    if (!prev || cand.getTs() >= prev.getTs()) {
+      latestByRootId.set(rootId, cand);
+    }
+  }
+
+  return latestByRootId;
+}
+
 /** Latest message content for mention parsing (`m.replace` edits target the root id). */
 function wireContentForMentionParse(
-  room: Room,
   rootEvent: MatrixEvent,
+  replacementsByRootId: Map<string, MatrixEvent>,
 ): Record<string, unknown> | undefined {
   const rootId = rootEvent.getId();
   if (!rootId) return undefined;
 
-  let latest = rootEvent;
-  let latestTs = rootEvent.getTs();
-
-  for (const cand of room.getLiveTimeline().getEvents()) {
-    if (getMessageReplaceTargetEventId(cand) !== rootId) continue;
-    if (isRedactedRoomMessageEvent(cand)) continue;
-    const ts = cand.getTs();
-    if (ts >= latestTs) {
-      latestTs = ts;
-      latest = cand;
-    }
-  }
+  const latest = replacementsByRootId.get(rootId) ?? rootEvent;
 
   const content = latest.getContent();
   return content && typeof content === 'object'
@@ -76,6 +86,7 @@ function countUnreadMentionMessagesForUser(
   readUpToId: string | null,
 ): number {
   const timeline = room.getLiveTimeline().getEvents();
+  const replacementsByRootId = latestReplacementByRootId(timeline);
   let n = 0;
   for (const ev of timeline) {
     if (ev.getType() !== EventType.RoomMessage) continue;
@@ -88,7 +99,7 @@ function countUnreadMentionMessagesForUser(
     if (sender === viewerId) continue;
 
     const ids = parseMentionUserIdsFromWireContent(
-      wireContentForMentionParse(room, ev),
+      wireContentForMentionParse(ev, replacementsByRootId),
     );
     if (!ids?.includes(viewerId)) continue;
 

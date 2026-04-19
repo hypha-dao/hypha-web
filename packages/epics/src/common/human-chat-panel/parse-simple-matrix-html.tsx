@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -117,10 +117,10 @@ export function renderSimpleHtmlNodes(
     const k = `${keyPrefix}${i}`;
     switch (n.type) {
       case 'text':
-        return (
-          <span key={k}>
-            {transformText ? transformText(n.value) : n.value}
-          </span>
+        return transformText ? (
+          <span key={k}>{transformText(n.value)}</span>
+        ) : (
+          <Fragment key={k}>{n.value}</Fragment>
         );
       case 'linebreak':
         return <br key={k} />;

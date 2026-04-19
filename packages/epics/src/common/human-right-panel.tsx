@@ -1721,7 +1721,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               client={client}
               roomId={roomId}
               currentUserId={currentUserId}
-              resolveMemberLabel={(id) => resolveMemberLabel(id)}
+              resolveMemberLabel={resolveMentionMemberLabel}
               onSelectMessage={handleSelectMentionFromInbox}
             />
           </div>

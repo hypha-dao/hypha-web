@@ -14,7 +14,8 @@ const MAX_QUERY_LEN = 256;
 function isAtWordStart(value: string, atIndex: number): boolean {
   if (atIndex <= 0) return true;
   const prev = value.charAt(atIndex - 1);
-  return /\s/.test(prev);
+  /** Open `@` after any non–word-constituent (whitespace, punctuation, `(` before backtick-mxids, etc.). */
+  return !/[\p{L}\p{M}\p{N}_]/u.test(prev);
 }
 
 /**
