@@ -22,6 +22,7 @@ export default async function NewSignalPage({ params }: PageProps) {
       <CreateSignalForm
         successfulUrl={successfulUrl}
         closeUrl={successfulUrl}
+        backUrl={successfulUrl}
         spaceId={spaceFromDb.id}
       />
     </ProposalOverlayShell>
