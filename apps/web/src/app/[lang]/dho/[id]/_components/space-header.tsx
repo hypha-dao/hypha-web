@@ -67,12 +67,17 @@ export async function SpaceHeader({
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
           <div className="flex shrink-0 gap-3 sm:gap-4">
             <Avatar className="h-14 w-14 rounded-xl ring-2 ring-neutral-6 sm:h-[72px] sm:w-[72px]">
-              <AvatarImage src={logoUrl || DEFAULT_SPACE_AVATAR_IMAGE} alt="" />
+              <AvatarImage
+                src={logoUrl || DEFAULT_SPACE_AVATAR_IMAGE}
+                alt=""
+                aria-hidden
+              />
             </Avatar>
             <div className="relative h-14 w-[5.5rem] shrink-0 overflow-hidden rounded-lg sm:h-[72px] sm:w-36">
               <Image
                 src={leadSrc}
                 alt=""
+                aria-hidden
                 fill
                 className="object-cover"
                 sizes="(max-width: 640px) 88px, 144px"
