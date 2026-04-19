@@ -270,255 +270,260 @@ export const CreateSignalForm = ({
         <form
           ref={formRef}
           onSubmit={form.handleSubmit(handleCreate, handleInvalid)}
-          className="flex flex-col gap-5"
+          className="flex flex-col gap-0"
         >
-          <div className="flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-2">
-            <div className="flex flex-grow gap-3">
-              <PersonAvatar
-                size="lg"
-                isLoading={isCreatingCoherence}
-                avatarSrc={person?.avatarUrl || ''}
-                userName={`${person?.name ?? ''} ${person?.surname ?? ''}`}
-              />
-              <div className="flex w-full">
-                <div className="flex flex-col w-full justify-between gap-4">
-                  <div className="flex flex-row w-full">
-                    <Badge className="w-fit" colorVariant="accent">
-                      {resolvedLabel}
-                    </Badge>
-                    {isDelegate && (
-                      <Badge
-                        variant="outline"
-                        colorVariant="accent"
-                        isLoading={isCreatingCoherence}
-                        className="ml-2"
-                      >
-                        {tAgreementFlow('createAgreementBaseFields.delegate')}
+          {/* Sticky like proposal aside: header stays visible while the modal body scrolls */}
+          <div className="sticky top-0 z-30 -mx-4 border-b border-border/80 bg-background-2 px-4 pb-4 pt-0 shadow-[0_1px_0_rgba(15,23,42,0.06)] supports-[backdrop-filter]:bg-background-2/95 supports-[backdrop-filter]:backdrop-blur-sm dark:border-border/60 dark:shadow-[0_1px_0_rgba(0,0,0,0.35)] lg:-mx-7 lg:px-7">
+            <div className="flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-2">
+              <div className="flex flex-grow gap-3">
+                <PersonAvatar
+                  size="lg"
+                  isLoading={isCreatingCoherence}
+                  avatarSrc={person?.avatarUrl || ''}
+                  userName={`${person?.name ?? ''} ${person?.surname ?? ''}`}
+                />
+                <div className="flex w-full">
+                  <div className="flex flex-col w-full justify-between gap-4">
+                    <div className="flex flex-row w-full">
+                      <Badge className="w-fit" colorVariant="accent">
+                        {resolvedLabel}
                       </Badge>
-                    )}
-                    <div className="flex grow"></div>
-                    {backUrl ? (
-                      <ButtonBack
-                        label={resolvedBackLabel}
-                        backUrl={backUrl}
+                      {isDelegate && (
+                        <Badge
+                          variant="outline"
+                          colorVariant="accent"
+                          isLoading={isCreatingCoherence}
+                          className="ml-2"
+                        >
+                          {tAgreementFlow('createAgreementBaseFields.delegate')}
+                        </Badge>
+                      )}
+                      <div className="flex grow"></div>
+                      {backUrl ? (
+                        <ButtonBack
+                          label={resolvedBackLabel}
+                          backUrl={backUrl}
+                          className="px-0 md:px-3 align-top"
+                        />
+                      ) : null}
+                      <ButtonClose
+                        closeUrl={closeUrl}
                         className="px-0 md:px-3 align-top"
                       />
-                    ) : null}
-                    <ButtonClose
-                      closeUrl={closeUrl}
-                      className="px-0 md:px-3 align-top"
-                    />
-                  </div>
-                  <div className="flex justify-between w-full gap-4">
-                    <div className="flex flex-col gap-4 w-full">
-                      <FormField
-                        control={form.control}
-                        name="title"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Input
-                                placeholder={t('signalTitle')}
-                                className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
-                                disabled={isCreatingCoherence}
-                                rightIcon={
-                                  <RequirementMark className="text-4" />
-                                }
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <Text className="text-1 text-neutral-11">
-                        {person?.name} {person?.surname}
-                      </Text>
                     </div>
-                    {Number(duration) === 0 ? (
-                      <div className="flex gap-2 h-fit items-center pr-3">
-                        <Image
-                          className="max-w-[32px] max-h-[32px] min-w-[32px] min-h-[32px]"
-                          width={32}
-                          height={32}
-                          src={
-                            theme === 'light'
-                              ? '/placeholder/auto-execution-icon-light.svg'
-                              : '/placeholder/auto-execution-icon.svg'
-                          }
-                          alt={tAgreementFlow(
-                            'createAgreementBaseFields.proposalMinimumVotingIconAlt',
+                    <div className="flex justify-between w-full gap-4">
+                      <div className="flex flex-col gap-4 w-full">
+                        <FormField
+                          control={form.control}
+                          name="title"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Input
+                                  placeholder={t('signalTitle')}
+                                  className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
+                                  disabled={isCreatingCoherence}
+                                  rightIcon={
+                                    <RequirementMark className="text-4" />
+                                  }
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
                           )}
                         />
-                        <div className="flex flex-col">
-                          <span className="text-3 text-accent-11 text-nowrap font-medium">
-                            {tAgreementFlow(
-                              'createAgreementBaseFields.autoExecution',
-                            )}
-                          </span>
-                          <span className="text-[9px] text-accent-11 text-nowrap font-medium">
-                            {spaceDetails?.quorum}% Quorum |{' '}
-                            {spaceDetails?.unity}% Unity
-                          </span>
-                        </div>
+                        <Text className="text-1 text-neutral-11">
+                          {person?.name} {person?.surname}
+                        </Text>
                       </div>
-                    ) : (
-                      <div className="flex gap-2 h-fit items-center pr-3">
-                        <Image
-                          className="max-w-[32px] max-h-[32px] min-w-[32px] min-h-[32px]"
-                          width={32}
-                          height={32}
-                          src={
-                            theme === 'light'
-                              ? '/placeholder/non-auto-execution-icon-light.svg'
-                              : '/placeholder/non-auto-execution-icon.svg'
-                          }
-                          alt={tAgreementFlow(
-                            'createAgreementBaseFields.proposalMinimumVotingIconAlt',
-                          )}
-                        />
-                        <div className="flex flex-col">
-                          <span className="text-2 text-accent-11 text-nowrap font-medium">
-                            {tAgreementFlow(
-                              'createAgreementBaseFields.toVote',
-                              {
-                                duration: formatDuration(Number(duration)),
-                              },
+                      {Number(duration) === 0 ? (
+                        <div className="flex gap-2 h-fit items-center pr-3">
+                          <Image
+                            className="max-w-[32px] max-h-[32px] min-w-[32px] min-h-[32px]"
+                            width={32}
+                            height={32}
+                            src={
+                              theme === 'light'
+                                ? '/placeholder/auto-execution-icon-light.svg'
+                                : '/placeholder/auto-execution-icon.svg'
+                            }
+                            alt={tAgreementFlow(
+                              'createAgreementBaseFields.proposalMinimumVotingIconAlt',
                             )}
-                          </span>
-                          <span className="text-[9px] text-accent-11 text-nowrap font-medium">
-                            {spaceDetails?.quorum}% Quorum |{' '}
-                            {spaceDetails?.unity}% Unity
-                          </span>
+                          />
+                          <div className="flex flex-col">
+                            <span className="text-3 text-accent-11 text-nowrap font-medium">
+                              {tAgreementFlow(
+                                'createAgreementBaseFields.autoExecution',
+                              )}
+                            </span>
+                            <span className="text-[9px] text-accent-11 text-nowrap font-medium">
+                              {spaceDetails?.quorum}% Quorum |{' '}
+                              {spaceDetails?.unity}% Unity
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      ) : (
+                        <div className="flex gap-2 h-fit items-center pr-3">
+                          <Image
+                            className="max-w-[32px] max-h-[32px] min-w-[32px] min-h-[32px]"
+                            width={32}
+                            height={32}
+                            src={
+                              theme === 'light'
+                                ? '/placeholder/non-auto-execution-icon-light.svg'
+                                : '/placeholder/non-auto-execution-icon.svg'
+                            }
+                            alt={tAgreementFlow(
+                              'createAgreementBaseFields.proposalMinimumVotingIconAlt',
+                            )}
+                          />
+                          <div className="flex flex-col">
+                            <span className="text-2 text-accent-11 text-nowrap font-medium">
+                              {tAgreementFlow(
+                                'createAgreementBaseFields.toVote',
+                                {
+                                  duration: formatDuration(Number(duration)),
+                                },
+                              )}
+                            </span>
+                            <span className="text-[9px] text-accent-11 text-nowrap font-medium">
+                              {spaceDetails?.quorum}% Quorum |{' '}
+                              {spaceDetails?.unity}% Unity
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
+            <Separator className="mt-4 bg-border/70" />
           </div>
-          <Separator />
 
-          <FormField
-            control={form.control}
-            name="type"
-            render={({ field }) => (
-              <FormItem>
-                <div className="w-full flex flex-col gap-3">
-                  <FormLabel className="text-foreground">
-                    {t('type')} <RequirementMark />
-                  </FormLabel>
-                  <FormControl>
-                    <span className="w-full grid grid-cols-2 gap-2">
-                      {typeOptions.map((option, index) => (
-                        <CoherenceTypeButton
-                          key={`type-option-${index}`}
-                          icon={option.icon}
-                          title={option.title}
-                          description={option.description}
-                          colorVariant={option.colorVariant}
-                          selected={field.value === option.type}
-                          onClick={() => {
-                            form.setValue(
-                              'type',
-                              option.type as CoherenceType,
-                              {
-                                shouldDirty: true,
-                              },
-                            );
-                          }}
-                        />
-                      ))}
-                    </span>
-                  </FormControl>
-                </div>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="priority"
-            render={({ field }) => (
-              <FormItem>
-                <div className="w-full flex flex-col gap-3">
-                  <FormLabel className="text-foreground">
-                    {t('priority')} <RequirementMark />
-                  </FormLabel>
-                  <FormControl>
-                    <span className="w-full flex flex-row gap-2">
-                      {priorityOptions.map((option, index) => (
-                        <CoherencePriorityButton
-                          key={`priority-option-${index}`}
-                          className="w-full"
-                          title={option.title}
-                          description={option.description}
-                          colorVariant={option.colorVariant}
-                          selected={field.value === option.priority}
-                          onClick={() => {
-                            form.setValue('priority', option.priority, {
-                              shouldDirty: true,
-                            });
-                          }}
-                        />
-                      ))}
-                    </span>
-                  </FormControl>
-                </div>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="tags"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-foreground">{t('tags')}</FormLabel>
-                <FormControl>
-                  <MultiSelect
-                    placeholder={t('selectOneOrMore')}
-                    options={tagOptions}
-                    value={field.value}
-                    allowToggleAll={false}
-                    onValueChange={field.onChange}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => {
-              const descriptionValue = field.value || '';
-              return (
+          <div className="flex min-h-0 flex-1 flex-col gap-5 pt-4">
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-foreground gap-1">
-                    {t('description')} <RequirementMark />
-                  </FormLabel>
-                  <FormControl>
-                    <RichTextEditor
-                      editorRef={null}
-                      markdown={descriptionValue}
-                      translation={translateEditor}
-                      placeholder={t('descriptionPlaceholder')}
-                      onChange={(markdown) => field.onChange(markdown)}
-                    />
-                  </FormControl>
-                  <FormDescription />
+                  <div className="w-full flex flex-col gap-3">
+                    <FormLabel className="text-foreground">
+                      {t('type')} <RequirementMark />
+                    </FormLabel>
+                    <FormControl>
+                      <span className="w-full grid grid-cols-2 gap-2">
+                        {typeOptions.map((option, index) => (
+                          <CoherenceTypeButton
+                            key={`type-option-${index}`}
+                            icon={option.icon}
+                            title={option.title}
+                            description={option.description}
+                            colorVariant={option.colorVariant}
+                            selected={field.value === option.type}
+                            onClick={() => {
+                              form.setValue(
+                                'type',
+                                option.type as CoherenceType,
+                                {
+                                  shouldDirty: true,
+                                },
+                              );
+                            }}
+                          />
+                        ))}
+                      </span>
+                    </FormControl>
+                  </div>
                   <FormMessage />
                 </FormItem>
-              );
-            }}
-          />
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="priority"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="w-full flex flex-col gap-3">
+                    <FormLabel className="text-foreground">
+                      {t('priority')} <RequirementMark />
+                    </FormLabel>
+                    <FormControl>
+                      <span className="w-full flex flex-row gap-2">
+                        {priorityOptions.map((option, index) => (
+                          <CoherencePriorityButton
+                            key={`priority-option-${index}`}
+                            className="w-full"
+                            title={option.title}
+                            description={option.description}
+                            colorVariant={option.colorVariant}
+                            selected={field.value === option.priority}
+                            onClick={() => {
+                              form.setValue('priority', option.priority, {
+                                shouldDirty: true,
+                              });
+                            }}
+                          />
+                        ))}
+                      </span>
+                    </FormControl>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="tags"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-foreground">{t('tags')}</FormLabel>
+                  <FormControl>
+                    <MultiSelect
+                      placeholder={t('selectOneOrMore')}
+                      options={tagOptions}
+                      value={field.value}
+                      allowToggleAll={false}
+                      onValueChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => {
+                const descriptionValue = field.value || '';
+                return (
+                  <FormItem>
+                    <FormLabel className="text-foreground gap-1">
+                      {t('description')} <RequirementMark />
+                    </FormLabel>
+                    <FormControl>
+                      <RichTextEditor
+                        editorRef={null}
+                        markdown={descriptionValue}
+                        translation={translateEditor}
+                        placeholder={t('descriptionPlaceholder')}
+                        onChange={(markdown) => field.onChange(markdown)}
+                      />
+                    </FormControl>
+                    <FormDescription />
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
 
-          <div className="flex justify-end w-full">
-            <Button type="submit" disabled={isCreatingCoherence}>
-              {tAgreementFlow('buttons.publish')}
-            </Button>
+            <div className="flex justify-end w-full">
+              <Button type="submit" disabled={isCreatingCoherence}>
+                {tAgreementFlow('buttons.publish')}
+              </Button>
+            </div>
           </div>
         </form>
       </Form>
