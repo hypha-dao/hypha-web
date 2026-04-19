@@ -1565,6 +1565,7 @@
     },
     "withdrawResubmit": {
       "title": "Vorschlag zurückziehen oder bearbeiten und erneut einreichen?",
+      "withdrawOnlyTitle": "Vorschlag zurückziehen?",
       "withdrawDialogTitle": "Vorschlag zurückziehen",
       "withdrawDialogDescription": "Möchten Sie diesen Vorschlag wirklich zurückziehen? Er wird nicht mehr in der Vorschlagsansicht angezeigt und kann nicht wiederhergestellt werden.",
       "withdraw": "Zurückziehen",

@@ -1565,6 +1565,7 @@
     },
     "withdrawResubmit": {
       "title": "¿Retirar tu propuesta o editarla y enviarla de nuevo?",
+      "withdrawOnlyTitle": "¿Retirar tu propuesta?",
       "withdrawDialogTitle": "Retirar propuesta",
       "withdrawDialogDescription": "¿Seguro que quieres retirar esta propuesta? Ya no aparecerá en la pantalla de propuestas y no se podrá recuperar.",
       "withdraw": "Retirar",
