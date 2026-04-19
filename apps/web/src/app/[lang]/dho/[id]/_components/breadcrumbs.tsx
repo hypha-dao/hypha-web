@@ -5,6 +5,28 @@ import { Locale } from '@hypha-platform/i18n';
 import { getTranslations } from 'next-intl/server';
 import { Fragment } from 'react';
 
+export type BreadcrumbSegment = { slug: string; title: string };
+
+/** Root → leaf chain for sticky header / client mirrors */
+export async function getSpaceBreadcrumbTrail(
+  spaceId: number,
+): Promise<BreadcrumbSegment[]> {
+  const leafUp: BreadcrumbSegment[] = [];
+  let id: number | null | undefined = spaceId;
+
+  while (id) {
+    const row = await findParentSpaceById({ id }, { db });
+    if (!row) break;
+    leafUp.push({
+      slug: row.slug as string,
+      title: row.title as string,
+    });
+    id = row.parentId ?? null;
+  }
+
+  return leafUp.reverse();
+}
+
 async function RecursiveBreadcrumbItem({
   spaceId,
   lang,
