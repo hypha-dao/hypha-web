@@ -35,8 +35,8 @@ export function SpaceHeaderAvatar({ src }: SpaceHeaderAvatarProps) {
       const bannerMidY = rect.top + rect.height / 2;
       const viewMid = vh / 2;
       const normalised = (bannerMidY - viewMid) / vh;
-      /* Stronger drift — visible depth while scrolling */
-      setParallaxY(Math.max(-28, Math.min(28, -normalised * 44)));
+      /* Subtle drift — avoids fighting scroll / sticky chrome */
+      setParallaxY(Math.max(-14, Math.min(14, -normalised * 22)));
     };
 
     const onScrollOrResize = () => {
@@ -66,7 +66,7 @@ export function SpaceHeaderAvatar({ src }: SpaceHeaderAvatarProps) {
       <div
         className={cn(
           'pointer-events-auto absolute top-1/2 left-0',
-          !reducedMotion && 'transition-transform duration-300 ease-out',
+          !reducedMotion && 'will-change-transform',
         )}
         style={{
           transform: `translate(-34%, calc(-50% + ${parallaxY}px + ${morphY}px)) scale(${morphScale})`,
