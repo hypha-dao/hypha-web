@@ -103,10 +103,7 @@ export const CreateSignalForm = ({
   useScrollToErrors(form, formRef);
 
   const typeOptions = React.useMemo(() => {
-    const computeColor = (colorVariant: string) => {
-      return `var(--${colorVariant}-10)`;
-    };
-    return COHERENCE_TYPE_OPTIONS.map(({ icon, type, colorVariant }) => ({
+    return COHERENCE_TYPE_OPTIONS.map(({ icon, type }) => ({
       icon: icon as LucideReactIcon,
       title: t(
         `types.${type}` as
@@ -127,13 +124,13 @@ export const CreateSignalForm = ({
           | 'typeDescriptions.Proposal',
       ),
       type,
-      colorVariant: colorVariant as CardButtonColorVariant,
-      titleColor: computeColor(colorVariant),
+      colorVariant: 'subtle' as CardButtonColorVariant,
+      titleColor: 'var(--foreground)',
     }));
   }, [t]);
 
   const priorityOptions = React.useMemo(() => {
-    return COHERENCE_PRIORITY_OPTIONS.map(({ priority, colorVariant }) => ({
+    return COHERENCE_PRIORITY_OPTIONS.map(({ priority }) => ({
       title: t(
         `priorities.${priority}` as
           | 'priorities.high'
@@ -147,7 +144,7 @@ export const CreateSignalForm = ({
           | 'priorityDescriptions.medium'
           | 'priorityDescriptions.low',
       ),
-      colorVariant: colorVariant as CardButtonColorVariant,
+      colorVariant: 'subtle' as CardButtonColorVariant,
     }));
   }, [t]);
 
@@ -241,11 +238,11 @@ export const CreateSignalForm = ({
         <form
           ref={formRef}
           onSubmit={form.handleSubmit(handleCreate, handleInvalid)}
-          className="flex flex-col gap-5"
+          className="flex flex-col gap-6 border border-border/80 rounded-xl bg-card/40 p-4 md:p-6 shadow-sm"
         >
-          <div className="flex w-full">
+          <div className="flex w-full border-b border-border/70 pb-4">
             <div className="flex flex-col w-full justify-between gap-4">
-              <div className="flex flex-row w-full">
+              <div className="flex flex-row w-full items-center">
                 <div className="flex grow"></div>
                 <ButtonClose
                   closeUrl={closeUrl}

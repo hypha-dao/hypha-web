@@ -7,6 +7,7 @@ export * from './link-label';
 export * from './links';
 export * from './select-action';
 export * from './side-panel';
+export * from './proposal-overlay-shell';
 export * from './web-links';
 export * from './get-active-tab-from-path';
 export * from './get-dho-space-slug-from-pathname';
