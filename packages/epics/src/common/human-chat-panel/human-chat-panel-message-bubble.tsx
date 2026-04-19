@@ -888,8 +888,11 @@ function renderTextWithMentions(
   resolveMx: (matrixUserId: string) => string,
 ): React.ReactNode[] {
   const segments = splitPlainTextMatrixMentions(text);
-  /** `@nickname` segments that are not full `@localpart:homeserver` MXIDs (Discord-style pills). */
-  const localHandleRe = /@([^\s@]{1,100}?)(?=\s|$|[.,!?;:])/g;
+  /**
+   * Discord-style `@handle` pills — require a left boundary so `jane@example.com`
+   * does not render `@example` as a pill.
+   */
+  const localHandleRe = /(^|[^\w.+-])@([^\s@]{1,100}?)(?=\s|$|[.,!?;:])/g;
 
   const mapPlainFragment = (
     fragment: string,
@@ -901,10 +904,13 @@ function renderTextWithMentions(
     const reLocal = new RegExp(localHandleRe.source, localHandleRe.flags);
     let keyN = 0;
     while ((mh = reLocal.exec(fragment)) !== null) {
-      if (mh.index > last) {
+      const prefix = mh[1] ?? '';
+      const handle = mh[2]?.trim() ?? '';
+      const mentionStart = mh.index + prefix.length;
+      if (mentionStart > last) {
         chunks.push(
           <span key={`${keyBase}-t-${keyN++}`}>
-            {fragment.slice(last, mh.index)}
+            {fragment.slice(last, mentionStart)}
           </span>,
         );
       }
@@ -913,10 +919,10 @@ function renderTextWithMentions(
           key={`${keyBase}-at-${keyN++}`}
           className="rounded bg-primary/20 px-1 font-medium text-primary"
         >
-          @{mh[1]?.trim()}
+          @{handle}
         </span>,
       );
-      last = mh.index + mh[0].length;
+      last = mentionStart + handle.length + 1;
     }
     if (last < fragment.length) {
       chunks.push(
@@ -933,14 +939,19 @@ function renderTextWithMentions(
   let segIdx = 0;
   for (const seg of segments) {
     if (seg.kind === 'mxid') {
-      const label = resolveMx(seg.full);
+      const label = resolveMx(seg.full).trim();
+      const displayLabel = label
+        ? label.startsWith('@')
+          ? label
+          : `@${label}`
+        : seg.full;
       parts.push(
         <span
           key={`mx-${segIdx}-${seg.full}`}
           title={seg.full}
           className="rounded bg-primary/20 px-1 font-medium text-primary"
         >
-          @{label}
+          {displayLabel}
         </span>,
       );
     } else if (seg.value) {

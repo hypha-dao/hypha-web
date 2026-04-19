@@ -39,10 +39,11 @@ export function normalizePlainTextMxidCaptureFromMatch(
   let m = mid;
   while (m.endsWith(':')) {
     const without = m.slice(0, -1);
-    /** `:8448` style port — do not strip the colon before digits. */
-    if (/:\d+$/.test(without)) break;
+    /** `:8448` ends the MXID; do not strip (also covers `@hs:8448:` + sentence `:`). */
+    if (/:\d+$/.test(without)) {
+      return without;
+    }
     m = without;
-    /** Stop once we removed the stray punctuation colon (single strip is enough for `@user:hs: hello`). */
     break;
   }
   return m;
