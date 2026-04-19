@@ -71,6 +71,10 @@ export type ResubmitProposalSessionPayload = {
   purchasePrice?: number;
   purchaseCurrency?: string;
   tokensAvailableForPurchase?: number;
+  /** Accept-investment / exchange-stakes-and-tokens form fields. */
+  recipient?: string;
+  investorSendLegs?: Array<{ amount?: string; token?: string }>;
+  spaceReceiveLegs?: Array<{ amount?: string; token?: string }>;
 } & {
   [K in typeof RESUBMIT_UPDATE_ISSUED_TOKEN_EMBEDDED_FIELD]?: UpdateIssuedTokenResubmitPayload;
 };

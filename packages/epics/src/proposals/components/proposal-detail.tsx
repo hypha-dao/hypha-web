@@ -1359,7 +1359,6 @@ export const ProposalDetail = ({
         }
         redeemResubmitPayload={redeemResubmitPayloadResolved}
         proposalTemplateData={resubmitTemplateDataMerged}
-        spaceTokenPurchaseData={proposalDetails?.spaceTokenPurchaseData}
       />
     </div>
   );
