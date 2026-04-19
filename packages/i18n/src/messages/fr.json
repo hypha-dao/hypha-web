@@ -910,6 +910,7 @@
     "createAgreementBaseFields": {
       "agreementLabel": "Accord",
       "backToCreate": "Retour à la création",
+      "resetForm": "Réinitialiser",
       "formContextMissing": "Le contexte du formulaire est manquant !",
       "delegate": "Délégué",
       "proposalTitlePlaceholder": "Titre de la proposition...",

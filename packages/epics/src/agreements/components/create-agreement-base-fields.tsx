@@ -1,7 +1,8 @@
 'use client';
 
-import { useFormContext, useWatch } from 'react-hook-form';
+import { useFormContext } from 'react-hook-form';
 import {
+  Button,
   Input,
   FormControl,
   FormDescription,
@@ -42,6 +43,7 @@ import { ButtonBack, ButtonClose } from '../../common';
 import { useProposalNotifications } from '../../governance/hooks';
 import React from 'react';
 import { useTranslations } from 'next-intl';
+import { RotateCcw } from 'lucide-react';
 
 type Creator = { avatar: string; name: string; surname: string };
 
@@ -272,6 +274,12 @@ export function CreateAgreementBaseFields({
     postProposalCreated,
   });
 
+  const handleResetForm = React.useCallback(() => {
+    form.reset();
+    setExistingAttachments([]);
+    setResubmitFormData(null);
+  }, [form]);
+
   return (
     <>
       <div className="flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-2">
@@ -299,6 +307,18 @@ export function CreateAgreementBaseFields({
                   </Badge>
                 )}
                 <div className="flex grow"></div>
+                {form.formState.isDirty ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    colorVariant="neutral"
+                    className="inline-flex items-center gap-1 px-0 text-neutral-10 md:px-3"
+                    onClick={handleResetForm}
+                  >
+                    <RotateCcw className="size-4 shrink-0" aria-hidden />
+                    {tAgreementFlow('createAgreementBaseFields.resetForm')}
+                  </Button>
+                ) : null}
                 {backUrl && (
                   <ButtonBack
                     label={resolvedBackLabel}
