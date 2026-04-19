@@ -879,9 +879,18 @@ function splitPlainTextMatrixMentions(
   return out;
 }
 
-/** Lexical `@user` pills — accent scale (avatar-indigo family), not primary (avoids muddy brown on amber highlight rows). */
-const CHAT_MENTION_PILL_CLASS =
-  'rounded-md border border-accent-8/35 bg-accent-3 px-1 py-px font-medium text-accent-11 dark:border-accent-8/45 dark:bg-accent-4 dark:text-accent-11';
+/**
+ * Discord-like mention chip: translucent **accent-9** (same hue as primary buttons `bg-accent-9`),
+ * inset ring — not a flat “notification” blue box.
+ */
+function chatMentionPillClass(onViewerMentionTintRow: boolean): string {
+  return cn(
+    'inline-flex max-w-full items-baseline rounded-[4px] px-[5px] py-[1px] text-[13px] font-semibold leading-snug tracking-tight',
+    onViewerMentionTintRow
+      ? 'bg-accent-9/22 text-accent-12 ring-1 ring-inset ring-accent-9/40 dark:bg-accent-9/30 dark:text-accent-11 dark:ring-accent-9/45'
+      : 'bg-accent-9/14 text-accent-11 ring-1 ring-inset ring-accent-9/28 dark:bg-accent-9/20 dark:text-accent-11 dark:ring-accent-9/35',
+  );
+}
 
 /**
  * Render plaintext with Matrix MXIDs as pills showing room display names (`resolveMx`).
@@ -890,6 +899,7 @@ const CHAT_MENTION_PILL_CLASS =
 function renderTextWithMentions(
   text: string,
   resolveMx: (matrixUserId: string) => string,
+  viewerMentionTintRow = false,
 ): React.ReactNode[] {
   const segments = splitPlainTextMatrixMentions(text);
   /**
@@ -921,7 +931,7 @@ function renderTextWithMentions(
       chunks.push(
         <span
           key={`${keyBase}-at-${keyN++}`}
-          className={CHAT_MENTION_PILL_CLASS}
+          className={chatMentionPillClass(viewerMentionTintRow)}
         >
           @{handle}
         </span>,
@@ -953,7 +963,7 @@ function renderTextWithMentions(
         <span
           key={`mx-${segIdx}-${seg.full}`}
           title={seg.full}
-          className={CHAT_MENTION_PILL_CLASS}
+          className={chatMentionPillClass(viewerMentionTintRow)}
         >
           {displayLabel}
         </span>,
@@ -969,8 +979,9 @@ function renderTextWithMentions(
 function resolveMatrixPlainAndHtmlFragments(
   fragment: string,
   resolveMx: (matrixUserId: string) => string,
+  viewerMentionTintRow = false,
 ): React.ReactNode[] {
-  return renderTextWithMentions(fragment, resolveMx);
+  return renderTextWithMentions(fragment, resolveMx, viewerMentionTintRow);
 }
 
 type ReplyConnectorGeometry = {
@@ -1350,10 +1361,10 @@ export function HumanChatPanelMessageBubble({
         /* Discord-style row tint: hover (primary) + focus-within for keyboard/reactions */
         'hover:bg-muted/60 focus-within:bg-muted/60',
         highlightMentionForViewer &&
-          'border-l-[3px] border-l-amber-500/95 bg-amber-100/85 dark:border-l-amber-400 dark:bg-amber-950/45',
+          'border-l-[3px] border-l-accent-9 bg-accent-2/95 dark:border-l-accent-10 dark:bg-accent-3/55',
         unreadBoundary &&
           !highlightMentionForViewer &&
-          'border-l-[3px] border-l-amber-700/90 bg-amber-50/90 dark:border-l-amber-600 dark:bg-amber-950/35',
+          'border-l-[3px] border-l-accent-8 bg-accent-1 dark:border-l-accent-9 dark:bg-accent-2/45',
       )}
       onPointerEnter={onRowPointerEnter}
       onPointerLeave={onRowPointerLeave}
@@ -1509,7 +1520,11 @@ export function HumanChatPanelMessageBubble({
                 <ChatMessageRichText
                   html={message.formattedContentHtml}
                   transformText={(fragment) =>
-                    resolveMatrixPlainAndHtmlFragments(fragment, bodyResolveMx)
+                    resolveMatrixPlainAndHtmlFragments(
+                      fragment,
+                      bodyResolveMx,
+                      highlightMentionForViewer,
+                    )
                   }
                 />
               </p>
@@ -1543,7 +1558,11 @@ export function HumanChatPanelMessageBubble({
                     : 'mt-0',
                 )}
               >
-                {renderTextWithMentions(textContent, bodyResolveMx)}
+                {renderTextWithMentions(
+                  textContent,
+                  bodyResolveMx,
+                  highlightMentionForViewer,
+                )}
               </p>
             ))}
 
