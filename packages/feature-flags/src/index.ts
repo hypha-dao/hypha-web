@@ -52,6 +52,18 @@ export const flagDefinitionsForDiscovery = {
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
+  /**
+   * Toolbar key matches `readBooleanOverride(..., 'enable-human-chat')`.
+   * Runtime default is on (kill-switch opt-out); discovery metadata reflects that.
+   */
+  enableHumanChat: {
+    key: 'enable-human-chat',
+    defaultValue: true,
+    description:
+      'Human Chat panel (default on; disable via HYPHA_DISABLE_HUMAN_CHAT / toolbar)',
+    origin: 'hypha' as const,
+    options: undefined as undefined,
+  },
 };
 
 export async function getEnableWeb3Auth(): Promise<boolean> {

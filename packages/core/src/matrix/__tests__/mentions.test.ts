@@ -28,6 +28,12 @@ describe('extractMentionUserIdsFromPlainBody', () => {
     ).toEqual(['@alice:matrix.org']);
   });
 
+  it('strips only sentence punctuation after host:port (not the port colon)', () => {
+    expect(
+      extractMentionUserIdsFromPlainBody('ping @alice:matrix.org:8448: hello'),
+    ).toEqual(['@alice:matrix.org:8448']);
+  });
+
   it('dedupes', () => {
     expect(
       extractMentionUserIdsFromPlainBody(
