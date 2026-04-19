@@ -41,20 +41,23 @@ type ProposalOverlayShellProps = {
  * Mobile / tablet portrait: docked sheet (respects `--menu-top-height` and
  * `--sidebar-right-width`).
  *
- * `md` and up: centered overlay with Radix **non-modal** Dialog semantics
- * (`modal={false}`) so portaled Dropdown/Popover/Select content (`z-50`) still
- * receives pointer events. A **modal** Radix Dialog sets
- * `disableOutsidePointerEvents` on everything outside the dialog panel, which
- * breaks Radix menus portaled to `document.body`.
+ * `md` and up: centered overlay using **Radix** `DialogPrimitive.Content` from
+ * `@radix-ui/react-dialog` (built-in `role="dialog"` + focus scope + screen-reader
+ * wiring). We intentionally **do not** wrap `packages/ui`’s `Dialog`/`DialogContent`
+ * here: those render a bundled overlay + default close control and fight
+ * parallel-route close + `z-index` rules (Dropdown/Popover portaled to `body`,
+ * {@link MenuTop} at `z-30`).
  *
- * `DialogPrimitive.Overlay` is not used here: when `modal={false}` Radix omits
- * it; we render an equivalent scrim div. Scroll lock on desktop is handled
- * below so the page does not scroll behind the panel.
+ * **Non-modal** `DialogPrimitive.Root` (`modal={false}`): a *modal* Radix dialog
+ * sets `disableOutsidePointerEvents`, which blocks portaled dropdowns. Escape
+ * and scrim dismissal are suppressed so close stays on in-app routes; parallel
+ * routes cannot use the stock “click outside closes” dialog pattern.
  *
- * **MenuTop must stay clickable:** `apps/web` renders {@link MenuTop} at
- * `z-30`. The scrim and dialog host use `top: var(--menu-top-height)` (not
- * `inset-0`) and stay at `z-20` / `z-[21]` so they never stack above the nav.
- * A full-viewport overlay at `z-40+` was a regression that blocked the header.
+ * Plain scrim + optional body scroll lock: `DialogPrimitive.Overlay` is omitted
+ * when `modal=false`, so we render the scrim `div` ourselves.
+ *
+ * **MenuTop:** scrim/host are clipped to `top: var(--menu-top-height)` and use
+ * `z-20` / `z-[21]` so the nav (`z-30`) stays clickable.
  */
 export function ProposalOverlayShell({
   children,
