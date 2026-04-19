@@ -549,7 +549,7 @@ export const ExchangeStakesAndTokensPlugin = ({
     buyerTokenCandidates,
   ]);
 
-  const { data: sellerEscrowWhitelistOk, isLoading: isLoadingSellerWhitelist } =
+  const { data: sellerEscrowWhitelistOk, error: sellerEscrowWhitelistError, isLoading: isLoadingSellerWhitelist } =
     useSWR(
       escrowContractAddress &&
         isEvmAddress(sellerBalanceLookupAddress) &&
@@ -581,7 +581,7 @@ export const ExchangeStakesAndTokensPlugin = ({
       { revalidateOnFocus: false },
     );
 
-  const { data: buyerEscrowWhitelistOk, isLoading: isLoadingBuyerWhitelist } =
+  const { data: buyerEscrowWhitelistOk, error: buyerEscrowWhitelistError, isLoading: isLoadingBuyerWhitelist } =
     useSWR(
       escrowContractAddress &&
         isEvmAddress(buyerBalanceLookupAddress) &&
@@ -618,6 +618,9 @@ export const ExchangeStakesAndTokensPlugin = ({
     if (!escrowContractAddress) {
       return toPayoutTokens(sellerTokensBeforeWhitelist);
     }
+    if (sellerEscrowWhitelistError) {
+      return [];
+    }
     /** SWR is undefined until resolved; do not treat as "no tokens" (that emptied the dropdown). */
     if (sellerEscrowWhitelistOk === undefined) {
       return toPayoutTokens(sellerTokensBeforeWhitelist);
@@ -629,6 +632,7 @@ export const ExchangeStakesAndTokensPlugin = ({
   }, [
     sellerTokensBeforeWhitelist,
     sellerEscrowWhitelistOk,
+    sellerEscrowWhitelistError,
     escrowContractAddress,
   ]);
 
@@ -636,6 +640,9 @@ export const ExchangeStakesAndTokensPlugin = ({
     if (!buyerTokensBeforeWhitelist.length) return [];
     if (!escrowContractAddress) {
       return toPayoutTokens(buyerTokensBeforeWhitelist);
+    }
+    if (buyerEscrowWhitelistError) {
+      return [];
     }
     if (buyerEscrowWhitelistOk === undefined) {
       return toPayoutTokens(buyerTokensBeforeWhitelist);
@@ -647,6 +654,7 @@ export const ExchangeStakesAndTokensPlugin = ({
   }, [
     buyerTokensBeforeWhitelist,
     buyerEscrowWhitelistOk,
+    buyerEscrowWhitelistError,
     escrowContractAddress,
   ]);
 

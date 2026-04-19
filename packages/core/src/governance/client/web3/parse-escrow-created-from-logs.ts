@@ -70,8 +70,9 @@ export function parseEscrowCreatedIdsFromLogs(logs: readonly Log[]): bigint[] {
       logs: [...logs],
       eventName: 'EscrowCreated',
     });
-    return events.map((e) => e.args.escrowId as bigint);
-  } catch {
+    return events.map((e) => e.args.escrowId);
+  } catch (err) {
+    console.error('parseEscrowCreatedIdsFromLogs failed', { err });
     return [];
   }
 }

@@ -72,6 +72,15 @@ export function useSellerLegBalanceValidation(messages: Messages | string) {
   const messagesRef = React.useRef(normalizedMessages);
   messagesRef.current = normalizedMessages;
 
+  const sellerLegRef = React.useRef(sellerLeg);
+  sellerLegRef.current = sellerLeg;
+  const sellerRecipientTypeRef = React.useRef(sellerRecipientType);
+  sellerRecipientTypeRef.current = sellerRecipientType;
+  const sellerAddressRef = React.useRef(sellerAddress);
+  sellerAddressRef.current = sellerAddress;
+  const spaceExecutorAddressRef = React.useRef(spaceExecutorAddress);
+  spaceExecutorAddressRef.current = spaceExecutorAddress;
+
   const validationKey = React.useMemo(
     () =>
       JSON.stringify({
@@ -88,12 +97,12 @@ export function useSellerLegBalanceValidation(messages: Messages | string) {
       return;
     }
 
-    const legs = sellerLeg ?? [];
+    const legs = sellerLegRef.current ?? [];
     const owner = resolveSellerBalanceOwner({
-      sellerRecipientType,
-      sellerAddress: sellerAddress ?? '',
+      sellerRecipientType: sellerRecipientTypeRef.current,
+      sellerAddress: sellerAddressRef.current ?? '',
       sellerLeg: legs,
-      spaceExecutorAddress,
+      spaceExecutorAddress: spaceExecutorAddressRef.current,
     });
 
     if (owner === 'treasury_unavailable' || owner === null) {
@@ -135,7 +144,12 @@ export function useSellerLegBalanceValidation(messages: Messages | string) {
               type: 'manual',
               message: amountTooSmall,
             });
+          } else if (result === 'rpc_error') {
+            // RPC failure: cannot validate, do not set error (fail open for UX)
+            // but also do not clear existing errors. Transient RPC failures
+            // should not clear legitimate balance errors.
           } else {
+            // result === 'ok' or 'skip'
             clearManualSellerLegAmountError(i);
           }
         }
@@ -151,9 +165,5 @@ export function useSellerLegBalanceValidation(messages: Messages | string) {
     isSubmitting,
     clearManualSellerLegAmountError,
     setError,
-    sellerLeg,
-    sellerRecipientType,
-    sellerAddress,
-    spaceExecutorAddress,
   ]);
 }

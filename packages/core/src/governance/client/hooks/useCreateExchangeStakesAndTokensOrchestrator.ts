@@ -166,12 +166,20 @@ export const useCreateExchangeStakesAndTokensOrchestrator = ({
   const { trigger: createExchangeStakesAndTokens } = useSWRMutation(
     'createExchangeStakesAndTokensOrchestration',
     async (_: string, { arg }: { arg: CreateExchangeArg }) => {
-      startTask('CREATE_WEB2_AGREEMENT');
-      const inputWeb2 = schemaCreateAgreementWeb2.parse(arg);
-      const createdAgreement = await web2.createAgreement(inputWeb2);
-      completeTask('CREATE_WEB2_AGREEMENT');
+      let web2Slug: string | undefined;
 
-      const web2Slug = createdAgreement?.slug ?? web2.createdAgreement?.slug;
+      try {
+        startTask('CREATE_WEB2_AGREEMENT');
+        const inputWeb2 = schemaCreateAgreementWeb2.parse(arg);
+        const createdAgreement = await web2.createAgreement(inputWeb2);
+        completeTask('CREATE_WEB2_AGREEMENT');
+
+        web2Slug = createdAgreement?.slug ?? web2.createdAgreement?.slug;
+      } catch (err) {
+        errorTask('CREATE_WEB2_AGREEMENT', err instanceof Error ? err.message : String(err));
+        throw err;
+      }
+
       const web3SpaceId = arg.web3SpaceId;
 
       try {
@@ -219,7 +227,7 @@ export const useCreateExchangeStakesAndTokensOrchestrator = ({
   const { data: updatedWeb2Agreement } = useSWR(
     web2.createdAgreement?.slug &&
       taskState.UPLOAD_FILES.status === TaskStatus.IS_DONE &&
-      (!config || taskState.CREATE_WEB3_AGREEMENT.status === TaskStatus.IS_DONE)
+      (!config || (taskState.CREATE_WEB3_AGREEMENT.status === TaskStatus.IS_DONE && web3.createdExchangeStakesAndTokens?.proposalId))
       ? [
           web2.createdAgreement.slug,
           web3.createdExchangeStakesAndTokens?.proposalId,
@@ -253,8 +261,13 @@ export const useCreateExchangeStakesAndTokensOrchestrator = ({
       [
         web2.errorCreateAgreementMutation,
         web3.errorCreateExchangeStakesAndTokens,
+        web3.errorWaitExchangeStakesAndTokensFromTransaction,
       ].filter(Boolean),
-    [web2, web3],
+    [
+      web2.errorCreateAgreementMutation,
+      web3.errorCreateExchangeStakesAndTokens,
+      web3.errorWaitExchangeStakesAndTokensFromTransaction,
+    ],
   );
 
   const reset = useCallback(() => {

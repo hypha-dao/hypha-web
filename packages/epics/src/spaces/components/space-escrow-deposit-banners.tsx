@@ -68,13 +68,20 @@ export const SpaceEscrowDepositBanners = ({
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({
     spaceId: web3SpaceId ?? null,
   });
-  const executorAddress = spaceDetails?.executor as `0x${string}` | undefined;
+  const executorAddress: `0x${string}` | undefined = (() => {
+    const raw = spaceDetails?.executor;
+    if (typeof raw === 'string' && /^0x[a-fA-F0-9]{40}$/.test(raw)) {
+      return raw as `0x${string}`;
+    }
+    return undefined;
+  })();
   const { isMember } = useSpaceMember({
     spaceId: typeof web3SpaceId === 'number' ? web3SpaceId : undefined,
   });
   const { person } = useMe();
+  const shouldFetchDeposits = isMember && typeof web3SpaceId === 'number' && !!executorAddress;
   const { pendingDeposits, refresh } = usePendingEscrowDeposits({
-    user: executorAddress,
+    user: shouldFetchDeposits ? executorAddress : undefined,
   });
   const {
     escrowIds: escrowIdsWithOpenProposal,

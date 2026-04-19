@@ -223,6 +223,7 @@ export const CreateExchangeStakesAndTokensForm = ({
     ].join('\n');
 
     const createPayload = { ...data };
+    delete createPayload.sellerRecipientType;
     delete createPayload.buyerRecipientType;
     delete createPayload.spaceExecutorAddress;
     delete createPayload.buyerExecutorAddressForSettlement;

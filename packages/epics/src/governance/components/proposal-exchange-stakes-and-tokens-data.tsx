@@ -185,6 +185,8 @@ export const ProposalExchangeStakesAndTokensData = ({
     ? buyerSpace.logoUrl ?? '/placeholder/space-avatar-image.svg'
     : undefined;
 
+  const t = useTranslations('AgreementFlow');
+
   const renderPartyValue = (
     address?: string,
     label?: string,
@@ -199,7 +201,7 @@ export const ProposalExchangeStakesAndTokensData = ({
             src={avatarUrl ?? '/placeholder/default-profile.svg'}
             width={24}
             height={24}
-            alt={avatarAlt ?? 'avatar'}
+            alt={avatarAlt ?? t('common.avatarAlt')}
           />
           <span className="text-nowrap">{label}</span>
         </span>
@@ -211,7 +213,7 @@ export const ProposalExchangeStakesAndTokensData = ({
           type="button"
           onClick={() => copyToClipboard(address)}
           className="flex items-center gap-2 text-neutral-11"
-          aria-label="Copy wallet address"
+          aria-label={t('common.copyWalletAddress')}
         >
           <span>{`${address.slice(0, 6)}…${address.slice(-4)}`}</span>
           <CopyIcon className="icon-sm" />
@@ -239,13 +241,20 @@ export const ProposalExchangeStakesAndTokensData = ({
       const dbToken = dbTokens?.find(
         (t) => t.address?.toLowerCase() === addrKey,
       );
-      const parsedAmount = Number(leg.amount);
-      const formattedAmount = Number.isFinite(parsedAmount)
-        ? parsedAmount.toLocaleString(undefined, {
+      // Keep amount as string to preserve precision for large/high-decimal values
+      const formattedAmount = (() => {
+        const trimmed = leg.amount.trim();
+        const asNumber = Number(trimmed);
+        // Only format via Number if it's a simple, safe value
+        if (Number.isFinite(asNumber) && Math.abs(asNumber) < 1e15) {
+          return asNumber.toLocaleString(undefined, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 6,
-          })
-        : leg.amount;
+          });
+        }
+        // For very large or high-precision amounts, return the string as-is
+        return trimmed;
+      })();
 
       const tokenLabel =
         token?.name ?? token?.symbol ?? dbToken?.name ?? dbToken?.symbol;

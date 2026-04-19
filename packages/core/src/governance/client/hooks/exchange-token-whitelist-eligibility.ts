@@ -39,7 +39,7 @@ export async function canExecutorSendToEscrowForExchange(params: {
     ]);
 
     if (
-      useTransferWhitelist === undefined ||
+      useTransferWhitelist === undefined &&
       useReceiveWhitelist === undefined
     ) {
       return true;
@@ -78,7 +78,11 @@ export async function canExecutorSendToEscrowForExchange(params: {
     }
 
     return true;
-  } catch {
+  } catch (err) {
+    console.error(
+      '[canExecutorSendToEscrowForExchange] RPC failure checking whitelist flags',
+      { tokenAddress, executorAddress, escrowAddress, err },
+    );
     return true;
   }
 }

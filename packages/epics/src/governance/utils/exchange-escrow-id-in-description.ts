@@ -38,6 +38,10 @@ export function upsertExchangeEscrowIdInDescription(
       description.slice(0, span.start) + token + description.slice(span.end)
     );
   }
+  const trimmed = description.trim();
+  if (trimmed === '') {
+    return token;
+  }
   return `${description.trimEnd()}\n\n${token}`;
 }
 
@@ -47,12 +51,7 @@ export function parseExchangeEscrowIdFromDescription(
   if (!description) return undefined;
   const span = findEscrowIdSpan(description);
   if (!span) return undefined;
-  const idSlice = span.id;
-  try {
-    return BigInt(idSlice);
-  } catch {
-    return undefined;
-  }
+  return BigInt(span.id);
 }
 
 /** Removes persisted `<!-- exchange-escrow-id:n -->` from text shown in lists / previews. */

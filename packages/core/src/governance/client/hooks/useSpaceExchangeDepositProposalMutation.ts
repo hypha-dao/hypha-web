@@ -68,11 +68,9 @@ export const useSpaceExchangeDepositProposalMutation = () => {
         throw new Error('HYPHA_ESCROW_ADDRESS_MISSING');
       }
 
-      const [duration] = await Promise.all([
-        publicClient.readContract(
-          getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
-        ),
-      ]);
+      const duration = await publicClient.readContract(
+        getSpaceMinProposalDuration({ spaceId: BigInt(arg.spaceId) }),
+      );
 
       /**
        * Minimal, correct tx set: approve the escrow and call `receiveFunds`.

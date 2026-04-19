@@ -89,7 +89,8 @@ export const useExchangeStakesAndTokensMutationsWeb3Rpc = ({
           getSpaceDetails({ spaceId: BigInt(arg.spaceId) }),
         ),
       ]);
-      const executor = spaceDetails[9] as `0x${string}`;
+      const EXECUTOR_INDEX = 9;
+      const executor = spaceDetails[EXECUTOR_INDEX] as `0x${string}`;
 
       // "Is space" here means "is THIS proposing space" — i.e. the party whose
       // leg will be funded by the executor running these batched transactions.

@@ -418,12 +418,32 @@ export const schemaAcceptInvestment = z.object({
     .refine(isAddress, { message: 'Invalid Ethereum address' }),
   investorSendLegs: z.array(acceptInvestmentTokenRow).length(1, {
     message:
-      'Exactly one token row is required under Investing member will send',
+      'Exactly one token row is required under Investing Member will Send',
   }),
   spaceReceiveLegs: z.array(acceptInvestmentTokenRow).length(1, {
     message:
       'Exactly one token row is required under Investing Member will Receive',
   }),
+});
+
+const exchangeTokenRow = z.object({
+  amount: z
+    .string()
+    .refine((value) => value.trim() !== '', {
+      message: 'Please enter an amount.',
+    })
+    .refine(
+      (value) => {
+        const normalized = value.trim();
+        const amount = Number(normalized);
+        return Number.isFinite(amount) && amount > 0;
+      },
+      { message: 'Amount must be greater than 0' },
+    ),
+  token: z
+    .string()
+    .min(1, { message: 'Please select a token' })
+    .refine(isAddress, { message: 'Invalid Ethereum address' }),
 });
 
 /** v1: exchange escrow supports a single token pair on each side. */
@@ -444,54 +464,14 @@ export const schemaExchangeStakesAndTokens = z
       .min(1, { message: 'Please add a recipient or wallet address' })
       .refine(isAddress, { message: 'Invalid Ethereum address' }),
     sellerLeg: z
-      .array(
-        z.object({
-          amount: z
-            .string()
-            .refine((value) => value.trim() !== '', {
-              message: 'Please enter an amount.',
-            })
-            .refine(
-              (value) => {
-                const normalized = value.trim();
-                const amount = Number(normalized);
-                return Number.isFinite(amount) && amount > 0;
-              },
-              { message: 'Amount must be greater than 0' },
-            ),
-          token: z
-            .string()
-            .min(1, { message: 'Please select a token' })
-            .refine(isAddress, { message: 'Invalid Ethereum address' }),
-        }),
-      )
+      .array(exchangeTokenRow)
       .length(1, { message: 'Exactly one seller token row is required' }),
     buyerAddress: z
       .string()
       .min(1, { message: 'Please add a recipient or wallet address' })
       .refine(isAddress, { message: 'Invalid Ethereum address' }),
     buyerLeg: z
-      .array(
-        z.object({
-          amount: z
-            .string()
-            .refine((value) => value.trim() !== '', {
-              message: 'Please enter an amount.',
-            })
-            .refine(
-              (value) => {
-                const normalized = value.trim();
-                const amount = Number(normalized);
-                return Number.isFinite(amount) && amount > 0;
-              },
-              { message: 'Amount must be greater than 0' },
-            ),
-          token: z
-            .string()
-            .min(1, { message: 'Please select a token' })
-            .refine(isAddress, { message: 'Invalid Ethereum address' }),
-        }),
-      )
+      .array(exchangeTokenRow)
       .length(1, { message: 'Exactly one buyer token row is required' }),
   })
   .superRefine((data, ctx) => {

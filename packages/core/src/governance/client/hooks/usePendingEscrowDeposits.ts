@@ -33,11 +33,6 @@ export type PendingEscrowDeposit = {
   amountB: bigint;
   isPartyAFunded: boolean;
   isPartyBFunded: boolean;
-  /**
-   * @deprecated Kept for backward compatibility with existing consumers. When
-   *   the user is on side B this mirrors `isPartyAFunded` (the counterparty).
-   *   Prefer `isCounterpartyFunded`.
-   */
   /** Funding flag for the OPPOSITE side (useful for messaging "they have already deposited"). */
   isCounterpartyFunded: boolean;
   /** Token the user must deposit to complete their side. */
