@@ -1646,6 +1646,7 @@
     },
     "withdrawResubmit": {
       "title": "Withdraw your proposal or edit and submit again?",
+      "withdrawOnlyTitle": "Withdraw your proposal?",
       "withdrawDialogTitle": "Withdraw Proposal",
       "withdrawDialogDescription": "Are you sure you want to withdraw this proposal? It will no longer appear on the Proposal screen and cannot be recovered.",
       "withdraw": "Withdraw",

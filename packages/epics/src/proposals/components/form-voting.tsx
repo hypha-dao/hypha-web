@@ -573,6 +573,7 @@ export const FormVoting = ({
           onWithdraw={handleWithdraw}
           onResubmit={handleResubmit}
           isWithdrawing={isWithdrawing}
+          hideResubmit={label === 'Issue New Token'}
         />
       )}
     </div>
