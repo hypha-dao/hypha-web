@@ -326,13 +326,20 @@ export const useCreateIssueTokenOrchestrator = ({
           web3ProposalId: Number(web3ProposalId),
         });
 
-        const updatedToken = await updateTokenAction(
-          {
-            agreementId: web2.createdAgreement!.id,
-            agreementWeb3IdUpdate: Number(web3ProposalId),
-          },
-          { authToken: authToken! },
-        );
+        try {
+          await updateTokenAction(
+            {
+              agreementId: web2.createdAgreement!.id,
+              agreementWeb3IdUpdate: Number(web3ProposalId),
+            },
+            { authToken: authToken! },
+          );
+        } catch (tokenDbError) {
+          console.error(
+            '[useCreateIssueTokenOrchestrator] Linked agreement to proposal but failed to persist agreementWeb3Id on tokens row (non-fatal):',
+            tokenDbError,
+          );
+        }
 
         completeTask('LINK_WEB2_AND_WEB3_AGREEMENT');
         return result;
