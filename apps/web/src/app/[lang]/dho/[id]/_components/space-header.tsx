@@ -18,6 +18,7 @@ import { NestedSpacesButton } from './nested-spaces-button';
 import { Breadcrumbs } from './breadcrumbs';
 import { SpaceHeaderAvatar } from './space-header-avatar';
 import { SpaceHeaderCollapseWrapper } from './space-header-collapse-wrapper';
+import { SpaceHeaderHeroClip } from './space-header-hero-clip';
 import { canConvertToBigInt, cn, formatDate } from '@hypha-platform/ui-utils';
 import { getTranslations } from 'next-intl/server';
 
@@ -89,33 +90,36 @@ export async function SpaceHeader({
       >
         <div className="relative mb-0 overflow-visible pl-3 sm:pl-5">
           <div
+            data-space-hero-card
             className={cn(
               'relative isolate flex h-[270px] min-h-[270px] max-h-[270px] w-full flex-col overflow-visible rounded-2xl border border-neutral-6 shadow-md',
             )}
           >
-            <div className="absolute inset-0 z-0 overflow-hidden rounded-2xl">
-              <Image
-                src={leadSrc}
-                alt=""
-                fill
-                priority
-                className="object-cover object-center"
-                sizes="(max-width: 1280px) 100vw, 1280px"
-                aria-hidden
-              />
-              <div
-                className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/88 via-black/42 via-[52%] to-black/22"
-                aria-hidden
-              />
-              <div
-                className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/58 via-transparent to-black/40"
-                aria-hidden
-              />
-              <div
-                className="pointer-events-none absolute inset-0 bg-gradient-to-br from-accent-11/18 via-transparent to-transparent"
-                aria-hidden
-              />
-            </div>
+            <SpaceHeaderHeroClip className="absolute inset-0 z-0">
+              <div className="relative h-full w-full overflow-hidden rounded-2xl">
+                <Image
+                  src={leadSrc}
+                  alt=""
+                  fill
+                  priority
+                  className="object-cover object-center"
+                  sizes="(max-width: 1280px) 100vw, 1280px"
+                  aria-hidden
+                />
+                <div
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/88 via-black/42 via-[52%] to-black/22"
+                  aria-hidden
+                />
+                <div
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/58 via-transparent to-black/40"
+                  aria-hidden
+                />
+                <div
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-br from-accent-11/18 via-transparent to-transparent"
+                  aria-hidden
+                />
+              </div>
+            </SpaceHeaderHeroClip>
 
             <SpaceHeaderAvatar src={logoUrl || DEFAULT_SPACE_AVATAR_IMAGE} />
 

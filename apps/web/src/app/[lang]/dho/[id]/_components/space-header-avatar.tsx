@@ -4,17 +4,19 @@ import { Avatar, AvatarImage } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useEffect, useRef, useState } from 'react';
 
+import { useSpaceHeaderMorph } from './space-header-morph-context';
+
 type SpaceHeaderAvatarProps = {
   src: string;
 };
 
 /**
- * Left-edge avatar, vertically centred on the banner, bleeding slightly past
- * the left border. Subtle scroll-based parallax (respects prefers-reduced-motion).
+ * Left-edge avatar with scroll-driven motion: parallax + scales toward compact row.
  */
 export function SpaceHeaderAvatar({ src }: SpaceHeaderAvatarProps) {
   const bannerRef = useRef<HTMLDivElement>(null);
   const [parallaxY, setParallaxY] = useState(0);
+  const { progress, reducedMotion } = useSpaceHeaderMorph();
 
   useEffect(() => {
     const el = bannerRef.current;
@@ -33,8 +35,8 @@ export function SpaceHeaderAvatar({ src }: SpaceHeaderAvatarProps) {
       const bannerMidY = rect.top + rect.height / 2;
       const viewMid = vh / 2;
       const normalised = (bannerMidY - viewMid) / vh;
-      /* Small opposite drift — reads as depth without gimmicks */
-      setParallaxY(Math.max(-12, Math.min(12, -normalised * 16)));
+      /* Stronger drift — visible depth while scrolling */
+      setParallaxY(Math.max(-28, Math.min(28, -normalised * 44)));
     };
 
     const onScrollOrResize = () => {
@@ -52,6 +54,9 @@ export function SpaceHeaderAvatar({ src }: SpaceHeaderAvatarProps) {
     };
   }, []);
 
+  const morphScale = reducedMotion ? 1 : Math.max(0.42, 1 - progress * 0.62);
+  const morphY = reducedMotion ? 0 : progress * -52;
+
   return (
     <div
       ref={bannerRef}
@@ -59,9 +64,14 @@ export function SpaceHeaderAvatar({ src }: SpaceHeaderAvatarProps) {
       aria-hidden
     >
       <div
-        className="pointer-events-auto absolute top-1/2 left-0 will-change-transform"
+        className={cn(
+          'pointer-events-auto absolute top-1/2 left-0',
+          !reducedMotion && 'transition-transform duration-300 ease-out',
+        )}
         style={{
-          transform: `translate(-34%, calc(-50% + ${parallaxY}px))`,
+          transform: `translate(-34%, calc(-50% + ${parallaxY}px + ${morphY}px)) scale(${morphScale})`,
+          transformOrigin: 'center center',
+          opacity: reducedMotion ? 1 : Math.max(0, 1 - progress * 1.05),
         }}
       >
         <Avatar
