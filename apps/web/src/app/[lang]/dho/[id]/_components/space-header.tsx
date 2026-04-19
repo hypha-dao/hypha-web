@@ -20,9 +20,8 @@ import { Breadcrumbs } from './breadcrumbs';
 import { canConvertToBigInt, cn, formatDate } from '@hypha-platform/ui-utils';
 import { getTranslations } from 'next-intl/server';
 
-/** Banner height — full-frame hero within the layout (tighter than legacy 270px). */
-const BANNER_HEIGHT =
-  'min-h-[200px] h-[clamp(11rem,28vw,17rem)] sm:min-h-[240px]';
+/** Matches legacy live layout: `layout.tsx` used 768×270 lead image. */
+const BANNER_HEIGHT_CLASS = 'h-[270px] min-h-[270px] max-h-[270px]';
 
 export type SpaceHeaderProps = {
   lang: Locale;
@@ -72,40 +71,141 @@ export async function SpaceHeader({
 
       <div
         className={cn(
-          'overflow-visible rounded-2xl border border-neutral-6 bg-card shadow-lg',
+          /* Avatar hangs ~93px below banner (128px − 35px offset) */
+          'relative mb-24 overflow-visible rounded-2xl border border-neutral-6 shadow-lg',
         )}
       >
-        {/* Full-width banner + circular avatar overlapping bottom edge (prod pattern) */}
-        <div className="relative">
+        {/* Banner + text overlay (live height 270px) + prod avatar overlap */}
+        <div
+          className={cn(
+            'relative isolate w-full overflow-hidden rounded-2xl',
+            BANNER_HEIGHT_CLASS,
+          )}
+        >
+          <Image
+            src={leadSrc}
+            alt=""
+            fill
+            priority
+            className="object-cover object-center"
+            sizes="(max-width: 1280px) 100vw, 1280px"
+            aria-hidden
+          />
+
+          {/* Readability overlays — strong bottom wash + side vignette */}
           <div
-            className={cn(
-              'relative isolate w-full overflow-hidden rounded-t-2xl',
-              BANNER_HEIGHT,
-            )}
-          >
-            <Image
-              src={leadSrc}
-              alt=""
-              fill
-              priority
-              className="object-cover object-center"
-              sizes="(max-width: 1280px) 100vw, 1280px"
-              aria-hidden
-            />
-            <div
-              className="pointer-events-none absolute inset-0 bg-gradient-to-t from-neutral-2/90 via-neutral-2/20 to-transparent"
-              aria-hidden
-            />
-            <div
-              className="pointer-events-none absolute inset-0 bg-gradient-to-br from-accent-11/20 via-transparent to-transparent"
-              aria-hidden
-            />
+            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/82 via-black/35 via-[45%] to-black/15"
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/55 via-black/15 to-transparent"
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-0 bg-gradient-to-br from-accent-11/25 via-transparent to-transparent"
+            aria-hidden
+          />
+
+          {/* Foreground copy + actions */}
+          <div className="relative z-[1] flex h-full flex-col justify-end p-4 pb-5 sm:p-6">
+            <div className="flex min-h-0 flex-col gap-4 xl:flex-row xl:items-end xl:justify-between xl:gap-6">
+              <div
+                className={cn(
+                  'min-w-0 flex-1 space-y-2',
+                  /* Clear the circular avatar (128px + original left inset) */
+                  'pl-[148px] sm:pl-[160px]',
+                )}
+              >
+                <Text
+                  id="space-title"
+                  className="text-balance text-6 font-semibold tracking-tight text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.65)] sm:text-7"
+                >
+                  {title}
+                </Text>
+
+                <div className="[&_a]:text-white/90 [&_a:hover]:text-white [&_svg]:text-white/80">
+                  <WebLinks links={links} />
+                </div>
+
+                <div className="space-y-0.5">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/75">
+                    {tSpaces('purpose')}
+                  </div>
+                  {hasPurpose ? (
+                    <p className="text-pretty text-2 leading-snug text-white/95 drop-shadow-[0_1px_8px_rgba(0,0,0,0.55)]">
+                      {purposeText}
+                    </p>
+                  ) : (
+                    <p className="text-pretty text-2 italic leading-snug text-white/70 drop-shadow-[0_1px_8px_rgba(0,0,0,0.45)]">
+                      {tSpaces('purposeEmptyPublic')}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-2 border-t border-white/20 pt-3 text-1 text-white/85">
+                  <span>
+                    <span className="font-semibold tabular-nums text-white">
+                      {spaceMembers}
+                    </span>{' '}
+                    {tCommon('Members')}
+                  </span>
+                  <span className="text-white/45" aria-hidden>
+                    ·
+                  </span>
+                  <span>
+                    <span className="font-semibold tabular-nums text-white">
+                      {spaceAgreements}
+                    </span>{' '}
+                    {tCommon('Agreements')}
+                  </span>
+                  <span className="text-white/45" aria-hidden>
+                    ·
+                  </span>
+                  <span className="text-white/80">
+                    {tCommon('createdOn', {
+                      date: formatDate(createdAt, true),
+                    })}
+                  </span>
+                  {canConvertToBigInt(web3SpaceId) ? (
+                    <>
+                      <span
+                        className="hidden text-white/45 sm:inline"
+                        aria-hidden
+                      >
+                        ·
+                      </span>
+                      <SubscriptionBadge web3SpaceId={web3SpaceId as number} />
+                    </>
+                  ) : null}
+                  <SpaceModeLabel
+                    web3SpaceId={web3SpaceId as number}
+                    isSandbox={flags.includes('sandbox')}
+                    isDemo={flags.includes('demo')}
+                    isArchived={
+                      flags.includes('archived') || spaceMembers === 0
+                    }
+                    configPath={`${getDhoPathAgreements(
+                      lang,
+                      daoSlug,
+                    )}/space-configuration`}
+                  />
+                </div>
+              </div>
+
+              <div className="flex shrink-0 flex-wrap gap-2 xl:justify-end">
+                {typeof web3SpaceId === 'number' ? (
+                  <JoinSpace web3SpaceId={web3SpaceId} spaceId={spaceId} />
+                ) : null}
+                <ActionButtons web3SpaceId={web3SpaceId as number} />
+              </div>
+            </div>
           </div>
 
+          {/* Avatar: match legacy prod offset — overlaps bottom edge */}
           <Avatar
             className={cn(
-              'absolute bottom-0 left-4 z-10 h-[104px] w-[104px] translate-y-1/2 rounded-full',
-              'ring-[4px] ring-neutral-2 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.75)] sm:left-6 sm:h-[112px] sm:w-[112px]',
+              'absolute bottom-[-35px] left-[15px] z-10 h-[128px] w-[128px] rounded-full',
+              'shadow-[0_14px_40px_-6px_rgba(0,0,0,0.85)] ring-[4px] ring-neutral-2',
             )}
           >
             <AvatarImage
@@ -115,90 +215,6 @@ export async function SpaceHeader({
               className="object-cover"
             />
           </Avatar>
-        </div>
-
-        {/* Content: padding clears overlapping avatar — no nested bordered panels */}
-        <div className="relative rounded-b-2xl px-4 pb-5 pt-[4.5rem] sm:px-6 sm:pt-[4.75rem]">
-          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between xl:gap-8">
-            <div className="min-w-0 flex-1 space-y-3 pl-32 sm:pl-36 lg:min-h-[4.25rem]">
-              <Text
-                id="space-title"
-                className="text-balance text-6 font-semibold tracking-tight sm:text-7"
-              >
-                {title}
-              </Text>
-              <WebLinks links={links} />
-
-              <div className="space-y-1">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-neutral-11">
-                  {tSpaces('purpose')}
-                </div>
-                {hasPurpose ? (
-                  <p className="text-pretty text-2 leading-relaxed text-neutral-12">
-                    {purposeText}
-                  </p>
-                ) : (
-                  <p className="text-pretty text-2 italic leading-relaxed text-neutral-10">
-                    {tSpaces('purposeEmptyPublic')}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-2 border-t border-neutral-6 pt-4 text-1">
-                <span className="text-neutral-11">
-                  <span className="font-semibold tabular-nums text-foreground">
-                    {spaceMembers}
-                  </span>{' '}
-                  {tCommon('Members')}
-                </span>
-                <span className="text-neutral-8" aria-hidden>
-                  ·
-                </span>
-                <span className="text-neutral-11">
-                  <span className="font-semibold tabular-nums text-foreground">
-                    {spaceAgreements}
-                  </span>{' '}
-                  {tCommon('Agreements')}
-                </span>
-                <span className="text-neutral-8" aria-hidden>
-                  ·
-                </span>
-                <span className="text-neutral-11">
-                  {tCommon('createdOn', {
-                    date: formatDate(createdAt, true),
-                  })}
-                </span>
-                {canConvertToBigInt(web3SpaceId) ? (
-                  <>
-                    <span
-                      className="hidden text-neutral-8 sm:inline"
-                      aria-hidden
-                    >
-                      ·
-                    </span>
-                    <SubscriptionBadge web3SpaceId={web3SpaceId as number} />
-                  </>
-                ) : null}
-                <SpaceModeLabel
-                  web3SpaceId={web3SpaceId as number}
-                  isSandbox={flags.includes('sandbox')}
-                  isDemo={flags.includes('demo')}
-                  isArchived={flags.includes('archived') || spaceMembers === 0}
-                  configPath={`${getDhoPathAgreements(
-                    lang,
-                    daoSlug,
-                  )}/space-configuration`}
-                />
-              </div>
-            </div>
-
-            <div className="flex shrink-0 flex-wrap gap-2 xl:justify-end xl:pt-1">
-              {typeof web3SpaceId === 'number' ? (
-                <JoinSpace web3SpaceId={web3SpaceId} spaceId={spaceId} />
-              ) : null}
-              <ActionButtons web3SpaceId={web3SpaceId as number} />
-            </div>
-          </div>
         </div>
       </div>
 
