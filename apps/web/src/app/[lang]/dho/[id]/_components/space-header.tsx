@@ -79,7 +79,7 @@ export async function SpaceHeader({
         )}
       </div>
 
-      <div className="relative mb-8 overflow-visible pl-3 sm:mb-10 sm:pl-5">
+      <div className="relative mb-0 overflow-visible pl-3 sm:pl-5">
         <div
           className={cn(
             'relative isolate flex h-[270px] min-h-[270px] max-h-[270px] w-full flex-col overflow-visible rounded-2xl border border-neutral-6 shadow-md',
@@ -204,15 +204,14 @@ export async function SpaceHeader({
         </div>
       </div>
 
-      {/* Original placement: actions below the banner, right-aligned */}
-      <div className="-mt-2 mb-1 flex justify-end gap-2 sm:-mt-1">
-        {typeof web3SpaceId === 'number' ? (
-          <JoinSpace web3SpaceId={web3SpaceId} spaceId={spaceId} />
-        ) : null}
-        <ActionButtons web3SpaceId={web3SpaceId as number} />
-      </div>
-
-      <div className="mt-1">
+      {/* Equal rhythm between hero bottom, actions, and trial banner */}
+      <div className="flex flex-col gap-4 pt-5 sm:gap-5 sm:pt-6">
+        <div className="flex flex-wrap justify-end gap-2">
+          {typeof web3SpaceId === 'number' ? (
+            <JoinSpace web3SpaceId={web3SpaceId} spaceId={spaceId} />
+          ) : null}
+          <ActionButtons web3SpaceId={web3SpaceId as number} />
+        </div>
         <SalesBanner web3SpaceId={web3SpaceId as number} />
       </div>
     </header>
