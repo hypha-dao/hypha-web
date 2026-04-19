@@ -701,6 +701,7 @@
     "uploadSpaceBanner": "Hochladen",
     "spaceBanner": "Space-Banner",
     "purpose": "Zweck",
+    "purposeEmptyPublic": "Noch kein Zweck angegeben — Mitglieder können einen in den Space-Einstellungen ergänzen.",
     "purposePlaceholder": "Geben Sie hier den Zweck Ihres Spaces ein...",
     "organisationLevel": "Organisationsebene",
     "tags": "Tags",

@@ -701,6 +701,7 @@
     "uploadSpaceBanner": "Téléverser",
     "spaceBanner": "bannière de l'espace",
     "purpose": "Objectif",
+    "purposeEmptyPublic": "Pas encore d’objectif — les membres peuvent l’ajouter dans les paramètres de l’espace.",
     "purposePlaceholder": "Saisissez l'objectif de votre espace ici...",
     "organisationLevel": "Niveau d'organisation",
     "tags": "Étiquettes",

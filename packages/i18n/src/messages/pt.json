@@ -1314,6 +1314,7 @@
     "uploadSpaceBanner": "Carregar",
     "spaceBanner": "bandeira espacial",
     "purpose": "Propósito",
+    "purposeEmptyPublic": "Ainda sem propósito — os membros podem adicionar nas configurações do espaço.",
     "purposePlaceholder": "Digite aqui a finalidade do seu espaço...",
     "organisationLevel": "Nível de organização",
     "tags": "Etiquetas",
