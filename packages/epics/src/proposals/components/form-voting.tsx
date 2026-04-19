@@ -434,6 +434,8 @@ export const FormVoting = ({
   const isRejectDisabled = isDisabled || votingInProgress || voteText === 'no';
   const isAcceptDisabled = isDisabled || votingInProgress || voteText === 'yes';
 
+  const hasUserVoted = Boolean(myVote ?? localVote);
+
   return (
     <div className="flex flex-col gap-7 text-neutral-11">
       <VoterList documentSlug={documentSlug} />
@@ -452,6 +454,7 @@ export const FormVoting = ({
             }
             indicatorColor="bg-accent-12"
             hideTargets={hideTargets()}
+            hasUserVoted={hasUserVoted}
           />
         </Skeleton>
         <Skeleton
@@ -468,6 +471,7 @@ export const FormVoting = ({
             }
             indicatorColor="bg-accent-9"
             hideTargets={hideTargets()}
+            hasUserVoted={hasUserVoted}
           />
         </Skeleton>
       </div>

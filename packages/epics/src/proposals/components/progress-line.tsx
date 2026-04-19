@@ -13,6 +13,8 @@ interface ProgressLineProps {
   /** Required threshold (space setting). Hidden when hideTargets is true. */
   target?: number;
   hideTargets?: boolean;
+  /** When true, label the value as the user’s vote context instead of “Current”. */
+  hasUserVoted?: boolean;
 }
 
 /** Threshold marker stays inside [4%, 96%] so labels don't clip at the rails. */
@@ -26,6 +28,7 @@ export function ProgressLine({
   indicatorColor,
   target = 0,
   hideTargets,
+  hasUserVoted = false,
 }: ProgressLineProps) {
   const tProposalDetails = useTranslations('ProposalDetails');
   const current = Math.min(100, Math.max(0, value));
@@ -38,7 +41,9 @@ export function ProgressLine({
         <div className="flex flex-wrap items-baseline gap-x-4 text-sm tabular-nums">
           <span className="text-muted-foreground">
             <span className="font-normal">
-              {tProposalDetails('voting.currentScore')}{' '}
+              {tProposalDetails(
+                hasUserVoted ? 'voting.voteScore' : 'voting.currentScore',
+              )}{' '}
               <span className="font-semibold text-foreground">
                 {current.toFixed(2)}%
               </span>

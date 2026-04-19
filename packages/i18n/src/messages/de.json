@@ -1608,6 +1608,7 @@
       "quorumMinParticipation": "Quorum (Mindestbeteiligung)",
       "unityMinAlignment": "Einheit (Mindestausrichtung)",
       "currentScore": "Aktuell",
+      "voteScore": "Stimme",
       "requiredScore": "Erforderlich {percent} %",
       "submittingVote": "Stimme wird übermittelt — warte auf Bestätigung…",
       "proposalVotingIconAlt": "Symbol für die Mindestabstimmung des Vorschlags",
