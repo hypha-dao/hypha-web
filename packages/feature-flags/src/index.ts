@@ -104,7 +104,11 @@ export async function getEnableCoherence(): Promise<boolean> {
 }
 
 /**
- * Human Chat is **on by default** (including production). Rollback uses a kill switch:
+ * Human Chat is **on by default** (including production). This is an intentional
+ * **opt-out** product default, not the typical `feature-flags` “off by default”
+ * pattern: disable with the kill switch / env / cookies below.
+ *
+ * Rollback:
  * - Cookie `HYPHA_DISABLE_HUMAN_CHAT=true`
  * - Or legacy opt-out: `HYPHA_ENABLE_HUMAN_CHAT=false`
  * - Or env: `NEXT_PUBLIC_DISABLE_HUMAN_CHAT=true` / `NEXT_PUBLIC_ENABLE_HUMAN_CHAT=false`
@@ -113,8 +117,7 @@ export async function getEnableCoherence(): Promise<boolean> {
 export async function getEnableHumanChat(): Promise<boolean> {
   const overrides = await getVercelToolbarFlagOverrides();
   const toolbarHumanChat = readBooleanOverride(overrides, 'enable-human-chat');
-  if (toolbarHumanChat === true) return true;
-  if (toolbarHumanChat === false) return false;
+  if (toolbarHumanChat !== undefined) return toolbarHumanChat;
 
   const store = await cookies();
 
