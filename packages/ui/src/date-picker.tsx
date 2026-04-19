@@ -81,7 +81,6 @@ export function DatePicker({
             selected={selected instanceof Date ? selected : undefined}
             onSelect={(date) => handleSelect(date)}
             locale={locale}
-            autoFocus
           />
         ) : (
           <Calendar
@@ -95,7 +94,6 @@ export function DatePicker({
             }
             onSelect={(range) => handleSelect(range)}
             locale={locale}
-            autoFocus
           />
         )}
       </PopoverContent>

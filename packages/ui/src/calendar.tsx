@@ -39,13 +39,14 @@ function Calendar({
         ),
         nav_button_previous: 'absolute left-1',
         nav_button_next: 'absolute right-1',
-        table: 'w-full border-collapse space-y-1',
-        head_row: 'flex',
+        /** Native table rows — `flex` here breaks weekday alignment (react-day-picker v8 table DOM). */
+        table: 'w-full border-collapse',
+        head_row: 'table-row',
         head_cell:
-          'text-secondary-foreground rounded-md w-8 font-normal text-2 uppercase',
-        row: 'flex w-full mt-2',
+          'table-cell align-middle text-secondary-foreground rounded-md w-9 min-w-9 px-0 text-center font-normal text-[11px] uppercase text-muted-foreground',
+        row: 'table-row',
         cell: cn(
-          'relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent [&:has([aria-selected].day-outside)]:bg-accent [&:has([aria-selected].day-range-end)]:rounded-r-full [&:has([aria-selected].day-range-end)]:rounded-r-full',
+          'relative table-cell align-middle p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent [&:has([aria-selected].day-outside)]:bg-accent [&:has([aria-selected].day-range-end)]:rounded-r-full [&:has([aria-selected].day-range-end)]:rounded-r-full',
           props.mode === 'range'
             ? '[&:has(>.day-range-end)]:rounded-r-full [&:has(>.day-range-start)]:rounded-l-full first:[&:has([aria-selected])]:rounded-l-full last:[&:has([aria-selected])]:rounded-r-full'
             : '[&:has([aria-selected])]:rounded-full',
