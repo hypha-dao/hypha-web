@@ -702,6 +702,7 @@
     "uploadSpaceBanner": "Upload",
     "spaceBanner": "space banner",
     "purpose": "Purpose",
+    "purposeEmptyPublic": "No purpose yet — members can add one in Space Settings.",
     "purposePlaceholder": "Type your space purpose here...",
     "organisationLevel": "Organisation Level",
     "tags": "Tags",
