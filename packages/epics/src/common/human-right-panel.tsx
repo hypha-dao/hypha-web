@@ -1601,30 +1601,34 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   return (
     <>
       <SidebarHeader className="bg-background-2 p-0">
-        <HumanChatPanelHeader
-          title={mode === 'coherence' ? coherenceTitle ?? undefined : undefined}
-          onBack={mode === 'coherence' ? closeCoherenceChat : undefined}
-          trailingStart={
-            roomId ? (
-              <HumanChatPanelMentionBell
-                unreadCount={unreadChatState.unreadMentionCount}
-                countIsCapped={unreadChatState.mentionCountIsCapped}
-                onOpenMentions={() => setActiveTab('mentions')}
-              />
-            ) : null
-          }
-        />
-        <HumanChatPanelTabs
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          chatMentionCount={unreadChatState.unreadMentionCount}
-          chatMentionCountCapped={unreadChatState.mentionCountIsCapped}
-          mentionTabBadgeCount={unreadChatState.unreadMentionCount}
-          mentionTabBadgeCapped={unreadChatState.mentionCountIsCapped}
-          notificationCentreHref={notificationCentreHref}
-        />
+        <div className="rounded-b-2xl border-x border-b border-border/60 bg-card/35 shadow-sm backdrop-blur-[1px] supports-[backdrop-filter]:bg-card/25 dark:bg-card/45 dark:supports-[backdrop-filter]:bg-card/35">
+          <HumanChatPanelHeader
+            title={
+              mode === 'coherence' ? coherenceTitle ?? undefined : undefined
+            }
+            onBack={mode === 'coherence' ? closeCoherenceChat : undefined}
+            trailingStart={
+              roomId ? (
+                <HumanChatPanelMentionBell
+                  unreadCount={unreadChatState.unreadMentionCount}
+                  countIsCapped={unreadChatState.mentionCountIsCapped}
+                  onOpenMentions={() => setActiveTab('mentions')}
+                />
+              ) : null
+            }
+          />
+          <HumanChatPanelTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            chatMentionCount={unreadChatState.unreadMentionCount}
+            chatMentionCountCapped={unreadChatState.mentionCountIsCapped}
+            mentionTabBadgeCount={unreadChatState.unreadMentionCount}
+            mentionTabBadgeCapped={unreadChatState.mentionCountIsCapped}
+            notificationCentreHref={notificationCentreHref}
+          />
+        </div>
       </SidebarHeader>
-      <SidebarContent className="bg-background-2 flex min-h-0 flex-col">
+      <SidebarContent className="flex min-h-0 flex-col bg-background-2">
         {activeTab === 'chat' && (
           <div
             className="flex min-h-0 flex-1 flex-col"
@@ -1729,38 +1733,40 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       </SidebarContent>
       {activeTab === 'chat' && (
         <SidebarFooter className="bg-background-2 p-0">
-          <HumanChatPanelChatBar
-            value={input}
-            onChange={setInput}
-            onSend={handleSend}
-            mentionCandidates={mentionCandidates}
-            mentionPickerEnabled={mentionPickerEnabled}
-            draftAttachments={draftAttachments}
-            onDraftAttachmentsChange={setDraftAttachments}
-            replyPreview={
-              replyDraft
-                ? {
-                    authorLabel: replyDraft.authorLabel,
-                    excerpt: replyDraft.excerpt,
-                    onDismiss: () => setReplyDraft(null),
-                  }
-                : undefined
-            }
-            editPreview={
-              editDraft
-                ? {
-                    excerpt: editDraft.excerpt,
-                    onDismiss: () => {
-                      setEditDraft(null);
-                      setInput('');
-                      disposeDraftAttachmentUrls(draftAttachmentsRef.current);
-                      setDraftAttachments([]);
-                    },
-                  }
-                : undefined
-            }
-            editMediaMode={Boolean(editDraft?.editMediaMode)}
-          />
+          <div className="rounded-t-2xl border-x border-t border-border/60 bg-card/35 shadow-[0_-8px_32px_-16px_rgba(15,23,42,0.12)] backdrop-blur-[1px] supports-[backdrop-filter]:bg-card/25 dark:bg-card/45 dark:shadow-[0_-8px_36px_-16px_rgba(0,0,0,0.45)] dark:supports-[backdrop-filter]:bg-card/35">
+            <HumanChatPanelChatBar
+              value={input}
+              onChange={setInput}
+              onSend={handleSend}
+              mentionCandidates={mentionCandidates}
+              mentionPickerEnabled={mentionPickerEnabled}
+              draftAttachments={draftAttachments}
+              onDraftAttachmentsChange={setDraftAttachments}
+              replyPreview={
+                replyDraft
+                  ? {
+                      authorLabel: replyDraft.authorLabel,
+                      excerpt: replyDraft.excerpt,
+                      onDismiss: () => setReplyDraft(null),
+                    }
+                  : undefined
+              }
+              editPreview={
+                editDraft
+                  ? {
+                      excerpt: editDraft.excerpt,
+                      onDismiss: () => {
+                        setEditDraft(null);
+                        setInput('');
+                        disposeDraftAttachmentUrls(draftAttachmentsRef.current);
+                        setDraftAttachments([]);
+                      },
+                    }
+                  : undefined
+              }
+              editMediaMode={Boolean(editDraft?.editMediaMode)}
+            />
+          </div>
         </SidebarFooter>
       )}
     </>
