@@ -802,6 +802,9 @@ importers:
       fetch-socks:
         specifier: ^1.3.2
         version: 1.3.2
+      lucide-react:
+        specifier: ^0.469.0
+        version: 0.469.0(react@19.1.2)
       matrix-js-sdk:
         specifier: ^40.0.0
         version: 40.2.0
