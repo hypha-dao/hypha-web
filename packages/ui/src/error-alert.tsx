@@ -7,8 +7,7 @@ import { Cross2Icon } from '@radix-ui/react-icons';
 import { v4 as uuidv4 } from 'uuid';
 
 type ErrorAlertLabelElement = HTMLDivElement;
-interface ErrorAlertLabelProps
-  extends React.HTMLAttributes<ErrorAlertLabelElement> {
+interface ErrorAlertLabelProps extends React.HTMLAttributes<ErrorAlertLabelElement> {
   text: string;
   onClose: () => void;
 }

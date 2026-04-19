@@ -249,10 +249,10 @@ const ProposalRefundRow: React.FC<
   const buttonLabel = isCreatingRefundProposal
     ? 'Submitting proposal...'
     : isLinkingAgreement
-    ? 'Linking agreement...'
-    : proposalSubmitted
-    ? 'Proposal submitted'
-    : 'Propose refund';
+      ? 'Linking agreement...'
+      : proposalSubmitted
+        ? 'Proposal submitted'
+        : 'Propose refund';
 
   return (
     <RefundRowShell

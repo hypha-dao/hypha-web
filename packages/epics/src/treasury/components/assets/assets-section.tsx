@@ -59,8 +59,8 @@ export const AssetsSection: FC<AssetSectionProps> = ({
   const tooltipMessage = !isAuthenticated
     ? tCommon('signIn')
     : !isMember && !isDelegate
-    ? tCommon('joinSpaceToUse')
-    : '';
+      ? tCommon('joinSpaceToUse')
+      : '';
 
   const renderFilterAndButtons = () => (
     <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-2">

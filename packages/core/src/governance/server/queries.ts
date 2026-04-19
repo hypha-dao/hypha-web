@@ -314,7 +314,7 @@ export const findAllDocumentsBySpaceSlug = async (
     .limit(pageSize)
     .offset(offset);
 
-  const total = results.length > 0 ? results[0]?.total ?? 0 : 0;
+  const total = results.length > 0 ? (results[0]?.total ?? 0) : 0;
   const totalPages = Math.ceil(total / pageSize);
 
   return {

@@ -117,8 +117,8 @@ export const EditPersonSection = ({
             typeof value === 'string'
               ? translateEditProfileError(value)
               : value && typeof value === 'object'
-              ? localizeErrorsRef.current(value)
-              : value;
+                ? localizeErrorsRef.current(value)
+                : value;
         }
       }
 

@@ -102,8 +102,8 @@ export const WhitelistAddressItem = ({
               {spaceScope === 'members'
                 ? ` ${tProposalDetails('labels.spaceWhitelistMembersSuffix')}`
                 : spaceScope === 'only'
-                ? ` ${tProposalDetails('labels.spaceWhitelistOnlySuffix')}`
-                : ''}
+                  ? ` ${tProposalDetails('labels.spaceWhitelistOnlySuffix')}`
+                  : ''}
             </div>
           </>
         ) : (

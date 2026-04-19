@@ -261,17 +261,15 @@ async function main(): Promise<void> {
         spacesChecked++;
 
         // Check if space has used free trial
-        const hasUsedFreeTrial = await spacePaymentTracker.hasUsedFreeTrial(
-          spaceId,
-        );
+        const hasUsedFreeTrial =
+          await spacePaymentTracker.hasUsedFreeTrial(spaceId);
 
         if (hasUsedFreeTrial) {
           spacesWithFreeTrial++;
 
           // Get current expiry time and active status
-          const expiryTime = await spacePaymentTracker.getSpaceExpiryTime(
-            spaceId,
-          );
+          const expiryTime =
+            await spacePaymentTracker.getSpaceExpiryTime(spaceId);
           const isActive = await spacePaymentTracker.isSpaceActive(spaceId);
           const expiryDate = new Date(Number(expiryTime) * 1000);
 

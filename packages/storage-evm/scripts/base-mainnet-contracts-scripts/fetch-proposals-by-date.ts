@@ -297,9 +297,8 @@ async function fetchProposalsByDate(): Promise<void> {
     // Check the date range of proposals we're scanning
     console.log('🔍 Determining date range of proposals to scan...');
     try {
-      const firstProposalData = await daoProposals.getProposalCore(
-        startProposal,
-      );
+      const firstProposalData =
+        await daoProposals.getProposalCore(startProposal);
       const lastProposalData = await daoProposals.getProposalCore(endProposal);
 
       const firstDate = new Date(Number(firstProposalData[1]) * 1000);

@@ -132,9 +132,8 @@ async function main(): Promise<void> {
       // Iterate through all spaces
       for (let spaceId = 1; spaceId <= Number(spaceCounter); spaceId++) {
         try {
-          const tokenAddresses = await regularTokenFactory.getSpaceToken(
-            spaceId,
-          );
+          const tokenAddresses =
+            await regularTokenFactory.getSpaceToken(spaceId);
 
           if (tokenAddresses.length === 0) {
             spacesWithoutTokens.push(spaceId);

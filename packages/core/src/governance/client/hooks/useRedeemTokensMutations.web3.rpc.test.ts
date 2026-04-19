@@ -23,9 +23,8 @@ vi.mock('@hypha-platform/core/client', async () => {
 describe('prepareRedeemProposalParams', () => {
   test('adds addToWhitelist before redeem when vault whitelist is enabled and executor is not whitelisted', async () => {
     const { publicClient } = await import('@hypha-platform/core/client');
-    const { prepareRedeemProposalParams } = await import(
-      './useRedeemTokensMutations.web3.rpc'
-    );
+    const { prepareRedeemProposalParams } =
+      await import('./useRedeemTokensMutations.web3.rpc');
     const readContractMock = vi.mocked(publicClient.readContract);
     readContractMock
       .mockResolvedValueOnce(3600n) // getSpaceMinProposalDuration
@@ -97,9 +96,8 @@ describe('prepareRedeemProposalParams', () => {
 
   test('prepends ERC20 approve on space token before redeem when whitelist is disabled', async () => {
     const { publicClient } = await import('@hypha-platform/core/client');
-    const { prepareRedeemProposalParams } = await import(
-      './useRedeemTokensMutations.web3.rpc'
-    );
+    const { prepareRedeemProposalParams } =
+      await import('./useRedeemTokensMutations.web3.rpc');
     const readContractMock = vi.mocked(publicClient.readContract);
     readContractMock
       .mockResolvedValueOnce(3600n) // getSpaceMinProposalDuration

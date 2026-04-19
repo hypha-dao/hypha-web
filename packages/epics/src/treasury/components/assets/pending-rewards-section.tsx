@@ -114,8 +114,8 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
             !isMyProfile
               ? tProfile('claimOnlyOnPersonalPage')
               : disableClaimButton
-              ? tProfile('rewardValueMustBeGreaterThanZero')
-              : ''
+                ? tProfile('rewardValueMustBeGreaterThanZero')
+                : ''
           }
           disabled={!isMyProfile || disableClaimButton}
           onClick={onHandleClaim}

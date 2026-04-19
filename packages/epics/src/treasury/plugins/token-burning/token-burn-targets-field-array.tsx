@@ -269,10 +269,12 @@ export const TokenBurnTargetsFieldArray = ({
                               'plugins.tokenBurning.recipientBalanceLoading',
                             )
                           : currentType === 'member'
-                          ? tAgreementFlow(
-                              'plugins.tokenBurning.noMembersFound',
-                            )
-                          : tAgreementFlow('plugins.tokenBurning.noSpacesFound')
+                            ? tAgreementFlow(
+                                'plugins.tokenBurning.noMembersFound',
+                              )
+                            : tAgreementFlow(
+                                'plugins.tokenBurning.noSpacesFound',
+                              )
                       }
                       renderOption={(option) => (
                         <>
@@ -574,7 +576,7 @@ function useRecipientPositiveBalanceAddresses({
     // Prevent stale cached balances from being shown while a live re-check runs.
     positiveBalanceAddresses: isRefreshingLiveBalances
       ? EMPTY_RECIPIENT_SET
-      : data ?? EMPTY_RECIPIENT_SET,
+      : (data ?? EMPTY_RECIPIENT_SET),
     isLoading: isLoading || isRefreshingLiveBalances,
     hasLoaded:
       !tokenAddress ||
@@ -671,8 +673,8 @@ function BurnAmountBalanceValidationMessage({
   const normalizedAmount = normalizedAmountInput.startsWith('.')
     ? `0${normalizedAmountInput}`
     : normalizedAmountInput.endsWith('.')
-    ? `${normalizedAmountInput}0`
-    : normalizedAmountInput;
+      ? `${normalizedAmountInput}0`
+      : normalizedAmountInput;
 
   let nextManagedErrorMessage: string | null | undefined;
   if (!isValidRecipient) {

@@ -332,15 +332,15 @@ export function HumanChatPanelMessages({
                     time: firstUnreadMeta.timeLabel,
                   })
                 : unreadCountIsCapped || unreadNotificationCount >= 100
-                ? t('unreadBannerCapped', {
-                    date: firstUnreadMeta.dateLabel,
-                    time: firstUnreadMeta.timeLabel,
-                  })
-                : t('unreadBannerCount', {
-                    count: unreadNotificationCount,
-                    date: firstUnreadMeta.dateLabel,
-                    time: firstUnreadMeta.timeLabel,
-                  })}
+                  ? t('unreadBannerCapped', {
+                      date: firstUnreadMeta.dateLabel,
+                      time: firstUnreadMeta.timeLabel,
+                    })
+                  : t('unreadBannerCount', {
+                      count: unreadNotificationCount,
+                      date: firstUnreadMeta.dateLabel,
+                      time: firstUnreadMeta.timeLabel,
+                    })}
             </p>
             <Button
               type="button"

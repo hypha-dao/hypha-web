@@ -168,10 +168,10 @@ export const SpacePendingRewardsSection: FC<
             !isAuthenticated
               ? tTreasury('rewardsSection.signInToClaimRewards')
               : !isMember
-              ? tTreasury('rewardsSection.onlySpaceMembersCanClaimRewards')
-              : !hasRewards
-              ? tTreasury('rewardsSection.noRewardsToClaim')
-              : ''
+                ? tTreasury('rewardsSection.onlySpaceMembersCanClaimRewards')
+                : !hasRewards
+                  ? tTreasury('rewardsSection.noRewardsToClaim')
+                  : ''
           }
           disabled={!canClaim || disableClaimButton}
           onClick={onHandleClaim}

@@ -25,7 +25,8 @@ const amountVariants = cva('', {
 });
 
 export interface AmountProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+  extends
+    React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof amountVariants> {
   value: number | undefined;
   withUsdSymbol?: boolean;

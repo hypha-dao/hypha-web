@@ -127,9 +127,8 @@ async function main() {
 
   // Optional: show initial members
   try {
-    const beforeMembers: string[] = await daoSpaceFactory.getSpaceMembers(
-      spaceId,
-    );
+    const beforeMembers: string[] =
+      await daoSpaceFactory.getSpaceMembers(spaceId);
     console.log(
       `Current members (${beforeMembers.length}): ${beforeMembers.join(', ')}`,
     );
@@ -176,9 +175,8 @@ async function main() {
 
   // Optional: show final members
   try {
-    const afterMembers: string[] = await daoSpaceFactory.getSpaceMembers(
-      spaceId,
-    );
+    const afterMembers: string[] =
+      await daoSpaceFactory.getSpaceMembers(spaceId);
     console.log(
       `\nFinal members (${afterMembers.length}): ${afterMembers.join(', ')}`,
     );

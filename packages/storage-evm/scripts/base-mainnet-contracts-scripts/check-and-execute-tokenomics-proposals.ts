@@ -146,9 +146,8 @@ async function main(): Promise<void> {
 
     try {
       // Get proposal details
-      const proposalData: ProposalData = await daoProposals.getProposalCore(
-        proposalId,
-      );
+      const proposalData: ProposalData =
+        await daoProposals.getProposalCore(proposalId);
 
       // Get space details for unity/quorum thresholds
       const spaceDetails = await daoSpaceFactory.getSpaceDetails(
@@ -174,8 +173,8 @@ async function main(): Promise<void> {
           proposalData.executed
             ? 'EXECUTED'
             : proposalData.expired
-            ? 'EXPIRED'
-            : 'ACTIVE'
+              ? 'EXPIRED'
+              : 'ACTIVE'
         }`,
       );
       console.log(`\n--- Voting Results ---`);

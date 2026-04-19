@@ -9,8 +9,7 @@ import { newGetTokenBalanceByAddress } from './token-balance-by-address';
 import { newGetAssetTransfers } from './transfers-by-address';
 
 export interface AlchemyClientOptions
-  extends AlchemySettings,
-    FastifyPluginOptions {}
+  extends AlchemySettings, FastifyPluginOptions {}
 
 const alchemyClient: FastifyPluginAsync<AlchemyClientOptions> = async (
   fastify: FastifyInstance,

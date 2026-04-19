@@ -488,8 +488,8 @@ export const PeopleBuySpaceTokens = ({
               {isApproving
                 ? t('statusApproving')
                 : isBuying
-                ? t('statusPurchasing')
-                : t('statusProcessing')}
+                  ? t('statusPurchasing')
+                  : t('statusProcessing')}
             </div>
           ) : showSuccessMessage ? (
             <div className="text-2 font-medium text-foreground">

@@ -44,9 +44,8 @@ async function main() {
   console.log('----------------------------------------------------');
 
   console.log('Deploying RegularSpaceToken...');
-  const RegularSpaceTokenFactory = await ethers.getContractFactory(
-    'RegularSpaceToken',
-  );
+  const RegularSpaceTokenFactory =
+    await ethers.getContractFactory('RegularSpaceToken');
   const regularSpaceToken = await RegularSpaceTokenFactory.deploy(
     spaceId,
     tokenName,

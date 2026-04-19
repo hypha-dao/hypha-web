@@ -339,8 +339,8 @@ export const NotificationCentreForm = ({
                                           ),
                                         },
                                       )
-                                    : localizedSubscription?.title ??
-                                      subscription.title}
+                                    : (localizedSubscription?.title ??
+                                      subscription.title)}
                                 </FormLabel>
                               </div>
                             </span>

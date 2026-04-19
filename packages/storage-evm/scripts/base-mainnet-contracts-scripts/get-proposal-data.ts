@@ -624,9 +624,8 @@ async function getProposalData(): Promise<void> {
 
     // Get the latest proposal ID - with fallback mechanisms
     console.log('Fetching latest proposal ID...');
-    const latestProposalId = await getLatestProposalIdWithFallback(
-      daoProposals,
-    );
+    const latestProposalId =
+      await getLatestProposalIdWithFallback(daoProposals);
     console.log(`Latest proposal ID: ${latestProposalId}`);
 
     if (latestProposalId === 0) {

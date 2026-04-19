@@ -318,7 +318,8 @@ export const RedeemTokensPlugin = ({
         hasInvalid = true;
         return {
           ...conversion,
-          asset: index === 0 ? conversionCollateralsBase[0]?.address ?? '' : '',
+          asset:
+            index === 0 ? (conversionCollateralsBase[0]?.address ?? '') : '',
         };
       },
     );

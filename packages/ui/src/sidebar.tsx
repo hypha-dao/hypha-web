@@ -848,7 +848,8 @@ const sidebarMenuButtonVariants = cva(
 );
 
 export interface SidebarMenuButtonProps
-  extends React.ComponentProps<'button'>,
+  extends
+    React.ComponentProps<'button'>,
     VariantProps<typeof sidebarMenuButtonVariants> {
   asChild?: boolean;
   isActive?: boolean;

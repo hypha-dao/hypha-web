@@ -223,12 +223,12 @@ function toUIMessage(
       replyAuthorId === currentUserId &&
       currentUserAvatarUrl
         ? currentUserAvatarUrl
-        : matrixMemberAvatarSquare(
+        : (matrixMemberAvatarSquare(
             clientForAvatars ?? null,
             roomIdForAvatars ?? null,
             replyAuthorId,
             64,
-          ) ?? resolveAvatarForUser(replyAuthorId);
+          ) ?? resolveAvatarForUser(replyAuthorId));
     replyTo = {
       authorLabel,
       excerpt,
@@ -327,10 +327,10 @@ function buildEditMediaDraftAttachments(
       slot.msgtype === 'm.image'
         ? 'image'
         : isAud
-        ? 'audio'
-        : isVid
-        ? 'video'
-        : 'file';
+          ? 'audio'
+          : isVid
+            ? 'video'
+            : 'file';
     out.push({
       id: newChatDraftAttachmentId(),
       file: dummyEditFile(
@@ -514,23 +514,23 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   m.replyTo.sourceUserId === currentUserIdRef.current &&
                   currentUserAvatarUrlRef.current
                     ? currentUserAvatarUrlRef.current
-                    : matrixMemberAvatarSquare(
+                    : (matrixMemberAvatarSquare(
                         matrixClientRef.current,
                         roomIdRef.current,
                         m.replyTo.sourceUserId,
                         64,
-                      ) ?? m.replyTo.authorAvatarUrl,
+                      ) ?? m.replyTo.authorAvatarUrl),
               }
             : m.replyTo;
 
         const nextMemberAvatar =
           m.role === 'member' && m.senderMatrixId
-            ? matrixMemberAvatarSquare(
+            ? (matrixMemberAvatarSquare(
                 matrixClientRef.current,
                 roomIdRef.current,
                 m.senderMatrixId,
                 96,
-              ) ?? m.avatarUrl
+              ) ?? m.avatarUrl)
             : m.avatarUrl;
 
         if (
@@ -1147,7 +1147,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       const authorLabel =
         target.role === 'user'
           ? t('you')
-          : target.senderName ?? resolveMemberLabel(target.senderMatrixId);
+          : (target.senderName ?? resolveMemberLabel(target.senderMatrixId));
       const excerpt = firstLineForReplyPreview(getMessagePlainText(target));
       setEditDraft(null);
       setReplyDraft({
@@ -1190,8 +1190,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       if (hasMedia && client) {
         const previewForMxc = (mxc: string) =>
           mxc.startsWith('mxc://')
-            ? client.mxcUrlToHttp(mxc, 400, 300, 'scale', true, false, false) ??
-              null
+            ? (client.mxcUrlToHttp(
+                mxc,
+                400,
+                300,
+                'scale',
+                true,
+                false,
+                false,
+              ) ?? null)
             : null;
         setDraftAttachments(
           buildEditMediaDraftAttachments(target, previewForMxc),
@@ -1289,8 +1296,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               kind: (a.kind === 'image'
                 ? 'image'
                 : a.kind === 'audio'
-                ? 'audio'
-                : 'file') as 'image' | 'audio' | 'file',
+                  ? 'audio'
+                  : 'file') as 'image' | 'audio' | 'file',
               spoiler: a.spoiler,
             }));
           await matrixRef.current.editRoomMessage({
@@ -1324,8 +1331,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   kind: (a.kind === 'image'
                     ? 'image'
                     : a.kind === 'audio'
-                    ? 'audio'
-                    : 'file') as 'image' | 'audio' | 'file',
+                      ? 'audio'
+                      : 'file') as 'image' | 'audio' | 'file',
                   spoiler: a.spoiler,
                 })),
                 onUploadProgress: ({ completed, total }) => {
@@ -1394,10 +1401,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       const msg = isMatrixRateLimitedError(err)
         ? t('sendRateLimited')
         : err instanceof MatrixUploadTimeoutError
-        ? t('sendUploadTimedOut')
-        : err instanceof Error
-        ? t('sendFailedWithReason', { message: err.message })
-        : t('sendFailed');
+          ? t('sendUploadTimedOut')
+          : err instanceof Error
+            ? t('sendFailedWithReason', { message: err.message })
+            : t('sendFailed');
       setComposerError(msg);
       setInput(text);
       setReplyDraft(savedDraft);
@@ -1416,7 +1423,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     <>
       <SidebarHeader className="bg-background-2 p-0">
         <HumanChatPanelHeader
-          title={mode === 'coherence' ? coherenceTitle ?? undefined : undefined}
+          title={
+            mode === 'coherence' ? (coherenceTitle ?? undefined) : undefined
+          }
           onBack={mode === 'coherence' ? closeCoherenceChat : undefined}
         />
         <HumanChatPanelTabs activeTab={activeTab} onTabChange={setActiveTab} />

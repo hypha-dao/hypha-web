@@ -254,8 +254,8 @@ async function prepareUploadedAttachmentMediaPayload(
     att.kind === 'image'
       ? MatrixSdk.MsgType.Image
       : att.kind === 'audio'
-      ? MatrixSdk.MsgType.Audio
-      : MatrixSdk.MsgType.File;
+        ? MatrixSdk.MsgType.Audio
+        : MatrixSdk.MsgType.File;
   let info: {
     mimetype?: string;
     size?: number;

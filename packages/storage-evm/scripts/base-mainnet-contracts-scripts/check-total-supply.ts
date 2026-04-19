@@ -343,9 +343,8 @@ async function main(): Promise<void> {
       currentSpaceId++
     ) {
       try {
-        const spaceDetails = await daoSpaceFactory.getSpaceDetails(
-          currentSpaceId,
-        );
+        const spaceDetails =
+          await daoSpaceFactory.getSpaceDetails(currentSpaceId);
 
         // Check if this is a valid space (has a creator address)
         if (spaceDetails.creator === ethers.ZeroAddress) {

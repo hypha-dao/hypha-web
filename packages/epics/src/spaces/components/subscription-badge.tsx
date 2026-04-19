@@ -41,8 +41,8 @@ export function SubscriptionBadge({
   const tooltipMessage = !isAuthenticated
     ? tCommon('signIn')
     : !isMember && !isDelegate
-    ? tCommon('joinSpaceToUse')
-    : '';
+      ? tCommon('joinSpaceToUse')
+      : '';
 
   let expiryTime: bigint = BigInt(0);
   let freeTrialUsed: boolean = false;

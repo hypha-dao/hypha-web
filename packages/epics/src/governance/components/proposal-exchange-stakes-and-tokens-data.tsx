@@ -166,24 +166,24 @@ export const ProposalExchangeStakesAndTokensData = ({
   const sellerDisplayLabel = sellerPerson
     ? personLabel(sellerPerson)
     : sellerResolvedAsSpace
-    ? sellerSpace.title
-    : undefined;
+      ? sellerSpace.title
+      : undefined;
   const buyerDisplayLabel = buyerPerson
     ? personLabel(buyerPerson)
     : buyerResolvedAsSpace
-    ? buyerSpace.title
-    : undefined;
+      ? buyerSpace.title
+      : undefined;
 
   const sellerDisplayAvatarUrl = sellerPerson
     ? sellerPerson.avatarUrl
     : sellerResolvedAsSpace
-    ? sellerSpace.logoUrl ?? '/placeholder/space-avatar-image.svg'
-    : undefined;
+      ? (sellerSpace.logoUrl ?? '/placeholder/space-avatar-image.svg')
+      : undefined;
   const buyerDisplayAvatarUrl = buyerPerson
     ? buyerPerson.avatarUrl
     : buyerResolvedAsSpace
-    ? buyerSpace.logoUrl ?? '/placeholder/space-avatar-image.svg'
-    : undefined;
+      ? (buyerSpace.logoUrl ?? '/placeholder/space-avatar-image.svg')
+      : undefined;
 
   const renderPartyValue = (
     address?: string,

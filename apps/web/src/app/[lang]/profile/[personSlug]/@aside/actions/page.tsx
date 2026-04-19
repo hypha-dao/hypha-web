@@ -102,8 +102,8 @@ export default function ProfileWallet() {
               action.id === 'migrateHyphaTokens'
                 ? `${MIGRATE_HYPHA_TOKENS_URL}/${person?.address ?? ''}`
                 : action.href
-                ? `/${lang}/profile/${personSlug}/actions/${action.href}`
-                : undefined,
+                  ? `/${lang}/profile/${personSlug}/actions/${action.href}`
+                  : undefined,
             target: action.target || undefined,
           }))}
         />

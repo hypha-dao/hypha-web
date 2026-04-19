@@ -47,10 +47,10 @@ export const TransferCard: React.FC<TransferCardProps> = ({
   const displayName = title
     ? title
     : name
-    ? `${name || ''} ${surname || ''}`.trim()
-    : counterparty === 'from'
-    ? from
-    : to;
+      ? `${name || ''} ${surname || ''}`.trim()
+      : counterparty === 'from'
+        ? from
+        : to;
 
   const isBurn = () => {
     return to === ZeroAddress && counterparty === 'to';
@@ -90,8 +90,8 @@ export const TransferCard: React.FC<TransferCardProps> = ({
                   {isMint
                     ? tTreasury('transactionCard.type.mint')
                     : isBurn()
-                    ? tTreasury('transactionCard.type.burn')
-                    : tTreasury('transactionCard.type.transfer')}
+                      ? tTreasury('transactionCard.type.burn')
+                      : tTreasury('transactionCard.type.transfer')}
                 </Badge>
                 <Badge
                   isLoading={isLoading}

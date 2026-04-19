@@ -127,10 +127,13 @@ export const SignalSection: FC<SignalSectionProps> = ({
   const createSignalHref = `/${lang}/dho/${id}/coherence/new-signal`;
 
   const typeOptions = React.useMemo(() => {
-    const typeMap = COHERENCE_TYPE_OPTIONS.reduce((acc, cur) => {
-      acc[cur.type] = 0;
-      return acc;
-    }, {} as { [key: string]: number });
+    const typeMap = COHERENCE_TYPE_OPTIONS.reduce(
+      (acc, cur) => {
+        acc[cur.type] = 0;
+        return acc;
+      },
+      {} as { [key: string]: number },
+    );
     for (const signal of signals) {
       const count = typeMap[signal.type] || 0;
       typeMap[signal.type] = count + 1;

@@ -104,10 +104,10 @@ export const SpaceModeLabel = ({
   const caption = isSandbox
     ? t('sandbox')
     : isDemo
-    ? t('pilot')
-    : isArchived
-    ? t('archived')
-    : '';
+      ? t('pilot')
+      : isArchived
+        ? t('archived')
+        : '';
   const colorVariant = isArchived ? 'error' : 'accent';
   return (
     <div className={clsx('flex', className)}>

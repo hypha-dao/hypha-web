@@ -379,9 +379,8 @@ export async function fetchMatrixChatAssets(
 
   let sessionToken: string | undefined;
   if (triedSession && sessionAuth && sessionReqUrl) {
-    const { resolveUserMatrixAccessTokenForOrgMemory } = await import(
-      './resolve-user-matrix-access-token-for-org-memory'
-    );
+    const { resolveUserMatrixAccessTokenForOrgMemory } =
+      await import('./resolve-user-matrix-access-token-for-org-memory');
     const resolved = await resolveUserMatrixAccessTokenForOrgMemory(
       sessionAuth,
       sessionReqUrl,

@@ -53,8 +53,8 @@ export const MembersSection: FC<MemberSectionProps> = ({
   const tooltipMessage = !isAuthenticated
     ? tCommon('signIn')
     : !isMember
-    ? tCommon('joinSpaceToUse')
-    : '';
+      ? tCommon('joinSpaceToUse')
+      : '';
 
   return (
     <div className="flex flex-col w-full justify-center items-center gap-4">
@@ -113,9 +113,9 @@ export const MembersSection: FC<MemberSectionProps> = ({
             {isLoading
               ? tMembers('loading')
               : pagination &&
-                (pagination.totalPages === pages || !pagination.hasNextPage)
-              ? tMembers('noMoreMembers')
-              : tMembers('loadMoreMembers')}
+                  (pagination.totalPages === pages || !pagination.hasNextPage)
+                ? tMembers('noMoreMembers')
+                : tMembers('loadMoreMembers')}
           </Text>
         </SectionLoadMore>
       )}

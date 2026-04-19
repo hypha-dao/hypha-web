@@ -45,8 +45,8 @@ export const NestedSpacesButton = ({
   const tooltipMessage = isLoading
     ? tDho('nestedSpacesButton.loading')
     : !hasAccess
-    ? tDho('nestedSpacesButton.noAccess')
-    : tDho('nestedSpacesButton.label');
+      ? tDho('nestedSpacesButton.noAccess')
+      : tDho('nestedSpacesButton.label');
 
   return (
     <Link

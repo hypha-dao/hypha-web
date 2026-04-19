@@ -35,6 +35,24 @@ const isAlreadyFundedError = (err: unknown): boolean => {
   );
 };
 
+/** True when a `cancelEscrow` revert is actually the escrow telling us it
+ * is already in a terminal state (cancelled or completed). The user's
+ * intent — "make this banner go away" — is already satisfied on-chain, so
+ * we treat these as a soft success and just refresh, instead of surfacing
+ * a long red user-operation revert blob. */
+const isAlreadyTerminatedError = (err: unknown): boolean => {
+  const msg =
+    err instanceof Error ? `${err.message} ${err.stack ?? ''}` : String(err);
+  return (
+    /Escrow already cancelled/i.test(msg) ||
+    /Escrow already completed/i.test(msg) ||
+    // ASCII-hex payload of the revert strings — present in raw RPC responses
+    // when the bundler returns the revert as `Error(string)` selector data.
+    /457363726f7720616c72656164792063616e63656c6c6564/i.test(msg) ||
+    /457363726f7720616c726561647920636f6d706c65746564/i.test(msg)
+  );
+};
+
 /**
  * Heuristic: an "Investment" pattern is one where partyA is also the
  * creator of the escrow (a space proposing to mint/sell tokens) and
@@ -72,11 +90,21 @@ export const EscrowDepositBanner = ({
   } = useEscrowCancelMutation();
   const [isWaitingReceipt, setIsWaitingReceipt] = React.useState(false);
   const [errorOverride, setErrorOverride] = React.useState<string | null>(null);
+  // Immediate, synchronous in-flight flags so the buttons flip to their
+  // loading state on the same render as the click — without depending on the
+  // SWR mutation's `isMutating` flag, which can trail the click by a tick on
+  // slow renders / when the wallet provider is busy. Also doubles as a
+  // double-click guard: clicking Refuse twice in a row was racing the first
+  // tx onto the bundler and surfacing an "Escrow already cancelled" revert.
+  const [isSubmittingDeposit, setIsSubmittingDeposit] = React.useState(false);
+  const [isSubmittingRefuse, setIsSubmittingRefuse] = React.useState(false);
 
   const needsApprove = deposit.payAllowance < deposit.payAmount;
   const insufficientBalance = deposit.payBalance < deposit.payAmount;
 
   const handleClick = React.useCallback(async () => {
+    if (isSubmittingDeposit || isSubmittingRefuse) return;
+    setIsSubmittingDeposit(true);
     setErrorOverride(null);
     try {
       const hash = await sendDeposit({
@@ -106,10 +134,20 @@ export const EscrowDepositBanner = ({
       setErrorOverride(err instanceof Error ? err.message : String(err));
     } finally {
       setIsWaitingReceipt(false);
+      setIsSubmittingDeposit(false);
     }
-  }, [deposit, sendDeposit, onDeposited, resetDeposit]);
+  }, [
+    deposit,
+    isSubmittingDeposit,
+    isSubmittingRefuse,
+    sendDeposit,
+    onDeposited,
+    resetDeposit,
+  ]);
 
   const handleRefuse = React.useCallback(async () => {
+    if (isSubmittingDeposit || isSubmittingRefuse) return;
+    setIsSubmittingRefuse(true);
     setErrorOverride(null);
     try {
       // The user has not yet deposited, so cancelling alone is enough –
@@ -121,10 +159,30 @@ export const EscrowDepositBanner = ({
       resetCancelEscrow();
       onRefused?.();
     } catch (err) {
+      if (isAlreadyTerminatedError(err)) {
+        // The escrow is already cancelled or completed on-chain — the
+        // banner is stale, not the user. Refresh silently instead of
+        // dumping the bundler's hex revert blob in red.
+        console.warn(
+          'Escrow already cancelled/completed on-chain; treating refuse as success.',
+        );
+        resetCancelEscrow();
+        onRefused?.();
+        return;
+      }
       console.error('Escrow refuse failed:', err);
       setErrorOverride(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsSubmittingRefuse(false);
     }
-  }, [cancelEscrow, deposit.escrowId, onRefused, resetCancelEscrow]);
+  }, [
+    cancelEscrow,
+    deposit.escrowId,
+    isSubmittingDeposit,
+    isSubmittingRefuse,
+    onRefused,
+    resetCancelEscrow,
+  ]);
 
   // Display the seller-side amount (what the seller is offering) followed by
   // the buyer-side amount (what is being asked from the user). This matches
@@ -141,22 +199,39 @@ export const EscrowDepositBanner = ({
 
   const investment = isInvestmentDeposit(deposit);
 
+  // `isSubmittingDeposit` is the synchronous flag set on click; SWR's
+  // `isDepositing` and the local `isWaitingReceipt` are kept as additional
+  // signals so the spinner stays on across the whole approve→deposit→receipt
+  // flow even after the click handler has returned.
+  const depositInFlight =
+    isSubmittingDeposit || isDepositing || isWaitingReceipt;
+  const refuseInFlight = isSubmittingRefuse || isCancellingEscrow;
+
   const actionLabel = isWaitingReceipt
     ? 'Confirming...'
     : isDepositing
-    ? needsApprove
-      ? 'Approving...'
-      : investment
-      ? 'Confirming...'
-      : 'Depositing...'
-    : investment
-    ? 'Confirm Investment'
-    : // Non-investment case == "Proposed Token Exchange". The CTA is the same
-      // label whether or not an ERC20 approve is needed first, so the user is
-      // not surprised by a label change after approval.
-      'Confirm Exchange';
+      ? needsApprove
+        ? 'Approving...'
+        : investment
+          ? 'Confirming...'
+          : 'Depositing...'
+      : isSubmittingDeposit
+        ? // Click registered but the SWR mutation hasn't yet flipped its own
+          // `isMutating` flag (e.g. precheck readContract still running). Show
+          // a generic in-flight label so the user gets immediate feedback.
+          investment
+          ? 'Confirming...'
+          : needsApprove
+            ? 'Approving...'
+            : 'Depositing...'
+        : investment
+          ? 'Confirm Investment'
+          : // Non-investment case == "Proposed Token Exchange". The CTA is the
+            // same label whether or not an ERC20 approve is needed first, so the
+            // user is not surprised by a label change after approval.
+            'Confirm Exchange';
 
-  const refuseLabel = isCancellingEscrow ? 'Refusing...' : 'Refuse';
+  const refuseLabel = refuseInFlight ? 'Refusing...' : 'Refuse';
 
   const mutationError =
     depositError && !isAlreadyFundedError(depositError)
@@ -229,27 +304,18 @@ export const EscrowDepositBanner = ({
         <Button
           variant="outline"
           onClick={handleRefuse}
-          disabled={isDepositing || isWaitingReceipt || isCancellingEscrow}
+          disabled={depositInFlight || refuseInFlight}
           className="w-full md:w-fit text-wrap justify-center"
         >
-          {isCancellingEscrow && (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          )}
+          {refuseInFlight && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {refuseLabel}
         </Button>
         <Button
           onClick={handleClick}
-          disabled={
-            isDepositing ||
-            isWaitingReceipt ||
-            isCancellingEscrow ||
-            insufficientBalance
-          }
+          disabled={depositInFlight || refuseInFlight || insufficientBalance}
           className="w-full md:w-fit text-wrap justify-center"
         >
-          {(isDepositing || isWaitingReceipt) && (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          )}
+          {depositInFlight && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {actionLabel}
         </Button>
       </div>

@@ -81,17 +81,17 @@ export const AttachmentList: React.FC<AttachmentListProps> = ({
       <div className="space-y-2 mt-2 w-full">
         {attachments.map((attachment, idx) => {
           const fileName = isString(attachment)
-            ? (attachment.split('/').pop() || `Document ${idx + 1}`).split(
+            ? ((attachment.split('/').pop() || `Document ${idx + 1}`).split(
                 /[?#]/,
-              )[0] ?? `Document ${idx + 1}`
+              )[0] ?? `Document ${idx + 1}`)
             : isAttachment(attachment)
-            ? attachment.name
-            : 'unnamed';
+              ? attachment.name
+              : 'unnamed';
           const url = isString(attachment)
             ? attachment
             : isAttachment(attachment)
-            ? attachment.url
-            : '';
+              ? attachment.url
+              : '';
           return (
             <div
               key={`${fileName}-${idx}`}

@@ -52,12 +52,10 @@ test.describe('Human Chat Panel — Resize Handle', () => {
         'Resize sidebar',
       );
       // Read min/max from the component instead of hardcoding
-      const minAttr = await chatPanel.resizeHandle.getAttribute(
-        'aria-valuemin',
-      );
-      const maxAttr = await chatPanel.resizeHandle.getAttribute(
-        'aria-valuemax',
-      );
+      const minAttr =
+        await chatPanel.resizeHandle.getAttribute('aria-valuemin');
+      const maxAttr =
+        await chatPanel.resizeHandle.getAttribute('aria-valuemax');
       expect(Number(minAttr)).toBeGreaterThan(0);
       expect(Number(maxAttr)).toBeGreaterThan(Number(minAttr));
       await expect(chatPanel.resizeHandle).toHaveAttribute(

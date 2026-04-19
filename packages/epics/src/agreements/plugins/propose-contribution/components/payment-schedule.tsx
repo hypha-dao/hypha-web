@@ -105,10 +105,10 @@ export function PaymentSchedule({
                 {selectedOption === 'Immediately'
                   ? tAgreementFlow('plugins.paymentSchedule.immediately')
                   : selectedOption === 'Future Payment'
-                  ? tAgreementFlow('plugins.paymentSchedule.futurePayment')
-                  : selectedOption === 'Milestones'
-                  ? tAgreementFlow('plugins.paymentSchedule.milestones')
-                  : selectedOption}
+                    ? tAgreementFlow('plugins.paymentSchedule.futurePayment')
+                    : selectedOption === 'Milestones'
+                      ? tAgreementFlow('plugins.paymentSchedule.milestones')
+                      : selectedOption}
               </span>
               <ChevronDownIcon className="size-2" />
             </Button>
@@ -126,8 +126,8 @@ export function PaymentSchedule({
                 {option === 'Immediately'
                   ? tAgreementFlow('plugins.paymentSchedule.immediately')
                   : option === 'Future Payment'
-                  ? tAgreementFlow('plugins.paymentSchedule.futurePayment')
-                  : tAgreementFlow('plugins.paymentSchedule.milestones')}
+                    ? tAgreementFlow('plugins.paymentSchedule.futurePayment')
+                    : tAgreementFlow('plugins.paymentSchedule.milestones')}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
