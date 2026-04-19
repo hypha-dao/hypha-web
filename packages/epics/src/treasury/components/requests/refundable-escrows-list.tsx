@@ -61,6 +61,24 @@ type RefundRowProps = {
   onRefunded: () => void;
 };
 
+/** True when a refund userOp revert is actually the escrow telling us the
+ * desired terminal state is already on-chain (cancelled / completed /
+ * funds already returned). The mutation hook absorbs most of these races,
+ * but we keep this guard so any straggler error blob still surfaces as a
+ * silent success rather than red text in the UI. */
+const isRefundAlreadySettledError = (err: unknown): boolean => {
+  const msg =
+    err instanceof Error ? `${err.message} ${err.stack ?? ''}` : String(err);
+  return (
+    /Escrow already cancelled/i.test(msg) ||
+    /Escrow already completed/i.test(msg) ||
+    /No funds to withdraw/i.test(msg) ||
+    /457363726f7720616c72656164792063616e63656c6c6564/i.test(msg) ||
+    /457363726f7720616c726561647920636f6d706c65746564/i.test(msg) ||
+    /4e6f2066756e647320746f2077697468647261/i.test(msg)
+  );
+};
+
 const DirectRefundRow: React.FC<RefundRowProps> = ({ escrow, onRefunded }) => {
   const {
     cancelEscrow,
@@ -80,6 +98,14 @@ const DirectRefundRow: React.FC<RefundRowProps> = ({ escrow, onRefunded }) => {
       resetCancelEscrow();
       onRefunded();
     } catch (err) {
+      if (isRefundAlreadySettledError(err)) {
+        console.warn(
+          'Escrow refund already settled on-chain; treating as success.',
+        );
+        resetCancelEscrow();
+        onRefunded();
+        return;
+      }
       console.error('Escrow refund failed:', err);
       setLocalError(err instanceof Error ? err.message : String(err));
     }
@@ -89,11 +115,12 @@ const DirectRefundRow: React.FC<RefundRowProps> = ({ escrow, onRefunded }) => {
     escrow.refundAmount,
     escrow.refundTokenDecimals,
   )} ${escrow.refundTokenSymbol || 'tokens'}`;
-  const counterpartyMutationError = cancelEscrowError
-    ? cancelEscrowError instanceof Error
-      ? cancelEscrowError.message
-      : String(cancelEscrowError)
-    : null;
+  const counterpartyMutationError =
+    cancelEscrowError && !isRefundAlreadySettledError(cancelEscrowError)
+      ? cancelEscrowError instanceof Error
+        ? cancelEscrowError.message
+        : String(cancelEscrowError)
+      : null;
   const errorMessage = localError ?? counterpartyMutationError;
 
   const isBusy = isCancellingEscrow;
