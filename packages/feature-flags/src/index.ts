@@ -14,6 +14,14 @@ import {
 } from './vercel-toolbar-overrides';
 
 /**
+ * **Guideline (most flags):** safe defaults, features off until enabled via cookie/env/toolbar.
+ *
+ * **Exception — Human Chat:** {@link getEnableHumanChat} is intentionally **default on** with
+ * a documented kill switch (`HYPHA_DISABLE_HUMAN_CHAT`, env, toolbar). Product and ops
+ * rollback: set `HYPHA_DISABLE_HUMAN_CHAT=true` or `NEXT_PUBLIC_DISABLE_HUMAN_CHAT=true`.
+ */
+
+/**
  * Static metadata for Vercel Flags discovery (`/.well-known/vercel/flags`).
  * Runtime reads use the `get*` functions below.
  *
@@ -127,6 +135,10 @@ export async function getEnableCoherence(): Promise<boolean> {
  * Human Chat is **on by default** (including production). This is an intentional
  * **opt-out** product default, not the typical `feature-flags` “off by default”
  * pattern: disable with the kill switch / env / cookies below.
+ *
+ * **Code review / guideline note:** Some repos prefer “features default off”; Human Chat is an
+ * acknowledged exception — see module comment above. Do not flip this to `return false` without a
+ * product decision (that would hide chat for all users with no opt-in path).
  *
  * Rollback:
  * - Cookie `HYPHA_DISABLE_HUMAN_CHAT=true`
