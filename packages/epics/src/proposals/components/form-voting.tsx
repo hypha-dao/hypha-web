@@ -13,13 +13,15 @@ import {
   useWithdrawProposal,
   useJwt,
   useAgreementMutationsWeb2Rsc,
-  TOKENS,
   useSpaceMinProposalDuration,
+  type Person,
+  type Space,
 } from '@hypha-platform/core/client';
 import { getTokenUpdateByDocumentIdAction } from '@hypha-platform/core/governance/server/actions';
 import {
   buildUpdateIssuedTokenResubmitPayload,
   RESUBMIT_UPDATE_ISSUED_TOKEN_EMBEDDED_FIELD,
+  type DecodedUpdateTokenWhitelist,
   type UpdateTokenProposalSnapshot,
 } from '../update-issued-token-resubmit';
 import { useSpaceMember } from '../../spaces';
@@ -28,7 +30,11 @@ import { useTheme } from 'next-themes';
 import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { formatUnits } from 'viem';
+import {
+  RESUBMIT_FORM_DATA_KEY,
+  RESUBMIT_PROPOSAL_DATA_KEY,
+  getCreateRouteSegmentForProposalLabel,
+} from '../../utils/resubmit-proposal-template';
 
 function formatTimeRemaining(
   endTime: string,
@@ -57,38 +63,8 @@ function formatTimeRemaining(
     : tProposalDetails('voting.voteClosingSoon');
 }
 
-const getCreateRouteForLabel = (label: string | undefined): string => {
-  if (!label) return '';
-
-  const labelToRoute: Record<string, string> = {
-    Contribution: 'propose-contribution',
-    'Collective Agreement': '',
-    Expenses: 'pay-for-expenses',
-    Funding: 'deploy-funds',
-    'Voting Method': 'change-voting-method',
-    'Entry Method': 'change-entry-method',
-    'Issue New Token': 'issue-new-token',
-    'Buy Hypha Tokens': 'buy-hypha-tokens',
-    'Activate Spaces': 'activate-spaces',
-    'Space To Space': 'space-to-space-membership',
-    'Treasury Minting': 'mint-tokens-to-space-treasury',
-    'Redeem Tokens': 'redeem-tokens',
-    'Token Burning': 'token-burning',
-    'Membership Exit': 'membership-exit',
-    'Backing Vault': 'token-backing-vault',
-    'Update Token': 'update-issued-token',
-    'Token Purchase': 'space-token-purchase',
-  };
-
-  return labelToRoute[label] || '';
-};
-
-const USDC_ADDRESS = TOKENS.find(
-  (token) => token.symbol === 'USDC',
-)?.address?.toLowerCase();
-const EURC_ADDRESS = TOKENS.find(
-  (token) => token.symbol === 'EURC',
-)?.address?.toLowerCase();
+/** @deprecated use getCreateRouteSegmentForProposalLabel */
+const getCreateRouteForLabel = getCreateRouteSegmentForProposalLabel;
 
 export const FormVoting = ({
   unity,
@@ -121,7 +97,11 @@ export const FormVoting = ({
   updateTokenProposalSnapshot,
   redeemResubmitPayload,
   proposalTemplateData,
-  spaceTokenPurchaseData,
+  updateTokenDecodedWhitelist,
+  membersForUpdateTokenResubmit,
+  spacesForUpdateTokenResubmit,
+  dbSpacesForUpdateTokenResubmit,
+  isOwnershipTokenForUpdateTokenResubmit,
 }: {
   unity: number;
   quorum: number;
@@ -157,13 +137,13 @@ export const FormVoting = ({
     conversions: { asset: string; percentage: string }[];
   };
   proposalTemplateData?: Record<string, unknown>;
-  spaceTokenPurchaseData?: {
-    tokenAddress?: string;
-    paymentToken?: string;
-    paymentTokenPricePerToken?: bigint;
-    tokensForSale?: bigint;
-    isActive?: boolean;
-  };
+  /** Decoded whitelist addresses from the update-token proposal transactions */
+  updateTokenDecodedWhitelist?: DecodedUpdateTokenWhitelist | null;
+  membersForUpdateTokenResubmit?: Person[];
+  spacesForUpdateTokenResubmit?: Space[];
+  dbSpacesForUpdateTokenResubmit?: Space[];
+  /** When DB has no type yet, use for whitelist from/to mapping (ownership = receive-only UI) */
+  isOwnershipTokenForUpdateTokenResubmit?: boolean;
 }) => {
   const tCommon = useTranslations('Common');
   const tProposalDetails = useTranslations('ProposalDetails');
@@ -224,24 +204,21 @@ export const FormVoting = ({
 
   const handleResubmit = async () => {
     try {
-      const paymentTokenAddress =
-        spaceTokenPurchaseData?.paymentToken?.toLowerCase();
-      const purchaseCurrency =
-        paymentTokenAddress === EURC_ADDRESS
-          ? 'EUR'
-          : paymentTokenAddress === USDC_ADDRESS
-          ? 'USD'
+      const tokenPurchaseFromTemplate =
+        label === 'Token Purchase' && proposalTemplateData
+          ? (
+              proposalTemplateData as {
+                spaceTokenPurchaseForm?: {
+                  tokenAddress?: string;
+                  activatePurchase?: boolean;
+                  purchaseCurrency?: string;
+                  purchasePrice?: number;
+                  tokensAvailableForPurchase?: number;
+                };
+              }
+            ).spaceTokenPurchaseForm
           : undefined;
-      const purchasePrice =
-        spaceTokenPurchaseData?.paymentTokenPricePerToken !== undefined
-          ? Number(
-              formatUnits(spaceTokenPurchaseData.paymentTokenPricePerToken, 6),
-            )
-          : undefined;
-      const tokensAvailableForPurchase =
-        spaceTokenPurchaseData?.tokensForSale !== undefined
-          ? Number(formatUnits(spaceTokenPurchaseData.tokensForSale, 18))
-          : undefined;
+
       let updateIssuedTokenResubmitPayload: ReturnType<
         typeof buildUpdateIssuedTokenResubmitPayload
       > = null;
@@ -268,10 +245,18 @@ export const FormVoting = ({
                 }
               : null,
             snapshot: updateTokenProposalSnapshot ?? null,
+            decodedWhitelistFromProposal:
+              updateTokenDecodedWhitelist ?? undefined,
+            dbSpacesForWhitelistMapping: dbSpacesForUpdateTokenResubmit,
+            membersForWhitelistMapping: membersForUpdateTokenResubmit,
+            spacesForWhitelistMapping: spacesForUpdateTokenResubmit,
+            isOwnershipTokenForWhitelist:
+              isOwnershipTokenForUpdateTokenResubmit,
           });
       }
 
       const proposalData = {
+        resubmitTemplateSegment: getCreateRouteSegmentForProposalLabel(label),
         title: documentTitle || '',
         description: documentDescription || '',
         leadImage: documentLeadImage || undefined,
@@ -280,19 +265,34 @@ export const FormVoting = ({
         ...(redeemResubmitPayload
           ? { redeemResubmit: redeemResubmitPayload }
           : {}),
-        ...(label === 'Token Purchase'
+        ...(tokenPurchaseFromTemplate
           ? {
-              tokenAddress: spaceTokenPurchaseData?.tokenAddress || '',
-              activatePurchase: Boolean(spaceTokenPurchaseData?.isActive),
-              purchaseCurrency,
-              purchasePrice: Number.isFinite(purchasePrice)
-                ? purchasePrice
-                : undefined,
-              tokensAvailableForPurchase: Number.isFinite(
-                tokensAvailableForPurchase,
+              tokenAddress: tokenPurchaseFromTemplate.tokenAddress || '',
+              activatePurchase: Boolean(
+                tokenPurchaseFromTemplate.activatePurchase,
+              ),
+              ...(tokenPurchaseFromTemplate.purchaseCurrency !== undefined
+                ? {
+                    purchaseCurrency:
+                      tokenPurchaseFromTemplate.purchaseCurrency as
+                        | 'USD'
+                        | 'EUR',
+                  }
+                : {}),
+              ...(tokenPurchaseFromTemplate.purchasePrice !== undefined &&
+              Number.isFinite(tokenPurchaseFromTemplate.purchasePrice)
+                ? { purchasePrice: tokenPurchaseFromTemplate.purchasePrice }
+                : {}),
+              ...(tokenPurchaseFromTemplate.tokensAvailableForPurchase !==
+                undefined &&
+              Number.isFinite(
+                tokenPurchaseFromTemplate.tokensAvailableForPurchase,
               )
-                ? tokensAvailableForPurchase
-                : undefined,
+                ? {
+                    tokensAvailableForPurchase:
+                      tokenPurchaseFromTemplate.tokensAvailableForPurchase,
+                  }
+                : {}),
             }
           : {}),
         ...(label === 'Update Token' && updateIssuedTokenResubmitPayload
@@ -304,11 +304,11 @@ export const FormVoting = ({
       };
 
       sessionStorage.setItem(
-        'resubmitProposalData',
+        RESUBMIT_PROPOSAL_DATA_KEY,
         JSON.stringify(proposalData),
       );
 
-      const saved = sessionStorage.getItem('resubmitProposalData');
+      const saved = sessionStorage.getItem(RESUBMIT_PROPOSAL_DATA_KEY);
       if (!saved) {
         console.error('Failed to save resubmit data to sessionStorage');
         return;
@@ -336,8 +336,8 @@ export const FormVoting = ({
       }
     } catch (error) {
       console.error('Error resubmitting proposal:', error);
-      sessionStorage.removeItem('resubmitProposalData');
-      sessionStorage.removeItem('resubmitFormData');
+      sessionStorage.removeItem(RESUBMIT_PROPOSAL_DATA_KEY);
+      sessionStorage.removeItem(RESUBMIT_FORM_DATA_KEY);
     }
   };
 

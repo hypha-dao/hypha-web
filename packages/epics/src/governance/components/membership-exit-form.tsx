@@ -11,12 +11,18 @@ import {
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
+import {
+  useClearResubmitOnSuccess,
+  useResubmitProposalData,
+  useScrollToErrors,
+} from '../../hooks';
 import { useConfig } from 'wagmi';
 import { Button, Form, LoadingBackdrop, Separator } from '@hypha-platform/ui';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
+
+const MEMBERSHIP_EXIT_RESUBMIT_SEGMENT = 'membership-exit';
 
 const combinedSchemaMembershipExit =
   schemaMembershipExit.extend(createAgreementFiles);
@@ -70,7 +76,12 @@ export const MembershipExitForm = ({
   }, [isPersonLoading, person, form]);
 
   useScrollToErrors(form, formRef);
-  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+  const { resubmitKey } = useResubmitProposalData(
+    form,
+    spaceId,
+    person?.id,
+    MEMBERSHIP_EXIT_RESUBMIT_SEGMENT,
+  );
 
   const { jwt } = useJwt();
   const config = useConfig();
@@ -82,6 +93,8 @@ export const MembershipExitForm = ({
     isPending,
     progress,
   } = useMembershipExitOrchestrator({ authToken: jwt, config });
+
+  useClearResubmitOnSuccess(progress === 100 && !isError);
 
   const handleCreate = React.useCallback(
     async (data: FormValues) => {

@@ -19,12 +19,16 @@ import { useConfig } from 'wagmi';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useRouter } from 'next/navigation';
 import {
+  clearResubmitProposalSessionStorage,
+  useClearResubmitOnSuccess,
   useDbTokens,
-  useScrollToErrors,
   useResubmitProposalData,
+  useScrollToErrors,
 } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useTranslations } from 'next-intl';
+
+const ISSUE_TOKEN_RESUBMIT_SEGMENT = 'issue-new-token';
 
 const ISSUE_NEW_TOKEN_ERROR_KEYS: Record<string, string> = {
   'Please add a title for your proposal':
@@ -343,7 +347,14 @@ export const IssueNewTokenForm = ({
   });
 
   useScrollToErrors(form, formRef);
-  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+  const { resubmitKey } = useResubmitProposalData(
+    form,
+    spaceId,
+    person?.id,
+    ISSUE_TOKEN_RESUBMIT_SEGMENT,
+  );
+
+  useClearResubmitOnSuccess(progress === 100 && !isError);
 
   const { tokens: dbTokens, refetchDbTokens } = useDbTokens();
 
@@ -355,6 +366,7 @@ export const IssueNewTokenForm = ({
 
   React.useEffect(() => {
     if (progress === 100 && agreementSlug) {
+      clearResubmitProposalSessionStorage();
       router.push(successfulUrl);
     }
   }, [progress, agreementSlug, router, successfulUrl]);
@@ -428,7 +440,12 @@ export const IssueNewTokenForm = ({
             label={tAgreementFlow('labels.issueNewToken')}
             progress={progress}
           />
-          {plugin}
+          {React.isValidElement(plugin)
+            ? React.cloneElement(
+                plugin as React.ReactElement<{ resubmitKey?: number }>,
+                { resubmitKey },
+              )
+            : plugin}
           <Separator />
           <div className="flex flex-col gap-2">
             {formError && (

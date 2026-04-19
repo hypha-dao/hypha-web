@@ -18,6 +18,11 @@ import {
   useVote,
   bigIntToPercentageString,
   getTokenDecimals,
+  CURRENCY_FEEDS,
+  REFERENCE_CURRENCIES,
+  TOKENS,
+  type Person,
+  type Space,
 } from '@hypha-platform/core/client';
 import {
   ProposalTransactionItem,
@@ -49,8 +54,300 @@ import { formatUnits } from 'viem';
 import { resolveTokenDecimals } from '../../governance/utils/token-decimals';
 import { useDbSpaces } from '../../hooks';
 import { hasUpdateTokenDataToDisplay } from '../utils/has-update-token-data-to-display';
+import { normalizeVotingDurationForResubmitSelect } from '../../agreements/plugins/change-voting-method/voting-duration-resubmit';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
+
+type ProposalTransferRow = {
+  recipient: string;
+  rawAmount: bigint;
+  token: string;
+};
+
+function buildRecipientPayoutsFromTransfers(
+  transfers: ProposalTransferRow[] | undefined,
+):
+  | { recipient: string; payouts: { token: string; amount: string }[] }
+  | undefined {
+  if (!transfers?.length) return undefined;
+  const first = transfers[0];
+  if (!first) return undefined;
+  const recipient = first.recipient;
+  const recipientLc = recipient.toLowerCase();
+  if (!transfers.every((t) => t.recipient.toLowerCase() === recipientLc)) {
+    return undefined;
+  }
+  const payouts = transfers.map((tx) => ({
+    token: tx.token,
+    amount: formatUnits(tx.rawAmount, resolveTokenDecimals(tx.token)),
+  }));
+  return { recipient, payouts };
+}
+
+function referenceCurrencyFromPriceFeed(
+  feed: string | undefined,
+): string | undefined {
+  if (!feed) return undefined;
+  const normalized = feed.toLowerCase();
+  for (const code of REFERENCE_CURRENCIES) {
+    const chainFeed = CURRENCY_FEEDS[code as keyof typeof CURRENCY_FEEDS];
+    if (!chainFeed) continue;
+    if (normalized === chainFeed.toLowerCase()) {
+      return code;
+    }
+  }
+  if (normalized === '0x0000000000000000000000000000000000000000') {
+    return 'USD';
+  }
+  return undefined;
+}
+
+function referenceCurrencyFeedAddressFromChainData(
+  currencyFeed: string | undefined,
+): string | undefined {
+  if (!currencyFeed) return undefined;
+  const lower = currencyFeed.toLowerCase();
+  for (const addr of Object.values(CURRENCY_FEEDS)) {
+    if (typeof addr === 'string' && addr.toLowerCase() === lower) {
+      return addr;
+    }
+  }
+  return CURRENCY_FEEDS.USD;
+}
+
+type ProposalTokenBackingVaultFromDetails = {
+  spaceToken?: string;
+  addCollaterals?: Array<{
+    token: string;
+    amount: string;
+    decimals: number;
+  }>;
+  removeCollaterals?: Array<{ token: string; amount: string }>;
+  enableRedemption?: boolean;
+  redemptionStartDate?: Date;
+  redemptionPrice?: string;
+  currencyFeed?: string;
+  maxRedemptionPercent?: number;
+  maxRedemptionPeriodDays?: number;
+  minimumBackingPercent?: number;
+  whitelistEnabled?: boolean;
+  whitelistedAddresses?: string[];
+};
+
+function buildTokenBackingVaultResubmitPayload(
+  data: ProposalTokenBackingVaultFromDetails,
+): Record<string, unknown> | undefined {
+  if (!data.spaceToken) return undefined;
+
+  const addCollaterals = (data.addCollaterals ?? []).map((c) => ({
+    token: c.token,
+    amount: c.amount,
+  }));
+  const removeCollaterals = (data.removeCollaterals ?? []).map((c) => ({
+    token: c.token,
+    amount: c.amount,
+  }));
+
+  const enableRedemption = Boolean(data.enableRedemption);
+  const referenceCurrency = referenceCurrencyFeedAddressFromChainData(
+    data.currencyFeed,
+  );
+  const redemptionWhitelist = (data.whitelistedAddresses ?? []).map((addr) => ({
+    type: 'member' as const,
+    address: addr,
+  }));
+
+  return {
+    tokenBackingVault: {
+      spaceToken: data.spaceToken,
+      activateVault: true,
+      enableRedemption,
+      addCollaterals,
+      removeCollaterals,
+      referenceCurrency,
+      tokenPrice:
+        enableRedemption && data.redemptionPrice
+          ? data.redemptionPrice
+          : undefined,
+      minimumBackingPercent: data.minimumBackingPercent ?? 0,
+      maxRedemptionPercent: data.maxRedemptionPercent,
+      maxRedemptionPeriodDays: data.maxRedemptionPeriodDays,
+      redemptionStartDate: data.redemptionStartDate ?? null,
+      enableAdvancedRedemptionControls: Boolean(data.whitelistEnabled),
+      redemptionWhitelist,
+    },
+  };
+}
+
+type ProposalTokenFromProposalDetails = {
+  tokenType: 'regular' | 'ownership' | 'voice';
+  spaceId: bigint;
+  name: string;
+  symbol: string;
+  maxSupply: bigint;
+  isVotingToken?: boolean;
+  transferable?: boolean;
+  fixedMaxSupply?: boolean;
+  autoMinting?: boolean;
+  priceInUSD?: bigint;
+  priceCurrencyFeed?: `0x${string}`;
+  useTransferWhitelist?: boolean;
+  useReceiveWhitelist?: boolean;
+  initialTransferWhitelist?: `0x${string}`[];
+  initialReceiveWhitelist?: `0x${string}`[];
+  decayPercentage?: bigint;
+  decayInterval?: bigint;
+  address?: string;
+};
+
+function buildIssueNewTokenResubmitPayload(
+  token: ProposalTokenFromProposalDetails,
+  proposalSpaceId: number,
+  dbTokens: DbToken[],
+  options?: {
+    /** Agreement document id — used to pick the draft token row (icon URL from Web2 before mint). */
+    documentId?: number | null;
+  },
+): Record<string, unknown> {
+  const humanSupply = Number(formatUnits(token.maxSupply, 18));
+  const enableLimitedSupply = humanSupply > 0;
+  const maxSupplyType = token.fixedMaxSupply
+    ? {
+        label: 'Forever Immutable',
+        value: 'immutable' as const,
+      }
+    : {
+        label: 'Updatable Over Time',
+        value: 'updatable' as const,
+      };
+
+  const enableProposalAutoMinting = token.autoMinting ?? true;
+  const transferable = token.transferable ?? true;
+
+  const fromList = token.initialTransferWhitelist ?? [];
+  const toList = token.initialReceiveWhitelist ?? [];
+  const hasWhitelistAddresses = fromList.length > 0 || toList.length > 0;
+  const enableAdvancedTransferControls = Boolean(
+    (token.useTransferWhitelist || token.useReceiveWhitelist) &&
+      hasWhitelistAddresses,
+  );
+
+  const matchedDb =
+    (token.address
+      ? dbTokens.find(
+          (t) => t.address?.toLowerCase() === token.address?.toLowerCase(),
+        )
+      : undefined) ??
+    dbTokens.find(
+      (t) =>
+        t.spaceId === proposalSpaceId &&
+        t.symbol?.toUpperCase() === token.symbol.toUpperCase(),
+    );
+
+  const draftTokenForAgreement =
+    options?.documentId != null
+      ? dbTokens.find((t) => t.agreementId === options.documentId)
+      : undefined;
+
+  /**
+   * Resubmit must mirror a normal create: pass decoded contract addresses only.
+   * Avoid member/space classification from UI lists — incomplete mapping broke web3 encode / create flow.
+   */
+  let transferWhitelist:
+    | {
+        from?: { type: 'member'; address: string }[];
+        to?: { type: 'member'; address: string }[];
+      }
+    | undefined;
+
+  if (enableAdvancedTransferControls && hasWhitelistAddresses) {
+    transferWhitelist = {};
+    if (fromList.length > 0) {
+      transferWhitelist.from = fromList.map((addr) => ({
+        type: 'member' as const,
+        address: addr,
+      }));
+    }
+    if (toList.length > 0) {
+      transferWhitelist.to = toList.map((addr) => ({
+        type: 'member' as const,
+        address: addr,
+      }));
+    }
+  }
+
+  const priceMicro =
+    token.priceInUSD !== undefined ? Number(token.priceInUSD) : 0;
+  const enableTokenPrice = priceMicro > 0;
+  const tokenPrice = enableTokenPrice ? priceMicro / 1_000_000 : undefined;
+
+  const feedAddr = token.priceCurrencyFeed as string | undefined;
+  const referenceCurrencyFromChain = referenceCurrencyFromPriceFeed(feedAddr);
+
+  let referenceCurrencyResolved = referenceCurrencyFromChain;
+  if (enableTokenPrice && matchedDb?.referenceCurrency) {
+    referenceCurrencyResolved = matchedDb.referenceCurrency;
+  } else if (enableTokenPrice && !referenceCurrencyResolved) {
+    referenceCurrencyResolved = 'USD';
+  }
+
+  const tokenPriceResolved =
+    enableTokenPrice && matchedDb?.referencePrice != null
+      ? matchedDb.referencePrice
+      : tokenPrice;
+
+  const formType =
+    matchedDb?.type ??
+    (token.tokenType === 'voice'
+      ? 'voice'
+      : token.tokenType === 'ownership'
+      ? 'ownership'
+      : 'utility');
+
+  const decaySettings =
+    formType === 'voice' &&
+    token.decayInterval !== undefined &&
+    token.decayPercentage !== undefined
+      ? {
+          decayInterval: Number(token.decayInterval),
+          decayPercentage: Number(token.decayPercentage),
+        }
+      : {
+          decayInterval: 2592000,
+          decayPercentage: 1,
+        };
+
+  const iconUrl =
+    typeof draftTokenForAgreement?.iconUrl === 'string' &&
+    draftTokenForAgreement.iconUrl.length > 0
+      ? draftTokenForAgreement.iconUrl
+      : typeof matchedDb?.iconUrl === 'string' && matchedDb.iconUrl.length > 0
+      ? matchedDb.iconUrl
+      : undefined;
+
+  return {
+    name: token.name,
+    symbol: token.symbol,
+    ...(iconUrl ? { iconUrl } : {}),
+    type: formType,
+    maxSupply: humanSupply,
+    ...(enableLimitedSupply ? { maxSupplyType } : {}),
+    decaySettings,
+    isVotingToken: formType === 'voice',
+    transferable,
+    enableAdvancedTransferControls,
+    ...(transferWhitelist ? { transferWhitelist } : {}),
+    enableProposalAutoMinting,
+    enableLimitedSupply,
+    enableTokenPrice,
+    ...(enableTokenPrice
+      ? {
+          referenceCurrency: referenceCurrencyResolved,
+          tokenPrice: tokenPriceResolved,
+        }
+      : {}),
+  };
+}
 
 type ProposalDetailProps = ProposalHeadProps & {
   documentId?: number;
@@ -70,6 +367,9 @@ type ProposalDetailProps = ProposalHeadProps & {
   isCheckingExpiration?: boolean;
   isVoting?: boolean;
   onWithdrawSuccess?: () => Promise<void>;
+  /** Used to map whitelist addresses to member/space rows when resubmitting Issue New Token. */
+  membersForWhitelist?: Person[];
+  spacesForWhitelist?: Space[];
 };
 
 type DocumentsArrays = {
@@ -101,6 +401,8 @@ export const ProposalDetail = ({
   isCheckingExpiration: externalIsCheckingExpiration,
   isVoting: externalIsVoting,
   onWithdrawSuccess,
+  membersForWhitelist,
+  spacesForWhitelist,
 }: ProposalDetailProps) => {
   const tProposalDetails = useTranslations('ProposalDetails');
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
@@ -130,6 +432,19 @@ export const ProposalDetail = ({
     const normalized = addr.toLowerCase();
     return dbTokens.find((t) => t.address?.toLowerCase() === normalized)?.type;
   }, [proposalDetails?.updateTokenData?.address, dbTokens]);
+
+  const isUpdateTokenOwnershipForResubmit = useMemo(() => {
+    if (
+      label !== 'Update Token' ||
+      !proposalDetails?.updateTokenData?.address
+    ) {
+      return undefined;
+    }
+    const t = updateTokenTypeFromDb as string | undefined;
+    if (t === 'ownership') return true;
+    if (t !== undefined && t !== 'ownership') return false;
+    return undefined;
+  }, [label, proposalDetails?.updateTokenData?.address, updateTokenTypeFromDb]);
 
   const spacesForWhitelistDisplay = useMemo(() => {
     const u = proposalDetails?.updateTokenData;
@@ -395,6 +710,273 @@ export const ProposalDetail = ({
             amount: formatUnits(burn.number, resolveTokenDecimals(burn.token)),
             allBalance: burn.allBalance ?? false,
           })),
+        },
+      };
+    }
+
+    if (label === 'Space Transparency') {
+      const ts = proposalDetails.transparencySettingsData;
+      if (!ts) return undefined;
+
+      const spaceDiscoverability =
+        ts.spaceDiscoverability !== undefined &&
+        !Number.isNaN(Number(ts.spaceDiscoverability))
+          ? Number(ts.spaceDiscoverability)
+          : undefined;
+      const spaceActivityAccess =
+        ts.spaceActivityAccess !== undefined &&
+        !Number.isNaN(Number(ts.spaceActivityAccess))
+          ? Number(ts.spaceActivityAccess)
+          : undefined;
+
+      if (
+        spaceDiscoverability === undefined &&
+        spaceActivityAccess === undefined
+      ) {
+        return undefined;
+      }
+
+      return {
+        ...(spaceDiscoverability !== undefined ? { spaceDiscoverability } : {}),
+        ...(spaceActivityAccess !== undefined ? { spaceActivityAccess } : {}),
+      };
+    }
+
+    if (label === 'Voting Method') {
+      const vm = proposalDetails.votingMethods?.[0];
+      if (!vm) return undefined;
+
+      const source = vm.votingPowerSource;
+      let votingMethod: '1m1v' | '1v1v' | '1t1v' | undefined;
+      if (source === 1n) votingMethod = '1t1v';
+      else if (source === 2n) votingMethod = '1m1v';
+      else if (source === 3n) votingMethod = '1v1v';
+      else return undefined;
+
+      const quorum = Number(vm.quorum);
+      const unity = Number(vm.unity);
+      const token =
+        proposalDetails.votingMethodsToken?.token &&
+        proposalDetails.votingMethodsToken.token.length > 0
+          ? proposalDetails.votingMethodsToken.token
+          : '';
+
+      const durationRaw = proposalDetails.minimumProposalDurationData?.duration;
+      const durationSeconds =
+        durationRaw !== undefined ? Number(durationRaw) : undefined;
+      const autoExecution =
+        durationSeconds !== undefined ? durationSeconds === 0 : true;
+      let votingDuration: number | undefined;
+      if (durationSeconds === undefined) {
+        votingDuration = undefined;
+      } else if (durationSeconds === 0) {
+        votingDuration = 0;
+      } else {
+        votingDuration =
+          normalizeVotingDurationForResubmitSelect(durationSeconds);
+      }
+
+      let members: { member: string; number: number }[] = [];
+      if (votingMethod === '1t1v' || votingMethod === '1v1v') {
+        if (token) {
+          const tokenLc = token.toLowerCase();
+          const dec = resolveTokenDecimals(token);
+          members = proposalDetails.transfers
+            .filter((tx) => tx.token?.toLowerCase() === tokenLc)
+            .map((tx) => ({
+              member: tx.recipient,
+              number: Number(formatUnits(tx.rawAmount, dec)),
+            }))
+            .filter(
+              (m) => m.member && Number.isFinite(m.number) && m.number > 0,
+            );
+        }
+        if (members.length === 0) {
+          members = [
+            {
+              member: '',
+              number: 0,
+            },
+          ];
+        }
+      }
+
+      return {
+        votingMethod,
+        quorumAndUnity: { quorum, unity },
+        token,
+        members,
+        ...(votingDuration !== undefined ? { votingDuration } : {}),
+        autoExecution,
+      };
+    }
+
+    if (label === 'Entry Method') {
+      const em = proposalDetails.entryMethods?.[0];
+      if (!em) return undefined;
+
+      const entryMethod = Number(em.joinMethod);
+      if (entryMethod < 0 || entryMethod > 2) return undefined;
+
+      let tokenBase: { token: string; amount: number } | undefined;
+      if (entryMethod === 1) {
+        const spaceIdBn = BigInt(proposalDetails.spaceId);
+        const tr = proposalDetails.tokenRequirements?.find(
+          (r) => r.spaceId === spaceIdBn,
+        );
+        if (tr) {
+          tokenBase = {
+            token: tr.token,
+            amount: Number(tr.amount),
+          };
+        }
+      }
+
+      return {
+        entryMethod,
+        ...(tokenBase ? { tokenBase } : {}),
+      };
+    }
+
+    if (label === 'Membership Exit') {
+      const me = proposalDetails.membershipExitData;
+      if (!me?.member || me.space === undefined) return undefined;
+
+      return {
+        space: Number(me.space),
+        member: me.member,
+      };
+    }
+
+    if (label === 'Space To Space') {
+      const dd = proposalDetails.delegatesData;
+      if (!dd?.member || dd.space === undefined) return undefined;
+
+      const targetWeb3Id = Number(dd.space);
+      if (!Number.isFinite(targetWeb3Id)) return undefined;
+
+      const targetSpaceAddress = dbSpaces.find(
+        (s) => s.web3SpaceId === targetWeb3Id,
+      )?.address;
+      if (!targetSpaceAddress) return undefined;
+
+      return {
+        spaceToSpaceTargetAddress: targetSpaceAddress,
+        spaceToSpaceMemberAddress: dd.member,
+      };
+    }
+
+    if (label === 'Issue New Token') {
+      const tok = proposalDetails.tokens?.[0];
+      if (!tok?.name || !tok?.symbol) return undefined;
+
+      return {
+        issueNewTokenForm: buildIssueNewTokenResubmitPayload(
+          tok as ProposalTokenFromProposalDetails,
+          proposalDetails.spaceId,
+          dbTokens ?? [],
+          { documentId },
+        ),
+      };
+    }
+
+    if (label === 'Backing Vault') {
+      const vaultPayload = buildTokenBackingVaultResubmitPayload(
+        proposalDetails.tokenBackingVaultData as ProposalTokenBackingVaultFromDetails,
+      );
+      if (!vaultPayload) return undefined;
+      return vaultPayload;
+    }
+
+    if (label === 'Funding') {
+      const fromTransfers = buildRecipientPayoutsFromTransfers(
+        proposalDetails.transfers,
+      );
+      if (!fromTransfers) return undefined;
+      return { deployFundsForm: fromTransfers };
+    }
+
+    if (label === 'Contribution') {
+      const fromTransfers = buildRecipientPayoutsFromTransfers(
+        proposalDetails.transfers,
+      );
+      if (!fromTransfers) return undefined;
+      return { proposeContributionForm: fromTransfers };
+    }
+
+    if (label === 'Expenses') {
+      const fromTransfers = buildRecipientPayoutsFromTransfers(
+        proposalDetails.transfers,
+      );
+      if (!fromTransfers) return undefined;
+      return { payForExpensesForm: fromTransfers };
+    }
+
+    if (label === 'Buy Hypha Tokens') {
+      const rawAmount = proposalDetails.buyHyphaTokensData?.amount;
+      if (rawAmount === undefined) return undefined;
+
+      const usdcMeta = TOKENS.find((t) => t.symbol === 'USDC');
+      const payDecimals = resolveTokenDecimals(usdcMeta?.address ?? '');
+      const amountStr = formatUnits(rawAmount, payDecimals);
+
+      const buyHyphaRecipient = '0x3dEf11d005F8C85c93e3374B28fcC69B25a650Af';
+
+      return {
+        buyHyphaTokensForm: {
+          payout: {
+            amount: amountStr,
+            token: usdcMeta?.address ?? '',
+          },
+          recipient: buyHyphaRecipient,
+        },
+      };
+    }
+
+    if (label === 'Token Purchase') {
+      const st = proposalDetails.spaceTokenPurchaseData;
+      if (!st?.tokenAddress) return undefined;
+
+      const paymentLc = st.paymentToken?.toLowerCase();
+      const usdcLc = TOKENS.find(
+        (t) => t.symbol === 'USDC',
+      )?.address?.toLowerCase();
+      const eurcLc = TOKENS.find(
+        (t) => t.symbol === 'EURC',
+      )?.address?.toLowerCase();
+      let purchaseCurrency: 'USD' | 'EUR' | undefined;
+      if (paymentLc && eurcLc && paymentLc === eurcLc) {
+        purchaseCurrency = 'EUR';
+      } else if (paymentLc && usdcLc && paymentLc === usdcLc) {
+        purchaseCurrency = 'USD';
+      }
+
+      const payDecimals = resolveTokenDecimals(st.paymentToken ?? '');
+      const saleDecimals = resolveTokenDecimals(st.tokenAddress);
+      const purchasePrice =
+        st.paymentTokenPricePerToken !== undefined
+          ? Number(formatUnits(st.paymentTokenPricePerToken, payDecimals))
+          : undefined;
+      const tokensAvailableForPurchase =
+        st.tokensForSale !== undefined
+          ? Number(formatUnits(st.tokensForSale, saleDecimals))
+          : undefined;
+
+      const canRestoreActiveToggle = Boolean(
+        st.isActive && purchaseCurrency !== undefined,
+      );
+
+      return {
+        spaceTokenPurchaseForm: {
+          tokenAddress: st.tokenAddress,
+          activatePurchase: canRestoreActiveToggle,
+          ...(canRestoreActiveToggle
+            ? {
+                purchaseCurrency,
+                purchasePrice,
+                tokensAvailableForPurchase,
+              }
+            : {}),
         },
       };
     }
@@ -670,9 +1252,30 @@ export const ProposalDetail = ({
             ? proposalDetails?.updateTokenData ?? null
             : undefined
         }
+        updateTokenDecodedWhitelist={
+          label === 'Update Token' && proposalDetails?.updateTokenData
+            ? {
+                initialTransferWhitelist:
+                  proposalDetails.updateTokenData.initialTransferWhitelist,
+                initialReceiveWhitelist:
+                  proposalDetails.updateTokenData.initialReceiveWhitelist,
+                initialTransferWhitelistSpaceIds:
+                  proposalDetails.updateTokenData
+                    .initialTransferWhitelistSpaceIds,
+                initialReceiveWhitelistSpaceIds:
+                  proposalDetails.updateTokenData
+                    .initialReceiveWhitelistSpaceIds,
+              }
+            : undefined
+        }
+        membersForUpdateTokenResubmit={membersForWhitelist}
+        spacesForUpdateTokenResubmit={spacesForWhitelist}
+        dbSpacesForUpdateTokenResubmit={dbSpaces}
+        isOwnershipTokenForUpdateTokenResubmit={
+          isUpdateTokenOwnershipForResubmit
+        }
         redeemResubmitPayload={redeemResubmitPayloadResolved}
         proposalTemplateData={resubmitTemplateData}
-        spaceTokenPurchaseData={proposalDetails?.spaceTokenPurchaseData}
       />
     </div>
   );

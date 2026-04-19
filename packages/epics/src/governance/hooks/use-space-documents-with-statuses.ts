@@ -2,6 +2,7 @@
 
 import React from 'react';
 import useSWR from 'swr';
+import { useTranslations } from 'next-intl';
 
 import {
   useSpaceProposalsWeb3Rpc,
@@ -12,152 +13,26 @@ import { DirectionType, Order, OrderField } from '@hypha-platform/core/client';
 import queryString from 'query-string';
 import { useAuthentication } from '@hypha-platform/authentication';
 
-const getDocumentBadges = (document: Document) => {
+import { DOCUMENT_LABEL_BADGE_KEYS } from './document-label-badge-keys';
+
+const getDocumentBadges = (document: Document, t: (key: string) => string) => {
   const badges = [];
-  switch (document.label) {
-    case 'Contribution':
-      badges.push({
-        label: 'Contribution',
-        className: 'capitalize',
-        variant: 'solid',
-        colorVariant: 'accent',
-      });
-      break;
-    case 'Collective Agreement':
-      badges.push({
-        label: 'Collective Agreement',
-        className: 'capitalize',
-        variant: 'solid',
-        colorVariant: 'accent',
-      });
-      break;
-    case 'Expenses':
-      badges.push({
-        label: 'Expenses',
-        className: 'capitalize',
-        variant: 'solid',
-        colorVariant: 'accent',
-      });
-      break;
-    case 'Funding':
-      badges.push({
-        label: 'Funding',
-        className: 'capitalize',
-        variant: 'solid',
-        colorVariant: 'accent',
-      });
-      break;
-    case 'Voting Method':
-      badges.push({
-        label: 'Voting Method',
-        className: 'capitalize',
-        variant: 'solid',
-        colorVariant: 'accent',
-      });
-      break;
-    case 'Entry Method':
-      badges.push({
-        label: 'Entry Method',
-        className: 'capitalize',
-        variant: 'solid',
-        colorVariant: 'accent',
-      });
-      break;
-    case 'Issue New Token':
-      badges.push({
-        label: 'Issue New Token',
-        className: 'capitalize',
-        variant: 'solid',
-        colorVariant: 'accent',
-      });
-      break;
-    case 'Invite':
-      badges.push({
-        label: 'Invite',
-        className: 'capitalize',
-        variant: 'solid',
-        colorVariant: 'accent',
-      });
-      break;
-    case 'Buy Hypha Tokens':
-      badges.push({
-        label: 'Buy Hypha Tokens',
-        className: 'capitalize',
-        variant: 'solid',
-        colorVariant: 'accent',
-      });
-      break;
-    case 'Activate Spaces':
-      badges.push({
-        label: 'Activate Spaces',
-        className: 'capitalize',
-        variant: 'solid',
-        colorVariant: 'accent',
-      });
-      break;
-    case 'Space To Space':
-      badges.push({
-        label: 'Space To Space',
-        className: 'capitalize',
-        variant: 'solid',
-        colorVariant: 'accent',
-      });
-      break;
-    case 'Space Transparency':
-      badges.push({
-        label: 'Space Transparency',
-        className: 'capitalize',
-        variant: 'solid',
-        colorVariant: 'accent',
-      });
-      break;
-    case 'Treasury Minting':
-      badges.push({
-        label: 'Treasury Minting',
-        className: 'capitalize',
-        variant: 'solid',
-        colorVariant: 'accent',
-      });
-      break;
-    case 'Backing Vault':
-      badges.push({
-        label: 'Backing Vault',
-        className: 'capitalize',
-        variant: 'solid',
-        colorVariant: 'accent',
-      });
-      break;
-    case 'Redeem Tokens':
-      badges.push({
-        label: 'Redeem Tokens',
-        className: 'capitalize',
-        variant: 'solid',
-        colorVariant: 'accent',
-      });
-      break;
-    case 'Token Purchase':
-      badges.push({
-        label: 'Token Purchase',
-        className: 'capitalize',
-        variant: 'solid',
-        colorVariant: 'accent',
-      });
-      break;
-    case 'Update Token':
-      badges.push({
-        label: 'Update Token',
-        className: 'capitalize',
-        variant: 'solid',
-        colorVariant: 'accent',
-      });
-      break;
-    default:
-      break;
+  const labelMessageKey =
+    document.label != null
+      ? DOCUMENT_LABEL_BADGE_KEYS[document.label]
+      : undefined;
+  if (labelMessageKey) {
+    badges.push({
+      label: t(labelMessageKey),
+      className: 'capitalize',
+      variant: 'solid',
+      colorVariant: 'accent',
+    });
   }
   switch (document.status) {
     case 'onVoting':
       badges.push({
-        label: 'On voting',
+        label: t('documentBadges.statusOnVoting'),
         className: 'capitalize',
         variant: 'outline',
         colorVariant: 'warn',
@@ -165,7 +40,7 @@ const getDocumentBadges = (document: Document) => {
       break;
     case 'accepted':
       badges.push({
-        label: 'Accepted',
+        label: t('documentBadges.statusAccepted'),
         className: 'capitalize',
         variant: 'outline',
         colorVariant: 'success',
@@ -173,7 +48,7 @@ const getDocumentBadges = (document: Document) => {
       break;
     case 'rejected':
       badges.push({
-        label: 'Rejected',
+        label: t('documentBadges.statusRejected'),
         className: 'capitalize',
         variant: 'outline',
         colorVariant: 'error',
@@ -192,6 +67,7 @@ export const useSpaceDocumentsWithStatuses = ({
   spaceId: number;
   order?: Order<Document>;
 }) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { getAccessToken } = useAuthentication();
   const { spaceProposalsIds } = useSpaceProposalsWeb3Rpc({ spaceId: spaceId });
   const { withdrawnProposalsIds } = useWithdrawnProposalsWeb3Rpc({
@@ -280,7 +156,7 @@ export const useSpaceDocumentsWithStatuses = ({
         const documentWithStatus = { ...doc, status: 'accepted' } as Document;
         return {
           ...documentWithStatus,
-          badges: getDocumentBadges(documentWithStatus),
+          badges: getDocumentBadges(documentWithStatus, tAgreementFlow),
         };
       });
 
@@ -297,7 +173,7 @@ export const useSpaceDocumentsWithStatuses = ({
         const documentWithStatus = { ...doc, status: 'rejected' } as Document;
         return {
           ...documentWithStatus,
-          badges: getDocumentBadges(documentWithStatus),
+          badges: getDocumentBadges(documentWithStatus, tAgreementFlow),
         };
       });
 
@@ -317,7 +193,7 @@ export const useSpaceDocumentsWithStatuses = ({
         const documentWithStatus = { ...doc, status: 'onVoting' } as Document;
         return {
           ...documentWithStatus,
-          badges: getDocumentBadges(documentWithStatus),
+          badges: getDocumentBadges(documentWithStatus, tAgreementFlow),
         };
       });
     return {
@@ -325,7 +201,12 @@ export const useSpaceDocumentsWithStatuses = ({
       rejected: rejectedDocuments,
       onVoting: onVotingDocuments,
     };
-  }, [documentsFromDb, spaceProposalsIds, withdrawnProposalsIds]);
+  }, [
+    documentsFromDb,
+    spaceProposalsIds,
+    withdrawnProposalsIds,
+    tAgreementFlow,
+  ]);
   return {
     documents: response,
     isLoading,

@@ -31,6 +31,10 @@ import {
 import { VotingMethodSelector } from '../../components/voting-method-selector';
 import React from 'react';
 import { useTranslations } from 'next-intl';
+import {
+  VOTING_DURATION_OPTION_VALUES,
+  normalizeVotingDurationForResubmitSelect,
+} from './voting-duration-resubmit';
 
 const votingDurationOptions = [
   { labelKey: 'h6', value: 6 * 3600 },
@@ -46,39 +50,33 @@ const votingDurationOptions = [
   { labelKey: 'd30', value: 30 * 86400 },
 ] as const;
 
-const votingDurationOptionValues = new Set(
-  votingDurationOptions.map((o) => o.value),
-);
-
-const nearestVotingDurationOption = (seconds: number) =>
-  votingDurationOptions.reduce((best, opt) =>
-    Math.abs(opt.value - seconds) < Math.abs(best.value - seconds) ? opt : best,
-  ).value;
-
 const normalizeChainDurationForSelect = (
   raw: bigint | number | undefined,
 ): number | undefined => {
   if (raw === undefined) return undefined;
   const seconds = typeof raw === 'bigint' ? Number(raw) : raw;
   if (!Number.isFinite(seconds) || seconds < 0) return undefined;
-  return votingDurationOptionValues.has(seconds)
+  return VOTING_DURATION_OPTION_VALUES.has(seconds)
     ? seconds
-    : nearestVotingDurationOption(seconds);
+    : normalizeVotingDurationForResubmitSelect(seconds);
 };
 
 const isValidVotingDurationSelectValue = (value: unknown): value is number =>
   typeof value === 'number' &&
   Number.isFinite(value) &&
-  votingDurationOptionValues.has(value);
+  VOTING_DURATION_OPTION_VALUES.has(value);
 
 export const ChangeVotingMethodPlugin = ({
   spaceSlug,
   members,
   web3SpaceId,
+  resubmitKey,
 }: {
   web3SpaceId?: number | null;
   spaceSlug: string;
   members: Person[];
+  /** Bumps after resubmit hydration so auto-duration effects do not overwrite restored values. */
+  resubmitKey?: number;
 }) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const chainReadEnabled = typeof web3SpaceId === 'number';
@@ -129,6 +127,19 @@ export const ChangeVotingMethodPlugin = ({
 
   const votingDurationUserEdited = React.useRef(false);
 
+  /** True for one frame after `resubmitKey` bumps — skip quorum/duration auto-overrides that would clear hydrated resubmit data. */
+  const resubmitHydrationRef = React.useRef(false);
+  React.useEffect(() => {
+    if (resubmitKey === undefined || resubmitKey <= 0) return;
+    resubmitHydrationRef.current = true;
+    const id = requestAnimationFrame(() => {
+      resubmitHydrationRef.current = false;
+    });
+    return () => cancelAnimationFrame(id);
+  }, [resubmitKey]);
+
+  const skipResubmitOverwrite = () => resubmitHydrationRef.current;
+
   const quorumAndUnity = useWatch({
     control,
     name: 'quorumAndUnity',
@@ -147,6 +158,7 @@ export const ChangeVotingMethodPlugin = ({
   const isQuorumTooLow = (quorumAndUnity?.quorum ?? 0) < 20;
 
   React.useEffect(() => {
+    if (skipResubmitOverwrite()) return;
     if (autoExecution !== false) return;
     if (chainSelectDuration === undefined) return;
     const current = getValues('votingDuration');
@@ -158,9 +170,10 @@ export const ChangeVotingMethodPlugin = ({
     }
     setValue('votingDuration', chainSelectDuration);
     votingDurationUserEdited.current = false;
-  }, [autoExecution, chainSelectDuration, setValue, getValues]);
+  }, [autoExecution, chainSelectDuration, setValue, getValues, resubmitKey]);
 
   React.useEffect(() => {
+    if (skipResubmitOverwrite()) return;
     const currentQuorum = quorumAndUnity?.quorum ?? 0;
     const currentAutoExecution = getValues('autoExecution');
     const currentVotingDuration = getValues('votingDuration');
@@ -186,7 +199,13 @@ export const ChangeVotingMethodPlugin = ({
       }
       votingDurationUserEdited.current = false;
     }
-  }, [quorumAndUnity?.quorum, chainSelectDuration, setValue, getValues]);
+  }, [
+    quorumAndUnity?.quorum,
+    chainSelectDuration,
+    setValue,
+    getValues,
+    resubmitKey,
+  ]);
 
   const handleMethodChange = (method: VotingMethodType | null) => {
     setValue('votingMethod', method);

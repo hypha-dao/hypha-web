@@ -6,17 +6,23 @@ import {
   createAgreementFiles,
   useJwt,
   useMe,
+  useCreateDeployFundsOrchestrator,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
-import { useCreateDeployFundsOrchestrator } from '@hypha-platform/core/client';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useConfig } from 'wagmi';
-import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
+import {
+  useClearResubmitOnSuccess,
+  useResubmitProposalData,
+  useScrollToErrors,
+} from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
+
+const DEPLOY_FUNDS_RESUBMIT_SEGMENT = 'deploy-funds';
 
 const fullSchemaCreateDeployFundsForm =
   schemaCreateAgreementForm.extend(createAgreementFiles);
@@ -77,7 +83,14 @@ export const CreateDeployFundsForm = ({
   });
 
   useScrollToErrors(form, formRef);
-  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+  const { resubmitKey } = useResubmitProposalData(
+    form,
+    spaceId,
+    person?.id,
+    DEPLOY_FUNDS_RESUBMIT_SEGMENT,
+  );
+
+  useClearResubmitOnSuccess(progress === 100 && !isError);
 
   const handleCreate = async (data: FormValues) => {
     if (!data.recipient || !data.payouts || data.payouts.length === 0) {

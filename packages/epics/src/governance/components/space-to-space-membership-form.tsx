@@ -15,9 +15,15 @@ import { useForm } from 'react-hook-form';
 import { useConfig } from 'wagmi';
 import React from 'react';
 import { useSpaceTokenRequirementsByAddress } from '../hooks';
-import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
+import {
+  useClearResubmitOnSuccess,
+  useResubmitProposalData,
+  useScrollToErrors,
+} from '../../hooks';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
+
+const STS_RESUBMIT_SEGMENT = 'space-to-space-membership';
 
 interface SpaceToSpaceMembershipFormProps {
   successfulUrl: string;
@@ -66,7 +72,12 @@ export const SpaceToSpaceMembershipForm = ({
   });
 
   useScrollToErrors(form, formRef);
-  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+  const { resubmitKey } = useResubmitProposalData(
+    form,
+    spaceId,
+    person?.id,
+    STS_RESUBMIT_SEGMENT,
+  );
 
   const { jwt } = useJwt();
   const config = useConfig();
@@ -78,6 +89,8 @@ export const SpaceToSpaceMembershipForm = ({
     isPending,
     progress,
   } = useSpaceToSpaceMembershipOrchestrator({ authToken: jwt, config, spaces });
+
+  useClearResubmitOnSuccess(progress === 100 && !isError);
 
   const spaceAddress = form.watch('space');
 

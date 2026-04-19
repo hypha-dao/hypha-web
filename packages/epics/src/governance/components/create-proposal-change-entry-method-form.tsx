@@ -19,9 +19,16 @@ import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
 import { useSpaceTokenRequirementsByAddress } from '../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
-import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
+import {
+  useClearResubmitOnSuccess,
+  useResubmitProposalData,
+  useScrollToErrors,
+} from '../../hooks';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
+import { hasResubmitDataForTemplate } from '../../utils/resubmit-proposal-template';
+
+const ENTRY_RESUBMIT_SEGMENT = 'change-entry-method';
 
 const schemaCreateProposalChangeEntryMethod =
   schemaChangeEntryMethod.extend(createAgreementFiles);
@@ -65,6 +72,11 @@ export const CreateProposalChangeEntryMethodForm = ({
     spaces,
   });
 
+  const skipLiveEntrySyncForResubmit = React.useMemo(
+    () => hasResubmitDataForTemplate(ENTRY_RESUBMIT_SEGMENT),
+    [],
+  );
+
   const {
     createChangeEntryMethod,
     reset,
@@ -79,6 +91,19 @@ export const CreateProposalChangeEntryMethodForm = ({
   );
 
   const defaultValues = React.useMemo(() => {
+    if (skipLiveEntrySyncForResubmit) {
+      return {
+        title: '',
+        description: '',
+        leadImage: undefined,
+        attachments: undefined,
+        spaceId: spaceId ?? undefined,
+        creatorId: person?.id,
+        entryMethod: EntryMethodType.OPEN_ACCESS,
+        tokenBase: undefined,
+        label: 'Entry Method',
+      };
+    }
     return {
       title: '',
       description: '',
@@ -92,7 +117,7 @@ export const CreateProposalChangeEntryMethodForm = ({
       tokenBase: undefined,
       label: 'Entry Method',
     };
-  }, [spaceId, person, spaceDetails]);
+  }, [spaceId, person, spaceDetails, skipLiveEntrySyncForResubmit]);
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
@@ -101,17 +126,30 @@ export const CreateProposalChangeEntryMethodForm = ({
   });
 
   useScrollToErrors(form, formRef);
-  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+  const { resubmitKey } = useResubmitProposalData(
+    form,
+    spaceId,
+    person?.id,
+    ENTRY_RESUBMIT_SEGMENT,
+  );
+
+  useClearResubmitOnSuccess(progress === 100 && !isError);
 
   React.useEffect(() => {
+    if (skipLiveEntrySyncForResubmit) {
+      return;
+    }
     if (spaceDetails && !isLoading) {
       const entryMethod =
         spaceDetails?.joinMethod ?? EntryMethodType.OPEN_ACCESS;
       form.setValue('entryMethod', Number(entryMethod));
     }
-  }, [spaceDetails, isLoading]);
+  }, [spaceDetails, isLoading, form, skipLiveEntrySyncForResubmit]);
 
   React.useEffect(() => {
+    if (skipLiveEntrySyncForResubmit) {
+      return;
+    }
     if (requiredToken) {
       const tokenBase = requiredToken
         ? {
@@ -121,7 +159,7 @@ export const CreateProposalChangeEntryMethodForm = ({
         : undefined;
       form.setValue('tokenBase', tokenBase);
     }
-  }, [requiredToken]);
+  }, [requiredToken, requiredAmount, form, skipLiveEntrySyncForResubmit]);
 
   const handleCreate = async (data: FormValues) => {
     if (

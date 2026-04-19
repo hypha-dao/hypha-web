@@ -14,10 +14,17 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useConfig } from 'wagmi';
-import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
+import {
+  clearResubmitProposalSessionStorage,
+  useClearResubmitOnSuccess,
+  useResubmitProposalData,
+  useScrollToErrors,
+} from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
+
+const CONTRIBUTION_RESUBMIT_SEGMENT = 'propose-contribution';
 
 type FormValues = z.infer<typeof schemaCreateAgreementForm>;
 
@@ -80,10 +87,18 @@ export const CreateProposeAContributionForm = ({
   });
 
   useScrollToErrors(form, formRef);
-  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+  const { resubmitKey } = useResubmitProposalData(
+    form,
+    spaceId,
+    person?.id,
+    CONTRIBUTION_RESUBMIT_SEGMENT,
+  );
+
+  useClearResubmitOnSuccess(progress === 100 && !isError);
 
   React.useEffect(() => {
     if (progress === 100 && successfulUrl) {
+      clearResubmitProposalSessionStorage();
       router.push(successfulUrl);
     }
   }, [progress, successfulUrl, router]);

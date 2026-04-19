@@ -13,11 +13,18 @@ import { Button, Form } from '@hypha-platform/ui';
 import React from 'react';
 import { useConfig } from 'wagmi';
 import { CreateAgreementBaseFields } from '../../agreements';
-import { useScrollToErrors } from '../../hooks';
+import {
+  useClearResubmitOnSuccess,
+  useResubmitProposalData,
+  useScrollToErrors,
+} from '../../hooks';
 import { TransparencyLevel } from '../../spaces/components/transparency-level';
 import { useSpaceDiscoverability } from '../../spaces/hooks/use-space-discoverability';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
+import { hasResubmitDataForTemplate } from '../../utils/resubmit-proposal-template';
+
+const TRANSPARENCY_RESUBMIT_SEGMENT = 'space-settings-transparency';
 
 type FormValues = z.infer<typeof schemaChangeSpaceTransparencySettings>;
 
@@ -65,6 +72,11 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
     spaceId: (web3SpaceId ?? spaceId ?? undefined) as number | undefined,
   });
 
+  const skipLiveTransparencySyncForResubmit = React.useMemo(
+    () => hasResubmitDataForTemplate(TRANSPARENCY_RESUBMIT_SEGMENT),
+    [],
+  );
+
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
     resolver,
@@ -82,6 +94,9 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
   });
 
   React.useEffect(() => {
+    if (skipLiveTransparencySyncForResubmit) {
+      return;
+    }
     if (!isLoadingDiscoverability) {
       if (discoverability !== undefined) {
         form.setValue('spaceDiscoverability', discoverability, {
@@ -92,9 +107,23 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
         form.setValue('spaceActivityAccess', access, { shouldDirty: false });
       }
     }
-  }, [discoverability, access, isLoadingDiscoverability, form]);
+  }, [
+    discoverability,
+    access,
+    isLoadingDiscoverability,
+    form,
+    skipLiveTransparencySyncForResubmit,
+  ]);
 
   useScrollToErrors(form, formRef);
+  const { resubmitKey } = useResubmitProposalData(
+    form,
+    spaceId,
+    person?.id,
+    TRANSPARENCY_RESUBMIT_SEGMENT,
+  );
+
+  useClearResubmitOnSuccess(progress === 100 && !isError);
 
   const handleCreate = async (data: FormValues) => {
     await createChangeSpaceTransparencySettings({
@@ -133,6 +162,7 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
           className="flex flex-col gap-5"
         >
           <CreateAgreementBaseFields
+            key={resubmitKey}
             creator={{
               avatar: person?.avatarUrl || '',
               name: person?.name || '',

@@ -14,10 +14,16 @@ import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useConfig } from 'wagmi';
-import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
+import {
+  useClearResubmitOnSuccess,
+  useResubmitProposalData,
+  useScrollToErrors,
+} from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
+
+const BACKING_VAULT_RESUBMIT_SEGMENT = 'token-backing-vault';
 
 const fullSchemaTokenBackingVault =
   schemaTokenBackingVault.extend(createAgreementFiles);
@@ -95,7 +101,14 @@ export const CreateProposalTokenBackingVaultForm = ({
   });
 
   useScrollToErrors(form, formRef);
-  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+  const { resubmitKey } = useResubmitProposalData(
+    form,
+    spaceId,
+    person?.id,
+    BACKING_VAULT_RESUBMIT_SEGMENT,
+  );
+
+  useClearResubmitOnSuccess(progress === 100 && !isError);
 
   const handleCreate = async (data: FormValues) => {
     setFormError(null);
@@ -145,7 +158,12 @@ export const CreateProposalTokenBackingVaultForm = ({
             label={tAgreementFlow('labels.backingVault')}
             progress={progress}
           />
-          {plugin}
+          {React.isValidElement(plugin)
+            ? React.cloneElement(
+                plugin as React.ReactElement<{ resubmitKey?: number }>,
+                { resubmitKey },
+              )
+            : plugin}
           <Separator />
           <div className="flex flex-col gap-2">
             {formError && (

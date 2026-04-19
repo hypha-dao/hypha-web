@@ -35,10 +35,12 @@ export const SpaceTokenPurchasePlugin = ({
   spaceSlug,
   spaceId,
   web3SpaceId,
+  resubmitKey,
 }: {
   spaceSlug: string;
   spaceId?: number;
   web3SpaceId?: number | null;
+  resubmitKey?: number;
 }) => {
   const { control, setValue } = useFormContext();
 
@@ -57,6 +59,18 @@ export const SpaceTokenPurchasePlugin = ({
 
   const hydratedFromChainForToken = React.useRef<string | null>(null);
 
+  const resubmitHydrationRef = React.useRef(false);
+  React.useEffect(() => {
+    if (resubmitKey === undefined || resubmitKey <= 0) return;
+    resubmitHydrationRef.current = true;
+    const id = requestAnimationFrame(() => {
+      resubmitHydrationRef.current = false;
+    });
+    return () => cancelAnimationFrame(id);
+  }, [resubmitKey]);
+
+  const skipResubmitSideEffects = () => resubmitHydrationRef.current;
+
   const tokenAddressChecksum = tokenAddress as `0x${string}` | undefined;
 
   const { data: saleDetailsFromChain } = useSpaceTokenSaleDetailsFromChain({
@@ -65,6 +79,7 @@ export const SpaceTokenPurchasePlugin = ({
   });
 
   React.useEffect(() => {
+    if (skipResubmitSideEffects()) return;
     hydratedFromChainForToken.current = null;
     setValue('activatePurchase', false, {
       shouldDirty: true,
@@ -85,6 +100,7 @@ export const SpaceTokenPurchasePlugin = ({
   }, [tokenAddressChecksum, setValue]);
 
   React.useEffect(() => {
+    if (skipResubmitSideEffects()) return;
     if (!tokenAddressChecksum || saleDetailsFromChain === undefined) {
       return;
     }

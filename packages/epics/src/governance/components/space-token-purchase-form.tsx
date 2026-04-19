@@ -15,9 +15,16 @@ import React from 'react';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
+import {
+  clearResubmitProposalSessionStorage,
+  useClearResubmitOnSuccess,
+  useResubmitProposalData,
+  useScrollToErrors,
+} from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useConfig } from 'wagmi';
+
+const STP_RESUBMIT_SEGMENT = 'space-token-purchase';
 
 const fullSchemaSpaceTokenPurchase = schemaSpaceTokenPurchaseObject
   .extend({ label: z.string().optional() })
@@ -85,7 +92,14 @@ export const SpaceTokenPurchaseForm = ({
   });
 
   useScrollToErrors(form, formRef);
-  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+  const { resubmitKey } = useResubmitProposalData(
+    form,
+    spaceId,
+    person?.id,
+    STP_RESUBMIT_SEGMENT,
+  );
+
+  useClearResubmitOnSuccess(progress === 100 && !isError);
 
   React.useEffect(() => {
     const proposalLabel = tAgreementFlow('labels.spaceTokenPurchase');
@@ -101,6 +115,7 @@ export const SpaceTokenPurchaseForm = ({
         web3SpaceId: web3SpaceId ?? undefined,
         label: tAgreementFlow('labels.spaceTokenPurchase'),
       });
+      clearResubmitProposalSessionStorage();
       router.push(successfulUrl);
     } catch {
       setFormError(tAgreementFlow('proposalLoader.tryAgainGeneric'));
@@ -150,7 +165,12 @@ export const SpaceTokenPurchaseForm = ({
             label={tAgreementFlow('labels.spaceTokenPurchase')}
             progress={progress}
           />
-          {plugin}
+          {React.isValidElement(plugin)
+            ? React.cloneElement(
+                plugin as React.ReactElement<{ resubmitKey?: number }>,
+                { resubmitKey },
+              )
+            : plugin}
           <Separator />
           <div className="flex flex-col gap-2">
             {formError && (

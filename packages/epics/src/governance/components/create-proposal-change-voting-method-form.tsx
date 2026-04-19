@@ -16,9 +16,16 @@ import React from 'react';
 import { useConfig } from 'wagmi';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
 import { VOTING_METHOD_TYPES } from '../hooks';
-import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
+import {
+  useClearResubmitOnSuccess,
+  useResubmitProposalData,
+  useScrollToErrors,
+} from '../../hooks';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
+import { hasResubmitDataForTemplate } from '../../utils/resubmit-proposal-template';
+
+const VOTING_RESUBMIT_SEGMENT = 'change-voting-method';
 
 type FormValues = z.infer<typeof schemaCreateProposalChangeVotingMethod>;
 
@@ -62,6 +69,11 @@ export const CreateProposalChangeVotingMethodForm = ({
     spaceId: BigInt(web3SpaceId as number),
   });
 
+  /** Re-read each render so first paint after sessionStorage write still skips live sync. */
+  const skipLiveVotingSyncForResubmit = hasResubmitDataForTemplate(
+    VOTING_RESUBMIT_SEGMENT,
+  );
+
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
     resolver,
@@ -81,12 +93,20 @@ export const CreateProposalChangeVotingMethodForm = ({
       votingMethod: undefined,
       label: 'Voting Method',
       votingDuration: undefined,
+      autoExecution: true,
     },
     mode: 'onChange',
   });
 
   useScrollToErrors(form, formRef);
-  const { resubmitKey } = useResubmitProposalData(form, spaceId, person?.id);
+  const { resubmitKey } = useResubmitProposalData(
+    form,
+    spaceId,
+    person?.id,
+    VOTING_RESUBMIT_SEGMENT,
+  );
+
+  useClearResubmitOnSuccess(progress === 100 && !isError);
 
   const { quorum = 0, unity = 0 } = form.watch('quorumAndUnity') ?? {};
 
@@ -102,6 +122,9 @@ export const CreateProposalChangeVotingMethodForm = ({
   };
 
   React.useEffect(() => {
+    if (skipLiveVotingSyncForResubmit) {
+      return;
+    }
     if (spaceDetails && !isLoading) {
       const quorum = Number(spaceDetails.quorum ?? 0);
       const unity = Number(spaceDetails.unity ?? 0);
@@ -119,7 +142,14 @@ export const CreateProposalChangeVotingMethodForm = ({
         form.setValue('token', voicePowerToken);
       }
     }
-  }, [spaceDetails, isLoading, votingPowerToken, voicePowerToken]);
+  }, [
+    spaceDetails,
+    isLoading,
+    votingPowerToken,
+    voicePowerToken,
+    form,
+    skipLiveVotingSyncForResubmit,
+  ]);
 
   const handleCreate = async (data: FormValues) => {
     if (!web3SpaceId || !data.votingMethod) return;
@@ -186,7 +216,12 @@ export const CreateProposalChangeVotingMethodForm = ({
             label={tAgreementFlow('labels.votingMethod')}
             progress={progress}
           />
-          {plugin}
+          {React.isValidElement(plugin)
+            ? React.cloneElement(
+                plugin as React.ReactElement<{ resubmitKey?: number }>,
+                { resubmitKey },
+              )
+            : plugin}
           <Separator />
           <div className="flex justify-end w-full">
             <Button type="submit" disabled={isButtonDisabled}>

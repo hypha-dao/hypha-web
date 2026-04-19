@@ -18,6 +18,8 @@ type IssueNewTokenPluginProps = {
   spaceSlug?: string;
   ownershipToWhitelistMembers?: Person[];
   ownershipToWhitelistSpaces?: Space[];
+  /** When set (e.g. after resubmit hydration), skip effects that clear advanced fields. */
+  resubmitKey?: number;
 };
 
 export const IssueNewTokenPlugin = ({
@@ -26,6 +28,7 @@ export const IssueNewTokenPlugin = ({
   spaceSlug,
   ownershipToWhitelistMembers,
   ownershipToWhitelistSpaces,
+  resubmitKey,
 }: IssueNewTokenPluginProps) => {
   const {
     getValues,
@@ -43,6 +46,21 @@ export const IssueNewTokenPlugin = ({
    * Collapsing the panel does not clear `decaySettings` — values stay in the form.
    */
   const prevVoiceDecayDirtyRef = useRef(false);
+
+  const resubmitHydrationRef = useRef(false);
+  useEffect(() => {
+    if (resubmitKey === undefined || resubmitKey <= 0) return;
+    // `resubmitKey` bumps only after `useResubmitProposalData` finishes applying
+    // resubmit payload (reset + setValue). The requestAnimationFrame window skips
+    // clearing side-effects in the same paint so hydrated values are not wiped.
+    resubmitHydrationRef.current = true;
+    const id = requestAnimationFrame(() => {
+      resubmitHydrationRef.current = false;
+    });
+    return () => cancelAnimationFrame(id);
+  }, [resubmitKey]);
+
+  const skipResubmitSideEffects = () => resubmitHydrationRef.current;
 
   const enableLimitedSupply = watch('enableLimitedSupply') ?? false;
   const setEnableLimitedSupply = (value: boolean) => {
@@ -62,6 +80,26 @@ export const IssueNewTokenPlugin = ({
   const tokenName = watch('name');
   const tokenSymbol = watch('symbol');
   const tokenIconUrl = watch('iconUrl');
+
+  useEffect(() => {
+    if (resubmitKey === undefined || resubmitKey <= 0) return;
+    const lim = getValues('enableLimitedSupply');
+    const adv = getValues('enableAdvancedTransferControls');
+    const price = getValues('enableTokenPrice');
+    if (lim || adv || price) {
+      setShowAdvancedSettings(true);
+    }
+    if (currentTokenType === 'voice') {
+      const ds = getValues('decaySettings');
+      if (
+        ds &&
+        typeof ds === 'object' &&
+        (ds as { decayInterval?: number }).decayInterval !== 2592000
+      ) {
+        setShowDecaySettings(true);
+      }
+    }
+  }, [resubmitKey, getValues, currentTokenType]);
 
   const areGeneralFieldsFilled =
     currentTokenType &&
@@ -142,6 +180,7 @@ export const IssueNewTokenPlugin = ({
 
   const prevTokenTypeRef = useRef<string | undefined>(currentTokenType);
   useEffect(() => {
+    if (skipResubmitSideEffects()) return;
     const prevType = prevTokenTypeRef.current;
     const currentType = currentTokenType;
 
@@ -187,6 +226,7 @@ export const IssueNewTokenPlugin = ({
   }, [tokenType, setValue]);
 
   useEffect(() => {
+    if (skipResubmitSideEffects()) return;
     if (!areGeneralFieldsFilled && showAdvancedSettings) {
       setShowAdvancedSettings(false);
       clearAdvancedSettingsFields();
@@ -220,6 +260,7 @@ export const IssueNewTokenPlugin = ({
   }, [currentTokenType, dirtyFields.decaySettings]);
 
   useEffect(() => {
+    if (skipResubmitSideEffects()) return;
     if (!showAdvancedSettings) {
       clearAdvancedSettingsFields();
     }
@@ -227,6 +268,7 @@ export const IssueNewTokenPlugin = ({
 
   const prevEnableLimitedSupplyRef = useRef(enableLimitedSupply);
   useEffect(() => {
+    if (skipResubmitSideEffects()) return;
     if (
       prevEnableLimitedSupplyRef.current === true &&
       enableLimitedSupply === false
@@ -237,12 +279,14 @@ export const IssueNewTokenPlugin = ({
   }, [enableLimitedSupply, clearLimitedSupplyFields]);
 
   useEffect(() => {
+    if (skipResubmitSideEffects()) return;
     if (transferable === false) {
       clearTransferFields();
     }
   }, [transferable, clearTransferFields]);
 
   useEffect(() => {
+    if (skipResubmitSideEffects()) return;
     if (!enableAdvancedTransferControls) {
       setValue('transferWhitelist', undefined, {
         shouldDirty: true,
@@ -252,6 +296,7 @@ export const IssueNewTokenPlugin = ({
   }, [enableAdvancedTransferControls, setValue]);
 
   useEffect(() => {
+    if (skipResubmitSideEffects()) return;
     if (!enableTokenPrice) {
       clearTokenPriceFields();
     }
