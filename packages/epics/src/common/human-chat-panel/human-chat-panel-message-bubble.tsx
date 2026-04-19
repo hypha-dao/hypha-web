@@ -63,6 +63,16 @@ type UIMessagePart =
   | { type: 'text'; text: string }
   | { type: string; [k: string]: unknown };
 
+/** Soft darken so inline photos blend with dark chat chrome (design reference). */
+function ChatMediaAmbientOverlay() {
+  return (
+    <div
+      className="pointer-events-none absolute inset-0 z-[1] rounded-[inherit] bg-black/15 shadow-[inset_0_0_40px_rgba(0,0,0,0.12)] dark:bg-black/35 dark:shadow-[inset_0_0_48px_rgba(0,0,0,0.28)]"
+      aria-hidden
+    />
+  );
+}
+
 /** Discord-style: dimmed media + centered pill (not full-width text strip). */
 function TimelineSpoilerRevealOverlay({
   t,
@@ -250,6 +260,7 @@ function TimelineImageSlot({
               )}
             />
           </a>
+          {!(media.spoiler && !spoilerRevealed) && <ChatMediaAmbientOverlay />}
           {media.spoiler && !spoilerRevealed && (
             <TimelineSpoilerRevealOverlay
               t={tOpen}
@@ -320,6 +331,7 @@ function TimelineCollageImageTile({
               errorRetries={2}
             />
           </a>
+          {!(media.spoiler && !spoilerRevealed) && <ChatMediaAmbientOverlay />}
           {media.spoiler && !spoilerRevealed && (
             <TimelineSpoilerRevealOverlay
               t={tOpen}
@@ -1694,6 +1706,9 @@ export function HumanChatPanelMessageBubble({
                         )}
                       />
                     </a>
+                    {!(message.media.spoiler && !spoilerRevealed) && (
+                      <ChatMediaAmbientOverlay />
+                    )}
                     {message.media.spoiler && !spoilerRevealed && (
                       <TimelineSpoilerRevealOverlay
                         t={t}
