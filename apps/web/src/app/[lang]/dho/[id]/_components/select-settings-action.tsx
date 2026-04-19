@@ -10,6 +10,7 @@ import { isAbsoluteUrl } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 import {
   Coins,
+  CloudLightning,
   Code2,
   DoorOpen,
   Download,
@@ -24,7 +25,6 @@ import {
   Puzzle,
   Rocket,
   Sparkles,
-  Sprout,
   Vault,
   Wallet,
   Workflow,
@@ -186,7 +186,9 @@ export const SelectSettingsAction = ({
       title: t('actions.spaceTokenPurchase.title'),
       description: t('actions.spaceTokenPurchase.description'),
       href: 'create/space-token-purchase',
-      icon: <Sprout className="size-[22px] shrink-0" strokeWidth={1.75} />,
+      icon: (
+        <CloudLightning className="size-[22px] shrink-0" strokeWidth={1.75} />
+      ),
       disabled: isPaymentExpired,
     },
     {
