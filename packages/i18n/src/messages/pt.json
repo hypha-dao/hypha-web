@@ -585,6 +585,7 @@
     "createAgreementBaseFields": {
       "agreementLabel": "Acordo",
       "backToCreate": "Voltar para criar",
+      "resetForm": "Repor",
       "formContextMissing": "O contexto do formulário está faltando!",
       "delegate": "Delegar",
       "proposalTitlePlaceholder": "Título da proposta...",
