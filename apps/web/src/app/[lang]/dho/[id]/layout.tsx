@@ -96,8 +96,15 @@ export default async function DhoLayout({
           spaceMembers={spaceMembers}
           spaceAgreements={spaceAgreements}
         />
-        {tab}
-        {children}
+        <div
+          style={{
+            paddingTop: 'var(--dho-sticky-pad, 0px)',
+            transition: 'padding-top 0.25s ease',
+          }}
+        >
+          {tab}
+          {children}
+        </div>
         <div className="space-y-9">
           <Separator />
           <div className="border-primary-foreground">

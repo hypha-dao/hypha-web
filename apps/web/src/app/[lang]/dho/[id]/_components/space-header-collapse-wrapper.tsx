@@ -19,6 +19,7 @@ import {
   AbsorbedBreadcrumbRow,
   StickySpaceBreadcrumbsInline,
 } from './sticky-space-breadcrumbs';
+import { SpaceStickyPadSync } from './space-sticky-pad-sync';
 
 function smoothstep(edge0: number, edge1: number, x: number) {
   const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
@@ -168,6 +169,7 @@ export function SpaceHeaderCollapseWrapper({
 
   return (
     <SpaceHeaderMorphProvider containerRef={containerRef}>
+      <SpaceStickyPadSync />
       <MorphCompactBarPortal
         mounted={mounted}
         title={title}
