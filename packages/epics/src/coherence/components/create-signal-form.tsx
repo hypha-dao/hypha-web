@@ -306,7 +306,7 @@ export const CreateSignalForm = ({
                 size="lg"
                 isLoading={isCreatingCoherence}
                 avatarSrc={person?.avatarUrl || ''}
-                userName=""
+                userName={[person?.name, person?.surname].filter(Boolean).join(' ')}
               />
               <div className="flex min-w-0 flex-1 flex-col gap-3">
                 <FormField
