@@ -54,7 +54,8 @@ export function CompactSpaceBanner({
   return (
     <section
       className={cn(
-        'relative overflow-hidden rounded-xl',
+        /* Production-style corner: large smooth radius + hairline dark rim (ref image 1) */
+        'relative overflow-hidden rounded-[40px] border border-[#1a1a1a]',
         'shadow-[0_24px_48px_-12px_rgba(5,33,22,0.55)]',
         'p-8',
         className,
