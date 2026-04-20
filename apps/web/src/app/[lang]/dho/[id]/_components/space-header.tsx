@@ -1,4 +1,5 @@
 import {
+  JoinSpace,
   SalesBanner,
   SpaceModeLabel,
   WebLinks,
@@ -12,25 +13,25 @@ import {
   DEFAULT_SPACE_LEAD_IMAGE,
 } from '@hypha-platform/core/client';
 import { getDhoPathAgreements } from '../@tab/agreements/constants';
+import { ActionButtons } from './action-buttons';
 import { NestedSpacesButton } from './nested-spaces-button';
 import { Breadcrumbs } from './breadcrumbs';
-import { SpaceHeaderClearMenuBreadcrumbs } from './space-header-clear-menu-breadcrumbs';
-import { SpaceHeaderAvatar } from './space-header-avatar';
+import { SpaceHeaderActionsMeasure } from './space-header-actions-measure';
+import { SpaceHeaderContextBar } from './space-header-context-bar';
 import { SpaceHeaderCollapseWrapper } from './space-header-collapse-wrapper';
 import { SpaceHeaderHeroClip } from './space-header-hero-clip';
-import { SpaceHeaderHeroActions } from './space-header-hero-actions';
+import { SpaceHeaderHeroFooterRow } from './space-header-hero-footer-row';
+import { SpaceHeaderInsetAvatar } from './space-header-inset-avatar';
+import { SpaceHeaderMenuBridge } from './space-header-menu-bridge';
 import { canConvertToBigInt, cn, formatDate } from '@hypha-platform/ui-utils';
 import { getTranslations } from 'next-intl/server';
 
 const PURPOSE_MAX_CHARS = 300;
 
-/** Hero height (slightly taller for top chrome row + buttons on-card) */
-const HERO_H = 'min-h-[300px] max-h-[300px] h-[300px]';
+/** Hero height — room for inset avatar row + purpose + footer row */
+const HERO_H = 'min-h-[320px] max-h-[320px] h-[320px]';
 
-/** Left inset: avatar is centred on left edge with ~34% bleed — keep copy clear */
-const INSET_CLEAR_AVATAR = 'pl-[104px] sm:pl-[118px] md:pl-[124px]';
-
-/** Option D: purpose wraps in a left column; right side of banner stays visible for lead art */
+/** Option D: purpose wraps in a left column */
 const PURPOSE_WRAP =
   'w-full min-w-0 max-w-full sm:max-w-[min(28rem,92%)] md:max-w-[min(30rem,50%)] lg:max-w-[min(34rem,48%)]';
 
@@ -75,21 +76,47 @@ export async function SpaceHeader({
       : rawPurpose;
   const hasPurpose = purposeDisplay.length > 0;
 
+  const breadcrumbDefault = (
+    <Breadcrumbs spaceId={spaceId} lang={lang} variant="default" />
+  );
+  const navDefault =
+    typeof web3SpaceId === 'number' ? (
+      <NestedSpacesButton web3SpaceId={web3SpaceId} spaceSlug={daoSlug} />
+    ) : null;
+  const navChrome =
+    typeof web3SpaceId === 'number' ? (
+      <NestedSpacesButton
+        variant="compactChrome"
+        web3SpaceId={web3SpaceId}
+        spaceSlug={daoSlug}
+      />
+    ) : null;
+
   return (
     <header className="mb-5 space-y-3" aria-labelledby="space-title">
       <SpaceHeaderCollapseWrapper
-        menuBreadcrumbBridge={<SpaceHeaderClearMenuBreadcrumbs />}
+        menuBreadcrumbBridge={
+          <SpaceHeaderMenuBridge>{null}</SpaceHeaderMenuBridge>
+        }
         title={title}
         logoUrl={logoUrl ?? null}
-        spaceMembers={spaceMembers}
         web3SpaceId={web3SpaceId}
         spaceId={spaceId}
+        heroCompactBreadcrumbs={
+          <Breadcrumbs spaceId={spaceId} lang={lang} variant="heroOverlay" />
+        }
+        heroCompactNav={navChrome}
       >
-        <div className="relative mb-0 overflow-visible pl-3 sm:pl-5">
+        <SpaceHeaderContextBar
+          breadcrumbs={breadcrumbDefault}
+          trailing={navDefault}
+        />
+
+        <div className="relative mb-0">
           <div
             data-space-hero-card
             className={cn(
-              'relative isolate flex w-full flex-col overflow-visible rounded-2xl border border-neutral-6 shadow-md',
+              'relative isolate flex w-full flex-col overflow-hidden rounded-2xl border border-neutral-6 shadow-md',
               HERO_H,
             )}
           >
@@ -119,46 +146,21 @@ export async function SpaceHeader({
               </div>
             </SpaceHeaderHeroClip>
 
-            <SpaceHeaderAvatar src={logoUrl || DEFAULT_SPACE_AVATAR_IMAGE} />
-
-            <div
-              className={cn(
-                'relative z-[25] flex h-full min-h-0 flex-col overflow-hidden rounded-2xl px-5 py-5 sm:px-7 sm:py-6',
-                INSET_CLEAR_AVATAR,
-              )}
-            >
-              <div className="flex shrink-0 flex-col gap-3 pb-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-x-4 sm:gap-y-2 sm:pb-4">
-                <div className="min-w-0 flex-1">
-                  <Breadcrumbs
-                    spaceId={spaceId}
-                    lang={lang}
-                    variant="heroOverlay"
-                  />
-                </div>
-                <div className="flex flex-shrink-0 flex-wrap items-center justify-start gap-x-4 gap-y-2 sm:justify-end">
-                  {typeof web3SpaceId === 'number' ? (
-                    <NestedSpacesButton
-                      variant="heroCompact"
-                      web3SpaceId={web3SpaceId}
-                      spaceSlug={daoSlug}
-                    />
-                  ) : null}
-                  <SpaceHeaderHeroActions
-                    web3SpaceId={web3SpaceId}
-                    spaceId={spaceId}
-                  />
-                </div>
-              </div>
-
-              <div className="flex shrink-0 flex-col gap-2">
-                <Text
-                  id="space-title"
-                  className="text-balance text-6 font-semibold tracking-tight text-white drop-shadow-sm sm:text-7"
-                >
-                  {title}
-                </Text>
-                <div className="[&_a]:text-white/90 [&_a:hover]:text-white [&_svg]:text-white/75">
-                  <WebLinks links={links} />
+            <div className="relative z-[25] flex h-full min-h-0 flex-col overflow-hidden rounded-2xl px-5 py-5 sm:px-7 sm:py-6">
+              <div className="flex shrink-0 items-start gap-3.5 sm:gap-4">
+                <SpaceHeaderInsetAvatar
+                  src={logoUrl || DEFAULT_SPACE_AVATAR_IMAGE}
+                />
+                <div className="flex min-w-0 flex-1 flex-col gap-2 pt-0.5">
+                  <Text
+                    id="space-title"
+                    className="text-balance text-6 font-semibold tracking-tight text-white drop-shadow-sm sm:text-7"
+                  >
+                    {title}
+                  </Text>
+                  <div className="[&_a]:text-white/90 [&_a:hover]:text-white [&_svg]:text-white/75">
+                    <WebLinks links={links} />
+                  </div>
                 </div>
               </div>
 
@@ -193,6 +195,31 @@ export async function SpaceHeader({
                   </div>
                 </div>
               </div>
+
+              <SpaceHeaderHeroFooterRow
+                breadcrumbs={
+                  <Breadcrumbs
+                    spaceId={spaceId}
+                    lang={lang}
+                    variant="heroOverlay"
+                  />
+                }
+                trailing={
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    {typeof web3SpaceId === 'number' ? (
+                      <JoinSpace web3SpaceId={web3SpaceId} spaceId={spaceId} />
+                    ) : null}
+                    <ActionButtons web3SpaceId={web3SpaceId as number} />
+                    {typeof web3SpaceId === 'number' ? (
+                      <NestedSpacesButton
+                        variant="heroCompact"
+                        web3SpaceId={web3SpaceId}
+                        spaceSlug={daoSlug}
+                      />
+                    ) : null}
+                  </div>
+                }
+              />
 
               <div className="shrink-0 border-t border-white/15 pt-4 sm:pt-5">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
@@ -248,7 +275,14 @@ export async function SpaceHeader({
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 pt-5 sm:gap-5 sm:pt-6">
+        <SpaceHeaderActionsMeasure className="flex flex-wrap justify-end gap-2 px-5 pt-5 sm:px-7 sm:pt-6">
+          {typeof web3SpaceId === 'number' ? (
+            <JoinSpace web3SpaceId={web3SpaceId} spaceId={spaceId} />
+          ) : null}
+          <ActionButtons web3SpaceId={web3SpaceId as number} />
+        </SpaceHeaderActionsMeasure>
+
+        <div className="flex flex-col gap-4 pt-4 sm:gap-5">
           <SalesBanner web3SpaceId={web3SpaceId as number} />
         </div>
       </SpaceHeaderCollapseWrapper>

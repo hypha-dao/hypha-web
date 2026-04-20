@@ -4,29 +4,29 @@ import { useEffect } from 'react';
 
 import { useSpaceHeaderMorph } from './space-header-morph-context';
 
-/** Approx max height of compact bar portal only (breadcrumbs live in MenuTop). */
-const MAX_STICKY_STACK_PX = 56;
-
-function padPx(p: number) {
-  /* Linear — avoids “two-step” feel vs hero morph */
-  const t = Math.min(1, Math.max(0, p));
-  return Math.round(t * MAX_STICKY_STACK_PX);
-}
+const COMPACT_BAR_PX = 64;
 
 /**
- * Reserves vertical space below MenuTop while fixed space chrome is visible,
- * so tab/content is not covered by portal layers.
+ * Reserves space when the fixed compact bar (duplicated actions) is shown
+ * so page content is not covered.
  */
 export function SpaceStickyPadSync() {
-  const { progress } = useSpaceHeaderMorph();
+  const { compactBarActive, progress } = useSpaceHeaderMorph();
 
   useEffect(() => {
-    const px = padPx(progress);
+    if (!compactBarActive) {
+      document.documentElement.style.setProperty('--dho-sticky-pad', '0px');
+      return () => {
+        document.documentElement.style.removeProperty('--dho-sticky-pad');
+      };
+    }
+    const fade = Math.min(1, Math.max(0, progress));
+    const px = Math.round(COMPACT_BAR_PX * fade);
     document.documentElement.style.setProperty('--dho-sticky-pad', `${px}px`);
     return () => {
       document.documentElement.style.removeProperty('--dho-sticky-pad');
     };
-  }, [progress]);
+  }, [compactBarActive, progress]);
 
   return null;
 }

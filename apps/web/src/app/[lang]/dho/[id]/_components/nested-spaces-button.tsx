@@ -15,8 +15,8 @@ import { useTranslations } from 'next-intl';
 interface NestedSpacesButtonProps {
   web3SpaceId?: number;
   spaceSlug?: string;
-  /** Compact hero overlay (smaller text, white links) */
-  variant?: 'default' | 'heroCompact';
+  /** Compact hero overlay (white) | compact sticky chrome (accent) */
+  variant?: 'default' | 'heroCompact' | 'compactChrome';
 }
 
 export const NestedSpacesButton = ({
@@ -52,6 +52,7 @@ export const NestedSpacesButton = ({
     : tDho('nestedSpacesButton.label');
 
   const isHero = variant === 'heroCompact';
+  const isChrome = variant === 'compactChrome';
 
   return (
     <Link
@@ -69,10 +70,12 @@ export const NestedSpacesButton = ({
         className={
           isHero
             ? 'flex h-auto min-h-0 items-center gap-1.5 p-0 text-[11px] font-medium leading-tight text-white/90 underline-offset-2 hover:text-white hover:no-underline disabled:text-white/40 [&_svg]:size-3.5 [&_svg]:text-white/75'
+            : isChrome
+            ? 'flex h-auto min-h-0 items-center gap-1.5 p-0 text-[11px] font-medium leading-tight text-accent-11 underline-offset-2 hover:text-accent-11 hover:no-underline disabled:text-muted-foreground [&_svg]:size-3.5'
             : 'flex items-center gap-2 text-accent-11'
         }
       >
-        <Eye className={isHero ? 'size-3.5' : 'w-4 h-4'} />
+        <Eye className={isHero || isChrome ? 'size-3.5' : 'w-4 h-4'} />
         <span>{tDho('nestedSpacesButton.label')}</span>
       </Button>
     </Link>

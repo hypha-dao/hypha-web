@@ -10,18 +10,23 @@ import {
   useState,
 } from 'react';
 
-/** Align with MenuTop `min-h-[65px]` */
-export const SPACE_MENU_TOP_PX = 65;
+/** Fallback when `--app-menu-top-h` is unset */
+export const SPACE_MENU_TOP_FALLBACK_PX = 65;
 
 export type SpaceHeaderMorphContextValue = {
   /** 0 = hero fully visible below fold concept; 1 = hero eaten / compact state */
   progress: number;
   reducedMotion: boolean;
+  /** True when below-banner actions row scrolls under MenuTop (+ optional subnav) — drives compact bar visibility */
+  compactBarActive: boolean;
+  setCompactBarActive: (active: boolean) => void;
 };
 
 const SpaceHeaderMorphContext = createContext<SpaceHeaderMorphContextValue>({
   progress: 0,
   reducedMotion: false,
+  compactBarActive: false,
+  setCompactBarActive: () => {},
 });
 
 export function useSpaceHeaderMorph() {
@@ -33,16 +38,23 @@ type ProviderProps = {
   containerRef: React.RefObject<HTMLElement | null>;
 };
 
-/**
- * Drives scroll progress for hero clip + avatar motion + compact bar morph.
- */
+function parseCssPx(value: string): number {
+  const n = parseFloat(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
 export function SpaceHeaderMorphProvider({
   children,
   containerRef,
 }: ProviderProps) {
   const [progress, setProgress] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [compactBarActive, setCompactBarActiveState] = useState(false);
   const frameRef = useRef<number>(0);
+
+  const setCompactBarActive = useCallback((active: boolean) => {
+    setCompactBarActiveState((p) => (p === active ? p : active));
+  }, []);
 
   const updateProgress = useCallback(() => {
     const root = containerRef.current;
@@ -55,8 +67,18 @@ export function SpaceHeaderMorphProvider({
     }
 
     const rect = hero.getBoundingClientRect();
-    const menuLine = SPACE_MENU_TOP_PX;
-    /* Eat starts when hero top crosses menu line; completes over ~hero height overlap */
+    const menuTopVar = parseCssPx(
+      getComputedStyle(document.documentElement).getPropertyValue(
+        '--app-menu-top-h',
+      ),
+    );
+    const subNavVar = parseCssPx(
+      getComputedStyle(document.documentElement).getPropertyValue(
+        '--app-subnav-h',
+      ),
+    );
+    const menuLine =
+      (menuTopVar || SPACE_MENU_TOP_FALLBACK_PX) + (subNavVar || 0);
     const span = Math.max(rect.height + 48, 200);
     const raw = (menuLine - rect.top) / span;
     const p = Math.min(1, Math.max(0, raw));
@@ -91,8 +113,13 @@ export function SpaceHeaderMorphProvider({
   }, [updateProgress]);
 
   const value = useMemo(
-    () => ({ progress, reducedMotion }),
-    [progress, reducedMotion],
+    () => ({
+      progress,
+      reducedMotion,
+      compactBarActive,
+      setCompactBarActive,
+    }),
+    [progress, reducedMotion, compactBarActive, setCompactBarActive],
   );
 
   return (

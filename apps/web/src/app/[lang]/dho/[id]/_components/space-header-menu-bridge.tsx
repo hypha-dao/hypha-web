@@ -1,16 +1,15 @@
 'use client';
 
 import { useSetMenuBreadcrumb } from '@web/components/menu-breadcrumb-context';
-import { useLayoutEffect } from 'react';
+import { useLayoutEffect, type ReactNode } from 'react';
 
-/** Breadcrumbs render on the hero — keep global MenuTop clear on DHO */
-export function SpaceHeaderClearMenuBreadcrumbs() {
+export function SpaceHeaderMenuBridge({ children }: { children: ReactNode }) {
   const setSlot = useSetMenuBreadcrumb();
 
   useLayoutEffect(() => {
-    setSlot(null);
+    setSlot(children);
     return () => setSlot(null);
-  }, [setSlot]);
+  }, [children, setSlot]);
 
   return null;
 }
