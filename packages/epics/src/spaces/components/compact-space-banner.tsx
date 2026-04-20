@@ -227,7 +227,17 @@ export function CompactSpaceBanner({
 
         {/* Below header: same horizontal origin as avatar — not nested in title column */}
         {description ? (
-          <div className={DESCRIPTION_SCROLL_BOX}>
+          <div
+            role="region"
+            aria-label={
+              logoAlt ? `${logoAlt}: description` : 'Space description'
+            }
+            tabIndex={0}
+            className={cn(
+              DESCRIPTION_SCROLL_BOX,
+              'outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
+            )}
+          >
             <p className="text-pretty text-2 leading-[1.5] text-white/95 [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]">
               {description}
             </p>
