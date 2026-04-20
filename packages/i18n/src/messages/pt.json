@@ -39,13 +39,13 @@
     "Coherence": "Coerência",
     "uploadLeadImage": {
       "cropTitle": "Carregar uma imagem",
-      "cropDescription": "Ajuste o enquadramento e guarde. Arraste para reposicionar e use o zoom para a área do banner (JPEG, PNG ou WebP — máx. 4 MB).",
+      "cropDescription": "Ajuste o enquadramento e salve. Arraste para reposicionar e use o zoom para a área do banner (JPEG, PNG ou WebP — máx. 4 MB).",
       "cancel": "Cancelar",
-      "confirm": "Recortar e guardar",
-      "dropHere": "Largue a imagem aqui",
+      "confirm": "Recortar e salvar",
+      "dropHere": "Solte a imagem aqui",
       "genericUploadFallback": "<accent>Carregar</accent> uma imagem",
-      "fileTooLarge": "A sua imagem é demasiado grande (máx. 4 MB) e não foi possível carregá-la. Reduza o tamanho e tente novamente.",
-      "uploadFailed": "Não foi possível carregar o ficheiro."
+      "fileTooLarge": "Sua imagem é muito grande (máx. 4 MB) e não foi possível carregá-la. Reduza o tamanho e tente novamente.",
+      "uploadFailed": "Não foi possível carregar o arquivo."
     }
   },
   "ModalAside": {
@@ -1059,7 +1059,8 @@
   },
   "Profile": {
     "signup": {
-      "loading": "A carregar..."
+      "loading": "A carregar...",
+      "creatingProfile": "Criando perfil..."
     },
     "profilePage": "Página de perfil",
     "personNotFound": "Pessoa não encontrada",

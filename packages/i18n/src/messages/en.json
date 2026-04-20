@@ -421,7 +421,8 @@
   },
   "Profile": {
     "signup": {
-      "loading": "Loading..."
+      "loading": "Loading...",
+      "creatingProfile": "Creating profile..."
     },
     "profilePage": "Profile Page",
     "personNotFound": "Person not found",

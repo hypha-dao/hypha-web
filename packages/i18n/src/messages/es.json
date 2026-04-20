@@ -1059,7 +1059,8 @@
   },
   "Profile": {
     "signup": {
-      "loading": "Cargando..."
+      "loading": "Cargando...",
+      "creatingProfile": "Creando perfil..."
     },
     "profilePage": "Página de perfil",
     "personNotFound": "Persona no encontrada",

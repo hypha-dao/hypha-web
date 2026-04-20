@@ -421,7 +421,8 @@
   },
   "Profile": {
     "signup": {
-      "loading": "Chargement…"
+      "loading": "Chargement…",
+      "creatingProfile": "Création du profil…"
     },
     "profilePage": "Page de profil",
     "personNotFound": "Personne introuvable",
