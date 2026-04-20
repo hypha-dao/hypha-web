@@ -3,6 +3,7 @@ import { LinkIcon } from '../../common/link-icon';
 import { LinkLabel } from '../../common/link-label';
 import { Avatar, AvatarImage } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { CompactSpaceBannerLead } from './compact-space-banner-lead';
 
 function isSafeLinkHref(url: string): boolean {
   const t = url.trim();
@@ -25,10 +26,6 @@ function isSafeTextureUrl(raw: string): boolean {
   } catch {
     return false;
   }
-}
-
-function cssUrlQuoted(url: string): string {
-  return JSON.stringify(url);
 }
 
 /** Matches PR #2165 `SpaceHeaderInsetAvatar` footprint */
@@ -97,14 +94,10 @@ export function CompactSpaceBanner({
       )}
       aria-label={title}
     >
-      {/* Lead image fill — PR #2165 hero-style base */}
+      {/* Lead image — Image + preload avoids grey decode flash; overlays unchanged */}
       {textureSrc ? (
         <>
-          <div
-            className="pointer-events-none absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${cssUrlQuoted(textureSrc)})` }}
-            aria-hidden
-          />
+          <CompactSpaceBannerLead src={textureSrc} />
           {/* Exact overlay stack from PR #2165 SpaceHeaderHeroCard */}
           <div
             className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/88 via-black/42 via-[52%] to-black/22"
