@@ -6,7 +6,9 @@ import {
   SpaceModeLabel,
   SubscriptionBadge,
   CompactSpaceBanner,
+  SpaceAccentFromImages,
 } from '@hypha-platform/epics';
+import './space-accent.css';
 import { Locale } from '@hypha-platform/i18n';
 import { Container, Separator } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
@@ -107,6 +109,13 @@ export default async function DhoLayout({
       ? rawLead
       : DEFAULT_SPACE_LEAD_IMAGE;
 
+  const accentLogoHref =
+    spaceFromDb.logoUrl?.trim() &&
+    (spaceFromDb.logoUrl.startsWith('/') ||
+      /^https?:\/\//i.test(spaceFromDb.logoUrl))
+      ? spaceFromDb.logoUrl.trim()
+      : DEFAULT_SPACE_AVATAR_IMAGE;
+
   return (
     <div className="mx-auto flex max-w-container-2xl">
       <Container className="min-w-0 flex-grow !px-4">
@@ -118,77 +127,83 @@ export default async function DhoLayout({
             fetchPriority="high"
           />
         ) : null}
-        {/* Single column + gap-2: tight rhythm under chrome; matches banner ↔ actions */}
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 md:gap-x-4">
-            <div className="flex min-w-0 flex-1 items-center">
-              <Breadcrumbs spaceId={spaceFromDb.id} lang={lang} />
-            </div>
-            {web3SpaceId !== undefined ? (
-              <NestedSpacesButton
-                web3SpaceId={web3SpaceId}
-                spaceSlug={daoSlug}
-              />
-            ) : null}
-          </div>
-          <CompactSpaceBanner
-            title={spaceFromDb.title}
-            description={spaceFromDb.description}
-            logoUrl={spaceFromDb.logoUrl}
-            logoAlt={spaceFromDb.title}
-            defaultLogoSrc={DEFAULT_SPACE_AVATAR_IMAGE}
-            links={spaceFromDb.links}
-            leadImageUrl={spaceFromDb.leadImage}
-            defaultLeadImageSrc={DEFAULT_SPACE_LEAD_IMAGE}
-            memberCount={spaceMembers}
-            agreementCount={spaceAgreements}
-            createdOnText={tCommon('createdOn', {
-              date: formatDate(spaceFromDb.createdAt, true),
-            })}
-            membersLabel={tCommon('Members')}
-            agreementsLabel={tCommon('Agreements')}
-            footerTrailing={
-              <>
-                {hasWeb3Id && web3SpaceId !== undefined && (
-                  <SubscriptionBadge
-                    web3SpaceId={web3SpaceId}
-                    className="rounded-md border-emerald-400/85 bg-transparent text-white hover:border-emerald-300 hover:bg-white/10 [&]:rounded-md [&]:border-emerald-400/85 [&]:text-white"
-                  />
-                )}
-                <SpaceModeLabel
+        <SpaceAccentFromImages
+          bannerSrc={heroBannerImageHref}
+          logoSrc={accentLogoHref}
+        >
+          {/* Single column + gap-2: tight rhythm under chrome; matches banner ↔ actions */}
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 md:gap-x-4">
+              <div className="flex min-w-0 flex-1 items-center">
+                <Breadcrumbs spaceId={spaceFromDb.id} lang={lang} />
+              </div>
+              {web3SpaceId !== undefined ? (
+                <NestedSpacesButton
                   web3SpaceId={web3SpaceId}
-                  isSandbox={spaceFromDb.flags.includes('sandbox')}
-                  isDemo={spaceFromDb.flags.includes('demo')}
-                  isArchived={
-                    spaceFromDb.flags.includes('archived') || spaceMembers === 0
-                  }
-                  configPath={`${getDhoPathAgreements(
-                    lang,
-                    daoSlug,
-                  )}/space-configuration`}
-                  className="[&_.border-accent-8]:rounded-md [&_.border-accent-8]:border-white/85 [&_.border-accent-8]:bg-transparent [&_.border-accent-8]:text-white [&_.border-accent-8]:hover:border-white [&_.border-accent-8]:hover:bg-white/10 [&_.border-error-8]:rounded-md [&_.border-error-8]:border-white/85 [&_.border-error-8]:bg-transparent [&_.border-error-8]:text-white [&_.border-warning-8]:rounded-md [&_.border-warning-8]:border-amber-200/90 [&_.border-warning-8]:bg-transparent [&_.border-warning-8]:text-white"
+                  spaceSlug={daoSlug}
                 />
-              </>
-            }
-          />
-          <div className="flex justify-end gap-2">
-            {web3SpaceId !== undefined && (
-              <JoinSpace web3SpaceId={web3SpaceId} spaceId={spaceFromDb.id} />
-            )}
-            <ActionButtons web3SpaceId={web3SpaceId} />
+              ) : null}
+            </div>
+            <CompactSpaceBanner
+              title={spaceFromDb.title}
+              description={spaceFromDb.description}
+              logoUrl={spaceFromDb.logoUrl}
+              logoAlt={spaceFromDb.title}
+              defaultLogoSrc={DEFAULT_SPACE_AVATAR_IMAGE}
+              links={spaceFromDb.links}
+              leadImageUrl={spaceFromDb.leadImage}
+              defaultLeadImageSrc={DEFAULT_SPACE_LEAD_IMAGE}
+              memberCount={spaceMembers}
+              agreementCount={spaceAgreements}
+              createdOnText={tCommon('createdOn', {
+                date: formatDate(spaceFromDb.createdAt, true),
+              })}
+              membersLabel={tCommon('Members')}
+              agreementsLabel={tCommon('Agreements')}
+              footerTrailing={
+                <>
+                  {hasWeb3Id && web3SpaceId !== undefined && (
+                    <SubscriptionBadge
+                      web3SpaceId={web3SpaceId}
+                      className="rounded-md border-emerald-400/85 bg-transparent text-white hover:border-emerald-300 hover:bg-white/10 [&]:rounded-md [&]:border-emerald-400/85 [&]:text-white"
+                    />
+                  )}
+                  <SpaceModeLabel
+                    web3SpaceId={web3SpaceId}
+                    isSandbox={spaceFromDb.flags.includes('sandbox')}
+                    isDemo={spaceFromDb.flags.includes('demo')}
+                    isArchived={
+                      spaceFromDb.flags.includes('archived') ||
+                      spaceMembers === 0
+                    }
+                    configPath={`${getDhoPathAgreements(
+                      lang,
+                      daoSlug,
+                    )}/space-configuration`}
+                    className="[&_.border-accent-8]:rounded-md [&_.border-accent-8]:border-white/85 [&_.border-accent-8]:bg-transparent [&_.border-accent-8]:text-white [&_.border-accent-8]:hover:border-white [&_.border-accent-8]:hover:bg-white/10 [&_.border-error-8]:rounded-md [&_.border-error-8]:border-white/85 [&_.border-error-8]:bg-transparent [&_.border-error-8]:text-white [&_.border-warning-8]:rounded-md [&_.border-warning-8]:border-amber-200/90 [&_.border-warning-8]:bg-transparent [&_.border-warning-8]:text-white"
+                  />
+                </>
+              }
+            />
+            <div className="flex justify-end gap-2">
+              {web3SpaceId !== undefined && (
+                <JoinSpace web3SpaceId={web3SpaceId} spaceId={spaceFromDb.id} />
+              )}
+              <ActionButtons web3SpaceId={web3SpaceId} />
+            </div>
           </div>
-        </div>
-        <div className="mt-4 flex flex-col gap-3">
-          <SalesBanner web3SpaceId={web3SpaceId} />
-          <SpaceEscrowDepositBanners
-            web3SpaceId={web3SpaceId}
-            spaceDbId={spaceFromDb.id}
-            spaceSlug={daoSlug}
-            lang={lang}
-          />
-        </div>
-        {tab}
-        {children}
+          <div className="mt-4 flex flex-col gap-3">
+            <SalesBanner web3SpaceId={web3SpaceId} />
+            <SpaceEscrowDepositBanners
+              web3SpaceId={web3SpaceId}
+              spaceDbId={spaceFromDb.id}
+              spaceSlug={daoSlug}
+              lang={lang}
+            />
+          </div>
+          {tab}
+          {children}
+        </SpaceAccentFromImages>
         <div className="space-y-9">
           <Separator />
           <div className="border-primary-foreground">
