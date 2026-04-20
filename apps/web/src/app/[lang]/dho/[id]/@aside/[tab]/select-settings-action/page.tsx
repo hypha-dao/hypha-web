@@ -24,7 +24,7 @@ export default async function SelectSettingsActions({
         <ModalStickyNavigation
           contextTitle={tModalAside('spaceSettings')}
           closeDropSegment={PATH_SELECT_SETTINGS_ACTION}
-          backToParent
+          showBack={false}
         />
         <SelectSettingsAction lang={lang} daoSlug={daoSlug} activeTab={tab}>
           <ActivateProposalsBanner
