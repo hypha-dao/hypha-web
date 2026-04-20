@@ -122,6 +122,7 @@ export default async function DhoLayout({
     <SpaceAccentPortalBridge>
       <div className="mx-auto flex max-w-container-2xl">
         <Container className="min-w-0 flex-grow !px-4">
+          {/* React 19+: link rel="preload" is hoisted to document head */}
           {heroBannerImageHref ? (
             <link
               rel="preload"
