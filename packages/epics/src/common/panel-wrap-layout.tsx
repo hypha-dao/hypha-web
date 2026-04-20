@@ -173,6 +173,7 @@ export function PanelWrapLayout({
 
   return (
     <div
+      data-hypha-panel-wrap-root
       style={
         {
           '--sidebar-right-width':

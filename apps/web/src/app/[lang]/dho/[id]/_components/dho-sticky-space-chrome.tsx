@@ -10,14 +10,23 @@ import {
 } from '@hypha-platform/epics';
 import { cn } from '@hypha-platform/ui-utils';
 
-export type DhoStickySpaceChromeProps = {
-  banner: React.ReactNode;
-  actionsSlot: React.ReactNode;
-  title: string;
-  logoUrl: string;
-  logoAlt: string;
-  defaultLogoSrc: string;
-};
+const PANEL_WRAP_SEL = '[data-hypha-panel-wrap-root]';
+
+function getScrollableAncestors(start: Element | null): (Element | Window)[] {
+  const out: (Element | Window)[] = [];
+  let el: Element | null = start;
+  while (el && el !== document.body) {
+    const st = getComputedStyle(el);
+    const oy = st.overflowY;
+    const ox = st.overflowX;
+    if (/(auto|scroll|overlay)/.test(oy) || /(auto|scroll|overlay)/.test(ox)) {
+      out.push(el);
+    }
+    el = el.parentElement;
+  }
+  out.push(window);
+  return out;
+}
 
 function useMenuTopOffsetPx(): number {
   /** Mirrors `--menu-top-fallback-height` until MenuTop publishes `--menu-top-height`. */
@@ -60,10 +69,62 @@ function useMenuTopOffsetPx(): number {
   return px;
 }
 
+/** PanelWrapLayout sets sidebar widths on a nested div; sync to :root so portaled chrome can read them. */
+function useSyncPanelSidebarWidthsToDocument(
+  scopeRef: React.RefObject<HTMLElement | null>,
+) {
+  React.useLayoutEffect(() => {
+    const sync = () => {
+      const scope = scopeRef.current;
+      const panelRoot = scope?.closest(PANEL_WRAP_SEL) as HTMLElement | null;
+      if (!panelRoot) return;
+      const cs = getComputedStyle(panelRoot);
+      const left = cs.getPropertyValue('--sidebar-left-width').trim() || '0px';
+      const right =
+        cs.getPropertyValue('--sidebar-right-width').trim() || '0px';
+      document.documentElement.style.setProperty('--sidebar-left-width', left);
+      document.documentElement.style.setProperty(
+        '--sidebar-right-width',
+        right,
+      );
+    };
+
+    sync();
+
+    const scope = scopeRef.current;
+    const panelRoot = scope?.closest(PANEL_WRAP_SEL) as HTMLElement | null;
+    if (!panelRoot) return;
+
+    const mo = new MutationObserver(sync);
+    mo.observe(panelRoot, { attributes: true, attributeFilter: ['style'] });
+    const ro = new ResizeObserver(sync);
+    ro.observe(panelRoot);
+
+    return () => {
+      mo.disconnect();
+      ro.disconnect();
+      document.documentElement.style.removeProperty('--sidebar-left-width');
+      document.documentElement.style.removeProperty('--sidebar-right-width');
+    };
+  }, [scopeRef]);
+}
+
+export type DhoStickySpaceChromeProps = {
+  banner: React.ReactNode;
+  actionsSlot: React.ReactNode;
+  title: string;
+  logoUrl: string;
+  logoAlt: string;
+  defaultLogoSrc: string;
+};
+
 /**
  * Desktop (md+): pin a compact chrome row under `MenuTop`. Actions move via portal so the same
- * React trees transition between positions. Horizontal inset matches `CompactSpaceBanner` (`px-8`)
- * so avatar, title, and actions align with the banner card edges.
+ * React trees transition between positions. Horizontal inset matches `CompactSpaceBanner` (`px-8`).
+ *
+ * The sticky shell is portaled to `document.body` so it is not clipped by `SidebarInset`'s
+ * overflow (fixed descendants are clipped to scroll containers in common browsers). Width is
+ * constrained with `--sidebar-left-width` / `--sidebar-right-width` like other global overlays.
  */
 export function DhoStickySpaceChrome({
   banner,
@@ -75,6 +136,14 @@ export function DhoStickySpaceChrome({
 }: DhoStickySpaceChromeProps) {
   const menuTopPx = useMenuTopOffsetPx();
   const sentinelRef = React.useRef<HTMLDivElement>(null);
+  const flowColumnRef = React.useRef<HTMLDivElement>(null);
+
+  useSyncPanelSidebarWidthsToDocument(flowColumnRef);
+
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const [flowActionsEl, setFlowActionsEl] =
     React.useState<HTMLDivElement | null>(null);
@@ -104,7 +173,6 @@ export function DhoStickySpaceChrome({
     if (!sentinel) return;
 
     const mq = window.matchMedia('(min-width: 768px)');
-    /** Small hysteresis (px) so rapid scroll does not flicker; keeps trigger near banner bottom ≡ menu line */
     const HYST = 2;
     let raf = 0;
 
@@ -117,7 +185,6 @@ export function DhoStickySpaceChrome({
         }
         return;
       }
-      /** Sticky when banner bottom meets the menu bottom edge (y = --menu-top-height). */
       const bottom = sentinel.getBoundingClientRect().bottom;
       let next = stuckRef.current;
       if (!next && bottom <= menuTopPx) next = true;
@@ -133,13 +200,17 @@ export function DhoStickySpaceChrome({
       raf = requestAnimationFrame(tick);
     };
 
+    const scrollers = getScrollableAncestors(sentinel);
     tick();
     mq.addEventListener('change', onScroll);
-    window.addEventListener('scroll', onScroll, { passive: true });
+    scrollers.forEach((s) =>
+      s.addEventListener('scroll', onScroll, { passive: true }),
+    );
     window.addEventListener('resize', onScroll);
+
     return () => {
       mq.removeEventListener('change', onScroll);
-      window.removeEventListener('scroll', onScroll);
+      scrollers.forEach((s) => s.removeEventListener('scroll', onScroll));
       window.removeEventListener('resize', onScroll);
       if (raf) cancelAnimationFrame(raf);
     };
@@ -149,53 +220,58 @@ export function DhoStickySpaceChrome({
 
   const actionsPortalTarget = stuck ? stickyActionsEl : flowActionsEl;
 
-  return (
-    <>
-      <div
-        className={cn(
-          'pointer-events-none fixed inset-x-0 z-[25] hidden md:block',
-          'border-b border-border bg-background-2 transition-[opacity,box-shadow] duration-300 ease-out',
-          stuck ? 'pointer-events-auto opacity-100 shadow-md' : 'opacity-0',
-        )}
-        style={{
-          top: 'var(--menu-top-height, var(--menu-top-fallback-height, 70px))',
-        }}
-        aria-hidden={!stuck}
-      >
-        {/* Mirror layout: Container `px-4` + banner section `px-8` so edges match CompactSpaceBanner */}
-        <div className="mx-auto w-full max-w-container-2xl px-4">
-          <div
-            className={cn(
-              'flex items-start justify-between gap-6 py-2.5',
-              COMPACT_SPACE_BANNER_CONTENT_INSET_PX_CLASS,
-            )}
-          >
-            <div className="flex min-w-0 flex-1 items-start gap-6">
-              <Avatar className={COMPACT_SPACE_BANNER_AVATAR_CLASS}>
-                <AvatarImage
-                  src={logoSrc}
-                  alt={logoAlt}
-                  className="object-cover"
-                />
-              </Avatar>
-              <p
-                className={cn(
-                  COMPACT_SPACE_BANNER_TITLE_TEXT_CLASS,
-                  'min-w-0 truncate text-foreground',
-                )}
-              >
-                {title}
-              </p>
-            </div>
-            <div
-              ref={setStickyActionsEl}
-              className="flex shrink-0 flex-nowrap items-center justify-end gap-2"
-            />
+  const stickyChrome = (
+    <div
+      className={cn(
+        'pointer-events-none fixed z-[25] hidden md:block',
+        'border-b border-border bg-background-2 transition-[opacity,box-shadow] duration-300 ease-out',
+        stuck ? 'pointer-events-auto opacity-100 shadow-md' : 'opacity-0',
+      )}
+      style={{
+        top: 'var(--menu-top-height, var(--menu-top-fallback-height, 70px))',
+        left: 'var(--sidebar-left-width, 0px)',
+        right: 'var(--sidebar-right-width, 0px)',
+      }}
+      aria-hidden={!stuck}
+    >
+      <div className="mx-auto h-full w-full max-w-container-2xl px-4">
+        <div
+          className={cn(
+            'flex items-start justify-between gap-6 py-2.5',
+            COMPACT_SPACE_BANNER_CONTENT_INSET_PX_CLASS,
+          )}
+        >
+          <div className="flex min-w-0 flex-1 items-start gap-6">
+            <Avatar className={COMPACT_SPACE_BANNER_AVATAR_CLASS}>
+              <AvatarImage
+                src={logoSrc}
+                alt={logoAlt}
+                className="object-cover"
+              />
+            </Avatar>
+            <p
+              className={cn(
+                COMPACT_SPACE_BANNER_TITLE_TEXT_CLASS,
+                'min-w-0 truncate text-foreground',
+              )}
+            >
+              {title}
+            </p>
           </div>
+          <div
+            ref={setStickyActionsEl}
+            className="flex shrink-0 flex-nowrap items-center justify-end gap-2"
+          />
         </div>
       </div>
+    </div>
+  );
 
-      <div className="flex flex-col gap-4">
+  return (
+    <>
+      {mounted ? createPortal(stickyChrome, document.body) : null}
+
+      <div ref={flowColumnRef} className="flex flex-col gap-4">
         <div className="relative">
           {banner}
           <div
