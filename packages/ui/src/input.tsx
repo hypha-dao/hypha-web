@@ -1,7 +1,8 @@
 import * as React from 'react';
 import { cn } from '@hypha-platform/ui-utils';
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
 }
