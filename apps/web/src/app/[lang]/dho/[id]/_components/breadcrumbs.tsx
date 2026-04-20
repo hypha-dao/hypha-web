@@ -48,7 +48,6 @@ async function RecursiveBreadcrumbItem({
   linkClassName?: string;
   separatorClassName?: string;
 }) {
-  console.debug('RecursiveBreadcrumbItem', { spaceId, depth, maxDepth });
   const space = await findParentSpaceById({ id: spaceId }, { db });
   if (!space || depth > maxDepth) return null;
 
