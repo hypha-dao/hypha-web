@@ -228,12 +228,20 @@ export function extractAccentHexFromImageData(data: ImageData): string {
     }
   }
 
+  const achromaticSample = (hex: string): boolean => {
+    const rgb = parseRgbFromHex(hex);
+    if (!rgb) return true;
+    return rgbToHsl(rgb[0], rgb[1], rgb[2]).s <= 0.045;
+  };
+
   if (n >= 8) {
-    return rgbToHex(rSum / n, gSum / n, bSum / n);
+    const hex = rgbToHex(rSum / n, gSum / n, bSum / n);
+    return achromaticSample(hex) ? SPACE_ACCENT_FALLBACK : hex;
   }
 
   if (wSum >= 8) {
-    return rgbToHex(wrSum / wSum, wgSum / wSum, wbSum / wSum);
+    const hex = rgbToHex(wrSum / wSum, wgSum / wSum, wbSum / wSum);
+    return achromaticSample(hex) ? SPACE_ACCENT_FALLBACK : hex;
   }
 
   return SPACE_ACCENT_FALLBACK;
