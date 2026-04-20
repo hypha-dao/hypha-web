@@ -10,10 +10,13 @@ export async function setCoherenceVoteBySlug(
   {
     slug,
     value,
+    authToken,
   }: {
     slug: string;
     /** +1 up, -1 down, 0 removes vote */
     value: -1 | 0 | 1;
+    /** Same JWT as server actions — needed for roster-style space access checks. */
+    authToken?: string;
   },
   { db }: { db: DatabaseInstance },
 ) {
@@ -30,7 +33,7 @@ export async function setCoherenceVoteBySlug(
   const allowed = await personMayInteractWithCoherenceSpace(
     person,
     coherence.spaceId,
-    { db },
+    { db, authToken },
   );
   if (!allowed) {
     throw new Error('You must be a member or delegate of this space to vote');

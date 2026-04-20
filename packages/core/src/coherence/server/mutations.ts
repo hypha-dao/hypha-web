@@ -51,7 +51,7 @@ export const createCoherence = async (
 
 export const updateCoherenceBySlug = async (
   { slug, ...rest }: { slug: string } & UpdateCoherenceInput,
-  { db }: { db: DatabaseInstance },
+  { db, authToken }: { db: DatabaseInstance; authToken?: string },
 ) => {
   const existingRows = await db
     .select()
@@ -71,7 +71,10 @@ export const updateCoherenceBySlug = async (
   if (!person) {
     throw new Error('Authentication required to update coherence');
   }
-  await assertCoherenceUpdateAllowed(person, existingRow, rest, { db });
+  await assertCoherenceUpdateAllowed(person, existingRow, rest, {
+    db,
+    authToken,
+  });
 
   const [updatedCoherence] = await db
     .update(coherences)
@@ -88,7 +91,7 @@ export const updateCoherenceBySlug = async (
 
 export const deleteCoherenceBySlug = async (
   { slug }: { slug: string },
-  { db }: { db: DatabaseInstance },
+  { db, authToken }: { db: DatabaseInstance; authToken?: string },
 ) => {
   const existingRows = await db
     .select()
@@ -108,7 +111,7 @@ export const deleteCoherenceBySlug = async (
   if (!person) {
     throw new Error('Authentication required to delete coherence');
   }
-  await assertCoherenceDeleteAllowed(person, existingRow, { db });
+  await assertCoherenceDeleteAllowed(person, existingRow, { db, authToken });
 
   const deleted = await db
     .delete(coherences)

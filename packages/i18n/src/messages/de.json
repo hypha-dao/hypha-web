@@ -1888,6 +1888,7 @@
     "deleteSignal": "Signal löschen",
     "deleteConfirm": "Dies entfernt das Signal dauerhaft aus dem Space. Fortfahren?",
     "deleteMenu": "Löschen",
-    "deleteConfirmAction": "Signal löschen"
+    "deleteConfirmAction": "Signal löschen",
+    "voteFailed": "Stimme konnte nicht gespeichert werden. Bitte erneut versuchen oder prüfen, ob die Wallet verknüpft ist."
   }
 }

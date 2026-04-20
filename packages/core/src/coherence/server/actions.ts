@@ -26,7 +26,10 @@ export async function updateCoherenceBySlugAction(
   { authToken }: { authToken?: string },
 ) {
   if (!authToken) throw new Error('authToken is required to update coherence');
-  return updateCoherenceBySlug(data, { db: getDb({ authToken }) });
+  return updateCoherenceBySlug(data, {
+    db: getDb({ authToken }),
+    authToken,
+  });
 }
 
 export async function deleteCoherenceBySlugAction(
@@ -34,7 +37,10 @@ export async function deleteCoherenceBySlugAction(
   { authToken }: { authToken?: string },
 ) {
   if (!authToken) throw new Error('authToken is required to delete coherence');
-  return deleteCoherenceBySlug(data, { db: getDb({ authToken }) });
+  return deleteCoherenceBySlug(data, {
+    db: getDb({ authToken }),
+    authToken,
+  });
 }
 
 export async function setCoherenceVoteBySlugAction(
@@ -42,7 +48,10 @@ export async function setCoherenceVoteBySlugAction(
   { authToken }: { authToken?: string },
 ) {
   if (!authToken) throw new Error('authToken is required to vote');
-  return setCoherenceVoteBySlug(data, { db: getDb({ authToken }) });
+  return setCoherenceVoteBySlug(
+    { ...data, authToken },
+    { db: getDb({ authToken }) },
+  );
 }
 
 export async function getCoherenceVoteStateBySlugAction(
