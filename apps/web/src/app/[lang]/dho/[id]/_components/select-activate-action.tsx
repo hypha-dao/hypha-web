@@ -1,13 +1,13 @@
 'use client';
 
 import { useMemo } from 'react';
+import { isAddress } from 'ethers';
 
-import { SelectAction } from '@hypha-platform/epics';
+import { SelectAction, useFundWallet } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { isAbsoluteUrl } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 import { Rocket, Sparkles, Wallet } from 'lucide-react';
-import { useFundWallet } from '@hypha-platform/epics';
 import { useParams } from 'next/navigation';
 import {
   useSpaceBySlug,
@@ -23,7 +23,7 @@ function normalizeTreasuryAddress(
 ): `0x${string}` | undefined {
   if (!candidate) return undefined;
   const trimmed = candidate.trim();
-  if (!/^0x[0-9a-fA-F]{40}$/.test(trimmed)) return undefined;
+  if (!isAddress(trimmed)) return undefined;
   if (trimmed.toLowerCase() === ZERO_ADDRESS.toLowerCase()) return undefined;
   return trimmed as `0x${string}`;
 }
