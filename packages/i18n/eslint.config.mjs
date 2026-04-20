@@ -1,4 +1,5 @@
 import { config as baseConfig } from '@hypha-platform/config-eslint/base';
+import globals from 'globals';
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
@@ -6,10 +7,7 @@ export default [
   {
     files: ['scripts/**/*.mjs'],
     languageOptions: {
-      globals: {
-        console: 'readonly',
-        process: 'readonly',
-      },
+      globals: globals.node,
     },
   },
 ];
