@@ -1935,6 +1935,8 @@
     "signalActions": "Acciones de la señal",
     "readMore": "Leer más",
     "showLess": "Mostrar menos",
+    "readFullDescription": "Leer descripción completa",
+    "fullDescriptionDialogSubtitle": "Descripción completa de la señal",
     "deleteSignal": "Eliminar señal",
     "deleteConfirm": "Esto elimina permanentemente esta señal del espacio. ¿Continuar?",
     "deleteMenu": "Eliminar",
