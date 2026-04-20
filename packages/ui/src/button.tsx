@@ -17,12 +17,12 @@ const buttonVariants = cva(
       },
       size: {
         /** Standard actions — matches modal/footer CTAs (touch-friendly min height). */
-        default: 'min-h-10 px-5 py-2 font-semibold',
+        default: 'min-h-10 px-5 py-2',
         /** Compact toolbar / auxiliary actions. */
-        sm: 'min-h-8 px-3 py-1.5 text-xs font-semibold',
+        sm: 'min-h-8 px-3 py-1.5 text-xs',
         /** Primary emphasis (hero / dialog primary). */
-        lg: 'min-h-11 px-8 py-2.5 text-base font-semibold',
-        icon: 'h-10 min-h-10 min-w-10 shrink-0 p-0 font-semibold',
+        lg: 'min-h-11 px-8 py-2.5 text-base',
+        icon: 'h-10 min-h-10 min-w-10 shrink-0 p-0',
       },
       colorVariant: {
         accent: '',
