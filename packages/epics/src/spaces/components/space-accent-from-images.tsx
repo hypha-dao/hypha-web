@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { cn } from '@hypha-platform/ui-utils';
 import {
+  buildAccentPaletteFromHex,
   extractAccentHexFromImageData,
   mixHexColors,
   SPACE_ACCENT_FALLBACK,
@@ -33,15 +34,33 @@ function contrastingForeground(hex: string): string {
   return brightness(hex) > 186 ? '#0f172a' : '#f8fafc';
 }
 
+/**
+ * Same-origin image URL so canvas readPixels works for remote hosts without CORS
+ * (Next.js Image Optimization proxies the bytes).
+ */
+function canvasFriendlyImageSrc(src: string): string {
+  const t = src.trim();
+  if (t.startsWith('/') || typeof window === 'undefined') {
+    return t;
+  }
+  try {
+    const u = new URL(t);
+    if (u.protocol === 'http:' || u.protocol === 'https:') {
+      return `/_next/image?url=${encodeURIComponent(t)}&w=96&q=75`;
+    }
+  } catch {
+    /* ignore */
+  }
+  return t;
+}
+
 async function sampleImageToAccent(src: string): Promise<string | null> {
   return new Promise((resolve) => {
     const img = new Image();
-    if (!src.startsWith('/')) {
-      img.crossOrigin = 'anonymous';
-    }
+    img.crossOrigin = 'anonymous';
     img.onload = () => {
       try {
-        const maxSide = 56;
+        const maxSide = 96;
         const scale = Math.min(maxSide / img.width, maxSide / img.height, 1);
         const w = Math.max(8, Math.round(img.width * scale));
         const h = Math.max(8, Math.round(img.height * scale));
@@ -61,7 +80,7 @@ async function sampleImageToAccent(src: string): Promise<string | null> {
       }
     };
     img.onerror = () => resolve(null);
-    img.src = src;
+    img.src = canvasFriendlyImageSrc(src);
   });
 }
 
@@ -71,9 +90,7 @@ async function sampleBannerToneOverlayVars(
 ): Promise<Record<string, string> | null> {
   return new Promise((resolve) => {
     const img = new Image();
-    if (!src.startsWith('/')) {
-      img.crossOrigin = 'anonymous';
-    }
+    img.crossOrigin = 'anonymous';
     img.onload = () => {
       try {
         const maxSide = 112;
@@ -97,7 +114,7 @@ async function sampleBannerToneOverlayVars(
       }
     };
     img.onerror = () => resolve(null);
-    img.src = src;
+    img.src = canvasFriendlyImageSrc(src);
   });
 }
 
@@ -145,6 +162,11 @@ export function SpaceAccentFromImages({
       el.style.setProperty('--space-accent-foreground', fg);
       el.style.setProperty('--space-accent-muted', subtle);
       el.style.setProperty('--space-accent-contrast', fg);
+
+      const palette = buildAccentPaletteFromHex(accent);
+      for (const [key, value] of Object.entries(palette)) {
+        el.style.setProperty(key, value);
+      }
 
       const ov = overlayVars ?? DEFAULT_BANNER_OVERLAY_CSS_VARS;
       for (const [k, v] of Object.entries(ov)) {

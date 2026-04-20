@@ -49,6 +49,86 @@ export function rgbToHsl(
   return { h, s, l };
 }
 
+/**
+ * HSL [0,1] → RGB 0–255. Used to build Radix-style accent ramps from one hex.
+ */
+export function hslToRgb(
+  h: number,
+  s: number,
+  l: number,
+): [number, number, number] {
+  let r: number;
+  let g: number;
+  let b: number;
+
+  if (s === 0) {
+    r = g = b = l;
+  } else {
+    const hue2rgb = (p: number, q: number, t: number) => {
+      let tt = t;
+      if (tt < 0) tt += 1;
+      if (tt > 1) tt -= 1;
+      if (tt < 1 / 6) return p + (q - p) * 6 * tt;
+      if (tt < 1 / 2) return q;
+      if (tt < 2 / 3) return p + (q - p) * (2 / 3 - tt) * 6;
+      return p;
+    };
+
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1 / 3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1 / 3);
+  }
+
+  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}
+
+/** 12-step Radix-style accent ramp (sufficient for Tailwind accent-1…12 bindings). */
+export function buildAccentPaletteFromHex(
+  baseHex: string,
+): Record<string, string> {
+  const r0 = parseInt(baseHex.slice(1, 3), 16);
+  const g0 = parseInt(baseHex.slice(3, 5), 16);
+  const b0 = parseInt(baseHex.slice(5, 7), 16);
+  const { h } = rgbToHsl(r0, g0, b0);
+
+  const steps = [
+    { step: 1, l: 0.99, s: 0.02 },
+    { step: 2, l: 0.97, s: 0.04 },
+    { step: 3, l: 0.93, s: 0.08 },
+    { step: 4, l: 0.88, s: 0.12 },
+    { step: 5, l: 0.78, s: 0.18 },
+    { step: 6, l: 0.62, s: 0.24 },
+    { step: 7, l: 0.52, s: 0.32 },
+    { step: 8, l: 0.45, s: 0.38 },
+    { step: 9, l: 0.52, s: 0.5 },
+    { step: 10, l: 0.48, s: 0.48 },
+    { step: 11, l: 0.42, s: 0.42 },
+    { step: 12, l: 0.2, s: 0.08 },
+  ];
+
+  const out: Record<string, string> = {};
+  for (const { step, l, s } of steps) {
+    const [r, g, b] = hslToRgb(h, clamp(s, 0, 1), clamp(l, 0, 1));
+    out[`--color-accent-${step}`] = rgbToHex(r, g, b);
+  }
+
+  const solid = out['--color-accent-9'] ?? baseHex;
+  const sr = parseInt(solid.slice(1, 3), 16);
+  const sg = parseInt(solid.slice(3, 5), 16);
+  const sb = parseInt(solid.slice(5, 7), 16);
+  const lum = (sr * 299 + sg * 587 + sb * 114) / 1000;
+  const onSolid = lum > 186 ? '#0f172a' : '#ffffff';
+
+  /** Semantic slots used by buttons (bg-accent-9, text-accent-contrast, etc.) */
+  out['--color-accent'] = solid;
+  out['--color-accent-foreground'] = out['--color-accent-12'] ?? '#ffffff';
+  out['--color-accent-contrast'] = onSolid;
+
+  return out;
+}
+
 export function extractAccentHexFromImageData(data: ImageData): string {
   const px = data.data;
   const { width, height } = data;
@@ -56,6 +136,12 @@ export function extractAccentHexFromImageData(data: ImageData): string {
   let gSum = 0;
   let bSum = 0;
   let n = 0;
+
+  /** Weighted fallback when strict filter yields few samples (dark overlays, grading). */
+  let wrSum = 0;
+  let wgSum = 0;
+  let wbSum = 0;
+  let wSum = 0;
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -68,6 +154,13 @@ export function extractAccentHexFromImageData(data: ImageData): string {
       const b = px[i + 2] ?? 0;
       const { s, l } = rgbToHsl(r, g, b);
 
+      /** Prefer chromatic mid-tones; weight all opaque pixels by saturation for fallback */
+      const chromaWeight = clamp(s * (1 - Math.abs(l - 0.48) * 1.35), 0.02, 1);
+      wrSum += r * chromaWeight;
+      wgSum += g * chromaWeight;
+      wbSum += b * chromaWeight;
+      wSum += chromaWeight;
+
       if (s < 0.12) continue;
       if (l < 0.06 || l > 0.94) continue;
 
@@ -78,11 +171,15 @@ export function extractAccentHexFromImageData(data: ImageData): string {
     }
   }
 
-  if (n < 8) {
-    return SPACE_ACCENT_FALLBACK;
+  if (n >= 8) {
+    return rgbToHex(rSum / n, gSum / n, bSum / n);
   }
 
-  return rgbToHex(rSum / n, gSum / n, bSum / n);
+  if (wSum >= 8) {
+    return rgbToHex(wrSum / wSum, wgSum / wSum, wbSum / wSum);
+  }
+
+  return SPACE_ACCENT_FALLBACK;
 }
 
 export function mixHexColors(a: string, b: string, weightA: number): string {
