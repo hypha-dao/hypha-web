@@ -21,7 +21,6 @@ import { ConditionalMatrixProvider } from '@web/components/conditional-matrix-pr
 import { fileRouter } from '@hypha-platform/core/server';
 import { TooltipProvider } from '@hypha-platform/ui';
 import { AppChromeWithMenu } from '@web/components/app-chrome-with-menu';
-import { MenuBreadcrumbProvider } from '@web/components/menu-breadcrumb-context';
 import {
   getEnableAiChat,
   getEnableHumanChat,
@@ -129,58 +128,56 @@ export default async function RootLayout({
                 >
                   <ConditionalMatrixProvider enabled={humanChatEnabled}>
                     <PanelProviders>
-                      <MenuBreadcrumbProvider>
-                        <PanelWrapLayout
-                          left={
-                            aiChatEnabled
-                              ? { content: <AiLeftPanel /> }
-                              : undefined
-                          }
-                          right={
-                            humanChatEnabled
-                              ? { content: <ConnectedHumanRightPanel /> }
-                              : undefined
-                          }
+                      <PanelWrapLayout
+                        left={
+                          aiChatEnabled
+                            ? { content: <AiLeftPanel /> }
+                            : undefined
+                        }
+                        right={
+                          humanChatEnabled
+                            ? { content: <ConnectedHumanRightPanel /> }
+                            : undefined
+                        }
+                      >
+                        <AppChromeWithMenu
+                          openMenuLabel={tNav('openMenu')}
+                          closeMenuLabel={tNav('closeMenu')}
+                          aiChatEnabled={aiChatEnabled}
+                          humanChatEnabled={humanChatEnabled}
+                          isLanguageSelectVisible={isLanguageSelectVisible}
+                          navItems={[
+                            {
+                              label: tNav('network'),
+                              href: `/${locale}/network`,
+                            },
+                            {
+                              label: tNav('mySpaces'),
+                              href: `/${locale}/my-spaces`,
+                            },
+                          ]}
                         >
-                          <AppChromeWithMenu
-                            openMenuLabel={tNav('openMenu')}
-                            closeMenuLabel={tNav('closeMenu')}
-                            aiChatEnabled={aiChatEnabled}
-                            humanChatEnabled={humanChatEnabled}
-                            isLanguageSelectVisible={isLanguageSelectVisible}
-                            navItems={[
-                              {
-                                label: tNav('network'),
-                                href: `/${locale}/network`,
-                              },
-                              {
-                                label: tNav('mySpaces'),
-                                href: `/${locale}/my-spaces`,
-                              },
-                            ]}
-                          >
-                            <NextSSRPlugin
-                              routerConfig={extractRouterConfig(fileRouter)}
-                            />
-                            <div className="mb-auto pb-8">
-                              <div className="flex h-full justify-normal pt-9">
-                                <div className="h-full w-full">{children}</div>
-                              </div>
+                          <NextSSRPlugin
+                            routerConfig={extractRouterConfig(fileRouter)}
+                          />
+                          <div className="mb-auto pb-8">
+                            <div className="flex h-full justify-normal pt-9">
+                              <div className="h-full w-full">{children}</div>
                             </div>
-                            <Footer
-                              networkLabel={tFooter('network')}
-                              legalLabel={tFooter('legal')}
-                              hyphaServicesLabel={tFooter('hyphaServices')}
-                              hyphaTokenomicsLabel={tFooter('hyphaTokenomics')}
-                              licensingPolicyLabel={tFooter('licensingPolicy')}
-                              termsAndConditionsLabel={tFooter(
-                                'termsAndConditions',
-                              )}
-                              privacyPolicyLabel={tFooter('privacyPolicy')}
-                            />
-                          </AppChromeWithMenu>
-                        </PanelWrapLayout>
-                      </MenuBreadcrumbProvider>
+                          </div>
+                          <Footer
+                            networkLabel={tFooter('network')}
+                            legalLabel={tFooter('legal')}
+                            hyphaServicesLabel={tFooter('hyphaServices')}
+                            hyphaTokenomicsLabel={tFooter('hyphaTokenomics')}
+                            licensingPolicyLabel={tFooter('licensingPolicy')}
+                            termsAndConditionsLabel={tFooter(
+                              'termsAndConditions',
+                            )}
+                            privacyPolicyLabel={tFooter('privacyPolicy')}
+                          />
+                        </AppChromeWithMenu>
+                      </PanelWrapLayout>
                     </PanelProviders>
                   </ConditionalMatrixProvider>
                 </NotificationSubscriber>

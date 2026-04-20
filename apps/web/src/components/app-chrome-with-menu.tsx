@@ -12,8 +12,6 @@ import { ConnectedLanguageSelect } from '@web/components/connected-language-sele
 import { ROOT_URL } from '@web/app/constants';
 import type { ReactNode } from 'react';
 
-import { useMenuBreadcrumbSlot } from './menu-breadcrumb-context';
-
 type AppChromeWithMenuProps = {
   openMenuLabel: string;
   closeMenuLabel: string;
@@ -33,14 +31,11 @@ export function AppChromeWithMenu({
   navItems,
   children,
 }: AppChromeWithMenuProps) {
-  const breadcrumbSlot = useMenuBreadcrumbSlot();
-
   return (
     <>
       <div className="sticky top-0 z-30 shrink-0">
         <MenuTop
           logoHref={ROOT_URL}
-          breadcrumbSlot={breadcrumbSlot ?? undefined}
           openMenuLabel={openMenuLabel}
           closeMenuLabel={closeMenuLabel}
           leadingAction={aiChatEnabled ? <AiSidebarTrigger /> : undefined}

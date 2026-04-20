@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 
 import { useSpaceHeaderMorph } from './space-header-morph-context';
 
-/** Approx max height of compact bar portal only (breadcrumbs live in MenuTop). */
+/** Approx max height of compact bar portal (breadcrumbs sit in sticky context row). */
 const MAX_STICKY_STACK_PX = 56;
 
 function padPx(p: number) {
