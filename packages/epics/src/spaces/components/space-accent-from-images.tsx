@@ -25,13 +25,16 @@ export type SpaceAccentFromImagesProps = {
 
 /**
  * Same-origin image URL so canvas readPixels works for remote hosts without CORS
- * (Next.js Image Optimization proxies the bytes).
+ * (Next.js Image Optimization proxies the bytes). Null for unsupported URLs.
  */
-function canvasFriendlyImageSrc(src: string): string {
+function canvasFriendlyImageSrc(src: string): string | null {
   const t = src.trim();
-  if (t.startsWith('/') || typeof window === 'undefined') {
-    return t;
+  if (!t) return null;
+  /** Same-origin path — reject protocol-relative `//evil` */
+  if (t.startsWith('/')) {
+    return t.startsWith('//') ? null : t;
   }
+  if (typeof window === 'undefined') return null;
   try {
     const u = new URL(t);
     if (u.protocol === 'http:' || u.protocol === 'https:') {
@@ -40,11 +43,16 @@ function canvasFriendlyImageSrc(src: string): string {
   } catch {
     /* ignore */
   }
-  return t;
+  return null;
 }
 
 async function sampleImageToAccent(src: string): Promise<string | null> {
   return new Promise((resolve) => {
+    const friendlySrc = canvasFriendlyImageSrc(src);
+    if (!friendlySrc) {
+      resolve(null);
+      return;
+    }
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
@@ -69,7 +77,7 @@ async function sampleImageToAccent(src: string): Promise<string | null> {
       }
     };
     img.onerror = () => resolve(null);
-    img.src = canvasFriendlyImageSrc(src);
+    img.src = friendlySrc;
   });
 }
 
@@ -78,6 +86,11 @@ async function sampleBannerToneOverlayVars(
   src: string,
 ): Promise<Record<string, string> | null> {
   return new Promise((resolve) => {
+    const friendlySrc = canvasFriendlyImageSrc(src);
+    if (!friendlySrc) {
+      resolve(null);
+      return;
+    }
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
@@ -103,7 +116,7 @@ async function sampleBannerToneOverlayVars(
       }
     };
     img.onerror = () => resolve(null);
-    img.src = canvasFriendlyImageSrc(src);
+    img.src = friendlySrc;
   });
 }
 
