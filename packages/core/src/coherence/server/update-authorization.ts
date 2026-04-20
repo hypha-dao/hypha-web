@@ -4,6 +4,8 @@ import type { UpdateCoherenceInput } from '../types';
 import { personMayInteractWithCoherenceSpace } from './coherence-space-access';
 import type { DbConfig } from '../../server';
 
+type AuthAwareDbConfig = DbConfig & { authToken?: string };
+
 const CONTENT_KEYS: (keyof UpdateCoherenceInput)[] = [
   'title',
   'description',
@@ -20,7 +22,7 @@ export async function assertCoherenceUpdateAllowed(
   person: Person,
   coherence: Pick<DbCoherence, 'creatorId' | 'spaceId'>,
   patch: UpdateCoherenceInput,
-  config: DbConfig,
+  config: AuthAwareDbConfig,
 ): Promise<void> {
   if (!coherence.spaceId) {
     throw new Error('Coherence has no space');
@@ -36,7 +38,7 @@ export async function assertCoherenceUpdateAllowed(
   const allowed = await personMayInteractWithCoherenceSpace(
     person,
     coherence.spaceId,
-    config,
+    { db: config.db, authToken: config.authToken },
   );
   if (!allowed) {
     throw new Error('You do not have permission to update this signal');
@@ -46,7 +48,7 @@ export async function assertCoherenceUpdateAllowed(
 export async function assertCoherenceDeleteAllowed(
   person: Person,
   coherence: Pick<DbCoherence, 'creatorId' | 'spaceId'>,
-  config: DbConfig,
+  config: AuthAwareDbConfig,
 ): Promise<void> {
   if (coherence.creatorId !== person.id) {
     throw new Error('Only the creator can delete this signal');
@@ -57,7 +59,7 @@ export async function assertCoherenceDeleteAllowed(
   const allowed = await personMayInteractWithCoherenceSpace(
     person,
     coherence.spaceId,
-    config,
+    { db: config.db, authToken: config.authToken },
   );
   if (!allowed) {
     throw new Error('You do not have permission to delete this signal');

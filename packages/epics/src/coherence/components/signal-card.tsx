@@ -106,6 +106,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
 
   const [expanded, setExpanded] = React.useState(false);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
+  const [voteError, setVoteError] = React.useState<string | null>(null);
   const isCreator = person?.id === creatorId;
 
   const coherenceType = React.useMemo(
@@ -178,6 +179,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   const handleVote = React.useCallback(
     async (next: -1 | 0 | 1) => {
       if (!slug) return;
+      setVoteError(null);
       try {
         await setCoherenceVote({ slug, value: next });
         onVoteChange?.(next);
@@ -185,9 +187,11 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         await onVotesSynced?.();
       } catch (error) {
         console.warn('Could not vote:', error);
+        const msg = error instanceof Error ? error.message : String(error);
+        setVoteError(msg || tSignalCard('voteFailed'));
       }
     },
-    [slug, setCoherenceVote, onVoteChange, onVotesSynced, refresh],
+    [slug, setCoherenceVote, onVoteChange, onVotesSynced, refresh, tSignalCard],
   );
 
   const handleDelete = React.useCallback(async () => {
@@ -215,136 +219,148 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       )}
     >
       <CardContent className="relative flex flex-1 flex-col gap-0 p-0">
-        <div className="flex items-start justify-between gap-3 border-b border-border/60 bg-muted/20 px-4 py-3">
-          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-            {badges?.length > 0 ? (
-              <BadgesList isLoading={isLoading} badges={badges ?? []} />
-            ) : null}
-            <span className="inline-flex items-center gap-1 text-1 text-muted-foreground">
-              <ClockIcon
-                className="h-3.5 w-3.5 shrink-0 opacity-70"
-                aria-hidden
-              />
-              <ClockDistance createdAt={createdAt} locale={dateFnsLocale} />
-            </span>
-          </div>
-          <div className="flex shrink-0 items-center gap-1">
-            <div
-              className="flex items-center rounded-lg border border-border/70 bg-background/80 p-0.5"
-              onClick={(e) => e.stopPropagation()}
-              onKeyDown={(e) => e.stopPropagation()}
-            >
-              <Button
-                type="button"
-                variant="ghost"
-                colorVariant={myVote === 1 ? 'accent' : 'neutral'}
-                size="sm"
-                className="h-8 gap-1 px-2"
-                disabled={isLoading || isVoting || archived}
-                aria-pressed={myVote === 1}
-                aria-label={tSignalCard('voteUp')}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  void handleVote(myVote === 1 ? 0 : 1);
-                }}
-              >
-                <TrendingUp className="h-4 w-4" aria-hidden />
-                <span className="tabular-nums text-1 font-medium">
-                  {voteScore}
-                </span>
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                colorVariant={myVote === -1 ? 'accent' : 'neutral'}
-                size="sm"
-                className="h-8 px-2"
-                disabled={isLoading || isVoting || archived}
-                aria-pressed={myVote === -1}
-                aria-label={tSignalCard('voteDown')}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  void handleVote(myVote === -1 ? 0 : -1);
-                }}
-              >
-                <TrendingDown className="h-4 w-4" aria-hidden />
-              </Button>
+        <div className="border-b border-border/60 bg-muted/20 px-4 py-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+              {badges?.length > 0 ? (
+                <BadgesList isLoading={isLoading} badges={badges ?? []} />
+              ) : null}
+              <span className="inline-flex items-center gap-1 text-1 text-muted-foreground">
+                <ClockIcon
+                  className="h-3.5 w-3.5 shrink-0 opacity-70"
+                  aria-hidden
+                />
+                <ClockDistance createdAt={createdAt} locale={dateFnsLocale} />
+              </span>
             </div>
-            {isCreator && slug ? (
-              <>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      colorVariant="neutral"
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                      disabled={isLoading}
-                      aria-label={tSignalCard('signalActions')}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="min-w-[10rem]">
-                    {editHref ? (
-                      <DropdownMenuItem asChild>
-                        <Link
-                          href={editHref}
-                          className="flex cursor-pointer items-center gap-2"
-                        >
-                          <Pencil className="h-4 w-4" />
-                          {t('editSignal')}
-                        </Link>
+            <div className="flex shrink-0 items-center gap-1">
+              <div
+                className="flex items-center rounded-lg border border-border/70 bg-background/80 p-0.5"
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+              >
+                <Button
+                  type="button"
+                  variant="ghost"
+                  colorVariant={myVote === 1 ? 'accent' : 'neutral'}
+                  size="sm"
+                  className="h-8 gap-1 px-2"
+                  disabled={isLoading || isVoting || archived}
+                  aria-pressed={myVote === 1}
+                  aria-label={tSignalCard('voteUp')}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    void handleVote(myVote === 1 ? 0 : 1);
+                  }}
+                >
+                  <TrendingUp className="h-4 w-4" aria-hidden />
+                  <span className="tabular-nums text-1 font-medium">
+                    {voteScore}
+                  </span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  colorVariant={myVote === -1 ? 'accent' : 'neutral'}
+                  size="sm"
+                  className="h-8 px-2"
+                  disabled={isLoading || isVoting || archived}
+                  aria-pressed={myVote === -1}
+                  aria-label={tSignalCard('voteDown')}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    void handleVote(myVote === -1 ? 0 : -1);
+                  }}
+                >
+                  <TrendingDown className="h-4 w-4" aria-hidden />
+                </Button>
+              </div>
+              {isCreator && slug ? (
+                <>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        colorVariant="neutral"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        disabled={isLoading}
+                        aria-label={tSignalCard('signalActions')}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="min-w-[10rem]">
+                      {editHref ? (
+                        <DropdownMenuItem asChild>
+                          <Link
+                            href={editHref}
+                            className="flex cursor-pointer items-center gap-2"
+                          >
+                            <Pencil className="h-4 w-4" />
+                            {t('editSignal')}
+                          </Link>
+                        </DropdownMenuItem>
+                      ) : null}
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          setDeleteOpen(true);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        {tSignalCard('deleteMenu')}
                       </DropdownMenuItem>
-                    ) : null}
-                    <DropdownMenuItem
-                      className="text-destructive focus:text-destructive"
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        setDeleteOpen(true);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      {tSignalCard('deleteMenu')}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-                  <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        {tSignalCard('deleteSignal')}
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        {tSignalCard('deleteConfirm')}
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel asChild>
-                        <Button variant="outline" colorVariant="neutral">
-                          {t('noLeave')}
-                        </Button>
-                      </AlertDialogCancel>
-                      <AlertDialogAction asChild>
-                        <Button
-                          colorVariant="error"
-                          onClick={() =>
-                            void handleDelete().then(() => setDeleteOpen(false))
-                          }
-                        >
-                          {tSignalCard('deleteConfirmAction')}
-                        </Button>
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </>
-            ) : null}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                    <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          {tSignalCard('deleteSignal')}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {tSignalCard('deleteConfirm')}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel asChild>
+                          <Button variant="outline" colorVariant="neutral">
+                            {t('noLeave')}
+                          </Button>
+                        </AlertDialogCancel>
+                        <AlertDialogAction asChild>
+                          <Button
+                            colorVariant="error"
+                            onClick={() =>
+                              void handleDelete().then(() =>
+                                setDeleteOpen(false),
+                              )
+                            }
+                          >
+                            {tSignalCard('deleteConfirmAction')}
+                          </Button>
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </>
+              ) : null}
+            </div>
           </div>
+          {voteError ? (
+            <p
+              role="alert"
+              className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1.5 text-1 text-destructive"
+            >
+              {voteError}
+            </p>
+          ) : null}
         </div>
 
         <div className="flex flex-col gap-3 px-4 pb-4 pt-4">

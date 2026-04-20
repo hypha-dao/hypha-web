@@ -1938,6 +1938,7 @@
     "deleteSignal": "Supprimer le signal",
     "deleteConfirm": "Cela supprime définitivement ce signal de l'espace. Continuer ?",
     "deleteMenu": "Supprimer",
-    "deleteConfirmAction": "Supprimer le signal"
+    "deleteConfirmAction": "Supprimer le signal",
+    "voteFailed": "Impossible d’enregistrer votre vote. Réessayez ou vérifiez que votre portefeuille est lié."
   }
 }

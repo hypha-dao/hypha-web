@@ -1,5 +1,6 @@
 import { publicClient } from '../../common/web3/public-client';
 import { findSpaceById } from '../../space/server/queries';
+import { checkSpaceAccessForSpace } from '../../space/server/check-space-access-for-roster';
 import { getSpaceDetails } from '../../space/client/web3/dao-space-factory/get-space-details';
 import { getDelegatesForSpace } from '../../space/client/web3/dao-space-factory/get-delegates-for-space';
 import { getDelegators } from '../../space/client/web3/dao-space-factory/get-delegators';
@@ -9,13 +10,19 @@ import { memberships } from '@hypha-platform/storage-postgres';
 import { and, eq } from 'drizzle-orm';
 import type { DbConfig } from '../../server';
 
+export type CoherenceSpaceAccessOptions = DbConfig & {
+  /** Neon JWT — required for checkSpaceAccess parity with roster (visibility + chain membership). */
+  authToken?: string;
+};
+
 /**
- * Voting / coherence writes: DB membership row, on-chain member, or valid delegate.
+ * Voting / coherence writes: DB membership row, or same access as space roster API
+ * (public/network visibility + on-chain member / valid delegate).
  */
 export async function personMayInteractWithCoherenceSpace(
   person: Pick<Person, 'id' | 'address'>,
   spaceId: number,
-  { db }: DbConfig,
+  { db, authToken }: CoherenceSpaceAccessOptions,
 ): Promise<boolean> {
   const [membershipRow] = await db
     .select({ id: memberships.id })
@@ -33,7 +40,19 @@ export async function personMayInteractWithCoherenceSpace(
   }
 
   const space = await findSpaceById({ id: spaceId }, { db });
-  if (!space?.web3SpaceId) {
+  if (!space) {
+    return false;
+  }
+
+  const rosterAccess = await checkSpaceAccessForSpace(
+    { web3SpaceId: space.web3SpaceId },
+    authToken,
+  );
+  if (rosterAccess.hasAccess) {
+    return true;
+  }
+
+  if (!space.web3SpaceId) {
     return false;
   }
 

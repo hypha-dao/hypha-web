@@ -1969,6 +1969,7 @@
     "deleteSignal": "Delete signal",
     "deleteConfirm": "This permanently removes this signal from the space. Continue?",
     "deleteMenu": "Delete",
-    "deleteConfirmAction": "Delete signal"
+    "deleteConfirmAction": "Delete signal",
+    "voteFailed": "Could not save your vote. Try again or check that your wallet is linked."
   }
 }

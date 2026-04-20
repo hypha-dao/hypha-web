@@ -1938,6 +1938,7 @@
     "deleteSignal": "Eliminar señal",
     "deleteConfirm": "Esto elimina permanentemente esta señal del espacio. ¿Continuar?",
     "deleteMenu": "Eliminar",
-    "deleteConfirmAction": "Eliminar señal"
+    "deleteConfirmAction": "Eliminar señal",
+    "voteFailed": "No se pudo guardar tu voto. Vuelve a intentarlo o comprueba que tu cartera esté vinculada."
   }
 }
