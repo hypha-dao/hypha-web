@@ -62,12 +62,6 @@ export async function setCoherenceVoteBySlug(
         return normalizeCoherence(coherence);
       }
       await tx.delete(coherenceVotes).where(eq(coherenceVotes.id, existing.id));
-      await tx
-        .update(coherences)
-        .set({
-          voteScore: sql`${coherences.voteScore} - ${existing.value}`,
-        })
-        .where(eq(coherences.id, coherenceId));
     } else {
       const previous = existing?.value ?? 0;
       if (previous === value) {
@@ -77,7 +71,6 @@ export async function setCoherenceVoteBySlug(
           .where(eq(coherences.id, coherenceId));
         return normalizeCoherence(row ?? coherence);
       }
-      const delta = value - previous;
 
       if (existing) {
         await tx
@@ -94,13 +87,7 @@ export async function setCoherenceVoteBySlug(
           value,
         });
       }
-
-      await tx
-        .update(coherences)
-        .set({
-          voteScore: sql`${coherences.voteScore} + ${delta}`,
-        })
-        .where(eq(coherences.id, coherenceId));
+      /* vote_score maintained by DB trigger coherence_votes_maintain_score_trg */
     }
 
     const [updated] = await tx
