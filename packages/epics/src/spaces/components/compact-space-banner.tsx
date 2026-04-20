@@ -15,7 +15,6 @@ function isSafeLinkHref(url: string): boolean {
   }
 }
 
-/** Same-origin paths or absolute http(s) — safe for CSS url() without injection. */
 function isSafeTextureUrl(raw: string): boolean {
   const t = raw.trim();
   if (!t) return false;
@@ -32,7 +31,13 @@ function cssUrlQuoted(url: string): string {
   return JSON.stringify(url);
 }
 
-/** Scrollable purpose block — narrow column (~50% on sm+) so copy wraps like design ref. */
+/** Matches PR #2165 `SpaceHeaderInsetAvatar` footprint */
+const AVATAR_CLASS = cn(
+  'h-16 w-16 shrink-0 rounded-full sm:h-[72px] sm:w-[72px]',
+  'shadow-[0_18px_40px_-12px_rgba(0,0,0,0.55)] ring-1 ring-white/15',
+);
+
+/** Purpose column — narrow on sm+; left edge aligns with avatar (full-width column below header row). */
 const DESCRIPTION_SCROLL_BOX = cn(
   'max-h-[min(45vh,280px)] w-full max-w-full min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y sm:max-w-[50%]',
   '[scrollbar-gutter:stable]',
@@ -47,16 +52,13 @@ export type CompactSpaceBannerProps = {
   logoAlt: string;
   defaultLogoSrc: string;
   links?: string[] | null;
-  /** Shown faintly on the right; reinforces the space visual identity */
   leadImageUrl?: string | null;
   defaultLeadImageSrc?: string;
   memberCount: number;
   agreementCount: number;
-  /** Pre-formatted created date string (locale-aware) */
   createdOnText: string;
   membersLabel: string;
   agreementsLabel: string;
-  /** Trial / sandbox badges — typically `SubscriptionBadge` + `SpaceModeLabel` */
   footerTrailing?: React.ReactNode;
   className?: string;
 };
@@ -88,7 +90,6 @@ export function CompactSpaceBanner({
   return (
     <section
       className={cn(
-        /* Card chrome: ~12–16px radius, subtle blue-gray rim (design ref image 1) */
         'relative overflow-hidden rounded-xl border border-[#30363d]',
         'shadow-[0_24px_48px_-12px_rgba(5,33,22,0.55)]',
         'px-8 pt-8 pb-5',
@@ -96,87 +97,48 @@ export function CompactSpaceBanner({
       )}
       aria-label={title}
     >
-      {/* Atmosphere — deep forest base + spotlight (distinct from flat single gradient) */}
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_140%_100%_at_12%_-5%,rgb(41,115,78)_0%,rgb(18,72,52)_38%,rgb(7,38,26)_68%,rgb(2,14,10)_100%)]"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute inset-0 mix-blend-overlay opacity-90 bg-[radial-gradient(ellipse_60%_45%_at_85%_20%,rgba(52,211,153,0.28),transparent_65%)]"
-        aria-hidden
-      />
-
-      {/* Fine grain — film texture */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.07] mix-blend-overlay"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-        }}
-        aria-hidden
-      />
-
-      {/* Hero image — richer bokeh + color pop, then a cool grade for “studio” depth */}
+      {/* Lead image fill — PR #2165 hero-style base */}
       {textureSrc ? (
         <>
           <div
-            className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.48]"
-            style={{
-              backgroundImage: `url(${cssUrlQuoted(textureSrc)})`,
-              filter: 'blur(32px) saturate(1.35) contrast(1.08)',
-              transform: 'scale(1.12)',
-            }}
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute inset-0 bg-cover bg-[center_28%] bg-no-repeat opacity-[0.38] mix-blend-soft-light"
+            className="pointer-events-none absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: `url(${cssUrlQuoted(textureSrc)})` }}
             aria-hidden
           />
+          {/* Exact overlay stack from PR #2165 SpaceHeaderHeroCard */}
           <div
-            className="pointer-events-none absolute inset-0 mix-blend-color opacity-[0.22] bg-gradient-to-br from-teal-600/80 via-emerald-900/40 to-slate-950/90"
+            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/88 via-black/42 via-[52%] to-black/22"
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/58 via-transparent to-black/40"
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-0 bg-gradient-to-br from-accent-11/18 via-transparent to-transparent"
             aria-hidden
           />
         </>
       ) : (
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.1]"
-          style={{
-            backgroundImage: `
-              radial-gradient(ellipse 70% 55% at 85% 35%, rgba(52, 211, 153, 0.4), transparent 60%),
-              radial-gradient(circle at 25% 75%, rgba(16, 185, 129, 0.25), transparent 50%)
-            `,
-          }}
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_140%_100%_at_12%_-5%,rgb(41,115,78)_0%,rgb(14,54,38)_42%,rgb(7,38,26)_68%,rgb(2,14,10)_100%)]"
           aria-hidden
         />
       )}
 
-      {/* Cinematic stack: vignette + rim light + footer anchor (replaces single flat veil) */}
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_95%_80%_at_50%_42%,transparent_0%,rgba(0,12,8,0.55)_78%,rgba(0,8,5,0.88)_100%)]"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-emerald-300/14 from-0% via-transparent via-35% to-transparent to-55%"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 from-0% via-black/12 via-38% to-transparent to-58%"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/35 from-[-5%] via-transparent via-50% to-black/30 to-[105%]"
-        aria-hidden
-      />
+      <div className="relative z-10 flex flex-col gap-5">
+        {/* Row 1: avatar + title/links — avatar size matches PR #2165 */}
+        <div className="flex items-start gap-6">
+          <Avatar className={AVATAR_CLASS}>
+            <AvatarImage
+              src={logoUrl || defaultLogoSrc}
+              alt={logoAlt}
+              className="object-cover"
+            />
+          </Avatar>
 
-      <div className="relative z-10 flex items-start gap-6">
-        <Avatar className="h-20 w-20 shrink-0 rounded-full">
-          <AvatarImage src={logoUrl || defaultLogoSrc} alt={logoAlt} />
-        </Avatar>
-
-        {/* Title, purpose, divider, footer share one column so left edges align pixel-true */}
-        <div className="flex min-w-0 flex-1 flex-col gap-5">
-          <div className="space-y-2">
-            <h1 className="text-7 font-bold leading-tight tracking-tight text-white">
+          <div className="min-w-0 flex-1 space-y-2">
+            <h1 className="text-balance text-6 font-semibold tracking-tight text-white drop-shadow-sm sm:text-7">
               {title}
             </h1>
             {safeLinks.length > 0 ? (
@@ -201,46 +163,47 @@ export function CompactSpaceBanner({
               </div>
             ) : null}
           </div>
+        </div>
 
-          {description ? (
-            <div className={DESCRIPTION_SCROLL_BOX}>
-              <p className="text-pretty text-2 leading-[1.5] text-white/95 [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]">
-                {description}
-              </p>
+        {/* Below header: same horizontal origin as avatar — not nested in title column */}
+        {description ? (
+          <div className={DESCRIPTION_SCROLL_BOX}>
+            <p className="text-pretty text-2 leading-[1.5] text-white/95 [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]">
+              {description}
+            </p>
+          </div>
+        ) : null}
+
+        <div className="h-px w-full bg-white/12" role="presentation" />
+
+        <div className="flex flex-col gap-3 gap-x-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-1 text-white/88 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]">
+            <span>
+              <span className="font-bold tabular-nums text-white">
+                {memberCount}
+              </span>{' '}
+              <span className="text-white/92">{membersLabel}</span>
+            </span>
+            <span className="text-white/45" aria-hidden>
+              ·
+            </span>
+            <span>
+              <span className="font-bold tabular-nums text-white">
+                {agreementCount}
+              </span>{' '}
+              <span className="text-white/92">{agreementsLabel}</span>
+            </span>
+            <span className="text-white/45" aria-hidden>
+              ·
+            </span>
+            <span className="text-white/88">{createdOnText}</span>
+          </div>
+
+          {footerTrailing ? (
+            <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end [&_.rounded-lg]:rounded-md [&_a]:inline-flex [&_a]:items-center [&_button]:rounded-md [&_div]:inline-flex [&_div]:items-center">
+              {footerTrailing}
             </div>
           ) : null}
-
-          <div className="h-px w-full bg-white/12" role="presentation" />
-
-          <div className="flex flex-col gap-3 gap-x-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-1 text-white/88 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]">
-              <span>
-                <span className="font-bold tabular-nums text-white">
-                  {memberCount}
-                </span>{' '}
-                <span className="text-white/92">{membersLabel}</span>
-              </span>
-              <span className="text-white/45" aria-hidden>
-                ·
-              </span>
-              <span>
-                <span className="font-bold tabular-nums text-white">
-                  {agreementCount}
-                </span>{' '}
-                <span className="text-white/92">{agreementsLabel}</span>
-              </span>
-              <span className="text-white/45" aria-hidden>
-                ·
-              </span>
-              <span className="text-white/88">{createdOnText}</span>
-            </div>
-
-            {footerTrailing ? (
-              <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end [&_.rounded-lg]:rounded-md [&_a]:inline-flex [&_a]:items-center [&_button]:rounded-md [&_div]:inline-flex [&_div]:items-center">
-                {footerTrailing}
-              </div>
-            ) : null}
-          </div>
         </div>
       </div>
     </section>
