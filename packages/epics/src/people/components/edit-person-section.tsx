@@ -65,6 +65,7 @@ export const EditPersonSection = ({
   const tProfile = useTranslations('Profile');
   const tSpaces = useTranslations('Spaces');
   const tModalAside = useTranslations('ModalAside');
+  const tCommon = useTranslations('Common');
   const baseResolver = useMemo(() => zodResolver(schemaEditPersonForm), []);
 
   const translateEditProfileError = useCallback(
@@ -333,6 +334,17 @@ export const EditPersonSection = ({
                           ),
                         },
                       )}
+                      cropDialogLabels={{
+                        title: tCommon('uploadLeadImage.cropTitle'),
+                        description: tCommon('uploadLeadImage.cropDescription'),
+                        cancel: tCommon('uploadLeadImage.cancel'),
+                        confirm: tCommon('uploadLeadImage.confirm'),
+                      }}
+                      messages={{
+                        dropHere: tCommon('uploadLeadImage.dropHere'),
+                        fileTooLarge: tCommon('uploadLeadImage.fileTooLarge'),
+                        uploadFailed: tCommon('uploadLeadImage.uploadFailed'),
+                      }}
                       defaultImage={
                         typeof person?.leadImageUrl === 'string'
                           ? person?.leadImageUrl

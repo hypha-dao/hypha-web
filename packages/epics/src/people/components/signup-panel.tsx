@@ -51,6 +51,7 @@ export const SignupPanel = ({
   error,
 }: SignupPanelProps) => {
   const tModalAside = useTranslations('ModalAside');
+  const tCommon = useTranslations('Common');
   const { user } = useAuthentication();
   const formRef = useRef<HTMLFormElement>(null);
   const form = useForm<FormData>({
@@ -191,6 +192,25 @@ export const SignupPanel = ({
                   <UploadLeadImage
                     onChange={field.onChange}
                     enableImageResizer={true}
+                    uploadText={tCommon.rich(
+                      'uploadLeadImage.genericUploadFallback',
+                      {
+                        accent: (chunks) => (
+                          <span className="text-accent-11">{chunks}</span>
+                        ),
+                      },
+                    )}
+                    cropDialogLabels={{
+                      title: tCommon('uploadLeadImage.cropTitle'),
+                      description: tCommon('uploadLeadImage.cropDescription'),
+                      cancel: tCommon('uploadLeadImage.cancel'),
+                      confirm: tCommon('uploadLeadImage.confirm'),
+                    }}
+                    messages={{
+                      dropHere: tCommon('uploadLeadImage.dropHere'),
+                      fileTooLarge: tCommon('uploadLeadImage.fileTooLarge'),
+                      uploadFailed: tCommon('uploadLeadImage.uploadFailed'),
+                    }}
                   />
                 </FormControl>
                 <FormMessage />

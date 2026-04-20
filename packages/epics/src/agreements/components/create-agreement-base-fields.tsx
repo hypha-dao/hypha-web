@@ -98,6 +98,7 @@ export function CreateAgreementBaseFields({
   progress,
 }: CreateAgreementFormProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
+  const tCommon = useTranslations('Common');
   const translateEditor = React.useCallback(
     (
       key: string,
@@ -542,6 +543,17 @@ export function CreateAgreementBaseFields({
                     onChange={field.onChange}
                     maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
                     enableImageResizer={true}
+                    cropDialogLabels={{
+                      title: tCommon('uploadLeadImage.cropTitle'),
+                      description: tCommon('uploadLeadImage.cropDescription'),
+                      cancel: tCommon('uploadLeadImage.cancel'),
+                      confirm: tCommon('uploadLeadImage.confirm'),
+                    }}
+                    messages={{
+                      dropHere: tCommon('uploadLeadImage.dropHere'),
+                      fileTooLarge: tCommon('uploadLeadImage.fileTooLarge'),
+                      uploadFailed: tCommon('uploadLeadImage.uploadFailed'),
+                    }}
                     uploadText={tAgreementFlow.rich(
                       'createAgreementBaseFields.uploadImageLabel',
                       {

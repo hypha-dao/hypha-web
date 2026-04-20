@@ -124,6 +124,7 @@ export const SpaceForm = ({
 
   const tSpaces = useTranslations('Spaces');
   const tModalAside = useTranslations('ModalAside');
+  const tCommon = useTranslations('Common');
 
   const resolvedSubmitLabel = submitLabel ?? tSpaces('createSpace');
   const resolvedSubmitLoadingLabel = submitLoadingLabel ?? tSpaces('creating');
@@ -539,6 +540,17 @@ export const SpaceForm = ({
                 <UploadLeadImage
                   {...field}
                   maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
+                  cropDialogLabels={{
+                    title: tCommon('uploadLeadImage.cropTitle'),
+                    description: tCommon('uploadLeadImage.cropDescription'),
+                    cancel: tCommon('uploadLeadImage.cancel'),
+                    confirm: tCommon('uploadLeadImage.confirm'),
+                  }}
+                  messages={{
+                    dropHere: tCommon('uploadLeadImage.dropHere'),
+                    fileTooLarge: tCommon('uploadLeadImage.fileTooLarge'),
+                    uploadFailed: tCommon('uploadLeadImage.uploadFailed'),
+                  }}
                   defaultImage={
                     typeof values?.leadImage === 'string'
                       ? values?.leadImage
