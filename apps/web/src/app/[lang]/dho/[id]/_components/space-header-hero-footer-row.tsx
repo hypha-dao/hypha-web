@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { cn } from '@hypha-platform/ui-utils';
 
 type SpaceHeaderHeroFooterRowProps = {
-  breadcrumbs: React.ReactNode;
+  breadcrumbs: ReactNode;
   trailing: ReactNode;
 };
 
