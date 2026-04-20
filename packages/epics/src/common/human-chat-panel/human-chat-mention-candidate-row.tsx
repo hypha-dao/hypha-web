@@ -65,8 +65,9 @@ export function HumanChatMentionCandidateRow({
       type="button"
       role="option"
       aria-selected={isActive}
+      aria-busy={busy || undefined}
       title={matrixUserId}
-      disabled={busy}
+      disabled={!privySub && loadingLink}
       className={cn(
         'flex w-full min-w-0 items-center gap-2.5 rounded-sm px-2 py-1.5 text-left text-sm',
         busy && 'opacity-70',
