@@ -15,6 +15,23 @@ function isSafeLinkHref(url: string): boolean {
   }
 }
 
+/** Same-origin paths or absolute http(s) — safe for CSS url() without injection. */
+function isSafeTextureUrl(raw: string): boolean {
+  const t = raw.trim();
+  if (!t) return false;
+  if (t.startsWith('/')) return true;
+  try {
+    const u = new URL(t);
+    return u.protocol === 'http:' || u.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function cssUrlQuoted(url: string): string {
+  return JSON.stringify(url);
+}
+
 /** Scrollable purpose block — mirrors #2165 hero (`overflow-y-auto`, thin scrollbar). */
 const DESCRIPTION_SCROLL_BOX = cn(
   'max-h-[min(45vh,280px)] w-full min-h-0 overflow-y-auto overscroll-y-contain pr-1 touch-pan-y',
@@ -60,7 +77,9 @@ export function CompactSpaceBanner({
   footerTrailing,
   className,
 }: CompactSpaceBannerProps) {
-  const textureSrc = leadImageUrl || defaultLeadImageSrc || undefined;
+  const rawTexture = leadImageUrl || defaultLeadImageSrc || '';
+  const textureSrc =
+    rawTexture && isSafeTextureUrl(rawTexture) ? rawTexture.trim() : '';
 
   const safeLinks =
     links?.filter((l) => typeof l === 'string' && isSafeLinkHref(l)) ?? [];
@@ -101,7 +120,7 @@ export function CompactSpaceBanner({
           <div
             className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.48]"
             style={{
-              backgroundImage: `url(${textureSrc})`,
+              backgroundImage: `url(${cssUrlQuoted(textureSrc)})`,
               filter: 'blur(32px) saturate(1.35) contrast(1.08)',
               transform: 'scale(1.12)',
             }}
@@ -109,7 +128,7 @@ export function CompactSpaceBanner({
           />
           <div
             className="pointer-events-none absolute inset-0 bg-cover bg-[center_28%] bg-no-repeat opacity-[0.38] mix-blend-soft-light"
-            style={{ backgroundImage: `url(${textureSrc})` }}
+            style={{ backgroundImage: `url(${cssUrlQuoted(textureSrc)})` }}
             aria-hidden
           />
           <div
