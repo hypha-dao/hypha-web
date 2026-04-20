@@ -6,6 +6,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { AsideOverlayLayoutProvider } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
+import { useSpaceAccentPortalStyles } from '../spaces/components/space-accent-portal-context';
 
 /**
  * Reference-counted body scroll lock for desktop modal stacks.
@@ -70,6 +71,7 @@ export function ProposalOverlayShell({
   className,
 }: ProposalOverlayShellProps) {
   const tModalAside = useTranslations('ModalAside');
+  const spaceAccentPortalStyle = useSpaceAccentPortalStyles();
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 768px)');
@@ -132,6 +134,8 @@ export function ProposalOverlayShell({
               id="proposal-overlay-panel"
               role="document"
               tabIndex={-1}
+              style={spaceAccentPortalStyle}
+              data-space-accent-scope
             >
               <div className="p-4 lg:p-7">{children}</div>
             </div>
