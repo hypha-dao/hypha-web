@@ -1,4 +1,7 @@
-import { CreateAcceptInvestmentForm, SidePanel } from '@hypha-platform/epics';
+import {
+  CreateAcceptInvestmentForm,
+  ProposalOverlayShell,
+} from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 import { Plugin } from '../../../../_components/plugins';
@@ -30,7 +33,7 @@ export default async function CreateAcceptInvestmentPage({
   });
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <CreateAcceptInvestmentForm
         successfulUrl={successfulUrl}
         backUrl={`${successfulUrl}${PATH_SELECT_CREATE_ACTION}`}
@@ -45,6 +48,6 @@ export default async function CreateAcceptInvestmentPage({
           />
         }
       />
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }
