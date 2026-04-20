@@ -32,9 +32,9 @@ function cssUrlQuoted(url: string): string {
   return JSON.stringify(url);
 }
 
-/** Scrollable purpose block — mirrors #2165 hero (`overflow-y-auto`, thin scrollbar). */
+/** Scrollable purpose block — narrow column (~50% on sm+) so copy wraps like design ref. */
 const DESCRIPTION_SCROLL_BOX = cn(
-  'max-h-[min(45vh,280px)] w-full min-h-0 overflow-y-auto overscroll-y-contain pr-1 touch-pan-y',
+  'max-h-[min(45vh,280px)] w-full max-w-full min-h-0 overflow-y-auto overscroll-y-contain pr-1 touch-pan-y sm:max-w-[50%]',
   '[scrollbar-color:rgba(255,255,255,0.35)_transparent] [scrollbar-width:thin]',
   '[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/30 [&::-webkit-scrollbar-track]:bg-transparent',
 );
