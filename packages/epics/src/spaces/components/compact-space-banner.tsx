@@ -109,7 +109,7 @@ export function CompactSpaceBanner({
       <div className="relative z-10 flex flex-col gap-6">
         {/* Header row: avatar + title stack only (Image 2) */}
         <div className="flex items-start gap-6">
-          <Avatar className="h-20 w-20 shrink-0 rounded-full ring-2 ring-emerald-400/90 ring-offset-[3px] ring-offset-[#0a2818]">
+          <Avatar className="h-20 w-20 shrink-0 rounded-full">
             <AvatarImage src={logoUrl || defaultLogoSrc} alt={logoAlt} />
           </Avatar>
 
