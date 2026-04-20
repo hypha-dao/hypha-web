@@ -12,7 +12,8 @@ import { Button } from '../button';
 
 export type UploadLeadImageProps = {
   onChange: (acceptedFile: File | null) => void;
-  defaultImage?: string;
+  /** Remote URL string, cleared with `null`, or omit while value is a File. */
+  defaultImage?: string | null;
   maxFileSize?: number;
   uploadText?: React.ReactNode;
   enableImageResizer?: boolean;
@@ -41,14 +42,24 @@ export const UploadLeadImage = ({
   const cropTitleId = React.useId();
   const cropDescId = React.useId();
   const [preview, setPreview] = React.useState<string | null>(
-    defaultImage || null,
+    defaultImage && typeof defaultImage === 'string' && defaultImage.trim()
+      ? defaultImage
+      : null,
   );
 
   // Sync remote/string defaults only. Do not clear preview when `defaultImage`
   // becomes undefined because the parent form value is a File — that transition
   // would wipe the crop/local preview right after the first upload.
   React.useEffect(() => {
-    if (typeof defaultImage === 'string' && defaultImage.trim().length > 0) {
+    if (defaultImage === null) {
+      setPreview(null);
+      return;
+    }
+    if (typeof defaultImage === 'string') {
+      if (defaultImage.trim().length === 0) {
+        setPreview(null);
+        return;
+      }
       setPreview(defaultImage);
     }
   }, [defaultImage]);
@@ -63,7 +74,13 @@ export const UploadLeadImage = ({
     (acceptedFiles: File[]) => {
       setError(null);
       if (!acceptedFiles.length) {
-        setPreview(defaultImage || null);
+        setPreview(
+          defaultImage === null
+            ? null
+            : typeof defaultImage === 'string' && defaultImage.trim() === ''
+            ? null
+            : defaultImage || null,
+        );
         onChange(null);
         return;
       }
