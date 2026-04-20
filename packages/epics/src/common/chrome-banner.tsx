@@ -74,7 +74,7 @@ export function ChromeBannerShell({
               'flex size-10 shrink-0 items-center justify-center rounded-xl border [&_svg]:size-[18px]',
               t.iconWrap,
             )}
-            aria-hidden={typeof title === 'string' ? undefined : true}
+            aria-hidden
           >
             {icon}
           </div>
