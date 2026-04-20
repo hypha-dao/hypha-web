@@ -34,7 +34,8 @@ function cssUrlQuoted(url: string): string {
 
 /** Scrollable purpose block — narrow column (~50% on sm+) so copy wraps like design ref. */
 const DESCRIPTION_SCROLL_BOX = cn(
-  'max-h-[min(45vh,280px)] w-full max-w-full min-h-0 overflow-y-auto overscroll-y-contain pr-1 touch-pan-y sm:max-w-[50%]',
+  'max-h-[min(45vh,280px)] w-full max-w-full min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y sm:max-w-[50%]',
+  '[scrollbar-gutter:stable]',
   '[scrollbar-color:rgba(255,255,255,0.35)_transparent] [scrollbar-width:thin]',
   '[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/30 [&::-webkit-scrollbar-track]:bg-transparent',
 );
@@ -167,14 +168,14 @@ export function CompactSpaceBanner({
         aria-hidden
       />
 
-      <div className="relative z-10 flex flex-col gap-5">
-        {/* Header row: avatar + title stack only (Image 2) */}
-        <div className="flex items-start gap-6">
-          <Avatar className="h-20 w-20 shrink-0 rounded-full">
-            <AvatarImage src={logoUrl || defaultLogoSrc} alt={logoAlt} />
-          </Avatar>
+      <div className="relative z-10 flex items-start gap-6">
+        <Avatar className="h-20 w-20 shrink-0 rounded-full">
+          <AvatarImage src={logoUrl || defaultLogoSrc} alt={logoAlt} />
+        </Avatar>
 
-          <div className="min-w-0 flex-1 space-y-2">
+        {/* Title, purpose, divider, footer share one column so left edges align pixel-true */}
+        <div className="flex min-w-0 flex-1 flex-col gap-5">
+          <div className="space-y-2">
             <h1 className="text-7 font-bold leading-tight tracking-tight text-white">
               {title}
             </h1>
@@ -200,47 +201,46 @@ export function CompactSpaceBanner({
               </div>
             ) : null}
           </div>
-        </div>
 
-        {/* Body — scroll when copy exceeds max height (same interaction model as #2165 hero purpose) */}
-        {description ? (
-          <div className={DESCRIPTION_SCROLL_BOX}>
-            <p className="text-pretty text-2 leading-[1.5] text-white/95 [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]">
-              {description}
-            </p>
-          </div>
-        ) : null}
-
-        <div className="h-px w-full bg-white/12" role="presentation" />
-
-        <div className="flex flex-col gap-3 gap-x-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-1 text-white/88 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]">
-            <span>
-              <span className="font-bold tabular-nums text-white">
-                {memberCount}
-              </span>{' '}
-              <span className="text-white/92">{membersLabel}</span>
-            </span>
-            <span className="text-white/45" aria-hidden>
-              ·
-            </span>
-            <span>
-              <span className="font-bold tabular-nums text-white">
-                {agreementCount}
-              </span>{' '}
-              <span className="text-white/92">{agreementsLabel}</span>
-            </span>
-            <span className="text-white/45" aria-hidden>
-              ·
-            </span>
-            <span className="text-white/88">{createdOnText}</span>
-          </div>
-
-          {footerTrailing ? (
-            <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end [&_.rounded-lg]:rounded-md [&_a]:inline-flex [&_a]:items-center [&_button]:rounded-md [&_div]:inline-flex [&_div]:items-center">
-              {footerTrailing}
+          {description ? (
+            <div className={DESCRIPTION_SCROLL_BOX}>
+              <p className="text-pretty text-2 leading-[1.5] text-white/95 [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]">
+                {description}
+              </p>
             </div>
           ) : null}
+
+          <div className="h-px w-full bg-white/12" role="presentation" />
+
+          <div className="flex flex-col gap-3 gap-x-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-1 text-white/88 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]">
+              <span>
+                <span className="font-bold tabular-nums text-white">
+                  {memberCount}
+                </span>{' '}
+                <span className="text-white/92">{membersLabel}</span>
+              </span>
+              <span className="text-white/45" aria-hidden>
+                ·
+              </span>
+              <span>
+                <span className="font-bold tabular-nums text-white">
+                  {agreementCount}
+                </span>{' '}
+                <span className="text-white/92">{agreementsLabel}</span>
+              </span>
+              <span className="text-white/45" aria-hidden>
+                ·
+              </span>
+              <span className="text-white/88">{createdOnText}</span>
+            </div>
+
+            {footerTrailing ? (
+              <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end [&_.rounded-lg]:rounded-md [&_a]:inline-flex [&_a]:items-center [&_button]:rounded-md [&_div]:inline-flex [&_div]:items-center">
+                {footerTrailing}
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
     </section>
