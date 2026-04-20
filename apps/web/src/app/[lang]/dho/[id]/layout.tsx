@@ -90,16 +90,16 @@ export default async function DhoLayout({
   return (
     <div className="flex max-w-container-2xl mx-auto">
       <Container className="flex-grow min-w-0">
-        <div className="mb-6 flex items-center">
-          <Breadcrumbs spaceId={spaceFromDb.id} lang={lang} />
-        </div>
-        <div className="relative flex justify-end mb-2">
-          {typeof spaceFromDb.web3SpaceId === 'number' && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <div className="flex min-h-9 min-w-0 flex-1 items-center">
+            <Breadcrumbs spaceId={spaceFromDb.id} lang={lang} />
+          </div>
+          {typeof spaceFromDb.web3SpaceId === 'number' ? (
             <NestedSpacesButton
               web3SpaceId={spaceFromDb.web3SpaceId as number}
               spaceSlug={daoSlug}
             />
-          )}
+          ) : null}
         </div>
         <CompactSpaceBanner
           title={spaceFromDb.title}

@@ -60,8 +60,9 @@ export const NestedSpacesButton = ({
     >
       <Button
         variant="link"
+        size="sm"
         disabled={isDisabled}
-        className="flex items-center gap-2 text-accent-11"
+        className="flex h-auto min-h-0 shrink-0 items-center gap-2 px-0 py-0 font-medium text-accent-11"
       >
         <Eye className="w-4 h-4" />
         <span>{tDho('nestedSpacesButton.label')}</span>
