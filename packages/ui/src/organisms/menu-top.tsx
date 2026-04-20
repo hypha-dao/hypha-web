@@ -1,14 +1,27 @@
 'use client';
 
 import { Logo } from '../atoms';
-import { useEffect, useRef, useState } from 'react';
+import {
+  type Dispatch,
+  type SetStateAction,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { Menu } from 'lucide-react';
 import { RxCross1 } from 'react-icons/rx';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 
+const MOBILE_MENU_REGION_ID = 'mobile-menu';
+
+/** Fallback when header height has not been measured yet; aligns with DHO sticky stack */
+const APP_MENU_TOP_FALLBACK_PX = 65;
+
 type MenuTopProps = {
   children?: React.ReactNode;
+  /** Optional center slot (e.g. space breadcrumbs on DHO routes) */
+  breadcrumbSlot?: React.ReactNode;
   leadingAction?: React.ReactNode;
   trailingAction?: React.ReactNode;
   logoHref?: string;
@@ -17,8 +30,65 @@ type MenuTopProps = {
   closeMenuLabel?: string;
 };
 
+function MobileMenuToggle({
+  isOpen,
+  setOpen,
+  openMenuLabel,
+  closeMenuLabel,
+  className,
+}: {
+  isOpen: boolean;
+  setOpen: Dispatch<SetStateAction<boolean>>;
+  openMenuLabel: string;
+  closeMenuLabel: string;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      className={clsx('md:hidden flex items-center', className)}
+      aria-label={isOpen ? closeMenuLabel : openMenuLabel}
+      aria-expanded={isOpen}
+      aria-controls={MOBILE_MENU_REGION_ID}
+      onClick={() => setOpen((v) => !v)}
+    >
+      {!isOpen && <Menu className="size-5" />}
+      {isOpen && <RxCross1 className="size-5" />}
+    </button>
+  );
+}
+
+function MobileMenuOverlay({
+  open,
+  topPx,
+  colSpanFull,
+  children,
+}: {
+  open: boolean;
+  topPx: number;
+  colSpanFull: boolean;
+  children: React.ReactNode;
+}) {
+  if (!open) return null;
+  return (
+    <div
+      id={MOBILE_MENU_REGION_ID}
+      className={clsx(
+        'md:hidden fixed inset-x-0 bottom-0 z-40 flex flex-col items-center p-4 bg-background-2 overflow-y-auto',
+        colSpanFull && 'col-span-full',
+      )}
+      style={{
+        top: topPx > 0 ? topPx : APP_MENU_TOP_FALLBACK_PX,
+      }}
+    >
+      <div className="flex flex-col space-y-8 items-center">{children}</div>
+    </div>
+  );
+}
+
 export const MenuTop = ({
   children,
+  breadcrumbSlot,
   leadingAction,
   trailingAction,
   logoHref,
@@ -35,67 +105,126 @@ export const MenuTop = ({
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const sync = () => {
+      const h = el.offsetHeight;
+      setHeaderHeight(h);
+      document.documentElement.style.setProperty('--app-menu-top-h', `${h}px`);
+    };
+    const ro = new ResizeObserver(sync);
+    ro.observe(el);
+    sync();
+    return () => {
+      ro.disconnect();
+      document.documentElement.style.removeProperty('--app-menu-top-h');
+    };
+  }, [breadcrumbSlot]);
+
+  const overlayTop = headerHeight > 0 ? headerHeight : APP_MENU_TOP_FALLBACK_PX;
+
+  const logoBlock = (
+    <div className="flex shrink-0 items-center gap-2">
+      {leadingAction}
+      {!!logoHref && <Logo width={110} href={logoHref} target={hrefTarget} />}
+    </div>
+  );
+
+  const desktopActions =
+    children || trailingAction ? (
+      <div
+        id="menu-top-actions"
+        className={clsx(
+          'hidden shrink-0 items-center gap-2 md:flex',
+          !breadcrumbSlot && !children && trailingAction && 'ml-auto',
+        )}
+      >
+        {children}
+        {trailingAction}
+      </div>
+    ) : null;
+
   return (
     <header
       ref={headerRef}
-      className="flex min-h-[65px] min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background-2 px-4 py-3 z-30"
+      className={clsx(
+        'flex min-h-[65px] min-w-0 flex-shrink-0 items-center border-b border-border bg-background-2 py-3 z-30',
+        breadcrumbSlot ? 'px-0' : 'gap-x-2 gap-y-2 px-4',
+      )}
     >
-      <div
-        className={clsx(
-          'w-full mx-auto flex items-center',
-          children ? 'justify-between' : 'justify-center',
-        )}
-      >
-        <div className="flex items-center gap-2">
-          {leadingAction}
-          {!!logoHref && (
-            <Logo width={110} href={logoHref} target={hrefTarget} />
-          )}
-        </div>
+      {breadcrumbSlot ? (
+        <div className="mx-auto grid w-full min-w-0 max-w-container-2xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 px-5 sm:gap-x-3">
+          {logoBlock}
 
-        {/* Desktop Nav + Trailing action (right-aligned group) */}
-        {(children || trailingAction) && (
-          <div
-            id="menu-top-actions"
-            className="hidden md:flex items-center gap-2"
-          >
-            {children}
-            {trailingAction}
-          </div>
-        )}
-
-        {/* Mobile trailing action (always visible on small screens) */}
-        {trailingAction && (
-          <div className="flex md:hidden items-center">{trailingAction}</div>
-        )}
-
-        {/* Mobile Burger */}
-        {children && (
-          <button
-            type="button"
-            className="md:hidden flex items-center"
-            aria-label={isMobileMenuOpen ? closeMenuLabel : openMenuLabel}
-            aria-expanded={isMobileMenuOpen}
-            aria-controls="mobile-menu"
-            onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
-          >
-            {!isMobileMenuOpen && <Menu className="size-5" />}
-            {isMobileMenuOpen && <RxCross1 className="size-5" />}
-          </button>
-        )}
-
-        {/* Mobile Full Screen Menu */}
-        {isMobileMenuOpen && (
-          <div
-            className="md:hidden fixed inset-x-0 bottom-0 z-40 flex flex-col items-center p-4 bg-background-2 overflow-y-auto"
-            style={{ top: headerHeight }}
-          >
-            <div className="flex flex-col space-y-8 items-center">
-              {children}
+          <div className="hidden min-h-[1.25rem] min-w-0 overflow-hidden md:flex md:items-center md:justify-start">
+            <div className="max-w-full min-w-0 text-start text-muted-foreground [&_a]:text-foreground [&_a:hover]:text-accent-11">
+              {breadcrumbSlot}
             </div>
           </div>
-        )}
-      </div>
+
+          <div className="flex shrink-0 items-center justify-end gap-2 md:justify-self-end">
+            {desktopActions}
+            {trailingAction && (
+              <div className="flex md:hidden items-center">
+                {trailingAction}
+              </div>
+            )}
+            {children ? (
+              <MobileMenuToggle
+                isOpen={isMobileMenuOpen}
+                setOpen={setIsMobileMenuOpen}
+                openMenuLabel={openMenuLabel}
+                closeMenuLabel={closeMenuLabel}
+              />
+            ) : null}
+          </div>
+
+          {children ? (
+            <MobileMenuOverlay
+              open={isMobileMenuOpen}
+              topPx={overlayTop}
+              colSpanFull
+            >
+              {children}
+            </MobileMenuOverlay>
+          ) : null}
+        </div>
+      ) : (
+        <div
+          className={clsx(
+            'mx-auto flex w-full min-w-0 items-center gap-2 sm:gap-3',
+            children ? 'justify-between' : 'justify-center',
+          )}
+        >
+          {logoBlock}
+
+          {desktopActions}
+
+          {trailingAction && (
+            <div className="flex md:hidden items-center">{trailingAction}</div>
+          )}
+
+          {children ? (
+            <MobileMenuToggle
+              isOpen={isMobileMenuOpen}
+              setOpen={setIsMobileMenuOpen}
+              openMenuLabel={openMenuLabel}
+              closeMenuLabel={closeMenuLabel}
+            />
+          ) : null}
+
+          {children ? (
+            <MobileMenuOverlay
+              open={isMobileMenuOpen}
+              topPx={overlayTop}
+              colSpanFull={false}
+            >
+              {children}
+            </MobileMenuOverlay>
+          ) : null}
+        </div>
+      )}
     </header>
   );
 };
