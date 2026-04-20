@@ -4,6 +4,13 @@ import { LinkLabel } from '../../common/link-label';
 import { Avatar, AvatarImage } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
+/** Scrollable purpose block — mirrors #2165 hero (`overflow-y-auto`, thin scrollbar). */
+const DESCRIPTION_SCROLL_BOX = cn(
+  'max-h-[min(45vh,280px)] w-full min-h-0 overflow-y-auto overscroll-y-contain pr-1 touch-pan-y',
+  '[scrollbar-color:rgba(255,255,255,0.35)_transparent] [scrollbar-width:thin]',
+  '[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/30 [&::-webkit-scrollbar-track]:bg-transparent',
+);
+
 export type CompactSpaceBannerProps = {
   title: string;
   description: string | null | undefined;
@@ -141,11 +148,13 @@ export function CompactSpaceBanner({
           </div>
         </div>
 
-        {/* Body — full width under header (Image 2); not constrained to half column */}
+        {/* Body — scroll when copy exceeds max height (same interaction model as #2165 hero purpose) */}
         {description ? (
-          <p className="max-w-none text-2 leading-[1.5] text-white">
-            {description}
-          </p>
+          <div className={DESCRIPTION_SCROLL_BOX}>
+            <p className="text-pretty text-2 leading-[1.5] text-white">
+              {description}
+            </p>
+          </div>
         ) : null}
 
         <div className="h-px w-full bg-white/12" role="presentation" />
