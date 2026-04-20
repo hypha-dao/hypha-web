@@ -22,17 +22,22 @@ export function SpaceHeaderContextBar({
 }: SpaceHeaderContextBarProps) {
   const rowRef = useRef<HTMLDivElement>(null);
   const tCommon = useTranslations('Common');
-  const { compactActionsMirror } = useSpaceHeaderMorph();
+  const { compactActionsMirror, progress } = useSpaceHeaderMorph();
+
+  /** Hide strip at top of page; show once user scrolls (hero moves under menu). */
+  const IDENTITY_STRIP_SHOW_PROGRESS = 0.04;
+
+  const stripVisible = progress >= IDENTITY_STRIP_SHOW_PROGRESS;
 
   useLayoutEffect(() => {
     const el = rowRef.current;
     if (!el) return;
+
     const sync = () => {
-      document.documentElement.style.setProperty(
-        '--app-subnav-h',
-        `${el.offsetHeight}px`,
-      );
+      const h = stripVisible ? el.offsetHeight : 0;
+      document.documentElement.style.setProperty('--app-subnav-h', `${h}px`);
     };
+
     const ro = new ResizeObserver(sync);
     ro.observe(el);
     sync();
@@ -40,21 +45,31 @@ export function SpaceHeaderContextBar({
       ro.disconnect();
       document.documentElement.style.removeProperty('--app-subnav-h');
     };
-  }, []);
+  }, [stripVisible]);
 
   return (
     <div
       ref={rowRef}
       className={cn(
-        'sticky z-[29] shrink-0 border-b border-border bg-background-2',
+        'sticky z-[29] shrink-0 bg-background-2',
+        stripVisible
+          ? 'border-b border-border w-screen py-2 sm:py-2.5'
+          : 'h-0 overflow-hidden border-0 py-0',
       )}
       style={{
         top: `var(--app-menu-top-h, ${SPACE_MENU_TOP_FALLBACK_PX}px)`,
+        ...(stripVisible
+          ? {
+              width: '100vw',
+              marginLeft: 'calc(50% - 50vw)',
+              marginRight: 'calc(50% - 50vw)',
+            }
+          : {}),
       }}
     >
       <div
         className={cn(
-          'mx-auto flex min-h-[2.25rem] max-w-container-2xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-5 py-2 sm:py-2.5',
+          'mx-auto flex min-h-[2.25rem] w-full max-w-container-2xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-5 sm:px-7',
         )}
       >
         <div
