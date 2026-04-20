@@ -97,7 +97,7 @@ export default function ProfileWallet() {
         <ModalStickyNavigation
           contextTitle={tModalAside('profileActions')}
           closeUrl={`/${lang}/profile/${personSlug}`}
-          backToParent
+          showBack={false}
         />
         <SelectAction
           title={tProfile('actions')}
