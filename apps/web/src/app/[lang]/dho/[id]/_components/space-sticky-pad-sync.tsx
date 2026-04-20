@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 
 import { useSpaceHeaderMorph } from './space-header-morph-context';
 
@@ -13,7 +13,7 @@ const COMPACT_BAR_PX = 64;
 export function SpaceStickyPadSync() {
   const { compactBarActive, progress } = useSpaceHeaderMorph();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!compactBarActive) {
       document.documentElement.style.setProperty('--dho-sticky-pad', '0px');
       return () => {
