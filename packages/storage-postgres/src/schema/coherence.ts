@@ -9,7 +9,7 @@ import {
   uniqueIndex,
   varchar,
 } from 'drizzle-orm/pg-core';
-import { InferInsertModel, InferSelectModel, sql } from 'drizzle-orm';
+import { desc, InferInsertModel, InferSelectModel, sql } from 'drizzle-orm';
 import { commonDateFields } from './shared';
 import { spaces } from './space';
 import { people } from './people';
@@ -33,6 +33,7 @@ export const coherences = pgTable(
     archived: boolean('archived').default(false),
     views: integer('views').default(0),
     messages: integer('messages').default(0),
+    voteScore: integer('vote_score').notNull().default(0),
     tags: jsonb('tags').$type<Array<string>>().notNull().default([]),
     ...commonDateFields,
   },
@@ -51,6 +52,11 @@ export const coherences = pgTable(
     index('search_archived').on(table.archived),
     index('search_views').on(table.views),
     index('search_messages').on(table.messages),
+    index('search_vote_score').on(table.voteScore),
+    index('search_vote_score_created_at').on(
+      desc(table.voteScore),
+      desc(table.createdAt),
+    ),
     index('search_tags').using('gin', table.tags),
   ],
 );

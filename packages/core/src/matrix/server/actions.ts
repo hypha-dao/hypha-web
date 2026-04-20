@@ -16,7 +16,11 @@ import {
   UpdateEncryptedAccessTokenInput,
 } from '../types';
 import { createMatrixUserLink, updateMatrixUserLink } from './mutations';
-import { findLinkByPrivyUserId, findAdminUserName } from './queries';
+import {
+  findAdminUserName,
+  findLinkByPrivyUserId,
+  findMatrixUserIdsByPrivyUserIds,
+} from './queries';
 import { getLinkByMatrixUserId } from './web3/get-link-by-matrix-user-id';
 import { Environment } from '../../coherence/types';
 
@@ -60,6 +64,23 @@ export async function getAdminUserNameAction(
     throw new Error('authToken is required to get admin user name');
   }
   return await findAdminUserName(data, { db });
+}
+
+/** Batch map Privy subs → Matrix MXIDs for the mention picker (space roster merge). */
+export async function getMatrixUserIdsByPrivySubsAction(
+  {
+    privyUserIds,
+    environment,
+  }: {
+    privyUserIds: string[];
+    environment: Environment;
+  },
+  { authToken }: { authToken?: string } = {},
+): Promise<Array<{ privyUserId: string; matrixUserId: string }>> {
+  if (!authToken) {
+    throw new Error('authToken is required for matrix user id batch lookup');
+  }
+  return findMatrixUserIdsByPrivyUserIds({ privyUserIds, environment }, { db });
 }
 
 export async function getLinkByMatrixUserIdAction(

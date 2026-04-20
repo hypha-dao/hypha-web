@@ -4,11 +4,10 @@ import {
   CoherenceOrder,
 } from '@hypha-platform/epics';
 import {
-  getEnableCoherence,
   getEnableHumanChat,
+  getEnableSpaceMemory,
 } from '@hypha-platform/feature-flags';
 import { Locale } from '@hypha-platform/i18n';
-import { notFound } from 'next/navigation';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -19,12 +18,8 @@ type PageProps = {
 };
 
 export default async function CoherencePage(props: PageProps) {
-  const coherenceEnabled = await getEnableCoherence();
-  if (!coherenceEnabled) {
-    notFound();
-  }
-
   const humanChatEnabled = await getEnableHumanChat();
+  const spaceMemoryEnabled = await getEnableSpaceMemory();
 
   const params = await props.params;
   const searchParams = await props.searchParams;
@@ -35,7 +30,7 @@ export default async function CoherencePage(props: PageProps) {
   const order: CoherenceOrder =
     orderRaw && COHERENCE_ORDERS.includes(orderRaw as CoherenceOrder)
       ? (orderRaw as CoherenceOrder)
-      : 'mostrecent';
+      : 'mostvotes';
 
   return (
     <CoherenceBlock
@@ -43,6 +38,7 @@ export default async function CoherencePage(props: PageProps) {
       spaceSlug={id}
       order={order}
       humanChatEnabled={humanChatEnabled}
+      spaceMemoryEnabled={spaceMemoryEnabled}
     />
   );
 }

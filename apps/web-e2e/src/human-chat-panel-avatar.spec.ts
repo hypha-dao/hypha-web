@@ -7,9 +7,6 @@ import { HumanChatPanelPage } from './pages/human-chat-panel.page';
  * Verifies that the PersonAvatar component is used in chat message bubbles
  * and that an authenticated user's profile image appears on their own messages.
  *
- * Feature flag: HYPHA_ENABLE_HUMAN_CHAT must be enabled.
- * We use the two-layer cookie strategy (extraHTTPHeaders for SSR + addCookies
- * for client navigation) — see .agents/skills/e2e-testing/references/feature-flags.md
  */
 
 const MOCK_AVATAR_URL = 'https://example.com/test-avatar.png';
@@ -26,17 +23,7 @@ const MOCK_USER = {
 test.describe('Human Chat Panel — Avatar in Messages', () => {
   let chatPanel: HumanChatPanelPage;
 
-  // Layer 1: Send cookie on SSR request
-  test.use({
-    extraHTTPHeaders: {
-      Cookie: 'HYPHA_ENABLE_HUMAN_CHAT=true',
-    },
-  });
-
-  test.beforeEach(async ({ page, context }) => {
-    // Layer 2: Persist cookie for client-side navigations
-    await HumanChatPanelPage.enableHumanChat(context);
-
+  test.beforeEach(async ({ page }) => {
     chatPanel = new HumanChatPanelPage(page);
     await chatPanel.open();
   });
@@ -83,17 +70,7 @@ test.describe('Human Chat Panel — Avatar in Messages', () => {
 test.describe('Human Chat Panel — Authenticated User Avatar', () => {
   let chatPanel: HumanChatPanelPage;
 
-  // Layer 1: Send cookie on SSR request
-  test.use({
-    extraHTTPHeaders: {
-      Cookie: 'HYPHA_ENABLE_HUMAN_CHAT=true',
-    },
-  });
-
-  test.beforeEach(async ({ page, context }) => {
-    // Layer 2: Persist cookie for client-side navigations
-    await HumanChatPanelPage.enableHumanChat(context);
-
+  test.beforeEach(async ({ page }) => {
     // Mock the /api/v1/people/me endpoint to return a user with an avatar
     await page.route('**/api/v1/people/me', (route) => {
       route.fulfill({

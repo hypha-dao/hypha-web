@@ -1,5 +1,5 @@
-import { getEnableCoherence } from '@hypha-platform/feature-flags';
 import { Locale } from '@hypha-platform/i18n';
+import { getEnableCoherence } from '@hypha-platform/feature-flags';
 import { ReactNode } from 'react';
 import { NavigationTabs } from '../_components/navigation-tabs';
 

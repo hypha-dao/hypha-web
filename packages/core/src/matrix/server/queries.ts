@@ -1,4 +1,9 @@
-import { MatrixUserLink } from '@hypha-platform/storage-postgres';
+import {
+  matrixUserLinks,
+  type MatrixUserLink,
+} from '@hypha-platform/storage-postgres';
+import { and, eq, inArray } from 'drizzle-orm';
+
 import { Environment } from '../../coherence/types';
 import { DbConfig } from '../../server';
 
@@ -58,6 +63,33 @@ export const findLinkByMatrixUserId = async (
   }
 
   return response;
+};
+
+/** Batch lookup for mention picker: Hypha roster `person.sub` → Matrix MXID (same env). */
+export const findMatrixUserIdsByPrivyUserIds = async (
+  {
+    privyUserIds,
+    environment,
+  }: { privyUserIds: string[]; environment: Environment },
+  { db }: DbConfig,
+): Promise<Array<{ privyUserId: string; matrixUserId: string }>> => {
+  const ids = [...new Set(privyUserIds.map((s) => s.trim()).filter(Boolean))];
+  if (ids.length === 0) return [];
+
+  const rows = await db
+    .select({
+      privyUserId: matrixUserLinks.privyUserId,
+      matrixUserId: matrixUserLinks.matrixUserId,
+    })
+    .from(matrixUserLinks)
+    .where(
+      and(
+        eq(matrixUserLinks.environment, environment),
+        inArray(matrixUserLinks.privyUserId, ids),
+      ),
+    );
+
+  return rows;
 };
 
 export const findAdminUserName = async (

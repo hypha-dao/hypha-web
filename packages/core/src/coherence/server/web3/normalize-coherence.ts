@@ -16,6 +16,7 @@ export function normalizeCoherence({
   slug,
   messages,
   views,
+  voteScore,
   ...rest
 }: DbCoherence): Coherence {
   return {
@@ -37,6 +38,7 @@ export function normalizeCoherence({
     slug: slug ?? '',
     messages: messages ?? 0,
     views: views ?? 0,
+    voteScore: voteScore ?? 0,
     ...rest,
   };
 }

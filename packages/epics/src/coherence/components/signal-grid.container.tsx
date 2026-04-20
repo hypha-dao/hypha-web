@@ -1,5 +1,6 @@
 import { Coherence, Order } from '@hypha-platform/core/client';
 import { SignalGrid } from './signal-grid';
+import { Locale } from '@hypha-platform/i18n';
 
 type SignalGridContainerProps = {
   basePath: string;
@@ -13,6 +14,12 @@ type SignalGridContainerProps = {
   signals: Coherence[];
   refresh: () => Promise<void>;
   onSignalClick?: (signal: Coherence) => void;
+  spaceSlug: string;
+  lang: Locale;
+  myVotes?: Record<number, -1 | 1>;
+  onVoteChange?: (coherenceId: number, next: -1 | 0 | 1) => void;
+  onVotesSynced?: () => void | Promise<void>;
+  votingCoherenceId?: number | null;
 };
 
 export const SignalGridContainer = ({
@@ -21,6 +28,12 @@ export const SignalGridContainer = ({
   signals,
   refresh,
   onSignalClick,
+  spaceSlug,
+  lang,
+  myVotes,
+  onVoteChange,
+  onVotesSynced,
+  votingCoherenceId,
 }: SignalGridContainerProps) => {
   const { page, firstPageSize, pageSize } = pagination;
   const startIndex = page <= 1 ? 0 : firstPageSize + (page - 2) * pageSize;
@@ -39,6 +52,12 @@ export const SignalGridContainer = ({
       }))}
       refresh={refresh}
       onSignalClick={onSignalClick}
+      spaceSlug={spaceSlug}
+      lang={lang}
+      myVotes={myVotes}
+      onVoteChange={onVoteChange}
+      onVotesSynced={onVotesSynced}
+      votingCoherenceId={votingCoherenceId}
     />
   );
 };
