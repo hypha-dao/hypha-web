@@ -121,10 +121,7 @@ export async function SpaceHeaderHeroCard({
               )}
               style={{ scrollbarWidth: 'thin' }}
             >
-              <div className="space-y-1.5">
-                <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-white/60 sm:text-[11px]">
-                  {tSpaces('purpose')}
-                </div>
+              <div>
                 {hasPurpose ? (
                   <p
                     className="text-pretty text-[15px] leading-relaxed text-white/95 sm:text-2 sm:leading-relaxed"
