@@ -250,8 +250,8 @@ export function CompactSpaceBanner({
             className="h-px w-full shrink-0 bg-white/12"
             role="presentation"
           />
-          <div className="flex flex-col gap-3 gap-x-5 pt-3.5 pb-3.5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-1 text-white/88 [text-shadow:0_1px_3px_rgba(0,0,0,0.55)]">
+          <div className="flex flex-col gap-3 px-0 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-x-6 sm:gap-y-0">
+            <div className="flex min-h-10 flex-wrap items-center gap-x-2 gap-y-1 text-1 leading-none text-white/88 [text-shadow:0_1px_3px_rgba(0,0,0,0.55)]">
               <span>
                 <span className="font-bold tabular-nums text-white">
                   {memberCount}
@@ -274,7 +274,7 @@ export function CompactSpaceBanner({
             </div>
 
             {footerTrailing ? (
-              <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end [&_.rounded-lg]:rounded-md [&_a]:inline-flex [&_a]:items-center [&_button]:rounded-md [&_div]:inline-flex [&_div]:items-center">
+              <div className="flex min-h-10 flex-wrap items-center justify-start gap-2 sm:justify-end [&_.rounded-lg]:rounded-md [&_a]:inline-flex [&_a]:items-center [&_button]:rounded-md [&_div]:inline-flex [&_div]:items-center">
                 {footerTrailing}
               </div>
             ) : null}
