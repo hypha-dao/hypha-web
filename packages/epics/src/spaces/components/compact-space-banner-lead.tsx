@@ -12,6 +12,14 @@ type Props = {
 const PARALLAX_SCROLL_RATE = 0.14;
 const PARALLAX_MAX_SHIFT_PX = 56;
 
+function clampParallaxScrollY(): number {
+  if (typeof window === 'undefined') return 0;
+  return Math.min(
+    PARALLAX_MAX_SHIFT_PX,
+    Math.max(-PARALLAX_MAX_SHIFT_PX, window.scrollY * PARALLAX_SCROLL_RATE),
+  );
+}
+
 /**
  * Hero lead image with stable branded placeholder + fade-in.
  * Avoids the grey flash from CSS background-image decoding on first paint.
@@ -19,7 +27,7 @@ const PARALLAX_MAX_SHIFT_PX = 56;
  */
 export function CompactSpaceBannerLead({ src }: Props) {
   const [ready, setReady] = React.useState(false);
-  const [parallaxY, setParallaxY] = React.useState(0);
+  const [parallaxY, setParallaxY] = React.useState(clampParallaxScrollY);
   const [preferReducedMotion, setPreferReducedMotion] = React.useState(false);
 
   React.useEffect(() => {
@@ -38,11 +46,7 @@ export function CompactSpaceBannerLead({ src }: Props) {
     let raf = 0;
 
     const tick = () => {
-      const y = Math.min(
-        PARALLAX_MAX_SHIFT_PX,
-        Math.max(-PARALLAX_MAX_SHIFT_PX, window.scrollY * PARALLAX_SCROLL_RATE),
-      );
-      setParallaxY(y);
+      setParallaxY(clampParallaxScrollY());
     };
 
     const onScroll = () => {
