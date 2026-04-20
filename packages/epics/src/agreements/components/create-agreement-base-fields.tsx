@@ -532,7 +532,7 @@ export function CreateAgreementBaseFields({
         <Separator />
       </div>
       <div className="flex flex-col gap-6">
-        <section className="rounded-xl border border-border/70 bg-muted/20 p-4 shadow-sm ring-1 ring-black/[0.03] dark:bg-muted/12 dark:ring-white/[0.06] lg:p-6">
+        <section className="rounded-xl border border-border/70 bg-muted/20 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/12 lg:p-6">
           <FormField
             control={form.control}
             name="leadImage"
@@ -578,7 +578,7 @@ export function CreateAgreementBaseFields({
             )}
           />
         </section>
-        <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-black/[0.03] dark:bg-muted/10 dark:ring-white/[0.06] lg:p-6">
+        <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
           <FormField
             control={form.control}
             name="description"
