@@ -43,11 +43,15 @@ import { ButtonClose } from '../../common/button-close';
 import { ButtonBack } from '../../common/button-back';
 import { CardButtonColorVariant } from '../../common/card-button';
 
-const schemaEdit = schemaCreateCoherenceForm.omit({
-  creatorId: true,
-  spaceId: true,
-  archived: true,
-});
+const schemaEdit = schemaCreateCoherenceForm
+  .omit({
+    creatorId: true,
+    spaceId: true,
+    archived: true,
+  })
+  .extend({
+    slug: z.string().min(1),
+  });
 
 type FormValues = z.infer<typeof schemaEdit>;
 
@@ -101,6 +105,7 @@ export const EditSignalForm = ({
   const form = useForm<FormValues>({
     resolver: zodResolver(schemaEdit),
     defaultValues: {
+      slug: coherence.slug ?? '',
       title: coherence.title,
       description: coherence.description,
       type: coherence.type,
@@ -176,6 +181,7 @@ export const EditSignalForm = ({
 
   const handleResetForm = React.useCallback(() => {
     form.reset({
+      slug: coherence.slug ?? '',
       title: coherence.title,
       description: coherence.description,
       type: coherence.type,
@@ -186,10 +192,9 @@ export const EditSignalForm = ({
 
   const handleSave = React.useCallback(
     async (data: FormValues) => {
-      if (!coherence.slug) return;
       try {
         await updateCoherenceBySlug({
-          slug: coherence.slug,
+          slug: data.slug,
           title: data.title,
           description: data.description,
           type: data.type,
@@ -201,7 +206,7 @@ export const EditSignalForm = ({
         console.warn('Could not update signal:', error);
       }
     },
-    [coherence.slug, updateCoherenceBySlug, router, successfulUrl],
+    [updateCoherenceBySlug, router, successfulUrl],
   );
 
   const handleInvalid = async (err?: Record<string, unknown>) => {
@@ -237,6 +242,7 @@ export const EditSignalForm = ({
           onSubmit={form.handleSubmit(handleSave, handleInvalid)}
           className="flex flex-col gap-0"
         >
+          <input type="hidden" {...form.register('slug')} />
           <div className="sticky top-0 z-30 -mx-4 bg-background-2 supports-[backdrop-filter]:bg-background-2/95 supports-[backdrop-filter]:backdrop-blur-sm lg:-mx-7">
             <div className="flex flex-row flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border px-4 pb-4 pt-2 lg:px-7">
               <span className="text-lg font-semibold leading-none text-foreground">
