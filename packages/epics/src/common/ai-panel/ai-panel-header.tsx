@@ -12,7 +12,7 @@ export function AiPanelHeader({ onResetChat }: AiPanelHeaderProps) {
   const { toggleSidebar } = useSidebar();
   const t = useTranslations('AiPanel');
   return (
-    <div className="flex min-w-0 flex-shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background-2 px-4 py-3">
+    <div className="box-border flex min-h-[var(--menu-top-height,var(--menu-top-fallback-height))] min-w-0 flex-shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background-2 px-4 py-0">
       <div className="flex min-w-0 shrink-0 items-center gap-2">
         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-primary">
           <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
