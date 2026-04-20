@@ -563,10 +563,12 @@ export function CreateAgreementBaseFields({
                       },
                     )}
                     defaultImage={
-                      resubmitFormData?.leadImage || field.value
-                        ? typeof field.value === 'string'
+                      typeof field.value === 'string'
+                        ? field.value.trim().length > 0
                           ? field.value
-                          : resubmitFormData?.leadImage
+                          : null
+                        : resubmitFormData?.leadImage?.trim()
+                        ? resubmitFormData.leadImage
                         : undefined
                     }
                   />
