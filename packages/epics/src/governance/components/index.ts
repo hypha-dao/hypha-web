@@ -35,3 +35,7 @@ export * from './token-burning-form';
 export * from '../utils/token-decimals';
 export * from './space-token-purchase-form';
 export * from './proposal-space-token-purchase-data';
+export * from './create-accept-investment-form';
+export * from './proposal-accept-investment-data';
+export * from './create-exchange-stakes-and-tokens-form';
+export * from './proposal-exchange-stakes-and-tokens-data';

@@ -218,13 +218,13 @@
         "title": "Ausgaben für Produkte oder Dienstleistungen bezahlen",
         "description": "Leisten Sie Zahlungen für Produkte und Dienstleistungen, indem Sie Mittel aus der Schatzkammer Ihres Spaces an einen anderen Space, eine Organisation oder eine individuelle Wallet übertragen."
       },
-      "acceptInvestmentComingSoon": {
-        "title": "Investition annehmen (Bald verfügbar)",
-        "description": "Erhalten Sie Kapital von Investoren, Mitgliedern oder ausgerichteten Spaces im Austausch für native Space-Token."
+      "acceptInvestment": {
+        "title": "Investition annehmen",
+        "description": "Erhalten Sie Kapital von Investoren, Mitgliedern oder ausgerichteten Spaces im Austausch für native Space-Token, abgewickelt über Escrow."
       },
-      "exchangeOwnershipComingSoon": {
-        "title": "Eigentum austauschen (Bald verfügbar)",
-        "description": "Tauschen Sie Eigentum zwischen Mitgliedern oder Spaces aus, sei es durch den Verkauf eines Anteils oder den Austausch von Vermögenswerten."
+      "exchangeStakesAndTokens": {
+        "title": "Anteile & Tokens tauschen",
+        "description": "Tauschen Sie Tokens zwischen Mitgliedern und Spaces aus — die Abwicklung erfolgt per Escrow, sobald beide Seiten ihre Mittel eingezahlt haben."
       },
       "deployFunds": {
         "title": "Mittel einsetzen",
@@ -369,7 +369,8 @@
       },
       "counterparty": {
         "from": "Von {name}",
-        "to": "An {name}"
+        "to": "An {name}",
+        "escrowAccount": "Escrow-Konto"
       }
     },
     "tokenSupply": "Token-Angebot",
@@ -779,7 +780,15 @@
     "rootSpace": "Root-Space",
     "rootSpaceDescription": "Wenn Sie diesen Space als Root-Space markieren, wird er unabhängig. Er ist dann nicht mehr mit der aktuellen Organisation verknüpft, und alle mit ihm verknüpften Spaces werden mitverschoben.",
     "search": "Suchen...",
-    "addYourUrl": "Füge deine URL hinzu"
+    "addYourUrl": "Füge deine URL hinzu",
+    "exchangeDepositProposalTitleBanner": "Die Seite dieses Spaces im Tausch abschließen",
+    "exchangeDepositProposalBody": "Ein Tauschvorschlag nennt diesen Space als Gegenpartei (Escrow #{escrowId}). Erstelle einen Vorschlag, um <send></send> einzuzahlen und <receive></receive> von der anderen Partei zu erhalten.",
+    "exchangeDepositProposalCta": "Einzahlungsvorschlag erstellen",
+    "exchangeDepositProposalCreating": "Vorschlag wird erstellt...",
+    "exchangeDepositProposalConfirming": "Bestätigung läuft...",
+    "exchangeDepositProposalTitle": "{amount} {symbol} einzahlen – Escrow abschließen (#{escrowId})",
+    "exchangeDepositProposalDescription": "Genehmige und zahle {payAmount} {paySymbol} in den Escrow (#{escrowId}) ein, um den Tausch mit {otherParty} abzuschließen. Im Gegenzug erhält {activeSpace} {receiveAmount} {receiveSymbol}.",
+    "investmentDepositProposalDescription": "Genehmige und zahle {payAmount} {paySymbol} in den Escrow (#{escrowId}) ein, um die Investition in {otherParty} abzuschließen. Im Gegenzug erhält {activeSpace} {receiveAmount} {receiveSymbol}."
   },
   "AgreementFlow": {
     "labels": {
@@ -798,7 +807,8 @@
       "collectiveAgreement": "Kollektive Vereinbarung",
       "contribution": "Beitrag",
       "expenses": "Ausgaben",
-      "funding": "Finanzierung"
+      "funding": "Finanzierung",
+      "investment": "Investition"
     },
     "documentBadges": {
       "invite": "Einladung",
@@ -872,7 +882,9 @@
       "redemptionReferenceCurrencyRequired": "Die Referenzwährung ist erforderlich, wenn die Rücknahme aktiv ist.",
       "redemptionMaxPercentRequired": "Der maximale Rücknahmeprozentsatz ist erforderlich, wenn die Rücknahme aktiv ist. Geben Sie 0 für kein Limit ein.",
       "redemptionPeriodDaysRequired": "Der Zeitraum (Tage) ist erforderlich, wenn die Rücknahme aktiv ist. Wählen Sie einen Rücknahmezeitraum aus.",
-      "redemptionStartDateRequired": "Das Datum „Rücknahme autorisieren ab“ ist erforderlich, wenn die Rücknahme aktiv ist."
+      "redemptionStartDateRequired": "Das Datum „Rücknahme autorisieren ab“ ist erforderlich, wenn die Rücknahme aktiv ist.",
+      "acceptInvestmentExactSendRows": "Unter „Investierendes Mitglied sendet“ ist genau eine Token-Zeile erforderlich.",
+      "acceptInvestmentExactReceiveRows": "Unter „Space stellt bereit (Mitglied erhält)“ ist genau eine Token-Zeile erforderlich."
     },
     "issueNewTokenForm": {
       "duplicateToken": "Ein Token mit demselben Namen und Symbol existiert bereits in Ihrem Space. Bitte ändern Sie entweder den Namen oder das Symbol, um fortzufahren.",
@@ -1365,6 +1377,25 @@
         "enterAmountAndToken": "Bitte geben Sie einen Betrag ein und wählen Sie einen Token aus.",
         "add": "Hinzufügen"
       },
+      "acceptInvestment": {
+        "investingMember": "Investierendes Mitglied",
+        "investorWillSend": "Investierendes Mitglied sendet",
+        "investorWillSendLine1": "Investierendes Mitglied",
+        "investorWillSendLine2": "sendet",
+        "investorWillReceive": "Space stellt bereit (Mitglied erhält)",
+        "investorWillReceiveLine1": "Space stellt bereit",
+        "investorWillReceiveLine2": "für Mitglied zum Erhalt",
+        "source": "Quelle",
+        "sourcePlaceholder": "Quelle wählen",
+        "sourceMint": "Neue Token prägen",
+        "sourceTreasury": "Verfügbare Token in der Treasury nutzen",
+        "escrowNotice": "Dieser Vorschlag verwendet Escrow für die Investition. Sobald er genehmigt ist, zahlt der Investor ({investor}) seinen Anteil aus seinem Profil oder seiner Space-Seite ein, und die Einzahlung von {activeSpace} erfolgt, wenn der Vorschlag genehmigt und ausgeführt wird."
+      },
+      "acceptInvestmentForm": {
+        "notMemberRevert": "Die Transaktion wurde abgelehnt: Die verbundene Wallet ist kein Mitglied oder Delegierter dieses Spaces. Verwenden Sie eine Wallet, die zum Space gehört, oder verbinden Sie sich als Delegierter.",
+        "walletRejected": "Die Transaktion wurde nicht signiert oder in der Wallet abgelehnt. Bitte erneut versuchen und bestätigen.",
+        "escrowNotConfigured": "Die Escrow-Vertragsadresse ist nicht konfiguriert. Setzen Sie NEXT_PUBLIC_ESCROW_IMPLEMENTATION_ADDRESS in apps/web/.env auf Ihren deployed EscrowImplementation-Proxy auf der Governance-Chain, starten Sie den Dev-Server neu oder deployen Sie die App erneut. Vertrag: packages/storage-evm (scripts/escrow-proxy.deploy.ts)."
+      },
       "paymentSchedule": {
         "label": "Zahlungsplan",
         "immediately": "Sofort",
@@ -1395,6 +1426,26 @@
     }
   },
   "ProposalDetails": {
+    "investment": {
+      "title": "Investitionsbedingungen",
+      "investor": "Investor",
+      "investingMember": "Investierendes Mitglied",
+      "investorWillSend": "Investierendes Mitglied sendet",
+      "investorWillSendLine1": "Investierendes Mitglied",
+      "investorWillSendLine2": "sendet",
+      "investorWillReceive": "Space stellt bereit (Mitglied erhält)",
+      "investorWillReceiveLine1": "Space stellt bereit",
+      "investorWillReceiveLine2": "für Mitglied zum Erhalt",
+      "escrowAccountAddress": "Escrow-Kontoadresse",
+      "fundingTreasuryThenMint": "Zuerst aus der Treasury, fehlender Betrag wird geprägt.",
+      "sourceMint": "Neue Token prägen",
+      "sourceTreasury": "Verfügbare Token in der Treasury nutzen",
+      "escrowOnChain": "Escrow (On-Chain)",
+      "partyAFundedHint": "Space-Seite bei Proposalausführung finanziert: {funded}",
+      "yes": "Ja",
+      "no": "Nein",
+      "escrowAccount": "Escrow-Konto"
+    },
     "status": {
       "accepted": "Akzeptiert",
       "rejected": "Abgelehnt",

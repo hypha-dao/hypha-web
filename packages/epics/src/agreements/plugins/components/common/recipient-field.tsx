@@ -17,6 +17,9 @@ export function RecipientField({
   members,
   spaces,
   defaultRecipientType = 'member',
+  recipientType,
+  onRecipientTypeChange,
+  readOnlyDropdown,
   readOnly,
   emptyMembersMessage,
   emptySpacesMessage,
@@ -28,6 +31,9 @@ export function RecipientField({
   members: Person[];
   spaces?: Space[];
   defaultRecipientType?: RecipientType;
+  recipientType?: RecipientType;
+  onRecipientTypeChange?: (next: RecipientType) => void;
+  readOnlyDropdown?: boolean;
   readOnly?: boolean;
   emptyMembersMessage?: string;
   emptySpacesMessage?: string;
@@ -65,6 +71,9 @@ export function RecipientField({
                   members={members}
                   spaces={spaces}
                   defaultRecipientType={defaultRecipientType}
+                  recipientType={recipientType}
+                  onRecipientTypeChange={onRecipientTypeChange}
+                  readOnlyDropdown={readOnlyDropdown}
                   readOnly={readOnly}
                   emptyMembersMessage={emptyMembersMessage}
                   emptySpacesMessage={emptySpacesMessage}

@@ -1,4 +1,5 @@
 import {
+  EscrowDepositBanners,
   MFABanner,
   PersonHead,
   ProfileMemberSpaces,
@@ -85,6 +86,10 @@ export default async function ProfilePage(props: PageProps) {
           />
           <Separator />
           <MFABanner />
+          <EscrowDepositBanners
+            personSlug={person.slug ?? ''}
+            personAddress={(person.address as `0x${string}`) ?? null}
+          />
           <ProfileMemberSpaces
             person={person}
             spaces={spaces}

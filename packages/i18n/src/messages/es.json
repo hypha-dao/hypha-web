@@ -72,7 +72,9 @@
       "redemptionReferenceCurrencyRequired": "La moneda de referencia es obligatoria cuando la redención está activa.",
       "redemptionMaxPercentRequired": "El % máximo de redención es obligatorio cuando la redención está activa. Ingresa 0 para no tener límite.",
       "redemptionPeriodDaysRequired": "El período (días) es obligatorio cuando la redención está activa. Selecciona un período de redención.",
-      "redemptionStartDateRequired": "La fecha \"Autorizar redención desde\" es obligatoria cuando la redención está activa."
+      "redemptionStartDateRequired": "La fecha \"Autorizar redención desde\" es obligatoria cuando la redención está activa.",
+      "acceptInvestmentExactSendRows": "Se requiere exactamente una fila de token en « El miembro inversor enviará ».",
+      "acceptInvestmentExactReceiveRows": "Se requiere exactamente una fila de token en « El miembro inversor recibirá »."
     },
     "plugins": {
       "paymentSchedule": {
@@ -485,6 +487,24 @@
         "enterAmountAndToken": "Ingrese una cantidad y seleccione un token.",
         "add": "Agregar"
       },
+      "acceptInvestment": {
+        "investingMember": "Miembro inversor",
+        "investorWillSend": "El miembro inversor enviará",
+        "investorWillSendLine1": "El miembro inversor",
+        "investorWillSendLine2": "enviará",
+        "investorWillReceive": "El espacio aporta (el miembro recibe)",
+        "investorWillReceiveLine1": "El espacio aporta",
+        "investorWillReceiveLine2": "para que el miembro reciba",
+        "source": "Origen",
+        "sourcePlaceholder": "Seleccionar origen",
+        "sourceMint": "Acuñar nuevos tokens",
+        "sourceTreasury": "Usar tokens disponibles en la tesorería"
+      },
+      "acceptInvestmentForm": {
+        "notMemberRevert": "La cadena rechazó la transacción: la cartera conectada no es miembro ni delegado de este espacio. Usa una cartera del espacio o conéctate como delegado.",
+        "walletRejected": "La transacción no se firmó o se rechazó en la cartera. Inténtalo de nuevo y aprueba la solicitud.",
+        "escrowNotConfigured": "Falta la dirección del contrato escrow. Configura NEXT_PUBLIC_ESCROW_IMPLEMENTATION_ADDRESS en apps/web/.env con el proxy EscrowImplementation en la cadena de gobernanza, reinicia el servidor o vuelve a desplegar la app. Despliegue: packages/storage-evm (scripts/escrow-proxy.deploy.ts)."
+      },
       "milestoneField": {
         "milestone": "Hito {index}",
         "percentageRequired": "Se requiere porcentaje",
@@ -509,7 +529,8 @@
       "collectiveAgreement": "Convenio Colectivo",
       "contribution": "Contribución",
       "expenses": "Gastos",
-      "funding": "Fondos"
+      "funding": "Fondos",
+      "investment": "Inversión"
     },
     "documentBadges": {
       "invite": "Invitación",
@@ -831,13 +852,13 @@
         "title": "Pagar gastos de productos o servicios",
         "description": "Realice pagos de productos y servicios transfiriendo fondos de su tesorería espacial a otro espacio, entidad o billetera individual."
       },
-      "acceptInvestmentComingSoon": {
-        "title": "Aceptar inversión (próximamente)",
-        "description": "Reciba capital de inversores, miembros o espacios alineados a cambio de tokens espaciales nativos."
+      "acceptInvestment": {
+        "title": "Aceptar inversión",
+        "description": "Reciba capital de inversores, miembros o espacios alineados a cambio de tokens nativos del espacio, liquidado mediante depósito en garantía."
       },
-      "exchangeOwnershipComingSoon": {
-        "title": "Propiedad de Exchange (próximamente)",
-        "description": "Intercambia la propiedad entre miembros o espacios, ya sea vendiendo una participación o intercambiando activos."
+      "exchangeStakesAndTokens": {
+        "title": "Intercambiar participaciones y tokens",
+        "description": "Intercambia tokens entre miembros y espacios, liquidado mediante escrow una vez que ambas partes hayan depositado sus fondos."
       },
       "deployFunds": {
         "title": "Implementar fondos",
@@ -982,7 +1003,8 @@
       },
       "counterparty": {
         "from": "Desde {name}",
-        "to": "A {name}"
+        "to": "A {name}",
+        "escrowAccount": "Cuenta de depósito en garantía"
       }
     },
     "tokenSupply": "Suministro del token",
@@ -1392,9 +1414,37 @@
     "rootSpace": "Espacio raíz",
     "rootSpaceDescription": "Marcar este espacio como Espacio Raíz lo hará independiente. Ya no estará vinculado a la organización actual y todos sus espacios vinculados se trasladarán con ella.",
     "search": "Buscar...",
-    "addYourUrl": "Añade tu URL"
+    "addYourUrl": "Añade tu URL",
+    "exchangeDepositProposalTitleBanner": "Completa la parte de este espacio en el intercambio",
+    "exchangeDepositProposalBody": "Una propuesta de intercambio incluye a este espacio como contraparte (escrow #{escrowId}). Crea una propuesta para depositar <send></send> y recibir <receive></receive> de la otra parte.",
+    "exchangeDepositProposalCta": "Crear propuesta de depósito",
+    "exchangeDepositProposalCreating": "Creando propuesta...",
+    "exchangeDepositProposalConfirming": "Confirmando...",
+    "exchangeDepositProposalTitle": "Depositar {amount} {symbol} – Liquidar escrow (#{escrowId})",
+    "exchangeDepositProposalDescription": "Aprueba y deposita {payAmount} {paySymbol} en el escrow (#{escrowId}) para completar el intercambio con {otherParty}. A cambio, {activeSpace} recibirá {receiveAmount} {receiveSymbol}.",
+    "investmentDepositProposalDescription": "Aprueba y deposita {payAmount} {paySymbol} en el escrow (#{escrowId}) para completar la inversión en {otherParty}. A cambio, {activeSpace} recibirá {receiveAmount} {receiveSymbol}."
   },
   "ProposalDetails": {
+    "investment": {
+      "title": "Términos de inversión",
+      "investor": "Inversor",
+      "investingMember": "Miembro inversor",
+      "investorWillSend": "El miembro inversor enviará",
+      "investorWillSendLine1": "El miembro inversor",
+      "investorWillSendLine2": "enviará",
+      "investorWillReceive": "El espacio aporta (el miembro recibe)",
+      "investorWillReceiveLine1": "El espacio aporta",
+      "investorWillReceiveLine2": "para que el miembro reciba",
+      "escrowAccountAddress": "Dirección de la cuenta de depósito en garantía",
+      "fundingTreasuryThenMint": "Desde la tesorería si hay saldo; el resto se acuña.",
+      "sourceMint": "Acuñar nuevos tokens",
+      "sourceTreasury": "Usar tokens disponibles en la tesorería",
+      "escrowOnChain": "Depósito en garantía (on-chain)",
+      "partyAFundedHint": "Lado del espacio financiado al ejecutar la propuesta: {funded}",
+      "yes": "Sí",
+      "no": "No",
+      "escrowAccount": "Cuenta de depósito en garantía"
+    },
     "status": {
       "accepted": "Aceptado",
       "rejected": "Rechazado",

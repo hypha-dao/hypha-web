@@ -50,7 +50,7 @@ export const TOKENS: Token[] = [
   },
   {
     symbol: 'HYPHA',
-    icon: '/placeholder/hypha-token-icon.webp',
+    icon: '/placeholder/hypha-token-icon.svg',
     address: '0x8b93862835C36e9689E9bb1Ab21De3982e266CD3',
     name: 'Hypha',
     type: 'utility',

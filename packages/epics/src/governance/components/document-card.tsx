@@ -12,7 +12,12 @@ import { PersonLabel } from '../../people/components/person-label';
 import { type Creator } from '../../people/components/person-label';
 import { type BadgeItem, BadgesList } from '@hypha-platform/ui';
 import { stripMarkdown } from '@hypha-platform/ui-utils';
-import { DocumentStatus, useEvents } from '@hypha-platform/core/client';
+import {
+  DocumentStatus,
+  stripHyphaInvestmentFormMarker,
+  useEvents,
+} from '@hypha-platform/core/client';
+import { stripExchangeDetailsBlock } from '../utils/strip-exchange-details-block';
 import React from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
 
@@ -47,9 +52,43 @@ function stripHtmlComments(text: string): string {
   return result;
 }
 
+/**
+ * MDX comments (`{/* … *\/}`) are invisible when the description is rendered
+ * via `<Markdown>` on the proposal detail page, but the card preview shows the
+ * description as plain text via `stripMarkdown(stripDescription(...))`, which
+ * leaves the literal `{/* … *\/}` syntax visible. We embed structured markers
+ * with this syntax (e.g. `buildExchangeDepositEscrowMarker`) so they need to
+ * be removed from the card preview too.
+ */
+function stripMdxComments(text: string): string {
+  let result = text;
+  for (;;) {
+    const start = result.indexOf('{/*');
+    if (start === -1) break;
+    const end = result.indexOf('*/}', start + 3);
+    if (end === -1) {
+      result = result.slice(0, start);
+      break;
+    }
+    result = result.slice(0, start) + result.slice(end + 3);
+  }
+  return result;
+}
+
 function stripDescription(description: string): string {
   if (!description) return '';
-  return stripHtmlComments(description)
+  // Strip investment marker before markdown — markdown can mangle `__` delimiters.
+  const withoutInvestmentMarker = stripHyphaInvestmentFormMarker(description);
+  // Exchange proposals embed a block of structured details between
+  // `<!-- exchange-details:start -->` / `<!-- exchange-details:end -->`. The
+  // content between those markers is plain markdown (wallet addresses, leg
+  // tables) so `stripHtmlComments` alone leaves it on the card preview. Drop
+  // the whole block so the card only shows the user-written description.
+  const withoutExchangeDetails = stripExchangeDetailsBlock(
+    withoutInvestmentMarker,
+    { replaceWith: '\n' },
+  );
+  return stripMdxComments(stripHtmlComments(withoutExchangeDetails))
     .replace(/\\([\[\]\(\)\{\}])/g, '$1')
     .replace(/&#x([0-9A-Fa-f]+);/gi, (full, hex) => {
       const codePoint = Number.parseInt(hex, 16);
@@ -151,12 +190,10 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
             loading={isLoading}
           >
             <div className="line-clamp-3 w-full">
-              {stripDescription(
-                stripMarkdown(description, {
-                  orderedListMarkers: false,
-                  unorderedListMarkers: false,
-                }),
-              )}
+              {stripMarkdown(stripDescription(description ?? ''), {
+                orderedListMarkers: false,
+                unorderedListMarkers: false,
+              })}
             </div>
           </Skeleton>
         </div>

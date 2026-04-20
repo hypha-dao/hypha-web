@@ -1,0 +1,150 @@
+import { publicClient, getTokenDecimals } from '@hypha-platform/core/client';
+import { erc20Abi, parseUnits } from 'viem';
+
+const isEvmAddress = (value: string): value is `0x${string}` =>
+  /^0x[a-fA-F0-9]{40}$/.test(value);
+
+const RPC_TIMEOUT_MS = 25_000;
+
+async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const id = setTimeout(() => reject(new Error('RPC_TIMEOUT')), ms);
+    promise
+      .then((v) => {
+        clearTimeout(id);
+        resolve(v);
+      })
+      .catch((e) => {
+        clearTimeout(id);
+        reject(e);
+      });
+  });
+}
+
+export const EXCHANGE_SELLER_BALANCE_EXCEEDED =
+  'EXCHANGE_SELLER_BALANCE_EXCEEDED';
+export const EXCHANGE_SELLER_AMOUNT_TOO_SMALL =
+  'EXCHANGE_SELLER_AMOUNT_TOO_SMALL';
+
+type SellerLeg = { amount: string; token: string };
+
+export type ValidateExchangeSellerBalancesInput = {
+  sellerRecipientType?: 'member' | 'space';
+  sellerAddress: string;
+  sellerLeg: SellerLeg[];
+  /** On-chain executor for the active space (treasury token holder). */
+  spaceExecutorAddress?: string | null;
+};
+
+/**
+ * Returns whose ERC-20 balance to check for seller legs (matches on-chain funding).
+ *
+ * - **Member seller:** Party A funds from the **seller's personal wallet** (not treasury).
+ * - **Space seller:** Party A funds from the **space executor (treasury)** when the proposal executes.
+ */
+export function resolveSellerBalanceOwner(
+  input: ValidateExchangeSellerBalancesInput,
+): `0x${string}` | null | 'treasury_unavailable' {
+  const { sellerRecipientType, sellerAddress, spaceExecutorAddress } = input;
+
+  if (sellerRecipientType === 'member') {
+    if (!sellerAddress || !isEvmAddress(sellerAddress)) {
+      return null;
+    }
+    return sellerAddress;
+  }
+
+  if (spaceExecutorAddress && isEvmAddress(spaceExecutorAddress)) {
+    return spaceExecutorAddress;
+  }
+  if (sellerRecipientType === 'space') {
+    return 'treasury_unavailable';
+  }
+  if (!sellerAddress || !isEvmAddress(sellerAddress)) {
+    return null;
+  }
+  return sellerAddress;
+}
+
+/** Returns whether the leg amount exceeds balance, or skip/error states. */
+export async function checkSingleSellerLegBalance(
+  owner: `0x${string}`,
+  leg: SellerLeg,
+): Promise<'ok' | 'exceeds' | 'skip' | 'rpc_error' | 'amount_too_small'> {
+  if (!leg?.token || !isEvmAddress(leg.token)) return 'skip';
+
+  const trimmed = leg.amount?.trim() ?? '';
+  if (!trimmed) return 'skip';
+
+  let decimals: number;
+  try {
+    decimals = await withTimeout(getTokenDecimals(leg.token), RPC_TIMEOUT_MS);
+  } catch {
+    return 'rpc_error';
+  }
+
+  let amountWei: bigint;
+  try {
+    amountWei = parseUnits(trimmed, decimals);
+  } catch {
+    return 'rpc_error';
+  }
+
+  // viem's `parseUnits` silently rounds down when the input has more
+  // fractional digits than the token supports. e.g. parseUnits('0.001', 2)
+  // returns 0n. The on-chain `createEscrow` then reverts with
+  // "Amount … must be greater than 0", which surfaces as a confusing
+  // proposal failure for the user. Treat this as a validation error so
+  // we can show actionable copy under the amount field.
+  if (amountWei === 0n) return 'amount_too_small';
+
+  let balanceWei: bigint;
+  try {
+    balanceWei = await withTimeout(
+      publicClient.readContract({
+        address: leg.token,
+        abi: erc20Abi,
+        functionName: 'balanceOf',
+        args: [owner],
+      }),
+      RPC_TIMEOUT_MS,
+    );
+  } catch {
+    return 'rpc_error';
+  }
+
+  return amountWei > balanceWei ? 'exceeds' : 'ok';
+}
+
+export async function validateExchangeSellerLegBalances(
+  input: ValidateExchangeSellerBalancesInput,
+): Promise<void> {
+  const { sellerLeg } = input;
+
+  const owner = resolveSellerBalanceOwner(input);
+  if (owner === 'treasury_unavailable') {
+    throw new Error('EXCHANGE_SELLER_TREASURY_UNAVAILABLE');
+  }
+  if (owner === null) {
+    return;
+  }
+
+  for (let i = 0; i < sellerLeg.length; i++) {
+    const leg = sellerLeg[i];
+    if (!leg) continue;
+    const result = await checkSingleSellerLegBalance(owner, leg);
+    if (result === 'rpc_error') {
+      throw new Error('EXCHANGE_SELLER_BALANCE_CHECK_FAILED');
+    }
+    if (result === 'amount_too_small') {
+      const err = new Error(EXCHANGE_SELLER_AMOUNT_TOO_SMALL);
+      (err as Error & { legIndex: number }).legIndex = i;
+      throw err;
+    }
+    if (result === 'exceeds') {
+      const err = new Error(EXCHANGE_SELLER_BALANCE_EXCEEDED);
+      (err as Error & { legIndex: number }).legIndex = i;
+      throw err;
+    }
+  }
+}

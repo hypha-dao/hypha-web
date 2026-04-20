@@ -23,6 +23,9 @@ import {
   TOKENS,
   type Person,
   type Space,
+  stripHyphaInvestmentFormMarker,
+  getEscrowImplementationAddress,
+  parseHyphaInvestmentFormFromDescription,
 } from '@hypha-platform/core/client';
 import {
   ProposalTransactionItem,
@@ -40,7 +43,11 @@ import {
   ProposalRedeemTokensData,
   ProposalSpaceTokenPurchaseData,
   ProposalUpdateToken,
+  ProposalAcceptInvestmentData,
+  ProposalExchangeStakesAndTokensData,
 } from '../../governance';
+import { parseExchangeDetailsFromDescription } from '../../governance/utils/exchange-details-parser';
+import { stripExchangeDetailsBlock } from '../../governance/utils/strip-exchange-details-block';
 import { MarkdownSuspense } from '@hypha-platform/ui/server';
 import { ButtonClose, ExpireProposalBanner } from '@hypha-platform/epics';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -984,6 +991,61 @@ export const ProposalDetail = ({
     return undefined;
   })();
 
+  const investmentResubmit = (() => {
+    if (label !== 'Investment') return undefined;
+    const fromMarker = parseHyphaInvestmentFormFromDescription(content);
+    if (fromMarker) {
+      return {
+        recipient: fromMarker.investorAddress,
+        investorSendLegs: fromMarker.investorSendLegs,
+        ...(fromMarker.spaceReceiveLegs?.length
+          ? { spaceReceiveLegs: fromMarker.spaceReceiveLegs }
+          : {}),
+      };
+    }
+    const ex = proposalDetails?.exchangeEscrowData;
+    if (
+      !ex?.partyB ||
+      !ex.tokenA ||
+      !ex.tokenB ||
+      ex.amountA === undefined ||
+      ex.amountB === undefined
+    ) {
+      return undefined;
+    }
+    const da = resolveTokenDecimals(ex.tokenA);
+    const db = resolveTokenDecimals(ex.tokenB);
+    return {
+      recipient: ex.partyB,
+      investorSendLegs: [
+        { amount: formatUnits(ex.amountB, db), token: ex.tokenB },
+      ],
+      spaceReceiveLegs: [
+        { amount: formatUnits(ex.amountA, da), token: ex.tokenA },
+      ],
+    };
+  })();
+
+  const resubmitTemplateDataMerged =
+    label === 'Investment' && investmentResubmit
+      ? { ...resubmitTemplateData, ...investmentResubmit }
+      : resubmitTemplateData;
+
+  // Description handed to FormVoting → resubmit session storage. Strip
+  // template-specific markers (investment JSON / exchange-details block) so
+  // the resubmit form's editor only shows the user-authored prose. The
+  // create form re-emits its own marker on submit; carrying the marker
+  // through the editor caused doubled-marker descriptions and a JSON-in-MDX
+  // crash when the resubmitted proposal was opened.
+  const resubmitDescription =
+    label === 'Investment'
+      ? stripHyphaInvestmentFormMarker(content ?? '')
+      : label === 'Exchange'
+      ? stripExchangeDetailsBlock(content ?? '')
+      : content;
+
+  const escrowAddr = getEscrowImplementationAddress();
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex gap-2 justify-between">
@@ -1029,8 +1091,37 @@ export const ProposalDetail = ({
         isExpiring={isExpiring}
         web3SpaceId={proposalDetails?.spaceId}
       />
-      <MarkdownSuspense>{content}</MarkdownSuspense>
+      <MarkdownSuspense>
+        {label === 'Investment'
+          ? stripHyphaInvestmentFormMarker(content ?? '')
+          : label === 'Exchange'
+          ? stripExchangeDetailsBlock(content ?? '')
+          : content}
+      </MarkdownSuspense>
       <AttachmentList attachments={attachments || []} />
+      {label === 'Investment' ? (
+        <ProposalAcceptInvestmentData
+          descriptionMarkdown={content}
+          spaceSlug={spaceSlug}
+          exchangeEscrowData={proposalDetails?.exchangeEscrowData}
+        />
+      ) : null}
+      {label === 'Exchange'
+        ? (() => {
+            const parsed = parseExchangeDetailsFromDescription(content);
+            if (!parsed) return null;
+            return (
+              <ProposalExchangeStakesAndTokensData
+                spaceSlug={spaceSlug}
+                sellerAddress={parsed.sellerAddress}
+                buyerAddress={parsed.buyerAddress}
+                sellerLeg={parsed.sellerLeg}
+                buyerLeg={parsed.buyerLeg}
+                dbTokens={dbTokens}
+              />
+            );
+          })()
+        : null}
       {proposalDetails?.votingMethods.map((method, idx) => (
         <ProposalVotingInfo
           key={idx}
@@ -1055,42 +1146,47 @@ export const ProposalDetail = ({
           spaceSlug={spaceSlug}
         />
       ))}
-      {proposalDetails?.tokens.map((token, idx) => (
-        <ProposalTokenItem
-          key={idx}
-          name={token.name}
-          symbol={token.symbol}
-          address={token.address}
-          initialSupply={token.maxSupply}
-          dbTokens={dbTokens}
-          transferable={token.transferable}
-          fixedMaxSupply={token.fixedMaxSupply}
-          autoMinting={token.autoMinting}
-          priceInUSD={token.priceInUSD}
-          useTransferWhitelist={token.useTransferWhitelist}
-          useReceiveWhitelist={token.useReceiveWhitelist}
-          initialTransferWhitelist={token.initialTransferWhitelist}
-          initialReceiveWhitelist={token.initialReceiveWhitelist}
-          decayPercentage={token.decayPercentage}
-          decayInterval={token.decayInterval}
-        />
-      ))}
-      {Boolean(proposalDetails?.transfers?.length) && (
-        <div className="flex flex-col gap-4">
-          <span className="text-neutral-11 text-2 font-medium">
-            {tProposalDetails('sections.payment')}
-          </span>
-          {proposalDetails?.transfers.map((tx, idx) => (
-            <ProposalTransactionItem
-              key={idx}
-              recipient={tx?.recipient}
-              amount={tx?.rawAmount}
-              tokenAddress={tx?.token}
-              spaceSlug={spaceSlug}
-            />
-          ))}
-        </div>
-      )}
+      {label !== 'Investment' &&
+        label !== 'Exchange' &&
+        proposalDetails?.tokens.map((token, idx) => (
+          <ProposalTokenItem
+            key={idx}
+            name={token.name}
+            symbol={token.symbol}
+            address={token.address}
+            initialSupply={token.maxSupply}
+            dbTokens={dbTokens}
+            transferable={token.transferable}
+            fixedMaxSupply={token.fixedMaxSupply}
+            autoMinting={token.autoMinting}
+            priceInUSD={token.priceInUSD}
+            useTransferWhitelist={token.useTransferWhitelist}
+            useReceiveWhitelist={token.useReceiveWhitelist}
+            initialTransferWhitelist={token.initialTransferWhitelist}
+            initialReceiveWhitelist={token.initialReceiveWhitelist}
+            decayPercentage={token.decayPercentage}
+            decayInterval={token.decayInterval}
+          />
+        ))}
+      {Boolean(proposalDetails?.transfers?.length) &&
+        label !== 'Investment' &&
+        label !== 'Exchange' && (
+          <div className="flex flex-col gap-4">
+            <span className="text-neutral-11 text-2 font-medium">
+              {tProposalDetails('sections.payment')}
+            </span>
+            {proposalDetails?.transfers.map((tx, idx) => (
+              <ProposalTransactionItem
+                key={idx}
+                recipient={tx?.recipient}
+                amount={tx?.rawAmount}
+                tokenAddress={tx?.token}
+                spaceSlug={spaceSlug}
+                escrowContractAddress={escrowAddr}
+              />
+            ))}
+          </div>
+        )}
       {proposalDetails?.mintings.map((mint, idx) => (
         <ProposalMintItem
           key={idx}
@@ -1239,7 +1335,7 @@ export const ProposalDetail = ({
         proposalId={proposalId ?? null}
         proposalCreator={proposalDetails?.creator ?? null}
         documentTitle={title}
-        documentDescription={content}
+        documentDescription={resubmitDescription}
         documentLeadImage={leadImage}
         documentAttachments={attachments}
         spaceSlug={spaceSlug}
@@ -1275,7 +1371,7 @@ export const ProposalDetail = ({
           isUpdateTokenOwnershipForResubmit
         }
         redeemResubmitPayload={redeemResubmitPayloadResolved}
-        proposalTemplateData={resubmitTemplateData}
+        proposalTemplateData={resubmitTemplateDataMerged}
       />
     </div>
   );

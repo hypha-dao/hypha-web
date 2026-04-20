@@ -218,13 +218,13 @@
         "title": "Payer des dépenses pour des produits ou services",
         "description": "Effectuez des paiements pour des produits et services en transférant des fonds de la trésorerie de votre espace vers un autre espace, une entité ou un portefeuille individuel."
       },
-      "acceptInvestmentComingSoon": {
-        "title": "Accepter un investissement (bientôt disponible)",
-        "description": "Recevez du capital d'investisseurs, de membres ou d'espaces alignés en échange des tokens natifs de l'espace."
+      "acceptInvestment": {
+        "title": "Accepter un investissement",
+        "description": "Recevez du capital d'investisseurs, de membres ou d'espaces alignés en échange des tokens natifs de l'espace, réglé via séquestre."
       },
-      "exchangeOwnershipComingSoon": {
-        "title": "Échanger la propriété (bientôt disponible)",
-        "description": "Échangez la propriété entre membres ou espaces, qu'il s'agisse de vendre une part ou d'échanger des actifs."
+      "exchangeStakesAndTokens": {
+        "title": "Échanger des parts et des jetons",
+        "description": "Échangez des jetons entre membres et espaces, réglés via séquestre lorsque les deux parties ont déposé leurs fonds."
       },
       "deployFunds": {
         "title": "Déployer des fonds",
@@ -369,7 +369,8 @@
       },
       "counterparty": {
         "from": "De {name}",
-        "to": "À {name}"
+        "to": "À {name}",
+        "escrowAccount": "Compte séquestre"
       }
     },
     "tokenSupply": "Offre de tokens",
@@ -779,7 +780,15 @@
     "rootSpace": "Espace racine",
     "rootSpaceDescription": "Marquer cet espace comme Espace racine le rendra indépendant. Il ne sera plus lié à l’organisation actuelle, et tous ses espaces liés seront déplacés avec lui.",
     "search": "Rechercher...",
-    "addYourUrl": "Ajoutez votre URL"
+    "addYourUrl": "Ajoutez votre URL",
+    "exchangeDepositProposalTitleBanner": "Finaliser la part de cet espace dans l'échange",
+    "exchangeDepositProposalBody": "Une proposition d'échange désigne cet espace comme contrepartie (escrow #{escrowId}). Créez une proposition pour déposer <send></send> et recevoir <receive></receive> de l'autre partie.",
+    "exchangeDepositProposalCta": "Créer une proposition de dépôt",
+    "exchangeDepositProposalCreating": "Création de la proposition...",
+    "exchangeDepositProposalConfirming": "Confirmation...",
+    "exchangeDepositProposalTitle": "Déposer {amount} {symbol} – Régler l'escrow (#{escrowId})",
+    "exchangeDepositProposalDescription": "Approuvez et déposez {payAmount} {paySymbol} dans l'escrow (#{escrowId}) pour finaliser l'échange avec {otherParty}. En retour, {activeSpace} recevra {receiveAmount} {receiveSymbol}.",
+    "investmentDepositProposalDescription": "Approuvez et déposez {payAmount} {paySymbol} dans l'escrow (#{escrowId}) pour finaliser l'investissement dans {otherParty}. En retour, {activeSpace} recevra {receiveAmount} {receiveSymbol}."
   },
   "AgreementFlow": {
     "labels": {
@@ -798,7 +807,8 @@
       "collectiveAgreement": "Accord collectif",
       "contribution": "Contribution",
       "expenses": "Dépenses",
-      "funding": "Financement"
+      "funding": "Financement",
+      "investment": "Investissement"
     },
     "documentBadges": {
       "invite": "Invitation",
@@ -872,7 +882,9 @@
       "redemptionReferenceCurrencyRequired": "La devise de référence est requise lorsque le rachat est activé.",
       "redemptionMaxPercentRequired": "Le pourcentage maximal de rachat est requis lorsque le rachat est activé. Saisissez 0 pour aucune limite.",
       "redemptionPeriodDaysRequired": "La période (jours) est requise lorsque le rachat est activé. Sélectionnez une période de rachat.",
-      "redemptionStartDateRequired": "La date \"Autoriser le rachat à partir du\" est requise lorsque le rachat est activé."
+      "redemptionStartDateRequired": "La date \"Autoriser le rachat à partir du\" est requise lorsque le rachat est activé.",
+      "acceptInvestmentExactSendRows": "Une seule ligne de jeton est requise sous « Le membre investisseur enverra ».",
+      "acceptInvestmentExactReceiveRows": "Une seule ligne de jeton est requise sous « Le membre investisseur recevra »."
     },
     "issueNewTokenForm": {
       "duplicateToken": "Un token avec le même nom et symbole existe déjà dans votre espace. Veuillez modifier le nom ou le symbole pour continuer.",
@@ -1365,6 +1377,24 @@
         "enterAmountAndToken": "Veuillez saisir un montant et sélectionner un token.",
         "add": "Ajouter"
       },
+      "acceptInvestment": {
+        "investingMember": "Membre investisseur",
+        "investorWillSend": "Le membre investisseur enverra",
+        "investorWillSendLine1": "Le membre investisseur",
+        "investorWillSendLine2": "enverra",
+        "investorWillReceive": "L’espace fournit (le membre reçoit)",
+        "investorWillReceiveLine1": "L’espace fournit",
+        "investorWillReceiveLine2": "pour que le membre reçoive",
+        "source": "Source",
+        "sourcePlaceholder": "Sélectionner la source",
+        "sourceMint": "Frapper de nouveaux tokens",
+        "sourceTreasury": "Utiliser les tokens disponibles en trésorerie"
+      },
+      "acceptInvestmentForm": {
+        "notMemberRevert": "La chaîne a rejeté la transaction : le portefeuille connecté n’est pas membre ou délégué de cet espace. Utilisez un portefeuille du bon espace ou connectez-vous en tant que délégué.",
+        "walletRejected": "La transaction n’a pas été signée ou a été refusée dans le portefeuille. Réessayez et approuvez la demande.",
+        "escrowNotConfigured": "L’adresse du contrat d’escrow n’est pas configurée. Définissez NEXT_PUBLIC_ESCROW_IMPLEMENTATION_ADDRESS dans apps/web/.env (proxy EscrowImplementation sur la chaîne de gouvernance), redémarrez le serveur de dev ou redéployez l’app. Déploiement : packages/storage-evm (scripts/escrow-proxy.deploy.ts)."
+      },
       "paymentSchedule": {
         "label": "Calendrier de paiement",
         "immediately": "Immédiatement",
@@ -1395,6 +1425,26 @@
     }
   },
   "ProposalDetails": {
+    "investment": {
+      "title": "Conditions d'investissement",
+      "investor": "Investisseur",
+      "investingMember": "Membre investisseur",
+      "investorWillSend": "Le membre investisseur enverra",
+      "investorWillSendLine1": "Le membre investisseur",
+      "investorWillSendLine2": "enverra",
+      "investorWillReceive": "L’espace fournit (le membre reçoit)",
+      "investorWillReceiveLine1": "L’espace fournit",
+      "investorWillReceiveLine2": "pour que le membre reçoive",
+      "escrowAccountAddress": "Adresse du compte séquestre",
+      "fundingTreasuryThenMint": "Prélevé sur la trésorerie si disponible ; le reste est frappé.",
+      "sourceMint": "Frapper de nouveaux tokens",
+      "sourceTreasury": "Utiliser les tokens disponibles en trésorerie",
+      "escrowOnChain": "Séquestre (on-chain)",
+      "partyAFundedHint": "Côté espace financé à l'exécution de la proposition : {funded}",
+      "yes": "Oui",
+      "no": "Non",
+      "escrowAccount": "Compte séquestre"
+    },
     "status": {
       "accepted": "Accepté",
       "rejected": "Rejeté",

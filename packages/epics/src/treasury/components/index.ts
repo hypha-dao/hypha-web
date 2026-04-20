@@ -3,6 +3,7 @@ export * from './assets/assets-section';
 export * from './assets/vaults-section';
 
 export * from './requests/transactions-section';
+export * from './requests/refundable-escrows-list';
 
 export * from './common/token-icon-field';
 export * from './common/token-max-supply-field';

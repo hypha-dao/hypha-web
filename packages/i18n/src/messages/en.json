@@ -218,13 +218,13 @@
         "title": "Pay Expenses for Products or Services",
         "description": "Make payments for products and services by transferring funds from your space treasury to another space, entity, or individual wallet."
       },
-      "acceptInvestmentComingSoon": {
-        "title": "Accept Investment (Coming Soon)",
-        "description": "Receive capital from investors, members, or aligned spaces in exchange for native space tokens."
+      "acceptInvestment": {
+        "title": "Accept Investment",
+        "description": "Receive capital from investors, members, or aligned spaces in exchange for native space tokens, settled via escrow."
       },
-      "exchangeOwnershipComingSoon": {
-        "title": "Exchange Ownership (Coming Soon)",
-        "description": "Swap ownership between members or spaces, whether selling a stake or exchanging assets."
+      "exchangeStakesAndTokens": {
+        "title": "Exchange Stakes & Tokens",
+        "description": "Swap tokens between members and spaces, settled via escrow when both sides have funded."
       },
       "deployFunds": {
         "title": "Deploy Funds",
@@ -369,7 +369,8 @@
       },
       "counterparty": {
         "from": "From {name}",
-        "to": "To {name}"
+        "to": "To {name}",
+        "escrowAccount": "Escrow Account"
       }
     },
     "tokenSupply": "Token Supply",
@@ -779,7 +780,15 @@
     "rootSpace": "Root Space",
     "rootSpaceDescription": "Marking this space as a Root Space will make it independent. It will no longer be linked to the current organisation, and all of its linked spaces will move with it.",
     "search": "Search...",
-    "addYourUrl": "Add your URL"
+    "addYourUrl": "Add your URL",
+    "exchangeDepositProposalTitleBanner": "Complete this space's side of an exchange",
+    "exchangeDepositProposalBody": "An exchange proposal lists this space as counterparty (escrow #{escrowId}). Create a proposal to deposit <send></send> and receive <receive></receive> from the other party.",
+    "exchangeDepositProposalCta": "Create deposit proposal",
+    "exchangeDepositProposalCreating": "Creating proposal...",
+    "exchangeDepositProposalConfirming": "Confirming...",
+    "exchangeDepositProposalTitle": "Deposit {amount} {symbol} – Settle escrow (#{escrowId})",
+    "exchangeDepositProposalDescription": "Approve and deposit {payAmount} {paySymbol} into escrow (#{escrowId}) to complete the exchange with {otherParty}. In return, {activeSpace} will receive {receiveAmount} {receiveSymbol}.",
+    "investmentDepositProposalDescription": "Approve and deposit {payAmount} {paySymbol} into escrow (#{escrowId}) to complete the investment into {otherParty}. In return, {activeSpace} will receive {receiveAmount} {receiveSymbol}."
   },
   "AgreementFlow": {
     "labels": {
@@ -798,7 +807,9 @@
       "collectiveAgreement": "Collective Agreement",
       "contribution": "Contribution",
       "expenses": "Expenses",
-      "funding": "Funding"
+      "funding": "Funding",
+      "investment": "Investment",
+      "exchange": "Exchange"
     },
     "documentBadges": {
       "invite": "Invite",
@@ -872,7 +883,9 @@
       "redemptionReferenceCurrencyRequired": "Reference currency is required when redemption is active.",
       "redemptionMaxPercentRequired": "Maximum Redemption % is required when redemption is active. Enter 0 for no limit.",
       "redemptionPeriodDaysRequired": "Period (days) is required when Redemption is active. Select a redemption period.",
-      "redemptionStartDateRequired": "Authorise Redemption from date is required when Redemption is active."
+      "redemptionStartDateRequired": "Authorise Redemption from date is required when Redemption is active.",
+      "acceptInvestmentExactSendRows": "Exactly one token row is required under Investing member will send.",
+      "acceptInvestmentExactReceiveRows": "Exactly one token row is required under Investing Member will Receive."
     },
     "issueNewTokenForm": {
       "duplicateToken": "A token with the same name and symbol already exists in your space. Please modify either the name or symbol to proceed.",
@@ -1365,6 +1378,54 @@
         "enterAmountAndToken": "Please enter an amount and select a token.",
         "add": "Add"
       },
+      "acceptInvestment": {
+        "investingMember": "Investing member",
+        "investorWillSend": "Investing member will send",
+        "investorWillSendLine1": "Investing member",
+        "investorWillSendLine2": "will send",
+        "investorWillReceive": "Space provides (member receives)",
+        "investorWillReceiveLine1": "Space provides",
+        "investorWillReceiveLine2": "for member to receive",
+        "source": "Source",
+        "sourcePlaceholder": "Select source",
+        "sourceMint": "Mint new tokens",
+        "sourceTreasury": "Use available tokens in treasury",
+        "escrowNotice": "This proposal uses escrow for the investment. Once it is approved, the investor ({investor}) deposits their side into escrow from their profile or space page, and {activeSpace}'s deposit is made when the proposal is approved and executed."
+      },
+      "acceptInvestmentForm": {
+        "notMemberRevert": "The chain rejected this transaction: the connected wallet is not a member or delegate of this space. Use a wallet that belongs to the space, or connect as a delegate.",
+        "walletRejected": "The transaction was not signed or was rejected in your wallet. Try again and approve the request.",
+        "escrowNotConfigured": "The escrow contract address is not configured. Set NEXT_PUBLIC_ESCROW_IMPLEMENTATION_ADDRESS in apps/web/.env to your deployed EscrowImplementation proxy on the governance chain (Base mainnet in production), restart the dev server or redeploy the app, then try again. Deploy the contract from packages/storage-evm (see scripts/escrow-proxy.deploy.ts) if you do not have an address yet."
+      },
+      "exchangeStakesAndTokens": {
+        "seller": "Seller (Wallet Address)",
+        "sellerWillSend": "Seller sends",
+        "buyer": "Buyer (Wallet Address)",
+        "buyerWillSend": "Buyer will send",
+        "loadingTokens": "Loading tokens...",
+        "escrowNotice": "This proposal uses escrow for the exchange. Once it is approved, each member deposits their side into escrow from their profile; if {activeSpace} is one of the parties, its deposit is made when the proposal is approved and executed.",
+        "escrowAccountAddress": "Escrow account address",
+        "copyWalletAddress": "Copy wallet address",
+        "avatarAlt": "Avatar",
+        "tokenAlt": "Token",
+        "spaceLogoAlt": "{name} logo",
+        "personAvatarAlt": "{name} avatar",
+        "spaceFallback": "space",
+        "sellerFallback": "seller",
+        "buyerFallback": "buyer",
+        "errors": {
+          "sellerAmountExceedsBalance": "The entered amount is greater than the seller available balance.",
+          "sellerAmountTooSmall": "Amount is too small for this token's decimals. Try a larger value.",
+          "buyerAmountTooSmall": "Amount is too small for this token's decimals. Try a larger value.",
+          "sellerTreasuryUnavailable": "Could not load the space treasury. Wait for chain data and try again.",
+          "sellerBalanceCheckFailed": "Could not verify seller balance. Check your connection and try again.",
+          "memberSellerWalletMismatch": "Exchange funding uses your connected wallet. Connect the same wallet as the seller address, or choose the member seller whose address matches your wallet.",
+          "escrowTokenInvalid": "A token row uses the escrow contract address. Use the ERC-20 token contract for seller and buyer tokens.",
+          "insufficientSellerBalance": "The connected wallet does not hold enough seller tokens. Fund the smart wallet that matches the seller address.",
+          "tokenWhitelistBlocked": "This token's on-chain rules block sending it to escrow (e.g. transfer/receive whitelist). Choose another token or update the token's whitelist settings.",
+          "safeErc20TransferFailed": "The token contract rejected the transfer to escrow (often balance, allowance, or non-transferable rules). Check that your smart wallet holds enough tokens and that the token allows transfers to the escrow."
+        }
+      },
       "paymentSchedule": {
         "label": "Payment Schedule",
         "immediately": "Immediately",
@@ -1395,6 +1456,26 @@
     }
   },
   "ProposalDetails": {
+    "investment": {
+      "title": "Investment terms",
+      "investor": "Investor",
+      "investingMember": "Investing member",
+      "investorWillSend": "Investing member will send",
+      "investorWillSendLine1": "Investing member",
+      "investorWillSendLine2": "will send",
+      "investorWillReceive": "Space provides (member receives)",
+      "investorWillReceiveLine1": "Space provides",
+      "investorWillReceiveLine2": "for member to receive",
+      "escrowAccountAddress": "Escrow account address",
+      "fundingTreasuryThenMint": "Taken from treasury when available; any remainder is minted.",
+      "sourceMint": "Mint new tokens",
+      "sourceTreasury": "Use available tokens in treasury",
+      "escrowOnChain": "Escrow (on-chain)",
+      "partyAFundedHint": "Space leg funded at proposal execution: {funded}",
+      "yes": "Yes",
+      "no": "No",
+      "escrowAccount": "Escrow Account"
+    },
     "status": {
       "accepted": "Accepted",
       "rejected": "Rejected",

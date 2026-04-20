@@ -2,6 +2,7 @@ import {
   JoinSpace,
   SalesBanner,
   SpaceCard,
+  SpaceEscrowDepositBanners,
   SpaceModeLabel,
   WebLinks,
   SubscriptionBadge,
@@ -183,8 +184,14 @@ export default async function DhoLayout({
             )}/space-configuration`}
           />
         </div>
-        <div className="mt-8">
+        <div className="mt-8 flex flex-col gap-3">
           <SalesBanner web3SpaceId={spaceFromDb.web3SpaceId as number} />
+          <SpaceEscrowDepositBanners
+            web3SpaceId={spaceFromDb.web3SpaceId as number}
+            spaceDbId={spaceFromDb.id}
+            spaceSlug={daoSlug}
+            lang={lang}
+          />
         </div>
         {tab}
         {children}

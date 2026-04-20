@@ -20,8 +20,9 @@ interface IEscrow {
   // Initialize the contract
   function initialize(address initialOwner) external;
 
-  // Create a new escrow
+  // Create a new escrow (third-party creator sets both parties; party A funds tokenA, party B tokenB)
   function createEscrow(
+    address _partyA,
     address _partyB,
     address _tokenA,
     address _tokenB,

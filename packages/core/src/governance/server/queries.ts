@@ -20,6 +20,7 @@ import {
   PaginationParams,
 } from '@hypha-platform/core/client';
 import { Document } from '../types';
+import { extractExchangeDepositEscrowId } from '../exchange-deposit-marker';
 import { alias } from 'drizzle-orm/pg-core';
 
 type CreatorType = {
@@ -446,6 +447,36 @@ export const findTokenUpdateByAddress = async (
     .where(sql`lower(${tokenUpdates.tokenAddress}) = ${normalized}`)
     .limit(1);
   return tokenUpdate || null;
+};
+
+/**
+ * Return escrow ids that already have an open "Exchange-Deposit" agreement
+ * linked to a given space. Used by the space-page escrow deposit banner to
+ * avoid showing (and allowing) a duplicate proposal for the same escrow.
+ *
+ * Only reads the description's structured marker, so stale agreements with a
+ * malformed description are ignored.
+ */
+export const findExchangeDepositEscrowIdsBySpaceId = async (
+  spaceId: number,
+  { db }: DbConfig,
+): Promise<string[]> => {
+  const rows = await db
+    .select({ description: documents.description })
+    .from(documents)
+    .where(
+      and(
+        eq(documents.spaceId, spaceId),
+        eq(documents.label, 'Exchange-Deposit'),
+      ),
+    );
+
+  const escrowIds = new Set<string>();
+  for (const row of rows) {
+    const id = extractExchangeDepositEscrowId(row.description);
+    if (id) escrowIds.add(id);
+  }
+  return Array.from(escrowIds);
 };
 
 /** Pending token update for a space + contract (avoids wrong row when same address exists elsewhere). */
