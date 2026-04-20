@@ -124,7 +124,7 @@ export function CompactSpaceBanner({
             className="pointer-events-none absolute inset-0"
             style={{
               backgroundImage:
-                'linear-gradient(to bottom right, color-mix(in srgb, var(--accent-11, #4f46e5) calc(var(--banner-ov-accent-wash, 0.18) * 100%), transparent), transparent, transparent)',
+                'linear-gradient(to bottom right, color-mix(in srgb, var(--color-accent-11, var(--space-accent, #4f46e5)) calc(var(--banner-ov-accent-wash, 0.18) * 100%), transparent), transparent, transparent)',
             }}
             aria-hidden
           />
