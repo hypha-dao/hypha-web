@@ -65,6 +65,11 @@ import { HumanChatMentionCandidateRow } from './human-chat-mention-candidate-row
 
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
 
+/** Web Speech API error codes (subset). `aborted` is emitted when `abort()` stops recognition. */
+function isBenignSpeechRecognitionError(code: string | undefined): boolean {
+  return code === 'aborted';
+}
+
 type SpeechRecognitionLike = {
   continuous: boolean;
   interimResults: boolean;
@@ -1166,14 +1171,19 @@ export function HumanChatPanelChatBar({
       }
     };
 
-    rec.onerror = () => {
+    rec.onerror = (ev) => {
+      const code =
+        typeof ev === 'object' && ev !== null && 'error' in ev
+          ? (ev as { error?: string }).error
+          : undefined;
+      const benign = isBenignSpeechRecognitionError(code);
       const interrupted = dictationInterruptForSendRef.current;
       if (interrupted) {
         dictationInterruptForSendRef.current = false;
       }
       finalizeDictationFromBrowser({
         syncValue: !interrupted,
-        showError: !interrupted,
+        showError: !interrupted && !benign,
       });
     };
     rec.onend = () => {
