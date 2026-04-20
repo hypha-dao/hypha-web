@@ -110,7 +110,7 @@ const buttonVariants = cva(
       {
         variant: 'ghost',
         colorVariant: 'neutral',
-        className: 'text-neutral-11 hover:bg-neutral-3 hover:text-neutral-12',
+        className: 'text-neutral-11 hover:bg-neutral-3 hover:text-foreground',
       },
       {
         variant: 'ghost',
