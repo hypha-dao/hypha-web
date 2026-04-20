@@ -54,7 +54,8 @@ export async function setCoherenceVoteBySlug(
           eq(coherenceVotes.personId, person.id),
         ),
       )
-      .limit(1);
+      .limit(1)
+      .for('update');
 
     if (value === 0) {
       if (!existing) {
