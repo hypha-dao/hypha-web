@@ -1706,6 +1706,7 @@
     "copiedButton": "Kopiert!",
     "tabChat": "Chat",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# ungelesene Erwähnung} other {# ungelesene Erwähnungen}}",
+    "tabWithUnreadMentionsCapped": "{tabLabel}, 99 oder mehr ungelesene Erwähnungen",
     "tabMembers": "Mitglieder",
     "tabMentions": "Erwähnungen",
     "tabMentionsWithMentionCount": "{tabLabel}, {count, plural, one {# ungelesene Erwähnung} other {# ungelesene Erwähnungen}}",

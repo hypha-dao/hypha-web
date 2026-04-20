@@ -1705,6 +1705,7 @@
     "copiedButton": "¡Copiado!",
     "tabChat": "Chat",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# mención sin leer} other {# menciones sin leer}}",
+    "tabWithUnreadMentionsCapped": "{tabLabel}, 99 o más menciones sin leer",
     "tabMembers": "Miembros",
     "tabMentions": "Menciones",
     "tabMentionsWithMentionCount": "{tabLabel}, {count, plural, one {# mención sin leer} other {# menciones sin leer}}",

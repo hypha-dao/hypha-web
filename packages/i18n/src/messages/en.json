@@ -1737,6 +1737,7 @@
     "copiedButton": "Copied!",
     "tabChat": "Chat",
     "tabChatWithMentionCount": "{tabLabel}, {count, plural, one {# unread mention} other {# unread mentions}}",
+    "tabWithUnreadMentionsCapped": "{tabLabel}, 99 or more unread mentions",
     "tabMembers": "Members",
     "tabMentions": "Mentions",
     "tabMentionsWithMentionCount": "{tabLabel}, {count, plural, one {# unread mention} other {# unread mentions}}",

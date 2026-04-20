@@ -85,15 +85,19 @@ export function HumanChatPanelTabs({
             role="tab"
             aria-label={
               tab.key === 'chat' && chatBadgeLabel != null
-                ? t('tabChatWithMentionCount', {
-                    tabLabel: tab.label,
-                    count: Math.min(chatMentionCount, 99),
-                  })
+                ? chatBadgeLabel === '99+'
+                  ? t('tabWithUnreadMentionsCapped', { tabLabel: tab.label })
+                  : t('tabChatWithMentionCount', {
+                      tabLabel: tab.label,
+                      count: chatMentionCount,
+                    })
                 : tab.key === 'mentions' && mentionBadgeLabel != null
-                ? t('tabMentionsWithMentionCount', {
-                    tabLabel: tab.label,
-                    count: Math.min(mentionTabBadgeCount, 99),
-                  })
+                ? mentionBadgeLabel === '99+'
+                  ? t('tabWithUnreadMentionsCapped', { tabLabel: tab.label })
+                  : t('tabMentionsWithMentionCount', {
+                      tabLabel: tab.label,
+                      count: mentionTabBadgeCount,
+                    })
                 : undefined
             }
             aria-selected={activeTab === tab.key}
