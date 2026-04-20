@@ -22,6 +22,7 @@
     "findCategory": "Find a Category",
     "noSpacesYet": "No spaces created or joined yet. Explore our network and join a Space, or create your own.",
     "close": "Close",
+    "comingSoonBadge": "Soon",
     "notFoundOops": "Oooops!",
     "notFoundCouldNotFindPage": "We couldn’t find this page",
     "notFoundDescription": "The page you are looking for might have been removed, had its name changed, or is temporarily unavailable",
@@ -36,6 +37,25 @@
     "publish": "Publish",
     "invalidTransactions": "Invalid transactions",
     "Coherence": "Coherence"
+  },
+  "ModalAside": {
+    "spaceSettings": "Space Settings",
+    "createProposal": "Create a Proposal",
+    "activateSpace": "Activate Space",
+    "spaceNavigation": "Space Navigation",
+    "profileActions": "Actions",
+    "transferFunds": "Transfer Funds",
+    "redeemTokens": "Redeem Tokens",
+    "buyHyphaTokens": "Buy Hypha Tokens (Rewards)",
+    "buySpaceTokens": "Buy Space Tokens",
+    "activateSpacesProfile": "Activate Space(s)",
+    "notificationCentre": "Notification Centre",
+    "editProfile": "Edit profile",
+    "createAccount": "Create account",
+    "createSpace": "Create Space",
+    "addSpace": "Add Space",
+    "configureSpace": "Configure Space",
+    "panelAccessibleName": "Hypha panel"
   },
   "Navigation": {
     "network": "Network",
@@ -59,7 +79,7 @@
   "NotificationCentre": {
     "title": "Notification Centre",
     "loading": {
-      "keepWindowOpen": "Please keep this window open until the progress bar completes."
+      "keepWindowOpen": "Keep this window open until we're finished."
     },
     "subscribe": {
       "title": "Subscribe to Notifications",
@@ -389,6 +409,9 @@
     "privacyPolicy": "Privacy Policy"
   },
   "Profile": {
+    "signup": {
+      "loading": "Loading..."
+    },
     "profilePage": "Profile Page",
     "personNotFound": "Person not found",
     "redirectingToProfile": "Redirecting to profile...",
@@ -919,12 +942,16 @@
     "createAgreementBaseFields": {
       "agreementLabel": "Agreement",
       "backToCreate": "Back to Create",
+      "resetForm": "Reset",
       "formContextMissing": "Form context is missing!",
       "delegate": "Delegate",
       "proposalTitlePlaceholder": "Proposal title...",
       "proposalMinimumVotingIconAlt": "Proposal minimum voting icon",
       "autoExecution": "Auto-Execution",
       "toVote": "{duration} to Vote",
+      "quorumLabel": "Quorum",
+      "unityLabel": "Unity",
+      "quorumUnityLine": "{quorumPercent}% {quorumLabel} | {unityPercent}% {unityLabel}",
       "uploadImageLabel": "<accent>Upload</accent> an image",
       "addAttachmentLabel": "Add Attachment (JPEG, PNG, WebP, or PDF — max 4MB)",
       "proposalContent": "Proposal Content",
@@ -951,7 +978,7 @@
       }
     },
     "loadingBackdrop": {
-      "keepWindowOpen": "Please keep this window open until the progress bar completes."
+      "keepWindowOpen": "Keep this window open until we're finished."
     },
     "spaceTokenPurchaseProgress": {
       "CREATE_WEB2_AGREEMENT": "Creating agreement...",
@@ -1529,6 +1556,10 @@
       "looksGood": "Looks good",
       "quorumMinParticipation": "Quorum (Min. Participation)",
       "unityMinAlignment": "Unity (Min. Alignment)",
+      "currentScore": "Current",
+      "voteScore": "Vote",
+      "requiredScore": "Required {percent}%",
+      "submittingVote": "Submitting your vote — waiting for confirmation…",
       "proposalVotingIconAlt": "Proposal minimum voting icon",
       "autoExecution": "Auto-Execution",
       "toVote": "{duration} to Vote",
@@ -1538,6 +1569,7 @@
     },
     "withdrawResubmit": {
       "title": "Withdraw your proposal or edit and submit again?",
+      "withdrawOnlyTitle": "Withdraw your proposal?",
       "withdrawDialogTitle": "Withdraw Proposal",
       "withdrawDialogDescription": "Are you sure you want to withdraw this proposal? It will no longer appear on the Proposal screen and cannot be recovered.",
       "withdraw": "Withdraw",
@@ -1829,7 +1861,7 @@
       "medium": "Monitor and act soon",
       "low": "Informational, no rush"
     },
-    "keepWindowOpenWhileCreating": "Please keep this window open until the progress bar completes.",
+    "keepWindowOpenWhileCreating": "Keep this window open until we're finished.",
     "tagLabels": {
       "Strategy": "Strategy",
       "Culture": "Culture",

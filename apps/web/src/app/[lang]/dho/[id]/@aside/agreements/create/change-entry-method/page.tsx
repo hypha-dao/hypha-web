@@ -1,6 +1,6 @@
 import {
   CreateProposalChangeEntryMethodForm,
-  SidePanel,
+  ProposalOverlayShell,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { notFound } from 'next/navigation';
@@ -48,7 +48,7 @@ export default async function CreateChangeEntryMethodPage({
   );
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <CreateProposalChangeEntryMethodForm
         spaceId={spaceId}
         web3SpaceId={web3SpaceId}
@@ -63,6 +63,6 @@ export default async function CreateChangeEntryMethodPage({
         }
         spaces={filteredSpaces}
       />
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

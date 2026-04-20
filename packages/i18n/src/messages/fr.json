@@ -22,6 +22,7 @@
     "findCategory": "Trouver une catégorie",
     "noSpacesYet": "Aucun espace créé ou rejoint pour le moment. Explorez notre réseau et rejoignez un espace, ou créez le vôtre.",
     "close": "Fermer",
+    "comingSoonBadge": "Bientôt",
     "notFoundOops": "Oooops !",
     "notFoundCouldNotFindPage": "Nous n’avons pas trouvé cette page",
     "notFoundDescription": "La page que vous recherchez a peut-être été supprimée, renommée ou est temporairement indisponible.",
@@ -36,6 +37,25 @@
     "publish": "Publier",
     "invalidTransactions": "Transactions invalides",
     "Coherence": "Cohérence"
+  },
+  "ModalAside": {
+    "spaceSettings": "Paramètres de l’espace",
+    "createProposal": "Créer une proposition",
+    "activateSpace": "Activer l’espace",
+    "spaceNavigation": "Navigation de l’espace",
+    "profileActions": "Actions",
+    "transferFunds": "Transférer des fonds",
+    "redeemTokens": "Échanger des jetons",
+    "buyHyphaTokens": "Acheter des jetons Hypha (récompenses)",
+    "buySpaceTokens": "Acheter des jetons d’espace",
+    "activateSpacesProfile": "Activer le(s) espace(s)",
+    "notificationCentre": "Centre de notifications",
+    "editProfile": "Modifier le profil",
+    "createAccount": "Créer un compte",
+    "createSpace": "Créer un espace",
+    "addSpace": "Ajouter un espace",
+    "configureSpace": "Configurer l’espace",
+    "panelAccessibleName": "Panneau Hypha"
   },
   "Navigation": {
     "network": "Réseau",
@@ -59,7 +79,7 @@
   "NotificationCentre": {
     "title": "Centre de notifications",
     "loading": {
-      "keepWindowOpen": "Veuillez laisser cette fenêtre ouverte jusqu’à la fin de la barre de progression."
+      "keepWindowOpen": "Gardez cette fenêtre ouverte jusqu’à la fin."
     },
     "subscribe": {
       "title": "S’abonner aux notifications",
@@ -389,6 +409,9 @@
     "privacyPolicy": "Politique de confidentialité"
   },
   "Profile": {
+    "signup": {
+      "loading": "Chargement…"
+    },
     "profilePage": "Page de profil",
     "personNotFound": "Personne introuvable",
     "redirectingToProfile": "Redirection vers le profil...",
@@ -919,12 +942,16 @@
     "createAgreementBaseFields": {
       "agreementLabel": "Accord",
       "backToCreate": "Retour à la création",
+      "resetForm": "Réinitialiser",
       "formContextMissing": "Le contexte du formulaire est manquant !",
       "delegate": "Délégué",
       "proposalTitlePlaceholder": "Titre de la proposition...",
       "proposalMinimumVotingIconAlt": "Icône de durée minimale de vote",
       "autoExecution": "Exécution automatique",
       "toVote": "{duration} pour voter",
+      "quorumLabel": "Quorum",
+      "unityLabel": "Unité",
+      "quorumUnityLine": "{quorumPercent}% {quorumLabel} | {unityPercent}% {unityLabel}",
       "uploadImageLabel": "<accent>Téléverser</accent> une image",
       "addAttachmentLabel": "Ajouter une pièce jointe (JPEG, PNG, WebP ou PDF — max 4 Mo)",
       "proposalContent": "Contenu de la proposition",
@@ -951,7 +978,7 @@
       }
     },
     "loadingBackdrop": {
-      "keepWindowOpen": "Veuillez laisser cette fenêtre ouverte jusqu’à la fin de la barre de progression."
+      "keepWindowOpen": "Gardez cette fenêtre ouverte jusqu’à la fin."
     },
     "spaceTokenPurchaseProgress": {
       "CREATE_WEB2_AGREEMENT": "Création de l'accord...",
@@ -1529,6 +1556,10 @@
       "looksGood": "Ça a l'air bien",
       "quorumMinParticipation": "Quorum (Participation min.)",
       "unityMinAlignment": "Unité (alignement min.)",
+      "currentScore": "Actuel",
+      "voteScore": "Vote",
+      "requiredScore": "Requis {percent} %",
+      "submittingVote": "Envoi de votre vote — attente de confirmation…",
       "proposalVotingIconAlt": "Icône de vote minimum pour la proposition",
       "autoExecution": "Exécution automatique",
       "toVote": "{duration} pour voter",
@@ -1538,6 +1569,7 @@
     },
     "withdrawResubmit": {
       "title": "Retirer votre proposition ou la modifier et la soumettre à nouveau ?",
+      "withdrawOnlyTitle": "Retirer votre proposition ?",
       "withdrawDialogTitle": "Retirer la proposition",
       "withdrawDialogDescription": "Êtes-vous sûr de vouloir retirer cette proposition ? Elle n'apparaîtra plus sur l'écran des propositions et ne pourra pas être récupérée.",
       "withdraw": "Retirer",
@@ -1829,7 +1861,7 @@
       "medium": "Surveiller et agir bientôt",
       "low": "Informatif, pas urgent"
     },
-    "keepWindowOpenWhileCreating": "Veuillez garder cette fenêtre ouverte jusqu'à la fin de la barre de progression.",
+    "keepWindowOpenWhileCreating": "Gardez cette fenêtre ouverte jusqu’à la fin.",
     "tagLabels": {
       "Strategy": "Stratégie",
       "Culture": "Culture",

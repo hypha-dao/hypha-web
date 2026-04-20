@@ -1,3 +1,13 @@
+/* MDXEditor portals `.mdxeditor-popup-container` to `document.body` as a **sibling** of
+ * the `.mdxeditor` wrapper (see `@mdxeditor/editor` EditorRootElement). Scoped rules under
+ * `.mdxeditor` therefore never hit it; the library default stays `z-index: 2`, which stacks
+ * below modal shells (~z-21) and breaks toolbar Select/Popover interactions.
+ * Keep portaled UI aligned with Radix layers used elsewhere (`z-50`). */
+body > .mdxeditor-popup-container {
+  position: relative;
+  z-index: 50;
+}
+
 .mdxeditor {
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -7,10 +17,6 @@
   &:focus-within {
     border-color: var(--accent-7);
     box-shadow: 0 0 0 1px var(--accent-7);
-  }
-
-  .mdxeditor-popup-container {
-    z-index: 1000;
   }
 
   .mdxeditor-toolbar {

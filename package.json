@@ -12,6 +12,7 @@
     "wagmi:generate": "turbo run wagmi:generate",
     "add-component": "cd packages/ui && pnpm dlx shadcn@latest add",
     "lint": "turbo run lint",
+    "verify:messages": "pnpm --filter @hypha-platform/i18n run verify:messages",
     "lint:fix": "turbo run lint -- --fix",
     "format:check": "npx prettier --check 'apps/**/*.{ts,tsx}' --check 'packages/**/*.{ts,tsx}'",
     "format:fix": "npx prettier --write 'apps/**/*.{ts,tsx}' --write 'packages/**/*.{ts,tsx}'",

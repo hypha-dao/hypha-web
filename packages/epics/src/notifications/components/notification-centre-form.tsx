@@ -25,7 +25,7 @@ import {
   TAG_SUB_NEW_PROPOSAL_OPEN,
   TAG_SUB_PROPOSAL_APPROVED_OR_REJECTED,
 } from '@hypha-platform/notifications/client';
-import { ButtonClose } from '../../common/button-close';
+import { ModalStickyNavigation } from '../../common/modal-sticky-navigation';
 import { useRouter } from 'next/navigation';
 import { Person } from '@hypha-platform/core/client';
 import { useTranslations } from 'next-intl';
@@ -80,6 +80,7 @@ export const NotificationCentreForm = ({
   saveConfigurations,
 }: NotificationCentreFormProps) => {
   const tNotificationCentre = useTranslations('NotificationCentre');
+  const tModalAside = useTranslations('ModalAside');
   const form = useForm<NotificationCentreFormValues>({
     resolver: zodResolver(schemaNotificationCentreForm),
     defaultValues: {
@@ -181,26 +182,24 @@ export const NotificationCentreForm = ({
   );
 
   return (
-    <div className="relative">
+    <div className="flex flex-col gap-5">
+      <ModalStickyNavigation
+        contextTitle={tModalAside('notificationCentre')}
+        closeUrl={closeUrl}
+        showBack={false}
+      />
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(handleSubmit, handleInvalid)}
           className="space-y-8"
         >
-          <ButtonClose closeUrl={closeUrl} className="absolute top-0 right-0" />
           <div className="flex flex-col gap-5">
             <div className="flex gap-5 justify-between">
-              <Skeleton width="100px" height="24px" loading={isLoading}>
-                <span className="text-4 text-secondary-foreground">
-                  {tNotificationCentre('title')}
-                </span>
+              <Skeleton width="100%" height="24px" loading={isLoading}>
+                <h3 className="text-3 font-medium text-neutral-11">
+                  {tNotificationCentre('subscribe.title')}
+                </h3>
               </Skeleton>
-            </div>
-            <Separator />
-            <div className="flex gap-5 justify-between">
-              <h3 className="text-3 font-medium text-neutral-11">
-                {tNotificationCentre('subscribe.title')}
-              </h3>
             </div>
             <span className="text-2 text-neutral-11">
               {subscribed ? (

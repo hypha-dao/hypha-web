@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { useAccount } from 'wagmi';
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 import { daoProposalsImplementationConfig } from '@hypha-platform/core/generated';
+import { publicClient } from '../../../common/web3/public-client';
 import { getGovernanceChainId } from './governance-chain-id';
 
 export const useProposalVoting = ({
@@ -25,12 +26,14 @@ export const useProposalVoting = ({
 
       setIsVoting(true);
       try {
-        return await client.writeContract({
+        const hash = await client.writeContract({
           address: daoProposalsImplementationConfig.address[chainId],
           abi: daoProposalsImplementationConfig.abi,
           functionName: 'vote',
           args: [BigInt(proposalId), support],
         });
+        await publicClient.waitForTransactionReceipt({ hash });
+        return hash;
       } finally {
         setIsVoting(false);
       }
@@ -45,12 +48,14 @@ export const useProposalVoting = ({
 
     setIsCheckingExpiration(true);
     try {
-      return await client.writeContract({
+      const hash = await client.writeContract({
         address: daoProposalsImplementationConfig.address[chainId],
         abi: daoProposalsImplementationConfig.abi,
         functionName: 'triggerExecutionCheck',
         args: [BigInt(proposalId)],
       });
+      await publicClient.waitForTransactionReceipt({ hash });
+      return hash;
     } catch (err) {
       console.error('Error checking proposal expiration:', err);
       throw err;

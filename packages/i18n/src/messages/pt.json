@@ -22,6 +22,7 @@
     "findCategory": "Encontre uma categoria",
     "noSpacesYet": "Nenhum espaço criado ou associado ainda. Explore nossa rede e participe de um Espaço ou crie o seu próprio.",
     "close": "Fechar",
+    "comingSoonBadge": "Em breve",
     "notFoundOops": "Oooops!",
     "notFoundCouldNotFindPage": "Não conseguimos encontrar esta página",
     "notFoundDescription": "A página que você procura pode ter sido removida, renomeada ou está temporariamente indisponível.",
@@ -36,6 +37,25 @@
     "publish": "Publicar",
     "invalidTransactions": "Transações inválidas",
     "Coherence": "Coerência"
+  },
+  "ModalAside": {
+    "spaceSettings": "Definições do espaço",
+    "createProposal": "Criar uma proposta",
+    "activateSpace": "Ativar espaço",
+    "spaceNavigation": "Navegação do espaço",
+    "profileActions": "Ações",
+    "transferFunds": "Transferir fundos",
+    "redeemTokens": "Resgatar tokens",
+    "buyHyphaTokens": "Comprar tokens Hypha (recompensas)",
+    "buySpaceTokens": "Comprar tokens do espaço",
+    "activateSpacesProfile": "Ativar espaço(s)",
+    "notificationCentre": "Centro de notificações",
+    "editProfile": "Editar perfil",
+    "createAccount": "Criar conta",
+    "createSpace": "Criar espaço",
+    "addSpace": "Adicionar espaço",
+    "configureSpace": "Configurar espaço",
+    "panelAccessibleName": "Painel Hypha"
   },
   "AgreementFlow": {
     "proposalErrors": {
@@ -594,12 +614,16 @@
     "createAgreementBaseFields": {
       "agreementLabel": "Acordo",
       "backToCreate": "Voltar para criar",
+      "resetForm": "Redefinir",
       "formContextMissing": "O contexto do formulário está faltando!",
       "delegate": "Delegar",
       "proposalTitlePlaceholder": "Título da proposta...",
       "proposalMinimumVotingIconAlt": "Ícone de votação mínima da proposta",
       "autoExecution": "Execução automática",
       "toVote": "{duration} para votar",
+      "quorumLabel": "Quórum",
+      "unityLabel": "Unidade",
+      "quorumUnityLine": "{quorumPercent}% {quorumLabel} | {unityPercent}% {unityLabel}",
       "uploadImageLabel": "<accent>Carregar</accent> uma imagem",
       "addAttachmentLabel": "Adicionar anexo (JPEG, PNG, WebP ou PDF — máximo 4 MB)",
       "proposalContent": "Conteúdo da proposta",
@@ -626,7 +650,7 @@
       }
     },
     "loadingBackdrop": {
-      "keepWindowOpen": "Por favor, mantenha esta janela aberta até que a barra de progresso seja concluída."
+      "keepWindowOpen": "Mantenha esta janela aberta até terminarmos."
     },
     "spaceTokenPurchaseProgress": {
       "CREATE_WEB2_AGREEMENT": "A criar acordo...",
@@ -672,7 +696,7 @@
   "NotificationCentre": {
     "title": "Central de Notificações",
     "loading": {
-      "keepWindowOpen": "Por favor, mantenha esta janela aberta até que a barra de progresso seja concluída."
+      "keepWindowOpen": "Mantenha esta janela aberta até terminarmos."
     },
     "subscribe": {
       "title": "Assine as notificações",
@@ -1002,6 +1026,9 @@
     "privacyPolicy": "Política de Privacidade"
   },
   "Profile": {
+    "signup": {
+      "loading": "A carregar..."
+    },
     "profilePage": "Página de perfil",
     "personNotFound": "Pessoa não encontrada",
     "redirectingToProfile": "Redirecionando para o perfil...",
@@ -1529,6 +1556,10 @@
       "looksGood": "Parece bom",
       "quorumMinParticipation": "Quórum (Participação Mínima)",
       "unityMinAlignment": "Unidade (alinhamento mínimo)",
+      "currentScore": "Atual",
+      "voteScore": "Voto",
+      "requiredScore": "Exigido {percent} %",
+      "submittingVote": "A enviar o seu voto — à espera da confirmação…",
       "proposalVotingIconAlt": "Ícone de votação mínima da proposta",
       "autoExecution": "Execução automática",
       "toVote": "{duration} para votar",
@@ -1538,6 +1569,7 @@
     },
     "withdrawResubmit": {
       "title": "Retirar sua proposta ou editar e enviar novamente?",
+      "withdrawOnlyTitle": "Retirar sua proposta?",
       "withdrawDialogTitle": "Retirar Proposta",
       "withdrawDialogDescription": "Tem certeza de que deseja retirar esta proposta? Ela não aparecerá mais na tela de propostas e não poderá ser recuperada.",
       "withdraw": "Retirar",
@@ -1829,7 +1861,7 @@
       "medium": "Monitorar e agir em breve",
       "low": "Informativo, sem pressa"
     },
-    "keepWindowOpenWhileCreating": "Mantenha esta janela aberta até a barra de progresso concluir.",
+    "keepWindowOpenWhileCreating": "Mantenha esta janela aberta até terminarmos.",
     "tagLabels": {
       "Strategy": "Estratégia",
       "Culture": "Cultura",

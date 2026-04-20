@@ -1,7 +1,8 @@
 'use client';
 
-import { useFormContext, useWatch } from 'react-hook-form';
+import { useFormContext } from 'react-hook-form';
 import {
+  Button,
   Input,
   FormControl,
   FormDescription,
@@ -42,8 +43,10 @@ import { ButtonBack, ButtonClose } from '../../common';
 import { useProposalNotifications } from '../../governance/hooks';
 import React from 'react';
 import { useTranslations } from 'next-intl';
+import { RotateCcw } from 'lucide-react';
 import {
   RESUBMIT_FORM_DATA_KEY,
+  RESUBMIT_PROPOSAL_DATA_KEY,
   getProposalTemplateSegmentFromPathname,
   isLegacyGenericResubmitSegment,
 } from '../../utils/resubmit-proposal-template';
@@ -63,6 +66,10 @@ const schemaCreateAgreementForm =
 
 export type CreateAgreementFormData = z.infer<typeof schemaCreateAgreementForm>;
 
+type AttachmentListItem = NonNullable<
+  CreateAgreementFormData['attachments']
+>[number];
+
 export type CreateAgreementFormProps = {
   creator?: Creator;
   isLoading?: boolean;
@@ -71,6 +78,8 @@ export type CreateAgreementFormProps = {
   backUrl?: string;
   backLabel?: string;
   label?: string;
+  /** When set, shown in sticky header instead of `label` (web3 submission still uses `label`). */
+  stickyHeaderTitle?: string;
   progress: number;
 };
 
@@ -85,6 +94,7 @@ export function CreateAgreementBaseFields({
   backUrl,
   backLabel,
   label,
+  stickyHeaderTitle,
   progress,
 }: CreateAgreementFormProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
@@ -177,15 +187,76 @@ export function CreateAgreementBaseFields({
 
   const { space } = useSpaceBySlug(spaceSlug as string);
 
-  const spaceIdBigInt = space?.web3SpaceId ? BigInt(space.web3SpaceId) : null;
+  /** Pre-fill proposal banner from space hero image once (users can still replace it). */
+  const hasAppliedSpaceBannerDefaultRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (resubmitFormData?.leadImage?.trim()) {
+      return;
+    }
+
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = sessionStorage.getItem(RESUBMIT_FORM_DATA_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw) as { leadImage?: string };
+          if (parsed?.leadImage?.trim()) {
+            return;
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+
+    const bannerUrl = space?.leadImage?.trim();
+    if (!bannerUrl || hasAppliedSpaceBannerDefaultRef.current) {
+      return;
+    }
+
+    const current = form.getValues('leadImage');
+    if (typeof current === 'string' && current.trim().length > 0) {
+      return;
+    }
+    if (current instanceof File) {
+      return;
+    }
+
+    form.setValue('leadImage', bannerUrl, { shouldValidate: true });
+    hasAppliedSpaceBannerDefaultRef.current = true;
+  }, [space?.leadImage, resubmitFormData, form]);
+
+  const spaceIdBigInt =
+    typeof space?.web3SpaceId === 'number'
+      ? BigInt(space.web3SpaceId)
+      : undefined;
 
   const { spaceDetails } = useSpaceDetailsWeb3Rpc({
     spaceId: space?.web3SpaceId as number,
   });
 
   const { duration } = useSpaceMinProposalDuration({
-    spaceId: spaceIdBigInt as bigint,
+    spaceId: spaceIdBigInt ?? 0n,
+    enabled: !!spaceIdBigInt,
   });
+
+  const durationNumber =
+    duration !== undefined && duration !== null ? Number(duration) : NaN;
+  const hasVotingDuration = Number.isFinite(durationNumber);
+
+  const quorumPct =
+    spaceDetails?.quorum != null ? Number(spaceDetails.quorum) : NaN;
+  const unityPct =
+    spaceDetails?.unity != null ? Number(spaceDetails.unity) : NaN;
+  const votingThresholdSummary =
+    Number.isFinite(quorumPct) && Number.isFinite(unityPct)
+      ? tAgreementFlow('createAgreementBaseFields.quorumUnityLine', {
+          quorumPercent: quorumPct,
+          unityPercent: unityPct,
+          quorumLabel: tAgreementFlow('createAgreementBaseFields.quorumLabel'),
+          unityLabel: tAgreementFlow('createAgreementBaseFields.unityLabel'),
+        })
+      : null;
 
   const { theme } = useTheme();
 
@@ -293,239 +364,296 @@ export function CreateAgreementBaseFields({
     postProposalCreated,
   });
 
+  const handleResetForm = React.useCallback(() => {
+    form.reset();
+    setExistingAttachments([]);
+    setResubmitFormData(null);
+    try {
+      sessionStorage.removeItem(RESUBMIT_FORM_DATA_KEY);
+      sessionStorage.removeItem(RESUBMIT_PROPOSAL_DATA_KEY);
+    } catch {
+      /* ignore */
+    }
+    hasAppliedSpaceBannerDefaultRef.current = false;
+  }, [form]);
+
   return (
     <>
-      <div className="flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-2">
-        <div className="flex flex-grow gap-3">
-          <PersonAvatar
-            size="lg"
-            isLoading={isLoading}
-            avatarSrc={creator?.avatar}
-            userName={`${creator?.name} ${creator?.surname}`}
-          />
-          <div className="flex w-full">
-            <div className="flex flex-col w-full justify-between gap-4">
-              <div className="flex flex-row w-full">
-                <Badge className="w-fit" colorVariant="accent">
-                  {resolvedLabel}
-                </Badge>
-                {isDelegate && (
-                  <Badge
-                    variant="outline"
-                    colorVariant="accent"
-                    isLoading={isLoading}
-                    className="ml-2"
-                  >
-                    {tAgreementFlow('createAgreementBaseFields.delegate')}
-                  </Badge>
-                )}
-                <div className="flex grow"></div>
-                {backUrl && (
-                  <ButtonBack
-                    label={resolvedBackLabel}
-                    backUrl={backUrl}
-                    className="px-0 md:px-3 align-top"
-                  />
-                )}
-                <ButtonClose
-                  closeUrl={closeUrl}
-                  className="px-0 md:px-3 align-top"
-                />
-              </div>
-              <div className="flex justify-between w-full gap-4">
-                <div className="flex flex-col gap-4 w-full">
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            placeholder={tAgreementFlow(
-                              'createAgreementBaseFields.proposalTitlePlaceholder',
-                            )}
-                            className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
-                            disabled={isLoading}
-                            rightIcon={<RequirementMark className="text-4" />}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
+      {/* Sticky header: compact toolbar row (fixed height) like legacy layout, then avatar + badges + title */}
+      <div className="sticky top-0 z-[5] -mx-4 mb-4 border-b border-border/90 bg-background-2/95 backdrop-blur-md supports-[backdrop-filter]:bg-background-2/80 lg:-mx-7">
+        <div className="flex min-h-11 shrink-0 items-center gap-2 border-b border-border/80 px-4 lg:px-7">
+          <h2 className="min-w-0 flex-1 truncate text-base font-semibold leading-tight tracking-tight text-foreground">
+            {stickyHeaderTitle ?? resolvedLabel}
+          </h2>
+          <div className="flex shrink-0 items-center justify-end gap-1">
+            {backUrl && (
+              <ButtonBack
+                label={resolvedBackLabel}
+                backUrl={backUrl}
+                className="px-0 md:px-3 align-top"
+              />
+            )}
+            {form.formState.isDirty ? (
+              <Button
+                type="button"
+                variant="ghost"
+                colorVariant="neutral"
+                className="inline-flex items-center gap-1 px-0 text-neutral-10 md:px-3"
+                onClick={handleResetForm}
+              >
+                <RotateCcw className="size-4 shrink-0" aria-hidden />
+                {tAgreementFlow('createAgreementBaseFields.resetForm')}
+              </Button>
+            ) : null}
+            <ButtonClose
+              closeUrl={closeUrl}
+              className="px-0 md:px-3 align-top"
+            />
+          </div>
+        </div>
+        <div className="px-4 pb-3 pt-3 lg:px-7">
+          <div className="flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-2">
+            <div className="flex flex-grow gap-3">
+              <PersonAvatar
+                size="lg"
+                isLoading={isLoading}
+                avatarSrc={creator?.avatar}
+                userName={`${creator?.name} ${creator?.surname}`}
+              />
+              <div className="flex w-full min-w-0">
+                <div className="flex flex-col w-full justify-between gap-4">
+                  <div className="flex flex-row flex-wrap items-center gap-x-2 gap-y-2">
+                    {isDelegate && (
+                      <Badge
+                        variant="outline"
+                        colorVariant="accent"
+                        isLoading={isLoading}
+                      >
+                        {tAgreementFlow('createAgreementBaseFields.delegate')}
+                      </Badge>
                     )}
-                  />
-                  <Text className="text-1 text-neutral-11">
-                    {creator?.name} {creator?.surname}
-                  </Text>
-                </div>
-                {Number(duration) === 0 ? (
-                  <div className="flex gap-2 h-fit items-center pr-3">
-                    <Image
-                      className="max-w-[32px] max-h-[32px] min-w-[32px] min-h-[32px]"
-                      width={32}
-                      height={32}
-                      src={
-                        theme === 'light'
-                          ? '/placeholder/auto-execution-icon-light.svg'
-                          : '/placeholder/auto-execution-icon.svg'
-                      }
-                      alt={tAgreementFlow(
-                        'createAgreementBaseFields.proposalMinimumVotingIconAlt',
-                      )}
-                    />
-                    <div className="flex flex-col">
-                      <span className="text-3 text-accent-11 text-nowrap font-medium">
-                        {tAgreementFlow(
-                          'createAgreementBaseFields.autoExecution',
+                  </div>
+                  <div className="flex justify-between w-full gap-4">
+                    <div className="flex flex-col gap-1.5 w-full sm:gap-2">
+                      <FormField
+                        control={form.control}
+                        name="title"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input
+                                rootClassName="!h-auto min-h-10 w-full sm:min-h-11"
+                                placeholder={tAgreementFlow(
+                                  'createAgreementBaseFields.proposalTitlePlaceholder',
+                                )}
+                                className="!h-auto min-h-10 w-full border-0 bg-inherit p-0 py-1 text-lg font-semibold leading-snug tracking-tight text-foreground placeholder:!text-base placeholder:font-medium placeholder:leading-snug placeholder:text-muted-foreground/80 sm:min-h-11 sm:text-xl sm:placeholder:!text-lg"
+                                disabled={isLoading}
+                                rightIcon={
+                                  <RequirementMark className="h-4 w-4 text-muted-foreground sm:h-4 sm:w-4" />
+                                }
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
                         )}
-                      </span>
-                      <span className="text-[9px] text-accent-11 text-nowrap font-medium">
-                        {spaceDetails?.quorum}% Quorum | {spaceDetails?.unity}%
-                        Unity
-                      </span>
+                      />
+                      <Text className="text-1 text-neutral-11">
+                        {creator?.name} {creator?.surname}
+                      </Text>
                     </div>
+                    {hasVotingDuration && durationNumber === 0 ? (
+                      <div className="flex gap-2 h-fit items-center pr-3">
+                        <Image
+                          className="max-w-[32px] max-h-[32px] min-w-[32px] min-h-[32px]"
+                          width={32}
+                          height={32}
+                          src={
+                            theme === 'light'
+                              ? '/placeholder/auto-execution-icon-light.svg'
+                              : '/placeholder/auto-execution-icon.svg'
+                          }
+                          alt={tAgreementFlow(
+                            'createAgreementBaseFields.proposalMinimumVotingIconAlt',
+                          )}
+                        />
+                        <div className="flex flex-col">
+                          <span className="text-3 text-accent-11 text-nowrap font-medium">
+                            {tAgreementFlow(
+                              'createAgreementBaseFields.autoExecution',
+                            )}
+                          </span>
+                          {votingThresholdSummary ? (
+                            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground text-nowrap tabular-nums">
+                              {votingThresholdSummary}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                    ) : hasVotingDuration ? (
+                      <div className="flex gap-2 h-fit items-center pr-3">
+                        <Image
+                          className="max-w-[32px] max-h-[32px] min-w-[32px] min-h-[32px]"
+                          width={32}
+                          height={32}
+                          src={
+                            theme === 'light'
+                              ? '/placeholder/non-auto-execution-icon-light.svg'
+                              : '/placeholder/non-auto-execution-icon.svg'
+                          }
+                          alt={tAgreementFlow(
+                            'createAgreementBaseFields.proposalMinimumVotingIconAlt',
+                          )}
+                        />
+                        <div className="flex flex-col">
+                          <span className="text-2 text-accent-11 text-nowrap font-medium">
+                            {tAgreementFlow(
+                              'createAgreementBaseFields.toVote',
+                              {
+                                duration: formatDuration(durationNumber),
+                              },
+                            )}
+                          </span>
+                          {votingThresholdSummary ? (
+                            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground text-nowrap tabular-nums">
+                              {votingThresholdSummary}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
-                ) : (
-                  <div className="flex gap-2 h-fit items-center pr-3">
-                    <Image
-                      className="max-w-[32px] max-h-[32px] min-w-[32px] min-h-[32px]"
-                      width={32}
-                      height={32}
-                      src={
-                        theme === 'light'
-                          ? '/placeholder/non-auto-execution-icon-light.svg'
-                          : '/placeholder/non-auto-execution-icon.svg'
-                      }
-                      alt={tAgreementFlow(
-                        'createAgreementBaseFields.proposalMinimumVotingIconAlt',
-                      )}
-                    />
-                    <div className="flex flex-col">
-                      <span className="text-2 text-accent-11 text-nowrap font-medium">
-                        {tAgreementFlow('createAgreementBaseFields.toVote', {
-                          duration: formatDuration(Number(duration)),
-                        })}
-                      </span>
-                      <span className="text-[9px] text-accent-11 text-nowrap font-medium">
-                        {spaceDetails?.quorum}% Quorum | {spaceDetails?.unity}%
-                        Unity
-                      </span>
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
         </div>
+        <Separator />
       </div>
-      <Separator />
-      <FormField
-        control={form.control}
-        name="leadImage"
-        render={({ field }) => (
-          <FormItem>
-            <FormControl>
-              <UploadLeadImage
-                onChange={field.onChange}
-                maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
-                enableImageResizer={true}
-                uploadText={tAgreementFlow.rich(
-                  'createAgreementBaseFields.uploadImageLabel',
-                  {
-                    accent: (chunks) => (
-                      <span className="text-accent-11">{chunks}</span>
-                    ),
-                  },
-                )}
-                defaultImage={
-                  resubmitFormData?.leadImage || field.value
-                    ? typeof field.value === 'string'
-                      ? field.value
-                      : resubmitFormData?.leadImage
-                    : undefined
-                }
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={form.control}
-        name="description"
-        render={({ field }) => {
-          const descriptionValue = field.value || '';
+      <div className="flex flex-col gap-6">
+        <section className="rounded-xl border border-border/70 bg-muted/20 p-4 shadow-sm ring-1 ring-black/[0.03] dark:bg-muted/12 dark:ring-white/[0.06] lg:p-6">
+          <FormField
+            control={form.control}
+            name="leadImage"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <UploadLeadImage
+                    onChange={field.onChange}
+                    maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
+                    enableImageResizer={true}
+                    uploadText={tAgreementFlow.rich(
+                      'createAgreementBaseFields.uploadImageLabel',
+                      {
+                        accent: (chunks) => (
+                          <span className="text-accent-11">{chunks}</span>
+                        ),
+                      },
+                    )}
+                    defaultImage={
+                      resubmitFormData?.leadImage || field.value
+                        ? typeof field.value === 'string'
+                          ? field.value
+                          : resubmitFormData?.leadImage
+                        : undefined
+                    }
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </section>
+        <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-black/[0.03] dark:bg-muted/10 dark:ring-white/[0.06] lg:p-6">
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => {
+              const descriptionValue = field.value || '';
 
-          return (
-            <FormItem>
-              <FormLabel className="text-foreground gap-1">
-                {tAgreementFlow('createAgreementBaseFields.proposalContent')}{' '}
-                <RequirementMark />
-              </FormLabel>
-              <FormControl>
-                <RichTextEditor
-                  editorRef={null}
-                  markdown={descriptionValue}
-                  translation={translateEditor}
-                  placeholder={tAgreementFlow(
-                    'createAgreementBaseFields.proposalContentPlaceholder',
-                  )}
-                  onChange={(markdown) => field.onChange(markdown)}
-                />
-              </FormControl>
-              <FormDescription />
-              <FormMessage />
-            </FormItem>
-          );
-        }}
-      />
-      <FormField
-        control={form.control}
-        name="attachments"
-        render={({ field }) => {
-          const fieldValue = field.value || [];
-          const newFiles = Array.isArray(fieldValue)
-            ? fieldValue.filter((item) => item instanceof File)
-            : [];
-          const allAttachments = [...existingAttachments, ...newFiles];
+              return (
+                <FormItem>
+                  <FormLabel className="gap-1 text-foreground">
+                    {tAgreementFlow(
+                      'createAgreementBaseFields.proposalContent',
+                    )}{' '}
+                    <RequirementMark />
+                  </FormLabel>
+                  <FormControl>
+                    <div className="overflow-hidden rounded-lg border border-border/80 bg-background-2 shadow-inner focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background-2">
+                      <RichTextEditor
+                        editorRef={null}
+                        markdown={descriptionValue}
+                        translation={translateEditor}
+                        placeholder={tAgreementFlow(
+                          'createAgreementBaseFields.proposalContentPlaceholder',
+                        )}
+                        onChange={(markdown) => field.onChange(markdown)}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormDescription />
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
+          />
+          <FormField
+            control={form.control}
+            name="attachments"
+            render={({ field }) => {
+              const fieldValue = field.value || [];
+              const newFiles = Array.isArray(fieldValue)
+                ? fieldValue.filter((item) => item instanceof File)
+                : [];
+              const mergedAttachments: AttachmentListItem[] = [
+                ...existingAttachments,
+                ...newFiles,
+              ];
 
-          return (
-            <FormItem>
-              <FormControl>
-                <AddAttachment
-                  label={tAgreementFlow(
-                    'createAgreementBaseFields.addAttachmentLabel',
-                  )}
-                  onChange={(files) => {
-                    field.onChange(files);
-                    form.setValue(
-                      'attachments',
-                      [...existingAttachments, ...files] as any,
-                      { shouldValidate: false },
-                    );
-                  }}
-                  onExistingAttachmentsChange={(updated) => {
-                    setExistingAttachments(updated);
-                    form.setValue(
-                      'attachments',
-                      [...updated, ...newFiles] as any,
-                      { shouldValidate: false },
-                    );
-                  }}
-                  value={allAttachments.length > 0 ? allAttachments : undefined}
-                  defaultAttachments={
-                    existingAttachments.length > 0
-                      ? existingAttachments
-                      : undefined
-                  }
-                />
-              </FormControl>
-              <FormDescription />
-              <FormMessage />
-            </FormItem>
-          );
-        }}
-      />
+              return (
+                <FormItem className="mt-6">
+                  <FormControl>
+                    <AddAttachment
+                      label={tAgreementFlow(
+                        'createAgreementBaseFields.addAttachmentLabel',
+                      )}
+                      onChange={(files) => {
+                        field.onChange(files);
+                        form.setValue(
+                          'attachments',
+                          [...existingAttachments, ...files],
+                          { shouldValidate: false },
+                        );
+                      }}
+                      onExistingAttachmentsChange={(updated) => {
+                        setExistingAttachments(updated);
+                        form.setValue(
+                          'attachments',
+                          [...updated, ...newFiles],
+                          { shouldValidate: false },
+                        );
+                      }}
+                      value={
+                        mergedAttachments.length > 0
+                          ? mergedAttachments
+                          : undefined
+                      }
+                      defaultAttachments={
+                        existingAttachments.length > 0
+                          ? existingAttachments
+                          : undefined
+                      }
+                    />
+                  </FormControl>
+                  <FormDescription />
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
+          />
+        </section>
+      </div>
     </>
   );
 }

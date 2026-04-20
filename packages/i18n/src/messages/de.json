@@ -22,6 +22,7 @@
     "findCategory": "Kategorie suchen",
     "noSpacesYet": "Noch keine Spaces erstellt oder beigetreten. Erkunden Sie unser Netzwerk und treten Sie einem Space bei oder erstellen Sie Ihren eigenen",
     "close": "Schließen",
+    "comingSoonBadge": "Bald",
     "notFoundOops": "Oooops!",
     "notFoundCouldNotFindPage": "Wir konnten diese Seite nicht finden",
     "notFoundDescription": "Die Seite, die Sie suchen, wurde möglicherweise entfernt, umbenannt oder ist vorübergehend nicht verfügbar.",
@@ -36,6 +37,25 @@
     "publish": "Veröffentlichen",
     "invalidTransactions": "Ungültige Transaktionen",
     "Coherence": "Kohärenz"
+  },
+  "ModalAside": {
+    "spaceSettings": "Space-Einstellungen",
+    "createProposal": "Vorschlag erstellen",
+    "activateSpace": "Space aktivieren",
+    "spaceNavigation": "Space-Navigation",
+    "profileActions": "Aktionen",
+    "transferFunds": "Mittel überweisen",
+    "redeemTokens": "Tokens einlösen",
+    "buyHyphaTokens": "Hypha Tokens kaufen (Rewards)",
+    "buySpaceTokens": "Space-Tokens kaufen",
+    "activateSpacesProfile": "Space(s) aktivieren",
+    "notificationCentre": "Benachrichtigungszentrale",
+    "editProfile": "Profil bearbeiten",
+    "createAccount": "Konto erstellen",
+    "createSpace": "Space erstellen",
+    "addSpace": "Space hinzufügen",
+    "configureSpace": "Space konfigurieren",
+    "panelAccessibleName": "Hypha-Panel"
   },
   "Navigation": {
     "network": "Netzwerk",
@@ -59,7 +79,7 @@
   "NotificationCentre": {
     "title": "Benachrichtigungszentrum",
     "loading": {
-      "keepWindowOpen": "Bitte lassen Sie dieses Fenster geöffnet, bis der Fortschrittsbalken abgeschlossen ist."
+      "keepWindowOpen": "Lassen Sie dieses Fenster geöffnet, bis wir fertig sind."
     },
     "subscribe": {
       "title": "Benachrichtigungen abonnieren",
@@ -389,6 +409,9 @@
     "privacyPolicy": "Datenschutzrichtlinie"
   },
   "Profile": {
+    "signup": {
+      "loading": "Wird geladen …"
+    },
     "profilePage": "Profilseite",
     "personNotFound": "Person nicht gefunden",
     "redirectingToProfile": "Weiterleitung zum Profil...",
@@ -919,12 +942,16 @@
     "createAgreementBaseFields": {
       "agreementLabel": "Vereinbarung",
       "backToCreate": "Zurück zum Erstellen",
+      "resetForm": "Zurücksetzen",
       "formContextMissing": "Formular-Kontext fehlt!",
       "delegate": "Delegierter",
       "proposalTitlePlaceholder": "Vorschlagstitel...",
       "proposalMinimumVotingIconAlt": "Symbol für minimale Abstimmungsdauer",
       "autoExecution": "Automatische Ausführung",
       "toVote": "{duration} zum Abstimmen",
+      "quorumLabel": "Quorum",
+      "unityLabel": "Einstimmigkeit",
+      "quorumUnityLine": "{quorumPercent}% {quorumLabel} | {unityPercent}% {unityLabel}",
       "uploadImageLabel": "<accent>Bild</accent> hochladen",
       "addAttachmentLabel": "Anhang hinzufügen (JPEG, PNG, WebP oder PDF — max. 4 MB)",
       "proposalContent": "Vorschlagsinhalt",
@@ -951,7 +978,7 @@
       }
     },
     "loadingBackdrop": {
-      "keepWindowOpen": "Bitte lassen Sie dieses Fenster geöffnet, bis der Fortschrittsbalken abgeschlossen ist."
+      "keepWindowOpen": "Lassen Sie dieses Fenster geöffnet, bis wir fertig sind."
     },
     "spaceTokenPurchaseProgress": {
       "CREATE_WEB2_AGREEMENT": "Vereinbarung wird erstellt...",
@@ -1529,6 +1556,10 @@
       "looksGood": "Sieht gut aus",
       "quorumMinParticipation": "Quorum (Mindestbeteiligung)",
       "unityMinAlignment": "Einheit (Mindestausrichtung)",
+      "currentScore": "Aktuell",
+      "voteScore": "Stimme",
+      "requiredScore": "Erforderlich {percent} %",
+      "submittingVote": "Stimme wird übermittelt — warte auf Bestätigung…",
       "proposalVotingIconAlt": "Symbol für die Mindestabstimmung des Vorschlags",
       "autoExecution": "Automatische Ausführung",
       "toVote": "{duration} zum Abstimmen",
@@ -1538,6 +1569,7 @@
     },
     "withdrawResubmit": {
       "title": "Vorschlag zurückziehen oder bearbeiten und erneut einreichen?",
+      "withdrawOnlyTitle": "Vorschlag zurückziehen?",
       "withdrawDialogTitle": "Vorschlag zurückziehen",
       "withdrawDialogDescription": "Möchten Sie diesen Vorschlag wirklich zurückziehen? Er wird nicht mehr in der Vorschlagsansicht angezeigt und kann nicht wiederhergestellt werden.",
       "withdraw": "Zurückziehen",
@@ -1829,7 +1861,7 @@
       "medium": "Beobachten und bald handeln",
       "low": "Informativ, keine Eile"
     },
-    "keepWindowOpenWhileCreating": "Bitte lassen Sie dieses Fenster offen, bis die Fortschrittsanzeige abgeschlossen ist.",
+    "keepWindowOpenWhileCreating": "Lassen Sie dieses Fenster geöffnet, bis wir fertig sind.",
     "tagLabels": {
       "Strategy": "Strategie",
       "Culture": "Kultur",

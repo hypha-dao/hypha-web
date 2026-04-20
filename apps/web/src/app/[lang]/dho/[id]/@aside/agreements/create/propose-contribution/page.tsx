@@ -1,6 +1,6 @@
 import {
   CreateProposeAContributionForm,
-  SidePanel,
+  ProposalOverlayShell,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
@@ -27,7 +27,7 @@ export default async function CreateProposeAContributionPage({
   const successfulUrl = getDhoPathAgreements(lang as Locale, id);
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <CreateProposeAContributionForm
         successfulUrl={successfulUrl}
         backUrl={`${successfulUrl}${PATH_SELECT_CREATE_ACTION}`}
@@ -35,6 +35,6 @@ export default async function CreateProposeAContributionPage({
         web3SpaceId={web3SpaceId}
         plugin={<Plugin name="propose-contribution" spaceSlug={spaceSlug} />}
       />
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

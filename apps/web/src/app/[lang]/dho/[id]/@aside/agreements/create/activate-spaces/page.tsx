@@ -1,5 +1,8 @@
 import { Locale } from '@hypha-platform/i18n';
-import { SidePanel, ActivateSpacesFormSpace } from '@hypha-platform/epics';
+import {
+  ProposalOverlayShell,
+  ActivateSpacesFormSpace,
+} from '@hypha-platform/epics';
 import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 import {
@@ -44,7 +47,7 @@ export default async function ActivateSpacesPage({ params }: PageProps) {
   );
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       {error ? (
         <div className="text-error text-sm">
           {tAgreementFlow('pageErrors.loadSpaces')}
@@ -63,6 +66,6 @@ export default async function ActivateSpacesPage({ params }: PageProps) {
           />
         </ActivateSpacesFormSpace>
       )}
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

@@ -1,13 +1,16 @@
 'use client';
 
-import { SidePanel, SignupPanel } from '@hypha-platform/epics';
+import { ProposalOverlayShell, SignupPanel } from '@hypha-platform/epics';
 import React, { useEffect, useState } from 'react';
 import { useCreateProfile } from '@web/hooks/use-create-profile';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useParams } from 'next/navigation';
 import { LoadingBackdrop } from '@hypha-platform/ui';
+import { useTranslations } from 'next-intl';
 
 export default function SignupPage() {
+  const tAgreementFlow = useTranslations('AgreementFlow');
+  const tProfileSignup = useTranslations('Profile.signup');
   const { createProfile, isCreating, error } = useCreateProfile();
   const { user, isLoading } = useAuthentication();
   const { lang } = useParams();
@@ -41,24 +44,19 @@ export default function SignupPage() {
   return (
     <LoadingBackdrop
       showKeepWindowOpenMessage={true}
+      keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       fullHeight={true}
       isLoading={isLoading || !user?.wallet?.address}
-      message={<span>Loading...</span>}
+      message={<span>{tProfileSignup('loading')}</span>}
     >
-      <>
-        <div
-          style={{ backdropFilter: 'blur(3px)' }}
-          className="fixed inset-0 z-40"
+      <ProposalOverlayShell>
+        <SignupPanel
+          closeUrl={`/${lang}/profile`}
+          onSave={handleSave}
+          isCreating={isCreating}
+          error={error}
         />
-        <SidePanel className="z-50">
-          <SignupPanel
-            closeUrl={`/${lang}/profile`}
-            onSave={handleSave}
-            isCreating={isCreating}
-            error={error}
-          />
-        </SidePanel>
-      </>
+      </ProposalOverlayShell>
     </LoadingBackdrop>
   );
 }

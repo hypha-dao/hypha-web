@@ -1,4 +1,7 @@
-import { CreateAgreementForm, SidePanel } from '@hypha-platform/epics';
+import {
+  CreateAgreementForm,
+  ProposalOverlayShell,
+} from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { getDhoPathAgreements } from '../../../@tab/agreements/constants';
 import { PATH_SELECT_CREATE_ACTION } from '@web/app/constants';
@@ -13,6 +16,7 @@ type PageProps = {
 
 export default async function CreateAgreementPage({ params }: PageProps) {
   const tAgreementFlow = await getTranslations('AgreementFlow');
+  const tModalAside = await getTranslations('ModalAside');
   const { lang, id } = await params;
 
   // TODO: implement authorization
@@ -25,14 +29,15 @@ export default async function CreateAgreementPage({ params }: PageProps) {
   const successfulUrl = getDhoPathAgreements(lang as Locale, id);
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <CreateAgreementForm
         successfulUrl={successfulUrl}
         backUrl={`${successfulUrl}${PATH_SELECT_CREATE_ACTION}`}
         spaceId={spaceId}
         web3SpaceId={web3SpaceId}
         label={tAgreementFlow('labels.collectiveAgreement')}
+        stickyHeaderTitle={tModalAside('createProposal')}
       />
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

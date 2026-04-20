@@ -38,13 +38,20 @@ export const UploadLeadImage = ({
   uploadText,
   enableImageResizer = false,
 }: UploadLeadImageProps) => {
+  const cropTitleId = React.useId();
+  const cropDescId = React.useId();
   const [preview, setPreview] = React.useState<string | null>(
     defaultImage || null,
   );
 
+  // Sync remote/string defaults only. Do not clear preview when `defaultImage`
+  // becomes undefined because the parent form value is a File — that transition
+  // would wipe the crop/local preview right after the first upload.
   React.useEffect(() => {
-    setPreview(defaultImage || null);
-  }, [defaultImage, setPreview]);
+    if (typeof defaultImage === 'string' && defaultImage.trim().length > 0) {
+      setPreview(defaultImage);
+    }
+  }, [defaultImage]);
 
   const [imageSrc, setImageSrc] = React.useState<string | null>(null);
   const [crop, setCrop] = React.useState({ x: 0, y: 0 });
@@ -125,6 +132,10 @@ export const UploadLeadImage = ({
     },
   });
 
+  /** Prefer in-component preview (upload/crop); fall through to parent default URL immediately so we never flash an empty dashed box while defaultImage hydrates. */
+  const displaySrc = preview ?? defaultImage ?? null;
+  const showEmptyPlaceholder = !displaySrc && !imageSrc;
+
   return (
     <>
       <AspectRatio
@@ -134,12 +145,12 @@ export const UploadLeadImage = ({
           'group cursor-pointer relative',
           'flex justify-center items-center overflow-hidden',
           'rounded-xl bg-accent-2',
-          !preview && 'border border-neutral-11 border-dashed',
+          showEmptyPlaceholder && 'border border-neutral-11 border-dashed',
         )}
       >
         <input {...getInputProps()} />
-        {preview && <PreviewImg src={preview} />}
-        <PreviewOverlay isVisible={!preview || isDragActive}>
+        {displaySrc && <PreviewImg src={displaySrc} />}
+        <PreviewOverlay isVisible={!displaySrc || isDragActive}>
           {isDragActive ? (
             <span>Drop the image here</span>
           ) : (
@@ -159,20 +170,54 @@ export const UploadLeadImage = ({
       {error && <p className="mt-2 text-2 text-error-11">{error}</p>}
 
       {enableImageResizer && imageSrc && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-          <div className="relative w-[600px] h-[400px] bg-white rounded-xl overflow-hidden">
-            <Cropper
-              image={imageSrc}
-              crop={crop}
-              zoom={zoom}
-              aspect={762 / 270}
-              onCropChange={setCrop}
-              onZoomChange={setZoom}
-              onCropComplete={onCropComplete}
-            />
-            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4">
-              <Button onClick={() => setImageSrc(null)}>Cancel</Button>
-              <Button onClick={confirmCrop}>Crop & Save</Button>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={cropTitleId}
+          aria-describedby={cropDescId}
+        >
+          <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-2xl">
+            <div className="border-b border-border px-5 py-4">
+              <h2
+                id={cropTitleId}
+                className="text-lg font-semibold tracking-tight text-foreground"
+              >
+                Upload an image
+              </h2>
+              <p
+                id={cropDescId}
+                className="mt-1 text-sm leading-relaxed text-muted-foreground"
+              >
+                Adjust how your image is framed, then save. Drag to reposition
+                and use zoom to fit the banner area (JPEG, PNG, or WebP — max
+                4&nbsp;MB).
+              </p>
+            </div>
+            <div className="relative min-h-[min(55vh,440px)] w-full flex-1 bg-muted/40">
+              <Cropper
+                image={imageSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={762 / 270}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+              />
+            </div>
+            <div className="flex items-center justify-end gap-3 border-t border-border bg-muted/20 px-5 py-4">
+              <Button
+                type="button"
+                variant="outline"
+                colorVariant="neutral"
+                size="lg"
+                onClick={() => setImageSrc(null)}
+              >
+                Cancel
+              </Button>
+              <Button type="button" size="lg" onClick={confirmCrop}>
+                Crop & Save
+              </Button>
             </div>
           </div>
         </div>

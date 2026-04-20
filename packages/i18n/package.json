@@ -4,7 +4,8 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "lint": "eslint ."
+    "lint": "pnpm run verify:messages && eslint .",
+    "verify:messages": "node scripts/verify-modal-aside-parity.mjs"
   },
   "devDependencies": {
     "@hypha-platform/config-eslint": "workspace:*",
