@@ -157,7 +157,7 @@ export default async function DhoLayout({
           )}
           <ActionButtons web3SpaceId={web3SpaceId} />
         </div>
-        <div className="mt-8 flex flex-col gap-3">
+        <div className="mt-4 flex flex-col gap-3">
           <SalesBanner web3SpaceId={web3SpaceId} />
           <SpaceEscrowDepositBanners
             web3SpaceId={web3SpaceId}
