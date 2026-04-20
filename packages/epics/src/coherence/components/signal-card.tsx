@@ -29,7 +29,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   LucideReactIcon,
-  Separator,
   Skeleton,
 } from '@hypha-platform/ui';
 import { stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
@@ -66,6 +65,7 @@ type SignalCardProps = {
   onVoteChange?: (next: -1 | 0 | 1) => void;
   onVotesSynced?: () => void | Promise<void>;
   isVoting?: boolean;
+  className?: string;
 };
 
 export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
@@ -91,6 +91,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   onVoteChange,
   onVotesSynced,
   isVoting,
+  className,
 }) => {
   const { jwt: authToken } = useJwt();
   const { person } = useMe();
@@ -212,13 +213,14 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   return (
     <Card
       className={cn(
-        'group flex h-full w-full flex-col overflow-hidden rounded-2xl border-border/70 bg-card pt-0 shadow-sm',
+        'group flex h-full w-full min-h-0 flex-col overflow-hidden rounded-2xl border-border/70 bg-card pt-0 shadow-sm',
         'transition-[border-color,box-shadow] duration-200 ease-out',
         'hover:border-accent-8/75 hover:shadow-md',
         'focus-within:border-accent-8/75 focus-within:shadow-md',
+        className,
       )}
     >
-      <CardContent className="relative flex flex-1 flex-col gap-0 p-0">
+      <CardContent className="relative flex min-h-0 flex-1 flex-col gap-0 p-0">
         <div className="border-b border-border/60 bg-muted/20 px-4 py-3">
           <div className="flex items-start justify-between gap-3">
             {/* Column so type tag(s) stay on row 1 and clock/time always on row 2 */}
@@ -364,7 +366,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           ) : null}
         </div>
 
-        <div className="flex flex-col gap-3 px-4 pb-4 pt-4">
+        <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pb-4 pt-4">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             {priority === 'high' && (
               <span className="inline-flex items-center gap-1 text-1 text-neutral-11">
@@ -450,8 +452,8 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           </div>
         </div>
 
-        <Separator />
-        <div className="flex gap-2 px-4 pb-4 pt-3">
+        {/* Fixed-height footer band so action row aligns across the grid when cards stretch */}
+        <div className="mt-auto flex min-h-[4.75rem] shrink-0 flex-col justify-center border-t border-border px-4 py-3">
           {archived ? (
             <div
               onClick={(e) => {
