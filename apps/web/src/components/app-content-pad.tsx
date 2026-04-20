@@ -5,14 +5,7 @@ import type { ReactNode } from 'react';
 
 import { cn } from '@hypha-platform/ui-utils';
 
-/**
- * DHO space routes use sticky chrome that meets MenuTop; skip root `pt-9` there
- * instead of negating margin per layout.
- */
-function isDhoSpaceRoute(pathname: string | null): boolean {
-  if (!pathname) return false;
-  return /^\/[^/]+\/dho\/[^/]+/.test(pathname);
-}
+import { isDhoSpaceRoute } from '@web/lib/dho-space-path';
 
 type AppContentPadProps = {
   children: ReactNode;
