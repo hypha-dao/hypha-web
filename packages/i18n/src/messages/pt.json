@@ -1941,6 +1941,7 @@
     "deleteConfirm": "Isto remove permanentemente este sinal do espaço. Continuar?",
     "deleteMenu": "Eliminar",
     "deleteConfirmAction": "Eliminar sinal",
+    "deleteFailed": "Não foi possível eliminar este sinal. Tente novamente.",
     "voteFailed": "Não foi possível guardar o seu voto. Tente de novo ou confirme se a carteira está associada."
   }
 }

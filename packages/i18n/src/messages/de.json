@@ -1942,6 +1942,7 @@
     "deleteConfirm": "Dies entfernt das Signal dauerhaft aus dem Space. Fortfahren?",
     "deleteMenu": "Löschen",
     "deleteConfirmAction": "Signal löschen",
+    "deleteFailed": "Signal konnte nicht gelöscht werden. Bitte erneut versuchen.",
     "voteFailed": "Stimme konnte nicht gespeichert werden. Bitte erneut versuchen oder prüfen, ob die Wallet verknüpft ist."
   }
 }

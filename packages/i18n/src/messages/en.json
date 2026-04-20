@@ -1972,6 +1972,7 @@
     "deleteConfirm": "This permanently removes this signal from the space. Continue?",
     "deleteMenu": "Delete",
     "deleteConfirmAction": "Delete signal",
+    "deleteFailed": "Could not delete this signal. Try again.",
     "voteFailed": "Could not save your vote. Try again or check that your wallet is linked."
   }
 }
