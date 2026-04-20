@@ -19,7 +19,8 @@ function isSafeLinkHref(url: string): boolean {
 function isSafeTextureUrl(raw: string): boolean {
   const t = raw.trim();
   if (!t) return false;
-  if (t.startsWith('/')) return true;
+  /** Same-origin path only — reject protocol-relative `//evil` */
+  if (t.startsWith('/') && !t.startsWith('//')) return true;
   try {
     const u = new URL(t);
     return u.protocol === 'http:' || u.protocol === 'https:';
