@@ -4,6 +4,8 @@ import { cn } from '@hypha-platform/ui-utils';
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 
+import { SPACE_MENU_TOP_FALLBACK_PX } from './space-header-morph-context';
+
 type SpaceHeaderContextBarProps = {
   breadcrumbs: ReactNode;
   trailing?: ReactNode;
@@ -41,7 +43,9 @@ export function SpaceHeaderContextBar({
       className={cn(
         'sticky z-[29] shrink-0 border-b border-border bg-background-2',
       )}
-      style={{ top: 'var(--app-menu-top-h, 65px)' }}
+      style={{
+        top: `var(--app-menu-top-h, ${SPACE_MENU_TOP_FALLBACK_PX}px)`,
+      }}
     >
       <div
         className={cn(
