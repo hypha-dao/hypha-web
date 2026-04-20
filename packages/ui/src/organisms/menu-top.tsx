@@ -1,7 +1,7 @@
 'use client';
 
 import { Logo } from '../atoms';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Menu } from 'lucide-react';
 import { RxCross1 } from 'react-icons/rx';
 import { usePathname } from 'next/navigation';
@@ -33,6 +33,30 @@ export const MenuTop = ({
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
+  }, [pathname]);
+
+  /** Publish measured height so side panels / overlays align with this bar (see e2e menu-top-consistent-height). */
+  useLayoutEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+
+    const publish = () => {
+      const h = Math.round(el.getBoundingClientRect().height);
+      if (h > 0) {
+        document.documentElement.style.setProperty(
+          '--menu-top-height',
+          `${h}px`,
+        );
+        setHeaderHeight(h);
+      }
+    };
+
+    publish();
+    const ro = new ResizeObserver(publish);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+    };
   }, [pathname]);
 
   return (

@@ -11,6 +11,7 @@ import { eventRelations } from './event.relations';
 import { events } from './event';
 import { transfers } from './transfers';
 import { coherences } from './coherence';
+import { coherenceVotes } from './coherence-votes';
 import { matrixUserLinks } from './matrix-user-link';
 import { tokenUpdates, tokenUpdateRelations } from './token-updates';
 
@@ -27,6 +28,7 @@ export * from './tokens';
 export * from './event';
 export * from './transfers';
 export * from './coherence';
+export * from './coherence-votes';
 export * from './matrix-user-link';
 export * from './token-updates';
 
@@ -45,6 +47,7 @@ export const schema = {
   eventRelations,
   transfers,
   coherences,
+  coherenceVotes,
   matrixUserLinks,
   tokenUpdates,
   tokenUpdateRelations,

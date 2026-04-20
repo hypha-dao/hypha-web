@@ -24,6 +24,8 @@ import {
 } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import {
+  MATRIX_MXID_IN_PLAIN_TEXT,
+  normalizePlainTextMxidCaptureFromMatch,
   useMatrix,
   usePersonBySub,
   useUserPrivyIdByMatrixId,
@@ -36,6 +38,10 @@ import {
   pushRecentChatReaction,
 } from './human-chat-panel-message-overflow';
 import { ChatMessageRichText } from './parse-simple-matrix-html';
+import {
+  matrixMemberDisplayLabelFromRoom,
+  needsHyphaProfileResolutionForMatrixLabel,
+} from './matrix-room-member-display';
 import {
   type ChatPanelAttachmentMedia,
   isChatPanelAudioFile,
@@ -56,6 +62,16 @@ type Reaction = {
 type UIMessagePart =
   | { type: 'text'; text: string }
   | { type: string; [k: string]: unknown };
+
+/** Soft darken so inline photos blend with dark chat chrome (design reference). */
+function ChatMediaAmbientOverlay() {
+  return (
+    <div
+      className="pointer-events-none absolute inset-0 z-[1] rounded-[inherit] bg-black/15 shadow-[inset_0_0_40px_rgba(0,0,0,0.12)] dark:bg-black/35 dark:shadow-[inset_0_0_48px_rgba(0,0,0,0.28)]"
+      aria-hidden
+    />
+  );
+}
 
 /** Discord-style: dimmed media + centered pill (not full-width text strip). */
 function TimelineSpoilerRevealOverlay({
@@ -244,6 +260,7 @@ function TimelineImageSlot({
               )}
             />
           </a>
+          {!(media.spoiler && !spoilerRevealed) && <ChatMediaAmbientOverlay />}
           {media.spoiler && !spoilerRevealed && (
             <TimelineSpoilerRevealOverlay
               t={tOpen}
@@ -314,6 +331,7 @@ function TimelineCollageImageTile({
               errorRetries={2}
             />
           </a>
+          {!(media.spoiler && !spoilerRevealed) && <ChatMediaAmbientOverlay />}
           {media.spoiler && !spoilerRevealed && (
             <TimelineSpoilerRevealOverlay
               t={tOpen}
@@ -643,6 +661,14 @@ function TimelineFileSlot({
 type HumanChatPanelMessageBubbleProps = {
   /** Map Matrix user id to display name for reaction hover tooltips. */
   resolveReactionReactorLabel?: (userId: string) => string;
+  /** Resolve `@localpart:homeserver` pills in message body (room member display names). */
+  resolveMatrixMemberLabel?: (matrixUserId: string) => string;
+  /**
+   * Hypha roster / merged labels for timeline headers (sender + reply). When set,
+   * used before `message.senderName` so senders match Members tab without requiring
+   * `matrix_user_links` for every MXID.
+   */
+  resolveSenderDisplayLabel?: (matrixUserId: string | undefined) => string;
   /** Parent list ensures at most one message shows the floating action bar. */
   isActionBarVisible?: boolean;
   onRowPointerEnter?: () => void;
@@ -683,6 +709,8 @@ type HumanChatPanelMessageBubbleProps = {
       sourceUserId?: string;
       authorAvatarUrl?: string;
     };
+    /** Matrix `m.mentions.user_ids` when present on the event. */
+    mentionedUserIds?: string[];
   };
   isStreaming?: boolean;
   /** When set, Reply is enabled (omit for synthetic messages like welcome). */
@@ -830,34 +858,142 @@ function formatTimestamp(
 }
 
 /**
- * Render text content with @mentions highlighted.
+ * Split plaintext into runs of literal text vs full Matrix MXIDs (`@local:homeserver`).
+ * A naive `@(\w+)…` regex breaks on the colon inside bridged Privy locals — root cause of ugly pills.
  */
-function renderTextWithMentions(text: string): React.ReactNode[] {
-  const mentionRegex = /@([\w\s]+?)(?=\s|$|[.,!?;:])/g;
-  const parts: React.ReactNode[] = [];
+function splitPlainTextMatrixMentions(
+  text: string,
+): Array<{ kind: 'text'; value: string } | { kind: 'mxid'; full: string }> {
+  const out: Array<
+    { kind: 'text'; value: string } | { kind: 'mxid'; full: string }
+  > = [];
+  const re = new RegExp(MATRIX_MXID_IN_PLAIN_TEXT.source, 'g');
   let lastIndex = 0;
-  let match;
-
-  while ((match = mentionRegex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(text.slice(lastIndex, match.index));
-    }
-    parts.push(
-      <span
-        key={match.index}
-        className="bg-primary/20 text-primary rounded px-1 font-medium"
-      >
-        @{match[1]}
-      </span>,
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    const mid = normalizePlainTextMxidCaptureFromMatch(
+      m[1] ?? '',
+      text,
+      m.index,
+      m[0].length,
     );
-    lastIndex = match.index + match[0].length;
+    if (!mid) continue;
+    const full = `@${mid}`;
+    if (m.index > lastIndex) {
+      out.push({ kind: 'text', value: text.slice(lastIndex, m.index) });
+    }
+    out.push({ kind: 'mxid', full });
+    lastIndex = m.index + full.length;
   }
-
   if (lastIndex < text.length) {
-    parts.push(text.slice(lastIndex));
+    out.push({ kind: 'text', value: text.slice(lastIndex) });
   }
+  return out;
+}
 
+/**
+ * Discord-like mention chip: translucent **accent-9** (same hue as primary buttons `bg-accent-9`),
+ * inset ring — not a flat “notification” blue box.
+ */
+function chatMentionPillClass(onViewerMentionTintRow: boolean): string {
+  return cn(
+    'inline-flex max-w-full items-baseline rounded-[4px] px-[5px] py-[1px] text-[13px] font-semibold leading-snug tracking-tight',
+    onViewerMentionTintRow
+      ? 'bg-accent-9/22 text-accent-12 ring-1 ring-inset ring-accent-9/40 dark:bg-accent-9/30 dark:text-accent-11 dark:ring-accent-9/45'
+      : 'bg-accent-9/14 text-accent-11 ring-1 ring-inset ring-accent-9/28 dark:bg-accent-9/20 dark:text-accent-11 dark:ring-accent-9/35',
+  );
+}
+
+/**
+ * Render plaintext with Matrix MXIDs as pills showing room display names (`resolveMx`).
+ * Non‑MXID `@handles` keep optional Discord-style pills (no colon in capture).
+ */
+function renderTextWithMentions(
+  text: string,
+  resolveMx: (matrixUserId: string) => string,
+  viewerMentionTintRow = false,
+): React.ReactNode[] {
+  const segments = splitPlainTextMatrixMentions(text);
+  /**
+   * Discord-style `@handle` pills — require a left boundary so `jane@example.com`
+   * does not render `@example` as a pill.
+   */
+  const localHandleRe = /(^|[^\w.+-])@([^\s@]{1,100}?)(?=\s|$|[.,!?;:])/g;
+
+  const mapPlainFragment = (
+    fragment: string,
+    keyBase: string,
+  ): React.ReactNode[] => {
+    const chunks: React.ReactNode[] = [];
+    let last = 0;
+    let mh: RegExpExecArray | null;
+    const reLocal = new RegExp(localHandleRe.source, localHandleRe.flags);
+    let keyN = 0;
+    while ((mh = reLocal.exec(fragment)) !== null) {
+      const prefix = mh[1] ?? '';
+      const handle = mh[2]?.trim() ?? '';
+      const mentionStart = mh.index + prefix.length;
+      if (mentionStart > last) {
+        chunks.push(
+          <span key={`${keyBase}-t-${keyN++}`}>
+            {fragment.slice(last, mentionStart)}
+          </span>,
+        );
+      }
+      chunks.push(
+        <span
+          key={`${keyBase}-at-${keyN++}`}
+          className={chatMentionPillClass(viewerMentionTintRow)}
+        >
+          @{handle}
+        </span>,
+      );
+      last = mentionStart + handle.length + 1;
+    }
+    if (last < fragment.length) {
+      chunks.push(
+        <span key={`${keyBase}-t-${keyN++}`}>{fragment.slice(last)}</span>,
+      );
+    }
+    if (chunks.length === 0 && fragment) {
+      return [<span key={keyBase}>{fragment}</span>];
+    }
+    return chunks;
+  };
+
+  const parts: React.ReactNode[] = [];
+  let segIdx = 0;
+  for (const seg of segments) {
+    if (seg.kind === 'mxid') {
+      const label = resolveMx(seg.full).trim();
+      const displayLabel = label
+        ? label.startsWith('@')
+          ? label
+          : `@${label}`
+        : seg.full;
+      parts.push(
+        <span
+          key={`mx-${segIdx}-${seg.full}`}
+          title={seg.full}
+          className={chatMentionPillClass(viewerMentionTintRow)}
+        >
+          {displayLabel}
+        </span>,
+      );
+    } else if (seg.value) {
+      parts.push(...mapPlainFragment(seg.value, `seg-${segIdx}`));
+    }
+    segIdx += 1;
+  }
   return parts;
+}
+
+function resolveMatrixPlainAndHtmlFragments(
+  fragment: string,
+  resolveMx: (matrixUserId: string) => string,
+  viewerMentionTintRow = false,
+): React.ReactNode[] {
+  return renderTextWithMentions(fragment, resolveMx, viewerMentionTintRow);
 }
 
 type ReplyConnectorGeometry = {
@@ -984,8 +1120,8 @@ function ChatReplyConnectorMeasured({
 }
 
 /**
- * Matrix often exposes the raw localpart (e.g. `prev_privy_did_…`, `prod_privy_did_…`)
- * as displayname; resolve Hypha profile via matrix_user_links when the label still looks technical.
+ * Matrix often exposes bridged localparts as displaynames (sometimes with a leading `@`).
+ * Resolve Hypha profile via `matrix_user_links` when the label still looks technical.
  */
 function needsHyphaProfileForMatrixLabel(
   label: string | undefined,
@@ -995,11 +1131,7 @@ function needsHyphaProfileForMatrixLabel(
   const l = label?.trim() ?? '';
   if (!l) return true;
   if (l === matrixId) return true;
-  if (/^prev_privy_/i.test(l)) return true;
-  if (/^prod_privy_/i.test(l)) return true;
-  /** Embedded Privy DID in localpart / displayname (prod vs stage prefixes). */
-  if (/privy_did_privy/i.test(l)) return true;
-  return false;
+  return needsHyphaProfileResolutionForMatrixLabel(label);
 }
 
 function formatPersonDisplayName(p: {
@@ -1029,6 +1161,8 @@ function reactionTooltipText(
 
 export function HumanChatPanelMessageBubble({
   resolveReactionReactorLabel,
+  resolveMatrixMemberLabel,
+  resolveSenderDisplayLabel,
   isActionBarVisible = false,
   onRowPointerEnter,
   onRowPointerLeave,
@@ -1048,6 +1182,13 @@ export function HumanChatPanelMessageBubble({
   const t = useTranslations('HumanChatPanel');
   const format = useFormatter();
   const { client } = useMatrix();
+  const bodyResolveMx = useMemo(
+    () =>
+      resolveMatrixMemberLabel ??
+      ((matrixUserId: string) =>
+        matrixMemberDisplayLabelFromRoom(client, roomId ?? null, matrixUserId)),
+    [resolveMatrixMemberLabel, client, roomId],
+  );
   const [hoverReactPickerOpen, setHoverReactPickerOpen] = useState(false);
   const [inlineReactPickerOpen, setInlineReactPickerOpen] = useState(false);
   const [spoilerRevealed, setSpoilerRevealed] = useState(false);
@@ -1088,12 +1229,27 @@ export function HumanChatPanelMessageBubble({
     ? getEmojiOnlyJumboLayout(textContent, Boolean(replyTo))
     : { mode: 'normal' as const };
 
+  const rosterSenderLabel =
+    message.role === 'member' && message.senderMatrixId
+      ? resolveSenderDisplayLabel?.(message.senderMatrixId)
+      : undefined;
+  const rosterReplyLabel =
+    replyTo?.sourceUserId != null
+      ? resolveSenderDisplayLabel?.(replyTo.sourceUserId)
+      : undefined;
+
   const resolveSenderProfile =
     message.role === 'member' &&
-    needsHyphaProfileForMatrixLabel(message.senderName, message.senderMatrixId);
+    needsHyphaProfileForMatrixLabel(
+      rosterSenderLabel ?? message.senderName,
+      message.senderMatrixId,
+    );
   const resolveReplyProfile =
     replyTo?.sourceUserId != null &&
-    needsHyphaProfileForMatrixLabel(replyTo.authorLabel, replyTo.sourceUserId);
+    needsHyphaProfileForMatrixLabel(
+      rosterReplyLabel ?? replyTo.authorLabel,
+      replyTo.sourceUserId,
+    );
 
   const { privyUserId: senderPrivySub, isLoading: isLoadingSenderLink } =
     useUserPrivyIdByMatrixId({
@@ -1117,27 +1273,29 @@ export function HumanChatPanelMessageBubble({
       ? formatPersonDisplayName(senderPerson)
       : '';
     if (fromPerson) return fromPerson;
+    if (rosterSenderLabel?.trim()) return rosterSenderLabel.trim();
     return message.senderName ?? t('unknownMember');
-  }, [message.role, message.senderName, senderPerson, t]);
+  }, [message.role, message.senderName, rosterSenderLabel, senderPerson, t]);
 
   const resolvedReplyAuthorLabel = useMemo(() => {
     if (!replyTo) return '';
     const fromPerson = replyPerson ? formatPersonDisplayName(replyPerson) : '';
     if (fromPerson) return fromPerson;
+    if (rosterReplyLabel?.trim()) return rosterReplyLabel.trim();
     return replyTo.authorLabel;
-  }, [replyPerson, replyTo]);
+  }, [replyPerson, replyTo, rosterReplyLabel]);
 
+  /**
+   * Show header skeleton only while SWR is in flight. If the person record is missing after load
+   * (deleted profile, fetch error), fall back to Matrix `senderName` — never keep the grey bar stuck.
+   */
   const senderProfileLoading =
     resolveSenderProfile &&
-    (isLoadingSenderLink ||
-      isLoadingSenderPerson ||
-      (Boolean(senderPrivySub) && !senderPerson));
+    (isLoadingSenderLink || (Boolean(senderPrivySub) && isLoadingSenderPerson));
 
   const replyProfileLoading =
     resolveReplyProfile &&
-    (isLoadingReplyLink ||
-      isLoadingReplyPerson ||
-      (Boolean(replyPrivySub) && !replyPerson));
+    (isLoadingReplyLink || (Boolean(replyPrivySub) && isLoadingReplyPerson));
 
   const senderName = resolvedSenderName;
   const replyAuthorLabelForUi = replyTo ? resolvedReplyAuthorLabel : '';
@@ -1195,6 +1353,12 @@ export function HumanChatPanelMessageBubble({
     reactions.length - MAX_VISIBLE_REACTIONS,
   );
 
+  const highlightMentionForViewer = Boolean(
+    currentUserId &&
+      message.mentionedUserIds?.length &&
+      message.mentionedUserIds.includes(currentUserId),
+  );
+
   const messageRowRef = useRef<HTMLDivElement>(null);
   const replyAvatarMeasureRef = useRef<HTMLDivElement>(null);
   const mainAvatarMeasureRef = useRef<HTMLDivElement>(null);
@@ -1208,8 +1372,11 @@ export function HumanChatPanelMessageBubble({
         'group relative -mx-3 flex flex-col overflow-visible rounded-sm px-3 py-0.5 transition-colors',
         /* Discord-style row tint: hover (primary) + focus-within for keyboard/reactions */
         'hover:bg-muted/60 focus-within:bg-muted/60',
+        highlightMentionForViewer &&
+          'border-l-[3px] border-l-accent-9 bg-accent-2/95 dark:border-l-accent-10 dark:bg-accent-3/55',
         unreadBoundary &&
-          'border-l-[3px] border-l-amber-700/90 bg-amber-50/90 dark:border-l-amber-600 dark:bg-amber-950/35',
+          !highlightMentionForViewer &&
+          'border-l-[3px] border-l-accent-8 bg-accent-1 dark:border-l-accent-9 dark:bg-accent-2/45',
       )}
       onPointerEnter={onRowPointerEnter}
       onPointerLeave={onRowPointerLeave}
@@ -1362,7 +1529,16 @@ export function HumanChatPanelMessageBubble({
                     : 'mt-0',
                 )}
               >
-                <ChatMessageRichText html={message.formattedContentHtml} />
+                <ChatMessageRichText
+                  html={message.formattedContentHtml}
+                  transformText={(fragment) =>
+                    resolveMatrixPlainAndHtmlFragments(
+                      fragment,
+                      bodyResolveMx,
+                      highlightMentionForViewer,
+                    )
+                  }
+                />
               </p>
             ) : jumboLayout.mode === 'jumbo' ? (
               <p
@@ -1394,7 +1570,11 @@ export function HumanChatPanelMessageBubble({
                     : 'mt-0',
                 )}
               >
-                {renderTextWithMentions(textContent)}
+                {renderTextWithMentions(
+                  textContent,
+                  bodyResolveMx,
+                  highlightMentionForViewer,
+                )}
               </p>
             ))}
 
@@ -1526,6 +1706,9 @@ export function HumanChatPanelMessageBubble({
                         )}
                       />
                     </a>
+                    {!(message.media.spoiler && !spoilerRevealed) && (
+                      <ChatMediaAmbientOverlay />
+                    )}
                     {message.media.spoiler && !spoilerRevealed && (
                       <TimelineSpoilerRevealOverlay
                         t={t}

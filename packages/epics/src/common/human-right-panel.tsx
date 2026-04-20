@@ -1,7 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import type { MatrixClient, MatrixEvent, Room } from 'matrix-js-sdk';
+import {
+  RoomStateEvent,
+  type MatrixClient,
+  type MatrixEvent,
+  type Room,
+} from 'matrix-js-sdk';
 import { useTranslations } from 'next-intl';
 import {
   useParams,
@@ -19,6 +24,7 @@ import {
   useMatrix,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
+  useMatrixUserIdsByPrivySubs,
   useMe,
   useSpaceBySlug,
   useSpaceMutationsWeb2Rsc,
@@ -34,6 +40,7 @@ import {
   getMessageReplaceTargetEventId,
   isRedactedRoomMessageEvent,
   type MessageReaction,
+  type Person,
 } from '@hypha-platform/core/client';
 import {
   isChatPanelAudioFile,
@@ -47,12 +54,27 @@ import {
   HumanChatPanelChatBar,
   HumanChatPanelTabs,
   HumanChatPanelMembers,
+  HumanChatPanelMentionBell,
+  HumanChatPanelMentionTab,
   type ChatDraftAttachment,
+  type ChatMentionCandidate,
   type ChatPanelAttachmentMedia,
 } from './human-chat-panel';
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
 import { computeHumanChatUnreadState } from './human-chat-panel/matrix-chat-unread';
+import {
+  matrixMemberDisplayLabel,
+  shortenMatrixIdForDisplay,
+} from './human-chat-panel/matrix-room-member-display';
+import { getActiveTabFromPath } from './get-active-tab-from-path';
+
+function personRosterLabel(p: Person, unknownLabel: string): string {
+  const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
+  if (full) return full;
+  if (p.nickname?.trim()) return p.nickname.trim();
+  return unknownLabel;
+}
 
 function disposeDraftAttachmentUrls(drafts: ChatDraftAttachment[]) {
   for (const a of drafts) {
@@ -84,6 +106,8 @@ type UIMessage = {
   avatarUrl?: string;
   /** Matrix event time (origin_server_ts), for header timestamp */
   timestamp?: Date;
+  /** MSC3952 intentional mentions on this event (`m.mentions.user_ids`). */
+  mentionedUserIds?: string[];
   /** Matrix custom HTML for visible body (when sent with formatting). */
   formattedContentHtml?: string;
   /** MXID of the message author (for reply target resolution). */
@@ -291,6 +315,9 @@ function toUIMessage(
     timestamp: msg.timestamp,
     reactions,
     replyTo,
+    ...(msg.mentionedUserIds?.length
+      ? { mentionedUserIds: msg.mentionedUserIds }
+      : {}),
   };
 }
 
@@ -417,6 +444,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   } = useHumanChatPanel();
   const { jwt: authToken } = useJwt();
   const { person: me } = useMe();
+  const { persons: spaceMembersResult } = useMembers({
+    spaceSlug,
+    paginationDisabled: true,
+  });
+  const spaceMembers = spaceMembersResult?.data ?? [];
   const { space, isLoading: isSpaceLoading } = useSpaceBySlug(spaceSlug ?? '');
   const { updateSpaceBySlug } = useSpaceMutationsWeb2Rsc(authToken);
   const { updateCoherenceBySlug } = useCoherenceMutationsWeb2Rsc(authToken);
@@ -450,6 +482,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [composerError, setComposerError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ChatPanelTab>('chat');
+  const [scrollToEventId, setScrollToEventId] = useState<string | null>(null);
   /** Shown in timeline after a short delay while large attachment sends run. */
   const [sendingPending, setSendingPending] = useState<null | {
     id: string;
@@ -469,6 +502,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const matrixClientRef = useRef(client);
   matrixClientRef.current = client;
 
+  /** Bumps when Matrix room membership changes so `@` mention candidates + button state refresh without reload. */
+  const [mentionMembershipEpoch, setMentionMembershipEpoch] = useState(0);
+
   const resolveMemberLabel = useCallback(
     (userId: string | undefined) => {
       if (!userId) return t('unknownMember');
@@ -479,14 +515,133 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       if (roomId && client) {
         const room = client.getRoom(roomId);
         const member = room?.getMember(userId);
-        if (member?.name && member.name !== userId) {
-          return member.name;
+        if (member) {
+          return matrixMemberDisplayLabel(member, userId);
         }
       }
-      return userId;
+      return shortenMatrixIdForDisplay(userId);
     },
     [client, roomId, currentUserId, me?.name, me?.surname, t],
   );
+
+  const rosterSubs = useMemo(
+    () =>
+      spaceMembers
+        .map((p) => p.sub?.trim())
+        .filter((s): s is string => Boolean(s)),
+    [spaceMembers],
+  );
+
+  const { subToMatrixUserId } = useMatrixUserIdsByPrivySubs({
+    privySubs: rosterSubs,
+  });
+
+  const mentionCandidates = useMemo((): ChatMentionCandidate[] => {
+    if (!client || !roomId) return [];
+    const room = client.getRoom(roomId);
+    if (!room) return [];
+
+    const byUserId = new Map<
+      string,
+      { displayLabel: string; avatarUrl?: string; privySub?: string }
+    >();
+
+    for (const member of room.getJoinedMembers()) {
+      const userId = member.userId;
+      if (!userId) continue;
+      if (currentUserId && userId === currentUserId) continue;
+      byUserId.set(userId, {
+        displayLabel: matrixMemberDisplayLabel(member, userId),
+        avatarUrl: matrixMemberAvatarSquare(client, roomId, userId, 64),
+      });
+    }
+
+    /** Same names as Members tab — overrides Matrix-only technical displaynames. */
+    for (const p of spaceMembers) {
+      const sub = p.sub?.trim();
+      if (!sub) continue;
+      const mxid = subToMatrixUserId[sub];
+      if (!mxid) continue;
+      if (currentUserId && mxid === currentUserId) continue;
+      const prev = byUserId.get(mxid);
+      byUserId.set(mxid, {
+        displayLabel: personRosterLabel(p, t('unknownMember')),
+        avatarUrl: p.avatarUrl ?? prev?.avatarUrl,
+        privySub: sub,
+      });
+    }
+
+    const list: ChatMentionCandidate[] = [];
+    for (const [userId, v] of byUserId) {
+      list.push({
+        userId,
+        displayLabel: v.displayLabel,
+        avatarUrl: v.avatarUrl,
+        ...(v.privySub ? { privySub: v.privySub } : {}),
+      });
+    }
+
+    list.sort((a, b) =>
+      a.displayLabel.localeCompare(b.displayLabel, undefined, {
+        sensitivity: 'base',
+      }),
+    );
+    return list;
+  }, [
+    client,
+    roomId,
+    currentUserId,
+    spaceMembers,
+    subToMatrixUserId,
+    t,
+    mentionMembershipEpoch,
+  ]);
+
+  const mentionLabelByUserId = useMemo(
+    () =>
+      new Map(
+        mentionCandidates.map((candidate) => [
+          candidate.userId,
+          candidate.displayLabel,
+        ]),
+      ),
+    [mentionCandidates],
+  );
+
+  const resolveMentionMemberLabel = useCallback(
+    (userId: string) =>
+      mentionLabelByUserId.get(userId) ?? resolveMemberLabel(userId),
+    [mentionLabelByUserId, resolveMemberLabel],
+  );
+
+  /** Same roster merge as pills — timeline sender/reply headers use this first. */
+  const resolveSenderDisplayLabel = useCallback(
+    (matrixUserId: string | undefined) => {
+      const id = matrixUserId?.trim();
+      if (!id) return t('unknownMember');
+      return resolveMentionMemberLabel(id);
+    },
+    [resolveMentionMemberLabel, t],
+  );
+
+  /** `@` when there is anyone to mention (joined members and/or roster-linked MXIDs). */
+  const mentionPickerEnabled = mentionCandidates.length > 0;
+
+  useEffect(() => {
+    if (!client || !roomId) return;
+    const room = client.getRoom(roomId);
+    if (!room) return;
+
+    const bumpMembership = () => setMentionMembershipEpoch((n) => n + 1);
+
+    room.on(RoomStateEvent.Members, bumpMembership);
+    room.on(RoomStateEvent.NewMember, bumpMembership);
+
+    return () => {
+      room.off(RoomStateEvent.Members, bumpMembership);
+      room.off(RoomStateEvent.NewMember, bumpMembership);
+    };
+  }, [client, roomId]);
 
   const resolveMemberLabelRef = useRef(resolveMemberLabel);
   resolveMemberLabelRef.current = resolveMemberLabel;
@@ -972,6 +1127,42 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [roomId, t],
   );
 
+  const notificationCentreHref = useMemo(() => {
+    const parts = pathname.split('/').filter(Boolean);
+    if (parts.length === 0) return '/notification-centre';
+    const lang = parts[0];
+
+    /** Match `ConnectedButtonProfile` / aside routes under `apps/web/src/app/[lang]/…/@aside/`. */
+    if (pathname.includes('/network')) {
+      return `/${lang}/network/notification-centre`;
+    }
+    if (pathname.includes('/my-spaces')) {
+      return `/${lang}/my-spaces/notification-centre`;
+    }
+    if (pathname.includes('/dho/')) {
+      const dhoId = spaceSlug ?? params?.id ?? parts[2];
+      if (!dhoId) return `/${lang}/notification-centre`;
+      const activeTab = getActiveTabFromPath(pathname);
+      return `/${lang}/dho/${dhoId}/${activeTab}/notification-centre`;
+    }
+    if (parts[1] === 'profile' && parts.length >= 3) {
+      return `/${lang}/profile/${parts[2]}/notification-centre`;
+    }
+    if (parts.length >= 2) {
+      return `/${lang}/${parts[1]}/notification-centre`;
+    }
+    return `/${lang}/notification-centre`;
+  }, [pathname, params?.id, spaceSlug]);
+
+  const handleSelectMentionFromInbox = useCallback((eventId: string) => {
+    setActiveTab('chat');
+    setScrollToEventId(eventId);
+  }, []);
+
+  const handleConsumedScrollTarget = useCallback(() => {
+    setScrollToEventId(null);
+  }, []);
+
   const mergedMessages = useMemo(() => {
     if (!sendingPending) return messages;
     const pendingRow: UIMessage = {
@@ -1009,23 +1200,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [client, roomId]);
 
   const unreadChatState = useMemo(() => {
-    if (!client || !roomId || !currentUserId || activeTab !== 'chat') {
+    if (!client || !roomId || !currentUserId) {
       return {
         firstUnreadMessageId: null as string | null,
         unreadNotificationCount: 0,
         unreadCountIsCapped: false,
+        unreadMentionCount: 0,
+        mentionCountIsCapped: false,
       };
     }
     const room = client.getRoom(roomId);
     return computeHumanChatUnreadState(room ?? undefined, currentUserId);
-  }, [
-    client,
-    roomId,
-    currentUserId,
-    activeTab,
-    unreadBump,
-    mergedMessages.length,
-  ]);
+  }, [client, roomId, currentUserId, unreadBump, mergedMessages.length]);
 
   const markChatTimelineRead = useCallback(async () => {
     if (!client || !roomId || !currentUserId) return;
@@ -1415,15 +1601,40 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   return (
     <>
       <SidebarHeader className="bg-background-2 p-0">
-        <HumanChatPanelHeader
-          title={mode === 'coherence' ? coherenceTitle ?? undefined : undefined}
-          onBack={mode === 'coherence' ? closeCoherenceChat : undefined}
-        />
-        <HumanChatPanelTabs activeTab={activeTab} onTabChange={setActiveTab} />
+        <div className="rounded-b-2xl border-x border-b border-border/60 bg-card/35 shadow-sm backdrop-blur-[1px] supports-[backdrop-filter]:bg-card/25 dark:bg-card/45 dark:supports-[backdrop-filter]:bg-card/35">
+          <HumanChatPanelHeader
+            title={
+              mode === 'coherence' ? coherenceTitle ?? undefined : undefined
+            }
+            onBack={mode === 'coherence' ? closeCoherenceChat : undefined}
+            trailingStart={
+              roomId ? (
+                <HumanChatPanelMentionBell
+                  unreadCount={unreadChatState.unreadMentionCount}
+                  countIsCapped={unreadChatState.mentionCountIsCapped}
+                  onOpenMentions={() => setActiveTab('mentions')}
+                />
+              ) : null
+            }
+          />
+          <HumanChatPanelTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            chatMentionCount={unreadChatState.unreadMentionCount}
+            chatMentionCountCapped={unreadChatState.mentionCountIsCapped}
+            mentionTabBadgeCount={unreadChatState.unreadMentionCount}
+            mentionTabBadgeCapped={unreadChatState.mentionCountIsCapped}
+            notificationCentreHref={notificationCentreHref}
+          />
+        </div>
       </SidebarHeader>
-      <SidebarContent className="bg-background-2 min-h-0">
+      <SidebarContent className="flex min-h-0 flex-col bg-background-2">
         {activeTab === 'chat' && (
-          <div className="flex min-h-0 flex-1 flex-col">
+          <div
+            className="flex min-h-0 flex-1 flex-col"
+            role="tabpanel"
+            id="chat-tabpanel-chat"
+          >
             {error && (
               <div
                 role="alert"
@@ -1475,6 +1686,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 resolveReactionReactorLabel={(userId) =>
                   resolveMemberLabel(userId)
                 }
+                resolveMatrixMemberLabel={resolveMentionMemberLabel}
+                resolveSenderDisplayLabel={resolveSenderDisplayLabel}
                 onCancelSendPending={cancelSendInFlight}
                 firstUnreadMessageId={unreadChatState.firstUnreadMessageId}
                 unreadNotificationCount={
@@ -1483,50 +1696,77 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 unreadCountIsCapped={unreadChatState.unreadCountIsCapped}
                 onReachedTimelineBottom={handleReachedTimelineBottom}
                 onMarkAsReadFromBanner={handleMarkAsReadFromBanner}
+                scrollTargetEventId={scrollToEventId}
+                onConsumedScrollTarget={handleConsumedScrollTarget}
               />
             )}
           </div>
         )}
         {activeTab === 'members' && (
-          <HumanChatPanelMembers
-            useMembers={useMembers}
-            spaceSlug={spaceSlug}
-            roomId={roomId}
-          />
+          <div
+            className="flex min-h-0 flex-1 flex-col overflow-hidden"
+            role="tabpanel"
+            id="chat-tabpanel-members"
+          >
+            <HumanChatPanelMembers
+              useMembers={useMembers}
+              spaceSlug={spaceSlug}
+              roomId={roomId}
+            />
+          </div>
+        )}
+        {activeTab === 'mentions' && (
+          <div
+            className="flex min-h-0 flex-1 flex-col overflow-hidden"
+            role="tabpanel"
+            id="chat-tabpanel-mentions"
+          >
+            <HumanChatPanelMentionTab
+              client={client}
+              roomId={roomId}
+              currentUserId={currentUserId}
+              resolveMemberLabel={resolveMentionMemberLabel}
+              onSelectMessage={handleSelectMentionFromInbox}
+            />
+          </div>
         )}
       </SidebarContent>
       {activeTab === 'chat' && (
         <SidebarFooter className="bg-background-2 p-0">
-          <HumanChatPanelChatBar
-            value={input}
-            onChange={setInput}
-            onSend={handleSend}
-            draftAttachments={draftAttachments}
-            onDraftAttachmentsChange={setDraftAttachments}
-            replyPreview={
-              replyDraft
-                ? {
-                    authorLabel: replyDraft.authorLabel,
-                    excerpt: replyDraft.excerpt,
-                    onDismiss: () => setReplyDraft(null),
-                  }
-                : undefined
-            }
-            editPreview={
-              editDraft
-                ? {
-                    excerpt: editDraft.excerpt,
-                    onDismiss: () => {
-                      setEditDraft(null);
-                      setInput('');
-                      disposeDraftAttachmentUrls(draftAttachmentsRef.current);
-                      setDraftAttachments([]);
-                    },
-                  }
-                : undefined
-            }
-            editMediaMode={Boolean(editDraft?.editMediaMode)}
-          />
+          <div className="rounded-t-2xl border border-border/60 border-b-0 bg-card/35 shadow-[0_-8px_32px_-16px_rgba(15,23,42,0.12)] backdrop-blur-[1px] supports-[backdrop-filter]:bg-card/25 dark:bg-card/45 dark:shadow-[0_-8px_36px_-16px_rgba(0,0,0,0.45)] dark:supports-[backdrop-filter]:bg-card/35">
+            <HumanChatPanelChatBar
+              value={input}
+              onChange={setInput}
+              onSend={handleSend}
+              mentionCandidates={mentionCandidates}
+              mentionPickerEnabled={mentionPickerEnabled}
+              draftAttachments={draftAttachments}
+              onDraftAttachmentsChange={setDraftAttachments}
+              replyPreview={
+                replyDraft
+                  ? {
+                      authorLabel: replyDraft.authorLabel,
+                      excerpt: replyDraft.excerpt,
+                      onDismiss: () => setReplyDraft(null),
+                    }
+                  : undefined
+              }
+              editPreview={
+                editDraft
+                  ? {
+                      excerpt: editDraft.excerpt,
+                      onDismiss: () => {
+                        setEditDraft(null);
+                        setInput('');
+                        disposeDraftAttachmentUrls(draftAttachmentsRef.current);
+                        setDraftAttachments([]);
+                      },
+                    }
+                  : undefined
+              }
+              editMediaMode={Boolean(editDraft?.editMediaMode)}
+            />
+          </div>
         </SidebarFooter>
       )}
     </>

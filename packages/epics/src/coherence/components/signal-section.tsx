@@ -17,6 +17,9 @@ import {
   COHERENCE_TYPE_OPTIONS,
   CoherenceType,
   DirectionType,
+  useJwt,
+  useMyCoherenceVotesForSpace,
+  useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import { PlusIcon, RocketIcon } from '@radix-ui/react-icons';
 import {
@@ -58,6 +61,8 @@ export const SignalSection: FC<SignalSectionProps> = ({
 }) => {
   const t = useTranslations('CoherenceTab');
   const { lang, id } = useParams<{ lang: Locale; id: string }>();
+  const { jwt: authToken } = useJwt();
+  const { space } = useSpaceBySlug(id);
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
@@ -91,6 +96,14 @@ export const SignalSection: FC<SignalSectionProps> = ({
     pageSize,
   });
 
+  const coherenceIdsForVotes = React.useMemo(
+    () => filteredSignals.map((s) => s.id),
+    [filteredSignals],
+  );
+
+  const { votes: myVotesFromServer, mutate: mutateMyVotes } =
+    useMyCoherenceVotesForSpace(authToken, space?.id, coherenceIdsForVotes);
+
   const onTagClick = React.useCallback(
     (type: string) => {
       const params = new URLSearchParams(searchParams);
@@ -104,15 +117,16 @@ export const SignalSection: FC<SignalSectionProps> = ({
     [searchParams, pathname, replace],
   );
 
+  /** Type filters — calm chips aligned with modal / overlay surfaces (PR #2160-style soft accent). */
   const multiSelectVariants = cva(
-    'm-1 transition ease-in-out delay-150 hover:-translate-y-1 hover:scale-110 duration-300',
+    'm-1 cursor-pointer transition-colors duration-150 ease-out hover:bg-accent-2',
     {
       variants: {
         variant: {
           default:
-            'border-foreground/10 text-foreground text-neutral-500 bg-card hover:bg-card/80',
+            'border-neutral-8/70 bg-background/80 text-neutral-11 shadow-none hover:border-accent-8/60 dark:bg-background/40',
           secondary:
-            'border-foreground/10 bg-secondary text-secondary-foreground hover:bg-secondary/80',
+            'border-accent-8 bg-accent-3 text-accent-12 shadow-sm hover:bg-accent-4 dark:border-accent-9/40',
           destructive:
             'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
           inverted: 'inverted',
@@ -156,7 +170,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
   }, [signals, t]);
 
   return (
-    <div className="flex flex-col justify-around items-center gap-4">
+    <div className="flex w-full flex-col gap-5">
       <SectionFilter
         count={pagination?.total || 0}
         label={label || ''}
@@ -182,10 +196,17 @@ export const SignalSection: FC<SignalSectionProps> = ({
           </Link>
         </div>
       </SectionFilter>
-      <div className="flex justify-center space-x-2 space-y-2 flex-wrap">
+      <div className="flex flex-wrap justify-start gap-x-2 gap-y-2">
         {typeOptions.map((typeOption) => (
           <Badge
             key={typeOption.value}
+            variant="outline"
+            colorVariant={
+              typeRaw === typeOption.value ||
+              (typeOption.value === 'all' && typeRaw === null)
+                ? 'accent'
+                : 'neutral'
+            }
             className={cn(
               multiSelectVariants({
                 variant:
@@ -195,14 +216,20 @@ export const SignalSection: FC<SignalSectionProps> = ({
                     : 'default',
               }),
             )}
-            style={{ cursor: 'pointer', animationDuration: '0s' }}
+            style={{ animationDuration: '0s' }}
             onClick={() => onTagClick(typeOption.value)}
           >
-            {typeOption.label} {typeOption.count}
+            <span className="tabular-nums">{typeOption.label}</span>
+            <span className="mx-1.5 inline-block min-w-[1ch] text-center text-muted-foreground">
+              ·
+            </span>
+            <span className="tabular-nums text-muted-foreground">
+              {typeOption.count}
+            </span>
           </Badge>
         ))}
       </div>
-      <Separator />
+      <Separator className="bg-border/70" />
 
       {pagination?.totalPages === 0 ? (
         <Empty>
@@ -229,6 +256,10 @@ export const SignalSection: FC<SignalSectionProps> = ({
               signals={filteredSignals}
               refresh={refresh}
               onSignalClick={onSignalClick}
+              spaceSlug={id}
+              lang={lang}
+              myVotes={myVotesFromServer}
+              onVotesSynced={() => void mutateMyVotes()}
             />
           ))}
         </div>

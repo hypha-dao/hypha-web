@@ -5,6 +5,7 @@ import {
   createCoherenceAction,
   deleteCoherenceBySlugAction,
   updateCoherenceBySlugAction,
+  setCoherenceVoteBySlugAction,
 } from '../../server/actions';
 import { CreateCoherenceInput, UpdateCoherenceBySlugInput } from '../../types';
 
@@ -31,6 +32,20 @@ export const useCoherenceMutationsWeb2Rsc = (authToken?: string | null) => {
     authToken ? [authToken, 'updateCoherence'] : null,
     async ([authToken], { arg }: { arg: UpdateCoherenceBySlugInput }) =>
       updateCoherenceBySlugAction(arg, { authToken }),
+  );
+
+  const {
+    trigger: setCoherenceVoteMutation,
+    reset: resetSetCoherenceVoteMutation,
+    isMutating: isVotingCoherence,
+    error: errorSetCoherenceVoteMutation,
+    data: votedCoherence,
+  } = useSWRMutation(
+    authToken ? [authToken, 'setCoherenceVote'] : null,
+    async (
+      [authToken],
+      { arg }: { arg: { slug: string; value: -1 | 0 | 1 } },
+    ) => setCoherenceVoteBySlugAction(arg, { authToken }),
   );
 
   const {
@@ -63,5 +78,11 @@ export const useCoherenceMutationsWeb2Rsc = (authToken?: string | null) => {
     isDeletingCoherence,
     errorDeleteCoherenceBySlugMutation,
     deletedCoherence,
+
+    setCoherenceVote: setCoherenceVoteMutation,
+    resetSetCoherenceVoteMutation,
+    isVotingCoherence,
+    errorSetCoherenceVoteMutation,
+    votedCoherence,
   };
 };
