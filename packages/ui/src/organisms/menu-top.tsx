@@ -1,12 +1,21 @@
 'use client';
 
 import { Logo } from '../atoms';
-import { useEffect, useRef, useState } from 'react';
+import {
+  type Dispatch,
+  type SetStateAction,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { Menu } from 'lucide-react';
 import { RxCross1 } from 'react-icons/rx';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 
+const MOBILE_MENU_REGION_ID = 'mobile-menu';
+
+/** Fallback when header height has not been measured yet; aligns with DHO sticky stack */
 const APP_MENU_TOP_FALLBACK_PX = 65;
 
 type MenuTopProps = {
@@ -20,6 +29,62 @@ type MenuTopProps = {
   openMenuLabel?: string;
   closeMenuLabel?: string;
 };
+
+function MobileMenuToggle({
+  isOpen,
+  setOpen,
+  openMenuLabel,
+  closeMenuLabel,
+  className,
+}: {
+  isOpen: boolean;
+  setOpen: Dispatch<SetStateAction<boolean>>;
+  openMenuLabel: string;
+  closeMenuLabel: string;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      className={clsx('md:hidden flex items-center', className)}
+      aria-label={isOpen ? closeMenuLabel : openMenuLabel}
+      aria-expanded={isOpen}
+      aria-controls={MOBILE_MENU_REGION_ID}
+      onClick={() => setOpen((v) => !v)}
+    >
+      {!isOpen && <Menu className="size-5" />}
+      {isOpen && <RxCross1 className="size-5" />}
+    </button>
+  );
+}
+
+function MobileMenuOverlay({
+  open,
+  topPx,
+  colSpanFull,
+  children,
+}: {
+  open: boolean;
+  topPx: number;
+  colSpanFull: boolean;
+  children: React.ReactNode;
+}) {
+  if (!open) return null;
+  return (
+    <div
+      id={MOBILE_MENU_REGION_ID}
+      className={clsx(
+        'md:hidden fixed inset-x-0 bottom-0 z-40 flex flex-col items-center p-4 bg-background-2 overflow-y-auto',
+        colSpanFull && 'col-span-full',
+      )}
+      style={{
+        top: topPx > 0 ? topPx : APP_MENU_TOP_FALLBACK_PX,
+      }}
+    >
+      <div className="flex flex-col space-y-8 items-center">{children}</div>
+    </div>
+  );
+}
 
 export const MenuTop = ({
   children,
@@ -56,6 +121,8 @@ export const MenuTop = ({
       document.documentElement.style.removeProperty('--app-menu-top-h');
     };
   }, [breadcrumbSlot]);
+
+  const overlayTop = headerHeight > 0 ? headerHeight : APP_MENU_TOP_FALLBACK_PX;
 
   const logoBlock = (
     <div className="flex shrink-0 items-center gap-2">
@@ -103,34 +170,25 @@ export const MenuTop = ({
                 {trailingAction}
               </div>
             )}
-            {children && (
-              <button
-                type="button"
-                className="md:hidden flex items-center"
-                aria-label={isMobileMenuOpen ? closeMenuLabel : openMenuLabel}
-                aria-expanded={isMobileMenuOpen}
-                aria-controls="mobile-menu"
-                onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
-              >
-                {!isMobileMenuOpen && <Menu className="size-5" />}
-                {isMobileMenuOpen && <RxCross1 className="size-5" />}
-              </button>
-            )}
+            {children ? (
+              <MobileMenuToggle
+                isOpen={isMobileMenuOpen}
+                setOpen={setIsMobileMenuOpen}
+                openMenuLabel={openMenuLabel}
+                closeMenuLabel={closeMenuLabel}
+              />
+            ) : null}
           </div>
 
-          {isMobileMenuOpen && (
-            <div
-              id="mobile-menu"
-              className="md:hidden fixed inset-x-0 bottom-0 z-40 flex flex-col items-center p-4 bg-background-2 overflow-y-auto col-span-full"
-              style={{
-                top: headerHeight > 0 ? headerHeight : APP_MENU_TOP_FALLBACK_PX,
-              }}
+          {children ? (
+            <MobileMenuOverlay
+              open={isMobileMenuOpen}
+              topPx={overlayTop}
+              colSpanFull
             >
-              <div className="flex flex-col space-y-8 items-center">
-                {children}
-              </div>
-            </div>
-          )}
+              {children}
+            </MobileMenuOverlay>
+          ) : null}
         </div>
       ) : (
         <div
@@ -147,33 +205,24 @@ export const MenuTop = ({
             <div className="flex md:hidden items-center">{trailingAction}</div>
           )}
 
-          {children && (
-            <button
-              type="button"
-              className="md:hidden flex items-center"
-              aria-label={isMobileMenuOpen ? closeMenuLabel : openMenuLabel}
-              aria-expanded={isMobileMenuOpen}
-              aria-controls="mobile-menu"
-              onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
-            >
-              {!isMobileMenuOpen && <Menu className="size-5" />}
-              {isMobileMenuOpen && <RxCross1 className="size-5" />}
-            </button>
-          )}
+          {children ? (
+            <MobileMenuToggle
+              isOpen={isMobileMenuOpen}
+              setOpen={setIsMobileMenuOpen}
+              openMenuLabel={openMenuLabel}
+              closeMenuLabel={closeMenuLabel}
+            />
+          ) : null}
 
-          {isMobileMenuOpen && (
-            <div
-              id="mobile-menu"
-              className="md:hidden fixed inset-x-0 bottom-0 z-40 flex flex-col items-center p-4 bg-background-2 overflow-y-auto"
-              style={{
-                top: headerHeight > 0 ? headerHeight : APP_MENU_TOP_FALLBACK_PX,
-              }}
+          {children ? (
+            <MobileMenuOverlay
+              open={isMobileMenuOpen}
+              topPx={overlayTop}
+              colSpanFull={false}
             >
-              <div className="flex flex-col space-y-8 items-center">
-                {children}
-              </div>
-            </div>
-          )}
+              {children}
+            </MobileMenuOverlay>
+          ) : null}
         </div>
       )}
     </header>
