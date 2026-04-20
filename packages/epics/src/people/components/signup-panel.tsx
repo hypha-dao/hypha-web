@@ -52,6 +52,8 @@ export const SignupPanel = ({
 }: SignupPanelProps) => {
   const tModalAside = useTranslations('ModalAside');
   const tCommon = useTranslations('Common');
+  const tProfile = useTranslations('Profile');
+  const tSpaces = useTranslations('Spaces');
   const { user } = useAuthentication();
   const formRef = useRef<HTMLFormElement>(null);
   const form = useForm<FormData>({
@@ -119,7 +121,9 @@ export const SignupPanel = ({
                           <FormControl>
                             <Input
                               disabled={isLoading}
-                              placeholder="First Name"
+                              placeholder={tProfile(
+                                'editForm.placeholders.firstName',
+                              )}
                               className="text-2 text-neutral-11"
                               rightIcon={
                                 !field.value && (
@@ -141,7 +145,9 @@ export const SignupPanel = ({
                           <FormControl>
                             <Input
                               disabled={isLoading}
-                              placeholder="Last Name"
+                              placeholder={tProfile(
+                                'editForm.placeholders.lastName',
+                              )}
                               className="text-2 text-neutral-11"
                               rightIcon={
                                 !field.value && (
@@ -164,7 +170,9 @@ export const SignupPanel = ({
                         <FormControl>
                           <Input
                             disabled={isLoading}
-                            placeholder="Nickname"
+                            placeholder={tProfile(
+                              'editForm.placeholders.nickname',
+                            )}
                             className="text-1 text-neutral-11"
                             rightIcon={
                               !field.value && (
@@ -224,7 +232,7 @@ export const SignupPanel = ({
               <FormItem>
                 <FormControl>
                   <Textarea
-                    placeholder="Type your life purpose here..."
+                    placeholder={tProfile('editForm.placeholders.lifePurpose')}
                     disabled={isLoading}
                     {...field}
                   />
@@ -236,7 +244,9 @@ export const SignupPanel = ({
           <Separator />
           <div className="flex gap-3 flex-col">
             <div className="flex justify-between">
-              <Text className={cn('text-2', 'text-neutral-11')}>Email</Text>
+              <Text className={cn('text-2', 'text-neutral-11')}>
+                {tProfile('editForm.labels.email')}
+              </Text>
               <span className="flex items-center">
                 <FormField
                   control={form.control}
@@ -246,7 +256,7 @@ export const SignupPanel = ({
                       <FormControl>
                         <Input
                           disabled={isLoading}
-                          placeholder="Email"
+                          placeholder={tProfile('editForm.placeholders.email')}
                           className="text-1 text-neutral-11"
                           {...field}
                         />
@@ -258,7 +268,9 @@ export const SignupPanel = ({
               </span>
             </div>
             <div className="flex justify-between">
-              <Text className={cn('text-2', 'text-neutral-11')}>Location</Text>
+              <Text className={cn('text-2', 'text-neutral-11')}>
+                {tProfile('editForm.labels.location')}
+              </Text>
               <span className="flex items-center">
                 <FormField
                   control={form.control}
@@ -268,7 +280,9 @@ export const SignupPanel = ({
                       <FormControl>
                         <Input
                           disabled={isLoading}
-                          placeholder="Location"
+                          placeholder={tProfile(
+                            'editForm.placeholders.location',
+                          )}
                           className="text-1 text-neutral-11"
                           {...field}
                         />
@@ -290,6 +304,7 @@ export const SignupPanel = ({
                         links={field.value || []}
                         onChange={field.onChange}
                         errors={form.formState.errors.links}
+                        placeholder={tSpaces('addYourUrl')}
                       />
                     </FormControl>
                     <FormMessage />
@@ -305,7 +320,7 @@ export const SignupPanel = ({
                 {isCreating ? (
                   <div className="flex items-center gap-2 text-sm text-neutral-10">
                     <Loader2 className="animate-spin w-4 h-4" />
-                    Creating profile...
+                    {tProfile('signup.creatingProfile')}
                   </div>
                 ) : (
                   <Button
@@ -314,7 +329,9 @@ export const SignupPanel = ({
                     className="rounded-lg justify-start text-white w-fit"
                     disabled={isLoading}
                   >
-                    {error ? 'Retry' : 'Save'}
+                    {error
+                      ? tProfile('editForm.actions.retry')
+                      : tProfile('editForm.actions.save')}
                   </Button>
                 )}
               </div>
