@@ -43,8 +43,8 @@ export type UploadLeadImageProps = {
   /** Dropzone errors and helper (defaults to English). */
   messages?: {
     dropHere?: React.ReactNode;
-    fileTooLarge?: React.ReactNode;
-    uploadFailed?: React.ReactNode;
+    fileTooLarge?: string;
+    uploadFailed?: string;
   };
 };
 
@@ -153,9 +153,9 @@ export const UploadLeadImage = ({
       );
 
       if (tooLarge) {
-        setError(String(messages.fileTooLarge));
+        setError(messages.fileTooLarge);
       } else {
-        setError(String(messages.uploadFailed));
+        setError(messages.uploadFailed);
       }
       onChange(null);
     },
