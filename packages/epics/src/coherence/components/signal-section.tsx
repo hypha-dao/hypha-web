@@ -195,6 +195,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
                 : 'neutral'
             }
             className={cn(
+              'animate-none',
               multiSelectVariants({
                 variant:
                   typeRaw === typeOption.value ||
@@ -203,7 +204,6 @@ export const SignalSection: FC<SignalSectionProps> = ({
                     : 'default',
               }),
             )}
-            style={{ animationDuration: '0s' }}
             onClick={() => onTagClick(typeOption.value)}
           >
             <span className="tabular-nums">{typeOption.label}</span>{' '}
