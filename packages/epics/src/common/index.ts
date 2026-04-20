@@ -29,3 +29,7 @@ export {
   HumanChatPanelMessages,
 } from './human-chat-panel';
 export { HumanRightPanel } from './human-right-panel';
+export {
+  StickyAccentChrome,
+  type StickyAccentChromeProps,
+} from './sticky-accent-chrome';
