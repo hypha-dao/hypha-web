@@ -36,7 +36,7 @@ jobs:
           DEFAULT_DB_URL: ${{ secrets.POSTGRES_URL }}
 
       - name: Install Vercel CLI
-        run: npm install --global vercel@latest
+        run: npm install --global vercel@51.8.0
 
       - name: Pull Vercel Environment Information
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
@@ -50,7 +50,22 @@ jobs:
           DEFAULT_DB_ANONYMOUS_URL: ${{secrets.POSTGRES_ANONYMOUS_URL}}
 
       - name: Deploy Project Artifacts to Vercel
-        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+          delay=8
+          for attempt in 1 2 3 4; do
+            if vercel deploy --prebuilt --prod --yes --archive=tgz --token="$VERCEL_TOKEN"; then
+              exit 0
+            fi
+            echo "::warning::vercel deploy attempt $attempt failed; retrying…"
+            if [ "$attempt" -lt 4 ]; then
+              sleep "$delay"
+              delay=$((delay * 2))
+            fi
+          done
+          exit 1
 
       - name: Setup Upterm Session On Failure
         uses: lhotari/action-upterm@v1
