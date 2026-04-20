@@ -118,15 +118,19 @@ export default async function DhoLayout({
             fetchPriority="high"
           />
         ) : null}
-        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 md:gap-x-4">
-          <div className="flex min-h-8 min-w-0 flex-1 items-center">
-            <Breadcrumbs spaceId={spaceFromDb.id} lang={lang} />
+        {/* Single column + gap-3: identical rhythm above banner, below banner, above actions */}
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 md:gap-x-4">
+            <div className="flex min-w-0 flex-1 items-center">
+              <Breadcrumbs spaceId={spaceFromDb.id} lang={lang} />
+            </div>
+            {web3SpaceId !== undefined ? (
+              <NestedSpacesButton
+                web3SpaceId={web3SpaceId}
+                spaceSlug={daoSlug}
+              />
+            ) : null}
           </div>
-          {web3SpaceId !== undefined ? (
-            <NestedSpacesButton web3SpaceId={web3SpaceId} spaceSlug={daoSlug} />
-          ) : null}
-        </div>
-        <div className="my-3">
           <CompactSpaceBanner
             title={spaceFromDb.title}
             description={spaceFromDb.description}
@@ -167,12 +171,12 @@ export default async function DhoLayout({
               </>
             }
           />
-        </div>
-        <div className="flex justify-end gap-2">
-          {web3SpaceId !== undefined && (
-            <JoinSpace web3SpaceId={web3SpaceId} spaceId={spaceFromDb.id} />
-          )}
-          <ActionButtons web3SpaceId={web3SpaceId} />
+          <div className="flex justify-end gap-2">
+            {web3SpaceId !== undefined && (
+              <JoinSpace web3SpaceId={web3SpaceId} spaceId={spaceFromDb.id} />
+            )}
+            <ActionButtons web3SpaceId={web3SpaceId} />
+          </div>
         </div>
         <div className="mt-4 flex flex-col gap-3">
           <SalesBanner web3SpaceId={web3SpaceId} />
