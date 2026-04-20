@@ -178,9 +178,7 @@ export async function SpaceHeader({
                       <p
                         className="text-pretty text-[15px] leading-relaxed text-white/95 sm:text-2 sm:leading-relaxed"
                         title={
-                          rawPurpose.length > PURPOSE_MAX_CHARS
-                            ? rawPurpose
-                            : undefined
+                          purposeDisplay !== rawPurpose ? rawPurpose : undefined
                         }
                       >
                         {purposeDisplay}
