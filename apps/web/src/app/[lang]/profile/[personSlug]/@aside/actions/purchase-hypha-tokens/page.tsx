@@ -1,8 +1,7 @@
 import { getAllSpaces, Space } from '@hypha-platform/core/server';
 import {
-  SidePanel,
-  ButtonBack,
-  ButtonClose,
+  ProposalOverlayShell,
+  ModalStickyNavigation,
   ProfilePageParams,
 } from '@hypha-platform/epics';
 import { PeoplePurchaseHyphaTokens } from '@hypha-platform/epics';
@@ -16,6 +15,7 @@ type PageProps = {
 export default async function PurchaseHyphaTokensProfile(props: PageProps) {
   const { lang, personSlug: personSlugRaw } = await props.params;
   const tActions = await getTranslations('ProfileActions');
+  const tModalAside = await getTranslations('ModalAside');
   const personSlug = tryDecodeUriPart(personSlugRaw);
 
   let spaces = [] as Space[];
@@ -36,20 +36,14 @@ export default async function PurchaseHyphaTokensProfile(props: PageProps) {
   );
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <div className="flex flex-col gap-5">
-        <div className="flex gap-5 justify-between">
-          <h2 className="text-4 text-secondary-foreground justify-start items-center">
-            {tActions('purchaseHypha.title')}
-          </h2>
-          <div className="flex gap-5 justify-end items-center">
-            <ButtonBack
-              label={tActions('backToActions')}
-              backUrl={`/${lang}/profile/${personSlug}/actions`}
-            />
-            <ButtonClose closeUrl={`/${lang}/profile/${personSlug}`} />
-          </div>
-        </div>
+        <ModalStickyNavigation
+          contextTitle={tModalAside('buyHyphaTokens')}
+          closeUrl={`/${lang}/profile/${personSlug}`}
+          backUrl={`/${lang}/profile/${personSlug}/actions`}
+          backLabel={tActions('backToActions')}
+        />
         <span className="text-2 text-neutral-11">
           {tActions('purchaseHypha.content')}
         </span>
@@ -64,6 +58,6 @@ export default async function PurchaseHyphaTokensProfile(props: PageProps) {
           />
         )}
       </div>
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

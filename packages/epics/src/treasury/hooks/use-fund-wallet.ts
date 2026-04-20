@@ -5,7 +5,8 @@ import { useFundWallet as usePrivyFund } from '@privy-io/react-auth';
 import { base, Chain } from 'viem/chains';
 
 export interface UseFundWalletParams {
-  address: `0x${string}`;
+  /** When omitted, `fundWallet` is a no-op (safe for gated / loading UIs). */
+  address?: `0x${string}`;
   chain?: Chain;
   title?: string;
   subtitle?: string;
@@ -20,6 +21,7 @@ export function useFundWallet({
   const { fundWallet: privyFundWallet } = usePrivyFund();
 
   const fundWallet = useCallback(async () => {
+    if (!address) return;
     try {
       await privyFundWallet(address, {
         chain,

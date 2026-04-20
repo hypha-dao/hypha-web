@@ -2,7 +2,7 @@
 
 import {
   ProposalDetail,
-  SidePanel,
+  ProposalOverlayShell,
   useSpaceDocumentsWithStatuses,
   useDbTokens,
 } from '@hypha-platform/epics';
@@ -140,7 +140,7 @@ export default function Agreements() {
   };
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <LoadingBackdrop
         progress={progress}
         isLoading={isLoading || isVoting || !!voteError}
@@ -203,6 +203,6 @@ export default function Agreements() {
           }}
         />
       </LoadingBackdrop>
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

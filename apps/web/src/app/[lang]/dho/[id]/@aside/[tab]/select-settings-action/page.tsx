@@ -1,10 +1,11 @@
 import {
   ActivateProposalsBanner,
-  ButtonClose,
-  SidePanel,
+  ModalStickyNavigation,
+  ProposalOverlayShell,
 } from '@hypha-platform/epics';
 import { SelectSettingsAction } from '../../../_components/select-settings-action';
 import { Locale } from '@hypha-platform/i18n';
+import { getTranslations } from 'next-intl/server';
 import {
   PATH_SELECT_ACTIVATE_ACTION,
   PATH_SELECT_SETTINGS_ACTION,
@@ -16,12 +17,14 @@ export default async function SelectSettingsActions({
   params: Promise<{ id: string; lang: Locale; tab: string }>;
 }) {
   const { id: daoSlug, lang, tab } = await params;
+  const tModalAside = await getTranslations('ModalAside');
   return (
-    <SidePanel>
-      <div className="relative">
-        <ButtonClose
-          dropSegment={PATH_SELECT_SETTINGS_ACTION}
-          className="absolute top-0 right-0"
+    <ProposalOverlayShell>
+      <div className="flex flex-col gap-5">
+        <ModalStickyNavigation
+          contextTitle={tModalAside('spaceSettings')}
+          closeDropSegment={PATH_SELECT_SETTINGS_ACTION}
+          showBack={false}
         />
         <SelectSettingsAction lang={lang} daoSlug={daoSlug} activeTab={tab}>
           <ActivateProposalsBanner
@@ -30,6 +33,6 @@ export default async function SelectSettingsActions({
           />
         </SelectSettingsAction>
       </div>
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

@@ -1,5 +1,8 @@
 import { findSpaceBySlug } from '@hypha-platform/core/server';
-import { MembershipExitForm, SidePanel } from '@hypha-platform/epics';
+import {
+  MembershipExitForm,
+  ProposalOverlayShell,
+} from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { db } from '@hypha-platform/storage-postgres';
 import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
@@ -22,7 +25,7 @@ export default async function MembershipExitPage({ params }: PageProps) {
   const { id: spaceId, web3SpaceId, slug: spaceSlug } = spaceFromDb;
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <MembershipExitForm
         successfulUrl={successfulUrl}
         backUrl={`${successfulUrl}${PATH_SELECT_SETTINGS_ACTION}`}
@@ -30,6 +33,6 @@ export default async function MembershipExitPage({ params }: PageProps) {
         web3SpaceId={web3SpaceId}
         plugin={<Plugin name="membership-exit" spaceSlug={spaceSlug} />}
       />
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

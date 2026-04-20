@@ -22,6 +22,7 @@
     "findCategory": "Encuentra una categoría",
     "noSpacesYet": "Aún no se han creado ni se han unido espacios. Explora nuestra red y únete a un Espacio, o crea el tuyo propio.",
     "close": "Cerrar",
+    "comingSoonBadge": "Pronto",
     "notFoundOops": "¡Oooops!",
     "notFoundCouldNotFindPage": "No pudimos encontrar esta página",
     "notFoundDescription": "La página que buscas puede haber sido eliminada, haber cambiado de nombre o no estar disponible temporalmente.",
@@ -35,7 +36,37 @@
     "errorLoadTreasuryTab": "Ups, algo salió mal. No se pudo cargar la pestaña de tesorería.",
     "publish": "Publicar",
     "invalidTransactions": "Transacciones inválidas",
-    "Coherence": "Coherencia"
+    "Coherence": "Coherencia",
+    "uploadLeadImage": {
+      "cropTitle": "Subir una imagen",
+      "cropDescription": "Ajusta el encuadre y guarda. Arrastra para reposicionar y usa el zoom para el área del banner (JPEG, PNG o WebP — máx. 4 MB).",
+      "cancel": "Cancelar",
+      "confirm": "Recortar y guardar",
+      "dropHere": "Suelta la imagen aquí",
+      "genericUploadFallback": "<accent>Subir</accent> una imagen",
+      "fileTooLarge": "Tu imagen es demasiado grande (máx. 4 MB) y no se pudo subir. Reduce el tamaño e inténtalo de nuevo.",
+      "uploadFailed": "No se pudo subir el archivo."
+    }
+  },
+  "ModalAside": {
+    "spaceSettings": "Configuración del espacio",
+    "createProposal": "Crear una propuesta",
+    "activateSpace": "Activar espacio",
+    "spaceNavigation": "Navegación del espacio",
+    "profileActions": "Acciones",
+    "transferFunds": "Transferir fondos",
+    "redeemTokens": "Canjear tokens",
+    "buyHyphaTokens": "Comprar tokens Hypha (recompensas)",
+    "buySpaceTokens": "Comprar tokens del espacio",
+    "activateSpacesProfile": "Activar espacio(s)",
+    "notificationCentre": "Centro de notificaciones",
+    "editProfile": "Editar perfil",
+    "createAccount": "Crear cuenta",
+    "createSpace": "Crear espacio",
+    "addSpace": "Añadir espacio",
+    "configureSpace": "Configurar espacio",
+    "panelAccessibleName": "Panel de Hypha",
+    "proposalVoters": "Votantes"
   },
   "AgreementFlow": {
     "proposalErrors": {
@@ -615,12 +646,16 @@
     "createAgreementBaseFields": {
       "agreementLabel": "Acuerdo",
       "backToCreate": "Volver a Crear",
+      "resetForm": "Restablecer",
       "formContextMissing": "¡Falta el contexto del formulario!",
       "delegate": "Delegar",
       "proposalTitlePlaceholder": "Título de la propuesta...",
       "proposalMinimumVotingIconAlt": "Ícono de votación mínima de propuesta",
       "autoExecution": "Ejecución automática",
       "toVote": "{duration} para votar",
+      "quorumLabel": "Quórum",
+      "unityLabel": "Unidad",
+      "quorumUnityLine": "{quorumPercent}% {quorumLabel} | {unityPercent}% {unityLabel}",
       "uploadImageLabel": "<accent>Subir</accent> una imagen",
       "addAttachmentLabel": "Agregar archivo adjunto (JPEG, PNG, WebP o PDF, máximo 4 MB)",
       "proposalContent": "Contenido de la propuesta",
@@ -647,7 +682,7 @@
       }
     },
     "loadingBackdrop": {
-      "keepWindowOpen": "Mantenga esta ventana abierta hasta que se complete la barra de progreso."
+      "keepWindowOpen": "Mantén esta ventana abierta hasta que terminemos."
     },
     "spaceTokenPurchaseProgress": {
       "CREATE_WEB2_AGREEMENT": "Creando acuerdo...",
@@ -693,7 +728,7 @@
   "NotificationCentre": {
     "title": "Centro de notificaciones",
     "loading": {
-      "keepWindowOpen": "Mantén esta ventana abierta hasta que se complete la barra de progreso."
+      "keepWindowOpen": "Mantén esta ventana abierta hasta que terminemos."
     },
     "subscribe": {
       "title": "Suscríbete a notificaciones",
@@ -1024,6 +1059,10 @@
     "privacyPolicy": "Política de privacidad"
   },
   "Profile": {
+    "signup": {
+      "loading": "Cargando...",
+      "creatingProfile": "Creando perfil..."
+    },
     "profilePage": "Página de perfil",
     "personNotFound": "Persona no encontrada",
     "redirectingToProfile": "Redirigiendo al perfil...",
@@ -1579,6 +1618,10 @@
       "looksGood": "Se ve bien",
       "quorumMinParticipation": "Quórum (Participación mínima)",
       "unityMinAlignment": "Unidad (alineación mínima)",
+      "currentScore": "Actual",
+      "voteScore": "Voto",
+      "requiredScore": "Requerido {percent} %",
+      "submittingVote": "Enviando tu voto — esperando confirmación…",
       "proposalVotingIconAlt": "Ícono de votación mínima de propuesta",
       "autoExecution": "Ejecución automática",
       "toVote": "{duration} para votar",
@@ -1588,6 +1631,7 @@
     },
     "withdrawResubmit": {
       "title": "¿Retirar tu propuesta o editarla y enviarla de nuevo?",
+      "withdrawOnlyTitle": "¿Retirar tu propuesta?",
       "withdrawDialogTitle": "Retirar propuesta",
       "withdrawDialogDescription": "¿Seguro que quieres retirar esta propuesta? Ya no aparecerá en la pantalla de propuestas y no se podrá recuperar.",
       "withdraw": "Retirar",
@@ -1879,7 +1923,7 @@
       "medium": "Supervisar y actuar pronto",
       "low": "Informativo, sin prisa"
     },
-    "keepWindowOpenWhileCreating": "Mantenga esta ventana abierta hasta que la barra de progreso termine.",
+    "keepWindowOpenWhileCreating": "Mantén esta ventana abierta hasta que terminemos.",
     "tagLabels": {
       "Strategy": "Estrategia",
       "Culture": "Cultura",

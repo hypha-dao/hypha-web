@@ -2,9 +2,8 @@
 
 import React from 'react';
 import {
-  SidePanel,
-  ButtonClose,
-  ButtonBack,
+  ProposalOverlayShell,
+  ModalStickyNavigation,
   useUserAssets,
 } from '@hypha-platform/epics';
 import { PeopleTransferForm } from '@hypha-platform/epics';
@@ -39,6 +38,7 @@ export const ProfileTransferFunds = ({
   personSlug,
 }: ProfileTransferFundsProps) => {
   const tActions = useTranslations('ProfileActions');
+  const tModalAside = useTranslations('ModalAside');
   const { assets, manualUpdate } = useUserAssets({
     personSlug,
     refreshInterval: 10000,
@@ -59,20 +59,14 @@ export const ProfileTransferFunds = ({
     }));
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <div className="flex flex-col gap-5">
-        <div className="flex gap-5 justify-between">
-          <h2 className="text-4 text-secondary-foreground justify-start items-center">
-            {tActions('transferFunds.title')}
-          </h2>
-          <div className="flex gap-5 justify-end items-center">
-            <ButtonBack
-              label={tActions('backToActions')}
-              backUrl={`/${lang}/profile/${personSlug}/actions`}
-            />
-            <ButtonClose closeUrl={`/${lang}/profile/${personSlug}`} />
-          </div>
-        </div>
+        <ModalStickyNavigation
+          contextTitle={tModalAside('transferFunds')}
+          closeUrl={`/${lang}/profile/${personSlug}`}
+          backUrl={`/${lang}/profile/${personSlug}/actions`}
+          backLabel={tActions('backToActions')}
+        />
         <span className="text-2 text-neutral-11">
           {tActions('transferFunds.content')}
         </span>
@@ -84,6 +78,6 @@ export const ProfileTransferFunds = ({
           updateAssets={manualUpdate}
         />
       </div>
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 };

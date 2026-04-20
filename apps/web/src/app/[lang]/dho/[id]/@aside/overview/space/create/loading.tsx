@@ -1,14 +1,18 @@
 'use client';
 
-import { SpaceForm, SidePanel } from '@hypha-platform/epics';
+import { SpaceForm, ProposalOverlayShell } from '@hypha-platform/epics';
 import React from 'react';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
+import { useTranslations } from 'next-intl';
 
 export default function AsideCreateSubspacePage() {
+  const tAgreementFlow = useTranslations('AgreementFlow');
+
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <LoadingBackdrop
         showKeepWindowOpenMessage={true}
+        keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
         fullHeight={true}
         progress={0}
         isLoading={true}
@@ -26,6 +30,6 @@ export default function AsideCreateSubspacePage() {
           isLoading={true}
         />
       </LoadingBackdrop>
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

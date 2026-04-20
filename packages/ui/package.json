@@ -23,7 +23,8 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tooltip": "^1.2.7",
     "class-variance-authority": "^0.7.1",
-    "lucide-react": "^0.469.0"
+    "lucide-react": "^0.469.0",
+    "react-day-picker": "^9.14.0"
   },
   "exports": {
     ".": "./src/index.ts",

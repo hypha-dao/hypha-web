@@ -10,7 +10,7 @@ import {
 import {
   getDhoPathAgreements,
   SchemaCreateSpaceForm,
-  SidePanel,
+  ProposalOverlayShell,
   SpaceForm,
 } from '@hypha-platform/epics';
 import { useParams, usePathname } from 'next/navigation';
@@ -127,7 +127,7 @@ export default function SpaceConfiguration() {
   );
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <LoadingBackdrop
         showKeepWindowOpenMessage={true}
         keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
@@ -177,6 +177,6 @@ export default function SpaceConfiguration() {
           spaceId={space?.id}
         />
       </LoadingBackdrop>
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

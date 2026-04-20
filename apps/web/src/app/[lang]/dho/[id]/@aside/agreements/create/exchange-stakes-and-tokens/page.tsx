@@ -1,6 +1,6 @@
 import {
   CreateExchangeStakesAndTokensForm,
-  SidePanel,
+  ProposalOverlayShell,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
@@ -31,7 +31,7 @@ export default async function CreateExchangeStakesAndTokensPage({
   });
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <CreateExchangeStakesAndTokensForm
         successfulUrl={successfulUrl}
         backUrl={`${successfulUrl}${PATH_SELECT_CREATE_ACTION}`}
@@ -46,6 +46,6 @@ export default async function CreateExchangeStakesAndTokensPage({
           />
         }
       />
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

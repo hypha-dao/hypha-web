@@ -1,6 +1,8 @@
-import { SidePanel } from '@hypha-platform/epics';
+import {
+  ProposalOverlayShell,
+  SpaceToSpaceMembershipForm,
+} from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
-import { SpaceToSpaceMembershipForm } from '@hypha-platform/epics';
 import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 import {
@@ -47,7 +49,7 @@ export default async function SpaceToSpaceMembershipPage({
       space?.address && space.address.trim() !== '' && space.id !== spaceId,
   );
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       {error ? (
         <div className="text-error text-sm">
           {tAgreementFlow('pageErrors.loadSpaces')}
@@ -67,6 +69,6 @@ export default async function SpaceToSpaceMembershipPage({
           />
         </SpaceToSpaceMembershipForm>
       )}
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

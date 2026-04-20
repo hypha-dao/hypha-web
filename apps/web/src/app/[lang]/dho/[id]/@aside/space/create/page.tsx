@@ -3,7 +3,7 @@
 import {
   CreateSubspaceForm,
   getDhoPathAgreements,
-  SidePanel,
+  ProposalOverlayShell,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
@@ -16,13 +16,13 @@ export default function CreateSubspacePage() {
   const successfulUrl = getDhoPathAgreements(lang as Locale, spaceSlug);
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <CreateSubspaceForm
         successfulUrl={successfulUrl}
         backUrl={`${successfulUrl}${PATH_SELECT_SETTINGS_ACTION}`}
         parentSpaceId={space?.id ?? null}
         parentSpaceSlug={space?.slug ?? ''}
       />
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

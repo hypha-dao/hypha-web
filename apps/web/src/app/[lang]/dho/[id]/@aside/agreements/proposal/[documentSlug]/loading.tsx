@@ -1,10 +1,10 @@
 'use client';
 
-import { ProposalDetail, SidePanel } from '@hypha-platform/epics';
+import { ProposalDetail, ProposalOverlayShell } from '@hypha-platform/epics';
 
 export default function Loading() {
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <ProposalDetail
         closeUrl={''}
         isCheckingExpiration={false}
@@ -22,6 +22,6 @@ export default function Loading() {
         documentSlug={''}
         dbTokens={[]}
       />
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

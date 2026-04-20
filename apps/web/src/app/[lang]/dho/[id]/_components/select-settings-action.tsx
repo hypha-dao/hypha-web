@@ -9,19 +9,28 @@ import { Locale } from '@hypha-platform/i18n';
 import { isAbsoluteUrl } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 import {
-  ArrowDownIcon,
-  ArrowLeftIcon,
-  ArrowRightIcon,
-  CrossCircledIcon,
-  EnterIcon,
-  GearIcon,
-  MixerVerticalIcon,
-  PlusCircledIcon,
-  RadiobuttonIcon,
-  Link2Icon,
-  ArrowUpIcon,
-  Pencil2Icon,
-} from '@radix-ui/react-icons';
+  Coins,
+  Code2,
+  DoorOpen,
+  Download,
+  Eye,
+  Flame,
+  FolderPlus,
+  Gift,
+  LayoutDashboard,
+  Link2,
+  LogOut,
+  Puzzle,
+  Rocket,
+  ShoppingBag,
+  Sparkles,
+  Vault,
+  Wallet,
+  Workflow,
+  Zap,
+} from 'lucide-react';
+
+import { HyphaEnergyIcon } from './icons/hypha-energy-icon';
 
 type SelectSettingsActionProps = {
   daoSlug: string;
@@ -45,14 +54,16 @@ export const SelectSettingsAction = ({
       title: t('actions.spaceConfiguration.title'),
       description: t('actions.spaceConfiguration.description'),
       href: 'space-configuration',
-      icon: <GearIcon />,
+      icon: (
+        <LayoutDashboard className="size-[22px] shrink-0" strokeWidth={1.75} />
+      ),
     },
     {
       group: t('groups.overview'),
       title: t('actions.spaceTransparencyConfiguration.title'),
       description: t('actions.spaceTransparencyConfiguration.description'),
       href: 'create/space-settings-transparency',
-      icon: <GearIcon />,
+      icon: <Eye className="size-[22px] shrink-0" strokeWidth={1.75} />,
       baseTab: 'agreements',
     },
     {
@@ -60,7 +71,7 @@ export const SelectSettingsAction = ({
       title: t('actions.addSpace.title'),
       description: t('actions.addSpace.description'),
       href: 'space/create',
-      icon: <PlusCircledIcon />,
+      icon: <FolderPlus className="size-[22px] shrink-0" strokeWidth={1.75} />,
     },
     {
       group: t('groups.overview'),
@@ -68,7 +79,7 @@ export const SelectSettingsAction = ({
       description: t('actions.activateSpaces.description'),
       href: 'create/activate-spaces',
       baseTab: 'agreements',
-      icon: <ArrowRightIcon />,
+      icon: <Rocket className="size-[22px] shrink-0" strokeWidth={1.75} />,
     },
     {
       defaultDurationDays: 4,
@@ -76,7 +87,7 @@ export const SelectSettingsAction = ({
       title: t('actions.votingMethod.title'),
       description: t('actions.votingMethod.description'),
       href: 'create/change-voting-method',
-      icon: <MixerVerticalIcon />,
+      icon: <Zap className="size-[22px] shrink-0" strokeWidth={1.75} />,
       baseTab: 'agreements',
       disabled: isPaymentExpired,
     },
@@ -86,7 +97,7 @@ export const SelectSettingsAction = ({
       title: t('actions.entryMethod.title'),
       description: t('actions.entryMethod.description'),
       href: 'create/change-entry-method',
-      icon: <EnterIcon />,
+      icon: <DoorOpen className="size-[22px] shrink-0" strokeWidth={1.75} />,
       baseTab: 'agreements',
       disabled: isPaymentExpired,
     },
@@ -105,7 +116,7 @@ export const SelectSettingsAction = ({
       title: t('actions.membershipExit.title'),
       description: t('actions.membershipExit.description'),
       href: 'create/membership-exit',
-      icon: <CrossCircledIcon />,
+      icon: <LogOut className="size-[22px] shrink-0" strokeWidth={1.75} />,
       baseTab: 'agreements',
       disabled: isPaymentExpired,
     },
@@ -114,7 +125,7 @@ export const SelectSettingsAction = ({
       title: t('actions.spaceToSpaceMembership.title'),
       description: t('actions.spaceToSpaceMembership.description'),
       href: 'create/space-to-space-membership',
-      icon: <Link2Icon />,
+      icon: <Link2 className="size-[22px] shrink-0" strokeWidth={1.75} />,
       baseTab: 'agreements',
       disabled: isPaymentExpired,
     },
@@ -124,7 +135,7 @@ export const SelectSettingsAction = ({
       title: t('actions.issueNewToken.title'),
       description: t('actions.issueNewToken.description'),
       href: 'create/issue-new-token',
-      icon: <RadiobuttonIcon />,
+      icon: <Coins className="size-[22px] shrink-0" strokeWidth={1.75} />,
       disabled: isPaymentExpired,
     },
     {
@@ -133,7 +144,7 @@ export const SelectSettingsAction = ({
       title: t('actions.updateIssuedToken.title'),
       description: t('actions.updateIssuedToken.description'),
       href: 'create/update-issued-token',
-      icon: <Pencil2Icon />,
+      icon: <Workflow className="size-[22px] shrink-0" strokeWidth={1.75} />,
       disabled: isPaymentExpired,
     },
     {
@@ -141,7 +152,7 @@ export const SelectSettingsAction = ({
       title: t('actions.mintTokensToSpaceTreasury.title'),
       description: t('actions.mintTokensToSpaceTreasury.description'),
       href: 'create/mint-tokens-to-space-treasury',
-      icon: <ArrowDownIcon />,
+      icon: <Download className="size-[22px] shrink-0" strokeWidth={1.75} />,
       disabled: isPaymentExpired,
     },
     {
@@ -149,7 +160,7 @@ export const SelectSettingsAction = ({
       title: t('actions.tokenBurning.title'),
       description: t('actions.tokenBurning.description'),
       href: 'create/token-burning',
-      icon: <ArrowDownIcon />,
+      icon: <Flame className="size-[22px] shrink-0" strokeWidth={1.75} />,
       disabled: isPaymentExpired,
     },
     {
@@ -158,7 +169,7 @@ export const SelectSettingsAction = ({
       title: t('actions.tokenBackingVault.title'),
       description: t('actions.tokenBackingVault.description'),
       href: 'create/token-backing-vault',
-      icon: <RadiobuttonIcon />,
+      icon: <Vault className="size-[22px] shrink-0" strokeWidth={1.75} />,
       baseTab: 'agreements',
       disabled: isPaymentExpired,
     },
@@ -166,17 +177,17 @@ export const SelectSettingsAction = ({
       group: t('groups.treasury'),
       title: t('actions.redeemTokens.title'),
       description: t('actions.redeemTokens.description'),
-      icon: <ArrowUpIcon />,
       href: 'create/redeem-tokens',
       baseTab: 'agreements',
       disabled: isPaymentExpired,
+      icon: <Gift className="size-[22px] shrink-0" strokeWidth={1.75} />,
     },
     {
       group: t('groups.treasury'),
       title: t('actions.spaceTokenPurchase.title'),
       description: t('actions.spaceTokenPurchase.description'),
       href: 'create/space-token-purchase',
-      icon: <ArrowLeftIcon />,
+      icon: <ShoppingBag className="size-[22px] shrink-0" strokeWidth={1.75} />,
       disabled: isPaymentExpired,
     },
     {
@@ -184,13 +195,13 @@ export const SelectSettingsAction = ({
       title: t('actions.buyHyphaTokensRewards.title'),
       description: t('actions.buyHyphaTokensRewards.description'),
       href: 'create/buy-hypha-tokens',
-      icon: <ArrowLeftIcon />,
+      icon: <Sparkles className="size-[22px] shrink-0" strokeWidth={1.75} />,
     },
     {
       group: t('groups.treasury'),
       title: t('actions.depositFunds.title'),
       description: t('actions.depositFunds.description'),
-      icon: <ArrowDownIcon />,
+      icon: <Wallet className="size-[22px] shrink-0" strokeWidth={1.75} />,
       baseTab: 'treasury',
       onAction: () => {
         fundWallet();
@@ -202,7 +213,7 @@ export const SelectSettingsAction = ({
       title: t('actions.integrateSmartContractInSpace.title'),
       description: t('actions.integrateSmartContractInSpace.description'),
       href: 'https://hypha.services/',
-      icon: <RadiobuttonIcon />,
+      icon: <Code2 className="size-[22px] shrink-0" strokeWidth={1.75} />,
       baseTab: 'agreements',
       target: '_blank',
       disabled: isPaymentExpired,
@@ -214,16 +225,17 @@ export const SelectSettingsAction = ({
         'actions.exploreExtensionsMarketplaceComingSoon.description',
       ),
       href: '#',
-      icon: <RadiobuttonIcon />,
+      icon: <Puzzle className="size-[22px] shrink-0" strokeWidth={1.75} />,
       baseTab: 'agreements',
       disabled: true,
+      comingSoon: true,
     },
     {
       group: t('groups.ecosystemVerticals'),
       title: t('actions.hyphaEnergy.title'),
       description: t('actions.hyphaEnergy.description'),
       href: 'https://hypha.energy',
-      icon: <RadiobuttonIcon />,
+      icon: <HyphaEnergyIcon className="size-[22px]" />,
       baseTab: 'agreements',
       target: '_blank',
       disabled: isPaymentExpired,
@@ -254,6 +266,7 @@ export const SelectSettingsAction = ({
     <SelectAction
       title={t('title')}
       content={t('content')}
+      showTitle={false}
       actions={SETTINGS_ACTIONS.map((action) => {
         const href = computeHref(action);
         return {

@@ -2,11 +2,10 @@
 
 import { useParams } from 'next/navigation';
 import {
-  ButtonClose,
   FullVoterList,
+  ModalStickyNavigation,
   ProposalHead,
-  SidePanel,
-  ButtonBack,
+  ProposalOverlayShell,
   getDhoPathAgreements,
 } from '@hypha-platform/epics';
 import { useDocumentBySlug } from '@web/hooks/use-document-by-slug';
@@ -16,16 +15,26 @@ import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 
 export default function VotersOverlay() {
-  const tCommon = useTranslations('Common');
+  const tModalAside = useTranslations('ModalAside');
   const { documentSlug, lang, id } = useParams();
   const { document } = useDocumentBySlug(documentSlug as string);
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
     proposalId: document?.web3ProposalId as number,
   });
 
+  const proposalShell = getDhoPathAgreements(lang as Locale, id as string);
+  const backToProposal = `${proposalShell}/proposal/${
+    document?.slug ?? (documentSlug as string)
+  }`;
+
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <div className="flex flex-col gap-5">
+        <ModalStickyNavigation
+          contextTitle={tModalAside('proposalVoters')}
+          closeUrl={proposalShell}
+          backUrl={backToProposal}
+        />
         <div className="flex gap-5 justify-between">
           <ProposalHead
             creator={{
@@ -42,22 +51,10 @@ export default function VotersOverlay() {
                 : undefined
             }
           />
-          <div className="flex justify-center gap-1">
-            <ButtonBack
-              label={tCommon('back')}
-              backUrl={`${getDhoPathAgreements(
-                lang as Locale,
-                id as string,
-              )}/proposal/${document?.slug ?? (documentSlug as string)}`}
-            />
-            <ButtonClose
-              closeUrl={getDhoPathAgreements(lang as Locale, id as string)}
-            />
-          </div>
         </div>
         <Separator />
         <FullVoterList documentSlug={documentSlug as string} />
       </div>
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

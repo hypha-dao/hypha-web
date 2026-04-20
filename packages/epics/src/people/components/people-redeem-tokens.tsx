@@ -2,9 +2,8 @@
 
 import React from 'react';
 import {
-  SidePanel,
-  ButtonClose,
-  ButtonBack,
+  ProposalOverlayShell,
+  ModalStickyNavigation,
   useUserAssets,
 } from '@hypha-platform/epics';
 import { PeopleRedeemForm } from './people-redeem-form';
@@ -82,6 +81,7 @@ export const ProfileRedeemTokens = ({
 }: ProfileRedeemTokensProps) => {
   const tRedeem = useTranslations('ProfileActions.redeemTokens');
   const tActions = useTranslations('ProfileActions');
+  const tModalAside = useTranslations('ModalAside');
   const chainId = 8453 as keyof typeof tokenBackingVaultImplementationAddress;
   const vaultAddress = tokenBackingVaultImplementationAddress[chainId];
   const { assets: userAssets, manualUpdate } = useUserAssets({
@@ -598,20 +598,14 @@ export const ProfileRedeemTokens = ({
   ]);
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <div className="flex flex-col gap-5">
-        <div className="flex gap-5 justify-between">
-          <h2 className="text-4 text-secondary-foreground justify-start items-center">
-            {tRedeem('title')}
-          </h2>
-          <div className="flex gap-5 justify-end items-center">
-            <ButtonBack
-              label={tActions('backToActions')}
-              backUrl={`/${lang}/profile/${personSlug}/actions`}
-            />
-            <ButtonClose closeUrl={`/${lang}/profile/${personSlug}`} />
-          </div>
-        </div>
+        <ModalStickyNavigation
+          contextTitle={tModalAside('redeemTokens')}
+          closeUrl={`/${lang}/profile/${personSlug}`}
+          backUrl={`/${lang}/profile/${personSlug}/actions`}
+          backLabel={tActions('backToActions')}
+        />
         <span className="text-2 text-neutral-11">{tRedeem('content')}</span>
         {hasVaultAccessIssues && (
           <div className="text-2 text-red-11">
@@ -639,6 +633,6 @@ export const ProfileRedeemTokens = ({
           <PeopleRedeemForm tokens={tokens} updateAssets={manualUpdate} />
         )}
       </div>
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 };

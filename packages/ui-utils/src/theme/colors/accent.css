@@ -1,6 +1,13 @@
 @import '../../colors/indigo.css';
 
-:root, .light, .light-theme, .dark, .dark-theme {
+/**
+ * Same accent scale for light and dark — periwinkle/indigo primaries (#4a65d8-ish at solid steps).
+ */
+:root,
+.light,
+.light-theme,
+.dark,
+.dark-theme {
   --accent-1: var(--indigo-1);
   --accent-2: var(--indigo-2);
   --accent-3: var(--indigo-3);

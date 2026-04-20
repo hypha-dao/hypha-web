@@ -15,6 +15,7 @@ import React from 'react';
 import { useCreateRedeemTokensOrchestrator } from '@hypha-platform/core/client';
 import { useRouter } from 'next/navigation';
 import { LoadingBackdrop } from '@hypha-platform/ui/server';
+import { useTranslations } from 'next-intl';
 import { useConfig } from 'wagmi';
 import {
   useClearResubmitOnSuccess,
@@ -51,6 +52,7 @@ const CreateRedeemTokensFormInner = ({
   web3SpaceId,
   plugin,
 }: CreateRedeemTokensFormProps) => {
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { person } = useMe();
   const redeemGuard = useRedeemSubmitGuard();
   const { jwt } = useJwt();
@@ -188,6 +190,7 @@ const CreateRedeemTokensFormInner = ({
   return (
     <LoadingBackdrop
       showKeepWindowOpenMessage={true}
+      keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       fullHeight={true}
       progress={progress}
       isLoading={isPending}

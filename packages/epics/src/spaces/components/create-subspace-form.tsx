@@ -27,6 +27,7 @@ export const CreateSubspaceForm = ({
   parentSpaceSlug,
 }: CreateSpaceFormProps) => {
   const t = useTranslations('Spaces');
+  const tAgreementFlow = useTranslations('AgreementFlow');
   const { lang } = useParams();
   const router = useRouter();
   const config = useConfig();
@@ -51,6 +52,7 @@ export const CreateSubspaceForm = ({
   return (
     <LoadingBackdrop
       showKeepWindowOpenMessage={true}
+      keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       fullHeight={true}
       progress={progress}
       isLoading={isPending}

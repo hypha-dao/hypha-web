@@ -4,13 +4,14 @@ import { SelectAction, useActionGating } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import {
-  ArrowUpIcon,
-  ArrowDownIcon,
-  FileIcon,
-  PlusCircledIcon,
-  RocketIcon,
-  Share1Icon,
-} from '@radix-ui/react-icons';
+  FileText,
+  Package,
+  PiggyBank,
+  Rocket,
+  TrendingUp,
+  Wallet,
+  Workflow,
+} from 'lucide-react';
 
 type SelectCreateActionProps = {
   daoSlug: string;
@@ -32,7 +33,7 @@ export const SelectCreateAction = ({
       title: t('actions.makeCollectiveAgreement.title'),
       description: t('actions.makeCollectiveAgreement.description'),
       href: 'agreements/create',
-      icon: <FileIcon />,
+      icon: <FileText className="size-[22px] shrink-0" strokeWidth={1.75} />,
       disabled: isPaymentExpired,
     },
     {
@@ -40,7 +41,7 @@ export const SelectCreateAction = ({
       title: t('actions.proposeContribution.title'),
       description: t('actions.proposeContribution.description'),
       href: 'agreements/create/propose-contribution',
-      icon: <RocketIcon />,
+      icon: <Rocket className="size-[22px] shrink-0" strokeWidth={1.75} />,
       disabled: isPaymentExpired,
     },
     {
@@ -48,7 +49,7 @@ export const SelectCreateAction = ({
       title: t('actions.payExpenses.title'),
       description: t('actions.payExpenses.description'),
       href: 'agreements/create/pay-for-expenses',
-      icon: <ArrowUpIcon />,
+      icon: <TrendingUp className="size-[22px] shrink-0" strokeWidth={1.75} />,
       disabled: isPaymentExpired,
     },
     {
@@ -56,7 +57,7 @@ export const SelectCreateAction = ({
       title: t('actions.acceptInvestment.title'),
       description: t('actions.acceptInvestment.description'),
       href: 'agreements/create/accept-investment',
-      icon: <PlusCircledIcon />,
+      icon: <PiggyBank className="size-[22px] shrink-0" strokeWidth={1.75} />,
       disabled: isPaymentExpired,
     },
     {
@@ -64,7 +65,7 @@ export const SelectCreateAction = ({
       title: t('actions.exchangeStakesAndTokens.title'),
       description: t('actions.exchangeStakesAndTokens.description'),
       href: 'agreements/create/exchange-stakes-and-tokens',
-      icon: <PlusCircledIcon />,
+      icon: <Package className="size-[22px] shrink-0" strokeWidth={1.75} />,
       disabled: isPaymentExpired,
     },
     {
@@ -72,13 +73,13 @@ export const SelectCreateAction = ({
       title: t('actions.deployFunds.title'),
       description: t('actions.deployFunds.description'),
       href: 'agreements/create/deploy-funds',
-      icon: <Share1Icon />,
+      icon: <Workflow className="size-[22px] shrink-0" strokeWidth={1.75} />,
       disabled: isPaymentExpired,
     },
     {
       title: t('actions.depositFunds.title'),
       description: t('actions.depositFunds.description'),
-      icon: <ArrowDownIcon />,
+      icon: <Wallet className="size-[22px] shrink-0" strokeWidth={1.75} />,
       onAction: () => {
         fundWallet();
       },
@@ -89,6 +90,7 @@ export const SelectCreateAction = ({
     <SelectAction
       title={t('title')}
       content={t('content')}
+      showTitle={false}
       actions={CREATE_ACTIONS.map((action) => ({
         ...action,
         ...(action.href && {
