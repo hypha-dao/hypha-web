@@ -150,7 +150,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       : tag;
     return {
       label: `#${displayLabel}`,
-      variant: 'solid',
+      variant: 'outline',
       colorVariant: 'neutral',
     };
   });
