@@ -36,17 +36,9 @@ export function normalizePlainTextMxidCaptureFromMatch(
     after.length === 0 || /^\s/.test(after) || /^[.,!?;]/.test(after);
   if (!punctuationBoundary || !mid.endsWith(':')) return mid;
 
-  let m = mid;
-  while (m.endsWith(':')) {
-    const without = m.slice(0, -1);
-    /** `:8448` ends the MXID; do not strip (also covers `@hs:8448:` + sentence `:`). */
-    if (/:\d+$/.test(without)) {
-      return without;
-    }
-    m = without;
-    break;
-  }
-  return m;
+  const without = mid.slice(0, -1);
+  /** `:8448` ends the MXID; do not strip (also covers `@hs:8448:` + sentence `:`). */
+  return without;
 }
 
 export function isLikelyMatrixUserId(id: string): boolean {
