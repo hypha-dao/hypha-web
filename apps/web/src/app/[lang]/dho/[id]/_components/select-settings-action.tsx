@@ -18,7 +18,6 @@ import {
   FolderPlus,
   Gift,
   LayoutDashboard,
-  Leaf,
   Link2,
   LogOut,
   Puzzle,
@@ -30,6 +29,8 @@ import {
   Workflow,
   Zap,
 } from 'lucide-react';
+
+import { HyphaEnergyIcon } from './icons/hypha-energy-icon';
 
 type SelectSettingsActionProps = {
   daoSlug: string;
@@ -234,7 +235,7 @@ export const SelectSettingsAction = ({
       title: t('actions.hyphaEnergy.title'),
       description: t('actions.hyphaEnergy.description'),
       href: 'https://hypha.energy',
-      icon: <Leaf className="size-[22px] shrink-0" strokeWidth={1.75} />,
+      icon: <HyphaEnergyIcon className="size-[22px]" />,
       baseTab: 'agreements',
       target: '_blank',
       disabled: isPaymentExpired,
