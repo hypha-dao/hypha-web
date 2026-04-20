@@ -973,7 +973,7 @@
       "autoExecution": "Automatische Ausführung",
       "toVote": "{duration} zum Abstimmen",
       "quorumLabel": "Quorum",
-      "unityLabel": "Einstimmigkeit",
+      "unityLabel": "Einheit",
       "quorumUnityLine": "{quorumPercent}% {quorumLabel} | {unityPercent}% {unityLabel}",
       "uploadImageLabel": "<accent>Bild</accent> hochladen",
       "addAttachmentLabel": "Anhang hinzufügen (JPEG, PNG, WebP oder PDF — max. 4 MB)",
