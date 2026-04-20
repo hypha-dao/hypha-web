@@ -24,6 +24,14 @@ export type BannerToneMetrics = {
   edgeEnergy: number;
 };
 
+/** Neutral metrics → static PR #2165–style reference (single source of truth) */
+export const BANNER_OVERLAY_FALLBACK_METRICS: BannerToneMetrics = {
+  luminanceMean: 0.42,
+  luminanceStd: 0.12,
+  saturationMean: 0.35,
+  edgeEnergy: 0.25,
+};
+
 /**
  * Population variance (divide by n, not n-1) for stable small samples.
  */
@@ -118,12 +126,7 @@ export function analyzeBannerToneFromImageData(
   }
 
   if (lumas.length < 16) {
-    return {
-      luminanceMean: 0.42,
-      luminanceStd: 0.12,
-      saturationMean: 0.35,
-      edgeEnergy: 0.25,
-    };
+    return { ...BANNER_OVERLAY_FALLBACK_METRICS };
   }
 
   let meanL = 0;
@@ -152,14 +155,6 @@ export function analyzeBannerToneFromImageData(
 }
 
 export type BannerOverlayCssVars = Record<string, string>;
-
-/** Neutral metrics → static PR #2165–style reference (used for baseline blend) */
-export const BANNER_OVERLAY_FALLBACK_METRICS: BannerToneMetrics = {
-  luminanceMean: 0.42,
-  luminanceStd: 0.12,
-  saturationMean: 0.35,
-  edgeEnergy: 0.25,
-};
 
 /** Portion of image-driven deviation from baseline we apply (lower = truer hero colour). */
 const OVERLAY_DYNAMIC_STRENGTH = 0.42;
