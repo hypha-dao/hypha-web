@@ -604,7 +604,9 @@ export const FormVoting = ({
           onWithdraw={handleWithdraw}
           onResubmit={handleResubmit}
           isWithdrawing={isWithdrawing}
-          hideResubmit={label === 'Issue New Token'}
+          hideResubmit={
+            getCreateRouteSegmentForProposalLabel(label) === 'issue-new-token'
+          }
         />
       )}
     </div>
