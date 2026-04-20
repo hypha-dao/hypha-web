@@ -90,6 +90,12 @@ export default async function DhoLayout({
     return notFound();
   }
 
+  const web3SpaceId =
+    typeof spaceFromDb.web3SpaceId === 'number'
+      ? spaceFromDb.web3SpaceId
+      : undefined;
+  const hasWeb3Id = canConvertToBigInt(spaceFromDb.web3SpaceId);
+
   const { members: spaceMembers, agreements: spaceAgreements } =
     await getSpaceMemberAndAgreementCounts(spaceFromDb.web3SpaceId);
 
@@ -101,11 +107,8 @@ export default async function DhoLayout({
           <div className="flex min-h-8 min-w-0 flex-1 items-center">
             <Breadcrumbs spaceId={spaceFromDb.id} lang={lang} />
           </div>
-          {typeof spaceFromDb.web3SpaceId === 'number' ? (
-            <NestedSpacesButton
-              web3SpaceId={spaceFromDb.web3SpaceId as number}
-              spaceSlug={daoSlug}
-            />
+          {web3SpaceId !== undefined ? (
+            <NestedSpacesButton web3SpaceId={web3SpaceId} spaceSlug={daoSlug} />
           ) : null}
         </div>
         <CompactSpaceBanner
@@ -126,18 +129,14 @@ export default async function DhoLayout({
           agreementsLabel={tCommon('Agreements')}
           footerTrailing={
             <>
-              {canConvertToBigInt(spaceFromDb.web3SpaceId) && (
+              {hasWeb3Id && web3SpaceId !== undefined && (
                 <SubscriptionBadge
-                  web3SpaceId={spaceFromDb.web3SpaceId as number}
+                  web3SpaceId={web3SpaceId}
                   className="rounded-md border-emerald-400/85 bg-transparent text-white hover:border-emerald-300 hover:bg-white/10 [&]:rounded-md [&]:border-emerald-400/85 [&]:text-white"
                 />
               )}
               <SpaceModeLabel
-                web3SpaceId={
-                  typeof spaceFromDb.web3SpaceId === 'number'
-                    ? spaceFromDb.web3SpaceId
-                    : undefined
-                }
+                web3SpaceId={web3SpaceId}
                 isSandbox={spaceFromDb.flags.includes('sandbox')}
                 isDemo={spaceFromDb.flags.includes('demo')}
                 isArchived={
@@ -153,18 +152,15 @@ export default async function DhoLayout({
           }
         />
         <div className="mt-3 flex justify-end gap-2">
-          {typeof spaceFromDb.web3SpaceId === 'number' && (
-            <JoinSpace
-              web3SpaceId={spaceFromDb.web3SpaceId}
-              spaceId={spaceFromDb.id}
-            />
+          {web3SpaceId !== undefined && (
+            <JoinSpace web3SpaceId={web3SpaceId} spaceId={spaceFromDb.id} />
           )}
-          <ActionButtons web3SpaceId={spaceFromDb.web3SpaceId as number} />
+          <ActionButtons web3SpaceId={web3SpaceId} />
         </div>
         <div className="mt-8 flex flex-col gap-3">
-          <SalesBanner web3SpaceId={spaceFromDb.web3SpaceId as number} />
+          <SalesBanner web3SpaceId={web3SpaceId} />
           <SpaceEscrowDepositBanners
-            web3SpaceId={spaceFromDb.web3SpaceId as number}
+            web3SpaceId={web3SpaceId}
             spaceDbId={spaceFromDb.id}
             spaceSlug={daoSlug}
             lang={lang}
