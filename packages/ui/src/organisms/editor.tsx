@@ -32,7 +32,7 @@ export function RichTextEditor({
     null,
   );
   const overlayHostRef = useCallback((node: HTMLDivElement | null) => {
-    setMdxOverlayHost((prev) => (prev === node ? prev : node));
+    setMdxOverlayHost(node);
   }, []);
 
   return (
