@@ -160,8 +160,9 @@ export default async function RootLayout({
                           <NextSSRPlugin
                             routerConfig={extractRouterConfig(fileRouter)}
                           />
-                          <div className="mb-auto pb-8">
-                            <div className="flex h-full justify-normal pt-9">
+                          {/* pt-9 on this wrapper so route-level -mt-9 (e.g. DHO) pulls up into this padding, not past an extra nested box */}
+                          <div className="mb-auto pb-8 pt-9">
+                            <div className="flex h-full justify-normal">
                               <div className="h-full w-full">{children}</div>
                             </div>
                           </div>
