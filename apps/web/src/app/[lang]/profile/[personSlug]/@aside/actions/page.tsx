@@ -10,11 +10,11 @@ import {
 import { useParams } from 'next/navigation';
 import {
   ArrowLeftRight,
-  CloudLightning,
   Gift,
   HandCoins,
   Rocket,
   Send,
+  ShoppingBag,
   Sparkles,
 } from 'lucide-react';
 import { useMemberBySlug } from '@web/hooks/use-member-by-slug';
@@ -69,9 +69,7 @@ export default function ProfileWallet() {
       title: tActions('actions.buySpaceTokens.title'),
       description: tActions('actions.buySpaceTokens.description'),
       href: 'buy-space-tokens',
-      icon: (
-        <CloudLightning className="size-[22px] shrink-0" strokeWidth={1.75} />
-      ),
+      icon: <ShoppingBag className="size-[22px] shrink-0" strokeWidth={1.75} />,
     },
     {
       id: 'activateSpaces',
