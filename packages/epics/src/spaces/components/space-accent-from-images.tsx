@@ -12,6 +12,7 @@ import {
   buildSpaceScopeStyleFromSampledAccents,
   DEFAULT_SPACE_SCOPE_STYLE,
 } from '../utils/space-accent-scope-style';
+import { defaultSpacePortalStyles } from '../utils/space-accent-portal-styles';
 import { useSetSpaceAccentPortalStyles } from './space-accent-portal-context';
 
 export type SpaceAccentFromImagesProps = {
@@ -122,6 +123,15 @@ export function SpaceAccentFromImages({
   React.useEffect(() => {
     let cancelled = false;
 
+    const scopeElInit = ref.current;
+    if (scopeElInit) {
+      for (const [k, v] of Object.entries(DEFAULT_SPACE_SCOPE_STYLE)) {
+        if (v === undefined || v === null) continue;
+        scopeElInit.style.setProperty(k, String(v));
+      }
+    }
+    setPortalStyles?.(defaultSpacePortalStyles);
+
     (async () => {
       const [bannerAccent, logoAccent, overlayRecord] = await Promise.all([
         sampleImageToAccent(bannerSrc),
@@ -130,7 +140,7 @@ export function SpaceAccentFromImages({
       ]);
       if (cancelled || !ref.current) return;
 
-      const el = ref.current;
+      const scopeEl = ref.current;
       const overlayVars = overlayRecord ?? DEFAULT_BANNER_OVERLAY_CSS_VARS;
 
       const scopeStyle = buildSpaceScopeStyleFromSampledAccents({
@@ -141,7 +151,7 @@ export function SpaceAccentFromImages({
 
       for (const [k, v] of Object.entries(scopeStyle)) {
         if (v === undefined || v === null) continue;
-        el.style.setProperty(k, String(v));
+        scopeEl.style.setProperty(k, String(v));
       }
 
       setPortalStyles?.(scopeStyle);
