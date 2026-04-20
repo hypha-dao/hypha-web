@@ -102,15 +102,23 @@ export function SpaceHeaderMorphProvider({
       });
     };
 
+    const root = containerRef.current;
+    let ro: ResizeObserver | undefined;
+    if (root && typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(onScroll);
+      ro.observe(root);
+    }
+
     updateProgress();
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll, { passive: true });
     return () => {
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
+      ro?.disconnect();
       if (frameRef.current) cancelAnimationFrame(frameRef.current);
     };
-  }, [updateProgress]);
+  }, [containerRef, updateProgress]);
 
   const value = useMemo(
     () => ({
