@@ -15,6 +15,9 @@ import {
 import { defaultSpacePortalStyles } from '../utils/space-accent-portal-styles';
 import { useSetSpaceAccentPortalStyles } from './space-accent-portal-context';
 
+/** Matches banner tone analysis grid; remote URLs use Next image optimizer at this width. */
+const BANNER_SAMPLE_MAX_SIDE = 112;
+
 export type SpaceAccentFromImagesProps = {
   bannerSrc: string;
   logoSrc: string;
@@ -38,7 +41,9 @@ function canvasFriendlyImageSrc(src: string): string | null {
   try {
     const u = new URL(t);
     if (u.protocol === 'http:' || u.protocol === 'https:') {
-      return `/_next/image?url=${encodeURIComponent(t)}&w=96&q=75`;
+      return `/_next/image?url=${encodeURIComponent(
+        t,
+      )}&w=${BANNER_SAMPLE_MAX_SIDE}&q=75`;
     }
   } catch {
     /* ignore */
@@ -81,21 +86,22 @@ async function sampleImageToAccent(src: string): Promise<string | null> {
   });
 }
 
-/** Larger sample grid for luminance / contrast / edge analysis (banner only). */
-async function sampleBannerToneOverlayVars(
-  src: string,
-): Promise<Record<string, string> | null> {
+/** Single decode for banner: accent hex + overlay vars from one ImageData pass. */
+async function sampleBannerAccentAndTone(src: string): Promise<{
+  accent: string | null;
+  overlayVars: Record<string, string> | null;
+}> {
   return new Promise((resolve) => {
     const friendlySrc = canvasFriendlyImageSrc(src);
     if (!friendlySrc) {
-      resolve(null);
+      resolve({ accent: null, overlayVars: null });
       return;
     }
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
       try {
-        const maxSide = 112;
+        const maxSide = BANNER_SAMPLE_MAX_SIDE;
         const scale = Math.min(maxSide / img.width, maxSide / img.height, 1);
         const w = Math.max(16, Math.round(img.width * scale));
         const h = Math.max(16, Math.round(img.height * scale));
@@ -104,18 +110,22 @@ async function sampleBannerToneOverlayVars(
         canvas.height = h;
         const ctx = canvas.getContext('2d');
         if (!ctx) {
-          resolve(null);
+          resolve({ accent: null, overlayVars: null });
           return;
         }
         ctx.drawImage(img, 0, 0, w, h);
         const data = ctx.getImageData(0, 0, w, h);
-        const tone = analyzeBannerToneFromImageData(data);
-        resolve(overlayCssVarsFromTone(tone));
+        resolve({
+          accent: extractAccentHexFromImageData(data),
+          overlayVars: overlayCssVarsFromTone(
+            analyzeBannerToneFromImageData(data),
+          ),
+        });
       } catch {
-        resolve(null);
+        resolve({ accent: null, overlayVars: null });
       }
     };
-    img.onerror = () => resolve(null);
+    img.onerror = () => resolve({ accent: null, overlayVars: null });
     img.src = friendlySrc;
   });
 }
@@ -146,11 +156,11 @@ export function SpaceAccentFromImages({
     setPortalStyles?.(defaultSpacePortalStyles);
 
     (async () => {
-      const [bannerAccent, logoAccent, overlayRecord] = await Promise.all([
-        sampleImageToAccent(bannerSrc),
-        sampleImageToAccent(logoSrc),
-        sampleBannerToneOverlayVars(bannerSrc),
-      ]);
+      const [{ accent: bannerAccent, overlayVars: overlayRecord }, logoAccent] =
+        await Promise.all([
+          sampleBannerAccentAndTone(bannerSrc),
+          sampleImageToAccent(logoSrc),
+        ]);
       if (cancelled || !ref.current) return;
 
       const scopeEl = ref.current;
