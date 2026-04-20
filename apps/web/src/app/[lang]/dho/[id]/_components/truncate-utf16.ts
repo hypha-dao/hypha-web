@@ -1,19 +1,23 @@
 /**
- * Truncate by Unicode code points so surrogate pairs are not split (unlike
- * `String.prototype.slice` with a character count).
+ * Truncate by user-perceived grapheme clusters (Intl.Segmenter) so surrogate
+ * pairs and combined marks are not split.
  */
 export function truncateByCodePoints(
   text: string,
   maxCodePoints: number,
 ): string {
-  let i = 0;
-  let count = 0;
-  while (i < text.length && count < maxCodePoints) {
-    const code = text.codePointAt(i);
-    if (code === undefined) break;
-    const charLen = code > 0xffff ? 2 : 1;
-    i += charLen;
-    count += 1;
+  const maxGraphemes = Math.max(0, Math.trunc(maxCodePoints));
+  if (maxGraphemes === 0) {
+    return text.length === 0 ? text : '…';
   }
-  return i >= text.length ? text : `${text.slice(0, i)}…`;
+
+  const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+  const segments = Array.from(
+    segmenter.segment(text),
+    ({ segment }) => segment,
+  );
+
+  return segments.length <= maxGraphemes
+    ? text
+    : `${segments.slice(0, maxGraphemes).join('')}…`;
 }
