@@ -7,11 +7,7 @@ import { CoherencePriority } from '../../coherence-priorities';
 import { findAllCoherences } from '../queries';
 import { Coherence } from '../../types';
 import { normalizeCoherence } from './normalize-coherence';
-
-/** Server actions must return JSON-serializable payloads (Date breaks some runtimes). */
-function toClientJson<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
-}
+import { toClientJson } from '../serialize-client-json';
 
 function isLikelyMissingVoteMigration(message: string): boolean {
   // e.g. "column ... vote_score does not exist" (42P01/42703) or table coherence_votes
