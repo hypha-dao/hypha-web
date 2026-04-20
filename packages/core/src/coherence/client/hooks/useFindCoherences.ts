@@ -13,7 +13,7 @@ export interface CoherenceQuery {
   tags?: CoherenceTag[];
   priority?: CoherencePriority;
   includeArchived?: boolean;
-  orderBy?: 'mostrecent' | 'mostmessages' | 'mostviews';
+  orderBy?: 'mostrecent' | 'mostmessages' | 'mostviews' | 'mostvotes';
 }
 
 export const useFindCoherences = ({

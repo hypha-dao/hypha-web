@@ -1782,6 +1782,7 @@
     "loadMore": "Load more",
     "noMore": "No more",
     "mostViews": "Most Views",
+    "mostVotes": "Most votes",
     "mostMessages": "Most Messages",
     "mostRecent": "Most Recent",
     "searchConversation": "Search conversation",
@@ -1801,6 +1802,9 @@
     "errorOhSnap": "Oh snap! There was an error",
     "reset": "Reset",
     "creatingNewSignal": "Creating new signal",
+    "editSignal": "Edit signal",
+    "savingSignal": "Saving…",
+    "saveChanges": "Save changes",
     "signalTitle": "Signal title...",
     "type": "Type",
     "priority": "Priority",
@@ -1875,6 +1879,15 @@
     }
   },
   "SignalCard": {
-    "noConversationRoom": "No conversation room yet"
+    "noConversationRoom": "No conversation room yet",
+    "voteUp": "Vote up",
+    "voteDown": "Vote down",
+    "signalActions": "Signal actions",
+    "readMore": "Read more",
+    "showLess": "Show less",
+    "deleteSignal": "Delete signal",
+    "deleteConfirm": "This permanently removes this signal from the space. Continue?",
+    "deleteMenu": "Delete",
+    "deleteConfirmAction": "Delete signal"
   }
 }

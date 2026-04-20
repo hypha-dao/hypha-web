@@ -1782,6 +1782,7 @@
     "loadMore": "Cargar más",
     "noMore": "No hay más",
     "mostViews": "Más vistas",
+    "mostVotes": "Más votos",
     "mostMessages": "Más mensajes",
     "mostRecent": "Más recientes",
     "searchConversation": "Buscar conversación",
@@ -1801,6 +1802,9 @@
     "errorOhSnap": "¡Vaya! Ocurrió un error",
     "reset": "Restablecer",
     "creatingNewSignal": "Creando nueva señal",
+    "editSignal": "Editar señal",
+    "savingSignal": "Guardando…",
+    "saveChanges": "Guardar cambios",
     "signalTitle": "Título de la señal...",
     "type": "Tipo",
     "priority": "Prioridad",
@@ -1875,6 +1879,15 @@
     }
   },
   "SignalCard": {
-    "noConversationRoom": "Aún no hay sala de conversación"
+    "noConversationRoom": "Aún no hay sala de conversación",
+    "voteUp": "Votar a favor",
+    "voteDown": "Votar en contra",
+    "signalActions": "Acciones de la señal",
+    "readMore": "Leer más",
+    "showLess": "Mostrar menos",
+    "deleteSignal": "Eliminar señal",
+    "deleteConfirm": "Esto elimina permanentemente esta señal del espacio. ¿Continuar?",
+    "deleteMenu": "Eliminar",
+    "deleteConfirmAction": "Eliminar señal"
   }
 }

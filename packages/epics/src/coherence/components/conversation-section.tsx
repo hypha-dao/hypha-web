@@ -36,6 +36,11 @@ const orderOptions: {
   searchText: string;
 }[] = [
   {
+    value: 'mostvotes',
+    label: 'Most votes',
+    searchText: 'Most votes',
+  },
+  {
     value: 'mostviews',
     label: 'Most Views',
     searchText: 'Most Views',

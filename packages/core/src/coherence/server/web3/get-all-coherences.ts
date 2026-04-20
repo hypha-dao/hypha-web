@@ -15,7 +15,7 @@ type GetAllCoherencesInput = {
   tags?: CoherenceTag[];
   priority?: CoherencePriority;
   includeArchived?: boolean;
-  orderBy?: 'mostrecent' | 'mostmessages' | 'mostviews';
+  orderBy?: 'mostrecent' | 'mostmessages' | 'mostviews' | 'mostvotes';
 };
 
 export async function getAllCoherences(

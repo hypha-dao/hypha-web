@@ -30,7 +30,7 @@ export default async function CoherencePage(props: PageProps) {
   const order: CoherenceOrder =
     orderRaw && COHERENCE_ORDERS.includes(orderRaw as CoherenceOrder)
       ? (orderRaw as CoherenceOrder)
-      : 'mostrecent';
+      : 'mostvotes';
 
   return (
     <CoherenceBlock

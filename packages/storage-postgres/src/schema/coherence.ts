@@ -33,6 +33,7 @@ export const coherences = pgTable(
     archived: boolean('archived').default(false),
     views: integer('views').default(0),
     messages: integer('messages').default(0),
+    voteScore: integer('vote_score').notNull().default(0),
     tags: jsonb('tags').$type<Array<string>>().notNull().default([]),
     ...commonDateFields,
   },
@@ -51,6 +52,7 @@ export const coherences = pgTable(
     index('search_archived').on(table.archived),
     index('search_views').on(table.views),
     index('search_messages').on(table.messages),
+    index('search_vote_score').on(table.voteScore),
     index('search_tags').using('gin', table.tags),
   ],
 );

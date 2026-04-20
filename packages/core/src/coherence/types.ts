@@ -22,6 +22,11 @@ export interface UpdateCoherenceInput {
   roomId?: string;
   messages?: number;
   views?: number;
+  title?: string;
+  description?: string;
+  type?: CoherenceType;
+  priority?: CoherencePriority;
+  tags?: CoherenceTag[];
 }
 
 export type UpdateCoherenceBySlugInput = {
@@ -31,6 +36,7 @@ export type UpdateCoherenceBySlugInput = {
 export type Coherence = {
   id: number;
   creatorId: number;
+  spaceId?: number | null;
   createdAt: Date;
   updatedAt: Date;
   type: CoherenceType;
@@ -43,6 +49,7 @@ export type Coherence = {
   tags: CoherenceTag[];
   messages?: number;
   views?: number;
+  voteScore?: number;
 };
 
 export enum Environment {

@@ -1,6 +1,6 @@
 import { Coherence, coherences } from '@hypha-platform/storage-postgres';
 import { DbConfig } from '../../server';
-import { and, arrayOverlaps, desc, eq, SQL, sql } from 'drizzle-orm';
+import { and, arrayOverlaps, desc, eq, sql } from 'drizzle-orm';
 import { CoherenceType } from '../coherence-types';
 import { CoherenceTag } from '../coherence-tags';
 import { CoherencePriority } from '../coherence-priorities';
@@ -12,7 +12,7 @@ type FindAllCoherencesInput = {
   tags?: CoherenceTag[];
   priority?: CoherencePriority;
   includeArchived?: boolean;
-  orderBy?: 'mostrecent' | 'mostmessages' | 'mostviews';
+  orderBy?: 'mostrecent' | 'mostmessages' | 'mostviews' | 'mostvotes';
 };
 
 export const findAllCoherences = async (
@@ -30,16 +30,18 @@ export const findAllCoherences = async (
   if (spaceId === undefined) {
     return [] as Coherence[];
   }
-  const order = ((orderRaw): SQL => {
+  const orderByCols = ((orderRaw) => {
     switch (orderRaw) {
       case 'mostrecent':
-        return desc(coherences.createdAt);
+        return [desc(coherences.createdAt)];
       case 'mostmessages':
-        return desc(coherences.messages);
+        return [desc(coherences.messages)];
       case 'mostviews':
-        return desc(coherences.views);
+        return [desc(coherences.views)];
+      case 'mostvotes':
+        return [desc(coherences.voteScore), desc(coherences.createdAt)];
       default:
-        return desc(coherences.createdAt);
+        return [desc(coherences.createdAt)];
     }
   })(orderBy);
   const results = await db
@@ -69,7 +71,7 @@ export const findAllCoherences = async (
         priority ? eq(coherences.priority, priority) : undefined,
       ),
     )
-    .orderBy(order);
+    .orderBy(...orderByCols);
 
   return results;
 };
