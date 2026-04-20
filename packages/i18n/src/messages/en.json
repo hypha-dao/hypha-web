@@ -2032,6 +2032,15 @@
     }
   },
   "SignalCard": {
-    "noConversationRoom": "No conversation room yet"
+    "noConversationRoom": "No conversation room yet",
+    "signalActions": "Signal actions",
+    "readMore": "Read more",
+    "showLess": "Show less",
+    "readFullDescription": "Read full description",
+    "fullDescriptionDialogSubtitle": "Full signal description",
+    "deleteSignal": "Delete signal",
+    "deleteConfirm": "This permanently removes this signal from the space. Continue?",
+    "deleteMenu": "Delete",
+    "deleteConfirmAction": "Delete signal"
   }
 }
