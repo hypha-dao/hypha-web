@@ -1,7 +1,12 @@
 'use client';
 
 import * as React from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+} from 'lucide-react';
 import {
   DayPicker,
   DayFlag,
@@ -118,7 +123,14 @@ function Calendar({
           orientation,
           ...chevronProps
         }) => {
-          const Icon = orientation === 'left' ? ChevronLeft : ChevronRight;
+          const Icon =
+            orientation === 'left'
+              ? ChevronLeft
+              : orientation === 'right'
+              ? ChevronRight
+              : orientation === 'up'
+              ? ChevronUp
+              : ChevronDown;
           return (
             <Icon
               className={cn('size-4', chevronClass)}
