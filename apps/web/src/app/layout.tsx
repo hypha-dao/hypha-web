@@ -21,6 +21,7 @@ import { ConditionalMatrixProvider } from '@web/components/conditional-matrix-pr
 import { fileRouter } from '@hypha-platform/core/server';
 import { TooltipProvider } from '@hypha-platform/ui';
 import { AppChromeWithMenu } from '@web/components/app-chrome-with-menu';
+import { MenuBreadcrumbProvider } from '@web/components/menu-breadcrumb-context';
 import {
   getEnableAiChat,
   getEnableHumanChat,
@@ -128,57 +129,59 @@ export default async function RootLayout({
                 >
                   <ConditionalMatrixProvider enabled={humanChatEnabled}>
                     <PanelProviders>
-                      <PanelWrapLayout
-                        left={
-                          aiChatEnabled
-                            ? { content: <AiLeftPanel /> }
-                            : undefined
-                        }
-                        right={
-                          humanChatEnabled
-                            ? { content: <ConnectedHumanRightPanel /> }
-                            : undefined
-                        }
-                      >
-                        <AppChromeWithMenu
-                          openMenuLabel={tNav('openMenu')}
-                          closeMenuLabel={tNav('closeMenu')}
-                          aiChatEnabled={aiChatEnabled}
-                          humanChatEnabled={humanChatEnabled}
-                          isLanguageSelectVisible={isLanguageSelectVisible}
-                          navItems={[
-                            {
-                              label: tNav('network'),
-                              href: `/${locale}/network`,
-                            },
-                            {
-                              label: tNav('mySpaces'),
-                              href: `/${locale}/my-spaces`,
-                            },
-                          ]}
+                      <MenuBreadcrumbProvider>
+                        <PanelWrapLayout
+                          left={
+                            aiChatEnabled
+                              ? { content: <AiLeftPanel /> }
+                              : undefined
+                          }
+                          right={
+                            humanChatEnabled
+                              ? { content: <ConnectedHumanRightPanel /> }
+                              : undefined
+                          }
                         >
-                          <NextSSRPlugin
-                            routerConfig={extractRouterConfig(fileRouter)}
-                          />
-                          {/* pt-9 on this wrapper so route-level -mt-9 (e.g. DHO) pulls up into this padding, not past an extra nested box */}
-                          <div className="mb-auto pb-8 pt-9">
-                            <div className="flex h-full justify-normal">
-                              <div className="h-full w-full">{children}</div>
+                          <AppChromeWithMenu
+                            openMenuLabel={tNav('openMenu')}
+                            closeMenuLabel={tNav('closeMenu')}
+                            aiChatEnabled={aiChatEnabled}
+                            humanChatEnabled={humanChatEnabled}
+                            isLanguageSelectVisible={isLanguageSelectVisible}
+                            navItems={[
+                              {
+                                label: tNav('network'),
+                                href: `/${locale}/network`,
+                              },
+                              {
+                                label: tNav('mySpaces'),
+                                href: `/${locale}/my-spaces`,
+                              },
+                            ]}
+                          >
+                            <NextSSRPlugin
+                              routerConfig={extractRouterConfig(fileRouter)}
+                            />
+                            {/* pt-9 on this wrapper so route-level -mt-9 (e.g. DHO) pulls up into this padding, not past an extra nested box */}
+                            <div className="mb-auto pb-8 pt-9">
+                              <div className="flex h-full justify-normal">
+                                <div className="h-full w-full">{children}</div>
+                              </div>
                             </div>
-                          </div>
-                          <Footer
-                            networkLabel={tFooter('network')}
-                            legalLabel={tFooter('legal')}
-                            hyphaServicesLabel={tFooter('hyphaServices')}
-                            hyphaTokenomicsLabel={tFooter('hyphaTokenomics')}
-                            licensingPolicyLabel={tFooter('licensingPolicy')}
-                            termsAndConditionsLabel={tFooter(
-                              'termsAndConditions',
-                            )}
-                            privacyPolicyLabel={tFooter('privacyPolicy')}
-                          />
-                        </AppChromeWithMenu>
-                      </PanelWrapLayout>
+                            <Footer
+                              networkLabel={tFooter('network')}
+                              legalLabel={tFooter('legal')}
+                              hyphaServicesLabel={tFooter('hyphaServices')}
+                              hyphaTokenomicsLabel={tFooter('hyphaTokenomics')}
+                              licensingPolicyLabel={tFooter('licensingPolicy')}
+                              termsAndConditionsLabel={tFooter(
+                                'termsAndConditions',
+                              )}
+                              privacyPolicyLabel={tFooter('privacyPolicy')}
+                            />
+                          </AppChromeWithMenu>
+                        </PanelWrapLayout>
+                      </MenuBreadcrumbProvider>
                     </PanelProviders>
                   </ConditionalMatrixProvider>
                 </NotificationSubscriber>

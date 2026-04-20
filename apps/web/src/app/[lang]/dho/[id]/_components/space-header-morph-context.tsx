@@ -10,13 +10,8 @@ import {
   useState,
 } from 'react';
 
-/** Fallback when `--app-menu-top-h` / `--app-subnav-h` are unset */
-export const SPACE_MENU_TOP_FALLBACK_PX = 65;
-
-function parseCssPx(value: string): number {
-  const n = parseFloat(value);
-  return Number.isFinite(n) ? n : 0;
-}
+/** Align with MenuTop `min-h-[65px]` */
+export const SPACE_MENU_TOP_PX = 65;
 
 export type SpaceHeaderMorphContextValue = {
   /** 0 = hero fully visible below fold concept; 1 = hero eaten / compact state */
@@ -60,12 +55,7 @@ export function SpaceHeaderMorphProvider({
     }
 
     const rect = hero.getBoundingClientRect();
-    const cs = getComputedStyle(document.documentElement);
-    const menuTop =
-      parseCssPx(cs.getPropertyValue('--app-menu-top-h')) ||
-      SPACE_MENU_TOP_FALLBACK_PX;
-    const subNav = parseCssPx(cs.getPropertyValue('--app-subnav-h')) || 0;
-    const menuLine = menuTop + subNav;
+    const menuLine = SPACE_MENU_TOP_PX;
     /* Eat starts when hero top crosses menu line; completes over ~hero height overlap */
     const span = Math.max(rect.height + 48, 200);
     const raw = (menuLine - rect.top) / span;

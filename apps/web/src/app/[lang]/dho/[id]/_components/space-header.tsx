@@ -16,7 +16,7 @@ import { getDhoPathAgreements } from '../@tab/agreements/constants';
 import { ActionButtons } from './action-buttons';
 import { NestedSpacesButton } from './nested-spaces-button';
 import { Breadcrumbs } from './breadcrumbs';
-import { SpaceHeaderContextBar } from './space-header-context-bar';
+import { SpaceHeaderMenuBridge } from './space-header-menu-bridge';
 import { SpaceHeaderAvatar } from './space-header-avatar';
 import { SpaceHeaderCollapseWrapper } from './space-header-collapse-wrapper';
 import { SpaceHeaderHeroClip } from './space-header-hero-clip';
@@ -76,24 +76,22 @@ export async function SpaceHeader({
   return (
     <header className="mb-5 space-y-3" aria-labelledby="space-title">
       <SpaceHeaderCollapseWrapper
+        menuBreadcrumbBridge={
+          <SpaceHeaderMenuBridge>
+            <Breadcrumbs spaceId={spaceId} lang={lang} />
+          </SpaceHeaderMenuBridge>
+        }
+        nestedSlot={
+          typeof web3SpaceId === 'number' ? (
+            <NestedSpacesButton web3SpaceId={web3SpaceId} spaceSlug={daoSlug} />
+          ) : undefined
+        }
         title={title}
         logoUrl={logoUrl ?? null}
         spaceMembers={spaceMembers}
         web3SpaceId={web3SpaceId}
         spaceId={spaceId}
       >
-        <SpaceHeaderContextBar
-          breadcrumbs={<Breadcrumbs spaceId={spaceId} lang={lang} />}
-          trailing={
-            typeof web3SpaceId === 'number' ? (
-              <NestedSpacesButton
-                web3SpaceId={web3SpaceId}
-                spaceSlug={daoSlug}
-              />
-            ) : undefined
-          }
-        />
-
         <div className="relative mb-0 overflow-visible pl-3 sm:pl-5">
           <div
             data-space-hero-card

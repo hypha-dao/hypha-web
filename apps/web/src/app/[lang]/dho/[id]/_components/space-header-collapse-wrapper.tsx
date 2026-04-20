@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { ActionButtons } from './action-buttons';
 import {
+  SPACE_MENU_TOP_PX,
   SpaceHeaderMorphProvider,
   useSpaceHeaderMorph,
 } from './space-header-morph-context';
@@ -55,7 +56,7 @@ function MorphCompactBarPortal({
         'shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]',
       )}
       style={{
-        top: `calc(var(--app-menu-top-h, 65px) + var(--app-subnav-h, 0px))`,
+        top: SPACE_MENU_TOP_PX,
         opacity: barOpacity,
         transform: reducedMotion ? undefined : `translateY(${barLift}px)`,
         transition: reducedMotion
@@ -66,7 +67,7 @@ function MorphCompactBarPortal({
       role="region"
       aria-label={title}
     >
-      <div className="mx-auto flex max-w-container-2xl items-center justify-between gap-2 px-5 py-2 sm:gap-3">
+      <div className="mx-auto flex max-w-container-2xl items-center justify-between gap-2 px-4 py-2 sm:gap-3 sm:px-6">
         <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
           <Avatar
             className={cn(
@@ -106,6 +107,8 @@ function MorphCompactBarPortal({
 
 type SpaceHeaderCollapseWrapperProps = {
   children: React.ReactNode;
+  menuBreadcrumbBridge: React.ReactNode;
+  nestedSlot?: React.ReactNode;
   title: string;
   logoUrl: string | null;
   spaceMembers: number;
@@ -115,6 +118,8 @@ type SpaceHeaderCollapseWrapperProps = {
 
 export function SpaceHeaderCollapseWrapper({
   children,
+  menuBreadcrumbBridge,
+  nestedSlot,
   title,
   logoUrl,
   spaceMembers,
@@ -131,6 +136,7 @@ export function SpaceHeaderCollapseWrapper({
 
   return (
     <SpaceHeaderMorphProvider containerRef={containerRef}>
+      {menuBreadcrumbBridge}
       <SpaceStickyPadSync />
       <MorphCompactBarPortal
         mounted={mounted}
@@ -141,6 +147,12 @@ export function SpaceHeaderCollapseWrapper({
         spaceId={spaceId}
         tMembers={tCommon('Members')}
       />
+
+      {nestedSlot ? (
+        <div className="mb-1 flex flex-wrap justify-end gap-x-4 gap-y-2 sm:mb-2">
+          {nestedSlot}
+        </div>
+      ) : null}
 
       <div ref={containerRef} className="relative">
         {children}
