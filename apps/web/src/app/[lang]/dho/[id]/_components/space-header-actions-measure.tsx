@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@hypha-platform/ui-utils';
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect, useRef } from 'react';
 
 import { useSpaceHeaderMorph } from './space-header-morph-context';
 
@@ -24,14 +24,15 @@ export function SpaceHeaderActionsMeasure({
   className,
 }: SpaceHeaderActionsMeasureProps) {
   const { setCompactBarActive, compactBarActive } = useSpaceHeaderMorph();
+  const rowRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const el = document.querySelector<HTMLElement>(
-      '[data-space-header-actions]',
-    );
+    const el = rowRef.current;
     if (!el) return;
 
-    const tick = () => {
+    let raf = 0;
+
+    const measure = () => {
       const cs = getComputedStyle(document.documentElement);
       const menu = parseCssPx(cs.getPropertyValue('--app-menu-top-h')) || 65;
       const sub = parseCssPx(cs.getPropertyValue('--app-subnav-h')) || 0;
@@ -42,12 +43,21 @@ export function SpaceHeaderActionsMeasure({
       setCompactBarActive(overlap);
     };
 
-    tick();
+    const tick = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        measure();
+      });
+    };
+
+    measure();
     window.addEventListener('scroll', tick, { passive: true });
     window.addEventListener('resize', tick);
     const ro = new ResizeObserver(tick);
     ro.observe(document.documentElement);
     return () => {
+      if (raf) cancelAnimationFrame(raf);
       window.removeEventListener('scroll', tick);
       window.removeEventListener('resize', tick);
       ro.disconnect();
@@ -57,6 +67,7 @@ export function SpaceHeaderActionsMeasure({
 
   return (
     <div
+      ref={rowRef}
       data-space-header-actions
       className={cn(
         className,
