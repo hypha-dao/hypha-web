@@ -153,13 +153,18 @@ export function analyzeBannerToneFromImageData(
 
 export type BannerOverlayCssVars = Record<string, string>;
 
-/**
- * Maps tone metrics to CSS variables consumed by `CompactSpaceBanner` overlays.
- * Defaults are tuned to match the previous static PR #2165 stack when metrics are neutral.
- */
-export function overlayCssVarsFromTone(
-  m: BannerToneMetrics,
-): BannerOverlayCssVars {
+/** Neutral metrics → static PR #2165–style reference (used for baseline blend) */
+export const BANNER_OVERLAY_FALLBACK_METRICS: BannerToneMetrics = {
+  luminanceMean: 0.42,
+  luminanceStd: 0.12,
+  saturationMean: 0.35,
+  edgeEnergy: 0.25,
+};
+
+/** Portion of image-driven deviation from baseline we apply (lower = truer hero colour). */
+const OVERLAY_DYNAMIC_STRENGTH = 0.42;
+
+function overlayCssVarsFromToneRaw(m: BannerToneMetrics): BannerOverlayCssVars {
   const {
     luminanceMean: L,
     luminanceStd: spread,
@@ -168,44 +173,40 @@ export function overlayCssVarsFromTone(
   } = m;
 
   /**
-   * brighter image → stronger scrim for text legibility
-   * (anchor around mid-photographic tone ~0.38)
+   * brighter image → slightly stronger scrim (subtle; was overpowering photos)
    */
-  const brightNeed = clamp01((L - 0.36) / 0.46);
+  const brightNeed = clamp01((L - 0.38) / 0.52) * 0.72;
   /**
-   * very dark hero → ease the bottom crush so mud doesn't swallow midtones
+   * very dark hero → ease the bottom crush
    */
-  const darkEase = clamp01((0.22 - L) / 0.22) * 0.55;
+  const darkEase = clamp01((0.22 - L) / 0.22) * 0.42;
   /**
-   * Radiance: colorful + luminous + micro-contrast → lift the WOW sheen slightly
+   * Radiance — keep light touches only so overlays don’t dominate the plate
    */
   const radiance = clamp01(0.35 * S + 0.35 * L + 0.3 * E);
   /**
-   * Busy / high-frequency → soften film grain & glow so overlays don't shimmer
+   * Busy / high-frequency → soften film grain & glow
    */
   const calmGrain = clamp01(0.55 * spread + 0.45 * E);
 
-  /** Vertical gradient stops (bottom → mid → top), PR #2165 baseline embedded */
-  const vBottom = clamp01(0.88 + brightNeed * 0.09 - darkEase * 0.14);
-  const vMid = clamp01(0.42 + brightNeed * 0.11 - darkEase * 0.08);
-  const vTop = clamp01(0.22 + brightNeed * 0.09 - darkEase * 0.06);
+  /** Vertical gradient — smaller deltas than before */
+  const vBottom = clamp01(0.88 + brightNeed * 0.05 - darkEase * 0.09);
+  const vMid = clamp01(0.42 + brightNeed * 0.06 - darkEase * 0.05);
+  const vTop = clamp01(0.22 + brightNeed * 0.05 - darkEase * 0.04);
 
-  /** Horizontal vignette sides */
-  const hFrom = clamp01(0.58 + brightNeed * 0.12 - darkEase * 0.06);
-  const hTo = clamp01(0.4 + brightNeed * 0.08);
+  const hFrom = clamp01(0.58 + brightNeed * 0.07 - darkEase * 0.04);
+  const hTo = clamp01(0.4 + brightNeed * 0.05);
 
-  /** Accent tint wash (was accent-11/18) — scales slightly with saturation radiance */
-  const accentWash = clamp01(0.14 + radiance * 0.12);
+  /** Tint wash — cap so original image chroma reads through */
+  const accentWash = clamp01(0.1 + radiance * 0.05);
 
-  /** Depth pass layers */
-  const skylightOpacity = clamp01(0.78 + radiance * 0.14 - calmGrain * 0.12);
-  const sheenOpacity = clamp01(0.06 + radiance * 0.06);
-  /** Scales alphas inside the bottom vignette radial (brighter heroes need a touch more) */
-  const vignetteStrength = clamp01(0.92 + brightNeed * 0.14 - darkEase * 0.1);
-  const grainOpacity = clamp01(0.055 + radiance * 0.025 - calmGrain * 0.028);
+  const skylightOpacity = clamp01(0.78 + radiance * 0.06 - calmGrain * 0.08);
+  const sheenOpacity = clamp01(0.05 + radiance * 0.025);
+  const vignetteStrength = clamp01(0.92 + brightNeed * 0.08 - darkEase * 0.07);
+  const grainOpacity = clamp01(0.048 + radiance * 0.015 - calmGrain * 0.02);
 
-  const innerTop = clamp01(0.09 + radiance * 0.04);
-  const innerBot = clamp01(0.18 + brightNeed * 0.04);
+  const innerTop = clamp01(0.085 + radiance * 0.022);
+  const innerBot = clamp01(0.17 + brightNeed * 0.025);
 
   return {
     '--banner-ov-v-bottom': String(vBottom),
@@ -224,13 +225,41 @@ export function overlayCssVarsFromTone(
   };
 }
 
-/** Neutral metrics → static overlay tuning (SSR / before client analysis) */
-export const BANNER_OVERLAY_FALLBACK_METRICS: BannerToneMetrics = {
-  luminanceMean: 0.42,
-  luminanceStd: 0.12,
-  saturationMean: 0.35,
-  edgeEnergy: 0.25,
-};
+/**
+ * Blend dynamic overlay toward neutral baseline so the hero keeps more of its
+ * native colour; `OVERLAY_DYNAMIC_STRENGTH` controls how much image tone may move the stack.
+ */
+function blendOverlayTowardBaseline(
+  dynamic: BannerOverlayCssVars,
+  baseline: BannerOverlayCssVars,
+  strength: number,
+): BannerOverlayCssVars {
+  const out: BannerOverlayCssVars = { ...baseline };
+  for (const key of Object.keys(dynamic)) {
+    if (key === '--banner-ov-v-mid-at') {
+      out[key] = dynamic[key] ?? baseline[key] ?? '52%';
+      continue;
+    }
+    const d = parseFloat(dynamic[key] ?? '');
+    const b = parseFloat(baseline[key] ?? '');
+    if (!Number.isFinite(d) || !Number.isFinite(b)) continue;
+    const v = b + (d - b) * strength;
+    out[key] = String(clamp01(v));
+  }
+  return out;
+}
+
+/**
+ * Maps tone metrics to CSS variables consumed by `CompactSpaceBanner` overlays.
+ * Neutral metrics match the classic PR #2165 static stack; real images get a gentle nudge only.
+ */
+export function overlayCssVarsFromTone(
+  m: BannerToneMetrics,
+): BannerOverlayCssVars {
+  const baseline = overlayCssVarsFromToneRaw(BANNER_OVERLAY_FALLBACK_METRICS);
+  const raw = overlayCssVarsFromToneRaw(m);
+  return blendOverlayTowardBaseline(raw, baseline, OVERLAY_DYNAMIC_STRENGTH);
+}
 
 export const DEFAULT_BANNER_OVERLAY_CSS_VARS: BannerOverlayCssVars =
   overlayCssVarsFromTone(BANNER_OVERLAY_FALLBACK_METRICS);
