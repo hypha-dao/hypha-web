@@ -145,7 +145,7 @@ export function buildAccentPaletteFromHex(
   const out: Record<string, string> = {};
   for (let i = 0; i < 12; i++) {
     const step = i + 1;
-    let l = ACCENT_LIGHTNESS_CURVE[i]!;
+    let l: number = ACCENT_LIGHTNESS_CURVE[i]!;
     /** Softly tie ladder to extracted luminance so dark banners don’t wash out mid-tones. */
     l = clamp(l * (1 - 0.11) + l0 * 0.11, 0.06, 0.992);
 
