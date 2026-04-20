@@ -32,12 +32,13 @@ export function SignalGrid({
   votingCoherenceId,
 }: SignalGridProps) {
   return (
-    <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3 lg:gap-4">
+    <div className="grid w-full auto-rows-fr grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3 lg:gap-4">
       {signals.map((signal) =>
         signal.archived ? (
           <SignalCard
             key={signal.id}
             {...signal}
+            className="h-full w-full min-h-0"
             spaceSlug={spaceSlug}
             lang={lang}
             myVote={myVotes?.[signal.id] ?? 0}
@@ -53,7 +54,7 @@ export function SignalGrid({
             role="button"
             tabIndex={0}
             className={cn(
-              'w-full cursor-pointer rounded-2xl text-left outline-none',
+              'flex h-full min-h-0 w-full cursor-pointer rounded-2xl text-left outline-none',
               'focus-visible:ring-2 focus-visible:ring-accent-9/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
             )}
             onClick={() => onSignalClick(signal)}
@@ -66,6 +67,7 @@ export function SignalGrid({
           >
             <SignalCard
               {...signal}
+              className="h-full w-full min-h-0"
               spaceSlug={spaceSlug}
               lang={lang}
               myVote={myVotes?.[signal.id] ?? 0}
@@ -78,9 +80,14 @@ export function SignalGrid({
             />
           </div>
         ) : (
-          <Link key={signal.id} href={`${basePath}/${signal.slug}`}>
+          <Link
+            key={signal.id}
+            href={`${basePath}/${signal.slug}`}
+            className="flex h-full min-h-0"
+          >
             <SignalCard
               {...signal}
+              className="h-full w-full min-h-0"
               spaceSlug={spaceSlug}
               lang={lang}
               myVote={myVotes?.[signal.id] ?? 0}
