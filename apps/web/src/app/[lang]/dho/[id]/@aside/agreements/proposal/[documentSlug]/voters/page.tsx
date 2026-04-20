@@ -2,11 +2,10 @@
 
 import { useParams } from 'next/navigation';
 import {
-  ButtonClose,
   FullVoterList,
+  ModalStickyNavigation,
   ProposalHead,
   ProposalOverlayShell,
-  ButtonBack,
   getDhoPathAgreements,
 } from '@hypha-platform/epics';
 import { useDocumentBySlug } from '@web/hooks/use-document-by-slug';
@@ -16,7 +15,7 @@ import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 
 export default function VotersOverlay() {
-  const tCommon = useTranslations('Common');
+  const tModalAside = useTranslations('ModalAside');
   const { documentSlug, lang, id } = useParams();
   const { document } = useDocumentBySlug(documentSlug as string);
   const { proposalDetails } = useProposalDetailsWeb3Rpc({
@@ -31,19 +30,11 @@ export default function VotersOverlay() {
   return (
     <ProposalOverlayShell>
       <div className="flex flex-col gap-5">
-        <div className="sticky top-0 z-[5] -mx-4 border-b border-border bg-background-2 lg:-mx-7">
-          <div className="flex h-11 shrink-0 items-center justify-end gap-1 border-b border-border px-4 lg:px-7">
-            <ButtonBack
-              label={tCommon('back')}
-              backUrl={backToProposal}
-              className="px-0 md:px-3 align-top"
-            />
-            <ButtonClose
-              closeUrl={proposalShell}
-              className="px-0 md:px-3 align-top"
-            />
-          </div>
-        </div>
+        <ModalStickyNavigation
+          contextTitle={tModalAside('proposalVoters')}
+          closeUrl={proposalShell}
+          backUrl={backToProposal}
+        />
         <div className="flex gap-5 justify-between">
           <ProposalHead
             creator={{

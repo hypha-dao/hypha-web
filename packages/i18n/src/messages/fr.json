@@ -65,7 +65,8 @@
     "createSpace": "Créer un espace",
     "addSpace": "Ajouter un espace",
     "configureSpace": "Configurer l’espace",
-    "panelAccessibleName": "Panneau Hypha"
+    "panelAccessibleName": "Panneau Hypha",
+    "proposalVoters": "Votants"
   },
   "Navigation": {
     "network": "Réseau",

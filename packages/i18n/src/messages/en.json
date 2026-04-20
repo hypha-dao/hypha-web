@@ -65,7 +65,8 @@
     "createSpace": "Create Space",
     "addSpace": "Add Space",
     "configureSpace": "Configure Space",
-    "panelAccessibleName": "Hypha panel"
+    "panelAccessibleName": "Hypha panel",
+    "proposalVoters": "Voters"
   },
   "Navigation": {
     "network": "Network",

@@ -65,7 +65,8 @@
     "createSpace": "Crear espacio",
     "addSpace": "Añadir espacio",
     "configureSpace": "Configurar espacio",
-    "panelAccessibleName": "Panel de Hypha"
+    "panelAccessibleName": "Panel de Hypha",
+    "proposalVoters": "Votantes"
   },
   "AgreementFlow": {
     "proposalErrors": {
