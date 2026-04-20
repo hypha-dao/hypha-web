@@ -443,7 +443,7 @@ export const SpaceForm = ({
             <div className="flex shrink-0 items-center justify-end gap-1">
               {backUrl ? (
                 <ButtonBack
-                  label={backLabel}
+                  label={backLabel ?? tCommon('back')}
                   backUrl={backUrl}
                   className="px-0 md:px-3 align-top"
                 />
