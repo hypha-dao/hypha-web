@@ -114,7 +114,7 @@ export function ProposalOverlayShell({
             onInteractOutside={(e) => e.preventDefault()}
             onEscapeKeyDown={(e) => e.preventDefault()}
             className={cn(
-              'fixed z-[21] outline-none max-md:inset-auto max-md:bottom-0 max-md:top-[var(--menu-top-height,65px)] max-md:right-[var(--sidebar-right-width,0px)] max-md:h-auto max-md:w-full max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:bg-background-2 max-md:shadow-none',
+              'fixed z-[21] outline-none max-md:inset-auto max-md:bottom-0 max-md:left-0 max-md:top-[var(--menu-top-height,65px)] max-md:right-[var(--sidebar-right-width,0px)] max-md:h-auto max-md:w-[calc(100%-var(--sidebar-right-width,0px))] max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:bg-background-2 max-md:shadow-none',
               // Host fills only below MenuTop so the nav strip is never covered.
               'md:inset-x-0 md:bottom-0 md:top-[var(--menu-top-height,65px)] md:flex md:items-center md:justify-center md:overflow-hidden md:bg-transparent md:p-4 md:pt-4',
             )}
