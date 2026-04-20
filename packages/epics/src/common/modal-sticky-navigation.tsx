@@ -54,11 +54,30 @@ export function ModalStickyNavigation({
       ? pathname.slice(0, -normalizedCloseDropSegment.length) || '/'
       : undefined);
 
-  const backUrl =
+  if (
+    process.env.NODE_ENV !== 'production' &&
+    normalizedCloseDropSegment &&
+    closeUrlProp === undefined &&
+    closeUrl === undefined
+  ) {
+    console.warn(
+      '[ModalStickyNavigation] closeDropSegment does not match pathname tail',
+      { pathname, normalizedCloseDropSegment },
+    );
+  }
+
+  const rawBackUrl =
     backUrlProp ??
     (backToParent && pathname.includes('/')
       ? pathname.slice(0, pathname.lastIndexOf('/'))
       : undefined);
+
+  const backUrl =
+    rawBackUrl === undefined || rawBackUrl === null
+      ? undefined
+      : rawBackUrl === ''
+      ? '/'
+      : rawBackUrl;
 
   const resolvedBackLabel = backLabel ?? tCommon('back');
 

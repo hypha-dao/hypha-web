@@ -24,7 +24,12 @@ export const ButtonClose = ({
 
   if (!closeUrl) {
     if (dropSegment) {
-      closeUrl = pathname.replace(dropSegment, '');
+      const normalized = dropSegment.startsWith('/')
+        ? dropSegment
+        : `/${dropSegment}`;
+      closeUrl = pathname.endsWith(normalized)
+        ? pathname.slice(0, -normalized.length) || '/'
+        : pathname.replace(dropSegment, '');
     } else {
       console.debug('ButtonClose: closeUrl or dropSegment must be provided');
       return null;

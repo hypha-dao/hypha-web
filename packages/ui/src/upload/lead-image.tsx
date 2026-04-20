@@ -38,6 +38,8 @@ export const UploadLeadImage = ({
   uploadText,
   enableImageResizer = false,
 }: UploadLeadImageProps) => {
+  const cropTitleId = React.useId();
+  const cropDescId = React.useId();
   const [preview, setPreview] = React.useState<string | null>(
     defaultImage || null,
   );
@@ -169,22 +171,22 @@ export const UploadLeadImage = ({
 
       {enableImageResizer && imageSrc && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
-          aria-labelledby="lead-image-crop-title"
-          aria-describedby="lead-image-crop-desc"
+          aria-labelledby={cropTitleId}
+          aria-describedby={cropDescId}
         >
           <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-2xl">
             <div className="border-b border-border px-5 py-4">
               <h2
-                id="lead-image-crop-title"
+                id={cropTitleId}
                 className="text-lg font-semibold tracking-tight text-foreground"
               >
                 Upload an image
               </h2>
               <p
-                id="lead-image-crop-desc"
+                id={cropDescId}
                 className="mt-1 text-sm leading-relaxed text-muted-foreground"
               >
                 Adjust how your image is framed, then save. Drag to reposition
