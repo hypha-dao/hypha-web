@@ -9,7 +9,7 @@ import {
   uniqueIndex,
   varchar,
 } from 'drizzle-orm/pg-core';
-import { InferInsertModel, InferSelectModel, sql } from 'drizzle-orm';
+import { desc, InferInsertModel, InferSelectModel, sql } from 'drizzle-orm';
 import { commonDateFields } from './shared';
 import { spaces } from './space';
 import { people } from './people';
@@ -53,6 +53,10 @@ export const coherences = pgTable(
     index('search_views').on(table.views),
     index('search_messages').on(table.messages),
     index('search_vote_score').on(table.voteScore),
+    index('search_vote_score_created_at').on(
+      desc(table.voteScore),
+      desc(table.createdAt),
+    ),
     index('search_tags').using('gin', table.tags),
   ],
 );

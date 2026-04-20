@@ -344,6 +344,13 @@
       "when": 1775400000000,
       "tag": "0048_coherence_vote_score_trigger",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1775500000000,
+      "tag": "0049_coherence_mostvotes_index",
+      "breakpoints": true
     }
   ]
 }
