@@ -29,6 +29,47 @@ import { Breadcrumbs } from './_components/breadcrumbs';
 import { canConvertToBigInt, formatDate } from '@hypha-platform/ui-utils';
 import { getTranslations } from 'next-intl/server';
 
+async function getSpaceMemberAndAgreementCounts(web3SpaceId: unknown): Promise<{
+  members: number;
+  agreements: number;
+}> {
+  if (!canConvertToBigInt(web3SpaceId)) {
+    return { members: 0, agreements: 0 };
+  }
+  const id = BigInt(web3SpaceId as number);
+  const [members, agreements] = await Promise.all([
+    (async () => {
+      try {
+        const [spaceDetails] = await fetchSpaceDetails({
+          spaceIds: [id],
+        });
+        return spaceDetails?.members.length ?? 0;
+      } catch (error) {
+        console.error(
+          `Failed to get space details for a space ${web3SpaceId}:`,
+          error,
+        );
+        return 0;
+      }
+    })(),
+    (async () => {
+      try {
+        const [proposals] = await fetchSpaceProposalsIds({
+          spaceIds: [id],
+        });
+        return proposals?.accepted?.length ?? 0;
+      } catch (error) {
+        console.error(
+          `Failed to get space proposals for a space ${web3SpaceId}:`,
+          error,
+        );
+        return 0;
+      }
+    })(),
+  ]);
+  return { members, agreements };
+}
+
 export default async function DhoLayout({
   aside,
   children,
@@ -49,42 +90,8 @@ export default async function DhoLayout({
     return notFound();
   }
 
-  const [spaceMembers, spaceAgreements] = await Promise.all([
-    (async () => {
-      try {
-        if (!canConvertToBigInt(spaceFromDb.web3SpaceId)) {
-          return 0;
-        }
-        const [spaceDetails] = await fetchSpaceDetails({
-          spaceIds: [BigInt(spaceFromDb.web3SpaceId as number)],
-        });
-        return spaceDetails?.members.length ?? 0;
-      } catch (error) {
-        console.error(
-          `Failed to get space details for a space ${spaceFromDb.web3SpaceId}:`,
-          error,
-        );
-        return 0;
-      }
-    })(),
-    (async () => {
-      try {
-        if (!canConvertToBigInt(spaceFromDb.web3SpaceId)) {
-          return 0;
-        }
-        const [proposals] = await fetchSpaceProposalsIds({
-          spaceIds: [BigInt(spaceFromDb.web3SpaceId as number)],
-        });
-        return proposals?.accepted?.length ?? 0;
-      } catch (error) {
-        console.error(
-          `Failed to get space proposals for a space ${spaceFromDb.web3SpaceId}:`,
-          error,
-        );
-        return 0;
-      }
-    })(),
-  ]);
+  const { members: spaceMembers, agreements: spaceAgreements } =
+    await getSpaceMemberAndAgreementCounts(spaceFromDb.web3SpaceId);
 
   const spaces = await getAllSpaces({ parentOnly: false, omitSandbox: true });
   return (
