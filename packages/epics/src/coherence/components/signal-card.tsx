@@ -7,6 +7,7 @@ import {
   useCoherenceMutationsWeb2Rsc,
   useJwt,
   useMe,
+  usePersonById,
 } from '@hypha-platform/core/client';
 import {
   AlertDialog,
@@ -27,14 +28,13 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   LucideReactIcon,
+  Separator,
   Skeleton,
 } from '@hypha-platform/ui';
 import { stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
@@ -58,6 +58,9 @@ import {
 } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
+import { PersonAvatar } from '../../people/components/person-avatar';
+import { Text } from '@radix-ui/themes';
+import { RxCross1 } from 'react-icons/rx';
 
 type SignalCardProps = {
   isLoading: boolean;
@@ -116,6 +119,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   const descriptionClampRef = React.useRef<HTMLParagraphElement>(null);
   const [descriptionTruncated, setDescriptionTruncated] = React.useState(false);
   const isCreator = person?.id === creatorId;
+
+  const { person: creator, isLoading: isCreatorLoading } = usePersonById({
+    id: creatorId,
+  });
 
   const coherenceType = React.useMemo(
     () => COHERENCE_TYPE_OPTIONS.find((option) => option.type === type),
@@ -451,27 +458,97 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
 
           <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
             <DialogContent
-              className="max-h-[min(560px,85dvh)] gap-0 overflow-hidden p-0 sm:max-w-lg"
+              hideClose
+              className={cn(
+                'flex max-h-[min(720px,calc(100dvh-2rem))] w-[calc(100vw-1.5rem)] max-w-[min(896px,calc(100vw-2rem))] translate-x-[-50%] translate-y-[-50%] flex-col gap-0 overflow-hidden rounded-2xl border-border/90 bg-background-2 p-0 shadow-2xl ring-1 ring-white/5 dark:ring-white/10 sm:w-full',
+              )}
               onClick={(e) => e.stopPropagation()}
               onPointerDownOutside={(e) => e.stopPropagation()}
             >
-              <DialogHeader className="border-b border-border px-6 pb-4 pt-6">
-                <DialogTitle className="pr-8 leading-snug">{title}</DialogTitle>
-                <DialogDescription className="text-xs">
-                  {tSignalCard('fullDescriptionDialogSubtitle')}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="max-h-[min(420px,calc(85dvh-9rem))] overflow-y-auto px-6 py-4">
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
-                  {plainDescription}
-                </p>
+              <DialogTitle className="sr-only">{title}</DialogTitle>
+              <DialogDescription className="sr-only">
+                {tSignalCard('fullDescriptionDialogSubtitle')}
+              </DialogDescription>
+
+              {/* Match create-signal modal: title row + close */}
+              <div className="sticky top-0 z-10 shrink-0 border-b border-border bg-background-2 px-4 pb-4 pt-2 supports-[backdrop-filter]:bg-background-2/95 supports-[backdrop-filter]:backdrop-blur-sm lg:px-7">
+                <div className="flex flex-row flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                  <span className="text-lg font-semibold leading-none text-foreground">
+                    {t('signals')}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    colorVariant="neutral"
+                    className="gap-1.5 px-2 md:px-3"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDetailsOpen(false);
+                    }}
+                  >
+                    <span>{tCommon('close')}</span>
+                    <RxCross1 className="h-4 w-4 shrink-0" aria-hidden />
+                  </Button>
+                </div>
               </div>
-              <DialogFooter className="border-t border-border px-6 py-4">
+
+              {/* Avatar + title row (token-burning style) */}
+              <div className="flex flex-row items-start gap-3 border-b border-border px-4 pb-5 pt-5 lg:px-7">
+                <PersonAvatar
+                  size="lg"
+                  isLoading={isCreatorLoading}
+                  avatarSrc={creator?.avatarUrl || ''}
+                  userName=""
+                />
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
+                  <p className="text-base font-semibold leading-snug text-foreground">
+                    {title}
+                  </p>
+                  <Text className="text-1 text-neutral-11">
+                    {creator?.name} {creator?.surname}
+                  </Text>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-1 text-muted-foreground">
+                    <span className="inline-flex items-center gap-1">
+                      <ClockIcon
+                        className="h-3.5 w-3.5 shrink-0 opacity-70"
+                        aria-hidden
+                      />
+                      <ClockDistance
+                        createdAt={createdAt}
+                        locale={dateFnsLocale}
+                      />
+                    </span>
+                    {badges?.length ? (
+                      <>
+                        <span className="text-muted-foreground/80" aria-hidden>
+                          ·
+                        </span>
+                        <BadgesList isLoading={isLoading} badges={badges} />
+                      </>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              <Separator className="bg-border" />
+
+              {/* Description — framed like create signal body */}
+              <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-5 lg:px-7">
+                <span className="text-sm font-medium text-foreground">
+                  {t('description')}
+                </span>
+                <div className="rounded-xl border border-border/80 bg-card/40 p-4 shadow-sm md:p-6 dark:bg-card/30">
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-neutral-11">
+                    {plainDescription}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex shrink-0 justify-end border-t border-border px-4 py-4 lg:px-7">
                 <Button
                   type="button"
                   variant="default"
                   colorVariant="accent"
-                  className="w-full sm:w-auto"
                   onClick={(e) => {
                     e.stopPropagation();
                     setDetailsOpen(false);
@@ -479,7 +556,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 >
                   {tCommon('close')}
                 </Button>
-              </DialogFooter>
+              </div>
             </DialogContent>
           </Dialog>
 
