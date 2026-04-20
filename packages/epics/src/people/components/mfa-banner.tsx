@@ -3,9 +3,11 @@
 import { ChromeBannerShell } from '../../common/chrome-banner';
 import { Button } from '@hypha-platform/ui';
 import { Shield } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useMFABanner } from '../hooks/useMFABanner';
 
 export const MFABanner = () => {
+  const tCommon = useTranslations('Common');
   const { onClose, isVisible, showMfaEnrollmentModal } = useMFABanner();
 
   if (!isVisible) return null;
@@ -21,7 +23,7 @@ export const MFABanner = () => {
       title={title}
       subtitle={subtitle}
       onDismiss={onClose}
-      dismissLabel="Dismiss"
+      dismissLabel={tCommon('close')}
       actions={
         <Button
           size="sm"

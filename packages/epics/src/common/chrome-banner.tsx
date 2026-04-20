@@ -37,10 +37,11 @@ type ChromeBannerShellProps = {
   title: ReactNode;
   subtitle?: ReactNode;
   actions: ReactNode;
-  onDismiss?: () => void;
-  dismissLabel?: string;
   className?: string;
-};
+} & (
+  | { onDismiss?: undefined; dismissLabel?: never }
+  | { onDismiss: () => void; dismissLabel: string }
+);
 
 /**
  * Shared inset-panels / space-header visual language:
@@ -53,7 +54,7 @@ export function ChromeBannerShell({
   subtitle,
   actions,
   onDismiss,
-  dismissLabel = 'Dismiss',
+  dismissLabel,
   className,
 }: ChromeBannerShellProps) {
   const t = toneClasses[tone];
