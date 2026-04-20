@@ -46,6 +46,14 @@ export const MenuTop = ({
     };
 
     sync();
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', sync);
+      return () => {
+        window.removeEventListener('resize', sync);
+        document.documentElement.style.removeProperty('--menu-top-height');
+      };
+    }
+
     const ro = new ResizeObserver(sync);
     ro.observe(el);
     return () => {
