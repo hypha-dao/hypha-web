@@ -4,6 +4,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 
+import { SPACE_HEADER_IDENTITY_STRIP_SHOW_PROGRESS } from './space-header-constants';
 import {
   SPACE_MENU_TOP_FALLBACK_PX,
   useSpaceHeaderMorph,
@@ -15,7 +16,7 @@ type SpaceHeaderContextBarProps = {
   trailing?: ReactNode;
 };
 
-/** Sticky row under MenuTop; sets `--app-subnav-h` for morph / overlap math */
+/** Sticky identity under MenuTop; publishes `--app-subnav-h` for hero morph math */
 export function SpaceHeaderContextBar({
   identity,
   trailing,
@@ -24,10 +25,7 @@ export function SpaceHeaderContextBar({
   const tCommon = useTranslations('Common');
   const { progress } = useSpaceHeaderMorph();
 
-  /** Hide strip at top of page; show once user scrolls (hero moves under menu). */
-  const IDENTITY_STRIP_SHOW_PROGRESS = 0.04;
-
-  const stripVisible = progress >= IDENTITY_STRIP_SHOW_PROGRESS;
+  const stripVisible = progress >= SPACE_HEADER_IDENTITY_STRIP_SHOW_PROGRESS;
 
   useLayoutEffect(() => {
     const el = rowRef.current;

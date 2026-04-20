@@ -21,7 +21,6 @@ export function SpaceHeaderActionsRow({
 
   return (
     <div
-      data-space-header-actions-cluster
       className={cn('flex flex-wrap justify-end gap-1.5 sm:gap-2', className)}
     >
       <JoinSpace web3SpaceId={web3SpaceId} spaceId={spaceId} />
