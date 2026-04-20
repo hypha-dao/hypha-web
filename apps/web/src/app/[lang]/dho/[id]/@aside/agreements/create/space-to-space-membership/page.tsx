@@ -1,6 +1,8 @@
-import { ProposalOverlayShell } from '@hypha-platform/epics';
+import {
+  ProposalOverlayShell,
+  SpaceToSpaceMembershipForm,
+} from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
-import { SpaceToSpaceMembershipForm } from '@hypha-platform/epics';
 import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 import {
