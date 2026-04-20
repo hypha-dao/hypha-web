@@ -134,7 +134,7 @@ export async function getCoherenceVoteStateBySlug(
       )
       .limit(1);
     if (row?.value === -1 || row?.value === 1) {
-      myVote = row.value as -1 | 1;
+      myVote = row.value;
     }
   }
 
@@ -171,7 +171,7 @@ export async function getMyCoherenceVotesForSpace(
   const out: Record<number, -1 | 1> = {};
   for (const row of rows) {
     if (row.value === -1 || row.value === 1) {
-      out[row.coherenceId] = row.value as -1 | 1;
+      out[row.coherenceId] = row.value;
     }
   }
   return out;
@@ -205,7 +205,7 @@ export async function getMyCoherenceVotesForCoherenceIds(
   const out: Record<number, -1 | 1> = {};
   for (const row of rows) {
     if (row.value === -1 || row.value === 1) {
-      out[row.coherenceId] = row.value as -1 | 1;
+      out[row.coherenceId] = row.value;
     }
   }
   return out;
