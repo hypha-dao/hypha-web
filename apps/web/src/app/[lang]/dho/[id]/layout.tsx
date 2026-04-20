@@ -118,9 +118,9 @@ export default async function DhoLayout({
       : DEFAULT_SPACE_AVATAR_IMAGE;
 
   return (
-    <div className="mx-auto flex max-w-container-2xl">
-      <Container className="min-w-0 flex-grow !px-4">
-        <SpaceAccentPortalBridge>
+    <SpaceAccentPortalBridge>
+      <div className="mx-auto flex max-w-container-2xl">
+        <Container className="min-w-0 flex-grow !px-4">
           {heroBannerImageHref ? (
             <link
               rel="preload"
@@ -208,51 +208,53 @@ export default async function DhoLayout({
             </div>
             {tab}
             {children}
-            {aside}
           </SpaceAccentFromImages>
-        </SpaceAccentPortalBridge>
-        <div className="space-y-9">
-          <Separator />
-          <div className="border-primary-foreground">
-            <Text className="text-4 font-medium pb-4 pt-4">
-              {tSpaces('spacesYouMightLike')}
-            </Text>
-            <Carousel className="my-6 mt-6">
-              <CarouselContent className="pb-5" showScrollbar>
-                {spaces.map((space) => (
-                  <CarouselItem
-                    key={space.id}
-                    className="w-full sm:w-[454px] max-w-[454px] flex-shrink-0"
-                  >
-                    <Link
-                      className="flex flex-col flex-1"
-                      href={getDhoPathAgreements(lang, space.slug as string)}
+          <div className="space-y-9">
+            <Separator />
+            <div className="border-primary-foreground">
+              <Text className="text-4 font-medium pb-4 pt-4">
+                {tSpaces('spacesYouMightLike')}
+              </Text>
+              <Carousel className="my-6 mt-6">
+                <CarouselContent className="pb-5" showScrollbar>
+                  {spaces.map((space) => (
+                    <CarouselItem
+                      key={space.id}
+                      className="w-full sm:w-[454px] max-w-[454px] flex-shrink-0"
                     >
-                      <SpaceCard
-                        description={space.description as string}
-                        icon={space.logoUrl || ''}
-                        leadImage={space.leadImage || DEFAULT_SPACE_LEAD_IMAGE}
-                        members={space.memberCount}
-                        agreements={space.documentCount}
-                        title={space.title as string}
-                        isSandbox={space.flags?.includes('sandbox') ?? false}
-                        isDemo={space.flags?.includes('demo') ?? false}
-                        isArchived={isSpaceArchived(space)}
-                        web3SpaceId={space.web3SpaceId as number}
-                        configPath={`${getDhoPathAgreements(
-                          lang,
-                          space.slug,
-                        )}/space-configuration`}
-                        createdAt={space.createdAt}
-                      />
-                    </Link>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-            </Carousel>
+                      <Link
+                        className="flex flex-col flex-1"
+                        href={getDhoPathAgreements(lang, space.slug as string)}
+                      >
+                        <SpaceCard
+                          description={space.description as string}
+                          icon={space.logoUrl || ''}
+                          leadImage={
+                            space.leadImage || DEFAULT_SPACE_LEAD_IMAGE
+                          }
+                          members={space.memberCount}
+                          agreements={space.documentCount}
+                          title={space.title as string}
+                          isSandbox={space.flags?.includes('sandbox') ?? false}
+                          isDemo={space.flags?.includes('demo') ?? false}
+                          isArchived={isSpaceArchived(space)}
+                          web3SpaceId={space.web3SpaceId as number}
+                          configPath={`${getDhoPathAgreements(
+                            lang,
+                            space.slug,
+                          )}/space-configuration`}
+                          createdAt={space.createdAt}
+                        />
+                      </Link>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+              </Carousel>
+            </div>
           </div>
-        </div>
-      </Container>
-    </div>
+        </Container>
+        {aside}
+      </div>
+    </SpaceAccentPortalBridge>
   );
 }
