@@ -4,29 +4,29 @@ import { useLayoutEffect } from 'react';
 
 import { useSpaceHeaderMorph } from './space-header-morph-context';
 
-const COMPACT_BAR_PX = 64;
+const FIXED_ACTIONS_STRIP_PX = 64;
 
 /**
- * Reserves space when the fixed compact bar (duplicated actions) is shown
+ * Reserves space when the fixed actions mirror strip is shown
  * so page content is not covered.
  */
 export function SpaceStickyPadSync() {
-  const { compactBarActive, progress } = useSpaceHeaderMorph();
+  const { compactActionsMirror, progress } = useSpaceHeaderMorph();
 
   useLayoutEffect(() => {
-    if (!compactBarActive) {
+    if (!compactActionsMirror) {
       document.documentElement.style.setProperty('--dho-sticky-pad', '0px');
       return () => {
         document.documentElement.style.removeProperty('--dho-sticky-pad');
       };
     }
     const fade = Math.min(1, Math.max(0, progress));
-    const px = Math.round(COMPACT_BAR_PX * fade);
+    const px = Math.round(FIXED_ACTIONS_STRIP_PX * fade);
     document.documentElement.style.setProperty('--dho-sticky-pad', `${px}px`);
     return () => {
       document.documentElement.style.removeProperty('--dho-sticky-pad');
     };
-  }, [compactBarActive, progress]);
+  }, [compactActionsMirror, progress]);
 
   return null;
 }

@@ -16,14 +16,19 @@ type SpaceHeaderActionsMeasureProps = {
 };
 
 /**
- * Wraps the below-banner Join + ActionButtons row; sets compact bar visibility when
- * this row aligns under MenuTop (--app-subnav-h is 0 when breadcrumbs live in the hero).
+ * Join + actions row: while scrolling into MenuTop + identity strip, a fixed mirror
+ * duplicates this row; once the in-flow row is absorbed (sticky under the stack),
+ * the mirror turns off — no double toolbar.
  */
 export function SpaceHeaderActionsMeasure({
   children,
   className,
 }: SpaceHeaderActionsMeasureProps) {
-  const { setCompactBarActive, compactBarActive } = useSpaceHeaderMorph();
+  const {
+    setCompactActionsScroll,
+    compactActionsMirror,
+    compactActionsAbsorbed,
+  } = useSpaceHeaderMorph();
   const rowRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -38,9 +43,14 @@ export function SpaceHeaderActionsMeasure({
       const sub = parseCssPx(cs.getPropertyValue('--app-subnav-h')) || 0;
       const threshold = menu + sub + 1;
       const top = el.getBoundingClientRect().top;
-      /* Narrow band so the fixed duplicate appears only while overlapping the sticky stack */
-      const overlap = top <= threshold + 8 && top >= threshold - 14;
-      setCompactBarActive(overlap);
+
+      /* Row is stuck under the sticky stack */
+      const absorbed = top <= threshold + 0.75;
+      /* Narrow band: row overlaps stack but has not yet locked — show fixed mirror */
+      const mirror =
+        !absorbed && top <= threshold + 18 && top >= threshold - 22;
+
+      setCompactActionsScroll(mirror, absorbed);
     };
 
     const tick = () => {
@@ -61,20 +71,25 @@ export function SpaceHeaderActionsMeasure({
       window.removeEventListener('scroll', tick);
       window.removeEventListener('resize', tick);
       ro.disconnect();
-      setCompactBarActive(false);
+      setCompactActionsScroll(false, false);
     };
-  }, [setCompactBarActive]);
+  }, [setCompactActionsScroll]);
 
   return (
     <div
       ref={rowRef}
       data-space-header-actions
       className={cn(
+        'sticky z-[28] flex flex-wrap justify-end gap-2 border-b border-border bg-background-2 py-2.5 sm:py-3',
         className,
-        compactBarActive &&
+        compactActionsMirror &&
           'pointer-events-none invisible select-none opacity-0',
+        compactActionsAbsorbed && 'visible opacity-100',
       )}
-      aria-hidden={compactBarActive || undefined}
+      style={{
+        top: `calc(var(--app-menu-top-h, 65px) + var(--app-subnav-h, 0px))`,
+      }}
+      aria-hidden={compactActionsMirror || undefined}
     >
       {children}
     </div>

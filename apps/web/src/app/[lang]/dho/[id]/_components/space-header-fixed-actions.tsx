@@ -2,9 +2,6 @@
 
 import type { ReactNode } from 'react';
 import { JoinSpace } from '@hypha-platform/epics';
-import { Avatar, AvatarImage } from '@hypha-platform/ui';
-import { DEFAULT_SPACE_AVATAR_IMAGE } from '@hypha-platform/core/client';
-import { cn } from '@hypha-platform/ui-utils';
 import { createPortal } from 'react-dom';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -14,43 +11,39 @@ import {
   useSpaceHeaderMorph,
 } from './space-header-morph-context';
 
-type SpaceHeaderCompactBarProps = {
+type SpaceHeaderFixedActionsProps = {
   mounted: boolean;
-  title: string;
-  logoUrl: string | null;
-  breadcrumbs: ReactNode;
+  identitySlot: ReactNode;
   navLink: ReactNode | null;
   web3SpaceId: number | null;
   spaceId: number;
 };
 
 /**
- * Fixed strip: avatar + breadcrumbs + same Join/Action buttons as below hero, with
- * Space nav to the right. Shows only while `compactBarActive` so it overlays that row.
+ * Fixed duplicate of `SpaceHeaderActionsRow` only while the in-flow row overlaps
+ * MenuTop + identity strip; turns off once the row is absorbed (sticky).
  */
-export function SpaceHeaderCompactBar({
+export function SpaceHeaderFixedActions({
   mounted,
-  title,
-  logoUrl,
-  breadcrumbs,
+  identitySlot,
   navLink,
   web3SpaceId,
   spaceId,
-}: SpaceHeaderCompactBarProps) {
-  const { progress, reducedMotion, compactBarActive } = useSpaceHeaderMorph();
-  const avatarSrc = logoUrl || DEFAULT_SPACE_AVATAR_IMAGE;
+}: SpaceHeaderFixedActionsProps) {
+  const { progress, reducedMotion, compactActionsMirror } =
+    useSpaceHeaderMorph();
 
   const barOpacity = useMemo(() => {
-    if (!compactBarActive) return 0;
+    if (!compactActionsMirror) return 0;
     return Math.min(1, Math.max(0, (progress - 0.08) / 0.35));
-  }, [compactBarActive, progress]);
+  }, [compactActionsMirror, progress]);
 
   const [portalReady, setPortalReady] = useState(false);
   useEffect(() => {
     setPortalReady(true);
   }, []);
 
-  if (!mounted || !portalReady || !compactBarActive) {
+  if (!mounted || !portalReady || !compactActionsMirror) {
     return null;
   }
 
@@ -58,10 +51,7 @@ export function SpaceHeaderCompactBar({
 
   return createPortal(
     <div
-      className={cn(
-        'fixed left-0 right-0 z-[29] border-b border-border bg-background-2',
-        'shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]',
-      )}
+      className="fixed left-0 right-0 z-[29] border-b border-border bg-background-2 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]"
       style={{
         top,
         opacity: barOpacity,
@@ -74,20 +64,11 @@ export function SpaceHeaderCompactBar({
         pointerEvents: barOpacity > 0.2 ? 'auto' : 'none',
       }}
       role="region"
-      aria-label={title}
+      aria-hidden={barOpacity < 0.05 || undefined}
     >
       <div className="mx-auto flex max-w-container-2xl flex-col gap-2 px-5 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-2.5">
         <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
-          <Avatar
-            className={cn(
-              'h-8 w-8 shrink-0 rounded-full shadow-md ring-1 ring-border/50 sm:h-9 sm:w-9',
-            )}
-          >
-            <AvatarImage src={avatarSrc} alt="" className="object-cover" />
-          </Avatar>
-          <div className="min-w-0 flex-1 overflow-hidden text-muted-foreground [&_a]:text-foreground [&_a:hover]:text-accent-11">
-            {breadcrumbs}
-          </div>
+          <div className="min-w-0 flex-1 overflow-hidden">{identitySlot}</div>
         </div>
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 sm:gap-2">
           <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">

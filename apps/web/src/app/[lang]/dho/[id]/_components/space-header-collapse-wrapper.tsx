@@ -1,31 +1,29 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 
-import { SpaceHeaderCompactBar } from './space-header-compact-bar';
+import { SpaceHeaderFixedActions } from './space-header-fixed-actions';
 import { SpaceHeaderMorphProvider } from './space-header-morph-context';
 import { SpaceStickyPadSync } from './space-sticky-pad-sync';
 
 type SpaceHeaderCollapseWrapperProps = {
-  children: React.ReactNode;
-  menuBreadcrumbBridge: React.ReactNode;
-  title: string;
-  logoUrl: string | null;
+  children: ReactNode;
+  menuBreadcrumbBridge: ReactNode;
   web3SpaceId: number | null;
   spaceId: number;
-  heroCompactBreadcrumbs: React.ReactNode;
-  heroCompactNav: React.ReactNode | null;
+  /** Shown in fixed mirror strip (duplicate of sticky identity) */
+  identitySlot: ReactNode;
+  navLink: ReactNode | null;
 };
 
 export function SpaceHeaderCollapseWrapper({
   children,
   menuBreadcrumbBridge,
-  title,
-  logoUrl,
   web3SpaceId,
   spaceId,
-  heroCompactBreadcrumbs,
-  heroCompactNav,
+  identitySlot,
+  navLink,
 }: SpaceHeaderCollapseWrapperProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
@@ -38,12 +36,10 @@ export function SpaceHeaderCollapseWrapper({
     <SpaceHeaderMorphProvider containerRef={containerRef}>
       {menuBreadcrumbBridge}
       <SpaceStickyPadSync />
-      <SpaceHeaderCompactBar
+      <SpaceHeaderFixedActions
         mounted={mounted}
-        title={title}
-        logoUrl={logoUrl}
-        breadcrumbs={heroCompactBreadcrumbs}
-        navLink={heroCompactNav}
+        identitySlot={identitySlot}
+        navLink={navLink}
         web3SpaceId={web3SpaceId}
         spaceId={spaceId}
       />

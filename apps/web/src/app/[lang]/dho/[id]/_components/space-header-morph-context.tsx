@@ -17,16 +17,22 @@ export type SpaceHeaderMorphContextValue = {
   /** 0 = hero fully visible below fold concept; 1 = hero eaten / compact state */
   progress: number;
   reducedMotion: boolean;
-  /** True when below-banner actions row scrolls under MenuTop (+ optional subnav) — drives compact bar visibility */
-  compactBarActive: boolean;
-  setCompactBarActive: (active: boolean) => void;
+  /**
+   * Fixed portal duplicates the actions row only while it overlaps MenuTop + identity
+   * strip (narrow band). Turns off once the row is absorbed (sticky under the stack).
+   */
+  compactActionsMirror: boolean;
+  /** In-flow actions row is stuck under MenuTop + subnav */
+  compactActionsAbsorbed: boolean;
+  setCompactActionsScroll: (mirror: boolean, absorbed: boolean) => void;
 };
 
 const SpaceHeaderMorphContext = createContext<SpaceHeaderMorphContextValue>({
   progress: 0,
   reducedMotion: false,
-  compactBarActive: false,
-  setCompactBarActive: () => {},
+  compactActionsMirror: false,
+  compactActionsAbsorbed: false,
+  setCompactActionsScroll: () => {},
 });
 
 export function useSpaceHeaderMorph() {
@@ -49,12 +55,17 @@ export function SpaceHeaderMorphProvider({
 }: ProviderProps) {
   const [progress, setProgress] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(false);
-  const [compactBarActive, setCompactBarActiveState] = useState(false);
+  const [compactActionsMirror, setCompactActionsMirror] = useState(false);
+  const [compactActionsAbsorbed, setCompactActionsAbsorbed] = useState(false);
   const frameRef = useRef<number>(0);
 
-  const setCompactBarActive = useCallback((active: boolean) => {
-    setCompactBarActiveState((p) => (p === active ? p : active));
-  }, []);
+  const setCompactActionsScroll = useCallback(
+    (mirror: boolean, absorbed: boolean) => {
+      setCompactActionsMirror((p) => (p === mirror ? p : mirror));
+      setCompactActionsAbsorbed((p) => (p === absorbed ? p : absorbed));
+    },
+    [],
+  );
 
   const updateProgress = useCallback(() => {
     const root = containerRef.current;
@@ -93,14 +104,6 @@ export function SpaceHeaderMorphProvider({
     return () => mq.removeEventListener('change', onMq);
   }, []);
 
-  /** Breadcrumbs moved into the hero; no sticky subnav row — keep var defined for compact bar / morph math */
-  useEffect(() => {
-    document.documentElement.style.setProperty('--app-subnav-h', '0px');
-    return () => {
-      document.documentElement.style.removeProperty('--app-subnav-h');
-    };
-  }, []);
-
   useEffect(() => {
     const onScroll = () => {
       if (frameRef.current) return;
@@ -132,10 +135,17 @@ export function SpaceHeaderMorphProvider({
     () => ({
       progress,
       reducedMotion,
-      compactBarActive,
-      setCompactBarActive,
+      compactActionsMirror,
+      compactActionsAbsorbed,
+      setCompactActionsScroll,
     }),
-    [progress, reducedMotion, compactBarActive, setCompactBarActive],
+    [
+      progress,
+      reducedMotion,
+      compactActionsMirror,
+      compactActionsAbsorbed,
+      setCompactActionsScroll,
+    ],
   );
 
   return (

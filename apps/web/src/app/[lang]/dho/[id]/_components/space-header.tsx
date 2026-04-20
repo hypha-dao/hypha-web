@@ -1,5 +1,4 @@
 import {
-  JoinSpace,
   SalesBanner,
   SpaceModeLabel,
   WebLinks,
@@ -13,12 +12,14 @@ import {
   DEFAULT_SPACE_LEAD_IMAGE,
 } from '@hypha-platform/core/client';
 import { getDhoPathAgreements } from '../@tab/agreements/constants';
-import { ActionButtons } from './action-buttons';
 import { NestedSpacesButton } from './nested-spaces-button';
-import { Breadcrumbs } from './breadcrumbs';
 import { SpaceHeaderActionsMeasure } from './space-header-actions-measure';
+import { SpaceHeaderActionsRow } from './space-header-actions-row';
 import { SpaceHeaderCollapseWrapper } from './space-header-collapse-wrapper';
+import { SpaceHeaderContextBar } from './space-header-context-bar';
 import { SpaceHeaderHeroClip } from './space-header-hero-clip';
+import { SpaceHeaderIdentityCrumbs } from './space-header-identity-crumbs';
+import { SPACE_HEADER_IDENTITY_TITLE_CLASS } from './space-header-identity-tokens';
 import { SpaceHeaderInsetAvatar } from './space-header-inset-avatar';
 import { SpaceHeaderMenuBridge } from './space-header-menu-bridge';
 import { canConvertToBigInt, cn, formatDate } from '@hypha-platform/ui-utils';
@@ -27,7 +28,7 @@ import { getTranslations } from 'next-intl/server';
 
 const PURPOSE_MAX_CHARS = 300;
 
-/** Hero height — room for top overlay nav + inset avatar + purpose + stats */
+/** Hero height — inset avatar + purpose + stats */
 const HERO_H = 'min-h-[320px] max-h-[320px] h-[320px]';
 
 /** Option D: purpose wraps in a left column */
@@ -72,15 +73,15 @@ export async function SpaceHeader({
   const purposeDisplay = truncateByCodePoints(rawPurpose, PURPOSE_MAX_CHARS);
   const hasPurpose = purposeDisplay.length > 0;
 
-  const navOverlay =
-    typeof web3SpaceId === 'number' ? (
-      <NestedSpacesButton
-        variant="heroCompact"
-        web3SpaceId={web3SpaceId}
-        spaceSlug={daoSlug}
-      />
-    ) : null;
-  const navChrome =
+  const identityProps = { lang, title, logoUrl: logoUrl ?? null };
+  const identityContext = (
+    <SpaceHeaderIdentityCrumbs key="identity-context" {...identityProps} />
+  );
+  const identityMirror = (
+    <SpaceHeaderIdentityCrumbs key="identity-mirror" {...identityProps} />
+  );
+
+  const navLink =
     typeof web3SpaceId === 'number' ? (
       <NestedSpacesButton
         variant="compactChrome"
@@ -95,15 +96,13 @@ export async function SpaceHeader({
         menuBreadcrumbBridge={
           <SpaceHeaderMenuBridge>{null}</SpaceHeaderMenuBridge>
         }
-        title={title}
-        logoUrl={logoUrl ?? null}
         web3SpaceId={web3SpaceId}
         spaceId={spaceId}
-        heroCompactBreadcrumbs={
-          <Breadcrumbs spaceId={spaceId} lang={lang} variant="heroOverlay" />
-        }
-        heroCompactNav={navChrome}
+        identitySlot={identityMirror}
+        navLink={navLink}
       >
+        <SpaceHeaderContextBar identity={identityContext} trailing={navLink} />
+
         <div className="relative mb-0">
           <div
             data-space-hero-card
@@ -139,32 +138,17 @@ export async function SpaceHeader({
             </SpaceHeaderHeroClip>
 
             <div className="relative z-[25] flex h-full min-h-0 flex-col overflow-hidden rounded-2xl px-5 py-5 sm:px-7 sm:py-6">
-              <div className="pointer-events-none absolute inset-x-0 top-0 z-[26] flex flex-wrap items-start justify-between gap-x-3 gap-y-2 px-5 pt-4 sm:px-7 sm:pt-5">
-                <nav
-                  className="pointer-events-auto min-w-0 flex-1 text-[11px] leading-tight text-white/75 [&_a]:text-white/88 [&_a:hover]:text-white [&_svg]:size-3 [&_[data-slot=breadcrumb-separator]]:text-white/40"
-                  aria-label={tCommon('breadcrumbNavigation')}
-                >
-                  <Breadcrumbs
-                    spaceId={spaceId}
-                    lang={lang}
-                    variant="heroOverlay"
-                  />
-                </nav>
-                {navOverlay ? (
-                  <div className="pointer-events-auto flex shrink-0 justify-end">
-                    {navOverlay}
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="flex shrink-0 items-start gap-3.5 pt-11 sm:gap-4 sm:pt-12">
+              <div className="flex shrink-0 items-start gap-3.5 sm:gap-4">
                 <SpaceHeaderInsetAvatar
                   src={logoUrl || DEFAULT_SPACE_AVATAR_IMAGE}
                 />
                 <div className="flex min-w-0 flex-1 flex-col gap-2 pt-0.5">
                   <Text
                     id="space-title"
-                    className="text-balance text-6 font-semibold tracking-tight text-white drop-shadow-sm sm:text-7"
+                    className={cn(
+                      SPACE_HEADER_IDENTITY_TITLE_CLASS,
+                      'text-balance',
+                    )}
                   >
                     {title}
                   </Text>
@@ -260,13 +244,8 @@ export async function SpaceHeader({
           </div>
         </div>
 
-        <SpaceHeaderActionsMeasure className="flex flex-wrap justify-end gap-2 px-5 pt-5 sm:px-7 sm:pt-6">
-          {typeof web3SpaceId === 'number' ? (
-            <JoinSpace web3SpaceId={web3SpaceId} spaceId={spaceId} />
-          ) : null}
-          {typeof web3SpaceId === 'number' ? (
-            <ActionButtons web3SpaceId={web3SpaceId} />
-          ) : null}
+        <SpaceHeaderActionsMeasure className="px-5 sm:px-7">
+          <SpaceHeaderActionsRow web3SpaceId={web3SpaceId} spaceId={spaceId} />
         </SpaceHeaderActionsMeasure>
 
         <div className="flex flex-col gap-4 pt-4 sm:gap-5">
