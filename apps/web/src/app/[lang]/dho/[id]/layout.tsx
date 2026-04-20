@@ -107,15 +107,18 @@ export default async function DhoLayout({
 
   const rawLead = spaceFromDb.leadImage?.trim();
   const heroBannerImageHref =
-    rawLead && (rawLead.startsWith('/') || /^https?:\/\//i.test(rawLead))
+    rawLead &&
+    ((rawLead.startsWith('/') && !rawLead.startsWith('//')) ||
+      /^https?:\/\//i.test(rawLead))
       ? rawLead
       : DEFAULT_SPACE_LEAD_IMAGE;
 
+  const rawLogo = spaceFromDb.logoUrl?.trim();
   const accentLogoHref =
-    spaceFromDb.logoUrl?.trim() &&
-    (spaceFromDb.logoUrl.startsWith('/') ||
-      /^https?:\/\//i.test(spaceFromDb.logoUrl))
-      ? spaceFromDb.logoUrl.trim()
+    rawLogo &&
+    ((rawLogo.startsWith('/') && !rawLogo.startsWith('//')) ||
+      /^https?:\/\//i.test(rawLogo))
+      ? rawLogo
       : DEFAULT_SPACE_AVATAR_IMAGE;
 
   return (
@@ -151,11 +154,11 @@ export default async function DhoLayout({
               <CompactSpaceBanner
                 title={spaceFromDb.title}
                 description={spaceFromDb.description}
-                logoUrl={spaceFromDb.logoUrl}
+                logoUrl={accentLogoHref}
                 logoAlt={spaceFromDb.title}
                 defaultLogoSrc={DEFAULT_SPACE_AVATAR_IMAGE}
                 links={spaceFromDb.links}
-                leadImageUrl={spaceFromDb.leadImage}
+                leadImageUrl={heroBannerImageHref}
                 defaultLeadImageSrc={DEFAULT_SPACE_LEAD_IMAGE}
                 memberCount={spaceMembers ?? 0}
                 agreementCount={spaceAgreements ?? 0}
