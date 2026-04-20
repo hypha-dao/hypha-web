@@ -20,7 +20,10 @@ export function SpaceHeaderActionsRow({
   if (typeof web3SpaceId !== 'number') return null;
 
   return (
-    <div className={cn('flex flex-wrap justify-end gap-2', className)}>
+    <div
+      data-space-header-actions-cluster
+      className={cn('flex flex-wrap justify-end gap-1.5 sm:gap-2', className)}
+    >
       <JoinSpace web3SpaceId={web3SpaceId} spaceId={spaceId} />
       <ActionButtons web3SpaceId={web3SpaceId} />
     </div>

@@ -16,16 +16,17 @@ type SpaceHeaderActionsMeasureProps = {
 };
 
 /**
- * Join + actions row: while scrolling into MenuTop + identity strip, a fixed mirror
- * duplicates this row; once the in-flow row is absorbed (sticky under the stack),
- * the mirror turns off — no double toolbar.
+ * Join + actions row: fixed mirror duplicates the cluster only while it overlaps
+ * MenuTop + identity; pixel-aligns via measured translateX. Once absorbed (sticky),
+ * mirror off. Space Navigation stays in the fixed strip while mirroring (hidden in
+ * identity bar during that phase).
  */
 export function SpaceHeaderActionsMeasure({
   children,
   className,
 }: SpaceHeaderActionsMeasureProps) {
   const {
-    setCompactActionsScroll,
+    setActionsMirrorLayout,
     compactActionsMirror,
     compactActionsAbsorbed,
   } = useSpaceHeaderMorph();
@@ -44,13 +45,30 @@ export function SpaceHeaderActionsMeasure({
       const threshold = menu + sub + 1;
       const top = el.getBoundingClientRect().top;
 
-      /* Row is stuck under the sticky stack */
       const absorbed = top <= threshold + 0.75;
-      /* Narrow band: row overlaps stack but has not yet locked — show fixed mirror */
       const mirror =
         !absorbed && top <= threshold + 18 && top >= threshold - 22;
 
-      setCompactActionsScroll(mirror, absorbed);
+      const clusterEl = el.querySelector<HTMLElement>(
+        '[data-space-header-actions-cluster]',
+      );
+      const stripEl = document.querySelector<HTMLElement>(
+        '[data-space-header-fixed-strip]',
+      );
+
+      let clusterTranslatePx = 0;
+      if (mirror && clusterEl && stripEl) {
+        clusterTranslatePx = Math.round(
+          clusterEl.getBoundingClientRect().left -
+            stripEl.getBoundingClientRect().left,
+        );
+      }
+
+      setActionsMirrorLayout({
+        mirror,
+        absorbed,
+        clusterTranslatePx,
+      });
     };
 
     const tick = () => {
@@ -71,9 +89,13 @@ export function SpaceHeaderActionsMeasure({
       window.removeEventListener('scroll', tick);
       window.removeEventListener('resize', tick);
       ro.disconnect();
-      setCompactActionsScroll(false, false);
+      setActionsMirrorLayout({
+        mirror: false,
+        absorbed: false,
+        clusterTranslatePx: 0,
+      });
     };
-  }, [setCompactActionsScroll]);
+  }, [setActionsMirrorLayout]);
 
   return (
     <div

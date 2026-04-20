@@ -4,7 +4,10 @@ import { cn } from '@hypha-platform/ui-utils';
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 
-import { SPACE_MENU_TOP_FALLBACK_PX } from './space-header-morph-context';
+import {
+  SPACE_MENU_TOP_FALLBACK_PX,
+  useSpaceHeaderMorph,
+} from './space-header-morph-context';
 
 type SpaceHeaderContextBarProps = {
   /** “My Spaces” (small) > [icon] space name — aligned to hero title column */
@@ -19,6 +22,7 @@ export function SpaceHeaderContextBar({
 }: SpaceHeaderContextBarProps) {
   const rowRef = useRef<HTMLDivElement>(null);
   const tCommon = useTranslations('Common');
+  const { compactActionsMirror } = useSpaceHeaderMorph();
 
   useLayoutEffect(() => {
     const el = rowRef.current;
@@ -59,7 +63,7 @@ export function SpaceHeaderContextBar({
         >
           {identity}
         </div>
-        {trailing ? (
+        {!compactActionsMirror && trailing ? (
           <div className="flex shrink-0 justify-end">{trailing}</div>
         ) : null}
       </div>

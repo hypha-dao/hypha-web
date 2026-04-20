@@ -20,8 +20,9 @@ type SpaceHeaderFixedActionsProps = {
 };
 
 /**
- * Fixed duplicate of `SpaceHeaderActionsRow` only while the in-flow row overlaps
- * MenuTop + identity strip; turns off once the row is absorbed (sticky).
+ * Fixed strip under MenuTop + identity: Space Navigation always visible here while
+ * the strip is shown. Join + ActionButtons only while `compactActionsMirror` (overlap
+ * band), horizontally aligned to the in-flow cluster via `clusterTranslatePx`.
  */
 export function SpaceHeaderFixedActions({
   mounted,
@@ -30,7 +31,7 @@ export function SpaceHeaderFixedActions({
   web3SpaceId,
   spaceId,
 }: SpaceHeaderFixedActionsProps) {
-  const { progress, reducedMotion, compactActionsMirror } =
+  const { progress, reducedMotion, compactActionsMirror, clusterTranslatePx } =
     useSpaceHeaderMorph();
 
   const barOpacity = useMemo(() => {
@@ -51,6 +52,7 @@ export function SpaceHeaderFixedActions({
 
   return createPortal(
     <div
+      data-space-header-fixed-strip
       className="fixed left-0 right-0 z-[29] border-b border-border bg-background-2 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]"
       style={{
         top,
@@ -71,14 +73,20 @@ export function SpaceHeaderFixedActions({
           <div className="min-w-0 flex-1 overflow-hidden">{identitySlot}</div>
         </div>
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 sm:gap-2">
-          <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
-            {typeof web3SpaceId === 'number' ? (
+          {typeof web3SpaceId === 'number' ? (
+            <div
+              className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2"
+              style={{
+                transform:
+                  clusterTranslatePx !== 0
+                    ? `translateX(${clusterTranslatePx}px)`
+                    : undefined,
+              }}
+            >
               <JoinSpace web3SpaceId={web3SpaceId} spaceId={spaceId} />
-            ) : null}
-            {typeof web3SpaceId === 'number' ? (
               <ActionButtons web3SpaceId={web3SpaceId} />
-            ) : null}
-          </div>
+            </div>
+          ) : null}
           {navLink ? (
             <div className="flex shrink-0 items-center border-border pl-2 sm:border-l sm:pl-3">
               {navLink}
