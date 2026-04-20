@@ -20,7 +20,6 @@ import { SpaceHeaderActionsMeasure } from './space-header-actions-measure';
 import { SpaceHeaderContextBar } from './space-header-context-bar';
 import { SpaceHeaderCollapseWrapper } from './space-header-collapse-wrapper';
 import { SpaceHeaderHeroClip } from './space-header-hero-clip';
-import { SpaceHeaderHeroFooterRow } from './space-header-hero-footer-row';
 import { SpaceHeaderInsetAvatar } from './space-header-inset-avatar';
 import { SpaceHeaderMenuBridge } from './space-header-menu-bridge';
 import { canConvertToBigInt, cn, formatDate } from '@hypha-platform/ui-utils';
@@ -191,33 +190,6 @@ export async function SpaceHeader({
                   </div>
                 </div>
               </div>
-
-              <SpaceHeaderHeroFooterRow
-                breadcrumbs={
-                  <Breadcrumbs
-                    spaceId={spaceId}
-                    lang={lang}
-                    variant="heroOverlay"
-                  />
-                }
-                trailing={
-                  <div className="flex flex-wrap items-center justify-end gap-2">
-                    {typeof web3SpaceId === 'number' ? (
-                      <JoinSpace web3SpaceId={web3SpaceId} spaceId={spaceId} />
-                    ) : null}
-                    {typeof web3SpaceId === 'number' ? (
-                      <ActionButtons web3SpaceId={web3SpaceId} />
-                    ) : null}
-                    {typeof web3SpaceId === 'number' ? (
-                      <NestedSpacesButton
-                        variant="heroCompact"
-                        web3SpaceId={web3SpaceId}
-                        spaceSlug={daoSlug}
-                      />
-                    ) : null}
-                  </div>
-                }
-              />
 
               <div className="shrink-0 border-t border-white/15 pt-4 sm:pt-5">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
