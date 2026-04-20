@@ -33,11 +33,12 @@ import { canConvertToBigInt, formatDate } from '@hypha-platform/ui-utils';
 import { getTranslations } from 'next-intl/server';
 
 async function getSpaceMemberAndAgreementCounts(web3SpaceId: unknown): Promise<{
-  members: number;
-  agreements: number;
+  /** null when enrichment failed — do not treat as “zero members” */
+  members: number | null;
+  agreements: number | null;
 }> {
   if (!canConvertToBigInt(web3SpaceId)) {
-    return { members: 0, agreements: 0 };
+    return { members: null, agreements: null };
   }
   const id = BigInt(web3SpaceId as number);
   const [members, agreements] = await Promise.all([
@@ -52,7 +53,7 @@ async function getSpaceMemberAndAgreementCounts(web3SpaceId: unknown): Promise<{
           `Failed to get space details for a space ${web3SpaceId}:`,
           error,
         );
-        return 0;
+        return null;
       }
     })(),
     (async () => {
@@ -66,7 +67,7 @@ async function getSpaceMemberAndAgreementCounts(web3SpaceId: unknown): Promise<{
           `Failed to get space proposals for a space ${web3SpaceId}:`,
           error,
         );
-        return 0;
+        return null;
       }
     })(),
   ]);
@@ -155,8 +156,8 @@ export default async function DhoLayout({
                 links={spaceFromDb.links}
                 leadImageUrl={spaceFromDb.leadImage}
                 defaultLeadImageSrc={DEFAULT_SPACE_LEAD_IMAGE}
-                memberCount={spaceMembers}
-                agreementCount={spaceAgreements}
+                memberCount={spaceMembers ?? 0}
+                agreementCount={spaceAgreements ?? 0}
                 createdOnText={tCommon('createdOn', {
                   date: formatDate(spaceFromDb.createdAt, true),
                 })}
@@ -176,7 +177,7 @@ export default async function DhoLayout({
                       isDemo={spaceFromDb.flags.includes('demo')}
                       isArchived={
                         spaceFromDb.flags.includes('archived') ||
-                        spaceMembers === 0
+                        (spaceMembers !== null && spaceMembers === 0)
                       }
                       configPath={`${getDhoPathAgreements(
                         lang,
