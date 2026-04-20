@@ -68,19 +68,19 @@ const buttonVariants = cva(
         variant: 'outline',
         colorVariant: 'neutral',
         className:
-          'border-neutral-9 text-secondary-foreground bg-neutral-1 hover:text-neutral-12',
+          'border-neutral-9 text-secondary-foreground bg-neutral-1 hover:text-foreground',
       },
       {
         variant: 'outline',
         colorVariant: 'error',
         className:
-          'border-error-9 text-error-9 hover:bg-error-2 hover:text-error-11',
+          'border-error-9 text-error-9 hover:bg-error-2 hover:text-foreground',
       },
       {
         variant: 'outline',
         colorVariant: 'success',
         className:
-          'border-success-10 text-success-11 hover:bg-success-2 hover:text-success-12',
+          'border-success-10 text-success-11 hover:bg-success-2 hover:text-foreground',
       },
       {
         variant: 'link',
@@ -115,12 +115,12 @@ const buttonVariants = cva(
       {
         variant: 'ghost',
         colorVariant: 'error',
-        className: 'text-error-11 hover:bg-error-3 hover:text-error-12',
+        className: 'text-error-11 hover:bg-error-3 hover:text-foreground',
       },
       {
         variant: 'ghost',
         colorVariant: 'success',
-        className: 'text-success-11 hover:bg-success-3 hover:text-success-12',
+        className: 'text-success-11 hover:bg-success-3 hover:text-foreground',
       },
     ],
   },

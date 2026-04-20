@@ -137,7 +137,7 @@ export const SelectAction = ({
                         </span>
                       ) : null}
                     </span>
-                    <span className="text-1 leading-relaxed text-muted-foreground">
+                    <span className="group-hover:text-foreground/90 text-1 leading-relaxed text-muted-foreground">
                       <TextWithLinks text={action.description} />
                     </span>
                   </div>
