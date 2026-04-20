@@ -131,8 +131,8 @@ export default async function DhoLayout({
           bannerSrc={heroBannerImageHref}
           logoSrc={accentLogoHref}
         >
-          {/* Single column + gap-2: tight rhythm under chrome; matches banner ↔ actions */}
-          <div className="flex flex-col gap-2">
+          {/* gap-4 (16px) matches mt-4 above SalesBanner: breadcrumb→banner and banner→actions */}
+          <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 md:gap-x-4">
               <div className="flex min-w-0 flex-1 items-center">
                 <Breadcrumbs spaceId={spaceFromDb.id} lang={lang} />
