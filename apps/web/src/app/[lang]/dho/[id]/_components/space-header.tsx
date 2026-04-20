@@ -17,16 +17,13 @@ import { ActionButtons } from './action-buttons';
 import { NestedSpacesButton } from './nested-spaces-button';
 import { Breadcrumbs } from './breadcrumbs';
 import { SpaceHeaderContextBar } from './space-header-context-bar';
-import { SpaceHeaderAvatar } from './space-header-avatar';
+import { SpaceHeaderInsetAvatar } from './space-header-inset-avatar';
 import { SpaceHeaderCollapseWrapper } from './space-header-collapse-wrapper';
 import { SpaceHeaderHeroClip } from './space-header-hero-clip';
 import { canConvertToBigInt, cn, formatDate } from '@hypha-platform/ui-utils';
 import { getTranslations } from 'next-intl/server';
 
 const PURPOSE_MAX_CHARS = 300;
-
-/** Left inset: avatar is centred on left edge with ~34% bleed — keep copy clear */
-const INSET_CLEAR_AVATAR = 'pl-[104px] sm:pl-[118px] md:pl-[124px]';
 
 /** Option D: purpose wraps in a left column; right side of banner stays visible for lead art */
 const PURPOSE_WRAP =
@@ -94,11 +91,11 @@ export async function SpaceHeader({
           }
         />
 
-        <div className="relative mb-0 overflow-visible pl-3 sm:pl-5">
+        <div className="relative mb-0">
           <div
             data-space-hero-card
             className={cn(
-              'relative isolate flex h-[270px] min-h-[270px] max-h-[270px] w-full flex-col overflow-visible rounded-2xl border border-neutral-6 shadow-md',
+              'relative isolate flex h-[270px] min-h-[270px] max-h-[270px] w-full flex-col overflow-hidden rounded-2xl border border-neutral-6 shadow-md',
             )}
           >
             <SpaceHeaderHeroClip className="absolute inset-0 z-0">
@@ -127,23 +124,21 @@ export async function SpaceHeader({
               </div>
             </SpaceHeaderHeroClip>
 
-            <SpaceHeaderAvatar src={logoUrl || DEFAULT_SPACE_AVATAR_IMAGE} />
-
-            <div
-              className={cn(
-                'relative z-[25] flex h-full min-h-0 flex-col overflow-hidden rounded-2xl px-5 py-5 sm:px-7 sm:py-6',
-                INSET_CLEAR_AVATAR,
-              )}
-            >
-              <div className="flex shrink-0 flex-col gap-2">
-                <Text
-                  id="space-title"
-                  className="text-balance text-6 font-semibold tracking-tight text-white drop-shadow-sm sm:text-7"
-                >
-                  {title}
-                </Text>
-                <div className="[&_a]:text-white/90 [&_a:hover]:text-white [&_svg]:text-white/75">
-                  <WebLinks links={links} />
+            <div className="relative z-[25] flex h-full min-h-0 flex-col overflow-hidden rounded-2xl px-5 py-5 sm:px-7 sm:py-6">
+              <div className="flex shrink-0 items-start gap-3.5 sm:gap-4">
+                <SpaceHeaderInsetAvatar
+                  src={logoUrl || DEFAULT_SPACE_AVATAR_IMAGE}
+                />
+                <div className="flex min-w-0 flex-1 flex-col gap-2 pt-0.5">
+                  <Text
+                    id="space-title"
+                    className="text-balance text-6 font-semibold tracking-tight text-white drop-shadow-sm sm:text-7"
+                  >
+                    {title}
+                  </Text>
+                  <div className="[&_a]:text-white/90 [&_a:hover]:text-white [&_svg]:text-white/75">
+                    <WebLinks links={links} />
+                  </div>
                 </div>
               </div>
 
