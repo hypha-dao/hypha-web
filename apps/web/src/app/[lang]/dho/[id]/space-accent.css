@@ -8,11 +8,11 @@
 
 [data-space-accent-scope] .tabs-root [data-state='active'] {
   border-bottom-color: var(--space-tab-active-border) !important;
-  color: var(--color-accent-11, var(--space-accent, #4a65d8)) !important;
+  color: var(--color-accent-11, #4a65d8) !important;
 }
 
 [data-space-accent-scope] [data-space-nav] {
-  color: var(--color-accent-11, var(--space-accent, #4a65d8));
+  color: var(--color-accent-11, #4a65d8);
 }
 
 [data-space-accent-scope] [data-space-nav]:hover {
