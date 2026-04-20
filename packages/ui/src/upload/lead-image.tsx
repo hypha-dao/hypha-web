@@ -23,13 +23,14 @@ export type UploadLeadImageCropLabels = {
   confirm?: React.ReactNode;
 };
 
-const DEFAULT_CROP: Required<UploadLeadImageCropLabels> = {
-  title: 'Upload an image',
-  description:
-    'Adjust how your image is framed, then save. Drag to reposition and use zoom to fit the banner area (JPEG, PNG, or WebP — max 4 MB).',
-  cancel: 'Cancel',
-  confirm: 'Crop & Save',
-};
+function buildDefaultCrop(maxMb: number): Required<UploadLeadImageCropLabels> {
+  return {
+    title: 'Upload an image',
+    description: `Adjust how your image is framed, then save. Drag to reposition and use zoom to fit the banner area (JPEG, PNG, or WebP — max ${maxMb} MB).`,
+    cancel: 'Cancel',
+    confirm: 'Crop & Save',
+  };
+}
 
 export type UploadLeadImageProps = {
   onChange: (acceptedFile: File | null) => void;
@@ -70,14 +71,31 @@ export const UploadLeadImage = ({
   cropDialogLabels,
   messages: messagesProp,
 }: UploadLeadImageProps) => {
-  const cropLabels = { ...DEFAULT_CROP, ...cropDialogLabels };
-  const messages = {
-    dropHere: messagesProp?.dropHere ?? 'Drop the image here',
-    fileTooLarge:
-      messagesProp?.fileTooLarge ??
-      'Your image is too large (max 4 MB) and could not be uploaded. Resize it and try again.',
-    uploadFailed: messagesProp?.uploadFailed ?? 'File could not be uploaded.',
-  };
+  const maxMb = React.useMemo(
+    () => Math.max(0.1, Math.round((maxFileSize / (1024 * 1024)) * 10) / 10),
+    [maxFileSize],
+  );
+
+  const cropLabels = React.useMemo(
+    () => ({ ...buildDefaultCrop(maxMb), ...cropDialogLabels }),
+    [maxMb, cropDialogLabels],
+  );
+
+  const messages = React.useMemo(
+    () => ({
+      dropHere: messagesProp?.dropHere ?? 'Drop the image here',
+      fileTooLarge:
+        messagesProp?.fileTooLarge ??
+        `Your image is too large (max ${maxMb} MB) and could not be uploaded. Resize it and try again.`,
+      uploadFailed: messagesProp?.uploadFailed ?? 'File could not be uploaded.',
+    }),
+    [
+      maxMb,
+      messagesProp?.dropHere,
+      messagesProp?.fileTooLarge,
+      messagesProp?.uploadFailed,
+    ],
+  );
 
   const [preview, setPreview] = React.useState<string | null>(
     defaultImage && typeof defaultImage === 'string' && defaultImage.trim()
