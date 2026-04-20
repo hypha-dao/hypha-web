@@ -4,19 +4,12 @@ import {
   SpaceCard,
   SpaceEscrowDepositBanners,
   SpaceModeLabel,
-  WebLinks,
   SubscriptionBadge,
+  CompactSpaceBanner,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
-import {
-  Container,
-  Card,
-  Avatar,
-  AvatarImage,
-  Separator,
-} from '@hypha-platform/ui';
+import { Container, Separator } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
-import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { getAllSpaces, findSpaceBySlug } from '@hypha-platform/core/server';
@@ -56,41 +49,42 @@ export default async function DhoLayout({
     return notFound();
   }
 
-  const spaceMembers = await (async () => {
-    try {
-      if (!canConvertToBigInt(spaceFromDb.web3SpaceId)) {
+  const [spaceMembers, spaceAgreements] = await Promise.all([
+    (async () => {
+      try {
+        if (!canConvertToBigInt(spaceFromDb.web3SpaceId)) {
+          return 0;
+        }
+        const [spaceDetails] = await fetchSpaceDetails({
+          spaceIds: [BigInt(spaceFromDb.web3SpaceId as number)],
+        });
+        return spaceDetails?.members.length ?? 0;
+      } catch (error) {
+        console.error(
+          `Failed to get space details for a space ${spaceFromDb.web3SpaceId}:`,
+          error,
+        );
         return 0;
       }
-      const [spaceDetails] = await fetchSpaceDetails({
-        spaceIds: [BigInt(spaceFromDb.web3SpaceId as number)],
-      });
-      return spaceDetails?.members.length ?? 0;
-    } catch (error) {
-      console.error(
-        `Failed to get space details for a space ${spaceFromDb.web3SpaceId}:`,
-        error,
-      );
-      return 0;
-    }
-  })();
-
-  const spaceAgreements = await (async () => {
-    try {
-      if (!canConvertToBigInt(spaceFromDb.web3SpaceId)) {
+    })(),
+    (async () => {
+      try {
+        if (!canConvertToBigInt(spaceFromDb.web3SpaceId)) {
+          return 0;
+        }
+        const [proposals] = await fetchSpaceProposalsIds({
+          spaceIds: [BigInt(spaceFromDb.web3SpaceId as number)],
+        });
+        return proposals?.accepted?.length ?? 0;
+      } catch (error) {
+        console.error(
+          `Failed to get space proposals for a space ${spaceFromDb.web3SpaceId}:`,
+          error,
+        );
         return 0;
       }
-      const [proposals] = await fetchSpaceProposalsIds({
-        spaceIds: [BigInt(spaceFromDb.web3SpaceId as number)],
-      });
-      return proposals?.accepted?.length ?? 0;
-    } catch (error) {
-      console.error(
-        `Failed to get space details for a space ${spaceFromDb.web3SpaceId}:`,
-        error,
-      );
-      return 0;
-    }
-  })();
+    })(),
+  ]);
 
   const spaces = await getAllSpaces({ parentOnly: false, omitSandbox: true });
   return (
@@ -107,22 +101,51 @@ export default async function DhoLayout({
             />
           )}
         </div>
-        <Card className="relative">
-          <Image
-            width={768}
-            height={270}
-            className="rounded-xl min-h-[270px] max-h-[270px] w-full object-cover"
-            src={spaceFromDb.leadImage || DEFAULT_SPACE_LEAD_IMAGE}
-            alt={spaceFromDb.title}
-          ></Image>
-          <Avatar className="w-[128px] h-[128px] absolute bottom-[-35px] left-[15px]">
-            <AvatarImage
-              src={spaceFromDb.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE}
-              alt="logo"
-            />
-          </Avatar>
-        </Card>
-        <div className="flex justify-end mt-2 gap-2">
+        <CompactSpaceBanner
+          title={spaceFromDb.title}
+          description={spaceFromDb.description}
+          logoUrl={spaceFromDb.logoUrl}
+          logoAlt={spaceFromDb.title}
+          defaultLogoSrc={DEFAULT_SPACE_AVATAR_IMAGE}
+          links={spaceFromDb.links}
+          leadImageUrl={spaceFromDb.leadImage}
+          defaultLeadImageSrc={DEFAULT_SPACE_LEAD_IMAGE}
+          memberCount={spaceMembers}
+          agreementCount={spaceAgreements}
+          createdOnText={tCommon('createdOn', {
+            date: formatDate(spaceFromDb.createdAt, true),
+          })}
+          membersLabel={tCommon('Members')}
+          agreementsLabel={tCommon('Agreements')}
+          footerTrailing={
+            <>
+              {canConvertToBigInt(spaceFromDb.web3SpaceId) && (
+                <SubscriptionBadge
+                  web3SpaceId={spaceFromDb.web3SpaceId as number}
+                  className="rounded border-emerald-400/85 bg-transparent text-white hover:border-emerald-300 hover:bg-white/10 [&]:border-emerald-400/85 [&]:text-white"
+                />
+              )}
+              <SpaceModeLabel
+                web3SpaceId={
+                  typeof spaceFromDb.web3SpaceId === 'number'
+                    ? spaceFromDb.web3SpaceId
+                    : undefined
+                }
+                isSandbox={spaceFromDb.flags.includes('sandbox')}
+                isDemo={spaceFromDb.flags.includes('demo')}
+                isArchived={
+                  spaceFromDb.flags.includes('archived') || spaceMembers === 0
+                }
+                configPath={`${getDhoPathAgreements(
+                  lang,
+                  daoSlug,
+                )}/space-configuration`}
+                className="[&_.border-accent-8]:rounded [&_.border-accent-8]:border-white/85 [&_.border-accent-8]:bg-transparent [&_.border-accent-8]:text-white [&_.border-accent-8]:hover:border-white [&_.border-accent-8]:hover:bg-white/10 [&_.border-error-8]:rounded [&_.border-error-8]:border-white/85 [&_.border-error-8]:bg-transparent [&_.border-error-8]:text-white [&_.border-warning-8]:rounded [&_.border-warning-8]:border-amber-200/90 [&_.border-warning-8]:bg-transparent [&_.border-warning-8]:text-white"
+              />
+            </>
+          }
+        />
+        <div className="mt-4 flex justify-end gap-2">
           {typeof spaceFromDb.web3SpaceId === 'number' && (
             <JoinSpace
               web3SpaceId={spaceFromDb.web3SpaceId}
@@ -130,59 +153,6 @@ export default async function DhoLayout({
             />
           )}
           <ActionButtons web3SpaceId={spaceFromDb.web3SpaceId as number} />
-        </div>
-
-        <div className="flex flex-col mt-4 gap-2">
-          <Text className="text-7">{spaceFromDb.title}</Text>
-          <WebLinks links={spaceFromDb.links} />
-        </div>
-        <div className="mt-6">
-          <Text className="text-2">{spaceFromDb.description}</Text>
-        </div>
-        <div className="flex gap-4 items-start mt-6 flex-wrap">
-          <div className="flex flex-col gap-y-2 gap-x-4">
-            <div className="flex flex-row gap-y-2 gap-x-4">
-              <div className="flex">
-                <div className="font-bold text-1">{spaceMembers}</div>
-                <div className="text-gray-500 ml-1 text-1">
-                  {tCommon('Members')}
-                </div>
-              </div>
-              <div className="flex">
-                <div className="font-bold text-1">
-                  {/* @ts-ignore: TODO: infer types from relations */}
-                  {spaceAgreements}
-                </div>
-                <div className="text-gray-500 ml-1 text-1">
-                  {tCommon('Agreements')}
-                </div>
-              </div>
-            </div>
-            <div className="flex">
-              <div className="text-gray-500 text-1">
-                {tCommon('createdOn', {
-                  date: formatDate(spaceFromDb.createdAt, true),
-                })}
-              </div>
-            </div>
-          </div>
-          {canConvertToBigInt(spaceFromDb.web3SpaceId) && (
-            <SubscriptionBadge
-              web3SpaceId={spaceFromDb.web3SpaceId as number}
-            />
-          )}
-          <SpaceModeLabel
-            web3SpaceId={spaceFromDb.web3SpaceId as number}
-            isSandbox={spaceFromDb.flags.includes('sandbox')}
-            isDemo={spaceFromDb.flags.includes('demo')}
-            isArchived={
-              spaceFromDb.flags.includes('archived') || spaceMembers === 0
-            }
-            configPath={`${getDhoPathAgreements(
-              lang,
-              daoSlug,
-            )}/space-configuration`}
-          />
         </div>
         <div className="mt-8 flex flex-col gap-3">
           <SalesBanner web3SpaceId={spaceFromDb.web3SpaceId as number} />
