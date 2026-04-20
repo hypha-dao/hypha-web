@@ -118,12 +118,46 @@ export function CompactSpaceBanner({
             className="pointer-events-none absolute inset-0 bg-gradient-to-br from-accent-11/18 via-transparent to-transparent"
             aria-hidden
           />
+          {/* Depth pass — cinematic WOW without fighting hero readability */}
+          <div
+            className="pointer-events-none absolute inset-0 mix-blend-soft-light opacity-90 bg-[radial-gradient(ellipse_55%_45%_at_82%_8%,rgba(209,250,229,0.38),transparent_62%)]"
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.07] from-[-10%] via-transparent via-40% to-transparent to-55%"
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_115%_95%_at_50%_72%,transparent_22%,rgba(0,18,12,0.62)_88%,rgba(0,8,5,0.92)_100%)]"
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-0 rounded-[inherit] opacity-[0.055] mix-blend-overlay"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+            }}
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-0 rounded-[inherit] shadow-[inset_0_1px_0_rgba(255,255,255,0.09),inset_0_-1px_0_rgba(0,0,0,0.18)]"
+            aria-hidden
+          />
         </>
       ) : (
-        <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_140%_100%_at_12%_-5%,rgb(41,115,78)_0%,rgb(14,54,38)_42%,rgb(7,38,26)_68%,rgb(2,14,10)_100%)]"
-          aria-hidden
-        />
+        <>
+          <div
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_140%_100%_at_12%_-5%,rgb(41,115,78)_0%,rgb(14,54,38)_42%,rgb(7,38,26)_68%,rgb(2,14,10)_100%)]"
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-0 mix-blend-soft-light opacity-80 bg-[radial-gradient(ellipse_50%_40%_at_80%_5%,rgba(52,211,153,0.2),transparent_60%)]"
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_110%_90%_at_50%_78%,transparent_35%,rgba(0,14,10,0.72)_92%)]"
+            aria-hidden
+          />
+        </>
       )}
 
       <div className="relative z-10 flex flex-col gap-5">
