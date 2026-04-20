@@ -54,7 +54,8 @@ export function SpaceHeaderAvatar({ src }: SpaceHeaderAvatarProps) {
     };
   }, []);
 
-  const morphScale = reducedMotion ? 1 : Math.max(0.42, 1 - progress * 0.62);
+  /* End at 32px (h-8) — same size as fixed identity avatar */
+  const morphScale = reducedMotion ? 1 : Math.max(0.25, 1 - progress * 0.75);
   const morphY = reducedMotion ? 0 : progress * -52;
 
   return (

@@ -1,5 +1,4 @@
 import {
-  JoinSpace,
   SalesBanner,
   SpaceModeLabel,
   WebLinks,
@@ -13,7 +12,7 @@ import {
   DEFAULT_SPACE_LEAD_IMAGE,
 } from '@hypha-platform/core/client';
 import { getDhoPathAgreements } from '../@tab/agreements/constants';
-import { ActionButtons } from './action-buttons';
+import { SpaceHeaderActionsRow } from './space-header-actions-row';
 import { NestedSpacesButton } from './nested-spaces-button';
 import { Breadcrumbs } from './breadcrumbs';
 import { SpaceHeaderMenuBridge } from './space-header-menu-bridge';
@@ -228,14 +227,9 @@ export async function SpaceHeader({
           </div>
         </div>
 
-        {/* Equal rhythm between hero bottom, actions, and trial banner */}
-        <div className="flex flex-col gap-4 pt-5 sm:gap-5 sm:pt-6">
-          <div className="flex flex-wrap justify-end gap-2">
-            {typeof web3SpaceId === 'number' ? (
-              <JoinSpace web3SpaceId={web3SpaceId} spaceId={spaceId} />
-            ) : null}
-            <ActionButtons web3SpaceId={web3SpaceId as number} />
-          </div>
+        {/* Actions row morphs into sticky chrome (see SpaceHeaderFixedActions) */}
+        <div className="flex flex-col gap-4 sm:gap-5">
+          <SpaceHeaderActionsRow web3SpaceId={web3SpaceId} spaceId={spaceId} />
           <SalesBanner web3SpaceId={web3SpaceId as number} />
         </div>
       </SpaceHeaderCollapseWrapper>

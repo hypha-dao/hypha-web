@@ -75,7 +75,7 @@ export default async function DhoLayout({
 
   const spaces = await getAllSpaces({ parentOnly: false, omitSandbox: true });
   return (
-    /* Pull space chrome up against MenuTop — root layout applies pt-9 for other routes */
+    /* Cancel root `pt-9` so hero sits flush under MenuTop */
     <div className="-mt-9 flex max-w-container-2xl mx-auto">
       <Container className="flex-grow min-w-0">
         <SpaceHeader
