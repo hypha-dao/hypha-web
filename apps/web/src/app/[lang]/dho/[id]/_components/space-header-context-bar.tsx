@@ -2,6 +2,7 @@
 
 import { cn } from '@hypha-platform/ui-utils';
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 
 type SpaceHeaderContextBarProps = {
   breadcrumbs: ReactNode;
@@ -14,6 +15,7 @@ export function SpaceHeaderContextBar({
   trailing,
 }: SpaceHeaderContextBarProps) {
   const rowRef = useRef<HTMLDivElement>(null);
+  const tCommon = useTranslations('Common');
 
   useLayoutEffect(() => {
     const el = rowRef.current;
@@ -48,7 +50,7 @@ export function SpaceHeaderContextBar({
       >
         <nav
           className="min-w-0 flex-1 text-muted-foreground [&_a]:text-foreground [&_a:hover]:text-accent-11"
-          aria-label="Breadcrumb"
+          aria-label={tCommon('breadcrumbNavigation')}
         >
           {breadcrumbs}
         </nav>
