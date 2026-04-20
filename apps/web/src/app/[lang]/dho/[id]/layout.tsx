@@ -100,9 +100,24 @@ export default async function DhoLayout({
     await getSpaceMemberAndAgreementCounts(spaceFromDb.web3SpaceId);
 
   const spaces = await getAllSpaces({ parentOnly: false, omitSandbox: true });
+
+  const rawLead = spaceFromDb.leadImage?.trim();
+  const heroBannerImageHref =
+    rawLead && (rawLead.startsWith('/') || /^https?:\/\//i.test(rawLead))
+      ? rawLead
+      : DEFAULT_SPACE_LEAD_IMAGE;
+
   return (
     <div className="mx-auto flex max-w-container-2xl">
       <Container className="min-w-0 flex-grow !px-4">
+        {heroBannerImageHref ? (
+          <link
+            rel="preload"
+            as="image"
+            href={heroBannerImageHref}
+            fetchPriority="high"
+          />
+        ) : null}
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 md:gap-x-4">
           <div className="flex min-h-8 min-w-0 flex-1 items-center">
             <Breadcrumbs spaceId={spaceFromDb.id} lang={lang} />
