@@ -49,7 +49,7 @@ function populationStdDev(values: number[], mean: number): number {
  * Sobel magnitude on grayscale grid; returns mean normalized gradient [0,1].
  */
 function meanEdgeEnergy(
-  gray: number[][],
+  gray: Float32Array,
   width: number,
   height: number,
 ): number {
@@ -58,19 +58,18 @@ function meanEdgeEnergy(
   let sum = 0;
   let count = 0;
 
+  const at = (yy: number, xx: number) => gray[yy * width + xx] ?? 0;
+
   for (let y = 1; y < height - 1; y++) {
     for (let x = 1; x < width - 1; x++) {
-      const rowUp = gray[y - 1];
-      const rowMid = gray[y];
-      const rowDn = gray[y + 1];
-      const tl = rowUp?.[x - 1] ?? 0;
-      const t = rowUp?.[x] ?? 0;
-      const tr = rowUp?.[x + 1] ?? 0;
-      const l = rowMid?.[x - 1] ?? 0;
-      const r = rowMid?.[x + 1] ?? 0;
-      const bl = rowDn?.[x - 1] ?? 0;
-      const b = rowDn?.[x] ?? 0;
-      const br = rowDn?.[x + 1] ?? 0;
+      const tl = at(y - 1, x - 1);
+      const t = at(y - 1, x);
+      const tr = at(y - 1, x + 1);
+      const l = at(y, x - 1);
+      const r = at(y, x + 1);
+      const bl = at(y + 1, x - 1);
+      const b = at(y + 1, x);
+      const br = at(y + 1, x + 1);
 
       const gx = -tl + tr - 2 * l + 2 * r - bl + br;
       const gy = -tl - 2 * t - tr + bl + 2 * b + br;
@@ -94,12 +93,9 @@ export function analyzeBannerToneFromImageData(
   let satSum = 0;
   let satN = 0;
 
-  const gray: number[][] = Array.from({ length: height }, () =>
-    Array.from({ length: width }, () => 0),
-  );
-  const sampled: boolean[][] = Array.from({ length: height }, () =>
-    Array.from({ length: width }, () => false),
-  );
+  const nPx = width * height;
+  const gray = new Float32Array(nPx);
+  const sampled = new Uint8Array(nPx);
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -114,8 +110,9 @@ export function analyzeBannerToneFromImageData(
       const l = luminance(r, g, b);
       lumas.push(l);
 
-      gray[y]![x] = l;
-      sampled[y]![x] = true;
+      const gi = y * width + x;
+      gray[gi] = l;
+      sampled[gi] = 1;
 
       const max = Math.max(r, g, b) / 255;
       const min = Math.min(r, g, b) / 255;
@@ -134,11 +131,9 @@ export function analyzeBannerToneFromImageData(
   meanL /= lumas.length;
 
   /** Avoid fake edges at transparent corners (e.g. logo PNG): fill gaps with mean luma */
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      if (!sampled[y]?.[x]) {
-        gray[y]![x] = meanL;
-      }
+  for (let i = 0; i < nPx; i++) {
+    if (!sampled[i]) {
+      gray[i] = meanL;
     }
   }
 
