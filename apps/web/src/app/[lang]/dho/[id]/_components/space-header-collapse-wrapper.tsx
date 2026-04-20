@@ -108,7 +108,6 @@ function MorphCompactBarPortal({
 type SpaceHeaderCollapseWrapperProps = {
   children: React.ReactNode;
   menuBreadcrumbBridge: React.ReactNode;
-  nestedSlot?: React.ReactNode;
   title: string;
   logoUrl: string | null;
   spaceMembers: number;
@@ -119,7 +118,6 @@ type SpaceHeaderCollapseWrapperProps = {
 export function SpaceHeaderCollapseWrapper({
   children,
   menuBreadcrumbBridge,
-  nestedSlot,
   title,
   logoUrl,
   spaceMembers,
@@ -147,12 +145,6 @@ export function SpaceHeaderCollapseWrapper({
         spaceId={spaceId}
         tMembers={tCommon('Members')}
       />
-
-      {nestedSlot ? (
-        <div className="mb-1 flex flex-wrap justify-end gap-x-4 gap-y-2 sm:mb-2">
-          {nestedSlot}
-        </div>
-      ) : null}
 
       <div ref={containerRef} className="relative">
         {children}

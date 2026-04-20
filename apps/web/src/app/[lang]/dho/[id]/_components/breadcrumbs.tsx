@@ -32,11 +32,15 @@ async function RecursiveBreadcrumbItem({
   lang,
   depth = 0,
   maxDepth = 2,
+  linkClassName,
+  separatorClassName,
 }: {
   spaceId: number;
   lang: Locale;
   depth?: number;
   maxDepth?: number;
+  linkClassName?: string;
+  separatorClassName?: string;
 }) {
   console.debug('RecursiveBreadcrumbItem', { spaceId, depth, maxDepth });
   const space = await findParentSpaceById({ id: spaceId }, { db });
@@ -50,31 +54,55 @@ async function RecursiveBreadcrumbItem({
           lang={lang}
           depth={depth + 1}
           maxDepth={maxDepth}
+          linkClassName={linkClassName}
+          separatorClassName={separatorClassName}
         />
       )}
       <SpaceBreadcrumbItem
         lang={lang}
         breadcrumb={{ slug: space.slug, title: space.title }}
+        linkClassName={linkClassName}
+        separatorClassName={separatorClassName}
       />
     </Fragment>
   );
 }
 
+const HERO_BREADCRUMB_ROOT_LINK =
+  'text-[11px] font-medium leading-tight text-white/90 hover:text-white';
+const HERO_BREADCRUMB_LINK =
+  'text-[11px] font-medium leading-tight text-white/90 hover:text-white';
+const HERO_BREADCRUMB_LIST =
+  'gap-1 text-[11px] leading-tight text-white/75 [&_[data-slot=breadcrumb-separator]]:text-white/45';
+
 export async function Breadcrumbs({
   spaceId,
   lang,
+  variant = 'default',
 }: {
   spaceId: number;
   lang: Locale;
+  variant?: 'default' | 'heroOverlay';
 }) {
   const tNavigation = await getTranslations('Navigation');
+
+  const isHero = variant === 'heroOverlay';
 
   return (
     <SpaceBreadcrumb
       rootHref={`/${lang}/my-spaces`}
       rootLabel={tNavigation('mySpaces')}
+      listClassName={isHero ? HERO_BREADCRUMB_LIST : undefined}
+      rootLinkClassName={isHero ? HERO_BREADCRUMB_ROOT_LINK : undefined}
     >
-      <RecursiveBreadcrumbItem spaceId={spaceId} lang={lang} />
+      <RecursiveBreadcrumbItem
+        spaceId={spaceId}
+        lang={lang}
+        linkClassName={isHero ? HERO_BREADCRUMB_LINK : undefined}
+        separatorClassName={
+          isHero ? '[&>svg]:size-3 [&>svg]:text-white/45' : undefined
+        }
+      />
     </SpaceBreadcrumb>
   );
 }
