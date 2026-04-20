@@ -118,8 +118,8 @@ export default async function DhoLayout({
             fetchPriority="high"
           />
         ) : null}
-        {/* Single column + gap-3: identical rhythm above banner, below banner, above actions */}
-        <div className="flex flex-col gap-3">
+        {/* Single column + gap-2: tight rhythm under chrome; matches banner ↔ actions */}
+        <div className="flex flex-col gap-2">
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 md:gap-x-4">
             <div className="flex min-w-0 flex-1 items-center">
               <Breadcrumbs spaceId={spaceFromDb.id} lang={lang} />
