@@ -41,18 +41,10 @@ export const MenuTop = ({
   useEffect(() => {
     const el = headerRef.current;
     if (!el) return;
-    const sync = () => {
-      const h = el.offsetHeight;
-      setHeaderHeight(h);
-      document.documentElement.style.setProperty('--app-menu-top-h', `${h}px`);
-    };
-    const ro = new ResizeObserver(sync);
+    const ro = new ResizeObserver(() => setHeaderHeight(el.offsetHeight));
     ro.observe(el);
-    sync();
-    return () => {
-      ro.disconnect();
-      document.documentElement.style.removeProperty('--app-menu-top-h');
-    };
+    setHeaderHeight(el.offsetHeight);
+    return () => ro.disconnect();
   }, [breadcrumbSlot]);
 
   const logoBlock = (

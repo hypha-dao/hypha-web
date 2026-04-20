@@ -4,42 +4,29 @@ import { useEffect } from 'react';
 
 import { useSpaceHeaderMorph } from './space-header-morph-context';
 
-function parseCssPx(value: string): number {
-  const n = parseFloat(value);
-  return Number.isFinite(n) ? n : 0;
+/** Approx max height of compact bar portal only (breadcrumbs live in MenuTop). */
+const MAX_STICKY_STACK_PX = 56;
+
+function padPx(p: number) {
+  /* Linear — avoids “two-step” feel vs hero morph */
+  const t = Math.min(1, Math.max(0, p));
+  return Math.round(t * MAX_STICKY_STACK_PX);
 }
 
+/**
+ * Reserves vertical space below MenuTop while fixed space chrome is visible,
+ * so tab/content is not covered by portal layers.
+ */
 export function SpaceStickyPadSync() {
-  const { progress, compactActionsAbsorbed, actionsRowHeightPx } =
-    useSpaceHeaderMorph();
+  const { progress } = useSpaceHeaderMorph();
 
   useEffect(() => {
-    const idH = parseCssPx(
-      getComputedStyle(document.documentElement).getPropertyValue(
-        '--dho-identity-strip-h',
-      ),
-    );
-
-    const rowH = actionsRowHeightPx > 8 ? actionsRowHeightPx : 52;
-
-    let pad = 0;
-    if (progress > 0.08) {
-      pad = idH;
-      if (progress > 0.12) {
-        if (compactActionsAbsorbed || progress > 0.14) {
-          pad += rowH;
-        }
-      }
-    }
-
-    document.documentElement.style.setProperty(
-      '--dho-sticky-pad',
-      `${Math.round(pad)}px`,
-    );
+    const px = padPx(progress);
+    document.documentElement.style.setProperty('--dho-sticky-pad', `${px}px`);
     return () => {
       document.documentElement.style.removeProperty('--dho-sticky-pad');
     };
-  }, [progress, compactActionsAbsorbed, actionsRowHeightPx]);
+  }, [progress]);
 
   return null;
 }

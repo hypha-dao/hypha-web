@@ -10,28 +10,18 @@ import {
   useState,
 } from 'react';
 
-/** Fallback — sync with MenuTop actual height via --app-menu-top-h */
-export const SPACE_MENU_TOP_FALLBACK_PX = 65;
+/** Align with MenuTop `min-h-[65px]` */
+export const SPACE_MENU_TOP_PX = 65;
 
 export type SpaceHeaderMorphContextValue = {
   /** 0 = hero fully visible below fold concept; 1 = hero eaten / compact state */
   progress: number;
   reducedMotion: boolean;
-  /** True while the in-flow action row sits under MenuTop + identity strip (portal duplicate hidden). */
-  compactActionsAbsorbed: boolean;
-  setCompactActionsAbsorbed: (absorbed: boolean) => void;
-  /** Measured height of Join + action buttons row for sticky padding */
-  actionsRowHeightPx: number;
-  setActionsRowHeightPx: (px: number) => void;
 };
 
 const SpaceHeaderMorphContext = createContext<SpaceHeaderMorphContextValue>({
   progress: 0,
   reducedMotion: false,
-  compactActionsAbsorbed: false,
-  setCompactActionsAbsorbed: () => {},
-  actionsRowHeightPx: 0,
-  setActionsRowHeightPx: () => {},
 });
 
 export function useSpaceHeaderMorph() {
@@ -44,7 +34,7 @@ type ProviderProps = {
 };
 
 /**
- * Drives scroll progress for hero clip + avatar motion + compact chrome.
+ * Drives scroll progress for hero clip + avatar motion + compact bar morph.
  */
 export function SpaceHeaderMorphProvider({
   children,
@@ -52,22 +42,7 @@ export function SpaceHeaderMorphProvider({
 }: ProviderProps) {
   const [progress, setProgress] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(false);
-  const [compactActionsAbsorbed, setCompactActionsAbsorbedState] =
-    useState(false);
-  const [actionsRowHeightPx, setActionsRowHeightPxState] = useState(0);
   const frameRef = useRef<number>(0);
-
-  const setCompactActionsAbsorbed = useCallback((absorbed: boolean) => {
-    setCompactActionsAbsorbedState((prev) =>
-      prev === absorbed ? prev : absorbed,
-    );
-  }, []);
-
-  const setActionsRowHeightPx = useCallback((px: number) => {
-    setActionsRowHeightPxState((prev) =>
-      Math.abs(prev - px) < 0.5 ? prev : px,
-    );
-  }, []);
 
   const updateProgress = useCallback(() => {
     const root = containerRef.current;
@@ -80,14 +55,7 @@ export function SpaceHeaderMorphProvider({
     }
 
     const rect = hero.getBoundingClientRect();
-    const menuTopVar = parseFloat(
-      getComputedStyle(document.documentElement).getPropertyValue(
-        '--app-menu-top-h',
-      ),
-    );
-    const menuLine = Number.isFinite(menuTopVar)
-      ? menuTopVar
-      : SPACE_MENU_TOP_FALLBACK_PX;
+    const menuLine = SPACE_MENU_TOP_PX;
     /* Eat starts when hero top crosses menu line; completes over ~hero height overlap */
     const span = Math.max(rect.height + 48, 200);
     const raw = (menuLine - rect.top) / span;
@@ -123,22 +91,8 @@ export function SpaceHeaderMorphProvider({
   }, [updateProgress]);
 
   const value = useMemo(
-    () => ({
-      progress,
-      reducedMotion,
-      compactActionsAbsorbed,
-      setCompactActionsAbsorbed,
-      actionsRowHeightPx,
-      setActionsRowHeightPx,
-    }),
-    [
-      progress,
-      reducedMotion,
-      compactActionsAbsorbed,
-      setCompactActionsAbsorbed,
-      actionsRowHeightPx,
-      setActionsRowHeightPx,
-    ],
+    () => ({ progress, reducedMotion }),
+    [progress, reducedMotion],
   );
 
   return (
