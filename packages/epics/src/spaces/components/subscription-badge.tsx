@@ -9,18 +9,36 @@ import { usePathname } from 'next/navigation';
 import { useSpaceMember } from '../hooks';
 import { useAuthentication } from '@hypha-platform/authentication';
 import Link from 'next/link';
+import { cn } from '@hypha-platform/ui-utils';
 import { useIsDelegate } from '@hypha-platform/core/client';
 import { useFormatter, useTranslations } from 'next-intl';
 
 interface SubscriptionBadgeProps extends Omit<BadgeProps, 'isLoading'> {
   web3SpaceId: number;
+  /** High-contrast pill for dark scrims (e.g. space hero) — avoids pale outline hover fills */
+  forDarkBackground?: boolean;
 }
 
 const PATH_SELECT_ACTIVATE_ACTION = '/select-activate-action';
 
+const darkHeroOutlineByTone = {
+  success:
+    'border-emerald-400/55 bg-black/35 text-emerald-50 shadow-none hover:border-emerald-300/75 hover:bg-emerald-950/55 focus-visible:ring-emerald-400/35',
+  warn: 'border-amber-400/55 bg-black/35 text-amber-50 shadow-none hover:border-amber-300/75 hover:bg-amber-950/45 focus-visible:ring-amber-400/35',
+  error:
+    'border-red-400/55 bg-black/35 text-red-50 shadow-none hover:border-red-300/75 hover:bg-red-950/45 focus-visible:ring-red-400/35',
+} as const satisfies Record<
+  Extract<
+    NonNullable<BadgeProps['colorVariant']>,
+    'success' | 'warn' | 'error'
+  >,
+  string
+>;
+
 export function SubscriptionBadge({
   web3SpaceId,
   className,
+  forDarkBackground = false,
   ...props
 }: SubscriptionBadgeProps) {
   const tCommon = useTranslations('Common');
@@ -116,6 +134,13 @@ export function SubscriptionBadge({
     expired: { colorVariant: 'error' },
   };
 
+  const tone = variantMap[status].colorVariant;
+  const darkModeclasses =
+    forDarkBackground &&
+    tone &&
+    tone in darkHeroOutlineByTone &&
+    darkHeroOutlineByTone[tone as keyof typeof darkHeroOutlineByTone];
+
   return (
     <Link
       className={isDisabled ? 'cursor-not-allowed' : ''}
@@ -127,8 +152,8 @@ export function SubscriptionBadge({
       <Badge
         variant="outline"
         size={1}
-        colorVariant={variantMap[status].colorVariant}
-        className={className}
+        colorVariant={tone}
+        className={cn(darkModeclasses, className)}
         {...props}
       >
         {label}

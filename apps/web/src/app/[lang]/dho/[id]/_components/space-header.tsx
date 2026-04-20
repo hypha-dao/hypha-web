@@ -209,7 +209,10 @@ export async function SpaceHeader({
                   </div>
                   <div className="flex flex-shrink-0 flex-wrap items-center justify-start gap-2 sm:justify-end">
                     {canConvertToBigInt(web3SpaceId) ? (
-                      <SubscriptionBadge web3SpaceId={web3SpaceId as number} />
+                      <SubscriptionBadge
+                        web3SpaceId={web3SpaceId as number}
+                        forDarkBackground
+                      />
                     ) : null}
                     <SpaceModeLabel
                       web3SpaceId={web3SpaceId as number}
@@ -222,6 +225,7 @@ export async function SpaceHeader({
                         lang,
                         daoSlug,
                       )}/space-configuration`}
+                      forDarkBackground
                     />
                   </div>
                 </div>
