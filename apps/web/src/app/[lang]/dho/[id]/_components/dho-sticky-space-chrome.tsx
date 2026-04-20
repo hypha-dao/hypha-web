@@ -2,16 +2,17 @@
 
 import * as React from 'react';
 import { createPortal } from 'react-dom';
-import Image from 'next/image';
-import { ChevronRightIcon } from 'lucide-react';
+import { Avatar, AvatarImage } from '@hypha-platform/ui';
+import {
+  COMPACT_SPACE_BANNER_AVATAR_CLASS,
+  COMPACT_SPACE_BANNER_CONTENT_INSET_PX_CLASS,
+  COMPACT_SPACE_BANNER_TITLE_TEXT_CLASS,
+} from '@hypha-platform/epics';
 import { cn } from '@hypha-platform/ui-utils';
 
 export type DhoStickySpaceChromeProps = {
-  breadcrumbsRow: React.ReactNode;
-  breadcrumbsSticky: React.ReactNode;
   banner: React.ReactNode;
   actionsSlot: React.ReactNode;
-  nestedSpacesSlot: React.ReactNode;
   title: string;
   logoUrl: string;
   logoAlt: string;
@@ -19,7 +20,8 @@ export type DhoStickySpaceChromeProps = {
 };
 
 function useMenuTopOffsetPx(): number {
-  const [px, setPx] = React.useState(64);
+  /** Mirrors `--menu-top-fallback-height` until MenuTop publishes `--menu-top-height`. */
+  const [px, setPx] = React.useState(70);
 
   React.useLayoutEffect(() => {
     const read = () => {
@@ -27,7 +29,17 @@ function useMenuTopOffsetPx(): number {
         '--menu-top-height',
       );
       const n = parseFloat(raw);
-      setPx(Number.isFinite(n) && n > 0 ? n : 64);
+      const fallbackRaw = getComputedStyle(
+        document.documentElement,
+      ).getPropertyValue('--menu-top-fallback-height');
+      const fb = parseFloat(fallbackRaw);
+      setPx(
+        Number.isFinite(n) && n > 0
+          ? n
+          : Number.isFinite(fb) && fb > 0
+          ? fb
+          : 70,
+      );
     };
     read();
     const ro = new ResizeObserver(read);
@@ -49,15 +61,13 @@ function useMenuTopOffsetPx(): number {
 }
 
 /**
- * Desktop (md+): pin a compact chrome row under `MenuTop`. Actions / nested-space move
- * via portal so the same React trees (hooks) transition between positions — pixel-identical Button UI.
+ * Desktop (md+): pin a compact chrome row under `MenuTop`. Actions move via portal so the same
+ * React trees transition between positions. Horizontal inset matches `CompactSpaceBanner` (`px-8`)
+ * so avatar, title, and actions align with the banner card edges.
  */
 export function DhoStickySpaceChrome({
-  breadcrumbsRow,
-  breadcrumbsSticky,
   banner,
   actionsSlot,
-  nestedSpacesSlot,
   title,
   logoUrl,
   logoAlt,
@@ -69,11 +79,6 @@ export function DhoStickySpaceChrome({
   const [flowActionsEl, setFlowActionsEl] =
     React.useState<HTMLDivElement | null>(null);
   const [stickyActionsEl, setStickyActionsEl] =
-    React.useState<HTMLDivElement | null>(null);
-  const [flowNestedEl, setFlowNestedEl] = React.useState<HTMLDivElement | null>(
-    null,
-  );
-  const [stickyNestedEl, setStickyNestedEl] =
     React.useState<HTMLDivElement | null>(null);
 
   const [stuck, setStuck] = React.useState(false);
@@ -99,7 +104,8 @@ export function DhoStickySpaceChrome({
     if (!sentinel) return;
 
     const mq = window.matchMedia('(min-width: 768px)');
-    const HYST = 12;
+    /** Small hysteresis (px) so rapid scroll does not flicker; keeps trigger near banner bottom ≡ menu line */
+    const HYST = 2;
     let raf = 0;
 
     const tick = () => {
@@ -142,8 +148,6 @@ export function DhoStickySpaceChrome({
   const logoSrc = logoUrl || defaultLogoSrc;
 
   const actionsPortalTarget = stuck ? stickyActionsEl : flowActionsEl;
-  const nestedPortalTarget =
-    nestedSpacesSlot && (stuck ? stickyNestedEl : flowNestedEl);
 
   return (
     <>
@@ -153,64 +157,45 @@ export function DhoStickySpaceChrome({
           'border-b border-border bg-background-2 transition-[opacity,box-shadow] duration-300 ease-out',
           stuck ? 'pointer-events-auto opacity-100 shadow-md' : 'opacity-0',
         )}
-        style={{ top: 'var(--menu-top-height, 4rem)' }}
+        style={{
+          top: 'var(--menu-top-height, var(--menu-top-fallback-height, 70px))',
+        }}
         aria-hidden={!stuck}
       >
-        <div className="mx-auto flex max-w-container-2xl items-center gap-3 px-4 py-2.5">
-          <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-3">
-            <div className="min-w-0 shrink">{breadcrumbsSticky}</div>
-            <ChevronRightIcon
-              className="h-4 w-4 shrink-0 text-muted-foreground"
-              aria-hidden
-            />
-            <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10 dark:ring-white/15">
-              <Image
-                src={logoSrc}
-                alt=""
-                fill
-                className="object-cover"
-                sizes="36px"
-              />
-              <span className="sr-only">{logoAlt}</span>
+        {/* Mirror layout: Container `px-4` + banner section `px-8` so edges match CompactSpaceBanner */}
+        <div className="mx-auto w-full max-w-container-2xl px-4">
+          <div
+            className={cn(
+              'flex items-start justify-between gap-6 py-2.5',
+              COMPACT_SPACE_BANNER_CONTENT_INSET_PX_CLASS,
+            )}
+          >
+            <div className="flex min-w-0 flex-1 items-start gap-6">
+              <Avatar className={COMPACT_SPACE_BANNER_AVATAR_CLASS}>
+                <AvatarImage
+                  src={logoSrc}
+                  alt={logoAlt}
+                  className="object-cover"
+                />
+              </Avatar>
+              <p
+                className={cn(
+                  COMPACT_SPACE_BANNER_TITLE_TEXT_CLASS,
+                  'min-w-0 truncate text-foreground',
+                )}
+              >
+                {title}
+              </p>
             </div>
-            <p className="truncate text-4 font-semibold text-foreground">
-              {title}
-            </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
             <div
               ref={setStickyActionsEl}
-              className="flex flex-nowrap items-center gap-2"
+              className="flex shrink-0 flex-nowrap items-center justify-end gap-2"
             />
-            {nestedSpacesSlot ? (
-              <>
-                <div
-                  className="hidden h-8 w-px shrink-0 bg-border md:block"
-                  aria-hidden
-                />
-                <div
-                  ref={setStickyNestedEl}
-                  className="flex shrink-0 items-center"
-                />
-              </>
-            ) : null}
           </div>
         </div>
       </div>
 
       <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 md:flex-nowrap md:gap-x-4">
-          <div className="flex min-w-0 flex-1 items-center">
-            {breadcrumbsRow}
-          </div>
-          {nestedSpacesSlot ? (
-            <div
-              ref={setFlowNestedEl}
-              className={cn('shrink-0', stuck && 'hidden')}
-            />
-          ) : null}
-        </div>
-
         <div className="relative">
           {banner}
           <div
@@ -224,6 +209,7 @@ export function DhoStickySpaceChrome({
           ref={setFlowActionsEl}
           className={cn(
             'flex justify-end gap-2 md:flex-nowrap',
+            COMPACT_SPACE_BANNER_CONTENT_INSET_PX_CLASS,
             stuck && 'pointer-events-none invisible opacity-0',
           )}
           style={stuck ? { minHeight: flowMinH } : undefined}
@@ -232,9 +218,6 @@ export function DhoStickySpaceChrome({
 
       {actionsPortalTarget
         ? createPortal(actionsSlot, actionsPortalTarget)
-        : null}
-      {nestedSpacesSlot && nestedPortalTarget
-        ? createPortal(nestedSpacesSlot, nestedPortalTarget)
         : null}
     </>
   );

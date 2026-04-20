@@ -29,11 +29,20 @@ function isSafeTextureUrl(raw: string): boolean {
   }
 }
 
-/** Matches PR #2165 `SpaceHeaderInsetAvatar` footprint */
-const AVATAR_CLASS = cn(
+/** Matches PR #2165 `SpaceHeaderInsetAvatar` footprint — export for sticky chrome parity */
+export const COMPACT_SPACE_BANNER_AVATAR_CLASS = cn(
   'h-16 w-16 shrink-0 rounded-full sm:h-[72px] sm:w-[72px]',
   'shadow-[0_18px_40px_-12px_rgba(0,0,0,0.55)] ring-1 ring-white/15',
 );
+
+/** Horizontal inset inside the banner card (`px-8`) — align siblings (sticky row, actions) with banner content */
+export const COMPACT_SPACE_BANNER_CONTENT_INSET_PX_CLASS = 'px-8';
+
+/** Title typography scale — reuse on sticky bar for baseline alignment with `h1` */
+export const COMPACT_SPACE_BANNER_TITLE_TEXT_CLASS =
+  'text-balance text-6 font-semibold tracking-tight sm:text-7';
+
+const AVATAR_CLASS = COMPACT_SPACE_BANNER_AVATAR_CLASS;
 
 /** Purpose column — narrow on sm+; left edge aligns with avatar (full-width column below header row). */
 const DESCRIPTION_SCROLL_BOX = cn(
@@ -198,7 +207,12 @@ export function CompactSpaceBanner({
           </Avatar>
 
           <div className="min-w-0 flex-1 space-y-2">
-            <h1 className="text-balance text-6 font-semibold tracking-tight text-white drop-shadow-[0_2px_14px_rgba(0,0,0,0.55)] sm:text-7">
+            <h1
+              className={cn(
+                COMPACT_SPACE_BANNER_TITLE_TEXT_CLASS,
+                'text-white drop-shadow-[0_2px_14px_rgba(0,0,0,0.55)]',
+              )}
+            >
               {title}
             </h1>
             {safeLinks.length > 0 ? (

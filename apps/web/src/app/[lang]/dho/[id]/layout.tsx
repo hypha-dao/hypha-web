@@ -18,7 +18,6 @@ import Link from 'next/link';
 import { getAllSpaces, findSpaceBySlug } from '@hypha-platform/core/server';
 import { getDhoPathAgreements } from './@tab/agreements/constants';
 import { ActionButtons } from './_components/action-buttons';
-import { NestedSpacesButton } from './_components/nested-spaces-button';
 import {
   DEFAULT_SPACE_AVATAR_IMAGE,
   DEFAULT_SPACE_LEAD_IMAGE,
@@ -28,7 +27,6 @@ import {
 } from '@hypha-platform/core/client';
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
-import { Breadcrumbs, BreadcrumbsRootOnly } from './_components/breadcrumbs';
 import { DhoStickySpaceChrome } from './_components/dho-sticky-space-chrome';
 import { canConvertToBigInt, formatDate } from '@hypha-platform/ui-utils';
 import { getTranslations } from 'next-intl/server';
@@ -141,10 +139,6 @@ export default async function DhoLayout({
           >
             {/* gap-4 (16px) matches mt-4 above SalesBanner: breadcrumb→banner and banner→actions */}
             <DhoStickySpaceChrome
-              breadcrumbsRow={
-                <Breadcrumbs spaceId={spaceFromDb.id} lang={lang} />
-              }
-              breadcrumbsSticky={<BreadcrumbsRootOnly lang={lang} />}
               banner={
                 <CompactSpaceBanner
                   title={spaceFromDb.title}
@@ -198,14 +192,6 @@ export default async function DhoLayout({
                   )}
                   <ActionButtons web3SpaceId={web3SpaceId} />
                 </>
-              }
-              nestedSpacesSlot={
-                web3SpaceId !== undefined ? (
-                  <NestedSpacesButton
-                    web3SpaceId={web3SpaceId}
-                    spaceSlug={daoSlug}
-                  />
-                ) : null
               }
               title={spaceFromDb.title}
               logoUrl={accentLogoHref}
