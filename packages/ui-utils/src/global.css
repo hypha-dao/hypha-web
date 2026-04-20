@@ -25,6 +25,9 @@
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 @theme {
+  /* App chrome — matches MenuTop min-height until JS sets --menu-top-height */
+  --menu-top-fallback-height: 70px;
+
   /* Breakpoints */
   --breakpoint-sm: 640px;
   --breakpoint-md: 768px;

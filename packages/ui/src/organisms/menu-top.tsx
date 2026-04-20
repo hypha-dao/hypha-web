@@ -65,7 +65,7 @@ export const MenuTop = ({
   return (
     <header
       ref={headerRef}
-      className="flex min-h-[70px] min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background-2 px-4 py-4 z-30"
+      className="flex min-h-[var(--menu-top-fallback-height)] min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background-2 px-4 py-4 z-30"
     >
       <div
         className={clsx(
