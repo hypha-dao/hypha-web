@@ -5,6 +5,17 @@
 
 export const SPACE_ACCENT_FALLBACK = '#4a65d8';
 
+/** Validates `#RRGGBB` for palette and mixHexColors callers. */
+export function parseRgbFromHex(hex: string): [number, number, number] | null {
+  const t = hex.trim();
+  if (!/^#[0-9a-fA-F]{6}$/.test(t)) return null;
+  const r = parseInt(t.slice(1, 3), 16);
+  const g = parseInt(t.slice(3, 5), 16);
+  const b = parseInt(t.slice(5, 7), 16);
+  if ([r, g, b].some((n) => Number.isNaN(n))) return null;
+  return [r, g, b];
+}
+
 function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
 }
@@ -88,9 +99,8 @@ export function hslToRgb(
 export function buildAccentPaletteFromHex(
   baseHex: string,
 ): Record<string, string> {
-  const r0 = parseInt(baseHex.slice(1, 3), 16);
-  const g0 = parseInt(baseHex.slice(3, 5), 16);
-  const b0 = parseInt(baseHex.slice(5, 7), 16);
+  const fb = parseRgbFromHex(SPACE_ACCENT_FALLBACK)!;
+  const [r0, g0, b0] = parseRgbFromHex(baseHex) ?? fb;
   const { h } = rgbToHsl(r0, g0, b0);
 
   const steps = [
@@ -115,9 +125,8 @@ export function buildAccentPaletteFromHex(
   }
 
   const solid = out['--color-accent-9'] ?? baseHex;
-  const sr = parseInt(solid.slice(1, 3), 16);
-  const sg = parseInt(solid.slice(3, 5), 16);
-  const sb = parseInt(solid.slice(5, 7), 16);
+  const solidRgb = parseRgbFromHex(solid) ?? fb;
+  const [sr, sg, sb] = solidRgb;
   const lum = (sr * 299 + sg * 587 + sb * 114) / 1000;
   const onSolid = lum > 186 ? '#0f172a' : '#ffffff';
 
@@ -183,12 +192,11 @@ export function extractAccentHexFromImageData(data: ImageData): string {
 }
 
 export function mixHexColors(a: string, b: string, weightA: number): string {
-  const pa = parseInt(a.slice(1, 3), 16);
-  const ga = parseInt(a.slice(3, 5), 16);
-  const ba = parseInt(a.slice(5, 7), 16);
-  const pb = parseInt(b.slice(1, 3), 16);
-  const gb = parseInt(b.slice(3, 5), 16);
-  const bb = parseInt(b.slice(5, 7), 16);
+  const fb = parseRgbFromHex(SPACE_ACCENT_FALLBACK)!;
+  const ca = parseRgbFromHex(a) ?? fb;
+  const cb = parseRgbFromHex(b) ?? fb;
+  const [pa, ga, ba] = ca;
+  const [pb, gb, bb] = cb;
   const w = clamp(weightA, 0, 1);
   return rgbToHex(
     pa * w + pb * (1 - w),
