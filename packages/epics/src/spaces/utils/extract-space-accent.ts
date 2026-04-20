@@ -135,7 +135,9 @@ export function buildAccentPaletteFromHex(
   baseHex: string,
 ): Record<string, string> {
   const fb = parseRgbFromHex(SPACE_ACCENT_FALLBACK)!;
-  const [r0, g0, b0] = parseRgbFromHex(baseHex) ?? fb;
+  const parsed = parseRgbFromHex(baseHex) ?? fb;
+  const { s: baseS } = rgbToHsl(parsed[0], parsed[1], parsed[2]);
+  const [r0, g0, b0] = baseS < 0.04 ? fb : parsed;
   const { h, s: s0, l: l0 } = rgbToHsl(r0, g0, b0);
 
   /** Greys need injected chroma or buttons read as neutral; cap so vivid sources stay controlled. */
