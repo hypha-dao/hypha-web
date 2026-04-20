@@ -7,6 +7,8 @@ import { RxCross1 } from 'react-icons/rx';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 
+const APP_MENU_TOP_FALLBACK_PX = 65;
+
 type MenuTopProps = {
   children?: React.ReactNode;
   /** Optional center slot (e.g. space breadcrumbs on DHO routes) */
@@ -118,8 +120,11 @@ export const MenuTop = ({
 
           {isMobileMenuOpen && (
             <div
+              id="mobile-menu"
               className="md:hidden fixed inset-x-0 bottom-0 z-40 flex flex-col items-center p-4 bg-background-2 overflow-y-auto col-span-full"
-              style={{ top: headerHeight }}
+              style={{
+                top: headerHeight > 0 ? headerHeight : APP_MENU_TOP_FALLBACK_PX,
+              }}
             >
               <div className="flex flex-col space-y-8 items-center">
                 {children}
@@ -158,8 +163,11 @@ export const MenuTop = ({
 
           {isMobileMenuOpen && (
             <div
+              id="mobile-menu"
               className="md:hidden fixed inset-x-0 bottom-0 z-40 flex flex-col items-center p-4 bg-background-2 overflow-y-auto"
-              style={{ top: headerHeight }}
+              style={{
+                top: headerHeight > 0 ? headerHeight : APP_MENU_TOP_FALLBACK_PX,
+              }}
             >
               <div className="flex flex-col space-y-8 items-center">
                 {children}
