@@ -9,7 +9,10 @@ import { createPortal } from 'react-dom';
 import { useEffect, useMemo, useState } from 'react';
 
 import { ActionButtons } from './action-buttons';
-import { useSpaceHeaderMorph } from './space-header-morph-context';
+import {
+  SPACE_MENU_TOP_FALLBACK_PX,
+  useSpaceHeaderMorph,
+} from './space-header-morph-context';
 
 type SpaceHeaderCompactBarProps = {
   mounted: boolean;
@@ -47,11 +50,11 @@ export function SpaceHeaderCompactBar({
     setPortalReady(true);
   }, []);
 
-  if (!mounted || !portalReady || !compactBarActive || barOpacity < 0.05) {
+  if (!mounted || !portalReady || !compactBarActive) {
     return null;
   }
 
-  const top = `calc(var(--app-menu-top-h, 65px) + var(--app-subnav-h, 0px))`;
+  const top = `calc(var(--app-menu-top-h, ${SPACE_MENU_TOP_FALLBACK_PX}px) + var(--app-subnav-h, 0px))`;
 
   return createPortal(
     <div
