@@ -187,7 +187,7 @@ export default async function RootLayout({
                           routerConfig={extractRouterConfig(fileRouter)}
                         />
                         <div className="mb-auto pb-8">
-                          <div className="pt-6 h-full flex justify-normal md:pt-7">
+                          <div className="flex h-full justify-normal pt-4 md:pt-5">
                             <div className="w-full h-full">{children}</div>
                           </div>
                         </div>
