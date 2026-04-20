@@ -9,8 +9,15 @@ import { Coherence } from '../../types';
 import { normalizeCoherence } from './normalize-coherence';
 import { toClientJson } from '../serialize-client-json';
 
-function isLikelyMissingVoteMigration(message: string): boolean {
-  // e.g. "column ... vote_score does not exist" (42P01/42703) or table coherence_votes
+function isLikelyMissingVoteMigration(err: unknown): boolean {
+  const code =
+    typeof err === 'object' && err !== null && 'code' in err
+      ? String((err as { code?: string }).code ?? '')
+      : '';
+  const message = err instanceof Error ? err.message : String(err);
+  if (code === '42703' || code === '42P01') {
+    return /vote_score|coherence_votes/i.test(message);
+  }
   return (
     /vote_score|coherence_votes/i.test(message) &&
     /does not exist|42P01|42703/i.test(message)
@@ -35,8 +42,7 @@ export async function getAllCoherences(
     const normalized = coherences.map(normalizeCoherence);
     return toClientJson(normalized);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    if (props.orderBy === 'mostvotes' && isLikelyMissingVoteMigration(msg)) {
+    if (props.orderBy === 'mostvotes' && isLikelyMissingVoteMigration(error)) {
       try {
         const coherences = await findAllCoherences(
           { db },
@@ -44,8 +50,11 @@ export async function getAllCoherences(
         );
         const normalized = coherences.map(normalizeCoherence);
         return toClientJson(normalized);
-      } catch {
-        // fall through
+      } catch (fallbackErr) {
+        console.warn(
+          '[getAllCoherences] mostvotes fallback after missing vote migration detection failed',
+          fallbackErr,
+        );
       }
     }
     throw new Error('Failed to get coherences', {
