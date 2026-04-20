@@ -86,7 +86,7 @@ export default async function DhoLayout({
               ? spaceFromDb.web3SpaceId
               : null
           }
-          title={spaceFromDb.title as string}
+          title={spaceFromDb.title}
           description={spaceFromDb.description}
           links={spaceFromDb.links}
           logoUrl={spaceFromDb.logoUrl}
