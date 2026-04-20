@@ -395,6 +395,8 @@ export const SpaceForm = ({
         return tModalAside('createSpace');
       case 'configure':
         return tModalAside('configureSpace');
+      default:
+        return tModalAside('createSpace');
     }
   }, [label, tModalAside]);
 
