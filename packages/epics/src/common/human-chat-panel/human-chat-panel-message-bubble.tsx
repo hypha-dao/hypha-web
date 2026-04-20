@@ -883,6 +883,9 @@ function splitPlainTextMatrixMentions(
       out.push({ kind: 'text', value: text.slice(lastIndex, m.index) });
     }
     out.push({ kind: 'mxid', full });
+    // `full` can be shorter than m[0] when normalizePlainTextMxidCaptureFromMatch strips
+    // a sentence-punctuation colon; the regex still advances to m.index + m[0].length, while
+    // the following text slice uses lastIndex so the stripped `:` remains in a plain 'text' run.
     lastIndex = m.index + full.length;
   }
   if (lastIndex < text.length) {
