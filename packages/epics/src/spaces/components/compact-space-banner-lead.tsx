@@ -90,7 +90,7 @@ export function CompactSpaceBannerLead({ src }: Props) {
               'object-cover object-center transition-opacity duration-500 ease-out',
               ready ? 'opacity-100' : 'opacity-0',
             )}
-            onLoadingComplete={() => setReady(true)}
+            onLoad={() => setReady(true)}
           />
         </div>
       </div>
