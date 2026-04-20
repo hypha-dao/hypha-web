@@ -132,7 +132,7 @@ export function CompactSpaceBanner({
             className="pointer-events-none absolute inset-0 mix-blend-soft-light"
             style={{
               backgroundImage:
-                'radial-gradient(ellipse 55% 45% at 82% 8%, rgba(209,250,229,calc(0.38 * var(--banner-ov-skylight-op, 0.9))), transparent 62%)',
+                'radial-gradient(ellipse 58% 48% at 78% 6%, rgba(209,250,229,calc(0.5 * var(--banner-ov-skylight-op, 0.9))), transparent 58%)',
             }}
             aria-hidden
           />
@@ -198,7 +198,7 @@ export function CompactSpaceBanner({
           </Avatar>
 
           <div className="min-w-0 flex-1 space-y-2">
-            <h1 className="text-balance text-6 font-semibold tracking-tight text-white drop-shadow-sm sm:text-7">
+            <h1 className="text-balance text-6 font-semibold tracking-tight text-white drop-shadow-[0_2px_14px_rgba(0,0,0,0.55)] sm:text-7">
               {title}
             </h1>
             {safeLinks.length > 0 ? (
@@ -238,7 +238,7 @@ export function CompactSpaceBanner({
               'outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
             )}
           >
-            <p className="text-pretty text-2 leading-[1.5] text-white/95 [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]">
+            <p className="text-pretty text-2 leading-[1.5] text-white/95 [text-shadow:0_1px_3px_rgba(0,0,0,0.65)]">
               {description}
             </p>
           </div>
@@ -251,7 +251,7 @@ export function CompactSpaceBanner({
             role="presentation"
           />
           <div className="flex flex-col gap-3 gap-x-5 pt-3.5 pb-3.5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-1 text-white/88 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-1 text-white/88 [text-shadow:0_1px_3px_rgba(0,0,0,0.55)]">
               <span>
                 <span className="font-bold tabular-nums text-white">
                   {memberCount}

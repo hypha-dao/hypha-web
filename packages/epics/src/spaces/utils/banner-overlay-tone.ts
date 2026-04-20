@@ -152,7 +152,7 @@ export function analyzeBannerToneFromImageData(
 export type BannerOverlayCssVars = Record<string, string>;
 
 /** Portion of image-driven deviation from baseline we apply (lower = truer hero colour). */
-const OVERLAY_DYNAMIC_STRENGTH = 0.42;
+const OVERLAY_DYNAMIC_STRENGTH = 0.28;
 
 function overlayCssVarsFromToneRaw(m: BannerToneMetrics): BannerOverlayCssVars {
   const {
@@ -165,11 +165,11 @@ function overlayCssVarsFromToneRaw(m: BannerToneMetrics): BannerOverlayCssVars {
   /**
    * brighter image → slightly stronger scrim (subtle; was overpowering photos)
    */
-  const brightNeed = clamp01((L - 0.38) / 0.52) * 0.72;
+  const brightNeed = clamp01((L - 0.38) / 0.52) * 0.62;
   /**
-   * very dark hero → ease the bottom crush
+   * very dark hero → ease the bottom crush (let more light through mid/upper plate)
    */
-  const darkEase = clamp01((0.22 - L) / 0.22) * 0.42;
+  const darkEase = clamp01((0.22 - L) / 0.22) * 0.48;
   /**
    * Radiance — keep light touches only so overlays don’t dominate the plate
    */
@@ -179,24 +179,27 @@ function overlayCssVarsFromToneRaw(m: BannerToneMetrics): BannerOverlayCssVars {
    */
   const calmGrain = clamp01(0.55 * spread + 0.45 * E);
 
-  /** Vertical gradient — smaller deltas than before */
-  const vBottom = clamp01(0.88 + brightNeed * 0.05 - darkEase * 0.09);
-  const vMid = clamp01(0.42 + brightNeed * 0.06 - darkEase * 0.05);
-  const vTop = clamp01(0.22 + brightNeed * 0.05 - darkEase * 0.04);
+  /** Vertical scrim — lower alphas so hero colour and highlights read through */
+  const vBottom = clamp01(0.74 + brightNeed * 0.045 - darkEase * 0.065);
+  const vMid = clamp01(0.33 + brightNeed * 0.055 - darkEase * 0.045);
+  const vTop = clamp01(0.13 + brightNeed * 0.045 - darkEase * 0.035);
 
-  const hFrom = clamp01(0.58 + brightNeed * 0.07 - darkEase * 0.04);
-  const hTo = clamp01(0.4 + brightNeed * 0.05);
+  const hFrom = clamp01(0.46 + brightNeed * 0.065 - darkEase * 0.035);
+  const hTo = clamp01(0.29 + brightNeed * 0.048);
 
-  /** Tint wash — cap so original image chroma reads through */
-  const accentWash = clamp01(0.1 + radiance * 0.05);
+  /** Tint wash — slight; too much mutes saturation */
+  const accentWash = clamp01(0.085 + radiance * 0.038);
 
-  const skylightOpacity = clamp01(0.78 + radiance * 0.06 - calmGrain * 0.08);
-  const sheenOpacity = clamp01(0.05 + radiance * 0.025);
-  const vignetteStrength = clamp01(0.92 + brightNeed * 0.08 - darkEase * 0.07);
-  const grainOpacity = clamp01(0.048 + radiance * 0.015 - calmGrain * 0.02);
+  /** Skylight / sheen carry the “WOW” depth; vignette stays secondary */
+  const skylightOpacity = clamp01(0.88 + radiance * 0.075 - calmGrain * 0.065);
+  const sheenOpacity = clamp01(0.062 + radiance * 0.032);
+  const vignetteStrength = clamp01(
+    0.72 + brightNeed * 0.065 - darkEase * 0.065,
+  );
+  const grainOpacity = clamp01(0.038 + radiance * 0.012 - calmGrain * 0.018);
 
-  const innerTop = clamp01(0.085 + radiance * 0.022);
-  const innerBot = clamp01(0.17 + brightNeed * 0.025);
+  const innerTop = clamp01(0.095 + radiance * 0.026);
+  const innerBot = clamp01(0.14 + brightNeed * 0.022);
 
   return {
     '--banner-ov-v-bottom': String(vBottom),
