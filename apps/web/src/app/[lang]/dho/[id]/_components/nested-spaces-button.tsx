@@ -11,6 +11,7 @@ import { useUserSpaceState } from '@hypha-platform/epics';
 import { checkAccess } from '@hypha-platform/epics';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { useTranslations } from 'next-intl';
+import { cn } from '@hypha-platform/ui-utils';
 
 interface NestedSpacesButtonProps {
   web3SpaceId?: number;
@@ -53,6 +54,9 @@ export const NestedSpacesButton = ({
 
   const isHero = variant === 'heroCompact';
   const isChrome = variant === 'compactChrome';
+  const isCompact = isHero || isChrome;
+  const compactBase =
+    'flex h-auto min-h-0 items-center gap-1.5 p-0 text-[11px] font-medium leading-tight underline-offset-2 hover:no-underline [&_svg]:size-3.5';
 
   return (
     <Link
@@ -67,13 +71,13 @@ export const NestedSpacesButton = ({
       <Button
         variant="link"
         disabled={isDisabled}
-        className={
-          isHero
-            ? 'flex h-auto min-h-0 items-center gap-1.5 p-0 text-[11px] font-medium leading-tight text-white/90 underline-offset-2 hover:text-white hover:no-underline disabled:text-white/40 [&_svg]:size-3.5 [&_svg]:text-white/75'
-            : isChrome
-            ? 'flex h-auto min-h-0 items-center gap-1.5 p-0 text-[11px] font-medium leading-tight text-accent-11 underline-offset-2 hover:text-accent-11 hover:no-underline disabled:text-muted-foreground [&_svg]:size-3.5'
-            : 'flex items-center gap-2 text-accent-11'
-        }
+        className={cn(
+          !isCompact && 'flex items-center gap-2 text-accent-11',
+          isHero &&
+            `${compactBase} text-white/90 hover:text-white disabled:text-white/40 [&_svg]:text-white/75`,
+          isChrome &&
+            `${compactBase} text-accent-11 hover:text-accent-11 disabled:text-muted-foreground`,
+        )}
       >
         <Eye className={isHero || isChrome ? 'size-3.5' : 'w-4 h-4'} />
         <span>{tDho('nestedSpacesButton.label')}</span>
