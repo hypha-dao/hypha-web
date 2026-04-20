@@ -4,6 +4,17 @@ import { LinkLabel } from '../../common/link-label';
 import { Avatar, AvatarImage } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
+function isSafeLinkHref(url: string): boolean {
+  const t = url.trim();
+  if (!t) return false;
+  try {
+    const u = new URL(t, 'https://example.com');
+    return u.protocol === 'https:' || u.protocol === 'http:';
+  } catch {
+    return false;
+  }
+}
+
 /** Scrollable purpose block — mirrors #2165 hero (`overflow-y-auto`, thin scrollbar). */
 const DESCRIPTION_SCROLL_BOX = cn(
   'max-h-[min(45vh,280px)] w-full min-h-0 overflow-y-auto overscroll-y-contain pr-1 touch-pan-y',
@@ -50,6 +61,9 @@ export function CompactSpaceBanner({
   className,
 }: CompactSpaceBannerProps) {
   const textureSrc = leadImageUrl || defaultLeadImageSrc || undefined;
+
+  const safeLinks =
+    links?.filter((l) => typeof l === 'string' && isSafeLinkHref(l)) ?? [];
 
   return (
     <section
@@ -145,9 +159,9 @@ export function CompactSpaceBanner({
             <h1 className="text-7 font-bold leading-tight tracking-tight text-white">
               {title}
             </h1>
-            {links && links.length > 0 ? (
+            {safeLinks.length > 0 ? (
               <div className="flex flex-wrap gap-x-5 gap-y-2">
-                {links.map((link, index) => (
+                {safeLinks.map((link, index) => (
                   <a
                     key={`${link}_${index}`}
                     href={link}
