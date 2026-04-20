@@ -2,17 +2,17 @@
 
 import * as React from 'react';
 import { cn } from '@hypha-platform/ui-utils';
-import {
-  buildAccentPaletteFromHex,
-  extractAccentHexFromImageData,
-  mixHexColors,
-  SPACE_ACCENT_FALLBACK,
-} from '../utils/extract-space-accent';
+import { extractAccentHexFromImageData } from '../utils/extract-space-accent';
 import {
   analyzeBannerToneFromImageData,
   DEFAULT_BANNER_OVERLAY_CSS_VARS,
   overlayCssVarsFromTone,
 } from '../utils/banner-overlay-tone';
+import {
+  buildSpaceScopeStyleFromSampledAccents,
+  getDefaultSpaceScopeStyle,
+} from '../utils/space-accent-scope-style';
+import { useSetSpaceAccentPortalStyles } from './space-accent-portal-context';
 
 export type SpaceAccentFromImagesProps = {
   bannerSrc: string;
@@ -21,18 +21,6 @@ export type SpaceAccentFromImagesProps = {
   /** Optional class on the wrapping element that receives CSS variables */
   className?: string;
 };
-
-/** Perceived brightness 0–255 */
-function brightness(hex: string): number {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return (r * 299 + g * 587 + b * 114) / 1000;
-}
-
-function contrastingForeground(hex: string): string {
-  return brightness(hex) > 186 ? '#0f172a' : '#f8fafc';
-}
 
 /**
  * Same-origin image URL so canvas readPixels works for remote hosts without CORS
@@ -129,62 +117,47 @@ export function SpaceAccentFromImages({
   className,
 }: SpaceAccentFromImagesProps) {
   const ref = React.useRef<HTMLDivElement>(null);
+  const setPortalStyles = useSetSpaceAccentPortalStyles();
 
   React.useEffect(() => {
     let cancelled = false;
 
     (async () => {
-      const [bannerAccent, logoAccent, overlayVars] = await Promise.all([
+      const [bannerAccent, logoAccent, overlayRecord] = await Promise.all([
         sampleImageToAccent(bannerSrc),
         sampleImageToAccent(logoSrc),
         sampleBannerToneOverlayVars(bannerSrc),
       ]);
       if (cancelled || !ref.current) return;
 
-      let accent = SPACE_ACCENT_FALLBACK;
-      if (bannerAccent && logoAccent) {
-        accent = mixHexColors(bannerAccent, logoAccent, 0.55);
-      } else if (bannerAccent) {
-        accent = bannerAccent;
-      } else if (logoAccent) {
-        accent = logoAccent;
-      }
-
-      const fg = contrastingForeground(accent);
-      const subtle = mixHexColors(
-        accent,
-        brightness(accent) > 186 ? '#0f172a' : '#ffffff',
-        0.45,
-      );
-
       const el = ref.current;
-      el.style.setProperty('--space-accent', accent);
-      el.style.setProperty('--space-accent-foreground', fg);
-      el.style.setProperty('--space-accent-muted', subtle);
-      el.style.setProperty('--space-accent-contrast', fg);
+      const overlayVars = overlayRecord ?? DEFAULT_BANNER_OVERLAY_CSS_VARS;
 
-      const palette = buildAccentPaletteFromHex(accent);
-      for (const [key, value] of Object.entries(palette)) {
-        el.style.setProperty(key, value);
+      const scopeStyle = buildSpaceScopeStyleFromSampledAccents({
+        bannerAccent,
+        logoAccent,
+        overlayVars,
+      });
+
+      for (const [k, v] of Object.entries(scopeStyle)) {
+        if (v === undefined || v === null) continue;
+        el.style.setProperty(k, String(v));
       }
 
-      const ov = overlayVars ?? DEFAULT_BANNER_OVERLAY_CSS_VARS;
-      for (const [k, v] of Object.entries(ov)) {
-        el.style.setProperty(k, v);
-      }
+      setPortalStyles?.(scopeStyle);
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [bannerSrc, logoSrc]);
+  }, [bannerSrc, logoSrc, setPortalStyles]);
 
   return (
     <div
       ref={ref}
       data-space-accent-scope
       className={cn(className)}
-      style={DEFAULT_BANNER_OVERLAY_CSS_VARS as React.CSSProperties}
+      style={getDefaultSpaceScopeStyle()}
     >
       {children}
     </div>

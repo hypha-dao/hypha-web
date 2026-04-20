@@ -1,6 +1,7 @@
 export * from './activate-proposals-banner';
 export * from './compact-space-banner';
 export * from './space-accent-from-images';
+export * from './space-accent-portal-context';
 export * from './category-search';
 export * from './category-spaces';
 export * from './create-space-form';
