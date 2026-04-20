@@ -75,8 +75,7 @@ export default async function DhoLayout({
 
   const spaces = await getAllSpaces({ parentOnly: false, omitSandbox: true });
   return (
-    /* Pull space chrome up against MenuTop — root layout applies pt-9 for other routes */
-    <div className="-mt-9 flex max-w-container-2xl mx-auto">
+    <div className="flex max-w-container-2xl mx-auto">
       <Container className="flex-grow min-w-0">
         <SpaceHeader
           lang={lang}

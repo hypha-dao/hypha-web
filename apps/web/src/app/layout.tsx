@@ -21,6 +21,7 @@ import { ConditionalMatrixProvider } from '@web/components/conditional-matrix-pr
 import { fileRouter } from '@hypha-platform/core/server';
 import { TooltipProvider } from '@hypha-platform/ui';
 import { AppChromeWithMenu } from '@web/components/app-chrome-with-menu';
+import { AppContentPad } from '@web/components/app-content-pad';
 import { MenuBreadcrumbProvider } from '@web/components/menu-breadcrumb-context';
 import {
   getEnableAiChat,
@@ -162,12 +163,7 @@ export default async function RootLayout({
                             <NextSSRPlugin
                               routerConfig={extractRouterConfig(fileRouter)}
                             />
-                            {/* pt-9 on this wrapper so route-level -mt-9 (e.g. DHO) pulls up into this padding, not past an extra nested box */}
-                            <div className="mb-auto pb-8 pt-9">
-                              <div className="flex h-full justify-normal">
-                                <div className="h-full w-full">{children}</div>
-                              </div>
-                            </div>
+                            <AppContentPad>{children}</AppContentPad>
                             <Footer
                               networkLabel={tFooter('network')}
                               legalLabel={tFooter('legal')}
