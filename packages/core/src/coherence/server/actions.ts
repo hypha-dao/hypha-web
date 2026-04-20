@@ -2,6 +2,7 @@
 
 import { CreateCoherenceInput, UpdateCoherenceBySlugInput } from '../types';
 import { getDb } from '../../common/server/get-db';
+import { toClientJson } from './serialize-client-json';
 import {
   createCoherence,
   deleteCoherenceBySlug,
@@ -18,7 +19,8 @@ export async function createCoherenceAction(
   { authToken }: { authToken?: string },
 ) {
   if (!authToken) throw new Error('authToken is required to create coherence');
-  return createCoherence({ ...data }, { db: getDb({ authToken }) });
+  const row = await createCoherence({ ...data }, { db: getDb({ authToken }) });
+  return toClientJson(row);
 }
 
 export async function updateCoherenceBySlugAction(
@@ -26,10 +28,11 @@ export async function updateCoherenceBySlugAction(
   { authToken }: { authToken?: string },
 ) {
   if (!authToken) throw new Error('authToken is required to update coherence');
-  return updateCoherenceBySlug(data, {
+  const row = await updateCoherenceBySlug(data, {
     db: getDb({ authToken }),
     authToken,
   });
+  return toClientJson(row);
 }
 
 export async function deleteCoherenceBySlugAction(
@@ -37,10 +40,11 @@ export async function deleteCoherenceBySlugAction(
   { authToken }: { authToken?: string },
 ) {
   if (!authToken) throw new Error('authToken is required to delete coherence');
-  return deleteCoherenceBySlug(data, {
+  const row = await deleteCoherenceBySlug(data, {
     db: getDb({ authToken }),
     authToken,
   });
+  return toClientJson(row);
 }
 
 export async function setCoherenceVoteBySlugAction(
@@ -48,19 +52,21 @@ export async function setCoherenceVoteBySlugAction(
   { authToken }: { authToken?: string },
 ) {
   if (!authToken) throw new Error('authToken is required to vote');
-  return setCoherenceVoteBySlug(
+  const normalized = await setCoherenceVoteBySlug(
     { ...data, authToken },
     { db: getDb({ authToken }) },
   );
+  return toClientJson(normalized);
 }
 
 export async function getCoherenceVoteStateBySlugAction(
   data: { slug: string },
   { authToken }: { authToken?: string },
 ) {
-  return getCoherenceVoteStateBySlug(data, {
+  const state = await getCoherenceVoteStateBySlug(data, {
     db: getDb({ authToken: authToken ?? undefined }),
   });
+  return state ? toClientJson(state) : null;
 }
 
 export async function getMyCoherenceVotesForCoherenceIdsAction(
