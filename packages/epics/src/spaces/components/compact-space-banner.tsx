@@ -107,9 +107,9 @@ export function CompactSpaceBanner({
         />
       )}
 
-      {/* Readability veil — keeps text crisp over photo */}
+      {/* Readability veil — darken foliage under typography (neutral-* tokens are for light surfaces) */}
       <div
-        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-black/35 via-transparent to-emerald-950/55"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-black/45 via-black/25 to-emerald-950/65"
         aria-hidden
       />
 
@@ -151,7 +151,7 @@ export function CompactSpaceBanner({
         {/* Body — scroll when copy exceeds max height (same interaction model as #2165 hero purpose) */}
         {description ? (
           <div className={DESCRIPTION_SCROLL_BOX}>
-            <p className="text-pretty text-2 leading-[1.5] text-white">
+            <p className="text-pretty text-2 leading-[1.5] text-white/95 [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]">
               {description}
             </p>
           </div>
@@ -160,22 +160,26 @@ export function CompactSpaceBanner({
         <div className="h-px w-full bg-white/12" role="presentation" />
 
         <div className="flex flex-col gap-4 gap-x-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-1 text-neutral-11">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-1 text-white/88 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]">
             <span>
-              <span className="font-bold text-white">{memberCount}</span>{' '}
-              {membersLabel}
+              <span className="font-bold tabular-nums text-white">
+                {memberCount}
+              </span>{' '}
+              <span className="text-white/92">{membersLabel}</span>
             </span>
-            <span className="text-neutral-10" aria-hidden>
+            <span className="text-white/45" aria-hidden>
               ·
             </span>
             <span>
-              <span className="font-bold text-white">{agreementCount}</span>{' '}
-              {agreementsLabel}
+              <span className="font-bold tabular-nums text-white">
+                {agreementCount}
+              </span>{' '}
+              <span className="text-white/92">{agreementsLabel}</span>
             </span>
-            <span className="text-neutral-10" aria-hidden>
+            <span className="text-white/45" aria-hidden>
               ·
             </span>
-            <span>{createdOnText}</span>
+            <span className="text-white/88">{createdOnText}</span>
           </div>
 
           {footerTrailing ? (
