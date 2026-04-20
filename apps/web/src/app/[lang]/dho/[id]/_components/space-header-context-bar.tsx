@@ -22,7 +22,7 @@ export function SpaceHeaderContextBar({
 }: SpaceHeaderContextBarProps) {
   const rowRef = useRef<HTMLDivElement>(null);
   const tCommon = useTranslations('Common');
-  const { compactActionsMirror, progress } = useSpaceHeaderMorph();
+  const { progress } = useSpaceHeaderMorph();
 
   /** Hide strip at top of page; show once user scrolls (hero moves under menu). */
   const IDENTITY_STRIP_SHOW_PROGRESS = 0.04;
@@ -78,7 +78,7 @@ export function SpaceHeaderContextBar({
         >
           {identity}
         </div>
-        {!compactActionsMirror && trailing ? (
+        {trailing ? (
           <div className="flex shrink-0 justify-end">{trailing}</div>
         ) : null}
       </div>

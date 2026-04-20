@@ -77,10 +77,6 @@ export async function SpaceHeader({
   const identityContext = (
     <SpaceHeaderIdentityCrumbs key="identity-context" {...identityProps} />
   );
-  const identityMirror = (
-    <SpaceHeaderIdentityCrumbs key="identity-mirror" {...identityProps} />
-  );
-
   const navLink =
     typeof web3SpaceId === 'number' ? (
       <NestedSpacesButton
@@ -96,10 +92,6 @@ export async function SpaceHeader({
         menuBreadcrumbBridge={
           <SpaceHeaderMenuBridge>{null}</SpaceHeaderMenuBridge>
         }
-        web3SpaceId={web3SpaceId}
-        spaceId={spaceId}
-        identitySlot={identityMirror}
-        navLink={navLink}
       >
         <SpaceHeaderContextBar identity={identityContext} trailing={navLink} />
 

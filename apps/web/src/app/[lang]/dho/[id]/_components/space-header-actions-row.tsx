@@ -11,7 +11,7 @@ type SpaceHeaderActionsRowProps = {
   className?: string;
 };
 
-/** Single in-flow Join + action buttons row (mirrored by `SpaceHeaderFixedActions` until absorbed). */
+/** Single in-flow Join + action buttons row below the hero. */
 export function SpaceHeaderActionsRow({
   web3SpaceId,
   spaceId,

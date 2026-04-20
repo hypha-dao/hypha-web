@@ -13,41 +13,15 @@ import {
 /** Fallback when `--app-menu-top-h` is unset */
 export const SPACE_MENU_TOP_FALLBACK_PX = 65;
 
-export type ActionsMirrorLayout = {
-  mirror: boolean;
-  absorbed: boolean;
-  /** Horizontal delta so fixed Join+actions cluster lines up with the in-flow row */
-  clusterTranslatePx: number;
-};
-
 export type SpaceHeaderMorphContextValue = {
   /** 0 = hero fully visible below fold concept; 1 = hero eaten / compact state */
   progress: number;
   reducedMotion: boolean;
-  /**
-   * Fixed portal shows Join+actions only while the in-flow row overlaps MenuTop + identity
-   * (narrow band). Turns off once the row is absorbed (sticky under the stack).
-   */
-  compactActionsMirror: boolean;
-  /** In-flow actions row is stuck under MenuTop + subnav */
-  compactActionsAbsorbed: boolean;
-  clusterTranslatePx: number;
-  setActionsMirrorLayout: (next: ActionsMirrorLayout) => void;
-};
-
-const defaultLayout: ActionsMirrorLayout = {
-  mirror: false,
-  absorbed: false,
-  clusterTranslatePx: 0,
 };
 
 const SpaceHeaderMorphContext = createContext<SpaceHeaderMorphContextValue>({
   progress: 0,
   reducedMotion: false,
-  compactActionsMirror: false,
-  compactActionsAbsorbed: false,
-  clusterTranslatePx: 0,
-  setActionsMirrorLayout: () => {},
 });
 
 export function useSpaceHeaderMorph() {
@@ -70,18 +44,7 @@ export function SpaceHeaderMorphProvider({
 }: ProviderProps) {
   const [progress, setProgress] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(false);
-  const [layout, setLayout] = useState<ActionsMirrorLayout>(defaultLayout);
   const frameRef = useRef<number>(0);
-
-  const setActionsMirrorLayout = useCallback((next: ActionsMirrorLayout) => {
-    setLayout((prev) =>
-      prev.mirror === next.mirror &&
-      prev.absorbed === next.absorbed &&
-      prev.clusterTranslatePx === next.clusterTranslatePx
-        ? prev
-        : next,
-    );
-  }, []);
 
   const updateProgress = useCallback(() => {
     const root = containerRef.current;
@@ -151,12 +114,8 @@ export function SpaceHeaderMorphProvider({
     () => ({
       progress,
       reducedMotion,
-      compactActionsMirror: layout.mirror,
-      compactActionsAbsorbed: layout.absorbed,
-      clusterTranslatePx: layout.clusterTranslatePx,
-      setActionsMirrorLayout,
     }),
-    [progress, reducedMotion, layout, setActionsMirrorLayout],
+    [progress, reducedMotion],
   );
 
   return (
