@@ -103,7 +103,7 @@ export default async function DhoLayout({
   return (
     <div className="mx-auto flex max-w-container-2xl">
       <Container className="min-w-0 flex-grow !px-4">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 md:gap-x-4">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 md:gap-x-4">
           <div className="flex min-h-8 min-w-0 flex-1 items-center">
             <Breadcrumbs spaceId={spaceFromDb.id} lang={lang} />
           </div>
@@ -111,47 +111,49 @@ export default async function DhoLayout({
             <NestedSpacesButton web3SpaceId={web3SpaceId} spaceSlug={daoSlug} />
           ) : null}
         </div>
-        <CompactSpaceBanner
-          title={spaceFromDb.title}
-          description={spaceFromDb.description}
-          logoUrl={spaceFromDb.logoUrl}
-          logoAlt={spaceFromDb.title}
-          defaultLogoSrc={DEFAULT_SPACE_AVATAR_IMAGE}
-          links={spaceFromDb.links}
-          leadImageUrl={spaceFromDb.leadImage}
-          defaultLeadImageSrc={DEFAULT_SPACE_LEAD_IMAGE}
-          memberCount={spaceMembers}
-          agreementCount={spaceAgreements}
-          createdOnText={tCommon('createdOn', {
-            date: formatDate(spaceFromDb.createdAt, true),
-          })}
-          membersLabel={tCommon('Members')}
-          agreementsLabel={tCommon('Agreements')}
-          footerTrailing={
-            <>
-              {hasWeb3Id && web3SpaceId !== undefined && (
-                <SubscriptionBadge
+        <div className="my-3">
+          <CompactSpaceBanner
+            title={spaceFromDb.title}
+            description={spaceFromDb.description}
+            logoUrl={spaceFromDb.logoUrl}
+            logoAlt={spaceFromDb.title}
+            defaultLogoSrc={DEFAULT_SPACE_AVATAR_IMAGE}
+            links={spaceFromDb.links}
+            leadImageUrl={spaceFromDb.leadImage}
+            defaultLeadImageSrc={DEFAULT_SPACE_LEAD_IMAGE}
+            memberCount={spaceMembers}
+            agreementCount={spaceAgreements}
+            createdOnText={tCommon('createdOn', {
+              date: formatDate(spaceFromDb.createdAt, true),
+            })}
+            membersLabel={tCommon('Members')}
+            agreementsLabel={tCommon('Agreements')}
+            footerTrailing={
+              <>
+                {hasWeb3Id && web3SpaceId !== undefined && (
+                  <SubscriptionBadge
+                    web3SpaceId={web3SpaceId}
+                    className="rounded-md border-emerald-400/85 bg-transparent text-white hover:border-emerald-300 hover:bg-white/10 [&]:rounded-md [&]:border-emerald-400/85 [&]:text-white"
+                  />
+                )}
+                <SpaceModeLabel
                   web3SpaceId={web3SpaceId}
-                  className="rounded-md border-emerald-400/85 bg-transparent text-white hover:border-emerald-300 hover:bg-white/10 [&]:rounded-md [&]:border-emerald-400/85 [&]:text-white"
+                  isSandbox={spaceFromDb.flags.includes('sandbox')}
+                  isDemo={spaceFromDb.flags.includes('demo')}
+                  isArchived={
+                    spaceFromDb.flags.includes('archived') || spaceMembers === 0
+                  }
+                  configPath={`${getDhoPathAgreements(
+                    lang,
+                    daoSlug,
+                  )}/space-configuration`}
+                  className="[&_.border-accent-8]:rounded-md [&_.border-accent-8]:border-white/85 [&_.border-accent-8]:bg-transparent [&_.border-accent-8]:text-white [&_.border-accent-8]:hover:border-white [&_.border-accent-8]:hover:bg-white/10 [&_.border-error-8]:rounded-md [&_.border-error-8]:border-white/85 [&_.border-error-8]:bg-transparent [&_.border-error-8]:text-white [&_.border-warning-8]:rounded-md [&_.border-warning-8]:border-amber-200/90 [&_.border-warning-8]:bg-transparent [&_.border-warning-8]:text-white"
                 />
-              )}
-              <SpaceModeLabel
-                web3SpaceId={web3SpaceId}
-                isSandbox={spaceFromDb.flags.includes('sandbox')}
-                isDemo={spaceFromDb.flags.includes('demo')}
-                isArchived={
-                  spaceFromDb.flags.includes('archived') || spaceMembers === 0
-                }
-                configPath={`${getDhoPathAgreements(
-                  lang,
-                  daoSlug,
-                )}/space-configuration`}
-                className="[&_.border-accent-8]:rounded-md [&_.border-accent-8]:border-white/85 [&_.border-accent-8]:bg-transparent [&_.border-accent-8]:text-white [&_.border-accent-8]:hover:border-white [&_.border-accent-8]:hover:bg-white/10 [&_.border-error-8]:rounded-md [&_.border-error-8]:border-white/85 [&_.border-error-8]:bg-transparent [&_.border-error-8]:text-white [&_.border-warning-8]:rounded-md [&_.border-warning-8]:border-amber-200/90 [&_.border-warning-8]:bg-transparent [&_.border-warning-8]:text-white"
-              />
-            </>
-          }
-        />
-        <div className="mt-3 flex justify-end gap-2">
+              </>
+            }
+          />
+        </div>
+        <div className="flex justify-end gap-2">
           {web3SpaceId !== undefined && (
             <JoinSpace web3SpaceId={web3SpaceId} spaceId={spaceFromDb.id} />
           )}
