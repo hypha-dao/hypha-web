@@ -14,8 +14,6 @@ export * from './get-path-function';
 export * from './ai-panel';
 export { AiLeftPanel } from './ai-left-panel';
 export { AiLeftPanelLayout } from './ai-left-panel-layout';
-export { ChromeBannerShell } from './chrome-banner';
-
 export {
   PanelProviders,
   PanelWrapLayout,
