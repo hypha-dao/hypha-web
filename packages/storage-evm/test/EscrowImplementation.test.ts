@@ -9,13 +9,13 @@ describe('EscrowImplementation', function () {
       await ethers.getSigners();
 
     // Deploy EscrowImplementation via UUPS proxy
-    const EscrowFactory =
-      await ethers.getContractFactory('EscrowImplementation');
-    const escrow = await upgrades.deployProxy(
-      EscrowFactory,
-      [owner.address],
-      { initializer: 'initialize', kind: 'uups' },
+    const EscrowFactory = await ethers.getContractFactory(
+      'EscrowImplementation',
     );
+    const escrow = await upgrades.deployProxy(EscrowFactory, [owner.address], {
+      initializer: 'initialize',
+      kind: 'uups',
+    });
 
     // Deploy two mock ERC20 tokens
     const TokenFactory = await ethers.getContractFactory('MockERC20');
@@ -63,8 +63,16 @@ describe('EscrowImplementation', function () {
   // ──────────────────────────────────────────────
   describe('createEscrow', function () {
     it('allows a third-party to create an escrow for two other parties', async function () {
-      const { escrow, tokenA, tokenB, partyA, partyB, creator, AMOUNT_A, AMOUNT_B } =
-        await loadFixture(deployFixture);
+      const {
+        escrow,
+        tokenA,
+        tokenB,
+        partyA,
+        partyB,
+        creator,
+        AMOUNT_A,
+        AMOUNT_B,
+      } = await loadFixture(deployFixture);
 
       const tx = await escrow
         .connect(creator)
@@ -92,8 +100,16 @@ describe('EscrowImplementation', function () {
     });
 
     it('emits EscrowCreated with correct creator, partyA, partyB', async function () {
-      const { escrow, tokenA, tokenB, partyA, partyB, creator, AMOUNT_A, AMOUNT_B } =
-        await loadFixture(deployFixture);
+      const {
+        escrow,
+        tokenA,
+        tokenB,
+        partyA,
+        partyB,
+        creator,
+        AMOUNT_A,
+        AMOUNT_B,
+      } = await loadFixture(deployFixture);
 
       await expect(
         escrow
@@ -219,15 +235,39 @@ describe('EscrowImplementation', function () {
     });
 
     it('increments escrowCounter for each new escrow', async function () {
-      const { escrow, tokenA, tokenB, partyA, partyB, creator, AMOUNT_A, AMOUNT_B } =
-        await loadFixture(deployFixture);
+      const {
+        escrow,
+        tokenA,
+        tokenB,
+        partyA,
+        partyB,
+        creator,
+        AMOUNT_A,
+        AMOUNT_B,
+      } = await loadFixture(deployFixture);
 
       await escrow
         .connect(creator)
-        .createEscrow(partyA.address, partyB.address, tokenA.target, tokenB.target, AMOUNT_A, AMOUNT_B, false);
+        .createEscrow(
+          partyA.address,
+          partyB.address,
+          tokenA.target,
+          tokenB.target,
+          AMOUNT_A,
+          AMOUNT_B,
+          false,
+        );
       await escrow
         .connect(creator)
-        .createEscrow(partyA.address, partyB.address, tokenA.target, tokenB.target, AMOUNT_A, AMOUNT_B, false);
+        .createEscrow(
+          partyA.address,
+          partyB.address,
+          tokenA.target,
+          tokenB.target,
+          AMOUNT_A,
+          AMOUNT_B,
+          false,
+        );
 
       expect(await escrow.escrowCounter()).to.equal(2);
     });
@@ -240,7 +280,15 @@ describe('EscrowImplementation', function () {
 
       await escrow
         .connect(partyA)
-        .createEscrow(partyA.address, partyB.address, tokenA.target, tokenB.target, AMOUNT_A, AMOUNT_B, true);
+        .createEscrow(
+          partyA.address,
+          partyB.address,
+          tokenA.target,
+          tokenB.target,
+          AMOUNT_A,
+          AMOUNT_B,
+          true,
+        );
 
       const data = await escrow.getEscrow(1);
       expect(data.isPartyAFunded).to.be.true;
@@ -255,7 +303,15 @@ describe('EscrowImplementation', function () {
 
       await escrow
         .connect(partyB)
-        .createEscrow(partyA.address, partyB.address, tokenA.target, tokenB.target, AMOUNT_A, AMOUNT_B, true);
+        .createEscrow(
+          partyA.address,
+          partyB.address,
+          tokenA.target,
+          tokenB.target,
+          AMOUNT_A,
+          AMOUNT_B,
+          true,
+        );
 
       const data = await escrow.getEscrow(1);
       expect(data.isPartyAFunded).to.be.false;
@@ -263,13 +319,29 @@ describe('EscrowImplementation', function () {
     });
 
     it('sendFundsNow=true reverts when creator is neither party', async function () {
-      const { escrow, tokenA, tokenB, partyA, partyB, creator, AMOUNT_A, AMOUNT_B } =
-        await loadFixture(deployFixture);
+      const {
+        escrow,
+        tokenA,
+        tokenB,
+        partyA,
+        partyB,
+        creator,
+        AMOUNT_A,
+        AMOUNT_B,
+      } = await loadFixture(deployFixture);
 
       await expect(
         escrow
           .connect(creator)
-          .createEscrow(partyA.address, partyB.address, tokenA.target, tokenB.target, AMOUNT_A, AMOUNT_B, true),
+          .createEscrow(
+            partyA.address,
+            partyB.address,
+            tokenA.target,
+            tokenB.target,
+            AMOUNT_A,
+            AMOUNT_B,
+            true,
+          ),
       ).to.be.revertedWith('Sender not part of this escrow');
     });
   });
@@ -280,11 +352,28 @@ describe('EscrowImplementation', function () {
   describe('receiveFunds', function () {
     async function createdEscrowFixture() {
       const base = await deployFixture();
-      const { escrow, tokenA, tokenB, partyA, partyB, creator, AMOUNT_A, AMOUNT_B } = base;
+      const {
+        escrow,
+        tokenA,
+        tokenB,
+        partyA,
+        partyB,
+        creator,
+        AMOUNT_A,
+        AMOUNT_B,
+      } = base;
 
       await escrow
         .connect(creator)
-        .createEscrow(partyA.address, partyB.address, tokenA.target, tokenB.target, AMOUNT_A, AMOUNT_B, false);
+        .createEscrow(
+          partyA.address,
+          partyB.address,
+          tokenA.target,
+          tokenB.target,
+          AMOUNT_A,
+          AMOUNT_B,
+          false,
+        );
 
       // Approve escrow contract
       await tokenA.connect(partyA).approve(escrow.target, AMOUNT_A);
@@ -295,12 +384,18 @@ describe('EscrowImplementation', function () {
 
     it('allows partyA to fund', async function () {
       const { escrow, partyA } = await loadFixture(createdEscrowFixture);
-      await expect(escrow.connect(partyA).receiveFunds(1)).to.emit(escrow, 'FundsReceived');
+      await expect(escrow.connect(partyA).receiveFunds(1)).to.emit(
+        escrow,
+        'FundsReceived',
+      );
     });
 
     it('allows partyB to fund', async function () {
       const { escrow, partyB } = await loadFixture(createdEscrowFixture);
-      await expect(escrow.connect(partyB).receiveFunds(1)).to.emit(escrow, 'FundsReceived');
+      await expect(escrow.connect(partyB).receiveFunds(1)).to.emit(
+        escrow,
+        'FundsReceived',
+      );
     });
 
     it('creator who is not a party cannot fund', async function () {
@@ -346,11 +441,28 @@ describe('EscrowImplementation', function () {
   describe('cancelEscrow', function () {
     async function createdEscrowFixture() {
       const base = await deployFixture();
-      const { escrow, tokenA, tokenB, partyA, partyB, creator, AMOUNT_A, AMOUNT_B } = base;
+      const {
+        escrow,
+        tokenA,
+        tokenB,
+        partyA,
+        partyB,
+        creator,
+        AMOUNT_A,
+        AMOUNT_B,
+      } = base;
 
       await escrow
         .connect(creator)
-        .createEscrow(partyA.address, partyB.address, tokenA.target, tokenB.target, AMOUNT_A, AMOUNT_B, false);
+        .createEscrow(
+          partyA.address,
+          partyB.address,
+          tokenA.target,
+          tokenB.target,
+          AMOUNT_A,
+          AMOUNT_B,
+          false,
+        );
 
       return base;
     }
@@ -385,7 +497,16 @@ describe('EscrowImplementation', function () {
 
     it('cannot cancel an already-completed escrow', async function () {
       const base = await loadFixture(createdEscrowFixture);
-      const { escrow, tokenA, tokenB, partyA, partyB, creator, AMOUNT_A, AMOUNT_B } = base;
+      const {
+        escrow,
+        tokenA,
+        tokenB,
+        partyA,
+        partyB,
+        creator,
+        AMOUNT_A,
+        AMOUNT_B,
+      } = base;
 
       await tokenA.connect(partyA).approve(escrow.target, AMOUNT_A);
       await tokenB.connect(partyB).approve(escrow.target, AMOUNT_B);
@@ -404,32 +525,291 @@ describe('EscrowImplementation', function () {
         'Escrow already cancelled',
       );
     });
+
+    // ──────────────────────────────────────────────
+    //  Auto-refund on cancel
+    //
+    //  Note: at cancellation time at most one side can be funded —
+    //  `_receiveFunds` auto-completes the escrow as soon as both sides
+    //  have funded, so `isPartyAFunded && isPartyBFunded && !isCompleted`
+    //  is unreachable. These tests cover the realistic single-party-
+    //  funded case for both sides and the push-refund failure fallback.
+    // ──────────────────────────────────────────────
+    describe('auto-refund on cancel', function () {
+      async function partyAFundedFixture() {
+        const base = await deployFixture();
+        const {
+          escrow,
+          tokenA,
+          tokenB,
+          partyA,
+          partyB,
+          creator,
+          AMOUNT_A,
+          AMOUNT_B,
+        } = base;
+
+        await escrow
+          .connect(creator)
+          .createEscrow(
+            partyA.address,
+            partyB.address,
+            tokenA.target,
+            tokenB.target,
+            AMOUNT_A,
+            AMOUNT_B,
+            false,
+          );
+        await tokenA.connect(partyA).approve(escrow.target, AMOUNT_A);
+        await escrow.connect(partyA).receiveFunds(1);
+
+        return base;
+      }
+
+      it('refunds partyA in a single tx when creator cancels', async function () {
+        const { escrow, tokenA, partyA, creator, AMOUNT_A } = await loadFixture(
+          partyAFundedFixture,
+        );
+
+        const aBefore = await tokenA.balanceOf(partyA.address);
+
+        await expect(escrow.connect(creator).cancelEscrow(1))
+          .to.emit(escrow, 'EscrowCancelled')
+          .withArgs(1, creator.address)
+          .and.to.emit(escrow, 'FundsWithdrawn')
+          .withArgs(1, partyA.address, tokenA.target, AMOUNT_A);
+
+        expect((await tokenA.balanceOf(partyA.address)) - aBefore).to.equal(
+          AMOUNT_A,
+        );
+
+        const data = await escrow.getEscrow(1);
+        expect(data.isCancelled).to.be.true;
+        expect(data.isPartyAFunded).to.be.false;
+        expect(data.isPartyBFunded).to.be.false;
+      });
+
+      it('refunds partyB in a single tx when partyB cancels after only they funded', async function () {
+        const {
+          escrow,
+          tokenA,
+          tokenB,
+          partyA,
+          partyB,
+          creator,
+          AMOUNT_A,
+          AMOUNT_B,
+        } = await loadFixture(deployFixture);
+
+        await escrow
+          .connect(creator)
+          .createEscrow(
+            partyA.address,
+            partyB.address,
+            tokenA.target,
+            tokenB.target,
+            AMOUNT_A,
+            AMOUNT_B,
+            false,
+          );
+        await tokenB.connect(partyB).approve(escrow.target, AMOUNT_B);
+        await escrow.connect(partyB).receiveFunds(1);
+
+        const bBefore = await tokenB.balanceOf(partyB.address);
+
+        await expect(escrow.connect(partyB).cancelEscrow(1))
+          .to.emit(escrow, 'FundsWithdrawn')
+          .withArgs(1, partyB.address, tokenB.target, AMOUNT_B);
+
+        expect((await tokenB.balanceOf(partyB.address)) - bBefore).to.equal(
+          AMOUNT_B,
+        );
+
+        const data = await escrow.getEscrow(1);
+        expect(data.isPartyBFunded).to.be.false;
+      });
+
+      it('emits no FundsWithdrawn when neither party deposited', async function () {
+        const {
+          escrow,
+          tokenA,
+          tokenB,
+          partyA,
+          partyB,
+          creator,
+          AMOUNT_A,
+          AMOUNT_B,
+        } = await loadFixture(deployFixture);
+
+        await escrow
+          .connect(creator)
+          .createEscrow(
+            partyA.address,
+            partyB.address,
+            tokenA.target,
+            tokenB.target,
+            AMOUNT_A,
+            AMOUNT_B,
+            false,
+          );
+
+        await expect(escrow.connect(creator).cancelEscrow(1))
+          .to.emit(escrow, 'EscrowCancelled')
+          .and.to.not.emit(escrow, 'FundsWithdrawn');
+      });
+
+      it('cancellation succeeds even when the refund token transfer reverts; funded party can still pull via withdrawFromCancelled', async function () {
+        const { owner, partyA, partyB, creator, AMOUNT_A, AMOUNT_B } =
+          await loadFixture(deployFixture);
+
+        const EscrowFactory = await ethers.getContractFactory(
+          'EscrowImplementation',
+        );
+        const escrow = await upgrades.deployProxy(
+          EscrowFactory,
+          [owner.address],
+          { initializer: 'initialize', kind: 'uups' },
+        );
+
+        // Use a reverting tokenA so the auto-refund push fails.
+        const Bad = await ethers.getContractFactory('MockRevertingERC20');
+        const tokenA = await Bad.deploy('Bad', 'BAD', 18);
+        const Good = await ethers.getContractFactory('MockERC20');
+        const tokenB = await Good.deploy('Good', 'GOOD', 18);
+
+        await tokenA.mint(partyA.address, ethers.parseEther('10000'));
+        await tokenB.mint(partyB.address, ethers.parseEther('10000'));
+
+        await escrow
+          .connect(creator)
+          .createEscrow(
+            partyA.address,
+            partyB.address,
+            tokenA.target,
+            tokenB.target,
+            AMOUNT_A,
+            AMOUNT_B,
+            false,
+          );
+
+        await tokenA.connect(partyA).approve(escrow.target, AMOUNT_A);
+        await escrow.connect(partyA).receiveFunds(1);
+
+        // Poison the refund path back to partyA — simulates a USDC-style blacklist.
+        await tokenA.setFailTransfersTo(partyA.address);
+
+        const aBefore = await tokenA.balanceOf(partyA.address);
+
+        // Cancel must still succeed.
+        await expect(escrow.connect(creator).cancelEscrow(1))
+          .to.emit(escrow, 'EscrowCancelled')
+          .and.to.not.emit(escrow, 'FundsWithdrawn');
+
+        // partyA got nothing — push refund silently failed.
+        expect(await tokenA.balanceOf(partyA.address)).to.equal(aBefore);
+
+        const data = await escrow.getEscrow(1);
+        expect(data.isCancelled).to.be.true;
+        // Funded flag preserved so partyA can still pull the funds.
+        expect(data.isPartyAFunded).to.be.true;
+
+        // Lift the blacklist and confirm partyA can recover via the pull path.
+        await tokenA.setFailTransfersTo(ethers.ZeroAddress);
+        await escrow.connect(partyA).withdrawFromCancelled(1);
+        expect((await tokenA.balanceOf(partyA.address)) - aBefore).to.equal(
+          AMOUNT_A,
+        );
+      });
+
+      it('withdrawFromCancelled reverts with "No funds to withdraw" after a successful auto-refund', async function () {
+        // Confirms the frontend's existing soft-success branch still
+        // matches: cancelEscrow now refunds, the follow-up withdraw
+        // hits the no-funds revert which the client treats as success.
+        const { escrow, partyA, creator } = await loadFixture(
+          partyAFundedFixture,
+        );
+
+        await escrow.connect(creator).cancelEscrow(1);
+
+        await expect(
+          escrow.connect(partyA).withdrawFromCancelled(1),
+        ).to.be.revertedWith('No funds to withdraw');
+      });
+    });
   });
 
   // ──────────────────────────────────────────────
-  //  withdrawFromCancelled
+  //  withdrawFromCancelled (now a fallback for when push refund failed)
+  //
+  //  Since cancelEscrow now auto-refunds funded parties, the realistic
+  //  scenario for needing this function is: cancellation succeeded but
+  //  the token transfer in _tryRefund silently failed (paused/blacklist
+  //  token). We use MockRevertingERC20 to simulate that.
   // ──────────────────────────────────────────────
   describe('withdrawFromCancelled', function () {
-    async function fundedAndCancelledFixture() {
-      const base = await deployFixture();
-      const { escrow, tokenA, tokenB, partyA, partyB, creator, AMOUNT_A, AMOUNT_B } = base;
+    async function pushFailedFundedAndCancelledFixture() {
+      const [owner, partyA, partyB, creator, stranger] =
+        await ethers.getSigners();
+
+      const EscrowFactory = await ethers.getContractFactory(
+        'EscrowImplementation',
+      );
+      const escrow = await upgrades.deployProxy(
+        EscrowFactory,
+        [owner.address],
+        { initializer: 'initialize', kind: 'uups' },
+      );
+
+      // Reverting tokenA so the auto-refund push can be made to fail.
+      const Bad = await ethers.getContractFactory('MockRevertingERC20');
+      const tokenA = await Bad.deploy('Bad', 'BAD', 18);
+      const Good = await ethers.getContractFactory('MockERC20');
+      const tokenB = await Good.deploy('Good', 'GOOD', 18);
+
+      const AMOUNT_A = ethers.parseEther('100');
+      const AMOUNT_B = ethers.parseEther('200');
+
+      await tokenA.mint(partyA.address, ethers.parseEther('10000'));
+      await tokenB.mint(partyB.address, ethers.parseEther('10000'));
 
       await escrow
         .connect(creator)
-        .createEscrow(partyA.address, partyB.address, tokenA.target, tokenB.target, AMOUNT_A, AMOUNT_B, false);
+        .createEscrow(
+          partyA.address,
+          partyB.address,
+          tokenA.target,
+          tokenB.target,
+          AMOUNT_A,
+          AMOUNT_B,
+          false,
+        );
 
-      // partyA funds, partyB does not
       await tokenA.connect(partyA).approve(escrow.target, AMOUNT_A);
       await escrow.connect(partyA).receiveFunds(1);
 
-      // creator cancels
+      // Block the auto-refund path so the funds stay in escrow after cancel.
+      await tokenA.setFailTransfersTo(partyA.address);
       await escrow.connect(creator).cancelEscrow(1);
+      // Lift the block so the pull path can succeed.
+      await tokenA.setFailTransfersTo(ethers.ZeroAddress);
 
-      return base;
+      return {
+        escrow,
+        tokenA,
+        tokenB,
+        partyA,
+        partyB,
+        creator,
+        stranger,
+        AMOUNT_A,
+        AMOUNT_B,
+      };
     }
 
-    it('funded party can withdraw after cancellation', async function () {
-      const { escrow, tokenA, partyA, AMOUNT_A } = await loadFixture(fundedAndCancelledFixture);
+    it('funded party can withdraw via the pull fallback when auto-refund failed', async function () {
+      const { escrow, tokenA, partyA, AMOUNT_A } = await loadFixture(
+        pushFailedFundedAndCancelledFixture,
+      );
 
       const balBefore = await tokenA.balanceOf(partyA.address);
       await escrow.connect(partyA).withdrawFromCancelled(1);
@@ -439,14 +819,18 @@ describe('EscrowImplementation', function () {
     });
 
     it('unfunded party cannot withdraw', async function () {
-      const { escrow, partyB } = await loadFixture(fundedAndCancelledFixture);
+      const { escrow, partyB } = await loadFixture(
+        pushFailedFundedAndCancelledFixture,
+      );
       await expect(
         escrow.connect(partyB).withdrawFromCancelled(1),
       ).to.be.revertedWith('No funds to withdraw');
     });
 
     it('creator (non-party) cannot withdraw', async function () {
-      const { escrow, creator } = await loadFixture(fundedAndCancelledFixture);
+      const { escrow, creator } = await loadFixture(
+        pushFailedFundedAndCancelledFixture,
+      );
       await expect(
         escrow.connect(creator).withdrawFromCancelled(1),
       ).to.be.revertedWith('Not authorized');
@@ -463,12 +847,28 @@ describe('EscrowImplementation', function () {
     });
 
     it('getEscrowCreator returns the third-party creator', async function () {
-      const { escrow, tokenA, tokenB, partyA, partyB, creator, AMOUNT_A, AMOUNT_B } =
-        await loadFixture(deployFixture);
+      const {
+        escrow,
+        tokenA,
+        tokenB,
+        partyA,
+        partyB,
+        creator,
+        AMOUNT_A,
+        AMOUNT_B,
+      } = await loadFixture(deployFixture);
 
       await escrow
         .connect(creator)
-        .createEscrow(partyA.address, partyB.address, tokenA.target, tokenB.target, AMOUNT_A, AMOUNT_B, false);
+        .createEscrow(
+          partyA.address,
+          partyB.address,
+          tokenA.target,
+          tokenB.target,
+          AMOUNT_A,
+          AMOUNT_B,
+          false,
+        );
 
       expect(await escrow.getEscrowCreator(1)).to.equal(creator.address);
     });
@@ -479,13 +879,29 @@ describe('EscrowImplementation', function () {
   // ──────────────────────────────────────────────
   describe('End-to-end: third-party creates, parties fund, swap completes', function () {
     it('completes the full lifecycle', async function () {
-      const { escrow, tokenA, tokenB, partyA, partyB, creator, AMOUNT_A, AMOUNT_B } =
-        await loadFixture(deployFixture);
+      const {
+        escrow,
+        tokenA,
+        tokenB,
+        partyA,
+        partyB,
+        creator,
+        AMOUNT_A,
+        AMOUNT_B,
+      } = await loadFixture(deployFixture);
 
       // 1. Third-party creator creates the escrow
       await escrow
         .connect(creator)
-        .createEscrow(partyA.address, partyB.address, tokenA.target, tokenB.target, AMOUNT_A, AMOUNT_B, false);
+        .createEscrow(
+          partyA.address,
+          partyB.address,
+          tokenA.target,
+          tokenB.target,
+          AMOUNT_A,
+          AMOUNT_B,
+          false,
+        );
 
       expect(await escrow.escrowExists(1)).to.be.true;
 
