@@ -78,9 +78,13 @@ export function CompactSpaceBanner({
   footerTrailing,
   className,
 }: CompactSpaceBannerProps) {
-  const rawTexture = leadImageUrl || defaultLeadImageSrc || '';
-  const textureSrc =
-    rawTexture && isSafeTextureUrl(rawTexture) ? rawTexture.trim() : '';
+  const textureSrc = (() => {
+    const lead = leadImageUrl?.trim();
+    const fallback = defaultLeadImageSrc?.trim() ?? '';
+    if (lead && isSafeTextureUrl(lead)) return lead;
+    if (fallback && isSafeTextureUrl(fallback)) return fallback;
+    return '';
+  })();
 
   const safeLinks =
     links?.filter((l) => typeof l === 'string' && isSafeLinkHref(l)) ?? [];
