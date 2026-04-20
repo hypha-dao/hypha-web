@@ -1,10 +1,12 @@
 import {
+  check,
   integer,
   pgTable,
   serial,
   smallint,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { commonDateFields } from './shared';
 import { coherences } from './coherence';
@@ -29,6 +31,7 @@ export const coherenceVotes = pgTable(
       table.coherenceId,
       table.personId,
     ),
+    check('coherence_votes_value_check', sql`${table.value} IN (-1, 1)`),
   ],
 );
 
