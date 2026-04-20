@@ -54,6 +54,9 @@ jobs:
       - name: Type check
         run: pnpm turbo run check-types --filter=web
 
+      - name: Verify i18n locale parity
+        run: pnpm run verify:messages
+
   deploy-preview:
     needs: [detect-changes, check-types]
     if: github.event_name == 'pull_request' && needs.detect-changes.outputs.has_preview_deploy_changes == 'true'
