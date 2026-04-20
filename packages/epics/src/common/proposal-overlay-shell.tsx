@@ -99,7 +99,7 @@ export function ProposalOverlayShell({
 
   return (
     <AsideOverlayLayoutProvider mode="modal-shell">
-      <DialogPrimitive.Root modal={false} defaultOpen open>
+      <DialogPrimitive.Root modal={false} open>
         <DialogPrimitive.Portal>
           {/* Plain scrim below MenuTop (z-30); starts under --menu-top-height */}
           <div
