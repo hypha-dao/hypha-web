@@ -160,10 +160,5 @@ export function useSellerLegBalanceValidation(messages: Messages | string) {
       window.clearTimeout(timer);
       runSeqRef.current += 1;
     };
-  }, [
-    validationKey,
-    isSubmitting,
-    clearManualSellerLegAmountError,
-    setError,
-  ]);
+  }, [validationKey, isSubmitting, clearManualSellerLegAmountError, setError]);
 }

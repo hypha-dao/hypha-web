@@ -79,7 +79,8 @@ export const SpaceEscrowDepositBanners = ({
     spaceId: typeof web3SpaceId === 'number' ? web3SpaceId : undefined,
   });
   const { person } = useMe();
-  const shouldFetchDeposits = isMember && typeof web3SpaceId === 'number' && !!executorAddress;
+  const shouldFetchDeposits =
+    isMember && typeof web3SpaceId === 'number' && !!executorAddress;
   const { pendingDeposits, refresh } = usePendingEscrowDeposits({
     user: shouldFetchDeposits ? executorAddress : undefined,
   });

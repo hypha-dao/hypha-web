@@ -549,69 +549,75 @@ export const ExchangeStakesAndTokensPlugin = ({
     buyerTokenCandidates,
   ]);
 
-  const { data: sellerEscrowWhitelistOk, error: sellerEscrowWhitelistError, isLoading: isLoadingSellerWhitelist } =
-    useSWR(
-      escrowContractAddress &&
-        isEvmAddress(sellerBalanceLookupAddress) &&
-        sellerTokensBeforeWhitelist.length > 0
-        ? [
-            'exchangeSellerEscrowWhitelist',
-            chainId,
-            escrowContractAddress,
-            sellerBalanceLookupAddress,
-            ...sellerTokensBeforeWhitelist.map((t) => t.address.toLowerCase()),
-          ]
-        : null,
-      async () => {
-        const allowed = new Set<string>();
-        await Promise.all(
-          sellerTokensBeforeWhitelist.map(async (token) => {
-            const ok = await canExecutorSendToEscrowForExchange({
-              tokenAddress: token.address as `0x${string}`,
-              executorAddress: sellerBalanceLookupAddress as `0x${string}`,
-              escrowAddress: escrowContractAddress as `0x${string}`,
-            });
-            if (ok) {
-              allowed.add(token.address.toLowerCase());
-            }
-          }),
-        );
-        return allowed;
-      },
-      { revalidateOnFocus: false },
-    );
+  const {
+    data: sellerEscrowWhitelistOk,
+    error: sellerEscrowWhitelistError,
+    isLoading: isLoadingSellerWhitelist,
+  } = useSWR(
+    escrowContractAddress &&
+      isEvmAddress(sellerBalanceLookupAddress) &&
+      sellerTokensBeforeWhitelist.length > 0
+      ? [
+          'exchangeSellerEscrowWhitelist',
+          chainId,
+          escrowContractAddress,
+          sellerBalanceLookupAddress,
+          ...sellerTokensBeforeWhitelist.map((t) => t.address.toLowerCase()),
+        ]
+      : null,
+    async () => {
+      const allowed = new Set<string>();
+      await Promise.all(
+        sellerTokensBeforeWhitelist.map(async (token) => {
+          const ok = await canExecutorSendToEscrowForExchange({
+            tokenAddress: token.address as `0x${string}`,
+            executorAddress: sellerBalanceLookupAddress as `0x${string}`,
+            escrowAddress: escrowContractAddress as `0x${string}`,
+          });
+          if (ok) {
+            allowed.add(token.address.toLowerCase());
+          }
+        }),
+      );
+      return allowed;
+    },
+    { revalidateOnFocus: false },
+  );
 
-  const { data: buyerEscrowWhitelistOk, error: buyerEscrowWhitelistError, isLoading: isLoadingBuyerWhitelist } =
-    useSWR(
-      escrowContractAddress &&
-        isEvmAddress(buyerBalanceLookupAddress) &&
-        buyerTokensBeforeWhitelist.length > 0
-        ? [
-            'exchangeBuyerEscrowWhitelist',
-            chainId,
-            escrowContractAddress,
-            buyerBalanceLookupAddress,
-            ...buyerTokensBeforeWhitelist.map((t) => t.address.toLowerCase()),
-          ]
-        : null,
-      async () => {
-        const allowed = new Set<string>();
-        await Promise.all(
-          buyerTokensBeforeWhitelist.map(async (token) => {
-            const ok = await canBuyerSendToEscrowForExchange({
-              tokenAddress: token.address as `0x${string}`,
-              buyerAddress: buyerBalanceLookupAddress as `0x${string}`,
-              escrowAddress: escrowContractAddress as `0x${string}`,
-            });
-            if (ok) {
-              allowed.add(token.address.toLowerCase());
-            }
-          }),
-        );
-        return allowed;
-      },
-      { revalidateOnFocus: false },
-    );
+  const {
+    data: buyerEscrowWhitelistOk,
+    error: buyerEscrowWhitelistError,
+    isLoading: isLoadingBuyerWhitelist,
+  } = useSWR(
+    escrowContractAddress &&
+      isEvmAddress(buyerBalanceLookupAddress) &&
+      buyerTokensBeforeWhitelist.length > 0
+      ? [
+          'exchangeBuyerEscrowWhitelist',
+          chainId,
+          escrowContractAddress,
+          buyerBalanceLookupAddress,
+          ...buyerTokensBeforeWhitelist.map((t) => t.address.toLowerCase()),
+        ]
+      : null,
+    async () => {
+      const allowed = new Set<string>();
+      await Promise.all(
+        buyerTokensBeforeWhitelist.map(async (token) => {
+          const ok = await canBuyerSendToEscrowForExchange({
+            tokenAddress: token.address as `0x${string}`,
+            buyerAddress: buyerBalanceLookupAddress as `0x${string}`,
+            escrowAddress: escrowContractAddress as `0x${string}`,
+          });
+          if (ok) {
+            allowed.add(token.address.toLowerCase());
+          }
+        }),
+      );
+      return allowed;
+    },
+    { revalidateOnFocus: false },
+  );
 
   const sellerTokens = React.useMemo(() => {
     if (!sellerTokensBeforeWhitelist.length) return [];

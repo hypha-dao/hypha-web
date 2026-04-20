@@ -174,9 +174,13 @@ export const useCreateExchangeStakesAndTokensOrchestrator = ({
         const createdAgreement = await web2.createAgreement(inputWeb2);
         completeTask('CREATE_WEB2_AGREEMENT');
 
-        web2Slug = createdAgreement?.slug ?? web2.createdAgreement?.slug;
+        web2Slug =
+          createdAgreement?.slug ?? web2.createdAgreement?.slug ?? undefined;
       } catch (err) {
-        errorTask('CREATE_WEB2_AGREEMENT', err instanceof Error ? err.message : String(err));
+        errorTask(
+          'CREATE_WEB2_AGREEMENT',
+          err instanceof Error ? err.message : String(err),
+        );
         throw err;
       }
 
@@ -227,7 +231,9 @@ export const useCreateExchangeStakesAndTokensOrchestrator = ({
   const { data: updatedWeb2Agreement } = useSWR(
     web2.createdAgreement?.slug &&
       taskState.UPLOAD_FILES.status === TaskStatus.IS_DONE &&
-      (!config || (taskState.CREATE_WEB3_AGREEMENT.status === TaskStatus.IS_DONE && web3.createdExchangeStakesAndTokens?.proposalId))
+      (!config ||
+        (taskState.CREATE_WEB3_AGREEMENT.status === TaskStatus.IS_DONE &&
+          web3.createdExchangeStakesAndTokens?.proposalId))
       ? [
           web2.createdAgreement.slug,
           web3.createdExchangeStakesAndTokens?.proposalId,
