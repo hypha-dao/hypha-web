@@ -46,6 +46,7 @@ export const MenuTop = ({
     };
 
     sync();
+    /** ResizeObserver unavailable in some test runtimes (e.g. older JSDOM); sync on resize instead. */
     if (typeof ResizeObserver === 'undefined') {
       window.addEventListener('resize', sync);
       return () => {
