@@ -8,13 +8,15 @@ export type AsideOverlayLayoutMode = 'modal-shell' | 'side-panel';
 const AsideOverlayLayoutContext =
   createContext<AsideOverlayLayoutMode>('side-panel');
 
+export interface AsideOverlayLayoutProviderProps {
+  mode: AsideOverlayLayoutMode;
+  children: ReactNode;
+}
+
 export function AsideOverlayLayoutProvider({
   mode,
   children,
-}: {
-  mode: AsideOverlayLayoutMode;
-  children: ReactNode;
-}) {
+}: AsideOverlayLayoutProviderProps) {
   return (
     <AsideOverlayLayoutContext.Provider value={mode}>
       {children}
