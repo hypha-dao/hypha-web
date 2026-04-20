@@ -61,55 +61,75 @@ export function CompactSpaceBanner({
       )}
       aria-label={title}
     >
-      {/* Base gradient — lighter top-left (Image 2), darker bottom-right */}
+      {/* Atmosphere — deep forest base + spotlight (distinct from flat single gradient) */}
       <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_120%_90%_at_10%_-10%,rgb(34,94,62)_0%,rgb(14,54,38)_42%,rgb(5,33,22)_72%,rgb(2,18,12)_100%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_140%_100%_at_12%_-5%,rgb(41,115,78)_0%,rgb(18,72,52)_38%,rgb(7,38,26)_68%,rgb(2,14,10)_100%)]"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute inset-0 mix-blend-overlay opacity-90 bg-[radial-gradient(ellipse_60%_45%_at_85%_20%,rgba(52,211,153,0.28),transparent_65%)]"
         aria-hidden
       />
 
-      {/* Fine grain */}
+      {/* Fine grain — film texture */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.06]"
+        className="pointer-events-none absolute inset-0 opacity-[0.07] mix-blend-overlay"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
         }}
         aria-hidden
       />
 
-      {/* Bokeh foliage — full-bleed, visibly layered like Image 2 */}
+      {/* Hero image — richer bokeh + color pop, then a cool grade for “studio” depth */}
       {textureSrc ? (
         <>
           <div
-            className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.42]"
+            className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.48]"
             style={{
               backgroundImage: `url(${textureSrc})`,
-              filter: 'blur(28px) saturate(1.15)',
-              transform: 'scale(1.08)',
+              filter: 'blur(32px) saturate(1.35) contrast(1.08)',
+              transform: 'scale(1.12)',
             }}
             aria-hidden
           />
           <div
-            className="pointer-events-none absolute inset-0 bg-cover bg-[center_30%] bg-no-repeat opacity-[0.35] mix-blend-soft-light"
+            className="pointer-events-none absolute inset-0 bg-cover bg-[center_28%] bg-no-repeat opacity-[0.38] mix-blend-soft-light"
             style={{ backgroundImage: `url(${textureSrc})` }}
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-0 mix-blend-color opacity-[0.22] bg-gradient-to-br from-teal-600/80 via-emerald-900/40 to-slate-950/90"
             aria-hidden
           />
         </>
       ) : (
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.08]"
+          className="pointer-events-none absolute inset-0 opacity-[0.1]"
           style={{
             backgroundImage: `
-              radial-gradient(ellipse 70% 55% at 85% 35%, rgba(34, 197, 94, 0.35), transparent 60%),
-              radial-gradient(circle at 25% 75%, rgba(16, 185, 129, 0.22), transparent 50%)
+              radial-gradient(ellipse 70% 55% at 85% 35%, rgba(52, 211, 153, 0.4), transparent 60%),
+              radial-gradient(circle at 25% 75%, rgba(16, 185, 129, 0.25), transparent 50%)
             `,
           }}
           aria-hidden
         />
       )}
 
-      {/* Readability veil — darken foliage under typography (neutral-* tokens are for light surfaces) */}
+      {/* Cinematic stack: vignette + rim light + footer anchor (replaces single flat veil) */}
       <div
-        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-black/45 via-black/25 to-emerald-950/65"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_95%_80%_at_50%_42%,transparent_0%,rgba(0,12,8,0.55)_78%,rgba(0,8,5,0.88)_100%)]"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-emerald-300/14 from-0% via-transparent via-35% to-transparent to-55%"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 from-0% via-black/18 via-45% to-transparent to-72%"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/35 from-[-5%] via-transparent via-50% to-black/30 to-[105%]"
         aria-hidden
       />
 
