@@ -57,7 +57,7 @@ export const MenuTop = ({
     return () => {
       ro.disconnect();
     };
-  }, [pathname]);
+  }, []);
 
   return (
     <header
