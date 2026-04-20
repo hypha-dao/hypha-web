@@ -94,6 +94,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   );
 
   const [deleteOpen, setDeleteOpen] = React.useState(false);
+  const [deleteError, setDeleteError] = React.useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = React.useState(false);
   const descriptionClampRef = React.useRef<HTMLParagraphElement>(null);
   const [descriptionTruncated, setDescriptionTruncated] = React.useState(false);
@@ -181,15 +182,20 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     }
   }, [slug, refresh, updateCoherenceBySlug]);
 
-  const handleDelete = React.useCallback(async () => {
-    if (!slug) return;
+  const handleDelete = React.useCallback(async (): Promise<boolean> => {
+    if (!slug) return false;
+    setDeleteError(null);
     try {
       await deleteCoherenceBySlug({ slug });
       await refresh();
+      return true;
     } catch (error) {
       console.warn('Could not delete signal:', error);
+      const msg = error instanceof Error ? error.message : String(error);
+      setDeleteError(msg || tSignalCard('deleteFailed'));
+      return false;
     }
-  }, [slug, deleteCoherenceBySlug, refresh]);
+  }, [slug, deleteCoherenceBySlug, refresh, tSignalCard]);
 
   const editHref =
     slug != null && slug !== '' && spaceSlug && lang
@@ -267,7 +273,13 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                <AlertDialog
+                  open={deleteOpen}
+                  onOpenChange={(open) => {
+                    setDeleteOpen(open);
+                    if (!open) setDeleteError(null);
+                  }}
+                >
                   <AlertDialogContent onClick={(e) => e.stopPropagation()}>
                     <AlertDialogHeader>
                       <AlertDialogTitle>
@@ -277,6 +289,14 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                         {tSignalCard('deleteConfirm')}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
+                    {deleteError ? (
+                      <p
+                        role="alert"
+                        className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                      >
+                        {deleteError}
+                      </p>
+                    ) : null}
                     <AlertDialogFooter>
                       <AlertDialogCancel asChild>
                         <Button variant="outline" colorVariant="neutral">
@@ -287,7 +307,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                         <Button
                           colorVariant="error"
                           onClick={() =>
-                            void handleDelete().then(() => setDeleteOpen(false))
+                            void handleDelete().then((deleted) => {
+                              if (deleted) setDeleteOpen(false);
+                            })
                           }
                         >
                           {tSignalCard('deleteConfirmAction')}

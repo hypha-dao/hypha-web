@@ -2009,6 +2009,7 @@
     "deleteSignal": "Supprimer le signal",
     "deleteConfirm": "Cela supprime définitivement ce signal de l'espace. Continuer ?",
     "deleteMenu": "Supprimer",
-    "deleteConfirmAction": "Supprimer le signal"
+    "deleteConfirmAction": "Supprimer le signal",
+    "deleteFailed": "Impossible de supprimer ce signal. Réessayez."
   }
 }
