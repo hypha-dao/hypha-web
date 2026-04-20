@@ -24,6 +24,7 @@ import { SpaceHeaderHeroFooterRow } from './space-header-hero-footer-row';
 import { SpaceHeaderInsetAvatar } from './space-header-inset-avatar';
 import { SpaceHeaderMenuBridge } from './space-header-menu-bridge';
 import { canConvertToBigInt, cn, formatDate } from '@hypha-platform/ui-utils';
+import { truncateByCodePoints } from './truncate-utf16';
 import { getTranslations } from 'next-intl/server';
 
 const PURPOSE_MAX_CHARS = 300;
@@ -70,10 +71,7 @@ export async function SpaceHeader({
   const tSpaces = await getTranslations('Spaces');
   const leadSrc = leadImage || DEFAULT_SPACE_LEAD_IMAGE;
   const rawPurpose = description?.trim() ?? '';
-  const purposeDisplay =
-    rawPurpose.length > PURPOSE_MAX_CHARS
-      ? `${rawPurpose.slice(0, PURPOSE_MAX_CHARS)}…`
-      : rawPurpose;
+  const purposeDisplay = truncateByCodePoints(rawPurpose, PURPOSE_MAX_CHARS);
   const hasPurpose = purposeDisplay.length > 0;
 
   const breadcrumbDefault = (
