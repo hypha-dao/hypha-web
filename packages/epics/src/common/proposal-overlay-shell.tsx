@@ -43,8 +43,8 @@ type ProposalOverlayShellProps = {
  *
  * `md` and up: centered overlay using Radix `DialogPrimitive.Content`.
  *
- * **Non-modal** `DialogPrimitive.Root` (`modal={false}`): avoids blocking
- * portaled dropdowns. Escape and scrim dismissal are suppressed; close uses routes.
+ * **Modal** `DialogPrimitive.Root`: keeps focus trapping and background inerting.
+ * Escape and scrim dismissal are suppressed; MDX portals render inside the editor overlay host.
  *
  * **MenuTop:** scrim/host start at `top: var(--menu-top-height)` with z-20 / z-[21]
  * so the nav (`z-30`) stays clickable.
@@ -83,7 +83,8 @@ export function ProposalOverlayShell({
 
   return (
     <AsideOverlayLayoutProvider mode="modal-shell">
-      <DialogPrimitive.Root modal={false} defaultOpen open>
+      {/* modal={true}: restore focus trap + background inert for keyboard/SR users; MDX portals anchor in-editor via RichTextEditor.overlayContainer */}
+      <DialogPrimitive.Root modal defaultOpen open>
         <DialogPrimitive.Portal>
           <div
             className={cn(
