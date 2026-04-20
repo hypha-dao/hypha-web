@@ -209,7 +209,9 @@ export async function SpaceHeader({
                     {typeof web3SpaceId === 'number' ? (
                       <JoinSpace web3SpaceId={web3SpaceId} spaceId={spaceId} />
                     ) : null}
-                    <ActionButtons web3SpaceId={web3SpaceId as number} />
+                    {typeof web3SpaceId === 'number' ? (
+                      <ActionButtons web3SpaceId={web3SpaceId} />
+                    ) : null}
                     {typeof web3SpaceId === 'number' ? (
                       <NestedSpacesButton
                         variant="heroCompact"
@@ -255,19 +257,21 @@ export async function SpaceHeader({
                         forDarkBackground
                       />
                     ) : null}
-                    <SpaceModeLabel
-                      web3SpaceId={web3SpaceId as number}
-                      isSandbox={flags.includes('sandbox')}
-                      isDemo={flags.includes('demo')}
-                      isArchived={
-                        flags.includes('archived') || spaceMembers === 0
-                      }
-                      configPath={`${getDhoPathAgreements(
-                        lang,
-                        daoSlug,
-                      )}/space-configuration`}
-                      forDarkBackground
-                    />
+                    {typeof web3SpaceId === 'number' ? (
+                      <SpaceModeLabel
+                        web3SpaceId={web3SpaceId}
+                        isSandbox={flags.includes('sandbox')}
+                        isDemo={flags.includes('demo')}
+                        isArchived={
+                          flags.includes('archived') || spaceMembers === 0
+                        }
+                        configPath={`${getDhoPathAgreements(
+                          lang,
+                          daoSlug,
+                        )}/space-configuration`}
+                        forDarkBackground
+                      />
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -279,11 +283,15 @@ export async function SpaceHeader({
           {typeof web3SpaceId === 'number' ? (
             <JoinSpace web3SpaceId={web3SpaceId} spaceId={spaceId} />
           ) : null}
-          <ActionButtons web3SpaceId={web3SpaceId as number} />
+          {typeof web3SpaceId === 'number' ? (
+            <ActionButtons web3SpaceId={web3SpaceId} />
+          ) : null}
         </SpaceHeaderActionsMeasure>
 
         <div className="flex flex-col gap-4 pt-4 sm:gap-5">
-          <SalesBanner web3SpaceId={web3SpaceId as number} />
+          {typeof web3SpaceId === 'number' ? (
+            <SalesBanner web3SpaceId={web3SpaceId} />
+          ) : null}
         </div>
       </SpaceHeaderCollapseWrapper>
     </header>

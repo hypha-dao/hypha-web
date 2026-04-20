@@ -91,7 +91,9 @@ export function SpaceHeaderCompactBar({
             {typeof web3SpaceId === 'number' ? (
               <JoinSpace web3SpaceId={web3SpaceId} spaceId={spaceId} />
             ) : null}
-            <ActionButtons web3SpaceId={web3SpaceId as number} />
+            {typeof web3SpaceId === 'number' ? (
+              <ActionButtons web3SpaceId={web3SpaceId} />
+            ) : null}
           </div>
           {navLink ? (
             <div className="flex shrink-0 items-center border-border pl-2 sm:border-l sm:pl-3">
