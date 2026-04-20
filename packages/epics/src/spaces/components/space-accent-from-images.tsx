@@ -10,7 +10,7 @@ import {
 } from '../utils/banner-overlay-tone';
 import {
   buildSpaceScopeStyleFromSampledAccents,
-  getDefaultSpaceScopeStyle,
+  DEFAULT_SPACE_SCOPE_STYLE,
 } from '../utils/space-accent-scope-style';
 import { useSetSpaceAccentPortalStyles } from './space-accent-portal-context';
 
@@ -157,7 +157,7 @@ export function SpaceAccentFromImages({
       ref={ref}
       data-space-accent-scope
       className={cn(className)}
-      style={getDefaultSpaceScopeStyle()}
+      style={DEFAULT_SPACE_SCOPE_STYLE}
     >
       {children}
     </div>
