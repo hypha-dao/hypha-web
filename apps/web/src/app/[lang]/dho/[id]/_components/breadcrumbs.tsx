@@ -8,13 +8,19 @@ import { Fragment } from 'react';
 export type BreadcrumbSegment = { slug: string; title: string };
 
 /** Root → leaf chain for sticky header / client mirrors */
+const BREADCRUMB_TRAIL_MAX_DEPTH = 32;
+
 export async function getSpaceBreadcrumbTrail(
   spaceId: number,
 ): Promise<BreadcrumbSegment[]> {
   const leafUp: BreadcrumbSegment[] = [];
   let id: number | null | undefined = spaceId;
+  const seen = new Set<number>();
 
-  while (id) {
+  while (id && leafUp.length < BREADCRUMB_TRAIL_MAX_DEPTH) {
+    if (seen.has(id)) break;
+    seen.add(id);
+
     const row = await findParentSpaceById({ id }, { db });
     if (!row) break;
     leafUp.push({
