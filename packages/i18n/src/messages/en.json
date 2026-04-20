@@ -36,7 +36,17 @@
     "errorLoadTreasuryTab": "Oops, something went wrong. Couldn't load treasury tab.",
     "publish": "Publish",
     "invalidTransactions": "Invalid transactions",
-    "Coherence": "Coherence"
+    "Coherence": "Coherence",
+    "uploadLeadImage": {
+      "cropTitle": "Upload an image",
+      "cropDescription": "Adjust how your image is framed, then save. Drag to reposition and use zoom to fit the banner area (JPEG, PNG, or WebP — max 4 MB).",
+      "cancel": "Cancel",
+      "confirm": "Crop & Save",
+      "dropHere": "Drop the image here",
+      "genericUploadFallback": "<accent>Upload</accent> an image",
+      "fileTooLarge": "Your image is too large (max 4 MB) and could not be uploaded. Resize it and try again.",
+      "uploadFailed": "File could not be uploaded."
+    }
   },
   "ModalAside": {
     "spaceSettings": "Space Settings",

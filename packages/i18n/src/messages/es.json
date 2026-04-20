@@ -36,7 +36,17 @@
     "errorLoadTreasuryTab": "Ups, algo salió mal. No se pudo cargar la pestaña de tesorería.",
     "publish": "Publicar",
     "invalidTransactions": "Transacciones inválidas",
-    "Coherence": "Coherencia"
+    "Coherence": "Coherencia",
+    "uploadLeadImage": {
+      "cropTitle": "Subir una imagen",
+      "cropDescription": "Ajusta el encuadre y guarda. Arrastra para reposicionar y usa el zoom para el área del banner (JPEG, PNG o WebP — máx. 4 MB).",
+      "cancel": "Cancelar",
+      "confirm": "Recortar y guardar",
+      "dropHere": "Suelta la imagen aquí",
+      "genericUploadFallback": "<accent>Subir</accent> una imagen",
+      "fileTooLarge": "Tu imagen es demasiado grande (máx. 4 MB) y no se pudo subir. Reduce el tamaño e inténtalo de nuevo.",
+      "uploadFailed": "No se pudo subir el archivo."
+    }
   },
   "ModalAside": {
     "spaceSettings": "Configuración del espacio",

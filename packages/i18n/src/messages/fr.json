@@ -36,7 +36,17 @@
     "errorLoadTreasuryTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet trésorerie.",
     "publish": "Publier",
     "invalidTransactions": "Transactions invalides",
-    "Coherence": "Cohérence"
+    "Coherence": "Cohérence",
+    "uploadLeadImage": {
+      "cropTitle": "Téléverser une image",
+      "cropDescription": "Ajustez le cadrage, puis enregistrez. Faites glisser pour repositionner et zoomez pour remplir la zone de bannière (JPEG, PNG ou WebP — max. 4 Mo).",
+      "cancel": "Annuler",
+      "confirm": "Recadrer et enregistrer",
+      "dropHere": "Déposez l’image ici",
+      "genericUploadFallback": "<accent>Téléverser</accent> une image",
+      "fileTooLarge": "Votre image est trop volumineuse (max. 4 Mo) et n’a pas pu être téléversée. Réduisez-la et réessayez.",
+      "uploadFailed": "Le fichier n’a pas pu être téléversé."
+    }
   },
   "ModalAside": {
     "spaceSettings": "Paramètres de l’espace",
