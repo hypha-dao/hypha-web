@@ -61,6 +61,9 @@ export function getDefaultSpaceScopeStyle(): React.CSSProperties {
   });
 }
 
+/** Module singleton for initial paint and resetting accent scope between samples */
+export const DEFAULT_SPACE_SCOPE_STYLE = getDefaultSpaceScopeStyle();
+
 /** Canvas sampling results → same inline style bag as `buildSpaceScopeStyle` */
 export function buildSpaceScopeStyleFromSampledAccents(options: {
   bannerAccent: string | null;
