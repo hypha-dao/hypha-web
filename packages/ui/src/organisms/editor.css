@@ -8,6 +8,15 @@ body > .mdxeditor-popup-container {
   z-index: 50;
 }
 
+/**
+ * When `overlayContainer` is set, MDXEditor appends this outside `.mdxeditor`,
+ * so rules must not rely on `.mdxeditor .mdxeditor-popup-container` only.
+ */
+.richtext-editor-portal-host .mdxeditor-popup-container {
+  z-index: 1000;
+  pointer-events: auto;
+}
+
 .mdxeditor {
   border: 1px solid var(--border);
   border-radius: var(--radius);
