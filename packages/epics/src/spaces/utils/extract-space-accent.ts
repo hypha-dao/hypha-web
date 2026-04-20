@@ -211,8 +211,8 @@ export function extractAccentHexFromImageData(data: ImageData): string {
       const b = px[i + 2] ?? 0;
       const { s, l } = rgbToHsl(r, g, b);
 
-      /** Prefer chromatic mid-tones; weight all opaque pixels by saturation for fallback */
-      const chromaWeight = clamp(s * (1 - Math.abs(l - 0.48) * 1.35), 0.02, 1);
+      /** Prefer chromatic mid-tones; no min weight so grays are not forced to #808080 */
+      const chromaWeight = clamp(s * (1 - Math.abs(l - 0.48) * 1.35), 0, 1);
       wrSum += r * chromaWeight;
       wgSum += g * chromaWeight;
       wbSum += b * chromaWeight;
