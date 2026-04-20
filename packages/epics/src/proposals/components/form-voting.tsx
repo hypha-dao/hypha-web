@@ -167,7 +167,9 @@ export const FormVoting = ({
   useEffect(() => {
     const voting = Boolean(isVoting);
     if (wasVotingRef.current && !voting && mutateMyVote) {
-      void mutateMyVote();
+      void mutateMyVote().catch((error) => {
+        console.error('Failed to refresh vote after submission:', error);
+      });
     }
     wasVotingRef.current = voting;
   }, [isVoting, mutateMyVote]);
