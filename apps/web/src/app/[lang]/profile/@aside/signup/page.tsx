@@ -42,21 +42,21 @@ export default function SignupPage() {
   };
 
   return (
-    <LoadingBackdrop
-      showKeepWindowOpenMessage={true}
-      keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
-      fullHeight={true}
-      isLoading={isLoading || !user?.wallet?.address}
-      message={<span>{tProfileSignup('loading')}</span>}
-    >
-      <ProposalOverlayShell>
+    <ProposalOverlayShell>
+      <LoadingBackdrop
+        showKeepWindowOpenMessage={true}
+        keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
+        fullHeight={true}
+        isLoading={isLoading || !user?.wallet?.address}
+        message={<span>{tProfileSignup('loading')}</span>}
+      >
         <SignupPanel
           closeUrl={`/${lang}/profile`}
           onSave={handleSave}
           isCreating={isCreating}
           error={error}
         />
-      </ProposalOverlayShell>
-    </LoadingBackdrop>
+      </LoadingBackdrop>
+    </ProposalOverlayShell>
   );
 }
