@@ -122,7 +122,7 @@ export default async function DhoLayout({
               {canConvertToBigInt(spaceFromDb.web3SpaceId) && (
                 <SubscriptionBadge
                   web3SpaceId={spaceFromDb.web3SpaceId as number}
-                  className="rounded border-emerald-400/85 bg-transparent text-white hover:border-emerald-300 hover:bg-white/10 [&]:border-emerald-400/85 [&]:text-white"
+                  className="rounded-md border-emerald-400/85 bg-transparent text-white hover:border-emerald-300 hover:bg-white/10 [&]:rounded-md [&]:border-emerald-400/85 [&]:text-white"
                 />
               )}
               <SpaceModeLabel
@@ -140,7 +140,7 @@ export default async function DhoLayout({
                   lang,
                   daoSlug,
                 )}/space-configuration`}
-                className="[&_.border-accent-8]:rounded [&_.border-accent-8]:border-white/85 [&_.border-accent-8]:bg-transparent [&_.border-accent-8]:text-white [&_.border-accent-8]:hover:border-white [&_.border-accent-8]:hover:bg-white/10 [&_.border-error-8]:rounded [&_.border-error-8]:border-white/85 [&_.border-error-8]:bg-transparent [&_.border-error-8]:text-white [&_.border-warning-8]:rounded [&_.border-warning-8]:border-amber-200/90 [&_.border-warning-8]:bg-transparent [&_.border-warning-8]:text-white"
+                className="[&_.border-accent-8]:rounded-md [&_.border-accent-8]:border-white/85 [&_.border-accent-8]:bg-transparent [&_.border-accent-8]:text-white [&_.border-accent-8]:hover:border-white [&_.border-accent-8]:hover:bg-white/10 [&_.border-error-8]:rounded-md [&_.border-error-8]:border-white/85 [&_.border-error-8]:bg-transparent [&_.border-error-8]:text-white [&_.border-warning-8]:rounded-md [&_.border-warning-8]:border-amber-200/90 [&_.border-warning-8]:bg-transparent [&_.border-warning-8]:text-white"
               />
             </>
           }

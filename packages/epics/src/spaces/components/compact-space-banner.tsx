@@ -54,7 +54,7 @@ export function CompactSpaceBanner({
   return (
     <section
       className={cn(
-        'relative overflow-hidden rounded-3xl',
+        'relative overflow-hidden rounded-xl',
         'shadow-[0_24px_48px_-12px_rgba(5,33,22,0.55)]',
         'p-8',
         className,
@@ -203,7 +203,7 @@ export function CompactSpaceBanner({
           </div>
 
           {footerTrailing ? (
-            <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end [&_.rounded-lg]:rounded-full [&_button]:rounded-full">
+            <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end [&_.rounded-lg]:rounded-md [&_button]:rounded-md">
               {footerTrailing}
             </div>
           ) : null}
