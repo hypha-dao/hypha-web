@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
+import { ChevronRightIcon } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 
 export type DhoStickySpaceChromeProps = {
@@ -157,8 +158,12 @@ export function DhoStickySpaceChrome({
         aria-hidden={!stuck}
       >
         <div className="mx-auto flex max-w-container-2xl items-center gap-3 px-4 py-2.5">
-          <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-3">
             <div className="min-w-0 shrink">{breadcrumbsSticky}</div>
+            <ChevronRightIcon
+              className="h-4 w-4 shrink-0 text-muted-foreground"
+              aria-hidden
+            />
             <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10 dark:ring-white/15">
               <Image
                 src={logoSrc}
@@ -169,10 +174,7 @@ export function DhoStickySpaceChrome({
               />
               <span className="sr-only">{logoAlt}</span>
             </div>
-            <p
-              className="truncate text-4 font-semibold text-foreground"
-              aria-hidden
-            >
+            <p className="truncate text-4 font-semibold text-foreground">
               {title}
             </p>
           </div>

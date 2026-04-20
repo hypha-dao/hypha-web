@@ -56,3 +56,17 @@ export async function Breadcrumbs({
     </SpaceBreadcrumb>
   );
 }
+
+/** Root link only — used in sticky chrome where icon + title carry the current space. */
+export async function BreadcrumbsRootOnly({ lang }: { lang: Locale }) {
+  const tNavigation = await getTranslations('Navigation');
+
+  return (
+    <SpaceBreadcrumb
+      rootHref={`/${lang}/my-spaces`}
+      rootLabel={tNavigation('mySpaces')}
+    >
+      {null}
+    </SpaceBreadcrumb>
+  );
+}

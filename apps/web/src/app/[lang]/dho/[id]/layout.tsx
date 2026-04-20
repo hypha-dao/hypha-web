@@ -28,7 +28,7 @@ import {
 } from '@hypha-platform/core/client';
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
-import { Breadcrumbs } from './_components/breadcrumbs';
+import { Breadcrumbs, BreadcrumbsRootOnly } from './_components/breadcrumbs';
 import { DhoStickySpaceChrome } from './_components/dho-sticky-space-chrome';
 import { canConvertToBigInt, formatDate } from '@hypha-platform/ui-utils';
 import { getTranslations } from 'next-intl/server';
@@ -144,9 +144,7 @@ export default async function DhoLayout({
               breadcrumbsRow={
                 <Breadcrumbs spaceId={spaceFromDb.id} lang={lang} />
               }
-              breadcrumbsSticky={
-                <Breadcrumbs spaceId={spaceFromDb.id} lang={lang} />
-              }
+              breadcrumbsSticky={<BreadcrumbsRootOnly lang={lang} />}
               banner={
                 <CompactSpaceBanner
                   title={spaceFromDb.title}
