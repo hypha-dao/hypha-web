@@ -234,36 +234,41 @@ export function CompactSpaceBanner({
           </div>
         ) : null}
 
-        <div className="h-px w-full bg-white/12" role="presentation" />
-
-        <div className="flex flex-col gap-3 gap-x-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-1 text-white/88 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]">
-            <span>
-              <span className="font-bold tabular-nums text-white">
-                {memberCount}
-              </span>{' '}
-              <span className="text-white/92">{membersLabel}</span>
-            </span>
-            <span className="text-white/45" aria-hidden>
-              ·
-            </span>
-            <span>
-              <span className="font-bold tabular-nums text-white">
-                {agreementCount}
-              </span>{' '}
-              <span className="text-white/92">{agreementsLabel}</span>
-            </span>
-            <span className="text-white/45" aria-hidden>
-              ·
-            </span>
-            <span className="text-white/88">{createdOnText}</span>
-          </div>
-
-          {footerTrailing ? (
-            <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end [&_.rounded-lg]:rounded-md [&_a]:inline-flex [&_a]:items-center [&_button]:rounded-md [&_div]:inline-flex [&_div]:items-center">
-              {footerTrailing}
+        {/* Hairline + metadata: one flex item so gap-5 does not double-space above the strip */}
+        <div className="flex flex-col">
+          <div
+            className="h-px w-full shrink-0 bg-white/12"
+            role="presentation"
+          />
+          <div className="flex flex-col gap-3 gap-x-5 pt-3.5 pb-3.5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-1 text-white/88 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]">
+              <span>
+                <span className="font-bold tabular-nums text-white">
+                  {memberCount}
+                </span>{' '}
+                <span className="text-white/92">{membersLabel}</span>
+              </span>
+              <span className="text-white/45" aria-hidden>
+                ·
+              </span>
+              <span>
+                <span className="font-bold tabular-nums text-white">
+                  {agreementCount}
+                </span>{' '}
+                <span className="text-white/92">{agreementsLabel}</span>
+              </span>
+              <span className="text-white/45" aria-hidden>
+                ·
+              </span>
+              <span className="text-white/88">{createdOnText}</span>
             </div>
-          ) : null}
+
+            {footerTrailing ? (
+              <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end [&_.rounded-lg]:rounded-md [&_a]:inline-flex [&_a]:items-center [&_button]:rounded-md [&_div]:inline-flex [&_div]:items-center">
+                {footerTrailing}
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
     </section>
