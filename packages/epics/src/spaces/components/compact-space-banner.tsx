@@ -90,7 +90,7 @@ export function CompactSpaceBanner({
         /* Card chrome: ~12–16px radius, subtle blue-gray rim (design ref image 1) */
         'relative overflow-hidden rounded-xl border border-[#30363d]',
         'shadow-[0_24px_48px_-12px_rgba(5,33,22,0.55)]',
-        'p-8',
+        'px-8 pt-8 pb-5',
         className,
       )}
       aria-label={title}
@@ -159,7 +159,7 @@ export function CompactSpaceBanner({
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 from-0% via-black/18 via-45% to-transparent to-72%"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 from-0% via-black/12 via-38% to-transparent to-58%"
         aria-hidden
       />
       <div
@@ -167,7 +167,7 @@ export function CompactSpaceBanner({
         aria-hidden
       />
 
-      <div className="relative z-10 flex flex-col gap-6">
+      <div className="relative z-10 flex flex-col gap-5">
         {/* Header row: avatar + title stack only (Image 2) */}
         <div className="flex items-start gap-6">
           <Avatar className="h-20 w-20 shrink-0 rounded-full">
@@ -213,7 +213,7 @@ export function CompactSpaceBanner({
 
         <div className="h-px w-full bg-white/12" role="presentation" />
 
-        <div className="flex flex-col gap-4 gap-x-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 gap-x-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-1 text-white/88 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]">
             <span>
               <span className="font-bold tabular-nums text-white">
