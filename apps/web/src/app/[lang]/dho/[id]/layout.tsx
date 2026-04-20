@@ -88,10 +88,10 @@ export default async function DhoLayout({
 
   const spaces = await getAllSpaces({ parentOnly: false, omitSandbox: true });
   return (
-    <div className="flex max-w-container-2xl mx-auto">
-      <Container className="flex-grow min-w-0">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-          <div className="flex min-h-9 min-w-0 flex-1 items-center">
+    <div className="mx-auto flex max-w-container-2xl">
+      <Container className="min-w-0 flex-grow !px-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 md:gap-x-4">
+          <div className="flex min-h-8 min-w-0 flex-1 items-center">
             <Breadcrumbs spaceId={spaceFromDb.id} lang={lang} />
           </div>
           {typeof spaceFromDb.web3SpaceId === 'number' ? (
@@ -145,7 +145,7 @@ export default async function DhoLayout({
             </>
           }
         />
-        <div className="mt-4 flex justify-end gap-2">
+        <div className="mt-3 flex justify-end gap-2">
           {typeof spaceFromDb.web3SpaceId === 'number' && (
             <JoinSpace
               web3SpaceId={spaceFromDb.web3SpaceId}
