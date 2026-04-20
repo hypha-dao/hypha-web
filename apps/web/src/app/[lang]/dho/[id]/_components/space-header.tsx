@@ -17,7 +17,6 @@ import { ActionButtons } from './action-buttons';
 import { NestedSpacesButton } from './nested-spaces-button';
 import { Breadcrumbs } from './breadcrumbs';
 import { SpaceHeaderActionsMeasure } from './space-header-actions-measure';
-import { SpaceHeaderContextBar } from './space-header-context-bar';
 import { SpaceHeaderCollapseWrapper } from './space-header-collapse-wrapper';
 import { SpaceHeaderHeroClip } from './space-header-hero-clip';
 import { SpaceHeaderInsetAvatar } from './space-header-inset-avatar';
@@ -28,7 +27,7 @@ import { getTranslations } from 'next-intl/server';
 
 const PURPOSE_MAX_CHARS = 300;
 
-/** Hero height — room for inset avatar row + purpose + footer row */
+/** Hero height — room for top overlay nav + inset avatar + purpose + stats */
 const HERO_H = 'min-h-[320px] max-h-[320px] h-[320px]';
 
 /** Option D: purpose wraps in a left column */
@@ -73,12 +72,13 @@ export async function SpaceHeader({
   const purposeDisplay = truncateByCodePoints(rawPurpose, PURPOSE_MAX_CHARS);
   const hasPurpose = purposeDisplay.length > 0;
 
-  const breadcrumbDefault = (
-    <Breadcrumbs spaceId={spaceId} lang={lang} variant="default" />
-  );
-  const navDefault =
+  const navOverlay =
     typeof web3SpaceId === 'number' ? (
-      <NestedSpacesButton web3SpaceId={web3SpaceId} spaceSlug={daoSlug} />
+      <NestedSpacesButton
+        variant="heroCompact"
+        web3SpaceId={web3SpaceId}
+        spaceSlug={daoSlug}
+      />
     ) : null;
   const navChrome =
     typeof web3SpaceId === 'number' ? (
@@ -104,11 +104,6 @@ export async function SpaceHeader({
         }
         heroCompactNav={navChrome}
       >
-        <SpaceHeaderContextBar
-          breadcrumbs={breadcrumbDefault}
-          trailing={navDefault}
-        />
-
         <div className="relative mb-0">
           <div
             data-space-hero-card
@@ -144,7 +139,25 @@ export async function SpaceHeader({
             </SpaceHeaderHeroClip>
 
             <div className="relative z-[25] flex h-full min-h-0 flex-col overflow-hidden rounded-2xl px-5 py-5 sm:px-7 sm:py-6">
-              <div className="flex shrink-0 items-start gap-3.5 sm:gap-4">
+              <div className="pointer-events-none absolute inset-x-0 top-0 z-[26] flex flex-wrap items-start justify-between gap-x-3 gap-y-2 px-5 pt-4 sm:px-7 sm:pt-5">
+                <nav
+                  className="pointer-events-auto min-w-0 flex-1 text-[11px] leading-tight text-white/75 [&_a]:text-white/88 [&_a:hover]:text-white [&_svg]:size-3 [&_[data-slot=breadcrumb-separator]]:text-white/40"
+                  aria-label={tCommon('breadcrumbNavigation')}
+                >
+                  <Breadcrumbs
+                    spaceId={spaceId}
+                    lang={lang}
+                    variant="heroOverlay"
+                  />
+                </nav>
+                {navOverlay ? (
+                  <div className="pointer-events-auto flex shrink-0 justify-end">
+                    {navOverlay}
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="flex shrink-0 items-start gap-3.5 pt-11 sm:gap-4 sm:pt-12">
                 <SpaceHeaderInsetAvatar
                   src={logoUrl || DEFAULT_SPACE_AVATAR_IMAGE}
                 />

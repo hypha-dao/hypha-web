@@ -93,6 +93,14 @@ export function SpaceHeaderMorphProvider({
     return () => mq.removeEventListener('change', onMq);
   }, []);
 
+  /** Breadcrumbs moved into the hero; no sticky subnav row — keep var defined for compact bar / morph math */
+  useEffect(() => {
+    document.documentElement.style.setProperty('--app-subnav-h', '0px');
+    return () => {
+      document.documentElement.style.removeProperty('--app-subnav-h');
+    };
+  }, []);
+
   useEffect(() => {
     const onScroll = () => {
       if (frameRef.current) return;

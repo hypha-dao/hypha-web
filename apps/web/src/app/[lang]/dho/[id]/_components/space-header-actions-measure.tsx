@@ -17,7 +17,7 @@ type SpaceHeaderActionsMeasureProps = {
 
 /**
  * Wraps the below-banner Join + ActionButtons row; sets compact bar visibility when
- * this row aligns under MenuTop + sticky context bar (--app-subnav-h).
+ * this row aligns under MenuTop (--app-subnav-h is 0 when breadcrumbs live in the hero).
  */
 export function SpaceHeaderActionsMeasure({
   children,
