@@ -32,7 +32,6 @@ export async function assertCoherenceUpdateAllowed(
     if (coherence.creatorId !== person.id) {
       throw new Error('Only the creator can edit this signal');
     }
-    return;
   }
 
   const allowed = await personMayInteractWithCoherenceSpace(
