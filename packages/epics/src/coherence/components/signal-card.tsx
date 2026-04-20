@@ -221,7 +221,8 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       <CardContent className="relative flex flex-1 flex-col gap-0 p-0">
         <div className="border-b border-border/60 bg-muted/20 px-4 py-3">
           <div className="flex items-start justify-between gap-3">
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+            {/* Column so type tag(s) stay on row 1 and clock/time always on row 2 */}
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
               {badges?.length > 0 ? (
                 <BadgesList isLoading={isLoading} badges={badges ?? []} />
               ) : null}
