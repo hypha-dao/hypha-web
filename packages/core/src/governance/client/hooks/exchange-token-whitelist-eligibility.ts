@@ -45,6 +45,17 @@ export async function canExecutorSendToEscrowForExchange(params: {
       return true;
     }
 
+    if (
+      useTransferWhitelist === undefined ||
+      useReceiveWhitelist === undefined
+    ) {
+      console.warn(
+        '[canExecutorSendToEscrowForExchange] partial whitelist read; failing closed',
+        { tokenAddress, executorAddress, escrowAddress },
+      );
+      return false;
+    }
+
     if (!useTransferWhitelist && !useReceiveWhitelist) {
       return true;
     }

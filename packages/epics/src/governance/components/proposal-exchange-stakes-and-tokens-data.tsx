@@ -201,7 +201,7 @@ export const ProposalExchangeStakesAndTokensData = ({
             src={avatarUrl ?? '/placeholder/default-profile.svg'}
             width={24}
             height={24}
-            alt={avatarAlt ?? t('common.avatarAlt')}
+            alt={avatarAlt ?? t('plugins.exchangeStakesAndTokens.avatarAlt')}
           />
           <span className="text-nowrap">{label}</span>
         </span>
@@ -213,7 +213,7 @@ export const ProposalExchangeStakesAndTokensData = ({
           type="button"
           onClick={() => copyToClipboard(address)}
           className="flex items-center gap-2 text-neutral-11"
-          aria-label={t('common.copyWalletAddress')}
+          aria-label={t('plugins.exchangeStakesAndTokens.copyWalletAddress')}
         >
           <span>{`${address.slice(0, 6)}…${address.slice(-4)}`}</span>
           <CopyIcon className="icon-sm" />
@@ -268,7 +268,7 @@ export const ProposalExchangeStakesAndTokensData = ({
         >
           <Image
             src={tokenIcon}
-            alt={tokenLabel ?? 'token'}
+            alt={tokenLabel ?? t('plugins.exchangeStakesAndTokens.tokenAlt')}
             width={20}
             height={20}
             className="rounded-full"
@@ -293,8 +293,16 @@ export const ProposalExchangeStakesAndTokensData = ({
           sellerDisplayLabel,
           sellerDisplayAvatarUrl,
           sellerResolvedAsSpace
-            ? `${sellerSpace?.title ?? 'space'} logo`
-            : `${sellerPerson?.nickname ?? 'seller'} avatar`,
+            ? t('plugins.exchangeStakesAndTokens.spaceLogoAlt', {
+                name:
+                  sellerSpace?.title ??
+                  t('plugins.exchangeStakesAndTokens.spaceFallback'),
+              })
+            : t('plugins.exchangeStakesAndTokens.personAvatarAlt', {
+                name:
+                  sellerPerson?.nickname ??
+                  t('plugins.exchangeStakesAndTokens.sellerFallback'),
+              }),
         )}
       </div>
       <div className="flex items-center justify-between">
@@ -314,8 +322,16 @@ export const ProposalExchangeStakesAndTokensData = ({
           buyerDisplayLabel,
           buyerDisplayAvatarUrl,
           buyerResolvedAsSpace
-            ? `${buyerSpace?.title ?? 'space'} logo`
-            : `${buyerPerson?.nickname ?? 'buyer'} avatar`,
+            ? t('plugins.exchangeStakesAndTokens.spaceLogoAlt', {
+                name:
+                  buyerSpace?.title ??
+                  t('plugins.exchangeStakesAndTokens.spaceFallback'),
+              })
+            : t('plugins.exchangeStakesAndTokens.personAvatarAlt', {
+                name:
+                  buyerPerson?.nickname ??
+                  t('plugins.exchangeStakesAndTokens.buyerFallback'),
+              }),
         )}
       </div>
       <div className="flex items-center justify-between">
