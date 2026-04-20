@@ -73,7 +73,6 @@ export function RichTextEditor({
       <div
         ref={overlayHostRef}
         className="richtext-editor-portal-host pointer-events-none absolute inset-0 z-[60] overflow-visible"
-        aria-hidden
       />
     </div>
   );
