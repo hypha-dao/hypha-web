@@ -111,10 +111,11 @@ export function DhoStickySpaceChrome({
         }
         return;
       }
-      const top = sentinel.getBoundingClientRect().top;
+      /** Sticky when banner bottom meets the menu bottom edge (y = --menu-top-height). */
+      const bottom = sentinel.getBoundingClientRect().bottom;
       let next = stuckRef.current;
-      if (!next && top <= menuTopPx) next = true;
-      if (next && top >= menuTopPx + HYST) next = false;
+      if (!next && bottom <= menuTopPx) next = true;
+      if (next && bottom >= menuTopPx + HYST) next = false;
       if (next !== stuckRef.current) {
         stuckRef.current = next;
         setStuck(next);
@@ -149,10 +150,8 @@ export function DhoStickySpaceChrome({
       <div
         className={cn(
           'pointer-events-none fixed inset-x-0 z-[25] hidden md:block',
-          'border-b border-border bg-background-2 transition-[opacity,transform,box-shadow] duration-200 ease-out',
-          stuck
-            ? 'pointer-events-auto translate-y-0 opacity-100 shadow-md'
-            : '-translate-y-2 opacity-0',
+          'border-b border-border bg-background-2 transition-[opacity,box-shadow] duration-300 ease-out',
+          stuck ? 'pointer-events-auto opacity-100 shadow-md' : 'opacity-0',
         )}
         style={{ top: 'var(--menu-top-height, 4rem)' }}
         aria-hidden={!stuck}
@@ -212,13 +211,14 @@ export function DhoStickySpaceChrome({
           ) : null}
         </div>
 
-        {banner}
-
-        <div
-          ref={sentinelRef}
-          className="pointer-events-none hidden h-px w-full shrink-0 md:block"
-          aria-hidden
-        />
+        <div className="relative">
+          {banner}
+          <div
+            ref={sentinelRef}
+            className="pointer-events-none absolute bottom-0 left-0 right-0 hidden h-px opacity-0 md:block"
+            aria-hidden
+          />
+        </div>
 
         <div
           ref={setFlowActionsEl}
