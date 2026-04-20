@@ -44,35 +44,45 @@ function effectiveReadCursorEventId(room: Room, userId: string): string | null {
  * homeservers do not populate highlight counts reliably).
  */
 
-/** Latest non-redacted replacement per root event id (single timeline pass). */
-function latestReplacementByRootId(
+/**
+ * Non-redacted `m.replace` events per root id (single timeline pass).
+ * Callers must only use a replacement when `cand.getSender() === root.getSender()`.
+ */
+function replacementEventsByRootId(
   timeline: MatrixEvent[],
-): Map<string, MatrixEvent> {
-  const latestByRootId = new Map<string, MatrixEvent>();
+): Map<string, MatrixEvent[]> {
+  const byRootId = new Map<string, MatrixEvent[]>();
 
   for (const cand of timeline) {
     const rootId = getMessageReplaceTargetEventId(cand);
     if (!rootId) continue;
     if (isRedactedRoomMessageEvent(cand)) continue;
 
-    const prev = latestByRootId.get(rootId);
-    if (!prev || cand.getTs() >= prev.getTs()) {
-      latestByRootId.set(rootId, cand);
-    }
+    const list = byRootId.get(rootId) ?? [];
+    list.push(cand);
+    byRootId.set(rootId, list);
   }
 
-  return latestByRootId;
+  return byRootId;
 }
 
 /** Latest message content for mention parsing (`m.replace` edits target the root id). */
 function wireContentForMentionParse(
   rootEvent: MatrixEvent,
-  replacementsByRootId: Map<string, MatrixEvent>,
+  replacementsByRootId: Map<string, MatrixEvent[]>,
 ): Record<string, unknown> | undefined {
   const rootId = rootEvent.getId();
   if (!rootId) return undefined;
 
-  const latest = replacementsByRootId.get(rootId) ?? rootEvent;
+  const rootSender = rootEvent.getSender();
+  const candidates = replacementsByRootId.get(rootId);
+  let latest = rootEvent;
+  if (rootSender && candidates?.length) {
+    const trusted = candidates.filter((c) => c.getSender() === rootSender);
+    for (const cand of trusted) {
+      if (!latest || cand.getTs() >= latest.getTs()) latest = cand;
+    }
+  }
 
   const content = latest.getContent();
   return content && typeof content === 'object'
@@ -86,7 +96,7 @@ function countUnreadMentionMessagesForUser(
   readUpToId: string | null,
 ): number {
   const timeline = room.getLiveTimeline().getEvents();
-  const replacementsByRootId = latestReplacementByRootId(timeline);
+  const replacementsByRootId = replacementEventsByRootId(timeline);
   let n = 0;
   for (const ev of timeline) {
     if (ev.getType() !== EventType.RoomMessage) continue;
