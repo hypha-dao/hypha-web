@@ -47,10 +47,6 @@ test.describe('Human Chat Panel — default (enabled)', () => {
 });
 
 test.describe('Human Chat Panel — kill switch (disabled)', () => {
-  test.use({
-    extraHTTPHeaders: { Cookie: 'HYPHA_DISABLE_HUMAN_CHAT=true' },
-  });
-
   test.beforeEach(async ({ context }) => {
     await context.addCookies([
       {
