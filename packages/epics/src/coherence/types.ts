@@ -9,6 +9,7 @@ export type ChatCreatorType = {
 };
 
 export const COHERENCE_ORDERS = [
+  'mostvotes',
   'mostviews',
   'mostmessages',
   'mostrecent',

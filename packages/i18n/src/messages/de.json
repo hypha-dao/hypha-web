@@ -1833,6 +1833,7 @@
     "loadMore": "Mehr laden",
     "noMore": "Nichts mehr",
     "mostViews": "Meiste Aufrufe",
+    "mostVotes": "Meiste Stimmen",
     "mostMessages": "Meiste Nachrichten",
     "mostRecent": "Neueste",
     "searchConversation": "Gespräch suchen",
@@ -1852,6 +1853,9 @@
     "errorOhSnap": "Hoppla! Ein Fehler ist aufgetreten",
     "reset": "Zurücksetzen",
     "creatingNewSignal": "Neues Signal wird erstellt",
+    "editSignal": "Signal bearbeiten",
+    "savingSignal": "Wird gespeichert…",
+    "saveChanges": "Änderungen speichern",
     "signalTitle": "Signaltitel...",
     "type": "Typ",
     "priority": "Priorität",
@@ -1926,6 +1930,15 @@
     }
   },
   "SignalCard": {
-    "noConversationRoom": "Noch kein Gesprächsraum"
+    "noConversationRoom": "Noch kein Gesprächsraum",
+    "voteUp": "Positiv bewerten",
+    "voteDown": "Negativ bewerten",
+    "signalActions": "Signalaktionen",
+    "readMore": "Mehr lesen",
+    "showLess": "Weniger anzeigen",
+    "deleteSignal": "Signal löschen",
+    "deleteConfirm": "Dies entfernt das Signal dauerhaft aus dem Space. Fortfahren?",
+    "deleteMenu": "Löschen",
+    "deleteConfirmAction": "Signal löschen"
   }
 }

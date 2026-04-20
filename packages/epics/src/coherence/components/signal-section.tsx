@@ -17,6 +17,9 @@ import {
   COHERENCE_TYPE_OPTIONS,
   CoherenceType,
   DirectionType,
+  useJwt,
+  useMyCoherenceVotesForSpace,
+  useSpaceBySlug,
 } from '@hypha-platform/core/client';
 import { PlusIcon, RocketIcon } from '@radix-ui/react-icons';
 import {
@@ -58,6 +61,8 @@ export const SignalSection: FC<SignalSectionProps> = ({
 }) => {
   const t = useTranslations('CoherenceTab');
   const { lang, id } = useParams<{ lang: Locale; id: string }>();
+  const { jwt: authToken } = useJwt();
+  const { space } = useSpaceBySlug(id);
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { replace } = useRouter();
@@ -90,6 +95,14 @@ export const SignalSection: FC<SignalSectionProps> = ({
     firstPageSize,
     pageSize,
   });
+
+  const coherenceIdsForVotes = React.useMemo(
+    () => filteredSignals.map((s) => s.id),
+    [filteredSignals],
+  );
+
+  const { votes: myVotesFromServer, mutate: mutateMyVotes } =
+    useMyCoherenceVotesForSpace(authToken, space?.id, coherenceIdsForVotes);
 
   const onTagClick = React.useCallback(
     (type: string) => {
@@ -206,7 +219,10 @@ export const SignalSection: FC<SignalSectionProps> = ({
             style={{ animationDuration: '0s' }}
             onClick={() => onTagClick(typeOption.value)}
           >
-            <span className="tabular-nums">{typeOption.label}</span>{' '}
+            <span className="tabular-nums">{typeOption.label}</span>
+            <span className="mx-1.5 inline-block min-w-[1ch] text-center text-muted-foreground">
+              ·
+            </span>
             <span className="tabular-nums text-muted-foreground">
               {typeOption.count}
             </span>
@@ -240,6 +256,10 @@ export const SignalSection: FC<SignalSectionProps> = ({
               signals={filteredSignals}
               refresh={refresh}
               onSignalClick={onSignalClick}
+              spaceSlug={id}
+              lang={lang}
+              myVotes={myVotesFromServer}
+              onVotesSynced={() => void mutateMyVotes()}
             />
           ))}
         </div>
