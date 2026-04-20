@@ -24,6 +24,12 @@ import {
   CardContent,
   CardTitle,
   ConfirmDialog,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -44,8 +50,6 @@ import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { Locale } from '@hypha-platform/i18n';
 import {
-  ChevronDown,
-  ChevronUp,
   MoreHorizontal,
   Pencil,
   Trash2,
@@ -99,15 +103,18 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     useCoherenceMutationsWeb2Rsc(authToken);
   const t = useTranslations('CoherenceTab');
   const tSignalCard = useTranslations('SignalCard');
+  const tCommon = useTranslations('Common');
   const locale = useLocale();
   const dateFnsLocale = React.useMemo(
     () => resolveDateFnsLocale(locale),
     [locale],
   );
 
-  const [expanded, setExpanded] = React.useState(false);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [voteError, setVoteError] = React.useState<string | null>(null);
+  const [detailsOpen, setDetailsOpen] = React.useState(false);
+  const descriptionClampRef = React.useRef<HTMLParagraphElement>(null);
+  const [descriptionTruncated, setDescriptionTruncated] = React.useState(false);
   const isCreator = person?.id === creatorId;
 
   const coherenceType = React.useMemo(
@@ -166,6 +173,21 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       ),
     [description],
   );
+
+  React.useLayoutEffect(() => {
+    const el = descriptionClampRef.current;
+    if (!el || !plainDescription.trim()) {
+      setDescriptionTruncated(false);
+      return;
+    }
+    const measure = () => {
+      setDescriptionTruncated(el.scrollHeight > el.clientHeight + 1);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [plainDescription]);
 
   const handleUnarchive = React.useCallback(async () => {
     if (!slug) return;
@@ -394,7 +416,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             height="22px"
             loading={isLoading}
           >
-            <CardTitle className="text-base font-semibold leading-snug">
+            <CardTitle className="line-clamp-2 text-base font-semibold leading-snug">
               {title}
             </CardTitle>
           </Skeleton>
@@ -402,44 +424,64 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           <Skeleton
             className="min-w-full"
             width="100%"
-            height="72px"
+            height="44px"
             loading={isLoading}
           >
-            <div
-              className={cn(
-                'text-1 leading-relaxed text-neutral-11',
-                !expanded && 'line-clamp-4',
-              )}
-            >
-              {plainDescription}
+            <div className="flex flex-col gap-1">
+              <p
+                ref={descriptionClampRef}
+                className="text-1 leading-snug text-neutral-11 line-clamp-2"
+              >
+                {plainDescription}
+              </p>
+              {descriptionTruncated ? (
+                <button
+                  type="button"
+                  className="w-fit text-left text-1 font-medium text-accent-11 underline-offset-4 hover:underline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDetailsOpen(true);
+                  }}
+                >
+                  {tSignalCard('readFullDescription')}
+                </button>
+              ) : null}
             </div>
           </Skeleton>
 
-          {plainDescription.length > 140 ? (
-            <Button
-              type="button"
-              variant="ghost"
-              colorVariant="neutral"
-              size="sm"
-              className="-mt-1 h-auto self-start px-1 py-0 text-1 font-medium text-accent-11"
-              onClick={(e) => {
-                e.stopPropagation();
-                setExpanded((v) => !v);
-              }}
+          <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+            <DialogContent
+              className="max-h-[min(560px,85dvh)] gap-0 overflow-hidden p-0 sm:max-w-lg"
+              onClick={(e) => e.stopPropagation()}
+              onPointerDownOutside={(e) => e.stopPropagation()}
             >
-              {expanded ? (
-                <>
-                  <ChevronUp className="mr-1 inline h-3.5 w-3.5" />
-                  {tSignalCard('showLess')}
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="mr-1 inline h-3.5 w-3.5" />
-                  {tSignalCard('readMore')}
-                </>
-              )}
-            </Button>
-          ) : null}
+              <DialogHeader className="border-b border-border px-6 pb-4 pt-6">
+                <DialogTitle className="pr-8 leading-snug">{title}</DialogTitle>
+                <DialogDescription className="text-xs">
+                  {tSignalCard('fullDescriptionDialogSubtitle')}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="max-h-[min(420px,calc(85dvh-9rem))] overflow-y-auto px-6 py-4">
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+                  {plainDescription}
+                </p>
+              </div>
+              <DialogFooter className="border-t border-border px-6 py-4">
+                <Button
+                  type="button"
+                  variant="default"
+                  colorVariant="accent"
+                  className="w-full sm:w-auto"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDetailsOpen(false);
+                  }}
+                >
+                  {tCommon('close')}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {tagList?.length > 0 ? (
             <BadgesList isLoading={isLoading} badges={tagList ?? []} />

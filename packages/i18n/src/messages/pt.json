@@ -1885,6 +1885,8 @@
     "signalActions": "Ações do sinal",
     "readMore": "Ler mais",
     "showLess": "Mostrar menos",
+    "readFullDescription": "Ler descrição completa",
+    "fullDescriptionDialogSubtitle": "Descrição completa do sinal",
     "deleteSignal": "Eliminar sinal",
     "deleteConfirm": "Isto remove permanentemente este sinal do espaço. Continuar?",
     "deleteMenu": "Eliminar",
