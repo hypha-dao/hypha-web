@@ -635,7 +635,7 @@ export function CreateAgreementBaseFields({
                         form.setValue(
                           'attachments',
                           [...existingAttachments, ...files],
-                          { shouldValidate: false },
+                          { shouldValidate: false, shouldDirty: true },
                         );
                       }}
                       onExistingAttachmentsChange={(updated) => {
@@ -643,7 +643,7 @@ export function CreateAgreementBaseFields({
                         form.setValue(
                           'attachments',
                           [...updated, ...newFiles],
-                          { shouldValidate: false },
+                          { shouldValidate: false, shouldDirty: true },
                         );
                       }}
                       value={
