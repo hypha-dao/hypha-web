@@ -20,7 +20,10 @@ import {
   useResubmitProposalData,
   useScrollToErrors,
 } from '../../hooks';
-import { CreateAgreementBaseFields } from '../../agreements';
+import {
+  CreateAgreementBaseFields,
+  type BridgeInitialValues,
+} from '../../agreements';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
 
@@ -37,6 +40,10 @@ interface CreateProposeAContributionFormProps {
   successfulUrl: string;
   backUrl?: string;
   plugin: React.ReactNode;
+  /** Pre-fill values from an external bridge (e.g. ReGen Civics quest submission). */
+  initialValues?: BridgeInitialValues;
+  /** Bridge key embedded in the proposal title marker (e.g. "rc:abc12345"). */
+  bridgeKey?: string;
 }
 
 export const CreateProposeAContributionForm = ({
@@ -45,6 +52,8 @@ export const CreateProposeAContributionForm = ({
   spaceId,
   web3SpaceId,
   plugin,
+  initialValues,
+  bridgeKey,
 }: CreateProposeAContributionFormProps) => {
   const tSpaces = useTranslations('Spaces');
   const tAgreementFlow = useTranslations('AgreementFlow');
@@ -69,19 +78,24 @@ export const CreateProposeAContributionForm = ({
   const form = useForm<FormValues>({
     resolver,
     defaultValues: {
-      title: '',
-      description: '',
+      title: initialValues?.title ?? '',
+      description: initialValues?.description ?? '',
       leadImage: undefined,
       attachments: undefined,
       spaceId: spaceId ?? undefined,
       creatorId: person?.id,
-      recipient: '',
-      payouts: [
-        {
-          amount: undefined,
-          token: undefined,
-        },
-      ],
+      recipient: initialValues?.recipient ?? '',
+      payouts: initialValues?.payouts?.length
+        ? initialValues.payouts.map(({ amount, token }) => ({
+            amount,
+            token,
+          }))
+        : [
+            {
+              amount: undefined,
+              token: undefined,
+            },
+          ],
       label: 'Contribution',
     },
   });
@@ -96,6 +110,20 @@ export const CreateProposeAContributionForm = ({
 
   useClearResubmitOnSuccess(progress === 100 && !isError);
 
+  // Apply bridge payouts on first render only. We intentionally ignore later
+  // changes to `initialValues.payouts` because the form is then user-owned —
+  // re-applying would overwrite edits.
+  const didApplyBridgePayouts = React.useRef(false);
+  React.useEffect(() => {
+    if (didApplyBridgePayouts.current) return;
+    if (!initialValues?.payouts?.length) return;
+    form.setValue(
+      'payouts',
+      initialValues.payouts.map(({ amount, token }) => ({ amount, token })),
+    );
+    didApplyBridgePayouts.current = true;
+  }, [initialValues?.payouts, form]);
+
   React.useEffect(() => {
     if (progress === 100 && successfulUrl) {
       clearResubmitProposalSessionStorage();
@@ -108,7 +136,6 @@ export const CreateProposeAContributionForm = ({
       console.error('Recipient or payouts are missing');
       return;
     }
-
     await createProposeAContribution({
       ...data,
       spaceId: spaceId as number,
@@ -158,6 +185,8 @@ export const CreateProposeAContributionForm = ({
             isLoading={false}
             label={tAgreementFlow('labels.contribution')}
             progress={progress}
+            initialValues={initialValues}
+            bridgeKey={bridgeKey}
           />
           {plugin}
           <Separator />
