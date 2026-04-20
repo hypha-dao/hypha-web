@@ -7,7 +7,13 @@ import { AsideOverlayLayoutProvider } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 
-/** Reference-counted body scroll lock for desktop modal stacks — avoids stomping other overlays. */
+/**
+ * Reference-counted body scroll lock for desktop modal stacks.
+ * Multiple nested shells / overlays can call `lockBodyScroll` without fighting:
+ * only the final `unlock` when the count returns to zero restores
+ * `document.body.style.overflow` from `previousBodyOverflow` (including any
+ * custom value that existed before the first lock).
+ */
 let activeDesktopBodyLocks = 0;
 let previousBodyOverflow: string | undefined;
 
