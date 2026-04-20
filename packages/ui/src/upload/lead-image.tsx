@@ -246,7 +246,6 @@ export const UploadLeadImage = ({
             'max-sm:h-[min(90vh,640px)] sm:max-h-[90vh]',
           )}
           onInteractOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
         >
           <div className="border-b border-border px-5 py-4">
             <DialogTitle className="text-lg font-semibold tracking-tight text-foreground">
