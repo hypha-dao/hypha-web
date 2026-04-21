@@ -62,7 +62,8 @@ const buttonVariants = cva(
         variant: 'outline',
         colorVariant: 'accent',
         className:
-          'border-accent-8 text-accent-11 hover:bg-accent-3 hover:text-accent-12 hover:border-accent-9 active:scale-[0.99]',
+          /* accent-12 on accent-3 wash reads as colour-on-colour; foreground stays legible on the tint */
+          'border-accent-8 text-accent-11 hover:bg-accent-3 hover:text-foreground hover:border-accent-9 active:scale-[0.99]',
       },
       {
         variant: 'outline',
@@ -105,7 +106,7 @@ const buttonVariants = cva(
       {
         variant: 'ghost',
         colorVariant: 'accent',
-        className: 'text-accent-11 hover:bg-accent-3 hover:text-accent-12',
+        className: 'text-accent-11 hover:bg-accent-3 hover:text-foreground',
       },
       {
         variant: 'ghost',
