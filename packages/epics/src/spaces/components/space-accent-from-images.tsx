@@ -140,6 +140,12 @@ export function SpaceAccentFromImages({
     if (scopeElInit) {
       for (const [k, v] of Object.entries(DEFAULT_SPACE_SCOPE_STYLE)) {
         if (v === undefined || v === null) continue;
+        if (process.env.NODE_ENV !== 'production') {
+          console.assert(
+            k.startsWith('--'),
+            `Invalid CSS custom property: ${k}`,
+          );
+        }
         scopeElInit.style.setProperty(k, String(v));
       }
     }
@@ -164,6 +170,12 @@ export function SpaceAccentFromImages({
 
       for (const [k, v] of Object.entries(scopeStyle)) {
         if (v === undefined || v === null) continue;
+        if (process.env.NODE_ENV !== 'production') {
+          console.assert(
+            k.startsWith('--'),
+            `Invalid CSS custom property: ${k}`,
+          );
+        }
         scopeEl.style.setProperty(k, String(v));
       }
 
