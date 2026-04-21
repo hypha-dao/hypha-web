@@ -101,9 +101,13 @@ export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
         <Button
           onClick={onClose}
           variant="ghost"
-          className="rounded-full w-fit text-foreground flex-shrink-0"
+          className="group rounded-full w-fit flex-shrink-0 text-foreground"
         >
-          <Cross1Icon width={16} height={16} />
+          <Cross1Icon
+            width={16}
+            height={16}
+            className="transition-colors group-hover:text-white dark:group-hover:text-foreground"
+          />
         </Button>
       </div>
     </div>
