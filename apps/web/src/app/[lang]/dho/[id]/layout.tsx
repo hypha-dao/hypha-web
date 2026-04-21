@@ -7,6 +7,7 @@ import {
   CompactSpaceBanner,
   SpaceAccentFromImages,
   SpaceAccentPortalBridge,
+  isSafeImageUrl,
 } from '@hypha-platform/epics';
 import './space-accent.css';
 import { Locale } from '@hypha-platform/i18n';
@@ -100,19 +101,11 @@ export default async function DhoLayout({
 
   const rawLead = spaceFromDb.leadImage?.trim();
   const heroBannerImageHref =
-    rawLead &&
-    ((rawLead.startsWith('/') && !rawLead.startsWith('//')) ||
-      /^https?:\/\//i.test(rawLead))
-      ? rawLead
-      : DEFAULT_SPACE_LEAD_IMAGE;
+    rawLead && isSafeImageUrl(rawLead) ? rawLead : DEFAULT_SPACE_LEAD_IMAGE;
 
   const rawLogo = spaceFromDb.logoUrl?.trim();
   const accentLogoHref =
-    rawLogo &&
-    ((rawLogo.startsWith('/') && !rawLogo.startsWith('//')) ||
-      /^https?:\/\//i.test(rawLogo))
-      ? rawLogo
-      : DEFAULT_SPACE_AVATAR_IMAGE;
+    rawLogo && isSafeImageUrl(rawLogo) ? rawLogo : DEFAULT_SPACE_AVATAR_IMAGE;
 
   const compactBannerSpaceArchived =
     spaceFromDb.flags.includes('archived') ||

@@ -4,6 +4,7 @@ import { LinkLabel } from '../../common/link-label';
 import { Avatar, AvatarImage } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { CompactSpaceBannerLead } from './compact-space-banner-lead';
+import { isSafeImageUrl } from '../utils/safe-image-url';
 
 function isSafeLinkHref(url: string): boolean {
   const t = url.trim();
@@ -11,19 +12,6 @@ function isSafeLinkHref(url: string): boolean {
   try {
     const u = new URL(t);
     return u.protocol === 'https:' || u.protocol === 'http:';
-  } catch {
-    return false;
-  }
-}
-
-function isSafeTextureUrl(raw: string): boolean {
-  const t = raw.trim();
-  if (!t) return false;
-  /** Same-origin path only — reject protocol-relative `//evil` */
-  if (t.startsWith('/') && !t.startsWith('//')) return true;
-  try {
-    const u = new URL(t);
-    return u.protocol === 'http:' || u.protocol === 'https:';
   } catch {
     return false;
   }
@@ -89,8 +77,8 @@ export function CompactSpaceBanner({
   const textureSrc = (() => {
     const lead = leadImageUrl?.trim();
     const fallback = defaultLeadImageSrc?.trim() ?? '';
-    if (lead && isSafeTextureUrl(lead)) return lead;
-    if (fallback && isSafeTextureUrl(fallback)) return fallback;
+    if (lead && isSafeImageUrl(lead)) return lead;
+    if (fallback && isSafeImageUrl(fallback)) return fallback;
     return '';
   })();
 
