@@ -484,9 +484,18 @@ export const UpdateIssuedTokenPlugin = ({
 
   const lastHydratedTokenAddressRef = useRef<string | null>(null);
   const lastOnChainFingerprintRef = useRef<string>('');
+  /**
+   * Tracks the token address whose mutual-credit fields we already populated from
+   * on-chain data. Distinct from `lastOnChainFingerprintRef` because credit fields
+   * have their own "first-arrival" semantics: we want to force-fill them once per
+   * token regardless of any incidental `dirtyFields` flags that other effects may
+   * have set, then defer to user edits afterwards.
+   */
+  const creditHydratedForTokenRef = useRef<string | null>(null);
 
   useEffect(() => {
     lastOnChainFingerprintRef.current = '';
+    creditHydratedForTokenRef.current = null;
   }, [selectedTokenAddress]);
 
   useEffect(() => {
@@ -779,6 +788,12 @@ export const UpdateIssuedTokenPlugin = ({
      * Mutual credit hydration: a token is considered "credit-enabled" if it has either a
      * non-zero defaultCreditLimit or one or more credit-whitelisted spaces. Baselines are
      * mirrored so the orchestrator can compute add/remove space deltas.
+     *
+     * On the first arrival of on-chain data per selected token we force-fill the form
+     * fields (bypassing `dirtyFields` checks) so the "Mutual Credit" toggle, limit, and
+     * eligible-space list reliably prefill — a few sibling effects can flip the dirty
+     * flag for credit-related fields before the chain data lands. After this initial
+     * sync we respect user edits and only mirror the (non-user-facing) baseline fields.
      */
     const hasCreditLimit =
       onChainData.defaultCreditLimit !== undefined &&
@@ -786,24 +801,37 @@ export const UpdateIssuedTokenPlugin = ({
     const whitelistedSpaceIds = onChainData.creditWhitelistedSpaceIds ?? [];
     const hasCreditWhitelist = whitelistedSpaceIds.length > 0;
     const creditEnabledFromChain = hasCreditLimit || hasCreditWhitelist;
+    /**
+     * Mirror the new-token form's behavior: the issuing space is implicit (auto-added by
+     * the orchestrator and rendered as a non-removable badge in the picker UI), so exclude
+     * it from the form's `creditWhitelistedSpaceIds` field. The orchestrator dedupes when
+     * computing add/remove deltas, so this stays diff-stable.
+     */
+    const additionalWhitelistedSpaceIds =
+      typeof currentSpaceWeb3Id === 'number'
+        ? whitelistedSpaceIds.filter((id) => id !== currentSpaceWeb3Id)
+        : whitelistedSpaceIds;
 
-    if (!isDirty('enableMutualCredit')) {
+    const creditFirstSync =
+      !!selectedTokenAddress &&
+      creditHydratedForTokenRef.current !== selectedTokenAddress;
+
+    if (creditFirstSync || !isDirty('enableMutualCredit')) {
       setValue('enableMutualCredit', creditEnabledFromChain, {
         shouldDirty: false,
       });
     }
-    if (
-      onChainData.defaultCreditLimit !== undefined &&
-      !isDirty('defaultCreditLimit')
-    ) {
+    if (creditFirstSync || !isDirty('defaultCreditLimit')) {
       setValue(
         'defaultCreditLimit',
-        creditEnabledFromChain ? onChainData.defaultCreditLimit : undefined,
+        creditEnabledFromChain
+          ? onChainData.defaultCreditLimit ?? undefined
+          : undefined,
         { shouldDirty: false },
       );
     }
-    if (!isDirty('creditWhitelistedSpaceIds')) {
-      setValue('creditWhitelistedSpaceIds', whitelistedSpaceIds, {
+    if (creditFirstSync || !isDirty('creditWhitelistedSpaceIds')) {
+      setValue('creditWhitelistedSpaceIds', additionalWhitelistedSpaceIds, {
         shouldDirty: false,
       });
     }
@@ -819,9 +847,20 @@ export const UpdateIssuedTokenPlugin = ({
     if (creditEnabledFromChain) {
       setShowAdvancedSettings((prev) => prev || true);
     }
+    if (creditFirstSync) {
+      creditHydratedForTokenRef.current = selectedTokenAddress;
+    }
 
     setShowAdvancedSettings((prev) => prev || enableAdvancedTransferControls);
-  }, [isLoadingOnChainData, onChainData, setValue, getValues, dirtyFields]);
+  }, [
+    isLoadingOnChainData,
+    onChainData,
+    selectedTokenAddress,
+    currentSpaceWeb3Id,
+    setValue,
+    getValues,
+    dirtyFields,
+  ]);
 
   const resubmitOverlayAppliedRef = useRef(false);
   const resubmitHydratedRef = useRef(false);

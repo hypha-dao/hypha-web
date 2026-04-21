@@ -113,7 +113,9 @@ async function fetchTokenOnChainData(
   for (const failure of results.filter(
     (result) => result.status === 'failure',
   )) {
-    console.error(`Contract call failed: ${failure.error.message}`);
+    console.error(
+      `Contract call failed for ${address}: ${failure.error.message}`,
+    );
   }
 
   const [
