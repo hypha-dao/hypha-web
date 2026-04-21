@@ -132,7 +132,7 @@ export function NavigationTabs({
       <div
         className={cn(
           'mb-4 w-full overflow-x-auto overflow-y-visible overscroll-x-contain py-[18px]',
-          'touch-pan-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
+          'touch-pan-x touch-pan-y [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
         )}
       >
         <TabsList
