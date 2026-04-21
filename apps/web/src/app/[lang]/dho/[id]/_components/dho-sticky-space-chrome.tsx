@@ -86,7 +86,7 @@ export function DhoStickySpaceChrome({
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [stuck, flowActionsEl, actionsSlot]);
+  }, [stuck, flowActionsEl]);
 
   React.useEffect(() => {
     const sentinel = bannerBottomSentinelRef.current;
