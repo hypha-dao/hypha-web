@@ -17,7 +17,8 @@ import {
   useScrollToErrors,
 } from '../../hooks';
 import { useConfig } from 'wagmi';
-import { Button, Form, LoadingBackdrop, Separator } from '@hypha-platform/ui';
+import { Button, Form, Separator } from '@hypha-platform/ui';
+import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
@@ -120,7 +121,7 @@ export const MembershipExitForm = ({
   };
 
   return (
-    <LoadingBackdrop
+    <SpaceLoadingBackdrop
       showKeepWindowOpenMessage={true}
       keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       fullHeight={true}
@@ -167,6 +168,6 @@ export const MembershipExitForm = ({
           </div>
         </form>
       </Form>
-    </LoadingBackdrop>
+    </SpaceLoadingBackdrop>
   );
 };

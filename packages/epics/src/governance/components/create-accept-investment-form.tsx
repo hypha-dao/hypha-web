@@ -10,7 +10,7 @@ import {
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import { useCreateAcceptInvestmentOrchestrator } from '@hypha-platform/core/client';
-import { LoadingBackdrop } from '@hypha-platform/ui/server';
+import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
 import { useConfig } from 'wagmi';
 import { useScrollToErrors, useResubmitProposalData } from '../../hooks';
 import { CreateAgreementBaseFields } from '../../agreements';
@@ -111,7 +111,7 @@ export const CreateAcceptInvestmentForm = ({
   };
 
   return (
-    <LoadingBackdrop
+    <SpaceLoadingBackdrop
       showKeepWindowOpenMessage={true}
       keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       fullHeight={true}
@@ -160,6 +160,6 @@ export const CreateAcceptInvestmentForm = ({
           </div>
         </form>
       </Form>
-    </LoadingBackdrop>
+    </SpaceLoadingBackdrop>
   );
 };

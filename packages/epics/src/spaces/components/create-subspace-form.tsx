@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useJwt } from '@hypha-platform/core/client';
 import { useCreateSpaceOrchestrator } from '@hypha-platform/core/client';
 import React from 'react';
-import { LoadingBackdrop } from '@hypha-platform/ui/server';
+import { SpaceLoadingBackdrop } from './space-loading-backdrop';
 import { Button } from '@hypha-platform/ui';
 import { useMe } from '@hypha-platform/core/client';
 import { Locale } from '@hypha-platform/i18n';
@@ -50,7 +50,7 @@ export const CreateSubspaceForm = ({
   }, [progress, spaceSlug]);
 
   return (
-    <LoadingBackdrop
+    <SpaceLoadingBackdrop
       showKeepWindowOpenMessage={true}
       keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       fullHeight={true}
@@ -79,6 +79,6 @@ export const CreateSubspaceForm = ({
         label="add"
         slugIncorrectMessage={t('slugAlreadyExistsLong')}
       />
-    </LoadingBackdrop>
+    </SpaceLoadingBackdrop>
   );
 };

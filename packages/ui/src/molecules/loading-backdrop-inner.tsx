@@ -16,6 +16,11 @@ type LoadingBackdropInnerPropsBase = {
   fullHeight?: boolean;
   /** `auto`: follow Aside overlay context (modal shell vs side panel). */
   fullHeightVariant?: 'auto' | 'docked-panel' | 'responsive-modal-shell';
+  /**
+   * When the overlay is portaled to `document.body`, host CSS variables here
+   * (e.g. space-derived `--color-accent-9`) so `bg-accent-9` on the progress bar resolves.
+   */
+  portalScopeStyle?: React.CSSProperties;
 };
 
 /** When `showKeepWindowOpenMessage` is true, localized `keepWindowOpenMessage` is required (no English default in this component). */
@@ -117,6 +122,7 @@ export function LoadingBackdropInner({
   keepWindowOpenMessage,
   fullHeight = false,
   fullHeightVariant = 'auto',
+  portalScopeStyle,
 }: LoadingBackdropInnerProps) {
   const asideLayout = useAsideOverlayLayout();
   const resolvedFullHeightVariant =
@@ -142,6 +148,8 @@ export function LoadingBackdropInner({
         'max-md:top-[var(--menu-top-height,65px)] max-md:right-[var(--sidebar-right-width,0px)]',
         className,
       )}
+      style={portalScopeStyle}
+      data-space-accent-scope={portalScopeStyle ? '' : undefined}
       aria-live="polite"
       aria-busy="true"
     >
@@ -166,7 +174,9 @@ export function LoadingBackdropInner({
         style={{
           top: 'var(--menu-top-height, 65px)',
           right: 'var(--sidebar-right-width, 0px)',
+          ...portalScopeStyle,
         }}
+        data-space-accent-scope={portalScopeStyle ? '' : undefined}
         aria-live="polite"
         aria-busy="true"
       >
@@ -183,6 +193,8 @@ export function LoadingBackdropInner({
           'absolute inset-0 z-10 flex min-h-full flex-col items-center justify-center space-y-2 bg-background/75',
           className,
         )}
+        style={portalScopeStyle}
+        data-space-accent-scope={portalScopeStyle ? '' : undefined}
         aria-live="polite"
         aria-busy="true"
       >

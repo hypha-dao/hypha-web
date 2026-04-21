@@ -14,7 +14,7 @@ import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
 import { useConfig } from 'wagmi';
-import { LoadingBackdrop } from '@hypha-platform/ui/server';
+import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
 import { VOTING_METHOD_TYPES } from '../hooks';
 import {
   useClearResubmitOnSuccess,
@@ -178,7 +178,7 @@ export const CreateProposalChangeVotingMethodForm = ({
   const isButtonDisabled = quorum === 0 && unity === 0;
 
   return (
-    <LoadingBackdrop
+    <SpaceLoadingBackdrop
       showKeepWindowOpenMessage={true}
       keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       fullHeight={true}
@@ -230,6 +230,6 @@ export const CreateProposalChangeVotingMethodForm = ({
           </div>
         </form>
       </Form>
-    </LoadingBackdrop>
+    </SpaceLoadingBackdrop>
   );
 };

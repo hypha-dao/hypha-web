@@ -35,3 +35,4 @@ export * from './space-discoverability-field';
 export * from './space-activity-access-field';
 export * from './space-access-denied';
 export * from './space-tab-access-wrapper';
+export * from './space-loading-backdrop';

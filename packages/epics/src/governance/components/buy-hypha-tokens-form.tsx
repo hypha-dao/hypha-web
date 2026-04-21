@@ -11,7 +11,8 @@ import {
   useSpaceDetailsWeb3Rpc,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
-import { LoadingBackdrop, Form, Separator, Button } from '@hypha-platform/ui';
+import { Form, Separator, Button } from '@hypha-platform/ui';
+import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useConfig } from 'wagmi';
 import { useAssets, useFundWallet } from '../../treasury';
@@ -137,7 +138,7 @@ export const BuyHyphaTokensForm = ({
   };
 
   return (
-    <LoadingBackdrop
+    <SpaceLoadingBackdrop
       showKeepWindowOpenMessage={true}
       keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       fullHeight={true}
@@ -220,6 +221,6 @@ export const BuyHyphaTokensForm = ({
           </div>
         </form>
       </Form>
-    </LoadingBackdrop>
+    </SpaceLoadingBackdrop>
   );
 };
