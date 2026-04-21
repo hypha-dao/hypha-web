@@ -27,7 +27,7 @@ function clampParallaxScrollY(): number {
  */
 export function CompactSpaceBannerLead({ src }: Props) {
   const [ready, setReady] = React.useState(false);
-  const [parallaxY, setParallaxY] = React.useState(clampParallaxScrollY);
+  const [parallaxY, setParallaxY] = React.useState(0);
   const [preferReducedMotion, setPreferReducedMotion] = React.useState(false);
 
   React.useEffect(() => {
