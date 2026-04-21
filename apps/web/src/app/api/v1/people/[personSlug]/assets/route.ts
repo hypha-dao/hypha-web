@@ -77,10 +77,12 @@ export async function GET(
           console.warn('Failed to fetch member spaces:', error);
           return null;
         }),
-      getTokenBalancesByAddress(address).catch((error) => {
-        console.warn('Failed to fetch external token balances:', error);
-        return [] as any[];
-      }),
+      getTokenBalancesByAddress(address).catch(
+        (error): Awaited<ReturnType<typeof getTokenBalancesByAddress>> => {
+          console.warn('Failed to fetch external token balances:', error);
+          return [];
+        },
+      ),
       findAllTokens({ db: getDb({ authToken }) }, { search: undefined }),
     ]);
 

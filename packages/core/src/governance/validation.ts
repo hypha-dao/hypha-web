@@ -655,7 +655,7 @@ export const baseSchemaIssueNewToken = z.object({
     }
     const num = Number(val);
     return isNaN(num) ? undefined : num;
-  }, z.number().nonnegative().optional()),
+  }, z.number().int().nonnegative().optional()),
   /** Web3 space ids whose members are eligible for the credit line */
   creditWhitelistedSpaceIds: z.array(z.number().int().nonnegative()).optional(),
 });

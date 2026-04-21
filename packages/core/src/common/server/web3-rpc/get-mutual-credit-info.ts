@@ -76,6 +76,30 @@ export async function getMutualCreditInfo(
       return null;
     }
 
+    /**
+     * Partial multicall failures can silently corrupt reported balances (a transient
+     * RPC error on one call surfaces as "0"). Surface them so the symptom is visible
+     * in logs even though we still return the safe-fallback shape below.
+     */
+    const callNames = [
+      'defaultCreditLimit',
+      'creditBalanceOf',
+      'netBalanceOf',
+      'getCreditWhitelistedSpaces',
+      'creditLimitOf',
+      'creditLimitLeftOf',
+    ] as const;
+    const failed = results
+      .map((r, i) => ({ name: callNames[i], status: r.status }))
+      .filter((r) => r.status === 'failure');
+    if (failed.length > 0) {
+      console.warn(
+        `getMutualCreditInfo: partial multicall failure for token ${tokenAddress} owner ${ownerAddress}: ${failed
+          .map((f) => f.name)
+          .join(', ')}`,
+      );
+    }
+
     const defaultCreditLimit =
       defaultLimitResult.status === 'success'
         ? Number(formatUnits(defaultLimitResult.result as bigint, DECIMALS))
@@ -105,10 +129,20 @@ export async function getMutualCreditInfo(
       creditLimitResult?.status === 'success'
         ? Number(formatUnits(creditLimitResult.result as bigint, DECIMALS))
         : 0;
+    /**
+     * Only fall back to arithmetic when both inputs (creditLimit and creditBalance)
+     * actually succeeded — otherwise we could report the full limit as available even
+     * when the holder already has unreported debt.
+     */
+    const canDeriveCreditLimitLeft =
+      creditLimitResult?.status === 'success' &&
+      creditBalanceResult.status === 'success';
     const creditLimitLeft =
       creditLimitLeftResult?.status === 'success'
         ? Number(formatUnits(creditLimitLeftResult.result as bigint, DECIMALS))
-        : Math.max(0, creditLimit - creditBalance);
+        : canDeriveCreditLimitLeft
+        ? Math.max(0, creditLimit - creditBalance)
+        : 0;
 
     const isCreditEnabled =
       defaultCreditLimit > 0 || whitelistedSpaceIds.length > 0;

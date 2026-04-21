@@ -29,6 +29,14 @@ type MutualCreditSectionProps = {
   currentSpaceWeb3Id?: number | null;
 };
 
+/** Subset of fields this section reads/writes on the surrounding form. */
+type MutualCreditFormValues = {
+  creditWhitelistedSpaceIds?: number[];
+  defaultCreditLimit?: number;
+};
+
+const SWITCH_LABEL_ID = 'mutual-credit-enable-label';
+
 export const MutualCreditSection = ({
   enableMutualCredit,
   setEnableMutualCredit,
@@ -36,12 +44,14 @@ export const MutualCreditSection = ({
   currentSpaceWeb3Id,
 }: MutualCreditSectionProps) => {
   const tAgreementFlow = useTranslations('AgreementFlow');
-  const { control, setValue, getValues } = useFormContext();
+  const { control, setValue, getValues } =
+    useFormContext<MutualCreditFormValues>();
 
-  const selectedIds = (useWatch({
-    control,
-    name: 'creditWhitelistedSpaceIds',
-  }) ?? []) as number[];
+  const selectedIds =
+    useWatch({
+      control,
+      name: 'creditWhitelistedSpaceIds',
+    }) ?? [];
 
   const defaultCreditLimit = useWatch({
     control,
@@ -65,8 +75,7 @@ export const MutualCreditSection = ({
       const id = Number(rawValue);
       if (!Number.isFinite(id) || id <= 0) return;
       if (id === currentSpaceWeb3Id) return;
-      const current = (getValues('creditWhitelistedSpaceIds') ??
-        []) as number[];
+      const current = getValues('creditWhitelistedSpaceIds') ?? [];
       if (current.includes(id)) return;
       setValue('creditWhitelistedSpaceIds', [...current, id], {
         shouldDirty: true,
@@ -78,8 +87,7 @@ export const MutualCreditSection = ({
 
   const handleRemoveSpace = useCallback(
     (id: number) => {
-      const current = (getValues('creditWhitelistedSpaceIds') ??
-        []) as number[];
+      const current = getValues('creditWhitelistedSpaceIds') ?? [];
       setValue(
         'creditWhitelistedSpaceIds',
         current.filter((v) => v !== id),
@@ -90,7 +98,7 @@ export const MutualCreditSection = ({
   );
 
   const handleCreditLimitChange = handleNumberChange(
-    setValue,
+    setValue as (name: string, value: unknown) => void,
     'defaultCreditLimit',
   );
 
@@ -130,12 +138,13 @@ export const MutualCreditSection = ({
         {tAgreementFlow('plugins.issueNewToken.mutualCredit.description')}
       </span>
       <div className="flex w-full justify-between items-center text-2 text-neutral-11">
-        <span>
+        <span id={SWITCH_LABEL_ID}>
           {tAgreementFlow('plugins.issueNewToken.mutualCredit.enable')}
         </span>
         <Switch
           checked={enableMutualCredit}
           onCheckedChange={setEnableMutualCredit}
+          aria-labelledby={SWITCH_LABEL_ID}
           className="ml-2"
         />
       </div>

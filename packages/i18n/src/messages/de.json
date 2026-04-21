@@ -384,7 +384,12 @@
     "assetCard": {
       "fromSpace": "von {spaceTitle}",
       "totalIssuance": "Gesamtausgabe: {value}",
-      "createdOn": "Erstellt am {date}"
+      "createdOn": "Erstellt am {date}",
+      "mutualCredit": {
+        "debtBadge": "Schuldet {amount} {symbol}",
+        "netBadge": "Netto {amount} {symbol}",
+        "limit": "Kreditlimit: {limit} {symbol}"
+      }
     },
     "transactionCard": {
       "tokenIconAlt": "Token-Icon",
@@ -960,7 +965,8 @@
         "blockchainAddressInvalid": "Bitte geben Sie eine gültige Blockchain-Adresse ein",
         "referenceCurrencyRequired": "Bitte wählen Sie eine Referenzwährung aus",
         "tokenPricePositive": "Bitte geben Sie einen Token-Preis größer als 0 ein",
-        "duplicateWhitelistEntry": "Dieses Mitglied oder dieser Space steht bereits in dieser Whitelist. Entfernen Sie das Duplikat oder wählen Sie einen anderen Eintrag."
+        "duplicateWhitelistEntry": "Dieses Mitglied oder dieser Space steht bereits in dieser Whitelist. Entfernen Sie das Duplikat oder wählen Sie einen anderen Eintrag.",
+        "creditLimitPositive": "Bitte geben Sie ein Kreditlimit größer als 0 ein"
       }
     },
     "createAgreementBaseFields": {
@@ -1204,6 +1210,18 @@
           },
           "percentageLabel": "Voice-Decay-Prozentsatz",
           "percentagePlaceholder": "Decay"
+        },
+        "mutualCredit": {
+          "title": "Mutual Credit",
+          "description": "Erlauben Sie Mitgliedern von Whitelist-Spaces, bis zu einem persönlichen Kreditlimit unter null auszugeben. Der Nettosaldo wird negativ, sobald Kredit in Anspruch genommen wird.",
+          "enable": "Mutual Credit aktivieren",
+          "creditLimitLabel": "Standard-Kreditlimit",
+          "creditLimitPlaceholder": "Betrag eingeben",
+          "eligibleSpacesLabel": "Berechtigte Spaces",
+          "eligibleSpacesDescription": "Mitglieder dieser Spaces können die Kreditlinie nutzen. Der ausgebende Space ist immer enthalten.",
+          "currentSpaceTag": "ausgebender Space",
+          "addSpacePlaceholder": "Space hinzufügen…",
+          "removeSpace": "Space entfernen"
         }
       },
       "quorumAndUnity": {
@@ -1581,7 +1599,13 @@
       "whitelistEnforcementActive": "Aktiv",
       "whitelistEnforcementInactive": "Inaktiv",
       "spaceWhitelistMembersSuffix": "(Space & Members)",
-      "spaceWhitelistOnlySuffix": "(Nur Space)"
+      "spaceWhitelistOnlySuffix": "(Nur Space)",
+      "mutualCreditEnabled": "Mutual Credit aktiviert",
+      "mutualCreditLimit": "Standard-Kreditlimit",
+      "mutualCreditEligibleSpaces": "Berechtigte Spaces",
+      "mutualCreditEligibleSpacesAdded": "Hinzugefügte berechtigte Spaces",
+      "mutualCreditEligibleSpacesRemoved": "Entfernte berechtigte Spaces",
+      "spaceLogoAlt": "Logo von {title}"
     },
     "entryMethods": {
       "openAccess": "Open Access",

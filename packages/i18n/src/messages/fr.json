@@ -384,7 +384,12 @@
     "assetCard": {
       "fromSpace": "de {spaceTitle}",
       "totalIssuance": "Émission totale : {value}",
-      "createdOn": "Créé le {date}"
+      "createdOn": "Créé le {date}",
+      "mutualCredit": {
+        "debtBadge": "Doit {amount} {symbol}",
+        "netBadge": "Net {amount} {symbol}",
+        "limit": "Limite de crédit : {limit} {symbol}"
+      }
     },
     "transactionCard": {
       "tokenIconAlt": "Icône du token",
@@ -960,7 +965,8 @@
         "blockchainAddressInvalid": "Veuillez saisir une adresse blockchain valide",
         "referenceCurrencyRequired": "Veuillez sélectionner une devise de référence",
         "tokenPricePositive": "Veuillez saisir un prix de token supérieur à 0",
-        "duplicateWhitelistEntry": "Ce membre ou cet espace figure déjà dans cette liste blanche. Supprimez le doublon ou choisissez une autre entrée."
+        "duplicateWhitelistEntry": "Ce membre ou cet espace figure déjà dans cette liste blanche. Supprimez le doublon ou choisissez une autre entrée.",
+        "creditLimitPositive": "Veuillez saisir une limite de crédit supérieure à 0"
       }
     },
     "createAgreementBaseFields": {
@@ -1204,6 +1210,18 @@
           },
           "percentageLabel": "Pourcentage de décroissance de la voix",
           "percentagePlaceholder": "Décroissance"
+        },
+        "mutualCredit": {
+          "title": "Crédit mutuel",
+          "description": "Permet aux membres des espaces de la liste blanche de dépenser sous zéro jusqu’à une limite de crédit par compte. Le solde net devient négatif lorsque le crédit est utilisé.",
+          "enable": "Activer le crédit mutuel",
+          "creditLimitLabel": "Limite de crédit par défaut",
+          "creditLimitPlaceholder": "Saisir un montant",
+          "eligibleSpacesLabel": "Espaces éligibles",
+          "eligibleSpacesDescription": "Les membres de ces espaces peuvent utiliser la ligne de crédit. L’espace émetteur est toujours inclus.",
+          "currentSpaceTag": "espace émetteur",
+          "addSpacePlaceholder": "Ajouter un espace…",
+          "removeSpace": "Retirer l’espace"
         }
       },
       "quorumAndUnity": {
@@ -1580,7 +1598,13 @@
       "whitelistEnforcementActive": "Actif",
       "whitelistEnforcementInactive": "Inactif",
       "spaceWhitelistMembersSuffix": "(Space et membres)",
-      "spaceWhitelistOnlySuffix": "(Space uniquement)"
+      "spaceWhitelistOnlySuffix": "(Space uniquement)",
+      "mutualCreditEnabled": "Crédit mutuel activé",
+      "mutualCreditLimit": "Limite de crédit par défaut",
+      "mutualCreditEligibleSpaces": "Espaces éligibles",
+      "mutualCreditEligibleSpacesAdded": "Espaces éligibles ajoutés",
+      "mutualCreditEligibleSpacesRemoved": "Espaces éligibles retirés",
+      "spaceLogoAlt": "Logo de {title}"
     },
     "entryMethods": {
       "openAccess": "Accès libre",

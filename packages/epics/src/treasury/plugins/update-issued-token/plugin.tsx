@@ -183,6 +183,26 @@ export const UpdateIssuedTokenPlugin = ({
     });
   }, [setValue]);
 
+  /**
+   * Mutual credit lives under Advanced Settings — collapsing the section must
+   * also drop the credit toggle/limit/whitelist or hidden values can still be
+   * encoded into the update tx.
+   */
+  const clearMutualCreditFields = useCallback(() => {
+    setValue('enableMutualCredit', false, {
+      shouldDirty: true,
+      shouldValidate: false,
+    });
+    setValue('defaultCreditLimit', undefined, {
+      shouldDirty: true,
+      shouldValidate: false,
+    });
+    setValue('creditWhitelistedSpaceIds', [], {
+      shouldDirty: true,
+      shouldValidate: false,
+    });
+  }, [setValue]);
+
   const clearAdvancedSettingsFields = useCallback(() => {
     clearLimitedSupplyFields();
     setValue('enableProposalAutoMinting', true, {
@@ -199,12 +219,14 @@ export const UpdateIssuedTokenPlugin = ({
       shouldValidate: false,
     });
     clearTokenPriceFields();
+    clearMutualCreditFields();
     setEnableLimitedSupply(false);
   }, [
     setValue,
     clearLimitedSupplyFields,
     clearTransferFields,
     clearTokenPriceFields,
+    clearMutualCreditFields,
     currentTokenType,
   ]);
 

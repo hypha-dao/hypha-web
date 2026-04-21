@@ -281,7 +281,19 @@ export const useCreateIssueTokenOrchestrator = ({
           /**
            * Always include the issuing space so its members are eligible immediately.
            * `Set` dedupes when the user also explicitly picks the current space.
+           * Guard against falsy/0 ids that would otherwise be silently encoded
+           * into `batchAddCreditWhitelistSpaces` and reach the chain.
            */
+          if (
+            enableMutualCredit &&
+            !(Number.isInteger(arg.web3SpaceId) && arg.web3SpaceId > 0)
+          ) {
+            throw new Error(
+              `Cannot enable mutual credit: web3SpaceId must be a positive integer (got ${String(
+                arg.web3SpaceId,
+              )})`,
+            );
+          }
           const creditWhitelistSpaceIds = enableMutualCredit
             ? Array.from(
                 new Set<number>([

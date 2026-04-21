@@ -10,7 +10,7 @@ import {
   type TokenType,
   type TransferWhitelistFormValue,
 } from '@hypha-platform/core/client';
-import { getAddress } from 'viem';
+import { formatUnits, getAddress } from 'viem';
 import { Separator } from '@hypha-platform/ui';
 import {
   formatCurrencyValue,
@@ -457,7 +457,7 @@ export const ProposalUpdateToken = ({
     if (defaultCreditLimit === undefined) {
       return undefined;
     }
-    return Number(defaultCreditLimit / 10n ** 18n);
+    return Number(formatUnits(defaultCreditLimit, 18));
   }, [defaultCreditLimit]);
   const creditDisabled =
     creditLimitHuman !== undefined && creditLimitHuman === 0;
@@ -688,7 +688,9 @@ export const ProposalUpdateToken = ({
                         src={s.logoUrl ?? '/placeholder/default-profile.svg'}
                         width={20}
                         height={20}
-                        alt={`${s.title} logo`}
+                        alt={tProposalDetails('labels.spaceLogoAlt', {
+                          title: s.title,
+                        })}
                       />
                       <span className="text-1">{s.title}</span>
                     </Badge>
@@ -719,7 +721,9 @@ export const ProposalUpdateToken = ({
                         src={s.logoUrl ?? '/placeholder/default-profile.svg'}
                         width={20}
                         height={20}
-                        alt={`${s.title} logo`}
+                        alt={tProposalDetails('labels.spaceLogoAlt', {
+                          title: s.title,
+                        })}
                       />
                       <span className="text-1">{s.title}</span>
                     </Badge>

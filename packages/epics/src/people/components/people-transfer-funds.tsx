@@ -53,10 +53,20 @@ export const ProfileTransferFunds = ({
       const isTransferableType =
         (asset.type != null && !['ownership', 'voice'].includes(asset.type)) ||
         (asset.type == null &&
+          asset.address !== undefined &&
           ERC20_TOKEN_TRANSFER_ADDRESSES.includes(asset.address));
       if (!isTransferableType) return false;
       const hasBalance = (asset.value ?? 0) > 0;
-      const canDrawCredit = Boolean(asset.mutualCredit?.creditEligible);
+      /**
+       * `creditEligible` only means the user belongs to a whitelisted space; it
+       * doesn't guarantee they can currently draw. If `creditLimitLeft` is 0 the
+       * submit-time validation immediately rejects the transfer, so we hide the
+       * token here too to avoid a confusing dropdown entry.
+       */
+      const canDrawCredit = Boolean(
+        asset.mutualCredit?.creditEligible &&
+          asset.mutualCredit.creditLimitLeft > 0,
+      );
       return hasBalance || canDrawCredit;
     })
     .map((asset) => ({

@@ -1635,7 +1635,8 @@
       "mutualCreditLimit": "Default Credit Limit",
       "mutualCreditEligibleSpaces": "Eligible Spaces",
       "mutualCreditEligibleSpacesAdded": "Eligible Spaces Added",
-      "mutualCreditEligibleSpacesRemoved": "Eligible Spaces Removed"
+      "mutualCreditEligibleSpacesRemoved": "Eligible Spaces Removed",
+      "spaceLogoAlt": "{title} logo"
     },
     "entryMethods": {
       "openAccess": "Open Access",

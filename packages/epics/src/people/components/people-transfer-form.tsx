@@ -103,7 +103,7 @@ export const PeopleTransferForm = ({
       let isHyphaInsufficient = false;
       tokenTotals.forEach((totalAmount, tokenAddress) => {
         const asset = assets.find(
-          (a) => a.address.toLowerCase() === tokenAddress,
+          (a) => a.address?.toLowerCase() === tokenAddress,
         );
         const balance = asset ? parseFloat(String(asset.value)) : 0;
         /**
