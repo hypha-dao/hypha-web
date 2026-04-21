@@ -348,9 +348,7 @@ describe('Token Configuration Tests', function () {
       // Try to set max supply below total supply - should fail
       await expect(
         token.connect(executorSigner).setMaxSupply(ethers.parseEther('400')),
-      ).to.be.revertedWith(
-        'supply < total',
-      );
+      ).to.be.revertedWith('supply < total');
     });
   });
 
@@ -1416,12 +1414,12 @@ describe('Token Configuration Tests', function () {
       it('Should reject decay parameter updates from non-executor', async function () {
         const token = await deployDecayingTokenForConfigTests();
 
-        await expect(token.connect(alice).setDecayPercentage(250)).to.be.revertedWith(
-          '!executor',
-        );
-        await expect(token.connect(alice).setDecayInterval(7200)).to.be.revertedWith(
-          '!executor',
-        );
+        await expect(
+          token.connect(alice).setDecayPercentage(250),
+        ).to.be.revertedWith('!executor');
+        await expect(
+          token.connect(alice).setDecayInterval(7200),
+        ).to.be.revertedWith('!executor');
       });
 
       it('Should validate new decay parameters', async function () {
@@ -1429,11 +1427,10 @@ describe('Token Configuration Tests', function () {
 
         await expect(
           token.connect(executorSigner).setDecayPercentage(10001),
-        ).to.be.revertedWith(
-          'decay% > 100',
-        );
-        await expect(token.connect(executorSigner).setDecayInterval(0)).to.be
-          .revertedWith('!decay interval');
+        ).to.be.revertedWith('decay% > 100');
+        await expect(
+          token.connect(executorSigner).setDecayInterval(0),
+        ).to.be.revertedWith('!decay interval');
       });
     });
   });
@@ -3663,19 +3660,17 @@ describe('Token Configuration Tests', function () {
       }
     }
 
-    async function deployRegularWithMutualCredit(
-      {
-        tokenName = 'Credit Token',
-        tokenSymbol = 'CRED',
-        defaultCreditLimit = ethers.parseEther('100'),
-        initialCreditWhitelistSpaceIds = [spaceId],
-      }: {
-        tokenName?: string;
-        tokenSymbol?: string;
-        defaultCreditLimit?: bigint;
-        initialCreditWhitelistSpaceIds?: bigint[];
-      } = {},
-    ) {
+    async function deployRegularWithMutualCredit({
+      tokenName = 'Credit Token',
+      tokenSymbol = 'CRED',
+      defaultCreditLimit = ethers.parseEther('100'),
+      initialCreditWhitelistSpaceIds = [spaceId],
+    }: {
+      tokenName?: string;
+      tokenSymbol?: string;
+      defaultCreditLimit?: bigint;
+      initialCreditWhitelistSpaceIds?: bigint[];
+    } = {}) {
       const tx = await regularTokenFactory.connect(executorSigner).deployToken(
         spaceId,
         tokenName,
@@ -3765,7 +3760,9 @@ describe('Token Configuration Tests', function () {
         ethers.parseEther('50'),
       );
 
-      await expect(token.connect(bob).transfer(alice.address, ethers.parseEther('20')))
+      await expect(
+        token.connect(bob).transfer(alice.address, ethers.parseEther('20')),
+      )
         .to.emit(token, 'CreditRepaid')
         .withArgs(
           alice.address,
@@ -3778,7 +3775,9 @@ describe('Token Configuration Tests', function () {
       );
       // Alice receives 20 then immediately burns 20 to repay debt.
       expect(await token.balanceOf(alice.address)).to.equal(0);
-      expect(await token.balanceOf(bob.address)).to.equal(ethers.parseEther('30'));
+      expect(await token.balanceOf(bob.address)).to.equal(
+        ethers.parseEther('30'),
+      );
     });
 
     it('Should support credit admin functions and enforce access control', async function () {
@@ -3801,15 +3800,17 @@ describe('Token Configuration Tests', function () {
       expect(await token.creditLimitOf(alice.address)).to.equal(123n);
 
       await expect(
-        token.connect(executorSigner).batchRemoveCreditWhitelistSpaces([spaceId]),
+        token
+          .connect(executorSigner)
+          .batchRemoveCreditWhitelistSpaces([spaceId]),
       )
         .to.emit(token, 'CreditWhitelistSpaceRemoved')
         .withArgs(spaceId);
       expect(await token.creditLimitOf(alice.address)).to.equal(0);
 
-      await expect(token.connect(alice).setDefaultCreditLimit(1)).to.be.revertedWith(
-        '!executor',
-      );
+      await expect(
+        token.connect(alice).setDefaultCreditLimit(1),
+      ).to.be.revertedWith('!executor');
       await expect(
         token.connect(bob).batchAddCreditWhitelistSpaces([spaceId]),
       ).to.be.revertedWith('!executor');
@@ -3820,7 +3821,8 @@ describe('Token Configuration Tests', function () {
   });
 
   describe('17. Token Purchase', function () {
-    const PURCHASE_SPACES_CONTRACT = '0xc8B8454D2F9192FeCAbc2C6F5d88F6434A2a9cd9';
+    const PURCHASE_SPACES_CONTRACT =
+      '0xc8B8454D2F9192FeCAbc2C6F5d88F6434A2a9cd9';
 
     async function setupMockPurchaseMembership(
       entries: { sid: bigint; members: string[] }[],
@@ -3848,23 +3850,21 @@ describe('Token Configuration Tests', function () {
       }
     }
 
-    async function deploySaleToken(
-      {
-        useReceiveWhitelist = false,
-        paymentTokenAddress = ethers.ZeroAddress,
-        paymentTokenPricePerToken = 0n,
-        tokensForSale = 0n,
-        purchaseEligibilityMode = 0,
-        initialPurchaseWhitelistSpaceIds = [] as bigint[],
-      }: {
-        useReceiveWhitelist?: boolean;
-        paymentTokenAddress?: string;
-        paymentTokenPricePerToken?: bigint;
-        tokensForSale?: bigint;
-        purchaseEligibilityMode?: number;
-        initialPurchaseWhitelistSpaceIds?: bigint[];
-      } = {},
-    ) {
+    async function deploySaleToken({
+      useReceiveWhitelist = false,
+      paymentTokenAddress = ethers.ZeroAddress,
+      paymentTokenPricePerToken = 0n,
+      tokensForSale = 0n,
+      purchaseEligibilityMode = 0,
+      initialPurchaseWhitelistSpaceIds = [] as bigint[],
+    }: {
+      useReceiveWhitelist?: boolean;
+      paymentTokenAddress?: string;
+      paymentTokenPricePerToken?: bigint;
+      tokensForSale?: bigint;
+      purchaseEligibilityMode?: number;
+      initialPurchaseWhitelistSpaceIds?: bigint[];
+    } = {}) {
       const tx = await regularTokenFactory.connect(executorSigner).deployToken(
         spaceId,
         'Sale Token',
@@ -3982,11 +3982,18 @@ describe('Token Configuration Tests', function () {
       const expectedPayment = 6_000_000n; // 3 * 2.0 with 6 decimals
 
       await paymentToken.mint(alice.address, expectedPayment);
-      await paymentToken.connect(alice).approve(await token.getAddress(), expectedPayment);
+      await paymentToken
+        .connect(alice)
+        .approve(await token.getAddress(), expectedPayment);
 
       await expect(token.connect(alice).buyTokens(buyAmount))
         .to.emit(token, 'TokensPurchased')
-        .withArgs(alice.address, buyAmount, expectedPayment, executorSigner.address);
+        .withArgs(
+          alice.address,
+          buyAmount,
+          expectedPayment,
+          executorSigner.address,
+        );
 
       expect(await paymentToken.balanceOf(executorSigner.address)).to.equal(
         expectedPayment,
@@ -4011,9 +4018,8 @@ describe('Token Configuration Tests', function () {
 
       await paymentToken.mint(alice.address, 10_000_000n);
 
-      await expect(
-        token.connect(alice).buyTokens(ethers.parseEther('1')),
-      ).to.be.reverted;
+      await expect(token.connect(alice).buyTokens(ethers.parseEther('1'))).to.be
+        .reverted;
     });
 
     it('Should enforce sale cap and prevent overselling', async function () {
@@ -4029,7 +4035,9 @@ describe('Token Configuration Tests', function () {
       });
 
       await paymentToken.mint(alice.address, 10_000_000n);
-      await paymentToken.connect(alice).approve(await token.getAddress(), 10_000_000n);
+      await paymentToken
+        .connect(alice)
+        .approve(await token.getAddress(), 10_000_000n);
 
       await token.connect(alice).buyTokens(ethers.parseEther('5'));
       await expect(
@@ -4051,13 +4059,17 @@ describe('Token Configuration Tests', function () {
 
       await paymentToken.mint(alice.address, 10_000_000n);
       await paymentToken.mint(charlie.address, 10_000_000n);
-      await paymentToken.connect(alice).approve(await token.getAddress(), 10_000_000n);
+      await paymentToken
+        .connect(alice)
+        .approve(await token.getAddress(), 10_000_000n);
       await paymentToken
         .connect(charlie)
         .approve(await token.getAddress(), 10_000_000n);
 
       await token.connect(alice).buyTokens(ethers.parseEther('1'));
-      expect(await token.balanceOf(alice.address)).to.equal(ethers.parseEther('1'));
+      expect(await token.balanceOf(alice.address)).to.equal(
+        ethers.parseEther('1'),
+      );
 
       await expect(
         token.connect(charlie).buyTokens(ethers.parseEther('1')),
@@ -4080,13 +4092,15 @@ describe('Token Configuration Tests', function () {
       });
 
       await paymentToken.mint(bob.address, 10_000_000n);
-      await paymentToken.connect(bob).approve(await token.getAddress(), 10_000_000n);
+      await paymentToken
+        .connect(bob)
+        .approve(await token.getAddress(), 10_000_000n);
       await token.connect(bob).buyTokens(ethers.parseEther('1'));
-      expect(await token.balanceOf(bob.address)).to.equal(ethers.parseEther('1'));
+      expect(await token.balanceOf(bob.address)).to.equal(
+        ethers.parseEther('1'),
+      );
 
-      await token
-        .connect(executorSigner)
-        .setPurchaseEligibilityMode(1);
+      await token.connect(executorSigner).setPurchaseEligibilityMode(1);
       await expect(
         token.connect(alice).buyTokens(ethers.parseEther('1')),
       ).to.be.revertedWith('!eligible');

@@ -44,7 +44,9 @@ async function main(): Promise<void> {
   }
 
   if (!ethers.isAddress(newImplementation)) {
-    throw new Error(`Invalid NEW_DECAYING_IMPLEMENTATION: ${newImplementation}`);
+    throw new Error(
+      `Invalid NEW_DECAYING_IMPLEMENTATION: ${newImplementation}`,
+    );
   }
 
   const factory = new ethers.Contract(
@@ -80,7 +82,9 @@ async function main(): Promise<void> {
 
   if (dryRun) {
     console.log('DRY_RUN=true, skipping transaction.');
-    console.log(`Would update from ${currentImplementation} to ${newImplementation}`);
+    console.log(
+      `Would update from ${currentImplementation} to ${newImplementation}`,
+    );
     return;
   }
 

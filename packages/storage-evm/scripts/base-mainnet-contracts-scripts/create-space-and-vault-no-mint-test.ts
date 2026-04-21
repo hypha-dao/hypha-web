@@ -423,7 +423,10 @@ async function main(): Promise<void> {
     'Approve + create vault + enable redemption (no mint)',
   );
 
-  const exists = await tokenBackingVault.vaultExists(spaceId, spaceTokenAddress);
+  const exists = await tokenBackingVault.vaultExists(
+    spaceId,
+    spaceTokenAddress,
+  );
   console.log(`- vaultExists: ${exists}`);
   if (!exists) throw new Error('Vault was not created');
 
@@ -440,7 +443,10 @@ async function main(): Promise<void> {
   console.log(`Space token: ${spaceTokenAddress}`);
   console.log(`Backing token: ${backingTokenAddress} (autoMinting=true)`);
   console.log(
-    `Vault backing balance: ${ethers.formatUnits(vaultBalance, backingDecimals)} ${backingTokenSymbol}`,
+    `Vault backing balance: ${ethers.formatUnits(
+      vaultBalance,
+      backingDecimals,
+    )} ${backingTokenSymbol}`,
   );
   console.log(
     `Executor backing balance before/after: ${ethers.formatUnits(

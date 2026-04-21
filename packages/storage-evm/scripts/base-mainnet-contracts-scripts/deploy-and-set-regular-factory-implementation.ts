@@ -38,7 +38,11 @@ async function main(): Promise<void> {
     throw new Error(`Invalid REGULAR_FACTORY_ADDRESS: ${factoryAddress}`);
   }
 
-  const factory = new ethers.Contract(factoryAddress, REGULAR_FACTORY_ABI, signer);
+  const factory = new ethers.Contract(
+    factoryAddress,
+    REGULAR_FACTORY_ABI,
+    signer,
+  );
 
   console.log('='.repeat(72));
   console.log('DEPLOY + SET REGULAR FACTORY IMPLEMENTATION');
@@ -67,7 +71,9 @@ async function main(): Promise<void> {
   }
 
   console.log('\nDeploying new RegularSpaceToken implementation...');
-  const regularTokenFactory = await ethers.getContractFactory('RegularSpaceToken');
+  const regularTokenFactory = await ethers.getContractFactory(
+    'RegularSpaceToken',
+  );
   const newImplementation = (await upgrades.deployImplementation(
     regularTokenFactory,
     {

@@ -35,8 +35,7 @@ async function main(): Promise<void> {
   const factoryAddress =
     getEnv('REGULAR_FACTORY_ADDRESS') ?? DEFAULT_REGULAR_FACTORY_ADDRESS;
   const newImplementation =
-    getEnv('NEW_REGULAR_IMPLEMENTATION') ??
-    DEFAULT_NEW_REGULAR_IMPLEMENTATION;
+    getEnv('NEW_REGULAR_IMPLEMENTATION') ?? DEFAULT_NEW_REGULAR_IMPLEMENTATION;
   const dryRun = parseBoolean(getEnv('DRY_RUN'), false);
 
   if (!ethers.isAddress(factoryAddress)) {
@@ -47,7 +46,11 @@ async function main(): Promise<void> {
     throw new Error(`Invalid NEW_REGULAR_IMPLEMENTATION: ${newImplementation}`);
   }
 
-  const factory = new ethers.Contract(factoryAddress, REGULAR_FACTORY_ABI, signer);
+  const factory = new ethers.Contract(
+    factoryAddress,
+    REGULAR_FACTORY_ABI,
+    signer,
+  );
 
   console.log('='.repeat(68));
   console.log('UPDATE REGULAR FACTORY IMPLEMENTATION');
@@ -76,7 +79,9 @@ async function main(): Promise<void> {
 
   if (dryRun) {
     console.log('DRY_RUN=true, skipping transaction.');
-    console.log(`Would update from ${currentImplementation} to ${newImplementation}`);
+    console.log(
+      `Would update from ${currentImplementation} to ${newImplementation}`,
+    );
     return;
   }
 

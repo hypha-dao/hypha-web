@@ -228,7 +228,9 @@ async function main(): Promise<void> {
   if (
     vaultSpacesContract.toLowerCase() !== daoSpaceFactoryAddress.toLowerCase()
   ) {
-    console.log('\nVault spacesContract mismatch — restoring to known-good factory:');
+    console.log(
+      '\nVault spacesContract mismatch — restoring to known-good factory:',
+    );
     console.log(`  current:  ${vaultSpacesContract}`);
     console.log(`  target:   ${daoSpaceFactoryAddress}`);
 
@@ -388,13 +390,25 @@ async function main(): Promise<void> {
   );
 
   await delay(2000);
-  const stDecimals = Number(await readWithRetry('st decimals', () => spaceToken.decimals()) ?? 18);
-  const baDecimals = Number(await readWithRetry('ba decimals', () => backingA.decimals()) ?? 18);
-  const bbDecimals = Number(await readWithRetry('bb decimals', () => backingB.decimals()) ?? 18);
+  const stDecimals = Number(
+    (await readWithRetry('st decimals', () => spaceToken.decimals())) ?? 18,
+  );
+  const baDecimals = Number(
+    (await readWithRetry('ba decimals', () => backingA.decimals())) ?? 18,
+  );
+  const bbDecimals = Number(
+    (await readWithRetry('bb decimals', () => backingB.decimals())) ?? 18,
+  );
 
-  const stSymbol = (await readWithRetry<string>('st symbol', () => spaceToken.symbol())) ?? 'RTT';
-  const baSymbol = (await readWithRetry<string>('ba symbol', () => backingA.symbol())) ?? 'BALPHA';
-  const bbSymbol = (await readWithRetry<string>('bb symbol', () => backingB.symbol())) ?? 'BBETA';
+  const stSymbol =
+    (await readWithRetry<string>('st symbol', () => spaceToken.symbol())) ??
+    'RTT';
+  const baSymbol =
+    (await readWithRetry<string>('ba symbol', () => backingA.symbol())) ??
+    'BALPHA';
+  const bbSymbol =
+    (await readWithRetry<string>('bb symbol', () => backingB.symbol())) ??
+    'BBETA';
 
   console.log(
     `  Space token:  ${spaceTokenAddr} (${stSymbol}, price=${spaceTokenPrice}, dec=${stDecimals})`,
@@ -428,18 +442,12 @@ async function main(): Promise<void> {
       {
         target: backingAAddr,
         value: 0,
-        data: tokenIface.encodeFunctionData('mint', [
-          executor,
-          fundingAAmount,
-        ]),
+        data: tokenIface.encodeFunctionData('mint', [executor, fundingAAmount]),
       },
       {
         target: backingBAddr,
         value: 0,
-        data: tokenIface.encodeFunctionData('mint', [
-          executor,
-          fundingBAmount,
-        ]),
+        data: tokenIface.encodeFunctionData('mint', [executor, fundingBAmount]),
       },
       {
         target: spaceTokenAddr,
@@ -454,12 +462,30 @@ async function main(): Promise<void> {
   );
 
   await delay(1500);
-  const exBalA = await readWithRetry<bigint>('executor BALPHA', () => backingA.balanceOf(executor));
-  const exBalB = await readWithRetry<bigint>('executor BBETA', () => backingB.balanceOf(executor));
-  const walletRtt = await readWithRetry<bigint>('wallet RTT', () => spaceToken.balanceOf(wallet.address));
-  console.log(`  Executor BALPHA balance: ${exBalA !== null ? fmtUnits(exBalA, baDecimals) : 'n/a'}`);
-  console.log(`  Executor BBETA balance:  ${exBalB !== null ? fmtUnits(exBalB, bbDecimals) : 'n/a'}`);
-  console.log(`  Wallet RTT balance:      ${walletRtt !== null ? fmtUnits(walletRtt, stDecimals) : 'n/a'}`);
+  const exBalA = await readWithRetry<bigint>('executor BALPHA', () =>
+    backingA.balanceOf(executor),
+  );
+  const exBalB = await readWithRetry<bigint>('executor BBETA', () =>
+    backingB.balanceOf(executor),
+  );
+  const walletRtt = await readWithRetry<bigint>('wallet RTT', () =>
+    spaceToken.balanceOf(wallet.address),
+  );
+  console.log(
+    `  Executor BALPHA balance: ${
+      exBalA !== null ? fmtUnits(exBalA, baDecimals) : 'n/a'
+    }`,
+  );
+  console.log(
+    `  Executor BBETA balance:  ${
+      exBalB !== null ? fmtUnits(exBalB, bbDecimals) : 'n/a'
+    }`,
+  );
+  console.log(
+    `  Wallet RTT balance:      ${
+      walletRtt !== null ? fmtUnits(walletRtt, stDecimals) : 'n/a'
+    }`,
+  );
 
   // ──────────────────────────────────────────────────
   // Step 4: Create vault with 2 backing tokens via proposal
@@ -507,9 +533,7 @@ async function main(): Promise<void> {
   );
 
   // Set redemption start date to now (already active)
-  const redemptionStartDate = BigInt(
-    process.env.REDEMPTION_START_DATE ?? '0',
-  );
+  const redemptionStartDate = BigInt(process.env.REDEMPTION_START_DATE ?? '0');
   const setStartDateData = vaultIface.encodeFunctionData(
     'setRedemptionStartDate',
     [spaceId, spaceTokenAddr, redemptionStartDate],
@@ -547,12 +571,22 @@ async function main(): Promise<void> {
     console.log(`  redemptionStartDate: ${cfg.redemptionStartDate}`);
   }
 
-  const vaultBalA = (await readWithRetry<bigint>('vault BALPHA', () =>
-    tokenBackingVault.getBackingBalance(spaceId, spaceTokenAddr, backingAAddr),
-  )) ?? 0n;
-  const vaultBalB = (await readWithRetry<bigint>('vault BBETA', () =>
-    tokenBackingVault.getBackingBalance(spaceId, spaceTokenAddr, backingBAddr),
-  )) ?? 0n;
+  const vaultBalA =
+    (await readWithRetry<bigint>('vault BALPHA', () =>
+      tokenBackingVault.getBackingBalance(
+        spaceId,
+        spaceTokenAddr,
+        backingAAddr,
+      ),
+    )) ?? 0n;
+  const vaultBalB =
+    (await readWithRetry<bigint>('vault BBETA', () =>
+      tokenBackingVault.getBackingBalance(
+        spaceId,
+        spaceTokenAddr,
+        backingBAddr,
+      ),
+    )) ?? 0n;
   console.log(`  Vault BALPHA balance: ${fmtUnits(vaultBalA, baDecimals)}`);
   console.log(`  Vault BBETA balance:  ${fmtUnits(vaultBalB, bbDecimals)}`);
 
@@ -577,14 +611,16 @@ async function main(): Promise<void> {
     ),
   );
   console.log(
-    `  If redeeming ${redeemHuman} RTT for 100% BALPHA: ${calcOutA !== null ? fmtUnits(calcOutA, baDecimals) : 'n/a'} BALPHA`,
+    `  If redeeming ${redeemHuman} RTT for 100% BALPHA: ${
+      calcOutA !== null ? fmtUnits(calcOutA, baDecimals) : 'n/a'
+    } BALPHA`,
   );
   console.log(
-    `  If redeeming ${redeemHuman} RTT for 100% BBETA:  ${calcOutB !== null ? fmtUnits(calcOutB, bbDecimals) : 'n/a'} BBETA`,
+    `  If redeeming ${redeemHuman} RTT for 100% BBETA:  ${
+      calcOutB !== null ? fmtUnits(calcOutB, bbDecimals) : 'n/a'
+    } BBETA`,
   );
-  console.log(
-    `  Test will split 60/40 between BALPHA and BBETA`,
-  );
+  console.log(`  Test will split 60/40 between BALPHA and BBETA`);
 
   // ──────────────────────────────────────────────────
   // Step 6: Wallet approves vault to spend space tokens
@@ -600,34 +636,37 @@ async function main(): Promise<void> {
   await approveTx.wait();
 
   await delay(1500);
-  const allowance = (await readWithRetry<bigint>('allowance', () =>
-    spaceToken.allowance(wallet.address, tokenBackingVaultAddress),
-  )) ?? 0n;
+  const allowance =
+    (await readWithRetry<bigint>('allowance', () =>
+      spaceToken.allowance(wallet.address, tokenBackingVaultAddress),
+    )) ?? 0n;
   console.log(
     `  Allowance (wallet -> vault): ${fmtUnits(allowance, stDecimals)} RTT`,
   );
 
   // Snapshot balances before redeem
-  const walletRttBefore = (await readWithRetry<bigint>('wallet RTT before', () =>
-    spaceToken.balanceOf(wallet.address),
-  )) ?? 0n;
-  const walletBaBefore = (await readWithRetry<bigint>('wallet BALPHA before', () =>
-    backingA.balanceOf(wallet.address),
-  )) ?? 0n;
-  const walletBbBefore = (await readWithRetry<bigint>('wallet BBETA before', () =>
-    backingB.balanceOf(wallet.address),
-  )) ?? 0n;
-  const supplyBefore = (await readWithRetry<bigint>('totalSupply before', () =>
-    spaceToken.totalSupply(),
-  )) ?? 0n;
+  const walletRttBefore =
+    (await readWithRetry<bigint>('wallet RTT before', () =>
+      spaceToken.balanceOf(wallet.address),
+    )) ?? 0n;
+  const walletBaBefore =
+    (await readWithRetry<bigint>('wallet BALPHA before', () =>
+      backingA.balanceOf(wallet.address),
+    )) ?? 0n;
+  const walletBbBefore =
+    (await readWithRetry<bigint>('wallet BBETA before', () =>
+      backingB.balanceOf(wallet.address),
+    )) ?? 0n;
+  const supplyBefore =
+    (await readWithRetry<bigint>('totalSupply before', () =>
+      spaceToken.totalSupply(),
+    )) ?? 0n;
 
   // ──────────────────────────────────────────────────
   // Step 7: REDEEM — multi-token with 60/40 split
   // ──────────────────────────────────────────────────
   console.log('\n=== Step 7: REDEEM (multi-token 60/40 split) ===');
-  console.log(
-    `  Redeeming ${redeemHuman} RTT -> 60% BALPHA + 40% BBETA`,
-  );
+  console.log(`  Redeeming ${redeemHuman} RTT -> 60% BALPHA + 40% BBETA`);
 
   const proportionA = 6000n; // 60%
   const proportionB = 4000n; // 40%
@@ -651,18 +690,22 @@ async function main(): Promise<void> {
   console.log('\n=== Step 8: Verify results ===');
 
   await delay(1500);
-  const walletRttAfter = (await readWithRetry<bigint>('wallet RTT after', () =>
-    spaceToken.balanceOf(wallet.address),
-  )) ?? 0n;
-  const walletBaAfter = (await readWithRetry<bigint>('wallet BALPHA after', () =>
-    backingA.balanceOf(wallet.address),
-  )) ?? 0n;
-  const walletBbAfter = (await readWithRetry<bigint>('wallet BBETA after', () =>
-    backingB.balanceOf(wallet.address),
-  )) ?? 0n;
-  const supplyAfter = (await readWithRetry<bigint>('totalSupply after', () =>
-    spaceToken.totalSupply(),
-  )) ?? 0n;
+  const walletRttAfter =
+    (await readWithRetry<bigint>('wallet RTT after', () =>
+      spaceToken.balanceOf(wallet.address),
+    )) ?? 0n;
+  const walletBaAfter =
+    (await readWithRetry<bigint>('wallet BALPHA after', () =>
+      backingA.balanceOf(wallet.address),
+    )) ?? 0n;
+  const walletBbAfter =
+    (await readWithRetry<bigint>('wallet BBETA after', () =>
+      backingB.balanceOf(wallet.address),
+    )) ?? 0n;
+  const supplyAfter =
+    (await readWithRetry<bigint>('totalSupply after', () =>
+      spaceToken.totalSupply(),
+    )) ?? 0n;
 
   const rttBurned = walletRttBefore - walletRttAfter;
   const baReceived = walletBaAfter - walletBaBefore;
@@ -674,18 +717,34 @@ async function main(): Promise<void> {
   console.log(`  BALPHA received:  ${fmtUnits(baReceived, baDecimals)}`);
   console.log(`  BBETA received:   ${fmtUnits(bbReceived, bbDecimals)}`);
 
-  const vaultBalAAfter = (await readWithRetry<bigint>('vault BALPHA after', () =>
-    tokenBackingVault.getBackingBalance(spaceId, spaceTokenAddr, backingAAddr),
-  )) ?? 0n;
-  const vaultBalBAfter = (await readWithRetry<bigint>('vault BBETA after', () =>
-    tokenBackingVault.getBackingBalance(spaceId, spaceTokenAddr, backingBAddr),
-  )) ?? 0n;
+  const vaultBalAAfter =
+    (await readWithRetry<bigint>('vault BALPHA after', () =>
+      tokenBackingVault.getBackingBalance(
+        spaceId,
+        spaceTokenAddr,
+        backingAAddr,
+      ),
+    )) ?? 0n;
+  const vaultBalBAfter =
+    (await readWithRetry<bigint>('vault BBETA after', () =>
+      tokenBackingVault.getBackingBalance(
+        spaceId,
+        spaceTokenAddr,
+        backingBAddr,
+      ),
+    )) ?? 0n;
 
   console.log(
-    `  Vault BALPHA: ${fmtUnits(vaultBalA, baDecimals)} -> ${fmtUnits(vaultBalAAfter, baDecimals)}`,
+    `  Vault BALPHA: ${fmtUnits(vaultBalA, baDecimals)} -> ${fmtUnits(
+      vaultBalAAfter,
+      baDecimals,
+    )}`,
   );
   console.log(
-    `  Vault BBETA:  ${fmtUnits(vaultBalB, bbDecimals)} -> ${fmtUnits(vaultBalBAfter, bbDecimals)}`,
+    `  Vault BBETA:  ${fmtUnits(vaultBalB, bbDecimals)} -> ${fmtUnits(
+      vaultBalBAfter,
+      bbDecimals,
+    )}`,
   );
 
   // Validate
@@ -702,10 +761,17 @@ async function main(): Promise<void> {
   console.log(`  Backing B:      ${backingBAddr}`);
   console.log(`  Redeemed:       ${fmtUnits(rttBurned, stDecimals)} RTT`);
   console.log(
-    `  Received:       ${fmtUnits(baReceived, baDecimals)} BALPHA + ${fmtUnits(bbReceived, bbDecimals)} BBETA`,
+    `  Received:       ${fmtUnits(baReceived, baDecimals)} BALPHA + ${fmtUnits(
+      bbReceived,
+      bbDecimals,
+    )} BBETA`,
   );
   console.log(
-    `  Result:         ${allPassed ? 'PASS - Multi-token redeem successful' : 'FAIL - Check results above'}`,
+    `  Result:         ${
+      allPassed
+        ? 'PASS - Multi-token redeem successful'
+        : 'FAIL - Check results above'
+    }`,
   );
 }
 
