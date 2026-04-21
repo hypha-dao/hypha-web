@@ -156,9 +156,9 @@ export function DhoStickySpaceChrome({
         style={{ top: 'var(--menu-top-height, 4rem)' }}
         aria-hidden={!stuck}
       >
-        <div className="mx-auto flex max-w-container-2xl items-center gap-3 px-4 py-2.5">
-          {/* Match CompactSpaceBanner row: same avatar, title tokens, gap-6, vertical centre in bar */}
-          <div className="flex min-w-0 flex-1 items-center gap-6 pl-8">
+        <div className="mx-auto flex max-w-container-2xl items-center gap-3 px-8 py-2.5">
+          {/* Match CompactSpaceBanner row: same avatar, title tokens, gap-6; px-8 L/R balances chrome */}
+          <div className="flex min-w-0 flex-1 items-center gap-6">
             <Avatar className={COMPACT_SPACE_BANNER_AVATAR_CLASSNAME}>
               <AvatarImage
                 src={logoSrc}
