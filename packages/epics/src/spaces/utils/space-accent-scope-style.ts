@@ -9,6 +9,9 @@ import {
   type BannerOverlayCssVars,
 } from './banner-overlay-tone';
 
+/** W3C-style luminance cutoff for choosing dark vs light foreground on accent */
+const BRIGHTNESS_DARK_FG_THRESHOLD = 186;
+
 function brightness(hex: string): number {
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
@@ -17,7 +20,7 @@ function brightness(hex: string): number {
 }
 
 function contrastingForeground(hex: string): string {
-  return brightness(hex) > 186 ? '#0f172a' : '#f8fafc';
+  return brightness(hex) > BRIGHTNESS_DARK_FG_THRESHOLD ? '#0f172a' : '#f8fafc';
 }
 
 /**
@@ -49,7 +52,7 @@ export function getDefaultSpaceScopeStyle(): React.CSSProperties {
   const fg = contrastingForeground(accent);
   const subtle = mixHexColors(
     accent,
-    brightness(accent) > 186 ? '#0f172a' : '#ffffff',
+    brightness(accent) > BRIGHTNESS_DARK_FG_THRESHOLD ? '#0f172a' : '#ffffff',
     0.45,
   );
 
@@ -83,7 +86,7 @@ export function buildSpaceScopeStyleFromSampledAccents(options: {
   const fg = contrastingForeground(accent);
   const subtle = mixHexColors(
     accent,
-    brightness(accent) > 186 ? '#0f172a' : '#ffffff',
+    brightness(accent) > BRIGHTNESS_DARK_FG_THRESHOLD ? '#0f172a' : '#ffffff',
     0.45,
   );
 
