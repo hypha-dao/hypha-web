@@ -114,7 +114,7 @@ export const ProposalHead = ({
           <div className="grid">
             <div className="flex gap-x-1">
               <Badge
-                variant="solid"
+                variant="outline"
                 colorVariant="accent"
                 isLoading={isLoading}
               >

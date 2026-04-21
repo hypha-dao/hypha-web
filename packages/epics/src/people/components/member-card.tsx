@@ -111,7 +111,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
 
         <div className="flex justify-between items-center w-full">
           <div className="flex flex-col">
-            <Badge className="w-fit" colorVariant="accent">
+            <Badge className="w-fit" variant="outline" colorVariant="accent">
               Member
             </Badge>
             {!minimize ? (
