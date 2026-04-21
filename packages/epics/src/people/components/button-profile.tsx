@@ -153,14 +153,15 @@ export const ButtonProfile = ({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="rounded-lg outline-none"
+                  className="rounded-[35%] outline-none"
                   aria-label={t('openProfileMenu')}
                 >
                   <PersonAvatar
                     size="toolbar"
                     avatarSrc={person?.avatarUrl}
                     userName={person?.nickname}
-                    shape="circle"
+                    shape="squircle"
+                    className="ring-1 ring-border/55"
                   />
                 </button>
               </DropdownMenuTrigger>
