@@ -99,7 +99,8 @@ export function CompactSpaceBanner({
       className={cn(
         'relative overflow-hidden rounded-xl border border-[#30363d]',
         'shadow-[0_24px_48px_-12px_rgba(5,33,22,0.55)]',
-        'px-8 pt-8 pb-5',
+        /* Bottom breathing room lives on the footer strip so metadata + badges center between hairline and card edge */
+        'px-8 pt-8 pb-0',
         className,
       )}
       aria-label={title}
@@ -260,7 +261,7 @@ export function CompactSpaceBanner({
             className="h-px w-full shrink-0 bg-white/12"
             role="presentation"
           />
-          <div className="flex flex-col gap-3 gap-x-5 pt-3.5 pb-3.5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 gap-x-5 py-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-1 text-white/88 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]">
               <span>
                 <span className="font-bold tabular-nums text-white">
