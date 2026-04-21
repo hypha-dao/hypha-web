@@ -105,7 +105,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
           userName={nickname}
           size={minimize ? 'sm' : 'lg'}
           isLoading={isLoading}
-          shape="circle"
+          shape="rounded"
           className="mr-3"
         />
 

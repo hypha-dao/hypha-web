@@ -30,7 +30,7 @@ export const PersonAvatar = ({
   className?: string;
   isLoading?: boolean;
   size?: AvatarSize;
-  /** `circle` = full round; `squircle` ≈ Discord; `rounded` = default tile */
+  /** `circle` = full round; `squircle` ≈ superellipse; `rounded` = square + subtle corners */
   shape?: 'rounded' | 'squircle' | 'circle';
 }) => {
   const getFallbackContent = () => {
@@ -52,7 +52,7 @@ export const PersonAvatar = ({
       ? 'rounded-full'
       : shape === 'squircle'
       ? 'rounded-[35%]'
-      : 'rounded-lg';
+      : 'rounded-md';
 
   return (
     <Skeleton
