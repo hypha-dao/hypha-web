@@ -77,6 +77,17 @@ interface IDAOProposals {
     view
     returns (address[] memory yesVoters, address[] memory noVoters);
 
+  // Withdrawal functions
+  function withdrawProposal(uint256 _proposalId) external;
+
+  function isProposalWithdrawn(
+    uint256 _proposalId
+  ) external view returns (bool);
+
+  function getWithdrawnProposalsBySpace(
+    uint256 _spaceId
+  ) external view returns (uint256[] memory);
+
   // Events
   event ProposalCreated(
     uint256 indexed proposalId,
@@ -129,4 +140,10 @@ interface IDAOProposals {
   event ProposalValueSet(uint256 indexed proposalId, uint256 value);
 
   event MinimumProposalDurationSet(uint256 indexed spaceId, uint256 duration);
+
+  event ProposalWithdrawn(
+    uint256 indexed proposalId,
+    uint256 indexed spaceId,
+    address withdrawnBy
+  );
 }

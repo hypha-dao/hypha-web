@@ -160,7 +160,9 @@ contract EscrowImplementation is
     emit EscrowCompleted(_escrowId, escrow.partyA, escrow.partyB);
   }
 
-  function cancelEscrow(uint256 _escrowId) external override returns (bool) {
+  function cancelEscrow(
+    uint256 _escrowId
+  ) external override nonReentrant returns (bool) {
     require(escrowExists(_escrowId), 'Escrow does not exist');
 
     EscrowData storage escrow = escrows[_escrowId];
@@ -178,7 +180,52 @@ contract EscrowImplementation is
 
     emit EscrowCancelled(_escrowId, msg.sender);
 
+    // Best-effort push refund to any party that already deposited. If a
+    // token misbehaves (paused, blacklist, gas griefing, non-standard
+    // return) the cancellation still succeeds and the affected party can
+    // recover via withdrawFromCancelled. We never let one party's broken
+    // token block the other party's refund or the cancel itself.
+    if (escrow.isPartyAFunded) {
+      _tryRefund(_escrowId, escrow.partyA, escrow.tokenA, escrow.amountA, true);
+    }
+    if (escrow.isPartyBFunded) {
+      _tryRefund(
+        _escrowId,
+        escrow.partyB,
+        escrow.tokenB,
+        escrow.amountB,
+        false
+      );
+    }
+
     return true;
+  }
+
+  function _tryRefund(
+    uint256 _escrowId,
+    address _party,
+    address _token,
+    uint256 _amount,
+    bool _isPartyA
+  ) internal {
+    // Use raw transfer (not SafeERC20) so we can swallow reverts from
+    // misbehaving tokens. Some non-standard ERC20s also return no data
+    // on success — treat that as success too.
+    (bool ok, bytes memory data) = _token.call(
+      abi.encodeWithSelector(IERC20.transfer.selector, _party, _amount)
+    );
+    if (!ok) return;
+    if (data.length != 0 && !abi.decode(data, (bool))) return;
+
+    EscrowData storage escrow = escrows[_escrowId];
+    if (_isPartyA) {
+      escrow.isPartyAFunded = false;
+    } else {
+      escrow.isPartyBFunded = false;
+    }
+    escrowFunds[_escrowId][_token] -= _amount;
+
+    emit FundsWithdrawn(_escrowId, _party, _token, _amount);
   }
 
   function withdrawFromCancelled(

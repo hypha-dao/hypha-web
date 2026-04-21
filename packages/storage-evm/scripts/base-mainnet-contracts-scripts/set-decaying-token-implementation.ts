@@ -15,7 +15,7 @@ interface DecayingTokenFactoryInterface extends Contract {
 const DECAYING_TOKEN_FACTORY_ADDRESS =
   '0x299f4D2327933c1f363301dbd2a28379ccD5539b'; // DecayingTokenFactory Proxy
 
-const NEW_IMPLEMENTATION_ADDRESS = '0x4c69746B7907f76f6742e2e6e43c5f7Abd4A629B'; // DecayingSpaceToken Implementation
+const NEW_IMPLEMENTATION_ADDRESS = '0x7046164635F4521dAfa0D6025C086550562659C8'; // DecayingSpaceToken Implementation
 
 const decayingTokenFactoryAbi = [
   {
