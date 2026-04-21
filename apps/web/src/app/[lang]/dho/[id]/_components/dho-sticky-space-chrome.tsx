@@ -205,8 +205,7 @@ export function DhoStickySpaceChrome({
         <div
           ref={setFlowActionsEl}
           className={cn(
-            /* Nudge in-flow actions up so they overlap the sticky row when it engages */
-            'flex justify-end gap-2 px-8 md:-mt-2.5 md:flex-nowrap',
+            'flex justify-end gap-2 px-8 md:flex-nowrap',
             stuck && 'pointer-events-none invisible opacity-0',
           )}
           style={stuck ? { minHeight: flowMinH } : undefined}
