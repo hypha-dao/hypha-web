@@ -35,9 +35,9 @@ export const COMPACT_SPACE_BANNER_AVATAR_CLASSNAME = cn(
   'shadow-[0_18px_40px_-12px_rgba(0,0,0,0.55)] ring-1 ring-white/15',
 );
 
-/** Title size/weight on the banner — reuse on sticky for horizontal alignment */
+/** Title size on the banner — reuse on sticky; regular weight (no semibold) for calmer hero + chrome */
 export const COMPACT_SPACE_BANNER_TITLE_CLASSNAME = cn(
-  'text-balance text-6 font-semibold tracking-tight sm:text-7',
+  'text-balance text-6 font-normal tracking-tight sm:text-7',
   /* Use design-token text stack from packages/ui-utils @theme (--font-family-text) */
   '[font-family:var(--font-family-text),ui-sans-serif,system-ui,sans-serif]',
 );
