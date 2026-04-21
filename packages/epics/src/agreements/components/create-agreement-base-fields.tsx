@@ -143,14 +143,6 @@ export function CreateAgreementBaseFields({
   const resolvedLabel =
     label ?? tAgreementFlow('createAgreementBaseFields.agreementLabel');
 
-  if (!form) {
-    return (
-      <div>
-        {tAgreementFlow('createAgreementBaseFields.formContextMissing')}
-      </div>
-    );
-  }
-
   const [resubmitFormData, setResubmitFormData] =
     React.useState<ResubmitFormData | null>(null);
   const [existingAttachments, setExistingAttachments] = React.useState<
@@ -162,6 +154,7 @@ export function CreateAgreementBaseFields({
   // would render in the widget but be omitted from the submitted payload.
   const seedExistingAttachments = React.useCallback(
     (attachments: ExistingAttachment[]) => {
+      if (!form) return;
       setExistingAttachments(attachments);
       form.setValue(
         'attachments',
@@ -172,18 +165,22 @@ export function CreateAgreementBaseFields({
     [form],
   );
 
-  // Apply title/description from the bridge once on mount.
+  // Apply title/description from the bridge once on mount. Only flip the
+  // applied flag when a value is actually set, so a later render that finally
+  // delivers the field can still apply it.
   const didApplyBridgeFields = React.useRef(false);
   React.useEffect(() => {
+    if (!form) return;
     if (didApplyBridgeFields.current) return;
     if (!initialValues) return;
     if (initialValues.title) {
       form.setValue('title', initialValues.title);
+      didApplyBridgeFields.current = true;
     }
     if (initialValues.description) {
       form.setValue('description', initialValues.description);
+      didApplyBridgeFields.current = true;
     }
-    didApplyBridgeFields.current = true;
   }, [form, initialValues]);
 
   // Apply bridge attachments once on mount (cross-origin source: not in
@@ -365,6 +362,15 @@ export function CreateAgreementBaseFields({
     authToken,
     postProposalCreated,
   });
+
+  if (!form) {
+    return (
+      <div>
+        {tAgreementFlow('createAgreementBaseFields.formContextMissing')}
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-2">

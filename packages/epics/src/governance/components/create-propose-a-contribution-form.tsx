@@ -110,20 +110,6 @@ export const CreateProposeAContributionForm = ({
 
   useClearResubmitOnSuccess(progress === 100 && !isError);
 
-  // Apply bridge payouts on first render only. We intentionally ignore later
-  // changes to `initialValues.payouts` because the form is then user-owned —
-  // re-applying would overwrite edits.
-  const didApplyBridgePayouts = React.useRef(false);
-  React.useEffect(() => {
-    if (didApplyBridgePayouts.current) return;
-    if (!initialValues?.payouts?.length) return;
-    form.setValue(
-      'payouts',
-      initialValues.payouts.map(({ amount, token }) => ({ amount, token })),
-    );
-    didApplyBridgePayouts.current = true;
-  }, [initialValues?.payouts, form]);
-
   React.useEffect(() => {
     if (progress === 100 && successfulUrl) {
       clearResubmitProposalSessionStorage();
