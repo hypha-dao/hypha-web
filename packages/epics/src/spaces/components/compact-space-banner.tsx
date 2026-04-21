@@ -40,9 +40,10 @@ export const COMPACT_SPACE_BANNER_TITLE_CLASSNAME = cn(
   'text-balance text-6 font-semibold tracking-tight sm:text-7',
 );
 
-/** Purpose column — narrow on sm+; left edge aligns with avatar (full-width column below header row). */
+/** Purpose column — max four lines on narrow viewports (scroll); sm+ wider column + taller cap. */
 const DESCRIPTION_SCROLL_BOX = cn(
-  'max-h-[min(45vh,280px)] w-full max-w-full min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y sm:max-w-[50%]',
+  'w-full max-w-full min-h-0 max-h-[4lh] overflow-y-auto overscroll-y-contain touch-pan-y',
+  'text-2 leading-[1.5] sm:max-h-[min(45vh,280px)] sm:max-w-[50%]',
   '[scrollbar-gutter:stable]',
   '[scrollbar-color:rgba(255,255,255,0.35)_transparent] [scrollbar-width:thin]',
   '[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/30 [&::-webkit-scrollbar-track]:bg-transparent',
