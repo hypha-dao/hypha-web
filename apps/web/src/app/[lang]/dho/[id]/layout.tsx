@@ -116,7 +116,7 @@ export default async function DhoLayout({
       <div className="mx-auto flex max-w-container-2xl">
         <Container className="min-w-0 flex-grow !px-4">
           {/* React 19+: link rel="preload" is hoisted to document head */}
-          {heroBannerImageHref ? (
+          {heroBannerImageHref !== DEFAULT_SPACE_LEAD_IMAGE ? (
             <link
               rel="preload"
               as="image"
