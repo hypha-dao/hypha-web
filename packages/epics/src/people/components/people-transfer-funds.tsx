@@ -43,13 +43,22 @@ export const ProfileTransferFunds = ({
     personSlug,
     refreshInterval: 10000,
   });
+  /**
+   * Show every utility-class token the user holds + every credit-enabled token they
+   * are eligible to draw on (member of any whitelisted space) — so credit-eligible
+   * tokens appear in the dropdown even when the on-chain balance is zero.
+   */
   const tokens: Token[] = assets
-    .filter(
-      (asset) =>
+    .filter((asset) => {
+      const isTransferableType =
         (asset.type != null && !['ownership', 'voice'].includes(asset.type)) ||
         (asset.type == null &&
-          ERC20_TOKEN_TRANSFER_ADDRESSES.includes(asset.address)),
-    )
+          ERC20_TOKEN_TRANSFER_ADDRESSES.includes(asset.address));
+      if (!isTransferableType) return false;
+      const hasBalance = (asset.value ?? 0) > 0;
+      const canDrawCredit = Boolean(asset.mutualCredit?.creditEligible);
+      return hasBalance || canDrawCredit;
+    })
     .map((asset) => ({
       icon: asset.icon,
       symbol: asset.symbol,

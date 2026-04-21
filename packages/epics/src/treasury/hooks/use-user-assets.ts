@@ -54,6 +54,12 @@ type AssetItem = {
     creditBalance: number;
     netBalance: number;
     whitelistedSpaceIds: number[];
+    /** Per-account effective limit (default + override). 0 when not eligible. */
+    creditLimit: number;
+    /** Remaining credit available for this account (0 when not eligible). */
+    creditLimitLeft: number;
+    /** True when the user is a member of any whitelisted space. */
+    creditEligible: boolean;
   };
 };
 

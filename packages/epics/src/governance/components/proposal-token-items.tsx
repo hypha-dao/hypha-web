@@ -28,6 +28,10 @@ interface ProposalTokenItemProps {
   initialReceiveWhitelist?: `0x${string}`[];
   decayPercentage?: bigint;
   decayInterval?: bigint;
+  /** Mutual credit (RegularSpaceToken). On-chain limit is wei (multiplied by 1e18). */
+  defaultCreditLimit?: bigint;
+  /** Web3 ids of spaces eligible for the credit line (always includes issuing space). */
+  initialCreditWhitelistSpaceIds?: readonly bigint[];
 }
 
 interface WhitelistAddressItemProps {
@@ -141,6 +145,8 @@ export const ProposalTokenItem = ({
   initialReceiveWhitelist,
   decayPercentage,
   decayInterval,
+  defaultCreditLimit,
+  initialCreditWhitelistSpaceIds,
 }: ProposalTokenItemProps) => {
   const tProposalDetails = useTranslations('ProposalDetails');
   const tAgreementFlow = useTranslations('AgreementFlow');
@@ -156,6 +162,26 @@ export const ProposalTokenItem = ({
       t.spaceId == space?.id,
   );
   const tokenIcon = dbToken?.iconUrl;
+
+  /**
+   * Mutual credit is enabled when the deployToken call carried a non-zero limit
+   * or any whitelisted spaces. Ids are 1e18-scaled wei from the proposal calldata.
+   */
+  const creditLimitHuman =
+    defaultCreditLimit !== undefined
+      ? Number(defaultCreditLimit / 10n ** 18n)
+      : 0;
+  const creditWhitelistedIds = (initialCreditWhitelistSpaceIds ?? []).map(
+    (id) => Number(id),
+  );
+  const showMutualCredit =
+    creditLimitHuman > 0 || creditWhitelistedIds.length > 0;
+  const { spaces: dbSpacesForCredit } = useDbSpaces({ parentOnly: false });
+  const creditWhitelistedSpaces = creditWhitelistedIds
+    .map((id) =>
+      dbSpacesForCredit.find((s) => Number(s.web3SpaceId ?? 0) === id),
+    )
+    .filter((s): s is NonNullable<typeof s> => Boolean(s));
 
   const referenceCurrency = dbToken?.referenceCurrency;
 
@@ -292,6 +318,59 @@ export const ProposalTokenItem = ({
                 {formatDecayInterval(decayInterval)}
               </div>
             </div>
+          </div>
+        </>
+      )}
+
+      {showMutualCredit && (
+        <>
+          <Separator />
+          <div className="flex flex-col gap-4">
+            <div className="text-1 text-neutral-11 font-medium">
+              {tProposalDetails('sections.mutualCredit')}
+            </div>
+            <div className="flex justify-between items-center">
+              <div className="text-1 text-neutral-11 w-full">
+                {tProposalDetails('labels.mutualCreditEnabled')}
+              </div>
+              <div className="text-1">{tProposalDetails('labels.yes')}</div>
+            </div>
+            {creditLimitHuman > 0 && (
+              <div className="flex justify-between items-center">
+                <div className="text-1 text-neutral-11 w-full">
+                  {tProposalDetails('labels.mutualCreditLimit')}
+                </div>
+                <div className="text-1 text-nowrap">
+                  {formatCurrencyValue(creditLimitHuman)}
+                  {symbol ? ` ${symbol}` : ''}
+                </div>
+              </div>
+            )}
+            {creditWhitelistedSpaces.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <div className="text-1 text-neutral-11">
+                  {tProposalDetails('labels.mutualCreditEligibleSpaces')}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {creditWhitelistedSpaces.map((s) => (
+                    <Badge
+                      key={s.web3SpaceId ?? s.slug}
+                      variant="outline"
+                      className="gap-1.5 py-1 pl-1 pr-2"
+                    >
+                      <Image
+                        src={s.logoUrl ?? '/placeholder/default-profile.svg'}
+                        width={20}
+                        height={20}
+                        alt={`${s.title} logo`}
+                        className="rounded-full"
+                      />
+                      <span className="text-1">{s.title}</span>
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </>
       )}

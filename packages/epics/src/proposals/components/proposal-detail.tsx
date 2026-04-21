@@ -1170,6 +1170,10 @@ export const ProposalDetail = ({
             initialReceiveWhitelist={token.initialReceiveWhitelist}
             decayPercentage={token.decayPercentage}
             decayInterval={token.decayInterval}
+            defaultCreditLimit={token.defaultCreditLimit}
+            initialCreditWhitelistSpaceIds={
+              token.initialCreditWhitelistSpaceIds
+            }
           />
         ))}
       {Boolean(proposalDetails?.transfers?.length) &&
@@ -1311,6 +1315,15 @@ export const ProposalDetail = ({
           dbTokens={dbTokens}
           archiveToken={proposalDetails.updateTokenData.archiveToken}
           fixedMaxSupply={proposalDetails.updateTokenData.fixedMaxSupply}
+          defaultCreditLimit={
+            proposalDetails.updateTokenData.defaultCreditLimit
+          }
+          addCreditWhitelistSpaceIds={
+            proposalDetails.updateTokenData.addCreditWhitelistSpaceIds
+          }
+          removeCreditWhitelistSpaceIds={
+            proposalDetails.updateTokenData.removeCreditWhitelistSpaceIds
+          }
         />
       ) : null}
       {label === 'Token Purchase' && proposalDetails?.spaceTokenPurchaseData ? (

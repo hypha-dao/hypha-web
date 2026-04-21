@@ -1549,7 +1549,8 @@
       "transparencySettings": "Transparency Settings",
       "decaySettings": "Decay Settings",
       "fromWhitelist": "From Whitelist",
-      "toWhitelist": "To Whitelist"
+      "toWhitelist": "To Whitelist",
+      "mutualCredit": "Mutual Credit"
     },
     "labels": {
       "unknown": "Unknown",
@@ -1629,7 +1630,12 @@
       "whitelistEnforcementActive": "Active",
       "whitelistEnforcementInactive": "Inactive",
       "spaceWhitelistMembersSuffix": "(Space & Members)",
-      "spaceWhitelistOnlySuffix": "(Space only)"
+      "spaceWhitelistOnlySuffix": "(Space only)",
+      "mutualCreditEnabled": "Mutual Credit Enabled",
+      "mutualCreditLimit": "Default Credit Limit",
+      "mutualCreditEligibleSpaces": "Eligible Spaces",
+      "mutualCreditEligibleSpacesAdded": "Eligible Spaces Added",
+      "mutualCreditEligibleSpacesRemoved": "Eligible Spaces Removed"
     },
     "entryMethods": {
       "openAccess": "Open Access",

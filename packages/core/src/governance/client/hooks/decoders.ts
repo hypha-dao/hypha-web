@@ -349,6 +349,27 @@ function decodeDecayingSpaceTokenAdminProposal(
         type: 'setTokenArchived',
         data: { address, archiveToken: decoded.args[0] },
       };
+    case 'setDefaultCreditLimit':
+      return {
+        type: 'setTokenDefaultCreditLimit',
+        data: { address, defaultCreditLimit: decoded.args[0] as bigint },
+      };
+    case 'batchAddCreditWhitelistSpaces':
+      return {
+        type: 'setTokenBatchAddCreditWhitelistSpaces',
+        data: {
+          address,
+          spaceIds: decoded.args[0] as readonly bigint[],
+        },
+      };
+    case 'batchRemoveCreditWhitelistSpaces':
+      return {
+        type: 'setTokenBatchRemoveCreditWhitelistSpaces',
+        data: {
+          address,
+          spaceIds: decoded.args[0] as readonly bigint[],
+        },
+      };
     default:
       return null;
   }
@@ -438,6 +459,9 @@ export function decodeTransaction(tx: Tx) {
                 useReceiveWhitelist: decoded.args[10],
                 initialTransferWhitelist: decoded.args[11],
                 initialReceiveWhitelist: decoded.args[12],
+                /** Mutual credit (RegularSpaceToken only) — args[13]/[14] from current ABI. */
+                defaultCreditLimit: decoded.args[13],
+                initialCreditWhitelistSpaceIds: decoded.args[14],
               },
             }
           : null,

@@ -21,6 +21,9 @@ export function hasUpdateTokenDataToDisplay(
         initialTransferWhitelistSpaceIds?: unknown;
         initialReceiveWhitelistSpaceIds?: unknown;
         archiveToken?: boolean;
+        defaultCreditLimit?: bigint;
+        addCreditWhitelistSpaceIds?: unknown;
+        removeCreditWhitelistSpaceIds?: unknown;
       }
     | undefined,
 ): boolean {
@@ -42,6 +45,9 @@ export function hasUpdateTokenDataToDisplay(
     u.initialReceiveWhitelist !== undefined ||
     u.initialTransferWhitelistSpaceIds !== undefined ||
     u.initialReceiveWhitelistSpaceIds !== undefined ||
-    u.archiveToken !== undefined
+    u.archiveToken !== undefined ||
+    u.defaultCreditLimit !== undefined ||
+    u.addCreditWhitelistSpaceIds !== undefined ||
+    u.removeCreditWhitelistSpaceIds !== undefined
   );
 }

@@ -13,6 +13,16 @@ export type MutualCreditInfo = {
   creditBalance: number;
   /** Net position (token balance − credit debt), in human units. Negative = in debt. */
   netBalance: number;
+  /**
+   * Per-account effective credit limit (default + any override). Returns 0 when the
+   * caller is not eligible (not member of any whitelisted space).
+   */
+  creditLimit: number;
+  /**
+   * Remaining credit available right now, in human units. Equals
+   * `max(0, creditLimit - creditBalance)` for eligible accounts; 0 otherwise.
+   */
+  creditLimitLeft: number;
   /** Whether mutual credit is configured (limit > 0 or whitelisted spaces > 0). */
   isCreditEnabled: boolean;
   /** Web3 ids of credit-whitelisted spaces. */
@@ -42,6 +52,12 @@ export async function getMutualCreditInfo(
         { ...contract, functionName: 'creditBalanceOf', args: [ownerAddress] },
         { ...contract, functionName: 'netBalanceOf', args: [ownerAddress] },
         { ...contract, functionName: 'getCreditWhitelistedSpaces', args: [] },
+        { ...contract, functionName: 'creditLimitOf', args: [ownerAddress] },
+        {
+          ...contract,
+          functionName: 'creditLimitLeftOf',
+          args: [ownerAddress],
+        },
       ],
     });
 
@@ -50,6 +66,8 @@ export async function getMutualCreditInfo(
       creditBalanceResult,
       netBalanceResult,
       whitelistResult,
+      creditLimitResult,
+      creditLimitLeftResult,
     ] = results;
 
     /** When all credit calls fail the contract isn't a RegularSpaceToken — skip. */
@@ -79,6 +97,18 @@ export async function getMutualCreditInfo(
       whitelistResult.status === 'success'
         ? (whitelistResult.result as readonly bigint[]).map((id) => Number(id))
         : [];
+    /**
+     * `creditLimitOf` / `creditLimitLeftOf` already account for eligibility (returns 0
+     * for non-whitelisted accounts) and any per-account override on top of the default.
+     */
+    const creditLimit =
+      creditLimitResult?.status === 'success'
+        ? Number(formatUnits(creditLimitResult.result as bigint, DECIMALS))
+        : 0;
+    const creditLimitLeft =
+      creditLimitLeftResult?.status === 'success'
+        ? Number(formatUnits(creditLimitLeftResult.result as bigint, DECIMALS))
+        : Math.max(0, creditLimit - creditBalance);
 
     const isCreditEnabled =
       defaultCreditLimit > 0 || whitelistedSpaceIds.length > 0;
@@ -87,6 +117,8 @@ export async function getMutualCreditInfo(
       defaultCreditLimit,
       creditBalance,
       netBalance,
+      creditLimit,
+      creditLimitLeft,
       isCreditEnabled,
       whitelistedSpaceIds,
     };

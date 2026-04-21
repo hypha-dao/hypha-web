@@ -105,6 +105,9 @@ export const useProposalDetailsWeb3Rpc = ({
       decayPercentage?: bigint;
       decayInterval?: bigint;
       address?: string;
+      /** Mutual credit — only set on `regular` tokens deployed with credit configured. */
+      defaultCreditLimit?: bigint;
+      initialCreditWhitelistSpaceIds?: readonly bigint[];
     }> = [];
 
     const votingMethods: Array<{
@@ -238,6 +241,12 @@ export const useProposalDetailsWeb3Rpc = ({
       initialReceiveWhitelist?: `0x${string}`[];
       initialReceiveWhitelistSpaceIds?: number[];
       archiveToken?: boolean;
+      /** From `setDefaultCreditLimit` (raw on-chain bigint, scaled by 1e18). */
+      defaultCreditLimit?: bigint;
+      /** From `batchAddCreditWhitelistSpaces` calldata. */
+      addCreditWhitelistSpaceIds?: number[];
+      /** From `batchRemoveCreditWhitelistSpaces` calldata. */
+      removeCreditWhitelistSpaceIds?: number[];
     } = {
       address: undefined,
       name: undefined,
@@ -256,6 +265,9 @@ export const useProposalDetailsWeb3Rpc = ({
       initialReceiveWhitelistSpaceIds: undefined,
       archiveToken: undefined,
       fixedMaxSupply: undefined,
+      defaultCreditLimit: undefined,
+      addCreditWhitelistSpaceIds: undefined,
+      removeCreditWhitelistSpaceIds: undefined,
     };
 
     const assignUpdateTokenAddress = (addr: `0x${string}`) => {
@@ -717,6 +729,44 @@ export const useProposalDetailsWeb3Rpc = ({
           };
           assignUpdateTokenAddress(d.address);
           updateTokenData.archiveToken = d.archiveToken;
+          break;
+        }
+
+        case 'setTokenDefaultCreditLimit': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            defaultCreditLimit: bigint;
+          };
+          assignUpdateTokenAddress(d.address);
+          updateTokenData.defaultCreditLimit = d.defaultCreditLimit;
+          break;
+        }
+
+        case 'setTokenBatchAddCreditWhitelistSpaces': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            spaceIds: readonly bigint[];
+          };
+          assignUpdateTokenAddress(d.address);
+          const ids = d.spaceIds.map((x) => Number(x));
+          updateTokenData.addCreditWhitelistSpaceIds = [
+            ...(updateTokenData.addCreditWhitelistSpaceIds ?? []),
+            ...ids,
+          ];
+          break;
+        }
+
+        case 'setTokenBatchRemoveCreditWhitelistSpaces': {
+          const d = decoded.data as {
+            address: `0x${string}`;
+            spaceIds: readonly bigint[];
+          };
+          assignUpdateTokenAddress(d.address);
+          const ids = d.spaceIds.map((x) => Number(x));
+          updateTokenData.removeCreditWhitelistSpaceIds = [
+            ...(updateTokenData.removeCreditWhitelistSpaceIds ?? []),
+            ...ids,
+          ];
           break;
         }
 

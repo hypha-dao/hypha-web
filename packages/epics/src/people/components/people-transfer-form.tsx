@@ -106,7 +106,18 @@ export const PeopleTransferForm = ({
           (a) => a.address.toLowerCase() === tokenAddress,
         );
         const balance = asset ? parseFloat(String(asset.value)) : 0;
-        if (totalAmount > balance) {
+        /**
+         * Mutual-credit eligible accounts can spend below zero up to their remaining
+         * credit line. The contract enforces it on transfer; mirror that allowance
+         * client-side so the form doesn't block a valid transaction.
+         */
+        const creditLeft =
+          asset?.mutualCredit?.creditEligible &&
+          typeof asset.mutualCredit.creditLimitLeft === 'number'
+            ? asset.mutualCredit.creditLimitLeft
+            : 0;
+        const spendable = balance + creditLeft;
+        if (totalAmount > spendable) {
           hasInsufficientFunds = true;
           if (asset?.symbol === 'HYPHA') {
             isHyphaInsufficient = true;

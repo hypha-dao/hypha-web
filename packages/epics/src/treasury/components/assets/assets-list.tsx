@@ -63,6 +63,9 @@ export type AssetItem = {
     creditBalance: number;
     netBalance: number;
     whitelistedSpaceIds: number[];
+    creditLimit: number;
+    creditLimitLeft: number;
+    creditEligible: boolean;
   };
 };
 
