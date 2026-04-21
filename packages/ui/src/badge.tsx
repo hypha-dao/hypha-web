@@ -123,30 +123,30 @@ const badgeVariants = cva(
         colorVariant: 'neutral',
         className: 'bg-neutral-3 text-neutral-11 hover:bg-neutral-4',
       },
-      // Outline variants
+      // Outline variants — hover tint needs high-contrast text (accent-11 on accent-2 is illegible on strong themes)
       {
         variant: 'outline',
         colorVariant: 'accent',
         className:
-          'border-accent-8 text-accent-11 hover:border-accent-9 hover:bg-accent-2',
+          'border-accent-8 text-accent-11 hover:border-accent-9 hover:bg-accent-2 hover:text-foreground',
       },
       {
         variant: 'outline',
         colorVariant: 'success',
         className:
-          'border-success-8 text-success-11 hover:border-success-9 hover:bg-success-2',
+          'border-success-8 text-success-11 hover:border-success-9 hover:bg-success-2 hover:text-foreground',
       },
       {
         variant: 'outline',
         colorVariant: 'error',
         className:
-          'border-error-8 text-error-11 hover:border-error-9 hover:bg-error-2',
+          'border-error-8 text-error-11 hover:border-error-9 hover:bg-error-2 hover:text-foreground',
       },
       {
         variant: 'outline',
         colorVariant: 'warn',
         className:
-          'border-warning-8 text-warning-11 hover:border-warning-9 hover:bg-warning-2',
+          'border-warning-8 text-warning-11 hover:border-warning-9 hover:bg-warning-2 hover:text-foreground',
       },
       {
         variant: 'outline',
