@@ -45,7 +45,8 @@ export const COMPACT_SPACE_BANNER_TITLE_CLASSNAME = cn(
 /** Purpose column — max four lines on narrow viewports (scroll); sm+ wider column + taller cap. */
 const DESCRIPTION_SCROLL_BOX = cn(
   'w-full max-w-full min-h-0 max-h-[4lh] overflow-y-auto overscroll-y-contain touch-pan-y',
-  'text-2 leading-[1.5] sm:max-h-[min(45vh,280px)] sm:max-w-[50%]',
+  /* Slightly under text-2 (14px) for calmer purpose copy vs title */
+  'text-[13px] leading-[1.45] sm:max-h-[min(45vh,280px)] sm:max-w-[50%]',
   '[scrollbar-gutter:stable]',
   '[scrollbar-color:rgba(255,255,255,0.35)_transparent] [scrollbar-width:thin]',
   '[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/30 [&::-webkit-scrollbar-track]:bg-transparent',
@@ -252,7 +253,7 @@ export function CompactSpaceBanner({
               'outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
             )}
           >
-            <p className="text-pretty text-2 leading-[1.5] text-white/95 [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]">
+            <p className="text-pretty text-white/95 [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]">
               {description}
             </p>
           </div>
