@@ -27,6 +27,7 @@ function clampParallaxScrollY(): number {
  */
 export function CompactSpaceBannerLead({ src }: Props) {
   const [ready, setReady] = React.useState(false);
+  const [imageFailed, setImageFailed] = React.useState(false);
   const [parallaxY, setParallaxY] = React.useState(0);
   const [preferReducedMotion, setPreferReducedMotion] = React.useState(false);
 
@@ -88,9 +89,20 @@ export function CompactSpaceBannerLead({ src }: Props) {
             sizes="(max-width: 1280px) 100vw, min(1280px, 100vw)"
             className={cn(
               'object-cover object-center transition-opacity duration-500 ease-out',
-              ready ? 'opacity-100' : 'opacity-0',
+              imageFailed || ready ? 'opacity-100' : 'opacity-0',
             )}
             onLoad={() => setReady(true)}
+            onError={() => {
+              if (process.env.NODE_ENV !== 'production') {
+                console.warn(
+                  '[CompactSpaceBannerLead] lead image failed to load',
+                  {
+                    src,
+                  },
+                );
+              }
+              setImageFailed(true);
+            }}
           />
         </div>
       </div>
