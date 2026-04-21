@@ -20,6 +20,10 @@ export type DhoStickySpaceChromeProps = {
   defaultLogoSrc: string;
 };
 
+/** Match CSS transition duration + small buffer before unmounting the sticky shell (portal timing). */
+const STICKY_CHROME_TRANSITION_MS = 300;
+const STICKY_CHROME_UNMOUNT_DELAY_MS = STICKY_CHROME_TRANSITION_MS + 40;
+
 function useMenuTopOffsetPx(): number {
   const [px, setPx] = React.useState(64);
 
@@ -50,6 +54,22 @@ function useMenuTopOffsetPx(): number {
   return px;
 }
 
+function usePrefersReducedMotion(): boolean {
+  const [reduce, setReduce] = React.useState(false);
+
+  React.useEffect(() => {
+    const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    if (!mq) return;
+
+    const sync = () => setReduce(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+
+  return reduce;
+}
+
 /**
  * Desktop (md+): pin a compact chrome row under `MenuTop`. Actions / nested-space move
  * via portal so the same React trees (hooks) transition between positions — pixel-identical Button UI.
@@ -65,6 +85,7 @@ export function DhoStickySpaceChrome({
   defaultLogoSrc,
 }: DhoStickySpaceChromeProps) {
   const menuTopPx = useMenuTopOffsetPx();
+  const prefersReducedMotion = usePrefersReducedMotion();
   /** Bottom edge of the space image banner — sticky engages when this passes under MenuTop */
   const bannerBottomSentinelRef = React.useRef<HTMLDivElement>(null);
 
@@ -78,6 +99,15 @@ export function DhoStickySpaceChrome({
 
   const [stuck, setStuck] = React.useState(false);
   const stuckRef = React.useRef(false);
+
+  /** Kept mounted briefly after `stuck` false so opacity/transform transition can finish. */
+  const [stickyShellMounted, setStickyShellMounted] = React.useState(false);
+  /** Drives visible state; false on first paint when mounting for enter animation. */
+  const [stickyShellOpen, setStickyShellOpen] = React.useState(false);
+  const stickyUnmountTimerRef = React.useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+  const stickyEnterRafRef = React.useRef(0);
 
   const [flowMinH, setFlowMinH] = React.useState(44);
 
@@ -138,50 +168,105 @@ export function DhoStickySpaceChrome({
     };
   }, [menuTopPx]);
 
+  React.useEffect(() => {
+    if (stickyUnmountTimerRef.current) {
+      clearTimeout(stickyUnmountTimerRef.current);
+      stickyUnmountTimerRef.current = null;
+    }
+    if (stickyEnterRafRef.current) {
+      cancelAnimationFrame(stickyEnterRafRef.current);
+      stickyEnterRafRef.current = 0;
+    }
+
+    if (stuck) {
+      setStickyShellMounted(true);
+      if (prefersReducedMotion) {
+        setStickyShellOpen(true);
+        return;
+      }
+      setStickyShellOpen(false);
+      stickyEnterRafRef.current = requestAnimationFrame(() => {
+        stickyEnterRafRef.current = requestAnimationFrame(() => {
+          stickyEnterRafRef.current = 0;
+          setStickyShellOpen(true);
+        });
+      });
+      return () => {
+        if (stickyEnterRafRef.current) {
+          cancelAnimationFrame(stickyEnterRafRef.current);
+          stickyEnterRafRef.current = 0;
+        }
+      };
+    }
+
+    setStickyShellOpen(false);
+    stickyUnmountTimerRef.current = setTimeout(() => {
+      stickyUnmountTimerRef.current = null;
+      setStickyShellMounted(false);
+    }, STICKY_CHROME_UNMOUNT_DELAY_MS);
+
+    return () => {
+      if (stickyUnmountTimerRef.current) {
+        clearTimeout(stickyUnmountTimerRef.current);
+        stickyUnmountTimerRef.current = null;
+      }
+    };
+  }, [stuck, prefersReducedMotion]);
+
   const logoSrc = logoUrl || defaultLogoSrc;
 
   const actionsPortalTarget = stuck ? stickyActionsEl : flowActionsEl;
   const nestedPortalTarget = nestedSpacesSlot ? flowNestedEl : null;
 
+  const stickyChromeVisible = stickyShellMounted && stickyShellOpen;
+
   return (
     <>
-      <div
-        className={cn(
-          'pointer-events-none fixed inset-x-0 z-[25] hidden md:block',
-          'border-b border-border bg-background-2 transition-[opacity,transform,box-shadow] duration-200 ease-out',
-          stuck
-            ? 'pointer-events-auto translate-y-0 opacity-100 shadow-md'
-            : '-translate-y-2 opacity-0',
-        )}
-        style={{ top: 'var(--menu-top-height, 4rem)' }}
-        aria-hidden={!stuck}
-      >
-        <div className="mx-auto flex max-w-container-2xl items-center gap-3 px-8 py-2.5">
-          {/* Match CompactSpaceBanner row: same avatar, title tokens, gap-6; px-8 L/R balances chrome */}
-          <div className="flex min-w-0 flex-1 items-center gap-6">
-            <Avatar className={COMPACT_SPACE_BANNER_AVATAR_CLASSNAME}>
-              <AvatarImage
-                src={logoSrc}
-                alt={logoAlt}
-                className="object-cover"
-              />
-            </Avatar>
-            <p
-              className={cn(
-                COMPACT_SPACE_BANNER_TITLE_CLASSNAME,
-                'min-w-0 flex-1 truncate text-foreground',
-              )}
-              aria-hidden
-            >
-              {title}
-            </p>
+      {stickyShellMounted ? (
+        <div
+          className={cn(
+            'fixed inset-x-0 z-[25] hidden md:block',
+            'border-b border-border bg-background-2',
+            prefersReducedMotion
+              ? 'transition-opacity'
+              : 'transition-[opacity,transform,box-shadow]',
+            prefersReducedMotion
+              ? 'duration-150 ease-out'
+              : 'duration-300 ease-out',
+            stickyChromeVisible
+              ? 'pointer-events-auto translate-y-0 opacity-100 shadow-md'
+              : 'pointer-events-none -translate-y-1.5 opacity-0 shadow-none',
+          )}
+          style={{ top: 'var(--menu-top-height, 4rem)' }}
+          aria-hidden={!stickyChromeVisible}
+        >
+          <div className="mx-auto flex max-w-container-2xl items-center gap-3 px-8 py-2.5">
+            {/* Match CompactSpaceBanner row: same avatar, title tokens, gap-6; px-8 L/R balances chrome */}
+            <div className="flex min-w-0 flex-1 items-center gap-6">
+              <Avatar className={COMPACT_SPACE_BANNER_AVATAR_CLASSNAME}>
+                <AvatarImage
+                  src={logoSrc}
+                  alt={logoAlt}
+                  className="object-cover"
+                />
+              </Avatar>
+              <p
+                className={cn(
+                  COMPACT_SPACE_BANNER_TITLE_CLASSNAME,
+                  'min-w-0 flex-1 truncate text-foreground',
+                )}
+                aria-hidden
+              >
+                {title}
+              </p>
+            </div>
+            <div
+              ref={setStickyActionsEl}
+              className="flex shrink-0 flex-nowrap items-center gap-2"
+            />
           </div>
-          <div
-            ref={setStickyActionsEl}
-            className="flex shrink-0 flex-nowrap items-center gap-2"
-          />
         </div>
-      </div>
+      ) : null}
 
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 md:flex-nowrap md:gap-x-4">
