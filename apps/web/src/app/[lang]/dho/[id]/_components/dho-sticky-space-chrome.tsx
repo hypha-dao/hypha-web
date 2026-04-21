@@ -35,14 +35,8 @@ function useMenuTopOffsetPx(): number {
     const ro = new ResizeObserver(read);
     ro.observe(document.documentElement);
     window.addEventListener('resize', read);
-    const mo = new MutationObserver(read);
-    mo.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['style'],
-    });
     return () => {
       ro.disconnect();
-      mo.disconnect();
       window.removeEventListener('resize', read);
     };
   }, []);
