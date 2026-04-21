@@ -17,6 +17,7 @@ import {
   TokenType,
   getTokenDecimals,
   getEnergyBalances,
+  getMemberSpaces,
 } from '@hypha-platform/core/client';
 import { headers } from 'next/headers';
 import { hasEmojiOrLink, tryDecodeUriPart } from '@hypha-platform/ui-utils';
@@ -62,6 +63,20 @@ export async function GET(
       energyTokenAddress = result[1] as `0x${string}`;
     } catch (error) {
       console.warn('Failed to fetch energy balance:', error);
+    }
+
+    /**
+     * Spaces the user is a member of (web3 ids). Used below to surface tokens the user
+     * can spend on credit even when their on-chain balance is zero.
+     */
+    let memberWeb3SpaceIds: Set<number> = new Set();
+    try {
+      const result = (await web3Client.readContract(
+        getMemberSpaces({ memberAddress: address }),
+      )) as readonly bigint[];
+      memberWeb3SpaceIds = new Set(result.map((id) => Number(id)));
+    } catch (error) {
+      console.warn('Failed to fetch member spaces:', error);
     }
 
     let externalTokens: any[] = [];
@@ -145,6 +160,31 @@ export async function GET(
       }
     }
 
+    /**
+     * Also include every dbToken that has a deployed address — this lets us surface
+     * credit-enabled tokens even when the user has 0 balance and never held them
+     * (so they appear in transfer dropdowns when eligible by space membership).
+     * Non-credit tokens with 0 balance are filtered out below.
+     */
+    const rawDbTokensForSeed = await findAllTokens(
+      { db: getDb({ authToken }) },
+      { search: undefined },
+    );
+    rawDbTokensForSeed.forEach((t) => {
+      if (!t.address) return;
+      const lower = t.address.toLowerCase();
+      if (addressMap.has(lower)) return;
+      addressMap.set(lower, {
+        symbol: t.symbol ?? 'UNKNOWN',
+        name: t.name ?? 'Unnamed',
+        address: t.address as `0x${string}`,
+        icon: t.iconUrl ?? '/placeholder/token-icon.svg',
+        type: validTokenTypes.includes(t.type as TokenType)
+          ? (t.type as TokenType)
+          : 'utility',
+      });
+    });
+
     const allTokens: Token[] = Array.from(addressMap.values());
 
     let prices: Record<string, number | undefined> = {};
@@ -154,10 +194,7 @@ export async function GET(
       console.error('Failed to fetch token prices:', error);
     }
 
-    const rawDbTokens = await findAllTokens(
-      { db: getDb({ authToken }) },
-      { search: undefined },
-    );
+    const rawDbTokens = rawDbTokensForSeed;
     const dbTokens = rawDbTokens.map((token) => ({
       agreementId: token.agreementId ?? undefined,
       spaceId: token.spaceId ?? undefined,
@@ -253,6 +290,16 @@ export async function GET(
                     creditBalance: mutualCredit.creditBalance,
                     netBalance: mutualCredit.netBalance,
                     whitelistedSpaceIds: mutualCredit.whitelistedSpaceIds,
+                    creditLimit: mutualCredit.creditLimit,
+                    creditLimitLeft: mutualCredit.creditLimitLeft,
+                    /**
+                     * The user is credit-eligible if any space they are a member of is
+                     * in the token's credit whitelist. We rely on the on-chain whitelist
+                     * because the contract authorizes credit by space membership.
+                     */
+                    creditEligible: mutualCredit.whitelistedSpaceIds.some(
+                      (id) => memberWeb3SpaceIds.has(id),
+                    ),
                   }
                 : undefined,
           };
@@ -267,7 +314,25 @@ export async function GET(
       (typeof assets)[0]
     >[];
 
-    const sorted = validAssets.sort((a, b) =>
+    /**
+     * Keep tokens with non-zero balance, predefined `TOKENS` (e.g. HYPHA, USDC), the
+     * energy token, and credit-eligible tokens (so users see and can spend on credit
+     * even at 0 balance). Drop the noise of every zero-balance space token in the DB.
+     */
+    const knownAddresses = new Set<string>([
+      ...TOKENS.map((t) => t.address.toLowerCase()),
+      ...filteredExternalTokens.map((t) => t.address.toLowerCase()),
+      ...(energyTokenAddress ? [energyTokenAddress.toLowerCase()] : []),
+    ]);
+    const visibleAssets = validAssets.filter((a) => {
+      if (a.value > 0) return true;
+      if (knownAddresses.has(a.address.toLowerCase())) return true;
+      const mc = (a as { mutualCredit?: { creditEligible?: boolean } })
+        .mutualCredit;
+      return Boolean(mc?.creditEligible);
+    });
+
+    const sorted = visibleAssets.sort((a, b) =>
       a.usdEqual === b.usdEqual ? b.value - a.value : b.usdEqual - a.usdEqual,
     );
 
