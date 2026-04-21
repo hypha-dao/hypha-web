@@ -29,6 +29,13 @@ function clampTabParallaxScrollY(): number {
   );
 }
 
+function isReducedMotionPreferred(): boolean {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+  );
+}
+
 export function NavigationTabs({
   lang,
   id,
@@ -42,23 +49,24 @@ export function NavigationTabs({
   const pathname = usePathname();
   const activeTab = getEffectiveDhoTab(pathname, { coherenceEnabled });
 
-  const [tabParallaxY, setTabParallaxY] = React.useState(
-    clampTabParallaxScrollY,
-  );
+  const [tabParallaxY, setTabParallaxY] = React.useState(0);
   const [preferReducedMotion, setPreferReducedMotion] = React.useState(false);
 
   React.useEffect(() => {
     const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)');
     if (!mq) return;
 
-    const sync = () => setPreferReducedMotion(mq.matches);
+    const sync = () => {
+      setPreferReducedMotion(mq.matches);
+      if (mq.matches) setTabParallaxY(0);
+    };
     sync();
     mq.addEventListener('change', sync);
     return () => mq.removeEventListener('change', sync);
   }, []);
 
   React.useEffect(() => {
-    if (preferReducedMotion) {
+    if (preferReducedMotion || isReducedMotionPreferred()) {
       setTabParallaxY(0);
       return;
     }
