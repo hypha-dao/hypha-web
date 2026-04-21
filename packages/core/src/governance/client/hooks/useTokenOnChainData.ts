@@ -1,12 +1,13 @@
 'use client';
 
 import useSWR from 'swr';
+import { formatUnits } from 'viem';
 import { publicClient } from '../../../client';
 import { decayingSpaceTokenAbi } from '../../../generated';
 import type { UpdateIssuedTokenInput } from './build-update-issued-token-tx';
 import { decayBasisPointsToFormPercent } from '../../voice-decay-units';
 
-const DECIMALS = 18n;
+const DECIMALS = 18;
 /** On-chain `tokenPrice` is stored in micro-units (1e6); UI uses human decimals */
 const TOKEN_PRICE_MICRO = 1_000_000;
 
@@ -141,7 +142,7 @@ async function fetchTokenOnChainData(
     symbol: symbolResult as string,
     maxSupply:
       maxSupplyResult !== undefined
-        ? Number((maxSupplyResult as bigint) / 10n ** DECIMALS)
+        ? Number(formatUnits(maxSupplyResult as bigint, DECIMALS))
         : undefined,
     transferable: transferableResult as boolean,
     autoMinting: autoMintingResult as boolean,
@@ -167,13 +168,18 @@ async function fetchTokenOnChainData(
         : undefined,
     defaultCreditLimit:
       defaultCreditLimitResult !== undefined
-        ? Number((defaultCreditLimitResult as bigint) / 10n ** DECIMALS)
+        ? Number(formatUnits(defaultCreditLimitResult as bigint, DECIMALS))
         : undefined,
     creditWhitelistedSpaceIds:
       creditWhitelistedSpacesResult !== undefined
-        ? (creditWhitelistedSpacesResult as readonly bigint[]).map((v) =>
-            Number(v),
-          )
+        ? (creditWhitelistedSpacesResult as readonly bigint[]).map((v) => {
+            if (v > BigInt(Number.MAX_SAFE_INTEGER)) {
+              console.warn(
+                `Credit-whitelisted space id ${v.toString()} for ${address} exceeds Number.MAX_SAFE_INTEGER; precision may be lost.`,
+              );
+            }
+            return Number(v);
+          })
         : undefined,
   };
 }

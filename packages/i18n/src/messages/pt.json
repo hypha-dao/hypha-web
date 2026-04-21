@@ -309,6 +309,18 @@
           },
           "percentageLabel": "Porcentagem de deterioração da voz",
           "percentagePlaceholder": "Decadência"
+        },
+        "mutualCredit": {
+          "title": "Crédito mútuo",
+          "description": "Permite que os membros dos espaços na lista branca gastem abaixo de zero até um limite de crédito por conta. O saldo líquido fica negativo quando o crédito é utilizado.",
+          "enable": "Ativar crédito mútuo",
+          "creditLimitLabel": "Limite de crédito padrão",
+          "creditLimitPlaceholder": "Digite um valor",
+          "eligibleSpacesLabel": "Espaços elegíveis",
+          "eligibleSpacesDescription": "Os membros desses espaços podem utilizar a linha de crédito. O espaço emissor é sempre incluído.",
+          "currentSpaceTag": "espaço emissor",
+          "addSpacePlaceholder": "Adicionar um espaço…",
+          "removeSpace": "Remover espaço"
         }
       },
       "quorumAndUnity": {
@@ -643,7 +655,8 @@
         "blockchainAddressInvalid": "Por favor insira um endereço blockchain válido",
         "referenceCurrencyRequired": "Selecione uma moeda de referência",
         "tokenPricePositive": "Insira um preço de token maior que 0",
-        "duplicateWhitelistEntry": "Este membro ou espaço já está nesta lista de permissões. Remova o duplicado ou escolha outra entrada."
+        "duplicateWhitelistEntry": "Este membro ou espaço já está nesta lista de permissões. Remova o duplicado ou escolha outra entrada.",
+        "creditLimitPositive": "Insira um limite de crédito maior que 0"
       }
     },
     "createAgreementBaseFields": {
@@ -1027,7 +1040,12 @@
     "assetCard": {
       "fromSpace": "de {spaceTitle}",
       "totalIssuance": "Emissão total: {value}",
-      "createdOn": "Criado em {date}"
+      "createdOn": "Criado em {date}",
+      "mutualCredit": {
+        "debtBadge": "Deve {amount} {symbol}",
+        "netBadge": "Líquido {amount} {symbol}",
+        "limit": "Limite de crédito: {limit} {symbol}"
+      }
     },
     "transactionCard": {
       "tokenIconAlt": "Ícone de token",
@@ -1585,7 +1603,13 @@
       "whitelistEnforcementActive": "Ativo",
       "whitelistEnforcementInactive": "Inativo",
       "spaceWhitelistMembersSuffix": "(Space e membros)",
-      "spaceWhitelistOnlySuffix": "(Apenas space)"
+      "spaceWhitelistOnlySuffix": "(Apenas space)",
+      "mutualCreditEnabled": "Crédito mútuo ativado",
+      "mutualCreditLimit": "Limite de crédito padrão",
+      "mutualCreditEligibleSpaces": "Espaços elegíveis",
+      "mutualCreditEligibleSpacesAdded": "Espaços elegíveis adicionados",
+      "mutualCreditEligibleSpacesRemoved": "Espaços elegíveis removidos",
+      "spaceLogoAlt": "Logo de {title}"
     },
     "entryMethods": {
       "openAccess": "Acesso aberto",

@@ -29,22 +29,35 @@ type TransactionCardProps = {
   commentCount?: number;
 };
 
-type AssetItem = {
+/**
+ * Canonical shape for an asset row served by `/api/v1/people/{slug}/assets`.
+ *
+ * Re-exported by `assets-list.tsx` so view components and hooks share a single
+ * definition. New fields go here.
+ */
+export type AssetItem = {
   icon: string;
   name: string;
   symbol: string;
   value: number;
+  tokenPrice?: number;
+  referenceCurrency?: string | null;
   usdEqual: number;
   type: string;
   chartData: OneChartPoint[];
   transactions: TransactionCardProps[];
   closeUrl: string;
   slug: string;
-  address: string;
+  createdAt?: Date;
+  supply?: {
+    total: number;
+    max: number;
+  };
   space?: {
     title: string;
     slug: string;
   };
+  address?: string;
   /**
    * Mutual credit info — only present for RegularSpaceToken instances that have
    * mutual credit configured. `netBalance` is negative when the holder owes credit.

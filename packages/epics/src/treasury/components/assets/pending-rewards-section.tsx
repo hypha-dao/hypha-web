@@ -62,7 +62,7 @@ export const PendingRewardsSection: FC<PendingRewardsSectionProps> = ({
   const [hasClaimed, setHasClaimed] = useState(false);
 
   const originalAsset = filteredAssets?.find(
-    (a) => a.address.toLowerCase() === hyphaTokenAddress.toLowerCase(),
+    (a) => a.address?.toLowerCase() === hyphaTokenAddress.toLowerCase(),
   );
 
   const parsedRewardValue =

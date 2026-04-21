@@ -54,7 +54,7 @@ export const useUserAssetsSection = ({
         (asset) =>
           asset.name.toLowerCase().includes(term) ||
           asset.symbol.toLowerCase().includes(term) ||
-          asset.address.toLowerCase().includes(term),
+          (asset.address?.toLowerCase().includes(term) ?? false),
       );
     }
 

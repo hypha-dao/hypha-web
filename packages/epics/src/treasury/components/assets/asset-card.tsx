@@ -151,26 +151,28 @@ export const AssetCard: React.FC<AssetCardProps> = ({
           </Text>
         )}
       </div>
-      {mutualCredit ? (
+      {mutualCredit && symbol ? (
         <div className="w-full flex flex-row gap-2 flex-wrap items-center mt-1">
-          <Badge
-            colorVariant={mutualCredit.netBalance < 0 ? 'warn' : 'accent'}
-            variant="outline"
-            className="w-fit h-fit"
-          >
-            {mutualCredit.netBalance < 0
-              ? tTreasury('assetCard.mutualCredit.debtBadge', {
-                  amount: formatCurrencyValue(
-                    Math.abs(mutualCredit.netBalance),
-                    lang,
-                  ),
-                  symbol: symbol ?? '',
-                })
-              : tTreasury('assetCard.mutualCredit.netBadge', {
-                  amount: formatCurrencyValue(mutualCredit.netBalance, lang),
-                  symbol: symbol ?? '',
-                })}
-          </Badge>
+          {mutualCredit.netBalance !== 0 ? (
+            <Badge
+              colorVariant={mutualCredit.netBalance < 0 ? 'warn' : 'accent'}
+              variant="outline"
+              className="w-fit h-fit"
+            >
+              {mutualCredit.netBalance < 0
+                ? tTreasury('assetCard.mutualCredit.debtBadge', {
+                    amount: formatCurrencyValue(
+                      Math.abs(mutualCredit.netBalance),
+                      lang,
+                    ),
+                    symbol,
+                  })
+                : tTreasury('assetCard.mutualCredit.netBadge', {
+                    amount: formatCurrencyValue(mutualCredit.netBalance, lang),
+                    symbol,
+                  })}
+            </Badge>
+          ) : null}
           {mutualCredit.defaultCreditLimit > 0 && (
             <Text className="text-1 text-neutral-11">
               {tTreasury('assetCard.mutualCredit.limit', {
@@ -178,7 +180,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
                   mutualCredit.defaultCreditLimit,
                   lang,
                 ),
-                symbol: symbol ?? '',
+                symbol,
               })}
             </Text>
           )}

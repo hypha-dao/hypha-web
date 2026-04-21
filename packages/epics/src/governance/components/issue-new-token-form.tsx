@@ -167,7 +167,15 @@ const createFullSchemaIssueNewToken = (tAgreementFlow: any) =>
       }
     }
 
-    if (data.enableMutualCredit) {
+    /**
+     * Mutual credit only applies to RegularSpaceToken types — keep this guard
+     * in sync with `useIssueNewTokenOrchestrator` and the UI gating in
+     * `advanced-token-settings.tsx` so a manipulated form can't bypass it.
+     */
+    const isRegularToken = (
+      ['utility', 'credits', 'impact', 'community_currency'] as const
+    ).includes(data.type as never);
+    if (data.enableMutualCredit && isRegularToken) {
       if (
         data.defaultCreditLimit === undefined ||
         data.defaultCreditLimit === null ||
@@ -408,6 +416,20 @@ export const IssueNewTokenForm = ({
 
     if (dbTokens?.length && duplicateToken) {
       setFormError(tAgreementFlow('issueNewTokenForm.duplicateToken'));
+      return;
+    }
+
+    if (
+      data.enableMutualCredit &&
+      !(
+        typeof web3SpaceId === 'number' &&
+        Number.isInteger(web3SpaceId) &&
+        web3SpaceId > 0
+      )
+    ) {
+      setFormError(
+        tAgreementFlow('issueNewTokenForm.errors.creditLimitPositive'),
+      );
       return;
     }
     await createIssueToken({

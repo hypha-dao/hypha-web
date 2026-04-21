@@ -4,6 +4,7 @@ import { Image, Badge, Separator, Skeleton } from '@hypha-platform/ui';
 import { DbToken } from '@hypha-platform/core/server';
 import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { useParams } from 'next/navigation';
+import { formatUnits } from 'viem';
 import { EthAddress } from '../../people/components/eth-address';
 import { formatCurrencyValue } from '../../../../ui-utils/src/formatCurrencyValue';
 import { formatDecayInterval } from '@hypha-platform/ui-utils';
@@ -165,11 +166,12 @@ export const ProposalTokenItem = ({
 
   /**
    * Mutual credit is enabled when the deployToken call carried a non-zero limit
-   * or any whitelisted spaces. Ids are 1e18-scaled wei from the proposal calldata.
+   * or any whitelisted spaces. The credit limit is wei-scaled (1e18); space ids
+   * from `initialCreditWhitelistSpaceIds` are plain uint256 values.
    */
   const creditLimitHuman =
     defaultCreditLimit !== undefined
-      ? Number(defaultCreditLimit / 10n ** 18n)
+      ? Number(formatUnits(defaultCreditLimit, 18))
       : 0;
   const creditWhitelistedIds = (initialCreditWhitelistSpaceIds ?? []).map(
     (id) => Number(id),
@@ -362,7 +364,9 @@ export const ProposalTokenItem = ({
                         src={s.logoUrl ?? '/placeholder/default-profile.svg'}
                         width={20}
                         height={20}
-                        alt={`${s.title} logo`}
+                        alt={tProposalDetails('labels.spaceLogoAlt', {
+                          title: s.title,
+                        })}
                         className="rounded-full"
                       />
                       <span className="text-1">{s.title}</span>
