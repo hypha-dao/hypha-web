@@ -157,18 +157,15 @@ export function DhoStickySpaceChrome({
         aria-hidden={!stuck}
       >
         <div className="mx-auto flex max-w-container-2xl items-center gap-3 px-8 py-2.5">
-          <div className="flex min-w-0 flex-1 items-start gap-6">
-            <div className="relative h-9 w-9 shrink-0">
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 origin-top-left scale-50">
-                <Avatar className={COMPACT_SPACE_BANNER_AVATAR_CLASSNAME}>
-                  <AvatarImage
-                    src={logoSrc}
-                    alt={logoAlt}
-                    className="object-cover"
-                  />
-                </Avatar>
-              </div>
-            </div>
+          {/* Match CompactSpaceBanner row: same avatar, title tokens, gap-6, vertical centre in bar */}
+          <div className="flex min-w-0 flex-1 items-center gap-6">
+            <Avatar className={COMPACT_SPACE_BANNER_AVATAR_CLASSNAME}>
+              <AvatarImage
+                src={logoSrc}
+                alt={logoAlt}
+                className="object-cover"
+              />
+            </Avatar>
             <p
               className={cn(
                 COMPACT_SPACE_BANNER_TITLE_CLASSNAME,
