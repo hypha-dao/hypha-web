@@ -168,6 +168,9 @@ export function buildFullSchemaUpdateIssuedToken(
       whitelistBaselineToSpaceIds: z.array(z.number()).optional(),
       /** Passed from plugin for resolving space rows → web3 ids in orchestrator */
       spacesForWhitelistResolution: z.array(z.unknown()).optional(),
+      /** On-chain mutual credit baseline at form load — used for add/remove diffing */
+      creditBaselineDefaultLimit: z.number().optional(),
+      creditBaselineWhitelistedSpaceIds: z.array(z.number()).optional(),
     }),
   );
 
@@ -214,6 +217,23 @@ export function buildFullSchemaUpdateIssuedToken(
           code: z.ZodIssueCode.custom,
           message: tProposalDetails('tokenPriceGreaterThanZero'),
           path: ['tokenPrice'],
+        });
+      }
+    }
+
+    if (data.enableMutualCredit) {
+      if (
+        data.defaultCreditLimit === undefined ||
+        data.defaultCreditLimit === null ||
+        isNaN(data.defaultCreditLimit) ||
+        data.defaultCreditLimit <= 0
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: tAgreementFlow(
+            'issueNewTokenForm.errors.creditLimitPositive',
+          ),
+          path: ['defaultCreditLimit'],
         });
       }
     }
@@ -376,6 +396,11 @@ export const UpdateIssuedTokenForm = ({
       tokenPrice: undefined,
       tokenAddress: undefined,
       archiveToken: false,
+      enableMutualCredit: false,
+      defaultCreditLimit: undefined,
+      creditWhitelistedSpaceIds: [],
+      creditBaselineDefaultLimit: undefined,
+      creditBaselineWhitelistedSpaceIds: undefined,
       whitelistBaselineFrom: undefined,
       whitelistBaselineTo: undefined,
       whitelistBaselineFromMembers: undefined,
@@ -480,6 +505,12 @@ export const UpdateIssuedTokenForm = ({
       spacesForWhitelistResolution: submitData.spacesForWhitelistResolution as
         | Space[]
         | undefined,
+      enableMutualCredit: submitData.enableMutualCredit,
+      defaultCreditLimit: submitData.defaultCreditLimit,
+      creditWhitelistedSpaceIds: submitData.creditWhitelistedSpaceIds,
+      creditBaselineDefaultLimit: submitData.creditBaselineDefaultLimit,
+      creditBaselineWhitelistedSpaceIds:
+        submitData.creditBaselineWhitelistedSpaceIds,
     });
   };
 

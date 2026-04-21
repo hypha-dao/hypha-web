@@ -73,6 +73,8 @@ type UpdateIssuedTokenPluginProps = {
   spacesForChainMapping?: Space[];
   spaceSlug?: string;
   spaceId?: number;
+  /** Web3 id of the issuing space; auto-included in the mutual credit whitelist. */
+  currentSpaceWeb3Id?: number | null;
   ownershipToWhitelistMembers?: Person[];
   ownershipToWhitelistSpaces?: Space[];
 };
@@ -83,6 +85,7 @@ export const UpdateIssuedTokenPlugin = ({
   spacesForChainMapping,
   spaceSlug,
   spaceId,
+  currentSpaceWeb3Id,
   ownershipToWhitelistMembers,
   ownershipToWhitelistSpaces,
 }: UpdateIssuedTokenPluginProps) => {
@@ -131,6 +134,13 @@ export const UpdateIssuedTokenPlugin = ({
     'enableAdvancedTransferControls',
   );
   const enableTokenPrice = watch('enableTokenPrice');
+  const enableMutualCredit = watch('enableMutualCredit') ?? false;
+  const setEnableMutualCredit = (value: boolean) => {
+    setValue('enableMutualCredit', value, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
   const currentTokenType = watch('type');
   const tokenName = watch('name');
   const tokenSymbol = watch('symbol');
@@ -570,6 +580,11 @@ export const UpdateIssuedTokenPlugin = ({
           whitelistBaselineToMembers: undefined,
           whitelistBaselineFromSpaceIds: undefined,
           whitelistBaselineToSpaceIds: undefined,
+          enableMutualCredit: false,
+          defaultCreditLimit: undefined,
+          creditWhitelistedSpaceIds: [],
+          creditBaselineDefaultLimit: undefined,
+          creditBaselineWhitelistedSpaceIds: undefined,
         },
         { keepDirty: false, keepTouched: false },
       );
@@ -759,6 +774,52 @@ export const UpdateIssuedTokenPlugin = ({
         shouldDirty: false,
       });
     }
+
+    /**
+     * Mutual credit hydration: a token is considered "credit-enabled" if it has either a
+     * non-zero defaultCreditLimit or one or more credit-whitelisted spaces. Baselines are
+     * mirrored so the orchestrator can compute add/remove space deltas.
+     */
+    const hasCreditLimit =
+      onChainData.defaultCreditLimit !== undefined &&
+      onChainData.defaultCreditLimit > 0;
+    const whitelistedSpaceIds = onChainData.creditWhitelistedSpaceIds ?? [];
+    const hasCreditWhitelist = whitelistedSpaceIds.length > 0;
+    const creditEnabledFromChain = hasCreditLimit || hasCreditWhitelist;
+
+    if (!isDirty('enableMutualCredit')) {
+      setValue('enableMutualCredit', creditEnabledFromChain, {
+        shouldDirty: false,
+      });
+    }
+    if (
+      onChainData.defaultCreditLimit !== undefined &&
+      !isDirty('defaultCreditLimit')
+    ) {
+      setValue(
+        'defaultCreditLimit',
+        creditEnabledFromChain ? onChainData.defaultCreditLimit : undefined,
+        { shouldDirty: false },
+      );
+    }
+    if (!isDirty('creditWhitelistedSpaceIds')) {
+      setValue('creditWhitelistedSpaceIds', whitelistedSpaceIds, {
+        shouldDirty: false,
+      });
+    }
+    /** Baselines are not user-facing — always mirror chain so submit diff is correct. */
+    setValue(
+      'creditBaselineDefaultLimit',
+      onChainData.defaultCreditLimit ?? 0,
+      { shouldDirty: false },
+    );
+    setValue('creditBaselineWhitelistedSpaceIds', whitelistedSpaceIds, {
+      shouldDirty: false,
+    });
+    if (creditEnabledFromChain) {
+      setShowAdvancedSettings((prev) => prev || true);
+    }
+
     setShowAdvancedSettings((prev) => prev || enableAdvancedTransferControls);
   }, [isLoadingOnChainData, onChainData, setValue, getValues, dirtyFields]);
 
@@ -1059,12 +1120,15 @@ export const UpdateIssuedTokenPlugin = ({
                 enableAdvancedTransferControls ?? false
               }
               enableTokenPrice={enableTokenPrice ?? false}
+              enableMutualCredit={enableMutualCredit}
+              setEnableMutualCredit={setEnableMutualCredit}
               members={members}
               spaces={spaces}
               ownershipToWhitelistMembers={ownershipToWhitelistMembers}
               ownershipToWhitelistSpaces={ownershipToWhitelistSpaces}
               tokenType={currentTokenType}
               spaceSlug={spaceSlug}
+              currentSpaceWeb3Id={currentSpaceWeb3Id}
               maxSupplyTypeReadOnly={onChainData?.fixedMaxSupply === true}
             />
           )}

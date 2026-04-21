@@ -8,6 +8,7 @@ import {
   getBalance,
   getTokenMeta,
   getSupply,
+  getMutualCreditInfo,
 } from '@hypha-platform/core/server';
 import {
   TOKENS,
@@ -215,6 +216,15 @@ export async function GET(
           if (rate === 0) {
             rate = referencePriceByAddress[token.address.toLowerCase()] ?? 0;
           }
+          /**
+           * Mutual credit only exists on RegularSpaceToken instances. We attempt the
+           * read for every token but skip the energy token (different contract). The
+           * helper returns `null` when the contract doesn't expose credit functions
+           * so non-RegularSpaceToken tokens silently get no credit metadata.
+           */
+          const mutualCredit = isEnergyToken
+            ? null
+            : await getMutualCreditInfo(token.address, address);
           return {
             ...meta,
             address: token.address,
@@ -236,6 +246,15 @@ export async function GET(
                   title: meta.space.title,
                 }
               : undefined,
+            mutualCredit:
+              mutualCredit && mutualCredit.isCreditEnabled
+                ? {
+                    defaultCreditLimit: mutualCredit.defaultCreditLimit,
+                    creditBalance: mutualCredit.creditBalance,
+                    netBalance: mutualCredit.netBalance,
+                    whitelistedSpaceIds: mutualCredit.whitelistedSpaceIds,
+                  }
+                : undefined,
           };
         } catch (err) {
           console.warn(`Skipping token ${token.address}: ${err}`);

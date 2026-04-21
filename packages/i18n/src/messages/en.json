@@ -384,7 +384,12 @@
     "assetCard": {
       "fromSpace": "from {spaceTitle}",
       "totalIssuance": "Total Issuance: {value}",
-      "createdOn": "Created on {date}"
+      "createdOn": "Created on {date}",
+      "mutualCredit": {
+        "debtBadge": "Owes {amount} {symbol}",
+        "netBadge": "Net {amount} {symbol}",
+        "limit": "Credit limit: {limit} {symbol}"
+      }
     },
     "transactionCard": {
       "tokenIconAlt": "Token icon",
@@ -961,7 +966,8 @@
         "blockchainAddressInvalid": "Please enter a valid blockchain address",
         "referenceCurrencyRequired": "Please select a reference currency",
         "tokenPricePositive": "Please enter a token price greater than 0",
-        "duplicateWhitelistEntry": "This member or space is already listed in this whitelist. Remove the duplicate or choose a different entry."
+        "duplicateWhitelistEntry": "This member or space is already listed in this whitelist. Remove the duplicate or choose a different entry.",
+        "creditLimitPositive": "Please enter a credit limit greater than 0"
       }
     },
     "createAgreementBaseFields": {
@@ -1205,6 +1211,18 @@
           },
           "percentageLabel": "Voice Decay Percentage",
           "percentagePlaceholder": "Decay"
+        },
+        "mutualCredit": {
+          "title": "Mutual Credit",
+          "description": "Allow members of whitelisted spaces to spend below zero up to a per-account credit limit. Net balance turns negative when credit is drawn.",
+          "enable": "Enable Mutual Credit",
+          "creditLimitLabel": "Default Credit Limit",
+          "creditLimitPlaceholder": "Type an amount",
+          "eligibleSpacesLabel": "Eligible Spaces",
+          "eligibleSpacesDescription": "Members of these spaces can draw on the credit line. The issuing space is always included.",
+          "currentSpaceTag": "issuing space",
+          "addSpacePlaceholder": "Add a space…",
+          "removeSpace": "Remove space"
         }
       },
       "quorumAndUnity": {

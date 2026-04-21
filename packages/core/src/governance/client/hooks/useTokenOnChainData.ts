@@ -10,9 +10,19 @@ const DECIMALS = 18n;
 /** On-chain `tokenPrice` is stored in micro-units (1e6); UI uses human decimals */
 const TOKEN_PRICE_MICRO = 1_000_000;
 
+/**
+ * Hydration shape for token edit forms — extends the on-chain input fields with
+ * read-only credit metadata that the form needs but the tx builder does not
+ * (the tx builder uses `batchAdd/RemoveCreditWhitelistSpaceIds` deltas instead).
+ */
+export type TokenOnChainData = Partial<UpdateIssuedTokenInput> & {
+  /** Currently whitelisted space ids (web3 ids) — UI uses these as the baseline. */
+  creditWhitelistedSpaceIds?: number[];
+};
+
 async function fetchTokenOnChainData(
   address: `0x${string}`,
-): Promise<Partial<UpdateIssuedTokenInput>> {
+): Promise<TokenOnChainData> {
   const contract = {
     address,
     abi: decayingSpaceTokenAbi,
@@ -87,6 +97,16 @@ async function fetchTokenOnChainData(
         functionName: 'fixedMaxSupply',
         args: [],
       },
+      {
+        ...contract,
+        functionName: 'defaultCreditLimit',
+        args: [],
+      },
+      {
+        ...contract,
+        functionName: 'getCreditWhitelistedSpaces',
+        args: [],
+      },
     ],
   });
 
@@ -110,6 +130,8 @@ async function fetchTokenOnChainData(
     useReceiveWhitelistResult,
     archivedResult,
     fixedMaxSupplyResult,
+    defaultCreditLimitResult,
+    creditWhitelistedSpacesResult,
   ] = results.map(({ result }) => result);
 
   return {
@@ -140,6 +162,16 @@ async function fetchTokenOnChainData(
     fixedMaxSupply:
       fixedMaxSupplyResult !== undefined
         ? (fixedMaxSupplyResult as boolean)
+        : undefined,
+    defaultCreditLimit:
+      defaultCreditLimitResult !== undefined
+        ? Number((defaultCreditLimitResult as bigint) / 10n ** DECIMALS)
+        : undefined,
+    creditWhitelistedSpaceIds:
+      creditWhitelistedSpacesResult !== undefined
+        ? (creditWhitelistedSpacesResult as readonly bigint[]).map((v) =>
+            Number(v),
+          )
         : undefined,
   };
 }

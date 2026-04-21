@@ -100,6 +100,8 @@ const ISSUE_NEW_TOKEN_ERROR_KEYS: Record<string, string> = {
     'issueNewTokenForm.errors.referenceCurrencyRequired',
   'Please enter a token price greater than 0':
     'issueNewTokenForm.errors.tokenPricePositive',
+  'Please enter a credit limit greater than 0':
+    'issueNewTokenForm.errors.creditLimitPositive',
   [WHITELIST_DUPLICATE_ENTRY_MESSAGE]:
     'issueNewTokenForm.errors.duplicateWhitelistEntry',
 };
@@ -161,6 +163,23 @@ const createFullSchemaIssueNewToken = (tAgreementFlow: any) =>
             'issueNewTokenForm.errors.tokenPricePositive',
           ),
           path: ['tokenPrice'],
+        });
+      }
+    }
+
+    if (data.enableMutualCredit) {
+      if (
+        data.defaultCreditLimit === undefined ||
+        data.defaultCreditLimit === null ||
+        isNaN(data.defaultCreditLimit) ||
+        data.defaultCreditLimit <= 0
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: tAgreementFlow(
+            'issueNewTokenForm.errors.creditLimitPositive',
+          ),
+          path: ['defaultCreditLimit'],
         });
       }
     }
@@ -342,6 +361,9 @@ export const IssueNewTokenForm = ({
       enableTokenPrice: false,
       referenceCurrency: undefined,
       tokenPrice: undefined,
+      enableMutualCredit: false,
+      defaultCreditLimit: undefined,
+      creditWhitelistedSpaceIds: [],
       label: tAgreementFlow('labels.issueNewToken'),
     },
     mode: 'onChange',
@@ -398,6 +420,13 @@ export const IssueNewTokenForm = ({
       referencePrice: data.enableTokenPrice ? data.tokenPrice : undefined,
       referenceCurrency: data.enableTokenPrice
         ? data.referenceCurrency
+        : undefined,
+      enableMutualCredit: data.enableMutualCredit,
+      defaultCreditLimit: data.enableMutualCredit
+        ? data.defaultCreditLimit
+        : undefined,
+      creditWhitelistedSpaceIds: data.enableMutualCredit
+        ? data.creditWhitelistedSpaceIds
         : undefined,
     });
   };

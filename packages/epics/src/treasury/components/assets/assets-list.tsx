@@ -54,6 +54,16 @@ export type AssetItem = {
     slug: string;
   };
   address?: string;
+  /**
+   * Mutual credit info — only present for RegularSpaceToken instances that have
+   * mutual credit configured. `netBalance` is negative when the holder owes credit.
+   */
+  mutualCredit?: {
+    defaultCreditLimit: number;
+    creditBalance: number;
+    netBalance: number;
+    whitelistedSpaceIds: number[];
+  };
 };
 
 type AssetsListProps = {

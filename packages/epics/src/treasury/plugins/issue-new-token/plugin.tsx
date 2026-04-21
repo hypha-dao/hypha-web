@@ -16,6 +16,8 @@ type IssueNewTokenPluginProps = {
   members?: Person[];
   spaces?: Space[];
   spaceSlug?: string;
+  /** Web3 id of the issuing space; auto-included in the mutual credit whitelist. */
+  currentSpaceWeb3Id?: number | null;
   ownershipToWhitelistMembers?: Person[];
   ownershipToWhitelistSpaces?: Space[];
   /** When set (e.g. after resubmit hydration), skip effects that clear advanced fields. */
@@ -26,6 +28,7 @@ export const IssueNewTokenPlugin = ({
   members = [],
   spaces = [],
   spaceSlug,
+  currentSpaceWeb3Id,
   ownershipToWhitelistMembers,
   ownershipToWhitelistSpaces,
   resubmitKey,
@@ -76,6 +79,13 @@ export const IssueNewTokenPlugin = ({
     'enableAdvancedTransferControls',
   );
   const enableTokenPrice = watch('enableTokenPrice');
+  const enableMutualCredit = watch('enableMutualCredit') ?? false;
+  const setEnableMutualCredit = (value: boolean) => {
+    setValue('enableMutualCredit', value, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
   const currentTokenType = watch('type');
   const tokenName = watch('name');
   const tokenSymbol = watch('symbol');
@@ -138,6 +148,21 @@ export const IssueNewTokenPlugin = ({
     });
   }, [setValue]);
 
+  const clearMutualCreditFields = useCallback(() => {
+    setValue('enableMutualCredit', false, {
+      shouldDirty: true,
+      shouldValidate: false,
+    });
+    setValue('defaultCreditLimit', undefined, {
+      shouldDirty: true,
+      shouldValidate: false,
+    });
+    setValue('creditWhitelistedSpaceIds', [], {
+      shouldDirty: true,
+      shouldValidate: false,
+    });
+  }, [setValue]);
+
   const clearAdvancedSettingsFields = useCallback(() => {
     clearLimitedSupplyFields();
     setValue('enableProposalAutoMinting', true, {
@@ -154,12 +179,14 @@ export const IssueNewTokenPlugin = ({
       shouldValidate: false,
     });
     clearTokenPriceFields();
+    clearMutualCreditFields();
     setEnableLimitedSupply(false);
   }, [
     setValue,
     clearLimitedSupplyFields,
     clearTransferFields,
     clearTokenPriceFields,
+    clearMutualCreditFields,
     currentTokenType,
   ]);
 
@@ -372,12 +399,15 @@ export const IssueNewTokenPlugin = ({
           transferable={transferable}
           enableAdvancedTransferControls={enableAdvancedTransferControls}
           enableTokenPrice={enableTokenPrice}
+          enableMutualCredit={enableMutualCredit}
+          setEnableMutualCredit={setEnableMutualCredit}
           members={members}
           spaces={spaces}
           ownershipToWhitelistMembers={ownershipToWhitelistMembers}
           ownershipToWhitelistSpaces={ownershipToWhitelistSpaces}
           tokenType={currentTokenType}
           spaceSlug={spaceSlug}
+          currentSpaceWeb3Id={currentSpaceWeb3Id}
         />
       )}
       {tokenType === 'voice' && areGeneralFieldsFilled && (

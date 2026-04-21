@@ -129,6 +129,10 @@ type CreateIssueTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
       includeSpaceMembers?: boolean;
     }>;
   };
+  /** Mutual credit (RegularSpaceToken types only) */
+  enableMutualCredit?: boolean;
+  defaultCreditLimit?: number;
+  creditWhitelistedSpaceIds?: number[];
 };
 
 export const useCreateIssueTokenOrchestrator = ({
@@ -262,6 +266,31 @@ export const useCreateIssueTokenOrchestrator = ({
                   .filter((addr) => addr && addr.startsWith('0x'))
               : [];
 
+          /**
+           * Mutual credit only applies to RegularSpaceToken types — voice/ownership
+           * factories don't accept these args. Toggle off for non-regular tokens.
+           */
+          const isRegularToken = (
+            ['utility', 'credits', 'impact', 'community_currency'] as const
+          ).includes(arg.type as never);
+          const enableMutualCredit =
+            (arg.enableMutualCredit ?? false) && isRegularToken;
+          const defaultCreditLimit = enableMutualCredit
+            ? arg.defaultCreditLimit ?? 0
+            : 0;
+          /**
+           * Always include the issuing space so its members are eligible immediately.
+           * `Set` dedupes when the user also explicitly picks the current space.
+           */
+          const creditWhitelistSpaceIds = enableMutualCredit
+            ? Array.from(
+                new Set<number>([
+                  ...(arg.creditWhitelistedSpaceIds ?? []),
+                  arg.web3SpaceId,
+                ]),
+              )
+            : [];
+
           const web3Result = await web3.createIssueToken({
             spaceId: arg.web3SpaceId,
             name: arg.name,
@@ -286,6 +315,8 @@ export const useCreateIssueTokenOrchestrator = ({
             useReceiveWhitelist,
             initialTransferWhitelist,
             initialReceiveWhitelist,
+            defaultCreditLimit,
+            initialCreditWhitelistSpaceIds: creditWhitelistSpaceIds,
           });
           completeTask('CREATE_WEB3_AGREEMENT');
         }
