@@ -122,6 +122,10 @@ export default async function DhoLayout({
       ? rawLogo
       : DEFAULT_SPACE_AVATAR_IMAGE;
 
+  const compactBannerSpaceArchived =
+    spaceFromDb.flags.includes('archived') ||
+    (spaceMembers !== null && spaceMembers === 0);
+
   return (
     <SpaceAccentPortalBridge>
       <div className="mx-auto flex max-w-container-2xl">
@@ -166,22 +170,23 @@ export default async function DhoLayout({
                       {hasWeb3Id && web3SpaceId !== undefined && (
                         <SubscriptionBadge
                           web3SpaceId={web3SpaceId}
-                          className="rounded-md border-emerald-400/85 bg-transparent text-white hover:border-emerald-300 hover:bg-white/10 [&]:rounded-md [&]:border-emerald-400/85 [&]:text-white"
+                          className="rounded-md !border-accent-8 bg-transparent text-white hover:!border-accent-9 hover:bg-white/10"
                         />
                       )}
                       <SpaceModeLabel
                         web3SpaceId={web3SpaceId}
                         isSandbox={spaceFromDb.flags.includes('sandbox')}
                         isDemo={spaceFromDb.flags.includes('demo')}
-                        isArchived={
-                          spaceFromDb.flags.includes('archived') ||
-                          (spaceMembers !== null && spaceMembers === 0)
-                        }
+                        isArchived={compactBannerSpaceArchived}
                         configPath={`${getDhoPathAgreements(
                           lang,
                           daoSlug,
                         )}/space-configuration`}
-                        className="[&_.border-accent-8]:rounded-md [&_.border-accent-8]:border-white/85 [&_.border-accent-8]:bg-transparent [&_.border-accent-8]:text-white [&_.border-accent-8]:hover:border-white [&_.border-accent-8]:hover:bg-white/10 [&_.border-error-8]:rounded-md [&_.border-error-8]:border-white/85 [&_.border-error-8]:bg-transparent [&_.border-error-8]:text-white [&_.border-warning-8]:rounded-md [&_.border-warning-8]:border-amber-200/90 [&_.border-warning-8]:bg-transparent [&_.border-warning-8]:text-white"
+                        className={
+                          compactBannerSpaceArchived
+                            ? '[&_.border-error-8]:rounded-md [&_.border-error-8]:!border-error-8 [&_.border-error-8]:bg-transparent [&_.border-error-8]:text-white [&_.border-error-8]:hover:!border-error-9 [&_.border-error-8]:hover:bg-white/10'
+                            : '[&_.border-accent-8]:rounded-md [&_.border-accent-8]:!border-accent-8 [&_.border-accent-8]:bg-transparent [&_.border-accent-8]:text-white [&_.border-accent-8]:hover:!border-accent-9 [&_.border-accent-8]:hover:bg-white/10'
+                        }
                       />
                     </>
                   }
