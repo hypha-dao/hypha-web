@@ -65,7 +65,8 @@ export function DhoStickySpaceChrome({
   defaultLogoSrc,
 }: DhoStickySpaceChromeProps) {
   const menuTopPx = useMenuTopOffsetPx();
-  const sentinelRef = React.useRef<HTMLDivElement>(null);
+  /** Bottom edge of the space image banner — sticky engages when this passes under MenuTop */
+  const bannerBottomSentinelRef = React.useRef<HTMLDivElement>(null);
 
   const [flowActionsEl, setFlowActionsEl] =
     React.useState<HTMLDivElement | null>(null);
@@ -94,7 +95,7 @@ export function DhoStickySpaceChrome({
   }, [stuck, flowActionsEl, actionsSlot]);
 
   React.useEffect(() => {
-    const sentinel = sentinelRef.current;
+    const sentinel = bannerBottomSentinelRef.current;
     if (!sentinel) return;
 
     const mq = window.matchMedia('(min-width: 768px)');
@@ -110,10 +111,10 @@ export function DhoStickySpaceChrome({
         }
         return;
       }
-      const top = sentinel.getBoundingClientRect().top;
+      const bannerBottom = sentinel.getBoundingClientRect().bottom;
       let next = stuckRef.current;
-      if (!next && top <= menuTopPx) next = true;
-      if (next && top >= menuTopPx + HYST) next = false;
+      if (!next && bannerBottom <= menuTopPx) next = true;
+      if (next && bannerBottom >= menuTopPx + HYST) next = false;
       if (next !== stuckRef.current) {
         stuckRef.current = next;
         setStuck(next);
@@ -195,13 +196,14 @@ export function DhoStickySpaceChrome({
           ) : null}
         </div>
 
-        {banner}
-
-        <div
-          ref={sentinelRef}
-          className="pointer-events-none hidden h-px w-full shrink-0 md:block"
-          aria-hidden
-        />
+        <div className="relative">
+          {banner}
+          <div
+            ref={bannerBottomSentinelRef}
+            className="pointer-events-none absolute bottom-0 left-0 h-px w-full opacity-0"
+            aria-hidden
+          />
+        </div>
 
         <div
           ref={setFlowActionsEl}
