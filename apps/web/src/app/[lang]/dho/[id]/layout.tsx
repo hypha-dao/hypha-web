@@ -134,8 +134,9 @@ export default async function DhoLayout({
           <SpaceAccentFromImages
             bannerSrc={heroBannerImageHref}
             logoSrc={accentLogoHref}
+            className="pt-1 md:pt-1.5"
           >
-            {/* gap-4 (16px) matches mt-4 above SalesBanner: breadcrumb→banner and banner→actions */}
+            {/* gap-4 (16px) matches mt-4 above SalesBanner; slight pt above breadcrumbs vs MenuTop */}
             <DhoStickySpaceChrome
               breadcrumbsRow={
                 <Breadcrumbs spaceId={spaceFromDb.id} lang={lang} />
