@@ -14,7 +14,23 @@ interface IRegularTokenFactory {
     string memory symbol,
     uint256 maxSupply,
     bool transferable,
-    bool isVotingToken
+    bool fixedMaxSupply,
+    bool autoMinting,
+    uint256 tokenPrice,
+    address priceCurrencyFeed,
+    bool useTransferWhitelist,
+    bool useReceiveWhitelist,
+    address[] memory initialTransferWhitelist,
+    address[] memory initialReceiveWhitelist,
+    uint256[] memory initialTransferWhitelistSpaceIds,
+    uint256[] memory initialReceiveWhitelistSpaceIds,
+    uint256 defaultCreditLimit,
+    uint256[] memory initialCreditWhitelistSpaceIds,
+    address paymentToken,
+    uint256 paymentTokenPricePerToken,
+    uint256 tokensForSale,
+    uint8 purchaseEligibilityMode,
+    uint256[] memory initialPurchaseWhitelistSpaceIds
   ) external returns (address);
 
   function getSpaceToken(

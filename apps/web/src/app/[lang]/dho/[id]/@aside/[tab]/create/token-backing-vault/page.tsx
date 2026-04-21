@@ -1,6 +1,6 @@
 import {
-  SidePanel,
   CreateProposalTokenBackingVaultForm,
+  ProposalOverlayShell,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { notFound } from 'next/navigation';
@@ -12,7 +12,6 @@ import { getAllSpaces } from '@hypha-platform/core/server';
 import { findAllPeopleWithoutPagination } from '@hypha-platform/core/server';
 import { Person, Space } from '@hypha-platform/core/client';
 import { Plugin } from '../../../../_components/plugins';
-
 type PageProps = {
   params: Promise<{ lang: Locale; id: string; tab: string }>;
   searchParams: Promise<{ hideBack?: string }>;
@@ -59,7 +58,7 @@ export default async function TokenBackingVaultPage({
   );
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <CreateProposalTokenBackingVaultForm
         spaceId={spaceId}
         web3SpaceId={web3SpaceId}
@@ -75,6 +74,6 @@ export default async function TokenBackingVaultPage({
           />
         }
       />
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

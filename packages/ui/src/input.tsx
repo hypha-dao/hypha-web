@@ -1,15 +1,20 @@
 import * as React from 'react';
 import { cn } from '@hypha-platform/ui-utils';
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  /** Classes for the outer wrapper. Use for headline inputs that need h-auto and min-h larger than the default. */
+  rootClassName?: string;
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, leftIcon, rightIcon, ...props }, ref) => {
+  ({ className, type, leftIcon, rightIcon, rootClassName, ...props }, ref) => {
     return (
-      <div className="relative flex items-center h-6 w-full">
+      <div
+        className={cn('relative flex h-6 w-full items-center', rootClassName)}
+      >
         {leftIcon && (
           <div className="absolute left-2 flex items-center pointer-events-none text-muted-foreground">
             {leftIcon}

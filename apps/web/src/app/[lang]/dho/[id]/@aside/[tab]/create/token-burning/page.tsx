@@ -1,4 +1,4 @@
-import { SidePanel, TokenBurningForm } from '@hypha-platform/epics';
+import { ProposalOverlayShell, TokenBurningForm } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { notFound } from 'next/navigation';
 import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
@@ -7,7 +7,6 @@ import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { Plugin } from '../../../../_components/plugins';
 import { fetchMembersAndSpaces } from '@web/utils/fetch-users-members';
-
 type PageProps = {
   params: Promise<{ lang: Locale; id: string; tab: string }>;
   searchParams: Promise<{ hideBack?: string }>;
@@ -42,7 +41,7 @@ export default async function TokenBurningPage({
       : spaces;
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <TokenBurningForm
         spaceId={spaceId}
         web3SpaceId={web3SpaceId}
@@ -58,6 +57,6 @@ export default async function TokenBurningPage({
           />
         }
       />
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

@@ -12,18 +12,6 @@ permissions:
   contents: read
   pull-requests: write
 
-env:
-  NEON_DATABASE_USERNAME: ${{ secrets.DB_USER_NAME }} # change this to your database username
-  NEON_DATABASE_NAME: ${{ secrets.DB_NAME }} # change this to your database name
-  NEON_API_KEY: ${{ secrets.NEON_API_KEY }} # You can generate a an API key in your account settings
-  NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }} # You can find this in your project settings
-  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-  DEFAULT_DB_URL: ${{ secrets.POSTGRES_URL }}
-  PRIVATE_KEY: ${{ secrets.EVM_SC_OWNER_PRIVATE_KEY }}
-  DEFAULT_DB_AUTHENTICATED_URL: ${{ secrets.POSTGRES_AUTHENTICATED_URL }}
-  DEFAULT_DB_ANONYMOUS_URL: ${{secrets.POSTGRES_ANONYMOUS_URL}}
-  PR_OR_QUEUE_HEAD: ${{ github.event.pull_request.number || github.event.merge_group.head_sha }}
-
 jobs:
   detect-changes:
     runs-on: blacksmith-4vcpu-ubuntu-2404
@@ -54,10 +42,39 @@ jobs:
       - name: Type check
         run: pnpm turbo run check-types --filter=web
 
+  i18n-verify:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Verify i18n locale parity
+        run: pnpm run verify:messages
+
   deploy-preview:
-    needs: [detect-changes, check-types]
+    needs: [detect-changes, check-types, i18n-verify]
     if: github.event_name == 'pull_request' && needs.detect-changes.outputs.has_preview_deploy_changes == 'true'
     runs-on: blacksmith-4vcpu-ubuntu-2404
+    env:
+      NEON_DATABASE_USERNAME: ${{ secrets.DB_USER_NAME }}
+      NEON_DATABASE_NAME: ${{ secrets.DB_NAME }}
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      DEFAULT_DB_URL: ${{ secrets.POSTGRES_URL }}
+      PRIVATE_KEY: ${{ secrets.EVM_SC_OWNER_PRIVATE_KEY }}
+      DEFAULT_DB_AUTHENTICATED_URL: ${{ secrets.POSTGRES_AUTHENTICATED_URL }}
+      DEFAULT_DB_ANONYMOUS_URL: ${{ secrets.POSTGRES_ANONYMOUS_URL }}
+      PR_OR_QUEUE_HEAD: ${{ github.event.pull_request.number || github.event.merge_group.head_sha }}
 
     steps:
       - uses: actions/checkout@v4
@@ -132,6 +149,17 @@ jobs:
   main:
     needs: [detect-changes]
     runs-on: blacksmith-4vcpu-ubuntu-2404
+    env:
+      NEON_DATABASE_USERNAME: ${{ secrets.DB_USER_NAME }}
+      NEON_DATABASE_NAME: ${{ secrets.DB_NAME }}
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      DEFAULT_DB_URL: ${{ secrets.POSTGRES_URL }}
+      PRIVATE_KEY: ${{ secrets.EVM_SC_OWNER_PRIVATE_KEY }}
+      DEFAULT_DB_AUTHENTICATED_URL: ${{ secrets.POSTGRES_AUTHENTICATED_URL }}
+      DEFAULT_DB_ANONYMOUS_URL: ${{ secrets.POSTGRES_ANONYMOUS_URL }}
+      PR_OR_QUEUE_HEAD: ${{ github.event.pull_request.number || github.event.merge_group.head_sha }}
 
     steps:
       - uses: actions/checkout@v4

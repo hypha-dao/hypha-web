@@ -36,6 +36,8 @@ interface CreateAgreementFormProps {
   backUrl?: string;
   closeUrl?: string;
   label?: string;
+  /** Optional sticky-header title when it should differ from `label`. */
+  stickyHeaderTitle?: string;
 }
 
 export const CreateAgreementForm = ({
@@ -45,6 +47,7 @@ export const CreateAgreementForm = ({
   spaceId,
   web3SpaceId,
   label,
+  stickyHeaderTitle,
 }: CreateAgreementFormProps) => {
   const tSpaces = useTranslations('Spaces');
   const tAgreementFlow = useTranslations('AgreementFlow');
@@ -139,6 +142,7 @@ export const CreateAgreementForm = ({
             backUrl={backUrl}
             isLoading={false}
             label={resolvedLabel}
+            stickyHeaderTitle={stickyHeaderTitle}
             progress={progress}
           />
           <div className="flex justify-end w-full">

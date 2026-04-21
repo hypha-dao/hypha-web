@@ -9,13 +9,44 @@ import { AspectRatio } from '@radix-ui/react-aspect-ratio';
 import Cropper from 'react-easy-crop';
 import { getCroppedImg } from '@hypha-platform/ui-utils';
 import { Button } from '../button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '../dialog';
+
+export type UploadLeadImageCropLabels = {
+  title?: React.ReactNode;
+  description?: React.ReactNode;
+  cancel?: React.ReactNode;
+  confirm?: React.ReactNode;
+};
+
+function buildDefaultCrop(maxMb: number): Required<UploadLeadImageCropLabels> {
+  return {
+    title: 'Upload an image',
+    description: `Adjust how your image is framed, then save. Drag to reposition and use zoom to fit the banner area (JPEG, PNG, or WebP — max ${maxMb} MB).`,
+    cancel: 'Cancel',
+    confirm: 'Crop & Save',
+  };
+}
 
 export type UploadLeadImageProps = {
   onChange: (acceptedFile: File | null) => void;
-  defaultImage?: string;
+  /** Remote URL string, cleared with `null`, or omit while value is a File. */
+  defaultImage?: string | null;
   maxFileSize?: number;
   uploadText?: React.ReactNode;
   enableImageResizer?: boolean;
+  /** Overrides for crop dialog copy (defaults to English). */
+  cropDialogLabels?: UploadLeadImageCropLabels;
+  /** Dropzone errors and helper (defaults to English). */
+  messages?: {
+    dropHere?: React.ReactNode;
+    fileTooLarge?: string;
+    uploadFailed?: string;
+  };
 };
 
 function dataURLtoFile(dataUrl: string, filename: string) {
@@ -37,26 +68,80 @@ export const UploadLeadImage = ({
   maxFileSize = 4 * 1024 * 1024,
   uploadText,
   enableImageResizer = false,
+  cropDialogLabels,
+  messages: messagesProp,
 }: UploadLeadImageProps) => {
-  const [preview, setPreview] = React.useState<string | null>(
-    defaultImage || null,
+  const maxMb = React.useMemo(
+    () => Math.max(0.1, Math.round((maxFileSize / (1024 * 1024)) * 10) / 10),
+    [maxFileSize],
   );
 
+  const cropLabels = React.useMemo(
+    () => ({ ...buildDefaultCrop(maxMb), ...cropDialogLabels }),
+    [maxMb, cropDialogLabels],
+  );
+
+  const messages = React.useMemo(
+    () => ({
+      dropHere: messagesProp?.dropHere ?? 'Drop the image here',
+      fileTooLarge:
+        messagesProp?.fileTooLarge ??
+        `Your image is too large (max ${maxMb} MB) and could not be uploaded. Resize it and try again.`,
+      uploadFailed: messagesProp?.uploadFailed ?? 'File could not be uploaded.',
+    }),
+    [
+      maxMb,
+      messagesProp?.dropHere,
+      messagesProp?.fileTooLarge,
+      messagesProp?.uploadFailed,
+    ],
+  );
+
+  const [preview, setPreview] = React.useState<string | null>(
+    defaultImage && typeof defaultImage === 'string' && defaultImage.trim()
+      ? defaultImage
+      : null,
+  );
+
+  // Sync remote/string defaults only. Do not clear preview when `defaultImage`
+  // becomes undefined because the parent form value is a File — that transition
+  // would wipe the crop/local preview right after the first upload.
   React.useEffect(() => {
-    setPreview(defaultImage || null);
-  }, [defaultImage, setPreview]);
+    if (defaultImage === null) {
+      setPreview(null);
+      return;
+    }
+    if (typeof defaultImage === 'string') {
+      if (defaultImage.trim().length === 0) {
+        setPreview(null);
+        return;
+      }
+      setPreview(defaultImage);
+    }
+  }, [defaultImage]);
 
   const [imageSrc, setImageSrc] = React.useState<string | null>(null);
-  const [crop, setCrop] = React.useState({ x: 0, y: 0 });
+  const [cropBox, setCropBox] = React.useState({ x: 0, y: 0 });
   const [zoom, setZoom] = React.useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = React.useState<any>(null);
+  const [croppedAreaPixels, setCroppedAreaPixels] = React.useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
   const onDrop = React.useCallback(
     (acceptedFiles: File[]) => {
       setError(null);
       if (!acceptedFiles.length) {
-        setPreview(defaultImage || null);
+        setPreview(
+          defaultImage === null
+            ? null
+            : typeof defaultImage === 'string' && defaultImage.trim() === ''
+            ? null
+            : defaultImage || null,
+        );
         onChange(null);
         return;
       }
@@ -86,20 +171,21 @@ export const UploadLeadImage = ({
       );
 
       if (tooLarge) {
-        setError(
-          'Your image is too large (max 4 MB) and could not be uploaded. Resize it and try again.',
-        );
+        setError(messages.fileTooLarge);
       } else {
-        setError('File could not be uploaded.');
+        setError(messages.uploadFailed);
       }
       onChange(null);
     },
-    [onChange],
+    [messages.fileTooLarge, messages.uploadFailed, onChange],
   );
 
-  const onCropComplete = React.useCallback((_: any, croppedAreaPixels: any) => {
-    setCroppedAreaPixels(croppedAreaPixels);
-  }, []);
+  const onCropComplete = React.useCallback(
+    (_: unknown, pixels: typeof croppedAreaPixels) => {
+      setCroppedAreaPixels(pixels);
+    },
+    [],
+  );
 
   const confirmCrop = React.useCallback(async () => {
     if (!imageSrc || !croppedAreaPixels) return;
@@ -125,6 +211,10 @@ export const UploadLeadImage = ({
     },
   });
 
+  /** Prefer in-component preview (upload/crop); fall through to parent default URL immediately so we never flash an empty dashed box while defaultImage hydrates. */
+  const displaySrc = preview ?? defaultImage ?? null;
+  const showEmptyPlaceholder = !displaySrc && !imageSrc;
+
   return (
     <>
       <AspectRatio
@@ -134,14 +224,16 @@ export const UploadLeadImage = ({
           'group cursor-pointer relative',
           'flex justify-center items-center overflow-hidden',
           'rounded-xl bg-accent-2',
-          !preview && 'border border-neutral-11 border-dashed',
+          showEmptyPlaceholder && 'border border-neutral-11 border-dashed',
         )}
       >
         <input {...getInputProps()} />
-        {preview && <PreviewImg src={preview} />}
-        <PreviewOverlay isVisible={!preview || isDragActive}>
+        {displaySrc && typeof displaySrc === 'string' && (
+          <PreviewImg src={displaySrc} />
+        )}
+        <PreviewOverlay isVisible={!displaySrc || isDragActive}>
           {isDragActive ? (
-            <span>Drop the image here</span>
+            <span>{messages.dropHere}</span>
           ) : (
             <span>
               {uploadText ? (
@@ -158,25 +250,58 @@ export const UploadLeadImage = ({
 
       {error && <p className="mt-2 text-2 text-error-11">{error}</p>}
 
-      {enableImageResizer && imageSrc && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-          <div className="relative w-[600px] h-[400px] bg-white rounded-xl overflow-hidden">
-            <Cropper
-              image={imageSrc}
-              crop={crop}
-              zoom={zoom}
-              aspect={762 / 270}
-              onCropChange={setCrop}
-              onZoomChange={setZoom}
-              onCropComplete={onCropComplete}
-            />
-            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4">
-              <Button onClick={() => setImageSrc(null)}>Cancel</Button>
-              <Button onClick={confirmCrop}>Crop & Save</Button>
-            </div>
+      <Dialog
+        open={Boolean(enableImageResizer && imageSrc)}
+        onOpenChange={(open) => {
+          if (!open) setImageSrc(null);
+        }}
+      >
+        <DialogContent
+          hideCloseButton
+          overlayClassName="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+          className={clsx(
+            'fixed left-[50%] top-[50%] z-50 flex max-h-[90vh] w-full max-w-3xl translate-x-[-50%] translate-y-[-50%] flex-col gap-0 overflow-hidden rounded-2xl border border-border bg-background p-0 shadow-2xl',
+            'max-sm:h-[min(90vh,640px)] sm:max-h-[90vh]',
+          )}
+          onInteractOutside={(e) => e.preventDefault()}
+        >
+          <div className="border-b border-border px-5 py-4">
+            <DialogTitle className="text-lg font-semibold tracking-tight text-foreground">
+              {cropLabels.title}
+            </DialogTitle>
+            <DialogDescription className="mt-1 text-sm leading-relaxed text-muted-foreground">
+              {cropLabels.description}
+            </DialogDescription>
           </div>
-        </div>
-      )}
+          <div className="relative min-h-[min(55vh,440px)] w-full flex-1 bg-muted/40">
+            {imageSrc ? (
+              <Cropper
+                image={imageSrc}
+                crop={cropBox}
+                zoom={zoom}
+                aspect={762 / 270}
+                onCropChange={setCropBox}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+              />
+            ) : null}
+          </div>
+          <div className="flex items-center justify-end gap-3 border-t border-border bg-muted/20 px-5 py-4">
+            <Button
+              type="button"
+              variant="outline"
+              colorVariant="neutral"
+              size="lg"
+              onClick={() => setImageSrc(null)}
+            >
+              {cropLabels.cancel}
+            </Button>
+            <Button type="button" size="lg" onClick={confirmCrop}>
+              {cropLabels.confirm}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

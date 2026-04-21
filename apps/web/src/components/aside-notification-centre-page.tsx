@@ -1,7 +1,10 @@
 'use client';
 
 import { useMe } from '@hypha-platform/core/client';
-import { NotificationCentreForm, SidePanel } from '@hypha-platform/epics';
+import {
+  NotificationCentreForm,
+  ProposalOverlayShell,
+} from '@hypha-platform/epics';
 import { useNotifications } from '@hypha-platform/notifications/client';
 import { LoadingBackdrop } from '@hypha-platform/ui';
 import { usePathname } from 'next/navigation';
@@ -23,7 +26,7 @@ export default function AsideNotificationCentrePage() {
   const progress = 0;
   const isBusy = isLoading;
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <LoadingBackdrop
         showKeepWindowOpenMessage={true}
         keepWindowOpenMessage={tNotificationCentre('loading.keepWindowOpen')}
@@ -44,6 +47,6 @@ export default function AsideNotificationCentrePage() {
           saveConfigurations={saveConfigurations}
         />
       </LoadingBackdrop>
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

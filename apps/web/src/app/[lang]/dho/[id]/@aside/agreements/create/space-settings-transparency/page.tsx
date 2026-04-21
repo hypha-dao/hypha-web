@@ -1,6 +1,6 @@
 import {
   CreateProposalChangeSpaceTransparencySettingsForm,
-  SidePanel,
+  ProposalOverlayShell,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { notFound } from 'next/navigation';
@@ -28,7 +28,7 @@ export default async function CreateSpaceTransparencySettingsPage({
   const successfulUrl = getDhoPathAgreements(lang as Locale, id);
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <CreateProposalChangeSpaceTransparencySettingsForm
         spaceId={spaceId}
         web3SpaceId={web3SpaceId}
@@ -42,6 +42,6 @@ export default async function CreateSpaceTransparencySettingsPage({
           />
         }
       />
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

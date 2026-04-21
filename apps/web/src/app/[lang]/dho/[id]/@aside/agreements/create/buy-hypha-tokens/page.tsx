@@ -1,5 +1,8 @@
 import { Locale } from '@hypha-platform/i18n';
-import { SidePanel, BuyHyphaTokensForm } from '@hypha-platform/epics';
+import {
+  ProposalOverlayShell,
+  BuyHyphaTokensForm,
+} from '@hypha-platform/epics';
 import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 import { getDhoPathAgreements } from '../../../../@tab/agreements/constants';
 import {
@@ -44,7 +47,7 @@ export default async function BuyHyphaTokensPage({ params }: PageProps) {
   );
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       {error ? (
         <div className="text-error text-sm">
           {tAgreementFlow('pageErrors.loadSpaces')}
@@ -59,6 +62,6 @@ export default async function BuyHyphaTokensPage({ params }: PageProps) {
           <Plugin name="buy-hypha-tokens" spaces={filteredSpaces} />
         </BuyHyphaTokensForm>
       )}
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

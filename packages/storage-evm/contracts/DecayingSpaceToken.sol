@@ -27,6 +27,11 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
     uint256 newBalance,
     uint256 decayAmount
   );
+  event DecayPercentageUpdated(
+    uint256 oldDecayPercentage,
+    uint256 newDecayPercentage
+  );
+  event DecayIntervalUpdated(uint256 oldDecayInterval, uint256 newDecayInterval);
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
@@ -40,8 +45,23 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
     uint256 _spaceId,
     uint256 _maxSupply,
     bool _transferable,
+    bool _fixedMaxSupply,
+    bool _autoMinting,
+    uint256 _tokenPrice,
+    address _priceCurrencyFeed,
+    bool _useTransferWhitelist,
+    bool _useReceiveWhitelist,
+    address[] memory _initialTransferWhitelist,
+    address[] memory _initialReceiveWhitelist,
+    uint256[] memory _initialTransferWhitelistSpaceIds,
+    uint256[] memory _initialReceiveWhitelistSpaceIds,
     uint256 _decayPercentage,
-    uint256 _decayInterval
+    uint256 _decayInterval,
+    address _paymentToken,
+    uint256 _paymentTokenPricePerToken,
+    uint256 _tokensForSale,
+    uint8 _purchaseEligibilityMode,
+    uint256[] memory _initialPurchaseWhitelistSpaceIds
   ) public initializer {
     RegularSpaceToken.initialize(
       name,
@@ -49,15 +69,32 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
       _executor,
       _spaceId,
       _maxSupply,
-      _transferable
+      _transferable,
+      _fixedMaxSupply,
+      _autoMinting,
+      _tokenPrice,
+      _priceCurrencyFeed,
+      _useTransferWhitelist,
+      _useReceiveWhitelist,
+      _initialTransferWhitelist,
+      _initialReceiveWhitelist,
+      _initialTransferWhitelistSpaceIds,
+      _initialReceiveWhitelistSpaceIds,
+      0,
+      new uint256[](0),
+      _paymentToken,
+      _paymentTokenPricePerToken,
+      _tokensForSale,
+      _purchaseEligibilityMode,
+      _initialPurchaseWhitelistSpaceIds
     );
     require(
       _decayPercentage <= 10000,
-      'DecayingSpaceToken: decay percentage cannot exceed 100%'
+      'decay% > 100'
     );
     require(
       _decayInterval > 0,
-      'DecayingSpaceToken: decay interval must be positive'
+      '!decay interval'
     );
 
     decayPercentage = _decayPercentage;
@@ -92,6 +129,12 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
    */
   function balanceOf(address account) public view override returns (uint256) {
     uint256 currentBalance = super.balanceOf(account);
+
+    // If token is archived or decay is not configured, return actual balance without decay
+    if (archived || decayRate == 0) {
+      return currentBalance;
+    }
+
     if (currentBalance == 0 || lastApplied[account] == 0) {
       return currentBalance;
     }
@@ -124,6 +167,12 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
    * @param account The address to apply decay to
    */
   function applyDecay(address account) public {
+    // If token is archived or decay is not configured, update lastApplied but don't apply decay
+    if (archived || decayRate == 0) {
+      lastApplied[account] = block.timestamp;
+      return;
+    }
+
     uint256 oldBalance = super.balanceOf(account);
     uint256 newBalance = balanceOf(account);
 
@@ -144,74 +193,80 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
   }
 
   /**
-   * @dev Override mint to track lastDecayTimestamp and token holders
+   * @dev Update decay percentage in basis points (0-10000)
+   * @param _decayPercentage New decay percentage
    */
-  function mint(address to, uint256 amount) public override {
-    require(msg.sender == executor, 'Only executor can mint');
-    if (lastApplied[to] == 0) {
-      lastApplied[to] = block.timestamp;
-    } else {
-      applyDecay(to); // Apply any pending decay first
-    }
-    _addTokenHolder(to);
-    super.mint(to, amount);
+  function setDecayPercentage(uint256 _decayPercentage) external virtual {
+    require(
+      msg.sender == executor,
+      '!executor'
+    );
+    require(
+      _decayPercentage <= 10000,
+      'decay% > 100'
+    );
+
+    uint256 oldDecayPercentage = decayPercentage;
+    decayPercentage = _decayPercentage;
+
+    emit DecayPercentageUpdated(oldDecayPercentage, _decayPercentage);
   }
 
   /**
-   * @dev Apply decay before transfers
+   * @dev Update decay interval in seconds
+   * @param _decayInterval New decay interval
    */
+  function setDecayInterval(uint256 _decayInterval) external virtual {
+    require(msg.sender == executor, '!executor');
+    require(
+      _decayInterval > 0,
+      '!decay interval'
+    );
+
+    uint256 oldDecayInterval = decayRate;
+    decayRate = _decayInterval;
+
+    emit DecayIntervalUpdated(oldDecayInterval, _decayInterval);
+  }
+
+  function mint(address to, uint256 amount) public override {
+    require(msg.sender == executor, '!executor');
+    _applyDecayOrInit(to);
+    _addTokenHolder(to);
+    _mintWithSupplyChecks(to, amount);
+  }
+
+  function _applyDecayOrInit(address account) internal {
+    if (lastApplied[account] == 0) {
+      lastApplied[account] = block.timestamp;
+    } else {
+      applyDecay(account);
+    }
+  }
+
   function transfer(address to, uint256 amount) public override returns (bool) {
     address sender = _msgSender();
-    require(transferable || sender == executor, 'Token transfers are disabled');
+    _validateTransferAccess(sender, to, sender);
     applyDecay(sender);
-    if (sender == executor) {
-      if (super.balanceOf(sender) < amount) {
-        uint256 amountToMint = amount - super.balanceOf(sender);
-        mint(sender, amountToMint);
-      }
-    }
-
-    if (lastApplied[to] == 0) {
-      lastApplied[to] = block.timestamp;
-    } else {
-      applyDecay(to);
-    }
+    _autoMintIfNeeded(sender, amount);
+    _applyDecayOrInit(to);
     _addTokenHolder(to);
     _transfer(sender, to, amount);
     return true;
   }
 
-  /**
-   * @dev Apply decay before transferFrom
-   */
   function transferFrom(
     address from,
     address to,
     uint256 amount
   ) public override returns (bool) {
     address spender = _msgSender();
-    require(
-      transferable || spender == executor,
-      'Token transfers are disabled'
-    );
-
+    _validateTransferAccess(from, to, spender);
     applyDecay(from);
-    if (from == executor) {
-      if (super.balanceOf(from) < amount) {
-        uint256 amountToMint = amount - super.balanceOf(from);
-        mint(from, amountToMint);
-      }
-    }
-
-    if (lastApplied[to] == 0) {
-      lastApplied[to] = block.timestamp;
-    } else {
-      applyDecay(to);
-    }
+    _autoMintIfNeeded(from, amount);
+    _applyDecayOrInit(to);
     _addTokenHolder(to);
-
     if (spender == transferHelper) {
-      // Skip allowance check for TransferHelper if tx is initiated by token owner
     } else {
       _spendAllowance(from, spender, amount);
     }
@@ -234,5 +289,27 @@ contract DecayingSpaceToken is Initializable, RegularSpaceToken {
     }
 
     return totalDecayedSupply;
+  }
+
+  /**
+   * @dev Override setArchived to update all token holders' lastApplied timestamps when unarchiving
+   * This prevents decay from accumulating during the archived period
+   */
+  function setArchived(bool _archived) external override {
+    require(msg.sender == executor, '!executor');
+
+    // If we're unarchiving (going from true to false), update all holders' timestamps
+    if (archived && !_archived) {
+      // Update lastApplied for all token holders to prevent retroactive decay
+      for (uint256 i = 0; i < _tokenHolders.length; i++) {
+        address holder = _tokenHolders[i];
+        if (_isTokenHolder[holder] && lastApplied[holder] > 0) {
+          lastApplied[holder] = block.timestamp;
+        }
+      }
+    }
+
+    archived = _archived;
+    emit ArchivedStatusUpdated(_archived);
   }
 }

@@ -74,6 +74,24 @@ npx nx run storage-evm:script ./scripts/energy-distribution.upgrade.ts --network
 npx nx run storage-evm:script ./scripts/energy-token.deploy.ts --network base-mainnet
 
 npx nx run storage-evm:script ./scripts/energy-token.manual-upgrade.ts --network base-mainnet
+
+
+npx nx run storage-evm:script ./scripts/rndao-decaying-space-token.upgrade.ts --network base-mainnet
+npx nx run storage-evm:script ./scripts/upgrade-all-token-factories.ts --network base-mainnet
+
+
+```
+
+### token-backing-vault-proxy.deploy
+
+```bash
+npx nx run storage-evm:script ./scripts/token-backing-vault-proxy.deploy.ts --network base-mainnet
+```
+
+### token-backing-vault.upgrade
+
+```bash
+npx nx run storage-evm:script ./scripts/token-backing-vault.upgrade.ts --network base-mainnet
 ```
 
 ### exit-method-directory-proxy.deploy
@@ -105,6 +123,10 @@ npx nx run storage-evm:script ./scripts/join-method-open-join.deploy.ts --networ
 ```bash
 npx nx run storage-evm:script ./scripts/no-exit.deploy.ts --network base-mainnet
 npx nx run storage-evm:script ./scripts/regular-space-token-proxy.deploy.ts --network base-mainnet
+
+npx nx run storage-evm:script ./scripts/regular-token-factory-proxy.upgrade.ts --network base-mainnet
+
+regular-token-factory-proxy.upgrade.ts
 
 regular-space-token-proxy.deploy.ts
 ```
@@ -193,13 +215,32 @@ npx nx run storage-evm:test ./test/EnergySettlementMultiCycle.test.ts
 
 npx nx run storage-evm:test ./test/TransferHelper.test.ts
 
+npx nx run storage-evm:test ./test/TokenConfiguration.test.ts
+
+npx nx run storage-evm:test ./test/TokenBackingVault.test.ts
+
+
+
 
 ```
 
 ### Upgrade Space Factory
 
 ```bash
-npx nx run storage-evm:script ./scripts/dao-space-factory.upgrade.ts --network base-mainnet
+npx nx run storage-evm:script ./scripts/upgrade-multiple-tokens.ts --network base-mainnet
+npx nx run storage-evm:script ./scripts/upgrade-multiple-tokens.ts --network base-mainnet
+
+npx nx run storage-evm:script ./scripts/set-transfer-helper-multiple-tokens.ts --network base-mainnet
+
+npx hardhat run scripts/hypha-energy-credit.upgrade.ts --network base
+
+npx nx run storage-evm:script ./scripts/hypha-energy-credit.upgrade.ts --network base-mainnet
+
+npx nx run storage-evm:script ./scripts/hypha-ownership-token.upgrade.ts --network base-mainnet
+
+
+npx hardhat run scripts/hypha-ownership-token.upgrade.ts --network base
+
 ```
 
 ### Upgrade DAO Proposals
@@ -212,6 +253,23 @@ npx nx run storage-evm:script ./scripts/dao-proposals.upgrade.ts --network base-
 
 ```bash
 npx nx run storage-evm:script ./scripts/token-factory.upgrade.ts --network base-mainnet
+
+npx nx run storage-evm:script ./scripts/ownership-space-token-proxy.deploy.ts --network base-mainnet
+
+
+npx nx run storage-evm:script ./scripts/dao-space-factory.upgrade.ts --network base-mainnet
+
+npx nx run storage-evm:script ./scripts/latam-decaying-space-token.upgrade.ts --network base-mainnet
+
+npx nx run storage-evm:script ./scripts/localscale-ownership-space-token.upgrade.ts --network base-mainnet
+
+
+
+cd /Users/vlad/hypha-web/packages/storage-evm && npx hardhat run scripts/latam-decaying-space-token.upgrade.ts --network base
+
+dao-space-factory.upgrade.ts
+
+ownership-space-token-proxy.deploy.ts
 ```
 
 ### Upgrade Token Voting Power

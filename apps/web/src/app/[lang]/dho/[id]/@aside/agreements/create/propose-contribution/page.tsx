@@ -1,6 +1,6 @@
 import {
   CreateProposeAContributionForm,
-  SidePanel,
+  ProposalOverlayShell,
   type BridgeInitialValues,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
@@ -78,7 +78,7 @@ export default async function CreateProposeAContributionPage({
     : undefined;
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <CreateProposeAContributionForm
         successfulUrl={successfulUrl}
         backUrl={`${successfulUrl}${PATH_SELECT_CREATE_ACTION}`}
@@ -88,6 +88,6 @@ export default async function CreateProposeAContributionPage({
         initialValues={initialValues}
         bridgeKey={sp.bridgeKey}
       />
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

@@ -1,4 +1,4 @@
-import { SidePanel } from '@hypha-platform/epics';
+import { ProposalOverlayShell } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { notFound } from 'next/navigation';
 import { IssueNewTokenForm } from '@hypha-platform/epics';
@@ -12,7 +12,6 @@ import {
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { Person, Space } from '@hypha-platform/core/client';
-
 type PageProps = {
   params: Promise<{ lang: Locale; id: string; tab: string }>;
   searchParams: Promise<{ hideBack?: string }>;
@@ -60,7 +59,7 @@ export default async function IssueNewTokenPage({
   );
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <IssueNewTokenForm
         spaceId={spaceId}
         web3SpaceId={web3SpaceId}
@@ -76,6 +75,6 @@ export default async function IssueNewTokenPage({
           />
         }
       />
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

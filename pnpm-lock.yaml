@@ -799,9 +799,15 @@ importers:
       d3:
         specifier: ^7.9.0
         version: 7.9.0
+      ethers:
+        specifier: ^6.13.5
+        version: 6.13.5(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       fetch-socks:
         specifier: ^1.3.2
         version: 1.3.2
+      lucide-react:
+        specifier: ^0.469.0
+        version: 0.469.0(react@19.1.2)
       matrix-js-sdk:
         specifier: ^40.0.0
         version: 40.2.0
@@ -959,7 +965,7 @@ importers:
         version: link:../ui-utils
       '@privy-io/node':
         specifier: ^0.12.0
-        version: 0.12.0(viem@2.33.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.24.3))
+        version: 0.12.0(viem@2.33.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76))
       '@wagmi/cli':
         specifier: ^2.2.0
         version: 2.2.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
@@ -1006,6 +1012,9 @@ importers:
       '@hypha-platform/ui-utils':
         specifier: workspace:*
         version: link:../ui-utils
+      '@radix-ui/react-dialog':
+        specifier: ^1.1.15
+        version: 1.1.15(@types/react-dom@19.1.2(@types/react@19.1.2))(@types/react@19.1.2)(react-dom@19.1.2(react@19.1.2))(react@19.1.2)
       ai:
         specifier: ^6.0.105
         version: 6.0.138(zod@3.25.76)
@@ -1015,6 +1024,9 @@ importers:
       emoji-mart:
         specifier: ^5.6.0
         version: 5.6.0
+      lucide-react:
+        specifier: ^0.469.0
+        version: 0.469.0(react@19.1.2)
       matrix-js-sdk:
         specifier: ^40.0.0
         version: 40.2.0
@@ -1075,6 +1087,9 @@ importers:
       '@hypha-platform/config-typescript':
         specifier: workspace:*
         version: link:../../config/typescript
+      globals:
+        specifier: ^15.15.0
+        version: 15.15.0
 
   packages/mcp-server:
     dependencies:
@@ -1143,6 +1158,9 @@ importers:
       hardhat:
         specifier: ^2.22.17
         version: 2.23.0(bufferutil@4.0.9)(ts-node@10.9.2(@swc/core@1.15.18(@swc/helpers@0.5.17))(@types/node@24.2.1)(typescript@5.8.3))(typescript@5.8.3)(utf-8-validate@5.0.10)
+      hardhat-contract-sizer:
+        specifier: ^2.10.1
+        version: 2.10.1(hardhat@2.23.0(bufferutil@4.0.9)(ts-node@10.9.2(@swc/core@1.15.18(@swc/helpers@0.5.17))(@types/node@24.2.1)(typescript@5.8.3))(typescript@5.8.3)(utf-8-validate@5.0.10))
 
   packages/storage-postgres:
     dependencies:
@@ -1213,6 +1231,9 @@ importers:
       lucide-react:
         specifier: ^0.469.0
         version: 0.469.0(react@19.1.2)
+      react-day-picker:
+        specifier: ^9.14.0
+        version: 9.14.0(react@19.1.2)
     devDependencies:
       '@hypha-platform/config-eslint':
         specifier: workspace:*
@@ -2237,6 +2258,10 @@ packages:
 
   '@coinbase/wallet-sdk@4.3.2':
     resolution: {integrity: sha512-hOLA2YONq8Z9n8f6oVP6N//FEEHOen7nq+adG/cReol6juFTHUelVN5GnA5zTIxiLFMDcrhDwwgCA6Tdb5jubw==}
+
+  '@colors/colors@1.5.0':
+    resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
+    engines: {node: '>=0.1.90'}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -10694,6 +10719,10 @@ packages:
     resolution: {integrity: sha512-7Qg2Jrep1S/+Q3EceiZtQcDPWxhAvBw+ERf1162v4sikJrvojMHFqXt8QIVha8UlH9rgU0BeWPytZ9/TzYqlUw==}
     engines: {node: '>=6'}
 
+  cli-table3@0.6.5:
+    resolution: {integrity: sha512-+W/5efTR7y5HRD7gACw9yQjqMVvEMLBHmboM/kPWam+H+Hmyrgjh6YncVKK122YZkXrLudzTuAukUw9FnMf7IQ==}
+    engines: {node: 10.* || >= 12.*}
+
   cli-truncate@2.1.0:
     resolution: {integrity: sha512-n8fOixwDD6b/ObinzTrp1ZKFzbgvKZvuz/TvejnLn1aQfC6r52XEx85FmuC+3HI+JM7coBRXUvNqEU2PHVrHpg==}
     engines: {node: '>=8'}
@@ -13134,20 +13163,20 @@ packages:
 
   glob@5.0.15:
     resolution: {integrity: sha512-c9IPMazfRITpmAAKi22dK1VKxGDX9ehhqfABDriL/lzO92xcUKEJPQHrVA/2YHSNFB4iFlykVmWvwo48nr3OxA==}
-    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+    deprecated: Glob versions prior to v9 are no longer supported
 
   glob@7.1.7:
     resolution: {integrity: sha512-OvD9ENzPLbegENnYP5UUfJIirTg4+XwMWGaQfQTY0JenxNvvIKP3U3/tAQSPIu/lHxXYSZmpXlUHeqAIdKzBLQ==}
-    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+    deprecated: Glob versions prior to v9 are no longer supported
 
   glob@7.2.3:
     resolution: {integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==}
-    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+    deprecated: Glob versions prior to v9 are no longer supported
 
   glob@8.1.0:
     resolution: {integrity: sha512-r8hpEjiQEYlF2QU0df3dS+nxxSIreXQS1qRhMJM0Q5NDdR386C7jb7Hwwod8Fgiuex+k0GFjgft18yvxm5XoCQ==}
     engines: {node: '>=12'}
-    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+    deprecated: Glob versions prior to v9 are no longer supported
 
   global-modules@0.2.3:
     resolution: {integrity: sha512-JeXuCbvYzYXcwE6acL9V2bAOeSIGl4dD+iwLY9iUx2VBJJ80R18HCn+JCwHM9Oegdfya3lEkGCdaRkSyc10hDA==}
@@ -13298,6 +13327,11 @@ packages:
     resolution: {integrity: sha512-vafaFqs8MZkRrSX7sFVUdo3ap/eNiLnb4IakshzvP56X5Nr1iGKAIqdX6tMlm6HcNRIkr6AxO5jFEoJzzpT8aQ==}
     engines: {node: '>=0.4.7'}
     hasBin: true
+
+  hardhat-contract-sizer@2.10.1:
+    resolution: {integrity: sha512-/PPQQbUMgW6ERzk8M0/DA8/v2TEM9xRRAnF9qKPNMYF6FX5DFWcnxBsQvtp8uBz+vy7rmLyV9Elti2wmmhgkbg==}
+    peerDependencies:
+      hardhat: ^2.0.0
 
   hardhat-deploy@0.14.1:
     resolution: {integrity: sha512-hfho8XtlWqCi/xV2y+z3gBzkCcEP8o5smx6IS1X1ar8gL1ocRulD0kVl5rfZtNLdPjvXa77EtvhBgGAeDQsoOA==}
@@ -22004,6 +22038,9 @@ snapshots:
       eventemitter3: 5.0.1
       preact: 10.27.1
 
+  '@colors/colors@1.5.0':
+    optional: true
+
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
@@ -26747,20 +26784,6 @@ snapshots:
       - bufferutil
       - typescript
       - utf-8-validate
-
-  '@privy-io/node@0.12.0(viem@2.33.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.24.3))':
-    dependencies:
-      '@hpke/chacha20poly1305': 1.8.0
-      '@hpke/core': 1.9.0
-      '@noble/curves': 1.9.7
-      '@noble/hashes': 1.8.0
-      '@scure/base': 1.2.6
-      canonicalize: 2.1.0
-      jose: 6.2.2
-      lru-cache: 11.2.2
-      svix: 1.89.0
-    optionalDependencies:
-      viem: 2.33.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.24.3)
 
   '@privy-io/node@0.12.0(viem@2.33.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76))':
     dependencies:
@@ -34043,6 +34066,12 @@ snapshots:
     optionalDependencies:
       colors: 1.4.0
 
+  cli-table3@0.6.5:
+    dependencies:
+      string-width: 4.2.3
+    optionalDependencies:
+      '@colors/colors': 1.5.0
+
   cli-truncate@2.1.0:
     dependencies:
       slice-ansi: 3.0.0
@@ -37214,6 +37243,13 @@ snapshots:
       wordwrap: 1.0.0
     optionalDependencies:
       uglify-js: 3.19.3
+
+  hardhat-contract-sizer@2.10.1(hardhat@2.23.0(bufferutil@4.0.9)(ts-node@10.9.2(@swc/core@1.15.18(@swc/helpers@0.5.17))(@types/node@24.2.1)(typescript@5.8.3))(typescript@5.8.3)(utf-8-validate@5.0.10)):
+    dependencies:
+      chalk: 4.1.2
+      cli-table3: 0.6.5
+      hardhat: 2.23.0(bufferutil@4.0.9)(ts-node@10.9.2(@swc/core@1.15.18(@swc/helpers@0.5.17))(@types/node@24.2.1)(typescript@5.8.3))(typescript@5.8.3)(utf-8-validate@5.0.10)
+      strip-ansi: 6.0.1
 
   hardhat-deploy@0.14.1(bufferutil@4.0.9)(utf-8-validate@5.0.10):
     dependencies:

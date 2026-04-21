@@ -1,0 +1,15 @@
+{
+  "tokenType": "Regular",
+  "dryRun": false,
+  "timestamp": "2025-11-14T09:16:21.391Z",
+  "totalTime": "7.36",
+  "results": [
+    {
+      "tokenAddress": "0x843047108966c466f1bd5882b58103054F6C5903",
+      "success": false,
+      "oldImplementation": "0x8b89e59b3e621cb7f806238C160b229025D229EC",
+      "newImplementation": "0x8b89e59b3e621cb7f806238C160b229025D229EC",
+      "error": "Implementation unchanged and autoMinting config failed"
+    }
+  ]
+}

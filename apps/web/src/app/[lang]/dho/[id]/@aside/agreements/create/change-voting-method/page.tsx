@@ -1,5 +1,5 @@
 import {
-  SidePanel,
+  ProposalOverlayShell,
   CreateProposalChangeVotingMethodForm,
 } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
@@ -28,7 +28,7 @@ export default async function CreateChangeVotingMethodPage({
   const successfulUrl = getDhoPathAgreements(lang as Locale, id);
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell>
       <CreateProposalChangeVotingMethodForm
         spaceId={spaceId}
         web3SpaceId={web3SpaceId}
@@ -42,6 +42,6 @@ export default async function CreateChangeVotingMethodPage({
           />
         }
       />
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }
