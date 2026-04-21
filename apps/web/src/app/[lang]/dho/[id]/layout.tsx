@@ -36,7 +36,7 @@ async function getSpaceMemberAndAgreementCounts(web3SpaceId: unknown): Promise<{
   if (!canConvertToBigInt(web3SpaceId)) {
     return { members: null, agreements: null };
   }
-  const id = BigInt(web3SpaceId as number);
+  const id = BigInt(web3SpaceId);
   const [members, agreements] = await Promise.all([
     (async () => {
       try {
