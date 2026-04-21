@@ -69,6 +69,7 @@ export const ButtonProfile = ({
                 avatarSrc={person?.avatarUrl}
                 userName={person?.nickname}
                 size="lg"
+                shape="circle"
               />
               <p>{person?.nickname}</p>
               {address && (
@@ -159,6 +160,7 @@ export const ButtonProfile = ({
                     size="md"
                     avatarSrc={person?.avatarUrl}
                     userName={person?.nickname}
+                    shape="circle"
                   />
                 </button>
               </DropdownMenuTrigger>

@@ -52,10 +52,10 @@ export const SpaceMemberCard: React.FC<{
           width="64px"
           height="64px"
           loading={isLoading}
-          className="rounded-lg"
+          className="rounded-full"
         >
           <Image
-            className="h-[64px] w-[64px] rounded-lg"
+            className="h-[64px] w-[64px] rounded-full object-cover"
             src={space.logoUrl || '/placeholder/default-space.svg'}
             height={64}
             width={64}
