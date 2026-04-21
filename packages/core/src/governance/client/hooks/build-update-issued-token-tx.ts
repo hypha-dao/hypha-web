@@ -29,6 +29,15 @@ export interface UpdateIssuedTokenInput {
   batchAddReceiveWhitelistSpaceIds?: bigint[];
   batchRemoveReceiveWhitelistSpaceIds?: bigint[];
   archiveToken?: boolean;
+  /**
+   * Mutual credit (RegularSpaceToken). Contract has no `disable` primitive — the orchestrator
+   * "disables" by setting `defaultCreditLimit` to 0 and batch-removing all credit-whitelisted
+   * spaces; "enables" by setting `defaultCreditLimit` and batch-adding the desired spaces.
+   * Human units; multiplied by 10^18 on encode.
+   */
+  defaultCreditLimit?: number;
+  batchAddCreditWhitelistSpaceIds?: bigint[];
+  batchRemoveCreditWhitelistSpaceIds?: bigint[];
 }
 
 type ProposalTx = {
@@ -258,6 +267,42 @@ export function buildUpdateIssuedTokenTxData(
         abi: decayingSpaceTokenAbi,
         functionName: 'setArchived',
         args: [arg.archiveToken],
+      }),
+    });
+  }
+  if (arg.defaultCreditLimit !== undefined) {
+    txData.push({
+      target: arg.address,
+      value: 0,
+      data: encodeFunctionData({
+        abi: decayingSpaceTokenAbi,
+        functionName: 'setDefaultCreditLimit',
+        args: [
+          integerBigInt(arg.defaultCreditLimit, 'defaultCreditLimit') *
+            10n ** 18n,
+        ],
+      }),
+    });
+  }
+  if (arg.batchAddCreditWhitelistSpaceIds?.length) {
+    txData.push({
+      target: arg.address,
+      value: 0,
+      data: encodeFunctionData({
+        abi: decayingSpaceTokenAbi,
+        functionName: 'batchAddCreditWhitelistSpaces',
+        args: [arg.batchAddCreditWhitelistSpaceIds],
+      }),
+    });
+  }
+  if (arg.batchRemoveCreditWhitelistSpaceIds?.length) {
+    txData.push({
+      target: arg.address,
+      value: 0,
+      data: encodeFunctionData({
+        abi: decayingSpaceTokenAbi,
+        functionName: 'batchRemoveCreditWhitelistSpaces',
+        args: [arg.batchRemoveCreditWhitelistSpaceIds],
       }),
     });
   }

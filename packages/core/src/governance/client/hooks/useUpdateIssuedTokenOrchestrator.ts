@@ -160,6 +160,13 @@ type UpdateIssuedTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
   /** Sub-field dirty flags for voice-token decay (omit setter if subfield not dirty) */
   decayIntervalDirty?: boolean;
   decayPercentageDirty?: boolean;
+  /** Mutual credit (RegularSpaceToken) form state */
+  enableMutualCredit?: boolean;
+  defaultCreditLimit?: number;
+  creditWhitelistedSpaceIds?: number[];
+  /** On-chain snapshot at form load — used to compute add/remove space deltas */
+  creditBaselineDefaultLimit?: number;
+  creditBaselineWhitelistedSpaceIds?: number[];
 };
 
 /**
@@ -365,6 +372,60 @@ function buildPartialUpdateIssuedTokenWeb3Input(
 
   if (changed.has('archiveToken')) {
     base.archiveToken = arg.archiveToken;
+  }
+
+  /**
+   * Mutual credit deltas — only emitted for RegularSpaceToken types (utility, credits,
+   * impact, community_currency). Voice and ownership tokens are deployed via different
+   * factories without these admin functions.
+   */
+  const isRegularToken = (
+    ['utility', 'credits', 'impact', 'community_currency'] as const
+  ).includes(arg.type as never);
+  if (isRegularToken) {
+    const creditTouched =
+      changed.has('enableMutualCredit') ||
+      changed.has('defaultCreditLimit') ||
+      changed.has('creditWhitelistedSpaceIds');
+    if (creditTouched) {
+      const baselineLimit = arg.creditBaselineDefaultLimit ?? 0;
+      const baselineSpaces = arg.creditBaselineWhitelistedSpaceIds ?? [];
+
+      if (arg.enableMutualCredit) {
+        const targetLimit = arg.defaultCreditLimit ?? 0;
+        if (targetLimit !== baselineLimit) {
+          base.defaultCreditLimit = targetLimit;
+        }
+        /** Always include the issuing space so its members are eligible immediately. */
+        const targetSpacesSet = new Set<number>([
+          ...(arg.creditWhitelistedSpaceIds ?? []),
+          arg.web3SpaceId,
+        ]);
+        const baselineSet = new Set(baselineSpaces);
+        const toAdd = [...targetSpacesSet].filter((id) => !baselineSet.has(id));
+        const toRemove = baselineSpaces.filter(
+          (id) => !targetSpacesSet.has(id),
+        );
+        if (toAdd.length > 0) {
+          base.batchAddCreditWhitelistSpaceIds = toAdd.map((id) => BigInt(id));
+        }
+        if (toRemove.length > 0) {
+          base.batchRemoveCreditWhitelistSpaceIds = toRemove.map((id) =>
+            BigInt(id),
+          );
+        }
+      } else {
+        /** Disable: zero the limit and remove every previously whitelisted space. */
+        if (baselineLimit !== 0) {
+          base.defaultCreditLimit = 0;
+        }
+        if (baselineSpaces.length > 0) {
+          base.batchRemoveCreditWhitelistSpaceIds = baselineSpaces.map((id) =>
+            BigInt(id),
+          );
+        }
+      }
+    }
   }
 
   return base;

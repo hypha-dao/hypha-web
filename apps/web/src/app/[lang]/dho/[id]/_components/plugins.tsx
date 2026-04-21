@@ -93,6 +93,7 @@ export const Plugin = ({
     return (
       <UpdateIssuedTokenPlugin
         {...commonProps}
+        currentSpaceWeb3Id={web3SpaceId}
         spacesForChainMapping={spacesForChainMapping}
         ownershipToWhitelistMembers={ownershipToWhitelistMembers}
         ownershipToWhitelistSpaces={ownershipToWhitelistSpaces}
@@ -104,6 +105,7 @@ export const Plugin = ({
     return (
       <IssueNewTokenPlugin
         {...commonProps}
+        currentSpaceWeb3Id={web3SpaceId}
         ownershipToWhitelistMembers={ownershipToWhitelistMembers}
         ownershipToWhitelistSpaces={ownershipToWhitelistSpaces}
         {...resubmitProps}

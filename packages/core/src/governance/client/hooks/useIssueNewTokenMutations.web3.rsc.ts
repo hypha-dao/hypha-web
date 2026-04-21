@@ -101,7 +101,8 @@ export const useIssueTokenMutationsWeb3Rpc = ({
       const useReceiveWhitelist = arg.useReceiveWhitelist ?? false;
       const initialTransferWhitelist = arg.initialTransferWhitelist ?? [];
       const initialReceiveWhitelist = arg.initialReceiveWhitelist ?? [];
-      const defaultCreditLimit = BigInt(arg.defaultCreditLimit ?? 0);
+      const defaultCreditLimit =
+        BigInt(arg.defaultCreditLimit ?? 0) * 10n ** 18n;
       const initialCreditWhitelistSpaceIds = (
         arg.initialCreditWhitelistSpaceIds ?? []
       ).map((id) => BigInt(id));
