@@ -31,7 +31,7 @@ const parameters = {
 };
 
 const badgeVariants = cva(
-  'inline-flex items-center rounded-lg border focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 font-medium transition-colors',
+  'inline-flex items-center rounded-lg border focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 font-medium transition-[color,background-color,border-color,box-shadow,ring-color]',
   {
     variants: {
       size: {
@@ -59,7 +59,7 @@ const badgeVariants = cva(
       variant: {
         solid: 'border-transparent',
         soft: 'border-transparent',
-        outline: 'bg-transparent',
+        outline: 'bg-transparent ring-2 ring-transparent',
         surface: '',
       },
       colorVariant: {
@@ -128,31 +128,31 @@ const badgeVariants = cva(
         variant: 'outline',
         colorVariant: 'accent',
         className:
-          'border-accent-8 text-accent-11 hover:border-accent-9 hover:bg-accent-2 hover:text-foreground',
+          'border-accent-8 text-accent-11 hover:border-accent-10 hover:text-foreground hover:ring-accent-10/70',
       },
       {
         variant: 'outline',
         colorVariant: 'success',
         className:
-          'border-success-8 text-success-11 hover:border-success-9 hover:bg-success-2 hover:text-foreground',
+          'border-success-8 text-success-11 hover:border-success-10 hover:text-foreground hover:ring-success-10/70',
       },
       {
         variant: 'outline',
         colorVariant: 'error',
         className:
-          'border-error-8 text-error-11 hover:border-error-9 hover:bg-error-2 hover:text-foreground',
+          'border-error-8 text-error-11 hover:border-error-10 hover:text-foreground hover:ring-error-10/70',
       },
       {
         variant: 'outline',
         colorVariant: 'warn',
         className:
-          'border-warning-8 text-warning-11 hover:border-warning-9 hover:bg-warning-2 hover:text-foreground',
+          'border-warning-8 text-warning-11 hover:border-warning-10 hover:text-foreground hover:ring-warning-10/70',
       },
       {
         variant: 'outline',
         colorVariant: 'neutral',
         className:
-          'border-neutral-8 text-neutral-11 hover:border-neutral-9 hover:bg-neutral-2',
+          'border-neutral-8 text-neutral-11 hover:border-neutral-10 hover:text-foreground hover:ring-neutral-10/65',
       },
       // Surface variants
       {

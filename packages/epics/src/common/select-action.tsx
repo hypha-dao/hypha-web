@@ -105,9 +105,9 @@ export const SelectAction = ({
               const card = (
                 <Card
                   className={clsx(
-                    'group flex cursor-pointer items-start gap-4 border-border/80 p-5 shadow-sm transition-[border-color,box-shadow,background-color] duration-200 ease-out md:p-6',
+                    'group flex cursor-pointer items-start gap-4 border-border/80 p-5 shadow-sm ring-2 ring-transparent transition-[border-color,box-shadow,ring-color] duration-200 ease-out md:p-6',
                     !action.disabled &&
-                      'hover:border-accent-8/60 hover:bg-accent-2/40 hover:shadow-md',
+                      'hover:border-accent-9 hover:shadow-md hover:ring-accent-10/45',
                     !action.disabled &&
                       'focus-within:border-accent-9 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background-2',
                     {
@@ -120,10 +120,10 @@ export const SelectAction = ({
                 >
                   <div
                     className={clsx(
-                      'flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-muted/40 text-accent-11 transition-colors duration-200 [&_svg]:shrink-0',
+                      'flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-muted/40 text-accent-11 ring-2 ring-transparent transition-[border-color,box-shadow,ring-color,color] duration-200 [&_svg]:shrink-0',
                       !action.disabled &&
-                        /* Lucide uses currentColor — accent on accent wash was illegible */
-                        'group-hover:border-accent-8/50 group-hover:bg-accent-3/50 group-hover:text-foreground group-focus-within:text-foreground',
+                        /* Outline-style hover: ring + border — no solid fill */
+                        'group-hover:border-accent-9 group-hover:text-foreground group-hover:ring-accent-10/50 group-focus-within:text-foreground',
                     )}
                     aria-hidden
                   >

@@ -5,13 +5,14 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@hypha-platform/ui-utils';
 
 const buttonVariants = cva(
-  'cursor-pointer rounded-lg inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-semibold ring-offset-background transition-[color,box-shadow,transform,background-color] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  'cursor-pointer rounded-lg inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-semibold ring-offset-background transition-[color,box-shadow,transform,background-color,ring-color] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
         default: '',
         outline:
-          'border bg-transparent shadow-sm hover:shadow-md active:shadow-sm',
+          /* ring-2 reserved so hover highlight does not shift layout */
+          'border bg-transparent shadow-sm ring-2 ring-transparent hover:shadow-md active:shadow-sm',
         link: 'underline-offset-4 hover:underline bg-transparent font-medium',
         ghost: 'bg-transparent font-medium',
       },
@@ -62,26 +63,26 @@ const buttonVariants = cva(
         variant: 'outline',
         colorVariant: 'accent',
         className:
-          /* accent-12 on accent-3 wash reads as colour-on-colour; foreground stays legible on the tint */
-          'border-accent-8 text-accent-11 hover:bg-accent-3 hover:text-foreground hover:border-accent-9 active:scale-[0.99]',
+          /* Outline hover: emphasize border + ring — no solid fill (matches status chips) */
+          'border-accent-8 text-accent-11 hover:border-accent-10 hover:text-foreground hover:ring-accent-10/75 active:scale-[0.99]',
       },
       {
         variant: 'outline',
         colorVariant: 'neutral',
         className:
-          'border-neutral-9 bg-neutral-1 text-neutral-12 hover:bg-neutral-3 hover:text-foreground hover:border-neutral-10',
+          'border-neutral-9 bg-neutral-1 text-neutral-12 hover:border-neutral-11 hover:text-foreground hover:ring-neutral-10/70',
       },
       {
         variant: 'outline',
         colorVariant: 'error',
         className:
-          'border-error-9 text-error-9 hover:bg-error-2 hover:text-foreground',
+          'border-error-9 text-error-9 hover:border-error-10 hover:text-foreground hover:ring-error-10/75',
       },
       {
         variant: 'outline',
         colorVariant: 'success',
         className:
-          'border-success-10 text-success-11 hover:bg-success-2 hover:text-foreground',
+          'border-success-10 text-success-11 hover:border-success-11 hover:text-foreground hover:ring-success-10/75',
       },
       {
         variant: 'link',
