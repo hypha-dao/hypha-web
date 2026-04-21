@@ -7,7 +7,6 @@ import { cn } from '@hypha-platform/ui-utils';
 
 export type DhoStickySpaceChromeProps = {
   breadcrumbsRow: React.ReactNode;
-  breadcrumbsSticky: React.ReactNode;
   banner: React.ReactNode;
   actionsSlot: React.ReactNode;
   nestedSpacesSlot: React.ReactNode;
@@ -53,7 +52,6 @@ function useMenuTopOffsetPx(): number {
  */
 export function DhoStickySpaceChrome({
   breadcrumbsRow,
-  breadcrumbsSticky,
   banner,
   actionsSlot,
   nestedSpacesSlot,
@@ -72,8 +70,6 @@ export function DhoStickySpaceChrome({
   const [flowNestedEl, setFlowNestedEl] = React.useState<HTMLDivElement | null>(
     null,
   );
-  const [stickyNestedEl, setStickyNestedEl] =
-    React.useState<HTMLDivElement | null>(null);
 
   const [stuck, setStuck] = React.useState(false);
   const stuckRef = React.useRef(false);
@@ -140,8 +136,7 @@ export function DhoStickySpaceChrome({
   const logoSrc = logoUrl || defaultLogoSrc;
 
   const actionsPortalTarget = stuck ? stickyActionsEl : flowActionsEl;
-  const nestedPortalTarget =
-    nestedSpacesSlot && (stuck ? stickyNestedEl : flowNestedEl);
+  const nestedPortalTarget = nestedSpacesSlot ? flowNestedEl : null;
 
   return (
     <>
@@ -158,7 +153,6 @@ export function DhoStickySpaceChrome({
       >
         <div className="mx-auto flex max-w-container-2xl items-center gap-3 px-4 py-2.5">
           <div className="flex min-w-0 flex-1 items-center gap-3">
-            <div className="min-w-0 shrink">{breadcrumbsSticky}</div>
             <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10 dark:ring-white/15">
               <Image
                 src={logoSrc}
@@ -181,18 +175,6 @@ export function DhoStickySpaceChrome({
               ref={setStickyActionsEl}
               className="flex flex-nowrap items-center gap-2"
             />
-            {nestedSpacesSlot ? (
-              <>
-                <div
-                  className="hidden h-8 w-px shrink-0 bg-border md:block"
-                  aria-hidden
-                />
-                <div
-                  ref={setStickyNestedEl}
-                  className="flex shrink-0 items-center"
-                />
-              </>
-            ) : null}
           </div>
         </div>
       </div>
@@ -203,10 +185,7 @@ export function DhoStickySpaceChrome({
             {breadcrumbsRow}
           </div>
           {nestedSpacesSlot ? (
-            <div
-              ref={setFlowNestedEl}
-              className={cn('shrink-0', stuck && 'hidden')}
-            />
+            <div ref={setFlowNestedEl} className="shrink-0" />
           ) : null}
         </div>
 

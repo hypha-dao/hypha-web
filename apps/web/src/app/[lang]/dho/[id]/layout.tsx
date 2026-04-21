@@ -144,9 +144,6 @@ export default async function DhoLayout({
               breadcrumbsRow={
                 <Breadcrumbs spaceId={spaceFromDb.id} lang={lang} />
               }
-              breadcrumbsSticky={
-                <Breadcrumbs spaceId={spaceFromDb.id} lang={lang} />
-              }
               banner={
                 <CompactSpaceBanner
                   title={spaceFromDb.title}
