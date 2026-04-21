@@ -38,6 +38,8 @@ export const COMPACT_SPACE_BANNER_AVATAR_CLASSNAME = cn(
 /** Title size/weight on the banner — reuse on sticky for horizontal alignment */
 export const COMPACT_SPACE_BANNER_TITLE_CLASSNAME = cn(
   'text-balance text-6 font-semibold tracking-tight sm:text-7',
+  /* Use design-token text stack from packages/ui-utils @theme (--font-family-text) */
+  '[font-family:var(--font-family-text),ui-sans-serif,system-ui,sans-serif]',
 );
 
 /** Purpose column — max four lines on narrow viewports (scroll); sm+ wider column + taller cap. */
