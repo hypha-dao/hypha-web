@@ -2,7 +2,11 @@
 
 import * as React from 'react';
 import { createPortal } from 'react-dom';
-import Image from 'next/image';
+import {
+  COMPACT_SPACE_BANNER_AVATAR_CLASSNAME,
+  COMPACT_SPACE_BANNER_TITLE_CLASSNAME,
+} from '@hypha-platform/epics';
+import { Avatar, AvatarImage } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 
 export type DhoStickySpaceChromeProps = {
@@ -151,31 +155,33 @@ export function DhoStickySpaceChrome({
         style={{ top: 'var(--menu-top-height, 4rem)' }}
         aria-hidden={!stuck}
       >
-        <div className="mx-auto flex max-w-container-2xl items-center gap-3 px-4 py-2.5">
-          <div className="flex min-w-0 flex-1 items-center gap-3">
-            <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10 dark:ring-white/15">
-              <Image
-                src={logoSrc}
-                alt=""
-                fill
-                className="object-cover"
-                sizes="36px"
-              />
-              <span className="sr-only">{logoAlt}</span>
+        <div className="mx-auto flex max-w-container-2xl items-center gap-3 px-8 py-2.5">
+          <div className="flex min-w-0 flex-1 items-start gap-6">
+            <div className="relative h-9 w-9 shrink-0">
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 origin-top-left scale-50">
+                <Avatar className={COMPACT_SPACE_BANNER_AVATAR_CLASSNAME}>
+                  <AvatarImage
+                    src={logoSrc}
+                    alt={logoAlt}
+                    className="object-cover"
+                  />
+                </Avatar>
+              </div>
             </div>
             <p
-              className="truncate text-4 font-semibold text-foreground"
+              className={cn(
+                COMPACT_SPACE_BANNER_TITLE_CLASSNAME,
+                'min-w-0 flex-1 truncate text-foreground',
+              )}
               aria-hidden
             >
               {title}
             </p>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <div
-              ref={setStickyActionsEl}
-              className="flex flex-nowrap items-center gap-2"
-            />
-          </div>
+          <div
+            ref={setStickyActionsEl}
+            className="flex shrink-0 flex-nowrap items-center gap-2"
+          />
         </div>
       </div>
 
@@ -200,7 +206,7 @@ export function DhoStickySpaceChrome({
         <div
           ref={setFlowActionsEl}
           className={cn(
-            'flex justify-end gap-2 md:flex-nowrap',
+            'flex justify-end gap-2 px-8 md:flex-nowrap',
             stuck && 'pointer-events-none invisible opacity-0',
           )}
           style={stuck ? { minHeight: flowMinH } : undefined}

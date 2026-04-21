@@ -29,10 +29,15 @@ function isSafeTextureUrl(raw: string): boolean {
   }
 }
 
-/** Matches PR #2165 `SpaceHeaderInsetAvatar` footprint */
-const AVATAR_CLASS = cn(
+/** Matches PR #2165 `SpaceHeaderInsetAvatar` footprint — shared with DHO sticky chrome row */
+export const COMPACT_SPACE_BANNER_AVATAR_CLASSNAME = cn(
   'h-16 w-16 shrink-0 rounded-full sm:h-[72px] sm:w-[72px]',
   'shadow-[0_18px_40px_-12px_rgba(0,0,0,0.55)] ring-1 ring-white/15',
+);
+
+/** Title size/weight on the banner — reuse on sticky for horizontal alignment */
+export const COMPACT_SPACE_BANNER_TITLE_CLASSNAME = cn(
+  'text-balance text-6 font-semibold tracking-tight sm:text-7',
 );
 
 /** Purpose column — narrow on sm+; left edge aligns with avatar (full-width column below header row). */
@@ -189,7 +194,7 @@ export function CompactSpaceBanner({
       <div className="relative z-10 flex flex-col gap-5">
         {/* Row 1: avatar + title/links — avatar size matches PR #2165 */}
         <div className="flex items-start gap-6">
-          <Avatar className={AVATAR_CLASS}>
+          <Avatar className={COMPACT_SPACE_BANNER_AVATAR_CLASSNAME}>
             <AvatarImage
               src={logoUrl || defaultLogoSrc}
               alt={logoAlt}
@@ -198,7 +203,12 @@ export function CompactSpaceBanner({
           </Avatar>
 
           <div className="min-w-0 flex-1 space-y-2">
-            <h1 className="text-balance text-6 font-semibold tracking-tight text-white drop-shadow-sm sm:text-7">
+            <h1
+              className={cn(
+                COMPACT_SPACE_BANNER_TITLE_CLASSNAME,
+                'text-white drop-shadow-sm',
+              )}
+            >
               {title}
             </h1>
             {safeLinks.length > 0 ? (
