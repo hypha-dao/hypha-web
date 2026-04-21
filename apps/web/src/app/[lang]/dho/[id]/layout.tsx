@@ -94,7 +94,6 @@ export default async function DhoLayout({
     typeof spaceFromDb.web3SpaceId === 'number'
       ? spaceFromDb.web3SpaceId
       : undefined;
-  const hasWeb3Id = canConvertToBigInt(spaceFromDb.web3SpaceId);
 
   const { members: spaceMembers, agreements: spaceAgreements } =
     await getSpaceMemberAndAgreementCounts(spaceFromDb.web3SpaceId);
@@ -153,7 +152,7 @@ export default async function DhoLayout({
                   agreementsLabel={tCommon('Agreements')}
                   footerTrailing={
                     <>
-                      {hasWeb3Id && web3SpaceId !== undefined && (
+                      {web3SpaceId !== undefined && (
                         <SubscriptionBadge
                           web3SpaceId={web3SpaceId}
                           className="rounded-md !border-accent-8 bg-transparent text-white hover:!border-accent-9 hover:bg-white/10"
