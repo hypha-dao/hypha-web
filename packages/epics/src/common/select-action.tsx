@@ -120,9 +120,10 @@ export const SelectAction = ({
                 >
                   <div
                     className={clsx(
-                      'flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-muted/40 text-accent-11 transition-colors duration-200',
+                      'flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-muted/40 text-accent-11 transition-colors duration-200 [&_svg]:shrink-0',
                       !action.disabled &&
-                        'group-hover:border-accent-8/50 group-hover:bg-accent-3/50',
+                        /* Lucide uses currentColor — accent on accent wash was illegible */
+                        'group-hover:border-accent-8/50 group-hover:bg-accent-3/50 group-hover:text-foreground group-focus-within:text-foreground',
                     )}
                     aria-hidden
                   >
