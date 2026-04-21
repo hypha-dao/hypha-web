@@ -78,6 +78,7 @@ export const TransferCard: React.FC<TransferCardProps> = ({
                     isLoading={isLoading}
                     variant="surface"
                     colorVariant="accent"
+                    className="text-foreground"
                   >
                     {symbol}
                   </Badge>
@@ -86,6 +87,7 @@ export const TransferCard: React.FC<TransferCardProps> = ({
                   isLoading={isLoading}
                   variant="surface"
                   colorVariant="accent"
+                  className="text-foreground"
                 >
                   {isMint
                     ? tTreasury('transactionCard.type.mint')
