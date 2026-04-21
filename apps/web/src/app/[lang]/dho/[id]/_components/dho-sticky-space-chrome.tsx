@@ -156,9 +156,9 @@ export function DhoStickySpaceChrome({
         style={{ top: 'var(--menu-top-height, 4rem)' }}
         aria-hidden={!stuck}
       >
-        <div className="mx-auto flex max-w-container-2xl items-center gap-3 px-8 py-2.5">
+        <div className="mx-auto flex max-w-container-2xl items-center gap-3 px-4 py-2.5">
           {/* Match CompactSpaceBanner row: same avatar, title tokens, gap-6, vertical centre in bar */}
-          <div className="flex min-w-0 flex-1 items-center gap-6">
+          <div className="flex min-w-0 flex-1 items-center gap-6 pl-8">
             <Avatar className={COMPACT_SPACE_BANNER_AVATAR_CLASSNAME}>
               <AvatarImage
                 src={logoSrc}
@@ -205,7 +205,8 @@ export function DhoStickySpaceChrome({
         <div
           ref={setFlowActionsEl}
           className={cn(
-            'flex justify-end gap-2 px-8 md:flex-nowrap',
+            /* No extra horizontal padding: tab content (e.g. Claim) uses full container width */
+            'flex justify-end gap-2 px-0 md:flex-nowrap',
             stuck && 'pointer-events-none invisible opacity-0',
           )}
           style={stuck ? { minHeight: flowMinH } : undefined}
