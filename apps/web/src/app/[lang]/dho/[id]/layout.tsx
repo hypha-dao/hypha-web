@@ -4,25 +4,20 @@ import {
   SpaceCard,
   SpaceEscrowDepositBanners,
   SpaceModeLabel,
-  WebLinks,
   SubscriptionBadge,
+  CompactSpaceBanner,
+  SpaceAccentFromImages,
+  SpaceAccentPortalBridge,
 } from '@hypha-platform/epics';
+import './space-accent.css';
 import { Locale } from '@hypha-platform/i18n';
-import {
-  Container,
-  Card,
-  Avatar,
-  AvatarImage,
-  Separator,
-} from '@hypha-platform/ui';
+import { Container, Separator } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
-import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { getAllSpaces, findSpaceBySlug } from '@hypha-platform/core/server';
 import { getDhoPathAgreements } from './@tab/agreements/constants';
 import { ActionButtons } from './_components/action-buttons';
-import { NestedSpacesButton } from './_components/nested-spaces-button';
 import {
   DEFAULT_SPACE_AVATAR_IMAGE,
   DEFAULT_SPACE_LEAD_IMAGE,
@@ -32,9 +27,51 @@ import {
 } from '@hypha-platform/core/client';
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
-import { Breadcrumbs } from './_components/breadcrumbs';
+import { DhoStickySpaceChrome } from './_components/dho-sticky-space-chrome';
 import { canConvertToBigInt, formatDate } from '@hypha-platform/ui-utils';
 import { getTranslations } from 'next-intl/server';
+
+async function getSpaceMemberAndAgreementCounts(web3SpaceId: unknown): Promise<{
+  /** null when enrichment failed — do not treat as “zero members” */
+  members: number | null;
+  agreements: number | null;
+}> {
+  if (!canConvertToBigInt(web3SpaceId)) {
+    return { members: null, agreements: null };
+  }
+  const id = BigInt(web3SpaceId as number);
+  const [members, agreements] = await Promise.all([
+    (async () => {
+      try {
+        const [spaceDetails] = await fetchSpaceDetails({
+          spaceIds: [id],
+        });
+        return spaceDetails?.members.length ?? 0;
+      } catch (error) {
+        console.error(
+          `Failed to get space details for a space ${web3SpaceId}:`,
+          error,
+        );
+        return null;
+      }
+    })(),
+    (async () => {
+      try {
+        const [proposals] = await fetchSpaceProposalsIds({
+          spaceIds: [id],
+        });
+        return proposals?.accepted?.length ?? 0;
+      } catch (error) {
+        console.error(
+          `Failed to get space proposals for a space ${web3SpaceId}:`,
+          error,
+        );
+        return null;
+      }
+    })(),
+  ]);
+  return { members, agreements };
+}
 
 export default async function DhoLayout({
   aside,
@@ -56,188 +93,169 @@ export default async function DhoLayout({
     return notFound();
   }
 
-  const spaceMembers = await (async () => {
-    try {
-      if (!canConvertToBigInt(spaceFromDb.web3SpaceId)) {
-        return 0;
-      }
-      const [spaceDetails] = await fetchSpaceDetails({
-        spaceIds: [BigInt(spaceFromDb.web3SpaceId as number)],
-      });
-      return spaceDetails?.members.length ?? 0;
-    } catch (error) {
-      console.error(
-        `Failed to get space details for a space ${spaceFromDb.web3SpaceId}:`,
-        error,
-      );
-      return 0;
-    }
-  })();
+  const web3SpaceId =
+    typeof spaceFromDb.web3SpaceId === 'number'
+      ? spaceFromDb.web3SpaceId
+      : undefined;
+  const hasWeb3Id = canConvertToBigInt(spaceFromDb.web3SpaceId);
 
-  const spaceAgreements = await (async () => {
-    try {
-      if (!canConvertToBigInt(spaceFromDb.web3SpaceId)) {
-        return 0;
-      }
-      const [proposals] = await fetchSpaceProposalsIds({
-        spaceIds: [BigInt(spaceFromDb.web3SpaceId as number)],
-      });
-      return proposals?.accepted?.length ?? 0;
-    } catch (error) {
-      console.error(
-        `Failed to get space details for a space ${spaceFromDb.web3SpaceId}:`,
-        error,
-      );
-      return 0;
-    }
-  })();
+  const { members: spaceMembers, agreements: spaceAgreements } =
+    await getSpaceMemberAndAgreementCounts(spaceFromDb.web3SpaceId);
 
   const spaces = await getAllSpaces({ parentOnly: false, omitSandbox: true });
-  return (
-    <div className="flex max-w-container-2xl mx-auto">
-      <Container className="flex-grow min-w-0">
-        <div className="mb-6 flex items-center">
-          <Breadcrumbs spaceId={spaceFromDb.id} lang={lang} />
-        </div>
-        <div className="relative flex justify-end mb-2">
-          {typeof spaceFromDb.web3SpaceId === 'number' && (
-            <NestedSpacesButton
-              web3SpaceId={spaceFromDb.web3SpaceId as number}
-              spaceSlug={daoSlug}
-            />
-          )}
-        </div>
-        <Card className="relative">
-          <Image
-            width={768}
-            height={270}
-            className="rounded-xl min-h-[270px] max-h-[270px] w-full object-cover"
-            src={spaceFromDb.leadImage || DEFAULT_SPACE_LEAD_IMAGE}
-            alt={spaceFromDb.title}
-          ></Image>
-          <Avatar className="w-[128px] h-[128px] absolute bottom-[-35px] left-[15px]">
-            <AvatarImage
-              src={spaceFromDb.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE}
-              alt="logo"
-            />
-          </Avatar>
-        </Card>
-        <div className="flex justify-end mt-2 gap-2">
-          {typeof spaceFromDb.web3SpaceId === 'number' && (
-            <JoinSpace
-              web3SpaceId={spaceFromDb.web3SpaceId}
-              spaceId={spaceFromDb.id}
-            />
-          )}
-          <ActionButtons web3SpaceId={spaceFromDb.web3SpaceId as number} />
-        </div>
 
-        <div className="flex flex-col mt-4 gap-2">
-          <Text className="text-7">{spaceFromDb.title}</Text>
-          <WebLinks links={spaceFromDb.links} />
-        </div>
-        <div className="mt-6">
-          <Text className="text-2">{spaceFromDb.description}</Text>
-        </div>
-        <div className="flex gap-4 items-start mt-6 flex-wrap">
-          <div className="flex flex-col gap-y-2 gap-x-4">
-            <div className="flex flex-row gap-y-2 gap-x-4">
-              <div className="flex">
-                <div className="font-bold text-1">{spaceMembers}</div>
-                <div className="text-gray-500 ml-1 text-1">
-                  {tCommon('Members')}
-                </div>
-              </div>
-              <div className="flex">
-                <div className="font-bold text-1">
-                  {/* @ts-ignore: TODO: infer types from relations */}
-                  {spaceAgreements}
-                </div>
-                <div className="text-gray-500 ml-1 text-1">
-                  {tCommon('Agreements')}
-                </div>
-              </div>
-            </div>
-            <div className="flex">
-              <div className="text-gray-500 text-1">
-                {tCommon('createdOn', {
-                  date: formatDate(spaceFromDb.createdAt, true),
-                })}
-              </div>
-            </div>
-          </div>
-          {canConvertToBigInt(spaceFromDb.web3SpaceId) && (
-            <SubscriptionBadge
-              web3SpaceId={spaceFromDb.web3SpaceId as number}
+  const rawLead = spaceFromDb.leadImage?.trim();
+  const heroBannerImageHref =
+    rawLead &&
+    ((rawLead.startsWith('/') && !rawLead.startsWith('//')) ||
+      /^https?:\/\//i.test(rawLead))
+      ? rawLead
+      : DEFAULT_SPACE_LEAD_IMAGE;
+
+  const rawLogo = spaceFromDb.logoUrl?.trim();
+  const accentLogoHref =
+    rawLogo &&
+    ((rawLogo.startsWith('/') && !rawLogo.startsWith('//')) ||
+      /^https?:\/\//i.test(rawLogo))
+      ? rawLogo
+      : DEFAULT_SPACE_AVATAR_IMAGE;
+
+  return (
+    <SpaceAccentPortalBridge>
+      <div className="mx-auto flex max-w-container-2xl">
+        <Container className="min-w-0 flex-grow !px-4">
+          {/* React 19+: link rel="preload" is hoisted to document head */}
+          {heroBannerImageHref ? (
+            <link
+              rel="preload"
+              as="image"
+              href={heroBannerImageHref}
+              fetchPriority="high"
             />
-          )}
-          <SpaceModeLabel
-            web3SpaceId={spaceFromDb.web3SpaceId as number}
-            isSandbox={spaceFromDb.flags.includes('sandbox')}
-            isDemo={spaceFromDb.flags.includes('demo')}
-            isArchived={
-              spaceFromDb.flags.includes('archived') || spaceMembers === 0
-            }
-            configPath={`${getDhoPathAgreements(
-              lang,
-              daoSlug,
-            )}/space-configuration`}
-          />
-        </div>
-        <div className="mt-8 flex flex-col gap-3">
-          <SalesBanner web3SpaceId={spaceFromDb.web3SpaceId as number} />
-          <SpaceEscrowDepositBanners
-            web3SpaceId={spaceFromDb.web3SpaceId as number}
-            spaceDbId={spaceFromDb.id}
-            spaceSlug={daoSlug}
-            lang={lang}
-          />
-        </div>
-        {tab}
-        {children}
-        <div className="space-y-9">
-          <Separator />
-          <div className="border-primary-foreground">
-            <Text className="text-4 font-medium pb-4 pt-4">
-              {tSpaces('spacesYouMightLike')}
-            </Text>
-            <Carousel className="my-6 mt-6">
-              <CarouselContent className="pb-5" showScrollbar>
-                {spaces.map((space) => (
-                  <CarouselItem
-                    key={space.id}
-                    className="w-full sm:w-[454px] max-w-[454px] flex-shrink-0"
-                  >
-                    <Link
-                      className="flex flex-col flex-1"
-                      href={getDhoPathAgreements(lang, space.slug as string)}
-                    >
-                      <SpaceCard
-                        description={space.description as string}
-                        icon={space.logoUrl || ''}
-                        leadImage={space.leadImage || DEFAULT_SPACE_LEAD_IMAGE}
-                        members={space.memberCount}
-                        agreements={space.documentCount}
-                        title={space.title as string}
-                        isSandbox={space.flags?.includes('sandbox') ?? false}
-                        isDemo={space.flags?.includes('demo') ?? false}
-                        isArchived={isSpaceArchived(space)}
-                        web3SpaceId={space.web3SpaceId as number}
+          ) : null}
+          <SpaceAccentFromImages
+            bannerSrc={heroBannerImageHref}
+            logoSrc={accentLogoHref}
+          >
+            {/* gap-4 (16px) matches mt-4 above SalesBanner: breadcrumb→banner and banner→actions */}
+            <DhoStickySpaceChrome
+              banner={
+                <CompactSpaceBanner
+                  title={spaceFromDb.title}
+                  description={spaceFromDb.description}
+                  logoUrl={accentLogoHref}
+                  logoAlt={spaceFromDb.title}
+                  defaultLogoSrc={DEFAULT_SPACE_AVATAR_IMAGE}
+                  links={spaceFromDb.links}
+                  leadImageUrl={heroBannerImageHref}
+                  defaultLeadImageSrc={DEFAULT_SPACE_LEAD_IMAGE}
+                  memberCount={spaceMembers ?? 0}
+                  agreementCount={spaceAgreements ?? 0}
+                  createdOnText={tCommon('createdOn', {
+                    date: formatDate(spaceFromDb.createdAt, true),
+                  })}
+                  membersLabel={tCommon('Members')}
+                  agreementsLabel={tCommon('Agreements')}
+                  footerTrailing={
+                    <>
+                      {hasWeb3Id && web3SpaceId !== undefined && (
+                        <SubscriptionBadge
+                          web3SpaceId={web3SpaceId}
+                          className="rounded-md bg-transparent text-white !border-[color:var(--color-accent-8)] hover:!border-[color:var(--color-accent-9)] hover:bg-accent-2/20"
+                        />
+                      )}
+                      <SpaceModeLabel
+                        web3SpaceId={web3SpaceId}
+                        isSandbox={spaceFromDb.flags.includes('sandbox')}
+                        isDemo={spaceFromDb.flags.includes('demo')}
+                        isArchived={
+                          spaceFromDb.flags.includes('archived') ||
+                          (spaceMembers !== null && spaceMembers === 0)
+                        }
                         configPath={`${getDhoPathAgreements(
                           lang,
-                          space.slug,
+                          daoSlug,
                         )}/space-configuration`}
-                        createdAt={space.createdAt}
+                        className="[&_.border-accent-8]:rounded-md [&_.border-accent-8]:border-[color:var(--color-accent-8)] [&_.border-accent-8]:bg-transparent [&_.border-accent-8]:text-white [&_.border-accent-8:hover]:border-[color:var(--color-accent-9)] [&_.border-accent-8:hover]:bg-accent-2/15 [&_.border-error-8]:rounded-md [&_.border-error-8]:border-[color:var(--color-error-8)] [&_.border-error-8]:bg-transparent [&_.border-error-8]:text-white [&_.border-error-8:hover]:border-[color:var(--color-error-9)] [&_.border-error-8:hover]:bg-error-2/15"
                       />
-                    </Link>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-            </Carousel>
+                    </>
+                  }
+                />
+              }
+              actionsSlot={
+                <>
+                  {web3SpaceId !== undefined && (
+                    <JoinSpace
+                      web3SpaceId={web3SpaceId}
+                      spaceId={spaceFromDb.id}
+                    />
+                  )}
+                  <ActionButtons web3SpaceId={web3SpaceId} />
+                </>
+              }
+              title={spaceFromDb.title}
+              logoUrl={accentLogoHref}
+              logoAlt={spaceFromDb.title}
+              defaultLogoSrc={DEFAULT_SPACE_AVATAR_IMAGE}
+            />
+            <div className="mt-4 flex flex-col gap-3">
+              <SalesBanner web3SpaceId={web3SpaceId} />
+              <SpaceEscrowDepositBanners
+                web3SpaceId={web3SpaceId}
+                spaceDbId={spaceFromDb.id}
+                spaceSlug={daoSlug}
+                lang={lang}
+              />
+            </div>
+            {tab}
+            {children}
+          </SpaceAccentFromImages>
+          <div className="space-y-9">
+            <Separator />
+            <div className="border-primary-foreground">
+              <Text className="text-4 font-medium pb-4 pt-4">
+                {tSpaces('spacesYouMightLike')}
+              </Text>
+              <Carousel className="my-6 mt-6">
+                <CarouselContent className="pb-5" showScrollbar>
+                  {spaces.map((space) => (
+                    <CarouselItem
+                      key={space.id}
+                      className="w-full sm:w-[454px] max-w-[454px] flex-shrink-0"
+                    >
+                      <Link
+                        className="flex flex-col flex-1"
+                        href={getDhoPathAgreements(lang, space.slug as string)}
+                      >
+                        <SpaceCard
+                          description={space.description as string}
+                          icon={space.logoUrl || ''}
+                          leadImage={
+                            space.leadImage || DEFAULT_SPACE_LEAD_IMAGE
+                          }
+                          members={space.memberCount}
+                          agreements={space.documentCount}
+                          title={space.title as string}
+                          isSandbox={space.flags?.includes('sandbox') ?? false}
+                          isDemo={space.flags?.includes('demo') ?? false}
+                          isArchived={isSpaceArchived(space)}
+                          web3SpaceId={space.web3SpaceId as number}
+                          configPath={`${getDhoPathAgreements(
+                            lang,
+                            space.slug,
+                          )}/space-configuration`}
+                          createdAt={space.createdAt}
+                        />
+                      </Link>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+              </Carousel>
+            </div>
           </div>
-        </div>
-      </Container>
-      {aside}
-    </div>
+        </Container>
+        {aside}
+      </div>
+    </SpaceAccentPortalBridge>
   );
 }

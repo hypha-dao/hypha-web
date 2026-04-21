@@ -25,6 +25,9 @@
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 @theme {
+  /* App chrome — matches MenuTop min-height until JS sets --menu-top-height */
+  --menu-top-fallback-height: 70px;
+
   /* Breakpoints */
   --breakpoint-sm: 640px;
   --breakpoint-md: 768px;
@@ -369,4 +372,15 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/**
+ * Optional escape hatch for custom controls with tinted hover surfaces.
+ * Prefer design-system components (Button/Badge), which apply this pattern internally.
+ */
+@layer utilities {
+  .interactive-tint-hover:hover,
+  .interactive-tint-hover:focus-visible {
+    color: var(--color-foreground);
+  }
 }

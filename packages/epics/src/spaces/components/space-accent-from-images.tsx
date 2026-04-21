@@ -1,0 +1,198 @@
+'use client';
+
+import * as React from 'react';
+import { cn } from '@hypha-platform/ui-utils';
+import { extractAccentHexFromImageData } from '../utils/extract-space-accent';
+import {
+  analyzeBannerToneFromImageData,
+  DEFAULT_BANNER_OVERLAY_CSS_VARS,
+  overlayCssVarsFromTone,
+} from '../utils/banner-overlay-tone';
+import {
+  buildSpaceScopeStyleFromSampledAccents,
+  DEFAULT_SPACE_SCOPE_STYLE,
+} from '../utils/space-accent-scope-style';
+import { defaultSpacePortalStyles } from '../utils/space-accent-portal-styles';
+import { useSetSpaceAccentPortalStyles } from './space-accent-portal-context';
+
+/** Matches banner tone analysis grid; remote URLs use Next image optimizer at this width. */
+const BANNER_SAMPLE_MAX_SIDE = 112;
+
+export type SpaceAccentFromImagesProps = {
+  bannerSrc: string;
+  logoSrc: string;
+  children: React.ReactNode;
+  /** Optional class on the wrapping element that receives CSS variables */
+  className?: string;
+};
+
+/**
+ * Same-origin image URL so canvas readPixels works for remote hosts without CORS
+ * (Next.js Image Optimization proxies the bytes). Null for unsupported URLs.
+ */
+function canvasFriendlyImageSrc(src: string): string | null {
+  const t = src.trim();
+  if (!t) return null;
+  /** Same-origin path — reject protocol-relative `//evil` */
+  if (t.startsWith('/')) {
+    return t.startsWith('//') ? null : t;
+  }
+  if (typeof window === 'undefined') return null;
+  try {
+    const u = new URL(t);
+    if (u.protocol === 'http:' || u.protocol === 'https:') {
+      return `/_next/image?url=${encodeURIComponent(
+        t,
+      )}&w=${BANNER_SAMPLE_MAX_SIDE}&q=75`;
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+async function sampleImageToAccent(src: string): Promise<string | null> {
+  return new Promise((resolve) => {
+    const friendlySrc = canvasFriendlyImageSrc(src);
+    if (!friendlySrc) {
+      resolve(null);
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const maxSide = 96;
+        const scale = Math.min(maxSide / img.width, maxSide / img.height, 1);
+        const w = Math.max(8, Math.round(img.width * scale));
+        const h = Math.max(8, Math.round(img.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(null);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, w, h);
+        const data = ctx.getImageData(0, 0, w, h);
+        resolve(extractAccentHexFromImageData(data));
+      } catch {
+        resolve(null);
+      }
+    };
+    img.onerror = () => resolve(null);
+    img.src = friendlySrc;
+  });
+}
+
+/** Single decode for banner: accent hex + overlay vars from one ImageData pass. */
+async function sampleBannerAccentAndTone(src: string): Promise<{
+  accent: string | null;
+  overlayVars: Record<string, string> | null;
+}> {
+  return new Promise((resolve) => {
+    const friendlySrc = canvasFriendlyImageSrc(src);
+    if (!friendlySrc) {
+      resolve({ accent: null, overlayVars: null });
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const maxSide = BANNER_SAMPLE_MAX_SIDE;
+        const scale = Math.min(maxSide / img.width, maxSide / img.height, 1);
+        const w = Math.max(16, Math.round(img.width * scale));
+        const h = Math.max(16, Math.round(img.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve({ accent: null, overlayVars: null });
+          return;
+        }
+        ctx.drawImage(img, 0, 0, w, h);
+        const data = ctx.getImageData(0, 0, w, h);
+        resolve({
+          accent: extractAccentHexFromImageData(data),
+          overlayVars: overlayCssVarsFromTone(
+            analyzeBannerToneFromImageData(data),
+          ),
+        });
+      } catch {
+        resolve({ accent: null, overlayVars: null });
+      }
+    };
+    img.onerror = () => resolve({ accent: null, overlayVars: null });
+    img.src = friendlySrc;
+  });
+}
+
+/**
+ * Computes a dominant saturated accent from banner + logo imagery and exposes
+ * `--space-accent`, `--space-accent-foreground`, `--space-accent-muted` on the wrapper.
+ */
+export function SpaceAccentFromImages({
+  bannerSrc,
+  logoSrc,
+  children,
+  className,
+}: SpaceAccentFromImagesProps) {
+  const ref = React.useRef<HTMLDivElement>(null);
+  const setPortalStyles = useSetSpaceAccentPortalStyles();
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    const scopeElInit = ref.current;
+    if (scopeElInit) {
+      for (const [k, v] of Object.entries(DEFAULT_SPACE_SCOPE_STYLE)) {
+        if (v === undefined || v === null) continue;
+        scopeElInit.style.setProperty(k, String(v));
+      }
+    }
+    setPortalStyles?.(defaultSpacePortalStyles);
+
+    (async () => {
+      const [{ accent: bannerAccent, overlayVars: overlayRecord }, logoAccent] =
+        await Promise.all([
+          sampleBannerAccentAndTone(bannerSrc),
+          sampleImageToAccent(logoSrc),
+        ]);
+      if (cancelled || !ref.current) return;
+
+      const scopeEl = ref.current;
+      const overlayVars = overlayRecord ?? DEFAULT_BANNER_OVERLAY_CSS_VARS;
+
+      const scopeStyle = buildSpaceScopeStyleFromSampledAccents({
+        bannerAccent,
+        logoAccent,
+        overlayVars,
+      });
+
+      for (const [k, v] of Object.entries(scopeStyle)) {
+        if (v === undefined || v === null) continue;
+        scopeEl.style.setProperty(k, String(v));
+      }
+
+      setPortalStyles?.(scopeStyle);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [bannerSrc, logoSrc, setPortalStyles]);
+
+  return (
+    <div
+      ref={ref}
+      data-space-accent-scope
+      className={cn(className)}
+      style={DEFAULT_SPACE_SCOPE_STYLE}
+    >
+      {children}
+    </div>
+  );
+}

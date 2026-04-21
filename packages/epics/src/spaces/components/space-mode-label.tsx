@@ -32,6 +32,7 @@ const LabelButton = ({
       className="flex cursor-pointer"
       colorVariant={colorVariant}
       variant="outline"
+      size={1}
       role="link"
       title={t('changeSpaceConfiguration')}
       onClick={(e) => {
@@ -59,7 +60,12 @@ const LabelBadge = ({
   caption: string;
   colorVariant?: 'accent' | 'error';
 }) => (
-  <Badge className="flex" colorVariant={colorVariant} variant="outline">
+  <Badge
+    className="flex"
+    colorVariant={colorVariant}
+    variant="outline"
+    size={1}
+  >
     {caption}
   </Badge>
 );

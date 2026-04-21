@@ -122,7 +122,7 @@ export const SelectAction = ({
                     className={clsx(
                       'flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-muted/40 text-accent-11 transition-colors duration-200',
                       !action.disabled &&
-                        'group-hover:border-accent-8/50 group-hover:bg-accent-3/50',
+                        'group-hover:border-accent-8/50 group-hover:bg-accent-3/50 group-hover:text-foreground group-focus-within:text-foreground',
                     )}
                     aria-hidden
                   >
@@ -137,7 +137,7 @@ export const SelectAction = ({
                         </span>
                       ) : null}
                     </span>
-                    <span className="text-1 leading-relaxed text-muted-foreground">
+                    <span className="group-hover:text-foreground/90 text-1 leading-relaxed text-muted-foreground">
                       <TextWithLinks text={action.description} />
                     </span>
                   </div>

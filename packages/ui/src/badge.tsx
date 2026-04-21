@@ -101,88 +101,94 @@ const badgeVariants = cva(
       {
         variant: 'soft',
         colorVariant: 'accent',
-        className: 'bg-accent-3 text-accent-11 hover:bg-accent-4',
+        className:
+          'bg-accent-3 text-accent-11 hover:bg-accent-4 hover:text-foreground',
       },
       {
         variant: 'soft',
         colorVariant: 'success',
-        className: 'bg-success-3 text-success-11 hover:bg-success-4',
+        className:
+          'bg-success-3 text-success-11 hover:bg-success-4 hover:text-foreground',
       },
       {
         variant: 'soft',
         colorVariant: 'error',
-        className: 'bg-error-3 text-error-11 hover:bg-error-4',
+        className:
+          'bg-error-3 text-error-11 hover:bg-error-4 hover:text-foreground',
       },
       {
         variant: 'soft',
         colorVariant: 'warn',
-        className: 'bg-warning-3 text-warning-11 hover:bg-warning-4',
+        className:
+          'bg-warning-3 text-warning-11 hover:bg-warning-4 hover:text-foreground',
       },
       {
         variant: 'soft',
         colorVariant: 'neutral',
-        className: 'bg-neutral-3 text-neutral-11 hover:bg-neutral-4',
+        className:
+          'bg-neutral-3 text-neutral-11 hover:bg-neutral-4 hover:text-foreground',
       },
       // Outline variants
       {
         variant: 'outline',
         colorVariant: 'accent',
         className:
-          'border-accent-8 text-accent-11 hover:border-accent-9 hover:bg-accent-2',
+          'border-accent-8 text-accent-11 hover:border-accent-9 hover:bg-accent-2 hover:text-foreground',
       },
       {
         variant: 'outline',
         colorVariant: 'success',
         className:
-          'border-success-8 text-success-11 hover:border-success-9 hover:bg-success-2',
+          'border-success-8 text-success-11 hover:border-success-9 hover:bg-success-2 hover:text-foreground',
       },
       {
         variant: 'outline',
         colorVariant: 'error',
         className:
-          'border-error-8 text-error-11 hover:border-error-9 hover:bg-error-2',
+          'border-error-8 text-error-11 hover:border-error-9 hover:bg-error-2 hover:text-foreground',
       },
       {
         variant: 'outline',
         colorVariant: 'warn',
         className:
-          'border-warning-8 text-warning-11 hover:border-warning-9 hover:bg-warning-2',
+          'border-warning-8 text-warning-11 hover:border-warning-9 hover:bg-warning-2 hover:text-foreground',
       },
       {
         variant: 'outline',
         colorVariant: 'neutral',
         className:
-          'border-neutral-8 text-neutral-11 hover:border-neutral-9 hover:bg-neutral-2',
+          'border-neutral-8 text-neutral-11 hover:border-neutral-9 hover:bg-neutral-2 hover:text-foreground',
       },
       // Surface variants
       {
         variant: 'surface',
         colorVariant: 'accent',
         className:
-          'border-accent-7 bg-accent-2 text-accent-11 hover:bg-accent-3',
+          'border-accent-7 bg-accent-2 text-accent-11 hover:bg-accent-3 hover:text-foreground',
       },
       {
         variant: 'surface',
         colorVariant: 'success',
         className:
-          'border-success-11 bg-success-2 text-success-11 hover:bg-success-3',
+          'border-success-11 bg-success-2 text-success-11 hover:bg-success-3 hover:text-foreground',
       },
       {
         variant: 'surface',
         colorVariant: 'error',
-        className: 'border-error-7 bg-error-2 text-error-11 hover:bg-error-3',
+        className:
+          'border-error-7 bg-error-2 text-error-11 hover:bg-error-3 hover:text-foreground',
       },
       {
         variant: 'surface',
         colorVariant: 'warn',
         className:
-          'border-warning-7 bg-warning-2 text-warning-11 hover:bg-warning-3',
+          'border-warning-7 bg-warning-2 text-warning-11 hover:bg-warning-3 hover:text-foreground',
       },
       {
         variant: 'surface',
         colorVariant: 'neutral',
         className:
-          'border-neutral-7 bg-neutral-2 text-neutral-11 hover:bg-neutral-3',
+          'border-neutral-7 bg-neutral-2 text-neutral-11 hover:bg-neutral-3 hover:text-foreground',
       },
     ],
     defaultVariants: {

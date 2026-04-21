@@ -139,7 +139,7 @@ export function LoadingBackdropInner({
         'fixed inset-0 z-[45] flex flex-col items-center justify-center p-4 lg:p-8',
         'bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70',
         'dark:bg-black/45 dark:supports-[backdrop-filter]:bg-black/35',
-        'max-md:top-[var(--menu-top-height,65px)] max-md:right-[var(--sidebar-right-width,0px)]',
+        'max-md:top-[var(--menu-top-height,var(--menu-top-fallback-height))] max-md:right-[var(--sidebar-right-width,0px)]',
         className,
       )}
       aria-live="polite"
@@ -164,7 +164,7 @@ export function LoadingBackdropInner({
           className,
         )}
         style={{
-          top: 'var(--menu-top-height, 65px)',
+          top: 'var(--menu-top-height, var(--menu-top-fallback-height))',
           right: 'var(--sidebar-right-width, 0px)',
         }}
         aria-live="polite"

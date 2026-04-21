@@ -205,7 +205,7 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
       <Button
         disabled={isButtonDisabled || !isAuthenticated}
         onClick={handleJoinSpace}
-        className="rounded-lg min-w-[120px]"
+        className="min-w-[120px]"
         colorVariant={isMember || justJoined ? 'neutral' : 'accent'}
         variant={isMember || justJoined ? 'outline' : 'default'}
         title={!isAuthenticated ? t('signIn') : buttonTitle}

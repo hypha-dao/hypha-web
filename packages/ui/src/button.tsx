@@ -5,7 +5,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@hypha-platform/ui-utils';
 
 const buttonVariants = cva(
-  'cursor-pointer rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-semibold ring-offset-background transition-[color,box-shadow,transform,background-color] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  'cursor-pointer rounded-lg inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-semibold ring-offset-background transition-[color,box-shadow,transform,background-color] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
@@ -62,25 +62,25 @@ const buttonVariants = cva(
         variant: 'outline',
         colorVariant: 'accent',
         className:
-          'border-accent-8 text-accent-11 hover:bg-accent-3 hover:text-accent-12 hover:border-accent-9 active:scale-[0.99]',
+          'border-accent-8 text-accent-11 hover:bg-accent-3 hover:text-foreground hover:border-accent-9 active:scale-[0.99]',
       },
       {
         variant: 'outline',
         colorVariant: 'neutral',
         className:
-          'border-neutral-9 text-secondary-foreground bg-neutral-1 hover:text-neutral-12',
+          'border-neutral-9 text-secondary-foreground bg-neutral-1 hover:text-foreground',
       },
       {
         variant: 'outline',
         colorVariant: 'error',
         className:
-          'border-error-9 text-error-9 hover:bg-error-2 hover:text-error-11',
+          'border-error-9 text-error-9 hover:bg-error-2 hover:text-foreground',
       },
       {
         variant: 'outline',
         colorVariant: 'success',
         className:
-          'border-success-10 text-success-11 hover:bg-success-2 hover:text-success-12',
+          'border-success-10 text-success-11 hover:bg-success-2 hover:text-foreground',
       },
       {
         variant: 'link',
@@ -105,22 +105,22 @@ const buttonVariants = cva(
       {
         variant: 'ghost',
         colorVariant: 'accent',
-        className: 'text-accent-11 hover:bg-accent-3 hover:text-accent-12',
+        className: 'text-accent-11 hover:bg-accent-3 hover:text-foreground',
       },
       {
         variant: 'ghost',
         colorVariant: 'neutral',
-        className: 'text-neutral-11 hover:bg-neutral-3 hover:text-neutral-12',
+        className: 'text-neutral-11 hover:bg-neutral-3 hover:text-foreground',
       },
       {
         variant: 'ghost',
         colorVariant: 'error',
-        className: 'text-error-11 hover:bg-error-3 hover:text-error-12',
+        className: 'text-error-11 hover:bg-error-3 hover:text-foreground',
       },
       {
         variant: 'ghost',
         colorVariant: 'success',
-        className: 'text-success-11 hover:bg-success-3 hover:text-success-12',
+        className: 'text-success-11 hover:bg-success-3 hover:text-foreground',
       },
     ],
   },
