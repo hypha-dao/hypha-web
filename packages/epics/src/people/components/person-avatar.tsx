@@ -2,7 +2,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@hypha-platform/ui';
 import { UserIcon } from 'lucide-react';
 import { Skeleton } from '@hypha-platform/ui';
 
-type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'chat' | 'reply';
+type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'chat' | 'reply' | 'toolbar';
 
 const sizeMap: Record<AvatarSize, { avatar: string; skeleton: string }> = {
   xs: { avatar: 'w-[12px] h-[12px]', skeleton: '12px' },
@@ -13,6 +13,8 @@ const sizeMap: Record<AvatarSize, { avatar: string; skeleton: string }> = {
   chat: { avatar: 'h-10 w-10', skeleton: '40px' },
   /** Rich-reply quoted author */
   reply: { avatar: 'h-4 w-4', skeleton: '16px' },
+  /** MenuTop / ghost `Button` row: matches default `min-h-10` (40px) */
+  toolbar: { avatar: 'h-10 w-10 shrink-0', skeleton: '40px' },
 };
 
 export const PersonAvatar = ({

@@ -157,7 +157,7 @@ export const ButtonProfile = ({
                   aria-label={t('openProfileMenu')}
                 >
                   <PersonAvatar
-                    size="md"
+                    size="toolbar"
                     avatarSrc={person?.avatarUrl}
                     userName={person?.nickname}
                     shape="circle"
