@@ -106,9 +106,9 @@ export function HumanChatPanelTabs({
             onClick={() => onTabChange(tab.key)}
             onKeyDown={(e) => handleKeyDown(e, index)}
             className={cn(
-              'rounded-full px-3 py-1 text-xs font-medium transition-colors duration-150',
+              'rounded-lg px-3 py-1 text-xs font-medium transition-colors duration-150',
               activeTab === tab.key
-                ? 'border border-accent-8 bg-accent-3 text-accent-12 shadow-sm ring-1 ring-inset ring-accent-9/20 dark:bg-accent-4/90 dark:text-accent-12'
+                ? 'border border-accent-9/40 bg-accent-9/18 text-foreground shadow-sm ring-1 ring-inset ring-accent-9/25 dark:border-accent-10/45 dark:bg-accent-9/22 dark:text-foreground dark:ring-accent-10/30'
                 : 'border border-transparent text-muted-foreground hover:border-border/70 hover:bg-muted/80 hover:text-foreground',
             )}
           >

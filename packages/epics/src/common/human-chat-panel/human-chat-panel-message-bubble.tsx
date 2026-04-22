@@ -900,10 +900,11 @@ function splitPlainTextMatrixMentions(
  */
 function chatMentionPillClass(onViewerMentionTintRow: boolean): string {
   return cn(
-    'inline-flex max-w-full items-baseline rounded-[4px] px-[5px] py-[1px] text-[13px] font-semibold leading-snug tracking-tight',
+    'inline-flex max-w-full items-baseline rounded-md px-[5px] py-[1px] text-[13px] font-semibold leading-snug tracking-tight',
+    /* Foreground text keeps contrast on any space-derived accent tint (lime, etc.). */
     onViewerMentionTintRow
-      ? 'bg-accent-9/22 text-accent-12 ring-1 ring-inset ring-accent-9/40 dark:bg-accent-9/30 dark:text-accent-11 dark:ring-accent-9/45'
-      : 'bg-accent-9/14 text-accent-11 ring-1 ring-inset ring-accent-9/28 dark:bg-accent-9/20 dark:text-accent-11 dark:ring-accent-9/35',
+      ? 'bg-accent-9/22 text-foreground ring-1 ring-inset ring-accent-9/45 dark:bg-accent-9/28 dark:text-foreground dark:ring-accent-10/50'
+      : 'bg-muted/70 text-foreground ring-1 ring-inset ring-accent-9/35 dark:bg-muted/50 dark:text-foreground dark:ring-accent-10/40',
   );
 }
 
@@ -1376,7 +1377,7 @@ export function HumanChatPanelMessageBubble({
         /* Discord-style row tint: hover (primary) + focus-within for keyboard/reactions */
         'hover:bg-muted/60 focus-within:bg-muted/60',
         highlightMentionForViewer &&
-          'border-l-[3px] border-l-accent-9 bg-accent-2/95 dark:border-l-accent-10 dark:bg-accent-3/55',
+          'border-l-[3px] border-l-accent-9 bg-muted/75 dark:border-l-accent-10 dark:bg-muted/55',
         unreadBoundary &&
           !highlightMentionForViewer &&
           'border-l-[3px] border-l-accent-8 bg-accent-1 dark:border-l-accent-9 dark:bg-accent-2/45',
