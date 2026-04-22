@@ -2,6 +2,7 @@
 
 import {
   Coherence,
+  COHERENCE_PRIORITY_OPTIONS,
   COHERENCE_TAGS,
   COHERENCE_TYPE_OPTIONS,
   useCoherenceMutationsWeb2Rsc,
@@ -35,11 +36,7 @@ import {
 } from '@hypha-platform/ui';
 import { stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
 import { formatDistanceToNow } from 'date-fns';
-import {
-  ChatBubbleIcon,
-  ClockIcon,
-  DotFilledIcon,
-} from '@radix-ui/react-icons';
+import { ChatBubbleIcon, ClockIcon } from '@radix-ui/react-icons';
 import React from 'react';
 import type { BadgeProps } from '@hypha-platform/ui';
 import { useLocale, useTranslations } from 'next-intl';
@@ -108,15 +105,34 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       | 'types.Proposal',
   );
 
-  const badges: BadgeItem[] = [
-    {
+  const priorityMeta = React.useMemo(
+    () => COHERENCE_PRIORITY_OPTIONS.find((o) => o.priority === priority),
+    [priority],
+  );
+
+  const metaBadges: BadgeItem[] = React.useMemo(() => {
+    const typeBadge: BadgeItem = {
       label: typeLabel,
       icon: coherenceType?.icon as LucideReactIcon,
       variant: 'outline',
       colorVariant: (coherenceType?.colorVariant ??
         'accent') as BadgeProps['colorVariant'],
-    },
-  ];
+    };
+    if (!priorityMeta) return [typeBadge];
+    const priorityLabel = t(
+      `priorities.${priorityMeta.priority}` as
+        | 'priorities.high'
+        | 'priorities.medium'
+        | 'priorities.low',
+    );
+    const priorityBadge: BadgeItem = {
+      label: priorityLabel,
+      icon: priorityMeta.icon as LucideReactIcon,
+      variant: 'outline',
+      colorVariant: priorityMeta.colorVariant as BadgeProps['colorVariant'],
+    };
+    return [typeBadge, priorityBadge];
+  }, [coherenceType, priorityMeta, t, typeLabel]);
 
   const tagList: BadgeItem[] = tags.map((tag) => {
     const displayLabel = (COHERENCE_TAGS as readonly string[]).includes(tag)
@@ -283,26 +299,8 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           </div>
 
           <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-2 text-1 text-muted-foreground">
-            {badges?.length > 0 ? (
-              <BadgesList isLoading={isLoading} badges={badges ?? []} />
-            ) : null}
-            {priority === 'high' ? (
-              <span className="inline-flex items-center gap-1 text-neutral-11">
-                <DotFilledIcon className="h-3.5 w-3.5 shrink-0 text-error-11" />
-                {t('highUrgency')}
-              </span>
-            ) : null}
-            {priority === 'medium' ? (
-              <span className="inline-flex items-center gap-1 text-neutral-11">
-                <DotFilledIcon className="h-3.5 w-3.5 shrink-0 text-warning-11" />
-                {t('mediumUrgency')}
-              </span>
-            ) : null}
-            {priority === 'low' ? (
-              <span className="inline-flex items-center gap-1 text-neutral-11">
-                <DotFilledIcon className="h-3.5 w-3.5 shrink-0 text-neutral-11" />
-                {t('lowUrgency')}
-              </span>
+            {metaBadges.length > 0 ? (
+              <BadgesList isLoading={isLoading} badges={metaBadges} />
             ) : null}
             <span className="inline-flex min-w-0 items-center gap-1">
               <ClockIcon
