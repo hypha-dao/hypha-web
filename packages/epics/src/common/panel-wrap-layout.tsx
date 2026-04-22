@@ -196,6 +196,9 @@ export function PanelWrapLayout({
           '--sidebar-right-width':
             rightOpen && effectiveRight ? '320px' : '0px',
           '--sidebar-left-width': leftOpen && effectiveLeft ? '320px' : '0px',
+          transitionProperty: '--sidebar-left-width, --sidebar-right-width',
+          transitionDuration: '200ms',
+          transitionTimingFunction: 'linear',
         } as React.CSSProperties
       }
     >

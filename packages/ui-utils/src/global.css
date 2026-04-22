@@ -22,6 +22,18 @@
 
 @import './theme/scrollbar/narrow.css';
 
+/* Lets `transition` interpolate `--sidebar-*-width` (used by fixed chrome / dialogs). */
+@property --sidebar-left-width {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+@property --sidebar-right-width {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 @theme {
