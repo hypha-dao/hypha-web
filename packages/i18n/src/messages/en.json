@@ -20,6 +20,8 @@
     "home": "Home",
     "remove": "Remove",
     "by": "by",
+    "copyWalletAddress": "Copy wallet address",
+    "walletAddressCopied": "Copied!",
     "otherMembers": "+ other {count} members",
     "exploreSpaces": "Explore Spaces",
     "findCategory": "Find a Category",

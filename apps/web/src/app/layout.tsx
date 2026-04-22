@@ -128,7 +128,7 @@ export default async function RootLayout({
         >
           <ThemeStorageNormalize />
           <EvmProvider>
-            <NextIntlClientProvider messages={messages}>
+            <NextIntlClientProvider locale={locale} messages={messages}>
               <TooltipProvider>
                 <NotificationSubscriber
                   appId={notificationAppId}
@@ -179,10 +179,12 @@ export default async function RootLayout({
                                   href: `/${locale}/my-spaces`,
                                 },
                               ]}
+                              trailingBeforeProfile={
+                                isLanguageSelectVisible ? (
+                                  <ConnectedLanguageSelect />
+                                ) : undefined
+                              }
                             />
-                            {isLanguageSelectVisible && (
-                              <ConnectedLanguageSelect />
-                            )}
                           </MenuTop>
                         </div>
                         {/* Scrollable content area */}

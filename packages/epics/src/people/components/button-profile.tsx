@@ -1,24 +1,36 @@
 'use client';
 
+import type { ReactNode } from 'react';
+
 import {
   Button,
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@hypha-platform/ui';
 import { PersonAvatar } from './person-avatar';
 import { EthAddress } from './eth-address';
-import { TrashIcon, LogOutIcon, Repeat, Shield } from 'lucide-react';
+import {
+  Bell,
+  ChevronRight,
+  LogOutIcon,
+  Repeat,
+  Shield,
+  TrashIcon,
+  UserRound,
+} from 'lucide-react';
 import { ButtonNavItem, ButtonNavItemProps } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { Person } from '@hypha-platform/core/client';
-import { Text } from '@radix-ui/themes';
 import { usePrivy, useMfaEnrollment } from '@privy-io/react-auth';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { cn } from '@hypha-platform/ui-utils';
 
 export type ButtonProfileProps = {
   address?: string;
@@ -32,7 +44,12 @@ export type ButtonProfileProps = {
   navItems: ButtonNavItemProps[];
   person?: Person;
   resolvedTheme?: string;
+  /** Rendered after main nav links and before the profile avatar (desktop) or profile actions (mobile). */
+  trailingBeforeProfile?: ReactNode;
 };
+
+const menuItemClass =
+  'gap-2 px-2 py-2 text-2 [&_svg]:text-muted-foreground data-[highlighted]:[&_svg]:text-foreground';
 
 export const ButtonProfile = ({
   person,
@@ -46,6 +63,7 @@ export const ButtonProfile = ({
   navItems,
   onChangeThemeMode,
   resolvedTheme,
+  trailingBeforeProfile,
 }: ButtonProfileProps) => {
   const t = useTranslations('Navigation');
   const pathname = usePathname();
@@ -53,6 +71,9 @@ export const ButtonProfile = ({
   const { user } = usePrivy();
   const { showMfaEnrollmentModal } = useMfaEnrollment();
   const hasMfaMethods = user && user.mfaMethods && user.mfaMethods.length > 0;
+
+  const displayName = [person?.name, person?.surname].filter(Boolean).join(' ');
+  const primaryLine = displayName.trim() || person?.nickname || t('myProfile');
 
   useEffect(() => {
     setProfileMenuOpen(false);
@@ -63,20 +84,34 @@ export const ButtonProfile = ({
       {isConnected ? (
         <>
           {/* Mobile */}
-          <div className="flex flex-col justify-center gap-8 md:hidden">
-            <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-col justify-center gap-6 md:hidden">
+            <div
+              className={cn(
+                'flex flex-col items-center gap-3 rounded-xl border border-border/80',
+                'bg-popover px-4 py-5 text-popover-foreground shadow-sm',
+              )}
+            >
               <PersonAvatar
                 avatarSrc={person?.avatarUrl}
                 userName={person?.nickname}
                 size="lg"
                 shape="rounded"
               />
-              <p>{person?.nickname}</p>
-              {address && (
-                <div>
+              <div className="flex flex-col items-center gap-0.5 text-center">
+                <p className="text-2 font-semibold leading-snug text-foreground">
+                  {primaryLine}
+                </p>
+                {displayName.trim() && person?.nickname ? (
+                  <p className="text-1 text-muted-foreground">
+                    {person.nickname}
+                  </p>
+                ) : null}
+              </div>
+              {address ? (
+                <div className="w-full rounded-lg border border-border/60 bg-muted/40 px-3 py-2">
                   <EthAddress address={address} />
                 </div>
-              )}
+              ) : null}
             </div>
 
             {navItems.map((item) => (
@@ -86,6 +121,12 @@ export const ButtonProfile = ({
                 label={item.label}
               />
             ))}
+
+            {trailingBeforeProfile ? (
+              <div className="flex w-full justify-center">
+                {trailingBeforeProfile}
+              </div>
+            ) : null}
 
             {profileUrl && (
               <ButtonNavItem href={profileUrl} label={t('myProfile')} />
@@ -97,15 +138,6 @@ export const ButtonProfile = ({
                 href={notificationCentrePath}
               />
             )}
-
-            {/* TODO: It is necessary to implement profile deletion as part of a separate task */}
-            {/* {onDelete && (
-              <ButtonNavItem
-                onClick={onDelete}
-                classNames="text-error-11"
-                label="Delete"
-              />
-            )} */}
 
             <ButtonNavItem
               onClick={onChangeThemeMode}
@@ -146,107 +178,172 @@ export const ButtonProfile = ({
                 />
               ))}
             </div>
+            {trailingBeforeProfile}
             <DropdownMenu
               open={profileMenuOpen}
               onOpenChange={setProfileMenuOpen}
+              modal={false}
             >
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="rounded-md outline-none"
+                  className={cn(
+                    /* Match LanguageSelect trigger: h-10 toolbar row, square hit target */
+                    'box-border flex h-10 min-h-10 w-10 min-w-10 shrink-0 items-center justify-center',
+                    'isolate overflow-hidden rounded-md border border-neutral-9 bg-neutral-1 p-0 text-neutral-12 outline-none',
+                    'shadow-sm transition-colors duration-150',
+                    'hover:border-neutral-11 hover:text-foreground',
+                    'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                    'data-[state=open]:border-neutral-11 data-[state=open]:shadow-md',
+                  )}
                   aria-label={t('openProfileMenu')}
+                  aria-haspopup="menu"
                 >
                   <PersonAvatar
                     size="toolbar"
                     avatarSrc={person?.avatarUrl}
                     userName={person?.nickname}
                     shape="rounded"
-                    className="ring-1 ring-border/55"
+                    className="h-full w-full rounded-md ring-0"
                   />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-neutral-2 rounded-[6px] min-w-[185px] flex flex-col">
-                <Text className="text-2 font-medium text-foreground">
-                  {person?.name} {person?.surname}
-                </Text>
-                {address && (
-                  <DropdownMenuItem className="px-0 text-1 flex justify-between">
-                    <EthAddress address={address} />
-                  </DropdownMenuItem>
+              <DropdownMenuContent
+                align="end"
+                side="bottom"
+                sideOffset={6}
+                collisionPadding={12}
+                className={cn(
+                  'w-[min(17.5rem,calc(100vw-1.5rem))] border border-border/90 p-1',
+                  'bg-popover text-popover-foreground shadow-xl',
                 )}
-                {profileUrl && (
-                  <DropdownMenuItem className="px-0 text-1" asChild>
-                    <Link className="text-accent-11" href={profileUrl}>
-                      {t('viewProfile')}
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                {notificationCentrePath && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="px-0 text-1" asChild>
-                      <Link
-                        className="text-accent-11"
-                        href={notificationCentrePath}
-                      >
-                        {t('notificationCentre')}
-                      </Link>
-                    </DropdownMenuItem>
-                  </>
-                )}
-                <DropdownMenuSeparator />
-                {onChangeThemeMode && (
-                  <DropdownMenuItem
-                    onClick={onChangeThemeMode}
-                    className="px-0 text-1 flex justify-between"
-                  >
-                    {resolvedTheme === 'dark'
-                      ? t('switchToLightMode')
-                      : t('switchToDarkMode')}
-                    <Repeat className="icon-sm" />
-                  </DropdownMenuItem>
-                )}
-                {hasMfaMethods ? (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={showMfaEnrollmentModal}
-                      className="px-0 text-1"
+              >
+                <DropdownMenuLabel className="cursor-default px-2 pb-0 pt-1.5 font-normal">
+                  <div className="flex gap-3">
+                    <PersonAvatar
+                      size="md"
+                      avatarSrc={person?.avatarUrl}
+                      userName={person?.nickname}
+                      shape="rounded"
+                      className="ring-1 ring-border/60"
+                    />
+                    <div className="flex min-w-0 flex-1 flex-col gap-1">
+                      <span className="truncate text-2 font-semibold leading-snug text-foreground">
+                        {primaryLine}
+                      </span>
+                      {displayName.trim() && person?.nickname ? (
+                        <span className="truncate text-1 text-muted-foreground">
+                          {person.nickname}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                </DropdownMenuLabel>
+                {address ? (
+                  <div className="mt-2 w-full border-t border-border/50 pt-2 pb-1">
+                    <div
+                      className={cn(
+                        'w-full rounded-md border border-border/50 bg-muted/35 px-2 py-1.5',
+                        'text-1 text-muted-foreground',
+                      )}
                     >
-                      {t('updateMfa')}
-                      <Shield className="icon-sm" />
-                    </DropdownMenuItem>
-                  </>
-                ) : (
+                      <EthAddress address={address} />
+                    </div>
+                  </div>
+                ) : null}
+
+                {(profileUrl || notificationCentrePath) && (
                   <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={showMfaEnrollmentModal}
-                      className="px-0 text-1 flex justify-between"
-                    >
-                      {t('protectMfa')}
-                      <Shield className="icon-sm" />
-                    </DropdownMenuItem>
+                    <DropdownMenuSeparator className="-mx-0 my-1" />
+                    <DropdownMenuGroup className="space-y-0.5">
+                      {profileUrl ? (
+                        <DropdownMenuItem className={menuItemClass} asChild>
+                          <Link href={profileUrl}>
+                            <UserRound
+                              className="size-4 shrink-0"
+                              aria-hidden
+                            />
+                            <span className="flex-1">{t('viewProfile')}</span>
+                            <ChevronRight
+                              className="ml-auto size-4 opacity-60"
+                              aria-hidden
+                            />
+                          </Link>
+                        </DropdownMenuItem>
+                      ) : null}
+                      {notificationCentrePath ? (
+                        <DropdownMenuItem className={menuItemClass} asChild>
+                          <Link href={notificationCentrePath}>
+                            <Bell className="size-4 shrink-0" aria-hidden />
+                            <span className="flex-1">
+                              {t('notificationCentre')}
+                            </span>
+                            <ChevronRight
+                              className="ml-auto size-4 opacity-60"
+                              aria-hidden
+                            />
+                          </Link>
+                        </DropdownMenuItem>
+                      ) : null}
+                    </DropdownMenuGroup>
                   </>
                 )}
-                <DropdownMenuSeparator />
-                {onDelete && (
+
+                <DropdownMenuSeparator className="-mx-0 my-1" />
+
+                <DropdownMenuGroup className="space-y-0.5">
+                  {onChangeThemeMode ? (
+                    <DropdownMenuItem
+                      className={menuItemClass}
+                      onClick={onChangeThemeMode}
+                    >
+                      <span className="flex-1">
+                        {resolvedTheme === 'dark'
+                          ? t('switchToLightMode')
+                          : t('switchToDarkMode')}
+                      </span>
+                      <Repeat className="size-4 shrink-0" aria-hidden />
+                    </DropdownMenuItem>
+                  ) : null}
                   <DropdownMenuItem
-                    onClick={onDelete}
-                    className="px-0 text-1 flex justify-between"
-                    disabled
+                    className={menuItemClass}
+                    onClick={showMfaEnrollmentModal}
                   >
-                    {t('delete')}
-                    <TrashIcon className="icon-sm" />
+                    <span className="flex-1">
+                      {hasMfaMethods ? t('updateMfa') : t('protectMfa')}
+                    </span>
+                    <Shield className="size-4 shrink-0" aria-hidden />
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
+                </DropdownMenuGroup>
+
+                {onDelete ? (
+                  <>
+                    <DropdownMenuSeparator className="-mx-0 my-1" />
+                    <DropdownMenuItem
+                      onClick={onDelete}
+                      className={cn(
+                        menuItemClass,
+                        'text-error-11 focus:text-error-11',
+                      )}
+                      disabled
+                    >
+                      <span className="flex-1">{t('delete')}</span>
+                      <TrashIcon className="size-4 shrink-0" aria-hidden />
+                    </DropdownMenuItem>
+                  </>
+                ) : null}
+
+                <DropdownMenuSeparator className="-mx-0 my-1" />
+
                 <DropdownMenuItem
                   onClick={onLogout}
-                  className="px-0 text-1 text-error-11 flex justify-between"
+                  className={cn(
+                    menuItemClass,
+                    'text-error-11 focus:bg-error-3 focus:text-error-12 data-[highlighted]:bg-error-3',
+                  )}
                 >
-                  {t('logout')}
-                  <LogOutIcon className="icon-sm" />
+                  <span className="flex-1">{t('logout')}</span>
+                  <LogOutIcon className="size-4 shrink-0" aria-hidden />
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -261,6 +358,7 @@ export const ButtonProfile = ({
               label={item.label}
             />
           ))}
+          {trailingBeforeProfile}
           <Button onClick={onLogin}>{t('signIn')}</Button>
           <Button
             className="hidden md:flex"

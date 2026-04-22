@@ -1,7 +1,9 @@
 'use client';
 
-import { Globe } from 'lucide-react';
-import { Button } from './button';
+import { Check, Globe } from 'lucide-react';
+
+import { cn } from '@hypha-platform/ui-utils';
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +24,16 @@ type LanguageSelectProps = {
   ariaLabel?: string;
 };
 
+/** Toolbar trigger: matches profile avatar button (rounded-md, neutral border, h-10, no ring hover blur). */
+const languageTriggerClassName = cn(
+  'box-border flex h-10 min-h-10 shrink-0 cursor-pointer items-center gap-1.5 px-3',
+  'isolate overflow-hidden rounded-md border border-neutral-9 bg-neutral-1 text-neutral-12 outline-none',
+  'text-xs font-semibold shadow-sm transition-colors duration-150',
+  'hover:border-neutral-11 hover:text-foreground',
+  'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+  'data-[state=open]:border-neutral-11 data-[state=open]:shadow-md',
+);
+
 export function LanguageSelect({
   currentLocale,
   locales,
@@ -33,35 +45,67 @@ export function LanguageSelect({
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="default"
+        <button
+          type="button"
           aria-label={ariaLabel}
-          className="gap-1.5"
+          aria-haspopup="menu"
+          data-language-select-trigger
+          className={languageTriggerClassName}
         >
-          <Globe className="size-4" />
+          <Globe className="size-4 shrink-0" aria-hidden />
           <span className="sr-only">{currentMeta?.label ?? currentLocale}</span>
-          <span className="text-xs font-semibold" aria-hidden>
+          <span className="tabular-nums" aria-hidden>
             {currentMeta?.shortLabel ?? currentLocale.toUpperCase()}
           </span>
-        </Button>
+        </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
         side="bottom"
-        className="bg-neutral-2 rounded-[6px] min-w-[185px] flex flex-col"
+        sideOffset={6}
+        collisionPadding={12}
+        className={cn(
+          'w-[var(--radix-dropdown-menu-trigger-width)] min-w-[10.5rem] border border-border/90',
+          'bg-popover px-1 py-1 text-popover-foreground shadow-xl',
+        )}
       >
-        {locales
-          .filter((locale) => locale.code !== currentLocale)
-          .map((locale) => (
+        {locales.map((locale) => {
+          const active = locale.code === currentLocale;
+          return (
             <DropdownMenuItem
               key={locale.code}
-              onClick={() => onLocaleChange(locale.code)}
-              className="px-0 text-1"
+              textValue={`${locale.label} ${locale.shortLabel}`}
+              onSelect={(event) => {
+                if (active) {
+                  event.preventDefault();
+                  return;
+                }
+                onLocaleChange(locale.code);
+              }}
+              className={cn(
+                'min-h-0 gap-2 rounded-md px-2 py-1.5 text-2 leading-tight',
+                active &&
+                  'cursor-default bg-neutral-3/90 text-foreground focus:bg-neutral-3/90 focus:text-foreground data-[highlighted]:bg-neutral-3/90',
+              )}
+              aria-current={active ? 'true' : undefined}
             >
-              {locale.label}
+              <span
+                className="flex size-4 shrink-0 items-center justify-center text-accent-11"
+                aria-hidden
+              >
+                {active ? (
+                  <Check className="size-3.5" strokeWidth={2.5} />
+                ) : null}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-left font-medium">
+                {locale.label}
+                <span className="ml-1.5 font-mono text-xs font-semibold tabular-nums text-muted-foreground">
+                  {locale.shortLabel}
+                </span>
+              </span>
             </DropdownMenuItem>
-          ))}
+          );
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   );
