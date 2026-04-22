@@ -146,7 +146,7 @@ export function DhoStickySpaceChrome({
     <>
       <div
         className={cn(
-          'pointer-events-none fixed inset-x-0 z-[25] hidden md:block',
+          'pointer-events-none fixed left-[var(--sidebar-left-width,0px)] right-[var(--sidebar-right-width,0px)] z-[25] hidden md:block',
           'border-b border-border bg-background-2 transition-[opacity,transform,box-shadow] duration-200 ease-out',
           stuck
             ? 'pointer-events-auto translate-y-0 opacity-100 shadow-md'
