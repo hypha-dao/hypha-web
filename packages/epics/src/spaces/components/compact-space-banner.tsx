@@ -53,6 +53,8 @@ export type CompactSpaceBannerProps = {
   createdOnText: string;
   membersLabel: string;
   agreementsLabel: string;
+  /** Localized accessible name for the description region (screen readers). */
+  descriptionLabel: string;
   footerTrailing?: React.ReactNode;
   className?: string;
 };
@@ -71,6 +73,7 @@ export function CompactSpaceBanner({
   createdOnText,
   membersLabel,
   agreementsLabel,
+  descriptionLabel,
   footerTrailing,
   className,
 }: CompactSpaceBannerProps) {
@@ -231,9 +234,7 @@ export function CompactSpaceBanner({
         {description ? (
           <div
             role="region"
-            aria-label={
-              logoAlt ? `${logoAlt}: description` : 'Space description'
-            }
+            aria-label={descriptionLabel}
             tabIndex={0}
             className={cn(
               DESCRIPTION_SCROLL_BOX,

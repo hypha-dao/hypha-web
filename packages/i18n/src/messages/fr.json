@@ -7,6 +7,7 @@
     "Spaces": "Espaces",
     "loadMore": "Charger plus",
     "noMore": "Plus aucun",
+    "spaceBannerDescriptionAria": "{title} : description",
     "createdOn": "Créé le {date}",
     "acceptedOn": "Accepté le {date}",
     "rejectedOn": "Rejeté le {date}",

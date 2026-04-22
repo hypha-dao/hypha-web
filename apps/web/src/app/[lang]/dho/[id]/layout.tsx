@@ -150,6 +150,9 @@ export default async function DhoLayout({
                   })}
                   membersLabel={tCommon('Members')}
                   agreementsLabel={tCommon('Agreements')}
+                  descriptionLabel={tCommon('spaceBannerDescriptionAria', {
+                    title: spaceFromDb.title,
+                  })}
                   footerTrailing={
                     <>
                       {web3SpaceId !== undefined && (
