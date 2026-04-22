@@ -632,14 +632,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     const room = client.getRoom(roomId);
     if (!room) return;
 
-    const bumpMembership = () => setMentionMembershipEpoch((n) => n + 1);
+    const bumpMembership = (...args: unknown[]) => {
+      const state = args[1] as { roomId?: string } | undefined;
+      if (state?.roomId !== roomId) return;
+      setMentionMembershipEpoch((n) => n + 1);
+    };
 
-    room.on(RoomStateEvent.Members, bumpMembership);
-    room.on(RoomStateEvent.NewMember, bumpMembership);
+    client.on(RoomStateEvent.Members, bumpMembership);
+    client.on(RoomStateEvent.NewMember, bumpMembership);
 
     return () => {
-      room.off(RoomStateEvent.Members, bumpMembership);
-      room.off(RoomStateEvent.NewMember, bumpMembership);
+      client.off(RoomStateEvent.Members, bumpMembership);
+      client.off(RoomStateEvent.NewMember, bumpMembership);
     };
   }, [client, roomId]);
 
