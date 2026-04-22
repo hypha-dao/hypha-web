@@ -202,6 +202,13 @@ type ProposalTokenFromProposalDetails = {
   useReceiveWhitelist?: boolean;
   initialTransferWhitelist?: `0x${string}`[];
   initialReceiveWhitelist?: `0x${string}`[];
+  /**
+   * Web3 ids of spaces seeded into the on-chain transfer/receive whitelists at
+   * deploy time. Surfaced on the proposal card and used when resubmitting an
+   * issue-new-token proposal so the original space rows are re-hydrated.
+   */
+  initialTransferWhitelistSpaceIds?: readonly bigint[];
+  initialReceiveWhitelistSpaceIds?: readonly bigint[];
   decayPercentage?: bigint;
   decayInterval?: bigint;
   address?: string;
@@ -211,6 +218,13 @@ function buildIssueNewTokenResubmitPayload(
   token: ProposalTokenFromProposalDetails,
   proposalSpaceId: number,
   dbTokens: DbToken[],
+  /**
+   * Space rows from `useDbSpaces()` — used to convert the new
+   * `initial(Transfer|Receive)WhitelistSpaceIds` factory arrays back into
+   * `transferWhitelist.from/to` entries of `type: 'space'` so the form can
+   * re-render the original space chips.
+   */
+  dbSpaces: { web3SpaceId?: number | null; address?: string | null }[],
   options?: {
     /** Agreement document id — used to pick the draft token row (icon URL from Web2 before mint). */
     documentId?: number | null;
@@ -233,7 +247,35 @@ function buildIssueNewTokenResubmitPayload(
 
   const fromList = token.initialTransferWhitelist ?? [];
   const toList = token.initialReceiveWhitelist ?? [];
-  const hasWhitelistAddresses = fromList.length > 0 || toList.length > 0;
+  /**
+   * Look up space addresses for the encoded `initial(Transfer|Receive)WhitelistSpaceIds`
+   * so resubmit emits proper space rows next to member rows. Unresolved ids
+   * are dropped (can't round-trip without an address); the user can re-add
+   * them manually if needed.
+   */
+  const fromSpaceIds = (token.initialTransferWhitelistSpaceIds ?? []).map(
+    (id) => Number(id),
+  );
+  const toSpaceIds = (token.initialReceiveWhitelistSpaceIds ?? []).map((id) =>
+    Number(id),
+  );
+  const fromSpaceRows = fromSpaceIds
+    .map((id) => dbSpaces.find((s) => Number(s.web3SpaceId ?? -1) === id))
+    .filter(
+      (s): s is { web3SpaceId?: number | null; address?: string | null } =>
+        Boolean(s?.address),
+    );
+  const toSpaceRows = toSpaceIds
+    .map((id) => dbSpaces.find((s) => Number(s.web3SpaceId ?? -1) === id))
+    .filter(
+      (s): s is { web3SpaceId?: number | null; address?: string | null } =>
+        Boolean(s?.address),
+    );
+  const hasWhitelistAddresses =
+    fromList.length > 0 ||
+    toList.length > 0 ||
+    fromSpaceRows.length > 0 ||
+    toSpaceRows.length > 0;
   const enableAdvancedTransferControls = Boolean(
     (token.useTransferWhitelist || token.useReceiveWhitelist) &&
       hasWhitelistAddresses,
@@ -262,24 +304,38 @@ function buildIssueNewTokenResubmitPayload(
    */
   let transferWhitelist:
     | {
-        from?: { type: 'member'; address: string }[];
-        to?: { type: 'member'; address: string }[];
+        from?: { type: 'member' | 'space'; address: string }[];
+        to?: { type: 'member' | 'space'; address: string }[];
       }
     | undefined;
 
   if (enableAdvancedTransferControls && hasWhitelistAddresses) {
     transferWhitelist = {};
-    if (fromList.length > 0) {
-      transferWhitelist.from = fromList.map((addr) => ({
+    const fromEntries = [
+      ...fromList.map((addr) => ({
         type: 'member' as const,
-        address: addr,
-      }));
+        address: addr as string,
+      })),
+      ...fromSpaceRows.map((s) => ({
+        type: 'space' as const,
+        address: s.address as string,
+      })),
+    ];
+    const toEntries = [
+      ...toList.map((addr) => ({
+        type: 'member' as const,
+        address: addr as string,
+      })),
+      ...toSpaceRows.map((s) => ({
+        type: 'space' as const,
+        address: s.address as string,
+      })),
+    ];
+    if (fromEntries.length > 0) {
+      transferWhitelist.from = fromEntries;
     }
-    if (toList.length > 0) {
-      transferWhitelist.to = toList.map((addr) => ({
-        type: 'member' as const,
-        address: addr,
-      }));
+    if (toEntries.length > 0) {
+      transferWhitelist.to = toEntries;
     }
   }
 
@@ -882,6 +938,7 @@ export const ProposalDetail = ({
           tok as ProposalTokenFromProposalDetails,
           proposalDetails.spaceId,
           dbTokens ?? [],
+          dbSpaces ?? [],
           { documentId },
         ),
       };
@@ -1168,6 +1225,12 @@ export const ProposalDetail = ({
             useReceiveWhitelist={token.useReceiveWhitelist}
             initialTransferWhitelist={token.initialTransferWhitelist}
             initialReceiveWhitelist={token.initialReceiveWhitelist}
+            initialTransferWhitelistSpaceIds={
+              token.initialTransferWhitelistSpaceIds
+            }
+            initialReceiveWhitelistSpaceIds={
+              token.initialReceiveWhitelistSpaceIds
+            }
             decayPercentage={token.decayPercentage}
             decayInterval={token.decayInterval}
             defaultCreditLimit={token.defaultCreditLimit}

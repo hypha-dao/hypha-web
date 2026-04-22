@@ -200,6 +200,153 @@ const decayingTokenFactoryDeployLegacyAbi = [
   },
 ];
 
+/**
+ * Pre-whitelist-space-ids deploy ABIs: includes purchase params (and credit
+ * params for the regular factory) but NOT the new
+ * `initial(Transfer|Receive)WhitelistSpaceIds` arrays. Kept so proposals
+ * encoded against the previous current ABI continue to decode after the
+ * factory upgrade.
+ */
+const regularTokenFactoryDeployCreditOnlyAbi = [
+  {
+    type: 'function' as const,
+    name: 'deployToken',
+    inputs: [
+      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
+      { name: 'name', internalType: 'string', type: 'string' },
+      { name: 'symbol', internalType: 'string', type: 'string' },
+      { name: 'maxSupply', internalType: 'uint256', type: 'uint256' },
+      { name: 'transferable', internalType: 'bool', type: 'bool' },
+      { name: 'fixedMaxSupply', internalType: 'bool', type: 'bool' },
+      { name: 'autoMinting', internalType: 'bool', type: 'bool' },
+      { name: 'tokenPrice', internalType: 'uint256', type: 'uint256' },
+      { name: 'priceCurrencyFeed', internalType: 'address', type: 'address' },
+      { name: 'useTransferWhitelist', internalType: 'bool', type: 'bool' },
+      { name: 'useReceiveWhitelist', internalType: 'bool', type: 'bool' },
+      {
+        name: 'initialTransferWhitelist',
+        internalType: 'address[]',
+        type: 'address[]',
+      },
+      {
+        name: 'initialReceiveWhitelist',
+        internalType: 'address[]',
+        type: 'address[]',
+      },
+      { name: 'defaultCreditLimit', internalType: 'uint256', type: 'uint256' },
+      {
+        name: 'initialCreditWhitelistSpaceIds',
+        internalType: 'uint256[]',
+        type: 'uint256[]',
+      },
+      { name: 'paymentToken', internalType: 'address', type: 'address' },
+      {
+        name: 'paymentTokenPricePerToken',
+        internalType: 'uint256',
+        type: 'uint256',
+      },
+      { name: 'tokensForSale', internalType: 'uint256', type: 'uint256' },
+      { name: 'purchaseEligibilityMode', internalType: 'uint8', type: 'uint8' },
+      {
+        name: 'initialPurchaseWhitelistSpaceIds',
+        internalType: 'uint256[]',
+        type: 'uint256[]',
+      },
+    ],
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'nonpayable' as const,
+  },
+];
+const ownershipTokenFactoryDeployPurchaseOnlyAbi = [
+  {
+    type: 'function' as const,
+    name: 'deployOwnershipToken',
+    inputs: [
+      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
+      { name: 'name', internalType: 'string', type: 'string' },
+      { name: 'symbol', internalType: 'string', type: 'string' },
+      { name: 'maxSupply', internalType: 'uint256', type: 'uint256' },
+      { name: 'fixedMaxSupply', internalType: 'bool', type: 'bool' },
+      { name: 'autoMinting', internalType: 'bool', type: 'bool' },
+      { name: 'tokenPrice', internalType: 'uint256', type: 'uint256' },
+      { name: 'priceCurrencyFeed', internalType: 'address', type: 'address' },
+      { name: 'useTransferWhitelist', internalType: 'bool', type: 'bool' },
+      { name: 'useReceiveWhitelist', internalType: 'bool', type: 'bool' },
+      {
+        name: 'initialTransferWhitelist',
+        internalType: 'address[]',
+        type: 'address[]',
+      },
+      {
+        name: 'initialReceiveWhitelist',
+        internalType: 'address[]',
+        type: 'address[]',
+      },
+      { name: 'paymentToken', internalType: 'address', type: 'address' },
+      {
+        name: 'paymentTokenPricePerToken',
+        internalType: 'uint256',
+        type: 'uint256',
+      },
+      { name: 'tokensForSale', internalType: 'uint256', type: 'uint256' },
+      { name: 'purchaseEligibilityMode', internalType: 'uint8', type: 'uint8' },
+      {
+        name: 'initialPurchaseWhitelistSpaceIds',
+        internalType: 'uint256[]',
+        type: 'uint256[]',
+      },
+    ],
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'nonpayable' as const,
+  },
+];
+const decayingTokenFactoryDeployPurchaseOnlyAbi = [
+  {
+    type: 'function' as const,
+    name: 'deployDecayingToken',
+    inputs: [
+      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
+      { name: 'name', internalType: 'string', type: 'string' },
+      { name: 'symbol', internalType: 'string', type: 'string' },
+      { name: 'maxSupply', internalType: 'uint256', type: 'uint256' },
+      { name: 'transferable', internalType: 'bool', type: 'bool' },
+      { name: 'fixedMaxSupply', internalType: 'bool', type: 'bool' },
+      { name: 'autoMinting', internalType: 'bool', type: 'bool' },
+      { name: 'tokenPrice', internalType: 'uint256', type: 'uint256' },
+      { name: 'priceCurrencyFeed', internalType: 'address', type: 'address' },
+      { name: 'useTransferWhitelist', internalType: 'bool', type: 'bool' },
+      { name: 'useReceiveWhitelist', internalType: 'bool', type: 'bool' },
+      {
+        name: 'initialTransferWhitelist',
+        internalType: 'address[]',
+        type: 'address[]',
+      },
+      {
+        name: 'initialReceiveWhitelist',
+        internalType: 'address[]',
+        type: 'address[]',
+      },
+      { name: 'decayPercentage', internalType: 'uint256', type: 'uint256' },
+      { name: 'decayInterval', internalType: 'uint256', type: 'uint256' },
+      { name: 'paymentToken', internalType: 'address', type: 'address' },
+      {
+        name: 'paymentTokenPricePerToken',
+        internalType: 'uint256',
+        type: 'uint256',
+      },
+      { name: 'tokensForSale', internalType: 'uint256', type: 'uint256' },
+      { name: 'purchaseEligibilityMode', internalType: 'uint8', type: 'uint8' },
+      {
+        name: 'initialPurchaseWhitelistSpaceIds',
+        internalType: 'uint256[]',
+        type: 'uint256[]',
+      },
+    ],
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'nonpayable' as const,
+  },
+];
+
 import {
   decayingSpaceTokenAbi,
   tokenBalanceJoinImplementationAbi,
@@ -459,9 +606,15 @@ export function decodeTransaction(tx: Tx) {
                 useReceiveWhitelist: decoded.args[10],
                 initialTransferWhitelist: decoded.args[11],
                 initialReceiveWhitelist: decoded.args[12],
-                /** Mutual credit (RegularSpaceToken only) — args[13]/[14] from current ABI. */
-                defaultCreditLimit: decoded.args[13],
-                initialCreditWhitelistSpaceIds: decoded.args[14],
+                /**
+                 * Whitelist space ids (added in the same release as the new
+                 * factory deployments) live at args[13]/[14]; the credit fields
+                 * shift to args[15]/[16].
+                 */
+                initialTransferWhitelistSpaceIds: decoded.args[13],
+                initialReceiveWhitelistSpaceIds: decoded.args[14],
+                defaultCreditLimit: decoded.args[15],
+                initialCreditWhitelistSpaceIds: decoded.args[16],
               },
             }
           : null,
@@ -486,12 +639,103 @@ export function decodeTransaction(tx: Tx) {
                 useReceiveWhitelist: decoded.args[9],
                 initialTransferWhitelist: decoded.args[10],
                 initialReceiveWhitelist: decoded.args[11],
+                initialTransferWhitelistSpaceIds: decoded.args[12],
+                initialReceiveWhitelistSpaceIds: decoded.args[13],
               },
             }
           : null,
     },
     {
       abi: decayingTokenFactoryAbi,
+      handler: (decoded) =>
+        decoded.functionName === 'deployDecayingToken'
+          ? {
+              type: 'token',
+              data: {
+                tokenType: 'voice',
+                spaceId: decoded.args[0],
+                name: decoded.args[1],
+                symbol: decoded.args[2],
+                maxSupply: decoded.args[3],
+                transferable: decoded.args[4],
+                fixedMaxSupply: decoded.args[5],
+                autoMinting: decoded.args[6],
+                priceInUSD: decoded.args[7],
+                priceCurrencyFeed: decoded.args[8],
+                useTransferWhitelist: decoded.args[9],
+                useReceiveWhitelist: decoded.args[10],
+                initialTransferWhitelist: decoded.args[11],
+                initialReceiveWhitelist: decoded.args[12],
+                initialTransferWhitelistSpaceIds: decoded.args[13],
+                initialReceiveWhitelistSpaceIds: decoded.args[14],
+                decayPercentage: BigInt(
+                  decayBasisPointsToFormPercent(
+                    Number(decoded.args[15] as bigint),
+                  ),
+                ),
+                decayInterval: decoded.args[16],
+              },
+            }
+          : null,
+    },
+    /**
+     * Pre-whitelist-space-ids ABI fallbacks: proposals encoded against the
+     * previous factory shape (purchase + credit args, no transfer/receive
+     * whitelist space ids) must keep decoding with the old positions.
+     */
+    {
+      abi: regularTokenFactoryDeployCreditOnlyAbi,
+      handler: (decoded) =>
+        decoded.functionName === 'deployToken'
+          ? {
+              type: 'token',
+              data: {
+                tokenType: 'regular',
+                spaceId: decoded.args[0],
+                name: decoded.args[1],
+                symbol: decoded.args[2],
+                maxSupply: decoded.args[3],
+                transferable: decoded.args[4],
+                fixedMaxSupply: decoded.args[5],
+                autoMinting: decoded.args[6],
+                priceInUSD: decoded.args[7],
+                priceCurrencyFeed: decoded.args[8],
+                useTransferWhitelist: decoded.args[9],
+                useReceiveWhitelist: decoded.args[10],
+                initialTransferWhitelist: decoded.args[11],
+                initialReceiveWhitelist: decoded.args[12],
+                defaultCreditLimit: decoded.args[13],
+                initialCreditWhitelistSpaceIds: decoded.args[14],
+              },
+            }
+          : null,
+    },
+    {
+      abi: ownershipTokenFactoryDeployPurchaseOnlyAbi,
+      handler: (decoded) =>
+        decoded.functionName === 'deployOwnershipToken'
+          ? {
+              type: 'token',
+              data: {
+                tokenType: 'ownership',
+                spaceId: decoded.args[0],
+                name: decoded.args[1],
+                symbol: decoded.args[2],
+                maxSupply: decoded.args[3],
+                fixedMaxSupply: decoded.args[4],
+                autoMinting: decoded.args[5],
+                priceInUSD: decoded.args[6],
+                priceCurrencyFeed: decoded.args[7],
+                useTransferWhitelist: decoded.args[8],
+                useReceiveWhitelist: decoded.args[9],
+                initialTransferWhitelist: decoded.args[10],
+                initialReceiveWhitelist: decoded.args[11],
+              },
+            }
+          : null,
+    },
+    {
+      abi: decayingTokenFactoryDeployPurchaseOnlyAbi,
       handler: (decoded) =>
         decoded.functionName === 'deployDecayingToken'
           ? {

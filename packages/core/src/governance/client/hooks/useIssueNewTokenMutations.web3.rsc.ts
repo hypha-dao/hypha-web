@@ -51,6 +51,8 @@ interface CreateTokenArgs {
   useReceiveWhitelist?: boolean;
   initialTransferWhitelist?: `0x${string}`[];
   initialReceiveWhitelist?: `0x${string}`[];
+  initialTransferWhitelistSpaceIds?: number[];
+  initialReceiveWhitelistSpaceIds?: number[];
   defaultCreditLimit?: number;
   initialCreditWhitelistSpaceIds?: number[];
   salePaymentToken?: `0x${string}`;
@@ -101,6 +103,12 @@ export const useIssueTokenMutationsWeb3Rpc = ({
       const useReceiveWhitelist = arg.useReceiveWhitelist ?? false;
       const initialTransferWhitelist = arg.initialTransferWhitelist ?? [];
       const initialReceiveWhitelist = arg.initialReceiveWhitelist ?? [];
+      const initialTransferWhitelistSpaceIds = (
+        arg.initialTransferWhitelistSpaceIds ?? []
+      ).map((id) => BigInt(id));
+      const initialReceiveWhitelistSpaceIds = (
+        arg.initialReceiveWhitelistSpaceIds ?? []
+      ).map((id) => BigInt(id));
       const defaultCreditLimit =
         BigInt(arg.defaultCreditLimit ?? 0) * 10n ** 18n;
       const initialCreditWhitelistSpaceIds = (
@@ -141,6 +149,8 @@ export const useIssueTokenMutationsWeb3Rpc = ({
                 useReceiveWhitelist,
                 initialTransferWhitelist,
                 initialReceiveWhitelist,
+                initialTransferWhitelistSpaceIds,
+                initialReceiveWhitelistSpaceIds,
                 defaultCreditLimit,
                 initialCreditWhitelistSpaceIds,
                 salePaymentToken,
@@ -173,6 +183,8 @@ export const useIssueTokenMutationsWeb3Rpc = ({
                 useReceiveWhitelist,
                 initialTransferWhitelist,
                 initialReceiveWhitelist,
+                initialTransferWhitelistSpaceIds,
+                initialReceiveWhitelistSpaceIds,
                 salePaymentToken,
                 salePaymentTokenPricePerToken,
                 tokensForSale,
@@ -213,6 +225,8 @@ export const useIssueTokenMutationsWeb3Rpc = ({
                 useReceiveWhitelist,
                 initialTransferWhitelist,
                 initialReceiveWhitelist,
+                initialTransferWhitelistSpaceIds,
+                initialReceiveWhitelistSpaceIds,
                 BigInt(decayPercentToBasisPoints(arg.decayPercentage)),
                 BigInt(arg.decayInterval),
                 salePaymentToken,

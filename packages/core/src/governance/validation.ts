@@ -658,6 +658,12 @@ export const baseSchemaIssueNewToken = z.object({
   }, z.number().int().nonnegative().optional()),
   /** Web3 space ids whose members are eligible for the credit line */
   creditWhitelistedSpaceIds: z.array(z.number().int().nonnegative()).optional(),
+  /**
+   * Plugin-populated list of selectable spaces, used to resolve `transferWhitelist`
+   * space rows → web3 space ids in the orchestrator. Not persisted to the agreement
+   * payload directly; treated as opaque to keep this schema decoupled from `Space`.
+   */
+  spacesForWhitelistResolution: z.array(z.unknown()).optional(),
 });
 
 export const schemaIssueNewToken = baseSchemaIssueNewToken.superRefine(

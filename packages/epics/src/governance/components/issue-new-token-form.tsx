@@ -11,6 +11,7 @@ import {
   DbToken,
   useJwt,
   WHITELIST_DUPLICATE_ENTRY_MESSAGE,
+  type Space,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
@@ -372,6 +373,7 @@ export const IssueNewTokenForm = ({
       enableMutualCredit: false,
       defaultCreditLimit: undefined,
       creditWhitelistedSpaceIds: [],
+      spacesForWhitelistResolution: undefined,
       label: tAgreementFlow('labels.issueNewToken'),
     },
     mode: 'onChange',
@@ -450,6 +452,9 @@ export const IssueNewTokenForm = ({
       creditWhitelistedSpaceIds: data.enableMutualCredit
         ? data.creditWhitelistedSpaceIds
         : undefined,
+      spacesForWhitelistResolution: data.spacesForWhitelistResolution as
+        | Space[]
+        | undefined,
     });
   };
 
