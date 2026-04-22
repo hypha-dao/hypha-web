@@ -57,7 +57,7 @@ export const flagDefinitionsForDiscovery = {
     key: 'enable-coherence',
     defaultValue: false,
     description:
-      'Legacy opt-in for Coherence (no longer gates the Coherence tab or route)',
+      'Legacy flag kept for tooling/discovery; Coherence tab and signals are always available. Space Memory uses enable-space-memory.',
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
