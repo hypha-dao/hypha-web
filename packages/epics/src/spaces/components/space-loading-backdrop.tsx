@@ -10,6 +10,10 @@ import { useSpaceAccentPortalStyles } from './space-accent-portal-context';
  * matches the DHO space palette.
  */
 export function SpaceLoadingBackdrop(props: LoadingBackdropProps) {
-  const portalScopeStyle = useSpaceAccentPortalStyles();
+  const accentScopeStyle = useSpaceAccentPortalStyles();
+  const portalScopeStyle = {
+    ...accentScopeStyle,
+    ...props.portalScopeStyle,
+  };
   return <LoadingBackdrop {...props} portalScopeStyle={portalScopeStyle} />;
 }
