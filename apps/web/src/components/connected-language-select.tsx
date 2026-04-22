@@ -31,7 +31,6 @@ export function ConnectedLanguageSelect() {
       locales={locales}
       onLocaleChange={handleLocaleChange}
       ariaLabel={tNav('selectLanguage')}
-      menuHeading={tNav('interfaceLanguage')}
     />
   );
 }
