@@ -11,7 +11,7 @@ import { getDhoPathMembers } from '../@tab/members/constants';
 import { getDhoPathTreasury } from '../@tab/treasury/constants';
 // import { getDhoPathOverview } from '../@tab/overview/constants'; // Overview tab removed
 import { cn } from '@hypha-platform/ui-utils';
-import { getEffectiveDhoTab } from '@hypha-platform/epics';
+import { getActiveTabFromPath } from '@hypha-platform/epics';
 import { getDhoPathCoherence } from '../@tab/coherence/constants';
 
 /** Subtle scroll parallax: tab strip drifts slightly vs page for depth (see CompactSpaceBannerLead). */
@@ -36,18 +36,10 @@ function isReducedMotionPreferred(): boolean {
   );
 }
 
-export function NavigationTabs({
-  lang,
-  id,
-  coherenceEnabled = false,
-}: {
-  lang: Locale;
-  id: string;
-  coherenceEnabled?: boolean;
-}) {
+export function NavigationTabs({ lang, id }: { lang: Locale; id: string }) {
   const t = useTranslations('Common');
   const pathname = usePathname();
-  const activeTab = getEffectiveDhoTab(pathname, { coherenceEnabled });
+  const activeTab = getActiveTabFromPath(pathname);
 
   const [tabParallaxY, setTabParallaxY] = React.useState(0);
   const [preferReducedMotion, setPreferReducedMotion] = React.useState(false);
@@ -97,15 +89,11 @@ export function NavigationTabs({
     //   name: 'overview',
     //   href: getDhoPathOverview(lang, id),
     // },
-    ...(coherenceEnabled
-      ? [
-          {
-            title: t('Coherence'),
-            name: 'coherence',
-            href: getDhoPathCoherence(lang, id),
-          },
-        ]
-      : []),
+    {
+      title: t('Coherence'),
+      name: 'coherence',
+      href: getDhoPathCoherence(lang, id),
+    },
     {
       title: t('Agreements'),
       name: 'agreements',
