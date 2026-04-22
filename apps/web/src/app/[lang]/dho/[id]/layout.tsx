@@ -113,7 +113,7 @@ export default async function DhoLayout({
   return (
     <SpaceAccentPortalBridge>
       <div className="mx-auto flex max-w-container-2xl">
-        <Container className="min-w-0 flex-grow !px-4">
+        <Container className="min-w-0 flex-grow px-4!">
           {/* React 19+: link rel="preload" is hoisted to document head */}
           {heroBannerImageHref !== DEFAULT_SPACE_LEAD_IMAGE ? (
             <link
@@ -158,7 +158,7 @@ export default async function DhoLayout({
                       {web3SpaceId !== undefined && (
                         <SubscriptionBadge
                           web3SpaceId={web3SpaceId}
-                          className="rounded-md !border-accent-8 bg-transparent text-white hover:!border-accent-9 hover:bg-white/10"
+                          className="rounded-md border-accent-8! bg-transparent text-white hover:border-accent-9! hover:bg-white/10"
                         />
                       )}
                       <SpaceModeLabel
@@ -172,8 +172,8 @@ export default async function DhoLayout({
                         )}/space-configuration`}
                         className={
                           compactBannerSpaceArchived
-                            ? '[&_.border-error-8]:rounded-md [&_.border-error-8]:!border-error-8 [&_.border-error-8]:bg-transparent [&_.border-error-8]:text-white [&_.border-error-8]:hover:!border-error-9 [&_.border-error-8]:hover:bg-white/10'
-                            : '[&_.border-accent-8]:rounded-md [&_.border-accent-8]:!border-accent-8 [&_.border-accent-8]:bg-transparent [&_.border-accent-8]:text-white [&_.border-accent-8]:hover:!border-accent-9 [&_.border-accent-8]:hover:bg-white/10'
+                            ? '[&_.border-error-8]:rounded-md [&_.border-error-8]:border-error-8! [&_.border-error-8]:bg-transparent [&_.border-error-8]:text-white [&_.border-error-8]:hover:border-error-9! [&_.border-error-8]:hover:bg-white/10'
+                            : '[&_.border-accent-8]:rounded-md [&_.border-accent-8]:border-accent-8! [&_.border-accent-8]:bg-transparent [&_.border-accent-8]:text-white [&_.border-accent-8]:hover:border-accent-9! [&_.border-accent-8]:hover:bg-white/10'
                         }
                       />
                     </>
