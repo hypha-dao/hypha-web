@@ -8,7 +8,7 @@
     "Spaces": "Spaces",
     "loadMore": "Load more",
     "noMore": "No more",
-    "spaceBannerDescriptionAria": "{title}: description",
+    "spaceBannerDescriptionAria": "Description of {title}",
     "createdOn": "Created on {date}",
     "acceptedOn": "Accepted on {date}",
     "rejectedOn": "Rejected on {date}",

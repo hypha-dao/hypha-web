@@ -1,7 +1,7 @@
 {
   "Common": {
     "createdOn": "Creado el {date}",
-    "spaceBannerDescriptionAria": "{title}: descripción",
+    "spaceBannerDescriptionAria": "Descripción de {title}",
     "acceptedOn": "Aceptado el {date}",
     "rejectedOn": "Rechazado el {date}",
     "joinedSpaceOn": "Se unió al espacio el {date}",
