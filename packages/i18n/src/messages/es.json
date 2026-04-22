@@ -991,6 +991,13 @@
         "inactive": "Inactivo",
         "applicant": "Candidato",
         "unknown": "Desconocido"
+      },
+      "unsavedChangesModal": {
+        "title": "Cambios sin guardar",
+        "description": "Tienes cambios sin guardar. Si sales, los perderás.",
+        "discard": "Descartar cambios",
+        "save": "Guardar cambios",
+        "saving": "Guardando..."
       }
     },
     "delegateSection": {

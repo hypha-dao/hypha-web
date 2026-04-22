@@ -1,11 +1,19 @@
 'use client';
 
-import { useEffect, useRef, useState, useMemo } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+} from 'react';
 import { Separator, Label, Button } from '@hypha-platform/ui';
 import { DelegatedMemberSelector } from './delegated-member-selector';
 // import { DelegatedSpaceSelector } from './delegated-space-selector';
 import { UseMembers } from '../../spaces';
-import { useForm } from 'react-hook-form';
+import { useForm, useFormState } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormField, FormMessage, FormItem } from '@hypha-platform/ui';
 import { z } from 'zod';
@@ -29,6 +37,13 @@ interface DelegateVotingSectionProps {
   useMembers: UseMembers;
 }
 
+export type DelegateVotingSectionHandle = {
+  getIsDirty: () => boolean;
+  /** Programmatic submit; resolves true when validation passes and persist finished. */
+  submitPersist: () => Promise<boolean>;
+  resetDirtyBaseline: () => void;
+};
+
 type DelegateToMemberForm = {
   delegatedSpace: number;
   delegatedMember: string;
@@ -45,11 +60,10 @@ const passOnDelegatedVoiceSchema = z.object({
 type PassOnDelegatedVoiceForm = z.infer<typeof passOnDelegatedVoiceSchema>;
 */
 
-export const DelegateVotingSection = ({
-  web3SpaceId,
-  spaceSlug,
-  useMembers,
-}: DelegateVotingSectionProps) => {
+export const DelegateVotingSection = forwardRef<
+  DelegateVotingSectionHandle,
+  DelegateVotingSectionProps
+>(function DelegateVotingSection({ web3SpaceId, spaceSlug, useMembers }, ref) {
   const tMembersTab = useTranslations('MembersTab');
   const { personSlug: personSlugRaw } = useParams<ProfileComponentParams>();
   const personSlug = tryDecodeUriPart(personSlugRaw);
@@ -63,6 +77,32 @@ export const DelegateVotingSection = ({
   const filteredMembers =
     persons?.data?.filter((member) => member.address !== person?.address) ?? [];
   const isMember = person?.slug === personSlug;
+
+  const delegateToMemberSchema = useMemo(
+    () =>
+      z.object({
+        delegatedSpace: z.number({
+          required_error: tMembersTab('delegateSection.errors.selectSpace'),
+          invalid_type_error: tMembersTab('delegateSection.errors.selectSpace'),
+        }),
+        delegatedMember: z
+          .string()
+          .min(1, tMembersTab('delegateSection.errors.selectMember')),
+      }),
+    [tMembersTab],
+  );
+
+  const delegateToMemberFormRef = useRef<HTMLFormElement>(null);
+  const delegateToMemberForm = useForm<DelegateToMemberForm>({
+    resolver: zodResolver(delegateToMemberSchema),
+    defaultValues: {
+      delegatedMember: '',
+      delegatedSpace: effectiveSpaceId as number,
+    },
+  });
+  const { isDirty: delegateFormIsDirty } = useFormState({
+    control: delegateToMemberForm.control,
+  });
 
   const {
     delegate: delegateToMember,
@@ -110,27 +150,6 @@ export const DelegateVotingSection = ({
     }
   }, [delegateHashSpace, resetDelegateSpace]);
   */
-
-  if (!isMember) return null;
-
-  const delegateToMemberSchema = z.object({
-    delegatedSpace: z.number({
-      required_error: tMembersTab('delegateSection.errors.selectSpace'),
-      invalid_type_error: tMembersTab('delegateSection.errors.selectSpace'),
-    }),
-    delegatedMember: z
-      .string()
-      .min(1, tMembersTab('delegateSection.errors.selectMember')),
-  });
-
-  const delegateToMemberFormRef = useRef<HTMLFormElement>(null);
-  const delegateToMemberForm = useForm<DelegateToMemberForm>({
-    resolver: zodResolver(delegateToMemberSchema),
-    defaultValues: {
-      delegatedMember: '',
-      delegatedSpace: effectiveSpaceId as number,
-    },
-  });
 
   const viewerAddress = person?.address?.toLowerCase();
 
@@ -198,19 +217,23 @@ export const DelegateVotingSection = ({
     ];
   }, [effectiveSpaceId, person?.address]);
 
-  const handleDelegateToMember = async (data: DelegateToMemberForm) => {
-    await delegateToMember({
-      address: data.delegatedMember as `0x${string}`,
-      spaceId: data.delegatedSpace,
-    });
-    delegateToMemberForm.setValue('delegatedMember', data.delegatedMember);
-    if (delegateCacheKey) {
-      await mutateCache(delegateCacheKey);
-    }
-    await updateMembers?.();
-  };
+  const handleDelegateToMember = useCallback(
+    async (data: DelegateToMemberForm) => {
+      await delegateToMember({
+        address: data.delegatedMember as `0x${string}`,
+        spaceId: data.delegatedSpace,
+      });
+      delegateToMemberForm.setValue('delegatedMember', data.delegatedMember);
+      if (delegateCacheKey) {
+        await mutateCache(delegateCacheKey);
+      }
+      await updateMembers?.();
+      delegateToMemberForm.reset(delegateToMemberForm.getValues());
+    },
+    [delegateCacheKey, delegateToMember, delegateToMemberForm, updateMembers],
+  );
 
-  const handleUndelegate = async () => {
+  const handleUndelegate = useCallback(async () => {
     if (!effectiveSpaceId || !hasConfirmedDelegate) return;
     await undelegate({
       spaceId: effectiveSpaceId,
@@ -220,7 +243,40 @@ export const DelegateVotingSection = ({
       await mutateCache(delegateCacheKey);
     }
     await updateMembers?.();
-  };
+    delegateToMemberForm.reset(delegateToMemberForm.getValues());
+  }, [
+    delegateCacheKey,
+    delegateToMemberForm,
+    effectiveSpaceId,
+    hasConfirmedDelegate,
+    undelegate,
+    updateMembers,
+  ]);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      getIsDirty: () => delegateFormIsDirty,
+      submitPersist: () =>
+        new Promise<boolean>((resolve) => {
+          void delegateToMemberForm.handleSubmit(
+            async (data) => {
+              try {
+                await handleDelegateToMember(data);
+                resolve(true);
+              } catch {
+                resolve(false);
+              }
+            },
+            () => resolve(false),
+          )();
+        }),
+      resetDirtyBaseline: () => {
+        delegateToMemberForm.reset(delegateToMemberForm.getValues());
+      },
+    }),
+    [delegateFormIsDirty, delegateToMemberForm, handleDelegateToMember],
+  );
 
   /*
   const handleDelegateSpace = async (data: PassOnDelegatedVoiceForm) => {
@@ -230,6 +286,9 @@ export const DelegateVotingSection = ({
     });
   };
   */
+
+  if (!isMember) return null;
+
   return (
     <div className="flex flex-col gap-5">
       <Form {...delegateToMemberForm}>
@@ -384,4 +443,4 @@ export const DelegateVotingSection = ({
       {/* <Separator /> */}
     </div>
   );
-};
+});

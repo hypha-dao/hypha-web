@@ -26,6 +26,9 @@ export type MemberDetailProps = {
   member: MemberType;
   isLoading: boolean;
   spaces: Space[];
+  /** When set, invoked instead of navigating to `closeUrl` (e.g. unsaved-changes guard). */
+  onCloseRequest?: () => void;
+  closeDisabled?: boolean;
 };
 
 export const MemberDetail = ({
@@ -34,23 +37,42 @@ export const MemberDetail = ({
   closeUrl,
   member,
   spaces,
+  onCloseRequest,
+  closeDisabled = false,
 }: MemberDetailProps) => {
   const tCommon = useTranslations('Common');
+  const showClose = Boolean(closeUrl) || Boolean(onCloseRequest);
 
   return (
     <div className="flex flex-col gap-5">
       <div className="flex gap-5 justify-between">
         <MemberHead {...member} lang={lang} isLoading={isLoading} />
-        <Link href={closeUrl} scroll={false}>
-          <Button
-            variant="ghost"
-            colorVariant="neutral"
-            className="flex items-center"
-          >
-            {tCommon('close')}
-            <RxCross1 className="ml-2" />
-          </Button>
-        </Link>
+        {showClose ? (
+          onCloseRequest ? (
+            <Button
+              type="button"
+              variant="ghost"
+              colorVariant="neutral"
+              className="flex items-center"
+              disabled={closeDisabled}
+              onClick={onCloseRequest}
+            >
+              {tCommon('close')}
+              <RxCross1 className="ml-2" />
+            </Button>
+          ) : (
+            <Link href={closeUrl} scroll={false}>
+              <Button
+                variant="ghost"
+                colorVariant="neutral"
+                className="flex items-center"
+              >
+                {tCommon('close')}
+                <RxCross1 className="ml-2" />
+              </Button>
+            </Link>
+          )
+        ) : null}
       </div>
       <Separator />
       <Skeleton

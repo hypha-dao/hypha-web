@@ -338,6 +338,13 @@
         "inactive": "Inactive",
         "applicant": "Applicant",
         "unknown": "Unknown"
+      },
+      "unsavedChangesModal": {
+        "title": "Unsaved changes",
+        "description": "You have unsaved changes. If you navigate away, you will lose them.",
+        "discard": "Discard changes",
+        "save": "Save changes",
+        "saving": "Saving..."
       }
     },
     "delegateSection": {

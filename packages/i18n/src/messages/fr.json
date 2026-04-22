@@ -338,6 +338,13 @@
         "inactive": "Inactif",
         "applicant": "Candidat",
         "unknown": "Inconnu"
+      },
+      "unsavedChangesModal": {
+        "title": "Modifications non enregistrées",
+        "description": "Vous avez des modifications non enregistrées. Si vous quittez la page, elles seront perdues.",
+        "discard": "Abandonner les modifications",
+        "save": "Enregistrer les modifications",
+        "saving": "Enregistrement..."
       }
     },
     "delegateSection": {

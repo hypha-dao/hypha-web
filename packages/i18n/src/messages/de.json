@@ -338,6 +338,13 @@
         "inactive": "Inaktiv",
         "applicant": "Bewerber",
         "unknown": "Unbekannt"
+      },
+      "unsavedChangesModal": {
+        "title": "Ungespeicherte Änderungen",
+        "description": "Sie haben ungespeicherte Änderungen. Wenn Sie die Seite verlassen, gehen sie verloren.",
+        "discard": "Änderungen verwerfen",
+        "save": "Änderungen speichern",
+        "saving": "Wird gespeichert..."
       }
     },
     "delegateSection": {

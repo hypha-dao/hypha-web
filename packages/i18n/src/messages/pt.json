@@ -991,6 +991,13 @@
         "inactive": "Inativo",
         "applicant": "Candidato",
         "unknown": "Desconhecido"
+      },
+      "unsavedChangesModal": {
+        "title": "Alterações não salvas",
+        "description": "Você tem alterações não salvas. Se sair, elas serão perdidas.",
+        "discard": "Descartar alterações",
+        "save": "Salvar alterações",
+        "saving": "Salvando..."
       }
     },
     "delegateSection": {
