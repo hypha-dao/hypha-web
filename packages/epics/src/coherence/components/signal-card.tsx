@@ -350,14 +350,14 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
             <DialogContent
               className={cn(
-                'max-h-[min(560px,85dvh)] gap-0 overflow-hidden border-border/70 bg-card/95 p-0 shadow-2xl backdrop-blur-sm sm:max-w-lg',
+                'flex max-h-[min(560px,85dvh)] flex-col gap-0 overflow-hidden border-border/70 bg-card/95 p-0 shadow-2xl backdrop-blur-sm sm:max-w-lg',
                 'border-l-[3px] border-l-[var(--space-accent)]',
               )}
               style={spaceAccentPortalStyle}
               onClick={(e) => e.stopPropagation()}
               onPointerDownOutside={(e) => e.stopPropagation()}
             >
-              <DialogHeader className="space-y-1.5 border-b border-border/60 bg-gradient-to-b from-muted/25 to-transparent px-6 pb-4 pt-6">
+              <DialogHeader className="shrink-0 space-y-1.5 border-b border-border/60 bg-gradient-to-b from-muted/25 to-transparent px-6 pb-4 pt-6">
                 <DialogTitle className="pr-10 text-balance text-lg font-semibold leading-snug tracking-tight">
                   {title}
                 </DialogTitle>
@@ -367,7 +367,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               </DialogHeader>
               <div
                 className={cn(
-                  'narrow-scrollbar max-h-[min(420px,calc(85dvh_-_9.5rem))] overflow-y-auto px-6 py-5',
+                  'narrow-scrollbar min-h-0 flex-1 overflow-y-auto px-6 py-5',
                   '[scrollbar-gutter:stable]',
                 )}
               >
@@ -375,7 +375,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                   {plainDescription}
                 </p>
               </div>
-              <DialogFooter className="border-t border-border/60 bg-muted/10 px-6 py-4">
+              <DialogFooter className="shrink-0 border-t border-border/60 bg-muted/10 px-6 py-4">
                 <Button
                   type="button"
                   variant="outline"
