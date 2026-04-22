@@ -13,7 +13,10 @@ import { UpdateIssuedTokenForm } from '@hypha-platform/epics';
 import { Plugin } from '../../../../_components/plugins';
 import { Person, Space } from '@hypha-platform/core/client';
 // >>> MAINTENANCE START — remove this import together with the early return below.
-import { UnderMaintenance } from '../_maintenance/under-maintenance';
+import {
+  TOKEN_PROPOSAL_MAINTENANCE,
+  UnderMaintenance,
+} from '../_maintenance/under-maintenance';
 // <<< MAINTENANCE END
 type PageProps = {
   params: Promise<{ lang: Locale; id: string; tab: string }>;
@@ -25,11 +28,13 @@ export default async function UpdateIssuedTokenPage({
   searchParams,
 }: PageProps) {
   // >>> MAINTENANCE START — token contracts in flight; remove this block to re-enable.
-  return (
-    <ProposalOverlayShell>
-      <UnderMaintenance />
-    </ProposalOverlayShell>
-  );
+  if (TOKEN_PROPOSAL_MAINTENANCE) {
+    return (
+      <ProposalOverlayShell>
+        <UnderMaintenance />
+      </ProposalOverlayShell>
+    );
+  }
   // <<< MAINTENANCE END
 
   const { lang, id, tab } = await params;

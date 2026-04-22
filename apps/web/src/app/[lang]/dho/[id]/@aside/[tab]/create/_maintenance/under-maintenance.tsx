@@ -12,6 +12,14 @@ import { Wrench } from 'lucide-react';
  *
  * Approximate duration (informational only): 3 hours from deploy.
  */
+
+/**
+ * Typed as `boolean` (not the literal `true`) on purpose: keeps the rest of the
+ * page bodies reachable for TypeScript control-flow analysis so the existing
+ * `notFound()` narrowing on `spaceFromDb` still works while this flag is on.
+ */
+export const TOKEN_PROPOSAL_MAINTENANCE: boolean = true;
+
 export function UnderMaintenance({
   title = 'Temporarily under maintenance',
   message = 'Token creation and update proposals are temporarily disabled while we ship a contract change. Expected back online in approximately 3 hours.',
