@@ -47,6 +47,10 @@ function useMenuTopOffsetPx(): number {
 /**
  * Desktop (md+): pin a compact chrome row under `MenuTop`. Actions / nested-space move
  * via portal so the same React trees (hooks) transition between positions — pixel-identical Button UI.
+ *
+ * Note: `createPortal` remounts its subtree when the container DOM node changes (e.g. when
+ * `actionsPortalTarget` swaps between in-flow and sticky targets). Stateful descendants reset;
+ * lift state above the portaled subtree if that becomes a problem.
  */
 export function DhoStickySpaceChrome({
   breadcrumbsRow,
