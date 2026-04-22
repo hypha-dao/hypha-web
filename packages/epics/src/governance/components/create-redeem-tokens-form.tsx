@@ -185,8 +185,6 @@ const CreateRedeemTokensFormInner = ({
     }
   };
 
-  console.log('form errors:', form.formState.errors);
-
   return (
     <SpaceLoadingBackdrop
       showKeepWindowOpenMessage={true}
