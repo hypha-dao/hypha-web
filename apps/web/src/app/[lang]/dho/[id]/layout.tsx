@@ -143,8 +143,8 @@ export default async function DhoLayout({
                   links={spaceFromDb.links}
                   leadImageUrl={heroBannerImageHref}
                   defaultLeadImageSrc={DEFAULT_SPACE_LEAD_IMAGE}
-                  memberCount={spaceMembers ?? 0}
-                  agreementCount={spaceAgreements ?? 0}
+                  memberCount={spaceMembers}
+                  agreementCount={spaceAgreements}
                   createdOnText={tCommon('createdOn', {
                     date: formatDate(spaceFromDb.createdAt, true),
                   })}

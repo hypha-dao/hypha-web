@@ -37,8 +37,8 @@ export type CompactSpaceBannerProps = {
   links?: string[] | null;
   leadImageUrl?: string | null;
   defaultLeadImageSrc?: string;
-  memberCount: number;
-  agreementCount: number;
+  memberCount: number | null;
+  agreementCount: number | null;
   createdOnText: string;
   membersLabel: string;
   agreementsLabel: string;
@@ -252,7 +252,7 @@ export function CompactSpaceBanner({
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-1 text-white/88 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]">
               <span>
                 <span className="font-bold tabular-nums text-white">
-                  {memberCount}
+                  {memberCount ?? '—'}
                 </span>{' '}
                 <span className="text-white/92">{membersLabel}</span>
               </span>
@@ -261,7 +261,7 @@ export function CompactSpaceBanner({
               </span>
               <span>
                 <span className="font-bold tabular-nums text-white">
-                  {agreementCount}
+                  {agreementCount ?? '—'}
                 </span>{' '}
                 <span className="text-white/92">{agreementsLabel}</span>
               </span>
