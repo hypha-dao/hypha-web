@@ -514,6 +514,15 @@ export const UpdateIssuedTokenPlugin = ({
    * have set, then defer to user edits afterwards.
    */
   const creditHydratedForTokenRef = useRef<string | null>(null);
+  /**
+   * Resubmit-related refs are declared early so the on-chain hydration effect
+   * can observe `resubmitHydratedRef.current` before deciding to force-fill
+   * mutual-credit fields (see PR #2176 review). Their reset effect lives
+   * further down alongside the resubmit handler.
+   */
+  const resubmitOverlayAppliedRef = useRef(false);
+  const resubmitHydratedRef = useRef(false);
+  const baselineWhitelistAppliedForTokenRef = useRef<string | null>(null);
 
   useEffect(() => {
     lastOnChainFingerprintRef.current = '';
@@ -837,13 +846,20 @@ export const UpdateIssuedTokenPlugin = ({
     const creditFirstSync =
       !!selectedTokenAddress &&
       creditHydratedForTokenRef.current !== selectedTokenAddress;
+    /**
+     * If the resubmit overlay has already restored pending mutual-credit edits,
+     * skip the force-fill so we don't clobber them with current on-chain
+     * values. We still mirror the (non-user-facing) baselines below.
+     */
+    const shouldForceCreditSync =
+      creditFirstSync && !resubmitHydratedRef.current;
 
-    if (creditFirstSync || !isDirty('enableMutualCredit')) {
+    if (shouldForceCreditSync || !isDirty('enableMutualCredit')) {
       setValue('enableMutualCredit', creditEnabledFromChain, {
         shouldDirty: false,
       });
     }
-    if (creditFirstSync || !isDirty('defaultCreditLimit')) {
+    if (shouldForceCreditSync || !isDirty('defaultCreditLimit')) {
       setValue(
         'defaultCreditLimit',
         creditEnabledFromChain
@@ -852,7 +868,7 @@ export const UpdateIssuedTokenPlugin = ({
         { shouldDirty: false },
       );
     }
-    if (creditFirstSync || !isDirty('creditWhitelistedSpaceIds')) {
+    if (shouldForceCreditSync || !isDirty('creditWhitelistedSpaceIds')) {
       setValue('creditWhitelistedSpaceIds', additionalWhitelistedSpaceIds, {
         shouldDirty: false,
       });
@@ -884,10 +900,6 @@ export const UpdateIssuedTokenPlugin = ({
     dirtyFields,
   ]);
 
-  const resubmitOverlayAppliedRef = useRef(false);
-  const resubmitHydratedRef = useRef(false);
-  const baselineWhitelistAppliedForTokenRef = useRef<string | null>(null);
-
   useEffect(() => {
     resubmitOverlayAppliedRef.current = false;
     resubmitHydratedRef.current = false;
@@ -916,6 +928,12 @@ export const UpdateIssuedTokenPlugin = ({
       });
       resubmitOverlayAppliedRef.current = true;
       resubmitHydratedRef.current = true;
+      /**
+       * Treat resubmit hydration as the credit "first sync" so a later
+       * on-chain hydration (which may arrive after this handler) does not
+       * fall into the force-fill path and overwrite resubmitted credit edits.
+       */
+      creditHydratedForTokenRef.current = detail.tokenAddress;
     };
     window.addEventListener(UPDATE_ISSUED_TOKEN_RESUBMIT_EVENT, handler);
     return () =>

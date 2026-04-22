@@ -51,7 +51,13 @@ export type AssetItem = {
   createdAt?: Date;
   supply?: {
     total: number;
-    max: number;
+    /**
+     * Optional: the API producer (`/api/v1/people/[personSlug]/assets`) emits
+     * `supply: { total }` only and does not currently include `max`. Mark
+     * optional so consumers handle `undefined` instead of crashing on a stale
+     * required-`number` contract.
+     */
+    max?: number;
   };
   space?: {
     title: string;

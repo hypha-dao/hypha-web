@@ -466,16 +466,21 @@ export const ProposalUpdateToken = ({
     Boolean(addCreditWhitelistSpaceIds?.length) ||
     Boolean(removeCreditWhitelistSpaceIds?.length);
   const { spaces: dbSpacesForCredit } = useDbSpaces({ parentOnly: false });
+  /**
+   * Pair every chain-side whitelist id with its DB space (if found). Unresolved
+   * ids are kept and rendered as a fallback badge so add/remove deltas remain
+   * visible when `useDbSpaces()` does not have the row (private/sandbox spaces,
+   * not-yet-replicated rows, etc.) — see PR #2176 review.
+   */
   const resolveSpacesByIds = React.useCallback(
     (ids: number[] | undefined) => {
       if (!ids?.length) {
         return [];
       }
-      return ids
-        .map((id) =>
-          dbSpacesForCredit.find((s) => Number(s.web3SpaceId ?? 0) === id),
-        )
-        .filter((s): s is NonNullable<typeof s> => Boolean(s));
+      return ids.map((id) => ({
+        id,
+        space: dbSpacesForCredit.find((s) => Number(s.web3SpaceId ?? 0) === id),
+      }));
     },
     [dbSpacesForCredit],
   );
@@ -671,9 +676,9 @@ export const ProposalUpdateToken = ({
                   {tProposalDetails('labels.mutualCreditEligibleSpacesAdded')}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {addedCreditSpaces.map((s) => (
+                  {addedCreditSpaces.map(({ id, space: s }) => (
                     <Badge
-                      key={`add-${s.web3SpaceId ?? s.slug}`}
+                      key={`add-${s?.web3SpaceId ?? id}`}
                       variant="outline"
                       className="gap-1.5 py-1 pl-1 pr-2"
                     >
@@ -683,16 +688,26 @@ export const ProposalUpdateToken = ({
                       >
                         +
                       </span>
-                      <Image
-                        className="rounded-full w-5 h-5"
-                        src={s.logoUrl ?? '/placeholder/default-profile.svg'}
-                        width={20}
-                        height={20}
-                        alt={tProposalDetails('labels.spaceLogoAlt', {
-                          title: s.title,
-                        })}
-                      />
-                      <span className="text-1">{s.title}</span>
+                      {s ? (
+                        <>
+                          <Image
+                            className="rounded-full w-5 h-5"
+                            src={
+                              s.logoUrl ?? '/placeholder/default-profile.svg'
+                            }
+                            width={20}
+                            height={20}
+                            alt={tProposalDetails('labels.spaceLogoAlt', {
+                              title: s.title,
+                            })}
+                          />
+                          <span className="text-1">{s.title}</span>
+                        </>
+                      ) : (
+                        <span className="text-1">
+                          {tProposalDetails('labels.unknown')} #{id}
+                        </span>
+                      )}
                     </Badge>
                   ))}
                 </div>
@@ -704,9 +719,9 @@ export const ProposalUpdateToken = ({
                   {tProposalDetails('labels.mutualCreditEligibleSpacesRemoved')}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {removedCreditSpaces.map((s) => (
+                  {removedCreditSpaces.map(({ id, space: s }) => (
                     <Badge
-                      key={`rm-${s.web3SpaceId ?? s.slug}`}
+                      key={`rm-${s?.web3SpaceId ?? id}`}
                       variant="outline"
                       className="gap-1.5 py-1 pl-1 pr-2"
                     >
@@ -716,16 +731,26 @@ export const ProposalUpdateToken = ({
                       >
                         −
                       </span>
-                      <Image
-                        className="rounded-full w-5 h-5"
-                        src={s.logoUrl ?? '/placeholder/default-profile.svg'}
-                        width={20}
-                        height={20}
-                        alt={tProposalDetails('labels.spaceLogoAlt', {
-                          title: s.title,
-                        })}
-                      />
-                      <span className="text-1">{s.title}</span>
+                      {s ? (
+                        <>
+                          <Image
+                            className="rounded-full w-5 h-5"
+                            src={
+                              s.logoUrl ?? '/placeholder/default-profile.svg'
+                            }
+                            width={20}
+                            height={20}
+                            alt={tProposalDetails('labels.spaceLogoAlt', {
+                              title: s.title,
+                            })}
+                          />
+                          <span className="text-1">{s.title}</span>
+                        </>
+                      ) : (
+                        <span className="text-1">
+                          {tProposalDetails('labels.unknown')} #{id}
+                        </span>
+                      )}
                     </Badge>
                   ))}
                 </div>
