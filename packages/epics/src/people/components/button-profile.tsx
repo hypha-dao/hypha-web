@@ -108,7 +108,7 @@ export const ButtonProfile = ({
                 ) : null}
               </div>
               {address ? (
-                <div className="w-full max-w-[16rem] rounded-lg border border-border/60 bg-muted/40 px-3 py-2">
+                <div className="w-full rounded-lg border border-border/60 bg-muted/40 px-3 py-2">
                   <EthAddress address={address} />
                 </div>
               ) : null}
@@ -235,19 +235,21 @@ export const ButtonProfile = ({
                           {person.nickname}
                         </span>
                       ) : null}
-                      {address ? (
-                        <div
-                          className={cn(
-                            'mt-1 rounded-md border border-border/50 bg-muted/35 px-2 py-1.5',
-                            'text-1 text-muted-foreground',
-                          )}
-                        >
-                          <EthAddress address={address} />
-                        </div>
-                      ) : null}
                     </div>
                   </div>
                 </DropdownMenuLabel>
+                {address ? (
+                  <div className="mt-2 w-full border-t border-border/50 pt-2 pb-1">
+                    <div
+                      className={cn(
+                        'w-full rounded-md border border-border/50 bg-muted/35 px-2 py-1.5',
+                        'text-1 text-muted-foreground',
+                      )}
+                    >
+                      <EthAddress address={address} />
+                    </div>
+                  </div>
+                ) : null}
 
                 {(profileUrl || notificationCentrePath) && (
                   <>
