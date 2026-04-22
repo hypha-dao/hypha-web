@@ -10,6 +10,7 @@ import { useSyncExternalStore } from 'react';
 
 let scrollRoot: HTMLElement | null = null;
 const listeners = new Set<() => void>();
+let scrollNotifyRaf = 0;
 
 function readScrollY(): number {
   if (typeof window === 'undefined') return 0;
@@ -18,10 +19,18 @@ function readScrollY(): number {
 }
 
 function onScroll() {
-  listeners.forEach((l) => l());
+  if (scrollNotifyRaf) return;
+  scrollNotifyRaf = requestAnimationFrame(() => {
+    scrollNotifyRaf = 0;
+    listeners.forEach((l) => l());
+  });
 }
 
 function detachFrom(target: HTMLElement | Window | null) {
+  if (scrollNotifyRaf) {
+    cancelAnimationFrame(scrollNotifyRaf);
+    scrollNotifyRaf = 0;
+  }
   if (!target) return;
   target.removeEventListener('scroll', onScroll);
 }
