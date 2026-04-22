@@ -1299,6 +1299,9 @@ export function HumanChatPanelChatBar({
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.nativeEvent.isComposing) {
+        return;
+      }
       if (atOpen && atSuggestions.length > 0) {
         if (e.key === 'ArrowDown') {
           e.preventDefault();
