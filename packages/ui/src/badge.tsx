@@ -31,7 +31,7 @@ const parameters = {
 };
 
 const badgeVariants = cva(
-  'inline-flex items-center rounded-lg border focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 font-medium transition-[color,background-color,border-color,box-shadow,ring-color]',
+  'inline-flex items-center rounded-lg border focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 font-medium transition-[color,background-color,border-color,box-shadow]',
   {
     variants: {
       size: {
