@@ -1,5 +1,7 @@
 'use server';
 
+import { getDb } from '../../common/server/get-db';
+import { findSelf } from '../../people/server/queries';
 import { CreateCoherenceInput, UpdateCoherenceBySlugInput } from '../types';
 import { db } from '@hypha-platform/storage-postgres';
 import {
@@ -30,7 +32,15 @@ export async function deleteCoherenceBySlugAction(
   { authToken }: { authToken?: string },
 ) {
   if (!authToken) throw new Error('authToken is required to delete coherence');
-  // TODO: #602 Define RLS Policies for Spaces Table
-  // const db = getDb({ authToken });
-  return deleteCoherenceBySlug(data, { db });
+  const authDb = getDb({ authToken });
+  const self = await findSelf({ db: authDb });
+  if (!self?.id) {
+    throw new Error(
+      'Could not resolve authenticated user for delete coherence',
+    );
+  }
+  return deleteCoherenceBySlug(
+    { slug: data.slug, requesterPersonId: self.id },
+    { db },
+  );
 }
