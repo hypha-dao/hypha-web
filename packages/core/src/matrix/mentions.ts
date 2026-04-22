@@ -34,11 +34,23 @@ export function normalizePlainTextMxidCaptureFromMatch(
   const after = plain.slice(matchStart + matchLen);
   const punctuationBoundary =
     after.length === 0 || /^\s/.test(after) || /^[.,!?;]/.test(after);
-  if (!punctuationBoundary || !mid.endsWith(':')) return mid;
+  if (!punctuationBoundary) return mid;
 
-  const without = mid.slice(0, -1);
-  /** `:8448` ends the MXID; do not strip (also covers `@hs:8448:` + sentence `:`). */
-  return without;
+  let out = mid;
+  if (out.endsWith(':')) {
+    /** `:8448` ends the MXID; do not strip (also covers `@hs:8448:` + sentence `:`). */
+    out = out.slice(0, -1);
+  }
+
+  // Sentence-ending `.` can be captured as part of the homeserver segment (`.` is valid there).
+  while (out.endsWith('.')) {
+    const next = out.slice(0, -1);
+    if (!next.includes(':')) break;
+    if (!isLikelyMatrixUserId(`@${next}`)) break;
+    out = next;
+  }
+
+  return out;
 }
 
 export function isLikelyMatrixUserId(id: string): boolean {

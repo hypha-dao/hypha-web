@@ -30,6 +30,12 @@ describe('extractMentionUserIdsFromPlainBody', () => {
     ).toEqual(['@alice:matrix.org']);
   });
 
+  it('strips a trailing sentence period captured inside the homeserver segment', () => {
+    expect(
+      extractMentionUserIdsFromPlainBody('ping @alice:matrix.org. hello'),
+    ).toEqual(['@alice:matrix.org']);
+  });
+
   it('strips only sentence punctuation after host:port (not the port colon)', () => {
     expect(
       extractMentionUserIdsFromPlainBody('ping @alice:matrix.org:8448: hello'),
