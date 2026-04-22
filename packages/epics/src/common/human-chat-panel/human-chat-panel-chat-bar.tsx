@@ -1373,10 +1373,6 @@ export function HumanChatPanelChatBar({
       }
 
       if (e.key === 'Enter' && !e.shiftKey) {
-        const composing = e.nativeEvent.isComposing;
-        if (composing && !(canSend && draftAttachments.length > 0)) {
-          return;
-        }
         e.preventDefault();
         if (canSend) {
           sendMessage();
