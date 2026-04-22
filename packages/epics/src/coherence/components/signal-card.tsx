@@ -11,7 +11,6 @@ import {
 } from '@hypha-platform/core/client';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -271,18 +270,17 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                         {t('noLeave')}
                       </Button>
                     </AlertDialogCancel>
-                    <AlertDialogAction asChild>
-                      <Button
-                        colorVariant="accent"
-                        onClick={() =>
-                          void handleDelete().then((deleted) => {
-                            if (deleted) setDeleteOpen(false);
-                          })
-                        }
-                      >
-                        {tSignalCard('deleteConfirmAction')}
-                      </Button>
-                    </AlertDialogAction>
+                    <Button
+                      type="button"
+                      colorVariant="accent"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        const deleted = await handleDelete();
+                        if (deleted) setDeleteOpen(false);
+                      }}
+                    >
+                      {tSignalCard('deleteConfirmAction')}
+                    </Button>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
