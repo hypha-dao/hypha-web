@@ -30,10 +30,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
   LucideReactIcon,
   Skeleton,
 } from '@hypha-platform/ui';
@@ -41,17 +37,13 @@ import { stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
 import { formatDistanceToNow } from 'date-fns';
 import {
   ChatBubbleIcon,
-  UpdateIcon,
   ClockIcon,
   DotFilledIcon,
 } from '@radix-ui/react-icons';
 import React from 'react';
 import type { BadgeProps } from '@hypha-platform/ui';
-import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { Locale } from '@hypha-platform/i18n';
-import { useParams } from 'next/navigation';
-import { MoreHorizontal, Pencil, Trash2, Users } from 'lucide-react';
+import { Trash2, Users } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
 
@@ -79,7 +71,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   onOpenConversation,
   className,
 }) => {
-  const { lang, id: spaceSlug } = useParams<{ lang: Locale; id: string }>();
   const { jwt: authToken } = useJwt();
   const { person } = useMe();
   const { updateCoherenceBySlug, deleteCoherenceBySlug } =
@@ -197,11 +188,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     }
   }, [slug, deleteCoherenceBySlug, refresh, tSignalCard]);
 
-  const editHref =
-    slug != null && slug !== '' && spaceSlug && lang
-      ? `/${lang}/dho/${spaceSlug}/coherence/edit/${slug}`
-      : undefined;
-
   return (
     <Card
       className={cn(
@@ -213,66 +199,36 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       )}
     >
       <CardContent className="relative flex min-h-0 flex-1 flex-col gap-0 p-0">
-        <div className="border-b border-border/60 bg-muted/20 px-4 py-3">
+        <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 pt-4">
           <div className="flex items-start justify-between gap-3">
-            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-              {badges?.length > 0 ? (
-                <BadgesList isLoading={isLoading} badges={badges ?? []} />
-              ) : null}
-              <span className="inline-flex items-center gap-1 text-1 text-muted-foreground">
-                <ClockIcon
-                  className="h-3.5 w-3.5 shrink-0 opacity-70"
-                  aria-hidden
-                />
-                {createdAt
-                  ? formatDistanceToNow(new Date(createdAt), {
-                      addSuffix: true,
-                      locale: dateFnsLocale,
-                    })
-                  : ''}
-              </span>
-            </div>
+            <Skeleton
+              className="min-w-0 flex-1"
+              width="100%"
+              height="22px"
+              loading={isLoading}
+            >
+              <CardTitle className="line-clamp-2 pr-1 text-base font-semibold leading-snug">
+                {title}
+              </CardTitle>
+            </Skeleton>
             {isCreator && slug ? (
               <>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      colorVariant="neutral"
-                      size="sm"
-                      className="h-8 w-8 shrink-0 p-0"
-                      disabled={isLoading}
-                      aria-label={tSignalCard('signalActions')}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="min-w-[10rem]">
-                    {editHref ? (
-                      <DropdownMenuItem asChild>
-                        <Link
-                          href={editHref}
-                          className="flex cursor-pointer items-center gap-2"
-                        >
-                          <Pencil className="h-4 w-4" />
-                          {t('editSignal')}
-                        </Link>
-                      </DropdownMenuItem>
-                    ) : null}
-                    <DropdownMenuItem
-                      className="text-destructive focus:text-destructive"
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        setDeleteOpen(true);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      {tSignalCard('deleteMenu')}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  colorVariant="neutral"
+                  size="sm"
+                  className="h-8 w-8 shrink-0 p-0 text-muted-foreground hover:text-destructive"
+                  disabled={isLoading}
+                  aria-label={tSignalCard('deleteMenu')}
+                  title={tSignalCard('deleteMenu')}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeleteOpen(true);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden />
+                </Button>
                 <AlertDialog
                   open={deleteOpen}
                   onOpenChange={(open) => {
@@ -321,39 +277,42 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               </>
             ) : null}
           </div>
-        </div>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pb-4 pt-4">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            {priority === 'high' && (
-              <div className="flex flex-row gap-1 text-1 text-neutral-11">
-                <DotFilledIcon className="h-4 w-4 text-error-11" />
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-2 text-1 text-muted-foreground">
+            {badges?.length > 0 ? (
+              <BadgesList isLoading={isLoading} badges={badges ?? []} />
+            ) : null}
+            {priority === 'high' ? (
+              <span className="inline-flex items-center gap-1 text-neutral-11">
+                <DotFilledIcon className="h-3.5 w-3.5 shrink-0 text-error-11" />
                 {t('highUrgency')}
-              </div>
-            )}
-            {priority === 'medium' && (
-              <div className="flex flex-row gap-1 text-1 text-neutral-11">
-                <DotFilledIcon className="h-4 w-4 text-warning-11" />
+              </span>
+            ) : null}
+            {priority === 'medium' ? (
+              <span className="inline-flex items-center gap-1 text-neutral-11">
+                <DotFilledIcon className="h-3.5 w-3.5 shrink-0 text-warning-11" />
                 {t('mediumUrgency')}
-              </div>
-            )}
-            {priority === 'low' && (
-              <div className="flex flex-row gap-1 text-1 text-neutral-11">
-                <DotFilledIcon className="h-4 w-4 text-neutral-11" />
+              </span>
+            ) : null}
+            {priority === 'low' ? (
+              <span className="inline-flex items-center gap-1 text-neutral-11">
+                <DotFilledIcon className="h-3.5 w-3.5 shrink-0 text-neutral-11" />
                 {t('lowUrgency')}
-              </div>
-            )}
+              </span>
+            ) : null}
+            <span className="inline-flex min-w-0 items-center gap-1">
+              <ClockIcon
+                className="h-3.5 w-3.5 shrink-0 opacity-70"
+                aria-hidden
+              />
+              {createdAt
+                ? formatDistanceToNow(new Date(createdAt), {
+                    addSuffix: true,
+                    locale: dateFnsLocale,
+                  })
+                : ''}
+            </span>
           </div>
-          <Skeleton
-            className="min-w-full"
-            width="120px"
-            height="18px"
-            loading={isLoading}
-          >
-            <CardTitle className="line-clamp-2 text-base font-semibold leading-snug">
-              {title}
-            </CardTitle>
-          </Skeleton>
 
           <Skeleton
             className="min-w-full"
@@ -431,63 +390,49 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           </div>
         </div>
 
-        <div className="mt-auto flex min-h-[4.75rem] shrink-0 flex-col justify-center border-t border-border px-4 py-3">
-          <div className="flex gap-3">
-            {archived ? (
-              <div
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                }}
-              >
-                <ConfirmDialog
-                  title={t('unarchiveConversation')}
-                  description={t('unarchiveConfirm')}
-                  customAcceptButtonText={t('yesUnarchive')}
-                  customRejectButtonText={t('noLeave')}
-                  onAcceptClicked={handleUnarchive}
-                >
-                  <Button
-                    variant="outline"
-                    colorVariant="accent"
-                    className="w-full"
-                  >
-                    {t('unarchive')}
-                  </Button>
-                </ConfirmDialog>
-              </div>
-            ) : (
-              <Button
-                variant="outline"
-                colorVariant="accent"
-                disabled={isLoading || !roomId}
-                onClick={(e) => {
-                  if (onOpenConversation) {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    onOpenConversation();
-                  }
-                }}
-                title={!roomId ? tSignalCard('noConversationRoom') : undefined}
-              >
-                <ChatBubbleIcon />
-                {t('openConversation')}
-              </Button>
-            )}
-
-            <div className="flex-grow"></div>
-            <Button
-              variant="ghost"
-              colorVariant="neutral"
-              disabled={isLoading}
+        <div className="mt-auto flex min-h-[4.25rem] shrink-0 flex-col justify-center border-t border-border px-4 py-3">
+          {archived ? (
+            <div
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
               }}
             >
-              <UpdateIcon />
+              <ConfirmDialog
+                title={t('unarchiveConversation')}
+                description={t('unarchiveConfirm')}
+                customAcceptButtonText={t('yesUnarchive')}
+                customRejectButtonText={t('noLeave')}
+                onAcceptClicked={handleUnarchive}
+              >
+                <Button
+                  variant="outline"
+                  colorVariant="accent"
+                  className="w-full"
+                >
+                  {t('unarchive')}
+                </Button>
+              </ConfirmDialog>
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              colorVariant="accent"
+              className="w-full"
+              disabled={isLoading || !roomId}
+              onClick={(e) => {
+                if (onOpenConversation) {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  onOpenConversation();
+                }
+              }}
+              title={!roomId ? tSignalCard('noConversationRoom') : undefined}
+            >
+              <ChatBubbleIcon />
+              {t('openConversation')}
             </Button>
-          </div>
+          )}
         </div>
       </CardContent>
     </Card>
