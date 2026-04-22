@@ -11,6 +11,7 @@ import { fileRouter } from '@hypha-platform/core/server';
 import { MenuTop } from '@hypha-platform/ui';
 
 import '@hypha-platform/ui-utils/global.css';
+import { ThemeStorageNormalize } from '@web/components/theme-storage-normalize';
 
 const lato = Lato({
   subsets: ['latin'],
@@ -49,6 +50,7 @@ export default async function RootLayout({
           storageKey="theme"
           disableTransitionOnChange
         >
+          <ThemeStorageNormalize />
           <EvmProvider>
             <MenuTop logoHref={`/signin`} />
             <NextSSRPlugin routerConfig={extractRouterConfig(fileRouter)} />
