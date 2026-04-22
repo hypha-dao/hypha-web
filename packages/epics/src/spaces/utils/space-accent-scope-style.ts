@@ -2,6 +2,7 @@ import type * as React from 'react';
 import {
   buildAccentPaletteFromHex,
   mixHexColors,
+  parseRgbFromHex,
   SPACE_ACCENT_FALLBACK,
 } from './extract-space-accent';
 import {
@@ -12,10 +13,16 @@ import {
 /** W3C-style luminance cutoff for choosing dark vs light foreground on accent */
 const BRIGHTNESS_DARK_FG_THRESHOLD = 186;
 
+function normalizeAccentHex(hex: string | null | undefined): string | null {
+  if (hex == null) return null;
+  const normalized = hex.trim();
+  if (!normalized) return null;
+  return parseRgbFromHex(normalized) ? normalized : null;
+}
+
 function brightness(hex: string): number {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
+  const fb = parseRgbFromHex(SPACE_ACCENT_FALLBACK)!;
+  const [r, g, b] = parseRgbFromHex(hex) ?? fb;
   return (r * 299 + g * 587 + b * 114) / 1000;
 }
 
@@ -33,7 +40,8 @@ export function buildSpaceScopeStyle(input: {
   muted: string;
   overlayVars: BannerOverlayCssVars;
 }): React.CSSProperties {
-  const { accent, foreground, muted, overlayVars } = input;
+  const { foreground, muted, overlayVars } = input;
+  const accent = normalizeAccentHex(input.accent) ?? SPACE_ACCENT_FALLBACK;
   const palette = buildAccentPaletteFromHex(accent);
 
   return {
@@ -74,7 +82,8 @@ export function buildSpaceScopeStyleFromSampledAccents(options: {
   overlayVars: BannerOverlayCssVars | null;
 }): React.CSSProperties {
   let accent = SPACE_ACCENT_FALLBACK;
-  const { bannerAccent, logoAccent } = options;
+  const bannerAccent = normalizeAccentHex(options.bannerAccent);
+  const logoAccent = normalizeAccentHex(options.logoAccent);
   if (bannerAccent && logoAccent) {
     accent = mixHexColors(bannerAccent, logoAccent, 0.55);
   } else if (bannerAccent) {
