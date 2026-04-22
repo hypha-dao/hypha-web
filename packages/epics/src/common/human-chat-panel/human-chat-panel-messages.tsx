@@ -198,6 +198,8 @@ export function HumanChatPanelMessages({
   const initialUnreadScrollDoneRef = useRef(false);
   const prevRoomIdRef = useRef<string | null | undefined>(undefined);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
+  /** Avoid calling onConsumedScrollTarget repeatedly while scrollTargetEventId is unchanged. */
+  const scrollTargetConsumedRef = useRef<string | null>(null);
 
   /** At most one floating action bar: pointer hover, or locked while that row's hover emoji picker is open. */
   const [hoverActionMessageId, setHoverActionMessageId] = useState<
@@ -266,6 +268,12 @@ export function HumanChatPanelMessages({
     }
   }, [roomId]);
 
+  useEffect(() => {
+    if (!scrollTargetEventId) {
+      scrollTargetConsumedRef.current = null;
+    }
+  }, [scrollTargetEventId]);
+
   useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -310,6 +318,7 @@ export function HumanChatPanelMessages({
 
   useLayoutEffect(() => {
     if (!scrollTargetEventId) return;
+    if (scrollTargetConsumedRef.current === scrollTargetEventId) return;
     const root = containerRef.current;
     if (!root) return;
     const esc =
@@ -320,6 +329,7 @@ export function HumanChatPanelMessages({
     if (row instanceof HTMLElement) {
       row.scrollIntoView({ block: 'center', behavior: 'smooth' });
       stickToBottomRef.current = false;
+      scrollTargetConsumedRef.current = scrollTargetEventId;
       onConsumedScrollTarget?.();
     }
   }, [scrollTargetEventId, onConsumedScrollTarget, timelineRows.length]);
