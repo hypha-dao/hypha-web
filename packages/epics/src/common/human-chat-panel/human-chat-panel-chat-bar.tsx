@@ -416,11 +416,16 @@ function filterMentionCandidates(
       id.startsWith(q) ||
       (local && local.startsWith(q))
     ) {
-      starts.push(m);
-    } else if (label.includes(q) || id.includes(q)) {
+      if (starts.length < MAX_MENTION_SUGGESTIONS) {
+        starts.push(m);
+      }
+    } else if (
+      contains.length < MAX_MENTION_SUGGESTIONS &&
+      (label.includes(q) || id.includes(q))
+    ) {
       contains.push(m);
     }
-    if (starts.length + contains.length >= MAX_MENTION_SUGGESTIONS * 2) {
+    if (starts.length >= MAX_MENTION_SUGGESTIONS) {
       break;
     }
   }
