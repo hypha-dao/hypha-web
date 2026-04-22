@@ -47,7 +47,15 @@ export const CoherenceTypeButton = ({
       onClick={onClick}
     >
       <div className="w-full flex flex-row gap-3">
-        <div className={cn('h-7 flex items-center', textColor)}>
+        <div
+          className={cn(
+            'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-[border-color,box-shadow,ring-color] duration-200',
+            selected
+              ? 'border-accent-9 bg-muted/40 ring-2 ring-accent-10/45'
+              : 'border-transparent',
+            textColor,
+          )}
+        >
           <DynamicIcon name={icon} size={16} />
         </div>
         <div className="flex flex-col">

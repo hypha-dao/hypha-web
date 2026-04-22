@@ -67,12 +67,12 @@ const cardButtonVariants = cva(
         selected: false,
         className: 'hover:border-neutral-5',
       },
-      // Subtle — single accent tone when selected (create signal, overlay-style forms)
+      // Subtle — outline + ring when selected (aligned with SelectAction / proposal picker)
       {
         colorVariant: 'subtle',
         selected: true,
         className:
-          'border-accent-9 bg-accent-3 shadow-sm ring-1 ring-inset ring-accent-9/15',
+          'border-accent-9 bg-muted/45 shadow-md ring-2 ring-accent-10/45',
       },
       {
         colorVariant: 'subtle',
