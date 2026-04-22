@@ -21,17 +21,12 @@ function onScroll() {
   listeners.forEach((l) => l());
 }
 
-function detachScrollTarget() {
-  if (scrollRoot) {
-    scrollRoot.removeEventListener('scroll', onScroll);
-  }
-  if (typeof window !== 'undefined') {
-    window.removeEventListener('scroll', onScroll);
-  }
+function detachFrom(target: HTMLElement | Window | null) {
+  if (!target) return;
+  target.removeEventListener('scroll', onScroll);
 }
 
 function attachScrollTarget() {
-  detachScrollTarget();
   if (listeners.size === 0) return;
   if (scrollRoot) {
     scrollRoot.addEventListener('scroll', onScroll, { passive: true });
@@ -46,6 +41,9 @@ function attachScrollTarget() {
  */
 export function setMainColumnScrollRoot(el: HTMLElement | null) {
   if (scrollRoot === el) return;
+  const prev: HTMLElement | Window | null =
+    scrollRoot ?? (typeof window !== 'undefined' ? window : null);
+  detachFrom(prev);
   scrollRoot = el;
   attachScrollTarget();
   listeners.forEach((l) => l());
@@ -58,7 +56,11 @@ export function subscribeMainColumnScroll(onStoreChange: () => void) {
   if (wasEmpty) attachScrollTarget();
   return () => {
     listeners.delete(onStoreChange);
-    if (listeners.size === 0) detachScrollTarget();
+    if (listeners.size === 0) {
+      const target: HTMLElement | Window | null =
+        scrollRoot ?? (typeof window !== 'undefined' ? window : null);
+      detachFrom(target);
+    }
   };
 }
 
