@@ -37,6 +37,7 @@ export function LanguageSelect({
           variant="outline"
           size="default"
           aria-label={ariaLabel}
+          data-language-select-trigger
           className="gap-1.5"
         >
           <Globe className="size-4" />
