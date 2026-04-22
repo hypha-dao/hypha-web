@@ -13,7 +13,6 @@
  * | Coherence page renders (not auth-gated)       | Step 15  ✅       |
  * | "Sign in to see" shown when unauthenticated   | Step 12  ✅       |
  * | Signal section renders                        | Steps 8+12+15 (auth required) |
- * | Signal type filter badges are displayed       | Steps 8+12    (auth required) |
  * | "New Signal" button is visible                | Steps 8+12    (auth required) |
  * | Search input filters signals                  | Steps 8+12    (auth required) |
  * | Navigate to new-signal form                   | Steps 11+15   (route pending) |
@@ -132,39 +131,6 @@ test.describe('Coherence Screen', () => {
 
       await expect(coherencePage.newSignalButton).toBeVisible();
     });
-
-    test.fixme('signal type filter badges are displayed', async ({ page }) => {
-      const coherencePage = new CoherencePage(page, SPACE_SLUG);
-      await coherencePage.openCoherencePage();
-
-      // "All" badge is always the first filter option
-      await expect(coherencePage.allFilterBadge).toBeVisible();
-    });
-
-    test.fixme(
-      'all signal type filter options are rendered',
-      async ({ page }) => {
-        const coherencePage = new CoherencePage(page, SPACE_SLUG);
-        await coherencePage.openCoherencePage();
-
-        // Expected: All + 6 signal types = 7 filter options
-        const expectedTypes = [
-          'All',
-          'Opportunity',
-          'Risk',
-          'Tension',
-          'Insight',
-          'Trend',
-          'Proposal',
-        ];
-
-        for (const typeName of expectedTypes) {
-          await expect(
-            page.getByText(typeName, { exact: false }),
-          ).toBeVisible();
-        }
-      },
-    );
 
     test.fixme('search input is visible', async ({ page }) => {
       const coherencePage = new CoherencePage(page, SPACE_SLUG);
