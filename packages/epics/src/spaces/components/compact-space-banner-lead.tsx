@@ -29,20 +29,20 @@ export function CompactSpaceBannerLead({ src }: Props) {
   const [ready, setReady] = React.useState(false);
   const [imageFailed, setImageFailed] = React.useState(false);
   const [parallaxY, setParallaxY] = React.useState(0);
-  const [preferReducedMotion, setPreferReducedMotion] = React.useState(false);
+  const [reduceMotion, setReduceMotion] = React.useState(false);
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)');
     if (!mq) return;
 
-    const sync = () => setPreferReducedMotion(mq.matches);
+    const sync = () => setReduceMotion(mq.matches);
     sync();
     mq.addEventListener('change', sync);
     return () => mq.removeEventListener('change', sync);
   }, []);
 
   React.useEffect(() => {
-    if (preferReducedMotion) return;
+    if (reduceMotion) return;
 
     let raf = 0;
 
@@ -61,7 +61,7 @@ export function CompactSpaceBannerLead({ src }: Props) {
       window.removeEventListener('scroll', onScroll);
       cancelAnimationFrame(raf);
     };
-  }, [preferReducedMotion]);
+  }, [reduceMotion]);
 
   return (
     <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit]">
@@ -74,7 +74,7 @@ export function CompactSpaceBannerLead({ src }: Props) {
       <div
         className="absolute left-0 right-0 top-[-12%] h-[124%] will-change-transform"
         style={
-          preferReducedMotion
+          reduceMotion
             ? undefined
             : { transform: `translate3d(0, ${parallaxY}px, 0)` }
         }
