@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -55,10 +56,12 @@ import {
   looksLikeAudioMimeOrName,
   looksLikeVideoMimeOrName,
 } from './chat-panel-media-types';
+import { getActiveAtToken } from './human-chat-mention-token';
 import {
   ChatVoiceAudioRow,
   useDraftVoiceDuration,
 } from './human-chat-panel-voice-audio-row';
+import { HumanChatMentionCandidateRow } from './human-chat-mention-candidate-row';
 
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
 
@@ -80,6 +83,17 @@ type SpeechRecognitionEventLike = {
 };
 
 const ZWSP_CODE = 0x200b;
+
+function isKeyboardActivationTarget(target: EventTarget | null): boolean {
+  return (
+    target instanceof HTMLElement &&
+    Boolean(
+      target.closest(
+        'button,a,input,textarea,select,[role="button"],[role="menuitem"],[role="option"],[contenteditable="true"]',
+      ),
+    )
+  );
+}
 
 /** Linear-time strip (avoids ReDoS from `/\\u200b+$/` on user-controlled strings). */
 function stripTrailingZeroWidthSpaces(s: string): string {
@@ -120,6 +134,16 @@ export type ChatDraftEditSlot = {
   spoiler?: boolean;
 };
 
+/** Matrix room member for `@` autocomplete (MXID + display label). */
+export type ChatMentionCandidate = {
+  userId: string;
+  displayLabel: string;
+  /** Optional thumbnail for the mention picker (Matrix room avatar HTTP URL). */
+  avatarUrl?: string;
+  /** When known from space roster (`Person.sub`), resolves profile without Matrix→Privy lookup. */
+  privySub?: string;
+};
+
 export type ChatDraftAttachment = {
   id: string;
   file: File;
@@ -144,6 +168,13 @@ type HumanChatPanelChatBarProps = {
   editPreview?: EditPreview;
   draftAttachments?: ChatDraftAttachment[];
   onDraftAttachmentsChange?: (next: ChatDraftAttachment[]) => void;
+  /** Joined room members for `@` suggestions (omit when unavailable). */
+  mentionCandidates?: ChatMentionCandidate[];
+  /**
+   * When set, controls whether `@` is clickable (Matrix has another joined member).
+   * Falls back to `mentionCandidates.length > 0` when omitted.
+   */
+  mentionPickerEnabled?: boolean;
 };
 
 /** Blinking REC dot (“on-air”) for active voice recording / dictation controls. */
@@ -152,19 +183,34 @@ function ComposerRecOnAirIndicator() {
     <>
       <style>{`
         @keyframes hypha-rec-on-air {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.35; transform: scale(0.92); }
+          0%, 100% { opacity: 1; transform: scale(1); filter: brightness(1); }
+          50% { opacity: 0.88; transform: scale(0.94); filter: brightness(1.08); }
+        }
+        @keyframes hypha-rec-halo {
+          0%, 100% { opacity: 0.55; transform: scale(1); }
+          50% { opacity: 0.2; transform: scale(1.35); }
         }
         @media (prefers-reduced-motion: reduce) {
-          [data-hypha-rec-on-air] {
+          [data-hypha-rec-on-air], [data-hypha-rec-halo] {
             animation: none !important;
           }
         }
       `}</style>
       <span className="relative flex h-[18px] w-[18px] items-center justify-center">
         <span
+          data-hypha-rec-halo=""
+          className="pointer-events-none absolute h-3 w-3 rounded-full bg-red-500/35 blur-[2px]"
+          style={{
+            animationName: 'hypha-rec-halo',
+            animationDuration: '1.2s',
+            animationTimingFunction: 'ease-in-out',
+            animationIterationCount: 'infinite',
+          }}
+          aria-hidden
+        />
+        <span
           data-hypha-rec-on-air=""
-          className="motion-safe:inline-block h-2.5 w-2.5 rounded-full bg-red-600 shadow-[0_0_0_1px_rgba(254,202,202,0.35)]"
+          className="motion-safe:relative inline-block h-2 w-2 rounded-full bg-gradient-to-br from-red-400 to-red-600 shadow-[0_0_10px_rgba(239,68,68,0.55),inset_0_1px_0_rgba(255,255,255,0.35)] ring-1 ring-white/25 dark:ring-white/15"
           style={{
             animationName: 'hypha-rec-on-air',
             animationDuration: '1s',
@@ -340,6 +386,42 @@ function insertAtCaret(
   return { next, caret };
 }
 
+const MAX_MENTION_SUGGESTIONS = 24;
+
+function filterMentionCandidates(
+  all: ChatMentionCandidate[],
+  query: string,
+): ChatMentionCandidate[] {
+  const q = query.trim().toLowerCase();
+  if (!q) {
+    return all.slice(0, MAX_MENTION_SUGGESTIONS);
+  }
+
+  const starts: ChatMentionCandidate[] = [];
+  const contains: ChatMentionCandidate[] = [];
+  for (const m of all) {
+    const label = m.displayLabel.toLowerCase();
+    const id = m.userId.toLowerCase();
+    const local = m.userId.startsWith('@')
+      ? m.userId.slice(1).split(':')[0]?.toLowerCase() ?? ''
+      : '';
+    if (
+      label.startsWith(q) ||
+      id.startsWith(`@${q}`) ||
+      id.startsWith(q) ||
+      (local && local.startsWith(q))
+    ) {
+      starts.push(m);
+    } else if (label.includes(q) || id.includes(q)) {
+      contains.push(m);
+    }
+    if (starts.length + contains.length >= MAX_MENTION_SUGGESTIONS * 2) {
+      break;
+    }
+  }
+  return [...starts, ...contains].slice(0, MAX_MENTION_SUGGESTIONS);
+}
+
 function wrapSelection(
   value: string,
   start: number,
@@ -366,8 +448,13 @@ export function HumanChatPanelChatBar({
   editPreview,
   draftAttachments = [],
   onDraftAttachmentsChange,
+  mentionCandidates = [],
+  mentionPickerEnabled,
 }: HumanChatPanelChatBarProps) {
   const t = useTranslations('HumanChatPanel');
+
+  const atMentionInteractable =
+    mentionPickerEnabled ?? mentionCandidates.length > 0;
   const fileInputId = useId();
   const imageInputId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -379,9 +466,18 @@ export function HumanChatPanelChatBar({
   const [voiceError, setVoiceError] = useState<string | null>(null);
   /** When true, `MediaRecorder` stop should add an audio draft; when false (dictation), discard blob. */
   const voiceAsAttachmentRef = useRef(false);
+  /** When true, drop the next voice blob from MediaRecorder `onstop` (user sent text instead). */
+  const discardVoiceDraftIfIdleRef = useRef(false);
   const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
   /** Composer text before this dictation session (final + interim are appended live). */
   const dictationPrefixRef = useRef('');
+  /**
+   * When aborting SpeechRecognition for send, `onend`/`onerror` must not call `onChange`
+   * or they would repopulate the composer after `setInput('')` in the parent.
+   */
+  const dictationInterruptForSendRef = useRef(false);
+  /** Avoid duplicate finalize if both `onerror` and `onend` run after abort. */
+  const dictationSessionFinalizedRef = useRef(false);
   const [isDictating, setIsDictating] = useState(false);
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const valueRef = useRef(value);
@@ -407,6 +503,13 @@ export function HumanChatPanelChatBar({
   const colonTokenRef = useRef<{ start: number; query: string } | null>(null);
   const colonRequestIdRef = useRef(0);
 
+  const [atOpen, setAtOpen] = useState(false);
+  const [atSuggestions, setAtSuggestions] = useState<ChatMentionCandidate[]>(
+    [],
+  );
+  const [atActive, setAtActive] = useState(0);
+  const atTokenRef = useRef<ReturnType<typeof getActiveAtToken>>(null);
+
   const [selectionBar, setSelectionBar] = useState<{
     top: number;
     left: number;
@@ -427,7 +530,7 @@ export function HumanChatPanelChatBar({
     }
     const start = el.selectionStart ?? 0;
     const end = el.selectionEnd ?? 0;
-    if (start === end || colonOpen) {
+    if (start === end || colonOpen || atOpen) {
       setSelectionBar(null);
       return;
     }
@@ -447,7 +550,7 @@ export function HumanChatPanelChatBar({
       top: local.top + (taRect.top - wrapRect.top),
       left: local.left + (taRect.left - wrapRect.left),
     });
-  }, [colonOpen]);
+  }, [colonOpen, atOpen]);
 
   useEffect(() => {
     const endPointerSelect = () => {
@@ -468,13 +571,27 @@ export function HumanChatPanelChatBar({
   const autoResize = useCallback(() => {
     const ta = textareaRef.current;
     const bd = composerBackdropRef.current;
-    if (ta) {
-      ta.style.height = 'auto';
-      const h = Math.min(ta.scrollHeight, 160);
-      ta.style.height = `${h}px`;
-      if (bd) {
-        bd.style.height = `${h}px`;
-      }
+    if (!ta) return;
+    const content = valueRef.current;
+    /**
+     * After send we clear to `''`. With only `height='auto'`, some browsers keep the
+     * previous large scrollHeight — force a shrink before measuring.
+     */
+    if (content.length === 0) {
+      ta.style.height = '0px';
+      ta.style.minHeight = '0';
+      void ta.offsetHeight;
+    }
+    ta.style.height = 'auto';
+    ta.style.minHeight = '';
+    const h = Math.min(ta.scrollHeight, 160);
+    ta.style.height = `${h}px`;
+    if (content.length === 0) {
+      ta.scrollTop = 0;
+    }
+    /** Backdrop is `absolute inset-0` — no explicit height; mirrors textarea box via layout. */
+    if (bd && content.length === 0) {
+      bd.scrollTop = 0;
     }
   }, []);
 
@@ -502,6 +619,13 @@ export function HumanChatPanelChatBar({
 
   const syncColonState = useCallback((val: string, cursor: number) => {
     const requestId = ++colonRequestIdRef.current;
+    if (getActiveAtToken(val, cursor)) {
+      colonTokenRef.current = null;
+      setColonOpen(false);
+      setColonSuggestions([]);
+      setColonActive(0);
+      return;
+    }
     const tok = getActiveColonToken(val, cursor);
     colonTokenRef.current = tok;
     if (!tok) {
@@ -527,18 +651,60 @@ export function HumanChatPanelChatBar({
     });
   }, []);
 
+  const syncAtState = useCallback(
+    (val: string, cursor: number) => {
+      if (getActiveColonToken(val, cursor)) {
+        atTokenRef.current = null;
+        setAtOpen(false);
+        setAtSuggestions([]);
+        setAtActive(0);
+        return;
+      }
+      const tok = getActiveAtToken(val, cursor);
+      atTokenRef.current = tok;
+      if (!tok) {
+        setAtOpen(false);
+        setAtSuggestions([]);
+        setAtActive(0);
+        return;
+      }
+      if (!atMentionInteractable || !mentionCandidates.length) {
+        setAtOpen(false);
+        setAtSuggestions([]);
+        setAtActive(0);
+        return;
+      }
+      const sug = filterMentionCandidates(mentionCandidates, tok.query);
+      setAtSuggestions(sug);
+      setAtActive(0);
+      setAtOpen(sug.length > 0);
+    },
+    [mentionCandidates, atMentionInteractable],
+  );
+
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) {
       setColonOpen(false);
       setColonSuggestions([]);
       colonTokenRef.current = null;
+      setAtOpen(false);
+      setAtSuggestions([]);
+      atTokenRef.current = null;
       return;
     }
     syncColonState(value, el.selectionStart ?? value.length);
-  }, [value, syncColonState]);
+    syncAtState(value, el.selectionStart ?? value.length);
+  }, [value, syncColonState, syncAtState]);
 
   useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    syncAtState(value, el.selectionStart ?? value.length);
+  }, [mentionCandidates, value, syncAtState]);
+
+  /** Run before paint when `value` clears so height doesn’t flash stuck tall (dictation/send race). */
+  useLayoutEffect(() => {
     autoResize();
   }, [value, autoResize]);
 
@@ -564,9 +730,56 @@ export function HumanChatPanelChatBar({
     [value, onChange, autoResize],
   );
 
+  const applyAtChoice = useCallback(
+    (member: ChatMentionCandidate) => {
+      const el = textareaRef.current;
+      const tok = atTokenRef.current;
+      if (!el || !tok) return;
+      const insertion = `${member.userId} `;
+      const start = tok.start;
+      const end = el.selectionStart ?? value.length;
+      const { next, caret } = insertAtCaret(value, start, end, insertion);
+      onChange(next);
+      setAtOpen(false);
+      setAtSuggestions([]);
+      atTokenRef.current = null;
+      requestAnimationFrame(() => {
+        el.focus();
+        el.setSelectionRange(caret, caret);
+        autoResize();
+      });
+    },
+    [value, onChange, autoResize],
+  );
+
+  const openMentionPicker = useCallback(() => {
+    if (!atMentionInteractable) return;
+    const el = textareaRef.current;
+    if (!el) return;
+    const cur = el.selectionStart ?? value.length;
+    const before = value.slice(0, cur);
+    const after = value.slice(cur);
+    const needsSpace =
+      before.length > 0 && !/\s$/.test(before) && !before.endsWith('@');
+    const prefix = before.endsWith('@')
+      ? before
+      : needsSpace
+      ? `${before} @`
+      : `${before}@`;
+    const next = prefix + after;
+    const caret = prefix.length;
+    onChange(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(caret, caret);
+      autoResize();
+      syncAtState(next, caret);
+    });
+  }, [value, onChange, autoResize, syncAtState, atMentionInteractable]);
+
   useEffect(() => {
-    if (colonOpen) setSelectionBar(null);
-  }, [colonOpen]);
+    if (colonOpen || atOpen) setSelectionBar(null);
+  }, [colonOpen, atOpen]);
 
   useEffect(() => {
     const onSel = () => updateSelectionBar();
@@ -649,23 +862,6 @@ export function HumanChatPanelChatBar({
     (value.trim().length > 0 || draftAttachments.length > 0) &&
     (!editMediaMode || draftAttachments.length > 0);
 
-  const handleAttachMenuContentEnter = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key !== 'Enter' || e.shiftKey) return;
-      const ne = e.nativeEvent as KeyboardEvent;
-      if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
-        return;
-      }
-      e.preventDefault();
-      e.stopPropagation();
-      setAttachMenuOpen(false);
-      if (canSend) {
-        onSend();
-      }
-    },
-    [canSend, draftAttachments.length, onSend],
-  );
-
   const focusComposerTextarea = useCallback(() => {
     requestAnimationFrame(() => {
       const el = textareaRef.current;
@@ -690,108 +886,6 @@ export function HumanChatPanelChatBar({
       focusComposerTextarea();
     }
   }, [draftAttachments.length, focusComposerTextarea]);
-
-  /**
-   * Enter only bubbles to `textarea` when it is focused. After interacting with
-   * draft cards (spoiler/delete), focus can stay in the attachment strip — still
-   * send on Enter when there is something to send (e.g. voice-only).
-   */
-  const handleDraftAttachmentsKeyDownCapture = useCallback(
-    (e: React.KeyboardEvent<HTMLDivElement>) => {
-      if (e.key !== 'Enter' || e.shiftKey) return;
-      const ne = e.nativeEvent as KeyboardEvent;
-      if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
-        return;
-      }
-      if (colonOpen && colonSuggestions.length > 0) return;
-      if (!canSend) return;
-      e.preventDefault();
-      onSend();
-    },
-    [
-      colonOpen,
-      colonSuggestions.length,
-      canSend,
-      draftAttachments.length,
-      onSend,
-    ],
-  );
-
-  /**
-   * Enter often targets the attach (+) or mic trigger after menus/files — send from
-   * anywhere in the composer shell unless a popover menu is open.
-   */
-  const handleComposerShellKeyDownCapture = useCallback(
-    (e: React.KeyboardEvent<HTMLDivElement>) => {
-      if (e.key !== 'Enter' || e.shiftKey) return;
-      const ne = e.nativeEvent as KeyboardEvent;
-      if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
-        return;
-      }
-      if (colonOpen && colonSuggestions.length > 0) return;
-      if (attachMenuOpen || emojiPickerOpen) return;
-      const el = e.target;
-      if (el instanceof HTMLTextAreaElement) return;
-      if (!canSend) return;
-      e.preventDefault();
-      onSend();
-    },
-    [
-      colonOpen,
-      colonSuggestions.length,
-      attachMenuOpen,
-      emojiPickerOpen,
-      canSend,
-      draftAttachments.length,
-      onSend,
-    ],
-  );
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (colonOpen && colonSuggestions.length > 0) {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setColonActive((i) => (i + 1) % colonSuggestions.length);
-        return;
-      }
-      if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setColonActive(
-          (i) => (i - 1 + colonSuggestions.length) % colonSuggestions.length,
-        );
-        return;
-      }
-      if (e.key === 'Enter' || e.key === 'Tab') {
-        e.preventDefault();
-        const safeIndex = Math.max(
-          0,
-          Math.min(colonActive, colonSuggestions.length - 1),
-        );
-        const entry = colonSuggestions[safeIndex];
-        if (entry) applyColonChoice(entry);
-        return;
-      }
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        colonRequestIdRef.current += 1;
-        setColonOpen(false);
-        setColonSuggestions([]);
-        colonTokenRef.current = null;
-        return;
-      }
-    }
-
-    if (e.key === 'Enter' && !e.shiftKey) {
-      const composing = e.nativeEvent.isComposing;
-      if (composing && !(canSend && draftAttachments.length > 0)) {
-        return;
-      }
-      e.preventDefault();
-      if (canSend) {
-        onSend();
-      }
-    }
-  };
 
   const defaultPlaceholder = channelName
     ? t('placeholderChannel', { channel: channelName })
@@ -897,6 +991,7 @@ export function HumanChatPanelChatBar({
     }
     setVoiceError(null);
     voiceAsAttachmentRef.current = true;
+    discardVoiceDraftIfIdleRef.current = false;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaStreamRef.current = stream;
@@ -931,6 +1026,10 @@ export function HumanChatPanelChatBar({
         const asAttach = voiceAsAttachmentRef.current;
         voiceAsAttachmentRef.current = false;
         if (!asAttach || blob.size < 256) {
+          return;
+        }
+        if (discardVoiceDraftIfIdleRef.current) {
+          discardVoiceDraftIfIdleRef.current = false;
           return;
         }
         const ext = blob.type.includes('mp4') ? 'm4a' : 'webm';
@@ -969,18 +1068,32 @@ export function HumanChatPanelChatBar({
     const r = speechRecognitionRef.current;
     if (r) {
       try {
-        r.stop();
+        r.abort();
       } catch {
         try {
-          r.abort();
+          r.stop();
         } catch {
           // ignore
         }
       }
       speechRecognitionRef.current = null;
     }
+    dictationPrefixRef.current = '';
     setIsDictating(false);
   }, []);
+
+  const prepareSendSession = useCallback(() => {
+    dictationInterruptForSendRef.current = true;
+    discardVoiceDraftIfIdleRef.current = true;
+    voiceAsAttachmentRef.current = false;
+    stopDictation();
+    stopVoiceRecording();
+  }, [stopDictation, stopVoiceRecording]);
+
+  const sendMessage = useCallback(() => {
+    prepareSendSession();
+    onSend();
+  }, [prepareSendSession, onSend]);
 
   const startDictation = useCallback(() => {
     setVoiceError(null);
@@ -1000,12 +1113,15 @@ export function HumanChatPanelChatBar({
       stopDictation();
       return;
     }
+    dictationInterruptForSendRef.current = false;
+    dictationSessionFinalizedRef.current = false;
     dictationPrefixRef.current = stripTrailingZeroWidthSpaces(valueRef.current);
     const rec = new SR();
     rec.continuous = true;
     rec.interimResults = true;
     rec.lang = document.documentElement.lang || 'en';
     rec.onresult = (ev) => {
+      if (dictationInterruptForSendRef.current) return;
       const results = ev.results;
       const committedParts: string[] = [];
       let interimAccum = '';
@@ -1033,18 +1149,42 @@ export function HumanChatPanelChatBar({
         el.setSelectionRange(end, end);
       });
     };
-    rec.onerror = () => {
+    const finalizeDictationFromBrowser = (opts: {
+      syncValue: boolean;
+      showError: boolean;
+    }) => {
+      if (dictationSessionFinalizedRef.current) return;
+      dictationSessionFinalizedRef.current = true;
       speechRecognitionRef.current = null;
       dictationPrefixRef.current = '';
       setIsDictating(false);
-      onChange(stripTrailingZeroWidthSpaces(valueRef.current));
-      setVoiceError(t('dictationError'));
+      if (opts.syncValue) {
+        onChange(stripTrailingZeroWidthSpaces(valueRef.current));
+      }
+      if (opts.showError) {
+        setVoiceError(t('dictationError'));
+      }
+    };
+
+    rec.onerror = () => {
+      const interrupted = dictationInterruptForSendRef.current;
+      if (interrupted) {
+        dictationInterruptForSendRef.current = false;
+      }
+      finalizeDictationFromBrowser({
+        syncValue: !interrupted,
+        showError: !interrupted,
+      });
     };
     rec.onend = () => {
-      speechRecognitionRef.current = null;
-      dictationPrefixRef.current = '';
-      setIsDictating(false);
-      onChange(stripTrailingZeroWidthSpaces(valueRef.current));
+      const interrupted = dictationInterruptForSendRef.current;
+      if (interrupted) {
+        dictationInterruptForSendRef.current = false;
+      }
+      finalizeDictationFromBrowser({
+        syncValue: !interrupted,
+        showError: false,
+      });
     };
     speechRecognitionRef.current = rec;
     try {
@@ -1056,6 +1196,189 @@ export function HumanChatPanelChatBar({
       setVoiceError(t('dictationNotSupported'));
     }
   }, [isDictating, onChange, stopDictation, focusComposerTextarea, t]);
+
+  const handleAttachMenuContentEnter = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key !== 'Enter' || e.shiftKey) return;
+      if (isKeyboardActivationTarget(e.target)) return;
+      const ne = e.nativeEvent as KeyboardEvent;
+      if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
+        return;
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      setAttachMenuOpen(false);
+      if (canSend) {
+        sendMessage();
+      }
+    },
+    [canSend, draftAttachments.length, sendMessage],
+  );
+
+  /**
+   * Enter only bubbles to `textarea` when it is focused. After interacting with
+   * draft cards (spoiler/delete), focus can stay in the attachment strip — still
+   * send on Enter when there is something to send (e.g. voice-only).
+   */
+  const handleDraftAttachmentsKeyDownCapture = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key !== 'Enter' || e.shiftKey) return;
+      if (isKeyboardActivationTarget(e.target)) return;
+      const ne = e.nativeEvent as KeyboardEvent;
+      if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
+        return;
+      }
+      if (
+        atOpen ||
+        colonOpen ||
+        colonSuggestions.length > 0 ||
+        atSuggestions.length > 0
+      )
+        return;
+      if (!canSend) return;
+      e.preventDefault();
+      sendMessage();
+    },
+    [
+      atOpen,
+      colonOpen,
+      colonSuggestions.length,
+      atSuggestions.length,
+      canSend,
+      draftAttachments.length,
+      sendMessage,
+    ],
+  );
+
+  /**
+   * Enter often targets the attach (+) or mic trigger after menus/files — send from
+   * anywhere in the composer shell unless a popover menu is open.
+   */
+  const handleComposerShellKeyDownCapture = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key !== 'Enter' || e.shiftKey) return;
+      const ne = e.nativeEvent as KeyboardEvent;
+      if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
+        return;
+      }
+      if (
+        atOpen ||
+        colonOpen ||
+        colonSuggestions.length > 0 ||
+        atSuggestions.length > 0
+      )
+        return;
+      if (attachMenuOpen || emojiPickerOpen) return;
+      if (isKeyboardActivationTarget(e.target)) return;
+      if (!canSend) return;
+      e.preventDefault();
+      sendMessage();
+    },
+    [
+      atOpen,
+      colonOpen,
+      colonSuggestions.length,
+      atSuggestions.length,
+      attachMenuOpen,
+      emojiPickerOpen,
+      canSend,
+      draftAttachments.length,
+      sendMessage,
+    ],
+  );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (atOpen && atSuggestions.length > 0) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setAtActive((i) => (i + 1) % atSuggestions.length);
+          return;
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setAtActive(
+            (i) => (i - 1 + atSuggestions.length) % atSuggestions.length,
+          );
+          return;
+        }
+        if (e.key === 'Enter' || e.key === 'Tab') {
+          e.preventDefault();
+          const safeIndex = Math.max(
+            0,
+            Math.min(atActive, atSuggestions.length - 1),
+          );
+          const pick = atSuggestions[safeIndex];
+          if (pick) applyAtChoice(pick);
+          return;
+        }
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          setAtOpen(false);
+          setAtSuggestions([]);
+          atTokenRef.current = null;
+          return;
+        }
+      }
+
+      if (colonOpen && colonSuggestions.length > 0) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setColonActive((i) => (i + 1) % colonSuggestions.length);
+          return;
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setColonActive(
+            (i) => (i - 1 + colonSuggestions.length) % colonSuggestions.length,
+          );
+          return;
+        }
+        if (e.key === 'Enter' || e.key === 'Tab') {
+          e.preventDefault();
+          const safeIndex = Math.max(
+            0,
+            Math.min(colonActive, colonSuggestions.length - 1),
+          );
+          const entry = colonSuggestions[safeIndex];
+          if (entry) applyColonChoice(entry);
+          return;
+        }
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          colonRequestIdRef.current += 1;
+          setColonOpen(false);
+          setColonSuggestions([]);
+          colonTokenRef.current = null;
+          return;
+        }
+      }
+
+      if (e.key === 'Enter' && !e.shiftKey) {
+        const composing = e.nativeEvent.isComposing;
+        if (composing && !(canSend && draftAttachments.length > 0)) {
+          return;
+        }
+        e.preventDefault();
+        if (canSend) {
+          sendMessage();
+        }
+      }
+    },
+    [
+      atOpen,
+      atSuggestions,
+      atActive,
+      applyAtChoice,
+      colonOpen,
+      colonSuggestions,
+      colonActive,
+      applyColonChoice,
+      canSend,
+      draftAttachments.length,
+      sendMessage,
+    ],
+  );
 
   useEffect(() => {
     return () => {
@@ -1088,11 +1411,23 @@ export function HumanChatPanelChatBar({
   const iconButtonClass =
     'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-primary/12 hover:text-primary active:bg-primary/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-0';
 
+  /** Recording / dictation “stop” — calm broadcast UI (no harsh outline-on-grey). */
+  const recordingStopButtonClass =
+    'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-red-600 transition-all duration-200 ease-out ' +
+    'border border-red-500/25 bg-gradient-to-b from-red-500/[0.14] via-red-500/[0.08] to-red-950/[0.06] ' +
+    'shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_1px_3px_rgba(220,38,38,0.14)] ' +
+    'hover:border-red-500/40 hover:from-red-500/[0.2] hover:via-red-500/[0.12] hover:to-red-950/[0.1] hover:text-red-700 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_2px_8px_rgba(220,38,38,0.18)] ' +
+    'active:scale-[0.96] active:from-red-500/[0.24] active:via-red-600/[0.14] ' +
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background ' +
+    'dark:border-red-400/22 dark:from-red-500/[0.16] dark:via-red-600/[0.1] dark:to-red-950/40 dark:text-red-400 ' +
+    'dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_1px_4px_rgba(0,0,0,0.35)] ' +
+    'dark:hover:border-red-400/38 dark:hover:text-red-300';
+
   const fmtBtn =
     'flex h-6 w-6 shrink-0 items-center justify-center rounded text-popover-foreground transition-colors hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent dark:hover:text-accent-foreground';
 
   return (
-    <div className="flex w-full min-w-0 flex-shrink-0 flex-col border-t border-border bg-background-2 px-3 pt-3 pb-3">
+    <div className="flex w-full min-w-0 flex-shrink-0 flex-col bg-transparent px-3 pb-3 pt-3">
       <div
         ref={composerShellRef}
         onKeyDownCapture={handleComposerShellKeyDownCapture}
@@ -1458,6 +1793,25 @@ export function HumanChatPanelChatBar({
             </button>
           </div>
         )}
+        {atOpen && atSuggestions.length > 0 && (
+          <div
+            role="listbox"
+            aria-label={t('mentionListLabel')}
+            className="absolute bottom-full left-2 right-2 z-20 mb-1 max-h-52 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
+          >
+            {atSuggestions.map((m, idx) => (
+              <HumanChatMentionCandidateRow
+                key={m.userId}
+                matrixUserId={m.userId}
+                matrixFallbackLabel={m.displayLabel}
+                matrixFallbackAvatarUrl={m.avatarUrl}
+                privySub={m.privySub}
+                isActive={idx === atActive}
+                onPick={() => applyAtChoice(m)}
+              />
+            ))}
+          </div>
+        )}
         {colonOpen && colonSuggestions.length > 0 && (
           <div
             role="listbox"
@@ -1485,13 +1839,18 @@ export function HumanChatPanelChatBar({
             ))}
           </div>
         )}
-        <div className="relative isolate grid min-h-[36px] min-w-0 max-h-[160px] w-full [&>textarea]:col-start-1 [&>textarea]:row-start-1 [&>textarea]:col-end-2 [&>textarea]:row-end-2">
+        {/*
+          Single-flow textarea sets height. Mirrored backdrop is absolute so it never
+          participates in CSS Grid row sizing (grid + two stacked cells kept the row
+          stuck at max height after send).
+        */}
+        <div className="relative isolate min-h-[36px] min-w-0 max-h-[160px] w-full overflow-hidden rounded-sm">
           <div
             ref={composerBackdropRef}
             aria-hidden
             className={cn(
-              'pointer-events-none col-start-1 row-start-1 min-h-[36px] max-h-[160px] w-full',
-              'overflow-y-auto overflow-x-hidden whitespace-pre-wrap break-words px-3 py-2.5 text-sm leading-relaxed text-foreground',
+              'pointer-events-none absolute inset-0 z-0 overflow-y-auto overflow-x-hidden',
+              'whitespace-pre-wrap break-words px-3 py-2.5 text-sm leading-relaxed text-foreground',
               'selection:bg-transparent narrow-scrollbar',
             )}
           >
@@ -1514,11 +1873,13 @@ export function HumanChatPanelChatBar({
               autoResize();
               const cursor = e.target.selectionStart ?? e.target.value.length;
               syncColonState(e.target.value, cursor);
+              syncAtState(e.target.value, cursor);
               requestAnimationFrame(updateSelectionBar);
             }}
             onSelect={(e) => {
               const el = e.currentTarget;
               syncColonState(el.value, el.selectionStart ?? 0);
+              syncAtState(el.value, el.selectionStart ?? 0);
             }}
             onKeyUp={updateSelectionBar}
             onMouseUp={updateSelectionBar}
@@ -1528,7 +1889,7 @@ export function HumanChatPanelChatBar({
             placeholder={placeholder ?? defaultPlaceholder}
             rows={1}
             className={cn(
-              'relative z-[1] col-start-1 row-start-1 min-h-[36px] min-w-0 max-h-[160px] w-full resize-none',
+              'relative z-[1] block min-h-[36px] min-w-0 max-h-[160px] w-full resize-none',
               'overflow-y-auto whitespace-pre-wrap break-words bg-transparent px-3 py-2.5 text-sm leading-relaxed',
               'text-transparent caret-foreground',
               'placeholder:text-muted-foreground focus:outline-none',
@@ -1614,10 +1975,16 @@ export function HumanChatPanelChatBar({
               </HumanChatPanelEmojiPicker>
               <button
                 type="button"
-                disabled
-                className={cn(iconButtonClass, 'cursor-not-allowed opacity-50')}
-                aria-label={t('mentionNotAvailable')}
-                title={t('mentionNotAvailable')}
+                disabled={!atMentionInteractable}
+                className={cn(
+                  iconButtonClass,
+                  !atMentionInteractable && 'cursor-not-allowed opacity-50',
+                )}
+                aria-label={t('mention')}
+                title={
+                  !atMentionInteractable ? t('mentionNoMembers') : t('mention')
+                }
+                onClick={() => openMentionPicker()}
               >
                 <AtSign className="h-4 w-4" aria-hidden />
               </button>
@@ -1625,11 +1992,7 @@ export function HumanChatPanelChatBar({
               {isVoiceRecording ? (
                 <button
                   type="button"
-                  className={cn(
-                    iconButtonClass,
-                    'rounded-sm border-2 border-red-500/85 bg-red-950/25 text-red-600 shadow-sm',
-                    'hover:border-red-400 hover:bg-red-950/35 active:bg-red-950/45 dark:border-red-500 dark:bg-red-950/40',
-                  )}
+                  className={recordingStopButtonClass}
                   aria-label={t('composerStopRecording')}
                   title={t('composerStopRecording')}
                   onClick={() => stopVoiceRecording()}
@@ -1659,11 +2022,7 @@ export function HumanChatPanelChatBar({
               {isDictating ? (
                 <button
                   type="button"
-                  className={cn(
-                    iconButtonClass,
-                    'rounded-sm border-2 border-red-500/85 bg-red-950/25 text-red-600 shadow-sm',
-                    'hover:border-red-400 hover:bg-red-950/35 active:bg-red-950/45 dark:border-red-500 dark:bg-red-950/40',
-                  )}
+                  className={recordingStopButtonClass}
                   aria-label={t('composerStopDictation')}
                   title={t('composerStopDictation')}
                   onClick={() => stopDictation()}
@@ -1688,7 +2047,7 @@ export function HumanChatPanelChatBar({
             </div>
             <button
               type="button"
-              onClick={onSend}
+              onClick={sendMessage}
               disabled={!canSend}
               className={cn(
                 'flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-0',
