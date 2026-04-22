@@ -14,12 +14,14 @@ import queryString from 'query-string';
 import { useAuthentication } from '@hypha-platform/authentication';
 
 import { DOCUMENT_LABEL_BADGE_KEYS } from './document-label-badge-keys';
+import { normalizeDocumentLabelForBadge } from './normalize-document-label-for-badge';
 
 const getDocumentBadges = (document: Document, t: (key: string) => string) => {
   const badges = [];
+  const canonicalLabel = normalizeDocumentLabelForBadge(document.label);
   const labelMessageKey =
-    document.label != null
-      ? DOCUMENT_LABEL_BADGE_KEYS[document.label]
+    canonicalLabel !== ''
+      ? DOCUMENT_LABEL_BADGE_KEYS[canonicalLabel]
       : undefined;
   if (labelMessageKey) {
     badges.push({
