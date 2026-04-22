@@ -5,7 +5,19 @@ import { SidebarInset } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { setMainColumnScrollRoot } from './main-column-scroll';
 
-type Props = React.ComponentProps<typeof SidebarInset>;
+export type PanelScrollInsetProps = Omit<
+  React.ComponentPropsWithoutRef<typeof SidebarInset>,
+  'ref'
+>;
+
+function assignRef<T>(ref: React.Ref<T> | undefined, value: T | null): void {
+  if (ref == null) return;
+  if (typeof ref === 'function') {
+    ref(value);
+  } else {
+    (ref as React.MutableRefObject<T | null>).current = value;
+  }
+}
 
 /**
  * `SidebarInset` that registers itself as the main column scroll root for parallax /
@@ -14,17 +26,29 @@ type Props = React.ComponentProps<typeof SidebarInset>;
  * Do not add horizontal padding for open sidebars here: `Sidebar`’s gap element already
  * reserves width in the flex row, so extra padding would double-count and shrink content.
  * Viewport-fixed layers (dialogs, DHO sticky chrome) use `--sidebar-*-width` on their own.
+ *
+ * Forwards ref and merges with the scroll-root binding so callers cannot override it
+ * (CodeRabbit: `ref` in spread would replace a single internal ref).
  */
-export function PanelScrollInset({ className, ...props }: Props) {
-  const bind = React.useCallback((node: HTMLElement | null) => {
-    setMainColumnScrollRoot(node);
-  }, []);
+export const PanelScrollInset = React.forwardRef<
+  HTMLDivElement,
+  PanelScrollInsetProps
+>(function PanelScrollInset({ className, ...props }, forwardedRef) {
+  const setRefs = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      setMainColumnScrollRoot(node);
+      assignRef(forwardedRef, node);
+    },
+    [forwardedRef],
+  );
 
   return (
     <SidebarInset
-      ref={bind}
+      ref={setRefs}
       className={cn('overflow-y-auto narrow-scrollbar', className)}
       {...props}
     />
   );
-}
+});
+
+PanelScrollInset.displayName = 'PanelScrollInset';
