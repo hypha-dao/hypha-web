@@ -168,7 +168,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
 
   React.useLayoutEffect(() => {
     const el = descriptionClampRef.current;
-    if (!el || !plainDescription.trim()) {
+    if (!el || !plainDescription.trim() || isLoading) {
       setDescriptionTruncated(false);
       return;
     }
@@ -179,7 +179,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [plainDescription]);
+  }, [plainDescription, isLoading]);
 
   const handleUnarchive = React.useCallback(async () => {
     if (!slug) return;
