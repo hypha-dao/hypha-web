@@ -3,7 +3,7 @@
 import type { MatrixClient, MatrixEvent } from 'matrix-js-sdk';
 import { EventType } from 'matrix-js-sdk';
 import { Bell } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 
 import {
   getMessageReplaceTargetEventId,
@@ -63,6 +63,7 @@ export function HumanChatPanelMentionTab({
   onSelectMessage,
 }: HumanChatPanelMentionTabProps) {
   const t = useTranslations('HumanChatPanel');
+  const format = useFormatter();
 
   const rows =
     client && roomId && currentUserId
@@ -98,7 +99,7 @@ export function HumanChatPanelMentionTab({
                         {senderLabel}
                       </span>
                       <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
-                        {new Date(ts).toLocaleString(undefined, {
+                        {format.dateTime(new Date(ts), {
                           hour: 'numeric',
                           minute: '2-digit',
                           month: 'short',
