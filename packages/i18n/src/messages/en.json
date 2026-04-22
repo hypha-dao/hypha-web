@@ -1858,6 +1858,7 @@
     "mentionInboxEmpty": "No mentions in this chat yet.",
     "mentionInboxNoPreview": "(no preview)",
     "mentionInboxBellAria": "{count, plural, one {# unread mention} other {# unread mentions}}",
+    "mentionInboxBellAriaCapped": "99 or more unread mentions",
     "mentionInboxBellAriaEmpty": "Open mentions",
     "composerVoiceRecord": "Record voice message",
     "composerVoiceStop": "Stop recording",

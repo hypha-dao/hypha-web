@@ -1825,6 +1825,7 @@
     "mentionInboxEmpty": "Ainda não há menções neste chat.",
     "mentionInboxNoPreview": "(sem pré-visualização)",
     "mentionInboxBellAria": "{count, plural, one {# menção não lida} other {# menções não lidas}}",
+    "mentionInboxBellAriaCapped": "99 ou mais menções não lidas",
     "mentionInboxBellAriaEmpty": "Abrir menções",
     "composerVoiceRecord": "Gravar mensagem de voz",
     "composerVoiceStop": "Parar gravação",

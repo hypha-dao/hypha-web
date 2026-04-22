@@ -1826,6 +1826,7 @@
     "mentionInboxEmpty": "Noch keine Erwähnungen in diesem Chat.",
     "mentionInboxNoPreview": "(keine Vorschau)",
     "mentionInboxBellAria": "{count, plural, one {# ungelesene Erwähnung} other {# ungelesene Erwähnungen}}",
+    "mentionInboxBellAriaCapped": "99 oder mehr ungelesene Erwähnungen",
     "mentionInboxBellAriaEmpty": "Erwähnungen öffnen",
     "composerVoiceRecord": "Sprachnachricht aufnehmen",
     "composerVoiceStop": "Aufnahme beenden",

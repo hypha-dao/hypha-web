@@ -147,9 +147,9 @@ export function HumanChatPanelMentionBell({
       className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent-2 hover:text-accent-12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-9/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       aria-label={
         unreadCount > 0
-          ? t('mentionInboxBellAria', {
-              count: countIsCapped ? '99+' : unreadCount,
-            })
+          ? countIsCapped || unreadCount >= 100
+            ? t('mentionInboxBellAriaCapped')
+            : t('mentionInboxBellAria', { count: unreadCount })
           : t('mentionInboxBellAriaEmpty')
       }
       title={t('mentionInboxTitle')}
