@@ -2,6 +2,7 @@
   "Common": {
     "Assignments": "Affectations",
     "Members": "Membres",
+    "memberRoleLabel": "Membre",
     "Treasury": "Trésorerie",
     "Agreements": "Accords",
     "Spaces": "Espaces",
