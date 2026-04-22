@@ -199,83 +199,83 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       )}
     >
       <CardContent className="relative flex min-h-0 flex-1 flex-col gap-0 p-0">
-        <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 pt-4">
-          <div className="flex items-start justify-between gap-3">
+        <div className="relative flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 pt-4">
+          {isCreator && slug ? (
+            <>
+              <Button
+                type="button"
+                variant="ghost"
+                colorVariant="neutral"
+                size="sm"
+                className="absolute right-3 top-3 z-10 h-8 w-8 shrink-0 p-0 text-muted-foreground hover:text-destructive"
+                disabled={isLoading}
+                aria-label={tSignalCard('deleteMenu')}
+                title={tSignalCard('deleteMenu')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDeleteOpen(true);
+                }}
+              >
+                <Trash2 className="h-4 w-4" aria-hidden />
+              </Button>
+              <AlertDialog
+                open={deleteOpen}
+                onOpenChange={(open) => {
+                  setDeleteOpen(open);
+                  if (!open) setDeleteError(null);
+                }}
+              >
+                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      {tSignalCard('deleteSignal')}
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {tSignalCard('deleteConfirm')}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  {deleteError ? (
+                    <p
+                      role="alert"
+                      className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                    >
+                      {deleteError}
+                    </p>
+                  ) : null}
+                  <AlertDialogFooter>
+                    <AlertDialogCancel asChild>
+                      <Button variant="outline" colorVariant="neutral">
+                        {t('noLeave')}
+                      </Button>
+                    </AlertDialogCancel>
+                    <AlertDialogAction asChild>
+                      <Button
+                        colorVariant="error"
+                        onClick={() =>
+                          void handleDelete().then((deleted) => {
+                            if (deleted) setDeleteOpen(false);
+                          })
+                        }
+                      >
+                        {tSignalCard('deleteConfirmAction')}
+                      </Button>
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </>
+          ) : null}
+          <div className={cn('min-w-0', isCreator && slug && 'pr-10')}>
             <Skeleton
-              className="min-w-0 flex-1"
+              className="min-w-0"
               width="100%"
               height="22px"
               loading={isLoading}
             >
-              <CardTitle className="line-clamp-2 pr-1 text-base font-semibold leading-snug">
+              <CardTitle className="line-clamp-2 text-base font-semibold leading-snug">
                 {title}
               </CardTitle>
             </Skeleton>
-            {isCreator && slug ? (
-              <>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  colorVariant="neutral"
-                  size="sm"
-                  className="h-8 w-8 shrink-0 p-0 text-muted-foreground hover:text-destructive"
-                  disabled={isLoading}
-                  aria-label={tSignalCard('deleteMenu')}
-                  title={tSignalCard('deleteMenu')}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDeleteOpen(true);
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" aria-hidden />
-                </Button>
-                <AlertDialog
-                  open={deleteOpen}
-                  onOpenChange={(open) => {
-                    setDeleteOpen(open);
-                    if (!open) setDeleteError(null);
-                  }}
-                >
-                  <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        {tSignalCard('deleteSignal')}
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        {tSignalCard('deleteConfirm')}
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    {deleteError ? (
-                      <p
-                        role="alert"
-                        className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-                      >
-                        {deleteError}
-                      </p>
-                    ) : null}
-                    <AlertDialogFooter>
-                      <AlertDialogCancel asChild>
-                        <Button variant="outline" colorVariant="neutral">
-                          {t('noLeave')}
-                        </Button>
-                      </AlertDialogCancel>
-                      <AlertDialogAction asChild>
-                        <Button
-                          colorVariant="error"
-                          onClick={() =>
-                            void handleDelete().then((deleted) => {
-                              if (deleted) setDeleteOpen(false);
-                            })
-                          }
-                        >
-                          {tSignalCard('deleteConfirmAction')}
-                        </Button>
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </>
-            ) : null}
           </div>
 
           <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-2 text-1 text-muted-foreground">
