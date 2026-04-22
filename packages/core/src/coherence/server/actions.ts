@@ -29,6 +29,7 @@ export async function deleteCoherenceBySlugAction(
   data: { slug: string },
   { authToken }: { authToken?: string },
 ) {
+  if (!authToken) throw new Error('authToken is required to delete coherence');
   // TODO: #602 Define RLS Policies for Spaces Table
   // const db = getDb({ authToken });
   return deleteCoherenceBySlug(data, { db });
