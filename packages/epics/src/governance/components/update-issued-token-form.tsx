@@ -169,12 +169,10 @@ export function buildFullSchemaUpdateIssuedToken(
       /** Passed from plugin for resolving space rows → web3 ids in orchestrator */
       spacesForWhitelistResolution: z
         .array(
-          z
-            .object({
-              address: z.string().nullable().optional(),
-              web3SpaceId: z.number().int().nullable().optional(),
-            })
-            .passthrough(),
+          z.object({
+            address: z.string().nullable().optional(),
+            web3SpaceId: z.number().int().nullable().optional(),
+          }),
         )
         .optional(),
       /** On-chain mutual credit baseline at form load — used for add/remove diffing */
