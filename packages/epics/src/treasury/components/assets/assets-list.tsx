@@ -5,56 +5,9 @@ import { AssetCard } from './asset-card';
 import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
 import Link from 'next/link';
+import type { AssetItem } from '../../hooks/use-user-assets';
 
-type OneChartPoint = {
-  month: string;
-  value: number;
-  date: string;
-};
-
-type TransactionCardProps = {
-  id: string;
-  title: string;
-  description: string;
-  amount: number;
-  withUsdSymbol?: boolean;
-  badges: {
-    label: string;
-    variant: 'solid' | 'soft' | 'outline' | 'surface';
-  }[];
-  author: {
-    name: string;
-    surname: string;
-  };
-  isLoading?: boolean;
-  viewCount?: number;
-  commentCount?: number;
-};
-
-export type AssetItem = {
-  icon: string;
-  name: string;
-  symbol: string;
-  value: number;
-  tokenPrice?: number;
-  referenceCurrency?: string | null;
-  usdEqual: number;
-  type: string;
-  chartData: OneChartPoint[];
-  transactions: TransactionCardProps[];
-  closeUrl: string;
-  slug: string;
-  createdAt?: Date;
-  supply?: {
-    total: number;
-    max: number;
-  };
-  space?: {
-    title: string;
-    slug: string;
-  };
-  address?: string;
-};
+export type { AssetItem };
 
 type AssetsListProps = {
   assets: AssetItem[];

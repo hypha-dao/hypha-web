@@ -6,6 +6,14 @@ import { TokenSupplySection } from './token-supply-section';
 import { AutoMintSection } from './auto-mint-section';
 import { TransferSection } from './transfer-section';
 import { TokenValueSection } from './token-value-section';
+import { MutualCreditSection } from './mutual-credit-section';
+
+const REGULAR_TOKEN_TYPES = new Set([
+  'utility',
+  'credits',
+  'impact',
+  'community_currency',
+]);
 
 export const AdvancedTokenSettings = ({
   enableLimitedSupply,
@@ -14,12 +22,15 @@ export const AdvancedTokenSettings = ({
   transferable,
   enableAdvancedTransferControls,
   enableTokenPrice,
+  enableMutualCredit = false,
+  setEnableMutualCredit,
   members,
   spaces,
   ownershipToWhitelistMembers,
   ownershipToWhitelistSpaces,
   tokenType,
   spaceSlug,
+  currentSpaceWeb3Id,
   maxSupplyTypeReadOnly = false,
 }: {
   enableLimitedSupply: boolean;
@@ -28,6 +39,8 @@ export const AdvancedTokenSettings = ({
   transferable: boolean;
   enableAdvancedTransferControls: boolean;
   enableTokenPrice: boolean;
+  enableMutualCredit?: boolean;
+  setEnableMutualCredit?: (value: boolean) => void;
   members: Person[];
   spaces: Space[];
   /** Ownership token To whitelist: active space members (people) */
@@ -36,8 +49,14 @@ export const AdvancedTokenSettings = ({
   ownershipToWhitelistSpaces?: Space[];
   tokenType?: string;
   spaceSlug?: string;
+  /** Web3 id of the issuing space; used as the auto-included credit-whitelist entry. */
+  currentSpaceWeb3Id?: number | null;
   maxSupplyTypeReadOnly?: boolean;
 }) => {
+  const showMutualCredit =
+    typeof tokenType === 'string' &&
+    REGULAR_TOKEN_TYPES.has(tokenType) &&
+    typeof setEnableMutualCredit === 'function';
   return (
     <>
       <Separator />
@@ -61,6 +80,17 @@ export const AdvancedTokenSettings = ({
       />
       <Separator />
       <TokenValueSection enableTokenPrice={enableTokenPrice} />
+      {showMutualCredit && setEnableMutualCredit ? (
+        <>
+          <Separator />
+          <MutualCreditSection
+            enableMutualCredit={enableMutualCredit}
+            setEnableMutualCredit={setEnableMutualCredit}
+            spaces={spaces}
+            currentSpaceWeb3Id={currentSpaceWeb3Id}
+          />
+        </>
+      ) : null}
     </>
   );
 };

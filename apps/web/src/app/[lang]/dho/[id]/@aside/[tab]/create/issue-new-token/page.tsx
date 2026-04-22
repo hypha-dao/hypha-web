@@ -12,6 +12,12 @@ import {
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 import { Person, Space } from '@hypha-platform/core/client';
+// >>> MAINTENANCE START — remove this import together with the early return below.
+import {
+  TOKEN_PROPOSAL_MAINTENANCE,
+  UnderMaintenance,
+} from '../_maintenance/under-maintenance';
+// <<< MAINTENANCE END
 type PageProps = {
   params: Promise<{ lang: Locale; id: string; tab: string }>;
   searchParams: Promise<{ hideBack?: string }>;
@@ -21,6 +27,16 @@ export default async function IssueNewTokenPage({
   params,
   searchParams,
 }: PageProps) {
+  // >>> MAINTENANCE START — token contracts in flight; remove this block to re-enable.
+  if (TOKEN_PROPOSAL_MAINTENANCE) {
+    return (
+      <ProposalOverlayShell>
+        <UnderMaintenance />
+      </ProposalOverlayShell>
+    );
+  }
+  // <<< MAINTENANCE END
+
   const { lang, id, tab } = await params;
   const { hideBack = 'false' } = await searchParams;
   const hideBackUrl = hideBack?.toLowerCase?.() === 'true';

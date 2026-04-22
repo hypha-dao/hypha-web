@@ -1,18 +1,29 @@
 'use client';
 
 import useSWR from 'swr';
+import { formatUnits } from 'viem';
 import { publicClient } from '../../../client';
 import { decayingSpaceTokenAbi } from '../../../generated';
 import type { UpdateIssuedTokenInput } from './build-update-issued-token-tx';
 import { decayBasisPointsToFormPercent } from '../../voice-decay-units';
 
-const DECIMALS = 18n;
+const DECIMALS = 18;
 /** On-chain `tokenPrice` is stored in micro-units (1e6); UI uses human decimals */
 const TOKEN_PRICE_MICRO = 1_000_000;
 
+/**
+ * Hydration shape for token edit forms — extends the on-chain input fields with
+ * read-only credit metadata that the form needs but the tx builder does not
+ * (the tx builder uses `batchAdd/RemoveCreditWhitelistSpaceIds` deltas instead).
+ */
+export type TokenOnChainData = Partial<UpdateIssuedTokenInput> & {
+  /** Currently whitelisted space ids (web3 ids) — UI uses these as the baseline. */
+  creditWhitelistedSpaceIds?: number[];
+};
+
 async function fetchTokenOnChainData(
   address: `0x${string}`,
-): Promise<Partial<UpdateIssuedTokenInput>> {
+): Promise<TokenOnChainData> {
   const contract = {
     address,
     abi: decayingSpaceTokenAbi,
@@ -87,13 +98,25 @@ async function fetchTokenOnChainData(
         functionName: 'fixedMaxSupply',
         args: [],
       },
+      {
+        ...contract,
+        functionName: 'defaultCreditLimit',
+        args: [],
+      },
+      {
+        ...contract,
+        functionName: 'getCreditWhitelistedSpaces',
+        args: [],
+      },
     ],
   });
 
   for (const failure of results.filter(
     (result) => result.status === 'failure',
   )) {
-    console.error(`Contract call failed: ${failure.error.message}`);
+    console.error(
+      `Contract call failed for ${address}: ${failure.error.message}`,
+    );
   }
 
   const [
@@ -110,6 +133,8 @@ async function fetchTokenOnChainData(
     useReceiveWhitelistResult,
     archivedResult,
     fixedMaxSupplyResult,
+    defaultCreditLimitResult,
+    creditWhitelistedSpacesResult,
   ] = results.map(({ result }) => result);
 
   return {
@@ -117,7 +142,7 @@ async function fetchTokenOnChainData(
     symbol: symbolResult as string,
     maxSupply:
       maxSupplyResult !== undefined
-        ? Number((maxSupplyResult as bigint) / 10n ** DECIMALS)
+        ? Number(formatUnits(maxSupplyResult as bigint, DECIMALS))
         : undefined,
     transferable: transferableResult as boolean,
     autoMinting: autoMintingResult as boolean,
@@ -140,6 +165,21 @@ async function fetchTokenOnChainData(
     fixedMaxSupply:
       fixedMaxSupplyResult !== undefined
         ? (fixedMaxSupplyResult as boolean)
+        : undefined,
+    defaultCreditLimit:
+      defaultCreditLimitResult !== undefined
+        ? Number(formatUnits(defaultCreditLimitResult as bigint, DECIMALS))
+        : undefined,
+    creditWhitelistedSpaceIds:
+      creditWhitelistedSpacesResult !== undefined
+        ? (creditWhitelistedSpacesResult as readonly bigint[]).map((v) => {
+            if (v > BigInt(Number.MAX_SAFE_INTEGER)) {
+              console.warn(
+                `Credit-whitelisted space id ${v.toString()} for ${address} exceeds Number.MAX_SAFE_INTEGER; precision may be lost.`,
+              );
+            }
+            return Number(v);
+          })
         : undefined,
   };
 }

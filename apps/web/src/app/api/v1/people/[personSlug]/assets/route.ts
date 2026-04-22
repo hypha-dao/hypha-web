@@ -5,9 +5,11 @@ import {
   getDb,
   getTokenBalancesByAddress,
   findAllTokens,
+  findAllSpacesByWeb3SpaceIds,
   getBalance,
   getTokenMeta,
   getSupply,
+  getMutualCreditInfo,
 } from '@hypha-platform/core/server';
 import {
   TOKENS,
@@ -16,6 +18,7 @@ import {
   TokenType,
   getTokenDecimals,
   getEnergyBalances,
+  getMemberSpaces,
 } from '@hypha-platform/core/client';
 import { headers } from 'next/headers';
 import { hasEmojiOrLink, tryDecodeUriPart } from '@hypha-platform/ui-utils';
@@ -51,24 +54,54 @@ export async function GET(
       );
     }
 
-    let energyBalanceRaw: bigint = 0n;
-    let energyTokenAddress: `0x${string}` | undefined = undefined;
+    /**
+     * Run independent top-level fetches in parallel: on-chain energy balance, on-chain
+     * member-spaces, off-chain external token balances, and the in-DB tokens list. They
+     * share no data dependencies and previously ran sequentially, dominating TTFB.
+     */
+    const [
+      energyResult,
+      memberSpacesResult,
+      externalTokens,
+      rawDbTokensForSeed,
+    ] = await Promise.all([
+      web3Client
+        .readContract(getEnergyBalances({ member: address }))
+        .catch((error) => {
+          console.warn('Failed to fetch energy balance:', error);
+          return null;
+        }),
+      web3Client
+        .readContract(getMemberSpaces({ memberAddress: address }))
+        .catch((error) => {
+          console.warn('Failed to fetch member spaces:', error);
+          return null;
+        }),
+      getTokenBalancesByAddress(address).catch(
+        (error): Awaited<ReturnType<typeof getTokenBalancesByAddress>> => {
+          console.warn('Failed to fetch external token balances:', error);
+          return [];
+        },
+      ),
+      findAllTokens({ db: getDb({ authToken }) }, { search: undefined }),
+    ]);
 
-    try {
-      const config = getEnergyBalances({ member: address });
-      const result = await web3Client.readContract(config);
-      energyBalanceRaw = BigInt(result[0]);
-      energyTokenAddress = result[1] as `0x${string}`;
-    } catch (error) {
-      console.warn('Failed to fetch energy balance:', error);
-    }
+    const energyBalanceRaw: bigint = energyResult
+      ? BigInt(energyResult[0])
+      : 0n;
+    const energyTokenAddress: `0x${string}` | undefined = energyResult
+      ? (energyResult[1] as `0x${string}`)
+      : undefined;
 
-    let externalTokens: any[] = [];
-    try {
-      externalTokens = await getTokenBalancesByAddress(address);
-    } catch (error) {
-      console.warn('Failed to fetch external token balances:', error);
-    }
+    /**
+     * Spaces the user is a member of (web3 ids). Used below to surface tokens the user
+     * can spend on credit even when their on-chain balance is zero.
+     */
+    const memberWeb3SpaceIds: Set<number> = memberSpacesResult
+      ? new Set(
+          (memberSpacesResult as readonly bigint[]).map((id) => Number(id)),
+        )
+      : new Set();
 
     const parsedExternalTokens: Token[] = externalTokens
       .filter(
@@ -144,6 +177,49 @@ export async function GET(
       }
     }
 
+    /**
+     * Also include dbTokens issued by spaces the user is a member of — this lets us
+     * surface credit-enabled tokens even when the user has 0 balance (so they appear
+     * in transfer dropdowns when eligible by space membership). We restrict to member
+     * spaces because credit eligibility is gated on space membership; iterating every
+     * token in the DB is needlessly expensive for the user-profile endpoint.
+     * Non-credit tokens with 0 balance are filtered out below.
+     */
+    let memberDbSpaceIds: Set<number> = new Set();
+    if (memberWeb3SpaceIds.size > 0) {
+      try {
+        const memberSpaces = await findAllSpacesByWeb3SpaceIds(
+          {
+            web3SpaceIds: Array.from(memberWeb3SpaceIds),
+            parentOnly: false,
+          },
+          { db: getDb({ authToken }) },
+        );
+        memberDbSpaceIds = new Set(memberSpaces.map((s) => s.id));
+      } catch (error) {
+        console.warn('Failed to resolve member space db ids:', error);
+      }
+    }
+
+    /** Track which addresses come from dbTokens — others (HYPHA/USDC/external) skip the mutual credit RPC. */
+    const dbTokenAddresses = new Set<string>();
+    rawDbTokensForSeed.forEach((t) => {
+      if (!t.address) return;
+      const lower = t.address.toLowerCase();
+      dbTokenAddresses.add(lower);
+      if (addressMap.has(lower)) return;
+      if (t.spaceId == null || !memberDbSpaceIds.has(t.spaceId)) return;
+      addressMap.set(lower, {
+        symbol: t.symbol ?? 'UNKNOWN',
+        name: t.name ?? 'Unnamed',
+        address: t.address as `0x${string}`,
+        icon: t.iconUrl ?? '/placeholder/token-icon.svg',
+        type: validTokenTypes.includes(t.type as TokenType)
+          ? (t.type as TokenType)
+          : 'utility',
+      });
+    });
+
     const allTokens: Token[] = Array.from(addressMap.values());
 
     let prices: Record<string, number | undefined> = {};
@@ -153,10 +229,7 @@ export async function GET(
       console.error('Failed to fetch token prices:', error);
     }
 
-    const rawDbTokens = await findAllTokens(
-      { db: getDb({ authToken }) },
-      { search: undefined },
-    );
+    const rawDbTokens = rawDbTokensForSeed;
     const dbTokens = rawDbTokens.map((token) => ({
       agreementId: token.agreementId ?? undefined,
       spaceId: token.spaceId ?? undefined,
@@ -185,32 +258,51 @@ export async function GET(
     const assets = await Promise.all(
       allTokens.map(async (token) => {
         try {
-          const meta = await getTokenMeta(token.address, dbTokens);
           const isEnergyToken =
             token.address.toLowerCase() === energyTokenAddress?.toLowerCase();
+          /**
+           * Mutual credit only exists on RegularSpaceToken instances issued through the
+           * platform. Skipping the multicall for the energy token and for tokens that
+           * are not in the DB (e.g. HYPHA, USDC, external balances) avoids a wasted RPC
+           * round-trip per token, which dominated the previous endpoint latency.
+           */
+          const shouldFetchCredit =
+            !isEnergyToken && dbTokenAddresses.has(token.address.toLowerCase());
+
+          /** Run the per-token reads in parallel so each token costs ~1 RPC RTT. */
+          const [meta, decimals, balanceRes, supplyRes, mutualCredit] =
+            await Promise.all([
+              getTokenMeta(token.address, dbTokens),
+              getTokenDecimals(token.address),
+              isEnergyToken
+                ? Promise.resolve(null)
+                : getBalance(token.address, address).catch((err) => {
+                    console.warn(
+                      `Failed to fetch balance for token ${token.address}: ${err}`,
+                    );
+                    return null;
+                  }),
+              getSupply(token.address).catch((err) => {
+                console.warn(
+                  `Failed to fetch supply for token ${token.address}: ${err}`,
+                );
+                return null;
+              }),
+              shouldFetchCredit
+                ? getMutualCreditInfo(token.address, address)
+                : Promise.resolve(null),
+            ]);
+
           let amount: number;
-          const decimals = await getTokenDecimals(token.address);
           if (isEnergyToken) {
             amount =
               Number(energyBalanceRaw / 10n ** BigInt(decimals)) +
               Number(energyBalanceRaw % 10n ** BigInt(decimals)) /
                 10 ** decimals;
           } else {
-            const { amount: rawAmount } = await getBalance(
-              token.address,
-              address,
-            );
-            amount = rawAmount;
+            amount = balanceRes ? balanceRes.amount : 0;
           }
-          let totalSupply: bigint | undefined;
-          try {
-            const supply = await getSupply(token.address);
-            totalSupply = supply.totalSupply;
-          } catch (err) {
-            console.warn(
-              `Failed to fetch supply for token ${token.address}: ${err}`,
-            );
-          }
+          const totalSupply = supplyRes?.totalSupply;
           let rate = isEnergyToken ? 1 : prices[token.address] || 0;
           if (rate === 0) {
             rate = referencePriceByAddress[token.address.toLowerCase()] ?? 0;
@@ -236,6 +328,25 @@ export async function GET(
                   title: meta.space.title,
                 }
               : undefined,
+            mutualCredit:
+              mutualCredit && mutualCredit.isCreditEnabled
+                ? {
+                    defaultCreditLimit: mutualCredit.defaultCreditLimit,
+                    creditBalance: mutualCredit.creditBalance,
+                    netBalance: mutualCredit.netBalance,
+                    whitelistedSpaceIds: mutualCredit.whitelistedSpaceIds,
+                    creditLimit: mutualCredit.creditLimit,
+                    creditLimitLeft: mutualCredit.creditLimitLeft,
+                    /**
+                     * The user is credit-eligible if any space they are a member of is
+                     * in the token's credit whitelist. We rely on the on-chain whitelist
+                     * because the contract authorizes credit by space membership.
+                     */
+                    creditEligible: mutualCredit.whitelistedSpaceIds.some(
+                      (id) => memberWeb3SpaceIds.has(id),
+                    ),
+                  }
+                : undefined,
           };
         } catch (err) {
           console.warn(`Skipping token ${token.address}: ${err}`);
@@ -248,7 +359,25 @@ export async function GET(
       (typeof assets)[0]
     >[];
 
-    const sorted = validAssets.sort((a, b) =>
+    /**
+     * Keep tokens with non-zero balance, predefined `TOKENS` (e.g. HYPHA, USDC), the
+     * energy token, and credit-eligible tokens (so users see and can spend on credit
+     * even at 0 balance). Drop the noise of every zero-balance space token in the DB.
+     */
+    const knownAddresses = new Set<string>([
+      ...TOKENS.map((t) => t.address.toLowerCase()),
+      ...filteredExternalTokens.map((t) => t.address.toLowerCase()),
+      ...(energyTokenAddress ? [energyTokenAddress.toLowerCase()] : []),
+    ]);
+    const visibleAssets = validAssets.filter((a) => {
+      if (a.value > 0) return true;
+      if (knownAddresses.has(a.address.toLowerCase())) return true;
+      const mc = (a as { mutualCredit?: { creditEligible?: boolean } })
+        .mutualCredit;
+      return Boolean(mc?.creditEligible);
+    });
+
+    const sorted = visibleAssets.sort((a, b) =>
       a.usdEqual === b.usdEqual ? b.value - a.value : b.usdEqual - a.usdEqual,
     );
 

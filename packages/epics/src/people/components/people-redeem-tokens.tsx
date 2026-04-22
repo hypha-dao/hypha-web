@@ -164,6 +164,7 @@ export const ProfileRedeemTokens = ({
   const tokenMetadataByAddress = React.useMemo(() => {
     const map = new Map<string, { icon: string; symbol: string }>();
     for (const asset of userAssets) {
+      if (!asset.address) continue;
       map.set(asset.address.toLowerCase(), {
         icon: asset.icon,
         symbol: asset.symbol,
@@ -175,6 +176,7 @@ export const ProfileRedeemTokens = ({
   const tokenTypeByAddress = React.useMemo(() => {
     const map = new Map<string, TokenType>();
     for (const asset of userAssets) {
+      if (!asset.address) continue;
       const raw = asset.type;
       if (validTokenTypes.includes(raw as TokenType)) {
         map.set(asset.address.toLowerCase(), raw as TokenType);
@@ -187,6 +189,7 @@ export const ProfileRedeemTokens = ({
     const bySpaceAndAddress = new Map<string, number>();
     const byAddress = new Map<string, number>();
     for (const asset of userAssets) {
+      if (!asset.address) continue;
       const addressKey = asset.address.toLowerCase();
       if (!byAddress.has(addressKey)) {
         byAddress.set(addressKey, asset.value);

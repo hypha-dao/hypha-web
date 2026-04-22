@@ -73,6 +73,8 @@ type UpdateIssuedTokenPluginProps = {
   spacesForChainMapping?: Space[];
   spaceSlug?: string;
   spaceId?: number;
+  /** Web3 id of the issuing space; auto-included in the mutual credit whitelist. */
+  currentSpaceWeb3Id?: number | null;
   ownershipToWhitelistMembers?: Person[];
   ownershipToWhitelistSpaces?: Space[];
 };
@@ -83,6 +85,7 @@ export const UpdateIssuedTokenPlugin = ({
   spacesForChainMapping,
   spaceSlug,
   spaceId,
+  currentSpaceWeb3Id,
   ownershipToWhitelistMembers,
   ownershipToWhitelistSpaces,
 }: UpdateIssuedTokenPluginProps) => {
@@ -131,6 +134,13 @@ export const UpdateIssuedTokenPlugin = ({
     'enableAdvancedTransferControls',
   );
   const enableTokenPrice = watch('enableTokenPrice');
+  const enableMutualCredit = watch('enableMutualCredit') ?? false;
+  const setEnableMutualCredit = (value: boolean) => {
+    setValue('enableMutualCredit', value, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
   const currentTokenType = watch('type');
   const tokenName = watch('name');
   const tokenSymbol = watch('symbol');
@@ -173,6 +183,26 @@ export const UpdateIssuedTokenPlugin = ({
     });
   }, [setValue]);
 
+  /**
+   * Mutual credit lives under Advanced Settings — collapsing the section must
+   * also drop the credit toggle/limit/whitelist or hidden values can still be
+   * encoded into the update tx.
+   */
+  const clearMutualCreditFields = useCallback(() => {
+    setValue('enableMutualCredit', false, {
+      shouldDirty: true,
+      shouldValidate: false,
+    });
+    setValue('defaultCreditLimit', undefined, {
+      shouldDirty: true,
+      shouldValidate: false,
+    });
+    setValue('creditWhitelistedSpaceIds', [], {
+      shouldDirty: true,
+      shouldValidate: false,
+    });
+  }, [setValue]);
+
   const clearAdvancedSettingsFields = useCallback(() => {
     clearLimitedSupplyFields();
     setValue('enableProposalAutoMinting', true, {
@@ -189,12 +219,14 @@ export const UpdateIssuedTokenPlugin = ({
       shouldValidate: false,
     });
     clearTokenPriceFields();
+    clearMutualCreditFields();
     setEnableLimitedSupply(false);
   }, [
     setValue,
     clearLimitedSupplyFields,
     clearTransferFields,
     clearTokenPriceFields,
+    clearMutualCreditFields,
     currentTokenType,
   ]);
 
@@ -474,9 +506,27 @@ export const UpdateIssuedTokenPlugin = ({
 
   const lastHydratedTokenAddressRef = useRef<string | null>(null);
   const lastOnChainFingerprintRef = useRef<string>('');
+  /**
+   * Tracks the token address whose mutual-credit fields we already populated from
+   * on-chain data. Distinct from `lastOnChainFingerprintRef` because credit fields
+   * have their own "first-arrival" semantics: we want to force-fill them once per
+   * token regardless of any incidental `dirtyFields` flags that other effects may
+   * have set, then defer to user edits afterwards.
+   */
+  const creditHydratedForTokenRef = useRef<string | null>(null);
+  /**
+   * Resubmit-related refs are declared early so the on-chain hydration effect
+   * can observe `resubmitHydratedRef.current` before deciding to force-fill
+   * mutual-credit fields (see PR #2176 review). Their reset effect lives
+   * further down alongside the resubmit handler.
+   */
+  const resubmitOverlayAppliedRef = useRef(false);
+  const resubmitHydratedRef = useRef(false);
+  const baselineWhitelistAppliedForTokenRef = useRef<string | null>(null);
 
   useEffect(() => {
     lastOnChainFingerprintRef.current = '';
+    creditHydratedForTokenRef.current = null;
   }, [selectedTokenAddress]);
 
   useEffect(() => {
@@ -570,6 +620,11 @@ export const UpdateIssuedTokenPlugin = ({
           whitelistBaselineToMembers: undefined,
           whitelistBaselineFromSpaceIds: undefined,
           whitelistBaselineToSpaceIds: undefined,
+          enableMutualCredit: false,
+          defaultCreditLimit: undefined,
+          creditWhitelistedSpaceIds: [],
+          creditBaselineDefaultLimit: undefined,
+          creditBaselineWhitelistedSpaceIds: undefined,
         },
         { keepDirty: false, keepTouched: false },
       );
@@ -759,12 +814,91 @@ export const UpdateIssuedTokenPlugin = ({
         shouldDirty: false,
       });
     }
-    setShowAdvancedSettings((prev) => prev || enableAdvancedTransferControls);
-  }, [isLoadingOnChainData, onChainData, setValue, getValues, dirtyFields]);
 
-  const resubmitOverlayAppliedRef = useRef(false);
-  const resubmitHydratedRef = useRef(false);
-  const baselineWhitelistAppliedForTokenRef = useRef<string | null>(null);
+    /**
+     * Mutual credit hydration: a token is considered "credit-enabled" if it has either a
+     * non-zero defaultCreditLimit or one or more credit-whitelisted spaces. Baselines are
+     * mirrored so the orchestrator can compute add/remove space deltas.
+     *
+     * On the first arrival of on-chain data per selected token we force-fill the form
+     * fields (bypassing `dirtyFields` checks) so the "Mutual Credit" toggle, limit, and
+     * eligible-space list reliably prefill — a few sibling effects can flip the dirty
+     * flag for credit-related fields before the chain data lands. After this initial
+     * sync we respect user edits and only mirror the (non-user-facing) baseline fields.
+     */
+    const hasCreditLimit =
+      onChainData.defaultCreditLimit !== undefined &&
+      onChainData.defaultCreditLimit > 0;
+    const whitelistedSpaceIds = onChainData.creditWhitelistedSpaceIds ?? [];
+    const hasCreditWhitelist = whitelistedSpaceIds.length > 0;
+    const creditEnabledFromChain = hasCreditLimit || hasCreditWhitelist;
+    /**
+     * Mirror the new-token form's behavior: the issuing space is implicit (auto-added by
+     * the orchestrator and rendered as a non-removable badge in the picker UI), so exclude
+     * it from the form's `creditWhitelistedSpaceIds` field. The orchestrator dedupes when
+     * computing add/remove deltas, so this stays diff-stable.
+     */
+    const additionalWhitelistedSpaceIds =
+      typeof currentSpaceWeb3Id === 'number'
+        ? whitelistedSpaceIds.filter((id) => id !== currentSpaceWeb3Id)
+        : whitelistedSpaceIds;
+
+    const creditFirstSync =
+      !!selectedTokenAddress &&
+      creditHydratedForTokenRef.current !== selectedTokenAddress;
+    /**
+     * If the resubmit overlay has already restored pending mutual-credit edits,
+     * skip the force-fill so we don't clobber them with current on-chain
+     * values. We still mirror the (non-user-facing) baselines below.
+     */
+    const shouldForceCreditSync =
+      creditFirstSync && !resubmitHydratedRef.current;
+
+    if (shouldForceCreditSync || !isDirty('enableMutualCredit')) {
+      setValue('enableMutualCredit', creditEnabledFromChain, {
+        shouldDirty: false,
+      });
+    }
+    if (shouldForceCreditSync || !isDirty('defaultCreditLimit')) {
+      setValue(
+        'defaultCreditLimit',
+        creditEnabledFromChain
+          ? onChainData.defaultCreditLimit ?? undefined
+          : undefined,
+        { shouldDirty: false },
+      );
+    }
+    if (shouldForceCreditSync || !isDirty('creditWhitelistedSpaceIds')) {
+      setValue('creditWhitelistedSpaceIds', additionalWhitelistedSpaceIds, {
+        shouldDirty: false,
+      });
+    }
+    /** Baselines are not user-facing — always mirror chain so submit diff is correct. */
+    setValue(
+      'creditBaselineDefaultLimit',
+      onChainData.defaultCreditLimit ?? 0,
+      { shouldDirty: false },
+    );
+    setValue('creditBaselineWhitelistedSpaceIds', whitelistedSpaceIds, {
+      shouldDirty: false,
+    });
+    if (creditEnabledFromChain) {
+      setShowAdvancedSettings((prev) => prev || true);
+    }
+    if (creditFirstSync) {
+      creditHydratedForTokenRef.current = selectedTokenAddress;
+    }
+
+    setShowAdvancedSettings((prev) => prev || enableAdvancedTransferControls);
+  }, [
+    isLoadingOnChainData,
+    onChainData,
+    selectedTokenAddress,
+    currentSpaceWeb3Id,
+    setValue,
+    getValues,
+    dirtyFields,
+  ]);
 
   useEffect(() => {
     resubmitOverlayAppliedRef.current = false;
@@ -794,6 +928,12 @@ export const UpdateIssuedTokenPlugin = ({
       });
       resubmitOverlayAppliedRef.current = true;
       resubmitHydratedRef.current = true;
+      /**
+       * Treat resubmit hydration as the credit "first sync" so a later
+       * on-chain hydration (which may arrive after this handler) does not
+       * fall into the force-fill path and overwrite resubmitted credit edits.
+       */
+      creditHydratedForTokenRef.current = detail.tokenAddress;
     };
     window.addEventListener(UPDATE_ISSUED_TOKEN_RESUBMIT_EVENT, handler);
     return () =>
@@ -1059,12 +1199,15 @@ export const UpdateIssuedTokenPlugin = ({
                 enableAdvancedTransferControls ?? false
               }
               enableTokenPrice={enableTokenPrice ?? false}
+              enableMutualCredit={enableMutualCredit}
+              setEnableMutualCredit={setEnableMutualCredit}
               members={members}
               spaces={spaces}
               ownershipToWhitelistMembers={ownershipToWhitelistMembers}
               ownershipToWhitelistSpaces={ownershipToWhitelistSpaces}
               tokenType={currentTokenType}
               spaceSlug={spaceSlug}
+              currentSpaceWeb3Id={currentSpaceWeb3Id}
               maxSupplyTypeReadOnly={onChainData?.fixedMaxSupply === true}
             />
           )}

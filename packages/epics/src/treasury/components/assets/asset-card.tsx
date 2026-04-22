@@ -30,6 +30,16 @@ type AssetCardProps = {
   };
   lang?: Locale;
   createdAt?: Date;
+  /**
+   * Mutual credit info — only rendered when the underlying token has mutual
+   * credit enabled. `netBalance < 0` indicates the holder is in debt.
+   */
+  mutualCredit?: {
+    defaultCreditLimit: number;
+    creditBalance: number;
+    netBalance: number;
+    whitelistedSpaceIds: number[];
+  };
 };
 
 export const AssetCard: React.FC<AssetCardProps> = ({
@@ -47,6 +57,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   lang,
   type,
   createdAt,
+  mutualCredit,
 }) => {
   const tTreasury = useTranslations('TreasuryTab');
   const tAgreementFlow = useTranslations('AgreementFlow');
@@ -140,6 +151,41 @@ export const AssetCard: React.FC<AssetCardProps> = ({
           </Text>
         )}
       </div>
+      {mutualCredit && symbol ? (
+        <div className="w-full flex flex-row gap-2 flex-wrap items-center mt-1">
+          {mutualCredit.netBalance !== 0 ? (
+            <Badge
+              colorVariant={mutualCredit.netBalance < 0 ? 'warn' : 'accent'}
+              variant="outline"
+              className="w-fit h-fit"
+            >
+              {mutualCredit.netBalance < 0
+                ? tTreasury('assetCard.mutualCredit.debtBadge', {
+                    amount: formatCurrencyValue(
+                      Math.abs(mutualCredit.netBalance),
+                      lang,
+                    ),
+                    symbol,
+                  })
+                : tTreasury('assetCard.mutualCredit.netBadge', {
+                    amount: formatCurrencyValue(mutualCredit.netBalance, lang),
+                    symbol,
+                  })}
+            </Badge>
+          ) : null}
+          {mutualCredit.defaultCreditLimit > 0 && (
+            <Text className="text-1 text-neutral-11">
+              {tTreasury('assetCard.mutualCredit.limit', {
+                limit: formatCurrencyValue(
+                  mutualCredit.defaultCreditLimit,
+                  lang,
+                ),
+                symbol,
+              })}
+            </Text>
+          )}
+        </div>
+      ) : null}
       <div className="w-full flex flex-row gap-1">
         {createdAt instanceof Date && !Number.isNaN(createdAt.getTime()) && (
           <Text className="text-1 text-neutral-11">

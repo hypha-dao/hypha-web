@@ -645,6 +645,19 @@ export const baseSchemaIssueNewToken = z.object({
     const num = Number(val);
     return isNaN(num) ? undefined : num;
   }, z.number().positive().optional()),
+
+  /** Mutual credit: opt-in toggle to enable credit lines for whitelisted spaces */
+  enableMutualCredit: z.boolean().optional(),
+  /** Per-eligible-account credit limit, in human token units (multiplied by 10^18 on-chain) */
+  defaultCreditLimit: z.preprocess((val) => {
+    if (val === '' || val === null || val === undefined) {
+      return undefined;
+    }
+    const num = Number(val);
+    return isNaN(num) ? undefined : num;
+  }, z.number().int().nonnegative().optional()),
+  /** Web3 space ids whose members are eligible for the credit line */
+  creditWhitelistedSpaceIds: z.array(z.number().int().nonnegative()).optional(),
 });
 
 export const schemaIssueNewToken = baseSchemaIssueNewToken.superRefine(
@@ -690,6 +703,21 @@ export const schemaIssueNewToken = baseSchemaIssueNewToken.superRefine(
           code: z.ZodIssueCode.custom,
           message: 'Please enter a token price greater than 0',
           path: ['tokenPrice'],
+        });
+      }
+    }
+
+    if (data.enableMutualCredit) {
+      if (
+        data.defaultCreditLimit === undefined ||
+        data.defaultCreditLimit === null ||
+        isNaN(data.defaultCreditLimit) ||
+        data.defaultCreditLimit <= 0
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Please enter a credit limit greater than 0',
+          path: ['defaultCreditLimit'],
         });
       }
     }

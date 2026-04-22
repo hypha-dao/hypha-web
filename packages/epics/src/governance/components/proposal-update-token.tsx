@@ -10,7 +10,7 @@ import {
   type TokenType,
   type TransferWhitelistFormValue,
 } from '@hypha-platform/core/client';
-import { getAddress } from 'viem';
+import { formatUnits, getAddress } from 'viem';
 import { Separator } from '@hypha-platform/ui';
 import {
   formatCurrencyValue,
@@ -22,6 +22,8 @@ import { useTranslations } from 'next-intl';
 import { normalizeMaxSupplyHuman } from '../../treasury/utils/normalize-max-supply-human';
 import { WhitelistAddressItem } from './proposal-token-items';
 import { buildWhitelistDiffRows } from '../utils/whitelist-proposal-diff';
+import { useDbSpaces } from '../../hooks';
+import { Badge } from '@hypha-platform/ui';
 
 function buildSpaceScopeMapFromEntries(
   entries:
@@ -82,6 +84,12 @@ export interface ProposalUpdateTokenProps {
   fixedMaxSupply?: boolean;
   /** Prefer pending `token_updates` row for this agreement (correct when multiple spaces share an address). */
   documentId?: number;
+  /** From `setDefaultCreditLimit` calldata (raw bigint, scaled by 1e18). */
+  defaultCreditLimit?: bigint;
+  /** From `batchAddCreditWhitelistSpaces` calldata. */
+  addCreditWhitelistSpaceIds?: number[];
+  /** From `batchRemoveCreditWhitelistSpaces` calldata. */
+  removeCreditWhitelistSpaceIds?: number[];
 }
 
 interface TokenUpdateDataInterface {
@@ -124,6 +132,9 @@ export const ProposalUpdateToken = ({
   archiveToken,
   fixedMaxSupply: fixedMaxSupplyProp,
   documentId,
+  defaultCreditLimit,
+  addCreditWhitelistSpaceIds,
+  removeCreditWhitelistSpaceIds,
 }: ProposalUpdateTokenProps) => {
   const tProposalDetails = useTranslations('ProposalDetails');
   const tAgreementFlow = useTranslations('AgreementFlow');
@@ -437,6 +448,51 @@ export const ProposalUpdateToken = ({
     </div>
   );
 
+  /**
+   * Mutual credit summary — tx may carry any of: setDefaultCreditLimit,
+   * batchAddCreditWhitelistSpaces, batchRemoveCreditWhitelistSpaces.
+   * Disable is signaled by `setDefaultCreditLimit(0)`.
+   */
+  const creditLimitHuman = React.useMemo(() => {
+    if (defaultCreditLimit === undefined) {
+      return undefined;
+    }
+    return Number(formatUnits(defaultCreditLimit, 18));
+  }, [defaultCreditLimit]);
+  const creditDisabled =
+    creditLimitHuman !== undefined && creditLimitHuman === 0;
+  const showCreditSection =
+    defaultCreditLimit !== undefined ||
+    Boolean(addCreditWhitelistSpaceIds?.length) ||
+    Boolean(removeCreditWhitelistSpaceIds?.length);
+  const { spaces: dbSpacesForCredit } = useDbSpaces({ parentOnly: false });
+  /**
+   * Pair every chain-side whitelist id with its DB space (if found). Unresolved
+   * ids are kept and rendered as a fallback badge so add/remove deltas remain
+   * visible when `useDbSpaces()` does not have the row (private/sandbox spaces,
+   * not-yet-replicated rows, etc.) — see PR #2176 review.
+   */
+  const resolveSpacesByIds = React.useCallback(
+    (ids: number[] | undefined) => {
+      if (!ids?.length) {
+        return [];
+      }
+      return ids.map((id) => ({
+        id,
+        space: dbSpacesForCredit.find((s) => Number(s.web3SpaceId ?? 0) === id),
+      }));
+    },
+    [dbSpacesForCredit],
+  );
+  const addedCreditSpaces = React.useMemo(
+    () => resolveSpacesByIds(addCreditWhitelistSpaceIds),
+    [addCreditWhitelistSpaceIds, resolveSpacesByIds],
+  );
+  const removedCreditSpaces = React.useMemo(
+    () => resolveSpacesByIds(removeCreditWhitelistSpaceIds),
+    [removeCreditWhitelistSpaceIds, resolveSpacesByIds],
+  );
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-5">
@@ -586,6 +642,122 @@ export const ProposalUpdateToken = ({
               : tProposalDetails('labels.whitelistEnforcementInactive')}
           </div>
         </div>
+      )}
+      {showCreditSection && (
+        <>
+          <Separator />
+          <div className="flex flex-col gap-4">
+            <div className="text-1 text-neutral-11 font-medium">
+              {tProposalDetails('sections.mutualCredit')}
+            </div>
+            {creditDisabled ? (
+              <div className="flex justify-between items-center">
+                <div className="text-1 text-neutral-11 w-full">
+                  {tProposalDetails('labels.mutualCreditEnabled')}
+                </div>
+                <div className="text-1">{tProposalDetails('labels.no')}</div>
+              </div>
+            ) : (
+              creditLimitHuman !== undefined && (
+                <div className="flex justify-between items-center">
+                  <div className="text-1 text-neutral-11 w-full">
+                    {tProposalDetails('labels.mutualCreditLimit')}
+                  </div>
+                  <div className="text-1 text-nowrap">
+                    {formatCurrencyValue(creditLimitHuman)}
+                    {resolvedSymbol ? ` ${resolvedSymbol}` : ''}
+                  </div>
+                </div>
+              )
+            )}
+            {addedCreditSpaces.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <div className="text-1 text-neutral-11">
+                  {tProposalDetails('labels.mutualCreditEligibleSpacesAdded')}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {addedCreditSpaces.map(({ id, space: s }) => (
+                    <Badge
+                      key={`add-${s?.web3SpaceId ?? id}`}
+                      variant="outline"
+                      className="gap-1.5 py-1 pl-1 pr-2"
+                    >
+                      <span
+                        className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded border border-success-8 bg-success-2 text-[11px] font-semibold leading-none text-success-11"
+                        aria-hidden
+                      >
+                        +
+                      </span>
+                      {s ? (
+                        <>
+                          <Image
+                            className="rounded-full w-5 h-5"
+                            src={
+                              s.logoUrl ?? '/placeholder/default-profile.svg'
+                            }
+                            width={20}
+                            height={20}
+                            alt={tProposalDetails('labels.spaceLogoAlt', {
+                              title: s.title,
+                            })}
+                          />
+                          <span className="text-1">{s.title}</span>
+                        </>
+                      ) : (
+                        <span className="text-1">
+                          {tProposalDetails('labels.unknown')} #{id}
+                        </span>
+                      )}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            {removedCreditSpaces.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <div className="text-1 text-neutral-11">
+                  {tProposalDetails('labels.mutualCreditEligibleSpacesRemoved')}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {removedCreditSpaces.map(({ id, space: s }) => (
+                    <Badge
+                      key={`rm-${s?.web3SpaceId ?? id}`}
+                      variant="outline"
+                      className="gap-1.5 py-1 pl-1 pr-2"
+                    >
+                      <span
+                        className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded border border-error-8 bg-error-2 text-[11px] font-semibold leading-none text-error-11"
+                        aria-hidden
+                      >
+                        −
+                      </span>
+                      {s ? (
+                        <>
+                          <Image
+                            className="rounded-full w-5 h-5"
+                            src={
+                              s.logoUrl ?? '/placeholder/default-profile.svg'
+                            }
+                            width={20}
+                            height={20}
+                            alt={tProposalDetails('labels.spaceLogoAlt', {
+                              title: s.title,
+                            })}
+                          />
+                          <span className="text-1">{s.title}</span>
+                        </>
+                      ) : (
+                        <span className="text-1">
+                          {tProposalDetails('labels.unknown')} #{id}
+                        </span>
+                      )}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </>
       )}
       {showTransferWhitelistDetails && (
         <>

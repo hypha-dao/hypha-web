@@ -129,6 +129,10 @@ type CreateIssueTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
       includeSpaceMembers?: boolean;
     }>;
   };
+  /** Mutual credit (RegularSpaceToken types only) */
+  enableMutualCredit?: boolean;
+  defaultCreditLimit?: number;
+  creditWhitelistedSpaceIds?: number[];
 };
 
 export const useCreateIssueTokenOrchestrator = ({
@@ -262,6 +266,43 @@ export const useCreateIssueTokenOrchestrator = ({
                   .filter((addr) => addr && addr.startsWith('0x'))
               : [];
 
+          /**
+           * Mutual credit only applies to RegularSpaceToken types — voice/ownership
+           * factories don't accept these args. Toggle off for non-regular tokens.
+           */
+          const isRegularToken = (
+            ['utility', 'credits', 'impact', 'community_currency'] as const
+          ).includes(arg.type as never);
+          const enableMutualCredit =
+            (arg.enableMutualCredit ?? false) && isRegularToken;
+          const defaultCreditLimit = enableMutualCredit
+            ? arg.defaultCreditLimit ?? 0
+            : 0;
+          /**
+           * Always include the issuing space so its members are eligible immediately.
+           * `Set` dedupes when the user also explicitly picks the current space.
+           * Guard against falsy/0 ids that would otherwise be silently encoded
+           * into `batchAddCreditWhitelistSpaces` and reach the chain.
+           */
+          if (
+            enableMutualCredit &&
+            !(Number.isInteger(arg.web3SpaceId) && arg.web3SpaceId > 0)
+          ) {
+            throw new Error(
+              `Cannot enable mutual credit: web3SpaceId must be a positive integer (got ${String(
+                arg.web3SpaceId,
+              )})`,
+            );
+          }
+          const creditWhitelistSpaceIds = enableMutualCredit
+            ? Array.from(
+                new Set<number>([
+                  ...(arg.creditWhitelistedSpaceIds ?? []),
+                  arg.web3SpaceId,
+                ]),
+              )
+            : [];
+
           const web3Result = await web3.createIssueToken({
             spaceId: arg.web3SpaceId,
             name: arg.name,
@@ -286,6 +327,8 @@ export const useCreateIssueTokenOrchestrator = ({
             useReceiveWhitelist,
             initialTransferWhitelist,
             initialReceiveWhitelist,
+            defaultCreditLimit,
+            initialCreditWhitelistSpaceIds: creditWhitelistSpaceIds,
           });
           completeTask('CREATE_WEB3_AGREEMENT');
         }
