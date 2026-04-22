@@ -20,6 +20,8 @@
     "home": "Accueil",
     "remove": "Supprimer",
     "by": "par",
+    "copyWalletAddress": "Copier l’adresse du portefeuille",
+    "walletAddressCopied": "Copié !",
     "otherMembers": "+ {count} autres membres",
     "exploreSpaces": "Explorer les espaces",
     "findCategory": "Trouver une catégorie",

@@ -20,6 +20,8 @@
     "home": "Lar",
     "remove": "Remover",
     "by": "por",
+    "copyWalletAddress": "Copiar endereço da carteira",
+    "walletAddressCopied": "Copiado!",
     "otherMembers": "+ outros membros {count}",
     "exploreSpaces": "Explorar espaços",
     "findCategory": "Encontre uma categoria",

@@ -20,6 +20,8 @@
     "home": "Inicio",
     "remove": "Eliminar",
     "by": "por",
+    "copyWalletAddress": "Copiar dirección de la billetera",
+    "walletAddressCopied": "¡Copiado!",
     "otherMembers": "+ {count} otros miembros",
     "exploreSpaces": "Explorar espacios",
     "findCategory": "Encuentra una categoría",
