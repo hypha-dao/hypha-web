@@ -149,7 +149,6 @@ export {
   AlertDialogOverlay,
   AlertDialogTrigger,
   AlertDialogContent,
-  type AlertDialogContentProps,
   AlertDialogHeader,
   AlertDialogFooter,
   AlertDialogTitle,
