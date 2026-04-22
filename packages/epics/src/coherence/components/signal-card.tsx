@@ -45,6 +45,7 @@ import type { BadgeProps } from '@hypha-platform/ui';
 import { useLocale, useTranslations } from 'next-intl';
 import { Trash2, Users } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
+import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
 
 type SignalCardProps = {
@@ -78,6 +79,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   const t = useTranslations('CoherenceTab');
   const tSignalCard = useTranslations('SignalCard');
   const tCommon = useTranslations('Common');
+  const spaceAccentPortalStyle = useSpaceAccentPortalStyles();
   const locale = useLocale();
   const dateFnsLocale = React.useMemo(
     () => resolveDateFnsLocale(locale),
@@ -346,25 +348,36 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
 
           <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
             <DialogContent
-              className="max-h-[min(560px,85dvh)] gap-0 overflow-hidden p-0 sm:max-w-lg"
+              className={cn(
+                'max-h-[min(560px,85dvh)] gap-0 overflow-hidden border-border/70 bg-card/95 p-0 shadow-2xl backdrop-blur-sm sm:max-w-lg',
+                'border-l-[3px] border-l-[var(--space-accent)]',
+              )}
+              style={spaceAccentPortalStyle}
               onClick={(e) => e.stopPropagation()}
               onPointerDownOutside={(e) => e.stopPropagation()}
             >
-              <DialogHeader className="border-b border-border px-6 pb-4 pt-6">
-                <DialogTitle className="pr-8 leading-snug">{title}</DialogTitle>
-                <DialogDescription className="text-xs">
+              <DialogHeader className="space-y-1.5 border-b border-border/60 bg-gradient-to-b from-muted/25 to-transparent px-6 pb-4 pt-6">
+                <DialogTitle className="pr-10 text-balance text-lg font-semibold leading-snug tracking-tight">
+                  {title}
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground">
                   {tSignalCard('fullDescriptionDialogSubtitle')}
                 </DialogDescription>
               </DialogHeader>
-              <div className="max-h-[min(420px,calc(85dvh-9rem))] overflow-y-auto px-6 py-4">
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+              <div
+                className={cn(
+                  'narrow-scrollbar max-h-[min(420px,calc(85dvh_-_9.5rem))] overflow-y-auto px-6 py-5',
+                  '[scrollbar-gutter:stable]',
+                )}
+              >
+                <p className="whitespace-pre-wrap text-sm leading-[1.65] text-foreground/95">
                   {plainDescription}
                 </p>
               </div>
-              <DialogFooter className="border-t border-border px-6 py-4">
+              <DialogFooter className="border-t border-border/60 bg-muted/10 px-6 py-4">
                 <Button
                   type="button"
-                  variant="default"
+                  variant="outline"
                   colorVariant="accent"
                   className="w-full sm:w-auto"
                   onClick={(e) => {
