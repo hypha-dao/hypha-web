@@ -12,7 +12,7 @@ import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { LoadingBackdrop } from '@hypha-platform/ui/server';
+import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
 import { useConfig } from 'wagmi';
 import {
   clearResubmitProposalSessionStorage,
@@ -122,7 +122,7 @@ export const CreateProposeAContributionForm = ({
   };
 
   return (
-    <LoadingBackdrop
+    <SpaceLoadingBackdrop
       showKeepWindowOpenMessage={true}
       keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       fullHeight={true}
@@ -166,6 +166,6 @@ export const CreateProposeAContributionForm = ({
           </div>
         </form>
       </Form>
-    </LoadingBackdrop>
+    </SpaceLoadingBackdrop>
   );
 };

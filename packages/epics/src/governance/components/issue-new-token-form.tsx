@@ -16,7 +16,7 @@ import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
 import { useConfig } from 'wagmi';
-import { LoadingBackdrop } from '@hypha-platform/ui/server';
+import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
 import { useRouter } from 'next/navigation';
 import {
   clearResubmitProposalSessionStorage,
@@ -454,7 +454,7 @@ export const IssueNewTokenForm = ({
   };
 
   return (
-    <LoadingBackdrop
+    <SpaceLoadingBackdrop
       showKeepWindowOpenMessage={true}
       keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       fullHeight={true}
@@ -511,6 +511,6 @@ export const IssueNewTokenForm = ({
           </div>
         </form>
       </Form>
-    </LoadingBackdrop>
+    </SpaceLoadingBackdrop>
   );
 };

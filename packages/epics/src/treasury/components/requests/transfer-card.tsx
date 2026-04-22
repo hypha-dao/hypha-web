@@ -76,7 +76,7 @@ export const TransferCard: React.FC<TransferCardProps> = ({
                 {symbol ? (
                   <Badge
                     isLoading={isLoading}
-                    variant="surface"
+                    variant="outline"
                     colorVariant="accent"
                   >
                     {symbol}
@@ -84,7 +84,7 @@ export const TransferCard: React.FC<TransferCardProps> = ({
                 ) : null}
                 <Badge
                   isLoading={isLoading}
-                  variant="surface"
+                  variant="outline"
                   colorVariant="accent"
                 >
                   {isMint
@@ -95,7 +95,7 @@ export const TransferCard: React.FC<TransferCardProps> = ({
                 </Badge>
                 <Badge
                   isLoading={isLoading}
-                  variant="surface"
+                  variant="outline"
                   colorVariant={
                     isMint || direction === 'incoming' ? 'success' : 'error'
                   }

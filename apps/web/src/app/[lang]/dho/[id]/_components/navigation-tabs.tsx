@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { Locale } from '@hypha-platform/i18n';
 import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui/server';
 import Link from 'next/link';
@@ -9,9 +10,31 @@ import { getDhoPathAgreements } from '../@tab/agreements/constants';
 import { getDhoPathMembers } from '../@tab/members/constants';
 import { getDhoPathTreasury } from '../@tab/treasury/constants';
 // import { getDhoPathOverview } from '../@tab/overview/constants'; // Overview tab removed
-import { ScrollArea, ScrollBar } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 import { getEffectiveDhoTab } from '@hypha-platform/epics';
 import { getDhoPathCoherence } from '../@tab/coherence/constants';
+
+/** Subtle scroll parallax: tab strip drifts slightly vs page for depth (see CompactSpaceBannerLead). */
+const TAB_PARALLAX_SCROLL_RATE = 0.07;
+const TAB_PARALLAX_MAX_SHIFT_PX = 18;
+
+function clampTabParallaxScrollY(): number {
+  if (typeof window === 'undefined') return 0;
+  return Math.min(
+    TAB_PARALLAX_MAX_SHIFT_PX,
+    Math.max(
+      -TAB_PARALLAX_MAX_SHIFT_PX,
+      window.scrollY * TAB_PARALLAX_SCROLL_RATE,
+    ),
+  );
+}
+
+function isReducedMotionPreferred(): boolean {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+  );
+}
 
 export function NavigationTabs({
   lang,
@@ -25,6 +48,47 @@ export function NavigationTabs({
   const t = useTranslations('Common');
   const pathname = usePathname();
   const activeTab = getEffectiveDhoTab(pathname, { coherenceEnabled });
+
+  const [tabParallaxY, setTabParallaxY] = React.useState(0);
+  const [preferReducedMotion, setPreferReducedMotion] = React.useState(false);
+
+  React.useEffect(() => {
+    const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    if (!mq) return;
+
+    const sync = () => {
+      setPreferReducedMotion(mq.matches);
+      if (mq.matches) setTabParallaxY(0);
+    };
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+
+  React.useEffect(() => {
+    if (preferReducedMotion || isReducedMotionPreferred()) {
+      setTabParallaxY(0);
+      return;
+    }
+
+    let raf = 0;
+
+    const tick = () => {
+      setTabParallaxY(clampTabParallaxScrollY());
+    };
+
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(tick);
+    };
+
+    tick();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, [preferReducedMotion]);
 
   const tabs = [
     // Overview tab removed - functionality replaced by space-visualization
@@ -60,21 +124,34 @@ export function NavigationTabs({
   ];
 
   return (
-    <Tabs value={activeTab} className="w-full mt-16 overflow-hidden">
-      <ScrollArea>
-        <div className="w-full relative h-10 mb-4">
-          <TabsList className="flex absolute h-10 md:w-full">
-            {tabs.map(({ name, href, title }) => (
-              <TabsTrigger asChild key={name} value={name} variant="ghost">
-                <Link href={href} className="w-full" passHref>
-                  {title}
-                </Link>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </div>
-        <ScrollBar orientation="horizontal" className="hidden" />
-      </ScrollArea>
+    <Tabs value={activeTab} className="mt-6 w-full md:mt-7">
+      {/*
+        Radix ScrollArea's viewport forces overflow-y: hidden, which clips vertical parallax.
+        Native overflow-x-auto keeps horizontal swipe/scroll; vertical padding absorbs translate.
+      */}
+      <div
+        className={cn(
+          'mb-4 w-full overflow-x-auto overflow-y-visible overscroll-x-contain py-[18px]',
+          'touch-pan-x touch-pan-y [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
+        )}
+      >
+        <TabsList
+          className="flex h-10 min-w-max will-change-transform md:min-w-0 md:w-full"
+          style={
+            preferReducedMotion
+              ? undefined
+              : { transform: `translate3d(0, ${tabParallaxY}px, 0)` }
+          }
+        >
+          {tabs.map(({ name, href, title }) => (
+            <TabsTrigger asChild key={name} value={name} variant="ghost">
+              <Link href={href} className="w-full" passHref>
+                {title}
+              </Link>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </div>
     </Tabs>
   );
 }

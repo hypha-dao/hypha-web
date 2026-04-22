@@ -2,11 +2,14 @@
   "Common": {
     "Assignments": "Affectations",
     "Members": "Membres",
+    "memberRoleLabel": "Membre",
+    "delegatedVotingMemberLabel": "Membre avec vote délégué",
     "Treasury": "Trésorerie",
     "Agreements": "Accords",
     "Spaces": "Espaces",
     "loadMore": "Charger plus",
     "noMore": "Plus aucun",
+    "spaceBannerDescriptionAria": "Description de {title}",
     "createdOn": "Créé le {date}",
     "acceptedOn": "Accepté le {date}",
     "rejectedOn": "Rejeté le {date}",
@@ -1008,7 +1011,9 @@
       }
     },
     "loadingBackdrop": {
-      "keepWindowOpen": "Gardez cette fenêtre ouverte jusqu’à la fin."
+      "keepWindowOpen": "Gardez cette fenêtre ouverte jusqu’à la fin.",
+      "errorTitle": "Une erreur s’est produite",
+      "resetButton": "Réinitialiser"
     },
     "spaceTokenPurchaseProgress": {
       "CREATE_WEB2_AGREEMENT": "Création de l'accord...",

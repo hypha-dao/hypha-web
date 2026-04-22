@@ -69,6 +69,7 @@ export const ButtonProfile = ({
                 avatarSrc={person?.avatarUrl}
                 userName={person?.nickname}
                 size="lg"
+                shape="rounded"
               />
               <p>{person?.nickname}</p>
               {address && (
@@ -152,13 +153,15 @@ export const ButtonProfile = ({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="rounded-lg outline-none"
+                  className="rounded-md outline-none"
                   aria-label={t('openProfileMenu')}
                 >
                   <PersonAvatar
-                    size="md"
+                    size="toolbar"
                     avatarSrc={person?.avatarUrl}
                     userName={person?.nickname}
+                    shape="rounded"
+                    className="ring-1 ring-border/55"
                   />
                 </button>
               </DropdownMenuTrigger>

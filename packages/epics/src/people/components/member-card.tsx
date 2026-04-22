@@ -105,13 +105,14 @@ export const MemberCard: React.FC<MemberCardProps> = ({
           userName={nickname}
           size={minimize ? 'sm' : 'lg'}
           isLoading={isLoading}
+          shape="rounded"
           className="mr-3"
         />
 
         <div className="flex justify-between items-center w-full">
           <div className="flex flex-col">
-            <Badge className="w-fit" colorVariant="accent">
-              Member
+            <Badge className="w-fit" variant="outline" colorVariant="accent">
+              {tCommon('memberRoleLabel')}
             </Badge>
             {!minimize ? (
               <div className="flex gap-x-1">
@@ -203,7 +204,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
       {localIsDelegate && (
         <div>
           <span className="text-1 text-neutral-11 font-medium">
-            Delegated Voting Member
+            {tCommon('delegatedVotingMemberLabel')}
           </span>
         </div>
       )}

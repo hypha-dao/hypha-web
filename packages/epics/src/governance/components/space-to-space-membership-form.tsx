@@ -1,6 +1,7 @@
 'use client';
 
-import { Separator, Form, Button, LoadingBackdrop } from '@hypha-platform/ui';
+import { Separator, Form, Button } from '@hypha-platform/ui';
+import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
 import { CreateAgreementBaseFields } from '../../agreements';
 import {
   useMe,
@@ -125,7 +126,7 @@ export const SpaceToSpaceMembershipForm = ({
   };
 
   return (
-    <LoadingBackdrop
+    <SpaceLoadingBackdrop
       showKeepWindowOpenMessage={true}
       keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       fullHeight={true}
@@ -181,6 +182,6 @@ export const SpaceToSpaceMembershipForm = ({
           )}
         </form>
       </Form>
-    </LoadingBackdrop>
+    </SpaceLoadingBackdrop>
   );
 };

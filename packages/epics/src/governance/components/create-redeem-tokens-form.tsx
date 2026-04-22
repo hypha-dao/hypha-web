@@ -14,7 +14,7 @@ import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
 import { useCreateRedeemTokensOrchestrator } from '@hypha-platform/core/client';
 import { useRouter } from 'next/navigation';
-import { LoadingBackdrop } from '@hypha-platform/ui/server';
+import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
 import { useTranslations } from 'next-intl';
 import { useConfig } from 'wagmi';
 import {
@@ -185,10 +185,8 @@ const CreateRedeemTokensFormInner = ({
     }
   };
 
-  console.log('form errors:', form.formState.errors);
-
   return (
-    <LoadingBackdrop
+    <SpaceLoadingBackdrop
       showKeepWindowOpenMessage={true}
       keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       fullHeight={true}
@@ -197,13 +195,15 @@ const CreateRedeemTokensFormInner = ({
       message={
         isError ? (
           <div className="flex flex-col">
-            <div>Ouh Snap. There was an error</div>
+            <div>{tAgreementFlow('loadingBackdrop.errorTitle')}</div>
             {form.formState.errors.root?.message && (
               <div className="text-destructive">
                 {form.formState.errors.root.message}
               </div>
             )}
-            <Button onClick={reset}>Reset</Button>
+            <Button onClick={reset}>
+              {tAgreementFlow('loadingBackdrop.resetButton')}
+            </Button>
           </div>
         ) : (
           <div>{currentAction}</div>
@@ -242,7 +242,7 @@ const CreateRedeemTokensFormInner = ({
           </div>
         </form>
       </Form>
-    </LoadingBackdrop>
+    </SpaceLoadingBackdrop>
   );
 };
 

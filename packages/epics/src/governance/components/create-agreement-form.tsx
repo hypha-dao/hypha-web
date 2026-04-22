@@ -11,7 +11,7 @@ import {
 import { z } from 'zod';
 import { Button, Form } from '@hypha-platform/ui';
 import React from 'react';
-import { LoadingBackdrop } from '@hypha-platform/ui/server';
+import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
 import { useConfig } from 'wagmi';
 import {
   useClearResubmitOnSuccess,
@@ -107,7 +107,7 @@ export const CreateAgreementForm = ({
   };
 
   return (
-    <LoadingBackdrop
+    <SpaceLoadingBackdrop
       showKeepWindowOpenMessage={true}
       keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       progress={progress}
@@ -150,6 +150,6 @@ export const CreateAgreementForm = ({
           </div>
         </form>
       </Form>
-    </LoadingBackdrop>
+    </SpaceLoadingBackdrop>
   );
 };

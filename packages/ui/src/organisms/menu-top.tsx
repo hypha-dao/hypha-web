@@ -1,7 +1,7 @@
 'use client';
 
 import { Logo } from '../atoms';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Menu } from 'lucide-react';
 import { RxCross1 } from 'react-icons/rx';
 import { usePathname } from 'next/navigation';
@@ -35,10 +35,29 @@ export const MenuTop = ({
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
+  useLayoutEffect(() => {
+    const el = headerRef.current;
+    if (!el || typeof document === 'undefined') return;
+
+    const sync = () => {
+      const h = el.offsetHeight;
+      setHeaderHeight(h);
+      document.documentElement.style.setProperty('--menu-top-height', `${h}px`);
+    };
+
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      document.documentElement.style.removeProperty('--menu-top-height');
+    };
+  }, []);
+
   return (
     <header
       ref={headerRef}
-      className="flex min-h-[65px] min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background-2 px-4 py-3 z-30"
+      className="flex min-h-[70px] min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background-2 px-4 py-4 z-30"
     >
       <div
         className={clsx(

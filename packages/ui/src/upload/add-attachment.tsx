@@ -126,7 +126,13 @@ export const AddAttachment: React.FC<AddAttachmentProps> = ({
 
   return (
     <div className="flex flex-col items-end w-full">
-      <Button variant="ghost" onClick={handleClick} type="button">
+      <Button
+        variant="ghost"
+        colorVariant="accent"
+        type="button"
+        onClick={handleClick}
+        className="w-full justify-start text-accent-11 hover:bg-accent-3 hover:text-neutral-12 [&_svg]:text-accent-11 hover:[&_svg]:text-neutral-12"
+      >
         <Link2Icon />
         {label}
         <input

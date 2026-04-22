@@ -2,11 +2,14 @@
   "Common": {
     "Assignments": "Zuweisungen",
     "Members": "Mitglieder",
+    "memberRoleLabel": "Mitglied",
+    "delegatedVotingMemberLabel": "Delegiertes Stimmmitglied",
     "Treasury": "Schatzkammer",
     "Agreements": "Vereinbarungen",
     "Spaces": "Spaces",
     "loadMore": "Mehr laden",
     "noMore": "Keine weiteren",
+    "spaceBannerDescriptionAria": "Beschreibung von {title}",
     "createdOn": "Erstellt am {date}",
     "acceptedOn": "Angenommen am {date}",
     "rejectedOn": "Abgelehnt am {date}",
@@ -1008,7 +1011,9 @@
       }
     },
     "loadingBackdrop": {
-      "keepWindowOpen": "Lassen Sie dieses Fenster geöffnet, bis wir fertig sind."
+      "keepWindowOpen": "Lassen Sie dieses Fenster geöffnet, bis wir fertig sind.",
+      "errorTitle": "Etwas ist schiefgelaufen",
+      "resetButton": "Zurücksetzen"
     },
     "spaceTokenPurchaseProgress": {
       "CREATE_WEB2_AGREEMENT": "Vereinbarung wird erstellt...",
