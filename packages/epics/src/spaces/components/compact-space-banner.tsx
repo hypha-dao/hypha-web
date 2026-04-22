@@ -4,18 +4,7 @@ import { LinkLabel } from '../../common/link-label';
 import { Avatar, AvatarImage } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { CompactSpaceBannerLead } from './compact-space-banner-lead';
-import { isSafeImageUrl } from '../utils/safe-image-url';
-
-function isSafeLinkHref(url: string): boolean {
-  const t = url.trim();
-  if (!t) return false;
-  try {
-    const u = new URL(t);
-    return u.protocol === 'https:' || u.protocol === 'http:';
-  } catch {
-    return false;
-  }
-}
+import { isSafeExternalUrl, isSafeImageUrl } from '../utils/safe-image-url';
 
 /** Matches PR #2165 `SpaceHeaderInsetAvatar` footprint — shared with DHO sticky chrome row */
 export const COMPACT_SPACE_BANNER_AVATAR_CLASSNAME = cn(
@@ -86,7 +75,13 @@ export function CompactSpaceBanner({
   })();
 
   const safeLinks =
-    links?.filter((l) => typeof l === 'string' && isSafeLinkHref(l)) ?? [];
+    links?.filter((l) => typeof l === 'string' && isSafeExternalUrl(l)) ?? [];
+
+  const safeLogoSrc = (() => {
+    const candidate = logoUrl?.trim();
+    if (candidate && isSafeImageUrl(candidate)) return candidate;
+    return isSafeImageUrl(defaultLogoSrc) ? defaultLogoSrc : '';
+  })();
 
   return (
     <section
@@ -191,7 +186,7 @@ export function CompactSpaceBanner({
         <div className="flex items-start gap-6">
           <Avatar className={COMPACT_SPACE_BANNER_AVATAR_CLASSNAME}>
             <AvatarImage
-              src={logoUrl || defaultLogoSrc}
+              src={safeLogoSrc}
               alt={logoAlt}
               className="object-cover"
             />
