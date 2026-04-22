@@ -147,7 +147,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
           | 'types.Proposal',
       ),
       value: option.type,
-      count: typeMap[option.type],
+      count: typeMap[option.type] ?? 0,
     })).filter((opt) => opt.count > 0);
     const typeOptions = [
       { label: t('all'), value: 'all', count: signals.length },
