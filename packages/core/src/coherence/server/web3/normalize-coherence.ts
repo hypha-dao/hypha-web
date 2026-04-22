@@ -11,6 +11,7 @@ export function normalizeCoherence({
   type,
   priority,
   tags,
+  attachments,
   roomId,
   archived,
   slug,
@@ -31,6 +32,9 @@ export function normalizeCoherence({
       ? (tags.filter((t) =>
           (COHERENCE_TAGS as readonly string[]).includes(t),
         ) as CoherenceTag[])
+      : [],
+    attachments: Array.isArray(attachments)
+      ? (attachments as Coherence['attachments'])
       : [],
     roomId: roomId ?? undefined,
     archived: archived ?? false,

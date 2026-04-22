@@ -14,6 +14,9 @@ import { commonDateFields } from './shared';
 import { spaces } from './space';
 import { people } from './people';
 
+/** Same shape as documents.attachments — URLs or { name, url } after upload. */
+export type CoherenceAttachment = { name: string; url: string };
+
 export const coherences = pgTable(
   'coherences',
   {
@@ -34,6 +37,10 @@ export const coherences = pgTable(
     views: integer('views').default(0),
     messages: integer('messages').default(0),
     tags: jsonb('tags').$type<Array<string>>().notNull().default([]),
+    attachments: jsonb('attachments')
+      .$type<(string | CoherenceAttachment)[]>()
+      .notNull()
+      .default([]),
     ...commonDateFields,
   },
   (table) => [

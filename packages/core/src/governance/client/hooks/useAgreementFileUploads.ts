@@ -99,7 +99,7 @@ export const useAgreementFileUploads = (
 
       await Promise.all(uploadPromises);
       setFiles(uploadedFiles);
-      onSuccess?.(uploadedFiles, slug);
+      await Promise.resolve(onSuccess?.(uploadedFiles, slug));
     },
     [uploadImage, uploadAttachment, onSuccess],
   );

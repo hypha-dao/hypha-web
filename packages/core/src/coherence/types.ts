@@ -1,6 +1,9 @@
+import type { Attachment } from '../governance/types';
 import { CoherencePriority } from './coherence-priorities';
 import { CoherenceTag } from './coherence-tags';
 import { CoherenceType } from './coherence-types';
+
+export type CoherenceAttachment = Attachment;
 
 export interface CreateCoherenceInput {
   creatorId: number;
@@ -13,6 +16,8 @@ export interface CreateCoherenceInput {
   roomId?: string;
   archived: boolean;
   tags: CoherenceTag[];
+  /** Persisted after optional client-side upload (same contract as proposal attachments). */
+  attachments?: (string | CoherenceAttachment)[];
   messages?: number;
   views?: number;
 }
@@ -22,6 +27,7 @@ export interface UpdateCoherenceInput {
   roomId?: string;
   messages?: number;
   views?: number;
+  attachments?: (string | CoherenceAttachment)[];
 }
 
 export type UpdateCoherenceBySlugInput = {
@@ -41,6 +47,7 @@ export type Coherence = {
   roomId?: string;
   archived: boolean;
   tags: CoherenceTag[];
+  attachments: (string | CoherenceAttachment)[];
   messages?: number;
   views?: number;
 };

@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
+  AddAttachment,
   Button,
   Form,
   FormControl,
@@ -28,7 +29,9 @@ import {
   COHERENCE_TAGS,
   COHERENCE_TYPE_OPTIONS,
   CoherenceType,
+  schemaCreateAgreementFiles,
   schemaCreateCoherenceForm,
+  useAgreementFileUploads,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
   useMatrix,
@@ -90,6 +93,13 @@ export const CreateSignalForm = ({
     resetCreateCoherenceMutation,
     updateCoherenceBySlug,
   } = useCoherenceMutationsWeb2Rsc(authToken);
+  const signalFiles = useAgreementFileUploads(authToken, (uploaded, slug) => {
+    if (!slug) return;
+    return updateCoherenceBySlug({
+      slug,
+      attachments: uploaded.attachments ?? [],
+    });
+  });
   const { isMatrixAvailable, createRoom } = useMatrix();
 
   const progress = React.useMemo(() => {
@@ -108,6 +118,7 @@ export const CreateSignalForm = ({
       type: 'Opportunity',
       priority: 'medium',
       tags: [],
+      attachments: undefined,
     },
   });
 
@@ -208,13 +219,36 @@ export const CreateSignalForm = ({
       type: 'Opportunity',
       priority: 'medium',
       tags: [],
+      attachments: undefined,
     });
   }, [form, person?.id, spaceId]);
 
   const handleCreate = React.useCallback(
     async (data: FormValues) => {
       try {
-        const coherence = await createCoherence({ ...data });
+        const { attachments, ...rest } = data;
+        const alreadyUploaded = (attachments ?? []).filter(
+          (a): a is string | { name: string; url: string } =>
+            typeof a === 'string' ||
+            (typeof a === 'object' &&
+              a !== null &&
+              'url' in a &&
+              typeof (a as { url: unknown }).url === 'string'),
+        );
+
+        const coherence = await createCoherence({
+          ...rest,
+          attachments: alreadyUploaded,
+        });
+
+        const hasNewFiles =
+          Array.isArray(attachments) &&
+          attachments.some((a) => a instanceof File);
+        if (hasNewFiles) {
+          const filePayload = schemaCreateAgreementFiles.parse({ attachments });
+          await signalFiles.upload(filePayload, coherence.slug ?? undefined);
+        }
+
         if (isMatrixAvailable) {
           const { roomId } = await createRoom(coherence.title);
           await updateCoherenceBySlug({ slug: coherence.slug!, roomId });
@@ -229,6 +263,7 @@ export const CreateSignalForm = ({
     [
       createCoherence,
       createRoom,
+      signalFiles,
       updateCoherenceBySlug,
       isMatrixAvailable,
       router,
@@ -454,9 +489,40 @@ export const CreateSignalForm = ({
                 );
               }}
             />
+            <FormField
+              control={form.control}
+              name="attachments"
+              render={({ field }) => {
+                const fieldValue = field.value || [];
+                const newFiles = Array.isArray(fieldValue)
+                  ? fieldValue.filter((item) => item instanceof File)
+                  : [];
+
+                return (
+                  <FormItem>
+                    <FormControl>
+                      <AddAttachment
+                        label={tAgreementFlow(
+                          'createAgreementBaseFields.addAttachmentLabel',
+                        )}
+                        onChange={(files) => {
+                          field.onChange(files);
+                        }}
+                        value={newFiles.length > 0 ? newFiles : undefined}
+                      />
+                    </FormControl>
+                    <FormDescription />
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
 
             <div className="flex w-full justify-end">
-              <Button type="submit" disabled={isCreatingCoherence}>
+              <Button
+                type="submit"
+                disabled={isCreatingCoherence || signalFiles.isLoading}
+              >
                 {tAgreementFlow('buttons.publish')}
               </Button>
             </div>

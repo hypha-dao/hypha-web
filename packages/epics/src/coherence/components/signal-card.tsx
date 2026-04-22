@@ -17,6 +17,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AttachmentList,
   BadgeItem,
   BadgesList,
   Button,
@@ -35,6 +36,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   LucideReactIcon,
+  Separator,
   Skeleton,
 } from '@hypha-platform/ui';
 import { stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
@@ -71,6 +73,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   slug,
   createdAt,
   tags,
+  attachments = [],
   archived,
   messages = 0,
   roomId,
@@ -399,6 +402,12 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
                   {plainDescription}
                 </p>
+                {attachments.length > 0 ? (
+                  <>
+                    <Separator className="my-4" />
+                    <AttachmentList attachments={attachments} />
+                  </>
+                ) : null}
               </div>
               <DialogFooter className="border-t border-border px-6 py-4">
                 <Button
@@ -419,6 +428,15 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
 
           {tagList?.length > 0 ? (
             <BadgesList isLoading={isLoading} badges={tagList ?? []} />
+          ) : null}
+
+          {attachments.length > 0 ? (
+            <div
+              className="w-full min-w-0"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <AttachmentList attachments={attachments} />
+            </div>
           ) : null}
 
           <div className="flex flex-row gap-1">
