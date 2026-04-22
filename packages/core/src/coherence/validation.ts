@@ -48,3 +48,11 @@ export const schemaCreateCoherence = schemaCreateCoherenceWeb2;
 export const schemaCreateCoherenceForm = schemaCreateCoherenceWeb2.extend({
   attachments: createAgreementFiles.attachments,
 });
+
+/** Edit signal (creator): same fields as create except identity / slug / archived. */
+export const schemaUpdateCoherenceForm = schemaCreateCoherenceForm.omit({
+  creatorId: true,
+  spaceId: true,
+  slug: true,
+  archived: true,
+});

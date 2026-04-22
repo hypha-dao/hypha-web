@@ -202,7 +202,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
 
   const editHref =
     slug != null && slug !== '' && spaceSlug && lang
-      ? `/${lang}/dho/${spaceSlug}/coherence/edit/${slug}`
+      ? `/${lang}/dho/${spaceSlug}/coherence/edit-signal/${slug}`
       : undefined;
 
   return (

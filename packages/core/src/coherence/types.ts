@@ -23,6 +23,11 @@ export interface CreateCoherenceInput {
 }
 
 export interface UpdateCoherenceInput {
+  title?: string;
+  description?: string;
+  type?: CoherenceType;
+  priority?: CoherencePriority;
+  tags?: CoherenceTag[];
   archived?: boolean;
   roomId?: string;
   messages?: number;

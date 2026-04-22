@@ -1,27 +1,19 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Button,
-  Form,
-  FormControl,
-  FormItem,
-  FormMessage,
-  Image,
-  Separator,
-} from '@hypha-platform/ui';
+import { Button, Form, Separator } from '@hypha-platform/ui';
 import { Text } from '@radix-ui/themes';
 import { RefreshCw } from 'lucide-react';
 import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import {
+  Coherence,
   schemaCreateAgreementFiles,
-  schemaCreateCoherenceForm,
+  schemaUpdateCoherenceForm,
   useAgreementFileUploads,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
-  useMatrix,
   useMe,
 } from '@hypha-platform/core/client';
 import React from 'react';
@@ -33,21 +25,23 @@ import { ButtonClose } from '../../common/button-close';
 import { ButtonBack } from '../../common/button-back';
 import { SignalEditorFields, SignalTitleField } from './signal-editor-fields';
 
-type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
+type FormValues = z.infer<typeof schemaUpdateCoherenceForm>;
 
-interface CreateSignalFormProps {
-  spaceId: number;
+type EditSignalFormProps = {
+  slug: string;
+  signal: Coherence;
   successfulUrl: string;
   closeUrl?: string;
   backUrl?: string;
-}
+};
 
-export const CreateSignalForm = ({
-  spaceId,
+export function EditSignalForm({
+  slug,
+  signal,
   successfulUrl,
   closeUrl,
   backUrl,
-}: CreateSignalFormProps) => {
+}: EditSignalFormProps) {
   const t = useTranslations('CoherenceTab');
   const tAgreementFlow = useTranslations('AgreementFlow');
   const tSpaces = useTranslations('Spaces');
@@ -55,86 +49,61 @@ export const CreateSignalForm = ({
   const { jwt: authToken } = useJwt();
   const router = useRouter();
 
-  const {
-    createCoherence,
-    isCreatingCoherence,
-    createdCoherence,
-    errorCreateCoherenceMutation,
-    resetCreateCoherenceMutation,
-    updateCoherenceBySlug,
-  } = useCoherenceMutationsWeb2Rsc(authToken);
-  const signalFiles = useAgreementFileUploads(authToken, (uploaded, slug) => {
-    if (!slug) return;
-    return updateCoherenceBySlug({
-      slug,
-      attachments: uploaded.attachments ?? [],
-    });
-  });
-  const { isMatrixAvailable, createRoom } = useMatrix();
+  const attachmentUrlsRef = React.useRef<
+    (string | { name: string; url: string })[]
+  >([]);
 
-  const progress = React.useMemo(() => {
-    return isCreatingCoherence ? 50 : createdCoherence ? 100 : 0;
-  }, [isCreatingCoherence, createdCoherence]);
+  const {
+    updateCoherenceBySlug,
+    isUpdatingCoherence,
+    errorUpdateCoherenceBySlugMutation,
+    resetUpdateCoherenceBySlugMutation,
+  } = useCoherenceMutationsWeb2Rsc(authToken);
+
+  const signalFiles = useAgreementFileUploads(
+    authToken,
+    async (uploaded, s) => {
+      if (!s) return;
+      const prev = attachmentUrlsRef.current;
+      await updateCoherenceBySlug({
+        slug: s,
+        attachments: [...prev, ...(uploaded.attachments ?? [])],
+      });
+    },
+  );
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
-    resolver: zodResolver(schemaCreateCoherenceForm),
+    resolver: zodResolver(schemaUpdateCoherenceForm),
     defaultValues: {
-      title: '',
-      description: '',
-      creatorId: person?.id,
-      spaceId,
-      archived: false,
-      type: 'Opportunity',
-      priority: 'medium',
-      tags: [],
-      attachments: undefined,
+      title: signal.title,
+      description: signal.description,
+      type: signal.type,
+      priority: signal.priority,
+      tags: signal.tags ?? [],
+      attachments: [...(signal.attachments ?? [])],
     },
   });
 
   useScrollToErrors(form, formRef);
 
-  React.useEffect(() => {
-    const { isDirty } = form.getFieldState('creatorId');
-    if (!isDirty && person?.id) {
-      form.setValue('creatorId', person.id, {
-        shouldDirty: false,
-        shouldTouch: false,
-        shouldValidate: true,
-      });
-    }
-  }, [person, form]);
-
-  React.useEffect(() => {
-    const { isDirty } = form.getFieldState('spaceId');
-    if (!isDirty && spaceId) {
-      form.setValue('spaceId', spaceId, {
-        shouldDirty: false,
-        shouldTouch: false,
-        shouldValidate: true,
-      });
-    }
-  }, [spaceId, form]);
-
   const handleResetForm = React.useCallback(() => {
     form.reset({
-      title: '',
-      description: '',
-      creatorId: person?.id,
-      spaceId,
-      archived: false,
-      type: 'Opportunity',
-      priority: 'medium',
-      tags: [],
-      attachments: undefined,
+      title: signal.title,
+      description: signal.description,
+      type: signal.type,
+      priority: signal.priority,
+      tags: signal.tags ?? [],
+      attachments: [...(signal.attachments ?? [])],
     });
-  }, [form, person?.id, spaceId]);
+  }, [form, signal]);
 
-  const handleCreate = React.useCallback(
+  const handleSave = React.useCallback(
     async (data: FormValues) => {
       try {
-        const { attachments, ...rest } = data;
-        const alreadyUploaded = (attachments ?? []).filter(
+        const { attachments, ...fields } = data;
+        const arr = Array.isArray(attachments) ? attachments : [];
+        const alreadyUploaded = arr.filter(
           (a): a is string | { name: string; url: string } =>
             typeof a === 'string' ||
             (typeof a === 'object' &&
@@ -142,43 +111,31 @@ export const CreateSignalForm = ({
               'url' in a &&
               typeof (a as { url: unknown }).url === 'string'),
         );
+        attachmentUrlsRef.current = alreadyUploaded;
 
-        const coherence = await createCoherence({
-          ...rest,
+        await updateCoherenceBySlug({
+          slug,
+          ...fields,
           attachments: alreadyUploaded,
         });
 
-        const hasNewFiles =
-          Array.isArray(attachments) &&
-          attachments.some((a) => a instanceof File);
-        if (hasNewFiles) {
-          const filePayload = schemaCreateAgreementFiles.parse({ attachments });
-          await signalFiles.upload(filePayload, coherence.slug ?? undefined);
+        const newFiles = arr.filter((a) => a instanceof File);
+        if (newFiles.length > 0) {
+          const filePayload = schemaCreateAgreementFiles.parse({
+            attachments: newFiles,
+          });
+          await signalFiles.upload(filePayload, slug);
         }
 
-        if (isMatrixAvailable) {
-          const { roomId } = await createRoom(coherence.title);
-          await updateCoherenceBySlug({ slug: coherence.slug!, roomId });
-        } else {
-          console.warn('Matrix client is unavailable — skipping room creation');
-        }
         router.push(successfulUrl);
       } catch (error) {
-        console.warn('Could not create conversation:', error);
+        console.warn('Could not update signal:', error);
       }
     },
-    [
-      createCoherence,
-      createRoom,
-      signalFiles,
-      updateCoherenceBySlug,
-      isMatrixAvailable,
-      router,
-      successfulUrl,
-    ],
+    [router, signalFiles, slug, successfulUrl, updateCoherenceBySlug],
   );
 
-  const handleInvalid = async (err?: Record<string, unknown>) => {
+  const handleInvalid = (err?: Record<string, unknown>) => {
     console.warn('form errors:', err);
   };
 
@@ -188,32 +145,33 @@ export const CreateSignalForm = ({
   return (
     <SpaceLoadingBackdrop
       showKeepWindowOpenMessage={true}
-      progress={progress}
-      isLoading={isCreatingCoherence}
+      progress={isUpdatingCoherence || signalFiles.isLoading ? 50 : 0}
+      isLoading={isUpdatingCoherence || signalFiles.isLoading}
       fullHeight={true}
-      keepWindowOpenMessage={t('keepWindowOpenWhileCreating')}
+      keepWindowOpenMessage={t('keepWindowOpenWhileSaving')}
       message={
-        errorCreateCoherenceMutation ? (
+        errorUpdateCoherenceBySlugMutation ? (
           <div className="flex flex-col">
             <div>{t('errorOhSnap')}</div>
-            <Button onClick={resetCreateCoherenceMutation}>{t('reset')}</Button>
+            <Button onClick={resetUpdateCoherenceBySlugMutation}>
+              {t('reset')}
+            </Button>
           </div>
         ) : (
-          <div>{t('creatingNewSignal')}</div>
+          <div>{t('savingSignal')}</div>
         )
       }
     >
       <Form {...form}>
         <form
           ref={formRef}
-          onSubmit={form.handleSubmit(handleCreate, handleInvalid)}
+          onSubmit={form.handleSubmit(handleSave, handleInvalid)}
           className="flex flex-col gap-0"
         >
           <div className="sticky top-0 z-30 -mx-4 bg-background-2 supports-[backdrop-filter]:bg-background-2/95 supports-[backdrop-filter]:backdrop-blur-sm lg:-mx-7">
-            {/* Token-burning style: modal title row + delimiter */}
             <div className="flex flex-row flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border px-4 pb-4 pt-2 lg:px-7">
               <span className="text-lg font-semibold leading-none text-foreground">
-                {t('signals')}
+                {t('editSignal')}
               </span>
               <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1">
                 {backUrl ? (
@@ -230,7 +188,7 @@ export const CreateSignalForm = ({
                     colorVariant="neutral"
                     className="gap-1.5 px-2 md:px-3"
                     onClick={handleResetForm}
-                    disabled={isCreatingCoherence}
+                    disabled={isUpdatingCoherence || signalFiles.isLoading}
                   >
                     <RefreshCw className="h-3.5 w-3.5 shrink-0" aria-hidden />
                     <span>{tSpaces('reset')}</span>
@@ -243,11 +201,10 @@ export const CreateSignalForm = ({
               </div>
             </div>
 
-            {/* Avatar + title field — items-start aligns avatar with input (token burning layout) */}
             <div className="flex flex-row items-start gap-3 px-4 pb-4 pt-5 lg:px-7">
               <PersonAvatar
                 size="lg"
-                isLoading={isCreatingCoherence}
+                isLoading={isUpdatingCoherence}
                 avatarSrc={person?.avatarUrl || ''}
                 userName={[person?.name, person?.surname]
                   .filter(Boolean)
@@ -256,7 +213,7 @@ export const CreateSignalForm = ({
               <div className="flex min-w-0 flex-1 flex-col gap-3">
                 <SignalTitleField
                   form={form}
-                  disabled={isCreatingCoherence}
+                  disabled={isUpdatingCoherence}
                   placeholder={t('signalTitle')}
                 />
                 <Text className="text-1 text-neutral-11">
@@ -271,14 +228,14 @@ export const CreateSignalForm = ({
           <div className="flex min-h-0 flex-1 flex-col gap-5 px-0 pt-5">
             <SignalEditorFields
               form={form}
-              disabled={isCreatingCoherence}
+              disabled={isUpdatingCoherence}
               showAttachments
             />
 
             <div className="flex w-full justify-end">
               <Button
                 type="submit"
-                disabled={isCreatingCoherence || signalFiles.isLoading}
+                disabled={isUpdatingCoherence || signalFiles.isLoading}
               >
                 {tAgreementFlow('buttons.publish')}
               </Button>
@@ -288,4 +245,4 @@ export const CreateSignalForm = ({
       </Form>
     </SpaceLoadingBackdrop>
   );
-};
+}
