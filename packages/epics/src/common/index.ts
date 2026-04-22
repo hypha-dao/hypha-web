@@ -23,6 +23,11 @@ export {
   HumanSidebarTrigger,
 } from './panel-wrap-layout';
 export {
+  useMainColumnScrollY,
+  getMainColumnScrollY,
+  subscribeMainColumnScroll,
+} from './main-column-scroll';
+export {
   HumanChatPanelHeader,
   HumanChatPanelMessageBubble,
   HumanChatPanelChatBar,
