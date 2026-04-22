@@ -18,3 +18,15 @@
 [data-space-accent-scope] [data-space-nav]:hover {
   opacity: 0.92;
 }
+
+/**
+ * Header language picker lives outside `[data-space-accent-scope]`; accent is
+ * mirrored to `html` by `SpaceAccentFromImages` while a space layout is mounted.
+ */
+html[data-space-chrome-accent='true'] [data-language-select-trigger] {
+  border-color: color-mix(in srgb, var(--space-accent) 78%, transparent);
+}
+
+html[data-space-chrome-accent='true'] [data-language-select-trigger]:hover {
+  border-color: color-mix(in srgb, var(--space-accent) 92%, transparent);
+}

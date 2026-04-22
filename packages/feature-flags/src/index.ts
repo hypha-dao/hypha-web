@@ -31,7 +31,7 @@ export const flagDefinitionsForDiscovery = {
   },
   showLanguageSelect: {
     key: 'show-language-select',
-    defaultValue: false,
+    defaultValue: true,
     description: 'Show the i18n language select button in the menu bar',
     origin: 'hypha' as const,
     options: undefined as undefined,
@@ -75,7 +75,9 @@ export async function getShowLanguageSelect(): Promise<boolean> {
   if (o !== undefined) return o;
 
   const store = await cookies();
-  return store.get(HYPHA_SHOW_LANGUAGE_SELECT)?.value === 'true';
+  const cookieValue = store.get(HYPHA_SHOW_LANGUAGE_SELECT)?.value;
+  if (cookieValue === 'false') return false;
+  return true;
 }
 
 async function getBooleanFlagFromToolbarCookieOrEnv(

@@ -164,6 +164,9 @@ export default async function RootLayout({
                               ) : undefined
                             }
                           >
+                            {isLanguageSelectVisible && (
+                              <ConnectedLanguageSelect />
+                            )}
                             <ConnectedButtonProfile
                               useAuthentication={useAuthentication}
                               useMe={useMe}
@@ -180,9 +183,6 @@ export default async function RootLayout({
                                 },
                               ]}
                             />
-                            {isLanguageSelectVisible && (
-                              <ConnectedLanguageSelect />
-                            )}
                           </MenuTop>
                         </div>
                         {/* Scrollable content area */}
