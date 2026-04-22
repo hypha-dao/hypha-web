@@ -46,12 +46,16 @@ const defaultMdxPlugins: NonNullable<MDXEditorProps['plugins']> = [
   linkPlugin(),
 ];
 
+export type RichTextEditorProps = {
+  editorRef: ForwardedRef<MDXEditorMethods> | null;
+} & MDXEditorProps;
+
 export function RichTextEditor({
   editorRef,
   className,
   plugins = defaultMdxPlugins,
   ...props
-}: { editorRef: ForwardedRef<MDXEditorMethods> | null } & MDXEditorProps) {
+}: RichTextEditorProps) {
   /** Anchor MDX toolbar portals (Block type, etc.) inside this wrapper so Radix popper aligns in modals/overlays. */
   const [mdxOverlayHost, setMdxOverlayHost] = useState<HTMLElement | null>(
     null,
