@@ -23,7 +23,7 @@ export function PanelScrollInset({ className, ...props }: Props) {
   return (
     <SidebarInset
       ref={bind}
-      className={cn('overflow-y-auto', className)}
+      className={cn('overflow-y-auto narrow-scrollbar', className)}
       {...props}
     />
   );

@@ -7,6 +7,7 @@ import {
   SidebarInset,
   SidebarResizeHandle,
 } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 import { setMainColumnScrollRoot } from './main-column-scroll';
 
 type Props = {
@@ -50,7 +51,10 @@ export function PanelDualSidebarScrollBridge({
         {leftContent}
         <SidebarResizeHandle />
       </Sidebar>
-      <SidebarInset ref={bindScrollRoot} className="overflow-y-auto">
+      <SidebarInset
+        ref={bindScrollRoot}
+        className={cn('overflow-y-auto narrow-scrollbar')}
+      >
         <SidebarProvider
           open={rightOpen}
           onOpenChange={onRightOpenChange}
