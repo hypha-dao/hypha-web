@@ -18,7 +18,7 @@ import {
   CoherenceType,
   DirectionType,
 } from '@hypha-platform/core/client';
-import { PlusIcon, RocketIcon } from '@radix-ui/react-icons';
+import { PlusIcon } from '@radix-ui/react-icons';
 import {
   useParams,
   usePathname,
@@ -148,7 +148,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
       ),
       value: option.type,
       count: typeMap[option.type],
-    }));
+    })).filter((opt) => opt.count > 0);
     const typeOptions = [
       { label: t('all'), value: 'all', count: signals.length },
       ...coherenceTypes,
@@ -167,10 +167,6 @@ export const SignalSection: FC<SignalSectionProps> = ({
         inlineLabel={true}
       >
         <div className="flex flex-row gap-2">
-          <Button variant="ghost" colorVariant="accent" disabled={true}>
-            <RocketIcon />
-            {t('improve')}
-          </Button>
           <Link href={createSignalHref}>
             <Button
               variant="default"
