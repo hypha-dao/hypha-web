@@ -188,9 +188,10 @@ export const ButtonProfile = ({
                 <button
                   type="button"
                   className={cn(
-                    'rounded-lg border border-neutral-9 bg-neutral-1 text-neutral-12 outline-none',
-                    'shadow-sm ring-2 ring-transparent transition-[color,box-shadow,border-color,background-color]',
-                    'hover:border-neutral-11 hover:text-foreground hover:ring-neutral-10/50',
+                    /* overflow-hidden + radius match avatar: avoids ring/border anti-alias blur on the image */
+                    'isolate overflow-hidden rounded-md border border-neutral-9 bg-neutral-1 p-0 text-neutral-12 outline-none',
+                    'shadow-sm transition-colors duration-150',
+                    'hover:border-neutral-11 hover:text-foreground',
                     'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                     'data-[state=open]:border-neutral-11 data-[state=open]:shadow-md',
                   )}
