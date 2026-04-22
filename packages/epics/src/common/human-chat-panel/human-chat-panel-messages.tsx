@@ -139,6 +139,10 @@ type HumanChatPanelMessagesProps = {
   onToggleReaction?: (messageId: string, emoji: string) => void;
   /** Map Matrix user id to display name for reaction hover tooltips. */
   resolveReactionReactorLabel?: (userId: string) => string;
+  /** Map Matrix user id to display name inside @mention pills (body + formatted HTML). */
+  resolveMatrixMemberLabel?: (userId: string) => string;
+  /** Roster-first labels for message sender / reply headers (Hypha Members tab names). */
+  resolveSenderDisplayLabel?: (matrixUserId: string | undefined) => string;
   onCancelSendPending?: () => void;
   /** Oldest unread Matrix event id (from read receipt); scroll + divider. */
   firstUnreadMessageId?: string | null;
@@ -150,6 +154,9 @@ type HumanChatPanelMessagesProps = {
   onReachedTimelineBottom?: () => void;
   /** User clicked “Mark as read” in the banner. */
   onMarkAsReadFromBanner?: () => void;
+  /** Scroll this Matrix event id into view when set (e.g. mention inbox). */
+  scrollTargetEventId?: string | null;
+  onConsumedScrollTarget?: () => void;
 };
 
 export function HumanChatPanelMessages({
@@ -163,12 +170,16 @@ export function HumanChatPanelMessages({
   onDeleteMessage,
   onToggleReaction,
   resolveReactionReactorLabel,
+  resolveMatrixMemberLabel,
+  resolveSenderDisplayLabel,
   onCancelSendPending,
   firstUnreadMessageId,
   unreadCountIsCapped = false,
   unreadNotificationCount = 0,
   onReachedTimelineBottom,
   onMarkAsReadFromBanner,
+  scrollTargetEventId,
+  onConsumedScrollTarget,
 }: HumanChatPanelMessagesProps) {
   const t = useTranslations('HumanChatPanel');
   const formatter = useFormatter();
@@ -297,6 +308,22 @@ export function HumanChatPanelMessages({
     prevLastIdRef.current = lastId;
   }, [messages, isStreaming, firstUnreadMessageId, scrollToUnread]);
 
+  useLayoutEffect(() => {
+    if (!scrollTargetEventId) return;
+    const root = containerRef.current;
+    if (!root) return;
+    const esc =
+      typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+        ? CSS.escape(scrollTargetEventId)
+        : scrollTargetEventId.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    const row = root.querySelector(`[data-matrix-event-id="${esc}"]`);
+    if (row instanceof HTMLElement) {
+      row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      stickToBottomRef.current = false;
+      onConsumedScrollTarget?.();
+    }
+  }, [scrollTargetEventId, onConsumedScrollTarget, timelineRows.length]);
+
   useEffect(() => {
     const root = containerRef.current;
     const sentinel = bottomSentinelRef.current;
@@ -398,6 +425,8 @@ export function HumanChatPanelMessages({
                 currentUserId={currentUserId}
                 currentUserAvatarUrl={currentUserAvatarUrl}
                 resolveReactionReactorLabel={resolveReactionReactorLabel}
+                resolveMatrixMemberLabel={resolveMatrixMemberLabel}
+                resolveSenderDisplayLabel={resolveSenderDisplayLabel}
                 isActionBarVisible={isActionBarVisible}
                 unreadBoundary={row.isFirstUnread}
                 onRowPointerEnter={() => {

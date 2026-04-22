@@ -1,5 +1,6 @@
 'use server';
 
+import { getDb } from '../../common/server/get-db';
 import { CreateCoherenceInput, UpdateCoherenceBySlugInput } from '../types';
 import { db } from '@hypha-platform/storage-postgres';
 import {
@@ -7,6 +8,7 @@ import {
   deleteCoherenceBySlug,
   updateCoherenceBySlug,
 } from './mutations';
+import { assertCoherenceCreatorBySlug } from './ensure-signal-creator';
 
 export async function createCoherenceAction(
   data: CreateCoherenceInput,
@@ -20,16 +22,18 @@ export async function updateCoherenceBySlugAction(
   data: UpdateCoherenceBySlugInput,
   { authToken }: { authToken?: string },
 ) {
-  // TODO: #602 Define RLS Policies for Spaces Table
-  // const db = getDb({ authToken });
-  return updateCoherenceBySlug(data, { db });
+  if (!authToken) throw new Error('authToken is required to update coherence');
+  const authDb = getDb({ authToken });
+  await assertCoherenceCreatorBySlug(data.slug, { db: authDb });
+  return updateCoherenceBySlug(data, { db: authDb });
 }
 
 export async function deleteCoherenceBySlugAction(
   data: { slug: string },
   { authToken }: { authToken?: string },
 ) {
-  // TODO: #602 Define RLS Policies for Spaces Table
-  // const db = getDb({ authToken });
-  return deleteCoherenceBySlug(data, { db });
+  if (!authToken) throw new Error('authToken is required to delete coherence');
+  const authDb = getDb({ authToken });
+  await assertCoherenceCreatorBySlug(data.slug, { db: authDb });
+  return deleteCoherenceBySlug(data, { db: authDb });
 }

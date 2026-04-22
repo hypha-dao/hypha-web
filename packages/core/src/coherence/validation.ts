@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { createAgreementFiles } from '../governance/validation';
 import { COHERENCE_TYPES } from './coherence-types';
 import { COHERENCE_TAGS } from './coherence-tags';
 import { COHERENCE_PRIORITIES } from './coherence-priorities';
@@ -42,4 +43,16 @@ export const createCoherenceWeb2Props = {
 export const schemaCreateCoherenceWeb2 = z.object(createCoherenceWeb2Props);
 
 export const schemaCreateCoherence = schemaCreateCoherenceWeb2;
-export const schemaCreateCoherenceForm = schemaCreateCoherenceWeb2;
+
+/** Form schema: same attachment rules as proposals (max 3, JPEG/PNG/WebP/PDF, 4MB). */
+export const schemaCreateCoherenceForm = schemaCreateCoherenceWeb2.extend({
+  attachments: createAgreementFiles.attachments,
+});
+
+/** Edit signal (creator): same fields as create except identity / slug / archived. */
+export const schemaUpdateCoherenceForm = schemaCreateCoherenceForm.omit({
+  creatorId: true,
+  spaceId: true,
+  slug: true,
+  archived: true,
+});

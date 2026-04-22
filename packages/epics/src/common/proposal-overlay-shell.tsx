@@ -43,7 +43,7 @@ type ProposalOverlayShellProps = {
 
 /**
  * Presentation shell for primary @aside flows (proposals, space settings menus,
- * configure space, etc.).
+ * configure space, create signal modal, etc.).
  *
  * Mobile / tablet portrait: docked sheet (respects `--menu-top-height` and
  * `--sidebar-right-width`).
@@ -55,13 +55,12 @@ type ProposalOverlayShellProps = {
  * parallel-route close + `z-index` rules (Dropdown/Popover portaled to `body`,
  * {@link MenuTop} at `z-30`).
  *
- * **Non-modal** `DialogPrimitive.Root` (`modal={false}`): a *modal* Radix dialog
- * sets `disableOutsidePointerEvents`, which blocks portaled dropdowns. Escape
- * and scrim dismissal are suppressed so close stays on in-app routes; parallel
- * routes cannot use the stock “click outside closes” dialog pattern.
+ * **Modal** `DialogPrimitive.Root`: focus trapping and background inerting for
+ * keyboard and screen-reader users. Escape and scrim dismissal stay suppressed
+ * so close remains on in-app routes; MDX toolbar popovers anchor via
+ * `RichTextEditor` `overlayContainer` instead of fighting `document.body`.
  *
- * Plain scrim + optional body scroll lock: `DialogPrimitive.Overlay` is omitted
- * when `modal=false`, so we render the scrim `div` ourselves.
+ * Plain scrim: we still render the scrim `div` ourselves (aligned with MenuTop).
  *
  * **MenuTop:** scrim/host are clipped to `top: var(--menu-top-height)` and use
  * `z-20` / `z-[21]` so the nav (`z-30`) stays clickable.
@@ -101,7 +100,7 @@ export function ProposalOverlayShell({
 
   return (
     <AsideOverlayLayoutProvider mode="modal-shell">
-      <DialogPrimitive.Root modal={false} open>
+      <DialogPrimitive.Root modal open>
         <DialogPrimitive.Portal>
           {/* Plain scrim below MenuTop (z-30); starts under --menu-top-height */}
           <div

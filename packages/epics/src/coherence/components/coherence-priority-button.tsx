@@ -16,6 +16,8 @@ export const CoherencePriorityButton = ({
 }: CoherencePriorityButtonProps) => {
   const textClass = ((variant) => {
     switch (variant) {
+      case 'subtle':
+        return 'text-foreground';
       case 'error':
         return 'text-error-9';
       case 'warn':
@@ -28,6 +30,8 @@ export const CoherencePriorityButton = ({
   })(colorVariant);
   const textColor = ((variant) => {
     switch (variant) {
+      case 'subtle':
+        return 'var(--foreground)';
       case 'error':
         return 'var(--error-9)';
       case 'warn':
@@ -48,7 +52,15 @@ export const CoherencePriorityButton = ({
       <div className="w-full flex flex-col gap-1 items-center">
         <Circle className={textClass} fill={textColor} size={12} />
         <span className={cn('text-2 font-medium', textClass)}>{title}</span>
-        <span className="text-1 text-neutral-11">{description}</span>
+        <span
+          className={
+            colorVariant === 'subtle'
+              ? 'text-1 text-muted-foreground'
+              : 'text-1 text-neutral-11'
+          }
+        >
+          {description}
+        </span>
       </div>
     </CardButton>
   );

@@ -5,26 +5,20 @@ import {
   Button,
   Form,
   FormControl,
-  FormDescription,
-  FormField,
   FormItem,
-  FormLabel,
   FormMessage,
-  Input,
-  LucideReactIcon,
-  MultiSelect,
-  RequirementMark,
-  RichTextEditor,
+  Image,
+  Separator,
 } from '@hypha-platform/ui';
+import { Text } from '@radix-ui/themes';
+import { RefreshCw } from 'lucide-react';
 import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import {
-  COHERENCE_PRIORITY_OPTIONS,
-  COHERENCE_TAGS,
-  COHERENCE_TYPE_OPTIONS,
-  CoherenceType,
+  schemaCreateAgreementFiles,
   schemaCreateCoherenceForm,
+  useAgreementFileUploads,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
   useMatrix,
@@ -34,10 +28,10 @@ import React from 'react';
 import { useScrollToErrors } from '../../hooks';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { CoherenceTypeButton } from './coherence-type-button';
-import { CoherencePriorityButton } from './coherence-priority-button';
+import { PersonAvatar } from '../../people/components/person-avatar';
 import { ButtonClose } from '../../common/button-close';
-import { CardButtonColorVariant } from '../../common/card-button';
+import { ButtonBack } from '../../common/button-back';
+import { SignalEditorFields, SignalTitleField } from './signal-editor-fields';
 
 type FormValues = z.infer<typeof schemaCreateCoherenceForm>;
 
@@ -45,34 +39,22 @@ interface CreateSignalFormProps {
   spaceId: number;
   successfulUrl: string;
   closeUrl?: string;
+  backUrl?: string;
 }
 
 export const CreateSignalForm = ({
   spaceId,
   successfulUrl,
   closeUrl,
+  backUrl,
 }: CreateSignalFormProps) => {
   const t = useTranslations('CoherenceTab');
   const tAgreementFlow = useTranslations('AgreementFlow');
-  const translateEditor = React.useCallback(
-    (
-      key: string,
-      defaultValue: string | undefined,
-      interpolations?: Record<string, string | number>,
-    ) => {
-      const translationKey = `createAgreementBaseFields.editor.${key}`;
-
-      if (!tAgreementFlow.has(translationKey)) {
-        return defaultValue ?? key;
-      }
-
-      return tAgreementFlow(translationKey, interpolations);
-    },
-    [tAgreementFlow],
-  );
+  const tSpaces = useTranslations('Spaces');
   const { person } = useMe();
   const { jwt: authToken } = useJwt();
   const router = useRouter();
+
   const {
     createCoherence,
     isCreatingCoherence,
@@ -80,8 +62,14 @@ export const CreateSignalForm = ({
     errorCreateCoherenceMutation,
     resetCreateCoherenceMutation,
     updateCoherenceBySlug,
-    isUpdatingCoherence,
   } = useCoherenceMutationsWeb2Rsc(authToken);
+  const signalFiles = useAgreementFileUploads(authToken, (uploaded, slug) => {
+    if (!slug) return;
+    return updateCoherenceBySlug({
+      slug,
+      attachments: uploaded.attachments ?? [],
+    });
+  });
   const { isMatrixAvailable, createRoom } = useMatrix();
 
   const progress = React.useMemo(() => {
@@ -97,76 +85,14 @@ export const CreateSignalForm = ({
       creatorId: person?.id,
       spaceId,
       archived: false,
+      type: 'Opportunity',
+      priority: 'medium',
+      tags: [],
+      attachments: undefined,
     },
   });
 
   useScrollToErrors(form, formRef);
-
-  const typeOptions = React.useMemo(() => {
-    const computeColor = (colorVariant: string) => {
-      return `var(--${colorVariant}-10)`;
-    };
-    return COHERENCE_TYPE_OPTIONS.map(({ icon, type, colorVariant }) => ({
-      icon: icon as LucideReactIcon,
-      title: t(
-        `types.${type}` as
-          | 'types.Opportunity'
-          | 'types.Risk'
-          | 'types.Tension'
-          | 'types.Insight'
-          | 'types.Trend'
-          | 'types.Proposal',
-      ),
-      description: t(
-        `typeDescriptions.${type}` as
-          | 'typeDescriptions.Opportunity'
-          | 'typeDescriptions.Risk'
-          | 'typeDescriptions.Tension'
-          | 'typeDescriptions.Insight'
-          | 'typeDescriptions.Trend'
-          | 'typeDescriptions.Proposal',
-      ),
-      type,
-      colorVariant: colorVariant as CardButtonColorVariant,
-      titleColor: computeColor(colorVariant),
-    }));
-  }, [t]);
-
-  const priorityOptions = React.useMemo(() => {
-    return COHERENCE_PRIORITY_OPTIONS.map(({ priority, colorVariant }) => ({
-      title: t(
-        `priorities.${priority}` as
-          | 'priorities.high'
-          | 'priorities.medium'
-          | 'priorities.low',
-      ),
-      priority,
-      description: t(
-        `priorityDescriptions.${priority}` as
-          | 'priorityDescriptions.high'
-          | 'priorityDescriptions.medium'
-          | 'priorityDescriptions.low',
-      ),
-      colorVariant: colorVariant as CardButtonColorVariant,
-    }));
-  }, [t]);
-
-  const tagOptions = React.useMemo(() => {
-    return COHERENCE_TAGS.map((tag) => ({
-      value: tag,
-      label: t(
-        `tagLabels.${tag}` as
-          | 'tagLabels.Strategy'
-          | 'tagLabels.Culture'
-          | 'tagLabels.Onboarding'
-          | 'tagLabels.Engagement'
-          | 'tagLabels.Learning'
-          | 'tagLabels.Capacity'
-          | 'tagLabels.Network'
-          | 'tagLabels.Reputation',
-      ),
-    }));
-  }, [t]);
 
   React.useEffect(() => {
     const { isDirty } = form.getFieldState('creatorId');
@@ -190,10 +116,46 @@ export const CreateSignalForm = ({
     }
   }, [spaceId, form]);
 
+  const handleResetForm = React.useCallback(() => {
+    form.reset({
+      title: '',
+      description: '',
+      creatorId: person?.id,
+      spaceId,
+      archived: false,
+      type: 'Opportunity',
+      priority: 'medium',
+      tags: [],
+      attachments: undefined,
+    });
+  }, [form, person?.id, spaceId]);
+
   const handleCreate = React.useCallback(
     async (data: FormValues) => {
       try {
-        const coherence = await createCoherence({ ...data });
+        const { attachments, ...rest } = data;
+        const alreadyUploaded = (attachments ?? []).filter(
+          (a): a is string | { name: string; url: string } =>
+            typeof a === 'string' ||
+            (typeof a === 'object' &&
+              a !== null &&
+              'url' in a &&
+              typeof (a as { url: unknown }).url === 'string'),
+        );
+
+        const coherence = await createCoherence({
+          ...rest,
+          attachments: alreadyUploaded,
+        });
+
+        const hasNewFiles =
+          Array.isArray(attachments) &&
+          attachments.some((a) => a instanceof File);
+        if (hasNewFiles) {
+          const filePayload = schemaCreateAgreementFiles.parse({ attachments });
+          await signalFiles.upload(filePayload, coherence.slug ?? undefined);
+        }
+
         if (isMatrixAvailable) {
           const { roomId } = await createRoom(coherence.title);
           await updateCoherenceBySlug({ slug: coherence.slug!, roomId });
@@ -208,6 +170,7 @@ export const CreateSignalForm = ({
     [
       createCoherence,
       createRoom,
+      signalFiles,
       updateCoherenceBySlug,
       isMatrixAvailable,
       router,
@@ -218,6 +181,9 @@ export const CreateSignalForm = ({
   const handleInvalid = async (err?: Record<string, unknown>) => {
     console.warn('form errors:', err);
   };
+
+  const resolvedBackLabel = backUrl != null ? t('backToCoherence') : undefined;
+  const isDirty = form.formState.isDirty;
 
   return (
     <SpaceLoadingBackdrop
@@ -241,165 +207,82 @@ export const CreateSignalForm = ({
         <form
           ref={formRef}
           onSubmit={form.handleSubmit(handleCreate, handleInvalid)}
-          className="flex flex-col gap-5"
+          className="flex flex-col gap-0"
         >
-          <div className="flex w-full">
-            <div className="flex flex-col w-full justify-between gap-4">
-              <div className="flex flex-row w-full">
-                <div className="flex grow"></div>
+          <div className="sticky top-0 z-30 -mx-4 bg-background-2 supports-[backdrop-filter]:bg-background-2/95 supports-[backdrop-filter]:backdrop-blur-sm lg:-mx-7">
+            {/* Token-burning style: modal title row + delimiter */}
+            <div className="flex flex-row flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border px-4 pb-4 pt-2 lg:px-7">
+              <span className="text-lg font-semibold leading-none text-foreground">
+                {t('signals')}
+              </span>
+              <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1">
+                {backUrl ? (
+                  <ButtonBack
+                    label={resolvedBackLabel}
+                    backUrl={backUrl}
+                    className="px-0 md:px-3 align-top"
+                  />
+                ) : null}
+                {isDirty ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    colorVariant="neutral"
+                    className="gap-1.5 px-2 md:px-3"
+                    onClick={handleResetForm}
+                    disabled={isCreatingCoherence}
+                  >
+                    <RefreshCw className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                    <span>{tSpaces('reset')}</span>
+                  </Button>
+                ) : null}
                 <ButtonClose
                   closeUrl={closeUrl}
                   className="px-0 md:px-3 align-top"
                 />
               </div>
             </div>
-          </div>
-          <div className="flex justify-between w-full gap-4">
-            <div className="flex flex-col gap-4 w-full">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        placeholder={t('signalTitle')}
-                        className="border-0 text-4 p-0 placeholder:text-4 bg-inherit"
-                        rightIcon={<RequirementMark className="text-4" />}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription />
-                    <FormMessage />
-                  </FormItem>
-                )}
+
+            {/* Avatar + title field — items-start aligns avatar with input (token burning layout) */}
+            <div className="flex flex-row items-start gap-3 px-4 pb-4 pt-5 lg:px-7">
+              <PersonAvatar
+                size="lg"
+                isLoading={isCreatingCoherence}
+                avatarSrc={person?.avatarUrl || ''}
+                userName={[person?.name, person?.surname]
+                  .filter(Boolean)
+                  .join(' ')}
               />
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="w-full flex flex-col gap-3">
-                      <FormLabel className="text-foreground">
-                        {t('type')} <RequirementMark />
-                      </FormLabel>
-                      <FormControl>
-                        <span className="w-full grid grid-cols-2 gap-2">
-                          {typeOptions &&
-                            typeOptions.map((option, index) => {
-                              return (
-                                <CoherenceTypeButton
-                                  key={`type-option-${index}`}
-                                  icon={option.icon}
-                                  title={option.title}
-                                  description={option.description}
-                                  colorVariant={option.colorVariant}
-                                  selected={field.value === option.type}
-                                  onClick={() => {
-                                    form.setValue(
-                                      'type',
-                                      option.type as CoherenceType,
-                                      {
-                                        shouldDirty: true,
-                                      },
-                                    );
-                                  }}
-                                />
-                              );
-                            })}
-                        </span>
-                      </FormControl>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="priority"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="w-full flex flex-col gap-3">
-                      <FormLabel className="text-foreground">
-                        {t('priority')} <RequirementMark />
-                      </FormLabel>
-                      <FormControl>
-                        <span className="w-full flex flex-row gap-2">
-                          {priorityOptions &&
-                            priorityOptions.map((option, index) => {
-                              return (
-                                <CoherencePriorityButton
-                                  key={`priority-option-${index}`}
-                                  className="w-full"
-                                  title={option.title}
-                                  description={option.description}
-                                  colorVariant={option.colorVariant}
-                                  selected={field.value === option.priority}
-                                  onClick={() => {
-                                    form.setValue('priority', option.priority, {
-                                      shouldDirty: true,
-                                    });
-                                  }}
-                                />
-                              );
-                            })}
-                        </span>
-                      </FormControl>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="tags"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-foreground">
-                      {t('tags')}
-                    </FormLabel>
-                    <FormControl>
-                      <MultiSelect
-                        placeholder={t('selectOneOrMore')}
-                        options={tagOptions}
-                        value={field.value}
-                        allowToggleAll={false}
-                        onValueChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => {
-                  const descriptionValue = field.value || '';
-                  return (
-                    <FormItem>
-                      <FormLabel className="text-foreground gap-1">
-                        {t('description')} <RequirementMark />
-                      </FormLabel>
-                      <FormControl>
-                        <RichTextEditor
-                          editorRef={null}
-                          markdown={descriptionValue}
-                          translation={translateEditor}
-                          placeholder={t('descriptionPlaceholder')}
-                          onChange={(markdown) => field.onChange(markdown)}
-                        />
-                      </FormControl>
-                      <FormDescription />
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
+              <div className="flex min-w-0 flex-1 flex-col gap-3">
+                <SignalTitleField
+                  form={form}
+                  disabled={isCreatingCoherence}
+                  placeholder={t('signalTitle')}
+                />
+                <Text className="text-1 text-neutral-11">
+                  {person?.name} {person?.surname}
+                </Text>
+              </div>
             </div>
+
+            <Separator className="bg-border" />
           </div>
-          <div className="flex justify-end w-full">
-            <Button type="submit">{t('publish')}</Button>
+
+          <div className="flex min-h-0 flex-1 flex-col gap-5 px-0 pt-5">
+            <SignalEditorFields
+              form={form}
+              disabled={isCreatingCoherence}
+              showAttachments
+            />
+
+            <div className="flex w-full justify-end">
+              <Button
+                type="submit"
+                disabled={isCreatingCoherence || signalFiles.isLoading}
+              >
+                {tAgreementFlow('buttons.publish')}
+              </Button>
+            </div>
           </div>
         </form>
       </Form>

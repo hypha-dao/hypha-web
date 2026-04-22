@@ -1,14 +1,23 @@
-import { EventType, NotificationCountType, type Room } from 'matrix-js-sdk';
+import {
+  EventType,
+  NotificationCountType,
+  type MatrixEvent,
+  type Room,
+} from 'matrix-js-sdk';
 
 import {
   getMessageReplaceTargetEventId,
   isRedactedRoomMessageEvent,
+  parseMentionUserIdsFromWireContent,
 } from '@hypha-platform/core/client';
 
 export type HumanChatUnreadState = {
   firstUnreadMessageId: string | null;
   unreadNotificationCount: number;
   unreadCountIsCapped: boolean;
+  /** Matrix highlight notifications only (@mentions etc.); use for tab/bell badges. */
+  unreadMentionCount: number;
+  mentionCountIsCapped: boolean;
 };
 
 /**
@@ -29,6 +38,98 @@ function effectiveReadCursorEventId(room: Room, userId: string): string | null {
   return receiptId ?? fullyReadId ?? null;
 }
 
+/**
+ * Count room messages that @-mention the viewer and are still unread by read-receipt
+ * cursor. Used when `NotificationCountType.Highlight` from the server is 0 (some
+ * homeservers do not populate highlight counts reliably).
+ */
+
+/**
+ * Non-redacted `m.replace` events per root id (single timeline pass).
+ * Callers must only use a replacement when `cand.getSender() === root.getSender()`.
+ */
+function replacementEventsByRootId(
+  timeline: MatrixEvent[],
+): Map<string, MatrixEvent[]> {
+  const byRootId = new Map<string, MatrixEvent[]>();
+
+  for (const cand of timeline) {
+    const rootId = getMessageReplaceTargetEventId(cand);
+    if (!rootId) continue;
+    if (isRedactedRoomMessageEvent(cand)) continue;
+
+    const list = byRootId.get(rootId) ?? [];
+    list.push(cand);
+    byRootId.set(rootId, list);
+  }
+
+  return byRootId;
+}
+
+/** Latest message content for mention parsing (`m.replace` edits target the root id). */
+function wireContentForMentionParse(
+  rootEvent: MatrixEvent,
+  replacementsByRootId: Map<string, MatrixEvent[]>,
+): Record<string, unknown> | undefined {
+  const rootId = rootEvent.getId();
+  if (!rootId) return undefined;
+
+  const rootSender = rootEvent.getSender();
+  const candidates = replacementsByRootId.get(rootId);
+  let latest = rootEvent;
+  if (rootSender && candidates?.length) {
+    const trusted = candidates.filter((c) => c.getSender() === rootSender);
+    for (const cand of trusted) {
+      if (!latest || cand.getTs() >= latest.getTs()) latest = cand;
+    }
+  }
+
+  const content = latest.getContent();
+  return content && typeof content === 'object'
+    ? (content as Record<string, unknown>)
+    : undefined;
+}
+
+function countUnreadMentionMessagesForUser(
+  room: Room,
+  viewerId: string,
+  readUpToId: string | null,
+): number {
+  const timeline = room.getLiveTimeline().getEvents();
+  const replacementsByRootId = replacementEventsByRootId(timeline);
+  let n = 0;
+  for (const ev of timeline) {
+    if (ev.getType() !== EventType.RoomMessage) continue;
+    if (!ev.getId() || !ev.getSender()) continue;
+    if (isRedactedRoomMessageEvent(ev)) continue;
+    if (getMessageReplaceTargetEventId(ev) != null) continue;
+
+    const id = ev.getId()!;
+    const sender = ev.getSender()!;
+    if (sender === viewerId) continue;
+
+    const ids = parseMentionUserIdsFromWireContent(
+      wireContentForMentionParse(ev, replacementsByRootId),
+    );
+    if (!ids?.includes(viewerId)) continue;
+
+    if (readUpToId) {
+      const cmp = room.compareEventOrdering(readUpToId, id);
+      if (cmp !== null && cmp >= 0) continue;
+    }
+
+    if (
+      typeof room.hasUserReadEvent === 'function' &&
+      room.hasUserReadEvent(viewerId, id)
+    ) {
+      continue;
+    }
+
+    n += 1;
+  }
+  return n;
+}
+
 export function computeHumanChatUnreadState(
   room: Room | undefined,
   userId: string | null,
@@ -37,6 +138,8 @@ export function computeHumanChatUnreadState(
     firstUnreadMessageId: null,
     unreadNotificationCount: 0,
     unreadCountIsCapped: false,
+    unreadMentionCount: 0,
+    mentionCountIsCapped: false,
   };
 
   if (!room || !userId) return empty;
@@ -51,6 +154,16 @@ export function computeHumanChatUnreadState(
   const unreadCountIsCapped = unreadNotificationCount >= 100;
 
   const readUpToId = effectiveReadCursorEventId(room, userId);
+
+  const serverHighlightCount =
+    typeof highlight === 'number' && highlight > 0 ? highlight : 0;
+  const localMentionCount = countUnreadMentionMessagesForUser(
+    room,
+    userId,
+    readUpToId,
+  );
+  const unreadMentionCount = Math.max(serverHighlightCount, localMentionCount);
+  const mentionCountIsCapped = unreadMentionCount >= 100;
 
   const timeline = room.getLiveTimeline().getEvents();
 
@@ -82,6 +195,8 @@ export function computeHumanChatUnreadState(
       firstUnreadMessageId: id,
       unreadNotificationCount,
       unreadCountIsCapped,
+      unreadMentionCount,
+      mentionCountIsCapped,
     };
   }
 
@@ -89,5 +204,7 @@ export function computeHumanChatUnreadState(
     firstUnreadMessageId: null,
     unreadNotificationCount,
     unreadCountIsCapped,
+    unreadMentionCount,
+    mentionCountIsCapped,
   };
 }

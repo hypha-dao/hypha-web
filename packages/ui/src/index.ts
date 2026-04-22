@@ -4,6 +4,8 @@ export * from './molecules';
 export * from './organisms';
 export * from './theme';
 
+export * from './context/aside-overlay-layout';
+
 export * from './upload/add-attachment';
 export * from './upload/attachments-list';
 export * from './upload/avatar';
@@ -22,6 +24,7 @@ export * from './chips';
 export * from './combobox';
 export * from './container';
 export * from './date-picker';
+export * from './dialog';
 export * from './disposable-label';
 export * from './dropdown-menu';
 export * from './context-menu';

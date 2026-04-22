@@ -104,15 +104,16 @@ export const SignalSection: FC<SignalSectionProps> = ({
     [searchParams, pathname, replace],
   );
 
+  /** Type filters — calm chips aligned with modal / overlay surfaces (PR #2160-style soft accent). */
   const multiSelectVariants = cva(
-    'm-1 transition ease-in-out delay-150 hover:-translate-y-1 hover:scale-110 duration-300',
+    'm-1 cursor-pointer transition-colors duration-150 ease-out hover:bg-accent-2',
     {
       variants: {
         variant: {
           default:
-            'border-foreground/10 text-foreground text-neutral-500 bg-card hover:bg-card/80',
+            'border-neutral-8/70 bg-background/80 text-neutral-11 shadow-none hover:border-accent-8/60 dark:bg-background/40',
           secondary:
-            'border-foreground/10 bg-secondary text-secondary-foreground hover:bg-secondary/80',
+            'border-accent-8 bg-accent-3 text-accent-12 shadow-sm hover:bg-accent-4 dark:border-accent-9/40',
           destructive:
             'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
           inverted: 'inverted',
@@ -156,7 +157,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
   }, [signals, t]);
 
   return (
-    <div className="flex flex-col justify-around items-center gap-4">
+    <div className="flex w-full flex-col gap-5">
       <SectionFilter
         count={pagination?.total || 0}
         label={label || ''}
@@ -182,11 +183,19 @@ export const SignalSection: FC<SignalSectionProps> = ({
           </Link>
         </div>
       </SectionFilter>
-      <div className="flex justify-center space-x-2 space-y-2 flex-wrap">
+      <div className="flex flex-wrap justify-start gap-x-2 gap-y-2">
         {typeOptions.map((typeOption) => (
           <Badge
             key={typeOption.value}
+            variant="outline"
+            colorVariant={
+              typeRaw === typeOption.value ||
+              (typeOption.value === 'all' && typeRaw === null)
+                ? 'accent'
+                : 'neutral'
+            }
             className={cn(
+              'animate-none',
               multiSelectVariants({
                 variant:
                   typeRaw === typeOption.value ||
@@ -195,14 +204,16 @@ export const SignalSection: FC<SignalSectionProps> = ({
                     : 'default',
               }),
             )}
-            style={{ cursor: 'pointer', animationDuration: '0s' }}
             onClick={() => onTagClick(typeOption.value)}
           >
-            {typeOption.label} {typeOption.count}
+            <span className="tabular-nums">{typeOption.label}</span>{' '}
+            <span className="tabular-nums text-muted-foreground">
+              {typeOption.count}
+            </span>
           </Badge>
         ))}
       </div>
-      <Separator />
+      <Separator className="bg-border/70" />
 
       {pagination?.totalPages === 0 ? (
         <Empty>
