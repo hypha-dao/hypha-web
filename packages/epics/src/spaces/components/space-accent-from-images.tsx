@@ -82,29 +82,6 @@ async function sampleImageToAccent(src: string): Promise<string | null> {
 }
 
 /** Larger sample grid for luminance / contrast / edge analysis (banner only). */
-/**
- * Mirrors `--space-accent` from the in-page accent scope to `documentElement`
- * so fixed chrome (e.g. header language picker) can use the same token.
- */
-function syncSpaceChromeAccentToRoot(scopeEl: HTMLElement | null) {
-  const root = document.documentElement;
-  if (!scopeEl) {
-    root.removeAttribute('data-space-chrome-accent');
-    root.style.removeProperty('--space-accent');
-    return;
-  }
-  const accent = getComputedStyle(scopeEl)
-    .getPropertyValue('--space-accent')
-    .trim();
-  if (!accent) {
-    root.removeAttribute('data-space-chrome-accent');
-    root.style.removeProperty('--space-accent');
-    return;
-  }
-  root.style.setProperty('--space-accent', accent);
-  root.setAttribute('data-space-chrome-accent', 'true');
-}
-
 async function sampleBannerToneOverlayVars(
   src: string,
 ): Promise<Record<string, string> | null> {
@@ -171,7 +148,6 @@ export function SpaceAccentFromImages({
         }
         scopeElInit.style.setProperty(k, String(v));
       }
-      syncSpaceChromeAccentToRoot(scopeElInit);
     }
     setPortalStyles?.(defaultSpacePortalStyles);
 
@@ -203,13 +179,11 @@ export function SpaceAccentFromImages({
         scopeEl.style.setProperty(k, String(v));
       }
 
-      syncSpaceChromeAccentToRoot(scopeEl);
       setPortalStyles?.(scopeStyle);
     })();
 
     return () => {
       cancelled = true;
-      syncSpaceChromeAccentToRoot(null);
     };
   }, [bannerSrc, logoSrc, setPortalStyles]);
 

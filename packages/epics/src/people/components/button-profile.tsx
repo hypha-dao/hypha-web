@@ -188,7 +188,8 @@ export const ButtonProfile = ({
                 <button
                   type="button"
                   className={cn(
-                    /* overflow-hidden + radius match avatar: avoids ring/border anti-alias blur on the image */
+                    /* Match LanguageSelect trigger: h-10 toolbar row, square hit target */
+                    'box-border flex h-10 min-h-10 w-10 min-w-10 shrink-0 items-center justify-center',
                     'isolate overflow-hidden rounded-md border border-neutral-9 bg-neutral-1 p-0 text-neutral-12 outline-none',
                     'shadow-sm transition-colors duration-150',
                     'hover:border-neutral-11 hover:text-foreground',
@@ -203,7 +204,7 @@ export const ButtonProfile = ({
                     avatarSrc={person?.avatarUrl}
                     userName={person?.nickname}
                     shape="rounded"
-                    className="ring-0"
+                    className="h-full w-full rounded-md ring-0"
                   />
                 </button>
               </DropdownMenuTrigger>

@@ -4,7 +4,6 @@ import { Check, Globe } from 'lucide-react';
 
 import { cn } from '@hypha-platform/ui-utils';
 
-import { Button } from './button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +24,16 @@ type LanguageSelectProps = {
   ariaLabel?: string;
 };
 
+/** Toolbar trigger: matches profile avatar button (rounded-md, neutral border, h-10, no ring hover blur). */
+const languageTriggerClassName = cn(
+  'box-border flex h-10 min-h-10 shrink-0 cursor-pointer items-center gap-1.5 px-3',
+  'isolate overflow-hidden rounded-md border border-neutral-9 bg-neutral-1 text-neutral-12 outline-none',
+  'text-xs font-semibold shadow-sm transition-colors duration-150',
+  'hover:border-neutral-11 hover:text-foreground',
+  'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+  'data-[state=open]:border-neutral-11 data-[state=open]:shadow-md',
+);
+
 export function LanguageSelect({
   currentLocale,
   locales,
@@ -36,21 +45,19 @@ export function LanguageSelect({
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          colorVariant="neutral"
-          size="default"
+        <button
+          type="button"
           aria-label={ariaLabel}
           aria-haspopup="menu"
           data-language-select-trigger
-          className="h-10 min-h-10 gap-1.5 px-3 py-0"
+          className={languageTriggerClassName}
         >
           <Globe className="size-4 shrink-0" aria-hidden />
           <span className="sr-only">{currentMeta?.label ?? currentLocale}</span>
-          <span className="text-xs font-semibold tabular-nums" aria-hidden>
+          <span className="tabular-nums" aria-hidden>
             {currentMeta?.shortLabel ?? currentLocale.toUpperCase()}
           </span>
-        </Button>
+        </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
