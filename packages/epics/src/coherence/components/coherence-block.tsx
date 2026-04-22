@@ -20,6 +20,7 @@ type CoherenceBlockProps = {
   spaceSlug: string;
   order?: CoherenceOrder;
   humanChatEnabled?: boolean;
+  spaceMemoryEnabled?: boolean;
 };
 
 export function CoherenceBlock({
@@ -27,6 +28,7 @@ export function CoherenceBlock({
   spaceSlug,
   order,
   humanChatEnabled = false,
+  spaceMemoryEnabled = false,
 }: CoherenceBlockProps) {
   const t = useTranslations('CoherenceTab');
   const [hideArchived, setHideArchived] = React.useState(true);
@@ -81,7 +83,9 @@ export function CoherenceBlock({
             refresh={refresh}
             onSignalClick={onSignalClick}
           />
-          <SpaceMemorySection spaceSlug={spaceSlug} />
+          {spaceMemoryEnabled ? (
+            <SpaceMemorySection spaceSlug={spaceSlug} />
+          ) : null}
         </>
       ) : (
         <Empty>
