@@ -158,7 +158,8 @@ export default async function DhoLayout({
                       {web3SpaceId !== undefined && (
                         <SubscriptionBadge
                           web3SpaceId={web3SpaceId}
-                          className="rounded-md border-accent-8! bg-transparent text-white hover:border-accent-9! hover:bg-white/10"
+                          onHeroBackground
+                          className="rounded-md"
                         />
                       )}
                       <SpaceModeLabel
