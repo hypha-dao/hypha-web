@@ -660,10 +660,21 @@ export const baseSchemaIssueNewToken = z.object({
   creditWhitelistedSpaceIds: z.array(z.number().int().nonnegative()).optional(),
   /**
    * Plugin-populated list of selectable spaces, used to resolve `transferWhitelist`
-   * space rows → web3 space ids in the orchestrator. Not persisted to the agreement
-   * payload directly; treated as opaque to keep this schema decoupled from `Space`.
+   * space rows → web3 space ids in the orchestrator. Validates the minimal shape
+   * the orchestrator actually reads (`address`, `web3SpaceId`) so primitives/null
+   * items can't slip through and crash `splitWhitelistFormToTargets`. Other
+   * `Space` fields are passed through opaquely.
    */
-  spacesForWhitelistResolution: z.array(z.unknown()).optional(),
+  spacesForWhitelistResolution: z
+    .array(
+      z
+        .object({
+          address: z.string().nullable().optional(),
+          web3SpaceId: z.number().int().nullable().optional(),
+        })
+        .passthrough(),
+    )
+    .optional(),
 });
 
 export const schemaIssueNewToken = baseSchemaIssueNewToken.superRefine(

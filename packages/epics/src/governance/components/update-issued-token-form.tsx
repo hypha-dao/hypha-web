@@ -167,7 +167,16 @@ export function buildFullSchemaUpdateIssuedToken(
       whitelistBaselineFromSpaceIds: z.array(z.number()).optional(),
       whitelistBaselineToSpaceIds: z.array(z.number()).optional(),
       /** Passed from plugin for resolving space rows → web3 ids in orchestrator */
-      spacesForWhitelistResolution: z.array(z.unknown()).optional(),
+      spacesForWhitelistResolution: z
+        .array(
+          z
+            .object({
+              address: z.string().nullable().optional(),
+              web3SpaceId: z.number().int().nullable().optional(),
+            })
+            .passthrough(),
+        )
+        .optional(),
       /** On-chain mutual credit baseline at form load — used for add/remove diffing */
       creditBaselineDefaultLimit: z.number().optional(),
       creditBaselineWhitelistedSpaceIds: z.array(z.number()).optional(),

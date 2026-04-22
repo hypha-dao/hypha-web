@@ -290,6 +290,53 @@ export const useCreateIssueTokenOrchestrator = ({
             receiveTargets.spaceIds;
 
           /**
+           * Guard against `splitWhitelistFormToTargets` silently dropping space
+           * rows whose address can't be resolved to a `web3SpaceId` via
+           * `spacesForResolution`. If the user picked space rows but none
+           * resolved, deploying with `useTransferWhitelist`/`useReceiveWhitelist`
+           * enabled and empty `initial(Transfer|Receive)WhitelistSpaceIds` would
+           * brick transfers on the new token.
+           */
+          const countRequestedSpaceRows = (
+            entries:
+              | Array<{ type: 'member' | 'space'; address: string }>
+              | undefined,
+          ): number =>
+            entries?.filter(
+              (e) => e.type === 'space' && e.address?.startsWith('0x'),
+            ).length ?? 0;
+          const requestedTransferSpaceRows = countRequestedSpaceRows(
+            arg.transferWhitelist?.from,
+          );
+          const requestedReceiveSpaceRows = countRequestedSpaceRows(
+            arg.transferWhitelist?.to,
+          );
+          if (
+            useTransferWhitelist &&
+            initialTransferWhitelistSpaceIds.length < requestedTransferSpaceRows
+          ) {
+            throw new Error(
+              `Cannot enable transfer whitelist: ${
+                requestedTransferSpaceRows -
+                initialTransferWhitelistSpaceIds.length
+              } selected space(s) could not be resolved to a web3 space id. ` +
+                `Refresh the spaces list and retry.`,
+            );
+          }
+          if (
+            useReceiveWhitelist &&
+            initialReceiveWhitelistSpaceIds.length < requestedReceiveSpaceRows
+          ) {
+            throw new Error(
+              `Cannot enable receive whitelist: ${
+                requestedReceiveSpaceRows -
+                initialReceiveWhitelistSpaceIds.length
+              } selected space(s) could not be resolved to a web3 space id. ` +
+                `Refresh the spaces list and retry.`,
+            );
+          }
+
+          /**
            * Mutual credit only applies to RegularSpaceToken types — voice/ownership
            * factories don't accept these args. Toggle off for non-regular tokens.
            */
