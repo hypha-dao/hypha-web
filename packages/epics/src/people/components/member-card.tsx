@@ -204,7 +204,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
       {localIsDelegate && (
         <div>
           <span className="text-1 text-neutral-11 font-medium">
-            Delegated Voting Member
+            {tCommon('delegatedVotingMemberLabel')}
           </span>
         </div>
       )}
