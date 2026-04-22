@@ -6,7 +6,7 @@ import {
   useChangeSpaceTransparencySettingsOrchestrator,
   useJwt,
 } from '@hypha-platform/core/client';
-import { LoadingBackdrop } from '@hypha-platform/ui/server';
+import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Button, Form } from '@hypha-platform/ui';
@@ -138,7 +138,7 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
   };
 
   return (
-    <LoadingBackdrop
+    <SpaceLoadingBackdrop
       showKeepWindowOpenMessage={true}
       keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       fullHeight={true}
@@ -184,6 +184,6 @@ export const CreateProposalChangeSpaceTransparencySettingsForm = ({
           </div>
         </form>
       </Form>
-    </LoadingBackdrop>
+    </SpaceLoadingBackdrop>
   );
 };

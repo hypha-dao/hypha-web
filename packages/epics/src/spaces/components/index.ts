@@ -1,4 +1,7 @@
 export * from './activate-proposals-banner';
+export * from './compact-space-banner';
+export * from './space-accent-from-images';
+export * from './space-accent-portal-context';
 export * from './category-search';
 export * from './category-spaces';
 export * from './create-space-form';
@@ -32,3 +35,4 @@ export * from './space-discoverability-field';
 export * from './space-activity-access-field';
 export * from './space-access-denied';
 export * from './space-tab-access-wrapper';
+export * from './space-loading-backdrop';

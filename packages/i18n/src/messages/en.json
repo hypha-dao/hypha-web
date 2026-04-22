@@ -2,11 +2,14 @@
   "Common": {
     "Assignments": "Assignments",
     "Members": "Members",
+    "memberRoleLabel": "Member",
+    "delegatedVotingMemberLabel": "Delegated voting member",
     "Treasury": "Treasury",
     "Agreements": "Agreements",
     "Spaces": "Spaces",
     "loadMore": "Load more",
     "noMore": "No more",
+    "spaceBannerDescriptionAria": "Description of {title}",
     "createdOn": "Created on {date}",
     "acceptedOn": "Accepted on {date}",
     "rejectedOn": "Rejected on {date}",
@@ -1003,7 +1006,9 @@
       }
     },
     "loadingBackdrop": {
-      "keepWindowOpen": "Keep this window open until we're finished."
+      "keepWindowOpen": "Keep this window open until we're finished.",
+      "errorTitle": "Something went wrong",
+      "resetButton": "Reset"
     },
     "spaceTokenPurchaseProgress": {
       "CREATE_WEB2_AGREEMENT": "Creating agreement...",

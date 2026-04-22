@@ -38,6 +38,7 @@ import { ConnectedLanguageSelect } from '@web/components/connected-language-sele
 import { getShowLanguageSelect } from '@hypha-platform/feature-flags';
 import ScrollUp from '@web/components/scroll-up';
 import SeamlessScrollPolyfill from '@web/components/seamless-scroll-polyfill';
+import { ThemeStorageNormalize } from '@web/components/theme-storage-normalize';
 import '@web/utils/initialize-proxy';
 
 const lato = Lato({
@@ -120,10 +121,12 @@ export default async function RootLayout({
       >
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="dark"
+          enableSystem={false}
+          storageKey="theme"
           disableTransitionOnChange
         >
+          <ThemeStorageNormalize />
           <EvmProvider>
             <NextIntlClientProvider messages={messages}>
               <TooltipProvider>
@@ -187,7 +190,7 @@ export default async function RootLayout({
                           routerConfig={extractRouterConfig(fileRouter)}
                         />
                         <div className="mb-auto pb-8">
-                          <div className="pt-9 h-full flex justify-normal">
+                          <div className="flex h-full justify-normal pt-4 md:pt-5">
                             <div className="w-full h-full">{children}</div>
                           </div>
                         </div>

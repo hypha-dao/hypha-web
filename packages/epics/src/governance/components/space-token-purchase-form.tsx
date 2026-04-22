@@ -12,7 +12,7 @@ import {
 import { z } from 'zod';
 import { Button, Form, Separator } from '@hypha-platform/ui';
 import React from 'react';
-import { LoadingBackdrop } from '@hypha-platform/ui/server';
+import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
@@ -127,7 +127,7 @@ export const SpaceTokenPurchaseForm = ({
   };
 
   return (
-    <LoadingBackdrop
+    <SpaceLoadingBackdrop
       showKeepWindowOpenMessage={true}
       keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       fullHeight={true}
@@ -184,6 +184,6 @@ export const SpaceTokenPurchaseForm = ({
           </div>
         </form>
       </Form>
-    </LoadingBackdrop>
+    </SpaceLoadingBackdrop>
   );
 };

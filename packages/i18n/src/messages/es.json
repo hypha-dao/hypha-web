@@ -1,11 +1,14 @@
 {
   "Common": {
     "createdOn": "Creado el {date}",
+    "spaceBannerDescriptionAria": "Descripción de {title}",
     "acceptedOn": "Aceptado el {date}",
     "rejectedOn": "Rechazado el {date}",
     "joinedSpaceOn": "Se unió al espacio el {date}",
     "Assignments": "Asignaciones",
     "Members": "Miembros",
+    "memberRoleLabel": "Miembro",
+    "delegatedVotingMemberLabel": "Miembro con voto delegado",
     "Treasury": "Tesorería",
     "Agreements": "Acuerdos",
     "Spaces": "Espacios",
@@ -682,7 +685,9 @@
       }
     },
     "loadingBackdrop": {
-      "keepWindowOpen": "Mantén esta ventana abierta hasta que terminemos."
+      "keepWindowOpen": "Mantén esta ventana abierta hasta que terminemos.",
+      "errorTitle": "Algo salió mal",
+      "resetButton": "Restablecer"
     },
     "spaceTokenPurchaseProgress": {
       "CREATE_WEB2_AGREEMENT": "Creando acuerdo...",

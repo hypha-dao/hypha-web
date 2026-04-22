@@ -11,7 +11,8 @@ import {
   useSpaceDetailsWeb3Rpc,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
-import { LoadingBackdrop, Form, Separator, Button } from '@hypha-platform/ui';
+import { Form, Separator, Button } from '@hypha-platform/ui';
+import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useConfig } from 'wagmi';
 import { useParams } from 'next/navigation';
@@ -163,7 +164,7 @@ export const ActivateSpacesFormSpace = ({
   };
 
   return (
-    <LoadingBackdrop
+    <SpaceLoadingBackdrop
       showKeepWindowOpenMessage={true}
       keepWindowOpenMessage={tAgreementFlow('loadingBackdrop.keepWindowOpen')}
       fullHeight={true}
@@ -253,6 +254,6 @@ export const ActivateSpacesFormSpace = ({
           </div>
         </form>
       </Form>
-    </LoadingBackdrop>
+    </SpaceLoadingBackdrop>
   );
 };

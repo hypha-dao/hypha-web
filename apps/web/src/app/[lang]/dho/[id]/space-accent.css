@@ -1,0 +1,20 @@
+/**
+ * Space-scoped accent from imagery (--space-* set by SpaceAccentFromImages).
+ * Keeps global theme intact; only descendants of [data-space-accent-scope] use these hooks.
+ */
+[data-space-accent-scope] {
+  --space-tab-active-border: var(--space-accent, #3b82f6);
+}
+
+[data-space-accent-scope] .tabs-root [data-state='active'] {
+  border-bottom-color: var(--space-tab-active-border) !important;
+  color: var(--color-accent-11, #4a65d8) !important;
+}
+
+[data-space-accent-scope] [data-space-nav] {
+  color: var(--color-accent-11, #4a65d8);
+}
+
+[data-space-accent-scope] [data-space-nav]:hover {
+  opacity: 0.92;
+}

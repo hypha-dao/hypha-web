@@ -11,12 +11,12 @@ import {
   FormLabel,
   FormMessage,
   Input,
-  LoadingBackdrop,
   LucideReactIcon,
   MultiSelect,
   RequirementMark,
   RichTextEditor,
 } from '@hypha-platform/ui';
+import { SpaceLoadingBackdrop } from '../../spaces/components/space-loading-backdrop';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import {
@@ -220,7 +220,7 @@ export const CreateSignalForm = ({
   };
 
   return (
-    <LoadingBackdrop
+    <SpaceLoadingBackdrop
       showKeepWindowOpenMessage={true}
       progress={progress}
       isLoading={isCreatingCoherence}
@@ -403,6 +403,6 @@ export const CreateSignalForm = ({
           </div>
         </form>
       </Form>
-    </LoadingBackdrop>
+    </SpaceLoadingBackdrop>
   );
 };
