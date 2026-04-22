@@ -1,5 +1,7 @@
 'use client';
 
+import type { ReactNode } from 'react';
+
 import {
   Button,
   DropdownMenu,
@@ -42,6 +44,8 @@ export type ButtonProfileProps = {
   navItems: ButtonNavItemProps[];
   person?: Person;
   resolvedTheme?: string;
+  /** Rendered after main nav links and before the profile avatar (desktop) or profile actions (mobile). */
+  trailingBeforeProfile?: ReactNode;
 };
 
 const menuItemClass =
@@ -59,6 +63,7 @@ export const ButtonProfile = ({
   navItems,
   onChangeThemeMode,
   resolvedTheme,
+  trailingBeforeProfile,
 }: ButtonProfileProps) => {
   const t = useTranslations('Navigation');
   const pathname = usePathname();
@@ -117,6 +122,12 @@ export const ButtonProfile = ({
               />
             ))}
 
+            {trailingBeforeProfile ? (
+              <div className="flex w-full justify-center">
+                {trailingBeforeProfile}
+              </div>
+            ) : null}
+
             {profileUrl && (
               <ButtonNavItem href={profileUrl} label={t('myProfile')} />
             )}
@@ -167,6 +178,7 @@ export const ButtonProfile = ({
                 />
               ))}
             </div>
+            {trailingBeforeProfile}
             <DropdownMenu
               open={profileMenuOpen}
               onOpenChange={setProfileMenuOpen}
@@ -342,6 +354,7 @@ export const ButtonProfile = ({
               label={item.label}
             />
           ))}
+          {trailingBeforeProfile}
           <Button onClick={onLogin}>{t('signIn')}</Button>
           <Button
             className="hidden md:flex"

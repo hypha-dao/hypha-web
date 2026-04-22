@@ -4,7 +4,7 @@ import { ButtonProfile } from './button-profile';
 import { useRouter, useParams, usePathname } from 'next/navigation';
 import { UseAuthentication } from '@hypha-platform/authentication';
 import { UseMe } from '../hooks/types';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, type ReactNode } from 'react';
 import { ButtonNavItemProps } from '@hypha-platform/ui';
 import { useTheme } from 'next-themes';
 type ConnectedButtonProfileProps = {
@@ -13,6 +13,7 @@ type ConnectedButtonProfileProps = {
   newUserRedirectPath: string;
   baseRedirectPath: string;
   navItems: ButtonNavItemProps[];
+  trailingBeforeProfile?: ReactNode;
 };
 
 type ErrorUser = {
@@ -29,6 +30,7 @@ export const ConnectedButtonProfile = ({
   newUserRedirectPath,
   baseRedirectPath,
   navItems,
+  trailingBeforeProfile,
 }: ConnectedButtonProfileProps) => {
   const {
     isAuthenticated,
@@ -121,6 +123,7 @@ export const ConnectedButtonProfile = ({
       }
       notificationCentrePath={notificationCentrePath}
       navItems={navItems}
+      trailingBeforeProfile={trailingBeforeProfile}
     />
   );
 };
