@@ -73,25 +73,6 @@
     "panelAccessibleName": "Panel de Hypha",
     "proposalVoters": "Votantes"
   },
-  "ModalAside": {
-    "spaceSettings": "Configuración del espacio",
-    "createProposal": "Crear una propuesta",
-    "activateSpace": "Activar espacio",
-    "spaceNavigation": "Navegación del espacio",
-    "profileActions": "Acciones",
-    "transferFunds": "Transferir fondos",
-    "redeemTokens": "Canjear tokens",
-    "buyHyphaTokens": "Comprar tokens Hypha (recompensas)",
-    "buySpaceTokens": "Comprar tokens del espacio",
-    "activateSpacesProfile": "Activar espacio(s)",
-    "notificationCentre": "Centro de notificaciones",
-    "editProfile": "Editar perfil",
-    "createAccount": "Crear cuenta",
-    "createSpace": "Crear espacio",
-    "addSpace": "Añadir espacio",
-    "configureSpace": "Configurar espacio",
-    "panelAccessibleName": "Panel de Hypha"
-  },
   "AgreementFlow": {
     "proposalErrors": {
       "recipientRequired": "Agrega un destinatario o una dirección de cartera",
