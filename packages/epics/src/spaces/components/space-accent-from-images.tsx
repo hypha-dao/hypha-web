@@ -15,6 +15,48 @@ import {
 import { defaultSpacePortalStyles } from '../utils/space-accent-portal-styles';
 import { useSetSpaceAccentPortalStyles } from './space-accent-portal-context';
 
+/** Keys mirrored to `document.documentElement` so portaled UI (e.g. Human Chat) uses space accent. */
+const DOCUMENT_ACCENT_MIRROR_PREFIXES = [
+  '--color-accent',
+  '--space-accent',
+] as const;
+const DOCUMENT_ACCENT_MIRROR_EXACT = new Set(['--space-tab-active-border']);
+
+function shouldMirrorAccentKey(key: string): boolean {
+  if (DOCUMENT_ACCENT_MIRROR_EXACT.has(key)) return true;
+  return DOCUMENT_ACCENT_MIRROR_PREFIXES.some((p) => key.startsWith(p));
+}
+
+function mirrorSpaceAccentVarsToDocument(
+  style: Record<string, string | number | undefined>,
+  mirroredKeysRef: React.MutableRefObject<string[]>,
+): void {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  for (const key of mirroredKeysRef.current) {
+    root.style.removeProperty(key);
+  }
+  const next: string[] = [];
+  for (const [k, v] of Object.entries(style)) {
+    if (v === undefined || v === null) continue;
+    if (!shouldMirrorAccentKey(k)) continue;
+    root.style.setProperty(k, String(v));
+    next.push(k);
+  }
+  mirroredKeysRef.current = next;
+}
+
+function clearDocumentAccentMirror(
+  mirroredKeysRef: React.MutableRefObject<string[]>,
+): void {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  for (const key of mirroredKeysRef.current) {
+    root.style.removeProperty(key);
+  }
+  mirroredKeysRef.current = [];
+}
+
 export type SpaceAccentFromImagesProps = {
   bannerSrc: string;
   logoSrc: string;
@@ -132,6 +174,7 @@ export function SpaceAccentFromImages({
 }: SpaceAccentFromImagesProps) {
   const ref = React.useRef<HTMLDivElement>(null);
   const setPortalStyles = useSetSpaceAccentPortalStyles();
+  const documentMirroredKeysRef = React.useRef<string[]>([]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -150,6 +193,10 @@ export function SpaceAccentFromImages({
       }
     }
     setPortalStyles?.(defaultSpacePortalStyles);
+    mirrorSpaceAccentVarsToDocument(
+      DEFAULT_SPACE_SCOPE_STYLE as Record<string, string | number | undefined>,
+      documentMirroredKeysRef,
+    );
 
     (async () => {
       const [bannerAccent, logoAccent, overlayRecord] = await Promise.all([
@@ -180,10 +227,15 @@ export function SpaceAccentFromImages({
       }
 
       setPortalStyles?.(scopeStyle);
+      mirrorSpaceAccentVarsToDocument(
+        scopeStyle as Record<string, string | number | undefined>,
+        documentMirroredKeysRef,
+      );
     })();
 
     return () => {
       cancelled = true;
+      clearDocumentAccentMirror(documentMirroredKeysRef);
     };
   }, [bannerSrc, logoSrc, setPortalStyles]);
 
