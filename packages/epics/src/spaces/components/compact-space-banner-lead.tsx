@@ -89,7 +89,11 @@ export function CompactSpaceBannerLead({ src }: Props) {
             sizes="(max-width: 1280px) 100vw, min(1280px, 100vw)"
             className={cn(
               'object-cover object-center transition-opacity duration-500 ease-out',
-              imageFailed || ready ? 'opacity-100' : 'opacity-0',
+              imageFailed
+                ? 'pointer-events-none opacity-0'
+                : ready
+                ? 'opacity-100'
+                : 'opacity-0',
             )}
             onLoad={() => setReady(true)}
             onError={() => {
