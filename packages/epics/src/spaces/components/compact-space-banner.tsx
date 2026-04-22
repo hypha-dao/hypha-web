@@ -272,7 +272,7 @@ export function CompactSpaceBanner({
             </div>
 
             {footerTrailing ? (
-              <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end [&_.rounded-lg]:rounded-md [&_a]:inline-flex [&_a]:items-center [&_button]:rounded-md [&_div]:inline-flex [&_div]:items-center">
+              <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end [&_a]:inline-flex [&_a]:items-center [&_div]:inline-flex [&_div]:items-center">
                 {footerTrailing}
               </div>
             ) : null}
