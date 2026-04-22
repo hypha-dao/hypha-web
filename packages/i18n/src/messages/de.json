@@ -82,7 +82,7 @@
     "notificationCentre": "Benachrichtigungszentrale",
     "switchToLightMode": "Zum hellen Modus wechseln",
     "switchToDarkMode": "Zum dunklen Modus wechseln",
-    "updateMfa": "Fondschutz aktualisieren (MFA)",
+    "updateMfa": "Fondsschutz aktualisieren (MFA)",
     "protectMfa": "Fonds schützen (MFA)",
     "logout": "Abmelden",
     "viewProfile": "Profil anzeigen",
@@ -91,7 +91,7 @@
     "getStarted": "Loslegen"
   },
   "NotificationCentre": {
-    "title": "Benachrichtigungszentrum",
+    "title": "Benachrichtigungszentrale",
     "loading": {
       "keepWindowOpen": "Lassen Sie dieses Fenster geöffnet, bis wir fertig sind."
     },
