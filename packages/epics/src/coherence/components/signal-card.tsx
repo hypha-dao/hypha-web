@@ -225,7 +225,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                   if (!open) setDeleteError(null);
                 }}
               >
-                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                <AlertDialogContent
+                  overlayClassName="bg-black/75 backdrop-blur-sm supports-[backdrop-filter]:bg-black/65"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <AlertDialogHeader>
                     <AlertDialogTitle>
                       {tSignalCard('deleteSignal')}

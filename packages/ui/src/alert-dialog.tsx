@@ -15,6 +15,10 @@ const AlertDialogPortal = AlertDialogPrimitive.Portal;
 const ALERT_DIALOG_VIEWPORT_INSET =
   'top-0 bottom-0 left-[var(--sidebar-left-width,0px)] right-[var(--sidebar-right-width,0px)]';
 
+/** Default: lighter scrim (~45–50%) + blur; pass `className` for destructive / emphasis. */
+const ALERT_DIALOG_OVERLAY_DEFAULT =
+  'bg-black/45 backdrop-blur-md supports-[backdrop-filter]:bg-black/35';
+
 const AlertDialogOverlay = React.forwardRef<
   React.ComponentRef<typeof AlertDialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Overlay>
@@ -23,21 +27,28 @@ const AlertDialogOverlay = React.forwardRef<
     className={cn(
       'fixed z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
       ALERT_DIALOG_VIEWPORT_INSET,
+      ALERT_DIALOG_OVERLAY_DEFAULT,
       className,
     )}
-    style={{ backdropFilter: 'blur(3px)' }}
     {...props}
     ref={ref}
   />
 ));
 AlertDialogOverlay.displayName = AlertDialogPrimitive.Overlay.displayName;
 
+export type AlertDialogContentProps = React.ComponentPropsWithoutRef<
+  typeof AlertDialogPrimitive.Content
+> & {
+  /** Merged into the bundled overlay (e.g. heavier scrim for destructive flows). */
+  overlayClassName?: string;
+};
+
 const AlertDialogContent = React.forwardRef<
   React.ComponentRef<typeof AlertDialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content>
->(({ className, ...props }, ref) => (
+  AlertDialogContentProps
+>(({ className, overlayClassName, ...props }, ref) => (
   <AlertDialogPortal>
-    <AlertDialogOverlay />
+    <AlertDialogOverlay className={overlayClassName} />
     <AlertDialogPrimitive.Content
       ref={ref}
       className={cn(
@@ -138,6 +149,7 @@ export {
   AlertDialogOverlay,
   AlertDialogTrigger,
   AlertDialogContent,
+  type AlertDialogContentProps,
   AlertDialogHeader,
   AlertDialogFooter,
   AlertDialogTitle,

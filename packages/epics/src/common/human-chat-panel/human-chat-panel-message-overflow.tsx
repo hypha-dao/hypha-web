@@ -502,7 +502,7 @@ export function HumanChatPanelMessageOverflow({
           }
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent overlayClassName="bg-black/75 backdrop-blur-sm supports-[backdrop-filter]:bg-black/65">
           <AlertDialogHeader>
             <AlertDialogTitle>
               {t('contextDeleteConfirmTitle')}

@@ -17,6 +17,10 @@ const DialogClose = DialogPrimitive.Close;
 const DIALOG_VIEWPORT_INSET =
   'top-0 bottom-0 left-[var(--sidebar-left-width,0px)] right-[var(--sidebar-right-width,0px)]';
 
+/** Default: lighter scrim + blur; pass `className` on `DialogOverlay` or `overlayClassName` on `DialogContent` for emphasis. */
+const DIALOG_OVERLAY_DEFAULT =
+  'bg-black/45 backdrop-blur-md supports-[backdrop-filter]:bg-black/35';
+
 const DialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
@@ -24,8 +28,9 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      'fixed z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+      'fixed z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
       DIALOG_VIEWPORT_INSET,
+      DIALOG_OVERLAY_DEFAULT,
       className,
     )}
     {...props}

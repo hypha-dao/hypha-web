@@ -62,8 +62,9 @@ type ProposalOverlayShellProps = {
  *
  * Plain scrim: we still render the scrim `div` ourselves (aligned with MenuTop).
  *
- * **MenuTop:** scrim/host are clipped to `top: var(--menu-top-height)` and use
- * `z-20` / `z-[21]` so the nav (`z-30`) stays clickable.
+ * **MenuTop:** `layout.tsx` uses `z-30` for the nav strip. Scrim and host sit above it
+ * (`z-40` / `z-[41]`) so the overlay dims the full main column including space chrome;
+ * side panels use higher z and remain on top where applicable.
  */
 export function ProposalOverlayShell({
   children,
@@ -105,7 +106,7 @@ export function ProposalOverlayShell({
           {/* Plain scrim below MenuTop (z-30); starts under --menu-top-height */}
           <div
             className={cn(
-              'fixed bottom-0 z-20 hidden bg-black/50 backdrop-blur-xl supports-[backdrop-filter]:bg-black/40 md:block',
+              'fixed bottom-0 z-40 hidden bg-black/45 backdrop-blur-md supports-[backdrop-filter]:bg-black/35 md:block',
               'left-[var(--sidebar-left-width,0px)] right-[var(--sidebar-right-width,0px)]',
               'top-[var(--menu-top-height,65px)]',
             )}
@@ -116,9 +117,9 @@ export function ProposalOverlayShell({
             onInteractOutside={(e) => e.preventDefault()}
             onEscapeKeyDown={(e) => e.preventDefault()}
             className={cn(
-              'fixed z-[21] outline-none max-md:inset-auto max-md:bottom-0 max-md:left-[var(--sidebar-left-width,0px)] max-md:top-[var(--menu-top-height,65px)] max-md:right-[var(--sidebar-right-width,0px)] max-md:h-auto max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:bg-background-2 max-md:shadow-none',
-              // Host fills only below MenuTop; horizontal bounds match main column when panels are open.
-              'md:left-[var(--sidebar-left-width,0px)] md:right-[var(--sidebar-right-width,0px)] md:bottom-0 md:top-[var(--menu-top-height,65px)] md:flex md:items-center md:justify-center md:overflow-hidden md:bg-transparent md:p-4 md:pt-4',
+              'fixed z-[41] outline-none max-md:inset-auto max-md:bottom-0 max-md:left-[var(--sidebar-left-width,0px)] max-md:top-[var(--menu-top-height,65px)] max-md:right-[var(--sidebar-right-width,0px)] max-md:h-auto max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:bg-background-2 max-md:shadow-none',
+              // Host fills main column from top of viewport; horizontal bounds match inset when panels are open.
+              'md:left-[var(--sidebar-left-width,0px)] md:right-[var(--sidebar-right-width,0px)] md:bottom-0 md:top-0 md:flex md:items-center md:justify-center md:overflow-hidden md:bg-transparent md:p-4 md:pt-[max(1rem,var(--menu-top-height,65px))]',
             )}
           >
             <DialogPrimitive.Title className="sr-only">
