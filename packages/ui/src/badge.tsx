@@ -152,7 +152,7 @@ const badgeVariants = cva(
         variant: 'outline',
         colorVariant: 'neutral',
         className:
-          'border-neutral-8 text-neutral-11 hover:border-neutral-10 hover:text-foreground hover:ring-neutral-10/65',
+          'border-neutral-8 text-neutral-11 hover:border-neutral-10 hover:text-foreground hover:ring-neutral-10/70',
       },
       // Surface variants
       {
