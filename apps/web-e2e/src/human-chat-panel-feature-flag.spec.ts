@@ -47,13 +47,12 @@ test.describe('Human Chat Panel — default (enabled)', () => {
 });
 
 test.describe('Human Chat Panel — kill switch (disabled)', () => {
-  test.beforeEach(async ({ context }) => {
+  test.beforeEach(async ({ context, baseURL }) => {
     await context.addCookies([
       {
         name: 'HYPHA_DISABLE_HUMAN_CHAT',
         value: 'true',
-        domain: new URL(process.env.BASE_URL || 'http://127.0.0.1:4200')
-          .hostname,
+        domain: new URL(baseURL ?? 'http://127.0.0.1:3000').hostname,
         path: '/',
       },
     ]);
