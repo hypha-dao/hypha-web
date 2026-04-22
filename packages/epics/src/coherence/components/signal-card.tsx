@@ -182,8 +182,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       return true;
     } catch (error) {
       console.warn('Could not delete signal:', error);
-      const msg = error instanceof Error ? error.message : String(error);
-      setDeleteError(msg || tSignalCard('deleteFailed'));
+      setDeleteError(tSignalCard('deleteFailed'));
       return false;
     }
   }, [slug, deleteCoherenceBySlug, refresh, tSignalCard]);
