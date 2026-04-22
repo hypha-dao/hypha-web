@@ -78,11 +78,11 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
         )}
       </AlertDialogTrigger>
       <AlertDialogContent>
-        <AlertDialogTitle className="m-0 text-[17px] font-medium text-mauve12 text-card-foreground">
+        <AlertDialogTitle className="m-0 text-lg font-medium text-card-foreground">
           {title}
         </AlertDialogTitle>
         <AlertDialogDescription>{description}</AlertDialogDescription>
-        <div className="flex justify-end gap-[25px]">
+        <div className="flex justify-end gap-6">
           <AlertDialogCancel asChild>
             <Button
               variant="outline"
