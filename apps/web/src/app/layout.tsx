@@ -128,7 +128,7 @@ export default async function RootLayout({
         >
           <ThemeStorageNormalize />
           <EvmProvider>
-            <NextIntlClientProvider messages={messages}>
+            <NextIntlClientProvider locale={locale} messages={messages}>
               <TooltipProvider>
                 <NotificationSubscriber
                   appId={notificationAppId}
