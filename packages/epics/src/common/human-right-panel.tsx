@@ -1628,7 +1628,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           notificationCentreHref={notificationCentreHref}
         />
       </SidebarHeader>
-      <SidebarContent className="flex min-h-0 flex-col bg-background-2">
+      {/* overflow-hidden: single scroll inside tab bodies (messages / members / mentions); avoids stacked full-height scrollbars */}
+      <SidebarContent className="flex min-h-0 flex-col overflow-hidden bg-background-2">
         {activeTab === 'chat' && (
           <div
             className="flex min-h-0 flex-1 flex-col"
@@ -1708,11 +1709,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             role="tabpanel"
             id="chat-tabpanel-members"
           >
-            <HumanChatPanelMembers
-              useMembers={useMembers}
-              spaceSlug={spaceSlug}
-              roomId={roomId}
-            />
+            <div className="narrow-scrollbar min-h-0 flex-1 overflow-y-auto">
+              <HumanChatPanelMembers
+                useMembers={useMembers}
+                spaceSlug={spaceSlug}
+                roomId={roomId}
+              />
+            </div>
           </div>
         )}
         {activeTab === 'mentions' && (
