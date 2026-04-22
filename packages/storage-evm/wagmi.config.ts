@@ -28,6 +28,7 @@ export default defineConfig({
         'VotingPowerDelegationImplementation.sol/**',
         'EnergyDistributionImplementation.sol/**',
         'TransferHelper.sol/**',
+        'TokenBackingVaultImplementation.sol/**',
       ],
       deployments: {
         DAOSpaceFactoryImplementation: {
@@ -80,6 +81,9 @@ export default defineConfig({
         },
         TransferHelper: {
           [base.id]: '0x479002F7602579203ffba3eE84ACC1BC5b0d6785',
+        },
+        TokenBackingVaultImplementation: {
+          [base.id]: '0x9997C22f06F0aC67dF07C8Cb2A08562C53dD4E9f',
         },
       },
     }),

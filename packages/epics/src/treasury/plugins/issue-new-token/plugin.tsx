@@ -65,6 +65,19 @@ export const IssueNewTokenPlugin = ({
 
   const skipResubmitSideEffects = () => resubmitHydrationRef.current;
 
+  /**
+   * Mirror the spaces list into a hidden field so the orchestrator can resolve
+   * space rows in `transferWhitelist.from/to` → web3 space ids and feed them
+   * into the new factory `initial(Transfer|Receive)WhitelistSpaceIds` args.
+   */
+  useEffect(() => {
+    if (!spaces || spaces.length === 0) return;
+    setValue('spacesForWhitelistResolution', spaces, {
+      shouldDirty: false,
+      shouldValidate: false,
+    });
+  }, [spaces, setValue]);
+
   const enableLimitedSupply = watch('enableLimitedSupply') ?? false;
   const setEnableLimitedSupply = (value: boolean) => {
     setValue('enableLimitedSupply', value, {

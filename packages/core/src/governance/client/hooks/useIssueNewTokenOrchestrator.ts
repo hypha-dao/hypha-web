@@ -20,6 +20,8 @@ import { updateTokenAction } from '../../server/actions';
 import { ReferenceCurrency } from '../../types';
 import { getPriceCurrencyFeed } from '../../../common/web3/token-backing-vault';
 import type { TokenType } from '../../../common';
+import type { Space } from '../../../space/types';
+import { splitWhitelistFormToTargets } from './whitelist-address-diff';
 
 type TaskName =
   | 'CREATE_WEB2_AGREEMENT'
@@ -133,6 +135,12 @@ type CreateIssueTokenArg = z.infer<typeof schemaCreateAgreementWeb2> & {
   enableMutualCredit?: boolean;
   defaultCreditLimit?: number;
   creditWhitelistedSpaceIds?: number[];
+  /**
+   * Resolves space rows in `transferWhitelist.from/to` → web3 space ids so the
+   * factory `initialTransferWhitelistSpaceIds` / `initialReceiveWhitelistSpaceIds`
+   * args are populated at deploy time.
+   */
+  spacesForWhitelistResolution?: Space[];
 };
 
 export const useCreateIssueTokenOrchestrator = ({
@@ -252,19 +260,81 @@ export const useCreateIssueTokenOrchestrator = ({
               ? true
               : false;
 
-          const initialTransferWhitelist: `0x${string}`[] =
-            useTransferWhitelist && arg.transferWhitelist?.from
-              ? arg.transferWhitelist.from
-                  .map((entry) => entry.address as `0x${string}`)
-                  .filter((addr) => addr && addr.startsWith('0x'))
-              : [];
+          /**
+           * Form rows mix member addresses and space rows; the factory now takes
+           * separate `address[]` (members) and `uint256[]` (space ids) lists, so
+           * we split here using the spaces resolution table provided by the
+           * plugin.
+           */
+          const spacesForResolution = arg.spacesForWhitelistResolution ?? [];
+          const transferTargets = useTransferWhitelist
+            ? splitWhitelistFormToTargets(
+                arg.transferWhitelist?.from,
+                spacesForResolution,
+              )
+            : { memberAddresses: [], spaceIds: [] };
+          const receiveTargets = useReceiveWhitelist
+            ? splitWhitelistFormToTargets(
+                arg.transferWhitelist?.to,
+                spacesForResolution,
+              )
+            : { memberAddresses: [], spaceIds: [] };
 
+          const initialTransferWhitelist: `0x${string}`[] =
+            transferTargets.memberAddresses;
           const initialReceiveWhitelist: `0x${string}`[] =
-            useReceiveWhitelist && arg.transferWhitelist?.to
-              ? arg.transferWhitelist.to
-                  .map((entry) => entry.address as `0x${string}`)
-                  .filter((addr) => addr && addr.startsWith('0x'))
-              : [];
+            receiveTargets.memberAddresses;
+          const initialTransferWhitelistSpaceIds: number[] =
+            transferTargets.spaceIds;
+          const initialReceiveWhitelistSpaceIds: number[] =
+            receiveTargets.spaceIds;
+
+          /**
+           * Guard against `splitWhitelistFormToTargets` silently dropping space
+           * rows whose address can't be resolved to a `web3SpaceId` via
+           * `spacesForResolution`. If the user picked space rows but none
+           * resolved, deploying with `useTransferWhitelist`/`useReceiveWhitelist`
+           * enabled and empty `initial(Transfer|Receive)WhitelistSpaceIds` would
+           * brick transfers on the new token.
+           */
+          const countRequestedSpaceRows = (
+            entries:
+              | Array<{ type: 'member' | 'space'; address: string }>
+              | undefined,
+          ): number =>
+            entries?.filter(
+              (e) => e.type === 'space' && e.address?.startsWith('0x'),
+            ).length ?? 0;
+          const requestedTransferSpaceRows = countRequestedSpaceRows(
+            arg.transferWhitelist?.from,
+          );
+          const requestedReceiveSpaceRows = countRequestedSpaceRows(
+            arg.transferWhitelist?.to,
+          );
+          if (
+            useTransferWhitelist &&
+            initialTransferWhitelistSpaceIds.length < requestedTransferSpaceRows
+          ) {
+            throw new Error(
+              `Cannot enable transfer whitelist: ${
+                requestedTransferSpaceRows -
+                initialTransferWhitelistSpaceIds.length
+              } selected space(s) could not be resolved to a web3 space id. ` +
+                `Refresh the spaces list and retry.`,
+            );
+          }
+          if (
+            useReceiveWhitelist &&
+            initialReceiveWhitelistSpaceIds.length < requestedReceiveSpaceRows
+          ) {
+            throw new Error(
+              `Cannot enable receive whitelist: ${
+                requestedReceiveSpaceRows -
+                initialReceiveWhitelistSpaceIds.length
+              } selected space(s) could not be resolved to a web3 space id. ` +
+                `Refresh the spaces list and retry.`,
+            );
+          }
 
           /**
            * Mutual credit only applies to RegularSpaceToken types — voice/ownership
@@ -327,6 +397,8 @@ export const useCreateIssueTokenOrchestrator = ({
             useReceiveWhitelist,
             initialTransferWhitelist,
             initialReceiveWhitelist,
+            initialTransferWhitelistSpaceIds,
+            initialReceiveWhitelistSpaceIds,
             defaultCreditLimit,
             initialCreditWhitelistSpaceIds: creditWhitelistSpaceIds,
           });

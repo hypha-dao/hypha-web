@@ -27,6 +27,10 @@ interface ProposalTokenItemProps {
   useReceiveWhitelist?: boolean;
   initialTransferWhitelist?: `0x${string}`[];
   initialReceiveWhitelist?: `0x${string}`[];
+  /** Web3 ids of spaces whose members can transfer this token (initial set at deploy). */
+  initialTransferWhitelistSpaceIds?: readonly bigint[];
+  /** Web3 ids of spaces whose members can receive this token (initial set at deploy). */
+  initialReceiveWhitelistSpaceIds?: readonly bigint[];
   decayPercentage?: bigint;
   decayInterval?: bigint;
   /** Mutual credit (RegularSpaceToken). On-chain limit is wei (multiplied by 1e18). */
@@ -144,6 +148,8 @@ export const ProposalTokenItem = ({
   useReceiveWhitelist,
   initialTransferWhitelist,
   initialReceiveWhitelist,
+  initialTransferWhitelistSpaceIds,
+  initialReceiveWhitelistSpaceIds,
   decayPercentage,
   decayInterval,
   defaultCreditLimit,
@@ -186,6 +192,27 @@ export const ProposalTokenItem = ({
    * not-yet-replicated rows, etc.) — see PR #2176 review.
    */
   const creditWhitelistedSpaces = creditWhitelistedIds.map((id) => ({
+    id,
+    space: dbSpacesForCredit.find((s) => Number(s.web3SpaceId ?? 0) === id),
+  }));
+
+  /**
+   * Resolve the new factory `initial(Transfer|Receive)WhitelistSpaceIds` arrays
+   * to DB spaces so the proposal card can show a recognisable badge per space
+   * (mirrors the credit whitelist resolution above). Unresolved ids stay
+   * visible as fallback badges.
+   */
+  const transferWhitelistedSpaceIds = (
+    initialTransferWhitelistSpaceIds ?? []
+  ).map((id) => Number(id));
+  const receiveWhitelistedSpaceIds = (
+    initialReceiveWhitelistSpaceIds ?? []
+  ).map((id) => Number(id));
+  const transferWhitelistedSpaces = transferWhitelistedSpaceIds.map((id) => ({
+    id,
+    space: dbSpacesForCredit.find((s) => Number(s.web3SpaceId ?? 0) === id),
+  }));
+  const receiveWhitelistedSpaces = receiveWhitelistedSpaceIds.map((id) => ({
     id,
     space: dbSpacesForCredit.find((s) => Number(s.web3SpaceId ?? 0) === id),
   }));
@@ -395,35 +422,102 @@ export const ProposalTokenItem = ({
       )}
 
       {((initialTransferWhitelist && initialTransferWhitelist.length > 0) ||
-        (initialReceiveWhitelist && initialReceiveWhitelist.length > 0)) && (
+        (initialReceiveWhitelist && initialReceiveWhitelist.length > 0) ||
+        receiveWhitelistedSpaces.length > 0 ||
+        transferWhitelistedSpaces.length > 0) && (
         <>
           <Separator />
           <div className="flex flex-col gap-4">
-            {initialReceiveWhitelist && initialReceiveWhitelist.length > 0 && (
+            {(initialReceiveWhitelist?.length ?? 0) > 0 ||
+            receiveWhitelistedSpaces.length > 0 ? (
               <div className="flex flex-col gap-4">
                 <div className="text-1 text-neutral-11 font-bold">
                   {tProposalDetails('sections.toWhitelist')}
                 </div>
                 <div className="flex flex-col gap-4">
-                  {initialReceiveWhitelist.map((addr, idx) => (
-                    <WhitelistAddressItem key={idx} address={addr} />
+                  {initialReceiveWhitelist?.map((addr, idx) => (
+                    <WhitelistAddressItem key={`addr-${idx}`} address={addr} />
                   ))}
                 </div>
-              </div>
-            )}
-            {initialTransferWhitelist &&
-              initialTransferWhitelist.length > 0 && (
-                <div className="flex flex-col gap-4">
-                  <div className="text-1 text-neutral-11 font-bold">
-                    {tProposalDetails('sections.fromWhitelist')}
-                  </div>
-                  <div className="flex flex-col gap-4">
-                    {initialTransferWhitelist.map((addr, idx) => (
-                      <WhitelistAddressItem key={idx} address={addr} />
+                {receiveWhitelistedSpaces.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {receiveWhitelistedSpaces.map(({ id, space: s }) => (
+                      <Badge
+                        key={s?.web3SpaceId ?? `unresolved-receive-${id}`}
+                        variant="outline"
+                        className="gap-1.5 py-1 pl-1 pr-2"
+                      >
+                        {s ? (
+                          <>
+                            <Image
+                              src={
+                                s.logoUrl ?? '/placeholder/default-profile.svg'
+                              }
+                              width={20}
+                              height={20}
+                              alt={tProposalDetails('labels.spaceLogoAlt', {
+                                title: s.title,
+                              })}
+                              className="rounded-full"
+                            />
+                            <span className="text-1">{s.title}</span>
+                          </>
+                        ) : (
+                          <span className="text-1">
+                            {tProposalDetails('labels.unknown')} #{id}
+                          </span>
+                        )}
+                      </Badge>
                     ))}
                   </div>
+                )}
+              </div>
+            ) : null}
+            {(initialTransferWhitelist?.length ?? 0) > 0 ||
+            transferWhitelistedSpaces.length > 0 ? (
+              <div className="flex flex-col gap-4">
+                <div className="text-1 text-neutral-11 font-bold">
+                  {tProposalDetails('sections.fromWhitelist')}
                 </div>
-              )}
+                <div className="flex flex-col gap-4">
+                  {initialTransferWhitelist?.map((addr, idx) => (
+                    <WhitelistAddressItem key={`addr-${idx}`} address={addr} />
+                  ))}
+                </div>
+                {transferWhitelistedSpaces.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {transferWhitelistedSpaces.map(({ id, space: s }) => (
+                      <Badge
+                        key={s?.web3SpaceId ?? `unresolved-transfer-${id}`}
+                        variant="outline"
+                        className="gap-1.5 py-1 pl-1 pr-2"
+                      >
+                        {s ? (
+                          <>
+                            <Image
+                              src={
+                                s.logoUrl ?? '/placeholder/default-profile.svg'
+                              }
+                              width={20}
+                              height={20}
+                              alt={tProposalDetails('labels.spaceLogoAlt', {
+                                title: s.title,
+                              })}
+                              className="rounded-full"
+                            />
+                            <span className="text-1">{s.title}</span>
+                          </>
+                        ) : (
+                          <span className="text-1">
+                            {tProposalDetails('labels.unknown')} #{id}
+                          </span>
+                        )}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : null}
           </div>
         </>
       )}

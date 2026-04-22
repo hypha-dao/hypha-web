@@ -1,4 +1,31 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// AggregatorV3Interface
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const aggregatorV3InterfaceAbi = [
+  {
+    type: 'function',
+    inputs: [],
+    name: 'decimals',
+    outputs: [{ name: '', internalType: 'uint8', type: 'uint8' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'latestRoundData',
+    outputs: [
+      { name: 'roundId', internalType: 'uint80', type: 'uint80' },
+      { name: 'answer', internalType: 'int256', type: 'int256' },
+      { name: 'startedAt', internalType: 'uint256', type: 'uint256' },
+      { name: 'updatedAt', internalType: 'uint256', type: 'uint256' },
+      { name: 'answeredInRound', internalType: 'uint80', type: 'uint80' },
+    ],
+    stateMutability: 'view',
+  },
+] as const;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // AgreementsImplementation
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -947,14 +974,6 @@ export const daoProposalsImplementationAddress = {
 export const daoProposalsImplementationConfig = {
   address: daoProposalsImplementationAddress,
   abi: daoProposalsImplementationAbi,
-} as const;
-
-/**
- * Escrow proxy (EscrowImplementation UUPS) — same Base mainnet deployment batch as DAO proposals.
- * [__View Contract on Base Basescan__](https://basescan.org/address/0x447A317cA5516933264Cdd6aeee0633Fa954B576)
- */
-export const escrowImplementationAddress = {
-  8453: '0x447A317cA5516933264Cdd6aeee0633Fa954B576',
 } as const;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2730,12 +2749,18 @@ export const decayingSpaceTokenAbi = [
         internalType: 'address[]',
         type: 'address[]',
       },
-      { name: '_defaultCreditLimit', internalType: 'uint256', type: 'uint256' },
       {
-        name: '_initialCreditWhitelistSpaceIds',
+        name: '_initialTransferWhitelistSpaceIds',
         internalType: 'uint256[]',
         type: 'uint256[]',
       },
+      {
+        name: '_initialReceiveWhitelistSpaceIds',
+        internalType: 'uint256[]',
+        type: 'uint256[]',
+      },
+      { name: '_decayPercentage', internalType: 'uint256', type: 'uint256' },
+      { name: '_decayInterval', internalType: 'uint256', type: 'uint256' },
       { name: '_paymentToken', internalType: 'address', type: 'address' },
       {
         name: '_paymentTokenPricePerToken',
@@ -2783,8 +2808,22 @@ export const decayingSpaceTokenAbi = [
         internalType: 'address[]',
         type: 'address[]',
       },
-      { name: '_decayPercentage', internalType: 'uint256', type: 'uint256' },
-      { name: '_decayInterval', internalType: 'uint256', type: 'uint256' },
+      {
+        name: '_initialTransferWhitelistSpaceIds',
+        internalType: 'uint256[]',
+        type: 'uint256[]',
+      },
+      {
+        name: '_initialReceiveWhitelistSpaceIds',
+        internalType: 'uint256[]',
+        type: 'uint256[]',
+      },
+      { name: '_defaultCreditLimit', internalType: 'uint256', type: 'uint256' },
+      {
+        name: '_initialCreditWhitelistSpaceIds',
+        internalType: 'uint256[]',
+        type: 'uint256[]',
+      },
       { name: '_paymentToken', internalType: 'address', type: 'address' },
       {
         name: '_paymentTokenPricePerToken',
@@ -3433,6 +3472,16 @@ export const decayingTokenFactoryAbi = [
         name: 'initialReceiveWhitelist',
         internalType: 'address[]',
         type: 'address[]',
+      },
+      {
+        name: 'initialTransferWhitelistSpaceIds',
+        internalType: 'uint256[]',
+        type: 'uint256[]',
+      },
+      {
+        name: 'initialReceiveWhitelistSpaceIds',
+        internalType: 'uint256[]',
+        type: 'uint256[]',
       },
       { name: 'decayPercentage', internalType: 'uint256', type: 'uint256' },
       { name: 'decayInterval', internalType: 'uint256', type: 'uint256' },
@@ -4335,6 +4384,396 @@ export const energyDistributionImplementationConfig = {
 } as const;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// EscrowImplementation
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0x447A317cA5516933264Cdd6aeee0633Fa954B576)
+ */
+export const escrowImplementationAbi = [
+  { type: 'constructor', inputs: [], stateMutability: 'nonpayable' },
+  {
+    type: 'error',
+    inputs: [{ name: 'target', internalType: 'address', type: 'address' }],
+    name: 'AddressEmptyCode',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'implementation', internalType: 'address', type: 'address' },
+    ],
+    name: 'ERC1967InvalidImplementation',
+  },
+  { type: 'error', inputs: [], name: 'ERC1967NonPayable' },
+  { type: 'error', inputs: [], name: 'FailedCall' },
+  { type: 'error', inputs: [], name: 'InvalidInitialization' },
+  { type: 'error', inputs: [], name: 'NotInitializing' },
+  {
+    type: 'error',
+    inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
+    name: 'OwnableInvalidOwner',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'OwnableUnauthorizedAccount',
+  },
+  { type: 'error', inputs: [], name: 'ReentrancyGuardReentrantCall' },
+  {
+    type: 'error',
+    inputs: [{ name: 'token', internalType: 'address', type: 'address' }],
+    name: 'SafeERC20FailedOperation',
+  },
+  { type: 'error', inputs: [], name: 'UUPSUnauthorizedCallContext' },
+  {
+    type: 'error',
+    inputs: [{ name: 'slot', internalType: 'bytes32', type: 'bytes32' }],
+    name: 'UUPSUnsupportedProxiableUUID',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'escrowId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'cancelledBy',
+        internalType: 'address',
+        type: 'address',
+        indexed: false,
+      },
+    ],
+    name: 'EscrowCancelled',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'escrowId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'partyA',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'partyB',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'EscrowCompleted',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'escrowId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'creator',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'partyA',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'partyB',
+        internalType: 'address',
+        type: 'address',
+        indexed: false,
+      },
+      {
+        name: 'tokenA',
+        internalType: 'address',
+        type: 'address',
+        indexed: false,
+      },
+      {
+        name: 'tokenB',
+        internalType: 'address',
+        type: 'address',
+        indexed: false,
+      },
+      {
+        name: 'amountA',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'amountB',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'EscrowCreated',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'escrowId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      { name: 'from', internalType: 'address', type: 'address', indexed: true },
+      {
+        name: 'token',
+        internalType: 'address',
+        type: 'address',
+        indexed: false,
+      },
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'FundsReceived',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'escrowId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      { name: 'by', internalType: 'address', type: 'address', indexed: true },
+      {
+        name: 'token',
+        internalType: 'address',
+        type: 'address',
+        indexed: false,
+      },
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'FundsWithdrawn',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'version',
+        internalType: 'uint64',
+        type: 'uint64',
+        indexed: false,
+      },
+    ],
+    name: 'Initialized',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previousOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'newOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'OwnershipTransferred',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'implementation',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'Upgraded',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'UPGRADE_INTERFACE_VERSION',
+    outputs: [{ name: '', internalType: 'string', type: 'string' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_escrowId', internalType: 'uint256', type: 'uint256' }],
+    name: 'cancelEscrow',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_partyA', internalType: 'address', type: 'address' },
+      { name: '_partyB', internalType: 'address', type: 'address' },
+      { name: '_tokenA', internalType: 'address', type: 'address' },
+      { name: '_tokenB', internalType: 'address', type: 'address' },
+      { name: '_amountA', internalType: 'uint256', type: 'uint256' },
+      { name: '_amountB', internalType: 'uint256', type: 'uint256' },
+      { name: '_sendFundsNow', internalType: 'bool', type: 'bool' },
+    ],
+    name: 'createEscrow',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'escrowCounter',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_escrowId', internalType: 'uint256', type: 'uint256' }],
+    name: 'escrowExists',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_escrowId', internalType: 'uint256', type: 'uint256' }],
+    name: 'getEscrow',
+    outputs: [
+      { name: 'creator', internalType: 'address', type: 'address' },
+      { name: 'partyA', internalType: 'address', type: 'address' },
+      { name: 'partyB', internalType: 'address', type: 'address' },
+      { name: 'tokenA', internalType: 'address', type: 'address' },
+      { name: 'tokenB', internalType: 'address', type: 'address' },
+      { name: 'amountA', internalType: 'uint256', type: 'uint256' },
+      { name: 'amountB', internalType: 'uint256', type: 'uint256' },
+      { name: 'isPartyAFunded', internalType: 'bool', type: 'bool' },
+      { name: 'isPartyBFunded', internalType: 'bool', type: 'bool' },
+      { name: 'isCompleted', internalType: 'bool', type: 'bool' },
+      { name: 'isCancelled', internalType: 'bool', type: 'bool' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_escrowId', internalType: 'uint256', type: 'uint256' }],
+    name: 'getEscrowCreator',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'initialOwner', internalType: 'address', type: 'address' },
+    ],
+    name: 'initialize',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'owner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'proxiableUUID',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_escrowId', internalType: 'uint256', type: 'uint256' }],
+    name: 'receiveFunds',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'renounceOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address' }],
+    name: 'transferOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'newImplementation', internalType: 'address', type: 'address' },
+      { name: 'data', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'upgradeToAndCall',
+    outputs: [],
+    stateMutability: 'payable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '_escrowId', internalType: 'uint256', type: 'uint256' }],
+    name: 'withdrawFromCancelled',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'nonpayable',
+  },
+] as const;
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0x447A317cA5516933264Cdd6aeee0633Fa954B576)
+ */
+export const escrowImplementationAddress = {
+  8453: '0x447A317cA5516933264Cdd6aeee0633Fa954B576',
+} as const;
+
+/**
+ * [__View Contract on Base Basescan__](https://basescan.org/address/0x447A317cA5516933264Cdd6aeee0633Fa954B576)
+ */
+export const escrowImplementationConfig = {
+  address: escrowImplementationAddress,
+  abi: escrowImplementationAbi,
+} as const;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // HyphaToken
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -5182,6 +5621,44 @@ export const hyphaTokenConfig = {
 } as const;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ISpaceTokenPrice
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const iSpaceTokenPriceAbi = [
+  {
+    type: 'function',
+    inputs: [],
+    name: 'priceCurrencyFeed',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'tokenPrice',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+] as const;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ITokenBackingBurnableERC20
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const iTokenBackingBurnableErc20Abi = [
+  {
+    type: 'function',
+    inputs: [
+      { name: 'account', internalType: 'address', type: 'address' },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'burnFrom',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+] as const;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // OwnershipTokenFactory
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -5390,6 +5867,16 @@ export const ownershipTokenFactoryAbi = [
         name: 'initialReceiveWhitelist',
         internalType: 'address[]',
         type: 'address[]',
+      },
+      {
+        name: 'initialTransferWhitelistSpaceIds',
+        internalType: 'uint256[]',
+        type: 'uint256[]',
+      },
+      {
+        name: 'initialReceiveWhitelistSpaceIds',
+        internalType: 'uint256[]',
+        type: 'uint256[]',
       },
       { name: 'paymentToken', internalType: 'address', type: 'address' },
       {
@@ -6026,6 +6513,16 @@ export const regularTokenFactoryAbi = [
         name: 'initialReceiveWhitelist',
         internalType: 'address[]',
         type: 'address[]',
+      },
+      {
+        name: 'initialTransferWhitelistSpaceIds',
+        internalType: 'uint256[]',
+        type: 'uint256[]',
+      },
+      {
+        name: 'initialReceiveWhitelistSpaceIds',
+        internalType: 'uint256[]',
+        type: 'uint256[]',
       },
       { name: 'defaultCreditLimit', internalType: 'uint256', type: 'uint256' },
       {

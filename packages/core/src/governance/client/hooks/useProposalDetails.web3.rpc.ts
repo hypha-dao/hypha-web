@@ -102,6 +102,13 @@ export const useProposalDetailsWeb3Rpc = ({
       useReceiveWhitelist?: boolean;
       initialTransferWhitelist?: `0x${string}`[];
       initialReceiveWhitelist?: `0x${string}`[];
+      /**
+       * Web3 ids of spaces seeded into the on-chain transfer/receive whitelists
+       * at deploy time (factory `initial(Transfer|Receive)WhitelistSpaceIds`
+       * args). Decoded from the new factory ABI; absent on legacy proposals.
+       */
+      initialTransferWhitelistSpaceIds?: readonly bigint[];
+      initialReceiveWhitelistSpaceIds?: readonly bigint[];
       decayPercentage?: bigint;
       decayInterval?: bigint;
       address?: string;
