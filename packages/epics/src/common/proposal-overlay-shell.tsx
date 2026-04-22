@@ -105,7 +105,8 @@ export function ProposalOverlayShell({
           {/* Plain scrim below MenuTop (z-30); starts under --menu-top-height */}
           <div
             className={cn(
-              'fixed inset-x-0 bottom-0 z-20 hidden bg-black/50 backdrop-blur-xl supports-[backdrop-filter]:bg-black/40 md:block',
+              'fixed bottom-0 z-20 hidden bg-black/50 backdrop-blur-xl supports-[backdrop-filter]:bg-black/40 md:block',
+              'left-[var(--sidebar-left-width,0px)] right-[var(--sidebar-right-width,0px)]',
               'top-[var(--menu-top-height,65px)]',
             )}
             aria-hidden
@@ -115,9 +116,9 @@ export function ProposalOverlayShell({
             onInteractOutside={(e) => e.preventDefault()}
             onEscapeKeyDown={(e) => e.preventDefault()}
             className={cn(
-              'fixed z-[21] outline-none max-md:inset-auto max-md:bottom-0 max-md:left-0 max-md:top-[var(--menu-top-height,65px)] max-md:right-[var(--sidebar-right-width,0px)] max-md:h-auto max-md:w-[calc(100%-var(--sidebar-right-width,0px))] max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:bg-background-2 max-md:shadow-none',
-              // Host fills only below MenuTop so the nav strip is never covered.
-              'md:inset-x-0 md:bottom-0 md:top-[var(--menu-top-height,65px)] md:flex md:items-center md:justify-center md:overflow-hidden md:bg-transparent md:p-4 md:pt-4',
+              'fixed z-[21] outline-none max-md:inset-auto max-md:bottom-0 max-md:left-[var(--sidebar-left-width,0px)] max-md:top-[var(--menu-top-height,65px)] max-md:right-[var(--sidebar-right-width,0px)] max-md:h-auto max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:bg-background-2 max-md:shadow-none',
+              // Host fills only below MenuTop; horizontal bounds match main column when panels are open.
+              'md:left-[var(--sidebar-left-width,0px)] md:right-[var(--sidebar-right-width,0px)] md:bottom-0 md:top-[var(--menu-top-height,65px)] md:flex md:items-center md:justify-center md:overflow-hidden md:bg-transparent md:p-4 md:pt-4',
             )}
           >
             <DialogPrimitive.Title className="sr-only">
@@ -125,7 +126,7 @@ export function ProposalOverlayShell({
             </DialogPrimitive.Title>
             <div
               className={cn(
-                'relative flex w-full min-h-0 flex-col outline-none md:mx-auto md:max-h-[min(720px,calc(100dvh-var(--menu-top-height,65px)-2rem))] md:max-w-[min(896px,calc(100vw-2rem))]',
+                'relative flex w-full min-h-0 flex-col outline-none md:mx-auto md:max-h-[min(720px,calc(100dvh-var(--menu-top-height,65px)-2rem))] md:max-w-[min(896px,calc(100vw-var(--sidebar-left-width,0px)-var(--sidebar-right-width,0px)-2rem))]',
                 'md:z-10 md:flex-initial md:overflow-y-auto md:rounded-2xl md:border md:border-border/90 md:bg-background-2 md:shadow-2xl md:ring-1 md:ring-white/5 dark:md:ring-white/10',
                 'max-md:max-h-[calc(100dvh-var(--menu-top-height,65px))] max-md:overflow-y-auto',
                 className,
