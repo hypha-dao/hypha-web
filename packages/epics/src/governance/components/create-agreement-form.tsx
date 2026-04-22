@@ -21,7 +21,6 @@ import {
 import { CreateAgreementBaseFields } from '../../agreements';
 import { useTranslations } from 'next-intl';
 import { useLocalizedProposalResolver } from '../hooks/use-localized-proposal-resolver';
-import { normalizeDocumentLabelForBadge } from '../hooks/normalize-document-label-for-badge';
 
 const COLLECTIVE_AGREEMENT_RESUBMIT_SEGMENT = '';
 
@@ -69,9 +68,6 @@ export const CreateAgreementForm = ({
   );
   const resolvedLabel =
     label ?? tAgreementFlow('createActionForms.defaultAgreement');
-  /** Persist English literals so list badges match `DOCUMENT_LABEL_BADGE_KEYS`. */
-  const resolvedLabelForPersistence =
-    normalizeDocumentLabelForBadge(resolvedLabel);
 
   const formRef = React.useRef<HTMLFormElement>(null);
 
@@ -100,7 +96,7 @@ export const CreateAgreementForm = ({
   const handleCreate = async (data: FormValues) => {
     await createAgreement({
       ...data,
-      label: resolvedLabelForPersistence,
+      label: resolvedLabel,
       spaceId: spaceId as number,
       ...(typeof web3SpaceId === 'number' ? { web3SpaceId } : {}),
     });
