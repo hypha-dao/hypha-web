@@ -168,7 +168,7 @@ export function LoadingBackdropInner({
     (fullHeight && resolvedFullHeightVariant === 'docked-panel' ? (
       <div
         className={cn(
-          'fixed bottom-0 z-10 flex w-full flex-col items-center justify-center space-y-2 bg-background/75 p-4 md:w-container-sm lg:p-7',
+          'fixed bottom-0 z-[28] flex w-full flex-col items-center justify-center space-y-2 bg-background/75 p-4 md:w-container-sm lg:p-7',
           className,
         )}
         style={{
@@ -190,7 +190,7 @@ export function LoadingBackdropInner({
     ) : !fullHeight ? (
       <div
         className={cn(
-          'absolute inset-0 z-10 flex min-h-full flex-col items-center justify-center space-y-2 bg-background/75',
+          'absolute inset-0 z-[28] flex min-h-full flex-col items-center justify-center space-y-2 bg-background/75',
           className,
         )}
         style={portalScopeStyle}

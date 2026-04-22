@@ -146,7 +146,9 @@ export function DhoStickySpaceChrome({
     <>
       <div
         className={cn(
-          'pointer-events-none fixed left-[var(--sidebar-left-width,0px)] right-[var(--sidebar-right-width,0px)] z-[25] hidden md:block',
+          /* Leave room for main-column scrollbar (narrow-scrollbar ~8–12px) so it is not painted under this bar */
+          'pointer-events-none fixed left-[var(--sidebar-left-width,0px)] z-[25] hidden md:block',
+          'right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))]',
           'border-b border-border bg-background-2 transition-[opacity,transform,box-shadow] duration-200 ease-out',
           stuck
             ? 'pointer-events-auto translate-y-0 opacity-100 shadow-md'

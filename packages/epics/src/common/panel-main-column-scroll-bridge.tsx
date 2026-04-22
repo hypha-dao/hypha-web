@@ -54,6 +54,11 @@ export function PanelDualSidebarScrollBridge({
       <SidebarInset
         ref={bindScrollRoot}
         className={cn('overflow-y-auto narrow-scrollbar')}
+        style={
+          {
+            '--main-column-scrollbar-width': '10px',
+          } as React.CSSProperties
+        }
       >
         <SidebarProvider
           open={rightOpen}

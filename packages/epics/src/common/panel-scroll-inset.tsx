@@ -33,7 +33,7 @@ function assignRef<T>(ref: React.Ref<T> | undefined, value: T | null): void {
 export const PanelScrollInset = React.forwardRef<
   HTMLDivElement,
   PanelScrollInsetProps
->(function PanelScrollInset({ className, ...props }, forwardedRef) {
+>(function PanelScrollInset({ className, style, ...props }, forwardedRef) {
   const setRefs = React.useCallback(
     (node: HTMLDivElement | null) => {
       setMainColumnScrollRoot(node);
@@ -46,6 +46,12 @@ export const PanelScrollInset = React.forwardRef<
     <SidebarInset
       ref={setRefs}
       className={cn('overflow-y-auto narrow-scrollbar', className)}
+      style={
+        {
+          '--main-column-scrollbar-width': '10px',
+          ...(style as React.CSSProperties | undefined),
+        } as React.CSSProperties
+      }
       {...props}
     />
   );
