@@ -38,6 +38,7 @@ const unlockBodyScroll = () => {
 
 type ProposalOverlayShellProps = {
   children: ReactNode;
+  /** Merged onto the inner scroll panel (after defaults) — use for narrower modals e.g. member profile. */
   className?: string;
 };
 
@@ -130,6 +131,7 @@ export function ProposalOverlayShell({
                 'relative flex w-full min-h-0 flex-col outline-none md:mx-auto md:max-h-[min(720px,calc(100dvh_-_var(--menu-top-height,65px)_-_2rem))] md:max-w-[min(896px,calc(100vw_-_var(--sidebar-left-width,0px)_-_var(--sidebar-right-width,0px)_-_2rem))]',
                 'md:z-10 md:flex-initial md:overflow-y-auto md:rounded-2xl md:border md:border-border/90 md:bg-background-2 md:shadow-2xl md:ring-1 md:ring-white/5 dark:md:ring-white/10',
                 'max-md:max-h-[calc(100dvh_-_var(--menu-top-height,65px))] max-md:overflow-y-auto',
+                'narrow-scrollbar',
                 className,
               )}
               id="proposal-overlay-panel"
