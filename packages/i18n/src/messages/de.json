@@ -1003,7 +1003,9 @@
       }
     },
     "loadingBackdrop": {
-      "keepWindowOpen": "Lassen Sie dieses Fenster geöffnet, bis wir fertig sind."
+      "keepWindowOpen": "Lassen Sie dieses Fenster geöffnet, bis wir fertig sind.",
+      "errorTitle": "Etwas ist schiefgelaufen",
+      "resetButton": "Zurücksetzen"
     },
     "spaceTokenPurchaseProgress": {
       "CREATE_WEB2_AGREEMENT": "Vereinbarung wird erstellt...",

@@ -683,7 +683,9 @@
       }
     },
     "loadingBackdrop": {
-      "keepWindowOpen": "Mantenha esta janela aberta até terminarmos."
+      "keepWindowOpen": "Mantenha esta janela aberta até terminarmos.",
+      "errorTitle": "Algo correu mal",
+      "resetButton": "Repor"
     },
     "spaceTokenPurchaseProgress": {
       "CREATE_WEB2_AGREEMENT": "A criar acordo...",

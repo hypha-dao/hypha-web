@@ -197,13 +197,15 @@ const CreateRedeemTokensFormInner = ({
       message={
         isError ? (
           <div className="flex flex-col">
-            <div>Ouh Snap. There was an error</div>
+            <div>{tAgreementFlow('loadingBackdrop.errorTitle')}</div>
             {form.formState.errors.root?.message && (
               <div className="text-destructive">
                 {form.formState.errors.root.message}
               </div>
             )}
-            <Button onClick={reset}>Reset</Button>
+            <Button onClick={reset}>
+              {tAgreementFlow('loadingBackdrop.resetButton')}
+            </Button>
           </div>
         ) : (
           <div>{currentAction}</div>

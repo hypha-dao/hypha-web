@@ -1004,7 +1004,9 @@
       }
     },
     "loadingBackdrop": {
-      "keepWindowOpen": "Keep this window open until we're finished."
+      "keepWindowOpen": "Keep this window open until we're finished.",
+      "errorTitle": "Something went wrong",
+      "resetButton": "Reset"
     },
     "spaceTokenPurchaseProgress": {
       "CREATE_WEB2_AGREEMENT": "Creating agreement...",

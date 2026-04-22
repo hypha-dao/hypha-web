@@ -1003,7 +1003,9 @@
       }
     },
     "loadingBackdrop": {
-      "keepWindowOpen": "Gardez cette fenêtre ouverte jusqu’à la fin."
+      "keepWindowOpen": "Gardez cette fenêtre ouverte jusqu’à la fin.",
+      "errorTitle": "Une erreur s’est produite",
+      "resetButton": "Réinitialiser"
     },
     "spaceTokenPurchaseProgress": {
       "CREATE_WEB2_AGREEMENT": "Création de l'accord...",
