@@ -244,6 +244,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               >
                 <AlertDialogContent
                   overlayClassName="bg-black/75 backdrop-blur-sm supports-[backdrop-filter]:bg-black/65"
+                  className="border-l-[3px] border-l-[var(--space-accent)]"
+                  style={spaceAccentPortalStyle}
+                  data-space-accent-scope=""
                   onClick={(e) => e.stopPropagation()}
                 >
                   <AlertDialogHeader>
@@ -270,7 +273,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                     </AlertDialogCancel>
                     <AlertDialogAction asChild>
                       <Button
-                        colorVariant="error"
+                        colorVariant="accent"
                         onClick={() =>
                           void handleDelete().then((deleted) => {
                             if (deleted) setDeleteOpen(false);
