@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import {
   COMPACT_SPACE_BANNER_AVATAR_CLASSNAME,
   COMPACT_SPACE_BANNER_TITLE_CLASSNAME,
+  subscribeMainColumnScroll,
 } from '@hypha-platform/epics';
 import { Avatar, AvatarImage } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
@@ -126,11 +127,11 @@ export function DhoStickySpaceChrome({
 
     tick();
     mq.addEventListener('change', onScroll);
-    window.addEventListener('scroll', onScroll, { passive: true });
+    const unsubscribeScroll = subscribeMainColumnScroll(onScroll);
     window.addEventListener('resize', onScroll);
     return () => {
       mq.removeEventListener('change', onScroll);
-      window.removeEventListener('scroll', onScroll);
+      unsubscribeScroll();
       window.removeEventListener('resize', onScroll);
       if (raf) cancelAnimationFrame(raf);
     };

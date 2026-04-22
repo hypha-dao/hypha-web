@@ -3,6 +3,7 @@
 import * as React from 'react';
 import Image from 'next/image';
 import { cn } from '@hypha-platform/ui-utils';
+import { useMainColumnScrollY } from '../../common/main-column-scroll';
 
 type Props = {
   src: string;
@@ -12,11 +13,10 @@ type Props = {
 const PARALLAX_SCROLL_RATE = 0.14;
 const PARALLAX_MAX_SHIFT_PX = 56;
 
-function clampParallaxScrollY(): number {
-  if (typeof window === 'undefined') return 0;
+function clampParallaxScrollY(scrollY: number): number {
   return Math.min(
     PARALLAX_MAX_SHIFT_PX,
-    Math.max(-PARALLAX_MAX_SHIFT_PX, window.scrollY * PARALLAX_SCROLL_RATE),
+    Math.max(-PARALLAX_MAX_SHIFT_PX, scrollY * PARALLAX_SCROLL_RATE),
   );
 }
 
@@ -28,7 +28,7 @@ function clampParallaxScrollY(): number {
 export function CompactSpaceBannerLead({ src }: Props) {
   const [ready, setReady] = React.useState(false);
   const [imageFailed, setImageFailed] = React.useState(false);
-  const [parallaxY, setParallaxY] = React.useState(0);
+  const mainScrollY = useMainColumnScrollY();
   const [reduceMotion, setReduceMotion] = React.useState(false);
 
   React.useLayoutEffect(() => {
@@ -41,27 +41,7 @@ export function CompactSpaceBannerLead({ src }: Props) {
     return () => mq.removeEventListener('change', sync);
   }, []);
 
-  React.useEffect(() => {
-    if (reduceMotion) return;
-
-    let raf = 0;
-
-    const tick = () => {
-      setParallaxY(clampParallaxScrollY());
-    };
-
-    const onScroll = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(tick);
-    };
-
-    tick();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      cancelAnimationFrame(raf);
-    };
-  }, [reduceMotion]);
+  const parallaxY = reduceMotion ? 0 : clampParallaxScrollY(mainScrollY);
 
   return (
     <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit]">
