@@ -70,10 +70,12 @@ export const MenuTop = ({
          * Span the flex gap between SidebarInset and fixed side rails (human/AI panels).
          * Mirror vars come from PanelWrapLayout on `:root`; without this the rule stops at the
          * inset edge and misses the junction with `Sidebar` border-r / border-l.
+         * Also extend past the main column scrollbar gutter (`--main-column-scrollbar-width`) so
+         * the rule meets the side panel border — same inset logic as sticky DHO chrome.
          */
         'after:pointer-events-none after:absolute after:bottom-0 after:h-px after:bg-border',
         'after:left-[calc(-1_*_var(--sidebar-left-width,0px))]',
-        'after:right-[calc(-1_*_var(--sidebar-right-width,0px))]',
+        'after:right-[calc((-1_*_var(--sidebar-right-width,0px))_-_var(--main-column-scrollbar-width,0px))]',
       )}
     >
       <div
