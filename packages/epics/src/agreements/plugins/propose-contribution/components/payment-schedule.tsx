@@ -119,8 +119,9 @@ export function PaymentSchedule({
                 key={option}
                 onSelect={() => handleOptionChange(option)}
                 className={cn(
+                  /** App-neutral selection — avoid `:root` space-derived `--color-accent*` (low-contrast wash). */
                   selectedOption === option &&
-                    'bg-accent text-accent-foreground',
+                    'bg-muted/85 text-foreground focus:bg-muted/85 data-[highlighted]:bg-muted/85',
                 )}
               >
                 {option === 'Immediately'
