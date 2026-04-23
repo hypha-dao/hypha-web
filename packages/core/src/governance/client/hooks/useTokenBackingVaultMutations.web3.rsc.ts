@@ -37,6 +37,28 @@ interface BackingCollateralEntry {
   amount: string;
 }
 
+const tokenPriceAbi = [
+  {
+    inputs: [],
+    name: 'tokenPrice',
+    outputs: [{ type: 'uint256', name: '' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+] as const;
+
+async function readTokenPrice(address: `0x${string}`): Promise<bigint | null> {
+  try {
+    return (await publicClient.readContract({
+      address,
+      abi: tokenPriceAbi,
+      functionName: 'tokenPrice',
+    })) as bigint;
+  } catch {
+    return null;
+  }
+}
+
 interface TokenBackingVaultInput {
   spaceId: number;
   spaceToken: `0x${string}`;
@@ -128,6 +150,82 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
       const currentRedeemEnabled = currentVaultConfig
         ? currentVaultConfig.redeemEnabled
         : false;
+
+      // True when this proposal will create a brand new vault via addBackingToken.
+      // _getOrCreateVault sets minimumBackingBps, redemptionPrice/currencyFeed,
+      // maxRedemptionBps and maxRedemptionPeriodDays during creation, so the
+      // separate set* calls below would be redundant in that case.
+      const isCreatingNewVault = !vaultExists && willAddBacking;
+
+      // ============================================================
+      //  Preflight validation — surfaces the contract-level reverts
+      //  with actionable messages BEFORE the user signs / votes.
+      //  Mirrors the require() checks in TokenBackingVaultImplementation
+      //  so failures don't end up as opaque "Execution failed" reverts
+      //  from the executor (it drops returndata).
+      // ============================================================
+      const validationErrors: string[] = [];
+
+      // Contract requires at least one backing token to create a vault.
+      if (
+        arg.activateVault &&
+        !vaultExists &&
+        validAddCollaterals.length === 0
+      ) {
+        validationErrors.push(
+          'At least one backing collateral is required to create a vault.',
+        );
+      }
+
+      // Space token must have tokenPrice() > 0 when creating a new vault.
+      if (isCreatingNewVault) {
+        const spaceTokenPrice = await readTokenPrice(spaceToken);
+        if (spaceTokenPrice === null) {
+          validationErrors.push(
+            'The selected space token does not expose tokenPrice(). Pick a Hypha-issued space token.',
+          );
+        } else if (spaceTokenPrice === 0n) {
+          validationErrors.push(
+            'The selected space token has no price set. Update the token to set a price greater than 0 before creating a backing vault.',
+          );
+        }
+      }
+
+      // Backing tokens without a Chainlink feed mapping must expose
+      // tokenPrice() > 0 (the contract reads it directly).
+      if (validAddCollaterals.length > 0) {
+        for (const c of validAddCollaterals) {
+          const hasFeed = Boolean(
+            ASSET_PRICE_FEED_BY_TOKEN[c.token.toLowerCase()],
+          );
+          if (hasFeed) continue;
+          const price = await readTokenPrice(c.token as `0x${string}`);
+          if (price === null) {
+            validationErrors.push(
+              `Backing token ${c.token} has no Chainlink price feed mapping and does not expose tokenPrice(). Pick a supported token (e.g. USDC, WETH, cbBTC, EURC) or a Hypha-issued token with a price set.`,
+            );
+          } else if (price === 0n) {
+            validationErrors.push(
+              `Backing token ${c.token} has no price set. Set a tokenPrice greater than 0 on the token, or pick a token with a Chainlink price feed.`,
+            );
+          }
+        }
+      }
+
+      // Maximum-redemption cap requires a non-zero rolling period
+      // (matches `Period must be > 0 when cap is set` in the contract).
+      if (
+        (arg.maxRedemptionPercent ?? 0) > 0 &&
+        (arg.maxRedemptionPeriodDays ?? 0) <= 0
+      ) {
+        validationErrors.push(
+          'Maximum Redemption % is set, but the rolling period (days) is missing. Pick a period or set Maximum Redemption % to 0.',
+        );
+      }
+
+      if (validationErrors.length > 0) {
+        throw new Error(validationErrors.join('\n'));
+      }
 
       // Approve Vault contract to spend tokens on behalf of the Space.
       // Must be the first transactions executed so addBackingToken can transfer tokens.
@@ -285,7 +383,10 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
         });
       }
 
-      if (arg.tokenPrice && arg.referenceCurrency) {
+      // The next three calls are redundant when creating a new vault —
+      // addBackingToken already passes the same values into _getOrCreateVault.
+      // Only emit them when updating an existing vault.
+      if (!isCreatingNewVault && arg.tokenPrice && arg.referenceCurrency) {
         const redemptionPrice = BigInt(
           Math.round(parseFloat(arg.tokenPrice) * Number(PRICE_PRECISION)),
         );
@@ -302,6 +403,7 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
       }
 
       if (
+        !isCreatingNewVault &&
         (arg.maxRedemptionPercent ?? 0) > 0 &&
         (arg.maxRedemptionPeriodDays ?? 0) > 0
       ) {
@@ -321,7 +423,7 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
         });
       }
 
-      if ((arg.minimumBackingPercent ?? 0) > 0) {
+      if (!isCreatingNewVault && (arg.minimumBackingPercent ?? 0) > 0) {
         transactions.push({
           target: vaultAddress,
           value: 0n,

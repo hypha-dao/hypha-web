@@ -51,7 +51,7 @@ const daoProposalsAbi = [
 ];
 
 const regularTokenFactoryAbi = [
-  'function deployToken(uint256 spaceId,string name,string symbol,uint256 maxSupply,bool transferable,bool fixedMaxSupply,bool autoMinting,uint256 tokenPrice,address priceCurrencyFeed,bool useTransferWhitelist,bool useReceiveWhitelist,address[] initialTransferWhitelist,address[] initialReceiveWhitelist) external returns (address)',
+  'function deployToken(uint256 spaceId,string name,string symbol,uint256 maxSupply,bool transferable,bool fixedMaxSupply,bool autoMinting,uint256 tokenPrice,address priceCurrencyFeed,bool useTransferWhitelist,bool useReceiveWhitelist,address[] initialTransferWhitelist,address[] initialReceiveWhitelist,uint256[] initialTransferWhitelistSpaceIds,uint256[] initialReceiveWhitelistSpaceIds,uint256 defaultCreditLimit,uint256[] initialCreditWhitelistSpaceIds,address paymentToken,uint256 paymentTokenPricePerToken,uint256 tokensForSale,uint8 purchaseEligibilityMode,uint256[] initialPurchaseWhitelistSpaceIds) external returns (address)',
   'function getSpaceToken(uint256 spaceId) external view returns (address[])',
 ];
 
@@ -305,6 +305,15 @@ async function main(): Promise<void> {
     useReceiveWhitelist: false,
     initialTransferWhitelist: [] as string[],
     initialReceiveWhitelist: [] as string[],
+    initialTransferWhitelistSpaceIds: [] as bigint[],
+    initialReceiveWhitelistSpaceIds: [] as bigint[],
+    defaultCreditLimit: 0n,
+    initialCreditWhitelistSpaceIds: [] as bigint[],
+    paymentToken: zero,
+    paymentTokenPricePerToken: 0n,
+    tokensForSale: 0n,
+    purchaseEligibilityMode: 0,
+    initialPurchaseWhitelistSpaceIds: [] as bigint[],
   };
 
   const deploySpaceTokenData = deployIface.encodeFunctionData('deployToken', [
@@ -321,6 +330,15 @@ async function main(): Promise<void> {
     defaultDeployArgs.useReceiveWhitelist,
     defaultDeployArgs.initialTransferWhitelist,
     defaultDeployArgs.initialReceiveWhitelist,
+    defaultDeployArgs.initialTransferWhitelistSpaceIds,
+    defaultDeployArgs.initialReceiveWhitelistSpaceIds,
+    defaultDeployArgs.defaultCreditLimit,
+    defaultDeployArgs.initialCreditWhitelistSpaceIds,
+    defaultDeployArgs.paymentToken,
+    defaultDeployArgs.paymentTokenPricePerToken,
+    defaultDeployArgs.tokensForSale,
+    defaultDeployArgs.purchaseEligibilityMode,
+    defaultDeployArgs.initialPurchaseWhitelistSpaceIds,
   ]);
 
   const deployBackingTokenData = deployIface.encodeFunctionData('deployToken', [
@@ -337,6 +355,15 @@ async function main(): Promise<void> {
     defaultDeployArgs.useReceiveWhitelist,
     defaultDeployArgs.initialTransferWhitelist,
     defaultDeployArgs.initialReceiveWhitelist,
+    defaultDeployArgs.initialTransferWhitelistSpaceIds,
+    defaultDeployArgs.initialReceiveWhitelistSpaceIds,
+    defaultDeployArgs.defaultCreditLimit,
+    defaultDeployArgs.initialCreditWhitelistSpaceIds,
+    defaultDeployArgs.paymentToken,
+    defaultDeployArgs.paymentTokenPricePerToken,
+    defaultDeployArgs.tokensForSale,
+    defaultDeployArgs.purchaseEligibilityMode,
+    defaultDeployArgs.initialPurchaseWhitelistSpaceIds,
   ]);
 
   await createAndExecuteProposal(
