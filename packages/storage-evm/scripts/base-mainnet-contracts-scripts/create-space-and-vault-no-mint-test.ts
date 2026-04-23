@@ -51,7 +51,7 @@ const daoProposalsAbi = [
 ];
 
 const regularTokenFactoryAbi = [
-  'function deployToken(uint256 spaceId,string name,string symbol,uint256 maxSupply,bool transferable,bool fixedMaxSupply,bool autoMinting,uint256 tokenPrice,address priceCurrencyFeed,bool useTransferWhitelist,bool useReceiveWhitelist,address[] initialTransferWhitelist,address[] initialReceiveWhitelist) external returns (address)',
+  'function deployToken(uint256 spaceId,string name,string symbol,uint256 maxSupply,bool transferable,bool fixedMaxSupply,bool autoMinting,uint256 tokenPrice,address priceCurrencyFeed,bool useTransferWhitelist,bool useReceiveWhitelist,address[] initialTransferWhitelist,address[] initialReceiveWhitelist,uint256[] initialTransferWhitelistSpaceIds,uint256[] initialReceiveWhitelistSpaceIds,uint256 defaultCreditLimit,uint256[] initialCreditWhitelistSpaceIds,address paymentToken,uint256 paymentTokenPricePerToken,uint256 tokensForSale,uint8 purchaseEligibilityMode,uint256[] initialPurchaseWhitelistSpaceIds) external returns (address)',
   'function getSpaceToken(uint256 spaceId) external view returns (address[])',
 ];
 
@@ -106,6 +106,44 @@ async function loadWallet(
   return new ethers.Wallet(accountData[0].privateKey, provider);
 }
 
+const READ_DELAY_MS = Number(process.env.READ_DELAY_MS ?? 800);
+const TX_DELAY_MS = Number(process.env.TX_DELAY_MS ?? 1500);
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function withRetry<T>(
+  label: string,
+  fn: () => Promise<T>,
+  attempts = 6,
+  baseDelayMs = 1500,
+): Promise<T> {
+  let lastErr: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      if (i > 0) {
+        const wait = baseDelayMs * Math.pow(2, i - 1);
+        console.log(
+          `  retry ${i}/${attempts - 1} for ${label} after ${wait}ms`,
+        );
+        await sleep(wait);
+      }
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      const msg = (err as Error)?.message ?? String(err);
+      const rateLimited =
+        msg.includes('over rate limit') ||
+        msg.includes('rate limit') ||
+        msg.includes('429') ||
+        msg.includes('missing revert data');
+      if (!rateLimited) throw err;
+    }
+  }
+  throw lastErr;
+}
+
 function decodeProposalId(receipt: ethers.TransactionReceipt): number {
   const topic = ethers.id(
     'ProposalCreated(uint256,uint256,uint256,uint256,address,bytes)',
@@ -151,7 +189,11 @@ async function createAndExecuteProposal(
   console.log(`- vote tx: ${voteTx.hash}`);
   await voteTx.wait();
 
-  const core = await daoProposals.getProposalCore(proposalId);
+  if (TX_DELAY_MS > 0) await sleep(TX_DELAY_MS);
+
+  const core = await withRetry('getProposalCore', () =>
+    daoProposals.getProposalCore(proposalId),
+  );
   console.log(
     `- executed: ${core.executed}, yesVotes: ${core.yesVotes}, noVotes: ${core.noVotes}`,
   );
@@ -286,6 +328,15 @@ async function main(): Promise<void> {
     false,
     [],
     [],
+    [], // initialTransferWhitelistSpaceIds
+    [], // initialReceiveWhitelistSpaceIds
+    0n, // defaultCreditLimit
+    [], // initialCreditWhitelistSpaceIds
+    zero, // paymentToken (address(0) disables initial sale)
+    0n, // paymentTokenPricePerToken
+    0n, // tokensForSale
+    0, // purchaseEligibilityMode (0 = issuer space only)
+    [], // initialPurchaseWhitelistSpaceIds
   ]);
 
   const deployBackingTokenData = deployIface.encodeFunctionData('deployToken', [
@@ -302,6 +353,15 @@ async function main(): Promise<void> {
     false,
     [],
     [],
+    [], // initialTransferWhitelistSpaceIds
+    [], // initialReceiveWhitelistSpaceIds
+    0n, // defaultCreditLimit
+    [], // initialCreditWhitelistSpaceIds
+    zero, // paymentToken
+    0n, // paymentTokenPricePerToken
+    0n, // tokensForSale
+    0, // purchaseEligibilityMode
+    [], // initialPurchaseWhitelistSpaceIds
   ]);
 
   await createAndExecuteProposal(
@@ -322,8 +382,9 @@ async function main(): Promise<void> {
     'Deploy space token + auto-mint backing token',
   );
 
-  const spaceTokens: string[] = await regularTokenFactory.getSpaceToken(
-    spaceId,
+  if (READ_DELAY_MS > 0) await sleep(READ_DELAY_MS);
+  const spaceTokens: string[] = await withRetry('getSpaceToken', () =>
+    regularTokenFactory.getSpaceToken(spaceId),
   );
   if (spaceTokens.length < 2) {
     throw new Error(`Expected at least 2 tokens, got ${spaceTokens.length}`);
@@ -339,12 +400,21 @@ async function main(): Promise<void> {
     regularSpaceTokenAbi,
     wallet,
   );
-  const backingDecimals = Number(await backingToken.decimals());
+  if (READ_DELAY_MS > 0) await sleep(READ_DELAY_MS);
+  const backingDecimals = Number(
+    await withRetry('decimals', () => backingToken.decimals()),
+  );
   const fundingHuman = process.env.VAULT_FUNDING_AMOUNT ?? '10';
   const fundingAmount = ethers.parseUnits(fundingHuman, backingDecimals);
 
-  const balanceBefore: bigint = await backingToken.balanceOf(executor);
-  const supplyBefore: bigint = await backingToken.totalSupply();
+  if (READ_DELAY_MS > 0) await sleep(READ_DELAY_MS);
+  const balanceBefore: bigint = await withRetry('balanceOf(before)', () =>
+    backingToken.balanceOf(executor),
+  );
+  if (READ_DELAY_MS > 0) await sleep(READ_DELAY_MS);
+  const supplyBefore: bigint = await withRetry('totalSupply(before)', () =>
+    backingToken.totalSupply(),
+  );
   console.log(
     `- executor backing balance before funding: ${ethers.formatUnits(
       balanceBefore,
@@ -423,20 +493,29 @@ async function main(): Promise<void> {
     'Approve + create vault + enable redemption (no mint)',
   );
 
-  const exists = await tokenBackingVault.vaultExists(
-    spaceId,
-    spaceTokenAddress,
+  if (READ_DELAY_MS > 0) await sleep(READ_DELAY_MS);
+  const exists = await withRetry('vaultExists', () =>
+    tokenBackingVault.vaultExists(spaceId, spaceTokenAddress),
   );
   console.log(`- vaultExists: ${exists}`);
   if (!exists) throw new Error('Vault was not created');
 
-  const vaultBalance: bigint = await tokenBackingVault.getBackingBalance(
-    spaceId,
-    spaceTokenAddress,
-    backingTokenAddress,
+  if (READ_DELAY_MS > 0) await sleep(READ_DELAY_MS);
+  const vaultBalance: bigint = await withRetry('getBackingBalance', () =>
+    tokenBackingVault.getBackingBalance(
+      spaceId,
+      spaceTokenAddress,
+      backingTokenAddress,
+    ),
   );
-  const balanceAfter: bigint = await backingToken.balanceOf(executor);
-  const supplyAfter: bigint = await backingToken.totalSupply();
+  if (READ_DELAY_MS > 0) await sleep(READ_DELAY_MS);
+  const balanceAfter: bigint = await withRetry('balanceOf', () =>
+    backingToken.balanceOf(executor),
+  );
+  if (READ_DELAY_MS > 0) await sleep(READ_DELAY_MS);
+  const supplyAfter: bigint = await withRetry('totalSupply', () =>
+    backingToken.totalSupply(),
+  );
 
   console.log('\n=== Final Summary ===');
   console.log(`Space ID: ${spaceId}`);
