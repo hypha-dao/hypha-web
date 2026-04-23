@@ -88,11 +88,6 @@ export const LOCALIZED_PROPOSAL_LABEL_TO_CANONICAL: Record<string, string> = {
   "Transparence de l'espace": 'Space Transparency',
   'Transparencia espacial': 'Space Transparency',
   'Transparência Espacial': 'Space Transparency',
-  Agreement: 'Collective Agreement',
-  Acuerdo: 'Collective Agreement',
-  Accord: 'Collective Agreement',
-  Acordo: 'Collective Agreement',
-  Vereinbarung: 'Collective Agreement',
 };
 
 export function normalizeProposalDocumentLabel(
