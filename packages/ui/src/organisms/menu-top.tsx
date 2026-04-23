@@ -66,8 +66,14 @@ export const MenuTop = ({
       className={clsx(
         'relative flex min-h-[70px] min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2',
         'bg-background-2 px-4 py-[1.125rem] z-30',
-        /* Full-width bottom rule — avoids border segment stopping short at the right edge */
-        'after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border',
+        /*
+         * Span the flex gap between SidebarInset and fixed side rails (human/AI panels).
+         * Mirror vars come from PanelWrapLayout on `:root`; without this the rule stops at the
+         * inset edge and misses the junction with `Sidebar` border-r / border-l.
+         */
+        'after:pointer-events-none after:absolute after:bottom-0 after:h-px after:bg-border',
+        'after:left-[calc(-1_*_var(--sidebar-left-width,0px))]',
+        'after:right-[calc(-1_*_var(--sidebar-right-width,0px))]',
       )}
     >
       <div
