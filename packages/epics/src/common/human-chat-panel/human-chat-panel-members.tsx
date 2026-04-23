@@ -69,7 +69,7 @@ export function HumanChatPanelMembers({
               key={i}
               className="flex items-center gap-3 rounded-md px-2 py-1.5"
             >
-              <PersonAvatar isLoading size="md" />
+              <PersonAvatar isLoading size="md" className="rounded-lg" />
               <Skeleton width="120px" height="16px" loading>
                 <div />
               </Skeleton>
@@ -98,6 +98,7 @@ export function HumanChatPanelMembers({
               avatarSrc={member.avatarUrl}
               userName={displayName}
               size="md"
+              className="rounded-lg"
             />
             <span className="text-sm text-foreground truncate">
               {displayName}

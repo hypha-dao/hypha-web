@@ -1400,7 +1400,7 @@ export function HumanChatPanelMessageBubble({
           <div ref={replyAvatarMeasureRef} className="shrink-0">
             <PersonAvatar
               size="sm"
-              shape="circle"
+              className="rounded-lg"
               avatarSrc={replyHeaderAvatarResolved}
               userName={replyAuthorLabelForUi}
               isLoading={replyProfileLoading}
@@ -1432,7 +1432,7 @@ export function HumanChatPanelMessageBubble({
           <div ref={mainAvatarMeasureRef} className="relative">
             <PersonAvatar
               size="chat"
-              shape="circle"
+              className="rounded-lg"
               avatarSrc={mainAvatarSrc}
               userName={senderName}
               isLoading={senderProfileLoading}

@@ -1,6 +1,7 @@
 import { Avatar, AvatarImage, AvatarFallback } from '@hypha-platform/ui';
 import { UserIcon } from 'lucide-react';
 import { Skeleton } from '@hypha-platform/ui';
+import { cn } from '@hypha-platform/ui-utils';
 
 type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'chat' | 'reply' | 'toolbar';
 
@@ -59,9 +60,9 @@ export const PersonAvatar = ({
       width={skeletonSize}
       height={skeletonSize}
       loading={isLoading}
-      className={`${radiusClass} ${className}`}
+      className={cn(radiusClass, className)}
     >
-      <Avatar className={`${avatarSize} ${radiusClass} ${className}`}>
+      <Avatar className={cn(avatarSize, radiusClass, className)}>
         <AvatarImage src={avatarSrc} alt={`${userName}'s avatar`} />
         <AvatarFallback>{getFallbackContent()}</AvatarFallback>
       </Avatar>

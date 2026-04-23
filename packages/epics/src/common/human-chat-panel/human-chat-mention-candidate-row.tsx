@@ -80,8 +80,7 @@ export function HumanChatMentionCandidateRow({
         avatarSrc={avatarSrc}
         userName={resolvedName}
         size="sm"
-        shape="squircle"
-        className="shrink-0"
+        className="shrink-0 rounded-lg"
         isLoading={busy}
       />
       <span className="min-w-0 flex-1">
