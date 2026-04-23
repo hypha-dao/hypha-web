@@ -1272,10 +1272,8 @@ export function HumanChatPanelChatBar({
   const handleComposerShellKeyDownCapture = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
       if (e.key !== 'Enter' || e.shiftKey) return;
-      const ne = e.nativeEvent as KeyboardEvent;
-      if (ne.isComposing && !(canSend && draftAttachments.length > 0)) {
-        return;
-      }
+      const composing = (e.nativeEvent as KeyboardEvent).isComposing;
+      if (composing) return;
       if (
         atOpen ||
         colonOpen ||
@@ -1297,16 +1295,14 @@ export function HumanChatPanelChatBar({
       attachMenuOpen,
       emojiPickerOpen,
       canSend,
-      draftAttachments.length,
       sendMessage,
     ],
   );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.nativeEvent.isComposing) {
-        return;
-      }
+      const composing = (e.nativeEvent as KeyboardEvent).isComposing;
+      if (composing) return;
       if (atOpen && atSuggestions.length > 0) {
         if (e.key === 'ArrowDown') {
           e.preventDefault();
