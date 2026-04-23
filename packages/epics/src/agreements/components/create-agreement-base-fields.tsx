@@ -66,6 +66,20 @@ const schemaCreateAgreementForm =
 
 export type CreateAgreementFormData = z.infer<typeof schemaCreateAgreementForm>;
 
+/**
+ * Pre-fill values passed in from an external bridge (e.g. ReGen Civics quest
+ * submission). These arrive via URL searchParams, not sessionStorage, so they
+ * need their own code path alongside the existing resubmit flow.
+ */
+export interface BridgeInitialValues {
+  title?: string;
+  description?: string;
+  leadImage?: string;
+  recipient?: string;
+  attachments?: Array<{ url: string; filename: string }>;
+  payouts?: Array<{ amount: string; token: string }>;
+}
+
 type AttachmentListItem = NonNullable<
   CreateAgreementFormData['attachments']
 >[number];
@@ -81,10 +95,20 @@ export type CreateAgreementFormProps = {
   /** When set, shown in sticky header instead of `label` (web3 submission still uses `label`). */
   stickyHeaderTitle?: string;
   progress: number;
+  /** Pre-fill values from an external bridge (e.g. ReGen Civics). */
+  initialValues?: BridgeInitialValues;
+  /**
+   * Bridge key embedded in the proposal title marker (e.g. `rc:abc12345`).
+   * Currently passed through but not used; reserved for back-channel status
+   * tracking by the originating bridge.
+   */
+  bridgeKey?: string;
 };
 
 type Callback = () => Promise<void>;
 type CallbackList = Array<Callback>;
+
+type ExistingAttachment = string | { name: string; url: string };
 
 export function CreateAgreementBaseFields({
   creator,
@@ -96,6 +120,10 @@ export function CreateAgreementBaseFields({
   label,
   stickyHeaderTitle,
   progress,
+  initialValues,
+  // bridgeKey is intentionally accepted but not consumed yet.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  bridgeKey,
 }: CreateAgreementFormProps) {
   const tAgreementFlow = useTranslations('AgreementFlow');
   const tCommon = useTranslations('Common');
@@ -126,21 +154,59 @@ export function CreateAgreementBaseFields({
   const resolvedLabel =
     label ?? tAgreementFlow('createAgreementBaseFields.agreementLabel');
 
-  if (!form) {
-    return (
-      <div>
-        {tAgreementFlow('createAgreementBaseFields.formContextMissing')}
-      </div>
-    );
-  }
-
-  const [resubmitFormData, setResubmitFormData] = React.useState<{
-    leadImage?: string;
-    attachments?: (string | { name: string; url: string })[];
-  } | null>(null);
+  const [resubmitFormData, setResubmitFormData] =
+    React.useState<ResubmitFormData | null>(null);
   const [existingAttachments, setExistingAttachments] = React.useState<
-    (string | { name: string; url: string })[]
+    ExistingAttachment[]
   >([]);
+
+  // Helper: keep the React Hook Form `attachments` field in sync with the
+  // local `existingAttachments` UI state. Without this, prefilled attachments
+  // would render in the widget but be omitted from the submitted payload.
+  const seedExistingAttachments = React.useCallback(
+    (attachments: ExistingAttachment[]) => {
+      if (!form) return;
+      setExistingAttachments(attachments);
+      form.setValue(
+        'attachments',
+        attachments as CreateAgreementFormData['attachments'],
+        { shouldValidate: false },
+      );
+    },
+    [form],
+  );
+
+  // Apply title/description from the bridge once on mount. Only flip the
+  // applied flag when a value is actually set, so a later render that finally
+  // delivers the field can still apply it.
+  const didApplyBridgeFields = React.useRef(false);
+  React.useEffect(() => {
+    if (!form) return;
+    if (didApplyBridgeFields.current) return;
+    if (!initialValues) return;
+    if (initialValues.title) {
+      form.setValue('title', initialValues.title);
+      didApplyBridgeFields.current = true;
+    }
+    if (initialValues.description) {
+      form.setValue('description', initialValues.description);
+      didApplyBridgeFields.current = true;
+    }
+  }, [form, initialValues]);
+
+  // Apply bridge attachments once on mount (cross-origin source: not in
+  // sessionStorage). Takes priority over resubmit data.
+  const didApplyBridgeAttachments = React.useRef(false);
+  React.useEffect(() => {
+    if (didApplyBridgeAttachments.current) return;
+    if (!initialValues?.attachments?.length) return;
+    const mapped = initialValues.attachments.map(({ url, filename }) => ({
+      url,
+      name: filename,
+    }));
+    seedExistingAttachments(mapped);
+    didApplyBridgeAttachments.current = true;
+  }, [initialValues?.attachments, seedExistingAttachments]);
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -168,8 +234,13 @@ export function CreateAgreementBaseFields({
       }
 
       setResubmitFormData(parsed);
-      if (parsed.attachments && parsed.attachments.length > 0) {
-        setExistingAttachments(parsed.attachments);
+      // Bridge attachments win over sessionStorage attachments.
+      if (
+        parsed.attachments &&
+        parsed.attachments.length > 0 &&
+        !initialValues?.attachments?.length
+      ) {
+        seedExistingAttachments(parsed.attachments);
       }
 
       sessionStorage.setItem(
@@ -184,7 +255,7 @@ export function CreateAgreementBaseFields({
       console.error('Error reading resubmit form data:', error);
       sessionStorage.removeItem(RESUBMIT_FORM_DATA_KEY);
     }
-  }, [pathname]);
+  }, [pathname, initialValues?.attachments, seedExistingAttachments]);
 
   const { space } = useSpaceBySlug(spaceSlug as string);
 
@@ -328,7 +399,6 @@ export function CreateAgreementBaseFields({
         if (progressRef.current < 100) {
           setDelayedCallbacks((prev) => {
             if (prev.length > 0) {
-              // Normally should be called at most once
               return prev;
             }
             return [
@@ -366,6 +436,7 @@ export function CreateAgreementBaseFields({
   });
 
   const handleResetForm = React.useCallback(() => {
+    if (!form) return;
     form.reset();
     setExistingAttachments([]);
     setResubmitFormData(null);
@@ -377,6 +448,14 @@ export function CreateAgreementBaseFields({
     }
     hasAppliedSpaceBannerDefaultRef.current = false;
   }, [form]);
+
+  if (!form) {
+    return (
+      <div>
+        {tAgreementFlow('createAgreementBaseFields.formContextMissing')}
+      </div>
+    );
+  }
 
   return (
     <>
@@ -536,46 +615,54 @@ export function CreateAgreementBaseFields({
           <FormField
             control={form.control}
             name="leadImage"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <UploadLeadImage
-                    onChange={field.onChange}
-                    maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
-                    enableImageResizer={true}
-                    cropDialogLabels={{
-                      title: tCommon('uploadLeadImage.cropTitle'),
-                      description: tCommon('uploadLeadImage.cropDescription'),
-                      cancel: tCommon('uploadLeadImage.cancel'),
-                      confirm: tCommon('uploadLeadImage.confirm'),
-                    }}
-                    messages={{
-                      dropHere: tCommon('uploadLeadImage.dropHere'),
-                      fileTooLarge: tCommon('uploadLeadImage.fileTooLarge'),
-                      uploadFailed: tCommon('uploadLeadImage.uploadFailed'),
-                    }}
-                    uploadText={tAgreementFlow.rich(
-                      'createAgreementBaseFields.uploadImageLabel',
-                      {
-                        accent: (chunks) => (
-                          <span className="text-accent-11">{chunks}</span>
-                        ),
-                      },
-                    )}
-                    defaultImage={
-                      typeof field.value === 'string'
-                        ? field.value.trim().length > 0
-                          ? field.value
-                          : null
-                        : resubmitFormData?.leadImage?.trim()
-                        ? resubmitFormData.leadImage
-                        : undefined
-                    }
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            render={({ field }) => {
+              // Bridge prefill (from external integrations like ReGen Civics)
+              // wins over the user's current field value and any sessionStorage
+              // resubmit data, so the player sees their quest deliverable image
+              // without having to re-upload.
+              const resolvedDefaultImage = initialValues?.leadImage?.trim()
+                ? initialValues.leadImage
+                : typeof field.value === 'string'
+                ? field.value.trim().length > 0
+                  ? field.value
+                  : null
+                : resubmitFormData?.leadImage?.trim()
+                ? resubmitFormData.leadImage
+                : undefined;
+
+              return (
+                <FormItem>
+                  <FormControl>
+                    <UploadLeadImage
+                      onChange={field.onChange}
+                      maxFileSize={ALLOWED_IMAGE_FILE_SIZE}
+                      enableImageResizer={true}
+                      cropDialogLabels={{
+                        title: tCommon('uploadLeadImage.cropTitle'),
+                        description: tCommon('uploadLeadImage.cropDescription'),
+                        cancel: tCommon('uploadLeadImage.cancel'),
+                        confirm: tCommon('uploadLeadImage.confirm'),
+                      }}
+                      messages={{
+                        dropHere: tCommon('uploadLeadImage.dropHere'),
+                        fileTooLarge: tCommon('uploadLeadImage.fileTooLarge'),
+                        uploadFailed: tCommon('uploadLeadImage.uploadFailed'),
+                      }}
+                      uploadText={tAgreementFlow.rich(
+                        'createAgreementBaseFields.uploadImageLabel',
+                        {
+                          accent: (chunks) => (
+                            <span className="text-accent-11">{chunks}</span>
+                          ),
+                        },
+                      )}
+                      defaultImage={resolvedDefaultImage}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
           />
         </section>
         <section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm ring-1 ring-border/40 dark:bg-muted/10 lg:p-6">
