@@ -1,11 +1,16 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { useEffect, useRef } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { AsideOverlayLayoutProvider } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 import { useSpaceAccentPortalStyles } from '../spaces/components/space-accent-portal-context';
+import {
+  popMainColumnOverlayScrollLock,
+  pushMainColumnOverlayScrollLock,
+} from './main-column-scroll';
 
 type ProposalOverlayShellProps = {
   children: ReactNode;
@@ -44,7 +49,8 @@ type ProposalOverlayShellProps = {
  * on **`md+`** so clicks pass through to the menu and panel triggers, while the inner panel uses
  * **`pointer-events-auto`** so the modal stays interactive. Sidebars use `z-[50]` above the scrim.
  *
- * Body scroll is not locked so main column / panels can scroll while the overlay is open.
+ * While open, the **main column** scroll is **frozen** (so only the modal’s `narrow-scrollbar` is
+ * active — no double vertical rails). Human/AI panel / page body are not locked.
  *
  * Default desktop max size is a **mid** footprint (between a narrow chooser and the old full-width
  * card); pass {@link className} to override per flow (e.g. member profile at 640px).
@@ -55,6 +61,51 @@ export function ProposalOverlayShell({
 }: ProposalOverlayShellProps) {
   const tModalAside = useTranslations('ModalAside');
   const spaceAccentPortalStyle = useSpaceAccentPortalStyles();
+  const overlayPanelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    pushMainColumnOverlayScrollLock();
+    return () => {
+      popMainColumnOverlayScrollLock();
+    };
+  }, []);
+
+  /** Stronger scrollbar thumb while actively scrolling (WebKit + Firefox via class in narrow.css). */
+  useEffect(() => {
+    const el = overlayPanelRef.current;
+    if (!el) return;
+    let scrollIdleTimer: ReturnType<typeof setTimeout> | null = null;
+    let raf = 0;
+
+    const clearScrollingClass = () => {
+      el.classList.remove('narrow-scrollbar-scrolling');
+    };
+
+    const onScroll = () => {
+      el.classList.add('narrow-scrollbar-scrolling');
+      if (scrollIdleTimer) clearTimeout(scrollIdleTimer);
+      scrollIdleTimer = setTimeout(() => {
+        scrollIdleTimer = null;
+        clearScrollingClass();
+      }, 650);
+    };
+
+    const scheduleScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        onScroll();
+      });
+    };
+
+    el.addEventListener('scroll', scheduleScroll, { passive: true });
+    return () => {
+      el.removeEventListener('scroll', scheduleScroll);
+      if (raf) cancelAnimationFrame(raf);
+      if (scrollIdleTimer) clearTimeout(scrollIdleTimer);
+      clearScrollingClass();
+    };
+  }, []);
 
   return (
     <AsideOverlayLayoutProvider mode="modal-shell">
@@ -84,6 +135,7 @@ export function ProposalOverlayShell({
               {tModalAside('panelAccessibleName')}
             </DialogPrimitive.Title>
             <div
+              ref={overlayPanelRef}
               className={cn(
                 'pointer-events-auto relative flex w-full min-h-0 flex-col outline-none md:mx-auto md:max-h-[min(640px,calc(100dvh_-_var(--menu-top-height,65px)_-_2.5rem))] md:max-w-[min(768px,calc(100vw_-_var(--sidebar-left-width,0px)_-_var(--sidebar-right-width,0px)_-_var(--main-column-scrollbar-width,10px)_-_2.5rem))]',
                 'md:z-10 md:flex-initial md:overflow-y-auto md:rounded-2xl md:border md:border-border/90 md:bg-background-2 md:shadow-2xl md:ring-1 md:ring-white/5 dark:md:ring-white/10',

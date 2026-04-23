@@ -26,6 +26,8 @@ export {
   useMainColumnScrollY,
   getMainColumnScrollY,
   subscribeMainColumnScroll,
+  pushMainColumnOverlayScrollLock,
+  popMainColumnOverlayScrollLock,
 } from './main-column-scroll';
 export {
   HumanChatPanelHeader,

@@ -85,3 +85,31 @@ export function useMainColumnScrollY(): number {
     () => 0,
   );
 }
+
+/** Ref-count: freeze main-column scroll while e.g. proposal overlay scrolls its own panel (avoid double rails). */
+let overlayScrollLockDepth = 0;
+let lockedInsetEl: HTMLElement | null = null;
+let lockedInsetPrevOverflow = '';
+
+export function pushMainColumnOverlayScrollLock(): void {
+  if (typeof document === 'undefined') return;
+  overlayScrollLockDepth += 1;
+  if (overlayScrollLockDepth !== 1) return;
+  const el = scrollRoot;
+  if (!el) return;
+  lockedInsetEl = el;
+  lockedInsetPrevOverflow = el.style.overflow;
+  el.style.overflow = 'hidden';
+}
+
+export function popMainColumnOverlayScrollLock(): void {
+  if (typeof document === 'undefined') return;
+  if (overlayScrollLockDepth === 0) return;
+  overlayScrollLockDepth -= 1;
+  if (overlayScrollLockDepth !== 0) return;
+  const el = lockedInsetEl;
+  lockedInsetEl = null;
+  if (!el) return;
+  el.style.overflow = lockedInsetPrevOverflow;
+  lockedInsetPrevOverflow = '';
+}
