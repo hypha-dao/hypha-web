@@ -62,7 +62,6 @@ export const CreateSignalForm = ({
 }: CreateSignalFormProps) => {
   const t = useTranslations('CoherenceTab');
   const tAgreementFlow = useTranslations('AgreementFlow');
-  const tSpaces = useTranslations('Spaces');
   const translateEditor = React.useCallback(
     (
       key: string,
@@ -292,7 +291,7 @@ export const CreateSignalForm = ({
                     disabled={isCreatingCoherence}
                   >
                     <RefreshCw className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                    <span>{tSpaces('reset')}</span>
+                    <span>{t('reset')}</span>
                   </Button>
                 ) : null}
                 <ButtonClose
