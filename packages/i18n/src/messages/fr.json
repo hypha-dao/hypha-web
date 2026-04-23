@@ -1086,7 +1086,11 @@
         "leaveBlankUseTokenPrice": "Laissez vide pour utiliser le prix du token ({price} {currency})",
         "leaveBlankForTokenContractPrice": "Laissez vide pour utiliser le prix du contrat du token",
         "add": "Ajouter",
-        "remove": "Retirer"
+        "remove": "Retirer",
+        "errors": {
+          "spaceNotReady": "Votre espace n'est pas encore complètement chargé. Veuillez rafraîchir la page et réessayer.",
+          "spaceNotOnChain": "Votre espace n'a pas encore été publié on-chain, donc un coffre de garantie ne peut pas être créé. Publiez d'abord l'espace, puis revenez créer le coffre."
+        }
       },
       "issueNewToken": {
         "general": {

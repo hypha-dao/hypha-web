@@ -180,7 +180,11 @@
         "leaveBlankUseTokenPrice": "Déjalo en blanco para usar el precio del token ({price} {currency})",
         "leaveBlankForTokenContractPrice": "Déjalo en blanco para usar el precio del contrato del token",
         "add": "Agregar",
-        "remove": "Eliminar"
+        "remove": "Eliminar",
+        "errors": {
+          "spaceNotReady": "Tu espacio aún no se ha cargado por completo. Por favor, actualiza la página y vuelve a intentarlo.",
+          "spaceNotOnChain": "Tu espacio aún no se ha publicado on-chain, por lo que no se puede crear una bóveda de respaldo. Publica el espacio primero y luego vuelve para crear la bóveda."
+        }
       },
       "issueNewToken": {
         "general": {
