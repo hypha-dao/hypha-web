@@ -19,6 +19,17 @@ export const COMPACT_SPACE_BANNER_TITLE_CLASSNAME = cn(
   '[font-family:var(--font-family-text),ui-sans-serif,system-ui,sans-serif]',
 );
 
+/** Smaller footprint for the DHO sticky space chrome row — secondary tier under MenuTop, not a mini hero */
+export const STICKY_SPACE_CHROME_AVATAR_CLASSNAME = cn(
+  'h-10 w-10 shrink-0 rounded-full sm:h-11 sm:w-11',
+  'ring-1 ring-border/60 shadow-sm',
+);
+
+export const STICKY_SPACE_CHROME_TITLE_CLASSNAME = cn(
+  'text-balance text-4 font-medium tracking-tight sm:text-5',
+  '[font-family:var(--font-family-text),ui-sans-serif,system-ui,sans-serif]',
+);
+
 /** Purpose column — max four lines on narrow viewports (scroll); sm+ wider column + taller cap. */
 const DESCRIPTION_SCROLL_BOX = cn(
   'w-full max-w-full min-h-0 max-h-[4lh] overflow-y-auto overscroll-y-contain touch-pan-y',
