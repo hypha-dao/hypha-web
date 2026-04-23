@@ -2,10 +2,13 @@ export const COHERENCE_PRIORITIES = ['high', 'medium', 'low'] as const;
 
 export type CoherencePriority = (typeof COHERENCE_PRIORITIES)[number];
 
+/** Icon names used by priority options — matches `DynamicIcon` / Lucide registry. */
+export type CoherencePriorityIconName = 'CircleAlert' | 'CircleDot' | 'Circle';
+
 export const COHERENCE_PRIORITY_OPTIONS: {
   priority: CoherencePriority;
   /** Lucide icon name (see `DynamicIcon` in @hypha-platform/ui). */
-  icon: string;
+  icon: CoherencePriorityIconName;
   title: string;
   description: string;
   colorVariant: string;
