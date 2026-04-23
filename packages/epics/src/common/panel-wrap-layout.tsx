@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useLayoutEffect, useState } from 'react';
 import { MessageCircle, Sparkles } from 'lucide-react';
 import {
   SidebarProvider,
@@ -101,6 +101,37 @@ type PanelWrapLayoutProps = {
   right?: PanelSlot;
 };
 
+/** Matches `PanelScrollInset` — portaled overlays read this from `document.documentElement`. */
+const MAIN_COLUMN_SCROLLBAR_WIDTH_CSS = '10px';
+
+const SIDEBAR_WIDTH_MIRROR_KEYS = [
+  '--sidebar-left-width',
+  '--sidebar-right-width',
+  '--main-column-scrollbar-width',
+] as const;
+
+function mirrorMainColumnLayoutVarsToDocument(
+  sidebarLeftPx: string,
+  sidebarRightPx: string,
+): void {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  root.style.setProperty('--sidebar-left-width', sidebarLeftPx);
+  root.style.setProperty('--sidebar-right-width', sidebarRightPx);
+  root.style.setProperty(
+    '--main-column-scrollbar-width',
+    MAIN_COLUMN_SCROLLBAR_WIDTH_CSS,
+  );
+}
+
+function clearMainColumnLayoutMirrorFromDocument(): void {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  for (const key of SIDEBAR_WIDTH_MIRROR_KEYS) {
+    root.style.removeProperty(key);
+  }
+}
+
 // ─── Main Layout ─────────────────────────────────────────────────────────────
 // Reads panel open/close state from PanelProviders contexts. Creates
 // SidebarProvider wrappers for each side to drive sidebar animations.
@@ -122,6 +153,17 @@ export function PanelWrapLayout({
   // Panels are only available within a space context (/[lang]/dho/[id]/...)
   const effectiveLeft = isSpace ? left : undefined;
   const effectiveRight = isSpace ? right : undefined;
+
+  const sidebarLeftPx = leftOpen && effectiveLeft ? '320px' : '0px';
+  const sidebarRightPx = rightOpen && effectiveRight ? '320px' : '0px';
+
+  /** Radix portaled dialogs sit under `body` and do not inherit vars from this div — mirror to `:root`. */
+  useLayoutEffect(() => {
+    mirrorMainColumnLayoutVarsToDocument(sidebarLeftPx, sidebarRightPx);
+    return () => {
+      clearMainColumnLayoutMirrorFromDocument();
+    };
+  }, [sidebarLeftPx, sidebarRightPx]);
 
   // Core content that goes inside the scrollable SidebarInset (when panels wrap layout)
   let content = <>{children}</>;
@@ -193,9 +235,8 @@ export function PanelWrapLayout({
     <div
       style={
         {
-          '--sidebar-right-width':
-            rightOpen && effectiveRight ? '320px' : '0px',
-          '--sidebar-left-width': leftOpen && effectiveLeft ? '320px' : '0px',
+          '--sidebar-right-width': sidebarRightPx,
+          '--sidebar-left-width': sidebarLeftPx,
           transitionProperty: '--sidebar-left-width, --sidebar-right-width',
           transitionDuration: '200ms',
           transitionTimingFunction: 'linear',

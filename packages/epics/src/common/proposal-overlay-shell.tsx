@@ -63,6 +63,10 @@ type ProposalOverlayShellProps = {
  *
  * Plain scrim: we still render the scrim `div` ourselves (aligned with MenuTop).
  *
+ * **Portals:** `DialogPrimitive.Portal` renders under `document.body`. `--sidebar-*` and
+ * `--main-column-scrollbar-width` are mirrored onto `document.documentElement` by
+ * {@link PanelWrapLayout} so fixed positioning math matches the main column.
+ *
  * **MenuTop:** `layout.tsx` uses `z-30` for the nav strip. Scrim and host sit above it
  * (`z-40` / `z-[41]`) so the overlay dims the full main column including space chrome;
  * side panels use higher z and remain on top where applicable.
@@ -108,7 +112,7 @@ export function ProposalOverlayShell({
           <div
             className={cn(
               'fixed bottom-0 z-40 hidden bg-black/45 backdrop-blur-md supports-[backdrop-filter]:bg-black/35 md:block',
-              'left-[var(--sidebar-left-width,0px)] right-[var(--sidebar-right-width,0px)]',
+              'left-[var(--sidebar-left-width,0px)] right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))]',
               'top-[var(--menu-top-height,65px)]',
             )}
             aria-hidden
@@ -118,9 +122,9 @@ export function ProposalOverlayShell({
             onInteractOutside={(e) => e.preventDefault()}
             onEscapeKeyDown={(e) => e.preventDefault()}
             className={cn(
-              'fixed z-[41] outline-none max-md:inset-auto max-md:bottom-0 max-md:left-[var(--sidebar-left-width,0px)] max-md:top-[var(--menu-top-height,65px)] max-md:right-[var(--sidebar-right-width,0px)] max-md:h-auto max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:bg-background-2 max-md:shadow-none',
+              'fixed z-[41] outline-none max-md:inset-auto max-md:bottom-0 max-md:left-[var(--sidebar-left-width,0px)] max-md:top-[var(--menu-top-height,65px)] max-md:right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))] max-md:h-auto max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:bg-background-2 max-md:shadow-none',
               // Host fills main column from top of viewport; horizontal bounds match inset when panels are open.
-              'md:left-[var(--sidebar-left-width,0px)] md:right-[var(--sidebar-right-width,0px)] md:bottom-0 md:top-0 md:flex md:items-center md:justify-center md:overflow-hidden md:bg-transparent md:p-4 md:pt-[max(1rem,var(--menu-top-height,65px))]',
+              'md:left-[var(--sidebar-left-width,0px)] md:right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))] md:bottom-0 md:top-0 md:flex md:items-center md:justify-center md:overflow-hidden md:bg-transparent md:p-4 md:pt-[max(1rem,var(--menu-top-height,65px))]',
             )}
           >
             <DialogPrimitive.Title className="sr-only">
@@ -128,7 +132,7 @@ export function ProposalOverlayShell({
             </DialogPrimitive.Title>
             <div
               className={cn(
-                'relative flex w-full min-h-0 flex-col outline-none md:mx-auto md:max-h-[min(720px,calc(100dvh_-_var(--menu-top-height,65px)_-_2rem))] md:max-w-[min(896px,calc(100vw_-_var(--sidebar-left-width,0px)_-_var(--sidebar-right-width,0px)_-_2rem))]',
+                'relative flex w-full min-h-0 flex-col outline-none md:mx-auto md:max-h-[min(720px,calc(100dvh_-_var(--menu-top-height,65px)_-_2rem))] md:max-w-[min(896px,calc(100vw_-_var(--sidebar-left-width,0px)_-_var(--sidebar-right-width,0px)_-_var(--main-column-scrollbar-width,10px)_-_2rem))]',
                 'md:z-10 md:flex-initial md:overflow-y-auto md:rounded-2xl md:border md:border-border/90 md:bg-background-2 md:shadow-2xl md:ring-1 md:ring-white/5 dark:md:ring-white/10',
                 'max-md:max-h-[calc(100dvh_-_var(--menu-top-height,65px))] max-md:overflow-y-auto',
                 'narrow-scrollbar',
