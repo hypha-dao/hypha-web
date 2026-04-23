@@ -77,6 +77,8 @@ export function QuorumAndUnityChangerField({
                   className={cn(
                     'flex h-full flex-col items-start rounded-xl p-4 text-left shadow-sm transition-colors',
                     'border bg-card hover:bg-muted/45 dark:hover:bg-muted/25',
+                    /* Button adds focus-visible:ring-ring — override so focus matches space accent (not gray until blur). */
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--space-accent,var(--color-accent-9))] focus-visible:ring-offset-0',
                     isSelected
                       ? 'border-transparent bg-[color-mix(in_oklab,var(--space-accent,var(--color-accent-9))_12%,var(--card))] ring-2 ring-[var(--space-accent,var(--color-accent-9))] ring-offset-0 dark:bg-[color-mix(in_oklab,var(--space-accent,var(--color-accent-9))_18%,var(--card))]'
                       : 'border-border/90',
