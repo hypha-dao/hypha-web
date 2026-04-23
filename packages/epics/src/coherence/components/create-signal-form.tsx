@@ -301,8 +301,8 @@ export const CreateSignalForm = ({
               </div>
             </div>
 
-            {/* Avatar + title field — items-start aligns avatar with input (token burning layout) */}
-            <div className="flex flex-row items-start gap-3 px-4 pb-4 pt-5 lg:px-7">
+            {/* Avatar + title — match {@link CreateAgreementBaseFields} proposal title row */}
+            <div className="flex flex-grow gap-3 px-4 pb-4 pt-5 lg:px-7">
               <PersonAvatar
                 size="lg"
                 isLoading={isCreatingCoherence}
@@ -311,7 +311,7 @@ export const CreateSignalForm = ({
                   .filter(Boolean)
                   .join(' ')}
               />
-              <div className="flex min-w-0 flex-1 flex-col gap-3">
+              <div className="flex w-full min-w-0 flex-col gap-1.5 sm:gap-2">
                 <FormField
                   control={form.control}
                   name="title"
@@ -319,10 +319,13 @@ export const CreateSignalForm = ({
                     <FormItem>
                       <FormControl>
                         <Input
+                          rootClassName="!h-auto min-h-10 w-full sm:min-h-11"
                           placeholder={t('signalTitle')}
-                          className="min-h-10 bg-background py-2.5 text-sm text-foreground shadow-sm placeholder:text-muted-foreground"
+                          className="!h-auto min-h-10 w-full border-0 bg-inherit p-0 py-1 text-lg font-semibold leading-snug tracking-tight text-foreground placeholder:!text-base placeholder:font-medium placeholder:leading-snug placeholder:text-muted-foreground/80 sm:min-h-11 sm:text-xl sm:placeholder:!text-lg"
                           disabled={isCreatingCoherence}
-                          rightIcon={<RequirementMark className="text-4" />}
+                          rightIcon={
+                            <RequirementMark className="h-4 w-4 text-muted-foreground sm:h-4 sm:w-4" />
+                          }
                           {...field}
                         />
                       </FormControl>
