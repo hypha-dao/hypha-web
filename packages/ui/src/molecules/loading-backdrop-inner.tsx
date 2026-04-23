@@ -34,6 +34,14 @@ export type LoadingBackdropInnerProps =
       keepWindowOpenMessage: React.ReactNode;
     });
 
+/**
+ * Matches {@link ProposalOverlayShell} / DHO scrim: portaled UI must not use full
+ * viewport width when side panels are open — mirror vars on `:root` from
+ * `PanelWrapLayout`.
+ */
+const MAIN_COLUMN_EDGE_CLASSES =
+  'left-[var(--sidebar-left-width,0px)] right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))] top-[var(--menu-top-height,65px)]';
+
 /** Legacy card — docked side panel & inline overlays (unchanged layout). */
 function ProgressCard({
   progress,
@@ -142,10 +150,10 @@ export function LoadingBackdropInner({
   const modalShellOverlayInner = (
     <div
       className={cn(
-        'fixed inset-0 z-[45] flex flex-col items-center justify-center p-4 lg:p-8',
+        'fixed bottom-0 z-[45] flex flex-col items-center justify-center p-4 lg:p-8',
+        MAIN_COLUMN_EDGE_CLASSES,
         'bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70',
         'dark:bg-black/45 dark:supports-[backdrop-filter]:bg-black/35',
-        'max-md:top-[var(--menu-top-height,65px)] max-md:right-[var(--sidebar-right-width,0px)]',
         className,
       )}
       style={portalScopeStyle}
@@ -168,12 +176,11 @@ export function LoadingBackdropInner({
     (fullHeight && resolvedFullHeightVariant === 'docked-panel' ? (
       <div
         className={cn(
-          'fixed bottom-0 z-[28] flex w-full flex-col items-center justify-center space-y-2 bg-background/75 p-4 md:w-container-sm lg:p-7',
+          'fixed bottom-0 z-[28] flex w-full flex-col items-center justify-center space-y-2 bg-background/75 p-4 lg:p-7',
+          MAIN_COLUMN_EDGE_CLASSES,
           className,
         )}
         style={{
-          top: 'var(--menu-top-height, 65px)',
-          right: 'var(--sidebar-right-width, 0px)',
           ...portalScopeStyle,
         }}
         data-space-accent-scope={portalScopeStyle ? '' : undefined}
