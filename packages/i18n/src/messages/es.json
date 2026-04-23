@@ -79,6 +79,7 @@
       "invalidEthereumAddress": "Dirección de Ethereum inválida",
       "amountGreaterThanZero": "El monto debe ser mayor que 0",
       "amountRequired": "Ingresa un monto para continuar.",
+      "enterAmountPrompt": "Por favor, introduce una cantidad.",
       "tokenRequired": "Selecciona un token",
       "atLeastOnePayoutRequired": "Se requiere al menos un pago",
       "purchaseAmountRequired": "Ingresa un monto de compra.",

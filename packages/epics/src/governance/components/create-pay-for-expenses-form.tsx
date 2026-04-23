@@ -75,8 +75,8 @@ export const CreatePayForExpensesForm = ({
       recipient: '',
       payouts: [
         {
-          amount: undefined,
-          token: undefined,
+          amount: '',
+          token: '',
         },
       ],
     },

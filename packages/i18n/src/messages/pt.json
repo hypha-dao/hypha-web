@@ -79,6 +79,7 @@
       "invalidEthereumAddress": "Endereço Ethereum inválido",
       "amountGreaterThanZero": "O valor deve ser maior que 0",
       "amountRequired": "Insira um valor para continuar.",
+      "enterAmountPrompt": "Por favor, insira um valor.",
       "tokenRequired": "Selecione um token",
       "chooseTokenToBurn": "Escolha um token para queimar",
       "atLeastOneBurnTargetRequired": "É necessário pelo menos um destino de queima",

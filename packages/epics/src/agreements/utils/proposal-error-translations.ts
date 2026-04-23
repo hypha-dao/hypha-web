@@ -33,6 +33,9 @@ const PROPOSAL_ERROR_KEY_MAP: Record<string, string> = {
   'Invalid Ethereum address': 'proposalErrors.invalidEthereumAddress',
   'Amount must be greater than 0': 'proposalErrors.amountGreaterThanZero',
   'Amount is required': 'proposalErrors.amountRequired',
+  /** Payout rows — matches `schemaPayoutRow` / `payoutRowField` Zod messages */
+  'Please enter an amount.': 'proposalErrors.enterAmountPrompt',
+  'Please select a token': 'proposalErrors.tokenRequired',
   'Token is required': 'proposalErrors.tokenRequired',
   'At least one payout is required': 'proposalErrors.atLeastOnePayoutRequired',
   'Please enter a purchase amount.': 'proposalErrors.purchaseAmountRequired',
