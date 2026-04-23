@@ -78,7 +78,7 @@ export function QuorumAndUnityChangerField({
                     'flex h-full flex-col items-start rounded-xl p-4 text-left shadow-sm transition-colors',
                     'border bg-card hover:bg-muted/45 dark:hover:bg-muted/25',
                     isSelected
-                      ? 'border-accent-9 bg-accent-2/35 ring-1 ring-accent-9/25 dark:bg-accent-3/20 dark:ring-accent-10/30'
+                      ? 'border-transparent bg-[color-mix(in_oklab,var(--space-accent,var(--color-accent-9))_12%,var(--card))] ring-2 ring-[var(--space-accent,var(--color-accent-9))] ring-offset-0 dark:bg-[color-mix(in_oklab,var(--space-accent,var(--color-accent-9))_18%,var(--card))]'
                       : 'border-border/90',
                   )}
                 >
@@ -93,7 +93,7 @@ export function QuorumAndUnityChangerField({
                     <div className="flex items-center gap-2">
                       <div className="relative h-5 flex-1 rounded-2xl bg-muted">
                         <div
-                          className="h-5 rounded-2xl bg-accent-8/90 dark:bg-accent-9/85"
+                          className="h-5 rounded-2xl bg-[color-mix(in_oklab,var(--space-accent,var(--color-accent-9))_90%,transparent)]"
                           style={{
                             width: `${preset.quorum}%`,
                           }}
@@ -110,7 +110,7 @@ export function QuorumAndUnityChangerField({
                     <div className="flex items-center gap-2">
                       <div className="relative h-5 flex-1 rounded-2xl bg-muted">
                         <div
-                          className="h-5 rounded-2xl bg-accent-8/90 dark:bg-accent-9/85"
+                          className="h-5 rounded-2xl bg-[color-mix(in_oklab,var(--space-accent,var(--color-accent-9))_90%,transparent)]"
                           style={{
                             width: `${preset.unity}%`,
                           }}

@@ -58,8 +58,8 @@ const Slider = React.forwardRef<
               })}
         >
           {/*
-          Track / fill aligned with ProposalDetails `ProgressLine` (voting details):
-          muted track + inset ring, primary/accent fill, clear thumb on the rail.
+          Track: same muted shell as proposal voting. Fill + thumb use
+          `--space-accent` when mirrored to :root (DHO), else theme accent-9.
         */}
           <SliderPrimitive.Track
             className={cn(
@@ -67,12 +67,19 @@ const Slider = React.forwardRef<
               'bg-muted/80 ring-1 ring-inset ring-border/60',
             )}
           >
-            <SliderPrimitive.Range className="absolute h-full rounded-full bg-primary" />
+            <SliderPrimitive.Range
+              className={cn(
+                'absolute h-full rounded-full',
+                /* Space-scoped routes mirror `--space-accent` on `:root` */
+                'bg-[color-mix(in_oklab,var(--space-accent,var(--color-accent-9))_92%,transparent)]',
+              )}
+            />
           </SliderPrimitive.Track>
           <SliderPrimitive.Thumb
             className={cn(
               'block h-3.5 w-3.5 rounded-full border-2 border-background',
-              'bg-foreground shadow-md ring-1 ring-border/50',
+              'bg-background shadow-md',
+              'ring-2 ring-[var(--space-accent,var(--color-accent-9))] ring-offset-2 ring-offset-background',
               'transition-[transform,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
               'disabled:pointer-events-none disabled:opacity-50',
             )}
