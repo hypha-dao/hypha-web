@@ -41,6 +41,6 @@ export async function deleteCoherenceBySlugAction(
   }
   return deleteCoherenceBySlug(
     { slug: data.slug, requesterPersonId: self.id },
-    { db },
+    { db: authDb },
   );
 }
