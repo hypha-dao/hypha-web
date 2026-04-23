@@ -63,12 +63,32 @@ export const CreateProposalTokenBackingVaultForm = ({
     isError,
     isPending,
     progress,
+    errors,
   } = useCreateTokenBackingVaultOrchestrator({
     authToken: jwt,
     config,
   });
 
   const [formError, setFormError] = React.useState<string | null>(null);
+
+  // Aggregate every actionable message from the orchestration chain
+  // (preflight validation, web2 mutation, web3 wait, etc.) so the user
+  // sees the actual revert reason instead of just a generic "Oh snap".
+  const errorMessages = React.useMemo(() => {
+    const seen = new Set<string>();
+    const messages: string[] = [];
+    for (const err of errors) {
+      if (!err) continue;
+      const msg = err instanceof Error ? err.message : String(err);
+      if (!msg || seen.has(msg)) continue;
+      seen.add(msg);
+      messages.push(msg);
+    }
+    if (formError && !seen.has(formError)) {
+      messages.push(formError);
+    }
+    return messages;
+  }, [errors, formError]);
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
@@ -112,11 +132,18 @@ export const CreateProposalTokenBackingVaultForm = ({
 
   const handleCreate = async (data: FormValues) => {
     setFormError(null);
-    await createTokenBackingVault({
-      ...data,
-      spaceId: spaceId as number,
-      web3SpaceId: web3SpaceId as number,
-    });
+    try {
+      await createTokenBackingVault({
+        ...data,
+        spaceId: spaceId as number,
+        web3SpaceId: web3SpaceId as number,
+      });
+    } catch (err) {
+      // SWR mutation already surfaces the error via `errors`, but catching here
+      // prevents an "Uncaught (in promise)" warning in the console and gives
+      // us a fallback message in case the orchestrator's error channel is empty.
+      setFormError(err instanceof Error ? err.message : String(err));
+    }
   };
 
   return (
@@ -128,8 +155,15 @@ export const CreateProposalTokenBackingVaultForm = ({
       isLoading={isPending}
       message={
         isError ? (
-          <div className="flex flex-col">
-            <div>{tSpaces('errorOhSnap')}</div>
+          <div className="flex flex-col gap-3 max-w-lg text-left">
+            <div className="font-medium">{tSpaces('errorOhSnap')}</div>
+            {errorMessages.length > 0 && (
+              <ul className="text-2 text-neutral-11 list-disc pl-4 space-y-1 whitespace-pre-wrap break-words">
+                {errorMessages.map((msg, i) => (
+                  <li key={i}>{msg}</li>
+                ))}
+              </ul>
+            )}
             <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (
