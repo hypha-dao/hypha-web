@@ -8,8 +8,6 @@ import {
   updateAgreementBySlugAction,
   deleteAgreementBySlugAction,
 } from '@hypha-platform/core/governance/server/actions';
-import { normalizeProposalDocumentLabel } from '../../proposal-document-label';
-
 export const useAgreementMutationsWeb2Rsc = (authToken?: string | null) => {
   const {
     trigger: createAgreementMutation,
@@ -19,13 +17,8 @@ export const useAgreementMutationsWeb2Rsc = (authToken?: string | null) => {
     data: createdAgreement,
   } = useSWRMutation(
     authToken ? [authToken, 'createAgreement'] : null,
-    async ([authToken], { arg }: { arg: CreateAgreementInput }) => {
-      const label =
-        arg.label != null && String(arg.label).trim() !== ''
-          ? normalizeProposalDocumentLabel(String(arg.label))
-          : arg.label;
-      return createAgreementAction({ ...arg, label }, { authToken });
-    },
+    async ([authToken], { arg }: { arg: CreateAgreementInput }) =>
+      createAgreementAction(arg, { authToken }),
   );
 
   const {
