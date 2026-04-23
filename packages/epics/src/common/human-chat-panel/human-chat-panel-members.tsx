@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Skeleton } from '@hypha-platform/ui';
 import { useMatrix } from '@hypha-platform/core/client';
 import { PersonAvatar } from '../../people/components/person-avatar';
+import { APP_CHROME_SUBTLE_SQUARE_RADIUS } from '../../spaces/components/compact-space-banner';
 import { UseMembers } from '../../spaces';
 
 type HumanChatPanelMembersProps = {
@@ -69,7 +70,11 @@ export function HumanChatPanelMembers({
               key={i}
               className="flex items-center gap-3 rounded-md px-2 py-1.5"
             >
-              <PersonAvatar isLoading size="md" className="rounded-lg" />
+              <PersonAvatar
+                isLoading
+                size="md"
+                className={APP_CHROME_SUBTLE_SQUARE_RADIUS}
+              />
               <Skeleton width="120px" height="16px" loading>
                 <div />
               </Skeleton>
@@ -98,7 +103,7 @@ export function HumanChatPanelMembers({
               avatarSrc={member.avatarUrl}
               userName={displayName}
               size="md"
-              className="rounded-lg"
+              className={APP_CHROME_SUBTLE_SQUARE_RADIUS}
             />
             <span className="text-sm text-foreground truncate">
               {displayName}

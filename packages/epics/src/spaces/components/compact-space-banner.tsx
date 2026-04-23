@@ -19,9 +19,16 @@ export const COMPACT_SPACE_BANNER_TITLE_CLASSNAME = cn(
   '[font-family:var(--font-family-text),ui-sans-serif,system-ui,sans-serif]',
 );
 
+/**
+ * Subtle square corners — matches outlined header controls (language, Space Settings) and small square avatars.
+ * (~6px; not pill, not large card radius.)
+ */
+export const APP_CHROME_SUBTLE_SQUARE_RADIUS = 'rounded-[6px]';
+
 /** Smaller footprint for the DHO sticky space chrome row — secondary tier under MenuTop, not a mini hero */
 export const STICKY_SPACE_CHROME_AVATAR_CLASSNAME = cn(
-  'h-10 w-10 shrink-0 rounded-full sm:h-11 sm:w-11',
+  'h-10 w-10 shrink-0 sm:h-11 sm:w-11',
+  APP_CHROME_SUBTLE_SQUARE_RADIUS,
   'ring-1 ring-border/60 shadow-sm',
 );
 

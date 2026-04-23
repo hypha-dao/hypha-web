@@ -7,6 +7,7 @@ import {
 } from '@hypha-platform/core/client';
 
 import { PersonAvatar } from '../../people/components/person-avatar';
+import { APP_CHROME_SUBTLE_SQUARE_RADIUS } from '../../spaces/components/compact-space-banner';
 import { cn } from '@hypha-platform/ui-utils';
 
 function formatHyphaPersonName(p: {
@@ -80,7 +81,7 @@ export function HumanChatMentionCandidateRow({
         avatarSrc={avatarSrc}
         userName={resolvedName}
         size="sm"
-        className="shrink-0 rounded-lg"
+        className={cn('shrink-0', APP_CHROME_SUBTLE_SQUARE_RADIUS)}
         isLoading={busy}
       />
       <span className="min-w-0 flex-1">

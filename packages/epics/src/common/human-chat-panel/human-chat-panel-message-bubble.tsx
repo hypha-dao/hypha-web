@@ -31,6 +31,7 @@ import {
   useUserPrivyIdByMatrixId,
 } from '@hypha-platform/core/client';
 import { PersonAvatar } from '../../people/components/person-avatar';
+import { APP_CHROME_SUBTLE_SQUARE_RADIUS } from '../../spaces/components/compact-space-banner';
 
 import { HumanChatPanelEmojiPicker } from './human-chat-panel-emoji-picker';
 import {
@@ -1400,7 +1401,7 @@ export function HumanChatPanelMessageBubble({
           <div ref={replyAvatarMeasureRef} className="shrink-0">
             <PersonAvatar
               size="sm"
-              className="rounded-lg"
+              className={APP_CHROME_SUBTLE_SQUARE_RADIUS}
               avatarSrc={replyHeaderAvatarResolved}
               userName={replyAuthorLabelForUi}
               isLoading={replyProfileLoading}
@@ -1432,7 +1433,7 @@ export function HumanChatPanelMessageBubble({
           <div ref={mainAvatarMeasureRef} className="relative">
             <PersonAvatar
               size="chat"
-              className="rounded-lg"
+              className={APP_CHROME_SUBTLE_SQUARE_RADIUS}
               avatarSrc={mainAvatarSrc}
               userName={senderName}
               isLoading={senderProfileLoading}
