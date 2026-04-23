@@ -209,8 +209,8 @@ export function DhoStickySpaceChrome({
         <div
           ref={setFlowActionsEl}
           className={cn(
-            /* No extra horizontal padding: tab content (e.g. Claim) uses full container width */
-            'flex justify-end gap-2 px-0 md:flex-nowrap',
+            /* Same min-height as HumanChatPanelTabs so bottom borders align with chat panel */
+            'flex justify-end gap-2 px-0 md:flex-nowrap md:items-center md:min-h-[var(--secondary-chrome-actions-row-height,52px)]',
             stuck && 'pointer-events-none invisible opacity-0',
           )}
           style={stuck ? { minHeight: flowMinH } : undefined}

@@ -44,6 +44,14 @@ html {
     --sidebar-right-width 200ms linear;
 }
 
+/*
+ * DHO space actions row (Join / Settings / Create) + Human Chat tab strip share this height so
+ * their bottom borders line up across the main column ↔ chat panel gap.
+ */
+:root {
+  --secondary-chrome-actions-row-height: 52px;
+}
+
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 @theme {

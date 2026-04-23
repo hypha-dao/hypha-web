@@ -72,7 +72,13 @@ export function HumanChatPanelTabs({
   };
 
   return (
-    <div className="relative flex w-full min-w-0 items-center gap-2 border-b border-border bg-transparent px-4 py-2">
+    <div
+      className={cn(
+        'relative flex w-full min-w-0 items-center gap-2 border-b border-border bg-transparent px-4 py-2',
+        /* Match DHO secondary actions row — shared token in global.css */
+        'min-h-[var(--secondary-chrome-actions-row-height,52px)]',
+      )}
+    >
       <div
         role="tablist"
         className="flex min-w-0 flex-1 flex-wrap items-center gap-1"
