@@ -43,6 +43,10 @@ type ProposalOverlayShellProps = {
  * `z-[50]` ({@link PanelWrapLayout}) so they stay above the scrim and usable.
  *
  * Body scroll is not locked so main column / panels can scroll while the overlay is open.
+ *
+ * Default desktop footprint is intentionally modest (narrower max-width + lower max-height, larger
+ * host padding) so the panel does not dominate the center column; pass {@link className} to
+ * override per flow (e.g. member profile).
  */
 export function ProposalOverlayShell({
   children,
@@ -71,7 +75,7 @@ export function ProposalOverlayShell({
             className={cn(
               'fixed z-[41] outline-none max-md:inset-auto max-md:bottom-0 max-md:left-[var(--sidebar-left-width,0px)] max-md:top-[var(--menu-top-height,65px)] max-md:right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))] max-md:h-auto max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:bg-background-2 max-md:shadow-none',
               // Host fills main column from top of viewport; horizontal bounds match inset when panels are open.
-              'md:left-[var(--sidebar-left-width,0px)] md:right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))] md:bottom-0 md:top-0 md:flex md:items-center md:justify-center md:overflow-hidden md:bg-transparent md:p-4 md:pt-[max(1rem,var(--menu-top-height,65px))]',
+              'md:left-[var(--sidebar-left-width,0px)] md:right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))] md:bottom-0 md:top-0 md:flex md:items-center md:justify-center md:overflow-hidden md:bg-transparent md:p-6 md:pt-[max(1rem,var(--menu-top-height,65px))]',
             )}
           >
             <DialogPrimitive.Title className="sr-only">
@@ -79,7 +83,7 @@ export function ProposalOverlayShell({
             </DialogPrimitive.Title>
             <div
               className={cn(
-                'relative flex w-full min-h-0 flex-col outline-none md:mx-auto md:max-h-[min(720px,calc(100dvh_-_var(--menu-top-height,65px)_-_2rem))] md:max-w-[min(896px,calc(100vw_-_var(--sidebar-left-width,0px)_-_var(--sidebar-right-width,0px)_-_var(--main-column-scrollbar-width,10px)_-_2rem))]',
+                'relative flex w-full min-h-0 flex-col outline-none md:mx-auto md:max-h-[min(560px,calc(100dvh_-_var(--menu-top-height,65px)_-_3rem))] md:max-w-[min(640px,calc(100vw_-_var(--sidebar-left-width,0px)_-_var(--sidebar-right-width,0px)_-_var(--main-column-scrollbar-width,10px)_-_3rem))]',
                 'md:z-10 md:flex-initial md:overflow-y-auto md:rounded-2xl md:border md:border-border/90 md:bg-background-2 md:shadow-2xl md:ring-1 md:ring-white/5 dark:md:ring-white/10',
                 'max-md:max-h-[calc(100dvh_-_var(--menu-top-height,65px))] max-md:overflow-y-auto',
                 'narrow-scrollbar',
