@@ -63,7 +63,12 @@ export const MenuTop = ({
   return (
     <header
       ref={headerRef}
-      className="flex min-h-[70px] min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background-2 px-4 py-4 z-30"
+      className={clsx(
+        'relative flex min-h-[70px] min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2',
+        'bg-background-2 px-4 py-[1.125rem] z-30',
+        /* Full-width bottom rule — avoids border segment stopping short at the right edge */
+        'after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border',
+      )}
     >
       <div
         className={clsx(

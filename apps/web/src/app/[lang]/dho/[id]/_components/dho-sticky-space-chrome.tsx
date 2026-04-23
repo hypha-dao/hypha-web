@@ -150,7 +150,8 @@ export function DhoStickySpaceChrome({
           /* Leave room for main-column scrollbar (narrow-scrollbar ~8–12px) so it is not painted under this bar */
           'pointer-events-none fixed left-[var(--sidebar-left-width,0px)] z-[25] hidden md:block',
           'right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))]',
-          'border-b border-border/80 bg-background supports-[backdrop-filter]:bg-background/85 supports-[backdrop-filter]:backdrop-blur-md',
+          'bg-background supports-[backdrop-filter]:bg-background/85 supports-[backdrop-filter]:backdrop-blur-md',
+          'after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/80',
           'transition-[opacity,transform] duration-200 ease-linear motion-reduce:transition-none',
           stuck
             ? 'pointer-events-auto translate-y-0 opacity-100'
@@ -159,7 +160,7 @@ export function DhoStickySpaceChrome({
         style={{ top: 'var(--menu-top-height, 4rem)' }}
         aria-hidden={!stuck}
       >
-        <div className="mx-auto flex min-h-11 max-w-container-2xl items-center gap-3 px-4 py-2 sm:px-6 md:min-h-12 md:px-8">
+        <div className="mx-auto flex min-h-11 max-w-container-2xl items-center gap-3 px-4 py-2.5 sm:px-6 md:min-h-[52px] md:py-3 md:px-8">
           <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
             <Avatar className={STICKY_SPACE_CHROME_AVATAR_CLASSNAME}>
               <AvatarImage
