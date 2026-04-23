@@ -45,7 +45,11 @@ export const PanelScrollInset = React.forwardRef<
   return (
     <SidebarInset
       ref={setRefs}
-      className={cn('overflow-y-auto narrow-scrollbar', className)}
+      className={cn(
+        /* Stable gutter: full-width borders align to the scrollport edge (not short of the thumb) */
+        'overflow-y-auto narrow-scrollbar [scrollbar-gutter:stable]',
+        className,
+      )}
       style={
         {
           '--main-column-scrollbar-width': '10px',

@@ -60,7 +60,9 @@ export function PanelDualSidebarScrollBridge({
       </Sidebar>
       <SidebarInset
         ref={bindScrollRoot}
-        className={cn('overflow-y-auto narrow-scrollbar')}
+        className={cn(
+          'overflow-y-auto narrow-scrollbar [scrollbar-gutter:stable]',
+        )}
         style={
           {
             '--main-column-scrollbar-width': '10px',
