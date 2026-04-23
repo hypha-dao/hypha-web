@@ -12,6 +12,7 @@ import { QuorumAndUnityChanger } from './quorum-and-unity-changer';
 import { Button } from '@hypha-platform/ui';
 import { VOTING_METHOD_TEMPLATES } from '../../../../governance';
 import { useTranslations } from 'next-intl';
+import { cn } from '@hypha-platform/ui-utils';
 
 interface QuorumAndUnityChangerFieldProps {
   name: string;
@@ -70,26 +71,29 @@ export function QuorumAndUnityChangerField({
                 <Button
                   key={preset.title}
                   type="button"
+                  variant="outline"
+                  colorVariant="neutral"
                   onClick={() => handlePresetClick(preset)}
-                  className={`flex flex-col items-start h-full rounded-xl border p-4 text-left transition ${
+                  className={cn(
+                    'flex h-full flex-col items-start rounded-xl p-4 text-left shadow-sm transition-colors',
+                    'border bg-card hover:bg-muted/45 dark:hover:bg-muted/25',
                     isSelected
-                      ? 'border-accent-11'
-                      : 'border-neutral-7 hover:border-neutral-9'
-                  }`}
-                  variant="ghost"
+                      ? 'border-accent-9 bg-accent-2/35 ring-1 ring-accent-9/25 dark:bg-accent-3/20 dark:ring-accent-10/30'
+                      : 'border-border/90',
+                  )}
                 >
-                  <div className="font-bold mb-2">
+                  <div className="mb-2 font-semibold text-foreground">
                     {tAgreementFlow(
                       `plugins.quorumAndUnity.templates.${preset.titleKey}` as Parameters<
                         typeof tAgreementFlow
                       >[0],
                     )}
                   </div>
-                  <div className="space-y-3 text-sm text-neutral-11 w-full">
+                  <div className="w-full space-y-3 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 bg-neutral-6 h-5 rounded-2xl relative">
+                      <div className="relative h-5 flex-1 rounded-2xl bg-muted">
                         <div
-                          className="bg-accent-9 h-5 rounded-2xl"
+                          className="h-5 rounded-2xl bg-accent-8/90 dark:bg-accent-9/85"
                           style={{
                             width: `${preset.quorum}%`,
                           }}
@@ -104,9 +108,9 @@ export function QuorumAndUnityChangerField({
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 bg-neutral-6 h-5 rounded-2xl relative">
+                      <div className="relative h-5 flex-1 rounded-2xl bg-muted">
                         <div
-                          className="bg-accent-9 h-5 rounded-2xl"
+                          className="h-5 rounded-2xl bg-accent-8/90 dark:bg-accent-9/85"
                           style={{
                             width: `${preset.unity}%`,
                           }}
