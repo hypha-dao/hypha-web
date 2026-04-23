@@ -195,7 +195,11 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     setDeleteError(null);
     try {
       await deleteCoherenceBySlug({ slug });
-      await refresh();
+      try {
+        await refresh();
+      } catch (refreshErr) {
+        console.warn('Signal deleted but list refresh failed:', refreshErr);
+      }
       return true;
     } catch (error) {
       console.warn('Could not delete signal:', error);
