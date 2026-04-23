@@ -180,6 +180,31 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
       // separate set* calls below would be redundant in that case.
       const isCreatingNewVault = !vaultExists && willAddBacking;
 
+      // Read the vault's existing backing tokens once and reuse the resulting
+      // Set for both the preflight (to skip already-configured tokens — those
+      // get added via `addBacking`, which doesn't re-validate token price) and
+      // the transaction-building block below. Empty when the vault doesn't
+      // exist yet, so no RPC call is needed in that case.
+      let existingBackingTokens = new Set<string>();
+      if (vaultExists && validAddCollaterals.length > 0) {
+        const configuredBackingTokens = await publicClient.readContract({
+          address: vaultAddress,
+          abi: tokenBackingVaultImplementationAbi,
+          functionName: 'getBackingTokens',
+          args: [spaceId, spaceToken],
+        });
+        existingBackingTokens = new Set(
+          configuredBackingTokens.map((token) => token.toLowerCase()),
+        );
+      }
+
+      // Only tokens passed to `addBackingToken` go through the contract's
+      // price validation (see TokenBackingVaultImplementation). Tokens added
+      // via `addBacking` already passed validation when first registered.
+      const collateralsBeingRegistered = validAddCollaterals.filter(
+        (c) => !existingBackingTokens.has(c.token.toLowerCase()),
+      );
+
       // ============================================================
       //  Preflight validation — surfaces the contract-level reverts
       //  with actionable messages BEFORE the user signs / votes.
@@ -220,10 +245,12 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
       }
 
       // Backing tokens without a Chainlink feed mapping must expose
-      // tokenPrice() > 0 (the contract reads it directly).
-      if (validAddCollaterals.length > 0) {
+      // tokenPrice() > 0 (the contract reads it directly inside
+      // addBackingToken). Skip tokens already configured on the vault —
+      // those go through addBacking and won't re-trigger price validation.
+      if (collateralsBeingRegistered.length > 0) {
         await Promise.all(
-          validAddCollaterals.map(async (c) => {
+          collateralsBeingRegistered.map(async (c) => {
             const hasFeed = Boolean(
               ASSET_PRICE_FEED_BY_TOKEN[c.token.toLowerCase()],
             );
@@ -286,25 +313,13 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
       }
 
       if (willAddBacking && validAddCollaterals.length) {
-        let existingBackingTokens = new Set<string>();
-        if (vaultExists) {
-          const configuredBackingTokens = await publicClient.readContract({
-            address: vaultAddress,
-            abi: tokenBackingVaultImplementationAbi,
-            functionName: 'getBackingTokens',
-            args: [spaceId, spaceToken],
-          });
-          existingBackingTokens = new Set(
-            configuredBackingTokens.map((token) => token.toLowerCase()),
-          );
-        }
-
+        // Reuses `existingBackingTokens` populated above so the same
+        // membership decision drives both preflight validation and the
+        // addBacking-vs-addBackingToken split below.
         const collateralsForAddBacking = validAddCollaterals.filter((c) =>
           existingBackingTokens.has(c.token.toLowerCase()),
         );
-        const collateralsForAddBackingToken = validAddCollaterals.filter(
-          (c) => !existingBackingTokens.has(c.token.toLowerCase()),
-        );
+        const collateralsForAddBackingToken = collateralsBeingRegistered;
 
         if (collateralsForAddBacking.length > 0) {
           const backingTokens = collateralsForAddBacking.map(
