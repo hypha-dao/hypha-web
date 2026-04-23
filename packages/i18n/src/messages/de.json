@@ -1088,7 +1088,11 @@
         "leaveBlankUseTokenPrice": "Leer lassen, um den Token-Preis zu verwenden ({price} {currency})",
         "leaveBlankForTokenContractPrice": "Leer lassen, um den Token-Vertragspreis zu verwenden",
         "add": "Hinzufügen",
-        "remove": "Entfernen"
+        "remove": "Entfernen",
+        "errors": {
+          "spaceNotReady": "Dein Space ist noch nicht vollständig geladen. Bitte lade die Seite neu und versuche es erneut.",
+          "spaceNotOnChain": "Dein Space wurde noch nicht on-chain veröffentlicht, daher kann kein Backing Vault erstellt werden. Veröffentliche den Space zuerst und komm dann zurück, um den Vault zu erstellen."
+        }
       },
       "issueNewToken": {
         "general": {

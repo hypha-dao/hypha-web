@@ -74,19 +74,24 @@ export const CreateProposalTokenBackingVaultForm = ({
   // Aggregate every actionable message from the orchestration chain
   // (preflight validation, web2 mutation, web3 wait, etc.) so the user
   // sees the actual revert reason instead of just a generic "Oh snap".
+  // The preflight hook joins multiple problems with `\n`, so split each
+  // raw message into individual lines to render them as separate bullets.
   const errorMessages = React.useMemo(() => {
     const seen = new Set<string>();
     const messages: string[] = [];
+    const pushLines = (raw: string) => {
+      for (const line of raw.split('\n')) {
+        const trimmed = line.trim();
+        if (!trimmed || seen.has(trimmed)) continue;
+        seen.add(trimmed);
+        messages.push(trimmed);
+      }
+    };
     for (const err of errors) {
       if (!err) continue;
-      const msg = err instanceof Error ? err.message : String(err);
-      if (!msg || seen.has(msg)) continue;
-      seen.add(msg);
-      messages.push(msg);
+      pushLines(err instanceof Error ? err.message : String(err));
     }
-    if (formError && !seen.has(formError)) {
-      messages.push(formError);
-    }
+    if (formError) pushLines(formError);
     return messages;
   }, [errors, formError]);
 
@@ -132,11 +137,31 @@ export const CreateProposalTokenBackingVaultForm = ({
 
   const handleCreate = async (data: FormValues) => {
     setFormError(null);
+
+    // Runtime guards. The TS types allow `null | undefined` and we previously
+    // cast with `as number`, which silently passed garbage to the orchestrator.
+    // - Missing `spaceId` would blow up the web2 schema parse with a cryptic Zod error.
+    // - Missing `web3SpaceId` is worse: the orchestrator silently SKIPS the web3 step
+    //   while the web2 agreement still gets created, so the user thinks the proposal
+    //   exists on-chain when it doesn't. Catch both up-front with a friendly message.
+    if (typeof spaceId !== 'number' || !Number.isFinite(spaceId)) {
+      setFormError(
+        tAgreementFlow('plugins.tokenBackingVault.errors.spaceNotReady'),
+      );
+      return;
+    }
+    if (typeof web3SpaceId !== 'number' || !Number.isFinite(web3SpaceId)) {
+      setFormError(
+        tAgreementFlow('plugins.tokenBackingVault.errors.spaceNotOnChain'),
+      );
+      return;
+    }
+
     try {
       await createTokenBackingVault({
         ...data,
-        spaceId: spaceId as number,
-        web3SpaceId: web3SpaceId as number,
+        spaceId,
+        web3SpaceId,
       });
     } catch (err) {
       // SWR mutation already surfaces the error via `errors`, but catching here

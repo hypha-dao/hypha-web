@@ -181,7 +181,11 @@
         "leaveBlankUseTokenPrice": "Deixe em branco para usar o preço do token ({price} {currency})",
         "leaveBlankForTokenContractPrice": "Deixe em branco para usar o preço do contrato do token",
         "add": "Adicionar",
-        "remove": "Remover"
+        "remove": "Remover",
+        "errors": {
+          "spaceNotReady": "Seu espaço ainda não foi totalmente carregado. Por favor, atualize a página e tente novamente.",
+          "spaceNotOnChain": "Seu espaço ainda não foi publicado on-chain, então um cofre de garantia não pode ser criado. Publique o espaço primeiro e depois volte para criar o cofre."
+        }
       },
       "issueNewToken": {
         "general": {

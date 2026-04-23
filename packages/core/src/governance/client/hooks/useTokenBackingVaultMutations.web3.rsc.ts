@@ -59,6 +59,29 @@ async function readTokenPrice(address: `0x${string}`): Promise<bigint | null> {
   }
 }
 
+async function readTokenSymbol(address: `0x${string}`): Promise<string | null> {
+  try {
+    return (await publicClient.readContract({
+      address,
+      abi: erc20Abi,
+      functionName: 'symbol',
+    })) as string;
+  } catch {
+    return null;
+  }
+}
+
+function shortAddress(addr: string): string {
+  if (addr.length <= 12) return addr;
+  return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+}
+
+function tokenLabel(symbol: string | null, address: string): string {
+  return symbol
+    ? `"${symbol}" (${shortAddress(address)})`
+    : `at ${shortAddress(address)}`;
+}
+
 interface TokenBackingVaultInput {
   spaceId: number;
   spaceToken: `0x${string}`;
@@ -165,6 +188,7 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
       //  from the executor (it drops returndata).
       // ============================================================
       const validationErrors: string[] = [];
+      const SUPPORTED_TOKENS_HINT = 'USDC, WETH, cbBTC, or EURC';
 
       // Contract requires at least one backing token to create a vault.
       if (
@@ -173,20 +197,24 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
         validAddCollaterals.length === 0
       ) {
         validationErrors.push(
-          'At least one backing collateral is required to create a vault.',
+          'Please add at least one backing token before creating the vault.',
         );
       }
 
       // Space token must have tokenPrice() > 0 when creating a new vault.
       if (isCreatingNewVault) {
-        const spaceTokenPrice = await readTokenPrice(spaceToken);
+        const [spaceTokenSymbol, spaceTokenPrice] = await Promise.all([
+          readTokenSymbol(spaceToken),
+          readTokenPrice(spaceToken),
+        ]);
+        const label = tokenLabel(spaceTokenSymbol, spaceToken);
         if (spaceTokenPrice === null) {
           validationErrors.push(
-            'The selected space token does not expose tokenPrice(). Pick a Hypha-issued space token.',
+            `We couldn't read a price from the space token ${label}. Make sure it's a token issued by your space, then try again.`,
           );
         } else if (spaceTokenPrice === 0n) {
           validationErrors.push(
-            'The selected space token has no price set. Update the token to set a price greater than 0 before creating a backing vault.',
+            `The space token ${label} doesn't have a price yet. Open the token settings, set its price, and then come back here to create the vault.`,
           );
         }
       }
@@ -194,22 +222,29 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
       // Backing tokens without a Chainlink feed mapping must expose
       // tokenPrice() > 0 (the contract reads it directly).
       if (validAddCollaterals.length > 0) {
-        for (const c of validAddCollaterals) {
-          const hasFeed = Boolean(
-            ASSET_PRICE_FEED_BY_TOKEN[c.token.toLowerCase()],
-          );
-          if (hasFeed) continue;
-          const price = await readTokenPrice(c.token as `0x${string}`);
-          if (price === null) {
-            validationErrors.push(
-              `Backing token ${c.token} has no Chainlink price feed mapping and does not expose tokenPrice(). Pick a supported token (e.g. USDC, WETH, cbBTC, EURC) or a Hypha-issued token with a price set.`,
+        await Promise.all(
+          validAddCollaterals.map(async (c) => {
+            const hasFeed = Boolean(
+              ASSET_PRICE_FEED_BY_TOKEN[c.token.toLowerCase()],
             );
-          } else if (price === 0n) {
-            validationErrors.push(
-              `Backing token ${c.token} has no price set. Set a tokenPrice greater than 0 on the token, or pick a token with a Chainlink price feed.`,
-            );
-          }
-        }
+            if (hasFeed) return;
+            const tokenAddr = c.token as `0x${string}`;
+            const [symbol, price] = await Promise.all([
+              readTokenSymbol(tokenAddr),
+              readTokenPrice(tokenAddr),
+            ]);
+            const label = tokenLabel(symbol, tokenAddr);
+            if (price === null) {
+              validationErrors.push(
+                `We can't find a price source for the backing token ${label}. Pick a supported token (${SUPPORTED_TOKENS_HINT}) or a token issued by your space that already has a price set.`,
+              );
+            } else if (price === 0n) {
+              validationErrors.push(
+                `The backing token ${label} doesn't have a price yet. Set its price first, or pick a supported token (${SUPPORTED_TOKENS_HINT}) instead.`,
+              );
+            }
+          }),
+        );
       }
 
       // Maximum-redemption cap requires a non-zero rolling period
@@ -219,7 +254,7 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
         (arg.maxRedemptionPeriodDays ?? 0) <= 0
       ) {
         validationErrors.push(
-          'Maximum Redemption % is set, but the rolling period (days) is missing. Pick a period or set Maximum Redemption % to 0.',
+          'Please choose a redemption period to go with the maximum redemption percentage, or set the percentage to 0 to remove the limit.',
         );
       }
 
