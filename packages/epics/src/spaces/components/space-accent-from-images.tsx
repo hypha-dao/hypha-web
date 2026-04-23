@@ -22,6 +22,9 @@ const DOCUMENT_ACCENT_MIRROR_PREFIXES = [
 ] as const;
 const DOCUMENT_ACCENT_MIRROR_EXACT = new Set(['--space-tab-active-border']);
 
+/** Avoid clearing `:root` accent vars while another `SpaceAccentFromImages` is mounted. */
+let documentAccentMirrorInstanceCount = 0;
+
 function shouldMirrorAccentKey(key: string): boolean {
   if (DOCUMENT_ACCENT_MIRROR_EXACT.has(key)) return true;
   return DOCUMENT_ACCENT_MIRROR_PREFIXES.some((p) => key.startsWith(p));
@@ -178,6 +181,7 @@ export function SpaceAccentFromImages({
 
   React.useEffect(() => {
     let cancelled = false;
+    documentAccentMirrorInstanceCount += 1;
 
     const scopeElInit = ref.current;
     if (scopeElInit) {
@@ -235,7 +239,13 @@ export function SpaceAccentFromImages({
 
     return () => {
       cancelled = true;
-      clearDocumentAccentMirror(documentMirroredKeysRef);
+      documentAccentMirrorInstanceCount -= 1;
+      if (documentAccentMirrorInstanceCount <= 0) {
+        documentAccentMirrorInstanceCount = 0;
+        clearDocumentAccentMirror(documentMirroredKeysRef);
+      } else {
+        documentMirroredKeysRef.current = [];
+      }
     };
   }, [bannerSrc, logoSrc, setPortalStyles]);
 
