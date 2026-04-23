@@ -1,12 +1,14 @@
 import { CardButton, CardButtonProps } from '../../common/card-button';
+import { DynamicIcon, LucideReactIcon } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { Circle } from 'lucide-react';
 
 export interface CoherencePriorityButtonProps extends CardButtonProps {
+  icon: LucideReactIcon;
   onClick: () => void;
 }
 
 export const CoherencePriorityButton = ({
+  icon,
   title,
   description,
   colorVariant,
@@ -28,20 +30,6 @@ export const CoherencePriorityButton = ({
         return 'text-neutral-9';
     }
   })(colorVariant);
-  const textColor = ((variant) => {
-    switch (variant) {
-      case 'subtle':
-        return 'var(--foreground)';
-      case 'error':
-        return 'var(--error-9)';
-      case 'warn':
-        return 'var(--warning-11)';
-      case 'success':
-        return 'var(--success-11)';
-      default:
-        return 'var(--neutral-9)';
-    }
-  })(colorVariant);
   return (
     <CardButton
       className={cn('p-3', className)}
@@ -58,7 +46,7 @@ export const CoherencePriorityButton = ({
               : 'border-transparent',
           )}
         >
-          <Circle className={textClass} fill={textColor} size={12} />
+          <DynamicIcon name={icon} size={16} className={textClass} />
         </div>
         <span className={cn('text-2 font-medium', textClass)}>{title}</span>
         <span

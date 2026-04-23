@@ -141,7 +141,8 @@ export const CreateSignalForm = ({
   }, [t]);
 
   const priorityOptions = React.useMemo(() => {
-    return COHERENCE_PRIORITY_OPTIONS.map(({ priority }) => ({
+    return COHERENCE_PRIORITY_OPTIONS.map(({ priority, icon }) => ({
+      icon: icon as LucideReactIcon,
       title: t(
         `priorities.${priority}` as
           | 'priorities.high'
@@ -392,6 +393,7 @@ export const CreateSignalForm = ({
                           <CoherencePriorityButton
                             key={`priority-option-${index}`}
                             className="w-full"
+                            icon={option.icon}
                             title={option.title}
                             description={option.description}
                             colorVariant={option.colorVariant}
