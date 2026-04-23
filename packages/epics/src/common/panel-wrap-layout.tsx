@@ -140,6 +140,9 @@ function clearMainColumnLayoutMirrorFromDocument(): void {
 // themselves relative to the sidebars.
 //
 // Must be rendered inside <PanelProviders>.
+//
+// Keep sidebars above `ProposalOverlayShell` scrim (`z-40`) so chat/AI panels stay
+// interactive while proposal modals are open (`modal={false}` on that dialog).
 
 export function PanelWrapLayout({
   children,
@@ -201,7 +204,12 @@ export function PanelWrapLayout({
         <PanelScrollInset className="overflow-y-auto">
           {content}
         </PanelScrollInset>
-        <Sidebar side="right" variant="sidebar" collapsible="offcanvas">
+        <Sidebar
+          side="right"
+          variant="sidebar"
+          collapsible="offcanvas"
+          className="z-[50]"
+        >
           <SidebarResizeHandle />
           {effectiveRight.content}
         </Sidebar>
@@ -220,7 +228,12 @@ export function PanelWrapLayout({
           } as React.CSSProperties
         }
       >
-        <Sidebar side="left" variant="sidebar" collapsible="offcanvas">
+        <Sidebar
+          side="left"
+          variant="sidebar"
+          collapsible="offcanvas"
+          className="z-[50]"
+        >
           {effectiveLeft.content}
           <SidebarResizeHandle />
         </Sidebar>

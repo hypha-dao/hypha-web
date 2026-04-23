@@ -1,40 +1,11 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useEffect } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { AsideOverlayLayoutProvider } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 import { useSpaceAccentPortalStyles } from '../spaces/components/space-accent-portal-context';
-
-/**
- * Reference-counted body scroll lock for desktop modal stacks.
- * Multiple nested shells / overlays can call `lockBodyScroll` without fighting:
- * only the final `unlock` when the count returns to zero restores
- * `document.body.style.overflow` from `previousBodyOverflow` (including any
- * custom value that existed before the first lock).
- */
-let activeDesktopBodyLocks = 0;
-let previousBodyOverflow: string | undefined;
-
-const lockBodyScroll = () => {
-  if (activeDesktopBodyLocks === 0) {
-    previousBodyOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-  }
-  activeDesktopBodyLocks += 1;
-};
-
-const unlockBodyScroll = () => {
-  if (activeDesktopBodyLocks === 0) return;
-
-  activeDesktopBodyLocks -= 1;
-  if (activeDesktopBodyLocks === 0) {
-    document.body.style.overflow = previousBodyOverflow ?? '';
-    previousBodyOverflow = undefined;
-  }
-};
 
 type ProposalOverlayShellProps = {
   children: ReactNode;
@@ -56,10 +27,10 @@ type ProposalOverlayShellProps = {
  * parallel-route close + `z-index` rules (Dropdown/Popover portaled to `body`,
  * {@link MenuTop} at `z-30`).
  *
- * **Modal** `DialogPrimitive.Root`: focus trapping and background inerting for
- * keyboard and screen-reader users. Escape and scrim dismissal stay suppressed
- * so close remains on in-app routes; MDX toolbar popovers anchor via
- * `RichTextEditor` `overlayContainer` instead of fighting `document.body`.
+ * **Non-modal** `DialogPrimitive.Root` (`modal={false}`): does not trap focus or
+ * inert sibling trees, so Human/AI side panels stay interactive (open, close,
+ * type) while this overlay is open. Escape and scrim dismissal stay suppressed
+ * so close remains on in-app routes.
  *
  * Plain scrim: we still render the scrim `div` ourselves (aligned with MenuTop).
  *
@@ -68,8 +39,10 @@ type ProposalOverlayShellProps = {
  * {@link PanelWrapLayout} so fixed positioning math matches the main column.
  *
  * **MenuTop:** `layout.tsx` uses `z-30` for the nav strip. Scrim and host sit above it
- * (`z-40` / `z-[41]`) so the overlay dims the full main column including space chrome;
- * side panels use higher z and remain on top where applicable.
+ * (`z-40` / `z-[41]`) so the overlay dims the main column; AI/Human sidebars use
+ * `z-[50]` ({@link PanelWrapLayout}) so they stay above the scrim and usable.
+ *
+ * Body scroll is not locked so main column / panels can scroll while the overlay is open.
  */
 export function ProposalOverlayShell({
   children,
@@ -78,35 +51,9 @@ export function ProposalOverlayShell({
   const tModalAside = useTranslations('ModalAside');
   const spaceAccentPortalStyle = useSpaceAccentPortalStyles();
 
-  useEffect(() => {
-    const mq = window.matchMedia('(min-width: 768px)');
-    let isBodyScrollLocked = false;
-
-    const sync = () => {
-      if (mq.matches && !isBodyScrollLocked) {
-        lockBodyScroll();
-        isBodyScrollLocked = true;
-      }
-
-      if (!mq.matches && isBodyScrollLocked) {
-        unlockBodyScroll();
-        isBodyScrollLocked = false;
-      }
-    };
-
-    sync();
-    mq.addEventListener('change', sync);
-    return () => {
-      mq.removeEventListener('change', sync);
-      if (isBodyScrollLocked) {
-        unlockBodyScroll();
-      }
-    };
-  }, []);
-
   return (
     <AsideOverlayLayoutProvider mode="modal-shell">
-      <DialogPrimitive.Root modal open>
+      <DialogPrimitive.Root modal={false} open>
         <DialogPrimitive.Portal>
           {/* Plain scrim below MenuTop (z-30); starts under --menu-top-height */}
           <div

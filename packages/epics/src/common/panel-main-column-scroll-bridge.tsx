@@ -23,6 +23,8 @@ type Props = {
 /**
  * Single scroll container when both AI and Human panels are enabled, so parallax and
  * sticky DHO chrome see one scroll root instead of nested `overflow-y-auto` insets.
+ *
+ * Sidebars use `z-[50]` so they sit above `ProposalOverlayShell` scrim (`z-40`).
  */
 export function PanelDualSidebarScrollBridge({
   leftOpen,
@@ -47,7 +49,12 @@ export function PanelDualSidebarScrollBridge({
         } as React.CSSProperties
       }
     >
-      <Sidebar side="left" variant="sidebar" collapsible="offcanvas">
+      <Sidebar
+        side="left"
+        variant="sidebar"
+        collapsible="offcanvas"
+        className="z-[50]"
+      >
         {leftContent}
         <SidebarResizeHandle />
       </Sidebar>
@@ -70,7 +77,12 @@ export function PanelDualSidebarScrollBridge({
           }
         >
           {children}
-          <Sidebar side="right" variant="sidebar" collapsible="offcanvas">
+          <Sidebar
+            side="right"
+            variant="sidebar"
+            collapsible="offcanvas"
+            className="z-[50]"
+          >
             <SidebarResizeHandle />
             {rightContent}
           </Sidebar>
