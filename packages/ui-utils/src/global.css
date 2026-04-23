@@ -34,6 +34,16 @@
   initial-value: 0px;
 }
 
+/*
+ * `PanelWrapLayout` mirrors `--sidebar-*-width` onto `document.documentElement` for portaled
+ * UI (proposal scrim, sticky chrome). Without a transition here, those layers snap while the
+ * sidebar gap animates over 200ms on the inner wrapper — match {@link PanelWrapLayout} timing.
+ */
+html {
+  transition: --sidebar-left-width 200ms linear,
+    --sidebar-right-width 200ms linear;
+}
+
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 @theme {
