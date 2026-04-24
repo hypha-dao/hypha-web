@@ -9,7 +9,7 @@ const EXPECTED_SUGGESTIONS = [
 ];
 
 const EXPECTED_WELCOME_MESSAGE =
-  "Hello! I'm your Hypha AI assistant. I can look up space details like member counts, agreements, and structure. Ask me anything about the space you're viewing.";
+  "Hello! I'm your AI assistant. I can look up space details like member counts, agreements, and structure. Ask me anything about the space you're viewing.";
 
 test.describe('AI Chat Panel', () => {
   let chatPanel: AiChatPanelPage;
@@ -75,7 +75,7 @@ test.describe('AI Chat Panel', () => {
     // For unauthenticated users the sign-in prompt is shown instead,
     // but we can verify the sidebar contains the expected text
     const sidebarContent = page.locator('[data-sidebar="sidebar"]');
-    await expect(sidebarContent).toContainText('Sign in to use Hypha AI');
+    await expect(sidebarContent).toContainText('Sign in to use AI Chat');
   });
 
   test('suggestion prompts should match implemented capabilities', async ({

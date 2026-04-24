@@ -12,7 +12,10 @@ import {
 import './space-accent.css';
 import { Locale } from '@hypha-platform/i18n';
 import { Container } from '@hypha-platform/ui';
-import { findSpaceBySlug } from '@hypha-platform/core/server';
+import {
+  findSpaceBySlug,
+  getSpaceAncestorChain,
+} from '@hypha-platform/core/server';
 import { getDhoPathAgreements } from './@tab/agreements/constants';
 import { ActionButtons } from './_components/action-buttons';
 import { NestedSpacesButton } from './_components/nested-spaces-button';
@@ -90,6 +93,17 @@ export default async function DhoLayout({
     return notFound();
   }
 
+  const ancestorChain = await getSpaceAncestorChain(
+    { leafSpaceId: spaceFromDb.id },
+    { db },
+  );
+  const rootSpace = ancestorChain[0] ?? spaceFromDb;
+  const rootRawLogo = rootSpace.logoUrl?.trim();
+  const whitelabelStickyLogoHref =
+    rootRawLogo && isSafeImageUrl(rootRawLogo)
+      ? rootRawLogo
+      : DEFAULT_SPACE_AVATAR_IMAGE;
+
   const web3SpaceId =
     typeof spaceFromDb.web3SpaceId === 'number'
       ? spaceFromDb.web3SpaceId
@@ -105,6 +119,7 @@ export default async function DhoLayout({
   const rawLogo = spaceFromDb.logoUrl?.trim();
   const accentLogoHref =
     rawLogo && isSafeImageUrl(rawLogo) ? rawLogo : DEFAULT_SPACE_AVATAR_IMAGE;
+  const ecosystemLogoAlt = tCommon('spaceLogoAlt', { title: rootSpace.title });
 
   const compactBannerSpaceArchived =
     spaceFromDb.flags.includes('archived') ||
@@ -126,6 +141,7 @@ export default async function DhoLayout({
           <SpaceAccentFromImages
             bannerSrc={heroBannerImageHref}
             logoSrc={accentLogoHref}
+            accentLogoSrc={whitelabelStickyLogoHref}
             className="pt-1 md:pt-1.5"
           >
             {/* gap-4 (16px) matches mt-4 above SalesBanner; slight pt above breadcrumbs vs MenuTop */}
@@ -201,8 +217,8 @@ export default async function DhoLayout({
                 ) : null
               }
               title={spaceFromDb.title}
-              logoUrl={accentLogoHref}
-              logoAlt={spaceFromDb.title}
+              logoUrl={whitelabelStickyLogoHref}
+              logoAlt={ecosystemLogoAlt}
               defaultLogoSrc={DEFAULT_SPACE_AVATAR_IMAGE}
             />
             <div className="mt-4 flex flex-col gap-3">

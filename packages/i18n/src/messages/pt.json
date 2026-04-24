@@ -2,6 +2,7 @@
   "Common": {
     "createdOn": "Criado em {date}",
     "spaceBannerDescriptionAria": "Descrição de {title}",
+    "spaceLogoAlt": "Logotipo de {title}",
     "acceptedOn": "Aceito em {date}",
     "rejectedOn": "Rejeitado em {date}",
     "joinedSpaceOn": "Entrou no espaço em {date}",
@@ -1716,22 +1717,22 @@
     "spaceInformationMissing": "Faltam informações do espaço. Tente novamente."
   },
   "AiPanel": {
-    "title": "Hypha AI",
+    "title": "Chat de IA",
     "suggestions": {
       "aboutSpace": "Conte-me sobre este espaço",
       "memberCount": "Quantos membros este espaço tem?",
       "agreements": "Quais acordos existem neste espaço?",
       "structure": "Descreva a estrutura deste espaço"
     },
-    "welcome": "Olá! Sou seu assistente Hypha AI. Posso buscar detalhes do espaço como número de membros, acordos e estrutura. Pergunte-me qualquer coisa sobre o espaço que você está visualizando.",
-    "placeholder": "Pergunte ao Hypha AI...",
+    "welcome": "Olá! Sou seu assistente de IA. Posso buscar detalhes do espaço como número de membros, acordos e estrutura. Pergunte-me qualquer coisa sobre o espaço que você está visualizando.",
+    "placeholder": "Pergunte qualquer coisa sobre este espaço...",
     "sendButton": "Enviar",
     "stopButton": "Parar",
     "newlineHint": "Shift+Enter para nova linha",
-    "signIn": "Entre para usar o Hypha AI",
+    "signIn": "Entre para usar o chat de IA",
     "signInButton": "Entrar",
     "loading": "Carregando...",
-    "openPanel": "Abrir Hypha AI",
+    "openPanel": "Abrir o painel de chat de IA",
     "hidePanel": "Ocultar painel AI",
     "resetChat": "Reiniciar chat",
     "closePanel": "Fechar painel",

@@ -17,19 +17,24 @@ export function SpaceBreadcrumb({
   children,
   rootHref = '/my-spaces',
   rootLabel = 'My Spaces',
+  showRoot = true,
 }: {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   rootHref?: string;
   rootLabel?: string;
+  /** When false, only `children` items are shown (e.g. full path from root space). */
+  showRoot?: boolean;
 }) {
   return (
     <Breadcrumb>
       <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink href={rootHref} className="flex items-center">
-            {rootLabel}
-          </BreadcrumbLink>
-        </BreadcrumbItem>
+        {showRoot ? (
+          <BreadcrumbItem>
+            <BreadcrumbLink href={rootHref} className="flex items-center">
+              {rootLabel}
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+        ) : null}
         {children}
       </BreadcrumbList>
     </Breadcrumb>
@@ -39,15 +44,20 @@ export function SpaceBreadcrumb({
 export const SpaceBreadcrumbItem = ({
   breadcrumb,
   lang,
+  showSeparator = true,
 }: {
   breadcrumb: SpaceBreadcrumb;
   lang?: string;
+  /** When false, no leading chevron (use for the first segment in a full-path-only list). */
+  showSeparator?: boolean;
 }) => {
   return (
     <Fragment key={breadcrumb.slug}>
-      <BreadcrumbSeparator>
-        <ChevronRightIcon width={16} height={16} />
-      </BreadcrumbSeparator>
+      {showSeparator ? (
+        <BreadcrumbSeparator>
+          <ChevronRightIcon width={16} height={16} />
+        </BreadcrumbSeparator>
+      ) : null}
       <BreadcrumbItem>
         <BreadcrumbLink
           href={`${lang ? `/${lang}` : ''}/dho/${breadcrumb.slug}/agreements`}

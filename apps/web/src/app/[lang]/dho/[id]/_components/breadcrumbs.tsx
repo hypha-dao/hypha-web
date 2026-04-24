@@ -1,42 +1,10 @@
-import { findParentSpaceById } from '@hypha-platform/core/server';
+import {
+  findSpaceById,
+  getSpaceAncestorChain,
+} from '@hypha-platform/core/server';
 import { SpaceBreadcrumb, SpaceBreadcrumbItem } from '@hypha-platform/epics';
 import { db } from '@hypha-platform/storage-postgres';
 import { Locale } from '@hypha-platform/i18n';
-import { getTranslations } from 'next-intl/server';
-import { Fragment } from 'react';
-
-async function RecursiveBreadcrumbItem({
-  spaceId,
-  lang,
-  depth = 0,
-  maxDepth = 2,
-}: {
-  spaceId: number;
-  lang: Locale;
-  depth?: number;
-  maxDepth?: number;
-}) {
-  console.debug('RecursiveBreadcrumbItem', { spaceId, depth, maxDepth });
-  const space = await findParentSpaceById({ id: spaceId }, { db });
-  if (!space || depth > maxDepth) return null;
-
-  return (
-    <Fragment key={space.id}>
-      {space.parentId && (
-        <RecursiveBreadcrumbItem
-          spaceId={space.parentId}
-          lang={lang}
-          depth={depth + 1}
-          maxDepth={maxDepth}
-        />
-      )}
-      <SpaceBreadcrumbItem
-        lang={lang}
-        breadcrumb={{ slug: space.slug, title: space.title }}
-      />
-    </Fragment>
-  );
-}
 
 export async function Breadcrumbs({
   spaceId,
@@ -45,14 +13,26 @@ export async function Breadcrumbs({
   spaceId: number;
   lang: Locale;
 }) {
-  const tNavigation = await getTranslations('Navigation');
+  const [chain, current] = await Promise.all([
+    getSpaceAncestorChain({ leafSpaceId: spaceId }, { db }),
+    findSpaceById({ id: spaceId }, { db }),
+  ]);
+  const segments = chain.length > 0 ? chain : current ? [current] : [];
+
+  if (segments.length === 0) {
+    return <SpaceBreadcrumb showRoot={false} />;
+  }
 
   return (
-    <SpaceBreadcrumb
-      rootHref={`/${lang}/my-spaces`}
-      rootLabel={tNavigation('mySpaces')}
-    >
-      <RecursiveBreadcrumbItem spaceId={spaceId} lang={lang} />
+    <SpaceBreadcrumb showRoot={false}>
+      {segments.map((s, index) => (
+        <SpaceBreadcrumbItem
+          key={s.id}
+          lang={lang}
+          showSeparator={index > 0}
+          breadcrumb={{ slug: s.slug, title: s.title }}
+        />
+      ))}
     </SpaceBreadcrumb>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { AiPanelMessageBubble } from './ai-panel-message-bubble';
 import { AiPanelSuggestions } from './ai-panel-suggestions';
@@ -21,17 +22,6 @@ type AiPanelMessagesProps = {
   isStreaming?: boolean;
 };
 
-const WELCOME_MESSAGE: UIMessage = {
-  id: 'welcome',
-  role: 'assistant',
-  parts: [
-    {
-      type: 'text',
-      text: "Hello! I'm your Hypha AI assistant. I can look up space details like member counts, agreements, and structure. Ask me anything about the space you're viewing.",
-    },
-  ],
-};
-
 export function AiPanelMessages({
   messages,
   suggestions,
@@ -39,7 +29,18 @@ export function AiPanelMessages({
   onSuggestionSelect,
   isStreaming = false,
 }: AiPanelMessagesProps) {
+  const t = useTranslations('AiPanel');
   const containerRef = useRef<HTMLDivElement>(null);
+  const welcomeMessage: UIMessage = {
+    id: 'welcome',
+    role: 'assistant',
+    parts: [
+      {
+        type: 'text',
+        text: t('welcome'),
+      },
+    ],
+  };
 
   useEffect(() => {
     const container = containerRef.current;
@@ -48,7 +49,7 @@ export function AiPanelMessages({
     }
   }, [messages, isStreaming]);
 
-  const displayMessages = messages.length > 0 ? messages : [WELCOME_MESSAGE];
+  const displayMessages = messages.length > 0 ? messages : [welcomeMessage];
 
   return (
     <div

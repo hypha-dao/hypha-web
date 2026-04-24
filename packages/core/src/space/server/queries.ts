@@ -10,6 +10,7 @@ import {
 } from 'drizzle-orm';
 import { memberships, Space, spaces } from '@hypha-platform/storage-postgres';
 import { DbConfig } from '@hypha-platform/core/server';
+import { loadSpaceAncestorChain } from './space-ancestor-chain';
 import {
   PaginationParams,
   PaginatedResponse,
@@ -116,6 +117,14 @@ export const findParentSpaceById = async (
   if (!id) return null;
   return await findSpaceById({ id }, { db });
 };
+
+/**
+ * Ancestor chain for a space: **root → … → leaf** (left-to-right breadcrumb order).
+ */
+export const getSpaceAncestorChain = async (
+  { leafSpaceId }: { leafSpaceId: number },
+  { db }: DbConfig,
+) => loadSpaceAncestorChain(leafSpaceId, (id) => findSpaceById({ id }, { db }));
 
 type FindSpaceBySlugInput = { slug: string };
 

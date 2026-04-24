@@ -63,6 +63,11 @@ function clearDocumentAccentMirror(
 export type SpaceAccentFromImagesProps = {
   bannerSrc: string;
   logoSrc: string;
+  /**
+   * When set, used to sample space accent from the **logo** image (while `logoSrc` is still
+   * used for child UI such as the hero). Defaults to `logoSrc`.
+   */
+  accentLogoSrc?: string;
   children: React.ReactNode;
   /** Optional class on the wrapping element that receives CSS variables */
   className?: string;
@@ -172,9 +177,11 @@ async function sampleBannerToneOverlayVars(
 export function SpaceAccentFromImages({
   bannerSrc,
   logoSrc,
+  accentLogoSrc,
   children,
   className,
 }: SpaceAccentFromImagesProps) {
+  const logoSrcForAccent = accentLogoSrc ?? logoSrc;
   const ref = React.useRef<HTMLDivElement>(null);
   const setPortalStyles = useSetSpaceAccentPortalStyles();
   const documentMirroredKeysRef = React.useRef<string[]>([]);
@@ -205,7 +212,7 @@ export function SpaceAccentFromImages({
     (async () => {
       const [bannerAccent, logoAccent, overlayRecord] = await Promise.all([
         sampleImageToAccent(bannerSrc),
-        sampleImageToAccent(logoSrc),
+        sampleImageToAccent(logoSrcForAccent),
         sampleBannerToneOverlayVars(bannerSrc),
       ]);
       if (cancelled || !ref.current) return;
@@ -247,7 +254,7 @@ export function SpaceAccentFromImages({
         documentMirroredKeysRef.current = [];
       }
     };
-  }, [bannerSrc, logoSrc, setPortalStyles]);
+  }, [bannerSrc, logoSrc, logoSrcForAccent, setPortalStyles]);
 
   return (
     <div

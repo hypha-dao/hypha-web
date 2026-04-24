@@ -22,18 +22,18 @@ export class AiChatPanelPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.openButton = page.getByRole('button', { name: 'Open Hypha AI' });
-    this.headerText = page.getByText('Hypha AI', { exact: true });
+    this.openButton = page.getByRole('button', { name: /open ai chat/i });
+    this.headerText = page.getByText('AI Chat', { exact: true });
     this.closeButton = page
       .locator('[data-side="left"] [data-sidebar="sidebar"]')
       .getByRole('button', { name: 'Close panel' });
     this.resetButton = page.getByRole('button', { name: /reset chat/i });
-    this.signInPrompt = page.getByText('Sign in to use Hypha AI');
+    this.signInPrompt = page.getByText('Sign in to use AI Chat');
     this.signInButton = page.getByRole('button', {
       name: 'Sign In',
       exact: true,
     });
-    this.chatInput = page.getByPlaceholder('Ask Hypha AI anything...');
+    this.chatInput = page.getByPlaceholder('Ask anything about this space...');
     this.sendButton = page.getByRole('button', { name: 'Send' });
     // Scope to the left sidebar to avoid collision with Human Chat panel
     this.resizeHandle = page.locator(
@@ -48,7 +48,7 @@ export class AiChatPanelPage extends BasePage {
   /**
    * Enable the AI chat feature flag.
    *
-   * The flag is a server-side Vercel flag evaluated during SSR,
+   * The flag is read during SSR (cookies / NEXT_PUBLIC),
    * so we need both:
    * - extraHTTPHeaders with Cookie for the initial SSR request
    * - browser cookies for any subsequent client-side navigations

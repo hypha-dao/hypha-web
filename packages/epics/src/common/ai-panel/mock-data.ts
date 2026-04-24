@@ -26,7 +26,7 @@ export function createMockWelcomeMessage(): Message {
     id: 'welcome',
     role: 'assistant',
     content:
-      "Hello! I'm your Hypha AI assistant. I can look up space details like member counts, agreements, and structure. Ask me anything about the space you're viewing.",
+      "Hello! I'm your AI assistant. I can look up space details like member counts, agreements, and structure. Ask me anything about the space you're viewing.",
     timestamp: new Date(),
   };
 }

@@ -4,7 +4,7 @@
 
 | Field | Value |
 |--------|--------|
-| **Status** | Ready for implementation (planning) |
+| **Status** | Implemented (see DHO layout, breadcrumbs, `getSpaceAncestorChain`, AiPanel i18n) |
 | **Scope** | Product chrome on **DHO / space** routes: header logo, breadcrumb hierarchy, left panel title copy; no backend schema change required unless a gap is found in root resolution |
 | **Out of scope** | Changing Network / My spaces Hypha branding; i18n message updates beyond the listed keys (separate i18n task) |
 | **Related code (reference)** | `apps/web/src/app/[lang]/dho/[id]/layout.tsx`, `apps/web/src/app/[lang]/dho/[id]/_components/breadcrumbs.tsx`, `apps/web/src/app/[lang]/dho/[id]/_components/dho-sticky-space-chrome.tsx`, `packages/epics/src/spaces/components/breadcrumbs.tsx` |

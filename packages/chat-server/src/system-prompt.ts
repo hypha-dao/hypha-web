@@ -1,5 +1,5 @@
 const BASE_SYSTEM_PROMPT =
-  'You are Hypha AI, a helpful assistant for the Hypha DAO platform.';
+  'You are a helpful AI assistant for the Hypha DAO platform. Focus on the space the user is viewing when context is provided.';
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 

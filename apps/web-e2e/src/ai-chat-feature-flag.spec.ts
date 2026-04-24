@@ -24,7 +24,7 @@ test.describe('AI Chat Panel — Feature Flag Enabled', () => {
     await expect(chatPanel.openButton).toBeVisible();
     await expect(chatPanel.openButton).toHaveAttribute(
       'aria-label',
-      /open hypha ai/i,
+      /open ai chat/i,
     );
   });
 
@@ -59,7 +59,7 @@ test.describe('AI Chat Panel — Feature Flag Enabled', () => {
     await page.waitForLoadState('domcontentloaded');
 
     const aiButton = page.getByRole('button', {
-      name: 'Open Hypha AI panel',
+      name: /open ai chat panel/i,
     });
     await expect(aiButton).not.toBeVisible();
   });
@@ -93,7 +93,7 @@ test.describe('AI Chat Panel — Feature Flag Disabled', () => {
     await page.waitForLoadState('domcontentloaded');
 
     const aiButton = page.getByRole('button', {
-      name: 'Open Hypha AI panel',
+      name: /open ai chat panel/i,
     });
     await expect(aiButton).not.toBeVisible();
   });
