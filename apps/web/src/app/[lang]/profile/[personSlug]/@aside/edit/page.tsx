@@ -9,6 +9,7 @@ import { useMe, type Person } from '@hypha-platform/core/client';
 import React from 'react';
 import { useParams } from 'next/navigation';
 import { useEditProfile } from '@web/hooks/use-edit-profile';
+import type { ProfileFormData } from '@web/hooks/profile-form-data';
 import { LoadingBackdrop, Button } from '@hypha-platform/ui';
 import { useRouter } from 'next/navigation';
 import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
@@ -31,9 +32,8 @@ export default function EditProfilePage() {
   } = useEditProfile();
   const router = useRouter();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onEdit = async (data: any) => {
-    return await editProfile(data);
+  const onEdit = async (data: ProfileFormData) => {
+    return editProfile(data);
   };
 
   const onUpdate = async (saved?: Person) => {
