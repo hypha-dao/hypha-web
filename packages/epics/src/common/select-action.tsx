@@ -35,6 +35,8 @@ type SelectActionProps = {
    * Use for full-page or content-only layouts.
    */
   showActionCards?: boolean;
+  /** Optional class on the root wrapper. */
+  className?: string;
 };
 
 type GroupedActions = {
@@ -49,6 +51,7 @@ export const SelectAction = ({
   children,
   showTitle = true,
   showActionCards = true,
+  className,
 }: SelectActionProps) => {
   const tCommon = useTranslations('Common');
   const groupedActions = React.useMemo(
@@ -65,7 +68,13 @@ export const SelectAction = ({
   );
 
   return (
-    <div className="flex flex-col gap-6">
+    <div
+      className={
+        className
+          ? clsx('flex flex-col gap-6', className)
+          : 'flex flex-col gap-6'
+      }
+    >
       {showTitle ? (
         <header className="flex flex-col gap-2">
           <Skeleton width="100px" height="24px" loading={isLoading}>
