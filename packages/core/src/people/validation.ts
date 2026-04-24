@@ -1,8 +1,9 @@
 import { ALLOWED_IMAGE_FILE_SIZE, DEFAULT_IMAGE_ACCEPT } from '../assets';
 
 import { z } from 'zod';
-import { isAddress } from 'viem';
+import { getAddress, isAddress } from 'viem';
 import { percentageStringToBigInt } from '../common';
+import type { Person } from './types';
 
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
@@ -206,3 +207,77 @@ export const schemaSignupPerson = z.object({
   ...signupPersonWeb2Props,
   ...editPersonFiles.shape,
 });
+
+const personMeResponseDate = z.preprocess((val) => {
+  if (val == null) return new Date(0);
+  if (val instanceof Date) {
+    return Number.isNaN(val.getTime()) ? new Date(0) : val;
+  }
+  if (typeof val === 'string' || typeof val === 'number') {
+    const d = new Date(val);
+    return Number.isNaN(d.getTime()) ? new Date(0) : d;
+  }
+  return new Date(0);
+}, z.date());
+
+/**
+ * JSON shape of `GET /api/v1/people/me` and similar Person payloads
+ * (dates may serialize as strings; `id` may be numeric string).
+ */
+export const schemaPersonMeResponse = z.object({
+  id: z.coerce.number().int().positive(),
+  name: z.string().optional().nullable(),
+  surname: z.string().optional().nullable(),
+  email: z.string().optional().nullable(),
+  slug: z.string().min(1),
+  sub: z.string().optional().nullable(),
+  avatarUrl: z.string().optional().nullable(),
+  leadImageUrl: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+  location: z.string().optional().nullable(),
+  nickname: z.string().optional().nullable(),
+  address: z
+    .string()
+    .optional()
+    .nullable()
+    .refine((v) => v == null || v === '' || isAddress(v, { strict: false }), {
+      message: 'Invalid address',
+    }),
+  links: z.array(z.string()).max(3).optional().nullable(),
+  createdAt: personMeResponseDate,
+  updatedAt: personMeResponseDate,
+});
+
+export function parsePersonFromMeApiJson(raw: unknown): Person {
+  const parsed = schemaPersonMeResponse.safeParse(raw);
+  if (!parsed.success) {
+    throw new Error('Invalid Person response');
+  }
+  const p = parsed.data;
+  const s = (v: string | null | undefined) => {
+    const t = v?.trim();
+    return t === '' || t == null ? undefined : t;
+  };
+  const rawAddr = s(p.address);
+  const address =
+    rawAddr && isAddress(rawAddr, { strict: false })
+      ? getAddress(rawAddr)
+      : rawAddr;
+  return {
+    id: p.id,
+    name: s(p.name),
+    surname: s(p.surname),
+    email: s(p.email),
+    slug: p.slug,
+    sub: s(p.sub),
+    avatarUrl: s(p.avatarUrl ?? undefined),
+    leadImageUrl: s(p.leadImageUrl ?? undefined),
+    description: s(p.description),
+    location: s(p.location),
+    nickname: s(p.nickname),
+    address,
+    links: p.links && p.links.length > 0 ? p.links : undefined,
+    createdAt: p.createdAt,
+    updatedAt: p.updatedAt,
+  };
+}
