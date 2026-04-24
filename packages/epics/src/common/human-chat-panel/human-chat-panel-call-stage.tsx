@@ -578,8 +578,11 @@ const FeedContent = ({
     const el = ref.current;
     if (!el) return;
     el.srcObject = stream;
-    const p = el.play();
-    p.catch(() => {});
+    el.play().catch((err) => {
+      if (process.env.NODE_ENV === 'development') {
+        console.debug('[CallFeedTile] video play rejected', err);
+      }
+    });
 
     return () => {
       el.srcObject = null;
