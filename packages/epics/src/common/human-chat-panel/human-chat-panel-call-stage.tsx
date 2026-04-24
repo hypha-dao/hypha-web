@@ -6,6 +6,7 @@ import {
   useId,
   useReducer,
   useRef,
+  useState,
   type RefObject,
 } from 'react';
 import type { MatrixClient, GroupCall, Room } from 'matrix-js-sdk';
@@ -17,6 +18,7 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 import { Maximize2, User } from 'lucide-react';
 import { matrixMemberDisplayLabel } from './matrix-room-member-display';
+import { CallAudioVoiceWaves } from './call-audio-voice-waves';
 
 export type HumanChatPanelCallStageLayout = 'panel' | 'fullView' | 'hidden';
 
@@ -576,6 +578,7 @@ const FeedContent = ({
   const stream = feed.stream;
 
   const [, rerenderOnFeed] = useReducer((n: number) => n + 1, 0);
+  const [isSpeaking, setIsSpeaking] = useState(() => feed.isSpeaking());
 
   useEffect(() => {
     const el = ref.current;
@@ -591,19 +594,29 @@ const FeedContent = ({
 
   useEffect(() => {
     const onFeedVisualChange = () => {
+      setIsSpeaking(feed.isSpeaking());
       rerenderOnFeed();
+    };
+    const onSpeaking = (speaking: boolean) => {
+      setIsSpeaking(speaking);
     };
     feed.on(CallFeedEvent.MuteStateChanged, onFeedVisualChange);
     feed.on(CallFeedEvent.NewStream, onFeedVisualChange);
-    feed.on(CallFeedEvent.Speaking, onFeedVisualChange);
+    feed.on(CallFeedEvent.Speaking, onSpeaking);
     return () => {
       feed.removeListener(CallFeedEvent.MuteStateChanged, onFeedVisualChange);
       feed.removeListener(CallFeedEvent.NewStream, onFeedVisualChange);
-      feed.removeListener(CallFeedEvent.Speaking, onFeedVisualChange);
+      feed.removeListener(CallFeedEvent.Speaking, onSpeaking);
     };
   }, [feed]);
 
   const hasVideo = !feed.isVideoMuted() && stream.getVideoTracks().length > 0;
+  const showVoiceWaves =
+    !hasVideo &&
+    !isShare &&
+    isSpeaking &&
+    !feed.isAudioMuted() &&
+    stream.getAudioTracks().length > 0;
 
   return (
     <div
@@ -648,15 +661,41 @@ const FeedContent = ({
       ) : (
         <div
           className={cn(
-            'flex w-full flex-col items-center justify-center gap-1 p-2 text-center',
+            'flex w-full flex-col items-center justify-center gap-3 p-4 text-center',
+            'bg-gradient-to-b from-zinc-900/95 to-black',
             isFullView && !isPip ? 'min-h-0 flex-1' : 'min-h-[10rem]',
+            isPip && 'gap-1.5 p-2',
           )}
           aria-label={label}
         >
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-            <User className="h-7 w-7" />
+          <div
+            className={cn(
+              'flex shrink-0 items-center justify-center rounded-full bg-muted/30 text-muted-foreground ring-1 ring-border/40',
+              isPip
+                ? 'h-8 w-8'
+                : isFullView
+                ? 'h-20 w-20 sm:h-24 sm:w-24'
+                : 'h-14 w-14',
+            )}
+          >
+            <User
+              className={cn(
+                isPip
+                  ? 'h-4 w-4'
+                  : isFullView
+                  ? 'h-10 w-10 sm:h-12 sm:w-12'
+                  : 'h-7 w-7',
+              )}
+              aria-hidden
+            />
           </div>
-          <span className="line-clamp-2 text-xs text-muted-foreground">
+          <p
+            className={cn(
+              'line-clamp-2 max-w-full font-medium text-foreground',
+              isFullView && !isPip ? 'text-base sm:text-lg' : 'text-sm',
+              isPip && 'text-[10px] leading-tight',
+            )}
+          >
             {label}
             {feed.isAudioMuted() && !feed.isLocal()
               ? ` · ${t('callParticipantMuted')}`
@@ -664,7 +703,12 @@ const FeedContent = ({
             {feed.isLocal() && feed.isAudioMuted()
               ? ` · ${t('callParticipantMuted')}`
               : null}
-          </span>
+          </p>
+          <CallAudioVoiceWaves
+            active={showVoiceWaves}
+            size={isPip ? 'sm' : 'md'}
+            className={isPip ? 'max-w-[4.5rem]' : 'max-w-[min(16rem,85%)]'}
+          />
         </div>
       )}
     </div>

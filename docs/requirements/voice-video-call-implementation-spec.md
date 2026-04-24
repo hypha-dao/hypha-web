@@ -299,7 +299,7 @@ type HumanChatPanelCallToolbarProps = {
 | **Timer**      | **Optional v1.1:** `mm:ss` since connected; otherwise show **Connecting…** / **Connected**.                                                                           |
 | **Mute**       | Toggles mic; reflects `GroupCall` state.                                                                                                                              |
 | **Camera**     | Toggle video mute / camera off. **Hide** when session is **audio-only** (`callKind === 'audio'`) or show **disabled** — choose one and document in implementation PR. |
-| **Leave**      | Primary destructive control; calls `leave()`.                                                                                                                         |
+| **Leave**      | Primary **end call** control: **circular** (same diameter as other primary controls in the strip), **filled** destructive color, **phone-hang-up** style icon (e.g. `PhoneOff`); **no** wide “pill + text” in the **banner** or **full view** — `aria-label` + `title` carry “Leave” for screen readers. Implemented in **`HumanChatPanelInCallControls`**. |
 | **Connecting** | Spinner + disabled primary controls until `connected`.                                                                                                                |
 
 **Errors:** If `callState === 'error'`, show compact message with optional **Retry** / **Dismiss**.
@@ -311,6 +311,7 @@ type HumanChatPanelCallToolbarProps = {
 - **No** full-screen video stage required.
 - **Optional v1:** Thin strip under banner: local avatar + mic indicator.
 - **Chat tab:** Message list remains **primary**; banner stays at **top** of panel while scrolling.
+- **No video track (audio-only or camera off):** For each **user media** `CallFeed` tile with **no** visible video, the stage **shall** show a **plain** dark **fill** (no camera frame), the participant **name** (or “You” for local PiP), and — **only** when `CallFeed` reports **speaking** via **`isSpeaking()`** / `CallFeedEvent.Speaking` (and **not** when audio is muted) — a **bar waveform** in the same **visual language** as **voice message** rows (`CallAudioVoiceWaves` / `call-audio-voice-waves.tsx`). Bars **must** be **static** (muted) when the participant is not speaking. Respect **`prefers-reduced-motion`** for the animation.
 
 #### 3.4.2 Video (`enterVideo` or camera on after join)
 
