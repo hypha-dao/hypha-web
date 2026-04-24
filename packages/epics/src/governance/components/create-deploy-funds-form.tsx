@@ -75,8 +75,8 @@ export const CreateDeployFundsForm = ({
       recipient: '',
       payouts: [
         {
-          amount: undefined,
-          token: undefined,
+          amount: '',
+          token: '',
         },
       ],
     },

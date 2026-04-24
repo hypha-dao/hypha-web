@@ -9,7 +9,6 @@ import { HumanChatPanelPage } from './pages/human-chat-panel.page';
  * - Navigating to a different space resets the chat (clears messages, input)
  * - Navigating back to the original space re-joins its room
  *
- * These tests require NEXT_PUBLIC_ENABLE_HUMAN_CHAT=true.
  */
 test.describe('Human Chat Panel — Space Switching', () => {
   test.setTimeout(60_000); // Space navigation can be slow in production builds
@@ -17,10 +16,6 @@ test.describe('Human Chat Panel — Space Switching', () => {
   const SPACE_B = 'hypha-platform';
 
   let chatPanel: HumanChatPanelPage;
-
-  test.beforeEach(async ({ context }) => {
-    await HumanChatPanelPage.enableHumanChat(context);
-  });
 
   test('should show welcome message on a fresh space', async ({ page }) => {
     chatPanel = new HumanChatPanelPage(page);

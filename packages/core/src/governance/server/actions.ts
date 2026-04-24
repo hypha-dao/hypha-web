@@ -26,6 +26,7 @@ import {
 } from '../types';
 // TODO: #602 Define RLS Policies for Agreement Table
 import { db } from '@hypha-platform/storage-postgres';
+import { normalizeProposalDocumentLabel } from '../proposal-document-label';
 import {
   findExchangeDepositEscrowIdsBySpaceId,
   findTokenUpdateByAddress,
@@ -38,7 +39,11 @@ export async function createAgreementAction(
   { authToken }: { authToken?: string },
 ) {
   if (!authToken) throw new Error('authToken is required to create agreement');
-  return createAgreement({ ...data }, { db });
+  const label =
+    data.label != null && String(data.label).trim() !== ''
+      ? normalizeProposalDocumentLabel(data.label)
+      : data.label;
+  return createAgreement({ ...data, label }, { db });
 }
 
 export async function updateAgreementBySlugAction(

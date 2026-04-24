@@ -11,21 +11,20 @@ import { getDhoPathMembers } from '../@tab/members/constants';
 import { getDhoPathTreasury } from '../@tab/treasury/constants';
 // import { getDhoPathOverview } from '../@tab/overview/constants'; // Overview tab removed
 import { cn } from '@hypha-platform/ui-utils';
-import { getEffectiveDhoTab } from '@hypha-platform/epics';
+import {
+  getActiveTabFromPath,
+  useMainColumnScrollY,
+} from '@hypha-platform/epics';
 import { getDhoPathCoherence } from '../@tab/coherence/constants';
 
 /** Subtle scroll parallax: tab strip drifts slightly vs page for depth (see CompactSpaceBannerLead). */
 const TAB_PARALLAX_SCROLL_RATE = 0.07;
 const TAB_PARALLAX_MAX_SHIFT_PX = 18;
 
-function clampTabParallaxScrollY(): number {
-  if (typeof window === 'undefined') return 0;
+function clampTabParallaxScrollY(scrollY: number): number {
   return Math.min(
     TAB_PARALLAX_MAX_SHIFT_PX,
-    Math.max(
-      -TAB_PARALLAX_MAX_SHIFT_PX,
-      window.scrollY * TAB_PARALLAX_SCROLL_RATE,
-    ),
+    Math.max(-TAB_PARALLAX_MAX_SHIFT_PX, scrollY * TAB_PARALLAX_SCROLL_RATE),
   );
 }
 
@@ -43,13 +42,14 @@ export function NavigationTabs({
 }: {
   lang: Locale;
   id: string;
+  /** When true, show the Coherence tab (from `getEnableCoherence()` on the server). */
   coherenceEnabled?: boolean;
 }) {
   const t = useTranslations('Common');
   const pathname = usePathname();
-  const activeTab = getEffectiveDhoTab(pathname, { coherenceEnabled });
+  const activeTab = getActiveTabFromPath(pathname);
 
-  const [tabParallaxY, setTabParallaxY] = React.useState(0);
+  const mainScrollY = useMainColumnScrollY();
   const [preferReducedMotion, setPreferReducedMotion] = React.useState(false);
 
   React.useEffect(() => {
@@ -58,45 +58,18 @@ export function NavigationTabs({
 
     const sync = () => {
       setPreferReducedMotion(mq.matches);
-      if (mq.matches) setTabParallaxY(0);
     };
     sync();
     mq.addEventListener('change', sync);
     return () => mq.removeEventListener('change', sync);
   }, []);
 
-  React.useEffect(() => {
-    if (preferReducedMotion || isReducedMotionPreferred()) {
-      setTabParallaxY(0);
-      return;
-    }
-
-    let raf = 0;
-
-    const tick = () => {
-      setTabParallaxY(clampTabParallaxScrollY());
-    };
-
-    const onScroll = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(tick);
-    };
-
-    tick();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      cancelAnimationFrame(raf);
-    };
-  }, [preferReducedMotion]);
+  const tabParallaxY =
+    preferReducedMotion || isReducedMotionPreferred()
+      ? 0
+      : clampTabParallaxScrollY(mainScrollY);
 
   const tabs = [
-    // Overview tab removed - functionality replaced by space-visualization
-    // {
-    //   title: t('Overview'),
-    //   name: 'overview',
-    //   href: getDhoPathOverview(lang, id),
-    // },
     ...(coherenceEnabled
       ? [
           {

@@ -19,6 +19,23 @@ export const COMPACT_SPACE_BANNER_TITLE_CLASSNAME = cn(
   '[font-family:var(--font-family-text),ui-sans-serif,system-ui,sans-serif]',
 );
 
+/**
+ * Subtle square corners — matches outlined header controls (language, Space Settings) and small square avatars.
+ * (~6px; not pill, not large card radius.)
+ */
+export const APP_CHROME_SUBTLE_SQUARE_RADIUS = 'rounded-[6px]';
+
+/** Smaller footprint for the DHO sticky space chrome row — circular logo like the hero banner */
+export const STICKY_SPACE_CHROME_AVATAR_CLASSNAME = cn(
+  'h-10 w-10 shrink-0 rounded-full sm:h-11 sm:w-11',
+  'ring-1 ring-border/60 shadow-sm',
+);
+
+export const STICKY_SPACE_CHROME_TITLE_CLASSNAME = cn(
+  'text-balance text-4 font-medium tracking-tight sm:text-5',
+  '[font-family:var(--font-family-text),ui-sans-serif,system-ui,sans-serif]',
+);
+
 /** Purpose column — max four lines on narrow viewports (scroll); sm+ wider column + taller cap. */
 const DESCRIPTION_SCROLL_BOX = cn(
   'w-full max-w-full min-h-0 max-h-[4lh] overflow-y-auto overscroll-y-contain touch-pan-y',
@@ -272,7 +289,7 @@ export function CompactSpaceBanner({
             </div>
 
             {footerTrailing ? (
-              <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end [&_.rounded-lg]:rounded-md [&_a]:inline-flex [&_a]:items-center [&_button]:rounded-md [&_div]:inline-flex [&_div]:items-center">
+              <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end [&_a]:inline-flex [&_a]:items-center [&_div]:inline-flex [&_div]:items-center">
                 {footerTrailing}
               </div>
             ) : null}

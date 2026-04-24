@@ -23,6 +23,10 @@ import {
   type HyphaMediaBundleItemWire,
 } from '../../rich-reply';
 import { applyMediaEditCaptionAndReply } from '../../edit-room-message-media-caption';
+import {
+  mergeMatrixMentionsIntoContent,
+  resolveMentionUserIdsForSend,
+} from '../../mentions';
 
 export interface SendAttachmentInput {
   file: File;
@@ -37,9 +41,11 @@ export type SendMessageUploadProgress = {
   total: number;
 };
 
-interface SendMessageInput {
+export interface SendMessageInput {
   roomId: string;
   message: string;
+  /** Explicit MXIDs for Matrix `m.mentions` (optional; otherwise parsed from plaintext `@mxid`). */
+  mentionUserIds?: string[];
   /** Rich reply: target m.room.message event id (space chat; not m.thread). */
   replyToEventId?: string;
   /** Uploaded to the homeserver and sent as separate `m.file` / `m.image` events before optional text. */
@@ -64,6 +70,8 @@ export interface EditRoomMessageInput {
   /** Timeline id of the `m.room.message` to replace (not an edit event id). */
   targetEventId: string;
   message: string;
+  /** Explicit MXIDs for Matrix `m.mentions` when editing body/caption. */
+  mentionUserIds?: string[];
   /**
    * When editing a media message: ordered slots to keep (first = root event).
    * New files are uploaded and appended after these (see `newAttachments`).
@@ -527,6 +535,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
     async ({
       roomId,
       message,
+      mentionUserIds,
       replyToEventId,
       attachments,
       onUploadProgress,
@@ -545,6 +554,8 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       if (!trimmed && !hasAttachments) {
         return;
       }
+
+      const mentionIds = resolveMentionUserIdsForSend(trimmed, mentionUserIds);
 
       throwIfAborted(signal);
 
@@ -612,20 +623,26 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
               replyContext.targetBody,
               trimmed,
             );
-            mediaPayloads[0] = {
-              ...first,
-              body: rich.body,
-              format: MATRIX_CUSTOM_HTML_FORMAT,
-              formatted_body: rich.formatted_body,
-            };
+            mediaPayloads[0] = mergeMatrixMentionsIntoContent(
+              {
+                ...first,
+                body: rich.body,
+                format: MATRIX_CUSTOM_HTML_FORMAT,
+                formatted_body: rich.formatted_body,
+              },
+              mentionIds,
+            ) as HyphaMediaEventContent;
           } else {
             const textExtras =
               matrixTextEventContentWithOptionalFormatting(trimmed);
-            mediaPayloads[0] = {
-              ...first,
-              ...textExtras,
-              body: trimmed,
-            } as HyphaMediaEventContent;
+            mediaPayloads[0] = mergeMatrixMentionsIntoContent(
+              {
+                ...first,
+                ...textExtras,
+                body: trimmed,
+              },
+              mentionIds,
+            ) as HyphaMediaEventContent;
           }
         }
 
@@ -647,7 +664,10 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             await client.sendEvent(
               roomId,
               EventType.RoomMessage,
-              eventContent as RoomMessageEventContent,
+              mergeMatrixMentionsIntoContent(
+                eventContent,
+                mentionIds,
+              ) as RoomMessageEventContent,
             );
             sentMediaCount = 1;
           } else if (mediaPayloads.length > 1) {
@@ -683,7 +703,10 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             await client.sendEvent(
               roomId,
               EventType.RoomMessage,
-              eventContent as RoomMessageEventContent,
+              mergeMatrixMentionsIntoContent(
+                eventContent,
+                mentionIds,
+              ) as RoomMessageEventContent,
             );
             sentMediaCount = list.length;
           }
@@ -713,15 +736,22 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
             message,
           );
           throwIfAborted(signal);
-          await client.sendEvent(roomId, EventType.RoomMessage, {
-            msgtype: MsgType.Text,
-            ...payload,
-            'm.relates_to': {
-              'm.in_reply_to': {
-                event_id: replyContext.resolvedTargetId,
-              },
-            },
-          } as RoomMessageEventContent);
+          await client.sendEvent(
+            roomId,
+            EventType.RoomMessage,
+            mergeMatrixMentionsIntoContent(
+              {
+                msgtype: MsgType.Text,
+                ...payload,
+                'm.relates_to': {
+                  'm.in_reply_to': {
+                    event_id: replyContext.resolvedTargetId,
+                  },
+                },
+              } as RoomMessageEventContent,
+              mentionIds,
+            ),
+          );
           return;
         }
 
@@ -729,25 +759,39 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           const textPayload =
             matrixTextEventContentWithOptionalFormatting(message);
           throwIfAborted(signal);
-          await client.sendEvent(roomId, EventType.RoomMessage, {
-            msgtype: MsgType.Text,
-            ...textPayload,
-            'm.relates_to': {
-              'm.in_reply_to': {
-                event_id: replyContext.resolvedTargetId,
-              },
-            },
-          } as RoomMessageEventContent);
+          await client.sendEvent(
+            roomId,
+            EventType.RoomMessage,
+            mergeMatrixMentionsIntoContent(
+              {
+                msgtype: MsgType.Text,
+                ...textPayload,
+                'm.relates_to': {
+                  'm.in_reply_to': {
+                    event_id: replyContext.resolvedTargetId,
+                  },
+                },
+              } as RoomMessageEventContent,
+              mentionIds,
+            ),
+          );
           return;
         }
 
         const textPayload =
           matrixTextEventContentWithOptionalFormatting(message);
         throwIfAborted(signal);
-        await client.sendEvent(roomId, EventType.RoomMessage, {
-          msgtype: MsgType.Text,
-          ...textPayload,
-        } as RoomMessageEventContent);
+        await client.sendEvent(
+          roomId,
+          EventType.RoomMessage,
+          mergeMatrixMentionsIntoContent(
+            {
+              msgtype: MsgType.Text,
+              ...textPayload,
+            } as RoomMessageEventContent,
+            mentionIds,
+          ),
+        );
       } catch (textErr) {
         throw new SendMessagePartialFailureError(
           textErr instanceof Error
@@ -766,6 +810,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       roomId,
       targetEventId,
       message,
+      mentionUserIds,
       existingMediaSlots,
       newAttachments,
       signal,
@@ -774,6 +819,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         throw new Error('Client should be specified');
       }
       const trimmed = message.trim();
+      const mentionIds = resolveMentionUserIdsForSend(trimmed, mentionUserIds);
       const newList = newAttachments?.length ? newAttachments : [];
       if (!trimmed && newList.length === 0 && !existingMediaSlots?.length) {
         return;
@@ -919,6 +965,7 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           replyToId,
           (id) => resolveReplyTargetForSend(client, roomId, id),
           filenameFallback,
+          mentionUserIds,
         );
 
         const newBody =
@@ -959,20 +1006,26 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           targetBody,
           message,
         );
-        newContentPayload = {
-          msgtype: MsgType.Text,
-          ...rich,
-          'm.relates_to': {
-            'm.in_reply_to': {
-              event_id: resolvedReplyTargetId,
+        newContentPayload = mergeMatrixMentionsIntoContent(
+          {
+            msgtype: MsgType.Text,
+            ...rich,
+            'm.relates_to': {
+              'm.in_reply_to': {
+                event_id: resolvedReplyTargetId,
+              },
             },
-          },
-        } as RoomMessageEventContent;
+          } as RoomMessageEventContent,
+          mentionIds,
+        );
       } else {
-        newContentPayload = {
-          msgtype: MsgType.Text,
-          ...matrixTextEventContentWithOptionalFormatting(message),
-        } as RoomMessageEventContent;
+        newContentPayload = mergeMatrixMentionsIntoContent(
+          {
+            msgtype: MsgType.Text,
+            ...matrixTextEventContentWithOptionalFormatting(message),
+          } as RoomMessageEventContent,
+          mentionIds,
+        );
       }
 
       const newBody =

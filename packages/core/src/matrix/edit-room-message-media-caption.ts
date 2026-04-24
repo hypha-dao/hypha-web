@@ -4,6 +4,10 @@ import {
   buildRichReplyMatrixContent,
   matrixTextEventContentWithOptionalFormatting,
 } from './chat-markup';
+import {
+  mergeMatrixMentionsIntoContent,
+  resolveMentionUserIdsForSend,
+} from './mentions';
 import { MATRIX_CUSTOM_HTML_FORMAT } from './rich-reply';
 
 /** Same shape as media events built in `matrix-provider` `editRoomMessage`. */
@@ -28,6 +32,7 @@ export async function applyMediaEditCaptionAndReply(
   replyToId: string | undefined,
   resolveReplyTarget: (replyToEventId: string) => Promise<ReplyTargetResolved>,
   filenameFallbackBody: string,
+  explicitMentionUserIds?: string[],
 ): Promise<HyphaMediaEditCombined> {
   if (trimmedCaption) {
     if (replyToId?.trim()) {
@@ -41,7 +46,7 @@ export async function applyMediaEditCaptionAndReply(
         targetBody,
         trimmedCaption,
       );
-      return {
+      const withRelation = {
         ...combined,
         body: rich.body,
         format: MATRIX_CUSTOM_HTML_FORMAT,
@@ -52,14 +57,21 @@ export async function applyMediaEditCaptionAndReply(
           },
         },
       } as HyphaMediaEditCombined;
+      return mergeMatrixMentionsIntoContent(
+        withRelation,
+        resolveMentionUserIdsForSend(trimmedCaption, explicitMentionUserIds),
+      );
     }
     const textExtras =
       matrixTextEventContentWithOptionalFormatting(trimmedCaption);
-    return {
-      ...combined,
-      ...textExtras,
-      body: trimmedCaption,
-    } as HyphaMediaEditCombined;
+    return mergeMatrixMentionsIntoContent(
+      {
+        ...combined,
+        ...textExtras,
+        body: trimmedCaption,
+      } as HyphaMediaEditCombined,
+      resolveMentionUserIdsForSend(trimmedCaption, explicitMentionUserIds),
+    );
   }
 
   if (replyToId?.trim()) {
@@ -73,7 +85,7 @@ export async function applyMediaEditCaptionAndReply(
       targetBody,
       ' ',
     );
-    return {
+    const withQuoted = {
       ...combined,
       body: quoted.body,
       format: MATRIX_CUSTOM_HTML_FORMAT,
@@ -84,10 +96,17 @@ export async function applyMediaEditCaptionAndReply(
         },
       },
     } as HyphaMediaEditCombined;
+    return mergeMatrixMentionsIntoContent(
+      withQuoted,
+      resolveMentionUserIdsForSend('', explicitMentionUserIds),
+    );
   }
 
-  return {
-    ...combined,
-    body: filenameFallbackBody,
-  } as HyphaMediaEditCombined;
+  return mergeMatrixMentionsIntoContent(
+    {
+      ...combined,
+      body: filenameFallbackBody,
+    } as HyphaMediaEditCombined,
+    resolveMentionUserIdsForSend('', explicitMentionUserIds),
+  );
 }

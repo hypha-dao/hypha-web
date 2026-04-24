@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useLayoutEffect, useState } from 'react';
 import { MessageCircle, Sparkles } from 'lucide-react';
 import {
   SidebarProvider,
   Sidebar,
-  SidebarInset,
   SidebarResizeHandle,
 } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
@@ -16,6 +15,8 @@ import {
   useHumanChatPanel,
 } from './human-chat-panel-context';
 import { useIsSpaceContext } from './use-is-space-context';
+import { PanelDualSidebarScrollBridge } from './panel-main-column-scroll-bridge';
+import { PanelScrollInset } from './panel-scroll-inset';
 
 // ─── Panel Providers ─────────────────────────────────────────────────────────
 // Owns the open/close state for both panels and wraps children with the
@@ -100,6 +101,37 @@ type PanelWrapLayoutProps = {
   right?: PanelSlot;
 };
 
+/** Matches scroll inset — `0px` so fixed chrome / dividers span full main column (lines may cross overlay scrollbar). */
+const MAIN_COLUMN_SCROLLBAR_WIDTH_CSS = '0px';
+
+const SIDEBAR_WIDTH_MIRROR_KEYS = [
+  '--sidebar-left-width',
+  '--sidebar-right-width',
+  '--main-column-scrollbar-width',
+] as const;
+
+function mirrorMainColumnLayoutVarsToDocument(
+  sidebarLeftPx: string,
+  sidebarRightPx: string,
+): void {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  root.style.setProperty('--sidebar-left-width', sidebarLeftPx);
+  root.style.setProperty('--sidebar-right-width', sidebarRightPx);
+  root.style.setProperty(
+    '--main-column-scrollbar-width',
+    MAIN_COLUMN_SCROLLBAR_WIDTH_CSS,
+  );
+}
+
+function clearMainColumnLayoutMirrorFromDocument(): void {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  for (const key of SIDEBAR_WIDTH_MIRROR_KEYS) {
+    root.style.removeProperty(key);
+  }
+}
+
 // ─── Main Layout ─────────────────────────────────────────────────────────────
 // Reads panel open/close state from PanelProviders contexts. Creates
 // SidebarProvider wrappers for each side to drive sidebar animations.
@@ -108,6 +140,9 @@ type PanelWrapLayoutProps = {
 // themselves relative to the sidebars.
 //
 // Must be rendered inside <PanelProviders>.
+//
+// Keep sidebars above `ProposalOverlayShell` scrim (`z-40`) so chat/AI panels stay
+// interactive while proposal modals are open (`modal={false}` on that dialog).
 
 export function PanelWrapLayout({
   children,
@@ -122,11 +157,38 @@ export function PanelWrapLayout({
   const effectiveLeft = isSpace ? left : undefined;
   const effectiveRight = isSpace ? right : undefined;
 
-  // Core content that goes inside the innermost SidebarInset
+  const sidebarLeftPx = leftOpen && effectiveLeft ? '320px' : '0px';
+  const sidebarRightPx = rightOpen && effectiveRight ? '320px' : '0px';
+
+  /** Radix portaled dialogs sit under `body` and do not inherit vars from this div — mirror to `:root`. */
+  useLayoutEffect(() => {
+    mirrorMainColumnLayoutVarsToDocument(sidebarLeftPx, sidebarRightPx);
+    return () => {
+      clearMainColumnLayoutMirrorFromDocument();
+    };
+  }, [sidebarLeftPx, sidebarRightPx]);
+
+  // Core content that goes inside the scrollable SidebarInset (when panels wrap layout)
   let content = <>{children}</>;
 
-  // Wrap with right panel if provided and in space context
-  if (effectiveRight) {
+  if (effectiveLeft && effectiveRight) {
+    content = (
+      <PanelDualSidebarScrollBridge
+        leftOpen={leftOpen}
+        onLeftOpenChange={(open) => {
+          if (open !== leftOpen) toggleLeft();
+        }}
+        rightOpen={rightOpen}
+        onRightOpenChange={(open) => {
+          if (open !== rightOpen) toggleRight();
+        }}
+        leftContent={effectiveLeft.content}
+        rightContent={effectiveRight.content}
+      >
+        {content}
+      </PanelDualSidebarScrollBridge>
+    );
+  } else if (effectiveRight) {
     content = (
       <SidebarProvider
         open={rightOpen}
@@ -139,17 +201,21 @@ export function PanelWrapLayout({
           } as React.CSSProperties
         }
       >
-        <SidebarInset className="overflow-y-auto">{content}</SidebarInset>
-        <Sidebar side="right" variant="sidebar" collapsible="offcanvas">
+        <PanelScrollInset className="overflow-y-auto">
+          {content}
+        </PanelScrollInset>
+        <Sidebar
+          side="right"
+          variant="sidebar"
+          collapsible="offcanvas"
+          className="z-[50]"
+        >
           <SidebarResizeHandle />
           {effectiveRight.content}
         </Sidebar>
       </SidebarProvider>
     );
-  }
-
-  // Wrap with left panel if provided and in space context
-  if (effectiveLeft) {
+  } else if (effectiveLeft) {
     content = (
       <SidebarProvider
         open={leftOpen}
@@ -162,11 +228,18 @@ export function PanelWrapLayout({
           } as React.CSSProperties
         }
       >
-        <Sidebar side="left" variant="sidebar" collapsible="offcanvas">
+        <Sidebar
+          side="left"
+          variant="sidebar"
+          collapsible="offcanvas"
+          className="z-[50]"
+        >
           {effectiveLeft.content}
           <SidebarResizeHandle />
         </Sidebar>
-        <SidebarInset className="overflow-y-auto">{content}</SidebarInset>
+        <PanelScrollInset className="overflow-y-auto">
+          {content}
+        </PanelScrollInset>
       </SidebarProvider>
     );
   }
@@ -175,9 +248,11 @@ export function PanelWrapLayout({
     <div
       style={
         {
-          '--sidebar-right-width':
-            rightOpen && effectiveRight ? '320px' : '0px',
-          '--sidebar-left-width': leftOpen && effectiveLeft ? '320px' : '0px',
+          '--sidebar-right-width': sidebarRightPx,
+          '--sidebar-left-width': sidebarLeftPx,
+          transitionProperty: '--sidebar-left-width, --sidebar-right-width',
+          transitionDuration: '200ms',
+          transitionTimingFunction: 'linear',
         } as React.CSSProperties
       }
     >

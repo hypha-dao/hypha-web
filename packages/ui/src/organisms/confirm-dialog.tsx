@@ -5,8 +5,6 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
-  AlertDialogOverlay,
-  AlertDialogPortal,
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '../alert-dialog';
@@ -79,39 +77,36 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
           </Button>
         )}
       </AlertDialogTrigger>
-      <AlertDialogPortal>
-        <AlertDialogOverlay />
-        <AlertDialogContent>
-          <AlertDialogTitle className="m-0 text-[17px] font-medium text-mauve12 text-card-foreground">
-            {title}
-          </AlertDialogTitle>
-          <AlertDialogDescription>{description}</AlertDialogDescription>
-          <div className="flex justify-end gap-[25px]">
-            <AlertDialogCancel asChild>
-              <Button
-                variant="outline"
-                colorVariant="neutral"
-                onClick={onRejectClicked}
-                disabled={isProcessing || isLoading}
-              >
-                {customRejectButtonText ?? 'Cancel'}
-              </Button>
-            </AlertDialogCancel>
-            <AlertDialogAction asChild>
-              <Button
-                variant="outline"
-                colorVariant="neutral"
-                onClick={handleAccept}
-                disabled={isProcessing || isLoading}
-              >
-                {isProcessing || isLoading
-                  ? 'Processing...'
-                  : customAcceptButtonText ?? 'OK'}
-              </Button>
-            </AlertDialogAction>
-          </div>
-        </AlertDialogContent>
-      </AlertDialogPortal>
+      <AlertDialogContent>
+        <AlertDialogTitle className="m-0 text-lg font-medium text-card-foreground">
+          {title}
+        </AlertDialogTitle>
+        <AlertDialogDescription>{description}</AlertDialogDescription>
+        <div className="flex justify-end gap-6">
+          <AlertDialogCancel asChild>
+            <Button
+              variant="outline"
+              colorVariant="neutral"
+              onClick={onRejectClicked}
+              disabled={isProcessing || isLoading}
+            >
+              {customRejectButtonText ?? 'Cancel'}
+            </Button>
+          </AlertDialogCancel>
+          <AlertDialogAction asChild>
+            <Button
+              variant="outline"
+              colorVariant="neutral"
+              onClick={handleAccept}
+              disabled={isProcessing || isLoading}
+            >
+              {isProcessing || isLoading
+                ? 'Processing...'
+                : customAcceptButtonText ?? 'OK'}
+            </Button>
+          </AlertDialogAction>
+        </div>
+      </AlertDialogContent>
     </AlertDialog>
   );
 };

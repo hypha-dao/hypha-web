@@ -3,8 +3,9 @@
 import * as React from 'react';
 import { createPortal } from 'react-dom';
 import {
-  COMPACT_SPACE_BANNER_AVATAR_CLASSNAME,
-  COMPACT_SPACE_BANNER_TITLE_CLASSNAME,
+  STICKY_SPACE_CHROME_AVATAR_CLASSNAME,
+  STICKY_SPACE_CHROME_TITLE_CLASSNAME,
+  subscribeMainColumnScroll,
 } from '@hypha-platform/epics';
 import { Avatar, AvatarImage } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
@@ -45,8 +46,9 @@ function useMenuTopOffsetPx(): number {
 }
 
 /**
- * Desktop (md+): pin a compact chrome row under `MenuTop`. Actions / nested-space move
- * via portal so the same React trees (hooks) transition between positions — pixel-identical Button UI.
+ * Desktop (md+): pin a secondary chrome row under `MenuTop`. Lighter typography + avatar than
+ * `CompactSpaceBanner` so it reads as tier-2 chrome. Actions / nested-space move via portal so the
+ * same React trees (hooks) transition between positions — pixel-identical Button UI.
  *
  * Note: `createPortal` remounts its subtree when the container DOM node changes (e.g. when
  * `actionsPortalTarget` swaps between in-flow and sticky targets). Stateful descendants reset;
@@ -126,11 +128,11 @@ export function DhoStickySpaceChrome({
 
     tick();
     mq.addEventListener('change', onScroll);
-    window.addEventListener('scroll', onScroll, { passive: true });
+    const unsubscribeScroll = subscribeMainColumnScroll(onScroll);
     window.addEventListener('resize', onScroll);
     return () => {
       mq.removeEventListener('change', onScroll);
-      window.removeEventListener('scroll', onScroll);
+      unsubscribeScroll();
       window.removeEventListener('resize', onScroll);
       if (raf) cancelAnimationFrame(raf);
     };
@@ -145,19 +147,22 @@ export function DhoStickySpaceChrome({
     <>
       <div
         className={cn(
-          'pointer-events-none fixed inset-x-0 z-[25] hidden md:block',
-          'border-b border-border bg-background-2 transition-[opacity,transform,box-shadow] duration-200 ease-out',
+          /* Leave room for main-column scrollbar (narrow-scrollbar ~8–12px) so it is not painted under this bar */
+          'pointer-events-none fixed left-[var(--sidebar-left-width,0px)] z-[25] hidden md:block',
+          'right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,10px))]',
+          'bg-background supports-[backdrop-filter]:bg-background/85 supports-[backdrop-filter]:backdrop-blur-md',
+          'after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/80',
+          'transition-[opacity,transform] duration-200 ease-linear motion-reduce:transition-none',
           stuck
-            ? 'pointer-events-auto translate-y-0 opacity-100 shadow-md'
-            : '-translate-y-2 opacity-0',
+            ? 'pointer-events-auto translate-y-0 opacity-100'
+            : '-translate-y-1 opacity-0 motion-reduce:translate-y-0',
         )}
         style={{ top: 'var(--menu-top-height, 4rem)' }}
         aria-hidden={!stuck}
       >
-        <div className="mx-auto flex max-w-container-2xl items-center gap-3 px-8 py-2.5">
-          {/* Match CompactSpaceBanner row: same avatar, title tokens, gap-6; px-8 L/R balances chrome */}
-          <div className="flex min-w-0 flex-1 items-center gap-6">
-            <Avatar className={COMPACT_SPACE_BANNER_AVATAR_CLASSNAME}>
+        <div className="mx-auto flex min-h-11 max-w-container-2xl items-center gap-3 px-4 py-2.5 sm:px-6 md:min-h-[52px] md:py-3 md:px-8">
+          <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+            <Avatar className={STICKY_SPACE_CHROME_AVATAR_CLASSNAME}>
               <AvatarImage
                 src={logoSrc}
                 alt={logoAlt}
@@ -166,9 +171,10 @@ export function DhoStickySpaceChrome({
             </Avatar>
             <p
               className={cn(
-                COMPACT_SPACE_BANNER_TITLE_CLASSNAME,
+                STICKY_SPACE_CHROME_TITLE_CLASSNAME,
                 'min-w-0 flex-1 truncate text-foreground',
               )}
+              title={title}
               aria-hidden
             >
               {title}
@@ -203,8 +209,8 @@ export function DhoStickySpaceChrome({
         <div
           ref={setFlowActionsEl}
           className={cn(
-            /* No extra horizontal padding: tab content (e.g. Claim) uses full container width */
-            'flex justify-end gap-2 px-0 md:flex-nowrap',
+            /* Same min-height as HumanChatPanelTabs so bottom borders align with chat panel */
+            'flex justify-end gap-2 px-0 md:flex-nowrap md:items-center md:min-h-[var(--secondary-chrome-actions-row-height,52px)]',
             stuck && 'pointer-events-none invisible opacity-0',
           )}
           style={stuck ? { minHeight: flowMinH } : undefined}

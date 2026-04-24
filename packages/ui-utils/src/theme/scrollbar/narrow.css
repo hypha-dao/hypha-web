@@ -1,24 +1,71 @@
 @import '../colors/neutral.css';
 
+/**
+ * Lower-contrast thumb; stronger on hover / when `.narrow-scrollbar-scrolling` is toggled during scroll.
+ */
 .narrow-scrollbar::-webkit-scrollbar {
-  @apply w-1 h-1
+  @apply w-1 h-1;
 }
 
 .narrow-scrollbar::-webkit-scrollbar-track {
-  @apply bg-neutral-3 rounded-full;
+  @apply rounded-full bg-transparent;
 }
 
 .narrow-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-neutral-8 rounded-full;
+  border-radius: 9999px;
+  background-color: color-mix(
+    in oklch,
+    var(--color-neutral-8) 28%,
+    transparent
+  );
+}
+
+.narrow-scrollbar:hover::-webkit-scrollbar-thumb,
+.narrow-scrollbar:focus-within::-webkit-scrollbar-thumb {
+  background-color: color-mix(
+    in oklch,
+    var(--color-neutral-9) 55%,
+    transparent
+  );
+}
+
+.narrow-scrollbar.narrow-scrollbar-scrolling::-webkit-scrollbar-thumb {
+  background-color: color-mix(
+    in oklch,
+    var(--color-neutral-9) 50%,
+    transparent
+  );
 }
 
 .narrow-scrollbar::-webkit-scrollbar-thumb:hover {
-  @apply bg-neutral-9;
+  background-color: color-mix(
+    in oklch,
+    var(--color-neutral-10) 58%,
+    transparent
+  );
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .narrow-scrollbar::-webkit-scrollbar-thumb {
+    transition: background-color 0.2s ease-out;
+  }
 }
 
 @-moz-document url-prefix() {
   .narrow-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: var(--color-neutral-8) var(--color-neutral-3);
+    scrollbar-color: color-mix(in oklch, var(--color-neutral-8) 30%, transparent)
+      transparent;
+  }
+
+  .narrow-scrollbar:hover,
+  .narrow-scrollbar:focus-within {
+    scrollbar-color: color-mix(in oklch, var(--color-neutral-9) 55%, transparent)
+      transparent;
+  }
+
+  .narrow-scrollbar.narrow-scrollbar-scrolling {
+    scrollbar-color: color-mix(in oklch, var(--color-neutral-9) 50%, transparent)
+      transparent;
   }
 }

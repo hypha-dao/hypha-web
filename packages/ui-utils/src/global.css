@@ -22,6 +22,36 @@
 
 @import './theme/scrollbar/narrow.css';
 
+/* Lets `transition` interpolate `--sidebar-*-width` (used by fixed chrome / dialogs). */
+@property --sidebar-left-width {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+@property --sidebar-right-width {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
+/*
+ * `PanelWrapLayout` mirrors `--sidebar-*-width` onto `document.documentElement` for portaled
+ * UI (proposal scrim, sticky chrome). Without a transition here, those layers snap while the
+ * sidebar gap animates over 200ms on the inner wrapper — match {@link PanelWrapLayout} timing.
+ */
+html {
+  transition: --sidebar-left-width 200ms linear,
+    --sidebar-right-width 200ms linear;
+}
+
+/*
+ * DHO space actions row (Join / Settings / Create) + Human Chat tab strip share this height so
+ * their bottom borders line up across the main column ↔ chat panel gap.
+ */
+:root {
+  --secondary-chrome-actions-row-height: 52px;
+}
+
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 @theme {

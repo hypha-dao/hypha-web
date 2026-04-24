@@ -12,6 +12,7 @@ import { QuorumAndUnityChanger } from './quorum-and-unity-changer';
 import { Button } from '@hypha-platform/ui';
 import { VOTING_METHOD_TEMPLATES } from '../../../../governance';
 import { useTranslations } from 'next-intl';
+import { cn } from '@hypha-platform/ui-utils';
 
 interface QuorumAndUnityChangerFieldProps {
   name: string;
@@ -70,26 +71,31 @@ export function QuorumAndUnityChangerField({
                 <Button
                   key={preset.title}
                   type="button"
+                  variant="outline"
+                  colorVariant="neutral"
                   onClick={() => handlePresetClick(preset)}
-                  className={`flex flex-col items-start h-full rounded-xl border p-4 text-left transition ${
+                  className={cn(
+                    'flex h-full flex-col items-start rounded-xl p-4 text-left shadow-sm transition-colors',
+                    'border bg-card hover:bg-muted/45 dark:hover:bg-muted/25',
+                    /* Button adds focus-visible:ring-ring — override so focus matches space accent (not gray until blur). */
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--space-accent,var(--color-accent-9))] focus-visible:ring-offset-0',
                     isSelected
-                      ? 'border-accent-11'
-                      : 'border-neutral-7 hover:border-neutral-9'
-                  }`}
-                  variant="ghost"
+                      ? 'border-transparent bg-[color-mix(in_oklab,var(--space-accent,var(--color-accent-9))_12%,var(--card))] ring-2 ring-[var(--space-accent,var(--color-accent-9))] ring-offset-0 dark:bg-[color-mix(in_oklab,var(--space-accent,var(--color-accent-9))_18%,var(--card))]'
+                      : 'border-border/90',
+                  )}
                 >
-                  <div className="font-bold mb-2">
+                  <div className="mb-2 font-semibold text-foreground">
                     {tAgreementFlow(
                       `plugins.quorumAndUnity.templates.${preset.titleKey}` as Parameters<
                         typeof tAgreementFlow
                       >[0],
                     )}
                   </div>
-                  <div className="space-y-3 text-sm text-neutral-11 w-full">
+                  <div className="w-full space-y-3 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 bg-neutral-6 h-5 rounded-2xl relative">
+                      <div className="relative h-5 flex-1 rounded-2xl bg-muted">
                         <div
-                          className="bg-accent-9 h-5 rounded-2xl"
+                          className="h-5 rounded-2xl bg-[color-mix(in_oklab,var(--space-accent,var(--color-accent-9))_90%,transparent)]"
                           style={{
                             width: `${preset.quorum}%`,
                           }}
@@ -104,9 +110,9 @@ export function QuorumAndUnityChangerField({
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 bg-neutral-6 h-5 rounded-2xl relative">
+                      <div className="relative h-5 flex-1 rounded-2xl bg-muted">
                         <div
-                          className="bg-accent-9 h-5 rounded-2xl"
+                          className="h-5 rounded-2xl bg-[color-mix(in_oklab,var(--space-accent,var(--color-accent-9))_90%,transparent)]"
                           style={{
                             width: `${preset.unity}%`,
                           }}

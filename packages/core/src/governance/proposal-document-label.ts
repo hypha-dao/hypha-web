@@ -1,0 +1,104 @@
+import { DOCUMENT_LABEL_BADGE_KEYS } from './document-label-badge-keys';
+
+/**
+ * Every known localized string for `AgreementFlow.labels.*` and
+ * `AgreementFlow.documentBadges.*` (en, de, es, fr, pt) → English literal
+ * stored in DB and used as keys in `DOCUMENT_LABEL_BADGE_KEYS`.
+ */
+export const LOCALIZED_PROPOSAL_LABEL_TO_CANONICAL: Record<string, string> = {
+  Abstimmungsmethode: 'Voting Method',
+  'Accord collectif': 'Collective Agreement',
+  "Achat de tokens d'espace": 'Token Purchase',
+  'Acheter des tokens Hypha': 'Buy Hypha Tokens',
+  'Acheter des tokens Hypha (récompenses)': 'Buy Hypha Tokens',
+  'Acordo Coletivo': 'Collective Agreement',
+  'Activar espacios': 'Activate Spaces',
+  'Activer les espaces': 'Activate Spaces',
+  'Actualizar token': 'Update Token',
+  'Acuñación del Tesoro': 'Treasury Minting',
+  'Ativar espaços': 'Activate Spaces',
+  'Atualizar token': 'Update Token',
+  Ausgaben: 'Expenses',
+  Beitrag: 'Contribution',
+  Beitrittsmethode: 'Entry Method',
+  'Bóveda de respaldo': 'Backing Vault',
+  'Buy Hypha Tokens (Rewards)': 'Buy Hypha Tokens',
+  'Canjear tokens': 'Redeem Tokens',
+  'Coffre de garantie': 'Backing Vault',
+  'Cofre de lastro': 'Backing Vault',
+  'Combustion de tokens': 'Token Burning',
+  'Compra de tokens del espacio': 'Token Purchase',
+  'Compra de tokens do espaço': 'Token Purchase',
+  'Comprar tokens Hypha': 'Buy Hypha Tokens',
+  'Comprar tokens Hypha (recompensas)': 'Buy Hypha Tokens',
+  'Compre tokens Hypha (recompensas)': 'Buy Hypha Tokens',
+  Contribución: 'Contribution',
+  Contribuição: 'Contribution',
+  'Convenio Colectivo': 'Collective Agreement',
+  Convite: 'Invite',
+  'Cunhagem de Tesouro': 'Treasury Minting',
+  Dépenses: 'Expenses',
+  Despesas: 'Expenses',
+  'Échanger des tokens': 'Redeem Tokens',
+  Einladung: 'Invite',
+  'Émettre un nouveau token': 'Issue New Token',
+  'Emitir novo token': 'Issue New Token',
+  'Emitir nuevo token': 'Issue New Token',
+  'Espace-à-espace': 'Space To Space',
+  'Espacio al espacio': 'Space To Space',
+  'Espaço para Espaço': 'Space To Space',
+  Financement: 'Funding',
+  Financiamento: 'Funding',
+  Finanzierung: 'Funding',
+  Fondos: 'Funding',
+  'Frappe de trésorerie': 'Treasury Minting',
+  Gastos: 'Expenses',
+  'Hypha-Tokens kaufen': 'Buy Hypha Tokens',
+  'Hypha-Tokens kaufen (Belohnungen)': 'Buy Hypha Tokens',
+  Inversión: 'Investment',
+  Investimento: 'Investment',
+  Investissement: 'Investment',
+  Investition: 'Investment',
+  Invitación: 'Invite',
+  Invitation: 'Invite',
+  'Kollektive Vereinbarung': 'Collective Agreement',
+  "Méthode d'entrée": 'Entry Method',
+  'Méthode de vote': 'Voting Method',
+  'Método de entrada': 'Entry Method',
+  'Método de votação': 'Voting Method',
+  'Método de votación': 'Voting Method',
+  'Mettre à jour le token': 'Update Token',
+  'Mitgliedschaft beenden': 'Membership Exit',
+  'Neuen Token ausgeben': 'Issue New Token',
+  'Queima de tokens': 'Token Burning',
+  'Quema de tokens': 'Token Burning',
+  'Resgatar tokens': 'Redeem Tokens',
+  'Saída de adesão': 'Membership Exit',
+  'Salida de membresía': 'Membership Exit',
+  Sicherungsvault: 'Backing Vault',
+  'Sortie de membre': 'Membership Exit',
+  'Space to Space': 'Space To Space',
+  'Space-Transparenz': 'Space Transparency',
+  'Space-zu-Space': 'Space To Space',
+  'Spaces aktivieren': 'Activate Spaces',
+  'Token aktualisieren': 'Update Token',
+  'Token-Kauf': 'Token Purchase',
+  'Token-Verbrennung': 'Token Burning',
+  'Tokens einlösen': 'Redeem Tokens',
+  "Transparence de l'espace": 'Space Transparency',
+  'Transparencia espacial': 'Space Transparency',
+  'Transparência Espacial': 'Space Transparency',
+};
+
+export function normalizeProposalDocumentLabel(
+  label: string | null | undefined,
+): string {
+  const trimmed = (label ?? '').trim();
+  if (!trimmed) return '';
+
+  if (DOCUMENT_LABEL_BADGE_KEYS[trimmed]) {
+    return trimmed;
+  }
+
+  return LOCALIZED_PROPOSAL_LABEL_TO_CANONICAL[trimmed] ?? trimmed;
+}

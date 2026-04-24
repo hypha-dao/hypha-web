@@ -78,8 +78,8 @@ export const CreateProposeAContributionForm = ({
       recipient: '',
       payouts: [
         {
-          amount: undefined,
-          token: undefined,
+          amount: '',
+          token: '',
         },
       ],
       label: 'Contribution',

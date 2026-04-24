@@ -74,11 +74,11 @@ export const updateCoherenceBySlug = async (
 };
 
 export const deleteCoherenceBySlug = async (
-  { slug }: { slug: string },
+  { slug, requesterPersonId }: { slug: string; requesterPersonId: number },
   { db }: { db: DatabaseInstance },
 ) => {
   const existing = await db
-    .select({ id: coherences.id })
+    .select({ id: coherences.id, creatorId: coherences.creatorId })
     .from(coherences)
     .where(eq(coherences.slug, slug));
   if (existing.length === 0) {
@@ -89,9 +89,13 @@ export const deleteCoherenceBySlug = async (
       `Multiple coherences found for slug="${slug}", expected exactly one`,
     );
   }
+  const row = existing[0]!;
+  if (row.creatorId !== requesterPersonId) {
+    throw new Error('Only the signal creator can delete this coherence');
+  }
   const deleted = await db
     .delete(coherences)
-    .where(eq(coherences.id, existing[0]!.id))
+    .where(eq(coherences.id, row.id))
     .returning();
 
   if (!deleted || deleted.length === 0) {

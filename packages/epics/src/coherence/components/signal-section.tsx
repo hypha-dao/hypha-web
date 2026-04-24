@@ -3,32 +3,14 @@
 import { FC } from 'react';
 import { Text } from '@radix-ui/themes';
 import { useSignalsSection } from '../hooks';
-import {
-  Badge,
-  Button,
-  SectionFilter,
-  SectionLoadMore,
-  Separator,
-} from '@hypha-platform/ui';
+import { Button, SectionFilter, SectionLoadMore } from '@hypha-platform/ui';
 import { Empty } from '../../common';
 import { SignalGridContainer } from './signal-grid.container';
-import {
-  Coherence,
-  COHERENCE_TYPE_OPTIONS,
-  CoherenceType,
-  DirectionType,
-} from '@hypha-platform/core/client';
-import { PlusIcon, RocketIcon } from '@radix-ui/react-icons';
-import {
-  useParams,
-  usePathname,
-  useRouter,
-  useSearchParams,
-} from 'next/navigation';
+import { Coherence, DirectionType } from '@hypha-platform/core/client';
+import { PlusIcon } from '@radix-ui/react-icons';
+import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
 import Link from 'next/link';
-import { cva } from 'class-variance-authority';
-import { cn } from '@hypha-platform/ui-utils';
 import React from 'react';
 import { useTranslations } from 'next-intl';
 
@@ -58,26 +40,6 @@ export const SignalSection: FC<SignalSectionProps> = ({
 }) => {
   const t = useTranslations('CoherenceTab');
   const { lang, id } = useParams<{ lang: Locale; id: string }>();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const { replace } = useRouter();
-  const typeRaw = React.useMemo(() => {
-    return searchParams.get('type');
-  }, [searchParams]);
-  const validTypes = COHERENCE_TYPE_OPTIONS.map((o) => o.type);
-  const type = React.useMemo(() => {
-    if (!typeRaw) return undefined;
-    return validTypes.includes(typeRaw as CoherenceType)
-      ? (typeRaw as CoherenceType)
-      : undefined;
-  }, [typeRaw, validTypes]);
-  const chosenSignals = React.useMemo(() => {
-    if (!type) {
-      return signals;
-    }
-    const result = signals.filter((signal) => signal.type === type);
-    return result;
-  }, [signals, type]);
   const {
     pages,
     loadMore,
@@ -86,77 +48,15 @@ export const SignalSection: FC<SignalSectionProps> = ({
     searchTerm,
     filteredSignals,
   } = useSignalsSection({
-    signals: chosenSignals,
+    signals,
     firstPageSize,
     pageSize,
   });
 
-  const onTagClick = React.useCallback(
-    (type: string) => {
-      const params = new URLSearchParams(searchParams);
-      if (type === 'all') {
-        params.delete('type');
-      } else {
-        params.set('type', type);
-      }
-      replace(`${pathname}?${params.toString()}`);
-    },
-    [searchParams, pathname, replace],
-  );
-
-  const multiSelectVariants = cva(
-    'm-1 transition ease-in-out delay-150 hover:-translate-y-1 hover:scale-110 duration-300',
-    {
-      variants: {
-        variant: {
-          default:
-            'border-foreground/10 text-foreground text-neutral-500 bg-card hover:bg-card/80',
-          secondary:
-            'border-foreground/10 bg-secondary text-secondary-foreground hover:bg-secondary/80',
-          destructive:
-            'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
-          inverted: 'inverted',
-        },
-      },
-      defaultVariants: {
-        variant: 'default',
-      },
-    },
-  );
-
   const createSignalHref = `/${lang}/dho/${id}/coherence/new-signal`;
 
-  const typeOptions = React.useMemo(() => {
-    const typeMap = COHERENCE_TYPE_OPTIONS.reduce((acc, cur) => {
-      acc[cur.type] = 0;
-      return acc;
-    }, {} as { [key: string]: number });
-    for (const signal of signals) {
-      const count = typeMap[signal.type] || 0;
-      typeMap[signal.type] = count + 1;
-    }
-    const coherenceTypes = COHERENCE_TYPE_OPTIONS.map((option) => ({
-      label: t(
-        `types.${option.type}` as
-          | 'types.Opportunity'
-          | 'types.Risk'
-          | 'types.Tension'
-          | 'types.Insight'
-          | 'types.Trend'
-          | 'types.Proposal',
-      ),
-      value: option.type,
-      count: typeMap[option.type],
-    }));
-    const typeOptions = [
-      { label: t('all'), value: 'all', count: signals.length },
-      ...coherenceTypes,
-    ];
-    return typeOptions;
-  }, [signals, t]);
-
   return (
-    <div className="flex flex-col justify-around items-center gap-4">
+    <div className="flex w-full flex-col gap-5">
       <SectionFilter
         count={pagination?.total || 0}
         label={label || ''}
@@ -166,10 +66,6 @@ export const SignalSection: FC<SignalSectionProps> = ({
         inlineLabel={true}
       >
         <div className="flex flex-row gap-2">
-          <Button variant="ghost" colorVariant="accent" disabled={true}>
-            <RocketIcon />
-            {t('improve')}
-          </Button>
           <Link href={createSignalHref}>
             <Button
               variant="default"
@@ -182,27 +78,6 @@ export const SignalSection: FC<SignalSectionProps> = ({
           </Link>
         </div>
       </SectionFilter>
-      <div className="flex justify-center space-x-2 space-y-2 flex-wrap">
-        {typeOptions.map((typeOption) => (
-          <Badge
-            key={typeOption.value}
-            className={cn(
-              multiSelectVariants({
-                variant:
-                  typeRaw === typeOption.value ||
-                  (typeOption.value === 'all' && typeRaw === null)
-                    ? 'secondary'
-                    : 'default',
-              }),
-            )}
-            style={{ cursor: 'pointer', animationDuration: '0s' }}
-            onClick={() => onTagClick(typeOption.value)}
-          >
-            {typeOption.label} {typeOption.count}
-          </Badge>
-        ))}
-      </div>
-      <Separator />
 
       {pagination?.totalPages === 0 ? (
         <Empty>

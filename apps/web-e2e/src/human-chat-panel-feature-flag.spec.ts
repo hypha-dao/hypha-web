@@ -2,25 +2,14 @@ import { test, expect } from '@playwright/test';
 import { HumanChatPanelPage } from './pages/human-chat-panel.page';
 
 /**
- * Feature Flag: NEXT_PUBLIC_ENABLE_HUMAN_CHAT
- *
- * Controls the visibility of the Human Chat panel. When set to "true",
- * the panel trigger button and sidebar are rendered. When unset or
- * any other value, only the page children render (no Human Chat panel).
- *
- * Note: This is a NEXT_PUBLIC_ env var, bundled at build time.
- * The "flag disabled" tests require a separate build without the flag.
+ * Human Chat is enabled by default. Emergency rollback uses the kill-switch cookie
+ * `HYPHA_DISABLE_HUMAN_CHAT=true` (see `getEnableHumanChat` in feature-flags).
  */
 
-test.describe('Human Chat Panel — Feature Flag Enabled', () => {
+test.describe('Human Chat Panel — default (enabled)', () => {
   let chatPanel: HumanChatPanelPage;
 
-  test.use({
-    extraHTTPHeaders: { Cookie: 'HYPHA_ENABLE_HUMAN_CHAT=true' },
-  });
-
-  test.beforeEach(async ({ page, context }) => {
-    await HumanChatPanelPage.enableHumanChat(context);
+  test.beforeEach(async ({ page }) => {
     chatPanel = new HumanChatPanelPage(page);
     await chatPanel.open();
   });
@@ -57,29 +46,17 @@ test.describe('Human Chat Panel — Feature Flag Enabled', () => {
   });
 });
 
-test.describe('Human Chat Panel — Feature Flag Disabled', () => {
-  /**
-   * These tests verify behavior when NEXT_PUBLIC_ENABLE_HUMAN_CHAT is NOT "true".
-   *
-   * Since this is a build-time env var bundled by Next.js, toggling it requires
-   * a separate build/dev server started without the flag. These tests are skipped
-   * in the default test run (which assumes the flag is enabled for development).
-   *
-   * To run these tests:
-   * 1. Start the dev server without the flag: `NEXT_PUBLIC_ENABLE_HUMAN_CHAT= npx nx start web`
-   * 2. Run only this describe block: `npx playwright test human-chat-panel-feature-flag --grep "Disabled"`
-   *
-   * Expected behavior when disabled:
-   * - No "Open chat panel" button rendered
-   * - No right sidebar/panel markup in the DOM
-   * - Page content renders normally without any Human Chat wrapper
-   */
-
-  // eslint-disable-next-line playwright/no-skipped-test
-  test.skip(
-    true,
-    'Requires a build without NEXT_PUBLIC_ENABLE_HUMAN_CHAT=true',
-  );
+test.describe('Human Chat Panel — kill switch (disabled)', () => {
+  test.beforeEach(async ({ context, baseURL }) => {
+    await context.addCookies([
+      {
+        name: 'HYPHA_DISABLE_HUMAN_CHAT',
+        value: 'true',
+        domain: new URL(baseURL ?? 'http://127.0.0.1:3000').hostname,
+        path: '/',
+      },
+    ]);
+  });
 
   test('should not render Human Chat trigger button on space page', async ({
     page,
@@ -97,7 +74,6 @@ test.describe('Human Chat Panel — Feature Flag Disabled', () => {
     await page.goto('/en/dho/hypha/agreements');
     await page.waitForLoadState('domcontentloaded');
 
-    // Space page content should still render
     await expect(page.getByText('Agreements')).toBeVisible();
   });
 });

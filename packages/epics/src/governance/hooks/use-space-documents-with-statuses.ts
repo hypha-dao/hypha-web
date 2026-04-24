@@ -13,13 +13,17 @@ import { DirectionType, Order, OrderField } from '@hypha-platform/core/client';
 import queryString from 'query-string';
 import { useAuthentication } from '@hypha-platform/authentication';
 
-import { DOCUMENT_LABEL_BADGE_KEYS } from './document-label-badge-keys';
+import {
+  DOCUMENT_LABEL_BADGE_KEYS,
+  normalizeProposalDocumentLabel,
+} from '@hypha-platform/core/client';
 
 const getDocumentBadges = (document: Document, t: (key: string) => string) => {
   const badges = [];
+  const canonicalLabel = normalizeProposalDocumentLabel(document.label);
   const labelMessageKey =
-    document.label != null
-      ? DOCUMENT_LABEL_BADGE_KEYS[document.label]
+    canonicalLabel !== ''
+      ? DOCUMENT_LABEL_BADGE_KEYS[canonicalLabel]
       : undefined;
   if (labelMessageKey) {
     badges.push({

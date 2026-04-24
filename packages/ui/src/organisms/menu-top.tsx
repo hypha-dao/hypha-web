@@ -35,18 +35,24 @@ export const MenuTop = ({
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
+  /** Publish measured height so side panels / overlays align with this bar (see e2e menu-top-consistent-height). */
   useLayoutEffect(() => {
     const el = headerRef.current;
     if (!el || typeof document === 'undefined') return;
 
-    const sync = () => {
-      const h = el.offsetHeight;
-      setHeaderHeight(h);
-      document.documentElement.style.setProperty('--menu-top-height', `${h}px`);
+    const publish = () => {
+      const h = Math.round(el.getBoundingClientRect().height);
+      if (h > 0) {
+        document.documentElement.style.setProperty(
+          '--menu-top-height',
+          `${h}px`,
+        );
+        setHeaderHeight(h);
+      }
     };
 
-    sync();
-    const ro = new ResizeObserver(sync);
+    publish();
+    const ro = new ResizeObserver(publish);
     ro.observe(el);
     return () => {
       ro.disconnect();
@@ -57,7 +63,20 @@ export const MenuTop = ({
   return (
     <header
       ref={headerRef}
-      className="flex min-h-[70px] min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background-2 px-4 py-4 z-30"
+      className={clsx(
+        'relative flex min-h-[70px] min-w-0 flex-shrink-0 items-center justify-between gap-x-2 gap-y-2',
+        'bg-background-2 px-4 py-[1.125rem] z-30',
+        /*
+         * Span the flex gap between SidebarInset and fixed side rails (human/AI panels).
+         * Mirror vars come from PanelWrapLayout on `:root`; without this the rule stops at the
+         * inset edge and misses the junction with `Sidebar` border-r / border-l.
+         * Also extend past the main column scrollbar gutter (`--main-column-scrollbar-width`) so
+         * the rule meets the side panel border — same inset logic as sticky DHO chrome.
+         */
+        'after:pointer-events-none after:absolute after:bottom-0 after:h-px after:bg-border',
+        'after:left-[calc(-1_*_var(--sidebar-left-width,0px))]',
+        'after:right-[calc((-1_*_var(--sidebar-right-width,0px))_-_var(--main-column-scrollbar-width,0px))]',
+      )}
     >
       <div
         className={clsx(

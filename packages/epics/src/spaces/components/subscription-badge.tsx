@@ -11,9 +11,15 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import Link from 'next/link';
 import { useIsDelegate } from '@hypha-platform/core/client';
 import { useFormatter, useTranslations } from 'next-intl';
+import { cn } from '@hypha-platform/ui-utils';
 
 interface SubscriptionBadgeProps extends Omit<BadgeProps, 'isLoading'> {
   web3SpaceId: number;
+  /**
+   * When true, use a single high-contrast border + text tuned for dark hero
+   * banners (avoids stacking `colorVariant` outline with forced accent borders).
+   */
+  onHeroBackground?: boolean;
 }
 
 const PATH_SELECT_ACTIVATE_ACTION = '/select-activate-action';
@@ -21,6 +27,7 @@ const PATH_SELECT_ACTIVATE_ACTION = '/select-activate-action';
 export function SubscriptionBadge({
   web3SpaceId,
   className,
+  onHeroBackground = false,
   ...props
 }: SubscriptionBadgeProps) {
   const tCommon = useTranslations('Common');
@@ -116,6 +123,22 @@ export function SubscriptionBadge({
     expired: { colorVariant: 'error' },
   };
 
+  /** Single readable border on dark hero; `!` beats outline compound tokens */
+  const heroBannerClassByStatus: Record<NonNullable<typeof status>, string> = {
+    active:
+      'bg-black/25 shadow-sm !ring-0 hover:!ring-0 !border-emerald-400/85 !text-emerald-50 hover:!border-emerald-300/90 hover:bg-black/35 hover:!text-white',
+    activeFreeTrial:
+      'bg-black/25 shadow-sm !ring-0 hover:!ring-0 !border-emerald-400/85 !text-emerald-50 hover:!border-emerald-300/90 hover:bg-black/35 hover:!text-white',
+    activeFreeTrialExpiring:
+      'bg-black/25 shadow-sm !ring-0 hover:!ring-0 !border-amber-400/90 !text-amber-50 hover:!border-amber-300/90 hover:bg-black/35 hover:!text-amber-50',
+    activate:
+      'bg-black/25 shadow-sm !ring-0 hover:!ring-0 !border-amber-400/90 !text-amber-50 hover:!border-amber-300/90 hover:bg-black/35 hover:!text-amber-50',
+    expired:
+      'bg-black/25 shadow-sm !ring-0 hover:!ring-0 !border-red-400/90 !text-red-50 hover:!border-red-300/90 hover:bg-black/35 hover:!text-red-50',
+  };
+
+  const { colorVariant } = variantMap[status];
+
   return (
     <Link
       className={isDisabled ? 'cursor-not-allowed' : ''}
@@ -127,8 +150,11 @@ export function SubscriptionBadge({
       <Badge
         variant="outline"
         size={1}
-        colorVariant={variantMap[status].colorVariant}
-        className={className}
+        colorVariant={colorVariant}
+        className={cn(
+          onHeroBackground && heroBannerClassByStatus[status],
+          className,
+        )}
         {...props}
       >
         {label}

@@ -214,6 +214,27 @@ export const schemaCreateAgreement = z.object({
   ...createAgreementWeb2Props,
 });
 
+/** Single payout row — preprocess `undefined` (RHF defaults) so Zod runs `.min()` instead of generic "Required". */
+const schemaPayoutRow = z.object({
+  amount: z.preprocess(
+    (val) => (val === undefined || val === null ? '' : String(val)),
+    z
+      .string()
+      .min(1, { message: 'Please enter an amount.' })
+      .refine(
+        (value) => {
+          const n = parseFloat(value);
+          return !Number.isNaN(n) && n > 0;
+        },
+        { message: 'Amount must be greater than 0' },
+      ),
+  ),
+  token: z.preprocess(
+    (val) => (val === undefined || val === null ? '' : val),
+    z.string().min(1, { message: 'Please select a token' }),
+  ),
+});
+
 export const schemaProposeContribution = z.object({
   recipient: z
     .string()
@@ -222,14 +243,7 @@ export const schemaProposeContribution = z.object({
     .optional(),
 
   payouts: z
-    .array(
-      z.object({
-        amount: z.string().refine((value) => parseFloat(value) > 0, {
-          message: 'Amount must be greater than 0',
-        }),
-        token: z.string(),
-      }),
-    )
+    .array(schemaPayoutRow)
     .min(1, { message: 'At least one payout is required' })
     .optional(),
 

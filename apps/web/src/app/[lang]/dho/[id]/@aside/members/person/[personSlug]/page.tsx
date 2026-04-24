@@ -6,7 +6,7 @@ import {
   DelegateVotingSection,
   MemberDetail,
   MemberPageParams,
-  SidePanel,
+  ProposalOverlayShell,
   useMemberWeb3SpaceIds,
 } from '@hypha-platform/epics';
 import { useIsDelegate } from '@hypha-platform/core/client';
@@ -35,7 +35,7 @@ export default function Member() {
   });
 
   return (
-    <SidePanel>
+    <ProposalOverlayShell className="md:max-w-[min(640px,calc(100vw_-_var(--sidebar-left-width,0px)_-_var(--sidebar-right-width,0px)_-_2rem))]">
       <div className="flex flex-col gap-5">
         <MemberDetail
           closeUrl={getDhoPathMembers(lang, id)}
@@ -61,6 +61,6 @@ export default function Member() {
           />
         )}
       </div>
-    </SidePanel>
+    </ProposalOverlayShell>
   );
 }

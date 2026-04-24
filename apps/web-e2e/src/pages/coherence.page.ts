@@ -9,7 +9,6 @@ import { BasePage } from './base.page';
  * This page object covers:
  * - Navigation tab in DHO layout
  * - Coherence page main content (signal section)
- * - Signal type filter badges
  * - Search input
  * - "New Signal" button
  * - Create signal form navigation
@@ -37,14 +36,6 @@ export class CoherencePage extends BasePage {
 
   /** "Sign in to see signals and conversations" message (unauthenticated state) */
   readonly signInMessage: Locator;
-
-  // ── Signal type filter badges ───────────────────────────────────────────────
-  /**
-   * "All" filter badge.
-   * Rendered as a <div> (Badge component), not a <button>.
-   * Matched by text content.
-   */
-  readonly allFilterBadge: Locator;
 
   // ── Create signal form ─────────────────────────────────────────────────────
   /** Page heading of the create signal form */
@@ -78,9 +69,6 @@ export class CoherencePage extends BasePage {
     this.signInMessage = page.getByText(
       /please,\s*sign\s+in\s+to\s+see|por\s+favor,\s+inicie\s+sesi[oó]n\s+para\s+ver|por\s+favor,\s+fa[cç]a\s+login\s+para\s+ver|veuillez\s+vous\s+connecter\s+pour\s+voir|bitte\s+melden\s+sie\s+sich\s+an/i,
     );
-
-    // "All" filter badge: CoherenceTab.all + count (en All, es/pt Todos, fr Tous, de Alle)
-    this.allFilterBadge = page.getByText(/^(All|Todos|Tous|Alle)\s+\d+\s*$/i);
 
     // Loading overlay copy (CoherenceTab.creatingNewSignal) — rendered as text, not a heading
     this.createSignalHeading = page.getByText(

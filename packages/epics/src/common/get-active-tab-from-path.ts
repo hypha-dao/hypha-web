@@ -8,17 +8,12 @@ export function getActiveTabFromPath(pathname: string) {
 }
 
 /**
- * Radix Tabs `value` must match a rendered `TabsTrigger`. When Coherence is
- * disabled in the shell but the URL is still `/…/coherence` (e.g. stale link or
- * env mismatch), map away from `coherence` so the tab list does not 500.
+ * @deprecated Prefer {@link getActiveTabFromPath}; Coherence tab visibility is gated by
+ * {@link getEnableCoherence}. Space Memory uses {@link getEnableSpaceMemory}.
  */
 export function getEffectiveDhoTab(
   pathname: string,
-  options: { coherenceEnabled: boolean },
+  _options?: { coherenceEnabled: boolean },
 ): string {
-  const raw = getActiveTabFromPath(pathname);
-  if (raw === 'coherence' && !options.coherenceEnabled) {
-    return 'agreements';
-  }
-  return raw;
+  return getActiveTabFromPath(pathname);
 }
