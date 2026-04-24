@@ -1925,7 +1925,13 @@
     "callCameraOff": "Turn camera off",
     "callErrorPermission": "Camera or microphone access was denied. Check browser settings and try again.",
     "callErrorGeneric": "Could not start the call. Try again.",
-    "callParticipantCount": " · {count, plural, one {# in call} other {# in call}}"
+    "callParticipantCount": " · {count, plural, one {# in call} other {# in call}}",
+    "callStageLabel": "Call video and screen share",
+    "callYou": "You",
+    "callRemoteParticipant": "Participant",
+    "callScreenShare": "Screen share",
+    "callScreenShareActive": "Screen share is on",
+    "callParticipantMuted": "Muted"
   },
   "CoherenceTab": {
     "signals": "Signals",

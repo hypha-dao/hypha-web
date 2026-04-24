@@ -1894,7 +1894,13 @@
     "callCameraOff": "Kamera ausschalten",
     "callErrorPermission": "Kamera- oder Mikrofonzugriff verweigert. Bitte Browsereinstellungen prüfen.",
     "callErrorGeneric": "Anruf konnte nicht gestartet werden. Bitte erneut versuchen.",
-    "callParticipantCount": " · {count, plural, one {# in Anruf} other {# in Anruf}}"
+    "callParticipantCount": " · {count, plural, one {# in Anruf} other {# in Anruf}}",
+    "callStageLabel": "Video- und Bildschirmfreigabe im Anruf",
+    "callYou": "Du",
+    "callRemoteParticipant": "Teilnehmende/r",
+    "callScreenShare": "Bildschirmfreigabe",
+    "callScreenShareActive": "Bildschirmfreigabe ist aktiv",
+    "callParticipantMuted": "Stumm"
   },
   "CoherenceTab": {
     "signals": "Signale",

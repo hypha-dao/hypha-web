@@ -42,6 +42,10 @@ export function useSpaceGroupCall(roomId: string | null) {
     useState<MediaStream | null>(null);
   const [isMicrophoneMuted, setIsMicrophoneMuted] = useState(false);
   const [isLocalVideoMuted, setIsLocalVideoMuted] = useState(true);
+  /** Active GroupCall for UI (tiles); cleared on leave. */
+  const [groupCall, setGroupCall] = useState<MatrixSdk.GroupCall | null>(null);
+  /** Bumps when userMediaFeeds / screenshareFeeds change (re-render stage). */
+  const [feedVersion, setFeedVersion] = useState(0);
 
   const groupCallRef = useRef<MatrixSdk.GroupCall | null>(null);
   const isJoiningRef = useRef(false);
@@ -54,6 +58,9 @@ export function useSpaceGroupCall(roomId: string | null) {
         gc.removeAllListeners(GroupCallEvent.GroupCallStateChanged);
         gc.removeAllListeners(GroupCallEvent.LocalScreenshareStateChanged);
         gc.removeAllListeners(GroupCallEvent.ParticipantsChanged);
+        gc.removeAllListeners(GroupCallEvent.UserMediaFeedsChanged);
+        gc.removeAllListeners(GroupCallEvent.ScreenshareFeedsChanged);
+        gc.removeAllListeners(GroupCallEvent.LocalMuteStateChanged);
       } catch {
         // ignore
       }
@@ -68,6 +75,7 @@ export function useSpaceGroupCall(roomId: string | null) {
     setLocalPreviewStream(null);
     setIsMicrophoneMuted(false);
     setIsLocalVideoMuted(true);
+    setGroupCall(null);
   }, []);
 
   const refreshLocalPreview = useCallback(() => {
@@ -108,10 +116,7 @@ export function useSpaceGroupCall(roomId: string | null) {
         setThreadContext(null);
       };
       gc.on(GroupCallEvent.Error, onError);
-      const onState = (
-        newState: MatrixSdk.GroupCallState,
-        _oldState: MatrixSdk.GroupCallState,
-      ) => {
+      const onState = (newState: MatrixSdk.GroupCallState) => {
         if (newState === GroupCallState.Entered) {
           setCallState('connected');
           refreshLocalPreview();
@@ -124,6 +129,12 @@ export function useSpaceGroupCall(roomId: string | null) {
       });
       gc.on(GroupCallEvent.ParticipantsChanged, () => {
         updateParticipantCount();
+      });
+      gc.on(GroupCallEvent.UserMediaFeedsChanged, () => {
+        setFeedVersion((v) => v + 1);
+      });
+      gc.on(GroupCallEvent.ScreenshareFeedsChanged, () => {
+        setFeedVersion((v) => v + 1);
       });
       gc.on(
         GroupCallEvent.LocalMuteStateChanged,
@@ -211,6 +222,7 @@ export function useSpaceGroupCall(roomId: string | null) {
       gci.initWithAudioMuted = false;
 
       groupCallRef.current = gc;
+      setGroupCall(gc);
       attachGroupCallListeners(gc);
       setCallState('connecting');
 
@@ -278,6 +290,7 @@ export function useSpaceGroupCall(roomId: string | null) {
     if (!gc) return;
     await gc.setMicrophoneMuted(muted);
     setIsMicrophoneMuted(gc.isMicrophoneMuted());
+    setFeedVersion((v) => v + 1);
   }, []);
 
   const setCameraMuted = useCallback(async (muted: boolean) => {
@@ -285,12 +298,14 @@ export function useSpaceGroupCall(roomId: string | null) {
     if (!gc) return;
     await gc.setLocalVideoMuted(muted);
     setIsLocalVideoMuted(gc.isLocalVideoMuted());
+    setFeedVersion((v) => v + 1);
   }, []);
 
   const setScreensharingEnabled = useCallback(async (enabled: boolean) => {
     const gc = groupCallRef.current;
     if (!gc) return;
     await gc.setScreensharingEnabled(enabled);
+    setFeedVersion((v) => v + 1);
   }, []);
 
   useEffect(() => {
@@ -328,5 +343,7 @@ export function useSpaceGroupCall(roomId: string | null) {
     participantSummary: { count: participantCount },
     isMicrophoneMuted,
     isLocalVideoMuted,
+    groupCall,
+    feedVersion,
   };
 }

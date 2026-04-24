@@ -1893,7 +1893,13 @@
     "callCameraOff": "Éteindre la caméra",
     "callErrorPermission": "Accès refusé à la caméra ou au micro. Vérifiez les paramètres du navigateur.",
     "callErrorGeneric": "Impossible de démarrer l’appel. Réessayez.",
-    "callParticipantCount": " · {count, plural, one {# en appel} other {# en appel}}"
+    "callParticipantCount": " · {count, plural, one {# en appel} other {# en appel}}",
+    "callStageLabel": "Vidéo et partage d’écran pendant l’appel",
+    "callYou": "Vous",
+    "callRemoteParticipant": "Participant",
+    "callScreenShare": "Partage d’écran",
+    "callScreenShareActive": "Partage d’écran actif",
+    "callParticipantMuted": "Muet"
   },
   "CoherenceTab": {
     "signals": "Signaux",

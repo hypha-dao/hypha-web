@@ -1893,7 +1893,13 @@
     "callCameraOff": "Desligar câmara",
     "callErrorPermission": "Acesso à câmara ou microfone recusado. Verifique o navegador.",
     "callErrorGeneric": "Não foi possível iniciar a chamada. Tente novamente.",
-    "callParticipantCount": " · {count, plural, one {# na chamada} other {# na chamada}}"
+    "callParticipantCount": " · {count, plural, one {# na chamada} other {# na chamada}}",
+    "callStageLabel": "Vídeo e partilha de ecrã na chamada",
+    "callYou": "Você",
+    "callRemoteParticipant": "Participante",
+    "callScreenShare": "Partilha de ecrã",
+    "callScreenShareActive": "Partilha de ecrã ativa",
+    "callParticipantMuted": "Silenciado"
   },
   "CoherenceTab": {
     "signals": "Sinais",

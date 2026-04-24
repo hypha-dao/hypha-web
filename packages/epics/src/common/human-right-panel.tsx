@@ -59,6 +59,7 @@ import {
   HumanChatPanelMentionTab,
   HumanChatPanelCallToolbar,
   HumanChatPanelCallBanner,
+  HumanChatPanelCallStage,
   type ChatDraftAttachment,
   type ChatMentionCandidate,
   type ChatPanelAttachmentMedia,
@@ -517,6 +518,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     participantSummary: spaceCallParticipantSummary,
     isMicrophoneMuted: spaceCallMicMuted,
     isLocalVideoMuted: spaceCallVideoMuted,
+    isScreensharing: spaceCallScreensharing,
+    groupCall: spaceGroupCall,
+    feedVersion: spaceCallFeedVersion,
   } = useSpaceGroupCall(mode === 'space' ? roomId : null);
 
   const callUiEnabled = useMemo(
@@ -1722,6 +1726,20 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             role="tabpanel"
             id="chat-tabpanel-chat"
           >
+            {callUiEnabled && (
+              <HumanChatPanelCallStage
+                client={client}
+                roomId={roomId}
+                groupCall={spaceGroupCall}
+                callKind={spaceCallKind}
+                isLocalVideoMuted={spaceCallVideoMuted}
+                isScreensharing={spaceCallScreensharing}
+                callState={spaceCallState}
+                feedVersion={spaceCallFeedVersion}
+                currentUserId={currentUserId}
+                resolveMemberLabel={resolveMemberLabel}
+              />
+            )}
             {error && (
               <div
                 role="alert"
