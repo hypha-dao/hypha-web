@@ -28,7 +28,7 @@ test.describe('DHO spaces tab and workspace (hardening)', () => {
     page,
   }) => {
     await page.goto(LEGACY_NAV, { waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveURL(new RegExp(`${SPACES.replace(/\//g, '\\/')}`));
+    await expect(page).toHaveURL((url) => url.pathname === SPACES);
   });
 
   test('legacy redirect response exposes x-hypha-legacy-redirect', async ({
