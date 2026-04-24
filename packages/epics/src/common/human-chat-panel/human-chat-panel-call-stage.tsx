@@ -17,6 +17,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 import { Maximize2, User } from 'lucide-react';
+import type { SpaceGroupCallState } from '@hypha-platform/core/client';
 import { matrixMemberDisplayLabel } from './matrix-room-member-display';
 import { CallAudioVoiceWaves } from './call-audio-voice-waves';
 
@@ -29,7 +30,7 @@ type HumanChatPanelCallStageBaseProps = {
   callKind: 'audio' | 'video' | null;
   isLocalVideoMuted: boolean;
   isScreensharing: boolean;
-  callState: string;
+  callState: SpaceGroupCallState;
   feedVersion: number;
   activeSpeakerKey: string | null;
   currentUserId: string | null;
@@ -78,7 +79,7 @@ export function getHumanChatPanelCallStageModel(
   callKind: 'audio' | 'video' | null,
   isLocalVideoMuted: boolean,
   isScreensharing: boolean,
-  callState: string,
+  callState: SpaceGroupCallState,
 ): CallStageContentModel | null {
   if (callState !== 'connected' || !groupCall) {
     return null;
@@ -160,7 +161,7 @@ export function canOpenHumanChatCallFullView(
   callKind: 'audio' | 'video' | null,
   isLocalVideoMuted: boolean,
   isScreensharing: boolean,
-  callState: string,
+  callState: SpaceGroupCallState,
 ): boolean {
   const m = getHumanChatPanelCallStageModel(
     groupCall,
