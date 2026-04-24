@@ -1,7 +1,17 @@
 import { z } from 'zod';
-import { spaceSlugSchema } from '@hypha-platform/core/server';
 
 const documentStateSchema = z.enum(['discussion', 'proposal', 'agreement']);
+
+/** Parity with `spaceSlugSchema` in `@hypha-platform/core` — local copy avoids Zod+TS2589 in this file. */
+const mcpSpaceSlugSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(50)
+  .regex(
+    /^[a-z0-9'-]+$/,
+    'Slug must contain only lowercase letters, numbers, hyphens, and apostrophes',
+  );
 
 const creatorSchema = z
   .object({
@@ -19,7 +29,7 @@ const attachmentSchema = z.union([
 ]);
 
 export const getDocumentsBySpaceSlugInputSchema = z.object({
-  space_slug: spaceSlugSchema,
+  space_slug: mcpSpaceSlugSchema,
   page: z.number().int().min(1).optional().default(1),
   page_size: z.number().int().min(1).max(100).optional().default(20),
   searchTerm: z.string().optional(),
