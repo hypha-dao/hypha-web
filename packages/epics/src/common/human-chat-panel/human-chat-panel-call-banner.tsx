@@ -127,7 +127,6 @@ export function HumanChatPanelCallBanner({
     callState === 'awaiting_media' ||
     callState === 'initializing';
   const isDisconnecting = callState === 'disconnecting';
-  const controlsDisabled = isConnectingPhase || isDisconnecting;
 
   return (
     <div className="border-b border-border bg-muted/30">
