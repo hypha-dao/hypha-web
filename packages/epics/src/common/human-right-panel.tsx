@@ -615,10 +615,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     void enterSpaceCallVideo();
   }, [enterSpaceCallVideo]);
 
-  const handleCallSearch = useCallback(() => {
-    // Phase 2 stub — search in chat (coming soon; button disabled in toolbar)
-  }, []);
-
   const handleCallLeave = useCallback(() => {
     void leaveSpaceCall();
   }, [leaveSpaceCall]);
@@ -1827,7 +1823,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 }
                 onAudio={handleCallAudio}
                 onVideo={handleCallVideo}
-                onSearch={handleCallSearch}
               />
             ) : null
           }

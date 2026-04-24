@@ -1,6 +1,6 @@
 'use client';
 
-import { Phone, Search, Video } from 'lucide-react';
+import { Phone, Video } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 import type { SpaceGroupCallState } from '@hypha-platform/core/client';
@@ -20,11 +20,11 @@ type HumanChatPanelCallToolbarProps = {
   onlyLocalInRoomCall?: boolean;
   onAudio: () => void;
   onVideo: () => void;
-  onSearch: () => void;
 };
 
 /**
- * Space voice/video entry icons (phone, video, search) for the human chat header row.
+ * Space voice/video entry (phone, video) for the human chat tab row end cluster.
+ * In-chat search is hidden for now to give the tab menu more horizontal space.
  * Spec: voice-video-call-implementation-spec §3.1–3.2
  */
 export function HumanChatPanelCallToolbar({
@@ -36,7 +36,6 @@ export function HumanChatPanelCallToolbar({
   onlyLocalInRoomCall = false,
   onAudio,
   onVideo,
-  onSearch,
 }: HumanChatPanelCallToolbarProps) {
   const t = useTranslations('HumanChatPanel');
 
@@ -110,18 +109,6 @@ export function HumanChatPanelCallToolbar({
         aria-busy={busy}
       >
         <Video className="h-3.5 w-3.5" />
-      </button>
-      <button
-        type="button"
-        onClick={onSearch}
-        className="flex h-7 w-7 cursor-not-allowed items-center justify-center rounded-lg text-muted-foreground/60 opacity-60"
-        title={t('callSearchComingSoon')}
-        aria-label={t('callSearch')}
-        tabIndex={-1}
-        aria-disabled="true"
-        disabled
-      >
-        <Search className="h-3.5 w-3.5" />
       </button>
     </div>
   );
