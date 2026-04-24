@@ -6,7 +6,7 @@
 |--------|--------|
 | **Status** | Ready to implement (spec / design / QA only — no product code in this change) |
 | **Primary references** | [Vercel changelog — New dashboard navigation](https://vercel.com/changelog/new-dashboard-navigation-available) (sidebar + mobile bottom bar patterns as **UX inspiration**, not a dependency) |
-| **In-repo anchors** | `PanelWrapLayout` + `--sidebar-left-width` (`packages/epics/src/common/panel-wrap-layout.tsx`); DHO tab chrome (`apps/web/src/app/[lang]/dho/[id]/@tab/layout.tsx` → `NavigationTabs`); space navigation modal (`PATH_SELECT_NAVIGATION_ACTION`, `@aside/.../select-navigation-action/`) |
+| **In-repo anchors** | `PanelWrapLayout` + `--sidebar-left-width` (`packages/epics/src/common/panel-wrap-layout.tsx`); DHO tab chrome (`apps/web/src/app/[lang]/dho/[id]/@tab/layout.tsx` → `DhoSpaceWorkspace`); space navigation modal (`PATH_SELECT_NAVIGATION_ACTION`, `@aside/.../select-navigation-action/`) |
 | **Out of scope for this spec PR** | Feature-flag rollout strategy, Figma handoff, and implementation PRs (tracked as follow-up work) |
 
 ---
@@ -25,7 +25,7 @@
 
 Today, the DHO “space” experience mixes:
 
-1. **Horizontal primary navigation** as tabs (`NavigationTabs` in `apps/web/src/app/[lang]/dho/[id]/@tab/layout.tsx`) for Coherence (optional) / Agreements / Members / Treasury.
+1. **(Prior)** Horizontal primary navigation as tabs — **replaced** by `DhoSpaceWorkspace` in `@tab/layout.tsx` for Coherence (optional) / Agreements / Members / Treasury / Spaces.
 2. **Space / nested-spaces navigation** in a **modal / aside** flow (`NestedSpacesButton` appends `PATH_SELECT_NAVIGATION_ACTION` → `SelectNavigationAction` + `SpaceVisualization`).
 
 **Product goals**
@@ -55,7 +55,7 @@ Today, the DHO “space” experience mixes:
 
 - **C1** — **`prefers-reduced-motion`**: optional subtle transitions may be disabled; no essential information should depend on motion alone.
 - **C2** — **Internationalization**: all new labels go through `next-intl` namespaces used by DHO (extend `Common` / `DHO` / `SelectNavigationAction` as appropriate; follow [`i18n-translate`](../.agents/skills/i18n-translate/SKILL.md) conventions).
-- **C3** — **Accessibility**: the nav is a **navigation landmark** with **clear current location**; keyboard and screen reader behavior must match or exceed the tab strip (tabs today are link-based `TabsTrigger` + `Link` in `NavigationTabs`).
+- **C3** — **Accessibility**: the nav is a **navigation landmark** with **clear current location**; keyboard and screen reader behavior are implemented as **nav links** with `aria-current="page"` in `DhoSpaceWorkspace`.
 
 ---
 
@@ -64,7 +64,7 @@ Today, the DHO “space” experience mixes:
 | Concern | Location | Notes |
 |--------|----------|--------|
 | **AI / human panel layout + CSS vars** | `packages/epics/src/common/panel-wrap-layout.tsx` | Sets `--sidebar-left-width` / `--sidebar-right-width` on the wrapper and mirrors to `:root`; 200ms linear transition on those variables. **This is the coupling point for “smoothly moves when AI opens.”** |
-| **DHO tab list** | `apps/web/src/app/[lang]/dho/[id]/@tab/layout.tsx` + `_components/navigation-tabs.tsx` | Client tabs with scroll + parallax; map paths via `getActiveTabFromPath`. |
+| **DHO section nav** | `apps/web/src/app/[lang]/dho/[id]/@tab/layout.tsx` + `_components/dho-space-workspace.tsx` | Client workspace shell (left rail + mobile sheet); map paths via `getActiveTabFromPath`. |
 | **Space navigation “popup”** | `NestedSpacesButton` → `PATH_SELECT_NAVIGATION_ACTION` → `apps/web/src/app/[lang]/dho/[id]/@aside/.../select-navigation-action/page.tsx` | Renders `ProposalOverlayShell` + `SelectNavigationAction`. |
 | **Top chrome alignment** | `apps/web/src/app/layout.tsx` + `MenuTop` | `MenuTop` already uses `after:left` with `var(--sidebar-left-width)` so horizontal rules meet side panels. |
 
