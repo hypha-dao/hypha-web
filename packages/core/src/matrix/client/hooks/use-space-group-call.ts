@@ -134,10 +134,11 @@ export function useSpaceGroupCall(roomId: string | null) {
       } catch {
         // ignore
       }
-      try {
-        gc.leave();
-      } catch {
-        // ignore
+      const leave = gc.leave.bind(gc) as () => void;
+      if (typeof queueMicrotask === 'function') {
+        queueMicrotask(leave);
+      } else {
+        setTimeout(leave, 0);
       }
       groupCallRef.current = null;
     }
