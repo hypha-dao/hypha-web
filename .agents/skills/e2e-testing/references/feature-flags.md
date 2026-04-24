@@ -2,17 +2,16 @@
 
 ## Architecture
 
-Feature flags are **async helpers** in `@hypha-platform/feature-flags` (e.g. `getEnableHumanChat()`). They read **`next/headers` cookies** during SSR. **`FLAGS_SECRET`** is optional: without it, SSR still works. With it set on the deployment, the **Vercel Flags Toolbar** overrides in the **`vercel-flag-overrides`** cookie are decrypted (via the `flags` package) and applied **before** Hypha cookies / env — same order the old `flag()` runtime used.
+Feature flags are **async helpers** in `@hypha-platform/feature-flags` (e.g. `getEnableHumanChat()`). They read **`next/headers` cookies** and **`NEXT_PUBLIC_*` env** during SSR. There is **no** Vercel Flags Toolbar / `flags` package / `vercel-flag-overrides` path — use Hypha cookies and env to toggle behavior.
 
 ### Evaluation Order
 
-Each `get*` function:
-1. If **`FLAGS_SECRET`** is set: use **Vercel toolbar override** for that flag key when present (`enable-human-chat`, `enable-coherence`, …).
-2. Else: check **Hypha cookie** (e.g. `HYPHA_ENABLE_HUMAN_CHAT`)
-3. Else: **`NEXT_PUBLIC_*` env var**
-4. Else: default **`false`**
+1. For boolean product flags (AI Chat, Coherence, Space Memory): **Hypha cookie** if set to `"true"` or `"false"`; else **`NEXT_PUBLIC_*`** if set; else default **`true`**.
+2. **Human Chat:** kill-switch **`HYPHA_DISABLE_HUMAN_CHAT=true`** (or `NEXT_PUBLIC_DISABLE_HUMAN_CHAT=true`) forces off; else legacy cookie / env; else default **`true`**.
+3. **`getShowLanguageSelect`:** if `HYPHA_SHOW_LANGUAGE_SELECT=false` → off; else on.
+4. **`getEnableWeb3Auth`:** `HYPHA_AUTH_PROVIDER=web3auth` → on.
 
-Source: `packages/feature-flags/src/index.ts`, `vercel-toolbar-overrides.ts`
+Source: `packages/feature-flags/src/index.ts`
 
 ### Cookie Constants
 
@@ -23,6 +22,8 @@ Canonical source: `packages/cookie/src/constants.ts`
 | `HYPHA_ENABLE_HUMAN_CHAT` | `NEXT_PUBLIC_ENABLE_HUMAN_CHAT` | Human Chat right panel |
 | `HYPHA_ENABLE_COHERENCE` | `NEXT_PUBLIC_ENABLE_COHERENCE` | Coherence tab (signals / conversations) |
 | `HYPHA_ENABLE_AI_CHAT` | `NEXT_PUBLIC_ENABLE_AI_CHAT` | AI Chat left panel |
+| `HYPHA_ENABLE_SPACE_MEMORY` | `NEXT_PUBLIC_ENABLE_SPACE_MEMORY` | Space Memory on Coherence tab |
+| `HYPHA_DISABLE_HUMAN_CHAT` | `NEXT_PUBLIC_DISABLE_HUMAN_CHAT` | Kill-switch: hides Human Chat and Matrix token route |
 | `HYPHA_AUTH_PROVIDER` | *(none — cookie only)* | Auth provider selection (`web3auth`) |
 | `HYPHA_SHOW_LANGUAGE_SELECT` | *(none — cookie only)* | i18n language selector |
 

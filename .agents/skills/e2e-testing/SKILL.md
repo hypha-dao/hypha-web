@@ -53,7 +53,7 @@ done
 
 ### 2. Enable Feature Flags
 
-Feature flags are SSR-evaluated by `flags/next`. They check **cookies first**, then fall back to `NEXT_PUBLIC_*` env vars. For details on all flags and the cookie mechanism, read [references/feature-flags.md](references/feature-flags.md).
+Feature flags are SSR-evaluated in `@hypha-platform/feature-flags` (see [references/feature-flags.md](references/feature-flags.md)) — **Hypha cookies** and **`NEXT_PUBLIC_*` env**, with product flags defaulting **on** when unset.
 
 **Quick reference — two layers are needed in e2e tests:**
 
