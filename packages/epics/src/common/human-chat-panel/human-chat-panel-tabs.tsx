@@ -79,13 +79,16 @@ export function HumanChatPanelTabs({
     <div
       className={cn(
         'relative flex w-full min-w-0 items-center gap-2 border-b border-border bg-transparent px-4 py-2',
-        /* Match DHO secondary actions row — shared token in global.css */
+        /* Single horizontal row: tabs left, call icons + settings right (no wrapping). */
         'min-h-[var(--secondary-chrome-actions-row-height,52px)]',
       )}
     >
       <div
         role="tablist"
-        className="flex min-w-0 flex-1 flex-wrap items-center gap-1"
+        className={cn(
+          'flex min-w-0 min-h-0 flex-1 flex-nowrap items-center gap-1 overflow-x-auto pr-1',
+          '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+        )}
       >
         {tabs.map((tab, index) => (
           <button
@@ -116,7 +119,7 @@ export function HumanChatPanelTabs({
             onClick={() => onTabChange(tab.key)}
             onKeyDown={(e) => handleKeyDown(e, index)}
             className={cn(
-              'rounded-lg px-3 py-1 text-xs font-medium transition-colors duration-150',
+              'shrink-0 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors duration-150 sm:px-3',
               activeTab === tab.key
                 ? 'border border-accent-9/40 bg-accent-9/18 text-foreground shadow-sm ring-1 ring-inset ring-accent-9/25 dark:border-accent-10/45 dark:bg-accent-9/22 dark:text-foreground dark:ring-accent-10/30'
                 : 'border border-transparent text-muted-foreground hover:border-border/70 hover:bg-muted/80 hover:text-foreground',
@@ -145,14 +148,14 @@ export function HumanChatPanelTabs({
         ))}
       </div>
       {tabRowEnd ? (
-        <div className="flex shrink-0 items-center gap-1.5 pl-1">
+        <div className="flex h-7 shrink-0 items-center gap-1.5 self-center pl-0.5">
           {tabRowEnd}
         </div>
       ) : null}
       {notificationCentreHref ? (
         <Link
           href={notificationCentreHref}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="flex h-7 w-7 shrink-0 items-center justify-center self-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           aria-label={t('mentionInboxNotificationSettings')}
           title={t('mentionInboxNotificationSettings')}
         >

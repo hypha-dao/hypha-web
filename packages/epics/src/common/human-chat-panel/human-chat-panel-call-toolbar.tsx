@@ -35,7 +35,7 @@ export function HumanChatPanelCallToolbar({
 
   return (
     <div
-      className="flex shrink-0 items-center gap-0.5"
+      className="flex h-7 shrink-0 items-center gap-0.5"
       role="toolbar"
       aria-label={t('callToolbarLabel')}
     >
