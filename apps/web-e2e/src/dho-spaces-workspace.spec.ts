@@ -4,10 +4,11 @@ import { expect, test } from '@playwright/test';
 const SPACE = 'hypha';
 const SPACES = `/en/dho/${SPACE}/spaces`;
 const LEGACY_NAV = `/en/dho/${SPACE}/agreements/select-navigation-action`;
+const SPACES_DE = `/de/dho/${SPACE}/spaces`;
 
 const AI_HEADER = { Cookie: 'HYPHA_ENABLE_AI_CHAT=true' };
 
-test.describe('DHO spaces tab and workspace (Phase 4)', () => {
+test.describe('DHO spaces tab and workspace (hardening)', () => {
   test.use({
     extraHTTPHeaders: AI_HEADER,
   });
@@ -30,29 +31,61 @@ test.describe('DHO spaces tab and workspace (Phase 4)', () => {
     await expect(page).toHaveURL(new RegExp(`${SPACES.replace(/\//g, '\\/')}`));
   });
 
-  test('spaces page shows space navigation copy and no critical axe issues in main column', async ({
+  test('legacy redirect response exposes x-hypha-legacy-redirect', async ({
+    request,
+  }) => {
+    const r = await request.get(`http://127.0.0.1:3000${LEGACY_NAV}`, {
+      maxRedirects: 0,
+    });
+    expect(
+      r.status() >= 300 && r.status() < 400,
+      'expected redirect to /spaces',
+    ).toBeTruthy();
+    expect(r.headers()['x-hypha-legacy-redirect']).toBe('dho-spaces');
+  });
+
+  test('spaces main column and space navigation view are axe-clean', async ({
     page,
   }) => {
     await page.goto(SPACES);
     await page.waitForLoadState('domcontentloaded');
+    await expect(page.getByTestId('dho-workspace-main')).toBeVisible();
+    await expect(page.getByTestId('dho-space-navigation-view')).toBeVisible();
 
-    await expect(
-      page.getByText('Space Navigation', { exact: true }),
-    ).toBeVisible();
-
-    const main = page.getByTestId('dho-workspace-main');
-    await expect(main).toBeVisible();
-
-    const a11y = await new AxeBuilder({ page })
-      .include('[data-testid="dho-workspace-main"]')
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-      .analyze();
-    expect(a11y.violations, JSON.stringify(a11y.violations, null, 2)).toEqual(
-      [],
-    );
+    for (const sel of [
+      '[data-testid="dho-workspace-main"]',
+      '[data-testid="dho-space-navigation-view"]',
+    ] as const) {
+      const a11y = await new AxeBuilder({ page })
+        .include(sel)
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+        .analyze();
+      expect(
+        a11y.violations,
+        `axe violations in ${sel}: ` + JSON.stringify(a11y.violations, null, 2),
+      ).toEqual([]);
+    }
   });
 
-  test('left rail and Spaces link have current state on /spaces (desktop)', async ({
+  test('german /spaces: rail uses translated nav and tab labels', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1200, height: 800 });
+    await page.goto(SPACES_DE);
+    await page.waitForLoadState('domcontentloaded');
+
+    const spaceNav = page.getByRole('navigation', { name: 'Space-Bereiche' });
+    await expect(spaceNav).toBeVisible();
+    await expect(
+      spaceNav.getByRole('link', { name: 'Spaces' }),
+    ).toHaveAttribute('aria-current', 'page');
+    const tabs = page.getByTestId('dho-space-nav-map-tabs');
+    await expect(
+      tabs.getByRole('tab', { name: 'Verschachtelte Spaces' }),
+    ).toBeVisible();
+  });
+
+  test('left rail and Spaces link have current state on /spaces (desktop, en)', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1200, height: 800 });
