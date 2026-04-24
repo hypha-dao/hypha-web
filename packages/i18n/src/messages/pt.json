@@ -803,7 +803,8 @@
     "spaceNavAriaLabel": "Seções do espaço",
     "openSpaceMenu": "Menu do espaço",
     "spaceMenuTitle": "Espaço",
-    "closeMenu": "Fechar"
+    "closeMenu": "Fechar",
+    "spaceMapLoading": "Carregando mapa de espaços"
   },
   "SpaceSettingsAction": {
     "title": "Configurações de espaço",

@@ -148,7 +148,8 @@
     "spaceNavAriaLabel": "Space sections",
     "openSpaceMenu": "Space menu",
     "spaceMenuTitle": "Space",
-    "closeMenu": "Close"
+    "closeMenu": "Close",
+    "spaceMapLoading": "Loading space map"
   },
   "SpaceSettingsAction": {
     "title": "Space Settings",
