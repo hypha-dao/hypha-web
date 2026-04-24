@@ -88,7 +88,7 @@ export function HumanChatPanelCallJoinStrip({
           <div
             className="flex shrink-0 items-center justify-end gap-1.5 sm:ml-auto sm:justify-end"
             role="group"
-            aria-label={t('callJoinWithAudio')}
+            aria-label={t('callJoinControlsGroup')}
           >
             <button
               type="button"
