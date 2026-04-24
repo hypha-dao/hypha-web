@@ -144,7 +144,40 @@ jobs:
         id: deploy
         env:
           BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}
-        run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }} --env BRANCH_DB_URL=${{ env.BRANCH_DB_URL }}) >> $GITHUB_OUTPUT
+        run: |
+          set -uo pipefail
+          for attempt in 1 2 3; do
+            _log=$(mktemp)
+            vercel deploy --prebuilt --token="${VERCEL_TOKEN}" --env "BRANCH_DB_URL=${BRANCH_DB_URL:-}" 2>&1 | tee "$_log"
+            code=$?
+            out=$(cat "$_log")
+            rm -f "$_log"
+            if [ "$code" -eq 0 ]; then
+              # Last https URL in CLI output (strip carriage returns for Windows-style lines)
+              url=$(printf '%s\n' "$out" | tr -d '\r' | grep -oE 'https://[^[:space:]]+' | tail -n1)
+              if [ -n "$url" ]; then
+                echo "preview_url=${url}" >> "${GITHUB_OUTPUT}"
+                exit 0
+              fi
+            fi
+            echo "Vercel deploy (exit $code) or no URL in output — attempt ${attempt}/3, retrying in 25s…" >&2
+            if [ "$attempt" -lt 3 ]; then sleep 25; fi
+          done
+          exit 1
+
+      - name: Sticky — Vercel preview URL
+        if: success() && steps.deploy.outputs.preview_url != ''
+        uses: marocchino/sticky-pull-request-comment@0ea0beb66eb9baf113663a64ec522f60e49231c0 # v3.0.4
+        with:
+          header: vercel-pr-preview
+          number: ${{ github.event.pull_request.number }}
+          message: |
+            | | |
+            |:--|:--|
+            | **Preview** | ${{ steps.deploy.outputs.preview_url }} |
+            | **Commit** | `${{ github.event.pull_request.head.sha }}` |
+
+            _Deployment: [view run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})_
 
   main:
     needs: [detect-changes]
