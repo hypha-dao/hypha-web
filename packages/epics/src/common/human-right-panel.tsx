@@ -1789,6 +1789,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             callUiEnabled ? (
               <HumanChatPanelCallToolbar
                 callState={spaceCallState}
+                callKind={spaceCallKind}
                 disabled={!callUiEnabled}
                 inCall={callToolbarInCall}
                 roomCallInProgressToJoin={spaceCallToolbarJoinHint}

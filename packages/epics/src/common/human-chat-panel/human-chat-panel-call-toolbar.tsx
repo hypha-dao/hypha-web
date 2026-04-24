@@ -7,6 +7,7 @@ import type { SpaceGroupCallState } from '@hypha-platform/core/client';
 
 type HumanChatPanelCallToolbarProps = {
   callState: SpaceGroupCallState;
+  callKind: 'audio' | 'video' | null;
   disabled: boolean;
   inCall: boolean;
   /** True when other members have devices in the room GroupCall and local user is not in the session. */
@@ -22,6 +23,7 @@ type HumanChatPanelCallToolbarProps = {
  */
 export function HumanChatPanelCallToolbar({
   callState,
+  callKind,
   disabled,
   inCall,
   roomCallInProgressToJoin = false,
@@ -34,7 +36,9 @@ export function HumanChatPanelCallToolbar({
   const busy =
     callState === 'initializing' ||
     callState === 'awaiting_media' ||
-    callState === 'connecting';
+    callState === 'connecting' ||
+    callState === 'disconnecting';
+  const inVideoMode = inCall && callKind === 'video';
 
   return (
     <div
@@ -50,7 +54,7 @@ export function HumanChatPanelCallToolbar({
           'flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors',
           (disabled || busy) && 'cursor-not-allowed opacity-50',
           !disabled && !busy && 'hover:bg-muted hover:text-foreground',
-          inCall && 'text-foreground',
+          inCall && !inVideoMode && 'text-foreground',
         )}
         title={
           roomCallInProgressToJoin ? t('callJoinWithAudio') : t('callAudio')
@@ -58,7 +62,7 @@ export function HumanChatPanelCallToolbar({
         aria-label={
           roomCallInProgressToJoin ? t('callJoinWithAudio') : t('callAudio')
         }
-        aria-pressed={inCall}
+        aria-pressed={inCall && !inVideoMode}
         aria-busy={busy}
       >
         <Phone className="h-3.5 w-3.5" />
@@ -71,6 +75,7 @@ export function HumanChatPanelCallToolbar({
           'flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors',
           (disabled || busy) && 'cursor-not-allowed opacity-50',
           !disabled && !busy && 'hover:bg-muted hover:text-foreground',
+          inCall && inVideoMode && 'text-foreground',
         )}
         title={
           roomCallInProgressToJoin ? t('callJoinWithVideo') : t('callVideo')
@@ -78,6 +83,7 @@ export function HumanChatPanelCallToolbar({
         aria-label={
           roomCallInProgressToJoin ? t('callJoinWithVideo') : t('callVideo')
         }
+        aria-pressed={inCall && inVideoMode}
         aria-busy={busy}
       >
         <Video className="h-3.5 w-3.5" />
@@ -85,11 +91,12 @@ export function HumanChatPanelCallToolbar({
       <button
         type="button"
         onClick={onSearch}
-        disabled
         className="flex h-7 w-7 cursor-not-allowed items-center justify-center rounded-lg text-muted-foreground/60 opacity-60"
         title={t('callSearchComingSoon')}
         aria-label={t('callSearch')}
-        aria-disabled
+        tabIndex={-1}
+        aria-disabled="true"
+        disabled
       >
         <Search className="h-3.5 w-3.5" />
       </button>
