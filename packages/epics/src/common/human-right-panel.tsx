@@ -81,6 +81,7 @@ import {
   shortenMatrixIdForDisplay,
 } from './human-chat-panel/matrix-room-member-display';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
+import { useCallJoinChime } from './human-chat-panel/use-call-join-chime';
 
 function personRosterLabel(p: Person, unknownLabel: string): string {
   const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
@@ -563,6 +564,29 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const callToolbarInCall = spaceCallState === 'connected';
 
   const spaceCallToolbarJoinHint = callUiEnabled && spaceCallShowJoinStrip;
+
+  const spaceCallShowJoinChime = useMemo(
+    () => callUiEnabled && spaceCallShowJoinStrip && !inSpaceCall,
+    [callUiEnabled, spaceCallShowJoinStrip, inSpaceCall],
+  );
+
+  const joinChimeNotification = useMemo(
+    () => ({
+      title: t('callJoinNotificationTitle'),
+      body: t('callJoinNotificationBody', {
+        count: spaceCallRoomGroupDeviceCount,
+      }),
+    }),
+    [t, spaceCallRoomGroupDeviceCount],
+  );
+
+  const { joinAlertSoundEnabled, setJoinAlertSoundEnabled } = useCallJoinChime({
+    callUiEnabled,
+    roomId,
+    showJoinOpportunity: spaceCallShowJoinChime,
+    roomCallDeviceCount: spaceCallRoomGroupDeviceCount,
+    notification: joinChimeNotification,
+  });
 
   const spaceCallBusyJoining =
     spaceCallState === 'initializing' ||
@@ -1782,6 +1806,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             busy={spaceCallBusyJoining}
             onJoinAudio={handleCallAudio}
             onJoinVideo={handleCallVideo}
+            joinAlertSoundEnabled={joinAlertSoundEnabled}
+            onJoinAlertSoundChange={setJoinAlertSoundEnabled}
           />
         )}
         {callUiEnabled &&
@@ -1946,7 +1972,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         )}
       </SidebarContent>
       {activeTab === 'chat' && (
-        <SidebarFooter className="bg-background-2 p-0">
+        <SidebarFooter className="relative z-20 bg-background-2 p-0">
           <div className="rounded-t-2xl border border-border/60 border-b-0 bg-card/35 shadow-[0_-8px_32px_-16px_rgba(15,23,42,0.12)] backdrop-blur-[1px] supports-[backdrop-filter]:bg-card/25 dark:bg-card/45 dark:shadow-[0_-8px_36px_-16px_rgba(0,0,0,0.45)] dark:supports-[backdrop-filter]:bg-card/35">
             <HumanChatPanelChatBar
               value={input}
