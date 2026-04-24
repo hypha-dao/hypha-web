@@ -36,8 +36,6 @@ type SidebarContextProps = {
   state: 'expanded' | 'collapsed';
   open: boolean;
   setOpen: (open: boolean) => void;
-  openMobile: boolean;
-  setOpenMobile: (open: boolean) => void;
   isMobile: boolean;
   toggleSidebar: () => void;
 };
@@ -73,7 +71,6 @@ const SidebarProvider = React.forwardRef<HTMLDivElement, SidebarProviderProps>(
     ref,
   ) => {
     const isMobile = useIsMobile() ?? false;
-    const [openMobile, setOpenMobile] = React.useState(false);
 
     // This is the internal state of the sidebar.
     // We use openProp and setOpenProp for control from outside the component.
@@ -96,10 +93,8 @@ const SidebarProvider = React.forwardRef<HTMLDivElement, SidebarProviderProps>(
 
     // Helper to toggle the sidebar.
     const toggleSidebar = React.useCallback(() => {
-      return isMobile
-        ? setOpenMobile((open) => !open)
-        : setOpen((open) => !open);
-    }, [isMobile, setOpen, setOpenMobile]);
+      setOpen((o) => !o);
+    }, [setOpen]);
 
     // Adds a keyboard shortcut to toggle the sidebar.
     React.useEffect(() => {
@@ -137,19 +132,9 @@ const SidebarProvider = React.forwardRef<HTMLDivElement, SidebarProviderProps>(
         open,
         setOpen,
         isMobile,
-        openMobile,
-        setOpenMobile,
         toggleSidebar,
       }),
-      [
-        state,
-        open,
-        setOpen,
-        isMobile,
-        openMobile,
-        setOpenMobile,
-        toggleSidebar,
-      ],
+      [state, open, setOpen, isMobile, toggleSidebar],
     );
 
     return (
@@ -198,7 +183,7 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
     },
     ref,
   ) => {
-    const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
+    const { isMobile, state, setOpen } = useSidebar();
 
     if (collapsible === 'none') {
       return (
@@ -217,7 +202,7 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
 
     if (isMobile) {
       return (
-        <Sheet open={openMobile} onOpenChange={setOpenMobile}>
+        <Sheet open={state === 'expanded'} onOpenChange={setOpen}>
           <SheetContent
             ref={ref}
             data-sidebar="sidebar"
