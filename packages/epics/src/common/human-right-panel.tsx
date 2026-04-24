@@ -651,22 +651,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   );
 
   useEffect(() => {
-    if (activeTab !== 'chat' && callFullViewOpen) {
+    if (!callFullViewOpen) return;
+    if (
+      activeTab !== 'chat' ||
+      !canOpenCallFullView ||
+      spaceCallState !== 'connected'
+    ) {
       setCallFullViewOpen(false);
     }
-  }, [activeTab, callFullViewOpen]);
-
-  useEffect(() => {
-    if (!canOpenCallFullView && callFullViewOpen) {
-      setCallFullViewOpen(false);
-    }
-  }, [canOpenCallFullView, callFullViewOpen]);
-
-  useEffect(() => {
-    if (spaceCallState !== 'connected' && callFullViewOpen) {
-      setCallFullViewOpen(false);
-    }
-  }, [spaceCallState, callFullViewOpen]);
+  }, [activeTab, canOpenCallFullView, spaceCallState, callFullViewOpen]);
 
   /** Bumps when Matrix room membership changes so `@` mention candidates + button state refresh without reload. */
   const [mentionMembershipEpoch, setMentionMembershipEpoch] = useState(0);
