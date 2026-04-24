@@ -1,3 +1,4 @@
+import path from 'node:path';
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 import createWithVercelToolbar from '@vercel/toolbar/plugins/next';
@@ -20,8 +21,17 @@ const nextConfig: NextConfig = {
     // Single module path for matrix-js-sdk (require.resolve from apps/web needs
     // matrix-js-sdk as a direct dependency). Avoids "Multiple matrix-js-sdk
     // entrypoints detected!" when the SDK initializes from more than one bundle.
+    const matrixPackageJson = require.resolve('matrix-js-sdk/package.json');
+    const matrixRoot = path.dirname(matrixPackageJson);
     config.resolve.alias = {
       ...config.resolve.alias,
+      // pnpm: deep ESM subpaths (e.g. webrtc/callFeed.js) are not resolvable
+      // from the epics source tree without a concrete file path. Used by
+      // HumanChatPanelCallStage for CallFeed + CallFeedEvent.
+      'matrix-js-sdk/lib/webrtc/callFeed': path.join(
+        matrixRoot,
+        'lib/webrtc/callFeed.js',
+      ),
       'matrix-js-sdk': require.resolve('matrix-js-sdk'),
     };
     return config;
