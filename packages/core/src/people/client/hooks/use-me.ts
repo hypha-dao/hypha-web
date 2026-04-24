@@ -11,7 +11,7 @@ export const useMe = (): {
    * Refetch `/me`, or set cache from a known-good `Person` (e.g. right after save)
    * without waiting for a network round-trip.
    */
-  revalidate: (next?: Person) => Promise<unknown>;
+  revalidate: (next?: Person) => Promise<Person | undefined>;
   isMe: (personSlug: string) => boolean;
 } => {
   const { jwt, isLoadingJwt } = useJwt();
@@ -22,13 +22,13 @@ export const useMe = (): {
     data: person,
     isLoading: isLoadingPerson,
     mutate,
-  } = useSWR(jwt ? [endpoint, jwt] : null, ([endpoint, jwt]) =>
+  } = useSWR<Person>(jwt ? [endpoint, jwt] : null, ([endpoint, jwt]) =>
     fetch(endpoint, {
       headers: {
         Authorization: `Bearer ${jwt}`,
         'Content-Type': 'application/json',
       },
-    }).then((res) => res.json()),
+    }).then((res) => res.json() as Promise<Person>),
   );
 
   const isMe = React.useCallback(
@@ -45,7 +45,7 @@ export const useMe = (): {
   );
 
   const revalidate = React.useCallback(
-    (next?: Person) => {
+    (next?: Person): Promise<Person | undefined> => {
       if (next) {
         return mutate(next, { revalidate: false });
       }
