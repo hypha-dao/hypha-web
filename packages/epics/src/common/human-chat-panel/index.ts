@@ -2,6 +2,13 @@ export { HumanChatPanelCallToolbar } from './human-chat-panel-call-toolbar';
 export { HumanChatPanelCallBanner } from './human-chat-panel-call-banner';
 export { HumanChatPanelCallJoinStrip } from './human-chat-panel-call-join-strip';
 export { HumanChatPanelInCallControls } from './human-chat-panel-in-call-controls';
+export { HumanChatPanelCallFullViewLayoutMenu } from './human-chat-panel-call-full-view-layout-menu';
+export {
+  type CallFullViewLayoutMode,
+  readCallFullViewLayoutFromStorage,
+  persistCallFullViewLayout,
+  DEFAULT_CALL_FULL_VIEW_LAYOUT,
+} from './call-full-view-layout';
 export {
   HumanChatPanelCallStage,
   canOpenHumanChatCallFullView,

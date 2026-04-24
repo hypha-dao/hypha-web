@@ -1938,6 +1938,11 @@
     "callFullView": "Vista alargada",
     "callFullViewDescription": "Vista mais ampla da chamada. A chamada no espaço continua ativa ao fechar esta janela.",
     "callFullViewClose": "Fechar",
+    "callLayoutMode": "Layout da partilha de ecrã",
+    "callLayoutFilmstrip": "Pessoas abaixo (faixa)",
+    "callLayoutSideBySide": "Ecrã e pessoas lado a lado",
+    "callLayoutSpeakerOnTop": "Orador em cima, ecrã em baixo",
+    "callLayoutPip": "Vídeo por cima do ecrã",
     "callParticipantMuted": "Silenciado"
   },
   "CoherenceTab": {

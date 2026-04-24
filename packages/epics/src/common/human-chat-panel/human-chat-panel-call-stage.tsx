@@ -20,6 +20,7 @@ import { Maximize2, User } from 'lucide-react';
 import type { SpaceGroupCallState } from '@hypha-platform/core/client';
 import { matrixMemberDisplayLabel } from './matrix-room-member-display';
 import { CallAudioVoiceWaves } from './call-audio-voice-waves';
+import type { CallFullViewLayoutMode } from './call-full-view-layout';
 
 export type HumanChatPanelCallStageLayout = 'panel' | 'fullView' | 'hidden';
 
@@ -45,6 +46,11 @@ type HumanChatPanelCallStageProps = HumanChatPanelCallStageBaseProps & {
   fullViewOpen?: boolean;
   /** `ref` for the expand trigger (return focus on dialog close; Radix handles this if this ref is the trigger). */
   fullViewTriggerRef?: RefObject<HTMLButtonElement | null>;
+  /**
+   * Screen-share + camera layout in the full-view dialog (§3.4.4.2–3).
+   * Ignored when `layout !== 'fullView'`.
+   */
+  fullViewLayoutMode?: CallFullViewLayoutMode;
 };
 
 function feedKeyForActive(feed: CallFeed): string {
@@ -196,6 +202,7 @@ export function HumanChatPanelCallStage({
   onRequestFullView,
   fullViewOpen = false,
   fullViewTriggerRef,
+  fullViewLayoutMode = 'filmstrip',
 }: HumanChatPanelCallStageProps) {
   const t = useTranslations('HumanChatPanel');
   const labelId = useId();
@@ -276,6 +283,57 @@ export function HumanChatPanelCallStage({
 
   const showExpand = layout === 'panel' && !fullViewOpen && onRequestFullView;
 
+  /** In full view with screen share, participant tiles are laid out per `fullViewLayoutMode`; skip corner PiP to avoid duplicate with the strip/column. */
+  const showFloatingLocalPip =
+    isVideoCall &&
+    localUserMedia.length > 0 &&
+    hasLocalWebcam &&
+    showLocalPip &&
+    !(isFull && shareFeeds.length > 0);
+
+  const userTilesForFullViewShare = (() => {
+    const out: CallFeed[] = [...remoteUserMedia];
+    if (
+      showLocalPip &&
+      localUserMedia[0] &&
+      !out.some((f) => f.isLocal() && f === localUserMedia[0])
+    ) {
+      out.push(localUserMedia[0]!);
+    }
+    return out;
+  })();
+
+  const speakerFeedForTopMode = (() => {
+    if (remoteUserMedia.length === 0) {
+      return localUserMedia[0] ?? null;
+    }
+    if (activeSpeakerKey) {
+      const m = remoteUserMedia.find(
+        (f) => feedKeyForActive(f) === activeSpeakerKey,
+      );
+      if (m) return m;
+    }
+    return remoteUserMedia[0] ?? null;
+  })();
+
+  const renderUserTile = (feed: CallFeed, keyIdx: number) => (
+    <CallFeedTile
+      key={feedKey(feed, keyIdx)}
+      feed={feed}
+      isFullView={isFull}
+      isActiveSpeaker={
+        activeSpeakerKey != null && activeSpeakerKey === feedKeyForActive(feed)
+      }
+      room={room}
+      currentUserId={currentUserId}
+      resolveMemberLabel={resolveMemberLabel}
+      t={t}
+    />
+  );
+
+  const skipUserGridInFullViewWithShare =
+    isFull && shareFeeds.length > 0 && userTilesForFullViewShare.length > 0;
+
   return (
     <section
       className={cn(
@@ -310,41 +368,202 @@ export function HumanChatPanelCallStage({
       <h2 id={labelId} className="sr-only">
         {isFull ? t('callFullView') : t('callStageLabel')}
       </h2>
-      {shareFeeds.length > 0 && (
+      {isFull &&
+      shareFeeds.length > 0 &&
+      userTilesForFullViewShare.length > 0 ? (
         <div
-          className={cn(
-            'w-full p-2 pb-0',
-            isFull && 'flex min-h-0 min-w-0 flex-1 flex-col p-0',
-            isFull && shareFeeds.length > 0 && 'min-w-0', // FV-1: full width of main stage
-          )}
+          className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
           data-feed-tick={_feedVersion}
         >
-          {shareFeeds.map((feed, i) => (
-            <div
-              key={feedKey(feed, i)}
-              className={cn(
-                'w-full max-w-full',
-                isFull && 'flex min-h-0 min-w-0 flex-1 flex-col',
-              )}
-            >
-              <CallFeedTile
-                feed={feed}
-                isShare
-                isFullView={isFull}
-                isActiveSpeaker={
-                  activeSpeakerKey != null &&
-                  activeSpeakerKey === feedKeyForActive(feed)
-                }
-                room={room}
-                currentUserId={currentUserId}
-                resolveMemberLabel={resolveMemberLabel}
-                t={t}
-              />
+          {fullViewLayoutMode === 'sideBySide' && (
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:flex-row">
+              <div className="flex min-h-[35dvh] w-full min-w-0 flex-1 flex-col border-b border-border/20 pb-0 lg:min-h-0 lg:max-w-[72%] lg:border-b-0 lg:border-r lg:pb-0">
+                {shareFeeds.map((feed, i) => (
+                  <div
+                    key={feedKey(feed, i)}
+                    className="flex min-h-0 min-w-0 flex-1 flex-col"
+                  >
+                    <CallFeedTile
+                      feed={feed}
+                      isShare
+                      isFullView={isFull}
+                      isActiveSpeaker={
+                        activeSpeakerKey != null &&
+                        activeSpeakerKey === feedKeyForActive(feed)
+                      }
+                      room={room}
+                      currentUserId={currentUserId}
+                      resolveMemberLabel={resolveMemberLabel}
+                      t={t}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="flex min-h-[5.5rem] max-h-[min(40dvh,320px)] w-full min-w-0 flex-col gap-2 overflow-y-auto p-2 lg:min-h-0 lg:max-w-[28%] lg:flex-1">
+                {userTilesForFullViewShare.map((feed, i) =>
+                  renderUserTile(feed, 1000 + i),
+                )}
+              </div>
             </div>
-          ))}
+          )}
+          {fullViewLayoutMode === 'filmstrip' && (
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+              <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+                {shareFeeds.map((feed, i) => (
+                  <div
+                    key={feedKey(feed, i)}
+                    className="flex min-h-0 min-w-0 flex-1 flex-col"
+                  >
+                    <CallFeedTile
+                      feed={feed}
+                      isShare
+                      isFullView={isFull}
+                      isActiveSpeaker={
+                        activeSpeakerKey != null &&
+                        activeSpeakerKey === feedKeyForActive(feed)
+                      }
+                      room={room}
+                      currentUserId={currentUserId}
+                      resolveMemberLabel={resolveMemberLabel}
+                      t={t}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div
+                className="flex w-full min-h-[5.5rem] max-h-[7.5rem] shrink-0 items-stretch gap-2 overflow-x-auto border-t border-border/30 p-2"
+                role="group"
+                aria-label={t('callLayoutFilmstrip')}
+              >
+                {userTilesForFullViewShare.map((feed, i) => (
+                  <div
+                    key={feedKey(feed, 2000 + i)}
+                    className="h-full min-h-[4.5rem] w-[min(42%,9rem)] min-w-[6.5rem] shrink-0"
+                  >
+                    {renderUserTile(feed, 2000 + i)}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {fullViewLayoutMode === 'speakerTop' && (
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+              {speakerFeedForTopMode && (
+                <div className="h-[min(28dvh,220px)] w-full min-h-[5.5rem] max-h-[min(32dvh,280px)] shrink-0 border-b border-border/30 p-2">
+                  <div className="h-full min-h-0" key="speaker-top-tile">
+                    <CallFeedTile
+                      feed={speakerFeedForTopMode}
+                      isFullView={isFull}
+                      isActiveSpeaker
+                      room={room}
+                      currentUserId={currentUserId}
+                      resolveMemberLabel={resolveMemberLabel}
+                      t={t}
+                    />
+                  </div>
+                </div>
+              )}
+              <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+                {shareFeeds.map((feed, i) => (
+                  <div
+                    key={feedKey(feed, i)}
+                    className="flex min-h-0 min-w-0 flex-1 flex-col"
+                  >
+                    <CallFeedTile
+                      feed={feed}
+                      isShare
+                      isFullView={isFull}
+                      isActiveSpeaker={
+                        activeSpeakerKey != null &&
+                        activeSpeakerKey === feedKeyForActive(feed)
+                      }
+                      room={room}
+                      currentUserId={currentUserId}
+                      resolveMemberLabel={resolveMemberLabel}
+                      t={t}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {fullViewLayoutMode === 'pip' && (
+            <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+              {shareFeeds.map((feed, i) => (
+                <div
+                  key={feedKey(feed, i)}
+                  className="absolute inset-0 flex min-h-0 min-w-0"
+                >
+                  <CallFeedTile
+                    feed={feed}
+                    isShare
+                    isFullView={isFull}
+                    isActiveSpeaker={
+                      activeSpeakerKey != null &&
+                      activeSpeakerKey === feedKeyForActive(feed)
+                    }
+                    room={room}
+                    currentUserId={currentUserId}
+                    resolveMemberLabel={resolveMemberLabel}
+                    t={t}
+                  />
+                </div>
+              ))}
+              <div
+                className="pointer-events-none absolute end-4 bottom-4 z-10 flex w-[min(38%,12rem)] min-w-[6rem] flex-col gap-2"
+                role="group"
+                aria-label={t('callLayoutPip')}
+              >
+                {userTilesForFullViewShare.map((feed, i) => (
+                  <div
+                    key={feedKey(feed, 3000 + i)}
+                    className="pointer-events-auto"
+                  >
+                    {renderUserTile(feed, 3000 + i)}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
+      ) : (
+        shareFeeds.length > 0 && (
+          <div
+            className={cn(
+              'w-full p-2 pb-0',
+              isFull && 'flex min-h-0 min-w-0 flex-1 flex-col p-0',
+              isFull && shareFeeds.length > 0 && 'min-w-0', // FV-1: full width of main stage
+            )}
+            data-feed-tick={_feedVersion}
+          >
+            {shareFeeds.map((feed, i) => (
+              <div
+                key={feedKey(feed, i)}
+                className={cn(
+                  'w-full max-w-full',
+                  isFull && 'flex min-h-0 min-w-0 flex-1 flex-col',
+                )}
+              >
+                <CallFeedTile
+                  feed={feed}
+                  isShare
+                  isFullView={isFull}
+                  isActiveSpeaker={
+                    activeSpeakerKey != null &&
+                    activeSpeakerKey === feedKeyForActive(feed)
+                  }
+                  room={room}
+                  currentUserId={currentUserId}
+                  resolveMemberLabel={resolveMemberLabel}
+                  t={t}
+                />
+              </div>
+            ))}
+          </div>
+        )
       )}
       {(hasRemotesOrShare || showLocalInMainGrid) &&
+        !skipUserGridInFullViewWithShare &&
         (useFullViewSingleMainTile ? (
           <div
             className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col px-2 pb-2 pt-0"
@@ -453,7 +672,7 @@ export function HumanChatPanelCallStage({
       {isVideoCall &&
         localUserMedia.length > 0 &&
         hasLocalWebcam &&
-        showLocalPip && (
+        showFloatingLocalPip && (
           <div
             className={cn(
               'pointer-events-none absolute z-10 overflow-hidden rounded-lg border-2 border-border bg-card shadow-lg',

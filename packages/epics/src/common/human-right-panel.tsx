@@ -69,9 +69,14 @@ import {
   HumanChatPanelInCallControls,
   HumanChatPanelCallStage,
   canOpenHumanChatCallFullView,
+  DEFAULT_CALL_FULL_VIEW_LAYOUT,
+  HumanChatPanelCallFullViewLayoutMenu,
+  persistCallFullViewLayout,
+  readCallFullViewLayoutFromStorage,
   type ChatDraftAttachment,
   type ChatMentionCandidate,
   type ChatPanelAttachmentMedia,
+  type CallFullViewLayoutMode,
 } from './human-chat-panel';
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
@@ -497,6 +502,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ChatPanelTab>('chat');
   const [callFullViewOpen, setCallFullViewOpen] = useState(false);
+  const [callFullViewLayoutMode, setCallFullViewLayoutMode] =
+    useState<CallFullViewLayoutMode>(DEFAULT_CALL_FULL_VIEW_LAYOUT);
   /**
    * `HumanChatPanelCallStage` only mounts the expand control when
    * `layout === "panel" && !fullViewOpen`, so this ref is set on the open
@@ -648,6 +655,27 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       spaceCallScreensharing,
       spaceCallState,
     ],
+  );
+
+  const showCallLayoutMenuInFullView = useMemo(() => {
+    if (!spaceGroupCall) return false;
+    return (
+      spaceGroupCall.screenshareFeeds.length > 0 &&
+      spaceGroupCall.userMediaFeeds.length > 0
+    );
+  }, [spaceGroupCall]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setCallFullViewLayoutMode(readCallFullViewLayoutFromStorage());
+  }, []);
+
+  const onCallFullViewLayoutChange = useCallback(
+    (m: CallFullViewLayoutMode) => {
+      setCallFullViewLayoutMode(m);
+      persistCallFullViewLayout(m);
+    },
+    [],
   );
 
   useEffect(() => {
@@ -2031,15 +2059,25 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               callFullViewTriggerRef.current?.focus();
             }}
           >
-            <DialogHeader className="relative shrink-0 space-y-0.5 border-b border-border/50 bg-zinc-950/95 px-3 py-2.5 pe-12 text-left">
-              <DialogTitle className="text-sm font-medium tracking-tight text-foreground sm:text-left">
-                {t('callFullView')}
-              </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground sm:text-left">
-                {t('callFullViewDescription')}
-              </DialogDescription>
+            <DialogHeader className="flex shrink-0 items-start gap-2 border-b border-border/50 bg-zinc-950/95 px-3 py-2.5 pe-2 text-left">
+              <div className="min-w-0 flex-1 space-y-0.5 pe-1">
+                <DialogTitle className="text-sm font-medium tracking-tight text-foreground sm:text-left">
+                  {t('callFullView')}
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground sm:text-left">
+                  {t('callFullViewDescription')}
+                </DialogDescription>
+              </div>
+              {showCallLayoutMenuInFullView && (
+                <div className="shrink-0 self-center sm:self-start">
+                  <HumanChatPanelCallFullViewLayoutMenu
+                    value={callFullViewLayoutMode}
+                    onValueChange={onCallFullViewLayoutChange}
+                  />
+                </div>
+              )}
               <DialogClose
-                className="absolute end-2 top-2 inline-flex h-8 min-w-8 items-center justify-center gap-1 rounded-md border border-transparent text-xs text-muted-foreground transition-colors hover:bg-accent/80 hover:text-foreground focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring"
+                className="inline-flex h-8 min-w-8 shrink-0 items-center justify-center gap-1 self-start rounded-md border border-transparent text-xs text-muted-foreground transition-colors hover:bg-accent/80 hover:text-foreground focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label={t('callFullViewClose')}
               >
                 {t('callFullViewClose')}
@@ -2064,6 +2102,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   resolveMemberLabel={resolveMemberLabel}
                   layout="fullView"
                   fullViewOpen
+                  fullViewLayoutMode={callFullViewLayoutMode}
                 />
               </div>
               {spaceCallScreenshareError && spaceCallState === 'connected' && (

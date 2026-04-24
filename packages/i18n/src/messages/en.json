@@ -1970,6 +1970,11 @@
     "callFullView": "Full view",
     "callFullViewDescription": "Larger view of the call. Your space call stays active when you close this window.",
     "callFullViewClose": "Close",
+    "callLayoutMode": "Screen share layout",
+    "callLayoutFilmstrip": "People below (filmstrip)",
+    "callLayoutSideBySide": "Share and people side by side",
+    "callLayoutSpeakerOnTop": "Speaker on top, share below",
+    "callLayoutPip": "Video on top of share",
     "callParticipantMuted": "Muted"
   },
   "CoherenceTab": {

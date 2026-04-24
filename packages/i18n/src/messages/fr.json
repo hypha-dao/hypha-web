@@ -1938,6 +1938,11 @@
     "callFullView": "Plein affichage",
     "callFullViewDescription": "Affichage plus large de l’appel. L’appel dans l’espace reste actif lorsque vous fermez cette fenêtre.",
     "callFullViewClose": "Fermer",
+    "callLayoutMode": "Mise en page du partage d’écran",
+    "callLayoutFilmstrip": "Personnes en bas (bande)",
+    "callLayoutSideBySide": "Partage et personnes côte à côte",
+    "callLayoutSpeakerOnTop": "Intervenant en haut, partage en bas",
+    "callLayoutPip": "Vidéo sur le partage",
     "callParticipantMuted": "Muet"
   },
   "CoherenceTab": {

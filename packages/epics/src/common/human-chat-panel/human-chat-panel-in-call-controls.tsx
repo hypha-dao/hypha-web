@@ -49,29 +49,33 @@ export function HumanChatPanelInCallControls({
   const t = useTranslations('HumanChatPanel');
   const { controlsDisabled } = getCallControlsPhase(callState);
   const isFull = variant === 'fullView';
-
+  /**
+   * Full view modal: §3.4.4.4 — white glyphs on dark / green / red (not
+   * `text-foreground` on near-black / green where Lucide would read as black).
+   */
+  const fullViewIcon = 'h-5 w-5 text-white stroke-white';
   const baseBtn = isFull
-    ? 'h-10 min-w-10 sm:h-11 sm:min-w-11 rounded-full border border-border/50 bg-zinc-900/85 px-2.5 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-zinc-800/95 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring'
+    ? 'h-10 min-w-10 sm:h-11 sm:min-w-11 inline-flex items-center justify-center rounded-full border border-zinc-600/80 bg-zinc-900/90 px-2.5 text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-zinc-800/95 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50'
     : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
   const neutralBtn = isFull ? baseBtn : 'bg-background text-foreground';
-  const leaveIcon = isFull ? 'h-5 w-5' : 'h-4 w-4';
+  const leaveIcon = isFull ? fullViewIcon : 'h-4 w-4';
   /** End call — circular like mic/cam/share; high-contrast red without “pill + caption” weight. */
   const leaveBtn = isFull
-    ? 'inline-flex h-10 min-w-10 sm:h-11 sm:min-w-11 items-center justify-center rounded-full border border-destructive/50 bg-destructive text-destructive-foreground shadow-sm transition-colors hover:bg-destructive/90 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring'
+    ? 'inline-flex h-10 min-w-10 sm:h-11 sm:min-w-11 items-center justify-center rounded-full border border-destructive/60 bg-destructive text-white shadow-sm transition-colors hover:bg-destructive/90 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50'
     : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-destructive/45 bg-destructive text-destructive-foreground shadow-sm transition-colors hover:bg-destructive/90 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
   const micMutedBtn = isFull
-    ? cn(
-        baseBtn,
-        'bg-destructive/25 text-destructive border-destructive/35 hover:bg-destructive/35',
-      )
+    ? cn(baseBtn, 'border-rose-500/50 bg-rose-900/50 hover:bg-rose-900/70')
     : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-destructive/30 bg-destructive/12 text-destructive shadow-sm hover:bg-destructive/20';
   const shareActiveBtn = isFull
-    ? cn(baseBtn, 'ring-2 ring-accent-9/50 bg-accent-9/20 border-accent-9/30')
+    ? cn(
+        baseBtn,
+        'ring-2 ring-white/25 border-emerald-500/60 bg-emerald-600/90 hover:bg-emerald-500/90',
+      )
     : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-accent-9/18 text-foreground ring-1 ring-inset ring-accent-9/35';
   const camOffBtn = isFull
-    ? cn(baseBtn, 'bg-destructive/25 text-destructive border-destructive/35')
+    ? cn(baseBtn, 'border-rose-500/50 bg-rose-900/50 hover:bg-rose-900/70')
     : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-destructive/30 bg-destructive/12 text-destructive shadow-sm hover:bg-destructive/20';
-  const icon = isFull ? 'h-5 w-5' : 'h-4 w-4';
+  const icon = isFull ? fullViewIcon : 'h-4 w-4';
 
   return (
     <div

@@ -1939,6 +1939,11 @@
     "callFullView": "Vollansicht",
     "callFullViewDescription": "Größere Anzeige des Anrufs. Der Space-Anruf bleibt aktiv, wenn Sie dieses Fenster schließen.",
     "callFullViewClose": "Schließen",
+    "callLayoutMode": "Layout für Bildschirmfreigabe",
+    "callLayoutFilmstrip": "Personen unten (Filmstreifen)",
+    "callLayoutSideBySide": "Freigabe und Personen nebeneinander",
+    "callLayoutSpeakerOnTop": "Sprecher oben, Freigabe unten",
+    "callLayoutPip": "Video über der Freigabe",
     "callParticipantMuted": "Stumm"
   },
   "CoherenceTab": {
