@@ -13,6 +13,16 @@ const MIN_PX = 4;
 const MAX_PX = 28;
 const IDLED = WAVE_BARS_SEED.map((h) => MIN_PX + h * (MAX_PX - MIN_PX));
 
+function resumeAudioContextIfNeeded(ctx: globalThis.BaseAudioContext) {
+  if (ctx.state !== 'suspended') {
+    return;
+  }
+  const ac = ctx as globalThis.AudioContext;
+  if (typeof ac.resume === 'function') {
+    void ac.resume();
+  }
+}
+
 function VoiceWaveformBars({
   active,
   levels,
@@ -181,9 +191,7 @@ export function ChatVoiceAudioRow({
       if (!a || !data) {
         return;
       }
-      if (a.context.state === 'suspended') {
-        void a.context.resume();
-      }
+      resumeAudioContextIfNeeded(a.context);
       a.getByteFrequencyData(data);
       const n = data.length;
       const cut = Math.max(1, Math.floor(n * 0.4));
@@ -279,7 +287,7 @@ export function ChatVoiceAudioRow({
           if (!reduceMotion && !analysisRef.current && audioRef.current) {
             const a = ensureAnalysis(audioRef.current);
             if (a) {
-              void a.context.resume();
+              resumeAudioContextIfNeeded(a.context);
             }
           }
           setPlaying(true);

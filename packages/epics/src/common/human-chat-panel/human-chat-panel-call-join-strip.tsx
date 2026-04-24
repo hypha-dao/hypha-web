@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { Label, Switch } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
 import { Phone, Video } from 'lucide-react';
 
@@ -11,6 +12,9 @@ type HumanChatPanelCallJoinStripProps = {
   busy: boolean;
   onJoinAudio: () => void;
   onJoinVideo: () => void;
+  /** When set, shows a “join alert sound” switch (localStorage-persisted in parent). */
+  joinAlertSoundEnabled?: boolean;
+  onJoinAlertSoundChange?: (enabled: boolean) => void;
 };
 
 /**
@@ -23,8 +27,12 @@ export function HumanChatPanelCallJoinStrip({
   busy,
   onJoinAudio,
   onJoinVideo,
+  joinAlertSoundEnabled,
+  onJoinAlertSoundChange,
 }: HumanChatPanelCallJoinStripProps) {
   const t = useTranslations('HumanChatPanel');
+  const showSoundToggle =
+    joinAlertSoundEnabled !== undefined && onJoinAlertSoundChange;
 
   return (
     <div
@@ -40,6 +48,28 @@ export function HumanChatPanelCallJoinStrip({
             {t('callJoinStripDevices', { count: deviceCount })}
           </span>
         </p>
+        {showSoundToggle && (
+          <div className="flex items-center justify-end gap-2 sm:justify-start">
+            <Label
+              htmlFor="call-join-alert-sound"
+              className="cursor-pointer text-xs text-foreground/90"
+            >
+              {t('callJoinAlertSound')}
+            </Label>
+            <Switch
+              id="call-join-alert-sound"
+              checked={joinAlertSoundEnabled}
+              onCheckedChange={onJoinAlertSoundChange}
+              disabled={disabled}
+              title={
+                joinAlertSoundEnabled
+                  ? t('callJoinAlertSoundOn')
+                  : t('callJoinAlertSoundOff')
+              }
+              aria-label={t('callJoinAlertSound')}
+            />
+          </div>
+        )}
         <div
           className="flex shrink-0 items-center justify-end gap-1.5"
           role="group"
