@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -18,6 +19,8 @@ type HumanChatPanelTabsProps = {
   mentionTabBadgeCapped?: boolean;
   /** Notification centre URL for the gear at the end of the tab row (omit to hide). */
   notificationCentreHref?: string | null;
+  /** e.g. voice / video / search (space call controls); same row as tabs, before settings. */
+  tabRowEnd?: ReactNode;
 };
 
 export function HumanChatPanelTabs({
@@ -28,6 +31,7 @@ export function HumanChatPanelTabs({
   mentionTabBadgeCount = 0,
   mentionTabBadgeCapped = false,
   notificationCentreHref,
+  tabRowEnd,
 }: HumanChatPanelTabsProps) {
   const t = useTranslations('HumanChatPanel');
 
@@ -140,6 +144,11 @@ export function HumanChatPanelTabs({
           </button>
         ))}
       </div>
+      {tabRowEnd ? (
+        <div className="flex shrink-0 items-center gap-1.5 pl-1">
+          {tabRowEnd}
+        </div>
+      ) : null}
       {notificationCentreHref ? (
         <Link
           href={notificationCentreHref}

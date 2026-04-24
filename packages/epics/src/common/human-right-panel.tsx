@@ -39,6 +39,7 @@ import {
   isMatrixRateLimitedError,
   getMessageReplaceTargetEventId,
   isRedactedRoomMessageEvent,
+  useSpaceGroupCall,
   type MessageReaction,
   type Person,
 } from '@hypha-platform/core/client';
@@ -56,6 +57,8 @@ import {
   HumanChatPanelMembers,
   HumanChatPanelMentionBell,
   HumanChatPanelMentionTab,
+  HumanChatPanelCallToolbar,
+  HumanChatPanelCallBanner,
   type ChatDraftAttachment,
   type ChatMentionCandidate,
   type ChatPanelAttachmentMedia,
@@ -501,6 +504,61 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   roomIdRef.current = roomId;
   const matrixClientRef = useRef(client);
   matrixClientRef.current = client;
+
+  const {
+    callState: spaceCallState,
+    errorCode: spaceCallError,
+    callKind: spaceCallKind,
+    enterAudio: enterSpaceCallAudio,
+    enterVideo: enterSpaceCallVideo,
+    leave: leaveSpaceCall,
+    setMicrophoneMuted: setSpaceCallMicMuted,
+    setCameraMuted: setSpaceCallCameraMuted,
+    participantSummary: spaceCallParticipantSummary,
+    isMicrophoneMuted: spaceCallMicMuted,
+    isLocalVideoMuted: spaceCallVideoMuted,
+  } = useSpaceGroupCall(mode === 'space' ? roomId : null);
+
+  const callUiEnabled = useMemo(
+    () =>
+      mode === 'space' &&
+      Boolean(roomId) &&
+      isMatrixAvailable &&
+      isMatrixAuthenticated,
+    [mode, roomId, isMatrixAvailable, isMatrixAuthenticated],
+  );
+
+  const inSpaceCall =
+    spaceCallState === 'connected' ||
+    spaceCallState === 'connecting' ||
+    spaceCallState === 'awaiting_media' ||
+    spaceCallState === 'initializing';
+
+  const callToolbarInCall = spaceCallState === 'connected';
+
+  const handleCallAudio = useCallback(() => {
+    void enterSpaceCallAudio();
+  }, [enterSpaceCallAudio]);
+
+  const handleCallVideo = useCallback(() => {
+    void enterSpaceCallVideo();
+  }, [enterSpaceCallVideo]);
+
+  const handleCallSearch = useCallback(() => {
+    // Phase 2 stub — search in chat (coming soon; button disabled in toolbar)
+  }, []);
+
+  const handleCallLeave = useCallback(() => {
+    void leaveSpaceCall();
+  }, [leaveSpaceCall]);
+
+  const handleCallToggleMic = useCallback(() => {
+    void setSpaceCallMicMuted(!spaceCallMicMuted);
+  }, [setSpaceCallMicMuted, spaceCallMicMuted]);
+
+  const handleCallToggleCamera = useCallback(() => {
+    void setSpaceCallCameraMuted(!spaceCallVideoMuted);
+  }, [setSpaceCallCameraMuted, spaceCallVideoMuted]);
 
   /** Bumps when Matrix room membership changes so `@` mention candidates + button state refresh without reload. */
   const [mentionMembershipEpoch, setMentionMembershipEpoch] = useState(0);
@@ -1626,7 +1684,35 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           mentionTabBadgeCount={unreadChatState.unreadMentionCount}
           mentionTabBadgeCapped={unreadChatState.mentionCountIsCapped}
           notificationCentreHref={notificationCentreHref}
+          tabRowEnd={
+            callUiEnabled ? (
+              <HumanChatPanelCallToolbar
+                callState={spaceCallState}
+                disabled={!callUiEnabled}
+                inCall={callToolbarInCall}
+                onAudio={handleCallAudio}
+                onVideo={handleCallVideo}
+                onSearch={handleCallSearch}
+              />
+            ) : null
+          }
         />
+        {callUiEnabled &&
+          (inSpaceCall ||
+            spaceCallState === 'error' ||
+            spaceCallState === 'disconnecting') && (
+            <HumanChatPanelCallBanner
+              callState={spaceCallState}
+              callKind={spaceCallKind}
+              errorCode={spaceCallError}
+              isMicrophoneMuted={spaceCallMicMuted}
+              isLocalVideoMuted={spaceCallVideoMuted}
+              participantCount={spaceCallParticipantSummary.count}
+              onLeave={handleCallLeave}
+              onToggleMic={handleCallToggleMic}
+              onToggleCamera={handleCallToggleCamera}
+            />
+          )}
       </SidebarHeader>
       {/* overflow-hidden: single scroll inside tab bodies (messages / members / mentions); avoids stacked full-height scrollbars */}
       <SidebarContent className="flex min-h-0 flex-col overflow-hidden bg-background-2">

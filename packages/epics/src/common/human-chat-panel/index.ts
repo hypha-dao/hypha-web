@@ -1,3 +1,5 @@
+export { HumanChatPanelCallToolbar } from './human-chat-panel-call-toolbar';
+export { HumanChatPanelCallBanner } from './human-chat-panel-call-banner';
 export { HumanChatPanelHeader } from './human-chat-panel-header';
 export { HumanChatPanelMessageBubble } from './human-chat-panel-message-bubble';
 export {

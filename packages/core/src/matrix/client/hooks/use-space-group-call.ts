@@ -40,6 +40,8 @@ export function useSpaceGroupCall(roomId: string | null) {
   const [isScreensharing, setIsScreensharing] = useState(false);
   const [localPreviewStream, setLocalPreviewStream] =
     useState<MediaStream | null>(null);
+  const [isMicrophoneMuted, setIsMicrophoneMuted] = useState(false);
+  const [isLocalVideoMuted, setIsLocalVideoMuted] = useState(true);
 
   const groupCallRef = useRef<MatrixSdk.GroupCall | null>(null);
   const isJoiningRef = useRef(false);
@@ -64,6 +66,8 @@ export function useSpaceGroupCall(roomId: string | null) {
     }
     isJoiningRef.current = false;
     setLocalPreviewStream(null);
+    setIsMicrophoneMuted(false);
+    setIsLocalVideoMuted(true);
   }, []);
 
   const refreshLocalPreview = useCallback(() => {
@@ -121,6 +125,13 @@ export function useSpaceGroupCall(roomId: string | null) {
       gc.on(GroupCallEvent.ParticipantsChanged, () => {
         updateParticipantCount();
       });
+      gc.on(
+        GroupCallEvent.LocalMuteStateChanged,
+        (audioMuted: boolean, videoMuted: boolean) => {
+          setIsMicrophoneMuted(audioMuted);
+          setIsLocalVideoMuted(videoMuted);
+        },
+      );
     },
     [refreshLocalPreview, runCleanup, updateParticipantCount],
   );
@@ -222,6 +233,8 @@ export function useSpaceGroupCall(roomId: string | null) {
       setCallState('connected');
       refreshLocalPreview();
       updateParticipantCount();
+      setIsMicrophoneMuted(gc.isMicrophoneMuted());
+      setIsLocalVideoMuted(gc.isLocalVideoMuted());
       isJoiningRef.current = false;
     },
     [
@@ -264,12 +277,14 @@ export function useSpaceGroupCall(roomId: string | null) {
     const gc = groupCallRef.current;
     if (!gc) return;
     await gc.setMicrophoneMuted(muted);
+    setIsMicrophoneMuted(gc.isMicrophoneMuted());
   }, []);
 
   const setCameraMuted = useCallback(async (muted: boolean) => {
     const gc = groupCallRef.current;
     if (!gc) return;
     await gc.setLocalVideoMuted(muted);
+    setIsLocalVideoMuted(gc.isLocalVideoMuted());
   }, []);
 
   const setScreensharingEnabled = useCallback(async (enabled: boolean) => {
@@ -277,6 +292,19 @@ export function useSpaceGroupCall(roomId: string | null) {
     if (!gc) return;
     await gc.setScreensharingEnabled(enabled);
   }, []);
+
+  useEffect(() => {
+    if (!roomId && groupCallRef.current) {
+      setCallState('disconnecting');
+      runCleanup();
+      setCallState('idle');
+      setErrorCode(null);
+      setCallKind(null);
+      setIsScreensharing(false);
+      setThreadContext(null);
+      setParticipantCount(0);
+    }
+  }, [roomId, runCleanup]);
 
   useEffect(() => {
     return () => {
@@ -298,5 +326,7 @@ export function useSpaceGroupCall(roomId: string | null) {
     isScreensharing,
     localPreviewStream,
     participantSummary: { count: participantCount },
+    isMicrophoneMuted,
+    isLocalVideoMuted,
   };
 }

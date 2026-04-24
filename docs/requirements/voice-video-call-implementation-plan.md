@@ -52,6 +52,8 @@
 | 2.3 | Wire **`human-right-panel.tsx`** (`mode === 'space'`) with `roomId` + hook. | **No** video stage required yet for **audio-only** path. |
 | 2.4 | **i18n** keys for call strings (all locales). | No hard-coded English in UI components. |
 
+**Status (implemented):** `HumanChatPanelTabs` accepts **`tabRowEnd`** (toolbar). `HumanChatPanelCallToolbar` + `HumanChatPanelCallBanner` in `packages/epics/.../human-chat-panel/`; **`human-right-panel.tsx`** uses **`useSpaceGroupCall(mode === 'space' ? roomId : null)`**; i18n `HumanChatPanel.call*` in **en, de, es, fr, pt**. Coherence mode has no call UI.
+
 ### Phase 3 — Video + stage (top-tier in-call layout)
 
 | Step | Action | Done when |
