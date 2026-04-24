@@ -155,7 +155,9 @@ export function DhoSpaceWorkspace({
         <NavLinkList items={items} activeName={activeName} />
       </nav>
 
-      <div className="min-w-0 flex-1 py-0">{children}</div>
+      <div className="min-w-0 flex-1 py-0" data-testid="dho-workspace-main">
+        {children}
+      </div>
 
       <div
         className="pointer-events-none fixed inset-x-0 bottom-0 z-40 p-2 md:hidden"
