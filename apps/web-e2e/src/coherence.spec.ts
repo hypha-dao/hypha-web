@@ -29,42 +29,42 @@ test.describe('Coherence Screen', () => {
   // Navigation
   // ---------------------------------------------------------------------------
   test.describe('Navigation', () => {
-    test('coherence tab appears in DHO navigation bar', async ({ page }) => {
+    test('coherence link appears in DHO workspace nav', async ({ page }) => {
       const coherencePage = new CoherencePage(page, SPACE_SLUG);
       await coherencePage.openDhoPage();
 
-      // TabsTrigger with asChild renders as role="tab" on the <a> element
-      await expect(coherencePage.coherenceTab).toBeVisible();
+      await expect(coherencePage.coherenceNavLink).toBeVisible();
     });
 
-    test('clicking coherence tab navigates to coherence URL', async ({
+    test('clicking coherence link navigates to coherence URL', async ({
       page,
     }) => {
       const coherencePage = new CoherencePage(page, SPACE_SLUG);
       await coherencePage.openDhoPage();
 
-      await coherencePage.coherenceTab.click();
+      await coherencePage.coherenceNavLink.click();
       await expect(page).toHaveURL(new RegExp(COHERENCE_PATH));
     });
 
-    test('coherence tab has correct href', async ({ page }) => {
+    test('coherence link has correct href', async ({ page }) => {
       const coherencePage = new CoherencePage(page, SPACE_SLUG);
       await coherencePage.openDhoPage();
 
-      await expect(coherencePage.coherenceTab).toHaveAttribute(
+      await expect(coherencePage.coherenceNavLink).toHaveAttribute(
         'href',
         COHERENCE_PATH,
       );
     });
 
-    test('coherence tab is active when on coherence page', async ({ page }) => {
+    test('coherence link is current when on coherence page', async ({
+      page,
+    }) => {
       const coherencePage = new CoherencePage(page, SPACE_SLUG);
       await coherencePage.openCoherencePage();
 
-      // With Radix TabsTrigger asChild, data-state="active" is set on the <a> element itself
-      await expect(coherencePage.coherenceTab).toHaveAttribute(
-        'data-state',
-        'active',
+      await expect(coherencePage.coherenceNavLink).toHaveAttribute(
+        'aria-current',
+        'page',
       );
     });
   });
