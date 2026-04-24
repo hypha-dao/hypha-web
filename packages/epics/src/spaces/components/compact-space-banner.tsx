@@ -287,18 +287,10 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
         {/* Hairline + metadata: one flex item so gap-5 does not double-space above the strip */}
         {footerLeading || showSpaceStats || footerTrailing ? (
           <div className="flex flex-col">
-            {footerLeading && !showSpaceStats && !footerTrailing ? (
-              <hr
-                className="m-0 h-px w-full shrink-0 border-0 bg-white/12"
-                role="separator"
-                aria-orientation="horizontal"
-              />
-            ) : (
-              <div
-                className="h-px w-full shrink-0 bg-white/12"
-                role="presentation"
-              />
-            )}
+            <div
+              className="h-px w-full shrink-0 bg-white/12"
+              role="presentation"
+            />
             <div className="flex flex-col gap-3 gap-x-5 py-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-1 text-white/88 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]">
                 {footerLeading ? (
