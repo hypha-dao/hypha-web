@@ -1884,6 +1884,8 @@
     "callJoinCallAlertsUnmuted": "Alertas de chamada: ligados (sinal sonoro).",
     "callJoinCallAlertsMuted": "Alertas de chamada: desligados",
     "callJoinCallAlertsAria": "Alertas de chamada: sinal e notificação opcional",
+    "callJoinCallAlertsMuteAction": "Silenciar alertas de chamada (sem sinal nem notificação para novas chamadas)",
+    "callJoinCallAlertsUnmuteAction": "Reativar alertas de chamada",
     "callJoinWithAudio": "Entrar na chamada do espaço com o microfone",
     "callJoinWithVideo": "Entrar na chamada do espaço com câmara e microfone",
     "callJoinWithAudioShort": "Entrar (áudio)",

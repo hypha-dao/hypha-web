@@ -1885,6 +1885,8 @@
     "callJoinCallAlertsUnmuted": "Anruf-Hinweise: ein (Signalton bei neuer Sitzung).",
     "callJoinCallAlertsMuted": "Anruf-Hinweise: aus",
     "callJoinCallAlertsAria": "Anruf-Hinweise: Signalton und optionaler Hinweis bei laufendem Anruf",
+    "callJoinCallAlertsMuteAction": "Anruf-Hinweise stummschalten (kein Signalton bei neuen Anrufen)",
+    "callJoinCallAlertsUnmuteAction": "Anruf-Hinweise wieder einschalten",
     "callJoinWithAudio": "Am Space-Sprachanruf teilnehmen (Mikrofon)",
     "callJoinWithVideo": "Am Space-Videoanruf teilnehmen (Kamera und Mikrofon)",
     "callJoinWithAudioShort": "Audio beitreten",

@@ -1884,6 +1884,8 @@
     "callJoinCallAlertsUnmuted": "Alertes d’appel : actives (son quand l’appel démarre).",
     "callJoinCallAlertsMuted": "Alertes d’appel : désactivées",
     "callJoinCallAlertsAria": "Alertes d’appel : son et notification optionnelle quand un appel est proposé",
+    "callJoinCallAlertsMuteAction": "Couper le son des alertes d’appel (pas de son ni de notification pour les nouveaux appels)",
+    "callJoinCallAlertsUnmuteAction": "Réactiver les alertes d’appel",
     "callJoinWithAudio": "Rejoindre l’appel d’espace (microphone)",
     "callJoinWithVideo": "Rejoindre l’appel d’espace (caméra et micro)",
     "callJoinWithAudioShort": "Rejoindre (audio)",

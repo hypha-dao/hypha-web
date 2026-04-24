@@ -1884,6 +1884,8 @@
     "callJoinCallAlertsUnmuted": "Avisos de llamada: activos (timbre al empezar).",
     "callJoinCallAlertsMuted": "Avisos de llamada: desactivados",
     "callJoinCallAlertsAria": "Avisos de llamada: timbre y notificación opcional al haber una llamada",
+    "callJoinCallAlertsMuteAction": "Silenciar avisos de llamada (sin timbre ni notificación para nuevas llamadas)",
+    "callJoinCallAlertsUnmuteAction": "Activar avisos de llamada",
     "callJoinWithAudio": "Unirse a la llamada del espacio con el micrófono",
     "callJoinWithVideo": "Unirse a la llamada del espacio con cámara y micrófono",
     "callJoinWithAudioShort": "Unirse (audio)",

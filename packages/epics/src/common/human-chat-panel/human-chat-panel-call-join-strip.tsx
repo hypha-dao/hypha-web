@@ -1,10 +1,8 @@
 'use client';
 
-import { useId } from 'react';
 import { useTranslations } from 'next-intl';
-import { Label, Switch } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
-import { Phone, Video } from 'lucide-react';
+import { Phone, Video, Volume2, VolumeX } from 'lucide-react';
 
 type HumanChatPanelCallJoinStripProps = {
   deviceCount: number;
@@ -33,8 +31,8 @@ export function HumanChatPanelCallJoinStrip({
   onCallAlertsUnmutedChange,
 }: HumanChatPanelCallJoinStripProps) {
   const t = useTranslations('HumanChatPanel');
-  const alertsId = useId();
   const statusLine = t('callJoinStripLine', { count: deviceCount });
+  const alertsMuted = !callAlertsUnmuted;
 
   return (
     <div
@@ -51,27 +49,44 @@ export function HumanChatPanelCallJoinStrip({
         </p>
 
         <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-2.5">
-          <div className="flex min-w-0 max-w-[min(100%,9rem)] items-center gap-1.5 sm:max-w-[12.5rem] sm:gap-2">
-            <Label
-              htmlFor={alertsId}
-              className="line-clamp-2 max-w-[7rem] cursor-pointer text-[10px] font-medium leading-tight text-muted-foreground sm:line-clamp-1 sm:max-w-none sm:shrink-0 sm:whitespace-nowrap sm:uppercase sm:tracking-wide"
-            >
-              {t('callJoinCallAlerts')}
-            </Label>
-            <Switch
-              id={alertsId}
-              className="shrink-0"
-              checked={callAlertsUnmuted}
-              onCheckedChange={onCallAlertsUnmutedChange}
-              disabled={disabled}
-              title={
-                callAlertsUnmuted
-                  ? t('callJoinCallAlertsUnmuted')
-                  : t('callJoinCallAlertsMuted')
-              }
-              aria-label={t('callJoinCallAlertsAria')}
-            />
-          </div>
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => onCallAlertsUnmutedChange(!callAlertsUnmuted)}
+            className={cn(
+              'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring',
+              'text-white',
+              alertsMuted
+                ? 'border-destructive/50 bg-destructive/25 hover:bg-destructive/35'
+                : 'border-border/60 bg-zinc-900/85 hover:bg-zinc-800/90 dark:border-border/50 dark:bg-zinc-950/90 dark:hover:bg-zinc-900/95',
+              disabled && 'cursor-not-allowed opacity-50',
+            )}
+            title={
+              callAlertsUnmuted
+                ? t('callJoinCallAlertsUnmuted')
+                : t('callJoinCallAlertsMuted')
+            }
+            aria-label={
+              callAlertsUnmuted
+                ? t('callJoinCallAlertsMuteAction')
+                : t('callJoinCallAlertsUnmuteAction')
+            }
+            aria-pressed={alertsMuted}
+          >
+            {alertsMuted ? (
+              <VolumeX
+                className="h-4 w-4 shrink-0"
+                strokeWidth={2.25}
+                aria-hidden
+              />
+            ) : (
+              <Volume2
+                className="h-4 w-4 shrink-0"
+                strokeWidth={2.25}
+                aria-hidden
+              />
+            )}
+          </button>
 
           <div
             className="flex shrink-0 items-center justify-end gap-1.5"
