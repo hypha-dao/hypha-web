@@ -64,7 +64,7 @@ From the public API (see [MatrixClient](https://matrix-org.github.io/matrix-js-s
 
 **There is no `Thread` parameter** on `GroupCall`: **group calls are not modeled as sub-room thread resources** in this API.
 
-**UI mapping:** A full **SDK capability → layout/control** matrix (mic, camera, **screen share**, feeds, optional PTT/stats) is in the implementation spec **§2.4 and §3.5** of [voice-video-call-implementation-spec.md](./voice-video-call-implementation-spec.md).
+**UI mapping:** A full **SDK capability → layout/control** matrix (mic, camera, **screen share**, feeds, optional PTT/stats) is in the implementation spec **§2.4, §3.4.4, and §3.5** of [voice-video-call-implementation-spec.md](./voice-video-call-implementation-spec.md) — the latter also defines **in-app full view** (enlarged stage in a **modal**; not Matrix-specific).
 
 ### 2.4 Threads vs VoIP (Hypha mapping impact)
 

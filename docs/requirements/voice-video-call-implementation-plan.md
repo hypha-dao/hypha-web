@@ -61,6 +61,9 @@
 | 3.1  | **`human-chat-panel-call-stage.tsx`**: render **`userMediaFeeds`** / participant tiles; **local PiP**; **avatar fallback** for audio-only tiles. | Two-user video call visible; PiP does not cover tabs. |
 | 3.2  | **Camera mute** syncs UI + SDK **`setLocalVideoMuted`**.                                                                                         | Toggling does not drop call.                          |
 | 3.3  | **Responsive** behavior: narrow panel stacks stage + messages; no horizontal scroll for tiles.                                                   | Design review on sm/md breakpoints.                   |
+| 3.4  | **Full view (modal)** — **Expand** control on the call stage opens a **dialog**-based enlarged layout per [implementation spec §3.4.4](./voice-video-call-implementation-spec.md); single media-attachment strategy; i18n `callFullView` / `callFullViewClose`. | Modal closes with Esc / backdrop; **call stays connected**; a11y focus trap per spec. |
+
+**Status (3.4):** **Specified in spec** (§3.4.4, **IMP-8**). Implementation is a **follow-up** slice; track in the same PR or a child ticket. **Steps 3.1–3.3** (without 3.4) are **shipped** in the baseline branch.
 
 ### Phase 4 — Screen share + advanced controls
 
@@ -91,6 +94,8 @@
 | 6.3  | **Recording storage** — Align **artifact** upload and **metadata** rows with [space media storage reference](#document-control) (bucket paths, signed URLs, retention).                                                                                                                                   | Recording playable from Space UI; access matches Space permissions.                     |
 | 6.4  | **UI** — Space **Call history** or **Memory** subsection: list recordings + transcripts with **speakers**, **timestamps**, **language**.                                                                                                                                                                  | Product sign-off on IA.                                                                 |
 
+**Status (implemented in codebase):** **6.1** — [ADR 0001](../adr/0001-voice-video-recording-pipeline.md) (external SFU / egress as primary; client capture noted as non-default). **6.2–6.3** — `space_call_transcripts` and `space_call_recordings` tables (migration `0047`), `ingestSpaceCallArtifacts` (server) + `POST /api/v1/spaces/{slug}/call-artifacts` (secret `HYPHA_CALL_ARTIFACT_INGEST_SECRET`). **6.4** — Coherence **Space memory** merges `call_artifacts` from org-memory (page 1) with the same access gate as other memory; transcript tiles show excerpt; recording uses `media_uri` when https. **Consent** — i18n note in Coherence; full legal flow is product follow-up. **6.1 correlation** — `useSpaceGroupCall` exposes `callSessionId` (UUID per join) for workers.
+
 **Phases 1–3** deliver **in-app calling**; **Phase 6** may run **in parallel** after 6.1 once ADR is fixed.
 
 ---
@@ -120,6 +125,7 @@ These criteria **supplement** §7 of the [implementation spec](./voice-video-cal
 - [ ] **Internationalization**: all strings via **`HumanChatPanel.*`** (or agreed namespace).
 - [ ] **Accessibility**: keyboard operable controls for critical actions; visible focus; screen reader labels for call state changes.
 - [ ] **Resilience**: tab background / focus loss does not leave orphan streams without recovery path.
+- [ ] (When [spec §3.4.4](./voice-video-call-implementation-spec.md) is implemented) **Full view**: expand icon opens a **modal** enlarged stage; **Esc** / close returns to the panel **without** ending the call; **focus** management matches the spec.
 
 ### 3.4 Engineering
 

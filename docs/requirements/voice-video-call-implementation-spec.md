@@ -210,6 +210,35 @@ type HumanChatPanelCallToolbarProps = {
 
 **IMP:** Panel unmount or leaving Space **must** `leave()` and release `MediaStream` tracks.
 
+#### 3.4.4 Full view (enlarged call stage — **modal**)
+
+**Problem:** The in-panel **call stage** is **narrow** (right sidebar). Users need a **larger** view of **shared screen** and **camera** tiles for review, demos, and legibility without changing the underlying `GroupCall` / WebRTC model.
+
+**Normative product behavior**
+
+| Topic | Decision |
+|-------|----------|
+| **Trigger** | A **tertiary** control: **“Full view”** (icon: **expand / maximize** — e.g. Lucide `Maximize2` or equivalent; **not** the browser **Fullscreen API** *unless* product explicitly requests it later). The control is visible whenever **§3.4.2** / **§3.5** renders a **visible call stage** (`callState === 'connected'` and stage is not `null` — includes **screen share**-only and **video** paths). **Disabled** or **hidden** when there is **no** stage to enlarge (e.g. **audio-only** with no share and no video tiles as per current collapse rules). |
+| **Presentation** | Opening **Full view** SHALL render a **modal dialog** (Radix `Dialog` or shadcn `Dialog`) **on top of the app chrome** (viewport overlay), **not** only the sidebar. **Backdrop** semi-opaque; **click on backdrop** closes the modal (same as **Close**). This is **app-level modal** UX — it does *not* replace the Matrix `GroupCall` or duplicate feeds in a second React tree: **reuse the same** `<video>` / `CallFeed` **streams** the stage already uses (or **lift** a single “stage content” sub-tree) so **media** is not double-attached. |
+| **Content** | The modal **body** replicates **or composes the same** layout as the **in-panel** stage: **screen-share** tiles (when present) remain **primary**; **user media** grid + **local PiP** follow **§3.5** ordering. **No** new Matrix APIs — pure UI. |
+| **Size** | Modal **max** dimensions: e.g. **`max-w-[min(96vw,80rem)]`**, **`max-h-[min(90dvh,900px)]`** (tune in implementation); **scroll** inside the modal if tile count or aspect ratio exceeds the box — **no** loss of the leave path (see a11y). |
+| **Close** | **Primary** dismiss: **X** (or “Close full view”) button, **Esc** key, and **backdrop** click. Closing **only** leaves the **modal**; the **call** stays **connected**; user returns to the **sidebar** stage. |
+| **State** | **Local** React state: `isCallFullViewOpen: boolean`. **Initial:** `false` on connect. If the user **leaves the call** or the **panel unmounts** while the modal is open, close the modal in the same cleanup path that runs **`leave()`** (defensive). **Tab** switch (**Members** / **Pins**): keep modal open **if and only if** the stage would still be shown under current rules; **if** the stage is hidden (e.g. no video path on a tab with no stage), **close** the modal or show an empty state — **prefer** closing the modal to avoid a floating empty dialog (document the chosen rule in the implementation PR). |
+
+**Accessibility (WCAG-aligned, normative minimum)**
+
+- **`role="dialog"`**, `aria-modal="true"`; **`aria-labelledby`** pointing to the dialog title (e.g. “Call — full view” / i18n).
+- **Focus trap** inside the modal while open: **first** focus to the **close** control or a **container**; **Tab** / **Shift+Tab** do not escape until closed; **Esc** closes and **returns** focus to the **element** that opened the dialog (`aria-haspopup` / `aria-expanded` on the trigger is recommended).
+- **`aria-hidden`** (or inert) on the **page behind** the dialog per the design-system pattern used elsewhere.
+- **Reduced motion:** no gratuitous open/close **animation** on the modal, or use **`prefers-reduced-motion`** to shorten/disable.
+
+**Matrix / WebRTC (engineer contract)**
+
+- **No** change to `GroupCall.enter` / `leave` / feed subscriptions for this feature.
+- **Video elements:** Re-parenting the **same** DOM for `<video>` can disconnect playback in some browsers; **reference implementation** either (a) **portal** the existing stage **node** into the modal while open, or (b) use **a single** stage renderer with **layout props** (variant `panel` \| `modal`) so **one** set of `srcObject` attachments exists. The implementation PR **must** document the chosen approach and **verify** no **double** audio (duplicate `<audio>` or unmuted **parallel** `HTMLMediaElement`).
+
+**i18n:** see **§3.7** (`callFullView`, `callFullViewClose`).
+
 ### 3.5 In-call layout: all `GroupCall` media types (video, screen share, …)
 
 The **call stage** (`human-chat-panel-call-stage.tsx`) SHALL render feeds from **`userMediaFeeds`** and **`screenshareFeeds`** (and **`getUserMediaFeed` / `getScreenshareFeed`** as needed), not only “camera video”:
@@ -259,6 +288,8 @@ Until Signal/thread routing is wired end-to-end:
 | `callErrorScreenshare` | Display capture denied / failed |
 | `callErrorGeneric` | Fallback |
 | `callSearchComingSoon` | Search stub tooltip |
+| `callFullView` | **Full view** / expand button (`aria-label`) and optional dialog **title** |
+| `callFullViewClose` | Close / dismiss full-view modal (button) |
 
 Follow [i18n-translate skill](../../.agents/skills/i18n-translate/SKILL.md) for locale parity.
 
@@ -285,6 +316,7 @@ Follow [i18n-translate skill](../../.agents/skills/i18n-translate/SKILL.md) for 
 | **IMP-5** | All user-visible errors map to **`HumanChatPanel.*`** strings (no raw SDK errors in production UI; log details to console in dev). |
 | **IMP-6** | In-call UI SHALL follow **§3.1–§3.4**: combined **tabs + call/search** row, **banner** below, **video stage** above messages when `callKind === 'video'` and connected. |
 | **IMP-7** | When screen share is in scope for the release, stage SHALL render **`screenshareFeeds`** per **§3.5**; hook SHALL expose **`setScreensharingEnabled`** / **`isScreensharing`**. |
+| **IMP-8** | **Full view** (optional but specified): When implemented, in-call **modal enlarged stage** SHALL follow **§3.4.4** (dialog overlay, single media attachment strategy, a11y, i18n). **Browser native Fullscreen** (`Element.requestFullscreen`) is **out of scope** for **IMP-8** unless a future ticket promotes it. |
 
 ---
 
@@ -304,6 +336,7 @@ Follow [i18n-translate skill](../../.agents/skills/i18n-translate/SKILL.md) for 
 - [ ] User can **start** a call, see **connected** state, **mute** mic, **toggle** camera (if video path), and **leave** without reload.
 - [ ] **Layout** matches **§3.1**: tabs + phone/video/search on one row; **banner** under it; **video stage** (when applicable) above messages in Chat tab.
 - [ ] **Stage** can show **camera tiles** and, when implemented, **screen-share** tiles from **`userMediaFeeds` / `screenshareFeeds`** (**§3.5**).
+- [ ] (When **§3.4.4** is in scope) User can open **Full view** from the call stage, see the **enlarged** share/camera layout in a **modal**, and **close** it without **leaving** the call; **focus** and **Esc** behave per **§3.4.4**.
 - [ ] Second participant in the **same Space** can **join** the same session (same `roomId`).
 - [ ] No duplicate `matrix-js-sdk` bundles; no VoIP code on server.
 - [ ] Copy reflects **space-wide** call semantics.
@@ -319,7 +352,7 @@ Follow [i18n-translate skill](../../.agents/skills/i18n-translate/SKILL.md) for 
 | Export | `packages/core/src/matrix/client/index.ts` (or barrel) — public API |
 | Add | `packages/epics/src/common/human-chat-panel/human-chat-panel-call-toolbar.tsx` |
 | Add | `packages/epics/src/common/human-chat-panel/human-chat-panel-call-banner.tsx` |
-| Add | `packages/epics/src/common/human-chat-panel/human-chat-panel-call-stage.tsx` (video grid + local PiP) |
+| Add / Edit | `packages/epics/src/common/human-chat-panel/human-chat-panel-call-stage.tsx` (video grid + local PiP); optional **§3.4.4** — full-view trigger + `Dialog` wrapper (or shared stage sub-component) |
 | Edit | `packages/epics/src/common/human-right-panel.tsx` — wire toolbar + banner |
 | Edit | `packages/epics/src/common/human-chat-panel/index.ts` — re-exports |
 | Edit | `packages/i18n/src/messages/*.json` — keys under `HumanChatPanel` |
