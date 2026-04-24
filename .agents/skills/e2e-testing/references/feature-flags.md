@@ -8,9 +8,9 @@ Feature flags are **async helpers** in `@hypha-platform/feature-flags` (e.g. `ge
 
 Each `get*` function:
 1. If **`FLAGS_SECRET`** is set: use **Vercel toolbar override** for that flag key when present (`enable-human-chat`, `enable-coherence`, …).
-2. Else: check **Hypha cookie** (e.g. `HYPHA_ENABLE_HUMAN_CHAT`)
-3. Else: **`NEXT_PUBLIC_*` env var**
-4. Else: default **`false`**
+2. Else: check **Hypha cookie** (e.g. `HYPHA_ENABLE_HUMAN_CHAT` — `false` opts out; unset uses default)
+3. Else: **`NEXT_PUBLIC_*` env var** (e.g. `NEXT_PUBLIC_ENABLE_HUMAN_CHAT=false` to opt out)
+4. Else: default — **Human Chat is on** unless opted out; other flags may still default to `false` (see `flagDefinitionsForDiscovery` and each `get*` implementation)
 
 Source: `packages/feature-flags/src/index.ts`, `vercel-toolbar-overrides.ts`
 

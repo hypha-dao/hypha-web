@@ -14,9 +14,10 @@ import {
 } from './vercel-toolbar-overrides';
 
 /**
- * **Guideline:** product feature flags (AI / Human / Coherence / Space Memory) default **off**
- * until enabled via cookie, `NEXT_PUBLIC_*=true`, or Vercel Flags Toolbar. Human chat kill
- * switch: `HYPHA_DISABLE_HUMAN_CHAT=true` / `NEXT_PUBLIC_DISABLE_HUMAN_CHAT=true`.
+ * **Guideline:** AI / Coherence / Space Memory default **off** until enabled via cookie,
+ * `NEXT_PUBLIC_*=true`, or Vercel Flags Toolbar. Human Chat defaults **on** (see
+ * `getEnableHumanChat`). Human chat kill switch: `HYPHA_DISABLE_HUMAN_CHAT=true` /
+ * `NEXT_PUBLIC_DISABLE_HUMAN_CHAT=true`.
  */
 
 /**
@@ -74,9 +75,9 @@ export const flagDefinitionsForDiscovery = {
    */
   enableHumanChat: {
     key: 'enable-human-chat',
-    defaultValue: false,
+    defaultValue: true,
     description:
-      'Human Chat panel. Opt in: HYPHA_ENABLE_HUMAN_CHAT cookie or NEXT_PUBLIC_ENABLE_HUMAN_CHAT=true. Kill-switch: HYPHA_DISABLE_HUMAN_CHAT cookie or NEXT_PUBLIC_DISABLE_HUMAN_CHAT=true',
+      'Human Chat right panel (on by default; set NEXT_PUBLIC_ENABLE_HUMAN_CHAT=false, HYPHA_ENABLE_HUMAN_CHAT=false, or Vercel toolbar to opt out). Kill switch: HYPHA_DISABLE_HUMAN_CHAT or NEXT_PUBLIC_DISABLE_HUMAN_CHAT=true',
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
@@ -137,7 +138,8 @@ export async function getEnableCoherence(): Promise<boolean> {
 }
 
 /**
- * Opt-in via `NEXT_PUBLIC_ENABLE_HUMAN_CHAT`, cookie, or toolbar. Kill switch still wins.
+ * Human Chat right panel: on by default unless opted out via cookie, `NEXT_PUBLIC_ENABLE_HUMAN_CHAT`,
+ * or Vercel toolbar. Kill switch (`HYPHA_DISABLE_HUMAN_CHAT` / `NEXT_PUBLIC_DISABLE_HUMAN_CHAT`) wins.
  */
 export async function getEnableHumanChat(): Promise<boolean> {
   const overrides = await getVercelToolbarFlagOverrides();
@@ -156,7 +158,10 @@ export async function getEnableHumanChat(): Promise<boolean> {
   if (legacyEnable === 'true') return true;
   if (legacyEnable === 'false') return false;
 
-  return process.env.NEXT_PUBLIC_ENABLE_HUMAN_CHAT === 'true';
+  if (process.env.NEXT_PUBLIC_ENABLE_HUMAN_CHAT === 'true') return true;
+  if (process.env.NEXT_PUBLIC_ENABLE_HUMAN_CHAT === 'false') return false;
+
+  return true;
 }
 
 export async function getEnableSpaceMemory(): Promise<boolean> {
