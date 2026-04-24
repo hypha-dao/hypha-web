@@ -22,7 +22,7 @@ export class LayoutPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.aiTrigger = page.getByRole('button', { name: /open hypha ai/i });
+    this.aiTrigger = page.getByRole('button', { name: /open ai chat/i });
     this.chatTrigger = page.getByRole('button', { name: /open chat panel/i });
     this.menuTop = page.locator('header').filter({ has: page.locator('a') });
     this.leftSidebar = page.locator('[data-side="left"] [data-sidebar-fixed]');

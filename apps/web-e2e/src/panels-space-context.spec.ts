@@ -12,29 +12,20 @@ import {
  * on non-space pages (network, my-spaces, profile).
  *
  * Uses two-layer cookie strategy (SSR `extraHTTPHeaders` + `addCookies`):
- * - `HYPHA_ENABLE_AI_CHAT` for the left (AI) panel
- * - `HYPHA_ENABLE_HUMAN_CHAT` for the right (Human) panel (defaults off in app)
+ * - `HYPHA_ENABLE_HUMAN_CHAT` for the right (Human) panel (defaults off in app). AI defaults on.
  */
 
 const CHAT_TRIGGER = /open chat panel/i;
-const AI_TRIGGER = /open hypha ai panel/i;
+const AI_TRIGGER = /open ai chat/i;
 
 test.describe('Panels visible on space pages', () => {
   test.use({
     extraHTTPHeaders: {
-      Cookie: `HYPHA_ENABLE_AI_CHAT=true; ${HYPHA_ENABLE_HUMAN_CHAT}=true`,
+      Cookie: `${HYPHA_ENABLE_HUMAN_CHAT}=true`,
     },
   });
 
   test.beforeEach(async ({ context }) => {
-    await context.addCookies([
-      {
-        name: 'HYPHA_ENABLE_AI_CHAT',
-        value: 'true',
-        domain: '127.0.0.1',
-        path: '/',
-      },
-    ]);
     await addEnableHumanChatCookie(context);
   });
 
@@ -56,23 +47,6 @@ test.describe('Panels visible on space pages', () => {
 });
 
 test.describe('Panels hidden on non-space pages', () => {
-  test.use({
-    extraHTTPHeaders: {
-      Cookie: 'HYPHA_ENABLE_AI_CHAT=true',
-    },
-  });
-
-  test.beforeEach(async ({ context }) => {
-    await context.addCookies([
-      {
-        name: 'HYPHA_ENABLE_AI_CHAT',
-        value: 'true',
-        domain: '127.0.0.1',
-        path: '/',
-      },
-    ]);
-  });
-
   test('should NOT show Human Chat trigger on /network', async ({ page }) => {
     await page.goto('/en/network');
     await page.waitForLoadState('domcontentloaded');
@@ -120,19 +94,11 @@ test.describe('Panels hidden on non-space pages', () => {
 test.describe('Panels appear after navigating into a space', () => {
   test.use({
     extraHTTPHeaders: {
-      Cookie: `HYPHA_ENABLE_AI_CHAT=true; ${HYPHA_ENABLE_HUMAN_CHAT}=true`,
+      Cookie: `${HYPHA_ENABLE_HUMAN_CHAT}=true`,
     },
   });
 
   test.beforeEach(async ({ context }) => {
-    await context.addCookies([
-      {
-        name: 'HYPHA_ENABLE_AI_CHAT',
-        value: 'true',
-        domain: '127.0.0.1',
-        path: '/',
-      },
-    ]);
     await addEnableHumanChatCookie(context);
   });
 

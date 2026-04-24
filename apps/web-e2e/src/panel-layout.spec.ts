@@ -10,19 +10,11 @@ test.describe('Panel Layout', () => {
 
   test.use({
     extraHTTPHeaders: {
-      Cookie: `HYPHA_ENABLE_AI_CHAT=true; ${HYPHA_ENABLE_HUMAN_CHAT}=true`,
+      Cookie: `${HYPHA_ENABLE_HUMAN_CHAT}=true`,
     },
   });
 
   test.beforeEach(async ({ page, context }) => {
-    await context.addCookies([
-      {
-        name: 'HYPHA_ENABLE_AI_CHAT',
-        value: 'true',
-        domain: '127.0.0.1',
-        path: '/',
-      },
-    ]);
     await addEnableHumanChatCookie(context);
     await page.setViewportSize({ width: 1440, height: 900 });
     layout = new LayoutPage(page);

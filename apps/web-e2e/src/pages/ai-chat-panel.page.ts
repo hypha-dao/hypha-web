@@ -1,11 +1,5 @@
-import { Page, Locator, BrowserContext } from '@playwright/test';
+import { Page, Locator } from '@playwright/test';
 import { BasePage } from './base.page';
-
-/**
- * Cookie name for the AI chat feature flag.
- * Canonical source: packages/cookie/src/constants.ts → HYPHA_ENABLE_AI_CHAT
- */
-const HYPHA_ENABLE_AI_CHAT = 'HYPHA_ENABLE_AI_CHAT';
 
 export class AiChatPanelPage extends BasePage {
   readonly openButton: Locator;
@@ -43,28 +37,6 @@ export class AiChatPanelPage extends BasePage {
     this.sidebarWrapper = page.locator(
       '[data-sidebar="wrapper"]:has([data-side="left"])',
     );
-  }
-
-  /**
-   * Enable the AI chat feature flag.
-   *
-   * The flag is read during SSR (cookies / NEXT_PUBLIC),
-   * so we need both:
-   * - extraHTTPHeaders with Cookie for the initial SSR request
-   * - browser cookies for any subsequent client-side navigations
-   *
-   * Call this BEFORE open() in test setup, or use the static helper.
-   */
-  static async enableAiChat(context: BrowserContext) {
-    // Browser cookie for client-side reads
-    await context.addCookies([
-      {
-        name: HYPHA_ENABLE_AI_CHAT,
-        value: 'true',
-        domain: '127.0.0.1',
-        path: '/',
-      },
-    ]);
   }
 
   async open() {

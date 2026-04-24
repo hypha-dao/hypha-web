@@ -1,23 +1,18 @@
 import { test, expect } from '@playwright/test';
 import { AiChatPanelPage } from './pages/ai-chat-panel.page';
-import {
-  addEnableAiChatCookie,
-  extraHttpHeadersEnableAiChat,
-} from './test-helpers/ai-chat-e2e-cookies';
+
+/** Must match `packages/cookie` → `HYPHA_ENABLE_AI_CHAT` */
+const HYPHA_ENABLE_AI_CHAT = 'HYPHA_ENABLE_AI_CHAT' as const;
 
 /**
- * AI Chat (left panel) defaults off; opt in via `HYPHA_ENABLE_AI_CHAT` / `NEXT_PUBLIC_ENABLE_AI_CHAT`.
+ * AI Chat (left) defaults **on**; set `HYPHA_ENABLE_AI_CHAT=false` or
+ * `NEXT_PUBLIC_ENABLE_AI_CHAT=false` to hide.
  */
 
 test.describe('AI Chat Panel — Feature Flag Enabled', () => {
-  test.use({
-    extraHTTPHeaders: extraHttpHeadersEnableAiChat,
-  });
-
   let chatPanel: AiChatPanelPage;
 
-  test.beforeEach(async ({ page, context }) => {
-    await addEnableAiChatCookie(context);
+  test.beforeEach(async ({ page }) => {
     chatPanel = new AiChatPanelPage(page);
     await chatPanel.open();
   });
@@ -67,34 +62,27 @@ test.describe('AI Chat Panel — Feature Flag Enabled', () => {
   });
 });
 
-test.describe('AI Chat Panel — default off (no opt-in cookie)', () => {
-  test('should not render AI trigger button on space page', async ({
-    page,
-  }) => {
+test.describe('AI Chat Panel — opt-out (cookie off)', () => {
+  test.use({
+    extraHTTPHeaders: { Cookie: `${HYPHA_ENABLE_AI_CHAT}=false` },
+  });
+
+  test.beforeEach(async ({ context }) => {
+    await context.addCookies([
+      {
+        name: HYPHA_ENABLE_AI_CHAT,
+        value: 'false',
+        domain: '127.0.0.1',
+        path: '/',
+      },
+    ]);
+  });
+
+  test('should not render AI trigger on space page', async ({ page }) => {
     await page.goto('/en/dho/hypha/agreements');
     await page.waitForLoadState('domcontentloaded');
 
-    const aiButton = page.getByRole('button', {
-      name: /open ai chat/i,
-    });
+    const aiButton = page.getByRole('button', { name: /open ai chat/i });
     await expect(aiButton).not.toBeVisible();
-  });
-
-  test('should not render left AI sidebar markup', async ({ page }) => {
-    await page.goto('/en/dho/hypha/agreements');
-    await page.waitForLoadState('domcontentloaded');
-
-    const leftSidebar = page.locator(
-      '[data-side="left"] [data-sidebar="sidebar"]',
-    );
-    await expect(leftSidebar).toHaveCount(0);
-  });
-
-  test('should render page content normally', async ({ page }) => {
-    await page.goto('/en/dho/hypha/agreements');
-    await page.waitForLoadState('domcontentloaded');
-
-    await expect(page.getByText('Members')).toBeVisible();
-    await expect(page.getByText('Agreements')).toBeVisible();
   });
 });

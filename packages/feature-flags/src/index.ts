@@ -11,8 +11,8 @@ import {
 
 /**
  * Product feature toggles for SSR. Resolution order: **Hypha cookies** (explicit opt-in / opt-out),
- * then **`NEXT_PUBLIC_*` env** (`"true"` enables, `"false"` disables; **when unset, Coherence / Space Memory
- * default to on; AI Chat (left) and Human Chat (right) default to off** until opted in). Kill-switch
+ * then **`NEXT_PUBLIC_*` env** (`"true"` enables, `"false"` disables; when unset, **Coherence, Space
+ * Memory, and AI Chat (left) default to on; Human Chat (right) defaults to off** until opted in). Kill-switch
  * `HYPHA_DISABLE_HUMAN_CHAT` / `NEXT_PUBLIC_DISABLE_HUMAN_CHAT` still forces Human Chat off.
  *
  * Vercel Flags Toolbar / `flags` package / `vercel-flag-overrides` are not used; configure behavior
@@ -47,17 +47,11 @@ async function getBooleanFlagDefaultTrue(
   return true;
 }
 
-/**
- * Left panel (AI Chat). Default **off**; set `HYPHA_ENABLE_AI_CHAT=true` or `NEXT_PUBLIC_ENABLE_AI_CHAT=true` to show.
- */
 export async function getEnableAiChat(): Promise<boolean> {
-  const store = await cookies();
-  const c = store.get(HYPHA_ENABLE_AI_CHAT)?.value;
-  if (c === 'true') return true;
-  if (c === 'false') return false;
-  if (process.env.NEXT_PUBLIC_ENABLE_AI_CHAT === 'true') return true;
-  if (process.env.NEXT_PUBLIC_ENABLE_AI_CHAT === 'false') return false;
-  return false;
+  return getBooleanFlagDefaultTrue(
+    HYPHA_ENABLE_AI_CHAT,
+    process.env.NEXT_PUBLIC_ENABLE_AI_CHAT,
+  );
 }
 
 export async function getEnableCoherence(): Promise<boolean> {

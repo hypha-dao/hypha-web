@@ -12,12 +12,7 @@ const RESIZE_STEP = 10;
 test.describe('AI Chat Panel — Resize Handle', () => {
   let chatPanel: AiChatPanelPage;
 
-  test.use({
-    extraHTTPHeaders: { Cookie: 'HYPHA_ENABLE_AI_CHAT=true' },
-  });
-
-  test.beforeEach(async ({ page, context }) => {
-    await AiChatPanelPage.enableAiChat(context);
+  test.beforeEach(async ({ page }) => {
     chatPanel = new AiChatPanelPage(page);
     await chatPanel.open();
     await chatPanel.openPanel();
