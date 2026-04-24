@@ -497,6 +497,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ChatPanelTab>('chat');
   const [callFullViewOpen, setCallFullViewOpen] = useState(false);
+  /**
+   * `HumanChatPanelCallStage` only mounts the expand control when
+   * `layout === "panel" && !fullViewOpen`, so this ref is set on the open
+   * button in the sidebar. While the full-view `Dialog` is open the stage
+   * uses `layout="hidden"`, so the button unmounts but the ref value is
+   * retained for Radix `onCloseAutoFocus` to restore focus to the trigger.
+   */
   const callFullViewTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [scrollToEventId, setScrollToEventId] = useState<string | null>(null);
   /** Shown in timeline after a short delay while large attachment sends run. */
