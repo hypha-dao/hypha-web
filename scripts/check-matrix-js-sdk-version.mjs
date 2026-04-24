@@ -3,30 +3,36 @@
  * Ensures the resolved matrix-js-sdk major version is 40.x (Hypha policy: ^40.0.0; no v41+ in Next until upgraded).
  * Run from repo root: node scripts/check-matrix-js-sdk-version.mjs
  */
+import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
-
-const packageJsonCandidates = [
-  join(root, 'node_modules', 'matrix-js-sdk', 'package.json'),
-  join(root, 'apps', 'web', 'node_modules', 'matrix-js-sdk', 'package.json'),
-  join(root, 'packages', 'core', 'node_modules', 'matrix-js-sdk', 'package.json'),
-  join(root, 'packages', 'epics', 'node_modules', 'matrix-js-sdk', 'package.json'),
+/** `matrix-js-sdk` is a direct dep of `apps/web` and workspace packages, not the root. */
+const requireResolvers = [
+  createRequire(join(root, 'apps', 'web', 'package.json')),
+  createRequire(join(root, 'packages', 'epics', 'package.json')),
+  createRequire(join(root, 'packages', 'core', 'package.json')),
 ];
 
-let pkg;
-for (const p of packageJsonCandidates) {
-  try {
-    pkg = require(p);
-    break;
-  } catch {
-    // try next
+function readMatrixPackageJson() {
+  for (const req of requireResolvers) {
+    try {
+      const entry = req.resolve('matrix-js-sdk');
+      const installRoot = resolve(dirname(entry), '..');
+      return JSON.parse(
+        readFileSync(join(installRoot, 'package.json'), 'utf8'),
+      );
+    } catch {
+      /* try next */
+    }
   }
+  return null;
 }
+
+const pkg = readMatrixPackageJson();
 if (!pkg) {
   console.error(
     'check-matrix-js-sdk-version: matrix-js-sdk not found. Run `pnpm install` from the repo root (expect hoisted or apps/web link).',
