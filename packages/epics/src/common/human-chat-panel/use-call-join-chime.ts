@@ -130,7 +130,9 @@ export function useCallJoinChime({
 
   useEffect(() => {
     if (roomIdRef.current !== roomId) {
-      setOpportunityEpoch(0);
+      /* New room: allow a fresh join edge + chime; do not zero opportunityEpoch
+         (that would block the chime effect until showJoinOpportunity flips). */
+      prevShowJoinRef.current = false;
       lastChimedEpochRef.current = 0;
     }
   }, [roomId]);
