@@ -46,10 +46,8 @@ export const PanelScrollInset = React.forwardRef<
     <SidebarInset
       ref={setRefs}
       className={cn(
-        /* Overlay scrollbar: no permanent gutter — horizontal rules reach the column edge unless
-         * the thumb sits over that row (preferred over scrollbar-gutter:stable, which always
-         * leaves a gap next to the track even when the thumb is elsewhere). */
-        'overflow-y-auto narrow-scrollbar',
+        /* Stable gutter: full-width borders align to the scrollport edge (not short of the thumb) */
+        'overflow-y-auto narrow-scrollbar [scrollbar-gutter:stable]',
         className,
       )}
       style={
