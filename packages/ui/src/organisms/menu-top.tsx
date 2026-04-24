@@ -4,8 +4,11 @@ import { Logo } from '../atoms';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Menu } from 'lucide-react';
 import { RxCross1 } from 'react-icons/rx';
+import Image from 'next/image';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
+import { useEcosystemMenuBrand } from '../context/ecosystem-menu-brand';
 
 type MenuTopProps = {
   children?: React.ReactNode;
@@ -26,6 +29,7 @@ export const MenuTop = ({
   openMenuLabel = 'Open menu',
   closeMenuLabel = 'Close menu',
 }: MenuTopProps) => {
+  const ecosystemBrand = useEcosystemMenuBrand();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
@@ -84,10 +88,27 @@ export const MenuTop = ({
           children ? 'justify-between' : 'justify-center',
         )}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           {leadingAction}
-          {!!logoHref && (
-            <Logo width={110} href={logoHref} target={hrefTarget} />
+          {ecosystemBrand ? (
+            <Link
+              href={ecosystemBrand.href}
+              className="flex min-w-0 shrink-0 items-center"
+              aria-label={ecosystemBrand.label}
+            >
+              <Image
+                src={ecosystemBrand.logoUrl}
+                alt={ecosystemBrand.label}
+                width={120}
+                height={40}
+                className="h-8 w-auto max-h-9 max-w-[min(9rem,28vw)] object-contain"
+                unoptimized
+              />
+            </Link>
+          ) : (
+            !!logoHref && (
+              <Logo width={110} href={logoHref} target={hrefTarget} />
+            )
           )}
         </div>
 

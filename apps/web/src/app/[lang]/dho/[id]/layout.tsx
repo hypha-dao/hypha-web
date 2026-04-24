@@ -28,6 +28,7 @@ import {
 import { notFound } from 'next/navigation';
 import { db } from '@hypha-platform/storage-postgres';
 import { Breadcrumbs } from './_components/breadcrumbs';
+import { DhoEcosystemMenuTopBridge } from './_components/dho-ecosystem-menu-top-bridge';
 import { DhoStickySpaceChrome } from './_components/dho-sticky-space-chrome';
 import { canConvertToBigInt, formatDate } from '@hypha-platform/ui-utils';
 import { getTranslations } from 'next-intl/server';
@@ -127,6 +128,7 @@ export default async function DhoLayout({
 
   return (
     <SpaceAccentPortalBridge>
+      <DhoEcosystemMenuTopBridge />
       <div className="mx-auto flex max-w-container-2xl">
         <Container className="min-w-0 flex-grow px-4!">
           {/* React 19+: link rel="preload" is hoisted to document head */}

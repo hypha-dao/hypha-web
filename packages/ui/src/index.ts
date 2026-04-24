@@ -1,4 +1,5 @@
 export * from './context/aside-overlay-layout';
+export * from './context/ecosystem-menu-brand';
 export * from './atoms';
 export * from './molecules';
 export * from './organisms';
