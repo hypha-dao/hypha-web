@@ -144,6 +144,14 @@
       "noAccess": "Vous n'avez pas accès à la navigation des espaces."
     }
   },
+  "DhoWorkspaceNav": {
+    "spaceNavAriaLabel": "Sections de l’espace",
+    "openSpaceMenu": "Menu de l’espace",
+    "spaceMenuTitle": "Espace",
+    "closeMenu": "Fermer",
+    "spacesPageStubTitle": "Espaces (aperçu)",
+    "spacesPageStubDescription": "Le graphe des espaces imbriqués et la liste apparaîtront ici. Ceci est un emplacement de développement."
+  },
   "SpaceSettingsAction": {
     "title": "Paramètres de l'espace",
     "content": "Accédez aux paramètres de votre espace et gérez-les, y compris son apparence, sa structure, ses méthodes, l'adhésion et la trésorerie.",
