@@ -212,7 +212,7 @@ The Signal / thread panel SHALL use a **stacked header** inside `SidebarHeader` 
 
 **Symptom to prevent:** In a **narrow** right panel, the **active** tab (green border / accent chrome) and/or a **clipped** tab label (e.g. only **“M”** visible for **Mentions**) appears to **run under** the **phone / video / search** cluster or the **settings** icon, or the tab text is **illegible** with no clear scroll affordance.
 
-**Root cause (typical):** A single `flex` row where the **tab `tablist`** and the **call `tabRowEnd`** + **settings** all compete for width. The scrollable region (`overflow-x-auto` + `flex-1` + `min-w-0`) can shrink the **inner** width of a tab so aggressively that the **label truncates per-character**; the user reads overlap where it is really **clipping** inside the tab, adjacent to a **fixed** icon group.
+**Root cause (typical):** A single `flex` row where the **tab `tablist`** and the **call `tabRowEnd`** (notification **settings** live in the **top** header next to the **bell**, not in this row) all compete for width. The scrollable region (`overflow-x-auto` + `flex-1` + `min-w-0`) can shrink the **inner** width of a tab so aggressively that the **label truncates per-character**; the user reads overlap where it is really **clipping** inside the tab, adjacent to a **fixed** icon group.
 
 **Proposed implementation rules (pick one pattern and document in the PR; all satisfy the AC below):**
 

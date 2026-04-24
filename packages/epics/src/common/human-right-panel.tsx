@@ -1768,6 +1768,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         <HumanChatPanelHeader
           title={mode === 'coherence' ? coherenceTitle ?? undefined : undefined}
           onBack={mode === 'coherence' ? closeCoherenceChat : undefined}
+          notificationSettingsHref={notificationCentreHref}
           trailingStart={
             roomId ? (
               <HumanChatPanelMentionBell
@@ -1785,7 +1786,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           chatMentionCountCapped={unreadChatState.mentionCountIsCapped}
           mentionTabBadgeCount={unreadChatState.unreadMentionCount}
           mentionTabBadgeCapped={unreadChatState.mentionCountIsCapped}
-          notificationCentreHref={notificationCentreHref}
           tabRowEnd={
             callUiEnabled ? (
               <HumanChatPanelCallToolbar

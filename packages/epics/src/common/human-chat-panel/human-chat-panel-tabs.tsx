@@ -1,8 +1,6 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import Link from 'next/link';
-import { Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -17,9 +15,7 @@ type HumanChatPanelTabsProps = {
   /** Same count, shown on the Mentions tab when non-zero. */
   mentionTabBadgeCount?: number;
   mentionTabBadgeCapped?: boolean;
-  /** Notification centre URL for the gear at the end of the tab row (omit to hide). */
-  notificationCentreHref?: string | null;
-  /** e.g. voice / video / search (space call controls); same row as tabs, before settings. */
+  /** e.g. voice / video / search (space call controls); end of the tab row (right column). */
   tabRowEnd?: ReactNode;
 };
 
@@ -30,7 +26,6 @@ export function HumanChatPanelTabs({
   chatMentionCountCapped = false,
   mentionTabBadgeCount = 0,
   mentionTabBadgeCapped = false,
-  notificationCentreHref,
   tabRowEnd,
 }: HumanChatPanelTabsProps) {
   const t = useTranslations('HumanChatPanel');
@@ -75,7 +70,7 @@ export function HumanChatPanelTabs({
     }
   };
 
-  const hasEndCluster = Boolean(tabRowEnd || notificationCentreHref);
+  const hasEndCluster = Boolean(tabRowEnd);
 
   return (
     <div
@@ -172,16 +167,6 @@ export function HumanChatPanelTabs({
       {hasEndCluster ? (
         <div className="flex min-h-0 min-w-0 flex-none items-center justify-end gap-1.5 self-stretch border-s border-border/50 bg-background ps-1.5">
           {tabRowEnd}
-          {notificationCentreHref ? (
-            <Link
-              href={notificationCentreHref}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              aria-label={t('mentionInboxNotificationSettings')}
-              title={t('mentionInboxNotificationSettings')}
-            >
-              <Settings className="h-3.5 w-3.5" aria-hidden />
-            </Link>
-          ) : null}
         </div>
       ) : null}
     </div>
