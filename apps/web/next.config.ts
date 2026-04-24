@@ -21,8 +21,10 @@ const nextConfig: NextConfig = {
     // Single module path for matrix-js-sdk (require.resolve from apps/web needs
     // matrix-js-sdk as a direct dependency). Avoids "Multiple matrix-js-sdk
     // entrypoints detected!" when the SDK initializes from more than one bundle.
-    const matrixPackageJson = require.resolve('matrix-js-sdk/package.json');
-    const matrixRoot = path.dirname(matrixPackageJson);
+    // v40+ does not export `./package.json` from package.json "exports"; derive the
+    // install root from the resolved entry (typically …/matrix-js-sdk/lib/…).
+    const matrixEntry = require.resolve('matrix-js-sdk');
+    const matrixRoot = path.resolve(path.dirname(matrixEntry), '..');
     config.resolve.alias = {
       ...config.resolve.alias,
       // pnpm: deep ESM subpaths (e.g. webrtc/callFeed.js) are not resolvable
