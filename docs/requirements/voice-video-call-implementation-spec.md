@@ -24,6 +24,35 @@
 | **Modes**                    | **Audio-first** and **Video** entry points: both use **`GroupCall`**; video intent enables camera when entering (subject to permissions).                                                                                                                                                     |
 | **Coherence vs Space panel** | **v1:** Implement for **`HumanRightPanel` space mode** (`mode === 'space'`) where the panel has a resolved **`roomId`** for the Space. **Coherence mode** (`mode === 'coherence'`) is **out of scope** unless the same `roomId` + thread rules are explicitly extended in a follow-up ticket. |
 
+### 1.1 Join call and idle room `GroupCall` **subscription** (normative)
+
+This subsection locks **how** a second (or Nth) member **joins** the **same** Matrix session and **how** the client stays informed **before** the local user has entered, so the product does not show “phantom” separate calls.
+
+**Product rule — single session path:** `enterAudio` / `enterVideo` (§2) SHALL resolve the **room’s** `GroupCall` with **`getGroupCallForRoom(roomId)`** first, then **`createGroupCall`** only if **null**. A user who taps **join** is **not** creating a second parallel `GroupCall` in the same Space; they **enter** the one tied to the room. **Rationale:** `GroupCall` is **room-scoped**; duplicate “invisible” sessions in one room are a client bug or HS state inconsistency, not a valid v1 use case.
+
+**Count semantics:**
+
+| Quantity | Source | Use in UI |
+| -------- | ------ | --------- |
+| **Device count** | Sum of **devices** in `GroupCall.participants` (each `RoomMember` → per-device map size). | Accurate **N devices in call** for the join strip, banner, and i18n `callJoinStripDevices` / `callDeviceCountInRoom`. |
+| **In-call user IDs** | Union of `RoomMember.userId` for any device in `participants`. | Members tab hints and roster (user count can be **lower** than device count if one user has **multiple** devices). |
+
+**When to show “a call is in progress — you can join” (gate):** The **join affordance** (§3.2.1) SHALL appear only when the local user is **not** in the active session (`callState` is `idle` or a recoverable `error`), the **idle** room participant (device) count is **> 0**, and the app has a resolved **`roomId`**. It SHALL **not** show while `connecting` | `connected` | `disconnecting` (those are **in-our-session** states).
+
+**Idle `GroupCall` subscription (hook behavior):** While the local user is **idle** (or in `error` recovering to idle) and `client` + `roomId` are set, the implementation **shall** attach to the **room**’s current `GroupCall` (if any) and:
+
+1. **Re-read** participant state from `GroupCall.participants` (device count + user id set) on mount and when:
+   - **`GroupCallEvent.ParticipantsChanged`** fires on that instance, and
+   - The client receives **`GroupCall.ended`** (internal event name in matrix-js-sdk; the room’s active group call has ended or been replaced — implementation syncs to clear or refresh counts), scoped to the same `roomId` when the payload exposes it.
+2. **Clear** idle join state to **0 devices** when `getGroupCallForRoom(roomId)` returns **null** or the participant read yields **0** devices.
+3. **Tear down** listeners when `roomId` / `client` changes, on unmount, and when the local user **joins** (in-session path takes over with the same `GroupCall` and its own listeners including feed-driven participant updates).
+
+**After the local user enters:** Participant counts and roster ids SHALL continue to use the **in-session** `GroupCall` (including updates from `ParticipantsChanged`, `UserMediaFeedsChanged`, and `ScreenshareFeedsChanged` as needed). **`othersInRoomCallCount`:** when in-session, **`max(0, participantCount − 1)`**; when idle, equals **all** devices in the room call (every device is an “other”).
+
+**Exposed API (normative):** The hook **shall** expose at least: **`roomGroupCallDeviceCount`**, **`othersInRoomCallCount`**, **`inCallUserIdsForRoster`**, **`showRoomCallInProgress`**, and pass **`participantSummary` / `others`** consistent with the table above. See **§2.2**.
+
+**UI mapping:** **§3.2.1** (header strip, toolbar “Join” copy, members tab). **Files (reference):** `use-space-group-call.ts`, `HumanChatPanelCallJoinStrip`, `HumanChatPanelCallToolbar`, `HumanChatPanelMembers`, `HumanRightPanel`.
+
 ---
 
 ## 2) Matrix integration (packages/core)
@@ -68,6 +97,12 @@ Expose a **narrow** API on `MatrixContextType` (same provider file) or a **dedic
 | `localPreviewStream`             | `MediaStream \| null`                                                                                       | Optional: for local preview `<video>` (implementation detail).                                                   |
 | `participantSummary`             | `{ count: number }` or SDK-derived                                                                          | For header badge.                                                                                                |
 | `callKind`                       | `'audio' \| 'video' \| null`                                                                                | **`null`** when idle; drives **banner** (show/hide camera) and **stage** (§3.4).                                 |
+| `roomGroupCallDeviceCount`       | `number`                                                                                                    | **Devices** in the room’s `GroupCall` while idle (from **§1.1** subscription) or in-session from `groupCall` — single source of truth for “how many in call”. |
+| `othersInRoomCallCount`         | `number`                                                                                                    | In-session: `max(0, count − 1)`; idle: all devices (every device is an “other”). Drives **banner** and copy.     |
+| `inCallUserIdsForRoster`         | `string[]` (Matrix `userId`s)                                                                               | Union of user ids with ≥1 device in `participants` — for **Members** tab hint (may be **fewer** than device count). |
+| `showRoomCallInProgress`         | `boolean`                                                                                                    | `true` when **join** strip and **Join**-style toolbar copy **shall** show (§1.1 gate, §3.2.1).                 |
+
+**Idle subscription:** Before local `enter`, the hook **shall** follow **§1.1** to keep `roomGroupCallDeviceCount` / `showRoomCallInProgress` **accurate**; otherwise two users can each “start” without seeing the other. After `enter`, the same `GroupCall` drives counts via in-session listeners.
 
 **Matrix client usage (normative sequence):**
 
@@ -196,6 +231,19 @@ type HumanChatPanelCallToolbarProps = {
 ```
 
 **Accessibility:** `aria-label` per icon; live region for **joined** / **left** call; focus order: tabs → phone → video → search → banner controls.
+
+#### 3.2.1 **Join** affordance (call in progress while **you** are **idle**)
+
+**Normative (see §1.1):** When `showRoomCallInProgress` is true, the panel **shall** surface a **space-wide** “call in progress” message and **Join** actions so a second user does not assume they must “start a new call.”
+
+| Surface | Requirement |
+| -------- | ------------ |
+| **Join strip** | **`HumanChatPanelCallJoinStrip`**: placed **immediately under** the tab + toolbar row (above **3.3** when both apply). Shows **title** + **device count** (`roomGroupCallDeviceCount`); **Join with audio** / **Join with video** call `enterAudio` / `enterVideo` (same path as **§3.2** — not a different Matrix join API). **`role="status"`**, `aria-live="polite"`. **Disabled** when `busy` (connecting) or panel/room not ready. |
+| **Header toolbar** | When others are in the room call, **phone** and **video** `title` / `aria-label` **shall** use **Join audio** / **Join video** copy (i18n), not only “Start…”, so the affordance is visible **without** scrolling to the strip. |
+| **Members tab** | When the local user is **not** in the session, **shall** show a short **hint** that a call is active in the space; when **in** the session, **may** list **Matrix `userId`s** from `inCallUserIdsForRoster` for debugging / clarity (user count ≤ device count). |
+| **Banner (in call)** | Uses `roomGroupCallDeviceCount` and `othersInRoomCallCount` for “you are in this space’s call” + “others” copy (§1.1, §3.3). |
+
+**Rationale for subscription:** If the client only subscribes to `GroupCall` **after** local `enter`, the UI shows **0 others** while idle and each user can create/join a **separate** perceived session. The **§1.1** idle listener fixes that for **v1**.
 
 ### 3.3 Active-call banner (space-wide + primary controls)
 
@@ -339,6 +387,11 @@ Until Signal/thread routing is wired end-to-end:
 | `callSearchComingSoon`                         | Search stub tooltip                                                        |
 | `callFullView`                                 | **Full view** / expand button (`aria-label`) and optional dialog **title** |
 | `callFullViewClose`                            | Close / dismiss full-view modal (button)                                   |
+| `callJoinStripTitle` / `callJoinStripDevices`   | **Join** strip: heading + “N devices in call” (pluralized)                 |
+| `callJoinWithAudio` / `callJoinWithVideo`        | `aria-label` for **Join** strip and toolbar when room call is active         |
+| `callJoinWithAudioShort` / `callJoinWithVideoShort` | Short button labels in the strip                                        |
+| `callYouAreInSpaceCall` / `callDeviceCountInRoom` / `callOthersInCallHint` | **Banner** copy when **connected** (space call + device / others counts)   |
+| `callMembersTabJoinCallTitle` / `callMembersTabJoinCallBody` / `callMembersTabInCallPreamble` | **Members** tab: idle hint + in-call roster helper text          |
 
 Follow [i18n-translate skill](../../.agents/skills/i18n-translate/SKILL.md) for locale parity.
 
@@ -366,6 +419,7 @@ Follow [i18n-translate skill](../../.agents/skills/i18n-translate/SKILL.md) for 
 | **IMP-6** | In-call UI SHALL follow **§3.1–§3.4**: combined **tabs + call/search** row, **banner** below, **video stage** above messages when `callKind === 'video'` and connected.                                                                                                                                                                                                                                                             |
 | **IMP-7** | When screen share is in scope for the release, stage SHALL render **`screenshareFeeds`** per **§3.5**; hook SHALL expose **`setScreensharingEnabled`** / **`isScreensharing`**.                                                                                                                                                                                                                                                     |
 | **IMP-8** | **Full view** (optional but specified): When implemented, in-call **modal enlarged stage** SHALL follow **§3.4.4** and **§3.4.4.1** (dialog overlay, **primary stage** fills the modal between header and controls, no narrow-tile + empty-void layout, **single** `srcObject` tree, a11y, i18n). **Browser native Fullscreen** (`Element.requestFullscreen`) is **out of scope** for **IMP-8** unless a future ticket promotes it. |
+| **IMP-9** | **Join + idle subscription** (see **§1.1**, **§2.2**, **§3.2.1**): Hook SHALL keep **device** and **roster** state accurate **before** local `enter` via the **GroupCall.ended** + `ParticipantsChanged` path; UI SHALL show **join** affordances when `showRoomCallInProgress` is true; `enterAudio` / `enterVideo` SHALL use **get-then-create** for a **single** room `GroupCall` per **§1.1**. |
 
 ---
 
@@ -373,7 +427,7 @@ Follow [i18n-translate skill](../../.agents/skills/i18n-translate/SKILL.md) for 
 
 | Layer      | Scope                                                                                                                                         |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Unit**   | State machine: idle → enter → leave; double-enter no-op; error codes. Mock `MatrixClient`.                                                    |
+| **Unit**   | State machine: idle → enter → leave; double-enter no-op; error codes; `isPermissionLikeGroupCallError` (or equivalent). Mock `MatrixClient`. For **§1.1**: optional unit tests for **device vs user** counting from a mocked `participants` map. |
 | **Manual** | Script in PR description: two browsers, same Space, verify audio path + leave cleanup.                                                        |
 | **E2E**    | Playwright: **optional** for v1—assert toolbar **visible** and **disabled** state if no media permission in CI; skip real WebRTC if unstable. |
 
@@ -386,7 +440,7 @@ Follow [i18n-translate skill](../../.agents/skills/i18n-translate/SKILL.md) for 
 - [ ] **Layout** matches **§3.1**: tabs + phone/video/search on one row; **banner** under it; **video stage** (when applicable) above messages in Chat tab.
 - [ ] **Stage** can show **camera tiles** and, when implemented, **screen-share** tiles from **`userMediaFeeds` / `screenshareFeeds`** (**§3.5**).
 - [ ] (When **§3.4.4** is in scope) User can open **Full view** from the call stage, see the **enlarged** share/camera layout in a **modal** that satisfies **§3.4.4.1** (neat, large **primary** image in the fill area), and **close** it without **leaving** the call; **focus** and **Esc** behave per **§3.4.4**.
-- [ ] Second participant in the **same Space** can **join** the same session (same `roomId`).
+- [ ] Second participant in the **same Space** can **join** the same session (same `roomId`); while **user B** is still **idle**, the panel shows **call in progress** and **join** per **§1.1** / **§3.2.1** (strip + **Join** toolbar copy), and counts update without requiring B to “start” a new call.
 - [ ] No duplicate `matrix-js-sdk` bundles; no VoIP code on server.
 - [ ] Copy reflects **space-wide** call semantics.
 
