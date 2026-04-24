@@ -203,14 +203,15 @@ export function useSpaceGroupCall(roomId: string | null) {
   const attachGroupCallListeners = useCallback(
     (gc: MatrixSdk.GroupCall) => {
       const onError = (err: unknown) => {
-        if (isPermissionLikeGroupCallError(err)) {
+        const isPerm = isPermissionLikeGroupCallError(err);
+        const code: SpaceGroupCallErrorCode = isPerm
+          ? 'PERMISSION_DENIED'
+          : 'WEBRTC_FAILED';
+        if (isPerm) {
           setErrorCode('PERMISSION_DENIED');
         } else {
           setErrorCode('WEBRTC_FAILED');
         }
-        const code = isPermissionLikeGroupCallError(err)
-          ? 'PERMISSION_DENIED'
-          : 'WEBRTC_FAILED';
         if (roomId) {
           logSpaceGroupCallEvent({
             name: 'hypha.group_call.error',
@@ -268,7 +269,6 @@ export function useSpaceGroupCall(roomId: string | null) {
       refreshLocalPreview,
       runCleanup,
       scheduleFeedBatched,
-      setActiveKeyFromGroupCall,
       updateParticipantCount,
     ],
   );
