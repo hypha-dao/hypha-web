@@ -101,8 +101,8 @@ type PanelWrapLayoutProps = {
   right?: PanelSlot;
 };
 
-/** Matches `PanelScrollInset` — portaled overlays read this from `document.documentElement`. */
-const MAIN_COLUMN_SCROLLBAR_WIDTH_CSS = '10px';
+/** Matches scroll inset — `0px` so fixed chrome / dividers span full main column (lines may cross overlay scrollbar). */
+const MAIN_COLUMN_SCROLLBAR_WIDTH_CSS = '0px';
 
 const SIDEBAR_WIDTH_MIRROR_KEYS = [
   '--sidebar-left-width',
