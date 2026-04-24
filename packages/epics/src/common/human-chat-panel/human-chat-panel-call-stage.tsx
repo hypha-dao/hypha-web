@@ -276,13 +276,6 @@ export function HumanChatPanelCallStage({
 
   const showExpand = layout === 'panel' && !fullViewOpen && onRequestFullView;
 
-  if (!isFull && !(hasRemotesOrShare || showLocalInMainGrid)) {
-    return null;
-  }
-  if (!isFull && isVideoCall && !hasLocalWebcam && shareFeeds.length === 0) {
-    return null;
-  }
-
   return (
     <section
       className={cn(
