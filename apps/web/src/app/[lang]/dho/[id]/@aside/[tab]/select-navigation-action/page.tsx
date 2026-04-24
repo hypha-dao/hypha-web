@@ -1,29 +1,16 @@
-import {
-  ModalStickyNavigation,
-  ProposalOverlayShell,
-} from '@hypha-platform/epics';
-import { SelectNavigationAction } from '../../../_components/select-navigation-action';
+import { getDhoPathSpaces } from '../../../@tab/spaces/constants';
 import { Locale } from '@hypha-platform/i18n';
-import { getTranslations } from 'next-intl/server';
-import { PATH_SELECT_NAVIGATION_ACTION } from '@web/app/constants';
+import { redirect } from 'next/navigation';
 
-export default async function SelectNavigationActions({
+/**
+ * Legacy aside URL for space navigation. Primary discovery is the in-flow
+ * `/spaces` tab; keep this as a hard redirect for bookmarks and old links.
+ */
+export default async function SelectNavigationActionRedirect({
   params,
 }: {
   params: Promise<{ id: string; lang: Locale; tab: string }>;
 }) {
-  const { id: daoSlug, lang } = await params;
-  const tModalAside = await getTranslations('ModalAside');
-  return (
-    <ProposalOverlayShell>
-      <div className="flex flex-col gap-5">
-        <ModalStickyNavigation
-          contextTitle={tModalAside('spaceNavigation')}
-          closeDropSegment={PATH_SELECT_NAVIGATION_ACTION}
-          showBack={false}
-        />
-        <SelectNavigationAction lang={lang} daoSlug={daoSlug} />
-      </div>
-    </ProposalOverlayShell>
-  );
+  const { id, lang } = await params;
+  redirect(getDhoPathSpaces(lang, id));
 }
