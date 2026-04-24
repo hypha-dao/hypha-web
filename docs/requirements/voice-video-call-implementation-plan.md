@@ -7,7 +7,7 @@
 | **Status**                  | Ready to execute (phased)                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | **Specs**                   | [voice-video-call-matrix-tech-spec.md](./voice-video-call-matrix-tech-spec.md), [voice-video-call-implementation-spec.md](./voice-video-call-implementation-spec.md)                                                                                                                                                                                                                                                                                                       |
 | **Phase 0 (env)**           | [voice-video-call-phase-0-runbook.md](./voice-video-call-phase-0-runbook.md) — HS/TURN checklist, CSP notes, `pnpm run check:matrix-sdk`                                                                                                                                                                                                                                                                                                                                   |
-| **Media storage alignment** | Implementations of **recording** and **artifact URLs** SHALL follow the Hypha **space media storage** design. **Reference:** [Cursor agent / branch — space media storage](https://cursor.com/agents/bc-31e34c30-45d0-4f7a-b00b-9a6f46346b06?branch=cursor%2F-bc-31e34c30-45d0-4f7a-b00b-9a6f46346b06-b1a4) (use this as the source of truth for buckets, paths, signed URLs, and DB linkage to `spaces`). If that document moves, replace the link in a follow-up commit. |
+| **Media storage alignment** | Implementations of **recording** and **artifact URLs** SHALL follow [**ADR 0001** — recording pipeline and space media storage](../adr/0001-voice-video-recording-pipeline.md) (normative: object storage, signed URLs, `spaces` FK, and metadata rows). The older [Cursor design thread](https://cursor.com/agents/bc-31e34c30-45d0-4f7a-b00b-9a6f46346b06?branch=cursor%2F-bc-31e34c30-45d0-4f7a-b00b-9a6f46346b06-b1a4) remains **informational** only. |
 
 ---
 
@@ -157,7 +157,7 @@ These criteria **supplement** §7 of the [implementation spec](./voice-video-cal
 Both **recording files** and **transcript content** SHALL be **stored and scoped to the Hypha Space** so they contribute to **organizational memory**:
 
 - **Logical:** Every artifact has **`space_id`** (or equivalent FK to `spaces`) and **optional** link to **`thread_root_event_id`** / Signal id for context.
-- **Physical:** **Media blobs** (video/audio files) follow the **space media storage** pattern (object storage path, encryption at rest, signed URL policy) as defined in the **[referenced Cursor agent / branch](https://cursor.com/agents/bc-31e34c30-45d0-4f7a-b00b-9a6f46346b06?branch=cursor%2F-bc-31e34c30-45d0-4f7a-b00b-9a6f46346b06-b1a4)** — implementers MUST reconcile field names and upload flow with that document when it lands on `main`.
+- **Physical:** **Media blobs** (video/audio files) follow the **space media storage** pattern in [**ADR 0001**](../adr/0001-voice-video-recording-pipeline.md#2-space-media-storage-normative) (object storage path, encryption at rest, signed URL policy). The [Cursor design thread](https://cursor.com/agents/bc-31e34c30-45d0-4f7a-b00b-9a6f46346b06?branch=cursor%2F-bc-31e34c30-45d0-4f7a-b00b-9a6f46346b06-b1a4) is optional context for field-name alignment only.
 - **Access control:** Read/write **same rules** as Space membership (and any elevated roles product defines). **No** public transcript URLs without explicit product decision.
 
 ### 4.3 Transcript — data model (normative direction)
@@ -216,5 +216,5 @@ Implementers SHALL define a **dedicated** persistence layer (example shape — a
 ## 6) References
 
 - Matrix JS SDK: [MatrixClient](https://matrix-org.github.io/matrix-js-sdk/classes/matrix.MatrixClient.html), [GroupCall](https://matrix-org.github.io/matrix-js-sdk/classes/matrix.GroupCall.html)
-- Space media storage (external): [Cursor agent link](https://cursor.com/agents/bc-31e34c30-45d0-4f7a-b00b-9a6f46346b06?branch=cursor%2F-bc-31e34c30-45d0-4f7a-b00b-9a6f46346b06-b1a4)
+- Space media storage (normative): [ADR 0001](../adr/0001-voice-video-recording-pipeline.md#2-space-media-storage-normative) · (informational) [older Cursor design thread](https://cursor.com/agents/bc-31e34c30-45d0-4f7a-b00b-9a6f46346b06?branch=cursor%2F-bc-31e34c30-45d0-4f7a-b00b-9a6f46346b06-b1a4)
 - Hypha mapping: [`.agents/references/domain/hypha-matrix-mapping.md`](../../.agents/references/domain/hypha-matrix-mapping.md)
