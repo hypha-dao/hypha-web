@@ -1,16 +1,16 @@
-# DHO workspace navigation — Phase 0–3 delivery notes
+# DHO workspace navigation — Phase 0–4 delivery notes
 
 ## Document control
 
 | Field | Value |
 |--------|--------|
-| **Status** | Phases 0–3 implemented in code (in-flow Spaces map) |
+| **Status** | Phases 0–4 implemented in code (hardening, e2e, a11y scan) |
 | **Inspiration** | [Vercel — New dashboard navigation](https://vercel.com/changelog/new-dashboard-navigation-available) (IA patterns only) |
 
 ## Phase 0 — Locked decisions (UX / engineering)
 
 1. **Copy — “Spaces”** — The graph route and nav item use the existing **`Common` → `Spaces`** string. No separate “Map/Network” label in this phase.
-2. **Default space landing** — Unchanged: **`/agreements`** remains the default primary tab. The **`/spaces` stub** is reachable from the left nav; there is no redirect of the DHO index in this phase.
+2. **Default space landing** — Unchanged: **`/agreements`** remains the default primary tab. **`/spaces`** is the in-flow graph view (reachable from the left nav / Space menu).
 3. **Nav order** — When Coherence is enabled: **Coherence → Agreements → Members → Treasury → Spaces**. (Matches previous horizontal tab order with **Spaces** last as the new in-flow area.)
 4. **Mobile pattern** — **Left sheet** opened by a **floating “Space menu”** control (bottom; safe-area aware). The same links as the desktop rail; **not** a full-width permanent bottom bar (avoids clashing with browser chrome and existing layout).
 5. **Layout tokens (desktop rail)** — Fixed rail **`min(15rem, 100%)`**, **border-r** separator, `md+` only; in-flow (not `fixed`) so it **shifts with** the main column when the AI left panel animates (`--sidebar-left-width` in `PanelWrapLayout`).
@@ -33,8 +33,14 @@
 - **`/spaces` tab** renders **`SelectNavigationAction` with `variant="page"`** (intro + map + list; no empty foot section from `SelectAction`).
 - **`epics` `SelectAction`**: new **`showActionCards={false}`** to omit the trailing separator and action-cards block when `actions` is empty (used by the page variant).
 - **Aside** `select-navigation-action` is a **server `redirect` to** `getDhoPathSpaces(lang, id)` so old URLs keep working.
-- **`NestedSpacesButton`** links to **`getDhoPathSpaces`** instead of the aside `PATH_SELECT_NAVIGATION_ACTION`.
+- **`NestedSpacesButton`** links to **`getDhoPathSpaces`**.
 
-## Follow-up (Phase 4+)
+## Phase 4 — What shipped (hardening & QA)
 
-- E2E: optional assertions for `/spaces` and AI-panel offset; cleanup any remaining `PATH_SELECT_NAVIGATION` references in docs.
+- **Middleware** redirects **`/[lang]/dho/[id]/[tab]/select-navigation-action`** → **`/spaces`** (reliable for e2e and all HTTP methods). The aside `page` route for that path was **removed**; the **`PATH_SELECT_NAVIGATION_ACTION` constant** was **removed** from `apps/web` (unused after Phase 3).
+- **`DhoSpaceWorkspace`**: `data-testid="dho-workspace-main"` on the main content column (layout / e2e).
+- **E2E** (`dho-spaces-workspace.spec.ts`): legacy URL redirect, `/spaces` content, desktop rail `aria-current`, **AI panel open → main column x-shift**, mobile Space menu + sheet link, **Axe** on the main column (`@axe-core/playwright`).
+
+## Follow-up (optional)
+
+- Broader Axe (full page) or visual regression for `/spaces` if product wants baseline screenshots.
