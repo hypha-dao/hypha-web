@@ -45,7 +45,7 @@ const DESCRIPTION_SCROLL_BOX = cn(
   '[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/30 [&::-webkit-scrollbar-track]:bg-transparent',
 );
 
-export type CompactSpaceBannerProps = {
+type CompactSpaceBannerCommon = {
   title: string;
   description: string | null | undefined;
   logoUrl: string | null | undefined;
@@ -54,41 +54,60 @@ export type CompactSpaceBannerProps = {
   links?: string[] | null;
   leadImageUrl?: string | null;
   defaultLeadImageSrc?: string;
+  /** Localized accessible name for the description region (screen readers). */
+  descriptionLabel: string;
+  footerTrailing?: React.ReactNode;
+  className?: string;
+};
+
+export type CompactSpaceBannerWithStatsProps = CompactSpaceBannerCommon & {
+  showSpaceStats?: true;
   memberCount: number | null;
   agreementCount: number | null;
   createdOnText: string;
   membersLabel: string;
   agreementsLabel: string;
-  /** Localized accessible name for the description region (screen readers). */
-  descriptionLabel: string;
-  /** Renders before members / agreements / created (e.g. profile membership row). */
-  footerLeading?: React.ReactNode;
-  /** When false, omit the members · agreements · created strip (profile hero). Default true. */
-  showSpaceStats?: boolean;
-  footerTrailing?: React.ReactNode;
-  className?: string;
 };
 
-export function CompactSpaceBanner({
-  title,
-  description,
-  logoUrl,
-  logoAlt,
-  defaultLogoSrc,
-  links,
-  leadImageUrl,
-  defaultLeadImageSrc,
-  memberCount,
-  agreementCount,
-  createdOnText,
-  membersLabel,
-  agreementsLabel,
-  descriptionLabel,
-  footerLeading,
-  showSpaceStats = true,
-  footerTrailing,
-  className,
-}: CompactSpaceBannerProps) {
+export type CompactSpaceBannerProfileProps = CompactSpaceBannerCommon & {
+  showSpaceStats: false;
+  /** Renders before the hairline (e.g. member since, email) */
+  footerLeading?: React.ReactNode;
+};
+
+export type CompactSpaceBannerProps =
+  | CompactSpaceBannerWithStatsProps
+  | CompactSpaceBannerProfileProps;
+
+function isSpaceWithStats(
+  p: CompactSpaceBannerProps,
+): p is CompactSpaceBannerWithStatsProps {
+  return p.showSpaceStats !== false;
+}
+
+export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
+  const {
+    title,
+    description,
+    logoUrl,
+    logoAlt,
+    defaultLogoSrc,
+    links,
+    leadImageUrl,
+    defaultLeadImageSrc,
+    descriptionLabel,
+    footerTrailing,
+    className,
+  } = props;
+  const showSpaceStats = isSpaceWithStats(props);
+  const footerLeading = !showSpaceStats
+    ? (props as CompactSpaceBannerProfileProps).footerLeading
+    : undefined;
+  const memberCount = showSpaceStats ? props.memberCount : null;
+  const agreementCount = showSpaceStats ? props.agreementCount : null;
+  const createdOnText = showSpaceStats ? props.createdOnText : '';
+  const membersLabel = showSpaceStats ? props.membersLabel : '';
+  const agreementsLabel = showSpaceStats ? props.agreementsLabel : '';
   const textureSrc = (() => {
     const lead = leadImageUrl?.trim();
     const fallback = defaultLeadImageSrc?.trim() ?? '';

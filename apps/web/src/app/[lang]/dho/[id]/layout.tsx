@@ -135,6 +135,7 @@ export default async function DhoLayout({
               }
               banner={
                 <CompactSpaceBanner
+                  showSpaceStats
                   title={spaceFromDb.title}
                   description={spaceFromDb.description}
                   logoUrl={accentLogoHref}
