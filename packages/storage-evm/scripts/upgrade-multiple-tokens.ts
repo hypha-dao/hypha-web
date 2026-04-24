@@ -19,10 +19,13 @@ import path from 'path';
 const TOKEN_TYPE: 'Regular' | 'Ownership' | 'Decaying' = 'Regular';
 
 // Token addresses to upgrade (edit this array or load from file)
-const TOKEN_ADDRESSES: string[] = [''];
+// Space ID 803 (executor 0x9C64A299D9C9fC902cc30284Bc5dc3d80E8C9F5a) — DAFCREDITS
+const TOKEN_ADDRESSES: string[] = [
+  '0xc82721CEB329f10284c54Aa61C7341988713683D',
+];
 
 // Set to true to load addresses from a file instead of using TOKEN_ADDRESSES array
-const LOAD_FROM_FILE = true;
+const LOAD_FROM_FILE = false;
 const ADDRESS_FILE_PATH =
   '/Users/vlad/hypha-web/packages/storage-evm/scripts/base-mainnet-contracts-scripts/token-upgrade-data/regular-addresses-2025-11-14T09-30-58-747Z.txt';
 
@@ -123,9 +126,11 @@ async function upgradeToken(
         console.log('  ✅ DRY RUN: Implementation would change!');
       }
 
-      console.log(
-        '  🔍 DRY RUN: Would configure autoMinting=true after upgrade',
-      );
+      if (TOKEN_TYPE === 'Ownership') {
+        console.log(
+          `  🔍 DRY RUN: Would configure ownershipSpacesContract=${SPACES_CONTRACT} after upgrade`,
+        );
+      }
       result.newImplementation = preparedImpl.toString();
       result.success = true;
       return result;
@@ -246,10 +251,9 @@ async function upgradeToken(
       console.log('  ✅ Successfully upgraded!');
     }
 
-    // Post-upgrade configuration for backward compatibility and safety.
-    console.log('  🔧 Configuring post-upgrade settings...');
-    try {
-      if (TOKEN_TYPE === 'Ownership') {
+    if (TOKEN_TYPE === 'Ownership') {
+      console.log('  🔧 Configuring post-upgrade settings...');
+      try {
         const ownershipToken = await ethers.getContractAt(
           'OwnershipSpaceToken',
           tokenAddress,
@@ -274,37 +278,22 @@ async function upgradeToken(
         } else {
           console.log('  ℹ️  ownershipSpacesContract already configured');
         }
-      } else {
-        const tokenContract = await ethers.getContractAt(
-          'RegularSpaceToken',
-          tokenAddress,
+
+        result.success = true;
+      } catch (configError: any) {
+        console.log(
+          `  ⚠️  Warning: Could not configure post-upgrade settings: ${configError.message}`,
         );
-
-        // Check current autoMinting status
-        const currentAutoMinting = await tokenContract.autoMinting();
-        console.log(`  Current autoMinting: ${currentAutoMinting}`);
-
-        if (!currentAutoMinting) {
-          console.log('  Setting autoMinting to true...');
-          const configTx = await tokenContract.setAutoMinting(true);
-          await configTx.wait();
-          console.log('  ✅ AutoMinting enabled (backward compatibility)');
-        } else {
-          console.log('  ℹ️  AutoMinting already enabled, skipping');
+        result.success = implementationChanged;
+        if (!result.success) {
+          result.error =
+            'Implementation unchanged and post-upgrade config failed';
         }
       }
-
+    } else {
+      // Non-Ownership tokens: no post-upgrade config needed.
+      // Reaching here means upgradeProxy succeeded.
       result.success = true;
-    } catch (configError: any) {
-      console.log(
-        `  ⚠️  Warning: Could not configure post-upgrade settings: ${configError.message}`,
-      );
-      // Mark as success if implementation changed, otherwise keep as false
-      result.success = implementationChanged;
-      if (!result.success) {
-        result.error =
-          'Implementation unchanged and post-upgrade config failed';
-      }
     }
   } catch (error: any) {
     console.error(`  ❌ Error: ${error.message}`);
