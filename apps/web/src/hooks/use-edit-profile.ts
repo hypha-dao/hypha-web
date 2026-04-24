@@ -11,13 +11,21 @@ import type { ProfileFormData } from './profile-form-data';
 function parseApiPerson(raw: unknown): Person | null {
   if (!raw || typeof raw !== 'object') return null;
   const p = raw as Record<string, unknown>;
-  if (typeof p.id !== 'number' || typeof p.slug !== 'string') return null;
+  const idRaw = p.id;
+  const id =
+    typeof idRaw === 'number'
+      ? idRaw
+      : typeof idRaw === 'string'
+      ? Number.parseInt(idRaw, 10)
+      : NaN;
+  const slug = typeof p.slug === 'string' ? p.slug.trim() : '';
+  if (!Number.isFinite(id) || !slug) return null;
   return {
-    id: p.id,
+    id,
     name: p.name as string | undefined,
     surname: p.surname as string | undefined,
     email: p.email as string | undefined,
-    slug: p.slug,
+    slug,
     sub: p.sub as string | undefined,
     avatarUrl: p.avatarUrl as string | undefined,
     leadImageUrl: p.leadImageUrl as string | undefined,

@@ -31,6 +31,8 @@ export type MemberType = {
 
 interface PersonHeadProps {
   isLoading?: boolean;
+  /** DB id — with `useMe` enables live merge after save even if URL slug lags (nickname change). */
+  id?: number;
   about: string;
   background: string;
   links: string[];
@@ -42,6 +44,7 @@ interface PersonHeadProps {
 
 export const PersonHead = ({
   isLoading = false,
+  id: personId,
   avatar = DEFAULT_SPACE_AVATAR_IMAGE,
   name,
   surname,
@@ -59,13 +62,68 @@ export const PersonHead = ({
   const tCommon = useTranslations('Common');
   const format = useFormatter();
   const { exportWallet, isEmbeddedWallet } = useAuthentication();
-  const { isMe } = useMe();
+  const { isMe, person: me } = useMe();
   const { lang, personSlug: personSlugRaw } =
     useParams<ProfileComponentParams>();
   const personSlug = tryDecodeUriPart(personSlugRaw);
 
-  const signupDate = createdAt
-    ? format.dateTime(createdAt, {
+  /**
+   * Server `person` is static after navigation; SWR `me` updates after save without a full refresh.
+   * On your own profile, prefer `me` so the hero reflects edits. Match by id (stable) and/or URL slug
+   * so a nickname/slug change still updates before `router.push` completes.
+   */
+  const isSelfView = Boolean(
+    me &&
+      (personId != null
+        ? me.id === personId
+        : Boolean(personSlug) && me.slug === personSlug),
+  );
+  const isOwnProfile = isSelfView || (personSlug ? isMe(personSlug) : false);
+  const self = React.useMemo(() => {
+    if (!isSelfView || !me) {
+      return {
+        name,
+        surname,
+        slug,
+        createdAt,
+        about,
+        background,
+        links,
+        location,
+        email,
+        avatar,
+      };
+    }
+    return {
+      name: me.name ?? name,
+      surname: me.surname ?? surname,
+      slug: me.slug ?? slug,
+      createdAt: me.createdAt ?? createdAt,
+      about: me.description ?? about,
+      background: me.leadImageUrl ?? background,
+      links: me.links?.length ? me.links : links,
+      location: me.location ?? location,
+      email: me.email ?? email,
+      avatar: me.avatarUrl ?? avatar,
+    };
+  }, [
+    isSelfView,
+    me,
+    name,
+    surname,
+    slug,
+    personId,
+    createdAt,
+    about,
+    background,
+    links,
+    location,
+    email,
+    avatar,
+  ]);
+
+  const signupDate = self.createdAt
+    ? format.dateTime(self.createdAt, {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
@@ -75,13 +133,14 @@ export const PersonHead = ({
       })
     : null;
 
-  const displayName = `${name} ${surname}`.trim() || tProfile('profilePage');
+  const displayName =
+    `${self.name} ${self.surname}`.trim() || tProfile('profilePage');
 
-  const rawLead = background?.trim();
+  const rawLead = self.background?.trim();
   const heroBannerHref =
     rawLead && isSafeImageUrl(rawLead) ? rawLead : DEFAULT_SPACE_LEAD_IMAGE;
 
-  const rawAvatar = avatar?.trim();
+  const rawAvatar = self.avatar?.trim();
   const accentLogoHref =
     rawAvatar && isSafeImageUrl(rawAvatar)
       ? rawAvatar
@@ -94,26 +153,26 @@ export const PersonHead = ({
           {tProfile('hyphaMemberSince', { date: signupDate })}
         </span>
       ) : null}
-      {signupDate && email && isMe(personSlug) ? (
+      {signupDate && self.email && isOwnProfile ? (
         <span className="text-white/45" aria-hidden>
           ·
         </span>
       ) : null}
-      {email && isMe(personSlug) ? (
+      {self.email && isOwnProfile ? (
         <span className="inline-flex items-center gap-1.5">
           <MailIcon width={16} height={16} className="shrink-0 opacity-90" />
-          <span>{email}</span>
+          <span>{self.email}</span>
         </span>
       ) : null}
-      {(signupDate || (email && isMe(personSlug))) && location ? (
+      {(signupDate || (self.email && isOwnProfile)) && self.location ? (
         <span className="text-white/45" aria-hidden>
           ·
         </span>
       ) : null}
-      {location ? (
+      {self.location ? (
         <span className="inline-flex items-center gap-1.5">
           <MapPinIcon width={16} height={16} className="shrink-0 opacity-90" />
-          <span>{location}</span>
+          <span>{self.location}</span>
         </span>
       ) : null}
     </>
@@ -129,11 +188,11 @@ export const PersonHead = ({
         >
           <CompactSpaceBanner
             title={displayName}
-            description={about || undefined}
+            description={self.about || undefined}
             logoUrl={accentLogoHref}
             logoAlt={displayName}
             defaultLogoSrc={DEFAULT_SPACE_AVATAR_IMAGE}
-            links={links}
+            links={self.links}
             leadImageUrl={heroBannerHref}
             defaultLeadImageSrc={DEFAULT_SPACE_LEAD_IMAGE}
             memberCount={0}
@@ -150,7 +209,7 @@ export const PersonHead = ({
         </Skeleton>
 
         <div className="flex flex-wrap justify-end gap-2">
-          {isMe(slug) && (
+          {isOwnProfile && (
             <ExportEmbeddedWalletButton
               isLoading={isLoading}
               isEmbeddedWallet={isEmbeddedWallet || !!onExportEmbeddedWallet}
@@ -165,17 +224,21 @@ export const PersonHead = ({
           <ButtonCopyUserId
             title={tProfile('copyUserId')}
             successMessage={tProfile('copied')}
-            slug={slug}
+            slug={self.slug}
             isLoading={isLoading}
           />
           <Skeleton loading={isLoading} width={120} height={35}>
             <Link
               href={
-                isMe(personSlug) ? `/${lang}/profile/${personSlug}/edit` : {}
+                isOwnProfile
+                  ? `/${lang}/profile/${encodeURIComponent(
+                      me?.slug ?? self.slug,
+                    )}/edit`
+                  : {}
               }
               scroll={false}
             >
-              <Button colorVariant="accent" disabled={!isMe(personSlug)}>
+              <Button colorVariant="accent" disabled={!isOwnProfile}>
                 <RxPencil2 />
                 {tProfile('editProfile')}
               </Button>

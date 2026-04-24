@@ -89,6 +89,7 @@ export default async function ProfilePage(props: PageProps) {
       {person ? (
         <div className="flex flex-col gap-5">
           <PersonHead
+            id={person.id}
             avatar={person?.avatarUrl ?? '/placeholder/default-profile.svg'}
             name={person?.name ?? ''}
             surname={person?.surname ?? ''}
