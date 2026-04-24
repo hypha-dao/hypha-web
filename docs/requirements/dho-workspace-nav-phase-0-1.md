@@ -1,31 +1,34 @@
-# DHO workspace navigation — Phase 0 (UX decisions) and Phase 1 (shell) implementation
+# DHO workspace navigation — Phase 0–2 delivery notes
 
 ## Document control
 
 | Field | Value |
 |--------|--------|
-| **Status** | Phase 0–1 implemented in code (feature-flagged) |
+| **Status** | Phases 0–2 implemented in code (workspace nav is default) |
 | **Inspiration** | [Vercel — New dashboard navigation](https://vercel.com/changelog/new-dashboard-navigation-available) (IA patterns only) |
 
 ## Phase 0 — Locked decisions (UX / engineering)
 
 1. **Copy — “Spaces”** — The graph route and nav item use the existing **`Common` → `Spaces`** string. No separate “Map/Network” label in this phase.
-2. **Default space landing** — Unchanged: **`/agreements`** remains the default primary tab. The **`/spaces` stub** is reachable only via the new nav; there is no redirect of the DHO index in Phase 1.
+2. **Default space landing** — Unchanged: **`/agreements`** remains the default primary tab. The **`/spaces` stub** is reachable from the left nav; there is no redirect of the DHO index in this phase.
 3. **Nav order** — When Coherence is enabled: **Coherence → Agreements → Members → Treasury → Spaces**. (Matches previous horizontal tab order with **Spaces** last as the new in-flow area.)
 4. **Mobile pattern** — **Left sheet** opened by a **floating “Space menu”** control (bottom; safe-area aware). The same links as the desktop rail; **not** a full-width permanent bottom bar (avoids clashing with browser chrome and existing layout).
 5. **Layout tokens (desktop rail)** — Fixed rail **`min(15rem, 100%)`**, **border-r** separator, `md+` only; in-flow (not `fixed`) so it **shifts with** the main column when the AI left panel animates (`--sidebar-left-width` in `PanelWrapLayout`).
-6. **Feature flag** — Shell is off by default. Enable with **`NEXT_PUBLIC_ENABLE_DHO_WORKSPACE_NAV=true`** and/or cookie **`HYPHA_ENABLE_DHO_WORKSPACE_NAV=true`**, or the Vercel Flags Toolbar key **`enable-dho-workspace-nav`**.
-7. **Path helper** — `getDhoPathSpaces(lang, id)` → `/${lang}/dho/${id}/spaces` (`@tab/spaces/constants.ts`).
 
 ## Phase 1 — What shipped
 
 - **`DhoSpaceWorkspace`** client shell (`apps/web/src/app/[lang]/dho/[id]/_components/dho-space-workspace.tsx`) with desktop rail + mobile sheet.
-- **`@tab` layout** switches between legacy **`NavigationTabs`** and **`DhoSpaceWorkspace`** when the flag is on.
-- **Stub `spaces` tab page** with i18n placeholder copy until Phase 3 moves `SelectNavigationAction` in-flow.
+- **Path helper** — `getDhoPathSpaces(lang, id)` → `/${lang}/dho/${id}/spaces` (`@tab/spaces/constants.ts`).
 - **`getActiveTabFromPath`** recognizes the **`spaces`** (and `overview`) segment; unknown first segments under `/dho/[id]/` still **fall back to `agreements`** so other routes are not misclassified as active “tabs”.
+- (Initially) opt-in via **`getEnableDhoWorkspaceNav`** — **removed in Phase 2** (see below).
 
-## Follow-up (Phase 2+)
+## Phase 2 — What shipped (link parity)
 
-- Remove **`NavigationTabs`** for the default path when the feature is on everywhere.
+- **`@tab` layout** always wraps tab content in **`DhoSpaceWorkspace`**. The horizontal **`NavigationTabs`** component was **removed** (`apps/web/.../navigation-tabs.tsx` deleted).
+- The **`HYPHA_ENABLE_DHO_WORKSPACE_NAV` cookie, `getEnableDhoWorkspaceNav`, and `enable-dho-workspace-nav` Vercel flag** were removed; the workspace pattern is the only DHO tab navigation.
+- **E2E:** Coherence navigation locators use **`link` + `aria-current`** instead of Radix **`tab`** (Coherence e2e page + spec updated).
+
+## Follow-up (Phase 3+)
+
 - Replace **`spaces` stub** with the real `SelectNavigationAction` graph; redirect aside **`select-navigation-action`** as per main tech spec.
-- E2E: enable flag, assert nav links and panel-coupling.
+- E2E: add assertions for the spaces route and left-rail + AI panel offset if needed.
