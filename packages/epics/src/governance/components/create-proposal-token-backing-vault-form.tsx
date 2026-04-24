@@ -7,6 +7,7 @@ import {
   useMe,
   useJwt,
   useCreateTokenBackingVaultOrchestrator,
+  preflightTokenBackingVault,
   CURRENCY_FEED_OPTIONS,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
@@ -157,6 +158,34 @@ export const CreateProposalTokenBackingVaultForm = ({
       return;
     }
 
+    // Run the on-chain preflight BEFORE invoking the orchestrator. If we let
+    // the orchestrator start its first task, the loading-backdrop modal opens
+    // immediately and validation failures appear as a full-screen overlay.
+    // Surfacing them inline here keeps the user on the form with the same
+    // controls visible, matching the rest of the validation experience.
+    try {
+      await preflightTokenBackingVault({
+        spaceId: web3SpaceId,
+        spaceToken: data.tokenBackingVault.spaceToken as `0x${string}`,
+        activateVault: data.tokenBackingVault.activateVault,
+        enableRedemption: data.tokenBackingVault.enableRedemption,
+        addCollaterals: data.tokenBackingVault.addCollaterals,
+        removeCollaterals: data.tokenBackingVault.removeCollaterals,
+        referenceCurrency: data.tokenBackingVault.referenceCurrency,
+        tokenPrice: data.tokenBackingVault.tokenPrice,
+        minimumBackingPercent: data.tokenBackingVault.minimumBackingPercent,
+        maxRedemptionPercent: data.tokenBackingVault.maxRedemptionPercent,
+        maxRedemptionPeriodDays: data.tokenBackingVault.maxRedemptionPeriodDays,
+        redemptionStartDate: data.tokenBackingVault.redemptionStartDate,
+        enableAdvancedRedemptionControls:
+          data.tokenBackingVault.enableAdvancedRedemptionControls,
+        redemptionWhitelist: data.tokenBackingVault.redemptionWhitelist,
+      });
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : String(err));
+      return;
+    }
+
     try {
       await createTokenBackingVault({
         ...data,
@@ -225,7 +254,7 @@ export const CreateProposalTokenBackingVaultForm = ({
           <Separator />
           <div className="flex flex-col gap-2">
             {formError && (
-              <div className="text-error-11 text-2 font-medium">
+              <div className="text-error-11 text-2 font-medium whitespace-pre-line">
                 {formError}
               </div>
             )}

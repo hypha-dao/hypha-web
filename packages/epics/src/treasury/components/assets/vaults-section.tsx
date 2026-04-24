@@ -8,7 +8,7 @@ import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { Empty } from '../../../common';
 import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
-import { Button } from '@hypha-platform/ui';
+import { Button, Separator } from '@hypha-platform/ui';
 import Link from 'next/link';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useIsDelegate, useSpaceBySlug } from '@hypha-platform/core/client';
@@ -115,40 +115,49 @@ export const VaultsSection: FC = () => {
     return null;
   }
 
+  // Treasury page stacks Rewards / Vaults / Balance with only `gap-6` between
+  // them. When the vault block is present the three regions visually merge —
+  // the user reported "everything seems to mush on top of each other". Render
+  // a divider above and below this section (only when it renders) so the
+  // separations show up exclusively when there's a vault to break apart.
   return (
-    <div className="flex flex-col w-full justify-center items-center gap-6">
-      <div className="w-full">
-        <h3 className="text-4">{tTreasury('vaultsSection.title')}</h3>
+    <>
+      <Separator />
+      <div className="flex flex-col w-full justify-center items-center gap-6">
+        <div className="w-full">
+          <h3 className="text-4">{tTreasury('vaultsSection.title')}</h3>
+        </div>
+        {vaults.map((vault, index) => (
+          <SingleVaultSection
+            key={`${vault.spaceToken}-${index}`}
+            vault={vault}
+            isLoading={isLoading}
+            lang={lang}
+            canUpdateVault={canUpdateVault}
+            updateVaultHref={updateVaultHref}
+            updateDisabledTitle={updateDisabledTitle}
+          />
+        ))}
+        {isLoading && vaults.length === 0 && (
+          <SingleVaultSection
+            vault={{
+              spaceToken: '',
+              tokenName: '',
+              tokenSymbol: '',
+              tokenIcon: '',
+              totalUsd: 0,
+              backingPercent: 0,
+              collaterals: [],
+            }}
+            isLoading
+            lang={lang}
+            canUpdateVault={canUpdateVault}
+            updateVaultHref={updateVaultHref}
+            updateDisabledTitle={updateDisabledTitle}
+          />
+        )}
       </div>
-      {vaults.map((vault, index) => (
-        <SingleVaultSection
-          key={`${vault.spaceToken}-${index}`}
-          vault={vault}
-          isLoading={isLoading}
-          lang={lang}
-          canUpdateVault={canUpdateVault}
-          updateVaultHref={updateVaultHref}
-          updateDisabledTitle={updateDisabledTitle}
-        />
-      ))}
-      {isLoading && vaults.length === 0 && (
-        <SingleVaultSection
-          vault={{
-            spaceToken: '',
-            tokenName: '',
-            tokenSymbol: '',
-            tokenIcon: '',
-            totalUsd: 0,
-            backingPercent: 0,
-            collaterals: [],
-          }}
-          isLoading
-          lang={lang}
-          canUpdateVault={canUpdateVault}
-          updateVaultHref={updateVaultHref}
-          updateDisabledTitle={updateDisabledTitle}
-        />
-      )}
-    </div>
+      <Separator />
+    </>
   );
 };
