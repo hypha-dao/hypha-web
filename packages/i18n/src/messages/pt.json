@@ -799,6 +799,14 @@
       "noAccess": "Você não tem acesso para visualizar a navegação espacial."
     }
   },
+  "DhoWorkspaceNav": {
+    "spaceNavAriaLabel": "Seções do espaço",
+    "openSpaceMenu": "Menu do espaço",
+    "spaceMenuTitle": "Espaço",
+    "closeMenu": "Fechar",
+    "spacesPageStubTitle": "Espaços (prévia)",
+    "spacesPageStubDescription": "O grafo e a lista de espaços aninhados aparecerão aqui. Este é um placeholder de desenvolvimento."
+  },
   "SpaceSettingsAction": {
     "title": "Configurações de espaço",
     "content": "Acesse e gerencie as configurações do seu espaço, incluindo aparência, estrutura, métodos, associação e tesouraria.",

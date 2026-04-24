@@ -4,6 +4,7 @@ import {
   HYPHA_DISABLE_HUMAN_CHAT,
   HYPHA_ENABLE_AI_CHAT,
   HYPHA_ENABLE_COHERENCE,
+  HYPHA_ENABLE_DHO_WORKSPACE_NAV,
   HYPHA_ENABLE_HUMAN_CHAT,
   HYPHA_ENABLE_SPACE_MEMORY,
   HYPHA_SHOW_LANGUAGE_SELECT,
@@ -74,6 +75,14 @@ export const flagDefinitionsForDiscovery = {
     defaultValue: false,
     description:
       'Human Chat panel (`NEXT_PUBLIC_ENABLE_HUMAN_CHAT`; kill-switch HYPHA_DISABLE_HUMAN_CHAT)',
+    origin: 'hypha' as const,
+    options: undefined as undefined,
+  },
+  enableDhoWorkspaceNav: {
+    key: 'enable-dho-workspace-nav',
+    defaultValue: false,
+    description:
+      'DHO main-column left nav + mobile sheet (workspace shell; `NEXT_PUBLIC_ENABLE_DHO_WORKSPACE_NAV` + `HYPHA_ENABLE_DHO_WORKSPACE_NAV` cookie)',
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
@@ -155,5 +164,13 @@ export async function getEnableSpaceMemory(): Promise<boolean> {
     'enable-space-memory',
     HYPHA_ENABLE_SPACE_MEMORY,
     process.env.NEXT_PUBLIC_ENABLE_SPACE_MEMORY,
+  );
+}
+
+export async function getEnableDhoWorkspaceNav(): Promise<boolean> {
+  return getBooleanFlagFromToolbarCookieOrEnv(
+    'enable-dho-workspace-nav',
+    HYPHA_ENABLE_DHO_WORKSPACE_NAV,
+    process.env.NEXT_PUBLIC_ENABLE_DHO_WORKSPACE_NAV,
   );
 }
