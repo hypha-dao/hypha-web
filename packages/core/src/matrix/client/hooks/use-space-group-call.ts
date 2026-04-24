@@ -310,6 +310,7 @@ export function useSpaceGroupCall(roomId: string | null) {
         setCallState('error');
         setCallKind(null);
         setThreadContext(null);
+        setCallSessionId(null);
         isJoiningRef.current = false;
         joinStartedAtRef.current = null;
         if (roomId) {
@@ -344,6 +345,7 @@ export function useSpaceGroupCall(roomId: string | null) {
           } else {
             isJoiningRef.current = false;
             setErrorCode('UNKNOWN');
+            setCallSessionId(null);
             if (roomId) {
               logSpaceGroupCallEvent({
                 name: 'hypha.group_call.error',
@@ -363,6 +365,7 @@ export function useSpaceGroupCall(roomId: string | null) {
 
       if (!gc) {
         setErrorCode('UNKNOWN');
+        setCallSessionId(null);
         if (roomId) {
           logSpaceGroupCallEvent({
             name: 'hypha.group_call.error',
