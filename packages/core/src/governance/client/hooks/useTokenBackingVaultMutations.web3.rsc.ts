@@ -105,6 +105,138 @@ function parseUnits(value: string, decimals: number): bigint {
   return BigInt(padded || '0');
 }
 
+/**
+ * Pure preflight validation. Mirrors the require() checks in
+ * TokenBackingVaultImplementation so failures don't end up as opaque
+ * "Execution failed" reverts from the executor (which drops returndata).
+ *
+ * Exported so the form layer can run the validation BEFORE the
+ * orchestrator starts any task — that way a validation failure does not
+ * pop the loading-backdrop modal; it just surfaces inline on the form.
+ *
+ * Throws an Error whose message is a `\n`-joined list of human-readable
+ * problems when one or more checks fail. Resolves with `void` otherwise.
+ */
+export async function preflightTokenBackingVault(
+  arg: TokenBackingVaultInput,
+): Promise<void> {
+  const vaultAddress =
+    tokenBackingVaultImplementationAddress[
+      chainId as keyof typeof tokenBackingVaultImplementationAddress
+    ];
+
+  const spaceId = BigInt(arg.spaceId);
+  const spaceToken = arg.spaceToken;
+  const validAddCollaterals =
+    arg.addCollaterals?.filter(
+      (c) => c.token && Number.parseFloat(c.amount) > 0,
+    ) ?? [];
+  const willAddBacking = arg.activateVault && validAddCollaterals.length > 0;
+
+  const vaultExists = await publicClient.readContract({
+    address: vaultAddress,
+    abi: tokenBackingVaultImplementationAbi,
+    functionName: 'vaultExists',
+    args: [spaceId, spaceToken],
+  });
+
+  const willCreateEmptyVault =
+    arg.activateVault && !vaultExists && validAddCollaterals.length === 0;
+  const isCreatingNewVault =
+    !vaultExists && (willAddBacking || willCreateEmptyVault);
+
+  const redemptionPrice = arg.tokenPrice
+    ? BigInt(Math.round(parseFloat(arg.tokenPrice) * Number(PRICE_PRECISION)))
+    : 0n;
+
+  let existingBackingTokens = new Set<string>();
+  if (vaultExists && validAddCollaterals.length > 0) {
+    const configuredBackingTokens = await publicClient.readContract({
+      address: vaultAddress,
+      abi: tokenBackingVaultImplementationAbi,
+      functionName: 'getBackingTokens',
+      args: [spaceId, spaceToken],
+    });
+    existingBackingTokens = new Set(
+      configuredBackingTokens.map((token) => token.toLowerCase()),
+    );
+  }
+
+  // Only tokens passed to `addBackingToken` go through the contract's
+  // price validation. Tokens added via `addBacking` already passed
+  // validation when first registered.
+  const collateralsBeingRegistered = validAddCollaterals.filter(
+    (c) => !existingBackingTokens.has(c.token.toLowerCase()),
+  );
+
+  const validationErrors: string[] = [];
+  const SUPPORTED_TOKENS_HINT = 'USDC, WETH, cbBTC, or EURC';
+
+  // Space token must have tokenPrice() > 0 when creating a new vault,
+  // UNLESS a redemption-price override is being set in this proposal
+  // (the contract's _requirePriceableSpaceToken accepts either source).
+  if (isCreatingNewVault && redemptionPrice === 0n) {
+    const [spaceTokenSymbol, spaceTokenPrice] = await Promise.all([
+      readTokenSymbol(spaceToken),
+      readTokenPrice(spaceToken),
+    ]);
+    const label = tokenLabel(spaceTokenSymbol);
+    if (spaceTokenPrice === null) {
+      validationErrors.push(
+        `We couldn't read a price from the space token ${label}. Either set a price on it or set a redemption price below, then try again.`,
+      );
+    } else if (spaceTokenPrice === 0n) {
+      validationErrors.push(
+        `The space token ${label} doesn't have a price yet. Either set its price, or set a redemption price below to use that instead.`,
+      );
+    }
+  }
+
+  // Backing tokens without a Chainlink feed mapping must expose
+  // tokenPrice() > 0 (the contract reads it directly inside
+  // addBackingToken).
+  if (collateralsBeingRegistered.length > 0) {
+    await Promise.all(
+      collateralsBeingRegistered.map(async (c) => {
+        const hasFeed = Boolean(
+          ASSET_PRICE_FEED_BY_TOKEN[c.token.toLowerCase()],
+        );
+        if (hasFeed) return;
+        const tokenAddr = c.token as `0x${string}`;
+        const [symbol, price] = await Promise.all([
+          readTokenSymbol(tokenAddr),
+          readTokenPrice(tokenAddr),
+        ]);
+        const label = tokenLabel(symbol);
+        if (price === null) {
+          validationErrors.push(
+            `We can't find a price source for the backing token ${label}. Pick a supported token (${SUPPORTED_TOKENS_HINT}) or a token issued by your space that already has a price set.`,
+          );
+        } else if (price === 0n) {
+          validationErrors.push(
+            `The backing token ${label} doesn't have a price yet. Set its price first, or pick a supported token (${SUPPORTED_TOKENS_HINT}) instead.`,
+          );
+        }
+      }),
+    );
+  }
+
+  // Maximum-redemption cap requires a non-zero rolling period
+  // (matches `Period must be > 0 when cap is set` in the contract).
+  if (
+    (arg.maxRedemptionPercent ?? 0) > 0 &&
+    (arg.maxRedemptionPeriodDays ?? 0) <= 0
+  ) {
+    validationErrors.push(
+      'Please choose a redemption period to go with the maximum redemption percentage, or set the percentage to 0 to remove the limit.',
+    );
+  }
+
+  if (validationErrors.length > 0) {
+    throw new Error(validationErrors.join('\n'));
+  }
+}
+
 export const useTokenBackingVaultMutationsWeb3Rsc = ({
   proposalSlug,
 }: {
@@ -220,80 +352,12 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
         (c) => !existingBackingTokens.has(c.token.toLowerCase()),
       );
 
-      // ============================================================
-      //  Preflight validation — surfaces the contract-level reverts
-      //  with actionable messages BEFORE the user signs / votes.
-      //  Mirrors the require() checks in TokenBackingVaultImplementation
-      //  so failures don't end up as opaque "Execution failed" reverts
-      //  from the executor (it drops returndata).
-      // ============================================================
-      const validationErrors: string[] = [];
-      const SUPPORTED_TOKENS_HINT = 'USDC, WETH, cbBTC, or EURC';
-
-      // Space token must have tokenPrice() > 0 when creating a new vault,
-      // UNLESS a redemption-price override is being set in this proposal.
-      // The contract's _requirePriceableSpaceToken accepts either source.
-      if (isCreatingNewVault && redemptionPrice === 0n) {
-        const [spaceTokenSymbol, spaceTokenPrice] = await Promise.all([
-          readTokenSymbol(spaceToken),
-          readTokenPrice(spaceToken),
-        ]);
-        const label = tokenLabel(spaceTokenSymbol);
-        if (spaceTokenPrice === null) {
-          validationErrors.push(
-            `We couldn't read a price from the space token ${label}. Either set a price on it or set a redemption price below, then try again.`,
-          );
-        } else if (spaceTokenPrice === 0n) {
-          validationErrors.push(
-            `The space token ${label} doesn't have a price yet. Either set its price, or set a redemption price below to use that instead.`,
-          );
-        }
-      }
-
-      // Backing tokens without a Chainlink feed mapping must expose
-      // tokenPrice() > 0 (the contract reads it directly inside
-      // addBackingToken). Skip tokens already configured on the vault —
-      // those go through addBacking and won't re-trigger price validation.
-      if (collateralsBeingRegistered.length > 0) {
-        await Promise.all(
-          collateralsBeingRegistered.map(async (c) => {
-            const hasFeed = Boolean(
-              ASSET_PRICE_FEED_BY_TOKEN[c.token.toLowerCase()],
-            );
-            if (hasFeed) return;
-            const tokenAddr = c.token as `0x${string}`;
-            const [symbol, price] = await Promise.all([
-              readTokenSymbol(tokenAddr),
-              readTokenPrice(tokenAddr),
-            ]);
-            const label = tokenLabel(symbol);
-            if (price === null) {
-              validationErrors.push(
-                `We can't find a price source for the backing token ${label}. Pick a supported token (${SUPPORTED_TOKENS_HINT}) or a token issued by your space that already has a price set.`,
-              );
-            } else if (price === 0n) {
-              validationErrors.push(
-                `The backing token ${label} doesn't have a price yet. Set its price first, or pick a supported token (${SUPPORTED_TOKENS_HINT}) instead.`,
-              );
-            }
-          }),
-        );
-      }
-
-      // Maximum-redemption cap requires a non-zero rolling period
-      // (matches `Period must be > 0 when cap is set` in the contract).
-      if (
-        (arg.maxRedemptionPercent ?? 0) > 0 &&
-        (arg.maxRedemptionPeriodDays ?? 0) <= 0
-      ) {
-        validationErrors.push(
-          'Please choose a redemption period to go with the maximum redemption percentage, or set the percentage to 0 to remove the limit.',
-        );
-      }
-
-      if (validationErrors.length > 0) {
-        throw new Error(validationErrors.join('\n'));
-      }
+      // Defense-in-depth: the form layer also runs `preflightTokenBackingVault`
+      // BEFORE invoking the orchestrator (so validation failures don't open
+      // the loading-backdrop modal). We re-run it here because the on-chain
+      // state read by the preflight (vault existence, configured backings,
+      // token prices) could in theory shift between submit and execution.
+      await preflightTokenBackingVault(arg);
 
       // Approve Vault contract to spend tokens on behalf of the Space.
       // Must be the first transactions executed so addBackingToken can transfer tokens.
