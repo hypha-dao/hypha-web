@@ -4,6 +4,7 @@ import type { MatrixClient, MatrixEvent } from 'matrix-js-sdk';
 import { EventType } from 'matrix-js-sdk';
 import { Bell } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
+import { cn } from '@hypha-platform/ui-utils';
 
 import {
   getMessageReplaceTargetEventId,
@@ -126,12 +127,15 @@ export type HumanChatPanelMentionBellProps = {
   unreadCount: number;
   countIsCapped: boolean;
   onOpenMentions: () => void;
+  /** True when the Mentions tab is active — bell icon uses white on accent. */
+  mentionsTabActive?: boolean;
 };
 
 export function HumanChatPanelMentionBell({
   unreadCount,
   countIsCapped,
   onOpenMentions,
+  mentionsTabActive = false,
 }: HumanChatPanelMentionBellProps) {
   const t = useTranslations('HumanChatPanel');
 
@@ -145,7 +149,13 @@ export function HumanChatPanelMentionBell({
   return (
     <button
       type="button"
-      className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent-2 hover:text-accent-12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-9/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className={cn(
+        'relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-9/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        mentionsTabActive
+          ? 'bg-accent-9 text-white shadow-sm ring-1 ring-inset ring-accent-10/30 hover:bg-accent-10 hover:text-white'
+          : 'text-muted-foreground hover:bg-accent-2 hover:text-accent-12',
+      )}
+      aria-pressed={mentionsTabActive}
       aria-label={
         unreadCount > 0
           ? countIsCapped || unreadCount >= 100
@@ -156,9 +166,20 @@ export function HumanChatPanelMentionBell({
       title={t('mentionInboxTitle')}
       onClick={onOpenMentions}
     >
-      <Bell className="h-3.5 w-3.5" aria-hidden />
+      <Bell
+        className="h-3.5 w-3.5"
+        strokeWidth={mentionsTabActive ? 2.5 : 2}
+        aria-hidden
+      />
       {badgeLabel != null && (
-        <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full border border-accent-9/40 bg-accent-9 px-0.5 text-[9px] font-semibold leading-none text-accent-contrast shadow-sm">
+        <span
+          className={cn(
+            'absolute -right-0.5 -top-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full border px-0.5 text-[9px] font-semibold leading-none shadow-sm',
+            mentionsTabActive
+              ? 'border-white/30 bg-white text-accent-9'
+              : 'border-accent-9/40 bg-accent-9 text-accent-contrast',
+          )}
+        >
           {badgeLabel}
         </span>
       )}

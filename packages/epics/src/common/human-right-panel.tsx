@@ -1773,6 +1773,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               <HumanChatPanelMentionBell
                 unreadCount={unreadChatState.unreadMentionCount}
                 countIsCapped={unreadChatState.mentionCountIsCapped}
+                mentionsTabActive={activeTab === 'mentions'}
                 onOpenMentions={() => setActiveTab('mentions')}
               />
             ) : null

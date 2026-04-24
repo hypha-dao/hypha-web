@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -29,6 +30,7 @@ export function HumanChatPanelTabs({
   tabRowEnd,
 }: HumanChatPanelTabsProps) {
   const t = useTranslations('HumanChatPanel');
+  const tabRailScrollRef = useRef<HTMLDivElement | null>(null);
 
   const chatBadgeLabel =
     chatMentionCount > 0
@@ -72,6 +74,22 @@ export function HumanChatPanelTabs({
 
   const hasEndCluster = Boolean(tabRowEnd);
 
+  useLayoutEffect(() => {
+    if (activeTab !== 'mentions') return;
+    const el = document.getElementById('chat-tab-mentions');
+    const rail = tabRailScrollRef.current;
+    if (!el || !rail) return;
+    const elRect = el.getBoundingClientRect();
+    const railRect = rail.getBoundingClientRect();
+    if (elRect.left < railRect.left || elRect.right > railRect.right) {
+      el.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'nearest',
+      });
+    }
+  }, [activeTab]);
+
   return (
     <div
       className={cn(
@@ -90,6 +108,7 @@ export function HumanChatPanelTabs({
         role=tablist is on the inner so it still only contains role=tab children.
       */}
       <div
+        ref={tabRailScrollRef}
         className={cn(
           'min-w-0 max-w-full self-stretch',
           'overflow-x-auto overflow-y-hidden overscroll-x-contain',
@@ -135,7 +154,9 @@ export function HumanChatPanelTabs({
                 'whitespace-nowrap rounded-lg px-2.5 py-1.5 text-left text-xs font-medium',
                 'transition-colors duration-150 sm:px-3',
                 activeTab === tab.key
-                  ? 'border border-accent-9/40 bg-accent-9/18 text-foreground shadow-sm ring-1 ring-inset ring-accent-9/25 dark:border-accent-10/45 dark:bg-accent-9/22 dark:text-foreground dark:ring-accent-10/30'
+                  ? tab.key === 'mentions'
+                    ? 'border border-accent-9 bg-accent-9 text-white shadow-sm ring-1 ring-inset ring-accent-10/35 dark:border-accent-10 dark:bg-accent-10'
+                    : 'border border-accent-9/40 bg-accent-9/18 text-foreground shadow-sm ring-1 ring-inset ring-accent-9/25 dark:border-accent-10/45 dark:bg-accent-9/22 dark:text-foreground dark:ring-accent-10/30'
                   : 'border border-transparent text-muted-foreground hover:border-border/70 hover:bg-muted/80 hover:text-foreground',
               )}
             >
@@ -154,7 +175,12 @@ export function HumanChatPanelTabs({
                 {tab.key === 'mentions' && mentionBadgeLabel != null && (
                   <span
                     aria-hidden
-                    className="inline-flex min-h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full border border-accent-9/35 bg-accent-9 px-1.5 text-[10px] font-semibold leading-none text-accent-contrast tabular-nums shadow-sm"
+                    className={cn(
+                      'inline-flex min-h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full border px-1.5 text-[10px] font-semibold leading-none tabular-nums shadow-sm',
+                      activeTab === 'mentions'
+                        ? 'border-white/30 bg-white/20 text-white'
+                        : 'border border-accent-9/35 bg-accent-9 text-accent-contrast',
+                    )}
                   >
                     {mentionBadgeLabel}
                   </span>
