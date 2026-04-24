@@ -46,9 +46,19 @@ export function useSpaceGroupCall(roomId: string | null) {
   const [groupCall, setGroupCall] = useState<MatrixSdk.GroupCall | null>(null);
   /** Bumps when userMediaFeeds / screenshareFeeds change (re-render stage). */
   const [feedVersion, setFeedVersion] = useState(0);
+  /** `userId::deviceId` for GroupCall.activeSpeaker; Phase 4 optional UI highlight. */
+  const [activeSpeakerKey, setActiveSpeakerKey] = useState<string | null>(null);
+  /** Screenshare-only failure (does not end the call). */
+  const [screenshareErrorCode, setScreenshareErrorCode] =
+    useState<SpaceGroupCallErrorCode | null>(null);
 
   const groupCallRef = useRef<MatrixSdk.GroupCall | null>(null);
   const isJoiningRef = useRef(false);
+
+  const setActiveKeyFromGroupCall = useCallback((gc: MatrixSdk.GroupCall) => {
+    const f = gc.activeSpeaker;
+    setActiveSpeakerKey(f ? `${f.userId}::${f.deviceId ?? ''}` : null);
+  }, []);
 
   const runCleanup = useCallback(() => {
     const gc = groupCallRef.current;
@@ -61,6 +71,7 @@ export function useSpaceGroupCall(roomId: string | null) {
         gc.removeAllListeners(GroupCallEvent.UserMediaFeedsChanged);
         gc.removeAllListeners(GroupCallEvent.ScreenshareFeedsChanged);
         gc.removeAllListeners(GroupCallEvent.LocalMuteStateChanged);
+        gc.removeAllListeners(GroupCallEvent.ActiveSpeakerChanged);
       } catch {
         // ignore
       }
@@ -76,6 +87,8 @@ export function useSpaceGroupCall(roomId: string | null) {
     setIsMicrophoneMuted(false);
     setIsLocalVideoMuted(true);
     setGroupCall(null);
+    setActiveSpeakerKey(null);
+    setScreenshareErrorCode(null);
   }, []);
 
   const refreshLocalPreview = useCallback(() => {
@@ -136,6 +149,15 @@ export function useSpaceGroupCall(roomId: string | null) {
       gc.on(GroupCallEvent.ScreenshareFeedsChanged, () => {
         setFeedVersion((v) => v + 1);
       });
+      const onActiveSpeaker = (
+        feed: { userId: string; deviceId?: string } | undefined,
+      ) => {
+        setActiveSpeakerKey(
+          feed ? `${feed.userId}::${feed.deviceId ?? ''}` : null,
+        );
+      };
+      gc.on(GroupCallEvent.ActiveSpeakerChanged, onActiveSpeaker);
+      onActiveSpeaker(gc.activeSpeaker);
       gc.on(
         GroupCallEvent.LocalMuteStateChanged,
         (audioMuted: boolean, videoMuted: boolean) => {
@@ -144,7 +166,12 @@ export function useSpaceGroupCall(roomId: string | null) {
         },
       );
     },
-    [refreshLocalPreview, runCleanup, updateParticipantCount],
+    [
+      refreshLocalPreview,
+      runCleanup,
+      setActiveKeyFromGroupCall,
+      updateParticipantCount,
+    ],
   );
 
   const enterWithKind = useCallback(
@@ -159,6 +186,7 @@ export function useSpaceGroupCall(roomId: string | null) {
 
       isJoiningRef.current = true;
       setErrorCode(null);
+      setScreenshareErrorCode(null);
       if (threadRootEventId) {
         setThreadContext({ threadRootEventId });
       }
@@ -247,6 +275,7 @@ export function useSpaceGroupCall(roomId: string | null) {
       updateParticipantCount();
       setIsMicrophoneMuted(gc.isMicrophoneMuted());
       setIsLocalVideoMuted(gc.isLocalVideoMuted());
+      setActiveKeyFromGroupCall(gc);
       isJoiningRef.current = false;
     },
     [
@@ -255,6 +284,7 @@ export function useSpaceGroupCall(roomId: string | null) {
       roomId,
       refreshLocalPreview,
       runCleanup,
+      setActiveKeyFromGroupCall,
       updateParticipantCount,
     ],
   );
@@ -304,7 +334,19 @@ export function useSpaceGroupCall(roomId: string | null) {
   const setScreensharingEnabled = useCallback(async (enabled: boolean) => {
     const gc = groupCallRef.current;
     if (!gc) return;
-    await gc.setScreensharingEnabled(enabled);
+    setScreenshareErrorCode(null);
+    try {
+      const ok = await gc.setScreensharingEnabled(enabled);
+      if (ok === false) {
+        setScreenshareErrorCode('WEBRTC_FAILED');
+      }
+    } catch (e) {
+      if (isPermissionLikeGroupCallError(e)) {
+        setScreenshareErrorCode('PERMISSION_DENIED');
+      } else {
+        setScreenshareErrorCode('WEBRTC_FAILED');
+      }
+    }
     setFeedVersion((v) => v + 1);
   }, []);
 
@@ -318,6 +360,7 @@ export function useSpaceGroupCall(roomId: string | null) {
       setIsScreensharing(false);
       setThreadContext(null);
       setParticipantCount(0);
+      setScreenshareErrorCode(null);
     }
   }, [roomId, runCleanup]);
 
@@ -327,9 +370,16 @@ export function useSpaceGroupCall(roomId: string | null) {
     };
   }, [runCleanup]);
 
+  const dismissScreenshareError = useCallback(() => {
+    setScreenshareErrorCode(null);
+  }, []);
+
   return {
     callState,
     errorCode,
+    screenshareErrorCode,
+    dismissScreenshareError,
+    activeSpeakerKey,
     threadContext,
     callKind,
     enterAudio,

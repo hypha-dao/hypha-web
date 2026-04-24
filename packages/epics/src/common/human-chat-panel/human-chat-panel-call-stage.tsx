@@ -20,9 +20,15 @@ type HumanChatPanelCallStageProps = {
   isScreensharing: boolean;
   callState: string;
   feedVersion: number;
+  /** `userId::deviceId` from GroupCall activeSpeaker; optional highlight. */
+  activeSpeakerKey: string | null;
   currentUserId: string | null;
   resolveMemberLabel: (userId: string | undefined) => string;
 };
+
+function feedKeyForActive(feed: CallFeed): string {
+  return `${feed.userId}::${feed.deviceId ?? ''}`;
+}
 
 function feedKey(feed: CallFeed, index: number): string {
   return `${feed.userId}:${String(feed.deviceId)}:${String(
@@ -32,7 +38,7 @@ function feedKey(feed: CallFeed, index: number): string {
 
 /**
  * Video grid + local PiP from GroupCall userMedia / screenshare feeds.
- * @see voice-video-call-implementation-spec.md §3.4.2, §3.5
+ * @see voice-video-call-implementation-spec.md §3.4.2, §3.5 (Phase 4: share + active speaker)
  */
 export function HumanChatPanelCallStage({
   client,
@@ -43,6 +49,7 @@ export function HumanChatPanelCallStage({
   isScreensharing,
   callState,
   feedVersion: _feedVersion,
+  activeSpeakerKey,
   currentUserId,
   resolveMemberLabel,
 }: HumanChatPanelCallStageProps) {
@@ -51,15 +58,22 @@ export function HumanChatPanelCallStage({
   const room: Room | null =
     roomId && client ? client.getRoom(roomId) ?? null : null;
 
-  if (callState !== 'connected' || callKind !== 'video' || !groupCall) {
+  if (callState !== 'connected' || !groupCall) {
+    return null;
+  }
+  if (callKind !== 'video' && callKind !== 'audio') {
     return null;
   }
 
+  const isVideoCall = callKind === 'video';
   const userMediaFeeds = [...groupCall.userMediaFeeds];
   const shareFeeds = [...groupCall.screenshareFeeds];
 
-  const hasLocalWebcam = !isLocalVideoMuted;
-  if (!hasLocalWebcam && shareFeeds.length === 0) {
+  const hasLocalWebcam = isVideoCall && !isLocalVideoMuted;
+  if (!isVideoCall && shareFeeds.length === 0) {
+    return null;
+  }
+  if (isVideoCall && !hasLocalWebcam && shareFeeds.length === 0) {
     if (isScreensharing) {
       return (
         <section
@@ -78,7 +92,6 @@ export function HumanChatPanelCallStage({
   const remoteUserMedia = userMediaFeeds.filter((f) => !f.isLocal());
   const localUserMedia = userMediaFeeds.filter((f) => f.isLocal());
   const hasRemotesOrShare = shareFeeds.length > 0 || remoteUserMedia.length > 0;
-  /** When alone in the room, show the local camera as the primary tile (not a tiny empty canvas + PiP). */
   const showLocalInMainGrid =
     !hasRemotesOrShare && localUserMedia.length > 0 && hasLocalWebcam;
   const showLocalPip = hasRemotesOrShare;
@@ -92,18 +105,37 @@ export function HumanChatPanelCallStage({
       <h2 id={labelId} className="sr-only">
         {t('callStageLabel')}
       </h2>
+      {shareFeeds.length > 0 && (
+        <div className="w-full p-2 pb-0" data-feed-tick={_feedVersion}>
+          {shareFeeds.map((feed, i) => (
+            <div key={feedKey(feed, i)} className="w-full max-w-full">
+              <CallFeedTile
+                feed={feed}
+                isShare
+                isActiveSpeaker={
+                  activeSpeakerKey != null &&
+                  activeSpeakerKey === feedKeyForActive(feed)
+                }
+                room={room}
+                currentUserId={currentUserId}
+                resolveMemberLabel={resolveMemberLabel}
+                t={t}
+              />
+            </div>
+          ))}
+        </div>
+      )}
       {(hasRemotesOrShare || showLocalInMainGrid) && (
         <div
           className={cn(
-            'grid gap-2 p-2',
-            '@min-[22rem]:grid-cols-2',
+            'grid gap-2 p-2 pt-2',
+            shareFeeds.length > 0
+              ? 'max-h-[min(50vh,420px)] @min-[22rem]:grid-cols-2'
+              : '@min-[22rem]:grid-cols-2',
             shareFeeds.length +
               remoteUserMedia.length +
               (showLocalInMainGrid ? 1 : 0) ===
               1 && 'mx-auto max-w-2xl',
-            shareFeeds.some(
-              (f) => !f.isVideoMuted() && f.stream.getVideoTracks().length > 0,
-            ) && 'min-h-[min(36vh,280px)]',
             !shareFeeds.length &&
               remoteUserMedia.length > 0 &&
               'min-h-[min(32vh,220px)]',
@@ -111,21 +143,14 @@ export function HumanChatPanelCallStage({
           )}
           data-feed-tick={_feedVersion}
         >
-          {shareFeeds.map((feed, i) => (
-            <CallFeedTile
-              key={feedKey(feed, i)}
-              feed={feed}
-              isShare
-              room={room}
-              currentUserId={currentUserId}
-              resolveMemberLabel={resolveMemberLabel}
-              t={t}
-            />
-          ))}
           {remoteUserMedia.map((feed, i) => (
             <CallFeedTile
               key={feedKey(feed, i)}
               feed={feed}
+              isActiveSpeaker={
+                activeSpeakerKey != null &&
+                activeSpeakerKey === feedKeyForActive(feed)
+              }
               room={room}
               currentUserId={currentUserId}
               resolveMemberLabel={resolveMemberLabel}
@@ -137,6 +162,10 @@ export function HumanChatPanelCallStage({
               <CallFeedTile
                 key={feedKey(feed, i)}
                 feed={feed}
+                isActiveSpeaker={
+                  activeSpeakerKey != null &&
+                  activeSpeakerKey === feedKeyForActive(feed)
+                }
                 room={room}
                 currentUserId={currentUserId}
                 resolveMemberLabel={resolveMemberLabel}
@@ -145,24 +174,31 @@ export function HumanChatPanelCallStage({
             ))}
         </div>
       )}
-      {localUserMedia.length > 0 && hasLocalWebcam && showLocalPip && (
-        <div
-          className="pointer-events-none absolute bottom-2 end-2 z-10 w-[32%] min-w-[5.5rem] max-w-[8.5rem] overflow-hidden rounded-lg border-2 border-border bg-card shadow-lg"
-          style={{ aspectRatio: '4 / 3' }}
-        >
-          {localUserMedia.map((feed, i) => (
-            <CallFeedTile
-              key={feedKey(feed, i)}
-              feed={feed}
-              isPip
-              room={room}
-              currentUserId={currentUserId}
-              resolveMemberLabel={resolveMemberLabel}
-              t={t}
-            />
-          ))}
-        </div>
-      )}
+      {isVideoCall &&
+        localUserMedia.length > 0 &&
+        hasLocalWebcam &&
+        showLocalPip && (
+          <div
+            className="pointer-events-none absolute bottom-2 end-2 z-10 w-[32%] min-w-[5.5rem] max-w-[8.5rem] overflow-hidden rounded-lg border-2 border-border bg-card shadow-lg"
+            style={{ aspectRatio: '4 / 3' }}
+          >
+            {localUserMedia.map((feed, i) => (
+              <CallFeedTile
+                key={feedKey(feed, i)}
+                feed={feed}
+                isPip
+                isActiveSpeaker={
+                  activeSpeakerKey != null &&
+                  activeSpeakerKey === feedKeyForActive(feed)
+                }
+                room={room}
+                currentUserId={currentUserId}
+                resolveMemberLabel={resolveMemberLabel}
+                t={t}
+              />
+            ))}
+          </div>
+        )}
     </section>
   );
 }
@@ -186,6 +222,7 @@ const CallFeedTile = ({
   feed,
   isShare = false,
   isPip = false,
+  isActiveSpeaker = false,
   room,
   currentUserId,
   resolveMemberLabel,
@@ -194,6 +231,7 @@ const CallFeedTile = ({
   feed: CallFeed;
   isShare?: boolean;
   isPip?: boolean;
+  isActiveSpeaker?: boolean;
   room: Room | null;
   currentUserId: string | null;
   resolveMemberLabel: (userId: string | undefined) => string;
@@ -221,6 +259,7 @@ const CallFeedTile = ({
       feed={feed}
       isShare={isShare}
       isPip={isPip}
+      isActiveSpeaker={isActiveSpeaker}
       label={label}
       t={t}
     />
@@ -231,12 +270,14 @@ const FeedContent = ({
   feed,
   isShare,
   isPip,
+  isActiveSpeaker,
   label,
   t,
 }: {
   feed: CallFeed;
   isShare: boolean;
   isPip: boolean;
+  isActiveSpeaker: boolean;
   label: string;
   t: (key: string) => string;
 }) => {
@@ -263,9 +304,11 @@ const FeedContent = ({
     };
     feed.on(CallFeedEvent.MuteStateChanged, onFeedVisualChange);
     feed.on(CallFeedEvent.NewStream, onFeedVisualChange);
+    feed.on(CallFeedEvent.Speaking, onFeedVisualChange);
     return () => {
       feed.removeListener(CallFeedEvent.MuteStateChanged, onFeedVisualChange);
       feed.removeListener(CallFeedEvent.NewStream, onFeedVisualChange);
+      feed.removeListener(CallFeedEvent.Speaking, onFeedVisualChange);
     };
   }, [feed]);
 
@@ -275,7 +318,8 @@ const FeedContent = ({
     <div
       className={cn(
         'relative flex min-h-[10rem] min-w-0 items-stretch justify-center overflow-hidden rounded-lg bg-black/20',
-        isShare && 'min-h-[14rem] @min-[22rem]:col-span-2',
+        isShare && 'min-h-[min(42vh,360px)] w-full',
+        isActiveSpeaker && 'ring-2 ring-accent-9/70 ring-offset-0',
         isPip && 'min-h-0',
       )}
     >

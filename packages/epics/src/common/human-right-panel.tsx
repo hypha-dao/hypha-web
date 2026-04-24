@@ -521,6 +521,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     isScreensharing: spaceCallScreensharing,
     groupCall: spaceGroupCall,
     feedVersion: spaceCallFeedVersion,
+    screenshareErrorCode: spaceCallScreenshareError,
+    dismissScreenshareError: dismissSpaceCallScreenshareError,
+    activeSpeakerKey: spaceCallActiveSpeakerKey,
+    setScreensharingEnabled: setSpaceCallScreensharing,
   } = useSpaceGroupCall(mode === 'space' ? roomId : null);
 
   const callUiEnabled = useMemo(
@@ -563,6 +567,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const handleCallToggleCamera = useCallback(() => {
     void setSpaceCallCameraMuted(!spaceCallVideoMuted);
   }, [setSpaceCallCameraMuted, spaceCallVideoMuted]);
+
+  const handleCallToggleScreenshare = useCallback(() => {
+    void setSpaceCallScreensharing(!spaceCallScreensharing);
+  }, [setSpaceCallScreensharing, spaceCallScreensharing]);
 
   /** Bumps when Matrix room membership changes so `@` mention candidates + button state refresh without reload. */
   const [mentionMembershipEpoch, setMentionMembershipEpoch] = useState(0);
@@ -1709,12 +1717,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               callState={spaceCallState}
               callKind={spaceCallKind}
               errorCode={spaceCallError}
+              isScreensharing={spaceCallScreensharing}
+              screenshareErrorCode={spaceCallScreenshareError}
               isMicrophoneMuted={spaceCallMicMuted}
               isLocalVideoMuted={spaceCallVideoMuted}
               participantCount={spaceCallParticipantSummary.count}
               onLeave={handleCallLeave}
               onToggleMic={handleCallToggleMic}
               onToggleCamera={handleCallToggleCamera}
+              onToggleScreenshare={handleCallToggleScreenshare}
+              onDismissScreenshareError={dismissSpaceCallScreenshareError}
             />
           )}
       </SidebarHeader>
@@ -1736,6 +1748,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 isScreensharing={spaceCallScreensharing}
                 callState={spaceCallState}
                 feedVersion={spaceCallFeedVersion}
+                activeSpeakerKey={spaceCallActiveSpeakerKey}
                 currentUserId={currentUserId}
                 resolveMemberLabel={resolveMemberLabel}
               />
