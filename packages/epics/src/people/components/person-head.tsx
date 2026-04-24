@@ -99,12 +99,12 @@ export const PersonHead = ({
       surname: me.surname ?? surname,
       slug: me.slug ?? slug,
       createdAt: me.createdAt ?? createdAt,
-      about: me.description ?? about,
-      background: me.leadImageUrl ?? background,
-      links: me.links?.length ? me.links : links,
-      location: me.location ?? location,
-      email: me.email ?? email,
-      avatar: me.avatarUrl ?? avatar,
+      about: me.description,
+      background: me.leadImageUrl,
+      links: me.links ?? [],
+      location: me.location,
+      email: me.email,
+      avatar: me.avatarUrl,
     };
   }, [
     isSelfView,
@@ -195,11 +195,6 @@ export const PersonHead = ({
             links={self.links}
             leadImageUrl={heroBannerHref}
             defaultLeadImageSrc={DEFAULT_SPACE_LEAD_IMAGE}
-            memberCount={0}
-            agreementCount={0}
-            createdOnText=""
-            membersLabel=""
-            agreementsLabel=""
             descriptionLabel={tCommon('spaceBannerDescriptionAria', {
               title: displayName,
             })}
