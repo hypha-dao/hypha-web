@@ -29,6 +29,28 @@ export type SpaceGroupCallErrorCode =
 const { GroupCallEvent, GroupCallIntent, GroupCallType, GroupCallState } =
   MatrixSdk;
 
+/** `callSessionId` for correlation; must not use `Math.random()` (CodeQL / GAS-weak-randomness). */
+function newCallSessionId(): string {
+  const c = globalThis.crypto;
+  if (c && typeof c.randomUUID === 'function') {
+    return c.randomUUID();
+  }
+  if (c && typeof c.getRandomValues === 'function') {
+    const buf = new Uint8Array(16);
+    c.getRandomValues(buf);
+    buf[6] = (buf[6]! & 0x0f) | 0x40;
+    buf[8] = (buf[8]! & 0x3f) | 0x80;
+    const hex = [...buf].map((x) => x.toString(16).padStart(2, '0')).join('');
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(
+      12,
+      16,
+    )}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+  }
+  throw new Error(
+    'crypto.getRandomValues is not available (required for call session id)',
+  );
+}
+
 export function useSpaceGroupCall(roomId: string | null) {
   const { client } = useMatrix();
 
@@ -264,11 +286,7 @@ export function useSpaceGroupCall(roomId: string | null) {
       setIdleInCallUserIds([]);
 
       isJoiningRef.current = true;
-      const newSessionId =
-        typeof globalThis.crypto !== 'undefined' &&
-        typeof globalThis.crypto.randomUUID === 'function'
-          ? globalThis.crypto.randomUUID()
-          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const newSessionId = newCallSessionId();
       setCallSessionId(newSessionId);
       lastJoinKindRef.current = kind;
       lastThreadRootEventIdRef.current = threadRootEventId;
