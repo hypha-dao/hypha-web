@@ -35,7 +35,16 @@ function isReducedMotionPreferred(): boolean {
   );
 }
 
-export function NavigationTabs({ lang, id }: { lang: Locale; id: string }) {
+export function NavigationTabs({
+  lang,
+  id,
+  coherenceEnabled = false,
+}: {
+  lang: Locale;
+  id: string;
+  /** When true, show the Coherence tab (from `getEnableCoherence()` on the server). */
+  coherenceEnabled?: boolean;
+}) {
   const t = useTranslations('Common');
   const pathname = usePathname();
   const activeTab = getActiveTabFromPath(pathname);
@@ -61,17 +70,15 @@ export function NavigationTabs({ lang, id }: { lang: Locale; id: string }) {
       : clampTabParallaxScrollY(mainScrollY);
 
   const tabs = [
-    // Overview tab removed - functionality replaced by space-visualization
-    // {
-    //   title: t('Overview'),
-    //   name: 'overview',
-    //   href: getDhoPathOverview(lang, id),
-    // },
-    {
-      title: t('Coherence'),
-      name: 'coherence',
-      href: getDhoPathCoherence(lang, id),
-    },
+    ...(coherenceEnabled
+      ? [
+          {
+            title: t('Coherence'),
+            name: 'coherence',
+            href: getDhoPathCoherence(lang, id),
+          },
+        ]
+      : []),
     {
       title: t('Agreements'),
       name: 'agreements',

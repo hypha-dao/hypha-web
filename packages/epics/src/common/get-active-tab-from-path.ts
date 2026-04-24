@@ -8,8 +8,8 @@ export function getActiveTabFromPath(pathname: string) {
 }
 
 /**
- * @deprecated The Coherence tab is always shown; Space Memory alone is gated by
- * {@link getEnableSpaceMemory}. Prefer {@link getActiveTabFromPath} for tab state.
+ * @deprecated Prefer {@link getActiveTabFromPath}; Coherence tab visibility is gated by
+ * {@link getEnableCoherence}. Space Memory uses {@link getEnableSpaceMemory}.
  */
 export function getEffectiveDhoTab(
   pathname: string,

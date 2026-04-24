@@ -14,11 +14,9 @@ import {
 } from './vercel-toolbar-overrides';
 
 /**
- * **Guideline (most flags):** safe defaults, features off until enabled via cookie/env/toolbar.
- *
- * **Exception — Human Chat:** {@link getEnableHumanChat} is intentionally **default on** with
- * a documented kill switch (`HYPHA_DISABLE_HUMAN_CHAT`, env, toolbar). Product and ops
- * rollback: set `HYPHA_DISABLE_HUMAN_CHAT=true` or `NEXT_PUBLIC_DISABLE_HUMAN_CHAT=true`.
+ * **Guideline:** safe defaults — features off until enabled via cookie / `NEXT_PUBLIC_*` /
+ * Vercel Flags Toolbar. Human Chat uses the same opt-in pattern as Coherence (`NEXT_PUBLIC_ENABLE_*`).
+ * Kill switch: `HYPHA_DISABLE_HUMAN_CHAT=true` / `NEXT_PUBLIC_DISABLE_HUMAN_CHAT=true`.
  */
 
 /**
@@ -57,7 +55,7 @@ export const flagDefinitionsForDiscovery = {
     key: 'enable-coherence',
     defaultValue: false,
     description:
-      'Legacy flag kept for tooling/discovery; Coherence tab and signals are always available. Space Memory uses enable-space-memory.',
+      'Coherence tab and signals (`NEXT_PUBLIC_ENABLE_COHERENCE`, cookie). Space Memory uses enable-space-memory.',
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
@@ -70,13 +68,12 @@ export const flagDefinitionsForDiscovery = {
   },
   /**
    * Toolbar key matches `readBooleanOverride(..., 'enable-human-chat')`.
-   * Runtime default is on (kill-switch opt-out); discovery metadata reflects that.
    */
   enableHumanChat: {
     key: 'enable-human-chat',
-    defaultValue: true,
+    defaultValue: false,
     description:
-      'Human Chat panel (default on; disable via HYPHA_DISABLE_HUMAN_CHAT / toolbar)',
+      'Human Chat panel (`NEXT_PUBLIC_ENABLE_HUMAN_CHAT`; kill-switch HYPHA_DISABLE_HUMAN_CHAT)',
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
@@ -133,21 +130,7 @@ export async function getEnableCoherence(): Promise<boolean> {
   );
 }
 
-/**
- * Human Chat is **on by default** (including production). This is an intentional
- * **opt-out** product default, not the typical `feature-flags` “off by default”
- * pattern: disable with the kill switch / env / cookies below.
- *
- * **Code review / guideline note:** Some repos prefer “features default off”; Human Chat is an
- * acknowledged exception — see module comment above. Do not flip this to `return false` without a
- * product decision (that would hide chat for all users with no opt-in path).
- *
- * Rollback:
- * - Cookie `HYPHA_DISABLE_HUMAN_CHAT=true`
- * - Or legacy opt-out: `HYPHA_ENABLE_HUMAN_CHAT=false`
- * - Or env: `NEXT_PUBLIC_DISABLE_HUMAN_CHAT=true` / `NEXT_PUBLIC_ENABLE_HUMAN_CHAT=false`
- * - Or Vercel Flags Toolbar override `enable-human-chat` → `false` (when FLAGS_SECRET is set)
- */
+/** Opt-in via `NEXT_PUBLIC_ENABLE_HUMAN_CHAT`, cookie, or toolbar; kill-switch still wins. */
 export async function getEnableHumanChat(): Promise<boolean> {
   const overrides = await getVercelToolbarFlagOverrides();
   const toolbarHumanChat = readBooleanOverride(overrides, 'enable-human-chat');
@@ -159,13 +142,12 @@ export async function getEnableHumanChat(): Promise<boolean> {
     return false;
   }
 
-  const legacyEnable = store.get(HYPHA_ENABLE_HUMAN_CHAT)?.value;
-  if (legacyEnable === 'false') return false;
-
   if (process.env.NEXT_PUBLIC_DISABLE_HUMAN_CHAT === 'true') return false;
-  if (process.env.NEXT_PUBLIC_ENABLE_HUMAN_CHAT === 'false') return false;
 
-  return true;
+  const legacyEnable = store.get(HYPHA_ENABLE_HUMAN_CHAT)?.value;
+  if (legacyEnable !== undefined) return legacyEnable === 'true';
+
+  return process.env.NEXT_PUBLIC_ENABLE_HUMAN_CHAT === 'true';
 }
 
 export async function getEnableSpaceMemory(): Promise<boolean> {
