@@ -2,6 +2,7 @@
 
 import { useCallback, useReducer, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { isAddress } from 'viem';
 import { type Person, PersonFiles, useJwt } from '@hypha-platform/core/client';
 import { usePeopleFileUploads } from './use-people-file-uploads';
 import { useAuthHeader } from './use-auth-header';
@@ -18,6 +19,32 @@ function toDate(value: unknown): Date {
   return new Date(0);
 }
 
+function optStringField(value: unknown): string | undefined {
+  if (value == null) return undefined;
+  if (typeof value === 'string') {
+    const t = value.trim();
+    return t === '' ? undefined : t;
+  }
+  return undefined;
+}
+
+function optStringArrayField(value: unknown): string[] | undefined {
+  if (value == null) return undefined;
+  if (!Array.isArray(value)) return undefined;
+  const out: string[] = [];
+  for (const item of value) {
+    if (typeof item === 'string') out.push(item);
+  }
+  return out;
+}
+
+function optEthAddressField(value: unknown): `0x${string}` | undefined {
+  if (typeof value !== 'string' || !isAddress(value, { strict: false })) {
+    return undefined;
+  }
+  return value as `0x${string}`;
+}
+
 function parseApiPerson(raw: unknown): Person | null {
   if (!raw || typeof raw !== 'object') return null;
   const p = raw as Record<string, unknown>;
@@ -32,18 +59,18 @@ function parseApiPerson(raw: unknown): Person | null {
   if (!Number.isFinite(id) || !slug) return null;
   return {
     id,
-    name: p.name as string | undefined,
-    surname: p.surname as string | undefined,
-    email: p.email as string | undefined,
+    name: optStringField(p.name),
+    surname: optStringField(p.surname),
+    email: optStringField(p.email),
     slug,
-    sub: p.sub as string | undefined,
-    avatarUrl: p.avatarUrl as string | undefined,
-    leadImageUrl: p.leadImageUrl as string | undefined,
-    description: p.description as string | undefined,
-    location: p.location as string | undefined,
-    nickname: p.nickname as string | undefined,
-    address: p.address as `0x${string}` | undefined,
-    links: p.links as string[] | undefined,
+    sub: optStringField(p.sub),
+    avatarUrl: optStringField(p.avatarUrl),
+    leadImageUrl: optStringField(p.leadImageUrl),
+    description: optStringField(p.description),
+    location: optStringField(p.location),
+    nickname: optStringField(p.nickname),
+    address: optEthAddressField(p.address),
+    links: optStringArrayField(p.links),
     createdAt: toDate(p.createdAt),
     updatedAt: toDate(p.updatedAt),
   };
