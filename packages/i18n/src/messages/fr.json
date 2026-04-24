@@ -148,9 +148,7 @@
     "spaceNavAriaLabel": "Sections de l’espace",
     "openSpaceMenu": "Menu de l’espace",
     "spaceMenuTitle": "Espace",
-    "closeMenu": "Fermer",
-    "spacesPageStubTitle": "Espaces (aperçu)",
-    "spacesPageStubDescription": "Le graphe des espaces imbriqués et la liste apparaîtront ici. Ceci est un emplacement de développement."
+    "closeMenu": "Fermer"
   },
   "SpaceSettingsAction": {
     "title": "Paramètres de l'espace",

@@ -803,9 +803,7 @@
     "spaceNavAriaLabel": "Secciones del espacio",
     "openSpaceMenu": "Menú del espacio",
     "spaceMenuTitle": "Espacio",
-    "closeMenu": "Cerrar",
-    "spacesPageStubTitle": "Espacios (vista previa)",
-    "spacesPageStubDescription": "El grafo y la lista de espacios anidados aparecerán aquí. Esto es un marcador de desarrollo."
+    "closeMenu": "Cerrar"
   },
   "SpaceSettingsAction": {
     "title": "Configuración de espacio",

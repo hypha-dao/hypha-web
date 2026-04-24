@@ -148,9 +148,7 @@
     "spaceNavAriaLabel": "Space-Bereiche",
     "openSpaceMenu": "Space-Menü",
     "spaceMenuTitle": "Space",
-    "closeMenu": "Schließen",
-    "spacesPageStubTitle": "Spaces (Vorschau)",
-    "spacesPageStubDescription": "Hier erscheinen der Graph und die Liste verschachtelter Spaces. Dies ist ein Platzhalter für die Entwicklung."
+    "closeMenu": "Schließen"
   },
   "SpaceSettingsAction": {
     "title": "Space-Einstellungen",
