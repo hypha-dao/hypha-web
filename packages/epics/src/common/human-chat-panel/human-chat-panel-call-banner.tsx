@@ -172,7 +172,7 @@ export function HumanChatPanelCallBanner({
               : t('callActiveInSpace')}{' '}
             {participantCount > 0
               ? t('callDeviceCountInRoom', { count: participantCount })
-              : null}
+              : null}{' '}
             {callState === 'connected' && othersInRoomCallCount > 0
               ? t('callOthersInCallHint', { count: othersInRoomCallCount })
               : null}
