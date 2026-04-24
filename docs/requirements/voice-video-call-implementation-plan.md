@@ -41,6 +41,8 @@
 | 1.2 | Add **`use-space-group-call.ts`** (or equivalent) implementing **`waitUntilRoomReadyForGroupCalls` → get/create `GroupCall` → `enter` / `leave`**; expose **`callState`**, **`callKind`**, mute/camera/screenshare as per spec. | Unit tests with mocked `MatrixClient`; no duplicate `GroupCall` per `roomId`. |
 | 1.3 | Export hook from **`@hypha-platform/core`** barrel. | Epics can import without deep paths. |
 
+**Status (implemented in codebase):** `packages/core/src/matrix/client/providers/matrix-provider.tsx` (VoIP `createClient` options); `packages/core/src/matrix/client/hooks/use-space-group-call.ts` + `space-group-call-utils.ts` (exported from `./matrix/client/hooks`); `isPermissionLikeGroupCallError` unit tests in `packages/core/src/matrix/__tests__/use-space-group-call.test.ts`. Full `MatrixClient` mock tests optional follow-up; integration verified manually when UI lands in Phase 2.
+
 ### Phase 2 — UI shell: entry points + banner + audio-first
 
 | Step | Action | Done when |
