@@ -32,7 +32,7 @@ Use the table below and record **server name**, **date**, and **result** in your
 - **Script:** `scripts/check-matrix-js-sdk-version.mjs` — run from repo root; exits **0** only if the **resolved** `matrix-js-sdk` is **40.x** (matches `^40.0.0` lockfile resolution).
 - **npm script:** `pnpm run check:matrix-sdk` (root `package.json`).
 
-**CI:** Add `pnpm run check:matrix-sdk` to the appropriate lint/verify job when ready (optional in this PR; the script is available for local and future CI use).
+**CI:** The root `pnpm run lint` script runs `check:matrix-sdk` first, so any workflow that uses the monorepo lint task enforces the version policy.
 
 ---
 
