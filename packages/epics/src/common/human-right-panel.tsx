@@ -65,6 +65,7 @@ import {
   HumanChatPanelMentionTab,
   HumanChatPanelCallToolbar,
   HumanChatPanelCallBanner,
+  HumanChatPanelCallJoinStrip,
   HumanChatPanelInCallControls,
   HumanChatPanelCallStage,
   canOpenHumanChatCallFullView,
@@ -526,6 +527,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     setMicrophoneMuted: setSpaceCallMicMuted,
     setCameraMuted: setSpaceCallCameraMuted,
     participantSummary: spaceCallParticipantSummary,
+    roomGroupCallDeviceCount: spaceCallRoomGroupDeviceCount,
+    othersInRoomCallCount: spaceCallOthersInRoom,
+    inCallUserIdsForRoster: spaceCallInCallUserIds,
+    showRoomCallInProgress: spaceCallShowJoinStrip,
     isMicrophoneMuted: spaceCallMicMuted,
     isLocalVideoMuted: spaceCallVideoMuted,
     isScreensharing: spaceCallScreensharing,
@@ -556,6 +561,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceCallState === 'initializing';
 
   const callToolbarInCall = spaceCallState === 'connected';
+
+  const spaceCallToolbarJoinHint = callUiEnabled && spaceCallShowJoinStrip;
+
+  const spaceCallBusyJoining =
+    spaceCallState === 'initializing' ||
+    spaceCallState === 'awaiting_media' ||
+    spaceCallState === 'connecting';
 
   const handleCallAudio = useCallback(() => {
     void enterSpaceCallAudio();
@@ -1755,6 +1767,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 callState={spaceCallState}
                 disabled={!callUiEnabled}
                 inCall={callToolbarInCall}
+                roomCallInProgressToJoin={spaceCallToolbarJoinHint}
                 onAudio={handleCallAudio}
                 onVideo={handleCallVideo}
                 onSearch={handleCallSearch}
@@ -1762,6 +1775,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             ) : null
           }
         />
+        {callUiEnabled && spaceCallShowJoinStrip && !inSpaceCall && (
+          <HumanChatPanelCallJoinStrip
+            deviceCount={spaceCallRoomGroupDeviceCount}
+            disabled={!callUiEnabled}
+            busy={spaceCallBusyJoining}
+            onJoinAudio={handleCallAudio}
+            onJoinVideo={handleCallVideo}
+          />
+        )}
         {callUiEnabled &&
           (inSpaceCall ||
             spaceCallState === 'error' ||
@@ -1775,7 +1797,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               tabBackgroundWhileInCall={spaceCallTabBackground}
               isMicrophoneMuted={spaceCallMicMuted}
               isLocalVideoMuted={spaceCallVideoMuted}
-              participantCount={spaceCallParticipantSummary.count}
+              participantCount={spaceCallRoomGroupDeviceCount}
+              othersInRoomCallCount={spaceCallOthersInRoom}
               onLeave={handleCallLeave}
               onToggleMic={handleCallToggleMic}
               onToggleCamera={handleCallToggleCamera}
@@ -1899,6 +1922,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 useMembers={useMembers}
                 spaceSlug={spaceSlug}
                 roomId={roomId}
+                inCallMatrixUserIds={spaceCallInCallUserIds}
+                inOurCallSession={inSpaceCall && spaceCallState === 'connected'}
+                currentUserMatrixId={currentUserId}
               />
             </div>
           </div>

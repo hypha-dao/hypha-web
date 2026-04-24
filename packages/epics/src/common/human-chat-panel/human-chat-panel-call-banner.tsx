@@ -20,7 +20,10 @@ type HumanChatPanelCallBannerProps = {
   tabBackgroundWhileInCall: boolean;
   isMicrophoneMuted: boolean;
   isLocalVideoMuted: boolean;
+  /** Active devices in the room GroupCall (from Matrix). */
   participantCount: number;
+  /** When >=1, show that others are in the call (not the local user—used for "Y others"). */
+  othersInRoomCallCount: number;
   onLeave: () => void;
   onToggleMic: () => void;
   onToggleCamera: () => void;
@@ -64,6 +67,7 @@ export function HumanChatPanelCallBanner({
   isMicrophoneMuted,
   isLocalVideoMuted,
   participantCount,
+  othersInRoomCallCount,
   onLeave,
   onToggleMic,
   onToggleCamera,
@@ -166,9 +170,14 @@ export function HumanChatPanelCallBanner({
       <div className="flex min-h-[44px] flex-wrap items-center gap-2 px-4 py-2">
         <div className="min-w-0 flex-1">
           <p className="text-xs font-medium text-foreground">
-            {t('callActiveInSpace')}{' '}
+            {callState === 'connected'
+              ? t('callYouAreInSpaceCall')
+              : t('callActiveInSpace')}{' '}
             {participantCount > 0
-              ? t('callParticipantCount', { count: participantCount })
+              ? t('callDeviceCountInRoom', { count: participantCount })
+              : null}
+            {callState === 'connected' && othersInRoomCallCount > 0
+              ? t('callOthersInCallHint', { count: othersInRoomCallCount })
               : null}
           </p>
           {isDisconnecting && (

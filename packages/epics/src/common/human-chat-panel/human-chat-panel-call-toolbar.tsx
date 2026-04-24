@@ -9,6 +9,8 @@ type HumanChatPanelCallToolbarProps = {
   callState: SpaceGroupCallState;
   disabled: boolean;
   inCall: boolean;
+  /** True when other members have devices in the room GroupCall and local user is not in the session. */
+  roomCallInProgressToJoin?: boolean;
   onAudio: () => void;
   onVideo: () => void;
   onSearch: () => void;
@@ -22,6 +24,7 @@ export function HumanChatPanelCallToolbar({
   callState,
   disabled,
   inCall,
+  roomCallInProgressToJoin = false,
   onAudio,
   onVideo,
   onSearch,
@@ -49,8 +52,12 @@ export function HumanChatPanelCallToolbar({
           !disabled && !busy && 'hover:bg-muted hover:text-foreground',
           inCall && 'text-foreground',
         )}
-        title={t('callAudio')}
-        aria-label={t('callAudio')}
+        title={
+          roomCallInProgressToJoin ? t('callJoinWithAudio') : t('callAudio')
+        }
+        aria-label={
+          roomCallInProgressToJoin ? t('callJoinWithAudio') : t('callAudio')
+        }
         aria-pressed={inCall}
         aria-busy={busy}
       >
@@ -65,8 +72,12 @@ export function HumanChatPanelCallToolbar({
           (disabled || busy) && 'cursor-not-allowed opacity-50',
           !disabled && !busy && 'hover:bg-muted hover:text-foreground',
         )}
-        title={t('callVideo')}
-        aria-label={t('callVideo')}
+        title={
+          roomCallInProgressToJoin ? t('callJoinWithVideo') : t('callVideo')
+        }
+        aria-label={
+          roomCallInProgressToJoin ? t('callJoinWithVideo') : t('callVideo')
+        }
         aria-busy={busy}
       >
         <Video className="h-3.5 w-3.5" />

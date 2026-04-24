@@ -1,10 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as MatrixSdk from 'matrix-js-sdk';
 import { useMatrix } from '../providers/matrix-provider';
 import { isPermissionLikeGroupCallError } from './space-group-call-utils';
 import { logSpaceGroupCallEvent } from './space-group-call-telemetry';
+
+/** matrix-js-sdk client emits this when a room GroupCall is terminated. */
+const GROUP_CALL_ENDED_EVENT = 'GroupCall.ended' as const;
 
 export type SpaceGroupCallState =
   | 'idle'
@@ -48,6 +51,7 @@ export function useSpaceGroupCall(roomId: string | null) {
   /** Bumps when userMediaFeeds / screenshareFeeds change (re-render stage). */
   const [feedVersion, setFeedVersion] = useState(0);
   /** `userId::deviceId` for GroupCall.activeSpeaker; Phase 4 optional UI highlight. */
+  const [callSessionId, setCallSessionId] = useState<string | null>(null);
   const [activeSpeakerKey, setActiveSpeakerKey] = useState<string | null>(null);
   /** Screenshare-only failure (does not end the call). */
   const [screenshareErrorCode, setScreenshareErrorCode] =
@@ -64,6 +68,13 @@ export function useSpaceGroupCall(roomId: string | null) {
   const loggedStatsForGroupCallIdRef = useRef<string | null>(null);
   const [tabBackgroundWhileInCall, setTabBackgroundWhileInCall] =
     useState(false);
+  /**
+   * When local user is not in a call, counts participants from the room’s
+   * `GroupCall` (Matrix member state) so the UI can show “call in progress”
+   * and a Join affordance. When in our session, use `participantCount` instead.
+   */
+  const [idleRoomParticipantCount, setIdleRoomParticipantCount] = useState(0);
+  const [idleInCallUserIds, setIdleInCallUserIds] = useState<string[]>([]);
 
   const setActiveKeyFromGroupCall = useCallback((gc: MatrixSdk.GroupCall) => {
     const f = gc.activeSpeaker;
@@ -114,6 +125,7 @@ export function useSpaceGroupCall(roomId: string | null) {
     setIsLocalVideoMuted(true);
     setGroupCall(null);
     setActiveSpeakerKey(null);
+    setCallSessionId(null);
     setScreenshareErrorCode(null);
     loggedStatsForGroupCallIdRef.current = null;
     lastRoomIdForTelemetryRef.current = null;
@@ -141,6 +153,29 @@ export function useSpaceGroupCall(roomId: string | null) {
     }
     setParticipantCount(n);
   }, []);
+
+  const readParticipantsFromGroupCall = useCallback(
+    (gc: MatrixSdk.GroupCall) => {
+      const userIdSet = new Set<string>();
+      let deviceCount = 0;
+      for (const [member, deviceMap] of gc.participants) {
+        for (const _x of deviceMap.values()) {
+          deviceCount += 1;
+          if (member.userId) userIdSet.add(member.userId);
+        }
+      }
+      return { count: deviceCount, inCallUserIds: [...userIdSet] };
+    },
+    [],
+  );
+
+  const inCallUserIdsFromGroupCall = useCallback(
+    (gc: MatrixSdk.GroupCall | null) => {
+      if (!gc) return [];
+      return readParticipantsFromGroupCall(gc).inCallUserIds;
+    },
+    [readParticipantsFromGroupCall],
+  );
 
   const attachGroupCallListeners = useCallback(
     (gc: MatrixSdk.GroupCall) => {
@@ -182,12 +217,12 @@ export function useSpaceGroupCall(roomId: string | null) {
       gc.on(GroupCallEvent.ParticipantsChanged, () => {
         updateParticipantCount();
       });
-      gc.on(GroupCallEvent.UserMediaFeedsChanged, () => {
+      const onFeedsMaybeParticipants = () => {
         scheduleFeedBatched();
-      });
-      gc.on(GroupCallEvent.ScreenshareFeedsChanged, () => {
-        scheduleFeedBatched();
-      });
+        updateParticipantCount();
+      };
+      gc.on(GroupCallEvent.UserMediaFeedsChanged, onFeedsMaybeParticipants);
+      gc.on(GroupCallEvent.ScreenshareFeedsChanged, onFeedsMaybeParticipants);
       const onActiveSpeaker = (
         feed: { userId: string; deviceId?: string } | undefined,
       ) => {
@@ -225,7 +260,16 @@ export function useSpaceGroupCall(roomId: string | null) {
       if (isJoiningRef.current) return;
       if (groupCallRef.current) return;
 
+      setIdleRoomParticipantCount(0);
+      setIdleInCallUserIds([]);
+
       isJoiningRef.current = true;
+      const newSessionId =
+        typeof globalThis.crypto !== 'undefined' &&
+        typeof globalThis.crypto.randomUUID === 'function'
+          ? globalThis.crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      setCallSessionId(newSessionId);
       lastJoinKindRef.current = kind;
       lastThreadRootEventIdRef.current = threadRootEventId;
       lastRoomIdForTelemetryRef.current = roomId;
@@ -326,6 +370,7 @@ export function useSpaceGroupCall(roomId: string | null) {
       groupCallRef.current = gc;
       setGroupCall(gc);
       attachGroupCallListeners(gc);
+      updateParticipantCount();
       setCallState('connecting');
 
       try {
@@ -539,6 +584,65 @@ export function useSpaceGroupCall(roomId: string | null) {
     };
   }, [runCleanup]);
 
+  const idleGroupCallUnsubRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    idleGroupCallUnsubRef.current?.();
+    idleGroupCallUnsubRef.current = null;
+    setIdleRoomParticipantCount(0);
+    setIdleInCallUserIds([]);
+
+    if (!client || !roomId?.trim()) return;
+    if (groupCallRef.current) return;
+    if (callState !== 'idle' && callState !== 'error') return;
+
+    const gc = client.getGroupCallForRoom(roomId);
+    if (!gc) return;
+
+    const sync = () => {
+      if (groupCallRef.current) {
+        return;
+      }
+      const current = client.getGroupCallForRoom(roomId);
+      if (!current) {
+        setIdleRoomParticipantCount(0);
+        setIdleInCallUserIds([]);
+        return;
+      }
+      const p = readParticipantsFromGroupCall(current);
+      if (p.count === 0) {
+        setIdleRoomParticipantCount(0);
+        setIdleInCallUserIds([]);
+        return;
+      }
+      setIdleRoomParticipantCount(p.count);
+      setIdleInCallUserIds(p.inCallUserIds);
+    };
+
+    sync();
+    gc.on(GroupCallEvent.ParticipantsChanged, sync);
+    const onEnded = (ended: MatrixSdk.GroupCall) => {
+      if (ended.room?.roomId !== roomId) return;
+      sync();
+    };
+    const c = client as MatrixSdk.MatrixClient & {
+      on(ev: string, fn: (ended: MatrixSdk.GroupCall) => void): void;
+      removeListener(
+        ev: string,
+        fn: (ended: MatrixSdk.GroupCall) => void,
+      ): void;
+    };
+    c.on(GROUP_CALL_ENDED_EVENT, onEnded);
+    const unsub = () => {
+      gc.removeListener(GroupCallEvent.ParticipantsChanged, sync);
+      c.removeListener(GROUP_CALL_ENDED_EVENT, onEnded);
+    };
+    idleGroupCallUnsubRef.current = unsub;
+    return () => {
+      unsub();
+    };
+  }, [client, roomId, callState, readParticipantsFromGroupCall]);
+
   const dismissScreenshareError = useCallback(() => {
     setScreenshareErrorCode(null);
   }, []);
@@ -565,8 +669,40 @@ export function useSpaceGroupCall(roomId: string | null) {
     void enterWithKind(k, lastThreadRootEventIdRef.current);
   }, [callState, enterWithKind]);
 
+  const inOurSession =
+    callState === 'connecting' ||
+    callState === 'connected' ||
+    callState === 'awaiting_media' ||
+    callState === 'initializing' ||
+    callState === 'disconnecting';
+
+  const roomGroupCallDeviceCount = inOurSession
+    ? participantCount
+    : idleRoomParticipantCount;
+
+  const othersInRoomCallCount = useMemo(() => {
+    if (roomGroupCallDeviceCount === 0) return 0;
+    if (inOurSession) {
+      return Math.max(0, participantCount - 1);
+    }
+    return roomGroupCallDeviceCount;
+  }, [inOurSession, participantCount, roomGroupCallDeviceCount]);
+
+  const inCallUserIdsForRoster = inOurSession
+    ? inCallUserIdsFromGroupCall(groupCall)
+    : idleInCallUserIds;
+
+  const showRoomCallInProgress = useMemo(
+    () =>
+      !inOurSession &&
+      idleRoomParticipantCount > 0 &&
+      (callState === 'idle' || callState === 'error'),
+    [callState, inOurSession, idleRoomParticipantCount],
+  );
+
   return {
     callState,
+    callSessionId,
     errorCode,
     screenshareErrorCode,
     dismissScreenshareError,
@@ -584,7 +720,17 @@ export function useSpaceGroupCall(roomId: string | null) {
     setScreensharingEnabled,
     isScreensharing,
     localPreviewStream,
-    participantSummary: { count: participantCount },
+    /** Devices in the room’s GroupCall (or 0 if none). */
+    roomGroupCallDeviceCount,
+    /** For copy: when not in the call, all devices are “others”; when in call, max(0, n-1). */
+    othersInRoomCallCount,
+    /** Matrix user ids with at least one device in the call (room member state + local echo). */
+    inCallUserIdsForRoster,
+    showRoomCallInProgress,
+    participantSummary: {
+      count: roomGroupCallDeviceCount,
+      others: othersInRoomCallCount,
+    },
     isMicrophoneMuted,
     isLocalVideoMuted,
     groupCall,
