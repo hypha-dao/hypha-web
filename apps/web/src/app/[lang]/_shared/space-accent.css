@@ -1,6 +1,6 @@
 /**
  * Space-scoped accent from imagery (--space-* set by SpaceAccentFromImages).
- * Keeps global theme intact; only descendants of [data-space-accent-scope] use these hooks.
+ * Shared by DHO and profile layouts (avoid coupling routes via sibling imports).
  */
 [data-space-accent-scope] {
   --space-tab-active-border: var(--space-accent, #3b82f6);
@@ -17,4 +17,15 @@
 
 [data-space-accent-scope] [data-space-nav]:hover {
   opacity: 0.92;
+}
+
+/**
+ * CTA / alert rows that blend accent surface with accent-9 (trial, MFA, escrow).
+ */
+.bg-accent-surface-mix {
+  background-color: color-mix(
+    in oklab,
+    var(--color-accent-surface) 90%,
+    var(--color-accent-9) 10%
+  );
 }

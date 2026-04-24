@@ -1,5 +1,5 @@
 import { SpaceAccentPortalBridge } from '@hypha-platform/epics';
-import '../dho/[id]/space-accent.css';
+import '../_shared/space-accent.css';
 
 export const metadata = {
   title: 'Your Profile | Hypha',
