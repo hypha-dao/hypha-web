@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { Person, schemaEditPerson } from '@hypha-platform/core/client';
-import { getDb, updatePerson } from '@hypha-platform/core/server';
+import {
+  findPersonById,
+  getDb,
+  updatePerson,
+} from '@hypha-platform/core/server';
+import { routing } from '@hypha-platform/i18n';
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,9 +30,28 @@ export async function POST(request: NextRequest) {
     }
 
     const validatedData = validationResult.data;
+    const db = getDb({ authToken });
+    const before = await findPersonById({ id: validatedData.id }, { db });
     const updatedProfile = await updatePerson(validatedData as Person, {
-      db: getDb({ authToken }),
+      db,
     });
+    const beforeSlug = before?.slug;
+    const afterSlug = updatedProfile.slug;
+    if (beforeSlug || afterSlug) {
+      for (const lang of routing.locales) {
+        for (const slug of new Set(
+          [beforeSlug, afterSlug].filter(
+            (s): s is string => typeof s === 'string' && s.length > 0,
+          ),
+        )) {
+          revalidatePath(
+            `/${lang}/profile/${encodeURIComponent(slug)}`,
+            'page',
+          );
+        }
+        revalidatePath(`/${lang}/profile`, 'layout');
+      }
+    }
 
     return NextResponse.json({ profile: updatedProfile }, { status: 201 });
   } catch (error) {

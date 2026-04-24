@@ -3,6 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import {
+  type Person,
   schemaEditPersonWeb2,
   editPersonFiles,
 } from '@hypha-platform/core/client';
@@ -47,8 +48,11 @@ export type EditPersonSectionProps = {
   person?: Person;
   closeUrl: string;
   isLoading?: boolean;
-  onEdit: (values: z.infer<typeof schemaEditPersonForm>) => Promise<void>;
-  onUpdate: () => void;
+  onEdit: (
+    values: z.infer<typeof schemaEditPersonForm>,
+  ) => Promise<Person | void | null | undefined>;
+  /** Optional; e.g. merge saved `Person` into SWR after `onEdit` resolves. */
+  onUpdate?: (saved?: Person) => void | Promise<void>;
   error?: string | null;
 };
 
@@ -198,8 +202,8 @@ export const EditPersonSection = ({
 
   const handleSubmit = async (values: FormData) => {
     try {
-      await onEdit(values);
-      onUpdate();
+      const saved = await onEdit(values);
+      await onUpdate?.(saved ?? undefined);
     } catch (e) {
       console.log(e);
     }

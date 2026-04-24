@@ -2,16 +2,36 @@
 
 import { useCallback, useReducer, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { z } from 'zod';
-import {
-  schemaEditPerson,
-  PersonFiles,
-  useJwt,
-} from '@hypha-platform/core/client';
+import { type Person, PersonFiles, useJwt } from '@hypha-platform/core/client';
 import { usePeopleFileUploads } from './use-people-file-uploads';
 import { useAuthHeader } from './use-auth-header';
 import { produce } from 'immer';
 import type { ProfileFormData } from './profile-form-data';
+
+function parseApiPerson(raw: unknown): Person | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const p = raw as Record<string, unknown>;
+  if (typeof p.id !== 'number' || typeof p.slug !== 'string') return null;
+  return {
+    id: p.id,
+    name: p.name as string | undefined,
+    surname: p.surname as string | undefined,
+    email: p.email as string | undefined,
+    slug: p.slug,
+    sub: p.sub as string | undefined,
+    avatarUrl: p.avatarUrl as string | undefined,
+    leadImageUrl: p.leadImageUrl as string | undefined,
+    description: p.description as string | undefined,
+    location: p.location as string | undefined,
+    nickname: p.nickname as string | undefined,
+    address: p.address as `0x${string}` | undefined,
+    links: p.links as string[] | undefined,
+    createdAt:
+      p.createdAt instanceof Date ? p.createdAt : new Date(String(p.createdAt)),
+    updatedAt:
+      p.updatedAt instanceof Date ? p.updatedAt : new Date(String(p.updatedAt)),
+  };
+}
 
 export enum TaskStatus {
   IDLE = 'idle',
@@ -88,7 +108,7 @@ export const useEditProfile = (endpoint = '/api/v1/people/edit-profile') => {
   const [lastStartedTask, setLastStartedTask] = useState<TaskName | null>(null);
 
   const editProfile = useCallback(
-    async (data: ProfileFormData) => {
+    async (data: ProfileFormData): Promise<Person | null> => {
       if (!headers) {
         throw new Error('No auth headers available');
       }
@@ -131,7 +151,8 @@ export const useEditProfile = (endpoint = '/api/v1/people/edit-profile') => {
           throw new Error(errorData.error || 'Failed to update profile');
         }
 
-        await response.json();
+        const result = (await response.json()) as { profile?: unknown };
+        const nextPerson = parseApiPerson(result.profile);
 
         dispatch({ type: 'COMPLETE_TASK', taskName: 'EDIT_PROFILE' });
 
@@ -144,6 +165,8 @@ export const useEditProfile = (endpoint = '/api/v1/people/edit-profile') => {
         dispatch({ type: 'COMPLETE_TASK', taskName: 'CONFIRM_CHANGES' });
 
         router.refresh();
+
+        return nextPerson;
       } catch (err) {
         const message =
           err instanceof Error ? err.message : 'Unknown profile update error';
