@@ -9,7 +9,7 @@ import {
   SpaceAccentPortalBridge,
   isSafeImageUrl,
 } from '@hypha-platform/epics';
-import '../../_shared/space-accent.css';
+import '../_shared/space-accent.css';
 import { Locale } from '@hypha-platform/i18n';
 import { Container } from '@hypha-platform/ui';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
