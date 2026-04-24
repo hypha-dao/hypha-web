@@ -89,6 +89,18 @@ function applyCsp(response: NextResponse, request: NextRequest): NextResponse {
 }
 
 export function middleware(request: NextRequest) {
+  const { pathname, search, origin } = request.nextUrl;
+
+  /** Legacy soft-nav URL: /[lang]/dho/[id]/[tab]/select-navigation-action → /spaces in-flow. */
+  const legacyNav = pathname.match(
+    /^\/([^/]+)\/dho\/([^/]+)\/[^/]+\/select-navigation-action\/?$/,
+  );
+  if (legacyNav) {
+    const [, lang, dhoId] = legacyNav;
+    const to = new URL(`/${lang}/dho/${dhoId}/spaces${search}`, origin);
+    return NextResponse.redirect(to);
+  }
+
   const response = i18nMiddleware(request);
 
   if (response.status === 301 || response.status === 302) {
