@@ -1,21 +1,12 @@
 'use client';
 
-import {
-  Loader2,
-  LogOut,
-  Mic,
-  MicOff,
-  Monitor,
-  MonitorOff,
-  Video,
-  VideoOff,
-} from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { cn } from '@hypha-platform/ui-utils';
 import type {
   SpaceGroupCallErrorCode,
   SpaceGroupCallState,
 } from '@hypha-platform/core/client';
+import { HumanChatPanelInCallControls } from './human-chat-panel-in-call-controls';
 
 type HumanChatPanelCallBannerProps = {
   callState: SpaceGroupCallState;
@@ -197,92 +188,19 @@ export function HumanChatPanelCallBanner({
             aria-hidden
           />
         )}
-        <div
-          className="flex shrink-0 items-center gap-1"
-          role="group"
-          aria-label={t('callToolbarLabel')}
-        >
-          <button
-            type="button"
-            onClick={onToggleMic}
-            disabled={controlsDisabled}
-            className={cn(
-              'inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2.5 text-xs font-medium',
-              isMicrophoneMuted
-                ? 'bg-destructive/15 text-destructive'
-                : 'bg-background text-foreground',
-              controlsDisabled && 'opacity-50',
-              'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
-            )}
-            aria-pressed={isMicrophoneMuted}
-            aria-label={isMicrophoneMuted ? t('callUnmute') : t('callMute')}
-          >
-            {isMicrophoneMuted ? (
-              <MicOff className="h-3.5 w-3.5" />
-            ) : (
-              <Mic className="h-3.5 w-3.5" />
-            )}
-          </button>
-          {callKind === 'video' && (
-            <button
-              type="button"
-              onClick={onToggleCamera}
-              disabled={controlsDisabled}
-              className={cn(
-                'inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2.5 text-xs font-medium',
-                isLocalVideoMuted
-                  ? 'bg-destructive/15 text-destructive'
-                  : 'bg-background text-foreground',
-                controlsDisabled && 'opacity-50',
-                'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
-              )}
-              aria-pressed={isLocalVideoMuted}
-              aria-label={
-                isLocalVideoMuted ? t('callCameraOn') : t('callCameraOff')
-              }
-            >
-              {isLocalVideoMuted ? (
-                <VideoOff className="h-3.5 w-3.5" />
-              ) : (
-                <Video className="h-3.5 w-3.5" />
-              )}
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={onToggleScreenshare}
-            disabled={controlsDisabled}
-            className={cn(
-              'inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2.5 text-xs font-medium',
-              isScreensharing
-                ? 'bg-accent-9/20 text-foreground ring-1 ring-inset ring-accent-9/35'
-                : 'bg-background text-foreground',
-              controlsDisabled && 'opacity-50',
-              'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
-            )}
-            aria-pressed={isScreensharing}
-            aria-label={
-              isScreensharing
-                ? t('callScreenshareStop')
-                : t('callScreenshareStart')
-            }
-          >
-            {isScreensharing ? (
-              <MonitorOff className="h-3.5 w-3.5" />
-            ) : (
-              <Monitor className="h-3.5 w-3.5" />
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={onLeave}
-            disabled={callState === 'disconnecting'}
-            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/10 px-2.5 text-xs font-medium text-destructive hover:bg-destructive/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-            aria-label={t('callLeave')}
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            {t('callLeave')}
-          </button>
+        <div className="shrink-0">
+          <HumanChatPanelInCallControls
+            callState={callState}
+            callKind={callKind}
+            isMicrophoneMuted={isMicrophoneMuted}
+            isLocalVideoMuted={isLocalVideoMuted}
+            isScreensharing={isScreensharing}
+            onToggleMic={onToggleMic}
+            onToggleCamera={onToggleCamera}
+            onToggleScreenshare={onToggleScreenshare}
+            onLeave={onLeave}
+            variant="inBanner"
+          />
         </div>
       </div>
     </div>

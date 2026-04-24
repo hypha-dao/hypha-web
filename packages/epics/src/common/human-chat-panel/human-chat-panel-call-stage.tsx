@@ -260,10 +260,10 @@ export function HumanChatPanelCallStage({
   return (
     <section
       className={cn(
-        'relative w-full max-w-full shrink-0 border-b border-border bg-muted/20 @container/call',
+        'relative w-full max-w-full @container/call',
         isFull
-          ? 'min-h-0 flex-1 overflow-y-auto border-0 bg-black/30 py-0'
-          : 'min-h-[min(32vh,200px)]',
+          ? 'flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-0 bg-black py-0'
+          : 'shrink-0 border-b border-border bg-muted/20 min-h-[min(32vh,200px)]',
       )}
       role="region"
       aria-labelledby={labelId}
@@ -293,11 +293,17 @@ export function HumanChatPanelCallStage({
       </h2>
       {shareFeeds.length > 0 && (
         <div
-          className={cn('w-full p-2 pb-0', isFull && 'px-3 pt-3')}
+          className={cn(
+            'w-full p-2 pb-0',
+            isFull && 'flex min-h-0 flex-1 flex-col p-0',
+          )}
           data-feed-tick={_feedVersion}
         >
           {shareFeeds.map((feed, i) => (
-            <div key={feedKey(feed, i)} className="w-full max-w-full">
+            <div
+              key={feedKey(feed, i)}
+              className={cn('w-full max-w-full', isFull && 'min-h-0 flex-1')}
+            >
               <CallFeedTile
                 feed={feed}
                 isShare
@@ -320,20 +326,22 @@ export function HumanChatPanelCallStage({
           className={cn(
             'grid gap-2 p-2 pt-2',
             isFull
-              ? 'min-h-0 max-h-[min(72dvh,820px)] overflow-y-auto px-3 pb-3 pt-0 @min-[32rem]:grid-cols-2 @min-[48rem]:grid-cols-3'
+              ? 'min-h-0 flex-1 grid-cols-1 content-stretch items-stretch overflow-y-auto px-2 pb-2 pt-0 @min-[32rem]:grid-cols-2 @min-[48rem]:grid-cols-3'
               : shareFeeds.length > 0
               ? 'max-h-[min(50vh,420px)] @min-[22rem]:grid-cols-2'
               : '@min-[22rem]:grid-cols-2',
-            shareFeeds.length +
-              remoteUserMedia.length +
-              (showLocalInMainGrid ? 1 : 0) ===
-              1 && 'mx-auto max-w-2xl',
+            !isFull &&
+              shareFeeds.length +
+                remoteUserMedia.length +
+                (showLocalInMainGrid ? 1 : 0) ===
+                1 &&
+              'mx-auto max-w-2xl',
             !isFull &&
               !shareFeeds.length &&
               remoteUserMedia.length > 0 &&
               'min-h-[min(32vh,220px)]',
             !isFull && showLocalInMainGrid && 'min-h-[min(32vh,240px)]',
-            isFull && !shareFeeds.length && 'min-h-[min(32dvh,280px)]',
+            isFull && !shareFeeds.length && 'min-h-0',
           )}
           data-feed-tick={_feedVersion}
         >
@@ -524,9 +532,12 @@ const FeedContent = ({
   return (
     <div
       className={cn(
-        'relative flex min-h-[10rem] min-w-0 items-stretch justify-center overflow-hidden rounded-lg bg-black/20',
+        'relative flex min-w-0 items-stretch justify-center overflow-hidden rounded-lg bg-black/20',
+        isFullView && !isPip
+          ? 'h-full min-h-0 min-w-0 flex-1'
+          : 'min-h-[10rem]',
         isShare && !isFullView && 'min-h-[min(42vh,360px)] w-full',
-        isShare && isFullView && 'min-h-[min(56dvh,560px)] w-full',
+        isShare && isFullView && 'h-full min-h-0 w-full',
         isActiveSpeaker && 'ring-2 ring-accent-9/70 ring-offset-0',
         isPip && 'min-h-0',
       )}
@@ -540,7 +551,7 @@ const FeedContent = ({
               isPip
                 ? 'max-h-24'
                 : isFullView
-                ? 'min-h-[12rem] max-h-[min(64dvh,700px)]'
+                ? 'h-full min-h-0 max-h-none w-full max-w-full flex-1'
                 : 'min-h-[10rem] max-h-[min(40vh,360px)]',
             )}
             autoPlay

@@ -1,5 +1,6 @@
 export { HumanChatPanelCallToolbar } from './human-chat-panel-call-toolbar';
 export { HumanChatPanelCallBanner } from './human-chat-panel-call-banner';
+export { HumanChatPanelInCallControls } from './human-chat-panel-in-call-controls';
 export {
   HumanChatPanelCallStage,
   canOpenHumanChatCallFullView,

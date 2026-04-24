@@ -65,6 +65,7 @@ import {
   HumanChatPanelMentionTab,
   HumanChatPanelCallToolbar,
   HumanChatPanelCallBanner,
+  HumanChatPanelInCallControls,
   HumanChatPanelCallStage,
   canOpenHumanChatCallFullView,
   type ChatDraftAttachment,
@@ -1965,7 +1966,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           }}
         >
           <DialogContent
-            className="fixed z-[100] flex w-[min(96vw,80rem)] max-w-full max-h-[min(90dvh,900px)] flex-col !left-1/2 !top-1/2 -translate-x-1/2 -translate-y-1/2 overflow-hidden border border-border/50 bg-zinc-950/98 p-0 text-foreground shadow-2xl data-[state=open]:sm:rounded-xl data-[state=open]:duration-200 motion-reduce:data-[state=open]:duration-0 motion-reduce:data-[state=open]:zoom-in-100"
+            className="fixed z-[100] flex h-[min(90dvh,900px)] max-h-[min(90dvh,900px)] w-[min(96vw,80rem)] max-w-full !left-1/2 !top-1/2 -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden border border-border/50 bg-zinc-950/98 p-0 text-foreground shadow-2xl data-[state=open]:sm:rounded-xl data-[state=open]:duration-200 motion-reduce:data-[state=open]:duration-0 motion-reduce:data-[state=open]:zoom-in-100"
             hideCloseButton
             overlayClassName="fixed z-[99] !inset-0 !left-0 !right-0 !top-0 !bottom-0 border-0 bg-black/50 backdrop-blur-sm supports-[backdrop-filter]:bg-black/40 motion-reduce:backdrop-blur-none motion-reduce:animate-none"
             onCloseAutoFocus={(e) => {
@@ -1988,24 +1989,59 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               </DialogClose>
             </DialogHeader>
             <div
-              className="flex min-h-0 flex-1 flex-col overflow-y-auto p-0 motion-reduce:scroll-auto"
+              className="flex min-h-0 min-w-0 flex-1 flex-col p-0"
               role="presentation"
             >
-              <HumanChatPanelCallStage
-                client={client}
-                roomId={roomId}
-                groupCall={spaceGroupCall}
-                callKind={spaceCallKind}
-                isLocalVideoMuted={spaceCallVideoMuted}
-                isScreensharing={spaceCallScreensharing}
-                callState={spaceCallState}
-                feedVersion={spaceCallFeedVersion}
-                activeSpeakerKey={spaceCallActiveSpeakerKey}
-                currentUserId={currentUserId}
-                resolveMemberLabel={resolveMemberLabel}
-                layout="fullView"
-                fullViewOpen
-              />
+              <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
+                <HumanChatPanelCallStage
+                  client={client}
+                  roomId={roomId}
+                  groupCall={spaceGroupCall}
+                  callKind={spaceCallKind}
+                  isLocalVideoMuted={spaceCallVideoMuted}
+                  isScreensharing={spaceCallScreensharing}
+                  callState={spaceCallState}
+                  feedVersion={spaceCallFeedVersion}
+                  activeSpeakerKey={spaceCallActiveSpeakerKey}
+                  currentUserId={currentUserId}
+                  resolveMemberLabel={resolveMemberLabel}
+                  layout="fullView"
+                  fullViewOpen
+                />
+              </div>
+              {spaceCallScreenshareError && spaceCallState === 'connected' && (
+                <div
+                  role="alert"
+                  className="flex shrink-0 items-start justify-center gap-2 border-t border-destructive/20 bg-destructive/10 px-3 py-1.5"
+                >
+                  <p className="min-w-0 flex-1 text-center text-xs text-destructive">
+                    {spaceCallScreenshareError === 'PERMISSION_DENIED'
+                      ? t('callErrorPermission')
+                      : t('callErrorScreenshare')}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={dismissSpaceCallScreenshareError}
+                    className="shrink-0 text-xs font-medium text-destructive underline-offset-2 hover:underline"
+                  >
+                    {t('callScreenshareDismiss')}
+                  </button>
+                </div>
+              )}
+              <div className="shrink-0 border-t border-border/50 bg-zinc-950/90 px-3 py-2.5 backdrop-blur-sm">
+                <HumanChatPanelInCallControls
+                  callState={spaceCallState}
+                  callKind={spaceCallKind}
+                  isMicrophoneMuted={spaceCallMicMuted}
+                  isLocalVideoMuted={spaceCallVideoMuted}
+                  isScreensharing={spaceCallScreensharing}
+                  onToggleMic={handleCallToggleMic}
+                  onToggleCamera={handleCallToggleCamera}
+                  onToggleScreenshare={handleCallToggleScreenshare}
+                  onLeave={handleCallLeave}
+                  variant="fullView"
+                />
+              </div>
             </div>
           </DialogContent>
         </Dialog>
