@@ -7,6 +7,7 @@ import { cn } from '@hypha-platform/ui-utils';
 import { usePathname, useRouter } from 'next/navigation';
 import { cleanPath } from '../utils/cleanPath';
 import React from 'react';
+import { CTA_ACCENT_SURFACE_CLASS } from '../../common/cta-accent-surface';
 import { useTranslations } from 'next-intl';
 
 interface ActivateProposalsBannerProps {
@@ -65,7 +66,8 @@ export const ActivateProposalsBanner = ({
   return (
     <div
       className={cn(
-        'border-1 rounded-[8px] bg-center border-accent-6 bg-[color-mix(in_oklab,var(--color-accent-surface)_90%,var(--color-accent-9)_10%)]',
+        CTA_ACCENT_SURFACE_CLASS,
+        'border-1 rounded-[8px] bg-center border-accent-6',
         className,
       )}
     >
