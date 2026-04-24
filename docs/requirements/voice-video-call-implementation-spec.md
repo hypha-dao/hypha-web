@@ -19,7 +19,7 @@
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Call scope**               | **One active Matrix group call per Space (`roomId`)** at a time. Parallel “different thread, different call” in the **same** Space is **out of scope** for v1 (see parent doc).                                                                                                               |
 | **Who can be in the call**   | **All members of the Matrix room** (Hypha Space) may join; the SDK does **not** enforce thread-only membership. UI **must** label the call as **space-wide** (e.g. “Space call”) to avoid implying thread isolation.                                                                          |
-| **Join when call already active** | **Joining** the room’s existing `GroupCall` uses the **same** `enter` path as **starting** a call (phone / video). When **other** members’ devices are in the `GroupCall` and the user is **idle**, the UI **shall** show a **call in progress** strip and **Join**-style copy on the header tools. The hook **shall** subscribe to the **room** `GroupCall` while idle to read `participants` from **Matrix member state** (and refresh on `ParticipantsChanged` and `GroupCall.ended`). The in-call strip **shall** show **device** count in the room and, when `connected`, **“others”** = `max(0, count − 1)` for clarity. **Join alert (ring + invitation)** — when product enables it, see **§1.2** (not yet implemented). **Implemented in codebase** (strip, toolbar, members, subscription): `useSpaceGroupCall` + `HumanChatPanelCallJoinStrip` + members tab hint. |
+| **Join when call already active** | **Joining** the room’s existing `GroupCall` uses the **same** `enter` path as **starting** a call (phone / video). When **other** members’ devices are in the `GroupCall` and the user is **idle**, the UI **shall** show a **call in progress** strip and **Join**-style copy on the header tools. The hook **shall** subscribe to the **room** `GroupCall` while idle to read `participants` from **Matrix member state** (and refresh on `ParticipantsChanged` and `GroupCall.ended`). The in-call strip **shall** show **device** count in the room and, when `connected`, **“others”** = `max(0, count − 1)` for clarity. **Join alert** — **§1.2.1** (chime + strip toggle + optional background `Notification`) **implemented** in `use-call-join-chime` + `HumanChatPanelCallJoinStrip`; **§1.2.2** (invitation modal) **TBD** unless a later PR ships it. **Also:** `useSpaceGroupCall` + `HumanChatPanelCallJoinStrip` + members tab hint. |
 | **Signal / thread role**     | **`threadRootEventId`** identifies **which Signal** initiated or last focused the call UI; used for optional **thread notice** messages and analytics—not for access control.                                                                                                                 |
 | **Modes**                    | **Audio-first** and **Video** entry points: both use **`GroupCall`**; video intent enables camera when entering (subject to permissions).                                                                                                                                                     |
 | **Coherence vs Space panel** | **v1:** Implement for **`HumanRightPanel` space mode** (`mode === 'space'`) where the panel has a resolved **`roomId`** for the Space. **Coherence mode** (`mode === 'coherence'`) is **out of scope** unless the same `roomId` + thread rules are explicitly extended in a follow-up ticket. |
@@ -53,7 +53,7 @@ This subsection locks **how** a second (or Nth) member **joins** the **same** Ma
 
 **UI mapping:** **§3.2.1** (header strip, toolbar “Join” copy, members tab). **Files (reference):** `use-space-group-call.ts`, `HumanChatPanelCallJoinStrip`, `HumanChatPanelCallToolbar`, `HumanChatPanelMembers`, `HumanRightPanel`.
 
-### 1.2 Join **alert** (ring) and **join invitation** (modal) — *specified; implementation TBD*
+### 1.2 Join **alert** (ring) and **join invitation** (modal) — *ring: implemented; modal: TBD*
 
 **Scope:** Strengthens **discoverability** for idle members: **non-blocking** but **noticeable** feedback when a **room call** becomes active while the user is **not** in the session. **No new Matrix API** — pure **client** UX and optional **Web Audio** / **browser notification**; the **same** `enterAudio` / `enterVideo` paths as **§1.1**.
 
@@ -83,7 +83,9 @@ This subsection locks **how** a second (or Nth) member **joins** the **same** Ma
 | **Throttling / re-open** | **Shall not** re-open the modal on every `ParticipantsChanged` (counts fluctuate). Suggested: open **once** when **`showRoomCallInProgress` flips** from **false → true** for a given `roomId`, or **first time in session** the user lands on a Space with an **active** call. Store a **dismissal key** in session state (e.g. `dismissedJoinInviteFor: roomId + groupCallId` or **per navigation session**). Re-show only if the call **ended and restarted** (idle count returns to 0, then is greater than 0 again) or a **new** product-defined **session** — document the chosen policy in the implementation PR. |
 | **i18n** | All labels under **`HumanChatPanel`**, all locales. See **§3.7** (join invitation keys). |
 
-**1.2.3 Traceability** — **IMP-10**; UI detail **§3.2.2**; test notes **§6** / **§7**.
+**1.2.3 Traceability** — **IMP-10**; **audible** ring + strip: `packages/epics/.../use-call-join-chime.ts`; UI detail **§3.2.2**; test notes **§6** / **§7**.
+
+**Implementation status:** **§1.2.1** — **Web Audio** chime (two-pair beeps, under about 3 s) with `localStorage` key **`hypha.callJoinAlertSound`**, a **Switch** on the **join strip**, and a per-room **dedupe** window to avoid **Strict Mode** or duplicate **false → true** edges; optional **`Notification`** (silent, if permission **granted**) when the document is **hidden** and a join **opportunity** is detected. **§1.2.2** (invitation modal) — not implemented.
 
 ---
 
@@ -279,9 +281,9 @@ type HumanChatPanelCallToolbarProps = {
 
 #### 3.2.2 Join **invitation** modal and **ring** (spec — **IMP-10**)
 
-**Normative (see §1.2):** When **join alert** is implemented, idle members with `showRoomCallInProgress` **shall** receive a **polite** chime (toggleable) and a **modal** invitation (per **§1.2.2**) in addition to the **join strip** (**§3.2.1**). The modal **reuses** `enterAudio` / `enterVideo`; **dismissal** is non-destructive. **Throttling** prevents modal spam on `ParticipantsChanged`.
+**Normative (see §1.2):** **Ring (§1.2.1):** `HumanRightPanel` wires **`useCallJoinChime`**, which plays a **throttled** Web Audio chime when a join **opportunity** appears (`showRoomCallInProgress` and user not in call); **`HumanChatPanelCallJoinStrip`** includes a **Switch** bound to `localStorage` key **`hypha.callJoinAlertSound`**. If the **tab** is **hidden** and the browser has **`Notification` permission** (`granted`), a **silent** one-shot notification is shown. **Modal invitation (§1.2.2):** **TBD** — a future **`HumanChatPanelCallJoinInvitation`** may sit alongside this; the modal **reuses** `enterAudio` / `enterVideo`; **dismissal** is non-destructive. **Throttling** (modal, when added) must prevent re-open on every `ParticipantsChanged`.
 
-**File placement (suggested):** a small **`HumanChatPanelCallJoinInvitation`** in `packages/epics/.../human-chat-panel/`; optional **`useCallJoinAlert`** hook in **`packages/core`** to encapsulate: **gate** (same as §1.2), **dismissal** state, **one-shot** Web Audio, **opt-in** `Notification` when `document.hidden`. **CSP** must allow the audio file origin if a static asset is used.
+**Files (as shipped for ring):** `packages/epics/.../human-chat-panel/use-call-join-chime.ts`, `human-chat-panel-call-join-strip.tsx`, `human-right-panel.tsx`. A static **audio** asset is **not** used (avoids extra CSP for now).
 
 **Do not** combine this with **in-call** **full view** (**§3.4.4**): the join invitation is **pre-join** only; never stack two competing modals.
 
@@ -318,6 +320,7 @@ type HumanChatPanelCallToolbarProps = {
   - **Top** of `SidebarContent`: **stage** with **remote** participant tiles (from SDK feeds) and **local** preview as **picture-in-picture** in a **corner** (e.g. bottom-end) so tabs/header stay unobstructed.
   - **Below** stage: **scrollable** message list (split view). **Min-height** for stage (e.g. `min-h-[220px]` or ~40% panel height) — tune with design.
 - **Camera off (video muted):** **Collapse** to audio-only presentation (avatars or placeholders); **keep** banner controls.
+- **Widening the panel (one remote tile + PiP):** When the **user-media** grid has **one** main tile, it **shall** span the **full width** of the **stage** — **one** `grid` column (no `max-w-2xl` / horizontal centering that leaves empty space) so **resizing the right panel** grows the **video** with the available width. Two or more **main** user tiles may use **responsive 2–3** column rules at **container** breakpoints.
 
 #### 3.4.3 Tab switching during a call
 

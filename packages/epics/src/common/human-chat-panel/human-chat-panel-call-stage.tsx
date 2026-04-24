@@ -254,6 +254,16 @@ export function HumanChatPanelCallStage({
       : userGridTileCount === 2
       ? 'grid-cols-1 sm:grid-cols-2'
       : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
+  /**
+   * In-panel (sidebar): same FV-1 as full view — one user tile = `grid-cols-1` only
+   * so the video uses the full stage width (no empty second column from `@24rem:2`).
+   */
+  const panelUserGridColumnClass =
+    userGridTileCount <= 1
+      ? 'grid-cols-1'
+      : userGridTileCount === 2
+      ? 'grid-cols-1 @min-[22rem]:grid-cols-2'
+      : 'grid-cols-1 @min-[22rem]:grid-cols-2 @min-[32rem]:grid-cols-3';
   /** One camera tile only, no share: flex column fill (no empty grid track / FV-1). */
   const useFullViewSingleMainTile =
     isFull && userGridTileCount === 1 && shareFeeds.length === 0;
@@ -391,15 +401,10 @@ export function HumanChatPanelCallStage({
                       ? 'max-h-[min(40dvh,320px)] shrink-0'
                       : null,
                   )
-                : shareFeeds.length > 0
-                ? 'max-h-[min(50vh,420px)] @min-[22rem]:grid-cols-2'
-                : '@min-[22rem]:grid-cols-2',
-              !isFull &&
-                shareFeeds.length +
-                  remoteUserMedia.length +
-                  (showLocalInMainGrid ? 1 : 0) ===
-                  1 &&
-                'mx-auto max-w-2xl',
+                : cn(
+                    shareFeeds.length > 0 ? 'max-h-[min(50vh,420px)]' : null,
+                    panelUserGridColumnClass,
+                  ),
               !isFull &&
                 !shareFeeds.length &&
                 remoteUserMedia.length > 0 &&
