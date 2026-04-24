@@ -7,20 +7,21 @@ import { cn } from '@hypha-platform/ui-utils';
 import { Phone, Video } from 'lucide-react';
 
 type HumanChatPanelCallJoinStripProps = {
-  /** Number of active devices in the room GroupCall (from Matrix member state). */
   deviceCount: number;
   disabled: boolean;
   busy: boolean;
   onJoinAudio: () => void;
   onJoinVideo: () => void;
-  /** When set, shows a “join alert sound” switch (localStorage-persisted in parent). */
-  joinAlertSoundEnabled?: boolean;
-  onJoinAlertSoundChange?: (enabled: boolean) => void;
+  /**
+   * When `true`, play chime/notification for join opportunities (per-room dedupe in parent).
+   * @see useCallJoinChime
+   */
+  callAlertsUnmuted: boolean;
+  onCallAlertsUnmutedChange: (unmuted: boolean) => void;
 };
 
 /**
- * Shown when another member has an active group call in the room and the local
- * user has not entered yet. Same as tapping phone/video (join existing GroupCall).
+ * Idle: others are in the room GroupCall — one row, aligned with the in-call banner.
  */
 export function HumanChatPanelCallJoinStrip({
   deviceCount,
@@ -28,65 +29,52 @@ export function HumanChatPanelCallJoinStrip({
   busy,
   onJoinAudio,
   onJoinVideo,
-  joinAlertSoundEnabled,
-  onJoinAlertSoundChange,
+  callAlertsUnmuted,
+  onCallAlertsUnmutedChange,
 }: HumanChatPanelCallJoinStripProps) {
   const t = useTranslations('HumanChatPanel');
-  const showSoundToggle =
-    joinAlertSoundEnabled !== undefined && onJoinAlertSoundChange;
-  const joinAlertSoundId = useId();
+  const alertsId = useId();
+  const statusLine = t('callJoinStripLine', { count: deviceCount });
 
   return (
     <div
-      className="border-b border-border bg-accent-9/12 dark:bg-accent-9/15"
+      className="border-b border-border bg-muted/30"
       role="status"
       aria-live="polite"
     >
-      <div className="flex flex-col gap-2.5 px-3 py-2.5 sm:px-4">
-        <p className="min-w-0 text-xs leading-snug text-foreground">
-          <span className="font-medium">
-            {t('callJoinStripTitle')}
-            {` · `}
-            {t('callJoinStripDevices', { count: deviceCount })}
-          </span>
+      <div className="flex min-h-11 min-w-0 items-center gap-2 px-3 py-1.5 sm:gap-3 sm:px-4">
+        <p
+          className="min-w-0 flex-1 text-xs font-medium leading-tight text-foreground"
+          title={statusLine}
+        >
+          {statusLine}
         </p>
 
-        <div
-          className={cn(
-            'flex min-w-0 flex-col gap-2 sm:flex-row sm:items-stretch sm:gap-3',
-            showSoundToggle && 'sm:justify-between',
-            !showSoundToggle && 'sm:justify-end',
-          )}
-        >
-          {showSoundToggle && (
-            <div
-              className="flex w-full min-w-0 items-center justify-between gap-3 rounded-md border border-border/50 bg-background/55 px-2.5 py-1.5 shadow-sm sm:w-auto sm:min-w-0 sm:max-w-[min(100%,22rem)] sm:justify-start sm:gap-2.5"
-              role="group"
-              aria-label={t('callJoinAlertSound')}
+        <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-2.5">
+          <div className="flex min-w-0 max-w-[min(100%,9rem)] items-center gap-1.5 sm:max-w-[12.5rem] sm:gap-2">
+            <Label
+              htmlFor={alertsId}
+              className="line-clamp-2 max-w-[7rem] cursor-pointer text-[10px] font-medium leading-tight text-muted-foreground sm:line-clamp-1 sm:max-w-none sm:shrink-0 sm:whitespace-nowrap sm:uppercase sm:tracking-wide"
             >
-              <Label
-                htmlFor={joinAlertSoundId}
-                className="min-w-0 flex-1 cursor-pointer text-left text-xs leading-snug text-foreground/95"
-              >
-                {t('callJoinAlertSound')}
-              </Label>
-              <Switch
-                id={joinAlertSoundId}
-                className="shrink-0"
-                checked={joinAlertSoundEnabled}
-                onCheckedChange={onJoinAlertSoundChange}
-                disabled={disabled}
-                title={
-                  joinAlertSoundEnabled
-                    ? t('callJoinAlertSoundOn')
-                    : t('callJoinAlertSoundOff')
-                }
-              />
-            </div>
-          )}
+              {t('callJoinCallAlerts')}
+            </Label>
+            <Switch
+              id={alertsId}
+              className="shrink-0"
+              checked={callAlertsUnmuted}
+              onCheckedChange={onCallAlertsUnmutedChange}
+              disabled={disabled}
+              title={
+                callAlertsUnmuted
+                  ? t('callJoinCallAlertsUnmuted')
+                  : t('callJoinCallAlertsMuted')
+              }
+              aria-label={t('callJoinCallAlertsAria')}
+            />
+          </div>
 
           <div
-            className="flex shrink-0 items-center justify-end gap-1.5 sm:ml-auto sm:justify-end"
+            className="flex shrink-0 items-center justify-end gap-1.5"
             role="group"
             aria-label={t('callJoinControlsGroup')}
           >

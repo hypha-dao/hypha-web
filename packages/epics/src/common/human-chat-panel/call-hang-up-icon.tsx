@@ -1,0 +1,22 @@
+import { Phone } from 'lucide-react';
+import { cn } from '@hypha-platform/ui-utils';
+
+/**
+ * Classic end-call pictogram: handset horizontal, receiver end toward the bottom
+ * (distinct from {@link PhoneOff}’s diagonal “slashed” mark).
+ */
+export function CallHangUpIcon({
+  className,
+  'aria-hidden': ariaHidden = true,
+}: {
+  className?: string;
+  'aria-hidden'?: boolean;
+}) {
+  return (
+    <Phone
+      className={cn('rotate-90', className)}
+      aria-hidden={ariaHidden}
+      strokeWidth={2.25}
+    />
+  );
+}

@@ -5,10 +5,10 @@ import {
   MicOff,
   Monitor,
   MonitorOff,
-  PhoneOff,
   Video,
   VideoOff,
 } from 'lucide-react';
+import { CallHangUpIcon } from './call-hang-up-icon';
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 import {
@@ -175,7 +175,7 @@ export function HumanChatPanelInCallControls({
         title={t('callLeave')}
         aria-label={t('callLeave')}
       >
-        <PhoneOff className={leaveIcon} strokeWidth={2.25} />
+        <CallHangUpIcon className={leaveIcon} />
       </button>
     </div>
   );

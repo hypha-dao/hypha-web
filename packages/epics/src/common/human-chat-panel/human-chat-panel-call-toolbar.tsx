@@ -12,6 +12,12 @@ type HumanChatPanelCallToolbarProps = {
   inCall: boolean;
   /** True when other members have devices in the room GroupCall and local user is not in the session. */
   roomCallInProgressToJoin?: boolean;
+  /**
+   * True when a GroupCall session exists in the room but the local user is idle
+   * and the only current participant is the starter (1 device) — use “Start”
+   * copy; otherwise “Join” when more devices.
+   */
+  onlyLocalInRoomCall?: boolean;
   onAudio: () => void;
   onVideo: () => void;
   onSearch: () => void;
@@ -27,6 +33,7 @@ export function HumanChatPanelCallToolbar({
   disabled,
   inCall,
   roomCallInProgressToJoin = false,
+  onlyLocalInRoomCall = false,
   onAudio,
   onVideo,
   onSearch,
@@ -57,10 +64,18 @@ export function HumanChatPanelCallToolbar({
           inCall && !inVideoMode && 'text-foreground',
         )}
         title={
-          roomCallInProgressToJoin ? t('callJoinWithAudio') : t('callAudio')
+          roomCallInProgressToJoin
+            ? onlyLocalInRoomCall
+              ? t('callStartWithAudio')
+              : t('callJoinWithAudio')
+            : t('callAudio')
         }
         aria-label={
-          roomCallInProgressToJoin ? t('callJoinWithAudio') : t('callAudio')
+          roomCallInProgressToJoin
+            ? onlyLocalInRoomCall
+              ? t('callStartWithAudio')
+              : t('callJoinWithAudio')
+            : t('callAudio')
         }
         aria-pressed={inCall && !inVideoMode}
         aria-busy={busy}
@@ -78,10 +93,18 @@ export function HumanChatPanelCallToolbar({
           inCall && inVideoMode && 'text-foreground',
         )}
         title={
-          roomCallInProgressToJoin ? t('callJoinWithVideo') : t('callVideo')
+          roomCallInProgressToJoin
+            ? onlyLocalInRoomCall
+              ? t('callStartWithVideo')
+              : t('callJoinWithVideo')
+            : t('callVideo')
         }
         aria-label={
-          roomCallInProgressToJoin ? t('callJoinWithVideo') : t('callVideo')
+          roomCallInProgressToJoin
+            ? onlyLocalInRoomCall
+              ? t('callStartWithVideo')
+              : t('callJoinWithVideo')
+            : t('callVideo')
         }
         aria-pressed={inCall && inVideoMode}
         aria-busy={busy}

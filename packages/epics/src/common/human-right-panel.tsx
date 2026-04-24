@@ -539,6 +539,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     othersInRoomCallCount: spaceCallOthersInRoom,
     inCallUserIdsForRoster: spaceCallInCallUserIds,
     showRoomCallInProgress: spaceCallShowJoinStrip,
+    isSoleDeviceInCall: spaceCallSoleDevice,
     isMicrophoneMuted: spaceCallMicMuted,
     isLocalVideoMuted: spaceCallVideoMuted,
     isScreensharing: spaceCallScreensharing,
@@ -1793,6 +1794,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 disabled={!callUiEnabled}
                 inCall={callToolbarInCall}
                 roomCallInProgressToJoin={spaceCallToolbarJoinHint}
+                onlyLocalInRoomCall={
+                  spaceCallShowJoinStrip && spaceCallRoomGroupDeviceCount === 1
+                }
                 onAudio={handleCallAudio}
                 onVideo={handleCallVideo}
                 onSearch={handleCallSearch}
@@ -1807,8 +1811,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             busy={spaceCallBusyJoining}
             onJoinAudio={handleCallAudio}
             onJoinVideo={handleCallVideo}
-            joinAlertSoundEnabled={joinAlertSoundEnabled}
-            onJoinAlertSoundChange={setJoinAlertSoundEnabled}
+            callAlertsUnmuted={joinAlertSoundEnabled}
+            onCallAlertsUnmutedChange={setJoinAlertSoundEnabled}
           />
         )}
         {callUiEnabled &&
@@ -1826,6 +1830,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               isLocalVideoMuted={spaceCallVideoMuted}
               participantCount={spaceCallRoomGroupDeviceCount}
               othersInRoomCallCount={spaceCallOthersInRoom}
+              soleDeviceInCall={spaceCallSoleDevice}
               onLeave={handleCallLeave}
               onToggleMic={handleCallToggleMic}
               onToggleCamera={handleCallToggleCamera}

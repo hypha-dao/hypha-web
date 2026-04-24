@@ -25,6 +25,11 @@ type HumanChatPanelCallBannerProps = {
   participantCount: number;
   /** When >=1, show that others are in the call (not the local user—used for "Y others"). */
   othersInRoomCallCount: number;
+  /**
+   * True when this client is the only device in the GroupCall (end your session with Leave;
+   * the room call ends for everyone when no devices remain per Matrix).
+   */
+  soleDeviceInCall: boolean;
   onLeave: () => void;
   onToggleMic: () => void;
   onToggleCamera: () => void;
@@ -69,6 +74,7 @@ export function HumanChatPanelCallBanner({
   isLocalVideoMuted,
   participantCount,
   othersInRoomCallCount,
+  soleDeviceInCall,
   onLeave,
   onToggleMic,
   onToggleCamera,
@@ -164,17 +170,37 @@ export function HumanChatPanelCallBanner({
       )}
       <div className="flex min-h-[44px] flex-wrap items-center gap-2 px-4 py-2">
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium text-foreground">
-            {callState === 'connected'
-              ? t('callYouAreInSpaceCall')
-              : t('callActiveInSpace')}{' '}
-            {participantCount > 0
-              ? t('callDeviceCountInRoom', { count: participantCount })
-              : null}{' '}
-            {callState === 'connected' && othersInRoomCallCount > 0
-              ? t('callOthersInCallHint', { count: othersInRoomCallCount })
-              : null}
+          <p
+            className="text-xs font-medium leading-tight text-foreground"
+            title={
+              callState === 'connected'
+                ? othersInRoomCallCount === 0
+                  ? t('callBannerInCallSolo', { count: participantCount })
+                  : t('callBannerInCallWithOthers', {
+                      count: participantCount,
+                      otherCount: othersInRoomCallCount,
+                    })
+                : undefined
+            }
+          >
+            {callState === 'connected' ? (
+              <span className="whitespace-nowrap">
+                {othersInRoomCallCount === 0
+                  ? t('callBannerInCallSolo', { count: participantCount })
+                  : t('callBannerInCallWithOthers', {
+                      count: participantCount,
+                      otherCount: othersInRoomCallCount,
+                    })}
+              </span>
+            ) : (
+              t('callActiveInSpace')
+            )}
           </p>
+          {soleDeviceInCall && callState === 'connected' && (
+            <p className="mt-0.5 text-[10px] leading-tight text-muted-foreground">
+              {t('callSoleDeviceHint')}
+            </p>
+          )}
           {isDisconnecting && (
             <p className="text-xs text-muted-foreground">
               {t('callDisconnecting')}
