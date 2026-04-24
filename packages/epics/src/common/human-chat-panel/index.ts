@@ -6,10 +6,8 @@ export {
   HumanChatPanelCallStage,
   canOpenHumanChatCallFullView,
   getHumanChatPanelCallStageModel,
-} from './human-chat-panel-call-stage';
-export type {
-  CallStageContentModel,
-  HumanChatPanelCallStageLayout,
+  type CallStageContentModel,
+  type HumanChatPanelCallStageLayout,
 } from './human-chat-panel-call-stage';
 export { HumanChatPanelHeader } from './human-chat-panel-header';
 export { HumanChatPanelMessageBubble } from './human-chat-panel-message-bubble';
