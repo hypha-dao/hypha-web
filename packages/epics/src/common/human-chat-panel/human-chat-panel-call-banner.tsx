@@ -2,9 +2,10 @@
 
 import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import type {
-  SpaceGroupCallErrorCode,
-  SpaceGroupCallState,
+import {
+  getCallControlsPhase,
+  type SpaceGroupCallErrorCode,
+  type SpaceGroupCallState,
 } from '@hypha-platform/core/client';
 import { HumanChatPanelInCallControls } from './human-chat-panel-in-call-controls';
 
@@ -122,11 +123,8 @@ export function HumanChatPanelCallBanner({
     return null;
   }
 
-  const isConnectingPhase =
-    callState === 'connecting' ||
-    callState === 'awaiting_media' ||
-    callState === 'initializing';
-  const isDisconnecting = callState === 'disconnecting';
+  const { isConnectingPhase, isDisconnecting } =
+    getCallControlsPhase(callState);
 
   return (
     <div className="border-b border-border bg-muted/30">

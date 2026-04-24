@@ -11,7 +11,10 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
-import type { SpaceGroupCallState } from '@hypha-platform/core/client';
+import {
+  getCallControlsPhase,
+  type SpaceGroupCallState,
+} from '@hypha-platform/core/client';
 
 type HumanChatPanelInCallControlsProps = {
   callState: SpaceGroupCallState;
@@ -44,12 +47,7 @@ export function HumanChatPanelInCallControls({
   variant = 'inBanner',
 }: HumanChatPanelInCallControlsProps) {
   const t = useTranslations('HumanChatPanel');
-  const isConnectingPhase =
-    callState === 'connecting' ||
-    callState === 'awaiting_media' ||
-    callState === 'initializing';
-  const isDisconnecting = callState === 'disconnecting';
-  const controlsDisabled = isConnectingPhase || isDisconnecting;
+  const { controlsDisabled } = getCallControlsPhase(callState);
   const isFull = variant === 'fullView';
 
   const baseBtn = isFull
