@@ -56,12 +56,12 @@
 
 ### Phase 3 — Video + stage (top-tier in-call layout)
 
-| Step | Action                                                                                                                                           | Done when                                             |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
-| 3.1  | **`human-chat-panel-call-stage.tsx`**: render **`userMediaFeeds`** / participant tiles; **local PiP**; **avatar fallback** for audio-only tiles. | Two-user video call visible; PiP does not cover tabs. |
-| 3.2  | **Camera mute** syncs UI + SDK **`setLocalVideoMuted`**.                                                                                         | Toggling does not drop call.                          |
-| 3.3  | **Responsive** behavior: narrow panel stacks stage + messages; no horizontal scroll for tiles.                                                   | Design review on sm/md breakpoints.                   |
-| 3.4  | **Full view (modal)** — **Expand** control on the call stage opens a **dialog**-based enlarged layout per [implementation spec §3.4.4](./voice-video-call-implementation-spec.md); single media-attachment strategy; i18n `callFullView` / `callFullViewClose`. | Modal closes with Esc / backdrop; **call stays connected**; a11y focus trap per spec. |
+| Step | Action                                                                                                                                                                                                                                                                                                                                                      | Done when                                                                                                        |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| 3.1  | **`human-chat-panel-call-stage.tsx`**: render **`userMediaFeeds`** / participant tiles; **local PiP**; **avatar fallback** for audio-only tiles.                                                                                                                                                                                                            | Two-user video call visible; PiP does not cover tabs.                                                            |
+| 3.2  | **Camera mute** syncs UI + SDK **`setLocalVideoMuted`**.                                                                                                                                                                                                                                                                                                    | Toggling does not drop call.                                                                                     |
+| 3.3  | **Responsive** behavior: narrow panel stacks stage + messages; no horizontal scroll for tiles.                                                                                                                                                                                                                                                              | Design review on sm/md breakpoints.                                                                              |
+| 3.4  | **Full view (modal)** — **Expand** control on the call stage opens a **dialog**-based enlarged layout per [§3.4.4 + §3.4.4.1](./voice-video-call-implementation-spec.md) (**primary stage** uses full fill width/height; no narrow-tile + empty-void; **§3.4.4.1** FV-0–FV-6); single media-attachment strategy; i18n `callFullView` / `callFullViewClose`. | Modal closes with Esc / backdrop; **call stays connected**; a11y focus trap per spec; **visual** check per FV-6. |
 
 **Status (3.4):** **Specified in spec** (§3.4.4, **IMP-8**). Implementation is a **follow-up** slice; track in the same PR or a child ticket. **Steps 3.1–3.3** (without 3.4) are **shipped** in the baseline branch.
 
@@ -125,7 +125,7 @@ These criteria **supplement** §7 of the [implementation spec](./voice-video-cal
 - [ ] **Internationalization**: all strings via **`HumanChatPanel.*`** (or agreed namespace).
 - [ ] **Accessibility**: keyboard operable controls for critical actions; visible focus; screen reader labels for call state changes.
 - [ ] **Resilience**: tab background / focus loss does not leave orphan streams without recovery path.
-- [ ] (When [spec §3.4.4](./voice-video-call-implementation-spec.md) is implemented) **Full view**: expand icon opens a **modal** enlarged stage; **Esc** / close returns to the panel **without** ending the call; **focus** management matches the spec.
+- [ ] (When [spec §3.4.4](./voice-video-call-implementation-spec.md) is implemented) **Full view**: expand icon opens a **modal** whose **dominant** feed is **neat and large** per **§3.4.4.1**; **Esc** / close returns to the panel **without** ending the call; **focus** management matches the spec.
 
 ### 3.4 Engineering
 
