@@ -1,6 +1,13 @@
 'use client';
 
-import { useEffect, useId, useReducer, useRef } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useReducer,
+  useRef,
+  type RefObject,
+} from 'react';
 import type { MatrixClient, GroupCall, Room } from 'matrix-js-sdk';
 import {
   CallFeedEvent,
@@ -8,10 +15,12 @@ import {
 } from 'matrix-js-sdk/lib/webrtc/callFeed';
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
-import { User } from 'lucide-react';
+import { Maximize2, User } from 'lucide-react';
 import { matrixMemberDisplayLabel } from './matrix-room-member-display';
 
-type HumanChatPanelCallStageProps = {
+export type HumanChatPanelCallStageLayout = 'panel' | 'fullView' | 'hidden';
+
+type HumanChatPanelCallStageBaseProps = {
   client: MatrixClient | null;
   roomId: string | null;
   groupCall: GroupCall | null;
@@ -20,10 +29,19 @@ type HumanChatPanelCallStageProps = {
   isScreensharing: boolean;
   callState: string;
   feedVersion: number;
-  /** `userId::deviceId` from GroupCall activeSpeaker; optional highlight. */
   activeSpeakerKey: string | null;
   currentUserId: string | null;
   resolveMemberLabel: (userId: string | undefined) => string;
+};
+
+type HumanChatPanelCallStageProps = HumanChatPanelCallStageBaseProps & {
+  layout: HumanChatPanelCallStageLayout;
+  /** Shown in panel when full view is available; opens the enlarged dialog. */
+  onRequestFullView?: () => void;
+  /** `true` when the app-level full-view dialog is open; hides the inline stage so one video tree remains mounted. */
+  fullViewOpen?: boolean;
+  /** `ref` for the expand trigger (return focus on dialog close; Radix handles this if this ref is the trigger). */
+  fullViewTriggerRef?: RefObject<HTMLButtonElement | null>;
 };
 
 function feedKeyForActive(feed: CallFeed): string {
@@ -36,9 +54,128 @@ function feedKey(feed: CallFeed, index: number): string {
   )}:${index}`;
 }
 
+export type CallStageContentModel = {
+  kind: 'hidden' | 'screenSharePendingStrip' | 'main';
+  isVideoCall: boolean;
+  userMediaFeeds: CallFeed[];
+  shareFeeds: CallFeed[];
+  hasLocalWebcam: boolean;
+  remoteUserMedia: CallFeed[];
+  localUserMedia: CallFeed[];
+  hasRemotesOrShare: boolean;
+  showLocalInMainGrid: boolean;
+  showLocalPip: boolean;
+};
+
+/**
+ * Feeds the same gating as {@link HumanChatPanelCallStage} to decide if the
+ * enlarged (modal) call view is meaningful — not for the "screen share is on" text strip alone.
+ */
+export function getHumanChatPanelCallStageModel(
+  groupCall: GroupCall | null,
+  callKind: 'audio' | 'video' | null,
+  isLocalVideoMuted: boolean,
+  isScreensharing: boolean,
+  callState: string,
+): CallStageContentModel | null {
+  if (callState !== 'connected' || !groupCall) {
+    return null;
+  }
+  if (callKind !== 'video' && callKind !== 'audio') {
+    return null;
+  }
+
+  const isVideoCall = callKind === 'video';
+  const userMediaFeeds = [...groupCall.userMediaFeeds];
+  const shareFeeds = [...groupCall.screenshareFeeds];
+  const hasLocalWebcam = isVideoCall && !isLocalVideoMuted;
+  if (!isVideoCall && shareFeeds.length === 0) {
+    return {
+      kind: 'hidden',
+      isVideoCall,
+      userMediaFeeds,
+      shareFeeds,
+      hasLocalWebcam,
+      remoteUserMedia: [],
+      localUserMedia: [],
+      hasRemotesOrShare: false,
+      showLocalInMainGrid: false,
+      showLocalPip: false,
+    };
+  }
+  if (isVideoCall && !hasLocalWebcam && shareFeeds.length === 0) {
+    if (isScreensharing) {
+      return {
+        kind: 'screenSharePendingStrip',
+        isVideoCall,
+        userMediaFeeds,
+        shareFeeds,
+        hasLocalWebcam,
+        remoteUserMedia: [],
+        localUserMedia: [],
+        hasRemotesOrShare: false,
+        showLocalInMainGrid: false,
+        showLocalPip: false,
+      };
+    }
+    return {
+      kind: 'hidden',
+      isVideoCall,
+      userMediaFeeds,
+      shareFeeds,
+      hasLocalWebcam,
+      remoteUserMedia: [],
+      localUserMedia: [],
+      hasRemotesOrShare: false,
+      showLocalInMainGrid: false,
+      showLocalPip: false,
+    };
+  }
+
+  const remoteUserMedia = userMediaFeeds.filter((f) => !f.isLocal());
+  const localUserMedia = userMediaFeeds.filter((f) => f.isLocal());
+  const hasRemotesOrShare = shareFeeds.length > 0 || remoteUserMedia.length > 0;
+  const showLocalInMainGrid =
+    !hasRemotesOrShare && localUserMedia.length > 0 && hasLocalWebcam;
+  const showLocalPip = hasRemotesOrShare;
+  return {
+    kind: 'main',
+    isVideoCall,
+    userMediaFeeds,
+    shareFeeds,
+    hasLocalWebcam,
+    remoteUserMedia,
+    localUserMedia,
+    hasRemotesOrShare,
+    showLocalInMainGrid,
+    showLocalPip,
+  };
+}
+
+/** `true` when a full-size stage (grid / tiles) is on screen — user may open the enlarged dialog. */
+export function canOpenHumanChatCallFullView(
+  groupCall: GroupCall | null,
+  callKind: 'audio' | 'video' | null,
+  isLocalVideoMuted: boolean,
+  isScreensharing: boolean,
+  callState: string,
+): boolean {
+  const m = getHumanChatPanelCallStageModel(
+    groupCall,
+    callKind,
+    isLocalVideoMuted,
+    isScreensharing,
+    callState,
+  );
+  return m?.kind === 'main';
+}
+
 /**
  * Video grid + local PiP from GroupCall userMedia / screenshare feeds.
- * @see voice-video-call-implementation-spec.md §3.4.2, §3.5 (Phase 4: share + active speaker)
+ * Use `layout: 'panel' | 'fullView' | 'hidden'`: mount **one** instance with
+ * `fullView` when the modal is open, and `hidden` in the panel so streams stay
+ * single-sourced (spec §3.4.4).
+ * @see voice-video-call-implementation-spec.md §3.4.2, §3.4.4, §3.5
  */
 export function HumanChatPanelCallStage({
   client,
@@ -52,66 +189,119 @@ export function HumanChatPanelCallStage({
   activeSpeakerKey,
   currentUserId,
   resolveMemberLabel,
+  layout,
+  onRequestFullView,
+  fullViewOpen = false,
+  fullViewTriggerRef,
 }: HumanChatPanelCallStageProps) {
   const t = useTranslations('HumanChatPanel');
   const labelId = useId();
+  const model = getHumanChatPanelCallStageModel(
+    groupCall,
+    callKind,
+    isLocalVideoMuted,
+    isScreensharing,
+    callState,
+  );
+  const handleExpand = useCallback(() => {
+    onRequestFullView?.();
+  }, [onRequestFullView]);
+
+  if (!model) {
+    return null;
+  }
+
+  if (model.kind === 'screenSharePendingStrip') {
+    if (layout === 'fullView') {
+      return null;
+    }
+    return (
+      <section
+        className="shrink-0 border-b border-border bg-muted/20 px-3 py-2"
+        role="status"
+      >
+        <p className="text-xs text-muted-foreground">
+          {t('callScreenShareActive')}
+        </p>
+      </section>
+    );
+  }
+  if (model.kind === 'hidden') {
+    return null;
+  }
+  if (layout === 'hidden' && model.kind === 'main') {
+    return null;
+  }
+
+  const {
+    isVideoCall,
+    shareFeeds,
+    hasLocalWebcam,
+    remoteUserMedia,
+    localUserMedia,
+    hasRemotesOrShare,
+    showLocalInMainGrid,
+    showLocalPip,
+  } = model;
+
+  const isFull = layout === 'fullView';
   const room: Room | null =
     roomId && client ? client.getRoom(roomId) ?? null : null;
 
-  if (callState !== 'connected' || !groupCall) {
-    return null;
-  }
-  if (callKind !== 'video' && callKind !== 'audio') {
-    return null;
-  }
+  const showExpand = layout === 'panel' && !fullViewOpen && onRequestFullView;
 
-  const isVideoCall = callKind === 'video';
-  const userMediaFeeds = [...groupCall.userMediaFeeds];
-  const shareFeeds = [...groupCall.screenshareFeeds];
-
-  const hasLocalWebcam = isVideoCall && !isLocalVideoMuted;
-  if (!isVideoCall && shareFeeds.length === 0) {
+  if (!isFull && !(hasRemotesOrShare || showLocalInMainGrid)) {
     return null;
   }
-  if (isVideoCall && !hasLocalWebcam && shareFeeds.length === 0) {
-    if (isScreensharing) {
-      return (
-        <section
-          className="shrink-0 border-b border-border bg-muted/20 px-3 py-2"
-          role="status"
-        >
-          <p className="text-xs text-muted-foreground">
-            {t('callScreenShareActive')}
-          </p>
-        </section>
-      );
-    }
+  if (!isFull && isVideoCall && !hasLocalWebcam && shareFeeds.length === 0) {
     return null;
   }
-
-  const remoteUserMedia = userMediaFeeds.filter((f) => !f.isLocal());
-  const localUserMedia = userMediaFeeds.filter((f) => f.isLocal());
-  const hasRemotesOrShare = shareFeeds.length > 0 || remoteUserMedia.length > 0;
-  const showLocalInMainGrid =
-    !hasRemotesOrShare && localUserMedia.length > 0 && hasLocalWebcam;
-  const showLocalPip = hasRemotesOrShare;
 
   return (
     <section
-      className="relative w-full min-h-[min(32vh,200px)] max-w-full shrink-0 border-b border-border bg-muted/20 @container/call"
+      className={cn(
+        'relative w-full max-w-full shrink-0 border-b border-border bg-muted/20 @container/call',
+        isFull
+          ? 'min-h-0 flex-1 overflow-y-auto border-0 bg-black/30 py-0'
+          : 'min-h-[min(32vh,200px)]',
+      )}
       role="region"
       aria-labelledby={labelId}
     >
+      {showExpand && (
+        <div className="absolute end-2 top-2 z-20">
+          <button
+            type="button"
+            ref={fullViewTriggerRef}
+            onClick={handleExpand}
+            className={cn(
+              'flex h-8 w-8 items-center justify-center rounded-full border border-border/80 bg-background/90 text-foreground shadow-sm ring-offset-background',
+              'transition hover:bg-accent/90 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring',
+              'motion-reduce:transition-none',
+            )}
+            aria-haspopup="dialog"
+            aria-expanded={fullViewOpen}
+            title={t('callFullView')}
+            aria-label={t('callFullView')}
+          >
+            <Maximize2 className="h-4 w-4" aria-hidden />
+          </button>
+        </div>
+      )}
       <h2 id={labelId} className="sr-only">
-        {t('callStageLabel')}
+        {isFull ? t('callFullView') : t('callStageLabel')}
       </h2>
       {shareFeeds.length > 0 && (
-        <div className="w-full p-2 pb-0" data-feed-tick={_feedVersion}>
+        <div
+          className={cn('w-full p-2 pb-0', isFull && 'px-3 pt-3')}
+          data-feed-tick={_feedVersion}
+        >
           {shareFeeds.map((feed, i) => (
             <div key={feedKey(feed, i)} className="w-full max-w-full">
               <CallFeedTile
                 feed={feed}
                 isShare
+                isFullView={isFull}
                 isActiveSpeaker={
                   activeSpeakerKey != null &&
                   activeSpeakerKey === feedKeyForActive(feed)
@@ -129,17 +319,21 @@ export function HumanChatPanelCallStage({
         <div
           className={cn(
             'grid gap-2 p-2 pt-2',
-            shareFeeds.length > 0
+            isFull
+              ? 'min-h-0 max-h-[min(72dvh,820px)] overflow-y-auto px-3 pb-3 pt-0 @min-[32rem]:grid-cols-2 @min-[48rem]:grid-cols-3'
+              : shareFeeds.length > 0
               ? 'max-h-[min(50vh,420px)] @min-[22rem]:grid-cols-2'
               : '@min-[22rem]:grid-cols-2',
             shareFeeds.length +
               remoteUserMedia.length +
               (showLocalInMainGrid ? 1 : 0) ===
               1 && 'mx-auto max-w-2xl',
-            !shareFeeds.length &&
+            !isFull &&
+              !shareFeeds.length &&
               remoteUserMedia.length > 0 &&
               'min-h-[min(32vh,220px)]',
-            showLocalInMainGrid && 'min-h-[min(32vh,240px)]',
+            !isFull && showLocalInMainGrid && 'min-h-[min(32vh,240px)]',
+            isFull && !shareFeeds.length && 'min-h-[min(32dvh,280px)]',
           )}
           data-feed-tick={_feedVersion}
         >
@@ -147,6 +341,7 @@ export function HumanChatPanelCallStage({
             <CallFeedTile
               key={feedKey(feed, i)}
               feed={feed}
+              isFullView={isFull}
               isActiveSpeaker={
                 activeSpeakerKey != null &&
                 activeSpeakerKey === feedKeyForActive(feed)
@@ -162,6 +357,7 @@ export function HumanChatPanelCallStage({
               <CallFeedTile
                 key={feedKey(feed, i)}
                 feed={feed}
+                isFullView={isFull}
                 isActiveSpeaker={
                   activeSpeakerKey != null &&
                   activeSpeakerKey === feedKeyForActive(feed)
@@ -179,7 +375,12 @@ export function HumanChatPanelCallStage({
         hasLocalWebcam &&
         showLocalPip && (
           <div
-            className="pointer-events-none absolute bottom-2 end-2 z-10 w-[32%] min-w-[5.5rem] max-w-[8.5rem] overflow-hidden rounded-lg border-2 border-border bg-card shadow-lg"
+            className={cn(
+              'pointer-events-none absolute z-10 overflow-hidden rounded-lg border-2 border-border bg-card shadow-lg',
+              isFull
+                ? 'end-4 bottom-4 w-[min(22%,11rem)] min-w-[5.5rem]'
+                : 'bottom-2 end-2 w-[32%] min-w-[5.5rem] max-w-[8.5rem]',
+            )}
             style={{ aspectRatio: '4 / 3' }}
           >
             {localUserMedia.map((feed, i) => (
@@ -187,6 +388,7 @@ export function HumanChatPanelCallStage({
                 key={feedKey(feed, i)}
                 feed={feed}
                 isPip
+                isFullView={isFull}
                 isActiveSpeaker={
                   activeSpeakerKey != null &&
                   activeSpeakerKey === feedKeyForActive(feed)
@@ -223,6 +425,7 @@ const CallFeedTile = ({
   isShare = false,
   isPip = false,
   isActiveSpeaker = false,
+  isFullView = false,
   room,
   currentUserId,
   resolveMemberLabel,
@@ -232,6 +435,7 @@ const CallFeedTile = ({
   isShare?: boolean;
   isPip?: boolean;
   isActiveSpeaker?: boolean;
+  isFullView?: boolean;
   room: Room | null;
   currentUserId: string | null;
   resolveMemberLabel: (userId: string | undefined) => string;
@@ -259,6 +463,7 @@ const CallFeedTile = ({
       feed={feed}
       isShare={isShare}
       isPip={isPip}
+      isFullView={isFullView}
       isActiveSpeaker={isActiveSpeaker}
       label={label}
       t={t}
@@ -270,6 +475,7 @@ const FeedContent = ({
   feed,
   isShare,
   isPip,
+  isFullView,
   isActiveSpeaker,
   label,
   t,
@@ -277,6 +483,7 @@ const FeedContent = ({
   feed: CallFeed;
   isShare: boolean;
   isPip: boolean;
+  isFullView: boolean;
   isActiveSpeaker: boolean;
   label: string;
   t: (key: string) => string;
@@ -318,7 +525,8 @@ const FeedContent = ({
     <div
       className={cn(
         'relative flex min-h-[10rem] min-w-0 items-stretch justify-center overflow-hidden rounded-lg bg-black/20',
-        isShare && 'min-h-[min(42vh,360px)] w-full',
+        isShare && !isFullView && 'min-h-[min(42vh,360px)] w-full',
+        isShare && isFullView && 'min-h-[min(56dvh,560px)] w-full',
         isActiveSpeaker && 'ring-2 ring-accent-9/70 ring-offset-0',
         isPip && 'min-h-0',
       )}
@@ -329,7 +537,11 @@ const FeedContent = ({
             ref={ref}
             className={cn(
               'w-full object-contain',
-              isPip ? 'max-h-24' : 'min-h-[10rem] max-h-[min(40vh,360px)]',
+              isPip
+                ? 'max-h-24'
+                : isFullView
+                ? 'min-h-[12rem] max-h-[min(64dvh,700px)]'
+                : 'min-h-[10rem] max-h-[min(40vh,360px)]',
             )}
             autoPlay
             playsInline
@@ -337,7 +549,12 @@ const FeedContent = ({
             aria-label={label}
           />
           {!isPip && (
-            <div className="absolute bottom-1 start-1 max-w-[90%] truncate rounded bg-background/80 px-1.5 py-0.5 text-xs">
+            <div
+              className={cn(
+                'absolute start-1 max-w-[90%] truncate rounded bg-background/80 px-1.5 py-0.5 text-xs',
+                isFullView ? 'bottom-2' : 'bottom-1',
+              )}
+            >
               {label}
             </div>
           )}

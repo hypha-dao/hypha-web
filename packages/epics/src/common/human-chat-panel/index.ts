@@ -1,6 +1,14 @@
 export { HumanChatPanelCallToolbar } from './human-chat-panel-call-toolbar';
 export { HumanChatPanelCallBanner } from './human-chat-panel-call-banner';
-export { HumanChatPanelCallStage } from './human-chat-panel-call-stage';
+export {
+  HumanChatPanelCallStage,
+  canOpenHumanChatCallFullView,
+  getHumanChatPanelCallStageModel,
+} from './human-chat-panel-call-stage';
+export type {
+  CallStageContentModel,
+  HumanChatPanelCallStageLayout,
+} from './human-chat-panel-call-stage';
 export { HumanChatPanelHeader } from './human-chat-panel-header';
 export { HumanChatPanelMessageBubble } from './human-chat-panel-message-bubble';
 export {

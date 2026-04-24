@@ -1941,6 +1941,9 @@
     "callRemoteParticipant": "Participant",
     "callScreenShare": "Screen share",
     "callScreenShareActive": "Screen share is on",
+    "callFullView": "Full view",
+    "callFullViewDescription": "Larger view of the call. Your space call stays active when you close this window.",
+    "callFullViewClose": "Close",
     "callParticipantMuted": "Muted"
   },
   "CoherenceTab": {
@@ -1995,6 +1998,11 @@
     "spaceMemoryTimelineLabel": "Space memory history",
     "spaceMemoryContext": "From «{title}» · {state}",
     "spaceMemoryContextMatrix": "From Matrix chat",
+    "spaceMemoryContextCallTranscript": "Call transcript (organizational memory)",
+    "spaceMemoryContextCallRecording": "Call recording (organizational memory)",
+    "spaceMemoryCallTranscriptExcerpt": "Transcript",
+    "spaceMemoryCallRecordingNoUrl": "Recording will be available when a media URL is ingested for this session.",
+    "spaceMemoryCallArtifactNote": "Call memories appear when recording or speech-to-text completes for this space (see team pipeline).",
     "spaceMemoryMatrixPreviewNeedsChat": "Preview needs Human Chat (Matrix)",
     "spaceMemoryMatrixOpenHint": "Open Human Chat to connect Matrix, then refresh Space Memory to open this file.",
     "spaceMemoryMatrixVideoPlayHint": "Tap to play preview",

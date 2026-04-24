@@ -1910,6 +1910,9 @@
     "callRemoteParticipant": "Teilnehmende/r",
     "callScreenShare": "Bildschirmfreigabe",
     "callScreenShareActive": "Bildschirmfreigabe ist aktiv",
+    "callFullView": "Vollansicht",
+    "callFullViewDescription": "Größere Anzeige des Anrufs. Der Space-Anruf bleibt aktiv, wenn Sie dieses Fenster schließen.",
+    "callFullViewClose": "Schließen",
     "callParticipantMuted": "Stumm"
   },
   "CoherenceTab": {

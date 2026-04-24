@@ -19,6 +19,12 @@ import {
   SidebarContent,
   SidebarFooter,
   useSidebar,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from '@hypha-platform/ui';
 import {
   useMatrix,
@@ -60,6 +66,7 @@ import {
   HumanChatPanelCallToolbar,
   HumanChatPanelCallBanner,
   HumanChatPanelCallStage,
+  canOpenHumanChatCallFullView,
   type ChatDraftAttachment,
   type ChatMentionCandidate,
   type ChatPanelAttachmentMedia,
@@ -486,6 +493,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [composerError, setComposerError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ChatPanelTab>('chat');
+  const [callFullViewOpen, setCallFullViewOpen] = useState(false);
+  const callFullViewTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [scrollToEventId, setScrollToEventId] = useState<string | null>(null);
   /** Shown in timeline after a short delay while large attachment sends run. */
   const [sendingPending, setSendingPending] = useState<null | {
@@ -578,6 +587,42 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const handleRetrySpaceCall = useCallback(() => {
     retrySpaceCall();
   }, [retrySpaceCall]);
+
+  const canOpenCallFullView = useMemo(
+    () =>
+      canOpenHumanChatCallFullView(
+        spaceGroupCall,
+        spaceCallKind,
+        spaceCallVideoMuted,
+        spaceCallScreensharing,
+        spaceCallState,
+      ),
+    [
+      spaceGroupCall,
+      spaceCallKind,
+      spaceCallVideoMuted,
+      spaceCallScreensharing,
+      spaceCallState,
+    ],
+  );
+
+  useEffect(() => {
+    if (activeTab !== 'chat' && callFullViewOpen) {
+      setCallFullViewOpen(false);
+    }
+  }, [activeTab, callFullViewOpen]);
+
+  useEffect(() => {
+    if (!canOpenCallFullView && callFullViewOpen) {
+      setCallFullViewOpen(false);
+    }
+  }, [canOpenCallFullView, callFullViewOpen]);
+
+  useEffect(() => {
+    if (spaceCallState !== 'connected' && callFullViewOpen) {
+      setCallFullViewOpen(false);
+    }
+  }, [spaceCallState, callFullViewOpen]);
 
   /** Bumps when Matrix room membership changes so `@` mention candidates + button state refresh without reload. */
   const [mentionMembershipEpoch, setMentionMembershipEpoch] = useState(0);
@@ -1761,6 +1806,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 activeSpeakerKey={spaceCallActiveSpeakerKey}
                 currentUserId={currentUserId}
                 resolveMemberLabel={resolveMemberLabel}
+                layout={
+                  callFullViewOpen && canOpenCallFullView ? 'hidden' : 'panel'
+                }
+                onRequestFullView={
+                  canOpenCallFullView
+                    ? () => {
+                        setCallFullViewOpen(true);
+                      }
+                    : undefined
+                }
+                fullViewOpen={callFullViewOpen}
+                fullViewTriggerRef={callFullViewTriggerRef}
               />
             )}
             {error && (
@@ -1898,6 +1955,60 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             />
           </div>
         </SidebarFooter>
+      )}
+
+      {callUiEnabled && canOpenCallFullView && (
+        <Dialog
+          open={callFullViewOpen}
+          onOpenChange={(o) => {
+            setCallFullViewOpen(o);
+          }}
+        >
+          <DialogContent
+            className="fixed z-[100] flex w-[min(96vw,80rem)] max-w-full max-h-[min(90dvh,900px)] flex-col !left-1/2 !top-1/2 -translate-x-1/2 -translate-y-1/2 overflow-hidden border border-border/50 bg-zinc-950/98 p-0 text-foreground shadow-2xl data-[state=open]:sm:rounded-xl data-[state=open]:duration-200 motion-reduce:data-[state=open]:duration-0 motion-reduce:data-[state=open]:zoom-in-100"
+            hideCloseButton
+            overlayClassName="fixed z-[99] !inset-0 !left-0 !right-0 !top-0 !bottom-0 border-0 bg-black/50 backdrop-blur-sm supports-[backdrop-filter]:bg-black/40 motion-reduce:backdrop-blur-none motion-reduce:animate-none"
+            onCloseAutoFocus={(e) => {
+              e.preventDefault();
+              callFullViewTriggerRef.current?.focus();
+            }}
+          >
+            <DialogHeader className="relative shrink-0 space-y-0.5 border-b border-border/50 bg-zinc-950/95 px-3 py-2.5 pe-12 text-left">
+              <DialogTitle className="text-sm font-medium tracking-tight text-foreground sm:text-left">
+                {t('callFullView')}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground sm:text-left">
+                {t('callFullViewDescription')}
+              </DialogDescription>
+              <DialogClose
+                className="absolute end-2 top-2 inline-flex h-8 min-w-8 items-center justify-center gap-1 rounded-md border border-transparent text-xs text-muted-foreground transition-colors hover:bg-accent/80 hover:text-foreground focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={t('callFullViewClose')}
+              >
+                {t('callFullViewClose')}
+              </DialogClose>
+            </DialogHeader>
+            <div
+              className="flex min-h-0 flex-1 flex-col overflow-y-auto p-0 motion-reduce:scroll-auto"
+              role="presentation"
+            >
+              <HumanChatPanelCallStage
+                client={client}
+                roomId={roomId}
+                groupCall={spaceGroupCall}
+                callKind={spaceCallKind}
+                isLocalVideoMuted={spaceCallVideoMuted}
+                isScreensharing={spaceCallScreensharing}
+                callState={spaceCallState}
+                feedVersion={spaceCallFeedVersion}
+                activeSpeakerKey={spaceCallActiveSpeakerKey}
+                currentUserId={currentUserId}
+                resolveMemberLabel={resolveMemberLabel}
+                layout="fullView"
+                fullViewOpen
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </>
   );

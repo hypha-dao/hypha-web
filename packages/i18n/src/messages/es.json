@@ -1909,6 +1909,9 @@
     "callRemoteParticipant": "Participante",
     "callScreenShare": "Pantalla compartida",
     "callScreenShareActive": "Compartir pantalla activo",
+    "callFullView": "Vista ampliada",
+    "callFullViewDescription": "Vista más grande de la llamada. La llamada del espacio sigue activa al cerrar esta ventana.",
+    "callFullViewClose": "Cerrar",
     "callParticipantMuted": "Silenciado"
   },
   "CoherenceTab": {

@@ -1909,6 +1909,9 @@
     "callRemoteParticipant": "Participant",
     "callScreenShare": "Partage d’écran",
     "callScreenShareActive": "Partage d’écran actif",
+    "callFullView": "Plein affichage",
+    "callFullViewDescription": "Affichage plus large de l’appel. L’appel dans l’espace reste actif lorsque vous fermez cette fenêtre.",
+    "callFullViewClose": "Fermer",
     "callParticipantMuted": "Muet"
   },
   "CoherenceTab": {
