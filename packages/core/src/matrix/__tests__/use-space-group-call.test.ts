@@ -16,6 +16,11 @@ describe('isPermissionLikeGroupCallError', () => {
     ).toBe(true);
   });
 
+  it('returns true when DOMException name is NotAllowedError', () => {
+    const e = new DOMException('The request is not allowed', 'NotAllowedError');
+    expect(isPermissionLikeGroupCallError(e)).toBe(true);
+  });
+
   it('returns false for generic error', () => {
     expect(isPermissionLikeGroupCallError(new Error('ICE failed'))).toBe(false);
   });
