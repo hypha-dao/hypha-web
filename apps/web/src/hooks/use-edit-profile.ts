@@ -2,7 +2,7 @@
 
 import { useCallback, useReducer, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getAddress, isAddress } from 'viem';
+import { isAddress } from 'viem';
 import { type Person, PersonFiles, useJwt } from '@hypha-platform/core/client';
 import { usePeopleFileUploads } from './use-people-file-uploads';
 import { useAuthHeader } from './use-auth-header';
@@ -42,7 +42,7 @@ function optEthAddressField(value: unknown): `0x${string}` | undefined {
   if (typeof value !== 'string' || !isAddress(value, { strict: false })) {
     return undefined;
   }
-  return getAddress(value);
+  return value as `0x${string}`;
 }
 
 function parseApiPerson(raw: unknown): Person | null {
