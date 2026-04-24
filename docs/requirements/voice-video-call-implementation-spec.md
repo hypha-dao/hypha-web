@@ -271,6 +271,8 @@ type HumanChatPanelCallToolbarProps = {
 
 **Rationale (non-normative):** Sidebar and modal share **one** `GroupCall`, but the **UI** is different: a **condensed** grid in the **panel** vs. a **hero** main surface in the modal. Re-applying the **grid** that centers **`max-w-2xl`** or leaves unassigned `grid-cols` tracks in **full view** reproduces the narrow-tile + void bug; FV-1–FV-2 name the required **“main stage = full width”** contract explicitly.
 
+**Status (implemented in codebase):** `layout=fullView` uses: **(1)** **single** remote (or local solo) camera with **no** `grid` — **flex** column with **`flex-1`**, **`absolute inset-0`** video in tile (`FeedContent`); **(2)** `grid-cols-2` at `sm+` only when there are **≥2** user tiles, else **`grid-cols-1`**; **(3)** screen share blocks **`flex-1`**, camera strip below with **`max-h` cap**; **(4)** screen share tile wrapper **`flex-1` flex-col`**. PR screenshot per **FV-6** is still a **product** / review artifact.
+
 **Accessibility (WCAG-aligned, normative minimum)**
 
 - **`role="dialog"`**, `aria-modal="true"`; **`aria-labelledby`** pointing to the dialog title (e.g. “Call — full view” / i18n).

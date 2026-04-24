@@ -245,6 +245,19 @@ export function HumanChatPanelCallStage({
   } = model;
 
   const isFull = layout === 'fullView';
+  const userGridTileCount =
+    remoteUserMedia.length + (showLocalInMainGrid ? localUserMedia.length : 0);
+  /** Spec §3.4.4.1 FV-1: avoid 2–3 col grid with one child (empty “void” column). */
+  const fullViewUserColumnClass =
+    userGridTileCount <= 1
+      ? 'grid-cols-1'
+      : userGridTileCount === 2
+      ? 'grid-cols-1 sm:grid-cols-2'
+      : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
+  /** One camera tile only, no share: flex column fill (no empty grid track / FV-1). */
+  const useFullViewSingleMainTile =
+    isFull && userGridTileCount === 1 && shareFeeds.length === 0;
+
   const room: Room | null =
     roomId && client ? client.getRoom(roomId) ?? null : null;
 
@@ -295,14 +308,18 @@ export function HumanChatPanelCallStage({
         <div
           className={cn(
             'w-full p-2 pb-0',
-            isFull && 'flex min-h-0 flex-1 flex-col p-0',
+            isFull && 'flex min-h-0 min-w-0 flex-1 flex-col p-0',
+            isFull && shareFeeds.length > 0 && 'min-w-0', // FV-1: full width of main stage
           )}
           data-feed-tick={_feedVersion}
         >
           {shareFeeds.map((feed, i) => (
             <div
               key={feedKey(feed, i)}
-              className={cn('w-full max-w-full', isFull && 'min-h-0 flex-1')}
+              className={cn(
+                'w-full max-w-full',
+                isFull && 'flex min-h-0 min-w-0 flex-1 flex-col',
+              )}
             >
               <CallFeedTile
                 feed={feed}
@@ -321,63 +338,117 @@ export function HumanChatPanelCallStage({
           ))}
         </div>
       )}
-      {(hasRemotesOrShare || showLocalInMainGrid) && (
-        <div
-          className={cn(
-            'grid gap-2 p-2 pt-2',
-            isFull
-              ? 'min-h-0 flex-1 grid-cols-1 content-stretch items-stretch overflow-y-auto px-2 pb-2 pt-0 @min-[32rem]:grid-cols-2 @min-[48rem]:grid-cols-3'
-              : shareFeeds.length > 0
-              ? 'max-h-[min(50vh,420px)] @min-[22rem]:grid-cols-2'
-              : '@min-[22rem]:grid-cols-2',
-            !isFull &&
-              shareFeeds.length +
-                remoteUserMedia.length +
-                (showLocalInMainGrid ? 1 : 0) ===
-                1 &&
-              'mx-auto max-w-2xl',
-            !isFull &&
-              !shareFeeds.length &&
-              remoteUserMedia.length > 0 &&
-              'min-h-[min(32vh,220px)]',
-            !isFull && showLocalInMainGrid && 'min-h-[min(32vh,240px)]',
-            isFull && !shareFeeds.length && 'min-h-0',
-          )}
-          data-feed-tick={_feedVersion}
-        >
-          {remoteUserMedia.map((feed, i) => (
-            <CallFeedTile
-              key={feedKey(feed, i)}
-              feed={feed}
-              isFullView={isFull}
-              isActiveSpeaker={
-                activeSpeakerKey != null &&
-                activeSpeakerKey === feedKeyForActive(feed)
-              }
-              room={room}
-              currentUserId={currentUserId}
-              resolveMemberLabel={resolveMemberLabel}
-              t={t}
-            />
-          ))}
-          {showLocalInMainGrid &&
-            localUserMedia.map((feed, i) => (
-              <CallFeedTile
+      {(hasRemotesOrShare || showLocalInMainGrid) &&
+        (useFullViewSingleMainTile ? (
+          <div
+            className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col px-2 pb-2 pt-0"
+            data-feed-tick={_feedVersion}
+          >
+            {remoteUserMedia[0] ? (
+              <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col">
+                <CallFeedTile
+                  feed={remoteUserMedia[0]}
+                  isFullView={isFull}
+                  isActiveSpeaker={
+                    activeSpeakerKey != null &&
+                    activeSpeakerKey === feedKeyForActive(remoteUserMedia[0]!)
+                  }
+                  room={room}
+                  currentUserId={currentUserId}
+                  resolveMemberLabel={resolveMemberLabel}
+                  t={t}
+                />
+              </div>
+            ) : showLocalInMainGrid && localUserMedia[0] ? (
+              <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col">
+                <CallFeedTile
+                  feed={localUserMedia[0]}
+                  isFullView={isFull}
+                  isActiveSpeaker={
+                    activeSpeakerKey != null &&
+                    activeSpeakerKey === feedKeyForActive(localUserMedia[0]!)
+                  }
+                  room={room}
+                  currentUserId={currentUserId}
+                  resolveMemberLabel={resolveMemberLabel}
+                  t={t}
+                />
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <div
+            className={cn(
+              'grid gap-2 p-2 pt-2',
+              isFull
+                ? cn(
+                    'h-full min-h-0 w-full min-w-0 flex-1',
+                    'content-stretch items-stretch [grid-auto-rows:minmax(0,1fr)]',
+                    fullViewUserColumnClass,
+                    'overflow-y-auto px-2 pb-2 pt-0',
+                    // FV-5: when screen share is primary, user tiles are a bounded strip
+                    shareFeeds.length > 0
+                      ? 'max-h-[min(40dvh,320px)] shrink-0'
+                      : null,
+                  )
+                : shareFeeds.length > 0
+                ? 'max-h-[min(50vh,420px)] @min-[22rem]:grid-cols-2'
+                : '@min-[22rem]:grid-cols-2',
+              !isFull &&
+                shareFeeds.length +
+                  remoteUserMedia.length +
+                  (showLocalInMainGrid ? 1 : 0) ===
+                  1 &&
+                'mx-auto max-w-2xl',
+              !isFull &&
+                !shareFeeds.length &&
+                remoteUserMedia.length > 0 &&
+                'min-h-[min(32vh,220px)]',
+              !isFull && showLocalInMainGrid && 'min-h-[min(32vh,240px)]',
+            )}
+            data-feed-tick={_feedVersion}
+          >
+            {remoteUserMedia.map((feed, i) => (
+              <div
                 key={feedKey(feed, i)}
-                feed={feed}
-                isFullView={isFull}
-                isActiveSpeaker={
-                  activeSpeakerKey != null &&
-                  activeSpeakerKey === feedKeyForActive(feed)
-                }
-                room={room}
-                currentUserId={currentUserId}
-                resolveMemberLabel={resolveMemberLabel}
-                t={t}
-              />
+                className={isFull ? 'min-h-0 w-full min-w-0' : undefined}
+              >
+                <CallFeedTile
+                  feed={feed}
+                  isFullView={isFull}
+                  isActiveSpeaker={
+                    activeSpeakerKey != null &&
+                    activeSpeakerKey === feedKeyForActive(feed)
+                  }
+                  room={room}
+                  currentUserId={currentUserId}
+                  resolveMemberLabel={resolveMemberLabel}
+                  t={t}
+                />
+              </div>
             ))}
-        </div>
-      )}
+            {showLocalInMainGrid &&
+              localUserMedia.map((feed, i) => (
+                <div
+                  key={feedKey(feed, i)}
+                  className={isFull ? 'min-h-0 w-full min-w-0' : undefined}
+                >
+                  <CallFeedTile
+                    feed={feed}
+                    isFullView={isFull}
+                    isActiveSpeaker={
+                      activeSpeakerKey != null &&
+                      activeSpeakerKey === feedKeyForActive(feed)
+                    }
+                    room={room}
+                    currentUserId={currentUserId}
+                    resolveMemberLabel={resolveMemberLabel}
+                    t={t}
+                  />
+                </div>
+              ))}
+          </div>
+        ))}
       {isVideoCall &&
         localUserMedia.length > 0 &&
         hasLocalWebcam &&
@@ -532,14 +603,14 @@ const FeedContent = ({
   return (
     <div
       className={cn(
-        'relative flex min-w-0 items-stretch justify-center overflow-hidden rounded-lg bg-black/20',
+        'relative min-w-0 overflow-hidden rounded-lg bg-black/20',
         isFullView && !isPip
-          ? 'h-full min-h-0 min-w-0 flex-1'
-          : 'min-h-[10rem]',
+          ? 'flex h-full min-h-0 min-w-0 flex-1 flex-col'
+          : 'flex min-h-[10rem] items-stretch justify-center',
         isShare && !isFullView && 'min-h-[min(42vh,360px)] w-full',
         isShare && isFullView && 'h-full min-h-0 w-full',
         isActiveSpeaker && 'ring-2 ring-accent-9/70 ring-offset-0',
-        isPip && 'min-h-0',
+        isPip && 'flex min-h-0',
       )}
     >
       {hasVideo ? (
@@ -547,12 +618,11 @@ const FeedContent = ({
           <video
             ref={ref}
             className={cn(
-              'w-full object-contain',
               isPip
-                ? 'max-h-24'
+                ? 'max-h-24 w-full object-contain'
                 : isFullView
-                ? 'h-full min-h-0 max-h-none w-full max-w-full flex-1'
-                : 'min-h-[10rem] max-h-[min(40vh,360px)]',
+                ? 'absolute inset-0 h-full w-full object-contain'
+                : 'w-full min-h-[10rem] max-h-[min(40vh,360px)] object-contain',
             )}
             autoPlay
             playsInline
@@ -562,7 +632,7 @@ const FeedContent = ({
           {!isPip && (
             <div
               className={cn(
-                'absolute start-1 max-w-[90%] truncate rounded bg-background/80 px-1.5 py-0.5 text-xs',
+                'absolute start-1 z-[1] max-w-[90%] truncate rounded bg-background/80 px-1.5 py-0.5 text-xs',
                 isFullView ? 'bottom-2' : 'bottom-1',
               )}
             >
@@ -572,7 +642,10 @@ const FeedContent = ({
         </>
       ) : (
         <div
-          className="flex w-full min-h-[10rem] flex-col items-center justify-center gap-1 p-2 text-center"
+          className={cn(
+            'flex w-full flex-col items-center justify-center gap-1 p-2 text-center',
+            isFullView && !isPip ? 'min-h-0 flex-1' : 'min-h-[10rem]',
+          )}
           aria-label={label}
         >
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
