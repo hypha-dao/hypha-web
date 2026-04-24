@@ -25,11 +25,6 @@ type HumanChatPanelCallBannerProps = {
   participantCount: number;
   /** When >=1, show that others are in the call (not the local user—used for "Y others"). */
   othersInRoomCallCount: number;
-  /**
-   * True when this client is the only device in the GroupCall (end your session with Leave;
-   * the room call ends for everyone when no devices remain per Matrix).
-   */
-  soleDeviceInCall: boolean;
   onLeave: () => void;
   onToggleMic: () => void;
   onToggleCamera: () => void;
@@ -74,7 +69,6 @@ export function HumanChatPanelCallBanner({
   isLocalVideoMuted,
   participantCount,
   othersInRoomCallCount,
-  soleDeviceInCall,
   onLeave,
   onToggleMic,
   onToggleCamera,
@@ -196,11 +190,6 @@ export function HumanChatPanelCallBanner({
               t('callActiveInSpace')
             )}
           </p>
-          {soleDeviceInCall && callState === 'connected' && (
-            <p className="mt-0.5 text-[10px] leading-tight text-muted-foreground">
-              {t('callSoleDeviceHint')}
-            </p>
-          )}
           {isDisconnecting && (
             <p className="text-xs text-muted-foreground">
               {t('callDisconnecting')}

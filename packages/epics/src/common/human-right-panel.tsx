@@ -539,7 +539,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     othersInRoomCallCount: spaceCallOthersInRoom,
     inCallUserIdsForRoster: spaceCallInCallUserIds,
     showRoomCallInProgress: spaceCallShowJoinStrip,
-    isSoleDeviceInCall: spaceCallSoleDevice,
     isMicrophoneMuted: spaceCallMicMuted,
     isLocalVideoMuted: spaceCallVideoMuted,
     isScreensharing: spaceCallScreensharing,
@@ -1830,7 +1829,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               isLocalVideoMuted={spaceCallVideoMuted}
               participantCount={spaceCallRoomGroupDeviceCount}
               othersInRoomCallCount={spaceCallOthersInRoom}
-              soleDeviceInCall={spaceCallSoleDevice}
               onLeave={handleCallLeave}
               onToggleMic={handleCallToggleMic}
               onToggleCamera={handleCallToggleCamera}

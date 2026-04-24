@@ -717,12 +717,6 @@ export function useSpaceGroupCall(roomId: string | null) {
     [callState, inOurSession, idleRoomParticipantCount],
   );
 
-  /** True when this device is the only one in the GroupCall (you can leave to end your session; Matrix ends the call when everyone leaves). */
-  const isSoleDeviceInCall = useMemo(
-    () => inOurSession && participantCount === 1,
-    [inOurSession, participantCount],
-  );
-
   return {
     callState,
     callSessionId,
@@ -750,7 +744,6 @@ export function useSpaceGroupCall(roomId: string | null) {
     /** Matrix user ids with at least one device in the call (room member state + local echo). */
     inCallUserIdsForRoster,
     showRoomCallInProgress,
-    isSoleDeviceInCall,
     participantSummary: {
       count: roomGroupCallDeviceCount,
       others: othersInRoomCallCount,

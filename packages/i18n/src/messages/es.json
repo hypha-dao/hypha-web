@@ -1897,7 +1897,6 @@
     "callJoinControlsGroup": "Iniciar o unirse a la llamada",
     "callBannerInCallSolo": "En la llamada — {count, plural, one {1 dispositivo} other {# dispositivos}} · solo tú",
     "callBannerInCallWithOthers": "En la llamada — {count, plural, one {1 dispositivo} other {# dispositivos}} · {otherCount, plural, one {1 otro} other {# otros}}",
-    "callSoleDeviceHint": "Salir para finalizar tu sesión. La llamada termina cuando no quede nadie.",
     "callYouAreInSpaceCall": "En la llamada",
     "callDeviceCountInRoom": " · {count, plural, one {# dispositivo} other {# dispositivos}}",
     "callOthersInCallHint": " — {count, plural, one {# otro} other {# otros}}",

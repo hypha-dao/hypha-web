@@ -1898,7 +1898,6 @@
     "callJoinControlsGroup": "Anruf starten oder beitreten",
     "callBannerInCallSolo": "In diesem Anruf — {count, plural, one {1 Gerät} other {# Geräte}} · nur Sie",
     "callBannerInCallWithOthers": "In diesem Anruf — {count, plural, one {1 Gerät} other {# Geräte}} · {otherCount, plural, one {1 weitere/r} other {# weitere}}",
-    "callSoleDeviceHint": "Zum Beenden: Verlassen. Der Anruf endet, wenn niemand mehr verbunden ist.",
     "callYouAreInSpaceCall": "In diesem Anruf",
     "callDeviceCountInRoom": " · {count, plural, one {# Gerät} other {# Geräte}}",
     "callOthersInCallHint": " — {count, plural, one {# andere Person} other {# andere}}",

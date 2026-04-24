@@ -1897,7 +1897,6 @@
     "callJoinControlsGroup": "Iniciar ou juntar-se à chamada",
     "callBannerInCallSolo": "Na chamada — {count, plural, one {1 dispositivo} other {# dispositivos}} · só si",
     "callBannerInCallWithOthers": "Na chamada — {count, plural, one {1 dispositivo} other {# dispositivos}} · {otherCount, plural, one {1 outro} other {# outros}}",
-    "callSoleDeviceHint": "Saia para terminar a sua sessão. A chamada acaba quando ninguém fica na linha.",
     "callYouAreInSpaceCall": "Na chamada",
     "callDeviceCountInRoom": " · {count, plural, one {# dispositivo} other {# dispositivos}}",
     "callOthersInCallHint": " — {count, plural, one {# outro} other {# outros}}",
