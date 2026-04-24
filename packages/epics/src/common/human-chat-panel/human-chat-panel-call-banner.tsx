@@ -25,6 +25,8 @@ type HumanChatPanelCallBannerProps = {
   isScreensharing: boolean;
   /** Non-fatal display-capture error; does not end the call. */
   screenshareErrorCode: SpaceGroupCallErrorCode | null;
+  /** True when document is hidden during an active call (Phase 5.1). */
+  tabBackgroundWhileInCall: boolean;
   isMicrophoneMuted: boolean;
   isLocalVideoMuted: boolean;
   participantCount: number;
@@ -33,6 +35,9 @@ type HumanChatPanelCallBannerProps = {
   onToggleCamera: () => void;
   onToggleScreenshare: () => void;
   onDismissScreenshareError: () => void;
+  /** Reconnect after a recoverable call error. */
+  onRetryCall: () => void;
+  onDismissCallError: () => void;
 };
 
 function errorKey(code: SpaceGroupCallErrorCode): string {
@@ -40,9 +45,11 @@ function errorKey(code: SpaceGroupCallErrorCode): string {
     case 'PERMISSION_DENIED':
       return 'callErrorPermission';
     case 'NOT_READY':
+      return 'callErrorNotReady';
     case 'NO_ROOM':
+      return 'callErrorNoRoom';
     case 'NO_CLIENT':
-      return 'callErrorGeneric';
+      return 'callErrorNoClient';
     default:
       return 'callErrorGeneric';
   }
@@ -71,16 +78,43 @@ export function HumanChatPanelCallBanner({
   onToggleCamera,
   onToggleScreenshare,
   onDismissScreenshareError,
+  tabBackgroundWhileInCall,
+  onRetryCall,
+  onDismissCallError,
 }: HumanChatPanelCallBannerProps) {
   const t = useTranslations('HumanChatPanel');
+  const showRetryOnError =
+    errorCode != null &&
+    (errorCode === 'PERMISSION_DENIED' ||
+      errorCode === 'WEBRTC_FAILED' ||
+      errorCode === 'UNKNOWN');
 
   if (callState === 'error' && errorCode) {
     return (
       <div
         role="alert"
         className="border-b border-border bg-destructive/10 px-4 py-2.5"
+        aria-live="assertive"
       >
         <p className="text-sm text-destructive">{t(errorKey(errorCode))}</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {showRetryOnError ? (
+            <button
+              type="button"
+              onClick={onRetryCall}
+              className="inline-flex h-8 items-center rounded-md border border-border bg-background px-2.5 text-xs font-medium text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            >
+              {t('callErrorRetry')}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={onDismissCallError}
+            className="inline-flex h-8 items-center rounded-md border border-transparent bg-transparent px-2.5 text-xs font-medium text-destructive underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            {t('callErrorDismiss')}
+          </button>
+        </div>
       </div>
     );
   }
@@ -104,6 +138,23 @@ export function HumanChatPanelCallBanner({
 
   return (
     <div className="border-b border-border bg-muted/30">
+      <div
+        role="status"
+        className="sr-only"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {isConnectingPhase
+          ? t('callConnecting')
+          : callState === 'connected'
+          ? t('callActiveInSpace')
+          : null}
+      </div>
+      {callState === 'connected' && tabBackgroundWhileInCall && (
+        <p className="border-b border-border/60 bg-muted/50 px-4 py-1.5 text-xs text-muted-foreground">
+          {t('callTabBackgroundHint')}
+        </p>
+      )}
       {screenshareErrorCode && callState === 'connected' && (
         <div
           role="alert"
@@ -142,11 +193,15 @@ export function HumanChatPanelCallBanner({
         </div>
         {isConnectingPhase && (
           <Loader2
-            className="h-4 w-4 shrink-0 animate-spin text-muted-foreground"
+            className="h-4 w-4 shrink-0 motion-reduce:animate-none animate-spin text-muted-foreground"
             aria-hidden
           />
         )}
-        <div className="flex shrink-0 items-center gap-1">
+        <div
+          className="flex shrink-0 items-center gap-1"
+          role="group"
+          aria-label={t('callToolbarLabel')}
+        >
           <button
             type="button"
             onClick={onToggleMic}
@@ -157,6 +212,7 @@ export function HumanChatPanelCallBanner({
                 ? 'bg-destructive/15 text-destructive'
                 : 'bg-background text-foreground',
               controlsDisabled && 'opacity-50',
+              'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
             )}
             aria-pressed={isMicrophoneMuted}
             aria-label={isMicrophoneMuted ? t('callUnmute') : t('callMute')}
@@ -178,6 +234,7 @@ export function HumanChatPanelCallBanner({
                   ? 'bg-destructive/15 text-destructive'
                   : 'bg-background text-foreground',
                 controlsDisabled && 'opacity-50',
+                'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
               )}
               aria-pressed={isLocalVideoMuted}
               aria-label={
@@ -201,6 +258,7 @@ export function HumanChatPanelCallBanner({
                 ? 'bg-accent-9/20 text-foreground ring-1 ring-inset ring-accent-9/35'
                 : 'bg-background text-foreground',
               controlsDisabled && 'opacity-50',
+              'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
             )}
             aria-pressed={isScreensharing}
             aria-label={
@@ -219,7 +277,7 @@ export function HumanChatPanelCallBanner({
             type="button"
             onClick={onLeave}
             disabled={callState === 'disconnecting'}
-            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/10 px-2.5 text-xs font-medium text-destructive hover:bg-destructive/20"
+            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/10 px-2.5 text-xs font-medium text-destructive hover:bg-destructive/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             aria-label={t('callLeave')}
           >
             <LogOut className="h-3.5 w-3.5" />

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import * as MatrixSdk from 'matrix-js-sdk';
 import { useMatrix } from '../providers/matrix-provider';
 import { isPermissionLikeGroupCallError } from './space-group-call-utils';
+import { logSpaceGroupCallEvent } from './space-group-call-telemetry';
 
 export type SpaceGroupCallState =
   | 'idle'
@@ -54,13 +55,38 @@ export function useSpaceGroupCall(roomId: string | null) {
 
   const groupCallRef = useRef<MatrixSdk.GroupCall | null>(null);
   const isJoiningRef = useRef(false);
+  /** Batches rapid feed list events into one React update per frame (Phase 5.2). */
+  const feedUpdateRafRef = useRef<number | null>(null);
+  const lastJoinKindRef = useRef<'audio' | 'video' | null>(null);
+  const lastThreadRootEventIdRef = useRef<string | undefined>(undefined);
+  const joinStartedAtRef = useRef<number | null>(null);
+  const lastRoomIdForTelemetryRef = useRef<string | null>(null);
+  const loggedStatsForGroupCallIdRef = useRef<string | null>(null);
+  const [tabBackgroundWhileInCall, setTabBackgroundWhileInCall] =
+    useState(false);
 
   const setActiveKeyFromGroupCall = useCallback((gc: MatrixSdk.GroupCall) => {
     const f = gc.activeSpeaker;
     setActiveSpeakerKey(f ? `${f.userId}::${f.deviceId ?? ''}` : null);
   }, []);
 
+  const scheduleFeedBatched = useCallback(() => {
+    if (typeof window === 'undefined') {
+      setFeedVersion((v) => v + 1);
+      return;
+    }
+    if (feedUpdateRafRef.current != null) return;
+    feedUpdateRafRef.current = window.requestAnimationFrame(() => {
+      feedUpdateRafRef.current = null;
+      setFeedVersion((v) => v + 1);
+    });
+  }, []);
+
   const runCleanup = useCallback(() => {
+    if (feedUpdateRafRef.current != null) {
+      cancelAnimationFrame(feedUpdateRafRef.current);
+      feedUpdateRafRef.current = null;
+    }
     const gc = groupCallRef.current;
     if (gc) {
       try {
@@ -89,6 +115,8 @@ export function useSpaceGroupCall(roomId: string | null) {
     setGroupCall(null);
     setActiveSpeakerKey(null);
     setScreenshareErrorCode(null);
+    loggedStatsForGroupCallIdRef.current = null;
+    lastRoomIdForTelemetryRef.current = null;
   }, []);
 
   const refreshLocalPreview = useCallback(() => {
@@ -122,6 +150,17 @@ export function useSpaceGroupCall(roomId: string | null) {
         } else {
           setErrorCode('WEBRTC_FAILED');
         }
+        const code = isPermissionLikeGroupCallError(err)
+          ? 'PERMISSION_DENIED'
+          : 'WEBRTC_FAILED';
+        if (roomId) {
+          logSpaceGroupCallEvent({
+            name: 'hypha.group_call.error',
+            roomId,
+            kind: lastJoinKindRef.current ?? undefined,
+            errorCode: code,
+          });
+        }
         setCallState('error');
         runCleanup();
         setCallKind(null);
@@ -144,10 +183,10 @@ export function useSpaceGroupCall(roomId: string | null) {
         updateParticipantCount();
       });
       gc.on(GroupCallEvent.UserMediaFeedsChanged, () => {
-        setFeedVersion((v) => v + 1);
+        scheduleFeedBatched();
       });
       gc.on(GroupCallEvent.ScreenshareFeedsChanged, () => {
-        setFeedVersion((v) => v + 1);
+        scheduleFeedBatched();
       });
       const onActiveSpeaker = (
         feed: { userId: string; deviceId?: string } | undefined,
@@ -167,8 +206,10 @@ export function useSpaceGroupCall(roomId: string | null) {
       );
     },
     [
+      roomId,
       refreshLocalPreview,
       runCleanup,
+      scheduleFeedBatched,
       setActiveKeyFromGroupCall,
       updateParticipantCount,
     ],
@@ -185,6 +226,12 @@ export function useSpaceGroupCall(roomId: string | null) {
       if (groupCallRef.current) return;
 
       isJoiningRef.current = true;
+      lastJoinKindRef.current = kind;
+      lastThreadRootEventIdRef.current = threadRootEventId;
+      lastRoomIdForTelemetryRef.current = roomId;
+      const joinT0 =
+        typeof performance !== 'undefined' ? performance.now() : Date.now();
+      joinStartedAtRef.current = joinT0;
       setErrorCode(null);
       setScreenshareErrorCode(null);
       if (threadRootEventId) {
@@ -201,6 +248,15 @@ export function useSpaceGroupCall(roomId: string | null) {
         setCallKind(null);
         setThreadContext(null);
         isJoiningRef.current = false;
+        joinStartedAtRef.current = null;
+        if (roomId) {
+          logSpaceGroupCallEvent({
+            name: 'hypha.group_call.error',
+            roomId,
+            kind,
+            errorCode: 'NOT_READY',
+          });
+        }
         return;
       }
 
@@ -225,9 +281,18 @@ export function useSpaceGroupCall(roomId: string | null) {
           } else {
             isJoiningRef.current = false;
             setErrorCode('UNKNOWN');
+            if (roomId) {
+              logSpaceGroupCallEvent({
+                name: 'hypha.group_call.error',
+                roomId,
+                kind,
+                errorCode: 'UNKNOWN',
+              });
+            }
             setCallState('error');
             setCallKind(null);
             setThreadContext(null);
+            joinStartedAtRef.current = null;
             return;
           }
         }
@@ -235,10 +300,19 @@ export function useSpaceGroupCall(roomId: string | null) {
 
       if (!gc) {
         setErrorCode('UNKNOWN');
+        if (roomId) {
+          logSpaceGroupCallEvent({
+            name: 'hypha.group_call.error',
+            roomId,
+            kind,
+            errorCode: 'UNKNOWN',
+          });
+        }
         setCallState('error');
         setCallKind(null);
         setThreadContext(null);
         isJoiningRef.current = false;
+        joinStartedAtRef.current = null;
         return;
       }
 
@@ -263,10 +337,21 @@ export function useSpaceGroupCall(roomId: string | null) {
         } else {
           setErrorCode('WEBRTC_FAILED');
         }
+        if (roomId) {
+          logSpaceGroupCallEvent({
+            name: 'hypha.group_call.error',
+            roomId,
+            kind,
+            errorCode: isPermissionLikeGroupCallError(e)
+              ? 'PERMISSION_DENIED'
+              : 'WEBRTC_FAILED',
+          });
+        }
         setCallState('error');
         runCleanup();
         setCallKind(null);
         setThreadContext(null);
+        joinStartedAtRef.current = null;
         return;
       }
 
@@ -277,6 +362,36 @@ export function useSpaceGroupCall(roomId: string | null) {
       setIsLocalVideoMuted(gc.isLocalVideoMuted());
       setActiveKeyFromGroupCall(gc);
       isJoiningRef.current = false;
+      lastRoomIdForTelemetryRef.current = roomId;
+      const t1 =
+        typeof performance !== 'undefined' ? performance.now() : Date.now();
+      if (joinStartedAtRef.current != null) {
+        const joinMs = Math.round(t1 - joinStartedAtRef.current);
+        logSpaceGroupCallEvent({
+          name: 'hypha.group_call.join_ms',
+          roomId,
+          kind,
+          joinMs,
+        });
+        joinStartedAtRef.current = null;
+      }
+      if (
+        process.env.NODE_ENV === 'development' &&
+        loggedStatsForGroupCallIdRef.current !== gc.groupCallId
+      ) {
+        loggedStatsForGroupCallIdRef.current = gc.groupCallId;
+        try {
+          const stats = gc.getGroupCallStats();
+
+          console.debug(
+            '[hypha.group_call] getGroupCallStats (dev only)',
+            gc.groupCallId,
+            stats,
+          );
+        } catch {
+          // ignore
+        }
+      }
     },
     [
       attachGroupCallListeners,
@@ -306,6 +421,14 @@ export function useSpaceGroupCall(roomId: string | null) {
   const leave = useCallback(async () => {
     if (callState === 'idle' || callState === 'disconnecting') return;
     setCallState('disconnecting');
+    if (lastRoomIdForTelemetryRef.current) {
+      logSpaceGroupCallEvent({
+        name: 'hypha.group_call.left',
+        roomId: lastRoomIdForTelemetryRef.current,
+        kind: lastJoinKindRef.current ?? undefined,
+        reason: 'user',
+      });
+    }
     runCleanup();
     setCallState('idle');
     setErrorCode(null);
@@ -313,45 +436,63 @@ export function useSpaceGroupCall(roomId: string | null) {
     setIsScreensharing(false);
     setThreadContext(null);
     setParticipantCount(0);
+    setTabBackgroundWhileInCall(false);
   }, [callState, runCleanup]);
 
-  const setMicrophoneMuted = useCallback(async (muted: boolean) => {
-    const gc = groupCallRef.current;
-    if (!gc) return;
-    await gc.setMicrophoneMuted(muted);
-    setIsMicrophoneMuted(gc.isMicrophoneMuted());
-    setFeedVersion((v) => v + 1);
-  }, []);
+  const setMicrophoneMuted = useCallback(
+    async (muted: boolean) => {
+      const gc = groupCallRef.current;
+      if (!gc) return;
+      await gc.setMicrophoneMuted(muted);
+      setIsMicrophoneMuted(gc.isMicrophoneMuted());
+      scheduleFeedBatched();
+    },
+    [scheduleFeedBatched],
+  );
 
-  const setCameraMuted = useCallback(async (muted: boolean) => {
-    const gc = groupCallRef.current;
-    if (!gc) return;
-    await gc.setLocalVideoMuted(muted);
-    setIsLocalVideoMuted(gc.isLocalVideoMuted());
-    setFeedVersion((v) => v + 1);
-  }, []);
+  const setCameraMuted = useCallback(
+    async (muted: boolean) => {
+      const gc = groupCallRef.current;
+      if (!gc) return;
+      await gc.setLocalVideoMuted(muted);
+      setIsLocalVideoMuted(gc.isLocalVideoMuted());
+      scheduleFeedBatched();
+    },
+    [scheduleFeedBatched],
+  );
 
-  const setScreensharingEnabled = useCallback(async (enabled: boolean) => {
-    const gc = groupCallRef.current;
-    if (!gc) return;
-    setScreenshareErrorCode(null);
-    try {
-      const ok = await gc.setScreensharingEnabled(enabled);
-      if (ok === false) {
-        setScreenshareErrorCode('WEBRTC_FAILED');
+  const setScreensharingEnabled = useCallback(
+    async (enabled: boolean) => {
+      const gc = groupCallRef.current;
+      if (!gc) return;
+      setScreenshareErrorCode(null);
+      try {
+        const ok = await gc.setScreensharingEnabled(enabled);
+        if (ok === false) {
+          setScreenshareErrorCode('WEBRTC_FAILED');
+        }
+      } catch (e) {
+        if (isPermissionLikeGroupCallError(e)) {
+          setScreenshareErrorCode('PERMISSION_DENIED');
+        } else {
+          setScreenshareErrorCode('WEBRTC_FAILED');
+        }
       }
-    } catch (e) {
-      if (isPermissionLikeGroupCallError(e)) {
-        setScreenshareErrorCode('PERMISSION_DENIED');
-      } else {
-        setScreenshareErrorCode('WEBRTC_FAILED');
-      }
-    }
-    setFeedVersion((v) => v + 1);
-  }, []);
+      scheduleFeedBatched();
+    },
+    [scheduleFeedBatched],
+  );
 
   useEffect(() => {
     if (!roomId && groupCallRef.current) {
+      if (lastRoomIdForTelemetryRef.current) {
+        logSpaceGroupCallEvent({
+          name: 'hypha.group_call.left',
+          roomId: lastRoomIdForTelemetryRef.current,
+          kind: lastJoinKindRef.current ?? undefined,
+          reason: 'room',
+        });
+      }
       setCallState('disconnecting');
       runCleanup();
       setCallState('idle');
@@ -361,11 +502,39 @@ export function useSpaceGroupCall(roomId: string | null) {
       setThreadContext(null);
       setParticipantCount(0);
       setScreenshareErrorCode(null);
+      setTabBackgroundWhileInCall(false);
     }
   }, [roomId, runCleanup]);
 
   useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const onVis = () => {
+      const inCall =
+        callState === 'connecting' ||
+        callState === 'connected' ||
+        callState === 'awaiting_media' ||
+        callState === 'initializing';
+      setTabBackgroundWhileInCall(
+        inCall && typeof document !== 'undefined' && document.hidden,
+      );
+    };
+    document.addEventListener('visibilitychange', onVis);
+    onVis();
     return () => {
+      document.removeEventListener('visibilitychange', onVis);
+    };
+  }, [callState]);
+
+  useEffect(() => {
+    return () => {
+      if (groupCallRef.current && lastRoomIdForTelemetryRef.current) {
+        logSpaceGroupCallEvent({
+          name: 'hypha.group_call.left',
+          roomId: lastRoomIdForTelemetryRef.current,
+          kind: lastJoinKindRef.current ?? undefined,
+          reason: 'unmount',
+        });
+      }
       runCleanup();
     };
   }, [runCleanup]);
@@ -374,11 +543,36 @@ export function useSpaceGroupCall(roomId: string | null) {
     setScreenshareErrorCode(null);
   }, []);
 
+  const dismissCallError = useCallback(() => {
+    if (callState !== 'error') return;
+    setErrorCode(null);
+    setCallState('idle');
+    setCallKind(null);
+    setThreadContext(null);
+    isJoiningRef.current = false;
+  }, [callState]);
+
+  const retryFromError = useCallback(() => {
+    if (callState !== 'error') return;
+    const k = lastJoinKindRef.current;
+    if (!k) {
+      setErrorCode(null);
+      setCallState('idle');
+      return;
+    }
+    setErrorCode(null);
+    setCallState('idle');
+    void enterWithKind(k, lastThreadRootEventIdRef.current);
+  }, [callState, enterWithKind]);
+
   return {
     callState,
     errorCode,
     screenshareErrorCode,
     dismissScreenshareError,
+    dismissCallError,
+    retryFromError,
+    tabBackgroundWhileInCall,
     activeSpeakerKey,
     threadContext,
     callKind,

@@ -80,6 +80,8 @@
 | 5.3  | **Telemetry** (privacy-safe): join latency, leave reason, optional **getGroupCallStats** in dev builds.                                          | Dashboard or logs in staging only.    |
 | 5.4  | **Accessibility** — keyboard path to Leave/Mute; focus trap policy in modal; reduced motion preference for heavy animations.                     | axe / manual pass.                    |
 
+**Status (implemented in codebase):** **5.1** — distinct i18n for `NOT_READY` / `NO_CLIENT` / `NO_ROOM`; call error row with **Try again** (re-enters last audio/video) and **Close**; **tab background** hint while connected. **5.2** — `UserMediaFeedsChanged` / `ScreenshareFeedsChanged` and mute/toggle paths batch via **rAF** into one `feedVersion` bump per frame. **5.3** — `space-group-call-telemetry.ts` logs `[hypha.group_call]` in **development** only (join ms, error, leave reason); `getGroupCallStats()` logged once per connect in dev. **5.4** — `aria-live` for connection status; **focus-visible:outline** on banner controls; connecting spinner uses **`motion-reduce:animate-none`**; in-call controls `role="group"` with `aria-label` (toolbar string).
+
 ### Phase 6 — Recording & transcript (organizational memory)
 
 | Step | Action                                                                                                                                                                                                                                                                                                    | Done when                                                                               |

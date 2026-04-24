@@ -525,6 +525,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     dismissScreenshareError: dismissSpaceCallScreenshareError,
     activeSpeakerKey: spaceCallActiveSpeakerKey,
     setScreensharingEnabled: setSpaceCallScreensharing,
+    tabBackgroundWhileInCall: spaceCallTabBackground,
+    retryFromError: retrySpaceCall,
+    dismissCallError: dismissSpaceCallError,
   } = useSpaceGroupCall(mode === 'space' ? roomId : null);
 
   const callUiEnabled = useMemo(
@@ -571,6 +574,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const handleCallToggleScreenshare = useCallback(() => {
     void setSpaceCallScreensharing(!spaceCallScreensharing);
   }, [setSpaceCallScreensharing, spaceCallScreensharing]);
+
+  const handleRetrySpaceCall = useCallback(() => {
+    retrySpaceCall();
+  }, [retrySpaceCall]);
 
   /** Bumps when Matrix room membership changes so `@` mention candidates + button state refresh without reload. */
   const [mentionMembershipEpoch, setMentionMembershipEpoch] = useState(0);
@@ -1719,6 +1726,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               errorCode={spaceCallError}
               isScreensharing={spaceCallScreensharing}
               screenshareErrorCode={spaceCallScreenshareError}
+              tabBackgroundWhileInCall={spaceCallTabBackground}
               isMicrophoneMuted={spaceCallMicMuted}
               isLocalVideoMuted={spaceCallVideoMuted}
               participantCount={spaceCallParticipantSummary.count}
@@ -1727,6 +1735,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onToggleCamera={handleCallToggleCamera}
               onToggleScreenshare={handleCallToggleScreenshare}
               onDismissScreenshareError={dismissSpaceCallScreenshareError}
+              onRetryCall={handleRetrySpaceCall}
+              onDismissCallError={dismissSpaceCallError}
             />
           )}
       </SidebarHeader>
