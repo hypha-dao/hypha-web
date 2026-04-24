@@ -70,7 +70,7 @@ export default function EditProfilePage() {
         }
       >
         <EditPersonSection
-          person={person}
+          person={person ?? undefined}
           closeUrl={`/${lang}/profile/${personSlug}`}
           isLoading={isLoading || isEditing}
           onEdit={onEdit}

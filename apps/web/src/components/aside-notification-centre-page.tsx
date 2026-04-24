@@ -22,7 +22,7 @@ export default function AsideNotificationCentrePage() {
     error,
     configuration,
     saveConfigurations,
-  } = useNotifications({ person, isLoading });
+  } = useNotifications({ person: person ?? undefined, isLoading });
   const progress = 0;
   const isBusy = isLoading;
   return (
@@ -36,7 +36,7 @@ export default function AsideNotificationCentrePage() {
         message={<></>}
       >
         <NotificationCentreForm
-          person={person}
+          person={person ?? undefined}
           closeUrl={closeUrl}
           isLoading={isBusy}
           error={error}

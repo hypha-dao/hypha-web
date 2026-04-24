@@ -16,14 +16,6 @@ type ConnectedButtonProfileProps = {
   trailingBeforeProfile?: ReactNode;
 };
 
-type ErrorUser = {
-  error: string;
-};
-
-const isErrorUser = (obj: any): obj is ErrorUser => {
-  return obj && typeof obj === 'object' && 'error' in obj;
-};
-
 export const ConnectedButtonProfile = ({
   useAuthentication,
   useMe,
@@ -41,11 +33,14 @@ export const ConnectedButtonProfile = ({
     user,
     isLoading: isAuthLoading,
   } = useAuthentication();
-  const { person, isLoading: isPersonLoading } = useMe();
+  const { person, isLoading: isPersonLoading, meError } = useMe();
 
   const router = useRouter();
   const pathname = usePathname();
   const { lang, id } = useParams();
+  const localizedNewUserPath = `/${String(lang)}${
+    newUserRedirectPath.startsWith('/') ? '' : '/'
+  }${newUserRedirectPath}`;
   const { resolvedTheme, setTheme } = useTheme();
 
   const notificationCentrePath = useMemo(() => {
@@ -68,17 +63,25 @@ export const ConnectedButtonProfile = ({
     if (isAuthLoading || isPersonLoading || !isAuthenticated) {
       return;
     }
+    if (meError) {
+      return;
+    }
     if (user) {
+      if (person === null) {
+        if (!pathname.includes('/profile/signup')) {
+          router.push(localizedNewUserPath);
+        }
+        return;
+      }
       if (person) {
-        if (isErrorUser(person)) {
-          if (person.error !== 'Internal Server Error') {
-            router.push(newUserRedirectPath);
-          }
-        } else if (
-          (person?.id && pathname === newUserRedirectPath) ||
+        if (
+          (Boolean(person.id) && pathname.includes('/profile/signup')) ||
           isLoggingIn
         ) {
-          router.push(baseRedirectPath);
+          const localizedBase = `/${lang}${
+            baseRedirectPath.startsWith('/') ? '' : '/'
+          }${baseRedirectPath}`;
+          router.push(localizedBase);
           setLoggingIn(false);
         }
       } else {
@@ -94,8 +97,12 @@ export const ConnectedButtonProfile = ({
     router,
     baseRedirectPath,
     newUserRedirectPath,
+    localizedNewUserPath,
     isLoggingIn,
     setLoggingIn,
+    meError,
+    pathname,
+    lang,
   ]);
 
   const handleThemeChange = () => {
@@ -109,7 +116,7 @@ export const ConnectedButtonProfile = ({
   return (
     <ButtonProfile
       address={user?.wallet?.address}
-      person={person}
+      person={person ?? undefined}
       isConnected={isAuthenticated}
       onLogin={login}
       onLogout={logout}
@@ -119,7 +126,7 @@ export const ConnectedButtonProfile = ({
       profileUrl={
         person?.slug
           ? `/${lang}/profile/${person?.slug ?? ''}`
-          : newUserRedirectPath
+          : localizedNewUserPath
       }
       notificationCentrePath={notificationCentrePath}
       navItems={navItems}
