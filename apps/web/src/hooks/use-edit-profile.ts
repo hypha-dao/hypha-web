@@ -8,6 +8,16 @@ import { useAuthHeader } from './use-auth-header';
 import { produce } from 'immer';
 import type { ProfileFormData } from './profile-form-data';
 
+/** API trust boundary: avoid `Invalid Date` when timestamps are absent or malformed. */
+function toDate(value: unknown): Date {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+  if (typeof value === 'string' || typeof value === 'number') {
+    const d = new Date(value);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+  return new Date(0);
+}
+
 function parseApiPerson(raw: unknown): Person | null {
   if (!raw || typeof raw !== 'object') return null;
   const p = raw as Record<string, unknown>;
@@ -34,10 +44,8 @@ function parseApiPerson(raw: unknown): Person | null {
     nickname: p.nickname as string | undefined,
     address: p.address as `0x${string}` | undefined,
     links: p.links as string[] | undefined,
-    createdAt:
-      p.createdAt instanceof Date ? p.createdAt : new Date(String(p.createdAt)),
-    updatedAt:
-      p.updatedAt instanceof Date ? p.updatedAt : new Date(String(p.updatedAt)),
+    createdAt: toDate(p.createdAt),
+    updatedAt: toDate(p.updatedAt),
   };
 }
 
