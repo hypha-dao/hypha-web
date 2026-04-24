@@ -112,8 +112,13 @@ export default async function DhoLayout({
 
   return (
     <SpaceAccentPortalBridge>
-      <div className="mx-auto flex max-w-container-2xl">
-        <Container className="min-w-0 flex-grow px-4!">
+      {/*
+        Full-width row: `Container` already applies max-width + horizontal padding.
+        Dropping the extra `mx-auto max-w-container-2xl` wrapper avoided double
+        max-width + centering that made the main column look pushed with a void on the left.
+      */}
+      <div className="flex w-full min-w-0">
+        <Container size="lg" className="min-w-0 flex-1 px-4!">
           {/* React 19+: link rel="preload" is hoisted to document head */}
           {heroBannerImageHref !== DEFAULT_SPACE_LEAD_IMAGE ? (
             <link
