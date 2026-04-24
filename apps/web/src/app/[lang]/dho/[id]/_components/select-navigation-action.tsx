@@ -22,6 +22,12 @@ type SelectNavigationActionProps = {
   daoSlug: string;
   lang: Locale;
   children?: React.ReactNode;
+  /**
+   * `page` — main-column Spaces route: intro + graph only, no extra separator / empty
+   * action list at the foot of `SelectAction` (epics).
+   * `panel` (default) — space-navigation aside: unchanged layout.
+   */
+  variant?: 'page' | 'panel';
 };
 
 type HierarchyNode = {
@@ -75,7 +81,9 @@ export const SelectNavigationAction = ({
   daoSlug,
   lang,
   children,
+  variant = 'panel',
 }: SelectNavigationActionProps) => {
+  const isPage = variant === 'page';
   const t = useTranslations('SelectNavigationAction');
   const { resolvedTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('nested-spaces');
@@ -140,11 +148,12 @@ export const SelectNavigationAction = ({
     <SelectAction
       title={t('title')}
       content={t('content')}
-      showTitle={false}
+      showTitle={isPage}
+      showActionCards={false}
       actions={[]}
       isLoading={isLoading}
     >
-      <Separator />
+      {isPage ? null : <Separator />}
       {children}
       <div className="mt-2">
         <Tabs
