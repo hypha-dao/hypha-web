@@ -19,7 +19,7 @@
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Call scope**               | **One active Matrix group call per Space (`roomId`)** at a time. Parallel “different thread, different call” in the **same** Space is **out of scope** for v1 (see parent doc).                                                                                                               |
 | **Who can be in the call**   | **All members of the Matrix room** (Hypha Space) may join; the SDK does **not** enforce thread-only membership. UI **must** label the call as **space-wide** (e.g. “Space call”) to avoid implying thread isolation.                                                                          |
-| **Join when call already active** | **Joining** the room’s existing `GroupCall` uses the **same** `enter` path as **starting** a call (phone / video). When **other** members’ devices are in the `GroupCall` and the user is **idle**, the UI **shall** show a **call in progress** strip and **Join**-style copy on the header tools. The hook **shall** subscribe to the **room** `GroupCall` while idle to read `participants` from **Matrix member state** (and refresh on `ParticipantsChanged` and `GroupCall.ended`). The in-call strip **shall** show **device** count in the room and, when `connected`, **“others”** = `max(0, count − 1)` for clarity. **Implemented in codebase** (`useSpaceGroupCall` + `HumanChatPanelCallJoinStrip` + members tab hint). |
+| **Join when call already active** | **Joining** the room’s existing `GroupCall` uses the **same** `enter` path as **starting** a call (phone / video). When **other** members’ devices are in the `GroupCall` and the user is **idle**, the UI **shall** show a **call in progress** strip and **Join**-style copy on the header tools. The hook **shall** subscribe to the **room** `GroupCall` while idle to read `participants` from **Matrix member state** (and refresh on `ParticipantsChanged` and `GroupCall.ended`). The in-call strip **shall** show **device** count in the room and, when `connected`, **“others”** = `max(0, count − 1)` for clarity. **Join alert (ring + invitation)** — when product enables it, see **§1.2** (not yet implemented). **Implemented in codebase** (strip, toolbar, members, subscription): `useSpaceGroupCall` + `HumanChatPanelCallJoinStrip` + members tab hint. |
 | **Signal / thread role**     | **`threadRootEventId`** identifies **which Signal** initiated or last focused the call UI; used for optional **thread notice** messages and analytics—not for access control.                                                                                                                 |
 | **Modes**                    | **Audio-first** and **Video** entry points: both use **`GroupCall`**; video intent enables camera when entering (subject to permissions).                                                                                                                                                     |
 | **Coherence vs Space panel** | **v1:** Implement for **`HumanRightPanel` space mode** (`mode === 'space'`) where the panel has a resolved **`roomId`** for the Space. **Coherence mode** (`mode === 'coherence'`) is **out of scope** unless the same `roomId` + thread rules are explicitly extended in a follow-up ticket. |
@@ -52,6 +52,38 @@ This subsection locks **how** a second (or Nth) member **joins** the **same** Ma
 **Exposed API (normative):** The hook **shall** expose at least: **`roomGroupCallDeviceCount`**, **`othersInRoomCallCount`**, **`inCallUserIdsForRoster`**, **`showRoomCallInProgress`**, and pass **`participantSummary` / `others`** consistent with the table above. See **§2.2**.
 
 **UI mapping:** **§3.2.1** (header strip, toolbar “Join” copy, members tab). **Files (reference):** `use-space-group-call.ts`, `HumanChatPanelCallJoinStrip`, `HumanChatPanelCallToolbar`, `HumanChatPanelMembers`, `HumanRightPanel`.
+
+### 1.2 Join **alert** (ring) and **join invitation** (modal) — *specified; implementation TBD*
+
+**Scope:** Strengthens **discoverability** for idle members: **non-blocking** but **noticeable** feedback when a **room call** becomes active while the user is **not** in the session. **No new Matrix API** — pure **client** UX and optional **Web Audio** / **browser notification**; the **same** `enterAudio` / `enterVideo` paths as **§1.1**.
+
+**Gates (when alert + modal are allowed to fire):**
+
+- Same as **`showRoomCallInProgress`**: local user is **idle** (or in recoverable `error` per **§1.1**), **`roomId`** resolved, **`roomGroupCallDeviceCount > 0`**.
+- **Shall not** play or open while the user is **in-session** (`connecting` … `disconnecting`), or after the user has **dismissed** the invitation for the **current** “join opportunity” (see throttling), or if the user (or org policy) has **disabled** join alerts.
+
+**1.2.1 Audible ring (“nice” tone)**
+
+| Rule | Normative text |
+| --- | --- |
+| **Purpose** | Brief, pleasant **attention** sound — **not** a siren, **not** endless ringtone; product should favor a **short** chime (e.g. **1–3 s** total) or a **small** number of **repeats** (e.g. 2) then **silence** until a **new** join opportunity (throttling). |
+| **Tech** | Prefer a **dedicated** asset (e.g. small **`.ogg` / `.m4a`** in `public/` or packaged static) for consistent mix levels; **alternatively** a simple **Web Audio** bell/chime (oscillator) with **envelope** — must **stop** and **disconnect** the audio graph on dismiss / join / navigation. **No** autoplay of unrelated media. |
+| **User control** | Expose a **setting** (e.g. `callJoinAlertSound` in user preferences or **local** toggle): **on** (default) / **off**; if **off**, **no** chime. Optional **volume** is **v1.1**; **v1** may be binary. |
+| **OS / policy** | Honor **browser** autoplay rules: if the first play fails, **degrade** to **visual + optional `Notification` API** if permission was granted; **do not** retry sound in a tight loop. |
+| **Visibility** | If `document.visibilityState === 'hidden'`, **do not** rely on sound alone: pair with **§1.2.2** and/or a **one-shot** `Notification` ("Space call" + **Join** action if feasible) when permission allows — **not** a substitute for the in-app modal when the user returns to the tab. |
+| **Accessibility** | If sound plays, the **invitation** UI **shall** still **announce** via the **modal** title/description (`role="dialog"`, `aria-modal="true"`, `aria-labelledby` / `aria-describedby`). **Respect** user’s **reduced** preferences where applicable (no extra motion on the chime; sound opt-out is the primary a11y escape for sensory sensitivity). **Do not** play a second overlapping chime for every `ParticipantsChanged` tick. |
+
+**1.2.2 Join invitation (modal “pop-up”)**
+
+| Rule | Normative text |
+| --- | --- |
+| **Presentation** | A **modal dialog** (Radix **Dialog** / shadcn **AlertDialog** pattern) **on top of app chrome** — same **overlay** model as **§3.4.4** (viewport-level, not confined to the narrow sidebar). **Focus trap**; **Esc** closes; **Return** on open focuses **first primary** control. **Backdrop** optional for **invitation** (product may use **simpler** `AlertDialog` with scrim) — if backdrop click closes, document it (avoid accidental dismiss during mouse drag). |
+| **Content** | **Title** — space-scoped, e.g. "Call in this space" / "Space call in progress". **Description** — **device count** and short explainer (space-wide, not thread-private). **Primary** — `enterAudio` (**Join with audio**). **Secondary** — `enterVideo` (**Join with video**). **Tertiary** / dismiss — **Not now** or **Close** (does not reject the call; user can still use **§3.2.1** strip). |
+| **Relation to join strip** | The modal is **in addition to** the **join strip** — a **strong** interrupt for users not looking at the strip. After dismiss, the **strip** + toolbar copy remain. |
+| **Throttling / re-open** | **Shall not** re-open the modal on every `ParticipantsChanged` (counts fluctuate). Suggested: open **once** when **`showRoomCallInProgress` flips** from **false → true** for a given `roomId`, or **first time in session** the user lands on a Space with an **active** call. Store a **dismissal key** in session state (e.g. `dismissedJoinInviteFor: roomId + groupCallId` or **per navigation session**). Re-show only if the call **ended and restarted** (idle count returns to 0, then is greater than 0 again) or a **new** product-defined **session** — document the chosen policy in the implementation PR. |
+| **i18n** | All labels under **`HumanChatPanel`**, all locales. See **§3.7** (join invitation keys). |
+
+**1.2.3 Traceability** — **IMP-10**; UI detail **§3.2.2**; test notes **§6** / **§7**.
 
 ---
 
@@ -245,6 +277,14 @@ type HumanChatPanelCallToolbarProps = {
 
 **Rationale for subscription:** If the client only subscribes to `GroupCall` **after** local `enter`, the UI shows **0 others** while idle and each user can create/join a **separate** perceived session. The **§1.1** idle listener fixes that for **v1**.
 
+#### 3.2.2 Join **invitation** modal and **ring** (spec — **IMP-10**)
+
+**Normative (see §1.2):** When **join alert** is implemented, idle members with `showRoomCallInProgress` **shall** receive a **polite** chime (toggleable) and a **modal** invitation (per **§1.2.2**) in addition to the **join strip** (**§3.2.1**). The modal **reuses** `enterAudio` / `enterVideo`; **dismissal** is non-destructive. **Throttling** prevents modal spam on `ParticipantsChanged`.
+
+**File placement (suggested):** a small **`HumanChatPanelCallJoinInvitation`** in `packages/epics/.../human-chat-panel/`; optional **`useCallJoinAlert`** hook in **`packages/core`** to encapsulate: **gate** (same as §1.2), **dismissal** state, **one-shot** Web Audio, **opt-in** `Notification` when `document.hidden`. **CSP** must allow the audio file origin if a static asset is used.
+
+**Do not** combine this with **in-call** **full view** (**§3.4.4**): the join invitation is **pre-join** only; never stack two competing modals.
+
 ### 3.3 Active-call banner (space-wide + primary controls)
 
 **Component:** `human-chat-panel-call-banner.tsx`
@@ -392,6 +432,10 @@ Until Signal/thread routing is wired end-to-end:
 | `callJoinWithAudioShort` / `callJoinWithVideoShort` | Short button labels in the strip                                        |
 | `callYouAreInSpaceCall` / `callDeviceCountInRoom` / `callOthersInCallHint` | **Banner** copy when **connected** (space call + device / others counts)   |
 | `callMembersTabJoinCallTitle` / `callMembersTabJoinCallBody` / `callMembersTabInCallPreamble` | **Members** tab: idle hint + in-call roster helper text          |
+| `callJoinInviteTitle` / `callJoinInviteDescription`  | **Join invitation** modal: title + body (space-wide; device count interpolation)   |
+| `callJoinInviteJoinAudio` / `callJoinInviteJoinVideo` | Modal primary/secondary = same actions as **Join** strip                         |
+| `callJoinInviteDismiss`                                | "Not now" / dismiss (no leave — user not in call)                                  |
+| `callJoinAlertSound` (settings label) / `callJoinAlertSoundOn` / `callJoinAlertSoundOff` | Optional: sound toggle in settings or call-preferences (§1.2.1)               |
 
 Follow [i18n-translate skill](../../.agents/skills/i18n-translate/SKILL.md) for locale parity.
 
@@ -420,6 +464,7 @@ Follow [i18n-translate skill](../../.agents/skills/i18n-translate/SKILL.md) for 
 | **IMP-7** | When screen share is in scope for the release, stage SHALL render **`screenshareFeeds`** per **§3.5**; hook SHALL expose **`setScreensharingEnabled`** / **`isScreensharing`**.                                                                                                                                                                                                                                                     |
 | **IMP-8** | **Full view** (optional but specified): When implemented, in-call **modal enlarged stage** SHALL follow **§3.4.4** and **§3.4.4.1** (dialog overlay, **primary stage** fills the modal between header and controls, no narrow-tile + empty-void layout, **single** `srcObject` tree, a11y, i18n). **Browser native Fullscreen** (`Element.requestFullscreen`) is **out of scope** for **IMP-8** unless a future ticket promotes it. |
 | **IMP-9** | **Join + idle subscription** (see **§1.1**, **§2.2**, **§3.2.1**): Hook SHALL keep **device** and **roster** state accurate **before** local `enter` via the **GroupCall.ended** + `ParticipantsChanged` path; UI SHALL show **join** affordances when `showRoomCallInProgress` is true; `enterAudio` / `enterVideo` SHALL use **get-then-create** for a **single** room `GroupCall` per **§1.1**. |
+| **IMP-10** | **Join alert (optional product slice)** (see **§1.2**, **§3.2.2**): When built, **idle** members SHALL get **throttled** **chime** (toggle) + **join invitation** `Dialog` per **§1.2.1**–**§1.2.2**; SHALL respect **autoplay**, **visibility** (pair with `Notification` when allowed), and **a11y**; SHALL **not** re-open the modal on every `ParticipantsChanged`. **Matrix** behavior unchanged. |
 
 ---
 
@@ -428,7 +473,7 @@ Follow [i18n-translate skill](../../.agents/skills/i18n-translate/SKILL.md) for 
 | Layer      | Scope                                                                                                                                         |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Unit**   | State machine: idle → enter → leave; double-enter no-op; error codes; `isPermissionLikeGroupCallError` (or equivalent). Mock `MatrixClient`. For **§1.1**: optional unit tests for **device vs user** counting from a mocked `participants` map. |
-| **Manual** | Script in PR description: two browsers, same Space, verify audio path + leave cleanup.                                                        |
+| **Manual** | Script in PR description: two browsers, same Space, verify audio path + leave cleanup. If **IMP-10** is implemented: verify **chime** once, modal **dismiss** / **re-open** throttling, **off** in settings, **no** chime with tab in background (or + notification).   |
 | **E2E**    | Playwright: **optional** for v1—assert toolbar **visible** and **disabled** state if no media permission in CI; skip real WebRTC if unstable. |
 
 ---
@@ -441,6 +486,7 @@ Follow [i18n-translate skill](../../.agents/skills/i18n-translate/SKILL.md) for 
 - [ ] **Stage** can show **camera tiles** and, when implemented, **screen-share** tiles from **`userMediaFeeds` / `screenshareFeeds`** (**§3.5**).
 - [ ] (When **§3.4.4** is in scope) User can open **Full view** from the call stage, see the **enlarged** share/camera layout in a **modal** that satisfies **§3.4.4.1** (neat, large **primary** image in the fill area), and **close** it without **leaving** the call; **focus** and **Esc** behave per **§3.4.4**.
 - [ ] Second participant in the **same Space** can **join** the same session (same `roomId`); while **user B** is still **idle**, the panel shows **call in progress** and **join** per **§1.1** / **§3.2.1** (strip + **Join** toolbar copy), and counts update without requiring B to “start” a new call.
+- [ ] (When **IMP-10** / **§1.2** is in scope) Idle member receives a **throttled** join **chime** (when enabled) and a **dismissable** **join invitation** modal per **§1.2**; no modal re-open on each participant count tick; `Esc` / **Not now** do not end other participants’ call.
 - [ ] No duplicate `matrix-js-sdk` bundles; no VoIP code on server.
 - [ ] Copy reflects **space-wide** call semantics.
 
@@ -456,6 +502,7 @@ Follow [i18n-translate skill](../../.agents/skills/i18n-translate/SKILL.md) for 
 | Add        | `packages/epics/src/common/human-chat-panel/human-chat-panel-call-toolbar.tsx`                                                                                                                    |
 | Add        | `packages/epics/src/common/human-chat-panel/human-chat-panel-call-banner.tsx`                                                                                                                     |
 | Add / Edit | `packages/epics/src/common/human-chat-panel/human-chat-panel-call-stage.tsx` (video grid + local PiP); optional **§3.4.4** — full-view trigger + `Dialog` wrapper (or shared stage sub-component) |
+| Add        | (Optional **IMP-10**) `human-chat-panel-call-join-invitation.tsx` + static **chime** asset or Web Audio helper — per **§1.2** / **§3.2.2** |
 | Edit       | `packages/epics/src/common/human-right-panel.tsx` — wire toolbar + banner                                                                                                                         |
 | Edit       | `packages/epics/src/common/human-chat-panel/index.ts` — re-exports                                                                                                                                |
 | Edit       | `packages/i18n/src/messages/*.json` — keys under `HumanChatPanel`                                                                                                                                 |

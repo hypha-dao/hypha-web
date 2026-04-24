@@ -63,10 +63,13 @@
 | 3.3  | **Responsive** behavior: narrow panel stacks stage + messages; no horizontal scroll for tiles.                                                                                                                                                                                                                                                              | Design review on sm/md breakpoints.                                                                              |
 | 3.4  | **Full view (modal)** — **Expand** control on the call stage opens a **dialog**-based enlarged layout per [§3.4.4 + §3.4.4.1](./voice-video-call-implementation-spec.md) (**primary stage** uses full fill width/height; no narrow-tile + empty-void; **§3.4.4.1** FV-0–FV-6); single media-attachment strategy; i18n `callFullView` / `callFullViewClose`. | Modal closes with Esc / backdrop; **call stays connected**; a11y focus trap per spec; **visual** check per FV-6. |
 | 3.5  | **Join + idle `GroupCall` subscription** per [§1.1, §2.2, §3.2.1, IMP-9](./voice-video-call-implementation-spec.md): `useSpaceGroupCall` subscribes while **idle** (`GroupCall.ended` + `ParticipantsChanged`); **`HumanChatPanelCallJoinStrip`** + **Join** toolbar / Members copy; `get-then-create` for one room session.      | **Two browsers**, A in call, B **idle** sees **join** strip and accurate device count; B joins same session.      |
+| 3.6  | **Join alert (ring + invitation modal)** per [§1.2, §3.2.2, IMP-10](./voice-video-call-implementation-spec.md): **throttled** chime (asset or Web Audio, user toggle) + **viewport** `Dialog` for **join**; optional **Notification** when tab hidden; **no** re-open on every `ParticipantsChanged`.   | B hears **at most** one chime per join **opportunity**; modal **dismiss** + **Not now**; **re-open** only after call ends and restarts or per documented policy. |
 
 **Status (3.4):** **Specified in spec** (§3.4.4, **IMP-8**). Implementation is a **follow-up** slice; track in the same PR or a child ticket. **Steps 3.1–3.3** (without 3.4) are **shipped** in the baseline branch.
 
 **Status (3.5 / IMP-9):** Tracked in spec; **call join** strip + **idle** subscription are **implemented in codebase** (`use-space-group-call` + `HumanChatPanelCallJoinStrip` + toolbar / members wiring).
+
+**Status (3.6 / IMP-10):** **Specified in** [§1.2 + §3.2.2](./voice-video-call-implementation-spec.md); **not implemented** in codebase yet — own slice after product + design on **chime** asset, **dismissal** policy, and **opt-in** notifications.
 
 ### Phase 4 — Screen share + advanced controls
 
