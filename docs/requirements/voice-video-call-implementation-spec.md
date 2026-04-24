@@ -163,6 +163,8 @@ The Signal / thread panel SHALL use a **stacked header** inside `SidebarHeader` 
 
 **Files:** `packages/epics/.../human-chat-panel-tabs.tsx` (row layout, `tabRowEnd`); `human-chat-panel-call-toolbar.tsx` (fixed icon sizing).
 
+**Status (implemented in codebase):** `HumanChatPanelTabs` uses **`grid` `minmax(0,1fr) | auto`**, a **scrollable** tab rail (outer `overflow-x-auto` + inner `inline-flex w-max` so tab buttons are not width-crushed), opaque **`bg-background` + `border-s`** on the end cluster, and **thin** horizontal scrollbar instead of fully hidden. Tab label `truncate` + `title` is a last resort for extreme overflow.
+
 ### 3.2 Idle state — header icons (phone, video, search)
 
 **Component:** `human-chat-panel-call-toolbar.tsx` (or a merged row component that renders **tabs + icons** in one flex row).
