@@ -6,15 +6,9 @@ import { GroupCallEventHandlerEvent } from 'matrix-js-sdk/lib/webrtc/groupCallEv
 import { useMatrix } from '../providers/matrix-provider';
 import { isPermissionLikeGroupCallError } from './space-group-call-utils';
 import { logSpaceGroupCallEvent } from './space-group-call-telemetry';
+import type { SpaceGroupCallState } from './space-group-call-state';
 
-export type SpaceGroupCallState =
-  | 'idle'
-  | 'initializing'
-  | 'awaiting_media'
-  | 'connecting'
-  | 'connected'
-  | 'disconnecting'
-  | 'error';
+export type { SpaceGroupCallState } from './space-group-call-state';
 
 export type SpaceGroupCallErrorCode =
   | 'NO_CLIENT'
