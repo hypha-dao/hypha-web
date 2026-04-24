@@ -75,7 +75,7 @@ export const PersonHead = ({
   const isSelfView = Boolean(
     me &&
       (personId != null
-        ? me.id === personId
+        ? Number(me.id) === Number(personId)
         : Boolean(personSlug) && me.slug === personSlug),
   );
   const isOwnProfile = isSelfView || (personSlug ? isMe(personSlug) : false);
@@ -112,7 +112,6 @@ export const PersonHead = ({
     name,
     surname,
     slug,
-    personId,
     createdAt,
     about,
     background,
