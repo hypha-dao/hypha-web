@@ -76,7 +76,7 @@ export function HumanChatPanelTabs({
       className={cn(
         'relative flex w-full min-w-0 items-center gap-2 border-b border-border bg-transparent px-4 py-2',
         /* Match DHO secondary actions row — shared token in global.css */
-        'min-h-[var(--secondary-chrome-actions-row-height,56px)]',
+        'min-h-[var(--secondary-chrome-actions-row-height,52px)]',
       )}
     >
       <div
