@@ -1,4 +1,4 @@
-import { SelectNavigationAction } from '../../_components/select-navigation-action';
+import { SpaceNavigationView } from '../../_components/space-navigation-view';
 import { Locale } from '@hypha-platform/i18n';
 
 type PageProps = {
@@ -10,7 +10,7 @@ export default async function DhoSpacesPage(props: PageProps) {
 
   return (
     <div className="w-full min-w-0 py-4">
-      <SelectNavigationAction lang={lang} daoSlug={id} variant="page" />
+      <SpaceNavigationView lang={lang} daoSlug={id} />
     </div>
   );
 }
