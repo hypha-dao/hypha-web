@@ -80,9 +80,7 @@ export function HumanChatPanelCallBanner({
   const t = useTranslations('HumanChatPanel');
   const showRetryOnError =
     errorCode != null &&
-    (errorCode === 'PERMISSION_DENIED' ||
-      errorCode === 'WEBRTC_FAILED' ||
-      errorCode === 'UNKNOWN');
+    (errorCode === 'WEBRTC_FAILED' || errorCode === 'UNKNOWN');
 
   if (callState === 'error' && errorCode) {
     return (
