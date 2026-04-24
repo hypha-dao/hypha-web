@@ -170,7 +170,7 @@ export function HumanChatPanelTabs({
         </div>
       </div>
       {hasEndCluster ? (
-        <div className="flex h-7 min-h-7 min-w-0 flex-none items-center justify-end gap-1.5 self-center border-s border-border/50 bg-background ps-1.5">
+        <div className="flex min-h-0 min-w-0 flex-none items-center justify-end gap-1.5 self-stretch border-s border-border/50 bg-background ps-1.5">
           {tabRowEnd}
           {notificationCentreHref ? (
             <Link
