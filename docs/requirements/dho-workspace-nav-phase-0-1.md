@@ -1,10 +1,10 @@
-# DHO workspace navigation — Phase 0–2 delivery notes
+# DHO workspace navigation — Phase 0–3 delivery notes
 
 ## Document control
 
 | Field | Value |
 |--------|--------|
-| **Status** | Phases 0–2 implemented in code (workspace nav is default) |
+| **Status** | Phases 0–3 implemented in code (in-flow Spaces map) |
 | **Inspiration** | [Vercel — New dashboard navigation](https://vercel.com/changelog/new-dashboard-navigation-available) (IA patterns only) |
 
 ## Phase 0 — Locked decisions (UX / engineering)
@@ -28,7 +28,13 @@
 - The **`HYPHA_ENABLE_DHO_WORKSPACE_NAV` cookie, `getEnableDhoWorkspaceNav`, and `enable-dho-workspace-nav` Vercel flag** were removed; the workspace pattern is the only DHO tab navigation.
 - **E2E:** Coherence navigation locators use **`link` + `aria-current`** instead of Radix **`tab`** (Coherence e2e page + spec updated).
 
-## Follow-up (Phase 3+)
+## Phase 3 — What shipped (in-flow graph + redirect)
 
-- Replace **`spaces` stub** with the real `SelectNavigationAction` graph; redirect aside **`select-navigation-action`** as per main tech spec.
-- E2E: add assertions for the spaces route and left-rail + AI panel offset if needed.
+- **`/spaces` tab** renders **`SelectNavigationAction` with `variant="page"`** (intro + map + list; no empty foot section from `SelectAction`).
+- **`epics` `SelectAction`**: new **`showActionCards={false}`** to omit the trailing separator and action-cards block when `actions` is empty (used by the page variant).
+- **Aside** `select-navigation-action` is a **server `redirect` to** `getDhoPathSpaces(lang, id)` so old URLs keep working.
+- **`NestedSpacesButton`** links to **`getDhoPathSpaces`** instead of the aside `PATH_SELECT_NAVIGATION_ACTION`.
+
+## Follow-up (Phase 4+)
+
+- E2E: optional assertions for `/spaces` and AI-panel offset; cleanup any remaining `PATH_SELECT_NAVIGATION` references in docs.
