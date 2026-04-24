@@ -2,7 +2,11 @@
 
 import React from 'react';
 import useSWR from 'swr';
-import { Person, useJwt } from '@hypha-platform/core/client';
+import {
+  parsePersonFromMeApiJson,
+  Person,
+  useJwt,
+} from '@hypha-platform/core/client';
 
 export const useMe = (): {
   person: Person | undefined;
@@ -22,14 +26,15 @@ export const useMe = (): {
     data: person,
     isLoading: isLoadingPerson,
     mutate,
-  } = useSWR<Person>(jwt ? [endpoint, jwt] : null, ([endpoint, jwt]) =>
-    fetch(endpoint, {
+  } = useSWR<Person>(jwt ? [endpoint, jwt] : null, async ([endpoint, jwt]) => {
+    const res = await fetch(endpoint, {
       headers: {
         Authorization: `Bearer ${jwt}`,
         'Content-Type': 'application/json',
       },
-    }).then((res) => res.json() as Promise<Person>),
-  );
+    });
+    return parsePersonFromMeApiJson(await res.json());
+  });
 
   const isMe = React.useCallback(
     (personSlug: string): boolean => {
