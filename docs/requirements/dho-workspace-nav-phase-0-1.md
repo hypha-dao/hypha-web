@@ -1,46 +1,39 @@
-# DHO workspace navigation — Phase 0–4 delivery notes
+# DHO workspace navigation — delivery notes (Phases 0–6)
 
 ## Document control
 
 | Field | Value |
 |--------|--------|
-| **Status** | Phases 0–4 implemented in code (hardening, e2e, a11y scan) |
+| **Status** | Phases 0–6 complete in code |
 | **Inspiration** | [Vercel — New dashboard navigation](https://vercel.com/changelog/new-dashboard-navigation-available) (IA patterns only) |
 
 ## Phase 0 — Locked decisions (UX / engineering)
 
-1. **Copy — “Spaces”** — The graph route and nav item use the existing **`Common` → `Spaces`** string. No separate “Map/Network” label in this phase.
-2. **Default space landing** — Unchanged: **`/agreements`** remains the default primary tab. **`/spaces`** is the in-flow graph view (reachable from the left nav / Space menu).
-3. **Nav order** — When Coherence is enabled: **Coherence → Agreements → Members → Treasury → Spaces**. (Matches previous horizontal tab order with **Spaces** last as the new in-flow area.)
-4. **Mobile pattern** — **Left sheet** opened by a **floating “Space menu”** control (bottom; safe-area aware). The same links as the desktop rail; **not** a full-width permanent bottom bar (avoids clashing with browser chrome and existing layout).
-5. **Layout tokens (desktop rail)** — Fixed rail **`min(15rem, 100%)`**, **border-r** separator, `md+` only; in-flow (not `fixed`) so it **shifts with** the main column when the AI left panel animates (`--sidebar-left-width` in `PanelWrapLayout`).
+1. **Copy — “Spaces”** — The graph route and nav item use the existing **`Common` → `Spaces`** string.
+2. **Default space landing** — **`/agreements`** remains the default primary tab. **`/spaces`** is the in-flow graph.
+3. **Nav order** — When Coherence is enabled: **Coherence → Agreements → Members → Treasury → Spaces**.
+4. **Mobile** — **Left sheet** + floating **Space menu** (not a full-width bottom bar).
+5. **Layout tokens (desktop rail)** — Fixed rail **`min(15rem, 100%)`**, in-flow with **`PanelWrapLayout`**.
 
-## Phase 1 — What shipped
+## Phases 1–4 (summary)
 
-- **`DhoSpaceWorkspace`** client shell (`apps/web/src/app/[lang]/dho/[id]/_components/dho-space-workspace.tsx`) with desktop rail + mobile sheet.
-- **Path helper** — `getDhoPathSpaces(lang, id)` → `/${lang}/dho/${id}/spaces` (`@tab/spaces/constants.ts`).
-- **`getActiveTabFromPath`** recognizes the **`spaces`** (and `overview`) segment; unknown first segments under `/dho/[id]/` still **fall back to `agreements`** so other routes are not misclassified as active “tabs”.
-- (Initially) opt-in via **`getEnableDhoWorkspaceNav`** — **removed in Phase 2** (see below).
+- **1 —** `DhoSpaceWorkspace` shell, `getDhoPathSpaces`, `getActiveTabFromPath` updates.
+- **2 —** Horizontal tabs removed; workspace nav only.
+- **3 —** In-flow graph on `/spaces`, `NestedSpacesButton` → `getDhoPathSpaces`, middleware redirect for legacy path.
+- **4 —** E2E + Axe on main column, `data-testid` on main, `@axe-core/playwright`.
 
-## Phase 2 — What shipped (link parity)
+## Phase 5 — Hardening (spec “Stage 5”)
 
-- **`@tab` layout** always wraps tab content in **`DhoSpaceWorkspace`**. The horizontal **`NavigationTabs`** component was **removed** (`apps/web/.../navigation-tabs.tsx` deleted).
-- The **`HYPHA_ENABLE_DHO_WORKSPACE_NAV` cookie, `getEnableDhoWorkspaceNav`, and `enable-dho-workspace-nav` Vercel flag** were removed; the workspace pattern is the only DHO tab navigation.
-- **E2E:** Coherence navigation locators use **`link` + `aria-current`** instead of Radix **`tab`** (Coherence e2e page + spec updated).
+- **`SpaceNavigationView`** — Renamed from **`SelectNavigationAction`**; only used by the `/spaces` tab. Heavy **`SpaceVisualization`** (d3) loads via **`next/dynamic` (`ssr: false`)** with an accessible loading placeholder and **`DhoWorkspaceNav.spaceMapLoading`** i18n.
+- **`SelectAction`** — Optional **`className`** on the root for layout density.
+- **Middleware** — Response header **`x-hypha-legacy-redirect: dho-spaces`** on legacy redirect; **dev** `console.info` for the same.
+- **E2E** — Axe on **`dho-workspace-main`** and **`dho-space-navigation-view`**; **German** `/de/.../spaces` rail + tab copy; assert redirect header; testids **`dho-space-nav-map`**, **`dho-space-nav-map-tabs`**, **`dho-space-navigation-view`**.
 
-## Phase 3 — What shipped (in-flow graph + redirect)
+## Phase 6 — Cleanup (spec “Stage 6”)
 
-- **`/spaces` tab** renders **`SelectNavigationAction` with `variant="page"`** (intro + map + list; no empty foot section from `SelectAction`).
-- **`epics` `SelectAction`**: new **`showActionCards={false}`** to omit the trailing separator and action-cards block when `actions` is empty (used by the page variant).
-- **Aside** `select-navigation-action` is a **server `redirect` to** `getDhoPathSpaces(lang, id)` so old URLs keep working.
-- **`NestedSpacesButton`** links to **`getDhoPathSpaces`**.
+- **Removed** `select-navigation-action.tsx` (replaced by **`space-navigation-view.tsx`**).
+- **Docs** — Central spec and coherence plans no longer point at deleted `navigation-tabs.tsx`; copy updated to **`SpaceNavigationView`**.
 
-## Phase 4 — What shipped (hardening & QA)
+## Follow-up (product)
 
-- **Middleware** redirects **`/[lang]/dho/[id]/[tab]/select-navigation-action`** → **`/spaces`** (reliable for e2e and all HTTP methods). The aside `page` route for that path was **removed**; the **`PATH_SELECT_NAVIGATION_ACTION` constant** was **removed** from `apps/web` (unused after Phase 3).
-- **`DhoSpaceWorkspace`**: `data-testid="dho-workspace-main"` on the main content column (layout / e2e).
-- **E2E** (`dho-spaces-workspace.spec.ts`): legacy URL redirect, `/spaces` content, desktop rail `aria-current`, **AI panel open → main column x-shift**, mobile Space menu + sheet link, **Axe** on the main column (`@axe-core/playwright`).
-
-## Follow-up (optional)
-
-- Broader Axe (full page) or visual regression for `/spaces` if product wants baseline screenshots.
+- Optional full-page Axe in CI, visual baselines for `/spaces`, or performance budgets for the d3 bundle.

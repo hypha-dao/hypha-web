@@ -41,7 +41,7 @@ Today, the DHO “space” experience mixes:
 ### Goals (must)
 
 - **G1** — A **vertical nav** in the main column lists **Agreements**, **Members**, **Treasury**, and, when the coherence feature flag is on, **Coherence** — functionally replacing the current tab strip for those views.
-- **G2** — A **“Spaces”** (working title) item shows the **space graph / nested spaces experience** in the main column (content currently composed in `select-navigation-action` as `SelectNavigationAction` / `SpaceVisualization` / `VisibleSpacesList`), not only behind the aside modal.
+- **G2** — A **“Spaces”** (working title) item shows the **space graph / nested spaces experience** in the main column via **`SpaceNavigationView`** (`SpaceVisualization` + `VisibleSpacesList`), not only behind the aside modal.
 - **G3** — When the **AI left panel** toggles open in space context, the **entire main column** (nav + page body) **transitions in sync** with the existing 200ms `--sidebar-left-width` animation (see `PanelWrapLayout` in `packages/epics/src/common/panel-wrap-layout.tsx`).
 - **G4** — **Mobile** users can reach all items without relying on a desktop-only left rail (see §5).
 
@@ -65,7 +65,7 @@ Today, the DHO “space” experience mixes:
 |--------|----------|--------|
 | **AI / human panel layout + CSS vars** | `packages/epics/src/common/panel-wrap-layout.tsx` | Sets `--sidebar-left-width` / `--sidebar-right-width` on the wrapper and mirrors to `:root`; 200ms linear transition on those variables. **This is the coupling point for “smoothly moves when AI opens.”** |
 | **DHO section nav** | `apps/web/src/app/[lang]/dho/[id]/@tab/layout.tsx` + `_components/dho-space-workspace.tsx` | Client workspace shell (left rail + mobile sheet); map paths via `getActiveTabFromPath`. |
-| **Space graph** | In-flow `/{lang}/dho/{id}/spaces` with `SelectNavigationAction` (page variant) | Old `.../select-navigation-action` path → **middleware** redirect to `/spaces`. |
+| **Space graph** | In-flow `/{lang}/dho/{id}/spaces` with `SpaceNavigationView` | Old `.../select-navigation-action` path → **middleware** redirect to `/spaces`. |
 | **Top chrome alignment** | `apps/web/src/app/layout.tsx` + `MenuTop` | `MenuTop` already uses `after:left` with `var(--sidebar-left-width)` so horizontal rules meet side panels. |
 
 ---
@@ -103,7 +103,7 @@ Today, the DHO “space” experience mixes:
 ### 4.3 Replacing the tab strip
 
 - Remove or stub **`NavigationTabs`** from `@tab/layout.tsx` once the rail is complete; keep **`getActiveTabFromPath` semantics** in sync.
-- The **parallax** behavior on tabs (`useMainColumnScrollY` in `navigation-tabs.tsx`) **should not** blindly move to the rail; if a subtle depth effect is still desired, specify a **reduced, rail-safe** effect in implementation (or drop).
+- (Historical) Parallax on the old tab strip does not apply to the **workspace rail**; optional depth effects are out of scope unless re-specified.
 
 ### 4.4 Vercel-inspired notes (non-normative)
 
@@ -188,7 +188,7 @@ The [Vercel changelog](https://vercel.com/changelog/new-dashboard-navigation-ava
 | **A11y** | `@axe-core/playwright` | New surfaces scanned on navigation open/close. |
 | **Reduced motion** | Unit / manual | `prefers-reduced-motion: reduce` does not break layout. |
 
-**Regression watchlist** — `ProposalOverlayShell` z-index vs `Sidebar` (`z-[50]` in `PanelWrapLayout`), `NestedSpacesButton` `data-space-nav` e2e selectors, translations for `SelectNavigationAction`.
+**Regression watchlist** — `ProposalOverlayShell` z-index vs `Sidebar` (`z-[50]` in `PanelWrapLayout`), `NestedSpacesButton` `data-space-nav` e2e selectors, i18n for `SelectNavigationAction` (space map copy) and `DhoWorkspaceNav`.
 
 ---
 
