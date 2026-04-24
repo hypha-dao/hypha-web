@@ -87,6 +87,7 @@ export function useSpaceGroupCall(roomId: string | null) {
   const lastThreadRootEventIdRef = useRef<string | undefined>(undefined);
   const joinStartedAtRef = useRef<number | null>(null);
   const lastRoomIdForTelemetryRef = useRef<string | null>(null);
+  const activeGroupCallRoomIdRef = useRef<string | null>(null);
   const loggedStatsForGroupCallIdRef = useRef<string | null>(null);
   const [tabBackgroundWhileInCall, setTabBackgroundWhileInCall] =
     useState(false);
@@ -142,6 +143,7 @@ export function useSpaceGroupCall(roomId: string | null) {
       }
       groupCallRef.current = null;
     }
+    activeGroupCallRoomIdRef.current = null;
     isJoiningRef.current = false;
     setLocalPreviewStream(null);
     setIsMicrophoneMuted(false);
@@ -391,6 +393,7 @@ export function useSpaceGroupCall(roomId: string | null) {
       gci.initWithAudioMuted = false;
 
       groupCallRef.current = gc;
+      activeGroupCallRoomIdRef.current = roomId;
       setGroupCall(gc);
       attachGroupCallListeners(gc);
       updateParticipantCount();
@@ -552,26 +555,26 @@ export function useSpaceGroupCall(roomId: string | null) {
   );
 
   useEffect(() => {
-    if (!roomId && groupCallRef.current) {
-      if (lastRoomIdForTelemetryRef.current) {
-        logSpaceGroupCallEvent({
-          name: 'hypha.group_call.left',
-          roomId: lastRoomIdForTelemetryRef.current,
-          kind: lastJoinKindRef.current ?? undefined,
-          reason: 'room',
-        });
-      }
-      setCallState('disconnecting');
-      runCleanup();
-      setCallState('idle');
-      setErrorCode(null);
-      setCallKind(null);
-      setIsScreensharing(false);
-      setThreadContext(null);
-      setParticipantCount(0);
-      setScreenshareErrorCode(null);
-      setTabBackgroundWhileInCall(false);
+    if (!groupCallRef.current) return;
+    if (activeGroupCallRoomIdRef.current === roomId) return;
+    if (lastRoomIdForTelemetryRef.current) {
+      logSpaceGroupCallEvent({
+        name: 'hypha.group_call.left',
+        roomId: lastRoomIdForTelemetryRef.current,
+        kind: lastJoinKindRef.current ?? undefined,
+        reason: 'room',
+      });
     }
+    setCallState('disconnecting');
+    runCleanup();
+    setCallState('idle');
+    setErrorCode(null);
+    setCallKind(null);
+    setIsScreensharing(false);
+    setThreadContext(null);
+    setParticipantCount(0);
+    setScreenshareErrorCode(null);
+    setTabBackgroundWhileInCall(false);
   }, [roomId, runCleanup]);
 
   useEffect(() => {
