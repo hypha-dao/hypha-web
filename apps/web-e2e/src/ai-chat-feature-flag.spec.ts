@@ -8,8 +8,9 @@ import { AiChatPanelPage } from './pages/ai-chat-panel.page';
  * the panel trigger button and sidebar are rendered. When unset or
  * any other value, only the page children render (no AI panel).
  *
- * Note: This is a NEXT_PUBLIC_ env var, bundled at build time.
- * The "flag disabled" tests require a separate build without the flag.
+ * Note: This is a NEXT_PUBLIC_ env var, bundled at build time. When unset or
+ * "true", AI chat is on. The "flag disabled" tests require a build where it is
+ * not "true" (e.g. empty at build time).
  */
 
 test.describe('AI Chat Panel — Feature Flag Enabled', () => {

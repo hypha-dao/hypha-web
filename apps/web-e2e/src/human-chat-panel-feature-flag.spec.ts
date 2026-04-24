@@ -2,8 +2,8 @@ import { test, expect } from '@playwright/test';
 import { HumanChatPanelPage } from './pages/human-chat-panel.page';
 
 /**
- * Human Chat is enabled by default. Emergency rollback uses the kill-switch cookie
- * `HYPHA_DISABLE_HUMAN_CHAT=true` (see `getEnableHumanChat` in feature-flags).
+ * Human Chat defaults to on (see `getEnableHumanChat` in feature-flags). Opt out
+ * with cookie or env; emergency rollback uses `HYPHA_DISABLE_HUMAN_CHAT=true`.
  */
 
 test.describe('Human Chat Panel — default (enabled)', () => {
