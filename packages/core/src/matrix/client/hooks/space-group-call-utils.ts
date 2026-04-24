@@ -8,6 +8,15 @@ export function isPermissionLikeGroupCallError(e: unknown): boolean {
     if (code === 'no_user_media') return true;
   }
   if (e instanceof Error) {
+    const name = e.name;
+    if (
+      name === 'NotAllowedError' ||
+      name === 'PermissionDismissedError' /* experimental */ ||
+      name === 'NotReadableError' /* often used when device busy */ ||
+      name === 'OverconstrainedError' /* can follow denied constraints */
+    ) {
+      return true;
+    }
     const m = e.message.toLowerCase();
     return (
       m.includes('notallowederror') ||
