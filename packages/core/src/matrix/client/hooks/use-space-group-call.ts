@@ -382,10 +382,11 @@ export function useSpaceGroupCall(roomId: string | null) {
         return;
       }
 
-      const gci = gc as unknown as {
+      type GroupCallPreEnterMute = {
         initWithVideoMuted: boolean;
         initWithAudioMuted: boolean;
       };
+      const gci = gc as unknown as GroupCallPreEnterMute;
       gci.initWithVideoMuted = kind === 'audio';
       gci.initWithAudioMuted = false;
 
