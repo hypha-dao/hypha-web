@@ -138,6 +138,31 @@ The Signal / thread panel SHALL use a **stacked header** inside `SidebarHeader` 
 
 **File:** `packages/epics/src/common/human-right-panel.tsx` wires layout; presentational pieces live under `human-chat-panel/`.
 
+#### 3.1.1 Tab row + call toolbar / settings — **overlap and clipping (normative)**
+
+**Symptom to prevent:** In a **narrow** right panel, the **active** tab (green border / accent chrome) and/or a **clipped** tab label (e.g. only **“M”** visible for **Mentions**) appears to **run under** the **phone / video / search** cluster or the **settings** icon, or the tab text is **illegible** with no clear scroll affordance.
+
+**Root cause (typical):** A single `flex` row where the **tab `tablist`** and the **call `tabRowEnd`** + **settings** all compete for width. The scrollable region (`overflow-x-auto` + `flex-1` + `min-w-0`) can shrink the **inner** width of a tab so aggressively that the **label truncates per-character**; the user reads overlap where it is really **clipping** inside the tab, adjacent to a **fixed** icon group.
+
+**Proposed implementation rules (pick one pattern and document in the PR; all satisfy the AC below):**
+
+| # | Rule |
+|---|------|
+| R1 | **Reserved width for the right cluster:** The combined **call toolbar** (`tabRowEnd`) and **settings** `Link` SHALL be **`shrink-0`** (or `flex-none`) so they **never** compress. Icon buttons keep a **fixed** footprint (e.g. `h-7` + square hit targets) matching **`human-chat-panel-call-toolbar.tsx`**. |
+| R2 | **Tab rail is the flexible region:** The **`role="tablist"`** region SHALL sit in a **separate** flex or grid track with **`min-w-0`** so it may scroll horizontally, but **MUST NOT** be given layout rules that let **individual tab buttons** shrink below a **minimum readable** width (see AC). |
+| R3 | **No accidental overlap (stacking):** Tab **`<button>`**s and the right cluster SHALL share one row **without** `z-index` “fixes” on tabs that would paint **above** the call icons. If layering is ever needed, use a **subtle** separator (e.g. `border-s` on the end cluster) + ensure backgrounds are **opaque** on the icon group — not higher `z-index` on the tab list. |
+| R4 | **Active tab chrome:** The selected tab’s **border / ring** (e.g. `ring-inset`) **MUST** stay **inside** the button’s **border box** — no `outline-offset` or shadow that extends **into** the icon column. |
+| R5 | **Optional more robust row model:** Use **`grid`** with explicit columns, e.g. **`1fr` | `auto` | `auto`**: column 1 = scrollable `tablist` (`min-w-0`); columns 2–3 = `tabRowEnd` and settings, **`minmax(0, max-content)`** or `auto` + `shrink-0`. This avoids `flex-1` ambiguity between siblings. |
+| R6 | **Narrowest panel:** If product defines a **minimum** chat panel width, verify this row at that width in **en** and longest locale; if labels still do not fit, the **`tablist`** **horizontal scroll** SHALL remain the **only** overflow (fade or scrollbar **not** hidden in a way that confuses — current `[scrollbar-width:none]` is acceptable if **swipe/scroll** still works on touch; desktop may show a thin scrollbar on focus). |
+
+**Acceptance criteria (manual + visual):**
+
+- [ ] At a **realistic minimum** right-panel width, **Mentions** (and **Members**) show **at least the full short label** **or** a **documented** abbreviated label (e.g. `title` + tooltip) — **not** a single mystery letter.
+- [ ] The **active** tab’s **accent border** does **not** sit **on top of** the call or settings icons; **no** more than **hairline** optical collision.
+- [ ] **Focus order** remains: … last tab → **first call icon** → … → **settings** (or as agreed for RTL).
+
+**Files:** `packages/epics/.../human-chat-panel-tabs.tsx` (row layout, `tabRowEnd`); `human-chat-panel-call-toolbar.tsx` (fixed icon sizing).
+
 ### 3.2 Idle state — header icons (phone, video, search)
 
 **Component:** `human-chat-panel-call-toolbar.tsx` (or a merged row component that renders **tabs + icons** in one flex row).
