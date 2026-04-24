@@ -30,6 +30,11 @@ type SelectActionProps = {
   children?: React.ReactNode;
   /** Set false when the modal sticky header already shows the same title. */
   showTitle?: boolean;
+  /**
+   * When false, omit the trailing separator and empty action-cards section.
+   * Use for full-page or content-only layouts.
+   */
+  showActionCards?: boolean;
 };
 
 type GroupedActions = {
@@ -43,6 +48,7 @@ export const SelectAction = ({
   actions,
   children,
   showTitle = true,
+  showActionCards = true,
 }: SelectActionProps) => {
   const tCommon = useTranslations('Common');
   const groupedActions = React.useMemo(
@@ -80,87 +86,96 @@ export const SelectAction = ({
         </p>
       </Skeleton>
       {children}
-      <Separator />
-      <div className="flex flex-col gap-6">
-        {Object.entries(groupedActions || {}).map(([group, groupActions]) => (
-          <div key={group} className="flex flex-col gap-3">
-            {group && (
-              <h3 className="text-3 font-medium text-neutral-11">{group}</h3>
-            )}
-            {groupActions.map((action) => {
-              const isLink = !action.onAction && !!action.href;
-
-              const handleClick = (e: React.MouseEvent) => {
-                if (action.disabled) {
-                  e.preventDefault();
-                  return;
-                }
-
-                if (action.onAction) {
-                  e.preventDefault();
-                  action.onAction();
-                }
-              };
-              const comingSoon = action.disabled && action.comingSoon === true;
-              const card = (
-                <Card
-                  className={clsx(
-                    'group flex cursor-pointer items-start gap-4 border-border/80 p-5 shadow-sm ring-2 ring-transparent transition-[border-color,box-shadow,--tw-ring-color] duration-200 ease-out md:p-6',
-                    !action.disabled &&
-                      'hover:border-accent-9 hover:shadow-md hover:ring-accent-10/45',
-                    !action.disabled &&
-                      'focus-within:border-accent-9 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background-2',
-                    {
-                      'pointer-events-none cursor-not-allowed opacity-55 saturate-50':
-                        action.disabled,
-                    },
+      {showActionCards ? (
+        <>
+          <Separator />
+          <div className="flex flex-col gap-6">
+            {Object.entries(groupedActions || {}).map(
+              ([group, groupActions]) => (
+                <div key={group} className="flex flex-col gap-3">
+                  {group && (
+                    <h3 className="text-3 font-medium text-neutral-11">
+                      {group}
+                    </h3>
                   )}
-                  aria-disabled={action.disabled}
-                  onClick={handleClick}
-                >
-                  <div
-                    className={clsx(
-                      'flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-muted/40 text-accent-11 ring-2 ring-transparent transition-[border-color,box-shadow,--tw-ring-color,color] duration-200 [&_svg]:shrink-0',
-                      !action.disabled &&
-                        /* Outline-style hover: ring + border — no solid fill */
-                        'group-hover:border-accent-9 group-hover:text-foreground group-hover:ring-accent-10/50 group-focus-within:text-foreground',
-                    )}
-                    aria-hidden
-                  >
-                    {action.icon}
-                  </div>
-                  <div className="flex min-w-0 flex-1 flex-col gap-1">
-                    <span className="flex flex-wrap items-center gap-2 text-2 font-semibold leading-snug text-foreground">
-                      {action.title}
-                      {comingSoon ? (
-                        <span className="rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                          {tCommon('comingSoonBadge')}
-                        </span>
-                      ) : null}
-                    </span>
-                    <span className="text-1 leading-relaxed text-muted-foreground">
-                      <TextWithLinks text={action.description} />
-                    </span>
-                  </div>
-                </Card>
-              );
-              return isLink ? (
-                <Link
-                  href={action.href!}
-                  target={action.target}
-                  onClick={handleClick}
-                  key={action.title}
-                  aria-disabled={action.disabled}
-                >
-                  {card}
-                </Link>
-              ) : (
-                <div key={action.title}>{card}</div>
-              );
-            })}
+                  {groupActions.map((action) => {
+                    const isLink = !action.onAction && !!action.href;
+
+                    const handleClick = (e: React.MouseEvent) => {
+                      if (action.disabled) {
+                        e.preventDefault();
+                        return;
+                      }
+
+                      if (action.onAction) {
+                        e.preventDefault();
+                        action.onAction();
+                      }
+                    };
+                    const comingSoon =
+                      action.disabled && action.comingSoon === true;
+                    const card = (
+                      <Card
+                        className={clsx(
+                          'group flex cursor-pointer items-start gap-4 border-border/80 p-5 shadow-sm ring-2 ring-transparent transition-[border-color,box-shadow,--tw-ring-color] duration-200 ease-out md:p-6',
+                          !action.disabled &&
+                            'hover:border-accent-9 hover:shadow-md hover:ring-accent-10/45',
+                          !action.disabled &&
+                            'focus-within:border-accent-9 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background-2',
+                          {
+                            'pointer-events-none cursor-not-allowed opacity-55 saturate-50':
+                              action.disabled,
+                          },
+                        )}
+                        aria-disabled={action.disabled}
+                        onClick={handleClick}
+                      >
+                        <div
+                          className={clsx(
+                            'flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-muted/40 text-accent-11 ring-2 ring-transparent transition-[border-color,box-shadow,--tw-ring-color,color] duration-200 [&_svg]:shrink-0',
+                            !action.disabled &&
+                              /* Outline-style hover: ring + border — no solid fill */
+                              'group-hover:border-accent-9 group-hover:text-foreground group-hover:ring-accent-10/50 group-focus-within:text-foreground',
+                          )}
+                          aria-hidden
+                        >
+                          {action.icon}
+                        </div>
+                        <div className="flex min-w-0 flex-1 flex-col gap-1">
+                          <span className="flex flex-wrap items-center gap-2 text-2 font-semibold leading-snug text-foreground">
+                            {action.title}
+                            {comingSoon ? (
+                              <span className="rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                                {tCommon('comingSoonBadge')}
+                              </span>
+                            ) : null}
+                          </span>
+                          <span className="text-1 leading-relaxed text-muted-foreground">
+                            <TextWithLinks text={action.description} />
+                          </span>
+                        </div>
+                      </Card>
+                    );
+                    return isLink ? (
+                      <Link
+                        href={action.href!}
+                        target={action.target}
+                        onClick={handleClick}
+                        key={action.title}
+                        aria-disabled={action.disabled}
+                      >
+                        {card}
+                      </Link>
+                    ) : (
+                      <div key={action.title}>{card}</div>
+                    );
+                  })}
+                </div>
+              ),
+            )}
           </div>
-        ))}
-      </div>
+        </>
+      ) : null}
     </div>
   );
 };
