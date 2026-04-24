@@ -203,7 +203,7 @@ describe('TokenBackingVault', function () {
       expect(config.enabled).to.be.true;
     });
 
-    it('Should reject if space token has no price set', async function () {
+    it('Should reject if space token has no price set and no redemption price override', async function () {
       const { vault, usdc, usdcFeed, executor, SPACE_ID } = await loadFixture(
         deployFixture,
       );
@@ -228,7 +228,307 @@ describe('TokenBackingVault', function () {
             0,
             0,
           ),
-      ).to.be.revertedWith('Space token price must be > 0');
+      ).to.be.revertedWith('Need space token price or redemption price > 0');
+    });
+
+    it('Should accept a zero-price space token when a redemption-price override is provided', async function () {
+      const { vault, usdc, usdcFeed, executor, SPACE_ID } = await loadFixture(
+        deployFixture,
+      );
+
+      // Space token has tokenPrice() == 0 — vault must use the override.
+      const Community = await ethers.getContractFactory('MockSpaceToken');
+      const zeroPriceToken = await Community.deploy('Zero', 'ZERO', 0);
+
+      await expect(
+        vault.connect(executor).addBackingToken(
+          SPACE_ID,
+          await zeroPriceToken.getAddress(),
+          [await usdc.getAddress()],
+          [await usdcFeed.getAddress()],
+          [6],
+          [0],
+          0,
+          1_500_000, // $1.50 redemption price override (6 decimals)
+          ethers.ZeroAddress,
+          0,
+          0,
+        ),
+      ).to.emit(vault, 'VaultCreated');
+
+      const [storedPrice] = await vault.getRedemptionPrice(
+        SPACE_ID,
+        await zeroPriceToken.getAddress(),
+      );
+      expect(storedPrice).to.equal(1_500_000);
+    });
+  });
+
+  // ================================================================
+  //                  EMPTY VAULT CREATION (createVault)
+  // ================================================================
+
+  describe('createVault', function () {
+    it('Should create an empty vault with no backing tokens', async function () {
+      const { vault, communityToken, executor, SPACE_ID } = await loadFixture(
+        deployFixture,
+      );
+
+      await expect(
+        vault
+          .connect(executor)
+          .createVault(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            0,
+            0,
+            ethers.ZeroAddress,
+            0,
+            0,
+          ),
+      ).to.emit(vault, 'VaultCreated');
+
+      expect(
+        await vault.vaultExists(SPACE_ID, await communityToken.getAddress()),
+      ).to.be.true;
+
+      const tokens = await vault.getBackingTokens(
+        SPACE_ID,
+        await communityToken.getAddress(),
+      );
+      expect(tokens.length).to.equal(0);
+    });
+
+    it('Should let backing tokens be added to a vault created via createVault', async function () {
+      const { vault, communityToken, usdc, usdcFeed, executor, SPACE_ID } =
+        await loadFixture(deployFixture);
+
+      await vault.connect(executor).createVault(
+        SPACE_ID,
+        await communityToken.getAddress(),
+        2000, // 20% min backing
+        0,
+        ethers.ZeroAddress,
+        0,
+        0,
+      );
+
+      await usdc.mint(executor.address, 50_000e6);
+      await usdc.connect(executor).approve(await vault.getAddress(), 50_000e6);
+
+      await expect(
+        vault
+          .connect(executor)
+          .addBackingToken(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            [await usdc.getAddress()],
+            [await usdcFeed.getAddress()],
+            [6],
+            [50_000e6],
+            0,
+            0,
+            ethers.ZeroAddress,
+            0,
+            0,
+          ),
+      ).to.emit(vault, 'BackingTokenAdded');
+
+      const balance = await vault.getBackingBalance(
+        SPACE_ID,
+        await communityToken.getAddress(),
+        await usdc.getAddress(),
+      );
+      expect(balance).to.equal(50_000e6);
+
+      // minimumBackingBps was set when the vault was created and must NOT be
+      // reset to 0 when addBackingToken is called for the existing vault.
+      const config = await vault.getVaultConfig(
+        SPACE_ID,
+        await communityToken.getAddress(),
+      );
+      expect(config.minimumBackingBps).to.equal(2000);
+    });
+
+    it('Should accept a zero-price space token when a redemption-price override is provided', async function () {
+      const { vault, executor, SPACE_ID } = await loadFixture(deployFixture);
+
+      const Community = await ethers.getContractFactory('MockSpaceToken');
+      const zeroPriceToken = await Community.deploy('Zero', 'ZERO', 0);
+
+      await expect(
+        vault.connect(executor).createVault(
+          SPACE_ID,
+          await zeroPriceToken.getAddress(),
+          0,
+          2_000_000, // $2 override
+          ethers.ZeroAddress,
+          0,
+          0,
+        ),
+      ).to.emit(vault, 'VaultCreated');
+
+      const [storedPrice] = await vault.getRedemptionPrice(
+        SPACE_ID,
+        await zeroPriceToken.getAddress(),
+      );
+      expect(storedPrice).to.equal(2_000_000);
+    });
+
+    it('Should revert when neither tokenPrice() nor a redemption price override is provided', async function () {
+      const { vault, executor, SPACE_ID } = await loadFixture(deployFixture);
+
+      const Community = await ethers.getContractFactory('MockSpaceToken');
+      const zeroPriceToken = await Community.deploy('Zero', 'ZERO', 0);
+
+      await expect(
+        vault
+          .connect(executor)
+          .createVault(
+            SPACE_ID,
+            await zeroPriceToken.getAddress(),
+            0,
+            0,
+            ethers.ZeroAddress,
+            0,
+            0,
+          ),
+      ).to.be.revertedWith('Need space token price or redemption price > 0');
+
+      // Vault state must NOT have been written when the post-create check reverts.
+      expect(
+        await vault.vaultExists(SPACE_ID, await zeroPriceToken.getAddress()),
+      ).to.be.false;
+    });
+
+    it('Should revert if the vault already exists', async function () {
+      const { vault, communityToken, executor, SPACE_ID } = await loadFixture(
+        deployFixture,
+      );
+
+      await vault
+        .connect(executor)
+        .createVault(
+          SPACE_ID,
+          await communityToken.getAddress(),
+          0,
+          0,
+          ethers.ZeroAddress,
+          0,
+          0,
+        );
+
+      await expect(
+        vault
+          .connect(executor)
+          .createVault(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            0,
+            0,
+            ethers.ZeroAddress,
+            0,
+            0,
+          ),
+      ).to.be.revertedWith('Vault already exists');
+    });
+
+    it('Should reject zero-address space token', async function () {
+      const { vault, executor, SPACE_ID } = await loadFixture(deployFixture);
+
+      await expect(
+        vault
+          .connect(executor)
+          .createVault(
+            SPACE_ID,
+            ethers.ZeroAddress,
+            0,
+            0,
+            ethers.ZeroAddress,
+            0,
+            0,
+          ),
+      ).to.be.revertedWith('Invalid space token');
+    });
+
+    it('Should reject minimumBackingBps > 1000% (100000 bps)', async function () {
+      const { vault, communityToken, executor, SPACE_ID } = await loadFixture(
+        deployFixture,
+      );
+
+      await expect(
+        vault
+          .connect(executor)
+          .createVault(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            100001,
+            0,
+            ethers.ZeroAddress,
+            0,
+            0,
+          ),
+      ).to.be.revertedWith('Min backing cannot exceed 1000%');
+    });
+
+    it('Should reject maxRedemptionBps > 100%', async function () {
+      const { vault, communityToken, executor, SPACE_ID } = await loadFixture(
+        deployFixture,
+      );
+
+      await expect(
+        vault
+          .connect(executor)
+          .createVault(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            0,
+            0,
+            ethers.ZeroAddress,
+            10001,
+            7,
+          ),
+      ).to.be.revertedWith('Cannot exceed 100%');
+    });
+
+    it('Should reject maxRedemptionBps > 0 with periodDays == 0', async function () {
+      const { vault, communityToken, executor, SPACE_ID } = await loadFixture(
+        deployFixture,
+      );
+
+      await expect(
+        vault
+          .connect(executor)
+          .createVault(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            0,
+            0,
+            ethers.ZeroAddress,
+            500,
+            0,
+          ),
+      ).to.be.revertedWith('Period must be > 0 when cap is set');
+    });
+
+    it('Should reject from non-executor', async function () {
+      const { vault, communityToken, alice, SPACE_ID } = await loadFixture(
+        deployFixture,
+      );
+
+      await expect(
+        vault
+          .connect(alice)
+          .createVault(
+            SPACE_ID,
+            await communityToken.getAddress(),
+            0,
+            0,
+            ethers.ZeroAddress,
+            0,
+            0,
+          ),
+      ).to.be.revertedWith('Not authorized: only executor or owner');
     });
   });
 
