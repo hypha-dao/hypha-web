@@ -1,24 +1,16 @@
-import { getTranslations } from 'next-intl/server';
-
-import { Container } from '@hypha-platform/ui';
+import { SelectNavigationAction } from '../../_components/select-navigation-action';
 import { Locale } from '@hypha-platform/i18n';
 
 type PageProps = {
   params: Promise<{ id: string; lang: Locale }>;
 };
 
-export default async function DhoSpacesStubPage(props: PageProps) {
-  await props.params;
-  const t = await getTranslations('DhoWorkspaceNav');
+export default async function DhoSpacesPage(props: PageProps) {
+  const { id, lang } = await props.params;
 
   return (
-    <div className="w-full">
-      <Container className="px-0! py-6 text-sm text-muted-foreground" size="md">
-        <p className="text-base font-medium text-foreground">
-          {t('spacesPageStubTitle')}
-        </p>
-        <p className="mt-2 max-w-prose">{t('spacesPageStubDescription')}</p>
-      </Container>
+    <div className="w-full min-w-0 py-4">
+      <SelectNavigationAction lang={lang} daoSlug={id} variant="page" />
     </div>
   );
 }
