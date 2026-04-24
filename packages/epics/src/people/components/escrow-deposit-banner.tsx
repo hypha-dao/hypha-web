@@ -5,6 +5,7 @@ import { Button } from '@hypha-platform/ui';
 import { ArrowRightIcon, Loader2, X } from 'lucide-react';
 import { formatUnits } from 'viem';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
+import { CTA_ACCENT_SURFACE_CLASS } from '../../common/cta-accent-surface';
 import {
   PendingEscrowDeposit,
   useEscrowDepositMutation,
@@ -260,7 +261,9 @@ export const EscrowDepositBanner = ({
   // contract orders the legs.
 
   return (
-    <div className="bg-accent-surface-mix rounded-[8px] border-1 border-accent-6 bg-center p-5 flex flex-col md:flex-row gap-4 md:gap-5 items-start md:items-center justify-between">
+    <div
+      className={`${CTA_ACCENT_SURFACE_CLASS} rounded-[8px] border-1 border-accent-6 bg-center p-5 flex flex-col md:flex-row gap-4 md:gap-5 items-start md:items-center justify-between`}
+    >
       <div className="flex items-start gap-3 md:gap-5 w-full md:w-auto">
         <ArrowRightIcon
           width={16}

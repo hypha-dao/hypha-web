@@ -3,6 +3,7 @@
 import { Button } from '@hypha-platform/ui';
 import { useSalesBanner, useSpaceMember } from '../hooks';
 import { Cross1Icon } from '@radix-ui/react-icons';
+import { CTA_ACCENT_SURFACE_CLASS } from '../../common/cta-accent-surface';
 import { usePathname } from 'next/navigation';
 import { cleanPath } from '../utils/cleanPath';
 import { useAuthentication } from '@hypha-platform/authentication';
@@ -69,7 +70,9 @@ export const SalesBanner = ({ web3SpaceId }: SalesBannerProps) => {
   const { title, subtitle, actionText } = bannerStates[status];
 
   return (
-    <div className="bg-accent-surface-mix rounded-[8px] border-1 border-accent-6 bg-center p-5 flex flex-col md:flex-row gap-4 md:gap-5 items-start md:items-center justify-between">
+    <div
+      className={`${CTA_ACCENT_SURFACE_CLASS} rounded-[8px] border-1 border-accent-6 bg-center p-5 flex flex-col md:flex-row gap-4 md:gap-5 items-start md:items-center justify-between`}
+    >
       <div className="flex items-center gap-3 md:gap-5 w-full md:w-auto">
         <ExclamationTriangleIcon
           width={16}
