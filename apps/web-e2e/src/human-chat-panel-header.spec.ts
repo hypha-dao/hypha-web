@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { HumanChatPanelPage } from './pages/human-chat-panel.page';
+import {
+  addEnableHumanChatCookie,
+  extraHttpHeadersEnableHumanChat,
+} from './test-helpers/human-chat-e2e-cookies';
 
 /**
  * E2E tests for the Human Chat Panel Header layout.
@@ -11,9 +15,14 @@ import { HumanChatPanelPage } from './pages/human-chat-panel.page';
  * matching the SparklesIcon style in the AI panel header.
  */
 test.describe('Human Chat Panel Header Layout', () => {
+  test.use({
+    extraHTTPHeaders: extraHttpHeadersEnableHumanChat,
+  });
+
   let chatPanel: HumanChatPanelPage;
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, context }) => {
+    await addEnableHumanChatCookie(context);
     chatPanel = new HumanChatPanelPage(page);
     await chatPanel.open();
     await chatPanel.openPanel();

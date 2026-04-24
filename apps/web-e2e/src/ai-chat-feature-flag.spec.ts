@@ -1,21 +1,23 @@
 import { test, expect } from '@playwright/test';
 import { AiChatPanelPage } from './pages/ai-chat-panel.page';
+import {
+  addEnableAiChatCookie,
+  extraHttpHeadersEnableAiChat,
+} from './test-helpers/ai-chat-e2e-cookies';
 
 /**
- * Feature Flag: NEXT_PUBLIC_ENABLE_AI_CHAT
- *
- * Controls the visibility of the AI Chat panel. When set to "true",
- * the panel trigger button and sidebar are rendered. When unset or
- * any other value, only the page children render (no AI panel).
- *
- * Note: This is a NEXT_PUBLIC_ env var, bundled at build time.
- * The "flag disabled" tests require a separate build without the flag.
+ * AI Chat (left panel) defaults off; opt in via `HYPHA_ENABLE_AI_CHAT` / `NEXT_PUBLIC_ENABLE_AI_CHAT`.
  */
 
 test.describe('AI Chat Panel — Feature Flag Enabled', () => {
+  test.use({
+    extraHTTPHeaders: extraHttpHeadersEnableAiChat,
+  });
+
   let chatPanel: AiChatPanelPage;
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, context }) => {
+    await addEnableAiChatCookie(context);
     chatPanel = new AiChatPanelPage(page);
     await chatPanel.open();
   });
@@ -65,52 +67,33 @@ test.describe('AI Chat Panel — Feature Flag Enabled', () => {
   });
 });
 
-test.describe('AI Chat Panel — Feature Flag Disabled', () => {
-  /**
-   * These tests verify behavior when NEXT_PUBLIC_ENABLE_AI_CHAT is NOT "true".
-   *
-   * Since this is a build-time env var bundled by Next.js, toggling it requires
-   * a separate build/dev server started without the flag. These tests are skipped
-   * in the default test run (which assumes the flag is enabled for development).
-   *
-   * To run these tests:
-   * 1. Start the dev server without the flag: `NEXT_PUBLIC_ENABLE_AI_CHAT= npx nx start web`
-   * 2. Run only this describe block: `npx playwright test ai-chat-feature-flag --grep "Disabled"`
-   *
-   * Expected behavior when disabled:
-   * - No "Open Hypha AI panel" button rendered
-   * - No sidebar/panel markup in the DOM
-   * - Page content renders normally without any AI wrapper
-   */
-
-  // eslint-disable-next-line playwright/no-skipped-test
-  test.skip(true, 'Requires a build without NEXT_PUBLIC_ENABLE_AI_CHAT=true');
-
+test.describe('AI Chat Panel — default off (no opt-in cookie)', () => {
   test('should not render AI trigger button on space page', async ({
     page,
   }) => {
-    await page.goto('/en/dho/hypha');
+    await page.goto('/en/dho/hypha/agreements');
     await page.waitForLoadState('domcontentloaded');
 
     const aiButton = page.getByRole('button', {
-      name: /open ai chat panel/i,
+      name: /open ai chat/i,
     });
     await expect(aiButton).not.toBeVisible();
   });
 
-  test('should not render sidebar panel markup', async ({ page }) => {
-    await page.goto('/en/dho/hypha');
+  test('should not render left AI sidebar markup', async ({ page }) => {
+    await page.goto('/en/dho/hypha/agreements');
     await page.waitForLoadState('domcontentloaded');
 
-    const sidebar = page.locator('[data-sidebar="sidebar"]');
-    await expect(sidebar).toHaveCount(0);
+    const leftSidebar = page.locator(
+      '[data-side="left"] [data-sidebar="sidebar"]',
+    );
+    await expect(leftSidebar).toHaveCount(0);
   });
 
   test('should render page content normally', async ({ page }) => {
-    await page.goto('/en/dho/hypha');
+    await page.goto('/en/dho/hypha/agreements');
     await page.waitForLoadState('domcontentloaded');
 
-    // Space page content should still render
     await expect(page.getByText('Members')).toBeVisible();
     await expect(page.getByText('Agreements')).toBeVisible();
   });

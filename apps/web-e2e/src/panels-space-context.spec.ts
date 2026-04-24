@@ -1,4 +1,8 @@
 import { test, expect } from '@playwright/test';
+import {
+  addEnableHumanChatCookie,
+  HYPHA_ENABLE_HUMAN_CHAT,
+} from './test-helpers/human-chat-e2e-cookies';
 
 /**
  * Side Panels — Space Context Only
@@ -7,9 +11,9 @@ import { test, expect } from '@playwright/test';
  * rendered within a space context (/[lang]/dho/[id]/...) and are absent
  * on non-space pages (network, my-spaces, profile).
  *
- * Uses two-layer cookie strategy for AI Chat:
- * - extraHTTPHeaders for SSR
- * - addCookies for client-side navigation
+ * Uses two-layer cookie strategy (SSR `extraHTTPHeaders` + `addCookies`):
+ * - `HYPHA_ENABLE_AI_CHAT` for the left (AI) panel
+ * - `HYPHA_ENABLE_HUMAN_CHAT` for the right (Human) panel (defaults off in app)
  */
 
 const CHAT_TRIGGER = /open chat panel/i;
@@ -18,7 +22,7 @@ const AI_TRIGGER = /open hypha ai panel/i;
 test.describe('Panels visible on space pages', () => {
   test.use({
     extraHTTPHeaders: {
-      Cookie: 'HYPHA_ENABLE_AI_CHAT=true',
+      Cookie: `HYPHA_ENABLE_AI_CHAT=true; ${HYPHA_ENABLE_HUMAN_CHAT}=true`,
     },
   });
 
@@ -31,6 +35,7 @@ test.describe('Panels visible on space pages', () => {
         path: '/',
       },
     ]);
+    await addEnableHumanChatCookie(context);
   });
 
   test('should show Human Chat trigger on a space page', async ({ page }) => {
@@ -115,7 +120,7 @@ test.describe('Panels hidden on non-space pages', () => {
 test.describe('Panels appear after navigating into a space', () => {
   test.use({
     extraHTTPHeaders: {
-      Cookie: 'HYPHA_ENABLE_AI_CHAT=true',
+      Cookie: `HYPHA_ENABLE_AI_CHAT=true; ${HYPHA_ENABLE_HUMAN_CHAT}=true`,
     },
   });
 
@@ -128,6 +133,7 @@ test.describe('Panels appear after navigating into a space', () => {
         path: '/',
       },
     ]);
+    await addEnableHumanChatCookie(context);
   });
 
   test('triggers should appear when navigating from /network to a space', async ({

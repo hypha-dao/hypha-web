@@ -1,12 +1,16 @@
 import { test, expect } from '@playwright/test';
 import { LayoutPage } from './pages/layout.page';
+import {
+  addEnableHumanChatCookie,
+  HYPHA_ENABLE_HUMAN_CHAT,
+} from './test-helpers/human-chat-e2e-cookies';
 
 test.describe('Panel Layout', () => {
   let layout: LayoutPage;
 
   test.use({
     extraHTTPHeaders: {
-      Cookie: 'HYPHA_ENABLE_AI_CHAT=true',
+      Cookie: `HYPHA_ENABLE_AI_CHAT=true; ${HYPHA_ENABLE_HUMAN_CHAT}=true`,
     },
   });
 
@@ -19,6 +23,7 @@ test.describe('Panel Layout', () => {
         path: '/',
       },
     ]);
+    await addEnableHumanChatCookie(context);
     await page.setViewportSize({ width: 1440, height: 900 });
     layout = new LayoutPage(page);
     await layout.open();

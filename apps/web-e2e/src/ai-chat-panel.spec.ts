@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { AiChatPanelPage } from './pages/ai-chat-panel.page';
+import {
+  addEnableAiChatCookie,
+  extraHttpHeadersEnableAiChat,
+} from './test-helpers/ai-chat-e2e-cookies';
 
 const EXPECTED_SUGGESTIONS = [
   'Tell me about this space',
@@ -12,9 +16,14 @@ const EXPECTED_WELCOME_MESSAGE =
   "Hello! I'm your AI assistant. I can look up space details like member counts, agreements, and structure. Ask me anything about the space you're viewing.";
 
 test.describe('AI Chat Panel', () => {
+  test.use({
+    extraHTTPHeaders: extraHttpHeadersEnableAiChat,
+  });
+
   let chatPanel: AiChatPanelPage;
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, context }) => {
+    await addEnableAiChatCookie(context);
     chatPanel = new AiChatPanelPage(page);
     await chatPanel.open();
   });

@@ -1,10 +1,19 @@
 import { test, expect } from '@playwright/test';
 import { HumanChatPanelPage } from './pages/human-chat-panel.page';
+import {
+  addEnableHumanChatCookie,
+  extraHttpHeadersEnableHumanChat,
+} from './test-helpers/human-chat-e2e-cookies';
 
 test.describe('Human Chat Panel', () => {
+  test.use({
+    extraHTTPHeaders: extraHttpHeadersEnableHumanChat,
+  });
+
   let chatPanel: HumanChatPanelPage;
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, context }) => {
+    await addEnableHumanChatCookie(context);
     chatPanel = new HumanChatPanelPage(page);
     await chatPanel.open();
   });

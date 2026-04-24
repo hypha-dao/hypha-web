@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { HumanChatPanelPage } from './pages/human-chat-panel.page';
+import {
+  addEnableHumanChatCookie,
+  extraHttpHeadersEnableHumanChat,
+} from './test-helpers/human-chat-e2e-cookies';
 
 /**
  * Human Chat Panel — Space-specific chat state.
@@ -11,11 +15,19 @@ import { HumanChatPanelPage } from './pages/human-chat-panel.page';
  *
  */
 test.describe('Human Chat Panel — Space Switching', () => {
+  test.use({
+    extraHTTPHeaders: extraHttpHeadersEnableHumanChat,
+  });
+
   test.setTimeout(60_000); // Space navigation can be slow in production builds
   const SPACE_A = 'hypha';
   const SPACE_B = 'hypha-platform';
 
   let chatPanel: HumanChatPanelPage;
+
+  test.beforeEach(async ({ context }) => {
+    await addEnableHumanChatCookie(context);
+  });
 
   test('should show welcome message on a fresh space', async ({ page }) => {
     chatPanel = new HumanChatPanelPage(page);

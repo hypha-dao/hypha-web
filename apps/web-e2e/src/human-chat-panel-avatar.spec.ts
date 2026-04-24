@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { HumanChatPanelPage } from './pages/human-chat-panel.page';
+import {
+  addEnableHumanChatCookie,
+  extraHttpHeadersEnableHumanChat,
+} from './test-helpers/human-chat-e2e-cookies';
 
 /**
  * Human Chat Panel — Avatar / Profile Image Tests
@@ -21,9 +25,14 @@ const MOCK_USER = {
 };
 
 test.describe('Human Chat Panel — Avatar in Messages', () => {
+  test.use({
+    extraHTTPHeaders: extraHttpHeadersEnableHumanChat,
+  });
+
   let chatPanel: HumanChatPanelPage;
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, context }) => {
+    await addEnableHumanChatCookie(context);
     chatPanel = new HumanChatPanelPage(page);
     await chatPanel.open();
   });
@@ -68,9 +77,14 @@ test.describe('Human Chat Panel — Avatar in Messages', () => {
 });
 
 test.describe('Human Chat Panel — Authenticated User Avatar', () => {
+  test.use({
+    extraHTTPHeaders: extraHttpHeadersEnableHumanChat,
+  });
+
   let chatPanel: HumanChatPanelPage;
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, context }) => {
+    await addEnableHumanChatCookie(context);
     // Mock the /api/v1/people/me endpoint to return a user with an avatar
     await page.route('**/api/v1/people/me', (route) => {
       route.fulfill({

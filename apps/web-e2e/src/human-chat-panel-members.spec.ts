@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { HumanChatPanelPage } from './pages/human-chat-panel.page';
+import {
+  addEnableHumanChatCookie,
+  extraHttpHeadersEnableHumanChat,
+} from './test-helpers/human-chat-e2e-cookies';
 
 /**
  * E2E tests for the Human Chat Panel Members tab.
@@ -9,6 +13,10 @@ import { HumanChatPanelPage } from './pages/human-chat-panel.page';
  * in a compact list inside the right sidebar chat panel.
  */
 test.describe('Human Chat Panel – Members Tab', () => {
+  test.use({
+    extraHTTPHeaders: extraHttpHeadersEnableHumanChat,
+  });
+
   const MOCK_MEMBERS_RESPONSE = {
     persons: {
       data: [
@@ -71,7 +79,8 @@ test.describe('Human Chat Panel – Members Tab', () => {
 
   let chatPanel: HumanChatPanelPage;
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, context }) => {
+    await addEnableHumanChatCookie(context);
     // Intercept the members API to return deterministic mock data
     await page.route('**/api/v1/spaces/*/members*', (route) => {
       route.fulfill({

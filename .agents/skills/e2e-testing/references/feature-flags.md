@@ -6,10 +6,11 @@ Feature flags are **async helpers** in `@hypha-platform/feature-flags` (e.g. `ge
 
 ### Evaluation Order
 
-1. For boolean product flags (AI Chat, Coherence, Space Memory): **Hypha cookie** if set to `"true"` or `"false"`; else **`NEXT_PUBLIC_*`** if set; else default **`true`**.
-2. **Human Chat:** kill-switch **`HYPHA_DISABLE_HUMAN_CHAT=true`** (or `NEXT_PUBLIC_DISABLE_HUMAN_CHAT=true`) forces off; else legacy cookie / env; else default **`true`**.
-3. **`getShowLanguageSelect`:** if `HYPHA_SHOW_LANGUAGE_SELECT=false` → off; else on.
-4. **`getEnableWeb3Auth`:** `HYPHA_AUTH_PROVIDER=web3auth` → on.
+1. **Coherence, Space Memory:** **Hypha cookie** if set to `"true"` or `"false"`; else **`NEXT_PUBLIC_*`** if set; else default **`true`**.
+2. **AI Chat (left panel):** same resolution order, default **`false`**. Set **`HYPHA_ENABLE_AI_CHAT=true`** or **`NEXT_PUBLIC_ENABLE_AI_CHAT=true`** to show the panel.
+3. **Human Chat (right):** kill-switch first; else cookie / env; else default **`false`**. Set **`HYPHA_ENABLE_HUMAN_CHAT=true`** to opt in.
+4. **`getShowLanguageSelect`:** if `HYPHA_SHOW_LANGUAGE_SELECT=false` → off; else on.
+5. **`getEnableWeb3Auth`:** `HYPHA_AUTH_PROVIDER=web3auth` → on.
 
 Source: `packages/feature-flags/src/index.ts`
 

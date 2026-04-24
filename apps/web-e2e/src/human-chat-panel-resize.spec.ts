@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { HumanChatPanelPage } from './pages/human-chat-panel.page';
+import {
+  addEnableHumanChatCookie,
+  extraHttpHeadersEnableHumanChat,
+} from './test-helpers/human-chat-e2e-cookies';
 
 /**
  * Human Chat Panel — Resize Handle
@@ -16,9 +20,14 @@ const DEFAULT_WIDTH = 320;
 const RESIZE_STEP = 10;
 
 test.describe('Human Chat Panel — Resize Handle', () => {
+  test.use({
+    extraHTTPHeaders: extraHttpHeadersEnableHumanChat,
+  });
+
   let chatPanel: HumanChatPanelPage;
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, context }) => {
+    await addEnableHumanChatCookie(context);
     chatPanel = new HumanChatPanelPage(page);
     await chatPanel.open();
     await chatPanel.openPanel();

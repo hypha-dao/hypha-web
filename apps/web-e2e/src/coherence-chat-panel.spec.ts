@@ -30,6 +30,18 @@
 import { test, expect } from '@playwright/test';
 import { CoherenceChatPanelPage } from './pages/coherence-chat-panel.page';
 import { HumanChatPanelPage } from './pages/human-chat-panel.page';
+import {
+  addEnableHumanChatCookie,
+  extraHttpHeadersEnableHumanChat,
+} from './test-helpers/human-chat-e2e-cookies';
+
+test.use({
+  extraHTTPHeaders: extraHttpHeadersEnableHumanChat,
+});
+
+test.beforeEach(async ({ context }) => {
+  await addEnableHumanChatCookie(context);
+});
 
 test.describe('Coherence Chat Panel Integration', () => {
   const SPACE_SLUG = 'hypha';

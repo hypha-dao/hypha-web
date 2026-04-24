@@ -1,15 +1,38 @@
 import { test, expect } from '@playwright/test';
 import { HumanChatPanelPage } from './pages/human-chat-panel.page';
+import {
+  addEnableHumanChatCookie,
+  extraHttpHeadersEnableHumanChat,
+} from './test-helpers/human-chat-e2e-cookies';
 
 /**
- * Human Chat is enabled by default. Emergency rollback uses the kill-switch cookie
- * `HYPHA_DISABLE_HUMAN_CHAT=true` (see `getEnableHumanChat` in feature-flags).
+ * Human Chat defaults **off** when cookie and `NEXT_PUBLIC_ENABLE_HUMAN_CHAT` are unset.
+ * Opt in: `HYPHA_ENABLE_HUMAN_CHAT=true` or env. Kill-switch: `HYPHA_DISABLE_HUMAN_CHAT=true`.
  */
 
-test.describe('Human Chat Panel — default (enabled)', () => {
+test.describe('Human Chat Panel — default (off)', () => {
+  test('should not render Human Chat trigger on space page without opt-in', async ({
+    page,
+  }) => {
+    await page.goto('/en/dho/hypha/agreements');
+    await page.waitForLoadState('domcontentloaded');
+
+    const chatButton = page.getByRole('button', {
+      name: /open chat panel/i,
+    });
+    await expect(chatButton).not.toBeVisible();
+  });
+});
+
+test.describe('Human Chat Panel — opt-in (enabled)', () => {
+  test.use({
+    extraHTTPHeaders: extraHttpHeadersEnableHumanChat,
+  });
+
   let chatPanel: HumanChatPanelPage;
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, context }) => {
+    await addEnableHumanChatCookie(context);
     chatPanel = new HumanChatPanelPage(page);
     await chatPanel.open();
   });
@@ -47,7 +70,12 @@ test.describe('Human Chat Panel — default (enabled)', () => {
 });
 
 test.describe('Human Chat Panel — kill switch (disabled)', () => {
+  test.use({
+    extraHTTPHeaders: extraHttpHeadersEnableHumanChat,
+  });
+
   test.beforeEach(async ({ context, baseURL }) => {
+    await addEnableHumanChatCookie(context);
     await context.addCookies([
       {
         name: 'HYPHA_DISABLE_HUMAN_CHAT',
