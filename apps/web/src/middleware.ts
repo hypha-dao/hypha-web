@@ -98,7 +98,17 @@ export function middleware(request: NextRequest) {
   if (legacyNav) {
     const [, lang, dhoId] = legacyNav;
     const to = new URL(`/${lang}/dho/${dhoId}/spaces${search}`, origin);
-    return NextResponse.redirect(to);
+    const res = NextResponse.redirect(to);
+    res.headers.set('x-hypha-legacy-redirect', 'dho-spaces');
+    if (process.env.NODE_ENV === 'development') {
+      console.info(
+        '[middleware] redirect legacy dho path to /spaces',
+        request.nextUrl.pathname,
+        '→',
+        to.pathname,
+      );
+    }
+    return res;
   }
 
   const response = i18nMiddleware(request);
