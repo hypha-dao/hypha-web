@@ -1,12 +1,13 @@
-# Implementation specification — Space room calls with Signal (thread) context
+# Implementation specification — Voice and video call (Space room + Signal thread context)
 
 ## Document control
 
 | Field | Value |
 |-------|--------|
 | **Status** | Ready to implement |
-| **Parent** | [signal-thread-voip-matrix-tech-spec.md](./signal-thread-voip-matrix-tech-spec.md) |
-| **Plan** | [signal-thread-voip-implementation-plan.md](./signal-thread-voip-implementation-plan.md) — phased steps, world-class acceptance criteria, recording/transcript |
+| **Parent** | [voice-video-call-matrix-tech-spec.md](./voice-video-call-matrix-tech-spec.md) |
+| **Plan** | [voice-video-call-implementation-plan.md](./voice-video-call-implementation-plan.md) — phased steps, world-class acceptance criteria, recording/transcript |
+| **Phase 0** | [voice-video-call-phase-0-runbook.md](./voice-video-call-phase-0-runbook.md) — HS/TURN, `pnpm run check:matrix-sdk`, CSP |
 | **SDK** | `matrix-js-sdk@^40.0.0` (no v41+ in Next.js until platform upgrade) |
 | **Architecture** | **Option A** — `GroupCall` on **Space `roomId`**; **`threadRootEventId`** is **app context + optional timeline notice** only |
 
@@ -328,5 +329,5 @@ Follow [i18n-translate skill](../../.agents/skills/i18n-translate/SKILL.md) for 
 ## 9) References
 
 - [MatrixClient](https://matrix-org.github.io/matrix-js-sdk/classes/matrix.MatrixClient.html), [GroupCall](https://matrix-org.github.io/matrix-js-sdk/classes/matrix.GroupCall.html), [ICreateClientOpts](https://matrix-org.github.io/matrix-js-sdk/interfaces/matrix.ICreateClientOpts.html)
-- Parent: [signal-thread-voip-matrix-tech-spec.md](./signal-thread-voip-matrix-tech-spec.md)
+- Parent: [voice-video-call-matrix-tech-spec.md](./voice-video-call-matrix-tech-spec.md)
 - Hypha mapping: [`.agents/references/domain/hypha-matrix-mapping.md`](../../.agents/references/domain/hypha-matrix-mapping.md)

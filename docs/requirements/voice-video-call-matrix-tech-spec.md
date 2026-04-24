@@ -1,10 +1,10 @@
-# Technical Specification — Audio / video calls for Signal threads (Matrix)
+# Technical specification — Voice and video call for Signal threads (Matrix)
 
 ## Document control
 
 | Field | Value |
 |-------|--------|
-| **Status** | Architecture & requirements — **implementation:** [signal-thread-voip-implementation-spec.md](./signal-thread-voip-implementation-spec.md) — **plan & quality bar:** [signal-thread-voip-implementation-plan.md](./signal-thread-voip-implementation-plan.md) |
+| **Status** | Architecture & requirements — **implementation:** [voice-video-call-implementation-spec.md](./voice-video-call-implementation-spec.md) — **plan & quality bar:** [voice-video-call-implementation-plan.md](./voice-video-call-implementation-plan.md) — **Phase 0:** [voice-video-call-phase-0-runbook.md](./voice-video-call-phase-0-runbook.md) |
 | **Scope** | Enable **audio and video calling** initiated from a **Signal** conversation in a **Space**, using **`matrix-js-sdk@^40.0.0`** and Hypha’s existing **Space = Room**, **Signal = Thread** mapping |
 | **Normative references** | [Matrix JS SDK `MatrixClient`](https://matrix-org.github.io/matrix-js-sdk/classes/matrix.MatrixClient.html), [`GroupCall`](https://matrix-org.github.io/matrix-js-sdk/classes/matrix.GroupCall.html), [`ICreateClientOpts`](https://matrix-org.github.io/matrix-js-sdk/interfaces/matrix.ICreateClientOpts.html); Hypha: [`hypha-matrix-mapping.md`](../../.agents/references/domain/hypha-matrix-mapping.md) |
 | **SDK version constraint** | Remain on **`matrix-js-sdk@^40.0.0`**; do **not** upgrade to v41+ in Next.js until the project-wide “multiple entrypoints” issue is resolved (see existing chat requirements and matrix engineer role). |
@@ -64,7 +64,7 @@ From the public API (see [MatrixClient](https://matrix-org.github.io/matrix-js-s
 
 **There is no `Thread` parameter** on `GroupCall`: **group calls are not modeled as sub-room thread resources** in this API.
 
-**UI mapping:** A full **SDK capability → layout/control** matrix (mic, camera, **screen share**, feeds, optional PTT/stats) is in the implementation spec **§2.4 and §3.5** of [signal-thread-voip-implementation-spec.md](./signal-thread-voip-implementation-spec.md).
+**UI mapping:** A full **SDK capability → layout/control** matrix (mic, camera, **screen share**, feeds, optional PTT/stats) is in the implementation spec **§2.4 and §3.5** of [voice-video-call-implementation-spec.md](./voice-video-call-implementation-spec.md).
 
 ### 2.4 Threads vs VoIP (Hypha mapping impact)
 
@@ -79,9 +79,9 @@ Per [Hypha ↔ Matrix mapping](../../.agents/references/domain/hypha-matrix-mapp
 
 ### 2.5 Implementation handoff
 
-Normative file paths, API shape, UI placement, i18n keys, and acceptance criteria for engineers are in **[signal-thread-voip-implementation-spec.md](./signal-thread-voip-implementation-spec.md)**.
+Normative file paths, API shape, UI placement, i18n keys, and acceptance criteria for engineers are in **[voice-video-call-implementation-spec.md](./voice-video-call-implementation-spec.md)**.
 
-Phased **step-by-step plan**, **world-class** acceptance criteria (quality + UX), and **recording / transcript** (organizational memory in the Space) are in **[signal-thread-voip-implementation-plan.md](./signal-thread-voip-implementation-plan.md)**.
+Phased **step-by-step plan**, **world-class** acceptance criteria (quality + UX), and **recording / transcript** (organizational memory in the Space) are in **[voice-video-call-implementation-plan.md](./voice-video-call-implementation-plan.md)**.
 
 ---
 

@@ -1,11 +1,12 @@
-# Implementation plan — Space audio/video calls (world-class UX)
+# Implementation plan — Voice and video call (world-class UX)
 
 ## Document control
 
 | Field | Value |
 |-------|--------|
 | **Status** | Ready to execute (phased) |
-| **Specs** | [signal-thread-voip-matrix-tech-spec.md](./signal-thread-voip-matrix-tech-spec.md), [signal-thread-voip-implementation-spec.md](./signal-thread-voip-implementation-spec.md) |
+| **Specs** | [voice-video-call-matrix-tech-spec.md](./voice-video-call-matrix-tech-spec.md), [voice-video-call-implementation-spec.md](./voice-video-call-implementation-spec.md) |
+| **Phase 0 (env)** | [voice-video-call-phase-0-runbook.md](./voice-video-call-phase-0-runbook.md) — HS/TURN checklist, CSP notes, `pnpm run check:matrix-sdk` |
 | **Media storage alignment** | Implementations of **recording** and **artifact URLs** SHALL follow the Hypha **space media storage** design. **Reference:** [Cursor agent / branch — space media storage](https://cursor.com/agents/bc-31e34c30-45d0-4f7a-b00b-9a6f46346b06?branch=cursor%2F-bc-31e34c30-45d0-4f7a-b00b-9a6f46346b06-b1a4) (use this as the source of truth for buckets, paths, signed URLs, and DB linkage to `spaces`). If that document moves, replace the link in a follow-up commit. |
 
 ---
@@ -23,18 +24,20 @@
 
 ### Phase 0 — Prerequisites and environment
 
+**Status:** **Implemented in repo** (runbook, version check script, `next.config` note). Homeserver and two-browser tests remain **operator acceptance** on each environment.
+
 | Step | Action | Done when |
 |------|--------|-----------|
-| 0.1 | Confirm **homeserver** supports Matrix VoIP / group calls and **TURN** (or `getTurnServers` returns usable ICE servers). | Document HS version + VoIP checklist in runbook. |
-| 0.2 | Staging: **two browsers**, two users, same Space — verify **TURN** path (e.g. force relay in dev to simulate strict NAT). | ICE connected; audio heard both ways. |
-| 0.3 | Lock **`matrix-js-sdk@^40`** in all consumers; **no v41** in Next until platform upgrade (existing project rule). | CI / dependency review passes. |
-| 0.4 | Review **CSP** and headers for `getUserMedia`, workers if any, and **media** domains used later for recording. | Security sign-off note in PR. |
+| 0.1 | Confirm **homeserver** supports Matrix VoIP / group calls and **TURN** (or `getTurnServers` returns usable ICE servers). | [voice-video-call-phase-0-runbook.md](./voice-video-call-phase-0-runbook.md) §0.1 checklist run per environment; HS version recorded. |
+| 0.2 | Staging: **two browsers**, two users, same Space — verify **TURN** path (e.g. force relay in dev to simulate strict NAT). | Procedure in runbook §0.1; **ICE + audio** after Phase 1+ UI. |
+| 0.3 | Lock **`matrix-js-sdk@^40`** in all consumers; **no v41** in Next until platform upgrade (existing project rule). | **`pnpm run check:matrix-sdk`** passes; lockfile resolves to **40.x** (e.g. `40.2.0`). |
+| 0.4 | Review **CSP** and headers for `getUserMedia`, workers if any, and **media** domains used later for recording. | Runbook §0.3 + `apps/web/next.config.ts` comment; security re-review when CSP tightens. |
 
 ### Phase 1 — Core client: `createClient` + `useSpaceGroupCall`
 
 | Step | Action | Done when |
 |------|--------|-----------|
-| 1.1 | Extend **`matrix-provider.tsx`** `createClient` with VoIP options per [implementation spec §2.1](./signal-thread-voip-implementation-spec.md). | `disableVoip: false`; explicit opts in code comments. |
+| 1.1 | Extend **`matrix-provider.tsx`** `createClient` with VoIP options per [implementation spec §2.1](./voice-video-call-implementation-spec.md). | `disableVoip: false`; explicit opts in code comments. |
 | 1.2 | Add **`use-space-group-call.ts`** (or equivalent) implementing **`waitUntilRoomReadyForGroupCalls` → get/create `GroupCall` → `enter` / `leave`**; expose **`callState`**, **`callKind`**, mute/camera/screenshare as per spec. | Unit tests with mocked `MatrixClient`; no duplicate `GroupCall` per `roomId`. |
 | 1.3 | Export hook from **`@hypha-platform/core`** barrel. | Epics can import without deep paths. |
 
@@ -86,7 +89,7 @@
 
 ## 3) Acceptance criteria — world-class quality & top-tier UX
 
-These criteria **supplement** §7 of the [implementation spec](./signal-thread-voip-implementation-spec.md). All must be satisfied for the epic to be considered **complete** for “production-grade” calling.
+These criteria **supplement** §7 of the [implementation spec](./voice-video-call-implementation-spec.md). All must be satisfied for the epic to be considered **complete** for “production-grade” calling.
 
 ### 3.1 Functional (calling)
 
@@ -183,9 +186,10 @@ Implementers SHALL define a **dedicated** persistence layer (example shape — a
 
 | Artifact | Location |
 |----------|----------|
-| Architecture | [signal-thread-voip-matrix-tech-spec.md](./signal-thread-voip-matrix-tech-spec.md) |
-| UI + SDK mapping | [signal-thread-voip-implementation-spec.md](./signal-thread-voip-implementation-spec.md) |
+| Architecture | [voice-video-call-matrix-tech-spec.md](./voice-video-call-matrix-tech-spec.md) |
+| UI + SDK mapping | [voice-video-call-implementation-spec.md](./voice-video-call-implementation-spec.md) |
 | Phasing + quality bar + memory | This document |
+| Phase 0 runbook | [voice-video-call-phase-0-runbook.md](./voice-video-call-phase-0-runbook.md) |
 
 ---
 
