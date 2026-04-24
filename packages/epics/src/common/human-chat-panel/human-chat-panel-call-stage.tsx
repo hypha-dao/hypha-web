@@ -694,12 +694,7 @@ const FeedContent = ({
             )}
           >
             {label}
-            {feed.isAudioMuted() && !feed.isLocal()
-              ? ` · ${t('callParticipantMuted')}`
-              : null}
-            {feed.isLocal() && feed.isAudioMuted()
-              ? ` · ${t('callParticipantMuted')}`
-              : null}
+            {feed.isAudioMuted() ? ` · ${t('callParticipantMuted')}` : null}
           </p>
           <CallAudioVoiceWaves
             active={showVoiceWaves}
