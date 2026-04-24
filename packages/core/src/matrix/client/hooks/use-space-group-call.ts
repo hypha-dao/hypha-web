@@ -2,12 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as MatrixSdk from 'matrix-js-sdk';
+import { GroupCallEventHandlerEvent } from 'matrix-js-sdk/lib/webrtc/groupCallEventHandler';
 import { useMatrix } from '../providers/matrix-provider';
 import { isPermissionLikeGroupCallError } from './space-group-call-utils';
 import { logSpaceGroupCallEvent } from './space-group-call-telemetry';
-
-/** matrix-js-sdk client emits this when a room GroupCall is terminated. */
-const GROUP_CALL_ENDED_EVENT = 'GroupCall.ended' as const;
 
 export type SpaceGroupCallState =
   | 'idle'
@@ -651,17 +649,16 @@ export function useSpaceGroupCall(roomId: string | null) {
       if (ended.room?.roomId !== roomId) return;
       sync();
     };
-    const c = client as MatrixSdk.MatrixClient & {
-      on(ev: string, fn: (ended: MatrixSdk.GroupCall) => void): void;
-      removeListener(
-        ev: string,
-        fn: (ended: MatrixSdk.GroupCall) => void,
-      ): void;
-    };
-    c.on(GROUP_CALL_ENDED_EVENT, onEnded);
+    client.on(
+      GroupCallEventHandlerEvent.Ended,
+      onEnded as (ended: MatrixSdk.GroupCall) => void,
+    );
     const unsub = () => {
       gc.removeListener(GroupCallEvent.ParticipantsChanged, sync);
-      c.removeListener(GROUP_CALL_ENDED_EVENT, onEnded);
+      client.removeListener(
+        GroupCallEventHandlerEvent.Ended,
+        onEnded as (ended: MatrixSdk.GroupCall) => void,
+      );
     };
     idleGroupCallUnsubRef.current = unsub;
     return () => {
