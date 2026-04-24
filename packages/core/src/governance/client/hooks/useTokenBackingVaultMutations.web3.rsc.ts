@@ -71,15 +71,8 @@ async function readTokenSymbol(address: `0x${string}`): Promise<string | null> {
   }
 }
 
-function shortAddress(addr: string): string {
-  if (addr.length <= 12) return addr;
-  return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
-}
-
-function tokenLabel(symbol: string | null, address: string): string {
-  return symbol
-    ? `"${symbol}" (${shortAddress(address)})`
-    : `at ${shortAddress(address)}`;
+function tokenLabel(symbol: string | null): string {
+  return symbol ? `"${symbol}"` : 'one of the selected tokens';
 }
 
 interface TokenBackingVaultInput {
@@ -174,11 +167,33 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
         ? currentVaultConfig.redeemEnabled
         : false;
 
-      // True when this proposal will create a brand new vault via addBackingToken.
-      // _getOrCreateVault sets minimumBackingBps, redemptionPrice/currencyFeed,
-      // maxRedemptionBps and maxRedemptionPeriodDays during creation, so the
+      // The contract accepts an empty-vault setup via the new createVault()
+      // entry point. Use it when the user wants to spin up a vault now and
+      // register backing collateral later.
+      const willCreateEmptyVault =
+        arg.activateVault && !vaultExists && validAddCollaterals.length === 0;
+
+      // True when this proposal will create a brand new vault.
+      // _getOrCreateVault initializes minimumBackingBps, redemptionPrice/currencyFeed,
+      // maxRedemptionBps and maxRedemptionPeriodDays at creation, so the
       // separate set* calls below would be redundant in that case.
-      const isCreatingNewVault = !vaultExists && willAddBacking;
+      const isCreatingNewVault =
+        !vaultExists && (willAddBacking || willCreateEmptyVault);
+
+      // Hoist the contract-shaped values that need to be visible both to
+      // the preflight (to decide whether tokenPrice() is mandatory) and
+      // the transaction-building block.
+      const redemptionPrice = arg.tokenPrice
+        ? BigInt(
+            Math.round(parseFloat(arg.tokenPrice) * Number(PRICE_PRECISION)),
+          )
+        : 0n;
+      const currencyFeed =
+        (arg.referenceCurrency as `0x${string}`) ??
+        (CURRENCY_FEEDS.USD as `0x${string}`);
+      const minimumBackingBps = BigInt((arg.minimumBackingPercent ?? 0) * 100);
+      const maxRedemptionBps = BigInt((arg.maxRedemptionPercent ?? 0) * 100);
+      const maxRedemptionPeriodDays = BigInt(arg.maxRedemptionPeriodDays ?? 0);
 
       // Read the vault's existing backing tokens once and reuse the resulting
       // Set for both the preflight (to skip already-configured tokens — those
@@ -215,31 +230,22 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
       const validationErrors: string[] = [];
       const SUPPORTED_TOKENS_HINT = 'USDC, WETH, cbBTC, or EURC';
 
-      // Contract requires at least one backing token to create a vault.
-      if (
-        arg.activateVault &&
-        !vaultExists &&
-        validAddCollaterals.length === 0
-      ) {
-        validationErrors.push(
-          'Please add at least one backing token before creating the vault.',
-        );
-      }
-
-      // Space token must have tokenPrice() > 0 when creating a new vault.
-      if (isCreatingNewVault) {
+      // Space token must have tokenPrice() > 0 when creating a new vault,
+      // UNLESS a redemption-price override is being set in this proposal.
+      // The contract's _requirePriceableSpaceToken accepts either source.
+      if (isCreatingNewVault && redemptionPrice === 0n) {
         const [spaceTokenSymbol, spaceTokenPrice] = await Promise.all([
           readTokenSymbol(spaceToken),
           readTokenPrice(spaceToken),
         ]);
-        const label = tokenLabel(spaceTokenSymbol, spaceToken);
+        const label = tokenLabel(spaceTokenSymbol);
         if (spaceTokenPrice === null) {
           validationErrors.push(
-            `We couldn't read a price from the space token ${label}. Make sure it's a token issued by your space, then try again.`,
+            `We couldn't read a price from the space token ${label}. Either set a price on it or set a redemption price below, then try again.`,
           );
         } else if (spaceTokenPrice === 0n) {
           validationErrors.push(
-            `The space token ${label} doesn't have a price yet. Open the token settings, set its price, and then come back here to create the vault.`,
+            `The space token ${label} doesn't have a price yet. Either set its price, or set a redemption price below to use that instead.`,
           );
         }
       }
@@ -260,7 +266,7 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
               readTokenSymbol(tokenAddr),
               readTokenPrice(tokenAddr),
             ]);
-            const label = tokenLabel(symbol, tokenAddr);
+            const label = tokenLabel(symbol);
             if (price === null) {
               validationErrors.push(
                 `We can't find a price source for the backing token ${label}. Pick a supported token (${SUPPORTED_TOKENS_HINT}) or a token issued by your space that already has a price set.`,
@@ -312,6 +318,28 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
         }
       }
 
+      if (willCreateEmptyVault) {
+        // No backing tokens to register — call the dedicated createVault()
+        // entry point to spin up the empty vault with its config.
+        transactions.push({
+          target: vaultAddress,
+          value: 0n,
+          data: encodeFunctionData({
+            abi: tokenBackingVaultImplementationAbi,
+            functionName: 'createVault',
+            args: [
+              spaceId,
+              spaceToken,
+              minimumBackingBps,
+              redemptionPrice,
+              currencyFeed,
+              maxRedemptionBps,
+              maxRedemptionPeriodDays,
+            ],
+          }),
+        });
+      }
+
       if (willAddBacking && validAddCollaterals.length) {
         // Reuses `existingBackingTokens` populated above so the same
         // membership decision drives both preflight validation and the
@@ -359,26 +387,6 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
             fundingAmounts.push(parseUnits(c.amount, decimals));
           }
 
-          const minimumBackingBps = BigInt(
-            (arg.minimumBackingPercent ?? 0) * 100,
-          );
-          const redemptionPrice = arg.tokenPrice
-            ? BigInt(
-                Math.round(
-                  parseFloat(arg.tokenPrice) * Number(PRICE_PRECISION),
-                ),
-              )
-            : 0n;
-          const currencyFeed =
-            (arg.referenceCurrency as `0x${string}`) ??
-            (CURRENCY_FEEDS.USD as `0x${string}`);
-          const maxRedemptionBps = BigInt(
-            (arg.maxRedemptionPercent ?? 0) * 100,
-          );
-          const maxRedemptionPeriodDays = BigInt(
-            arg.maxRedemptionPeriodDays ?? 0,
-          );
-
           transactions.push({
             target: vaultAddress,
             value: 0n,
@@ -404,7 +412,7 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
       }
 
       if (
-        (willAddBacking || vaultExists) &&
+        (willAddBacking || willCreateEmptyVault || vaultExists) &&
         (!vaultExists || currentRedeemEnabled !== arg.enableRedemption)
       ) {
         transactions.push({
@@ -418,7 +426,10 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
         });
       }
 
-      if (arg.redemptionStartDate && (willAddBacking || vaultExists)) {
+      if (
+        arg.redemptionStartDate &&
+        (willAddBacking || willCreateEmptyVault || vaultExists)
+      ) {
         const startDate = BigInt(
           Math.floor(arg.redemptionStartDate.getTime() / 1000),
         );
@@ -434,13 +445,9 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
       }
 
       // The next three calls are redundant when creating a new vault —
-      // addBackingToken already passes the same values into _getOrCreateVault.
-      // Only emit them when updating an existing vault.
+      // addBackingToken / createVault already pass the same values into
+      // _getOrCreateVault. Only emit them when updating an existing vault.
       if (!isCreatingNewVault && arg.tokenPrice && arg.referenceCurrency) {
-        const redemptionPrice = BigInt(
-          Math.round(parseFloat(arg.tokenPrice) * Number(PRICE_PRECISION)),
-        );
-        const currencyFeed = arg.referenceCurrency as `0x${string}`;
         transactions.push({
           target: vaultAddress,
           value: 0n,
@@ -454,8 +461,8 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
 
       if (
         !isCreatingNewVault &&
-        (arg.maxRedemptionPercent ?? 0) > 0 &&
-        (arg.maxRedemptionPeriodDays ?? 0) > 0
+        maxRedemptionBps > 0n &&
+        maxRedemptionPeriodDays > 0n
       ) {
         transactions.push({
           target: vaultAddress,
@@ -466,25 +473,21 @@ export const useTokenBackingVaultMutationsWeb3Rsc = ({
             args: [
               spaceId,
               spaceToken,
-              BigInt((arg.maxRedemptionPercent ?? 0) * 100),
-              BigInt(arg.maxRedemptionPeriodDays ?? 0),
+              maxRedemptionBps,
+              maxRedemptionPeriodDays,
             ],
           }),
         });
       }
 
-      if (!isCreatingNewVault && (arg.minimumBackingPercent ?? 0) > 0) {
+      if (!isCreatingNewVault && minimumBackingBps > 0n) {
         transactions.push({
           target: vaultAddress,
           value: 0n,
           data: encodeFunctionData({
             abi: tokenBackingVaultImplementationAbi,
             functionName: 'setMinimumBacking',
-            args: [
-              spaceId,
-              spaceToken,
-              BigInt((arg.minimumBackingPercent ?? 0) * 100),
-            ],
+            args: [spaceId, spaceToken, minimumBackingBps],
           }),
         });
       }

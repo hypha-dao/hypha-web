@@ -181,9 +181,8 @@ export const CreateProposalTokenBackingVaultForm = ({
       message={
         isError ? (
           <div className="flex flex-col gap-3 max-w-lg text-left">
-            <div className="font-medium">{tSpaces('errorOhSnap')}</div>
             {errorMessages.length > 0 && (
-              <ul className="text-2 text-neutral-11 list-disc pl-4 space-y-1 whitespace-pre-wrap break-words">
+              <ul className="text-2 text-neutral-11 list-disc pl-4 space-y-2 whitespace-pre-wrap break-words">
                 {errorMessages.map((msg, i) => (
                   <li key={i}>{msg}</li>
                 ))}
