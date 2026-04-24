@@ -32,10 +32,14 @@ export const useMe = (): {
   );
 
   const isMe = React.useCallback(
-    (personSlug: string): boolean => {
-      if (isLoadingJwt || isLoadingPerson) return false;
-      if (!person?.slug || !personSlug) return false;
-      return person.slug === personSlug;
+    (personSlug: string) => {
+      return (
+        !isLoadingJwt &&
+        !isLoadingPerson &&
+        person?.slug &&
+        personSlug &&
+        person.slug === personSlug
+      );
     },
     [person, isLoadingJwt, isLoadingPerson],
   );
