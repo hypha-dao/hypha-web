@@ -364,7 +364,51 @@ type HumanChatPanelCallToolbarProps = {
 
 **Rationale (non-normative):** Sidebar and modal share **one** `GroupCall`, but the **UI** is different: a **condensed** grid in the **panel** vs. a **hero** main surface in the modal. Re-applying the **grid** that centers **`max-w-2xl`** or leaves unassigned `grid-cols` tracks in **full view** reproduces the narrow-tile + void bug; FV-1–FV-2 name the required **“main stage = full width”** contract explicitly.
 
-**Status (implemented in codebase):** `layout=fullView` uses: **(1)** **single** remote (or local solo) camera with **no** `grid` — **flex** column with **`flex-1`**, **`absolute inset-0`** video in tile (`FeedContent`); **(2)** `grid-cols-2` at `sm+` only when there are **≥2** user tiles, else **`grid-cols-1`**; **(3)** screen share blocks **`flex-1`**, camera strip below with **`max-h` cap**; **(4)** screen share tile wrapper **`flex-1` flex-col`**. PR screenshot per **FV-6** is still a **product** / review artifact.
+**Status (implemented in codebase):** `layout=fullView` uses: **(1)** **single** remote (or local solo) camera with **no** `grid` — **flex** column with **`flex-1`**, **`absolute inset-0`** video in tile (`FeedContent`); **(2)** `grid-cols-2` at `sm+` only when there are **≥2** user tiles, else **`grid-cols-1`**; **(3)** screen share blocks **`flex-1`**, camera strip below with **`max-h` cap**; **(4)** screen share tile wrapper **`flex-1` flex-col`**. PR screenshot per **FV-6** is still a **product** / review artifact. **Follow-up (normative, see §3.4.4.2–§3.4.4.3):** screen share **must** consume **all** of the main stage **except** an **explicit** thumbnail / filmstrip reserve; user-selectable **layout modes** (Zoom-like) and **icon contrast** on the modal control bar (§3.4.4.4).
+
+##### 3.4.4.2 Screen share + camera — **real estate** in **full view** (normative)
+
+**Reference UX:** [Zoom’s screen sharing layouts](https://support.zoom.com/hc/en/article/201362153-Sharing-a-screen) — *speakers can appear beside or on top of shared content; participants can change layout.* Hypha is **not** required to copy Zoom pixel-for-pixel; the spec **does** require the **same class of control**: **one dominant surface** (the share) **plus** a **non-wasteful** region for **participants**, without **huge** black voids beside a **postage-stamp** share (see FV-1, FV-2).
+
+| ID | Normative rule |
+| --- | --- |
+| **SS-1** | When **at least one** `screenshareFeeds` item is **visible** in **full view**, the **shared screen** (dominant `CallFeed` / `&lt;video&gt;`) **SHALL** be laid out in a **container** that is **`flex-1` `min-h-0`** in the **fill area** and **`width: 100%`**, so the **stage canvas** (dark background) is **filled** by the **combination** of (a) the **share** and (b) the **participant video** affordance, **not** a **small** share with **60%+** of the **width** or **height** unused. |
+| **SS-2** | **Reserved band for video:** A **dedicated** sub-layout (see §3.4.4.3) **SHALL** allocate space for **participant** tiles (thumbnails, filmstrip, or overlay) using **explicit** CSS (e.g. a **row** with **`min-h-[…]`** / **`max-h-[…]`**, or a **grid track**, or **overlay** `inset`); **MUST NOT** leave **unlabeled** “dead” `flex-1` siblings that read as **empty** black. |
+| **SS-3** | **`object-contain`** on the **share** `&lt;video&gt;` **MAY** letterbox **inside** the share’s **own** tile box (preserve aspect) **only if** that tile box already **takes** the **intended** fraction of the stage (per **SS-1** and the **selected layout mode**). **Not allowed:** a **tiny** `max-w-*` share tile centered in a **huge** unused canvas when **layout mode** expects **side-by-side** or **top + bottom**. |
+| **SS-4** | The **in-panel** stage (sidebar) **MAY** keep a **simpler** default; **full view** **MUST** satisfy **SS-1**–**SS-3** when the user opens the modal while screen share is active. |
+
+**Acceptance (visual):** For **1** remote (or local) **screen share** + **1** user-media tile, capture **screenshots** at **~1280×800** and **~1920×1000** showing: **no** “hall of mirrors”-scale **framing** bug (share is **visibly** the **primary** surface; thumbnails are **clearly** in the **designated** band, not an accident of empty space).
+
+##### 3.4.4.3 **Layout mode** (Zoom-style) — user choice (normative, full view)
+
+**Product goal:** The user can **arrange** how **cameras** relate to **screen share**, similar in **spirit** to Zoom’s **“side-by-side mode / speaker on top / hide thumbnails”** style controls — without changing `GroupCall` or feed wiring.
+
+| Topic | Normative text |
+| --- | --- |
+| **Where** | A **layout** control is **SHALL** appear in the **full view** dialog (toolbar row near **Close**, or a **`DropdownMenu`** / **segmented** control) **when** `screenshareFeeds.length +` relevant user tiles implies **share + at least one** camera. **MAY** be **hidden** when there is **no** screen share (only gallery video) — **then** the stage follows **§3.5** / FV-5. |
+| **Default** | **Side-by-side main** (see below): **Share** uses the **largest** continuous rectangle; **user-media** appears in a **secondary** region (**filmstrip** below, or **column** to the right at **`@media (min-width: …)`**). This **MUST** be the **initial** mode when the user opens full view with share active, unless **persisted** user preference (optional) says otherwise. |
+| **Mode A — “Filmstrip” (default)** | **Share: top / main** (`flex-1`), **participants: bottom** strip with **horizontal** scroll if needed. **Min** strip height (product: e.g. **88–120px**) to keep faces legible. |
+| **Mode B — “Share left / people right”** | On **wide** viewports, **split** the fill area: **share ~65–80%** width, **user-media column** (stacked tiles) for the **rest**. **MUST** define a **breakpoint**; below it, **fall back** to Mode A or a compact two-row layout. |
+| **Mode C — “Speaker / primary on top”** | The **active speaker** (or **pinned** feed, if product adds pin later) **large** tile **above** the **share**; **share** fills **remaining** **height** — *Zoom “speaker on top of shared content”* analog. **If** the SDK’s **active speaker** is **unreliable**, **MUST** document **fallback** (e.g. first remote **camera** tile). |
+| **Mode D — “Video on content” (PiP / overlay)** | One or more **camera** tiles as **overlays** on the **share** (default **bottom-end**; optional **user** corner selector **later**). **MUST** avoid **hiding** critical **share** UI; **MUST** keep **z-index** so controls (§3.4.4.4) stay **above** these tiles. |
+| **State** | Selected mode **SHALL** live in **React** state (full view). **MAY** persist in **`localStorage`** as `hypha.callFullViewLayoutMode` (string enum) for **return visits**. **MUST** reset to **default** on **new** full view open **if** product decides **session-only** — **document** the choice. |
+| **a11y** | The **layout** trigger **MUST** have **`aria-label`** (i18n), **keyboard** access, and a **description** in the **dialog** or **menu** entry for each option. |
+| **i18n** | New keys (example names): `callLayoutMode`, `callLayoutFilmstrip`, `callLayoutSideBySide`, `callLayoutSpeakerOnTop`, `callLayoutPip` — all locales. |
+
+**Out of scope for v1.0 of this spec item:** **Browser** native `requestFullscreen` on the share `&lt;video&gt;` only; **multi-screen** picker; **separate** window pop-out. **MAY** be a follow-up ADR.
+
+##### 3.4.4.4 **In-modal** call **controls** — **icon** visibility (normative)
+
+**Problem:** Circular buttons use **dark** (e.g. `zinc-900/85`) or **accent** (green) backgrounds; **outline** icons with **low-contrast** stroke (dark-on-dark) **fail** visual verification and **WCAG** non-text contrast where applicable.
+
+| ID | Normative rule |
+| --- | --- |
+| **IC-1** | For `variant=fullView` in **`HumanChatPanelInCallControls`**, **mic**, **camera**, and **screen share** **icons** (Lucide or custom) **SHALL** use **`className` / `stroke` such that the glyph renders as** **white** or **near-white** (`#fff` or **&gt;3:1** against the button **fill** for **default** and **active** (green) **states**). **Forbidden:** `currentColor` resolving to **near-black** on `bg-zinc-900/85` or `bg-accent-*`. |
+| **IC-2** | The **end call** (destructive) button **SHALL** keep a **white** (or `destructive-foreground`) **icon** on **`bg-destructive`**, with **stroke width** ≥ the **default** for **legibility** at `h-10` / `h-11` touch sizes. **Custom** SVGs (e.g. hang-up handset) **MUST** use the same **contrast** rule. |
+| **IC-3** | **Focus / disabled:** When **`disabled`**, **SHALL** reduce **opacity** of the **entire** button, **not** only the icon (avoids “invisible” glyph with active-looking chrome). **Focus ring** **SHALL** remain **visible** on the **control**, not the icon alone. |
+| **IC-4** | The **in-banner** strip (`variant=inBanner`, light background) **MAY** use **theme** `text-foreground` for icons; **MUST** verify both themes (light **and** **dark** panel) in QA. If **banner** and **full view** diverge, **document** in the component with a short comment. |
+
+**QA matrix:** Full view, **light** and **dark** app theme, **all four** control types (mic on/off, cam on/off, share on/off, leave) — **no** “missing” or **&lt;3:1** **glyph** on **default** and **active** (green) **backgrounds**.
 
 **Accessibility (WCAG-aligned, normative minimum)**
 
@@ -431,6 +475,7 @@ Until Signal/thread routing is wired end-to-end:
 | `callSearchComingSoon`                         | Search stub tooltip                                                        |
 | `callFullView`                                 | **Full view** / expand button (`aria-label`) and optional dialog **title** |
 | `callFullViewClose`                            | Close / dismiss full-view modal (button)                                   |
+| `callLayoutMode` / `callLayoutFilmstrip` / `callLayoutSideBySide` / `callLayoutSpeakerOnTop` / `callLayoutPip` | **Full view** — screen-share **layout** menu (§3.4.4.3) and option labels  |
 | `callJoinStripTitle` / `callJoinStripDevices`   | **Join** strip: heading + “N devices in call” (pluralized)                 |
 | `callJoinWithAudio` / `callJoinWithVideo`        | `aria-label` for **Join** strip and toolbar when room call is active         |
 | `callJoinWithAudioShort` / `callJoinWithVideoShort` | Short button labels in the strip                                        |
