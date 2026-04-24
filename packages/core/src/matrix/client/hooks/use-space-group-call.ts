@@ -171,11 +171,20 @@ export function useSpaceGroupCall(roomId: string | null) {
     setParticipantCount(n);
   }, []);
 
+  /**
+   * @param excludeUserId — when the local user is **not** in-session (idle path),
+   *   omit their row so a stale `participants` entry after `leave()` does not
+   *   keep "call in progress" / Join UI visible (see Hypha join strip).
+   */
   const readParticipantsFromGroupCall = useCallback(
-    (gc: MatrixSdk.GroupCall) => {
+    (gc: MatrixSdk.GroupCall, excludeUserId?: string | null) => {
       const userIdSet = new Set<string>();
       let deviceCount = 0;
       for (const [member, deviceMap] of gc.participants) {
+        // Idle UI only: never count the local user as "others in a call you can join".
+        if (excludeUserId && member.userId === excludeUserId) {
+          continue;
+        }
         for (const _x of deviceMap.values()) {
           deviceCount += 1;
           if (member.userId) userIdSet.add(member.userId);
@@ -617,6 +626,8 @@ export function useSpaceGroupCall(roomId: string | null) {
     const gc = client.getGroupCallForRoom(roomId);
     if (!gc) return;
 
+    const myId = client.getUserId() ?? null;
+
     const sync = () => {
       if (groupCallRef.current) {
         return;
@@ -627,7 +638,7 @@ export function useSpaceGroupCall(roomId: string | null) {
         setIdleInCallUserIds([]);
         return;
       }
-      const p = readParticipantsFromGroupCall(current);
+      const p = readParticipantsFromGroupCall(current, myId);
       if (p.count === 0) {
         setIdleRoomParticipantCount(0);
         setIdleInCallUserIds([]);
