@@ -144,6 +144,14 @@
       "noAccess": "Sie haben keinen Zugriff, um die Space-Navigation anzuzeigen."
     }
   },
+  "DhoWorkspaceNav": {
+    "spaceNavAriaLabel": "Space-Bereiche",
+    "openSpaceMenu": "Space-Menü",
+    "spaceMenuTitle": "Space",
+    "closeMenu": "Schließen",
+    "spacesPageStubTitle": "Spaces (Vorschau)",
+    "spacesPageStubDescription": "Hier erscheinen der Graph und die Liste verschachtelter Spaces. Dies ist ein Platzhalter für die Entwicklung."
+  },
   "SpaceSettingsAction": {
     "title": "Space-Einstellungen",
     "content": "Greifen Sie auf die Einstellungen Ihres Spaces zu und verwalten Sie sie, einschließlich Erscheinungsbild, Struktur, Methoden, Mitgliedschaft und Schatzkammer.",

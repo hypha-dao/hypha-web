@@ -144,6 +144,14 @@
       "noAccess": "You do not have access to view space navigation."
     }
   },
+  "DhoWorkspaceNav": {
+    "spaceNavAriaLabel": "Space sections",
+    "openSpaceMenu": "Space menu",
+    "spaceMenuTitle": "Space",
+    "closeMenu": "Close",
+    "spacesPageStubTitle": "Spaces (preview)",
+    "spacesPageStubDescription": "The nested space graph and list will appear here. This is a development placeholder."
+  },
   "SpaceSettingsAction": {
     "title": "Space Settings",
     "content": "Access and manage the settings for your space, including its appearance, structure, methods, membership, and treasury.",
