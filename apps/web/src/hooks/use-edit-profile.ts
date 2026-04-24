@@ -2,16 +2,79 @@
 
 import { useCallback, useReducer, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { z } from 'zod';
-import {
-  schemaEditPerson,
-  PersonFiles,
-  useJwt,
-} from '@hypha-platform/core/client';
+import { isAddress } from 'viem';
+import { type Person, PersonFiles, useJwt } from '@hypha-platform/core/client';
 import { usePeopleFileUploads } from './use-people-file-uploads';
 import { useAuthHeader } from './use-auth-header';
 import { produce } from 'immer';
 import type { ProfileFormData } from './profile-form-data';
+
+/** API trust boundary: avoid `Invalid Date` when timestamps are absent or malformed. */
+function toDate(value: unknown): Date {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+  if (typeof value === 'string' || typeof value === 'number') {
+    const d = new Date(value);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+  return new Date(0);
+}
+
+function optStringField(value: unknown): string | undefined {
+  if (value == null) return undefined;
+  if (typeof value === 'string') {
+    const t = value.trim();
+    return t === '' ? undefined : t;
+  }
+  return undefined;
+}
+
+function optStringArrayField(value: unknown): string[] | undefined {
+  if (value == null) return undefined;
+  if (!Array.isArray(value)) return undefined;
+  const out: string[] = [];
+  for (const item of value) {
+    if (typeof item === 'string') out.push(item);
+  }
+  return out;
+}
+
+function optEthAddressField(value: unknown): `0x${string}` | undefined {
+  if (typeof value !== 'string' || !isAddress(value, { strict: false })) {
+    return undefined;
+  }
+  return value as `0x${string}`;
+}
+
+function parseApiPerson(raw: unknown): Person | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const p = raw as Record<string, unknown>;
+  const idRaw = p.id;
+  const id =
+    typeof idRaw === 'number'
+      ? idRaw
+      : typeof idRaw === 'string'
+      ? Number.parseInt(idRaw, 10)
+      : NaN;
+  const slug = typeof p.slug === 'string' ? p.slug.trim() : '';
+  if (!Number.isFinite(id) || !slug) return null;
+  return {
+    id,
+    name: optStringField(p.name),
+    surname: optStringField(p.surname),
+    email: optStringField(p.email),
+    slug,
+    sub: optStringField(p.sub),
+    avatarUrl: optStringField(p.avatarUrl),
+    leadImageUrl: optStringField(p.leadImageUrl),
+    description: optStringField(p.description),
+    location: optStringField(p.location),
+    nickname: optStringField(p.nickname),
+    address: optEthAddressField(p.address),
+    links: optStringArrayField(p.links),
+    createdAt: toDate(p.createdAt),
+    updatedAt: toDate(p.updatedAt),
+  };
+}
 
 export enum TaskStatus {
   IDLE = 'idle',
@@ -88,7 +151,7 @@ export const useEditProfile = (endpoint = '/api/v1/people/edit-profile') => {
   const [lastStartedTask, setLastStartedTask] = useState<TaskName | null>(null);
 
   const editProfile = useCallback(
-    async (data: ProfileFormData) => {
+    async (data: ProfileFormData): Promise<Person | null> => {
       if (!headers) {
         throw new Error('No auth headers available');
       }
@@ -131,7 +194,8 @@ export const useEditProfile = (endpoint = '/api/v1/people/edit-profile') => {
           throw new Error(errorData.error || 'Failed to update profile');
         }
 
-        await response.json();
+        const result = (await response.json()) as { profile?: unknown };
+        const nextPerson = parseApiPerson(result.profile);
 
         dispatch({ type: 'COMPLETE_TASK', taskName: 'EDIT_PROFILE' });
 
@@ -144,6 +208,8 @@ export const useEditProfile = (endpoint = '/api/v1/people/edit-profile') => {
         dispatch({ type: 'COMPLETE_TASK', taskName: 'CONFIRM_CHANGES' });
 
         router.refresh();
+
+        return nextPerson;
       } catch (err) {
         const message =
           err instanceof Error ? err.message : 'Unknown profile update error';

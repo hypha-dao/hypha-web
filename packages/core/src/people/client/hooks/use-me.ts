@@ -7,7 +7,11 @@ import { Person, useJwt } from '@hypha-platform/core/client';
 export const useMe = (): {
   person: Person | undefined;
   isLoading: boolean;
-  revalidate: () => Promise<void>;
+  /**
+   * Refetch `/me`, or set cache from a known-good `Person` (e.g. right after save)
+   * without waiting for a network round-trip.
+   */
+  revalidate: (next?: Person) => Promise<Person | undefined>;
   isMe: (personSlug: string) => boolean;
 } => {
   const { jwt, isLoadingJwt } = useJwt();
@@ -18,32 +22,38 @@ export const useMe = (): {
     data: person,
     isLoading: isLoadingPerson,
     mutate,
-  } = useSWR(jwt ? [endpoint, jwt] : null, ([endpoint, jwt]) =>
+  } = useSWR<Person>(jwt ? [endpoint, jwt] : null, ([endpoint, jwt]) =>
     fetch(endpoint, {
       headers: {
         Authorization: `Bearer ${jwt}`,
         'Content-Type': 'application/json',
       },
-    }).then((res) => res.json()),
+    }).then((res) => res.json() as Promise<Person>),
   );
 
   const isMe = React.useCallback(
-    (personSlug: string) => {
-      return (
-        !isLoadingJwt &&
-        !isLoadingPerson &&
-        person?.slug &&
-        personSlug &&
-        person.slug === personSlug
-      );
+    (personSlug: string): boolean => {
+      if (isLoadingJwt || isLoadingPerson) return false;
+      if (!person?.slug || !personSlug) return false;
+      return person.slug === personSlug;
     },
     [person, isLoadingJwt, isLoadingPerson],
+  );
+
+  const revalidate = React.useCallback(
+    (next?: Person): Promise<Person | undefined> => {
+      if (next) {
+        return mutate(next, { revalidate: false });
+      }
+      return mutate();
+    },
+    [mutate],
   );
 
   return {
     person,
     isLoading: isLoadingJwt || isLoadingPerson,
-    revalidate: mutate,
+    revalidate,
     isMe,
   };
 };

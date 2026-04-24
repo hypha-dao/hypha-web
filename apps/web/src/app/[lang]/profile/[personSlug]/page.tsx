@@ -1,5 +1,6 @@
 import {
   EscrowDepositBanners,
+  isSafeImageUrl,
   MFABanner,
   PersonHead,
   ProfileMemberSpaces,
@@ -15,7 +16,11 @@ import {
   getSpacesByWeb3Ids,
 } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
-import { getMemberSpaces, Space } from '@hypha-platform/core/client';
+import {
+  DEFAULT_SPACE_LEAD_IMAGE,
+  getMemberSpaces,
+  Space,
+} from '@hypha-platform/core/client';
 import { ProfileTabs } from './_components/profile-tabs';
 import { web3Client } from '@hypha-platform/core/server';
 import { Hex, zeroAddress } from 'viem';
@@ -42,6 +47,9 @@ export default async function ProfilePage(props: PageProps) {
   const personSlug = tryDecodeUriPart(personSlugRaw);
 
   const person = await findPersonBySlug({ slug: personSlug }, { db });
+  const rawLead = person?.leadImageUrl?.trim();
+  const profileBannerPreload =
+    rawLead && isSafeImageUrl(rawLead) ? rawLead : null;
   const personAddress = (person?.address as Hex) || zeroAddress;
   let spaces: Space[] = [];
   try {
@@ -57,6 +65,15 @@ export default async function ProfilePage(props: PageProps) {
 
   return (
     <Container className="w-full">
+      {profileBannerPreload &&
+      profileBannerPreload !== DEFAULT_SPACE_LEAD_IMAGE ? (
+        <link
+          rel="preload"
+          as="image"
+          href={profileBannerPreload}
+          fetchPriority="high"
+        />
+      ) : null}
       <div className="mb-6 flex items-center w-full">
         <Link
           href={`/${lang}/my-spaces`}
@@ -72,6 +89,7 @@ export default async function ProfilePage(props: PageProps) {
       {person ? (
         <div className="flex flex-col gap-5">
           <PersonHead
+            id={person.id}
             avatar={person?.avatarUrl ?? '/placeholder/default-profile.svg'}
             name={person?.name ?? ''}
             surname={person?.surname ?? ''}

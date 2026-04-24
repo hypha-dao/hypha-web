@@ -5,17 +5,13 @@ import {
   EditPersonSection,
   ProfilePageParams,
 } from '@hypha-platform/epics';
-import { useMe } from '@hypha-platform/core/client';
+import { useMe, type Person } from '@hypha-platform/core/client';
 import React from 'react';
 import { useParams } from 'next/navigation';
 import { useEditProfile } from '@web/hooks/use-edit-profile';
+import type { ProfileFormData } from '@web/hooks/profile-form-data';
 import { LoadingBackdrop, Button } from '@hypha-platform/ui';
 import { useRouter } from 'next/navigation';
-import {
-  schemaEditPersonWeb2,
-  editPersonFiles,
-} from '@hypha-platform/core/client';
-import { z } from 'zod';
 import { tryDecodeUriPart } from '@hypha-platform/ui-utils';
 import { useTranslations } from 'next-intl';
 
@@ -36,17 +32,21 @@ export default function EditProfilePage() {
   } = useEditProfile();
   const router = useRouter();
 
-  const schemaEditPersonForm = schemaEditPersonWeb2.extend(
-    editPersonFiles.shape,
-  );
+  const onEdit = async (data: ProfileFormData) => {
+    return editProfile(data);
+  };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onEdit = async (data: any) => {
-    try {
-      await editProfile(data);
-      router.push('/profile');
-    } catch (err) {
-      console.log(err);
+  const onUpdate = async (saved?: Person) => {
+    if (saved) {
+      await revalidate(saved);
+    } else {
+      await revalidate();
+    }
+    const nextSlug = saved?.slug?.trim() || person?.slug?.trim();
+    if (nextSlug) {
+      router.push(`/${lang}/profile/${encodeURIComponent(nextSlug)}`);
+    } else {
+      router.push(`/${lang}/profile`);
     }
   };
 
@@ -74,7 +74,7 @@ export default function EditProfilePage() {
           closeUrl={`/${lang}/profile/${personSlug}`}
           isLoading={isLoading || isEditing}
           onEdit={onEdit}
-          onUpdate={revalidate}
+          onUpdate={onUpdate}
           error={error}
         />
       </LoadingBackdrop>

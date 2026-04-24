@@ -1,3 +1,6 @@
+import { SpaceAccentPortalBridge } from '@hypha-platform/epics';
+import '../_shared/space-accent.css';
+
 export const metadata = {
   title: 'Your Profile | Hypha',
   description:
@@ -12,9 +15,11 @@ export default async function RootLayout({
   aside: React.ReactNode;
 }) {
   return (
-    <div className="w-full h-full flex">
-      {children}
-      {aside}
-    </div>
+    <SpaceAccentPortalBridge>
+      <div className="w-full h-full flex">
+        {children}
+        {aside}
+      </div>
+    </SpaceAccentPortalBridge>
   );
 }

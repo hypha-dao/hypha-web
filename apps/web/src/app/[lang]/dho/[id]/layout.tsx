@@ -9,7 +9,7 @@ import {
   SpaceAccentPortalBridge,
   isSafeImageUrl,
 } from '@hypha-platform/epics';
-import './space-accent.css';
+import '../../_shared/space-accent.css';
 import { Locale } from '@hypha-platform/i18n';
 import { Container } from '@hypha-platform/ui';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
@@ -135,6 +135,7 @@ export default async function DhoLayout({
               }
               banner={
                 <CompactSpaceBanner
+                  showSpaceStats
                   title={spaceFromDb.title}
                   description={spaceFromDb.description}
                   logoUrl={accentLogoHref}
