@@ -160,7 +160,7 @@ export function DhoStickySpaceChrome({
         style={{ top: 'var(--menu-top-height, 4rem)' }}
         aria-hidden={!stuck}
       >
-        <div className="mx-auto flex min-h-11 max-w-container-2xl items-center gap-3 px-4 py-2.5 sm:px-6 md:min-h-[52px] md:py-3 md:px-8">
+        <div className="mx-auto flex min-h-11 max-w-container-2xl items-center gap-3 px-4 py-2.5 sm:px-6 md:min-h-[var(--secondary-chrome-actions-row-height,56px)] md:py-3 md:px-8">
           <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
             <Avatar className={STICKY_SPACE_CHROME_AVATAR_CLASSNAME}>
               <AvatarImage
@@ -210,7 +210,7 @@ export function DhoStickySpaceChrome({
           ref={setFlowActionsEl}
           className={cn(
             /* Same min-height as HumanChatPanelTabs so bottom borders align with chat panel */
-            'flex justify-end gap-2 px-0 md:flex-nowrap md:items-center md:min-h-[var(--secondary-chrome-actions-row-height,52px)]',
+            'flex justify-end gap-2 px-0 md:flex-nowrap md:items-center md:min-h-[var(--secondary-chrome-actions-row-height,56px)]',
             stuck && 'pointer-events-none invisible opacity-0',
           )}
           style={stuck ? { minHeight: flowMinH } : undefined}

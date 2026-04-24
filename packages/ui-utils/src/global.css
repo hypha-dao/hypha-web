@@ -49,7 +49,8 @@ html {
  * their bottom borders line up across the main column ↔ chat panel gap.
  */
 :root {
-  --secondary-chrome-actions-row-height: 52px;
+  /* Shared by DHO actions row + Human Chat tab strip; tuned with sticky chrome md min-height */
+  --secondary-chrome-actions-row-height: 56px;
 }
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
