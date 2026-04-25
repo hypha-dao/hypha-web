@@ -59,10 +59,13 @@ export function HumanChatPanelInCallControls({
     : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
   const neutralBtn = isFull ? baseBtn : 'bg-background text-foreground';
   const leaveIcon = isFull ? fullViewIcon : 'h-4 w-4';
-  /** End call — circular like mic/cam/share; high-contrast red without “pill + caption” weight. */
+  /**
+   * End call — classic “hang up” red (explicit red-600/700, not `destructive` token
+   * which can read as salmon in dark UIs on video chrome).
+   */
   const leaveBtn = isFull
-    ? 'inline-flex h-10 min-w-10 sm:h-11 sm:min-w-11 items-center justify-center rounded-full border border-destructive/60 bg-destructive text-white shadow-sm transition-colors hover:bg-destructive/90 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50'
-    : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-destructive/45 bg-destructive text-destructive-foreground shadow-sm transition-colors hover:bg-destructive/90 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring';
+    ? 'inline-flex h-10 min-w-10 sm:h-11 sm:min-w-11 items-center justify-center rounded-full border border-red-800/25 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/50 disabled:opacity-50'
+    : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-red-800/30 bg-red-600 text-white shadow-sm transition-colors hover:bg-red-700 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-500/40';
   const micMutedBtn = isFull
     ? cn(baseBtn, 'border-rose-500/50 bg-rose-900/50 hover:bg-rose-900/70')
     : 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-destructive/30 bg-destructive/12 text-destructive shadow-sm hover:bg-destructive/20';
@@ -174,7 +177,7 @@ export function HumanChatPanelInCallControls({
         className={cn(
           leaveBtn,
           'disabled:cursor-not-allowed',
-          !isFull && callState === 'disconnecting' && 'opacity-50',
+          callState === 'disconnecting' && 'opacity-50',
         )}
         title={t('callLeave')}
         aria-label={t('callLeave')}
