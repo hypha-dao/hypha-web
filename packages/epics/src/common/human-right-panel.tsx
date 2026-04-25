@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { Minimize2 } from 'lucide-react';
 import {
   RoomStateEvent,
   type MatrixClient,
@@ -1831,6 +1832,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 countIsCapped={unreadChatState.mentionCountIsCapped}
                 mentionsTabActive={activeTab === 'mentions'}
                 onOpenMentions={() => setActiveTab('mentions')}
+                callJoinRingControlsActive={
+                  callUiEnabled && !inSpaceCall && spaceCallShowJoinStrip
+                }
+                callJoinAlertsUnmuted={joinAlertSoundEnabled}
+                onCallJoinAlertsUnmutedChange={setJoinAlertSoundEnabled}
               />
             ) : null
           }
@@ -1865,12 +1871,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               deviceCount={spaceCallRoomGroupDeviceCount}
               disabled={!callUiEnabled}
               busy={spaceCallBusyJoining}
-              onJoinAudio={handleCallAudio}
-              onJoinVideo={handleCallVideo}
+              onJoinCall={handleCallAudio}
               durableMessage={callLeftMessage}
               onDismissDurable={clearCallLeftBanner}
-              callAlertsUnmuted={joinAlertSoundEnabled}
-              onCallAlertsUnmutedChange={setJoinAlertSoundEnabled}
             />
           )}
         {callUiEnabled &&
@@ -1907,32 +1910,40 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             id="chat-tabpanel-chat"
           >
             {callUiEnabled && (
-              <HumanChatPanelCallStage
-                client={client}
-                roomId={roomId}
-                groupCall={spaceGroupCall}
-                callKind={spaceCallKind}
-                isLocalVideoMuted={spaceCallVideoMuted}
-                isScreensharing={spaceCallScreensharing}
-                callState={spaceCallState}
-                feedVersion={spaceCallFeedVersion}
-                activeSpeakerKey={spaceCallActiveSpeakerKey}
-                currentUserId={currentUserId}
-                currentUserProfileAvatarUrl={currentUserAvatarUrl}
-                resolveMemberLabel={resolveMemberLabel}
-                layout={
-                  callFullViewOpen && canOpenCallFullView ? 'hidden' : 'panel'
+              <div
+                className={
+                  inSpaceCall
+                    ? 'flex min-h-0 min-w-0 flex-1 flex-col'
+                    : 'shrink-0'
                 }
-                onRequestFullView={
-                  canOpenCallFullView
-                    ? () => {
-                        setCallFullViewOpen(true);
-                      }
-                    : undefined
-                }
-                fullViewOpen={callFullViewOpen}
-                fullViewTriggerRef={callFullViewTriggerRef}
-              />
+              >
+                <HumanChatPanelCallStage
+                  client={client}
+                  roomId={roomId}
+                  groupCall={spaceGroupCall}
+                  callKind={spaceCallKind}
+                  isLocalVideoMuted={spaceCallVideoMuted}
+                  isScreensharing={spaceCallScreensharing}
+                  callState={spaceCallState}
+                  feedVersion={spaceCallFeedVersion}
+                  activeSpeakerKey={spaceCallActiveSpeakerKey}
+                  currentUserId={currentUserId}
+                  currentUserProfileAvatarUrl={currentUserAvatarUrl}
+                  resolveMemberLabel={resolveMemberLabel}
+                  layout={
+                    callFullViewOpen && canOpenCallFullView ? 'hidden' : 'panel'
+                  }
+                  onRequestFullView={
+                    canOpenCallFullView
+                      ? () => {
+                          setCallFullViewOpen(true);
+                        }
+                      : undefined
+                  }
+                  fullViewOpen={callFullViewOpen}
+                  fullViewTriggerRef={callFullViewTriggerRef}
+                />
+              </div>
             )}
             {error && (
               <div
@@ -2090,8 +2101,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               callFullViewTriggerRef.current?.focus();
             }}
           >
-            <DialogHeader className="flex shrink-0 items-start gap-2 border-b border-border/50 bg-zinc-950/95 px-3 py-2.5 pe-2 text-left">
-              <div className="min-w-0 flex-1 space-y-0.5 pe-1">
+            <DialogHeader className="relative flex shrink-0 border-b border-border/50 bg-zinc-950/95 px-3 py-2.5 pe-2 text-left">
+              <DialogClose
+                className="absolute end-2 top-2 z-10 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border/50 bg-zinc-900/90 text-foreground transition-colors hover:bg-zinc-800 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={t('callFullViewClose')}
+                title={t('callFullViewClose')}
+              >
+                <Minimize2 className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+              </DialogClose>
+              <div className="min-w-0 flex-1 space-y-0.5 pe-10">
                 <DialogTitle className="text-sm font-medium tracking-tight text-foreground sm:text-left">
                   {t('callFullView')}
                 </DialogTitle>
@@ -2100,19 +2118,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 </DialogDescription>
               </div>
               {showCallLayoutMenuInFullView && (
-                <div className="shrink-0 self-center sm:self-start">
+                <div className="mt-1 w-full shrink-0 sm:mt-0 sm:w-auto sm:justify-self-end sm:pe-10">
                   <HumanChatPanelCallFullViewLayoutMenu
                     value={callFullViewLayoutMode}
                     onValueChange={onCallFullViewLayoutChange}
                   />
                 </div>
               )}
-              <DialogClose
-                className="inline-flex h-8 min-w-8 shrink-0 items-center justify-center gap-1 self-start rounded-md border border-transparent text-xs text-muted-foreground transition-colors hover:bg-accent/80 hover:text-foreground focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label={t('callFullViewClose')}
-              >
-                {t('callFullViewClose')}
-              </DialogClose>
             </DialogHeader>
             <div
               ref={callFullViewSplitContainerRef}

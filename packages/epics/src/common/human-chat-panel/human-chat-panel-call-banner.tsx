@@ -167,33 +167,36 @@ export function HumanChatPanelCallBanner({
         </div>
       )}
       <div className="flex min-h-[44px] flex-wrap items-center gap-2 px-4 py-2">
-        <div className="min-w-0 flex-1">
-          <p
-            className="text-xs font-medium leading-tight text-foreground"
-            title={
-              callState === 'connected'
-                ? othersInRoomCallCount === 0
-                  ? t('callBannerInCallSolo', { count: participantCount })
-                  : t('callBannerInCallWithOthers', {
-                      count: participantCount,
-                      otherCount: othersInRoomCallCount,
-                    })
-                : undefined
-            }
-          >
-            {callState === 'connected' ? (
-              <span className="whitespace-nowrap">
-                {othersInRoomCallCount === 0
-                  ? t('callBannerInCallSolo', { count: participantCount })
-                  : t('callBannerInCallWithOthers', {
-                      count: participantCount,
-                      otherCount: othersInRoomCallCount,
-                    })}
-              </span>
+        <div className="min-w-0 flex-1 basis-0 pr-1 sm:pr-2">
+          {callState === 'connected' ? (
+            othersInRoomCallCount === 0 ? (
+              <p className="text-xs font-medium leading-tight text-foreground">
+                <span className="block max-w-full">
+                  {t('callBannerInCallSoloLine1', { count: participantCount })}
+                </span>
+                <span className="mt-0.5 block text-[11px] text-muted-foreground sm:text-xs">
+                  {t('callBannerInCallSoloLine2')}
+                </span>
+              </p>
             ) : (
-              t('callActiveInSpace')
-            )}
-          </p>
+              <p
+                className="text-xs font-medium leading-tight text-foreground"
+                title={t('callBannerInCallWithOthers', {
+                  count: participantCount,
+                  otherCount: othersInRoomCallCount,
+                })}
+              >
+                {t('callBannerInCallWithOthers', {
+                  count: participantCount,
+                  otherCount: othersInRoomCallCount,
+                })}
+              </p>
+            )
+          ) : (
+            <p className="text-xs font-medium leading-tight text-foreground">
+              {t('callActiveInSpace')}
+            </p>
+          )}
           {isDisconnecting && (
             <p className="text-xs text-muted-foreground">
               {t('callDisconnecting')}

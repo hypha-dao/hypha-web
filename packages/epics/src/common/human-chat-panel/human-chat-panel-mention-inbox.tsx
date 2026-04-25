@@ -1,8 +1,9 @@
 'use client';
 
+import { useRef } from 'react';
 import type { MatrixClient, MatrixEvent } from 'matrix-js-sdk';
 import { EventType } from 'matrix-js-sdk';
-import { Bell } from 'lucide-react';
+import { Bell, BellOff } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 
@@ -129,15 +130,39 @@ export type HumanChatPanelMentionBellProps = {
   onOpenMentions: () => void;
   /** True when the Mentions tab is active — bell icon uses white on accent. */
   mentionsTabActive?: boolean;
+  /**
+   * When true, show call-ring state on the bell; long-press (500ms) toggles
+   * `onCallJoinAlertsUnmutedChange` — short click still opens mentions.
+   */
+  callJoinRingControlsActive?: boolean;
+  callJoinAlertsUnmuted?: boolean;
+  onCallJoinAlertsUnmutedChange?: (unmuted: boolean) => void;
 };
+
+const RING_LONG_PRESS_MS = 500;
 
 export function HumanChatPanelMentionBell({
   unreadCount,
   countIsCapped,
   onOpenMentions,
   mentionsTabActive = false,
+  callJoinRingControlsActive = false,
+  callJoinAlertsUnmuted = true,
+  onCallJoinAlertsUnmutedChange,
 }: HumanChatPanelMentionBellProps) {
   const t = useTranslations('HumanChatPanel');
+  const longPressRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressFiredRef = useRef(false);
+
+  if (
+    process.env.NODE_ENV === 'development' &&
+    callJoinRingControlsActive &&
+    !onCallJoinAlertsUnmutedChange
+  ) {
+    console.warn(
+      'HumanChatPanelMentionBell: callJoinRingControlsActive requires onCallJoinAlertsUnmutedChange',
+    );
+  }
 
   const badgeLabel =
     unreadCount <= 0
@@ -145,6 +170,14 @@ export function HumanChatPanelMentionBell({
       : countIsCapped || unreadCount >= 100
       ? '99+'
       : String(unreadCount);
+
+  const showRingOff =
+    callJoinRingControlsActive &&
+    onCallJoinAlertsUnmutedChange &&
+    !callJoinAlertsUnmuted;
+  const ringLabel = callJoinAlertsUnmuted
+    ? t('callJoinCallAlertsMuteAction')
+    : t('callJoinCallAlertsUnmuteAction');
 
   return (
     <button
@@ -157,20 +190,68 @@ export function HumanChatPanelMentionBell({
       )}
       aria-pressed={mentionsTabActive}
       aria-label={
-        unreadCount > 0
+        callJoinRingControlsActive
+          ? `${t('mentionInboxTitle')}. ${ringLabel}`
+          : unreadCount > 0
           ? countIsCapped || unreadCount >= 100
             ? t('mentionInboxBellAriaCapped')
             : t('mentionInboxBellAria', { count: unreadCount })
           : t('mentionInboxBellAriaEmpty')
       }
-      title={t('mentionInboxTitle')}
-      onClick={onOpenMentions}
+      title={
+        callJoinRingControlsActive
+          ? `${t('mentionInboxTitle')}. ${t('mentionInboxBellCallRingHint')}`
+          : t('mentionInboxTitle')
+      }
+      onPointerDown={(e) => {
+        if (e.button !== 0) return;
+        if (!callJoinRingControlsActive || !onCallJoinAlertsUnmutedChange)
+          return;
+        longPressFiredRef.current = false;
+        longPressRef.current = setTimeout(() => {
+          longPressFiredRef.current = true;
+          onCallJoinAlertsUnmutedChange(!callJoinAlertsUnmuted);
+        }, RING_LONG_PRESS_MS);
+      }}
+      onPointerUp={() => {
+        if (longPressRef.current) {
+          clearTimeout(longPressRef.current);
+          longPressRef.current = null;
+        }
+      }}
+      onPointerLeave={() => {
+        if (longPressRef.current) {
+          clearTimeout(longPressRef.current);
+          longPressRef.current = null;
+        }
+      }}
+      onPointerCancel={() => {
+        if (longPressRef.current) {
+          clearTimeout(longPressRef.current);
+          longPressRef.current = null;
+        }
+      }}
+      onClick={() => {
+        if (longPressFiredRef.current) {
+          longPressFiredRef.current = false;
+          return;
+        }
+        onOpenMentions();
+      }}
     >
-      <Bell
-        className="h-3.5 w-3.5"
-        strokeWidth={mentionsTabActive ? 2.5 : 2}
-        aria-hidden
-      />
+      {showRingOff ? (
+        <BellOff
+          className="h-3.5 w-3.5 text-foreground/90"
+          strokeWidth={2.25}
+          aria-hidden
+        />
+      ) : (
+        <Bell
+          className="h-3.5 w-3.5"
+          strokeWidth={mentionsTabActive ? 2.5 : 2}
+          aria-hidden
+        />
+      )}
       {badgeLabel != null && (
         <span
           className={cn(

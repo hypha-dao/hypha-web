@@ -272,7 +272,7 @@ type HumanChatPanelCallToolbarProps = {
 
 | Surface | Requirement |
 | -------- | ------------ |
-| **Join strip** | **`HumanChatPanelCallJoinStrip`**: placed **immediately under** the tab + toolbar row (above **3.3** when both apply). Shows **title** + **device count** (`roomGroupCallDeviceCount`); **Join with audio** / **Join with video** call `enterAudio` / `enterVideo` (same path as **§3.2** — not a different Matrix join API). **`role="status"`**, `aria-live="polite"`. **Disabled** when `busy` (connecting) or panel/room not ready. |
+| **Join strip** | **`HumanChatPanelCallJoinStrip`**: placed **immediately under** the tab + toolbar row (above **3.3** when both apply). Shows **title** + **member** count; **Join call \| In progress** calls `enterAudio` (same path as **§3.2**). **Call ring** mute is on the **mention bell** (long-press), not a second icon. **`role="status"`**, `aria-live="polite"`. **Disabled** when `busy` (connecting) or panel/room not ready. |
 | **Header toolbar** | When others are in the room call, **phone** and **video** `title` / `aria-label` **shall** use **Join audio** / **Join video** copy (i18n), not only “Start…”, so the affordance is visible **without** scrolling to the strip. |
 | **Members tab** | When the local user is **not** in the session, **shall** show a short **hint** that a call is active in the space; when **in** the session, **may** list **Matrix `userId`s** from `inCallUserIdsForRoster` for debugging / clarity (user count ≤ device count). |
 | **Banner (in call)** | Uses `roomGroupCallDeviceCount` and `othersInRoomCallCount` for “you are in this space’s call” + “others” copy (§1.1, §3.3). |
@@ -281,7 +281,7 @@ type HumanChatPanelCallToolbarProps = {
 
 #### 3.2.2 Join **invitation** modal and **ring** (spec — **IMP-10**)
 
-**Normative (see §1.2):** **Ring (§1.2.1):** `HumanRightPanel` wires **`useCallJoinChime`**, which plays a **throttled** Web Audio chime when a join **opportunity** appears (`showRoomCallInProgress` and user not in call); **`HumanChatPanelCallJoinStrip`** includes a **Switch** bound to `localStorage` key **`hypha.callJoinAlertSound`**. If the **tab** is **hidden** and the browser has **`Notification` permission** (`granted`), a **silent** one-shot notification is shown. **Modal invitation (§1.2.2):** **TBD** — a future **`HumanChatPanelCallJoinInvitation`** may sit alongside this; the modal **reuses** `enterAudio` / `enterVideo`; **dismissal** is non-destructive. **Throttling** (modal, when added) must prevent re-open on every `ParticipantsChanged`.
+**Normative (see §1.2):** **Ring (§1.2.1):** `HumanRightPanel` wires **`useCallJoinChime`**; **mute** for join chime is toggled by **long-press** on **`HumanChatPanelMentionBell`** (when join strip is relevant), persisting to **`hypha.callJoinAlertSound`**. If the **tab** is **hidden** and the browser has **`Notification` permission** (`granted`), a **silent** one-shot notification is shown. **Modal invitation (§1.2.2):** **TBD**. **Throttling** (when added) must prevent re-open on every `ParticipantsChanged`.
 
 **Files (as shipped for ring):** `packages/epics/.../human-chat-panel/use-call-join-chime.ts`, `human-chat-panel-call-join-strip.tsx`, `human-right-panel.tsx`. A static **audio** asset is **not** used (avoids extra CSP for now).
 

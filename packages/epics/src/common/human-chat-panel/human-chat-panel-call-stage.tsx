@@ -383,7 +383,7 @@ export function HumanChatPanelCallStage({
         'relative w-full max-w-full @container/call',
         isFull
           ? 'flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-0 bg-black py-0'
-          : 'shrink-0 border-b border-border bg-muted/20 min-h-[min(32vh,200px)]',
+          : 'flex min-h-0 w-full min-w-0 flex-1 flex-col border-b border-border bg-muted/20 min-h-[min(32vh,200px)]',
       )}
       role="region"
       aria-labelledby={labelId}
@@ -1047,7 +1047,8 @@ const FeedContent = ({
           : 'flex min-h-[10rem] items-stretch justify-center',
         isShare && !isFullView && 'min-h-[min(42vh,360px)] w-full',
         isShare && isFullView && 'h-full min-h-0 w-full',
-        isActiveSpeaker && 'ring-2 ring-accent-9/70 ring-offset-0',
+        isActiveSpeaker &&
+          'ring-2 ring-offset-0 ring-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_70%,transparent)]',
       )}
     >
       {hasVideo ? (
