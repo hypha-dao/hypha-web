@@ -40,7 +40,12 @@ export const Footer = ({
         <div className="pt-6">
           <Logo width={140} />
         </div>
-        <div className="grid grid-cols-1 gap-8 py-8 md:grid-cols-2 md:gap-x-12 md:gap-y-0">
+        {/*
+          Three-column grid: two content columns + empty track (legacy layout).
+          `min-w-0` on each cell prevents text from painting into the next column when
+          the main column is narrow (e.g. beside open side panels).
+        */}
+        <div className="grid grid-cols-1 gap-8 py-8 md:grid-cols-3 md:gap-x-10 md:gap-y-0">
           <div className="flex min-w-0 flex-col items-start space-y-4 md:space-y-0">
             <Text style={customLabelStyles}>{networkLabel}</Text>
             <Button

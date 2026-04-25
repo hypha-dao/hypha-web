@@ -241,20 +241,16 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
         {/* This is what handles the sidebar gap on desktop */}
         <div
           data-sidebar-gap
-          style={
-            // Offcanvas: set width from React state, not only `data-collapsible` + Tailwind.
-            // Mismatches have left a full `--sidebar-width` flex gap with the panel visually closed.
-            collapsible === 'offcanvas'
-              ? {
-                  width:
-                    state === 'collapsed' ? 0 : 'var(--sidebar-width, 16rem)',
-                }
-              : undefined
-          }
           className={cn(
-            'relative w-(--sidebar-width) min-w-0 shrink-0 bg-transparent transition-[width] duration-200 ease-linear',
-            'group-data-[collapsible=offcanvas]:!w-0',
+            'relative min-w-0 shrink-0 bg-transparent transition-[width] duration-200 ease-linear',
             'group-data-[side=right]:rotate-180',
+            // Offcanvas: force zero width from React state. The base `w-(--sidebar-width)` can
+            // outrank non-important inline `width: 0` and has left a full-width black flex column
+            // when the sheet is visually closed (e.g. AI / Human shadcn sidebars).
+            collapsible === 'offcanvas' && state === 'collapsed'
+              ? '!w-0 !min-w-0 !max-w-0 grow-0 basis-0 p-0 m-0 overflow-hidden'
+              : 'w-(--sidebar-width) grow-0',
+            'group-data-[collapsible=offcanvas]:!w-0',
             variant === 'floating' || variant === 'inset'
               ? 'group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]'
               : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon)',
