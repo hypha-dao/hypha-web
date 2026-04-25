@@ -6,20 +6,14 @@ const SPACES = `/en/dho/${SPACE}/spaces`;
 const LEGACY_NAV = `/en/dho/${SPACE}/agreements/select-navigation-action`;
 const SPACES_DE = `/de/dho/${SPACE}/spaces`;
 
-const AI_HEADER = { Cookie: 'HYPHA_ENABLE_AI_CHAT=true' };
-
 test.describe('DHO spaces tab and workspace (hardening)', () => {
-  test.use({
-    extraHTTPHeaders: AI_HEADER,
-  });
-
-  test.beforeEach(async ({ context }) => {
+  test.beforeEach(async ({ context }, testInfo) => {
+    const baseURL = testInfo.project.use.baseURL ?? 'http://127.0.0.1:3000';
     await context.addCookies([
       {
         name: 'HYPHA_ENABLE_AI_CHAT',
         value: 'true',
-        domain: '127.0.0.1',
-        path: '/',
+        url: baseURL,
       },
     ]);
   });
