@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   getCallControlsPhase,
@@ -87,16 +87,18 @@ export function HumanChatPanelCallBanner({
     return (
       <div
         role="alert"
-        className="border-b border-border bg-destructive/10 px-4 py-2.5"
+        className="flex min-h-9 items-center gap-2 border-b border-destructive/20 bg-destructive/10 px-3 py-1.5 sm:min-h-10 sm:px-3.5"
         aria-live="assertive"
       >
-        <p className="text-sm text-destructive">{t(errorKey(errorCode))}</p>
-        <div className="mt-2 flex flex-wrap gap-2">
+        <p className="min-w-0 flex-1 text-xs leading-snug text-destructive sm:text-sm">
+          {t(errorKey(errorCode))}
+        </p>
+        <div className="flex shrink-0 items-center gap-1.5">
           {showRetryOnError ? (
             <button
               type="button"
               onClick={onRetryCall}
-              className="inline-flex h-8 items-center rounded-md border border-border bg-background px-2.5 text-xs font-medium text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              className="inline-flex h-7 items-center rounded-md border border-border/80 bg-background/90 px-2 text-xs font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring"
             >
               {t('callErrorRetry')}
             </button>
@@ -104,9 +106,11 @@ export function HumanChatPanelCallBanner({
           <button
             type="button"
             onClick={onDismissCallError}
-            className="inline-flex h-8 items-center rounded-md border border-transparent bg-transparent px-2.5 text-xs font-medium text-destructive underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-destructive transition-colors hover:bg-destructive/15 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring"
+            title={t('callErrorDismiss')}
+            aria-label={t('callErrorDismiss')}
           >
-            {t('callErrorDismiss')}
+            <X className="h-4 w-4" strokeWidth={2.25} aria-hidden />
           </button>
         </div>
       </div>
