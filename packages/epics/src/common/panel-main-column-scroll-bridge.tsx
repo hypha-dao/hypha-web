@@ -78,7 +78,13 @@ export function PanelDualSidebarScrollBridge({
             } as React.CSSProperties
           }
         >
-          {children}
+          {/*
+            `SidebarProvider` is `display: flex` (row). The root layout passes several siblings
+            (MenuTop, plugin, main, Footer) as a fragment — fragments flatten, so without this
+            wrapper they become **separate flex items** next to the right Sidebar: header | content
+            | footer | panel in one horizontal row.
+          */}
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>
           <Sidebar
             side="right"
             variant="sidebar"
