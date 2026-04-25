@@ -962,7 +962,6 @@ const FeedContent = ({
   const stream = feed.stream;
 
   const [, rerenderOnFeed] = useReducer((n: number) => n + 1, 0);
-  const [isSpeaking, setIsSpeaking] = useState(() => feed.isSpeaking());
 
   useEffect(() => {
     const el = ref.current;
@@ -981,27 +980,23 @@ const FeedContent = ({
 
   useEffect(() => {
     const onFeedVisualChange = () => {
-      setIsSpeaking(feed.isSpeaking());
       rerenderOnFeed();
-    };
-    const onSpeaking = (speaking: boolean) => {
-      setIsSpeaking(speaking);
     };
     feed.on(CallFeedEvent.MuteStateChanged, onFeedVisualChange);
     feed.on(CallFeedEvent.NewStream, onFeedVisualChange);
-    feed.on(CallFeedEvent.Speaking, onSpeaking);
+    feed.on(CallFeedEvent.Speaking, onFeedVisualChange);
     return () => {
       feed.removeListener(CallFeedEvent.MuteStateChanged, onFeedVisualChange);
       feed.removeListener(CallFeedEvent.NewStream, onFeedVisualChange);
-      feed.removeListener(CallFeedEvent.Speaking, onSpeaking);
+      feed.removeListener(CallFeedEvent.Speaking, onFeedVisualChange);
     };
   }, [feed]);
 
   const hasVideo = !feed.isVideoMuted() && stream.getVideoTracks().length > 0;
-  const showVoiceWaves =
+  /** Analyse mic/remote line whenever the tile has a live audio track (not just Matrix `isSpeaking`, which lags and hid real levels). */
+  const canVoiceWave =
     !hasVideo &&
     !isShare &&
-    isSpeaking &&
     !feed.isAudioMuted() &&
     stream.getAudioTracks().length > 0;
 
@@ -1155,7 +1150,8 @@ const FeedContent = ({
             {feed.isAudioMuted() ? ` · ${t('callParticipantMuted')}` : null}
           </p>
           <CallAudioVoiceWaves
-            active={showVoiceWaves}
+            mediaStream={stream}
+            active={canVoiceWave}
             onDarkScrim
             size={isPip ? 'sm' : isFullView && !isPip ? 'lg' : 'md'}
             className={
