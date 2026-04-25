@@ -28,8 +28,8 @@ export function persistCallJoinSoundPreference(on: boolean): void {
 const CHIME_MAX_MS = 3000;
 
 /**
- * Short two-part chime (Web Audio). No file asset — easy CSP; stops graph when done.
- * Fails quietly if Autoplay is blocked.
+ * Short four-beep chime (two rising pairs, Web Audio) at t0, t0+0.1s, t0+0.4s, t0+0.5s.
+ * No file asset — easy CSP; stops the graph when done. Fails quietly if Autoplay is blocked.
  */
 export function playCallJoinChime(): Promise<void> {
   if (typeof window === 'undefined') return Promise.resolve();
