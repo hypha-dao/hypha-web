@@ -28,7 +28,7 @@ test.describe('DHO spaces tab and workspace (hardening)', () => {
   test('legacy redirect response exposes x-hypha-legacy-redirect', async ({
     request,
   }) => {
-    const r = await request.get(`http://127.0.0.1:3000${LEGACY_NAV}`, {
+    const r = await request.get(LEGACY_NAV, {
       maxRedirects: 0,
     });
     expect(
