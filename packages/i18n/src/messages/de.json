@@ -1944,7 +1944,13 @@
     "callLayoutSideBySide": "Freigabe und Personen nebeneinander",
     "callLayoutSpeakerOnTop": "Sprecher oben, Freigabe unten",
     "callLayoutPip": "Video über der Freigabe",
-    "callParticipantMuted": "Stumm"
+    "callParticipantMuted": "Stumm",
+    "callLeftAudio": "Du hast den Sprachanruf verlassen.",
+    "callLeftVideo": "Du hast den Videoanruf verlassen.",
+    "callLeftBannerDismiss": "Schließen",
+    "callPaneResizeSharePeople": "Bildschirmfreigabe und Personen skalieren",
+    "callPaneResizeShareStrip": "Bildschirmfreigabe und Filmstreifen skalieren",
+    "callPaneResizeSpeakerShare": "Sprecher*in und Bildschirmfreigabe skalieren"
   },
   "CoherenceTab": {
     "signals": "Signale",

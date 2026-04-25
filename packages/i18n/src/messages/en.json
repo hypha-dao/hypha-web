@@ -1975,7 +1975,13 @@
     "callLayoutSideBySide": "Share and people side by side",
     "callLayoutSpeakerOnTop": "Speaker on top, share below",
     "callLayoutPip": "Video on top of share",
-    "callParticipantMuted": "Muted"
+    "callParticipantMuted": "Muted",
+    "callLeftAudio": "You left the voice call.",
+    "callLeftVideo": "You left the video call.",
+    "callLeftBannerDismiss": "Dismiss",
+    "callPaneResizeSharePeople": "Resize screen share and people",
+    "callPaneResizeShareStrip": "Resize screen share and filmstrip",
+    "callPaneResizeSpeakerShare": "Resize speaker and screen share"
   },
   "CoherenceTab": {
     "signals": "Signals",

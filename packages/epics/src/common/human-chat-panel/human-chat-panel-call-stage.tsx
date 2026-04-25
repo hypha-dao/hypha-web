@@ -21,6 +21,8 @@ import type { SpaceGroupCallState } from '@hypha-platform/core/client';
 import { matrixMemberDisplayLabel } from './matrix-room-member-display';
 import { CallAudioVoiceWaves } from './call-audio-voice-waves';
 import type { CallFullViewLayoutMode } from './call-full-view-layout';
+import { CallFullViewPaneSplitter } from './human-chat-panel-call-full-view-pane-splitter';
+import type { CallFullViewPaneSplit } from './call-full-view-split';
 
 export type HumanChatPanelCallStageLayout = 'panel' | 'fullView' | 'hidden';
 
@@ -51,6 +53,20 @@ type HumanChatPanelCallStageProps = HumanChatPanelCallStageBaseProps & {
    * Ignored when `layout !== 'fullView'`.
    */
   fullViewLayoutMode?: CallFullViewLayoutMode;
+  /**
+   * Draggable pane ratios (0–1) for screen share vs participants. Persisted in parent.
+   * Ignored when `layout !== 'fullView'`.
+   */
+  fullViewPaneSplit?: {
+    sideBySide: number;
+    filmstrip: number;
+    speakerOnTop: number;
+  };
+  onFullViewPaneSplitChange?: (
+    which: CallFullViewPaneSplit,
+    value: number,
+  ) => void;
+  fullViewSplitContainerRef?: RefObject<HTMLDivElement | null>;
 };
 
 function feedKeyForActive(feed: CallFeed): string {
@@ -203,9 +219,19 @@ export function HumanChatPanelCallStage({
   fullViewOpen = false,
   fullViewTriggerRef,
   fullViewLayoutMode = 'filmstrip',
+  fullViewPaneSplit = {
+    sideBySide: 0.68,
+    filmstrip: 0.72,
+    speakerOnTop: 0.28,
+  },
+  onFullViewPaneSplitChange,
+  fullViewSplitContainerRef,
 }: HumanChatPanelCallStageProps) {
   const t = useTranslations('HumanChatPanel');
   const labelId = useId();
+  const localSplitRef = useRef<HTMLDivElement | null>(null);
+  const splitRef = fullViewSplitContainerRef ?? localSplitRef;
+  const onSplit = onFullViewPaneSplitChange;
   const model = getHumanChatPanelCallStageModel(
     groupCall,
     callKind,
@@ -372,121 +398,193 @@ export function HumanChatPanelCallStage({
       shareFeeds.length > 0 &&
       userTilesForFullViewShare.length > 0 ? (
         <div
-          className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+          ref={onSplit ? splitRef : undefined}
+          className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
           data-feed-tick={_feedVersion}
         >
-          {fullViewLayoutMode === 'sideBySide' && (
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:flex-row">
-              <div className="flex min-h-[35dvh] w-full min-w-0 flex-1 flex-col border-b border-border/20 pb-0 lg:min-h-0 lg:max-w-[72%] lg:border-b-0 lg:border-r lg:pb-0">
-                {shareFeeds.map((feed, i) => (
+          {fullViewLayoutMode === 'sideBySide' &&
+            (() => {
+              const r = fullViewPaneSplit.sideBySide;
+              const a = Math.max(0, Math.min(1, r));
+              return (
+                <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:flex-row">
                   <div
-                    key={feedKey(feed, i)}
-                    className="flex min-h-0 min-w-0 flex-1 flex-col"
+                    className="flex w-full min-w-0 min-h-[4.5rem] flex-1 flex-col border-b border-border/20 pb-0 lg:min-h-0 lg:min-w-0 lg:border-b-0 lg:border-r lg:pb-0"
+                    style={{ flex: `${a} 1 0%` }}
                   >
-                    <CallFeedTile
-                      feed={feed}
-                      isShare
-                      isFullView={isFull}
-                      isActiveSpeaker={
-                        activeSpeakerKey != null &&
-                        activeSpeakerKey === feedKeyForActive(feed)
-                      }
-                      room={room}
-                      currentUserId={currentUserId}
-                      resolveMemberLabel={resolveMemberLabel}
-                      t={t}
-                    />
+                    {shareFeeds.map((feed, i) => (
+                      <div
+                        key={feedKey(feed, i)}
+                        className="flex min-h-0 min-w-0 flex-1 flex-col"
+                      >
+                        <CallFeedTile
+                          feed={feed}
+                          isShare
+                          isFullView={isFull}
+                          isActiveSpeaker={
+                            activeSpeakerKey != null &&
+                            activeSpeakerKey === feedKeyForActive(feed)
+                          }
+                          room={room}
+                          currentUserId={currentUserId}
+                          resolveMemberLabel={resolveMemberLabel}
+                          t={t}
+                        />
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-              <div className="flex min-h-[5.5rem] max-h-[min(40dvh,320px)] w-full min-w-0 flex-col gap-2 overflow-y-auto p-2 lg:min-h-0 lg:max-w-[28%] lg:flex-1">
-                {userTilesForFullViewShare.map((feed, i) =>
-                  renderUserTile(feed, 1000 + i),
-                )}
-              </div>
-            </div>
-          )}
-          {fullViewLayoutMode === 'filmstrip' && (
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-              <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-                {shareFeeds.map((feed, i) => (
+                  {onSplit && (
+                    <CallFullViewPaneSplitter
+                      orientation="horizontal"
+                      containerRef={splitRef}
+                      ratio={r}
+                      onRatioChange={(v) => onSplit('sideBySide', v)}
+                      className="lg:hidden"
+                      aria-label={t('callPaneResizeSharePeople')}
+                    />
+                  )}
+                  {onSplit && (
+                    <CallFullViewPaneSplitter
+                      orientation="vertical"
+                      containerRef={splitRef}
+                      ratio={r}
+                      onRatioChange={(v) => onSplit('sideBySide', v)}
+                      className="hidden lg:block"
+                      aria-label={t('callPaneResizeSharePeople')}
+                    />
+                  )}
                   <div
-                    key={feedKey(feed, i)}
-                    className="flex min-h-0 min-w-0 flex-1 flex-col"
+                    className="flex w-full min-w-0 min-h-0 min-h-[4.5rem] max-h-[min(50dvh,20rem)] flex-1 flex-col gap-2 overflow-y-auto p-2 lg:max-w-none"
+                    style={{ flex: `${1 - a} 1 0%` }}
                   >
-                    <CallFeedTile
-                      feed={feed}
-                      isShare
-                      isFullView={isFull}
-                      isActiveSpeaker={
-                        activeSpeakerKey != null &&
-                        activeSpeakerKey === feedKeyForActive(feed)
-                      }
-                      room={room}
-                      currentUserId={currentUserId}
-                      resolveMemberLabel={resolveMemberLabel}
-                      t={t}
-                    />
-                  </div>
-                ))}
-              </div>
-              <div
-                className="flex w-full min-h-[5.5rem] max-h-[7.5rem] shrink-0 items-stretch gap-2 overflow-x-auto border-t border-border/30 p-2"
-                role="group"
-                aria-label={t('callLayoutFilmstrip')}
-              >
-                {userTilesForFullViewShare.map((feed, i) => (
-                  <div
-                    key={feedKey(feed, 2000 + i)}
-                    className="h-full min-h-[4.5rem] w-[min(42%,9rem)] min-w-[6.5rem] shrink-0"
-                  >
-                    {renderUserTile(feed, 2000 + i)}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {fullViewLayoutMode === 'speakerTop' && (
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-              {speakerFeedForTopMode && (
-                <div className="h-[min(28dvh,220px)] w-full min-h-[5.5rem] max-h-[min(32dvh,280px)] shrink-0 border-b border-border/30 p-2">
-                  <div className="h-full min-h-0" key="speaker-top-tile">
-                    <CallFeedTile
-                      feed={speakerFeedForTopMode}
-                      isFullView={isFull}
-                      isActiveSpeaker
-                      room={room}
-                      currentUserId={currentUserId}
-                      resolveMemberLabel={resolveMemberLabel}
-                      t={t}
-                    />
+                    {userTilesForFullViewShare.map((feed, i) =>
+                      renderUserTile(feed, 1000 + i),
+                    )}
                   </div>
                 </div>
-              )}
-              <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-                {shareFeeds.map((feed, i) => (
+              );
+            })()}
+          {fullViewLayoutMode === 'filmstrip' &&
+            (() => {
+              const r = fullViewPaneSplit.filmstrip;
+              const a = Math.max(0, Math.min(1, r));
+              return (
+                <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
                   <div
-                    key={feedKey(feed, i)}
                     className="flex min-h-0 min-w-0 flex-1 flex-col"
+                    style={{ flex: `${a} 1 0%` }}
                   >
-                    <CallFeedTile
-                      feed={feed}
-                      isShare
-                      isFullView={isFull}
-                      isActiveSpeaker={
-                        activeSpeakerKey != null &&
-                        activeSpeakerKey === feedKeyForActive(feed)
-                      }
-                      room={room}
-                      currentUserId={currentUserId}
-                      resolveMemberLabel={resolveMemberLabel}
-                      t={t}
-                    />
+                    {shareFeeds.map((feed, i) => (
+                      <div
+                        key={feedKey(feed, i)}
+                        className="flex min-h-0 min-w-0 flex-1 flex-col"
+                      >
+                        <CallFeedTile
+                          feed={feed}
+                          isShare
+                          isFullView={isFull}
+                          isActiveSpeaker={
+                            activeSpeakerKey != null &&
+                            activeSpeakerKey === feedKeyForActive(feed)
+                          }
+                          room={room}
+                          currentUserId={currentUserId}
+                          resolveMemberLabel={resolveMemberLabel}
+                          t={t}
+                        />
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                  {onSplit && (
+                    <CallFullViewPaneSplitter
+                      orientation="horizontal"
+                      containerRef={splitRef}
+                      ratio={r}
+                      onRatioChange={(v) => onSplit('filmstrip', v)}
+                      aria-label={t('callPaneResizeShareStrip')}
+                    />
+                  )}
+                  <div
+                    className="flex w-full min-h-0 min-h-[3.5rem] shrink-0 items-stretch gap-2 overflow-x-auto border-t border-border/30 p-2"
+                    style={{ flex: `${1 - a} 1 0%` }}
+                    role="group"
+                    aria-label={t('callLayoutFilmstrip')}
+                  >
+                    {userTilesForFullViewShare.map((feed, i) => (
+                      <div
+                        key={feedKey(feed, 2000 + i)}
+                        className="h-full min-h-[4.5rem] w-[min(42%,9rem)] min-w-[6.5rem] shrink-0"
+                      >
+                        {renderUserTile(feed, 2000 + i)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+          {fullViewLayoutMode === 'speakerTop' &&
+            (() => {
+              const r = fullViewPaneSplit.speakerOnTop;
+              const a = Math.max(0, Math.min(1, r));
+              return (
+                <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+                  {speakerFeedForTopMode && (
+                    <div
+                      className="w-full min-h-0 min-h-[3.5rem] max-h-[min(40dvh,16rem)] shrink-0 border-b border-border/30 p-2"
+                      style={{ flex: `${a} 1 0%` }}
+                    >
+                      <div className="h-full min-h-0" key="speaker-top-tile">
+                        <CallFeedTile
+                          feed={speakerFeedForTopMode}
+                          isFullView={isFull}
+                          isActiveSpeaker
+                          room={room}
+                          currentUserId={currentUserId}
+                          resolveMemberLabel={resolveMemberLabel}
+                          t={t}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {onSplit && speakerFeedForTopMode && (
+                    <CallFullViewPaneSplitter
+                      orientation="horizontal"
+                      containerRef={splitRef}
+                      ratio={r}
+                      onRatioChange={(v) => onSplit('speakerOnTop', v)}
+                      aria-label={t('callPaneResizeSpeakerShare')}
+                    />
+                  )}
+                  <div
+                    className="flex min-h-0 min-w-0 flex-1 flex-col"
+                    style={{
+                      flex: speakerFeedForTopMode ? `${1 - a} 1 0%` : '1 1 0%',
+                    }}
+                  >
+                    {shareFeeds.map((feed, i) => (
+                      <div
+                        key={feedKey(feed, i)}
+                        className="flex min-h-0 min-w-0 flex-1 flex-col"
+                      >
+                        <CallFeedTile
+                          feed={feed}
+                          isShare
+                          isFullView={isFull}
+                          isActiveSpeaker={
+                            activeSpeakerKey != null &&
+                            activeSpeakerKey === feedKeyForActive(feed)
+                          }
+                          room={room}
+                          currentUserId={currentUserId}
+                          resolveMemberLabel={resolveMemberLabel}
+                          t={t}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           {fullViewLayoutMode === 'pip' && (
             <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
               {shareFeeds.map((feed, i) => (

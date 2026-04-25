@@ -73,6 +73,9 @@ import {
   HumanChatPanelCallFullViewLayoutMenu,
   persistCallFullViewLayout,
   readCallFullViewLayoutFromStorage,
+  type CallFullViewPaneSplit,
+  readCallFullViewPaneSplit,
+  persistCallFullViewPaneSplit,
   type ChatDraftAttachment,
   type ChatMentionCandidate,
   type ChatPanelAttachmentMedia,
@@ -504,6 +507,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [callFullViewOpen, setCallFullViewOpen] = useState(false);
   const [callFullViewLayoutMode, setCallFullViewLayoutMode] =
     useState<CallFullViewLayoutMode>(DEFAULT_CALL_FULL_VIEW_LAYOUT);
+  const [callFullViewPaneSplit, setCallFullViewPaneSplit] = useState<{
+    sideBySide: number;
+    filmstrip: number;
+    speakerOnTop: number;
+  }>(() => ({
+    sideBySide: readCallFullViewPaneSplit('sideBySide'),
+    filmstrip: readCallFullViewPaneSplit('filmstrip'),
+    speakerOnTop: readCallFullViewPaneSplit('speakerOnTop'),
+  }));
+  const [callLeftMessage, setCallLeftMessage] = useState<string | null>(null);
+  const callFullViewSplitContainerRef = useRef<HTMLDivElement | null>(null);
   /**
    * `HumanChatPanelCallStage` only mounts the expand control when
    * `layout === "panel" && !fullViewOpen`, so this ref is set on the open
@@ -575,6 +589,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceCallState === 'awaiting_media' ||
     spaceCallState === 'initializing';
 
+  useEffect(() => {
+    if (inSpaceCall) setCallLeftMessage(null);
+  }, [inSpaceCall]);
+
   const spaceCallToolbarJoinHint = callUiEnabled && spaceCallShowJoinStrip;
 
   const spaceCallShowJoinChime = useMemo(
@@ -605,17 +623,33 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceCallState === 'awaiting_media' ||
     spaceCallState === 'connecting';
 
+  const clearCallLeftBanner = useCallback(() => {
+    setCallLeftMessage(null);
+  }, []);
+
   const handleCallAudio = useCallback(() => {
+    setCallLeftMessage(null);
     void enterSpaceCallAudio();
   }, [enterSpaceCallAudio]);
 
   const handleCallVideo = useCallback(() => {
+    setCallLeftMessage(null);
     void enterSpaceCallVideo();
   }, [enterSpaceCallVideo]);
 
+  const onCallFullViewPaneSplitChange = useCallback(
+    (which: CallFullViewPaneSplit, value: number) => {
+      persistCallFullViewPaneSplit(which, value);
+      setCallFullViewPaneSplit((prev) => ({ ...prev, [which]: value }));
+    },
+    [],
+  );
+
   const handleCallLeave = useCallback(() => {
+    const k = spaceCallKind;
     void leaveSpaceCall();
-  }, [leaveSpaceCall]);
+    setCallLeftMessage(k === 'video' ? t('callLeftVideo') : t('callLeftAudio'));
+  }, [leaveSpaceCall, spaceCallKind, t]);
 
   const handleCallToggleMic = useCallback(() => {
     void setSpaceCallMicMuted(!spaceCallMicMuted);
@@ -1824,17 +1858,21 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             ) : null
           }
         />
-        {callUiEnabled && spaceCallShowJoinStrip && !inSpaceCall && (
-          <HumanChatPanelCallJoinStrip
-            deviceCount={spaceCallRoomGroupDeviceCount}
-            disabled={!callUiEnabled}
-            busy={spaceCallBusyJoining}
-            onJoinAudio={handleCallAudio}
-            onJoinVideo={handleCallVideo}
-            callAlertsUnmuted={joinAlertSoundEnabled}
-            onCallAlertsUnmutedChange={setJoinAlertSoundEnabled}
-          />
-        )}
+        {callUiEnabled &&
+          !inSpaceCall &&
+          (spaceCallShowJoinStrip || callLeftMessage) && (
+            <HumanChatPanelCallJoinStrip
+              deviceCount={spaceCallRoomGroupDeviceCount}
+              disabled={!callUiEnabled}
+              busy={spaceCallBusyJoining}
+              onJoinAudio={handleCallAudio}
+              onJoinVideo={handleCallVideo}
+              durableMessage={callLeftMessage}
+              onDismissDurable={clearCallLeftBanner}
+              callAlertsUnmuted={joinAlertSoundEnabled}
+              onCallAlertsUnmutedChange={setJoinAlertSoundEnabled}
+            />
+          )}
         {callUiEnabled &&
           (inSpaceCall ||
             spaceCallState === 'error' ||
@@ -2076,6 +2114,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               </DialogClose>
             </DialogHeader>
             <div
+              ref={callFullViewSplitContainerRef}
               className="flex min-h-0 min-w-0 flex-1 flex-col p-0"
               role="presentation"
             >
@@ -2095,6 +2134,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   layout="fullView"
                   fullViewOpen
                   fullViewLayoutMode={callFullViewLayoutMode}
+                  fullViewPaneSplit={callFullViewPaneSplit}
+                  onFullViewPaneSplitChange={onCallFullViewPaneSplitChange}
+                  fullViewSplitContainerRef={callFullViewSplitContainerRef}
                 />
               </div>
               {spaceCallScreenshareError && spaceCallState === 'connected' && (

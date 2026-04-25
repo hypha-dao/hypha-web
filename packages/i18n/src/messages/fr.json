@@ -1943,7 +1943,13 @@
     "callLayoutSideBySide": "Partage et personnes côte à côte",
     "callLayoutSpeakerOnTop": "Intervenant en haut, partage en bas",
     "callLayoutPip": "Vidéo sur le partage",
-    "callParticipantMuted": "Muet"
+    "callParticipantMuted": "Muet",
+    "callLeftAudio": "Vous avez quitté l'appel vocal.",
+    "callLeftVideo": "Vous avez quitté l'appel vidéo.",
+    "callLeftBannerDismiss": "Fermer",
+    "callPaneResizeSharePeople": "Redimensionner partage d’écran et personnes",
+    "callPaneResizeShareStrip": "Redimensionner partage d’écran et film",
+    "callPaneResizeSpeakerShare": "Redimensionner l’orateur et le partage d’écran"
   },
   "CoherenceTab": {
     "signals": "Signaux",

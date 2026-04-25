@@ -376,6 +376,7 @@ type HumanChatPanelCallToolbarProps = {
 | **SS-2** | **Reserved band for video:** A **dedicated** sub-layout (see §3.4.4.3) **SHALL** allocate space for **participant** tiles (thumbnails, filmstrip, or overlay) using **explicit** CSS (e.g. a **row** with **`min-h-[…]`** / **`max-h-[…]`**, or a **grid track**, or **overlay** `inset`); **MUST NOT** leave **unlabeled** “dead” `flex-1` siblings that read as **empty** black. |
 | **SS-3** | **`object-contain`** on the **share** `&lt;video&gt;` **MAY** letterbox **inside** the share’s **own** tile box (preserve aspect) **only if** that tile box already **takes** the **intended** fraction of the stage (per **SS-1** and the **selected layout mode**). **Not allowed:** a **tiny** `max-w-*` share tile centered in a **huge** unused canvas when **layout mode** expects **side-by-side** or **top + bottom**. |
 | **SS-4** | The **in-panel** stage (sidebar) **MAY** keep a **simpler** default; **full view** **MUST** satisfy **SS-1**–**SS-3** when the user opens the modal while screen share is active. |
+| **SS-5** | **Draggable split:** In **full view**, when **layout mode** uses a **visible** **boundary** between **screen share** and **participants** (side-by-side, filmstrip, speaker-on-top), the UI **SHALL** provide a **draggable** **splitter** (high-contrast handle, e.g. emerald) so the user can **adjust** the **relative** **flex** **fraction**; **MUST** **persist** the ratio per **mode** in **`localStorage`** (`hypha.callFullView.split.sideBySide`, `…filmstrip`, `…speakerOnTop`); **MUST** expose **`aria-label`** / **keyboard** (arrow keys) on the **separator**. |
 
 **Acceptance (visual):** For **1** remote (or local) **screen share** + **1** user-media tile, capture **screenshots** at **~1280×800** and **~1920×1000** showing: **no** “hall of mirrors”-scale **framing** bug (share is **visibly** the **primary** surface; thumbnails are **clearly** in the **designated** band, not an accident of empty space).
 
@@ -476,6 +477,8 @@ Until Signal/thread routing is wired end-to-end:
 | `callFullView`                                 | **Full view** / expand button (`aria-label`) and optional dialog **title** |
 | `callFullViewClose`                            | Close / dismiss full-view modal (button)                                   |
 | `callLayoutMode` / `callLayoutFilmstrip` / `callLayoutSideBySide` / `callLayoutSpeakerOnTop` / `callLayoutPip` | **Full view** — screen-share **layout** menu (§3.4.4.3) and option labels  |
+| `callPaneResizeSharePeople` / `callPaneResizeShareStrip` / `callPaneResizeSpeakerShare` | `aria-label` for **draggable** **splitter** (§3.4.4.2 **SS-5**) |
+| `callLeftAudio` / `callLeftVideo` / `callLeftBannerDismiss` | **Leave** confirmation in the **join** row when idle (dismiss with **X**) |
 | `callJoinStripTitle` / `callJoinStripDevices`   | **Join** strip: heading + “N devices in call” (pluralized)                 |
 | `callJoinWithAudio` / `callJoinWithVideo`        | `aria-label` for **Join** strip and toolbar when room call is active         |
 | `callJoinWithAudioShort` / `callJoinWithVideoShort` | Short button labels in the strip                                        |

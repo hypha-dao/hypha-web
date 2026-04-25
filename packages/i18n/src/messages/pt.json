@@ -1943,7 +1943,13 @@
     "callLayoutSideBySide": "Ecrã e pessoas lado a lado",
     "callLayoutSpeakerOnTop": "Orador em cima, ecrã em baixo",
     "callLayoutPip": "Vídeo por cima do ecrã",
-    "callParticipantMuted": "Silenciado"
+    "callParticipantMuted": "Silenciado",
+    "callLeftAudio": "Saiu da chamada de voz.",
+    "callLeftVideo": "Saiu da videchamada.",
+    "callLeftBannerDismiss": "Fechar",
+    "callPaneResizeSharePeople": "Redimensionar partilha e pessoas",
+    "callPaneResizeShareStrip": "Redimensionar partilha e filme",
+    "callPaneResizeSpeakerShare": "Redimensionar orador e partilha de ecrã"
   },
   "CoherenceTab": {
     "signals": "Sinais",

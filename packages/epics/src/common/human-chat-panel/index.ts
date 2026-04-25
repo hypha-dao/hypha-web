@@ -10,6 +10,11 @@ export {
   DEFAULT_CALL_FULL_VIEW_LAYOUT,
 } from './call-full-view-layout';
 export {
+  type CallFullViewPaneSplit,
+  readCallFullViewPaneSplit,
+  persistCallFullViewPaneSplit,
+} from './call-full-view-split';
+export {
   HumanChatPanelCallStage,
   canOpenHumanChatCallFullView,
   getHumanChatPanelCallStageModel,
