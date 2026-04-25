@@ -27,7 +27,7 @@ const MATRIX_SPACE_MEMORY_REFRESH_DEBOUNCE_MS = 1_800;
 type SpaceMemorySectionProps = {
   spaceSlug: string;
   /**
-   * When true (Artifact tab), render as a full-width section without the
+   * When true (Wiki tab), render as a full-width section without the
    * inner top border from the Coherence “stacked card” layout.
    */
   standalonePage?: boolean;
@@ -111,11 +111,11 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
           ? 'flex w-full flex-col gap-5'
           : 'flex w-full flex-col gap-5 border-t border-border/50 pt-10'
       }
-      aria-label={standalonePage ? t('artifact') : t('spaceMemory')}
+      aria-label={standalonePage ? t('wiki') : t('spaceMemory')}
     >
       <SectionFilter
         count={totalCount}
-        label={standalonePage ? t('artifact') : t('spaceMemory')}
+        label={standalonePage ? t('wiki') : t('spaceMemory')}
         hasSearch={true}
         searchPlaceholder={t('searchSpaceMemory')}
         onChangeSearch={setSearchTerm}

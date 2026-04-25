@@ -4,7 +4,7 @@ const KNOWN_DHO_TABS = new Set([
   'members',
   'treasury',
   'coherence',
-  'artifact',
+  'wiki',
   'spaces',
   'overview',
 ]);
