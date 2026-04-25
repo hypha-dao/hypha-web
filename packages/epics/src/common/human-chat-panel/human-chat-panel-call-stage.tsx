@@ -383,7 +383,7 @@ export function HumanChatPanelCallStage({
         'relative w-full max-w-full @container/call',
         isFull
           ? 'box-border flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-0 bg-black p-0.5 ring-1 ring-inset ring-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_45%,transparent)]'
-          : 'box-border flex min-h-0 w-full min-w-0 flex-1 flex-col border-b border-border bg-muted/20 min-h-[min(32vh,200px)] p-0.5',
+          : 'box-border flex h-full min-h-0 w-full min-w-0 max-h-full shrink-0 flex-col overflow-hidden border-b border-border bg-muted/20 p-0.5',
       )}
       role="region"
       aria-labelledby={labelId}

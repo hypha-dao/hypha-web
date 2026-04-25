@@ -1913,7 +1913,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               <div
                 className={
                   inSpaceCall
-                    ? 'flex min-h-0 min-w-0 flex-1 flex-col'
+                    ? /* cap height so min-heights on tiles (share grid) cannot overlap the message list */
+                      'flex min-h-0 min-w-0 max-h-[min(52dvh,520px)] shrink-0 flex-col overflow-hidden'
                     : 'shrink-0'
                 }
               >
