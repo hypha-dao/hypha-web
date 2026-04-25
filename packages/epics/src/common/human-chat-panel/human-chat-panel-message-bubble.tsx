@@ -1041,13 +1041,7 @@ function ChatReplyConnectorMeasured({
   const [geom, setGeom] = useState<ReplyConnectorGeometry | null>(null);
 
   useLayoutEffect(() => {
-    const row = rowRef.current;
-    const replyA = replyAvatarRef.current;
-    const mainA = mainAvatarRef.current;
-    if (!row || !replyA || !mainA) {
-      setGeom(null);
-      return;
-    }
+    let raf = 0;
 
     const measure = () => {
       const rEl = rowRef.current;
@@ -1089,15 +1083,50 @@ function ChatReplyConnectorMeasured({
       setGeom({ width: w, height: h, d });
     };
 
-    measure();
-    const ro = new ResizeObserver(() => measure());
-    ro.observe(row);
-    ro.observe(replyA);
-    ro.observe(mainA);
-    window.addEventListener('resize', measure);
+    const requestMeasure = () => {
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        measure();
+      });
+    };
+
+    const ro = new ResizeObserver(() => {
+      requestMeasure();
+    });
+    const row = rowRef.current;
+    const repAtMount = replyAvatarRef.current;
+    const mainAtMount = mainAvatarRef.current;
+    if (row) {
+      ro.observe(row);
+    }
+    if (repAtMount) {
+      ro.observe(repAtMount);
+    }
+    if (mainAtMount) {
+      ro.observe(mainAtMount);
+    }
+
+    requestMeasure();
+    const lateRefFrame = requestAnimationFrame(() => {
+      const rep = replyAvatarRef.current;
+      const main = mainAvatarRef.current;
+      if (rep && repAtMount == null) {
+        ro.observe(rep);
+      }
+      if (main && mainAtMount == null) {
+        ro.observe(main);
+      }
+      requestMeasure();
+    });
+    window.addEventListener('resize', requestMeasure);
     return () => {
+      if (raf) {
+        cancelAnimationFrame(raf);
+      }
+      cancelAnimationFrame(lateRefFrame);
       ro.disconnect();
-      window.removeEventListener('resize', measure);
+      window.removeEventListener('resize', requestMeasure);
     };
   }, [rowRef, replyAvatarRef, mainAvatarRef]);
 
@@ -1105,7 +1134,7 @@ function ChatReplyConnectorMeasured({
 
   return (
     <svg
-      className="pointer-events-none absolute inset-0 z-[8] overflow-visible text-muted-foreground/60 dark:text-muted-foreground/70"
+      className="pointer-events-none absolute inset-0 z-[8] overflow-visible text-border/80 dark:text-border/85"
       width={geom.width}
       height={geom.height}
       viewBox={`0 0 ${geom.width} ${geom.height}`}
@@ -1116,9 +1145,10 @@ function ChatReplyConnectorMeasured({
         d={geom.d}
         fill="none"
         stroke="currentColor"
-        strokeWidth={1.75}
+        strokeWidth={1.5}
         strokeLinecap="round"
         strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
       />
     </svg>
   );
