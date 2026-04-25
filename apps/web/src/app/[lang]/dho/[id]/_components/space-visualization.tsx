@@ -22,6 +22,8 @@ type Props = {
   data: SpaceNode;
   currentSpaceId?: number;
   onVisibleSpacesChange?: (spaces: VisibleSpace[]) => void;
+  /** Extra classes on the outer container (e.g. full-bleed map in Ecosystem layout). */
+  className?: string;
 };
 
 const VISUALIZATION_CONFIG = {
@@ -40,10 +42,12 @@ export function SpaceVisualization({
   data,
   currentSpaceId,
   onVisibleSpacesChange,
+  className,
 }: Props) {
   const { resolvedTheme } = useTheme();
   const svgRef = useRef<SVGSVGElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [canvasSize, setCanvasSize] = useState(VISUALIZATION_CONFIG.WIDTH);
   const previousVisibleSpacesRef = useRef<string>('');
   const onVisibleSpacesChangeRef = useRef(onVisibleSpacesChange);
   const focusRef = useRef<d3.HierarchyNode<SpaceNode> | null>(null);
@@ -68,6 +72,25 @@ export function SpaceVisualization({
   useEffect(() => {
     previousVisibleSpacesRef.current = '';
   }, [data, currentSpaceId]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const measure = () => {
+      const w = el.clientWidth;
+      const h = el.clientHeight;
+      const s = Math.round(
+        Math.max(320, Math.min(1200, h > 0 ? Math.min(w, h) : w)),
+      );
+      setCanvasSize(s);
+    };
+    measure();
+    const ro = new ResizeObserver(() => {
+      measure();
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!tooltip.visible || !tooltipRef.current || !containerRef.current)
@@ -158,7 +181,8 @@ export function SpaceVisualization({
       );
     };
 
-    const { WIDTH: width, HEIGHT: height } = VISUALIZATION_CONFIG;
+    const width = canvasSize;
+    const height = canvasSize;
 
     const root = d3.hierarchy<SpaceNode>(data) as SpaceHierarchyNode;
 
@@ -661,13 +685,17 @@ export function SpaceVisualization({
             .attr('height', r * 2);
         });
     }
-  }, [data, currentSpaceId, resolvedTheme]);
+  }, [data, currentSpaceId, resolvedTheme, canvasSize]);
 
   return (
-    <div ref={containerRef} className="relative w-full">
+    <div
+      ref={containerRef}
+      className={`relative min-h-0 w-full max-w-full flex-1 ${className ?? ''}`}
+    >
       <svg
         ref={svgRef}
-        className="w-full h-auto"
+        className="h-full w-full max-w-full"
+        style={{ minHeight: canvasSize }}
         role="img"
         aria-label="Space hierarchy visualization"
       />

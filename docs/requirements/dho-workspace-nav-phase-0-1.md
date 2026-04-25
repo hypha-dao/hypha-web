@@ -9,7 +9,7 @@
 
 ## Phase 0 — Locked decisions (UX / engineering)
 
-1. **Copy — “Spaces”** — The graph route and nav item use the existing **`Common` → `Spaces`** string.
+1. **Copy — Ecosystem (graph tab)** — Nav uses **`Common` → `Ecosystem`**. Canonical route **`/spaces`**; optional alias **`/ecosystem`** redirects to `/spaces` (see `getActiveTabFromPath` for segment `ecosystem`).
 2. **Default space landing** — **`/agreements`** remains the default primary tab. **`/spaces`** is the in-flow graph.
 3. **Nav order** — When Coherence is enabled: **Coherence → Agreements → Members → Treasury → Spaces**.
 4. **Mobile** — **Left sheet** + floating **Space menu** (not a full-width bottom bar).

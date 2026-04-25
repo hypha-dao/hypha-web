@@ -23,6 +23,7 @@
     "copyWalletAddress": "Copy wallet address",
     "walletAddressCopied": "Copied!",
     "otherMembers": "+ other {count} members",
+    "Ecosystem": "Ecosystem",
     "exploreSpaces": "Explore Spaces",
     "findCategory": "Find a Category",
     "noSpacesYet": "No spaces created or joined yet. Explore our network and join a Space, or create your own.",
@@ -301,8 +302,10 @@
     }
   },
   "SelectNavigationAction": {
-    "title": "Space Navigation",
-    "content": "Navigate all your spaces in a single interactive map to see how they connect to each other. Easily visit nested spaces, explore space-to-space memberships, and follow value flows across your direct ecosystem.",
+    "title": "Ecosystem",
+    "mapRegionAriaLabel": "Space relationship map",
+    "dataPanelAriaLabel": "Nested spaces, search, and actions",
+    "content": "See how your spaces connect. Use the map to explore; search and open nested spaces in the panel—stays in view on large screens.",
     "tabs": {
       "nestedSpaces": "Nested Spaces",
       "spaceToSpace": "Space-to-Space",

@@ -28,6 +28,9 @@ type VisibleSpacesListProps = {
   allSpaces: Space[];
   lang: Locale;
   entrySpaceId?: number;
+  /** Tight, scrollable column when shown beside the map (Ecosystem). */
+  variant?: 'default' | 'ecosystemPanel';
+  className?: string;
 };
 
 type AddSpaceButtonProps = {
@@ -106,8 +109,11 @@ export function VisibleSpacesList({
   allSpaces,
   lang,
   entrySpaceId,
+  variant = 'default',
+  className,
 }: VisibleSpacesListProps) {
   const t = useTranslations('SelectNavigationAction');
+  const isPanel = variant === 'ecosystemPanel';
   const [searchQuery, setSearchQuery] = useState('');
   const buildNestedPath = (space: VisibleSpace): string => {
     if (space.root) {
@@ -157,7 +163,16 @@ export function VisibleSpacesList({
     : '#';
 
   return (
-    <div className="flex flex-col gap-4">
+    <div
+      className={
+        isPanel
+          ? `flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1 ${
+              className ?? ''
+            }`
+          : `flex flex-col gap-4 ${className ?? ''}`
+      }
+      data-testid="dho-ecosystem-spaces-list"
+    >
       <Card className="p-4">
         <div className="flex flex-col md:flex-row md:items-center gap-4">
           <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -212,6 +227,7 @@ export function VisibleSpacesList({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="flex-1"
+          data-testid="dho-ecosystem-spaces-search"
         />
       </div>
 

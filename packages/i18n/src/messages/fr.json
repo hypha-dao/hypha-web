@@ -23,6 +23,7 @@
     "copyWalletAddress": "Copier l’adresse du portefeuille",
     "walletAddressCopied": "Copié !",
     "otherMembers": "+ {count} autres membres",
+    "Ecosystem": "Écosystème",
     "exploreSpaces": "Explorer les espaces",
     "findCategory": "Trouver une catégorie",
     "noSpacesYet": "Aucun espace créé ou rejoint pour le moment. Explorez notre réseau et rejoignez un espace, ou créez le vôtre.",
@@ -301,8 +302,10 @@
     }
   },
   "SelectNavigationAction": {
-    "title": "Navigation des espaces",
-    "content": "Naviguez dans tous vos espaces sur une seule carte interactive pour voir comment ils sont connectés les uns aux autres. Visitez facilement les espaces imbriqués, explorez les adhésions espace-à-espace et suivez les flux de valeur dans votre écosystème direct.",
+    "title": "Écosystème",
+    "mapRegionAriaLabel": "Carte des relations entre espaces",
+    "dataPanelAriaLabel": "Espaces imbriqués, recherche et actions",
+    "content": "Voici comment vos espaces se connectent. Utilisez la carte pour explorer ; cherchez et ouvrez les espaces imbriqués dans le panneau—visible en permanence sur les grands écrans.",
     "tabs": {
       "nestedSpaces": "Espaces imbriqués",
       "spaceToSpace": "Espace-à-espace",

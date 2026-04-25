@@ -94,7 +94,7 @@ function useNavItems(
       {
         name: 'spaces',
         href: getDhoPathSpaces(lang, spaceSlug),
-        label: t('Spaces'),
+        label: t('Ecosystem'),
         icon: LayoutGrid,
       },
     ],
