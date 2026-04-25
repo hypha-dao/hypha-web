@@ -405,6 +405,8 @@ export function useSpaceGroupCall(roomId: string | null) {
         setThreadContext(null);
         isJoiningRef.current = false;
         joinStartedAtRef.current = null;
+        setIsScreensharing(false);
+        setScreenshareErrorCode(null);
         return;
       }
 
