@@ -119,7 +119,6 @@ type NavRowProps = {
   showLabels?: boolean;
   index: number;
   linkRef?: React.Ref<HTMLAnchorElement>;
-  reducedMotion: boolean;
 };
 
 function NavRow({
@@ -133,7 +132,6 @@ function NavRow({
   showLabels = false,
   index,
   linkRef,
-  reducedMotion,
 }: NavRowProps) {
   const desktopIconOnly = variant === 'desktop' && !showLabels;
   const itemClass = cn(
@@ -144,10 +142,10 @@ function NavRow({
     isActive
       ? 'bg-accent/15 text-foreground [&_svg]:opacity-100'
       : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-    !reducedMotion && NAV_MOTION,
+    NAV_MOTION,
   );
-  const delay = reducedMotion ? 0 : index * 32;
-  const style = reducedMotion ? undefined : { animationDelay: `${delay}ms` };
+  const delay = index * 32;
+  const style = { animationDelay: `${delay}ms` };
 
   const content = (
     <>
@@ -207,7 +205,6 @@ function NavLinkList({
   showLabels,
   className,
   firstLinkRef,
-  reducedMotion,
   listId,
 }: {
   items: DhoSpaceWorkspaceNavItem[];
@@ -217,7 +214,6 @@ function NavLinkList({
   showLabels?: boolean;
   className?: string;
   firstLinkRef?: React.Ref<HTMLAnchorElement>;
-  reducedMotion: boolean;
   listId?: string;
 }) {
   return (
@@ -240,7 +236,6 @@ function NavLinkList({
             variant={variant}
             showLabels={showLabels}
             index={index}
-            reducedMotion={reducedMotion}
             linkRef={
               index === 0 && variant === 'sheet' ? firstLinkRef : undefined
             }
@@ -273,15 +268,6 @@ export function DhoSpaceWorkspace({
   const openButtonRef = React.useRef<HTMLButtonElement>(null);
   const firstLinkRef = React.useRef<HTMLAnchorElement | null>(null);
   const hadSheetOpen = React.useRef(false);
-
-  const [reducedMotion, setReducedMotion] = React.useState(false);
-  React.useEffect(() => {
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReducedMotion(mq.matches);
-    const handler = () => setReducedMotion(mq.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
 
   const navListId = React.useId();
   const [labelsExpanded, setLabelsExpanded] = React.useState(false);
@@ -374,7 +360,6 @@ export function DhoSpaceWorkspace({
           activeName={activeName}
           variant="desktop"
           showLabels={labelsExpanded}
-          reducedMotion={reducedMotion}
           listId={navListId}
         />
       </nav>
@@ -434,7 +419,6 @@ export function DhoSpaceWorkspace({
                 onNavigate={closeSheet}
                 variant="sheet"
                 firstLinkRef={firstLinkRef}
-                reducedMotion={reducedMotion}
               />
             </nav>
           </div>
