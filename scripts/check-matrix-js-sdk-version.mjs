@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * Ensures the resolved matrix-js-sdk major version is 40.x (Hypha policy: ^40.0.0; no v41+ in Next until upgraded).
- * Run from repo root: node scripts/check-matrix-js-sdk-version.mjs
+ * Also fails if `apps/web` vs `packages/*` resolve different `matrix-js-sdk` versions.
+ * Run from repo root: node scripts/check-matrix-js-sdk-version.mjs (root `pnpm run lint` runs this first)
  */
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -18,18 +19,32 @@ const requireResolvers = [
 ];
 
 function readMatrixPackageJson() {
+  const byVersion = new Map();
   for (const req of requireResolvers) {
     try {
       const entry = req.resolve('matrix-js-sdk');
       const installRoot = resolve(dirname(entry), '..');
-      return JSON.parse(
+      const pkg = JSON.parse(
         readFileSync(join(installRoot, 'package.json'), 'utf8'),
       );
+      byVersion.set(pkg.version || 'unknown', installRoot);
     } catch {
       /* try next */
     }
   }
-  return null;
+  if (byVersion.size === 0) return null;
+  if (byVersion.size > 1) {
+    const lines = [...byVersion.entries()].map(
+      ([v, root]) => `  ${v} — ${root}`,
+    );
+    console.error(
+      'check-matrix-js-sdk-version: multiple matrix-js-sdk versions resolved:\n' +
+        lines.join('\n'),
+    );
+    process.exit(1);
+  }
+  const [version, installRoot] = [...byVersion.entries()][0];
+  return { version, installRoot };
 }
 
 const pkg = readMatrixPackageJson();
