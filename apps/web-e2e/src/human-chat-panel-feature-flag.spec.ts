@@ -9,15 +9,8 @@ import { HumanChatPanelPage } from './pages/human-chat-panel.page';
 test.describe('Human Chat Panel — feature flag enabled (cookie)', () => {
   let chatPanel: HumanChatPanelPage;
 
-  test.beforeEach(async ({ context, page }) => {
-    await context.addCookies([
-      {
-        name: 'HYPHA_ENABLE_HUMAN_CHAT',
-        value: 'true',
-        domain: '127.0.0.1',
-        path: '/',
-      },
-    ]);
+  test.beforeEach(async ({ context, page, baseURL }) => {
+    await HumanChatPanelPage.enableHumanChat(context, baseURL);
     chatPanel = new HumanChatPanelPage(page);
     await chatPanel.open();
   });

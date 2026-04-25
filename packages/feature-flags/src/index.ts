@@ -57,7 +57,7 @@ export const flagDefinitionsForDiscovery = {
     key: 'enable-coherence',
     defaultValue: false,
     description:
-      'Coherence tab and signals. Opt in: NEXT_PUBLIC_ENABLE_COHERENCE=true. Space Memory uses enable-space-memory.',
+      'Coherence tab and signals. Opt in: HYPHA_ENABLE_COHERENCE cookie or NEXT_PUBLIC_ENABLE_COHERENCE=true. Space Memory uses enable-space-memory.',
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
@@ -65,7 +65,7 @@ export const flagDefinitionsForDiscovery = {
     key: 'enable-space-memory',
     defaultValue: false,
     description:
-      'Space Memory on Coherence tab. Opt in: NEXT_PUBLIC_ENABLE_SPACE_MEMORY=true',
+      'Space Memory on Coherence tab. Opt in: HYPHA_ENABLE_SPACE_MEMORY cookie or NEXT_PUBLIC_ENABLE_SPACE_MEMORY=true',
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
@@ -76,7 +76,7 @@ export const flagDefinitionsForDiscovery = {
     key: 'enable-human-chat',
     defaultValue: false,
     description:
-      'Human Chat panel. Opt in: NEXT_PUBLIC_ENABLE_HUMAN_CHAT=true. Kill-switch: HYPHA_DISABLE_HUMAN_CHAT',
+      'Human Chat panel. Opt in: HYPHA_ENABLE_HUMAN_CHAT cookie or NEXT_PUBLIC_ENABLE_HUMAN_CHAT=true. Kill-switch: HYPHA_DISABLE_HUMAN_CHAT cookie or NEXT_PUBLIC_DISABLE_HUMAN_CHAT=true',
     origin: 'hypha' as const,
     options: undefined as undefined,
   },

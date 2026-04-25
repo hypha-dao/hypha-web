@@ -118,6 +118,7 @@ export default async function DhoLayout({
         max-width + centering that made the main column look pushed with a void on the left.
       */}
       <div className="flex w-full min-w-0">
+        {/* `px-4!` = 16px: tighter than default Container `px-5` (20px) for DHO hero/tabs vs app chrome */}
         <Container size="lg" className="min-w-0 flex-1 px-4!">
           {/* React 19+: link rel="preload" is hoisted to document head */}
           {heroBannerImageHref !== DEFAULT_SPACE_LEAD_IMAGE ? (

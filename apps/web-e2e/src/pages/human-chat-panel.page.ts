@@ -1,5 +1,11 @@
-import { Page, Locator } from '@playwright/test';
+import { type BrowserContext, type Locator, type Page } from '@playwright/test';
 import { BasePage } from './base.page';
+
+/**
+ * Feature-flag cookie: mirrors `@hypha-platform/cookie` HYPHA_ENABLE_HUMAN_CHAT (e2e cannot
+ * import the package directly here).
+ */
+const HYPHA_ENABLE_HUMAN_CHAT = 'HYPHA_ENABLE_HUMAN_CHAT';
 
 export class HumanChatPanelPage extends BasePage {
   readonly openButton: Locator;
@@ -15,6 +21,17 @@ export class HumanChatPanelPage extends BasePage {
   readonly chatTab: Locator;
   readonly membersContainer: Locator;
   readonly memberItems: Locator;
+
+  static async enableHumanChat(context: BrowserContext, baseURL?: string) {
+    await context.addCookies([
+      {
+        name: HYPHA_ENABLE_HUMAN_CHAT,
+        value: 'true',
+        domain: new URL(baseURL ?? 'http://127.0.0.1:3000').hostname,
+        path: '/',
+      },
+    ]);
+  }
 
   constructor(page: Page) {
     super(page);

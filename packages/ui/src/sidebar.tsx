@@ -244,13 +244,12 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
           className={cn(
             'relative min-w-0 shrink-0 bg-transparent transition-[width] duration-200 ease-linear',
             'group-data-[side=right]:rotate-180',
-            // Offcanvas: force zero width from React state. The base `w-(--sidebar-width)` can
-            // outrank non-important inline `width: 0` and has left a full-width black flex column
-            // when the sheet is visually closed (e.g. AI / Human shadcn sidebars).
+            // Offcanvas collapsed: `!w-0` beats `w-(--sidebar-width) !important` in Tailwind v4 so
+            // the flex track cannot stay 320px with the panel visually closed. `group-data-[…]`
+            // is redundant with the same collapsed state — width is controlled here only.
             collapsible === 'offcanvas' && state === 'collapsed'
-              ? '!w-0 !min-w-0 !max-w-0 grow-0 basis-0 p-0 m-0 overflow-hidden'
+              ? '!w-0 !min-w-0 !max-w-0 grow-0 basis-0 overflow-hidden'
               : 'w-(--sidebar-width) grow-0',
-            'group-data-[collapsible=offcanvas]:!w-0',
             variant === 'floating' || variant === 'inset'
               ? 'group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]'
               : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon)',
