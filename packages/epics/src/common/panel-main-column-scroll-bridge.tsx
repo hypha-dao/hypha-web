@@ -41,6 +41,7 @@ export function PanelDualSidebarScrollBridge({
 
   return (
     <SidebarProvider
+      defaultOpen={false}
       open={leftOpen}
       onOpenChange={onLeftOpenChange}
       style={
@@ -68,6 +69,7 @@ export function PanelDualSidebarScrollBridge({
         }
       >
         <SidebarProvider
+          defaultOpen={false}
           open={rightOpen}
           onOpenChange={onRightOpenChange}
           style={

@@ -241,6 +241,16 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
         {/* This is what handles the sidebar gap on desktop */}
         <div
           data-sidebar-gap
+          style={
+            // Offcanvas: set width from React state, not only `data-collapsible` + Tailwind.
+            // Mismatches have left a full `--sidebar-width` flex gap with the panel visually closed.
+            collapsible === 'offcanvas'
+              ? {
+                  width:
+                    state === 'collapsed' ? 0 : 'var(--sidebar-width, 16rem)',
+                }
+              : undefined
+          }
           className={cn(
             'relative w-(--sidebar-width) min-w-0 shrink-0 bg-transparent transition-[width] duration-200 ease-linear',
             'group-data-[collapsible=offcanvas]:!w-0',
