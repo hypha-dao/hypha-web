@@ -103,9 +103,7 @@ test.describe('DHO spaces tab and workspace (hardening)', () => {
     expect(box0).toBeTruthy();
 
     await page.getByRole('button', { name: /open hypha ai panel/i }).click();
-    await expect(
-      page.getByRole('button', { name: /open hypha ai panel/i }),
-    ).toHaveCount(0);
+    await expect(page.getByText('Hypha AI', { exact: true })).toBeVisible();
 
     await expect
       .poll(
