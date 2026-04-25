@@ -159,9 +159,7 @@ function NavRow({
         <span className="min-w-0 flex-1 truncate">{label}</span>
       ) : showLabels ? (
         <span className="min-w-0 flex-1 overflow-hidden truncate">{label}</span>
-      ) : (
-        <span className="sr-only">{label}</span>
-      )}
+      ) : null}
     </>
   );
 
@@ -190,26 +188,15 @@ function NavRow({
       onClick={onNavigate}
       aria-current={isActive ? 'page' : undefined}
       className={itemClass}
-      title={undefined}
+      style={style}
+      aria-label={desktopIconOnly ? label : undefined}
+      title={desktopIconOnly ? label : undefined}
     >
       {content}
     </Link>
   );
 
-  return (
-    <li className="w-full" style={style}>
-      {showLabels ? (
-        linkEl
-      ) : (
-        <Tooltip>
-          <TooltipTrigger asChild>{linkEl}</TooltipTrigger>
-          <TooltipContent side="right" sideOffset={6}>
-            {label}
-          </TooltipContent>
-        </Tooltip>
-      )}
-    </li>
-  );
+  return <li className="w-full">{linkEl}</li>;
 }
 
 function NavLinkList({
