@@ -676,6 +676,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         spaceCallVideoMuted,
         spaceCallScreensharing,
         spaceCallState,
+        currentUserId,
+        spaceCallInCallUserIds,
       ),
     [
       spaceGroupCall,
@@ -683,6 +685,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       spaceCallVideoMuted,
       spaceCallScreensharing,
       spaceCallState,
+      currentUserId,
+      spaceCallInCallUserIds,
     ],
   );
 
@@ -1929,6 +1933,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   feedVersion={spaceCallFeedVersion}
                   activeSpeakerKey={spaceCallActiveSpeakerKey}
                   currentUserId={currentUserId}
+                  inCallUserIds={spaceCallInCallUserIds}
                   currentUserProfileAvatarUrl={currentUserAvatarUrl}
                   resolveMemberLabel={resolveMemberLabel}
                   layout={
@@ -2144,6 +2149,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   feedVersion={spaceCallFeedVersion}
                   activeSpeakerKey={spaceCallActiveSpeakerKey}
                   currentUserId={currentUserId}
+                  inCallUserIds={spaceCallInCallUserIds}
                   currentUserProfileAvatarUrl={currentUserAvatarUrl}
                   resolveMemberLabel={resolveMemberLabel}
                   layout="fullView"

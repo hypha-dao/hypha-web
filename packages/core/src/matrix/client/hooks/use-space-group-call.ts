@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as MatrixSdk from 'matrix-js-sdk';
+import { RoomStateEvent } from 'matrix-js-sdk';
 import { GroupCallEventHandlerEvent } from 'matrix-js-sdk/lib/webrtc/groupCallEventHandler';
 import { useMatrix } from '../providers/matrix-provider';
 import { isPermissionLikeGroupCallError } from './space-group-call-utils';
@@ -583,6 +584,31 @@ export function useSpaceGroupCall(roomId: string | null) {
     setScreenshareErrorCode(null);
     setTabBackgroundWhileInCall(false);
   }, [roomId, runCleanup]);
+
+  /**
+   * Room member `m.call.*` state is applied asynchronously in the GroupCall. When
+   * `updateParticipants` runs, `participants` updates but `ParticipantsChanged`
+   * may not re-fire. Re-sync the banner count on every room state update while in a call.
+   */
+  useEffect(() => {
+    if (!client || !roomId?.trim()) return;
+    const inCall =
+      callState === 'connecting' ||
+      callState === 'connected' ||
+      callState === 'awaiting_media' ||
+      callState === 'initializing' ||
+      callState === 'disconnecting';
+    if (!inCall) return;
+    const room = client.getRoom(roomId);
+    if (!room) return;
+    const bump = () => {
+      updateParticipantCount();
+    };
+    room.on(RoomStateEvent.Update, bump);
+    return () => {
+      room.off(RoomStateEvent.Update, bump);
+    };
+  }, [client, roomId, callState, updateParticipantCount]);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
