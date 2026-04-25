@@ -2,14 +2,22 @@ import { test, expect } from '@playwright/test';
 import { HumanChatPanelPage } from './pages/human-chat-panel.page';
 
 /**
- * Human Chat defaults to on (see `getEnableHumanChat` in feature-flags). Opt out
- * with cookie or env; emergency rollback uses `HYPHA_DISABLE_HUMAN_CHAT=true`.
+ * Default runtime: off. The enabled describe block sets `HYPHA_ENABLE_HUMAN_CHAT=true`.
+ * Emergency rollback: `HYPHA_DISABLE_HUMAN_CHAT=true`.
  */
 
-test.describe('Human Chat Panel — default (enabled)', () => {
+test.describe('Human Chat Panel — feature flag enabled (cookie)', () => {
   let chatPanel: HumanChatPanelPage;
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ context, page }) => {
+    await context.addCookies([
+      {
+        name: 'HYPHA_ENABLE_HUMAN_CHAT',
+        value: 'true',
+        domain: '127.0.0.1',
+        path: '/',
+      },
+    ]);
     chatPanel = new HumanChatPanelPage(page);
     await chatPanel.open();
   });
