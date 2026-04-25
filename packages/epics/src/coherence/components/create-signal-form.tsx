@@ -240,7 +240,7 @@ export const CreateSignalForm = ({
     console.warn('form errors:', err);
   };
 
-  const resolvedBackLabel = backUrl != null ? t('backToCoherence') : undefined;
+  const resolvedBackLabel = backUrl != null ? t('backToSignals') : undefined;
   const isDirty = form.formState.isDirty;
 
   return (

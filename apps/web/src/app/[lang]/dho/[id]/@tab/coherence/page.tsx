@@ -6,7 +6,6 @@ import {
 import {
   getEnableCoherence,
   getEnableHumanChat,
-  getEnableSpaceMemory,
 } from '@hypha-platform/feature-flags';
 import { Locale } from '@hypha-platform/i18n';
 import { redirect } from 'next/navigation';
@@ -28,7 +27,6 @@ export default async function CoherencePage(props: PageProps) {
   }
 
   const humanChatEnabled = await getEnableHumanChat();
-  const spaceMemoryEnabled = await getEnableSpaceMemory();
   const searchParams = await props.searchParams;
 
   const { lang, id } = params;
@@ -45,7 +43,6 @@ export default async function CoherencePage(props: PageProps) {
       spaceSlug={id}
       order={order}
       humanChatEnabled={humanChatEnabled}
-      spaceMemoryEnabled={spaceMemoryEnabled}
     />
   );
 }

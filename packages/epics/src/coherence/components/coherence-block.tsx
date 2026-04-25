@@ -12,7 +12,6 @@ import React from 'react';
 import { useTranslations } from 'next-intl';
 import { CoherenceOrder } from '../types';
 import { SignalSection } from './signal-section';
-import { SpaceMemorySection } from './space-memory-section';
 import { useHumanChatPanel } from '../../common/human-chat-panel-context';
 
 type CoherenceBlockProps = {
@@ -20,7 +19,6 @@ type CoherenceBlockProps = {
   spaceSlug: string;
   order?: CoherenceOrder;
   humanChatEnabled?: boolean;
-  spaceMemoryEnabled?: boolean;
 };
 
 export function CoherenceBlock({
@@ -28,7 +26,6 @@ export function CoherenceBlock({
   spaceSlug,
   order,
   humanChatEnabled = false,
-  spaceMemoryEnabled = false,
 }: CoherenceBlockProps) {
   const t = useTranslations('CoherenceTab');
   const [hideArchived, setHideArchived] = React.useState(true);
@@ -84,9 +81,6 @@ export function CoherenceBlock({
               refresh={refresh}
               onSignalClick={onSignalClick}
             />
-            {spaceMemoryEnabled ? (
-              <SpaceMemorySection spaceSlug={spaceSlug} />
-            ) : null}
           </div>
         </div>
       ) : (

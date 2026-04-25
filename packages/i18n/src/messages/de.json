@@ -42,6 +42,8 @@
     "publish": "Veröffentlichen",
     "invalidTransactions": "Ungültige Transaktionen",
     "Coherence": "Kohärenz",
+    "Signals": "Signale",
+    "Artifact": "Artefakt",
     "uploadLeadImage": {
       "cropTitle": "Ein Bild hochladen",
       "cropDescription": "Passen Sie den Ausschnitt an und speichern Sie. Ziehen Sie zum Verschieben und zoomen Sie, um den Bannerbereich auszufüllen (JPEG, PNG oder WebP — max. 4 MB).",
@@ -1978,11 +1980,13 @@
     "callPaneResizeSpeakerShare": "Sprecher*in und Bildschirmfreigabe skalieren"
   },
   "CoherenceTab": {
+    "artifact": "Artefakt",
     "signals": "Signale",
-    "signInToSee": "Bitte melden Sie sich an, um Signale, Space Memory und Gespräche zu sehen",
+    "signInToSee": "Bitte melden Sie sich an, um Signale, Artefakte und Gespräche zu sehen",
     "searchSignals": "Signale suchen...",
     "newSignal": "Neues Signal",
     "backToCoherence": "Zurück zur Kohärenz",
+    "backToSignals": "Zurück zu Signalen",
     "all": "Alle",
     "listIsEmpty": "Liste ist leer",
     "loadMore": "Mehr laden",
