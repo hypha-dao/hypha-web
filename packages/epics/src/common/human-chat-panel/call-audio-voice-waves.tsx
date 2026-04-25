@@ -11,6 +11,11 @@ type CallAudioVoiceWavesProps = {
   className?: string;
   /** In-call: `sm` = PiP, `md` = sidebar, `lg` = full view / main tile. */
   size?: 'sm' | 'md' | 'lg';
+  /**
+   * Bars sit on a fixed **dark** call tile. Use theme-independent light fills so
+   * `primary` / `muted-foreground` (theme tokens) are never “dark on black”.
+   */
+  onDarkScrim?: boolean;
 };
 
 /**
@@ -21,6 +26,7 @@ export function CallAudioVoiceWaves({
   active,
   className,
   size = 'md',
+  onDarkScrim = false,
 }: CallAudioVoiceWavesProps) {
   const hMax = size === 'sm' ? 10 : size === 'lg' ? 22 : 12;
   const hScale = size === 'sm' ? 8 : size === 'lg' ? 34 : 14;
@@ -29,10 +35,14 @@ export function CallAudioVoiceWaves({
     size === 'lg'
       ? 'w-1 min-w-[3px] max-w-[4px]'
       : 'w-0.5 min-w-[2px] max-w-[3px]';
-  const barActive =
-    size === 'lg'
-      ? 'bg-emerald-400/95 motion-safe:will-change-transform shadow-sm shadow-emerald-500/25'
-      : 'bg-primary/80 motion-safe:will-change-transform';
+  const barActive = onDarkScrim
+    ? size === 'lg'
+      ? 'bg-emerald-300/95 motion-safe:will-change-transform shadow-sm shadow-emerald-400/30'
+      : 'bg-emerald-200/90 motion-safe:will-change-transform shadow-sm shadow-white/10'
+    : size === 'lg'
+    ? 'bg-emerald-400/95 motion-safe:will-change-transform shadow-sm shadow-emerald-500/25'
+    : 'bg-primary/80 motion-safe:will-change-transform';
+  const barIdle = onDarkScrim ? 'bg-zinc-500/55' : 'bg-muted-foreground/30';
 
   return (
     <>
@@ -69,7 +79,7 @@ export function CallAudioVoiceWaves({
               className={cn(
                 'inline-block origin-bottom rounded-full',
                 barWidth,
-                active ? barActive : 'bg-muted-foreground/30',
+                active ? barActive : barIdle,
               )}
               style={{
                 height: `${heightPx}px`,

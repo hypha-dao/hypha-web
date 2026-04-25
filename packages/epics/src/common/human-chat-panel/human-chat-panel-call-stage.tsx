@@ -382,7 +382,7 @@ export function HumanChatPanelCallStage({
       className={cn(
         'relative w-full max-w-full @container/call',
         isFull
-          ? 'box-border flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-0 bg-black p-0.5 ring-1 ring-inset ring-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_45%,transparent)]'
+          ? 'box-border flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-0 bg-black p-0.5 text-zinc-50 ring-1 ring-inset ring-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_45%,transparent)]'
           : 'box-border flex h-full min-h-0 w-full min-w-0 max-h-full shrink-0 flex-col overflow-hidden border-b border-border bg-muted/20 p-0.5',
       )}
       role="region"
@@ -1101,7 +1101,8 @@ const FeedContent = ({
         <div
           className={cn(
             'flex w-full flex-col items-center justify-center gap-3 p-4 text-center',
-            'bg-gradient-to-b from-zinc-900/95 to-black',
+            /* Fixed dark scrim: always pair with light glyphs (not theme `foreground`). */
+            'bg-gradient-to-b from-zinc-900/95 to-black text-zinc-50',
             isFullView && !isPip
               ? 'min-h-0 flex-1'
               : isPip
@@ -1113,7 +1114,7 @@ const FeedContent = ({
         >
           <div
             className={cn(
-              'relative flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted/30 text-muted-foreground ring-1 ring-border/40',
+              'relative flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-zinc-200 ring-1 ring-white/20',
               isPip
                 ? 'h-8 w-8'
                 : isFullView
@@ -1145,7 +1146,7 @@ const FeedContent = ({
           </div>
           <p
             className={cn(
-              'line-clamp-2 max-w-full font-medium text-foreground',
+              'line-clamp-2 max-w-full font-medium text-zinc-50',
               isFullView && !isPip ? 'text-base sm:text-lg' : 'text-sm',
               isPip && 'text-[10px] leading-tight',
             )}
@@ -1155,6 +1156,7 @@ const FeedContent = ({
           </p>
           <CallAudioVoiceWaves
             active={showVoiceWaves}
+            onDarkScrim
             size={isPip ? 'sm' : isFullView && !isPip ? 'lg' : 'md'}
             className={
               isPip ? 'max-w-[4.5rem]' : 'w-full max-w-[min(18rem,92%)]'

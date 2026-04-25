@@ -2094,7 +2094,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           }}
         >
           <DialogContent
-            className="fixed z-[100] flex h-[min(90dvh,900px)] max-h-[min(90dvh,900px)] w-[min(96vw,80rem)] max-w-full !left-1/2 !top-1/2 -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden border border-border/50 bg-zinc-950/98 p-0 text-foreground shadow-2xl data-[state=open]:sm:rounded-xl data-[state=open]:duration-200 motion-reduce:data-[state=open]:duration-0 motion-reduce:data-[state=open]:zoom-in-100"
+            className="fixed z-[100] flex h-[min(90dvh,900px)] max-h-[min(90dvh,900px)] w-[min(96vw,80rem)] max-w-full !left-1/2 !top-1/2 -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden border border-border/50 bg-background p-0 text-foreground shadow-2xl data-[state=open]:sm:rounded-xl data-[state=open]:duration-200 motion-reduce:data-[state=open]:duration-0 motion-reduce:data-[state=open]:zoom-in-100"
             hideCloseButton
             overlayClassName="fixed z-[99] !inset-0 !left-0 !right-0 !top-0 !bottom-0 border-0 bg-black/50 backdrop-blur-sm supports-[backdrop-filter]:bg-black/40 motion-reduce:backdrop-blur-none motion-reduce:animate-none"
             onCloseAutoFocus={(e) => {
@@ -2102,9 +2102,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               callFullViewTriggerRef.current?.focus();
             }}
           >
-            <DialogHeader className="relative flex shrink-0 border-b border-border/50 bg-zinc-950/95 px-3 py-2.5 pe-2 text-left">
+            <DialogHeader className="relative flex shrink-0 border-b border-border/50 bg-muted/40 px-3 py-2.5 pe-2 text-left">
               <DialogClose
-                className="absolute end-2 top-2 z-10 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/50 bg-zinc-900/90 text-foreground transition-colors hover:bg-zinc-800 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring"
+                className="absolute end-2 top-2 z-10 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label={t('callFullViewClose')}
                 title={t('callFullViewClose')}
               >
@@ -2173,7 +2173,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   </button>
                 </div>
               )}
-              <div className="shrink-0 border-t border-border/50 bg-zinc-950/90 px-3 py-2.5 backdrop-blur-sm">
+              <div className="shrink-0 border-t border-border/50 bg-muted/30 px-3 py-2.5 backdrop-blur-sm">
                 <HumanChatPanelInCallControls
                   callState={spaceCallState}
                   callKind={spaceCallKind}
