@@ -68,13 +68,7 @@ export const SelectAction = ({
   );
 
   return (
-    <div
-      className={
-        className
-          ? clsx('flex flex-col gap-6', className)
-          : 'flex flex-col gap-6'
-      }
-    >
+    <div className={clsx('flex flex-col gap-6', className)}>
       {showTitle ? (
         <header className="flex flex-col gap-2">
           <Skeleton width="100px" height="24px" loading={isLoading}>
