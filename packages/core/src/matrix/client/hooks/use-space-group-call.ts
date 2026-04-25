@@ -429,7 +429,8 @@ export function useSpaceGroupCall(roomId: string | null) {
         await gc.enter();
       } catch (e) {
         isJoiningRef.current = false;
-        if (isPermissionLikeGroupCallError(e)) {
+        const permissionLike = isPermissionLikeGroupCallError(e);
+        if (permissionLike) {
           setErrorCode('PERMISSION_DENIED');
         } else {
           setErrorCode('WEBRTC_FAILED');
@@ -439,9 +440,7 @@ export function useSpaceGroupCall(roomId: string | null) {
             name: 'hypha.group_call.error',
             roomId,
             kind,
-            errorCode: isPermissionLikeGroupCallError(e)
-              ? 'PERMISSION_DENIED'
-              : 'WEBRTC_FAILED',
+            errorCode: permissionLike ? 'PERMISSION_DENIED' : 'WEBRTC_FAILED',
           });
         }
         setCallState('error');
