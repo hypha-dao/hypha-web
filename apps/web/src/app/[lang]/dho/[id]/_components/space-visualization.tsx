@@ -47,7 +47,9 @@ export function SpaceVisualization({
   const { resolvedTheme } = useTheme();
   const svgRef = useRef<SVGSVGElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [canvasSize, setCanvasSize] = useState(VISUALIZATION_CONFIG.WIDTH);
+  const [canvasSize, setCanvasSize] = useState<number>(
+    VISUALIZATION_CONFIG.WIDTH,
+  );
   const previousVisibleSpacesRef = useRef<string>('');
   const onVisibleSpacesChangeRef = useRef(onVisibleSpacesChange);
   const focusRef = useRef<d3.HierarchyNode<SpaceNode> | null>(null);
