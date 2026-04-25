@@ -103,8 +103,12 @@ export function HumanChatPanelInCallControls({
           'disabled:cursor-not-allowed',
           !isFull && controlsDisabled && 'opacity-50',
         )}
-        aria-pressed={isMicrophoneMuted}
-        aria-label={isMicrophoneMuted ? t('callUnmute') : t('callMute')}
+        title={t('callControlsMicrophone')}
+        aria-label={
+          isMicrophoneMuted
+            ? t('callControlsMicrophoneMutedAria')
+            : t('callControlsMicrophoneUnmutedAria')
+        }
       >
         {isMicrophoneMuted ? (
           <MicOff className={icon} />
@@ -130,9 +134,11 @@ export function HumanChatPanelInCallControls({
             'disabled:cursor-not-allowed',
             !isFull && controlsDisabled && 'opacity-50',
           )}
-          aria-pressed={isLocalVideoMuted}
+          title={t('callControlsCamera')}
           aria-label={
-            isLocalVideoMuted ? t('callCameraOn') : t('callCameraOff')
+            isLocalVideoMuted
+              ? t('callControlsCameraOffAria')
+              : t('callControlsCameraOnAria')
           }
         >
           {isLocalVideoMuted ? (
@@ -159,9 +165,11 @@ export function HumanChatPanelInCallControls({
           'disabled:cursor-not-allowed',
           !isFull && controlsDisabled && 'opacity-50',
         )}
-        aria-pressed={isScreensharing}
+        title={t('callControlsScreenshare')}
         aria-label={
-          isScreensharing ? t('callScreenshareStop') : t('callScreenshareStart')
+          isScreensharing
+            ? t('callControlsScreenshareActiveAria')
+            : t('callControlsScreenshareInactiveAria')
         }
       >
         {isScreensharing ? (
