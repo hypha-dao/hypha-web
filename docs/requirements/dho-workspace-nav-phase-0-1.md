@@ -37,4 +37,5 @@
 ## Follow-up (product)
 
 - **Signals / Artifact / world-class nav** — [dho-workspace-signals-artifact-nav-ux-spec.md](./dho-workspace-signals-artifact-nav-ux-spec.md) tracks **Coherence → Signals**, dedicated **Artifact** (space memory), **icon-first** rail, and main **H1** alignment to the first nav row. This extends product scope; it does not re-open Phases 0–6.
+- **Members tab card grid** — [dho-members-tab-card-grid-ux-spec.md](./dho-members-tab-card-grid-ux-spec.md) specifies moving the Members tab from a **vertical list of wide cards** to a **compact responsive card grid** (person + nested space), full data mapping, and **reserved badge row** (badges not shown in v1).
 - Optional full-page Axe in CI, visual baselines for `/spaces`, or performance budgets for the d3 bundle.
