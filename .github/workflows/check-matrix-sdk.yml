@@ -1,6 +1,10 @@
 # CodeRabbit: run matrix-js-sdk version policy in CI (not only locally via `pnpm run lint`).
 name: Check matrix-js-sdk version
 
+# Code scanning: GITHUB_TOKEN must be least-privilege (read-only; no default write scopes).
+permissions:
+  contents: read
+
 on:
   pull_request:
   push:
