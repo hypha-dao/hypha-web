@@ -2,9 +2,9 @@
 
 ## Document control
 
-| Field | Value |
-|--------|--------|
-| **Status** | Phases 0–6 complete in code |
+| Field           | Value                                                                                                                   |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **Status**      | Phases 0–6 complete in code                                                                                             |
 | **Inspiration** | [Vercel — New dashboard navigation](https://vercel.com/changelog/new-dashboard-navigation-available) (IA patterns only) |
 
 ## Phase 0 — Locked decisions (UX / engineering)
@@ -36,7 +36,7 @@
 
 ## Follow-up (product)
 
-- **Signals / Artifact / world-class nav** — [dho-workspace-signals-artifact-nav-ux-spec.md](./dho-workspace-signals-artifact-nav-ux-spec.md) tracks **Coherence → Signals**, dedicated **Artifact** (space memory), **icon-first** rail, and main **H1** alignment to the first nav row. This extends product scope; it does not re-open Phases 0–6.
+- **Signals / Wiki / world-class nav** — Space memory lives in the **Wiki** tab (URL segment `wiki`, former `artifact` redirects). [dho-workspace-signals-artifact-nav-ux-spec.md](./dho-workspace-signals-artifact-nav-ux-spec.md) documents **Signals** and the **icon-first** rail; Wiki naming supersedes “Artifact” for that surface.
 - **Members tab card grid** — [dho-members-tab-card-grid-ux-spec.md](./dho-members-tab-card-grid-ux-spec.md) specifies moving the Members tab from a **vertical list of wide cards** to a **compact responsive card grid** (person + nested space), full data mapping, and **reserved badge row** (badges not shown in v1).
 - **Ecosystem view (spaces / graph)** — [dho-ecosystem-view-ux-spec.md](./dho-ecosystem-view-ux-spec.md) renames the nav to **Ecosystem**, full-bleed **map** (out of the inner box), **above-the-fold** data placement, and bounded **“wow”** effects; other tab contents completed later.
 - Optional full-page Axe in CI, visual baselines for `/spaces`, or performance budgets for the d3 bundle.

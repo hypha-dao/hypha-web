@@ -2,12 +2,12 @@
 
 ## Document control
 
-| Field            | Value                                                                                                                                                 |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Status**       | Implemented in app (DHO workspace nav + `artifact` route + i18n); this file remains the IA reference |
-| **Scope**        | Central left rail in the DHO space workspace (`DhoSpaceWorkspace`) and related content column chrome                                                  |
-| **Depends on**   | [dho-central-left-nav-and-space-graph-tech-spec.md](./dho-central-left-nav-and-space-graph-tech-spec.md) (layout, routes, `PanelWrapLayout` coupling) |
-| **Out of scope** | Rebuilding Coherence/Signals data services, org-memory APIs, or three-pane (AI / main / human chat) product chrome beyond the central column          |
+| Field            | Value                                                                                                                                                          |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**       | Superseded for nav: **Wiki** (`/wiki`) + `SpaceMemorySection`; legacy `/artifact` redirects to `/wiki`. This file remains historical IA for Signals/icon rail. |
+| **Scope**        | Central left rail in the DHO space workspace (`DhoSpaceWorkspace`) and related content column chrome                                                           |
+| **Depends on**   | [dho-central-left-nav-and-space-graph-tech-spec.md](./dho-central-left-nav-and-space-graph-tech-spec.md) (layout, routes, `PanelWrapLayout` coupling)          |
+| **Out of scope** | Rebuilding Coherence/Signals data services, org-memory APIs, or three-pane (AI / main / human chat) product chrome beyond the central column                   |
 
 ## 1) Problem (from product + design review)
 

@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
-  BookOpen,
   FileCheck2,
+  Library,
   LayoutGrid,
   Radio,
   type LucideIcon,
@@ -26,7 +26,7 @@ import {
   TooltipTrigger,
 } from '@hypha-platform/ui';
 import { getDhoPathAgreements } from '../@tab/agreements/constants';
-import { getDhoPathArtifact } from '../@tab/artifact/constants';
+import { getDhoPathWiki } from '../@tab/wiki/constants';
 import { getDhoPathCoherence } from '../@tab/coherence/constants';
 import { getDhoPathMembers } from '../@tab/members/constants';
 import { getDhoPathSpaces } from '../@tab/spaces/constants';
@@ -84,10 +84,10 @@ function useNavItems(
       ...(spaceMemoryEnabled
         ? [
             {
-              name: 'artifact' as const,
-              href: getDhoPathArtifact(lang, spaceSlug),
-              label: t('Artifact'),
-              icon: BookOpen,
+              name: 'wiki' as const,
+              href: getDhoPathWiki(lang, spaceSlug),
+              label: t('Wiki'),
+              icon: Library,
             },
           ]
         : []),
