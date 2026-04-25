@@ -1948,6 +1948,7 @@
     "callLayoutSpeakerOnTop": "Orador em cima, ecrã em baixo",
     "callLayoutPip": "Vídeo por cima do ecrã",
     "callParticipantMuted": "Silenciado",
+    "callParticipantMicOff": "Micro desligado",
     "callLeftAudio": "Saiu da chamada de voz.",
     "callLeftVideo": "Saiu da videchamada.",
     "callLeftBannerDismiss": "Fechar",

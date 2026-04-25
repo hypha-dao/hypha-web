@@ -1980,6 +1980,7 @@
     "callLayoutSpeakerOnTop": "Speaker on top, share below",
     "callLayoutPip": "Video on top of share",
     "callParticipantMuted": "Muted",
+    "callParticipantMicOff": "Microphone off",
     "callLeftAudio": "You left the voice call.",
     "callLeftVideo": "You left the video call.",
     "callLeftBannerDismiss": "Dismiss",

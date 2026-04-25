@@ -2103,7 +2103,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           >
             <DialogHeader className="relative flex shrink-0 border-b border-border/50 bg-zinc-950/95 px-3 py-2.5 pe-2 text-left">
               <DialogClose
-                className="absolute end-2 top-2 z-10 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border/50 bg-zinc-900/90 text-foreground transition-colors hover:bg-zinc-800 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring"
+                className="absolute end-2 top-2 z-10 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/50 bg-zinc-900/90 text-foreground transition-colors hover:bg-zinc-800 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label={t('callFullViewClose')}
                 title={t('callFullViewClose')}
               >

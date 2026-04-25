@@ -154,9 +154,7 @@ export function HumanChatPanelTabs({
                 'whitespace-nowrap rounded-lg px-2.5 py-1.5 text-left text-xs font-medium',
                 'transition-colors duration-150 sm:px-3',
                 activeTab === tab.key
-                  ? tab.key === 'mentions'
-                    ? 'border border-accent-9 bg-accent-9 text-white shadow-sm ring-1 ring-inset ring-accent-10/35 dark:border-accent-10 dark:bg-accent-10'
-                    : 'border border-accent-9/40 bg-accent-9/18 text-foreground shadow-sm ring-1 ring-inset ring-accent-9/25 dark:border-accent-10/45 dark:bg-accent-9/22 dark:text-foreground dark:ring-accent-10/30'
+                  ? 'border border-accent-9/40 bg-accent-9/18 text-foreground shadow-sm ring-1 ring-inset ring-accent-9/25 dark:border-accent-10/45 dark:bg-accent-9/22 dark:text-foreground dark:ring-accent-10/30'
                   : 'border border-transparent text-muted-foreground hover:border-border/70 hover:bg-muted/80 hover:text-foreground',
               )}
             >
@@ -175,12 +173,7 @@ export function HumanChatPanelTabs({
                 {tab.key === 'mentions' && mentionBadgeLabel != null && (
                   <span
                     aria-hidden
-                    className={cn(
-                      'inline-flex min-h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full border px-1.5 text-[10px] font-semibold leading-none tabular-nums shadow-sm',
-                      activeTab === 'mentions'
-                        ? 'border-white/30 bg-white/20 text-white'
-                        : 'border border-accent-9/35 bg-accent-9 text-accent-contrast',
-                    )}
+                    className="inline-flex min-h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full border border-accent-9/35 bg-accent-9 px-1.5 text-[10px] font-semibold leading-none text-accent-contrast tabular-nums shadow-sm"
                   >
                     {mentionBadgeLabel}
                   </span>

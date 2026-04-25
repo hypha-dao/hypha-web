@@ -540,10 +540,16 @@ export function useSpaceGroupCall(roomId: string | null) {
       setScreenshareErrorCode(null);
       try {
         const ok = await gc.setScreensharingEnabled(enabled);
-        if (ok === false) {
+        // Stopping share is user-initiated; the SDK can report `false` without a real failure.
+        if (enabled && ok === false) {
           setScreenshareErrorCode('WEBRTC_FAILED');
         }
       } catch (e) {
+        if (!enabled) {
+          setScreenshareErrorCode(null);
+          scheduleFeedBatched();
+          return;
+        }
         if (isPermissionLikeGroupCallError(e)) {
           setScreenshareErrorCode('PERMISSION_DENIED');
         } else {

@@ -1948,6 +1948,7 @@
     "callLayoutSpeakerOnTop": "Orador arriba, pantalla abajo",
     "callLayoutPip": "Vídeo sobre la pantalla",
     "callParticipantMuted": "Silenciado",
+    "callParticipantMicOff": "Micrófono desactivado",
     "callLeftAudio": "Has salido de la llamada de voz.",
     "callLeftVideo": "Has salido de la videollamada.",
     "callLeftBannerDismiss": "Cerrar",

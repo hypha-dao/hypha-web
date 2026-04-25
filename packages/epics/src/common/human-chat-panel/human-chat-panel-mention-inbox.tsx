@@ -183,10 +183,10 @@ export function HumanChatPanelMentionBell({
     <button
       type="button"
       className={cn(
-        'relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-9/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        'relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-9/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         mentionsTabActive
-          ? 'bg-accent-9 text-white shadow-sm ring-1 ring-inset ring-accent-10/30 hover:bg-accent-10 hover:text-white'
-          : 'text-muted-foreground hover:bg-accent-2 hover:text-accent-12',
+          ? 'border border-accent-9/40 bg-accent-9/18 text-foreground shadow-sm ring-1 ring-inset ring-accent-9/25 dark:border-accent-10/45 dark:bg-accent-9/22 dark:ring-accent-10/30'
+          : 'border border-transparent text-muted-foreground hover:border-border/70 hover:bg-muted/80 hover:text-foreground',
       )}
       aria-pressed={mentionsTabActive}
       aria-label={
@@ -246,21 +246,10 @@ export function HumanChatPanelMentionBell({
           aria-hidden
         />
       ) : (
-        <Bell
-          className="h-3.5 w-3.5"
-          strokeWidth={mentionsTabActive ? 2.5 : 2}
-          aria-hidden
-        />
+        <Bell className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
       )}
       {badgeLabel != null && (
-        <span
-          className={cn(
-            'absolute -right-0.5 -top-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full border px-0.5 text-[9px] font-semibold leading-none shadow-sm',
-            mentionsTabActive
-              ? 'border-white/30 bg-white text-accent-9'
-              : 'border-accent-9/40 bg-accent-9 text-accent-contrast',
-          )}
-        >
+        <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full border border-accent-9/35 bg-accent-9 px-0.5 text-[9px] font-semibold leading-none text-accent-contrast shadow-sm">
           {badgeLabel}
         </span>
       )}

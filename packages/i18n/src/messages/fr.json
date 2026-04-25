@@ -1948,6 +1948,7 @@
     "callLayoutSpeakerOnTop": "Intervenant en haut, partage en bas",
     "callLayoutPip": "Vidéo sur le partage",
     "callParticipantMuted": "Muet",
+    "callParticipantMicOff": "Micro coupé",
     "callLeftAudio": "Vous avez quitté l'appel vocal.",
     "callLeftVideo": "Vous avez quitté l'appel vidéo.",
     "callLeftBannerDismiss": "Fermer",

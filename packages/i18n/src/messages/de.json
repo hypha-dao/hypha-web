@@ -1949,6 +1949,7 @@
     "callLayoutSpeakerOnTop": "Sprecher oben, Freigabe unten",
     "callLayoutPip": "Video über der Freigabe",
     "callParticipantMuted": "Stumm",
+    "callParticipantMicOff": "Mikrofon aus",
     "callLeftAudio": "Du hast den Sprachanruf verlassen.",
     "callLeftVideo": "Du hast den Videoanruf verlassen.",
     "callLeftBannerDismiss": "Schließen",

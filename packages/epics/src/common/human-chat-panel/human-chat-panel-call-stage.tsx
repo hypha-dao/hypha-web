@@ -17,7 +17,7 @@ import {
 } from 'matrix-js-sdk/lib/webrtc/callFeed';
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
-import { Maximize2, User } from 'lucide-react';
+import { Maximize2, MicOff, User } from 'lucide-react';
 import type { SpaceGroupCallState } from '@hypha-platform/core/client';
 import { matrixMemberDisplayLabel } from './matrix-room-member-display';
 import { CallAudioVoiceWaves } from './call-audio-voice-waves';
@@ -382,8 +382,8 @@ export function HumanChatPanelCallStage({
       className={cn(
         'relative w-full max-w-full @container/call',
         isFull
-          ? 'flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-0 bg-black py-0'
-          : 'flex min-h-0 w-full min-w-0 flex-1 flex-col border-b border-border bg-muted/20 min-h-[min(32vh,200px)]',
+          ? 'box-border flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-0 bg-black p-0.5 ring-1 ring-inset ring-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_45%,transparent)]'
+          : 'box-border flex min-h-0 w-full min-w-0 flex-1 flex-col border-b border-border bg-muted/20 min-h-[min(32vh,200px)] p-0.5',
       )}
       role="region"
       aria-labelledby={labelId}
@@ -1037,7 +1037,7 @@ const FeedContent = ({
   return (
     <div
       className={cn(
-        'relative min-w-0 overflow-hidden rounded-lg bg-black/20',
+        'relative min-w-0 overflow-hidden rounded-xl bg-black/20',
         isFullView && !isPip
           ? 'flex h-full min-h-0 min-w-0 flex-1 flex-col'
           : isPip
@@ -1067,6 +1067,25 @@ const FeedContent = ({
             muted={feed.isLocal()}
             aria-label={label}
           />
+          {feed.isAudioMuted() && (
+            <div
+              className={cn(
+                'pointer-events-none absolute z-[2] flex items-center justify-center rounded-md border border-destructive/30 bg-destructive/20 text-destructive-foreground shadow-sm backdrop-blur-sm',
+                isPip
+                  ? 'end-0.5 top-0.5 h-4 w-4'
+                  : 'end-1 top-1 h-7 w-7 sm:end-1.5 sm:top-1.5',
+              )}
+              title={t('callParticipantMicOff')}
+              role="img"
+              aria-label={t('callParticipantMicOff')}
+            >
+              <MicOff
+                className={isPip ? 'h-2.5 w-2.5' : 'h-3.5 w-3.5'}
+                strokeWidth={2.25}
+                aria-hidden
+              />
+            </div>
+          )}
           {!isPip && (
             <div
               className={cn(
