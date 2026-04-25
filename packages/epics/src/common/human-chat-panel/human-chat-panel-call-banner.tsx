@@ -92,6 +92,14 @@ export function HumanChatPanelCallBanner({
       >
         <p className="min-w-0 flex-1 text-xs leading-snug text-destructive sm:text-sm">
           {t(errorKey(errorCode))}
+          {errorCode === 'PERMISSION_DENIED' ? (
+            <>
+              {' '}
+              <span className="text-destructive/90">
+                {t('callErrorPermissionGuidance')}
+              </span>
+            </>
+          ) : null}
         </p>
         <div className="flex shrink-0 items-center gap-1.5">
           {showRetryOnError ? (
