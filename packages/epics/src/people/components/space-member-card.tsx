@@ -68,6 +68,8 @@ export const SpaceMemberCard: React.FC<SpaceMemberCardProps> = ({
   const desc = space.description?.trim() ?? '';
   const metaTitle = [desc, joinLine].filter(Boolean).join(' · ');
 
+  const logoSrc = space.logoUrl || '/placeholder/default-space.svg';
+
   return (
     <Card
       className={cn(
@@ -78,51 +80,76 @@ export const SpaceMemberCard: React.FC<SpaceMemberCardProps> = ({
       )}
       data-testid="space-member-card-grid"
     >
-      <div className="flex min-w-0 gap-2.5 p-3">
-        <div className="shrink-0 self-start">
+      <div className="relative isolate overflow-hidden">
+        <div
+          className={cn(
+            'relative h-[4.5rem] w-full overflow-hidden bg-muted/50',
+            'after:pointer-events-none after:absolute after:inset-0 after:bg-gradient-to-b after:from-transparent after:via-background/55 after:to-background',
+          )}
+        >
+          {isLoading ? (
+            <Skeleton
+              className="h-full w-full rounded-none"
+              loading
+              height="100%"
+            />
+          ) : (
+            <Image
+              src={logoSrc}
+              alt=""
+              width={320}
+              height={144}
+              className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-40 blur-[1.5px] motion-reduce:scale-100 motion-reduce:blur-none"
+              aria-hidden
+            />
+          )}
+        </div>
+        <div className="relative z-10 -mt-9 flex min-w-0 gap-2.5 px-3">
           <Skeleton
-            width="40px"
-            height="40px"
+            width="48px"
+            height="48px"
             loading={isLoading}
-            className="rounded-md"
+            className="rounded-lg"
           >
-            <div className="h-10 w-10 overflow-hidden rounded-md border border-border/60">
+            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-border/60 shadow-md ring-4 ring-card">
               <Image
-                className="h-10 w-10 object-cover"
-                src={space.logoUrl || '/placeholder/default-space.svg'}
-                height={40}
-                width={40}
+                className="h-12 w-12 object-cover"
+                src={logoSrc}
+                height={48}
+                width={48}
                 alt=""
               />
             </div>
           </Skeleton>
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-            <LayoutGrid
-              className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
-              strokeWidth={2.25}
-              aria-hidden
-            />
-            <span className="sr-only">{tMembers('nestedSpaceTypeLabel')}</span>
-            <Badge
-              className="h-5 max-w-full shrink-0 border text-[10px] font-semibold uppercase tracking-wide"
-              colorVariant="accent"
-            >
-              {tMembers('nestedSpaceTypeLabel')}
-            </Badge>
+          <div className="min-w-0 flex-1 pt-1">
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+              <LayoutGrid
+                className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+                strokeWidth={2.25}
+                aria-hidden
+              />
+              <span className="sr-only">
+                {tMembers('nestedSpaceTypeLabel')}
+              </span>
+              <Badge
+                className="h-5 max-w-full shrink-0 border text-[10px] font-semibold uppercase tracking-wide"
+                colorVariant="accent"
+              >
+                {tMembers('nestedSpaceTypeLabel')}
+              </Badge>
+            </div>
+            {isLoading ? (
+              <Skeleton className="mt-1.5" width="8rem" height="1rem" loading />
+            ) : (
+              <Text
+                as="p"
+                className="mt-1.5 line-clamp-2 text-4 font-medium leading-snug"
+                title={space.title}
+              >
+                {space.title}
+              </Text>
+            )}
           </div>
-          {isLoading ? (
-            <Skeleton className="mt-1.5" width="8rem" height="1rem" loading />
-          ) : (
-            <Text
-              as="p"
-              className="mt-1.5 line-clamp-2 text-4 font-medium leading-snug"
-              title={space.title}
-            >
-              {space.title}
-            </Text>
-          )}
         </div>
       </div>
 
