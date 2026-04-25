@@ -184,7 +184,7 @@ export const SpaceMemberCard: React.FC<SpaceMemberCardProps> = ({
             <div className="h-7 w-7 shrink-0 overflow-hidden rounded border border-border/60">
               <Image
                 className="h-7 w-7 object-cover"
-                src={delegator.avatarUrl || '/placeholder/default-space.svg'}
+                src={delegator.avatarUrl || '/placeholder/default-profile.svg'}
                 height={28}
                 width={28}
                 alt=""
