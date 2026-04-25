@@ -9,7 +9,6 @@ type HumanChatPanelCallToolbarProps = {
   callState: SpaceGroupCallState;
   callKind: 'audio' | 'video' | null;
   disabled: boolean;
-  inCall: boolean;
   /** True when other members have devices in the room GroupCall and local user is not in the session. */
   roomCallInProgressToJoin?: boolean;
   /**
@@ -31,7 +30,6 @@ export function HumanChatPanelCallToolbar({
   callState,
   callKind,
   disabled,
-  inCall,
   roomCallInProgressToJoin = false,
   onlyLocalInRoomCall = false,
   onAudio,
@@ -44,7 +42,23 @@ export function HumanChatPanelCallToolbar({
     callState === 'awaiting_media' ||
     callState === 'connecting' ||
     callState === 'disconnecting';
-  const inVideoMode = inCall && callKind === 'video';
+
+  /** In our session: highlight the control that matches `callKind` (not only at `connected`). */
+  const sessionActive =
+    callState === 'initializing' ||
+    callState === 'awaiting_media' ||
+    callState === 'connecting' ||
+    callState === 'connected' ||
+    callState === 'disconnecting';
+  const audioIsActive = sessionActive && callKind === 'audio';
+  const videoIsActive = sessionActive && callKind === 'video';
+
+  const activeCallChip =
+    'border border-accent-9/45 bg-accent-9/20 text-foreground shadow-sm ring-1 ring-inset ring-accent-9/25 dark:border-accent-10/50 dark:bg-accent-9/28 dark:ring-accent-10/30';
+
+  /** Dim the non-primary control while the call is still connecting, but keep the mode you chose legible. */
+  const phoneDim = (disabled || busy) && !audioIsActive;
+  const videoDim = (disabled || busy) && !videoIsActive;
 
   return (
     <div
@@ -57,10 +71,11 @@ export function HumanChatPanelCallToolbar({
         onClick={onAudio}
         disabled={disabled || busy}
         className={cn(
-          'flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors',
-          (disabled || busy) && 'cursor-not-allowed opacity-50',
+          'flex h-7 w-7 items-center justify-center rounded-lg transition-colors',
+          phoneDim && 'cursor-not-allowed opacity-50',
           !disabled && !busy && 'hover:bg-muted hover:text-foreground',
-          inCall && !inVideoMode && 'text-foreground',
+          !audioIsActive && 'text-muted-foreground',
+          audioIsActive && activeCallChip,
         )}
         title={
           roomCallInProgressToJoin
@@ -76,20 +91,24 @@ export function HumanChatPanelCallToolbar({
               : t('callJoinWithAudio')
             : t('callAudio')
         }
-        aria-pressed={inCall && !inVideoMode}
+        aria-pressed={audioIsActive}
         aria-busy={busy}
       >
-        <Phone className="h-3.5 w-3.5" />
+        <Phone
+          className={cn('h-3.5 w-3.5', audioIsActive && 'stroke-2')}
+          aria-hidden
+        />
       </button>
       <button
         type="button"
         onClick={onVideo}
         disabled={disabled || busy}
         className={cn(
-          'flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors',
-          (disabled || busy) && 'cursor-not-allowed opacity-50',
+          'flex h-7 w-7 items-center justify-center rounded-lg transition-colors',
+          videoDim && 'cursor-not-allowed opacity-50',
           !disabled && !busy && 'hover:bg-muted hover:text-foreground',
-          inCall && inVideoMode && 'text-foreground',
+          !videoIsActive && 'text-muted-foreground',
+          videoIsActive && activeCallChip,
         )}
         title={
           roomCallInProgressToJoin
@@ -105,10 +124,13 @@ export function HumanChatPanelCallToolbar({
               : t('callJoinWithVideo')
             : t('callVideo')
         }
-        aria-pressed={inCall && inVideoMode}
+        aria-pressed={videoIsActive}
         aria-busy={busy}
       >
-        <Video className="h-3.5 w-3.5" />
+        <Video
+          className={cn('h-3.5 w-3.5', videoIsActive && 'stroke-2')}
+          aria-hidden
+        />
       </button>
     </div>
   );

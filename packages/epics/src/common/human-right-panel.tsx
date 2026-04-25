@@ -575,8 +575,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     spaceCallState === 'awaiting_media' ||
     spaceCallState === 'initializing';
 
-  const callToolbarInCall = spaceCallState === 'connected';
-
   const spaceCallToolbarJoinHint = callUiEnabled && spaceCallShowJoinStrip;
 
   const spaceCallShowJoinChime = useMemo(
@@ -1816,7 +1814,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 callState={spaceCallState}
                 callKind={spaceCallKind}
                 disabled={!callUiEnabled}
-                inCall={callToolbarInCall}
                 roomCallInProgressToJoin={spaceCallToolbarJoinHint}
                 onlyLocalInRoomCall={
                   spaceCallShowJoinStrip && spaceCallRoomGroupDeviceCount === 1
