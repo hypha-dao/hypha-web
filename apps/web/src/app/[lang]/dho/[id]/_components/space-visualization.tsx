@@ -81,9 +81,8 @@ export function SpaceVisualization({
     const measure = () => {
       const w = el.clientWidth;
       const h = el.clientHeight;
-      const s = Math.round(
-        Math.max(320, Math.min(1200, h > 0 ? Math.min(w, h) : w)),
-      );
+      const inner = h > 0 ? Math.min(w, h) : w;
+      const s = Math.round(Math.max(320, Math.min(1200, inner)));
       setCanvasSize(s);
     };
     measure();
