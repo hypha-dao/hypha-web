@@ -4,7 +4,7 @@
 
 | Field            | Value                                                                                                                                                                                 |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Status**       | Spec only (no implementation in this change)                                                                                                                                          |
+| **Status**       | Implemented in app (Members tab grid; see `MembersList`, `MemberCard`, `SpaceMemberCard`)                                                                                             |
 | **Scope**        | DHO space **Members** main column: `@tab/members` → `MembersSection` + `MembersList` (`packages/epics/src/people/`)                                                                   |
 | **Depends on**   | [Hypha UI stack](../../.agents/skills/hypha-ui-stack/SKILL.md) — tokens, shadcn/Radix, `packages/ui`                                                                                  |
 | **Out of scope** | API contract changes (unless product approves a follow-up); person profile aside redesign; non-DHO members surfaces (e.g. side-panel member pickers) unless explicitly extended later |

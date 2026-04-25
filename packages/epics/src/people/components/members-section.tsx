@@ -57,30 +57,34 @@ export const MembersSection: FC<MemberSectionProps> = ({
     : '';
 
   return (
-    <div className="flex flex-col w-full justify-center items-center gap-4">
-      <span className="w-full flex gap-4">
-        <SectionFilter
-          count={pagination?.total || 0}
-          label={tCommon('Members')}
-          hasSearch
-          searchPlaceholder={tMembers('searchMembers')}
-          onChangeSearch={onUpdateSearch}
-        >
-          <ExitSpace web3SpaceId={space?.web3SpaceId as number} />
-        </SectionFilter>
-        {!isDelegate && (
-          <Link
-            title={tooltipMessage || ''}
-            className={isDisabled ? 'cursor-not-allowed' : ''}
-            href={`${basePath}/${person?.slug}`}
-            scroll={false}
+    <div className="flex w-full flex-col items-stretch justify-center gap-4">
+      <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <div className="min-w-0 flex-1">
+          <SectionFilter
+            count={pagination?.total || 0}
+            label={tCommon('Members')}
+            hasSearch
+            searchPlaceholder={tMembers('searchMembers')}
+            onChangeSearch={onUpdateSearch}
           >
-            <Button disabled={isDisabled || isMemberLoading}>
-              {tMembers('delegateVoting')}
-            </Button>
-          </Link>
+            <ExitSpace web3SpaceId={space?.web3SpaceId as number} />
+          </SectionFilter>
+        </div>
+        {!isDelegate && (
+          <div className="shrink-0 self-start sm:self-center">
+            <Link
+              title={tooltipMessage || ''}
+              className={isDisabled ? 'cursor-not-allowed' : ''}
+              href={`${basePath}/${person?.slug}`}
+              scroll={false}
+            >
+              <Button disabled={isDisabled || isMemberLoading}>
+                {tMembers('delegateVoting')}
+              </Button>
+            </Link>
+          </div>
         )}
-      </span>
+      </div>
       {pagination?.total === 0 ? (
         <Empty>
           <p>{tMembers('listIsEmpty')}</p>

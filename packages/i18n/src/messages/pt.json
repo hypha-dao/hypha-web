@@ -988,6 +988,8 @@
   },
   "MembersTab": {
     "searchMembers": "Pesquisar membros",
+    "nestedSpaceTypeLabel": "Espaço",
+    "spaceDelegateLabel": "Delegado",
     "delegateVoting": "Votação de delegado",
     "listIsEmpty": "A lista está vazia",
     "loading": "Carregando...",
