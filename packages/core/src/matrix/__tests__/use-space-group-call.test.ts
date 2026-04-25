@@ -21,6 +21,30 @@ describe('isPermissionLikeGroupCallError', () => {
     expect(isPermissionLikeGroupCallError(e)).toBe(true);
   });
 
+  it('returns true for PermissionDismissedError name (experimental)', () => {
+    expect(
+      isPermissionLikeGroupCallError(
+        new DOMException('dismissed', 'PermissionDismissedError'),
+      ),
+    ).toBe(true);
+  });
+
+  it('returns true for NotReadableError name (device busy)', () => {
+    expect(
+      isPermissionLikeGroupCallError(
+        new DOMException('Could not start video', 'NotReadableError'),
+      ),
+    ).toBe(true);
+  });
+
+  it('returns true for OverconstrainedError name', () => {
+    expect(
+      isPermissionLikeGroupCallError(
+        new DOMException('constraint', 'OverconstrainedError'),
+      ),
+    ).toBe(true);
+  });
+
   it('returns false for generic error', () => {
     expect(isPermissionLikeGroupCallError(new Error('ICE failed'))).toBe(false);
   });
