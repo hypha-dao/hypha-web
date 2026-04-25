@@ -128,9 +128,6 @@ export const SpaceMemberCard: React.FC<SpaceMemberCardProps> = ({
                 strokeWidth={2.25}
                 aria-hidden
               />
-              <span className="sr-only">
-                {tMembers('nestedSpaceTypeLabel')}
-              </span>
               <Badge
                 className="h-5 max-w-full shrink-0 border text-[10px] font-semibold uppercase tracking-wide"
                 colorVariant="accent"
