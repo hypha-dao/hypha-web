@@ -825,12 +825,11 @@ export function HumanChatPanelCallStage({
         showFloatingLocalPip && (
           <div
             className={cn(
-              'pointer-events-none absolute z-10 overflow-hidden rounded-lg border-2 border-border bg-card shadow-lg',
+              'pointer-events-none absolute z-10 flex overflow-hidden rounded-md border-2 border-border bg-black shadow-lg',
               isFull
-                ? 'end-4 bottom-4 w-[min(22%,11rem)] min-w-[5.5rem]'
-                : 'bottom-2 end-2 w-[32%] min-w-[5.5rem] max-w-[8.5rem]',
+                ? 'end-4 bottom-4 w-[min(22%,11rem)] min-w-[5.5rem] aspect-video'
+                : 'bottom-2 end-2 w-[32%] min-w-[5.5rem] max-w-[8.5rem] aspect-video',
             )}
-            style={{ aspectRatio: '4 / 3' }}
           >
             {localUserMedia.map((feed, i) => (
               <CallFeedTile
@@ -1032,18 +1031,19 @@ const FeedContent = ({
   return (
     <div
       className={cn(
-        'relative min-w-0 overflow-hidden rounded-xl bg-black/20',
+        /* `rounded-md` = button-like corners; solid black so letterboxing (if any) is never a light “white” gap in light mode */
+        'relative min-w-0 overflow-hidden rounded-md bg-black',
         isFullView && !isPip
           ? 'flex h-full min-h-0 min-w-0 flex-1 flex-col'
           : isPip
-          ? 'flex min-h-0'
+          ? 'flex h-full min-h-0 w-full min-w-0'
           : hasVideo
           ? 'flex h-full min-h-0 w-full min-w-0 flex-1 flex-col' // panel: match avatar tile height in multi-row grid
           : 'flex min-h-[10rem] items-stretch justify-center',
         isShare && !isFullView && 'min-h-[min(42vh,360px)] w-full',
         isShare && isFullView && 'h-full min-h-0 w-full',
         isActiveSpeaker &&
-          'ring-2 ring-offset-0 ring-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_70%,transparent)]',
+          'ring-2 ring-inset ring-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_70%,transparent)]',
       )}
     >
       {hasVideo ? (
@@ -1051,11 +1051,11 @@ const FeedContent = ({
           <video
             ref={ref}
             className={cn(
-              isPip
-                ? 'max-h-24 w-full object-contain'
-                : isFullView
-                ? 'absolute inset-0 h-full w-full object-contain'
-                : 'h-full w-full min-h-0 flex-1 object-cover', // panel: fill cell like avatar + waves column
+              'min-h-0 w-full',
+              isPip && 'h-full flex-1',
+              isFullView && !isPip && 'absolute inset-0 h-full w-full',
+              !isPip && !isFullView && 'h-full min-h-0 flex-1',
+              isShare ? 'object-contain' : 'object-cover',
             )}
             autoPlay
             playsInline
