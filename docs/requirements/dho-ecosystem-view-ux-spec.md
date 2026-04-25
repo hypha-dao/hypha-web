@@ -21,7 +21,7 @@
 ### 1.2 “Opening screen” (default first view in a space)
 
 - **Intent:** When a user lands in a DHO **space** context, the product should feel like the **Ecosystem** is a **first-class home** for orientation—at least for users who care about structure (not only agreements).
-- **Default route today:** Per [dho-workspace-nav-phase-0-1.md](./dho-workspace-nav-phase-0-1.md), default tab is **`/agreements`**. This spec **does not mandate** a global default change without product sign-off, but it **recommends** an explicit choice:
+- **Default route today:** Per [dho-workspace-nav-phases-0-6.md](./dho-workspace-nav-phases-0-6.md), default tab is **`/agreements`**. This spec **does not mandate** a global default change without product sign-off, but it **recommends** an explicit choice:
   - **Option A —** Keep default `agreements`; **Ecosystem** is one click away (low risk).
   - **Option B —** Default new sessions to **`/spaces` (Ecosystem)** for a more “map-first” DAO experience (higher impact; needs analytics and onboarding).
   - **Option C —** Per-user or per-space preference (later).
