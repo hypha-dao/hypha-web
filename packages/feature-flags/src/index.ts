@@ -72,6 +72,9 @@ export const flagDefinitionsForDiscovery = {
   },
   /**
    * Toolbar key matches `readBooleanOverride(..., 'enable-human-chat')`.
+   * CodeRabbit: discovery `defaultValue: true` intentionally matches
+   * {@link getEnableHumanChat} when env/cookie/toolbar are unset; defaulting the
+   * flag metadata to `false` would misrepresent the shipped product default.
    */
   enableHumanChat: {
     key: 'enable-human-chat',
