@@ -169,7 +169,7 @@ function useMeasuredSidebarGaps(
     let right = 0;
     for (const gap of gaps) {
       const el = gap as HTMLElement;
-      const side = el.parentElement?.getAttribute('data-side');
+      const side = el.closest('[data-side]')?.getAttribute('data-side');
       const w = el.offsetWidth;
       if (side === 'left') {
         left = w;
