@@ -1008,27 +1008,47 @@ type ReplyConnectorGeometry = {
   d: string;
 };
 
+/** Rounded L-corner radius (px); keep small vs stem so the arc is visible. */
+const REPLY_CONNECTOR_CORNER_R = 6;
+/** Start the vertical stem slightly below the main avatar so the stroke does not sit on the tile image. */
+const REPLY_CONNECTOR_MAIN_AVATAR_INSET = 3;
+
 /**
- * L-shaped path in row-local px: vertical from main-avatar top-center to the reply-row
- * height, then horizontal toward the small avatar. Uses only `L` segments so the path
- * cannot degenerate like the previous quadratic branch when yRep ≪ yMainTop.
+ * L-shaped path in row-local px: vertical from below main avatar center, rounded elbow,
+ * then horizontal to the small-avatar line. Rounded join avoids a harsh 90° kink; stem
+ * starts under the main avatar to reduce visual overlap (layering: svg z-0, avatars z-1).
  */
-function buildReplyConnectorPolylineD(params: {
+function buildReplyConnectorPathD(params: {
   xMain: number;
-  yMainTop: number;
+  yStemStart: number;
   yRep: number;
   xEnd: number;
 }): string {
-  const { xMain, yMainTop, yRep, xEnd } = params;
+  const { xMain, yStemStart, yRep, xEnd } = params;
+  const r = REPLY_CONNECTOR_CORNER_R;
+
   if (Math.abs(xEnd - xMain) < 0.75) {
-    return `M ${xMain} ${yMainTop} L ${xMain} ${yRep}`;
+    return `M ${xMain} ${yStemStart} L ${xMain} ${yRep}`;
   }
-  return `M ${xMain} ${yMainTop} L ${xMain} ${yRep} L ${xEnd} ${yRep}`;
+
+  const goRight = xEnd > xMain;
+  const yBefore = yRep - r;
+  if (yStemStart >= yBefore - 0.5) {
+    return `M ${xMain} ${yStemStart} L ${xMain} ${yRep} L ${xEnd} ${yRep}`;
+  }
+  if (goRight) {
+    return `M ${xMain} ${yStemStart} L ${xMain} ${yBefore} A ${r} ${r} 0 0 1 ${
+      xMain + r
+    } ${yRep} L ${xEnd} ${yRep}`;
+  }
+  return `M ${xMain} ${yStemStart} L ${xMain} ${yBefore} A ${r} ${r} 0 0 0 ${
+    xMain - r
+  } ${yRep} L ${xEnd} ${yRep}`;
 }
 
 /**
- * Measured Discord-style connector: stem from **top-center** of main avatar, vertical to
- * reply row, rounded corner, horizontal ending just **left** of the small avatar.
+ * Measured Discord-style connector: stem from main-avatar column (under the image),
+ * up to the reply row with a **rounded** elbow, horizontal to just before the small avatar.
  */
 function ChatReplyConnectorMeasured({
   rowRef,
@@ -1063,9 +1083,16 @@ function ChatReplyConnectorMeasured({
       }
       const xMain = mainRect.left + mainRect.width / 2 - rowRect.left;
       const yRep = repRect.top - rowRect.top + repRect.height / 2;
-      /** Stem starts at main avatar top-center (Discord-style). */
-      const yMainTop =
-        mainRect.top - rowRect.top + Math.min(4, mainRect.height * 0.06);
+      const mainBottomLocal = mainRect.bottom - rowRect.top;
+      const r = REPLY_CONNECTOR_CORNER_R;
+      /** Stem starts just under the main avatar (not from top) so the line does not cross the image. */
+      const yStemStart = Math.max(
+        mainRect.top - rowRect.top + mainRect.height * 0.35,
+        Math.min(
+          mainBottomLocal - REPLY_CONNECTOR_MAIN_AVATAR_INSET,
+          yRep - r * 2 - 1,
+        ),
+      );
       const gapPx = 6;
       const smallLeft = repRect.left - rowRect.left;
       const smallRight = repRect.right - rowRect.left;
@@ -1075,9 +1102,9 @@ function ChatReplyConnectorMeasured({
         smallLeft >= xMain
           ? Math.min(xEndTarget, smallLeft - 2)
           : Math.max(xEndTarget, smallRight + 2);
-      const d = buildReplyConnectorPolylineD({
+      const d = buildReplyConnectorPathD({
         xMain,
-        yMainTop,
+        yStemStart,
         yRep,
         xEnd,
       });
@@ -1135,7 +1162,7 @@ function ChatReplyConnectorMeasured({
 
   return (
     <svg
-      className="pointer-events-none absolute inset-0 z-[8] overflow-visible text-border/80 dark:text-border/85"
+      className="pointer-events-none absolute inset-0 z-0 overflow-visible text-border/80 dark:text-border/85"
       width={geom.width}
       height={geom.height}
       viewBox={`0 0 ${geom.width} ${geom.height}`}
