@@ -22,9 +22,9 @@ const GRID_CLASS =
 function MembersGridSkeleton() {
   return (
     <div className={cn(GRID_CLASS, 'min-h-36')} aria-hidden>
-      <MemberCard isLoading />
-      <MemberCard isLoading />
-      <MemberCard isLoading />
+      {Array.from({ length: 6 }).map((_, i) => (
+        <MemberCard key={`member-skel-${i}`} isLoading />
+      ))}
     </div>
   );
 }
