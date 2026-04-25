@@ -987,6 +987,7 @@
     "onVoting": "Sobre la votación",
     "accepted": "Aceptado",
     "rejected": "Rechazado",
+    "refused": "Rechazado",
     "searchDocuments": "Buscar documentos",
     "listIsEmpty": "La lista está vacía"
   },
