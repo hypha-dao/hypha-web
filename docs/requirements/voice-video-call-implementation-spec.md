@@ -321,6 +321,7 @@ type HumanChatPanelCallToolbarProps = {
   - **Below** stage: **scrollable** message list (split view). **Min-height** for stage (e.g. `min-h-[220px]` or ~40% panel height) — tune with design.
 - **Camera off (video muted):** **Do not** remove the stage — **same** **minimum** **audio** **tile** (avatar, name, waves) as **§3.4.1**; **keep** banner controls. **No** `hidden` stage for **solo** **in-call** user with `localUserMedia` **feeds** present.
 - **Widening the panel (one remote tile + PiP):** When the **user-media** grid has **one** main tile, it **shall** span the **full width** of the **stage** — **one** `grid` column (no `max-w-2xl` / horizontal centering that leaves empty space) so **resizing the right panel** grows the **video** with the available width. Two or more **main** user tiles may use **responsive 2–3** column rules at **container** breakpoints.
+- **2+ user tiles (mixed avatar and video):** In the **side panel**, each **grid** cell for user media **shall** have the **same** **minimum** **row** **height**; **video** `CallFeed` tiles **shall** **fill** the **cell** (`h-full` / `object-cover`) and **not** use a **lower** `max-h` than the **avatar** **+** **waves** column — **avoid** a **“postage stamp”** **video** beside a **taller** **avatar** **row**.
 
 #### 3.4.3 Tab switching during a call
 

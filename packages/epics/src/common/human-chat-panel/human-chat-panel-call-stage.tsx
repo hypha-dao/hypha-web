@@ -367,6 +367,16 @@ export function HumanChatPanelCallStage({
   const skipUserGridInFullViewWithShare =
     isFull && shareFeeds.length > 0 && userTilesForFullViewShare.length > 0;
 
+  /**
+   * In-panel, 2+ user tiles: each cell is a flex column with the same min-height so
+   * avatar-only and video rows match (video was capped by max-h and looked smaller).
+   */
+  const userGridCellClass = isFull
+    ? 'min-h-0 w-full min-w-0'
+    : userGridTileCount > 1
+    ? 'flex h-full min-h-[min(40vh,280px)] w-full min-w-0 flex-1 flex-col'
+    : 'min-w-0';
+
   return (
     <section
       className={cn(
@@ -755,6 +765,9 @@ export function HumanChatPanelCallStage({
                   )
                 : cn(
                     shareFeeds.length > 0 ? 'max-h-[min(50vh,420px)]' : null,
+                    !isFull && userGridTileCount > 1
+                      ? 'auto-rows-[minmax(min(40vh,280px),1fr)]'
+                      : null,
                     panelUserGridColumnClass,
                   ),
               !isFull &&
@@ -766,10 +779,7 @@ export function HumanChatPanelCallStage({
             data-feed-tick={_feedVersion}
           >
             {remoteUserMedia.map((feed, i) => (
-              <div
-                key={feedKey(feed, i)}
-                className={isFull ? 'min-h-0 w-full min-w-0' : undefined}
-              >
+              <div key={feedKey(feed, i)} className={userGridCellClass}>
                 <CallFeedTile
                   client={client}
                   roomId={roomId}
@@ -789,10 +799,7 @@ export function HumanChatPanelCallStage({
             ))}
             {showLocalInMainGrid &&
               localUserMedia.map((feed, i) => (
-                <div
-                  key={feedKey(feed, i)}
-                  className={isFull ? 'min-h-0 w-full min-w-0' : undefined}
-                >
+                <div key={feedKey(feed, i)} className={userGridCellClass}>
                   <CallFeedTile
                     client={client}
                     roomId={roomId}
@@ -1033,11 +1040,14 @@ const FeedContent = ({
         'relative min-w-0 overflow-hidden rounded-lg bg-black/20',
         isFullView && !isPip
           ? 'flex h-full min-h-0 min-w-0 flex-1 flex-col'
+          : isPip
+          ? 'flex min-h-0'
+          : hasVideo
+          ? 'flex h-full min-h-0 w-full min-w-0 flex-1 flex-col' // panel: match avatar tile height in multi-row grid
           : 'flex min-h-[10rem] items-stretch justify-center',
         isShare && !isFullView && 'min-h-[min(42vh,360px)] w-full',
         isShare && isFullView && 'h-full min-h-0 w-full',
         isActiveSpeaker && 'ring-2 ring-accent-9/70 ring-offset-0',
-        isPip && 'flex min-h-0',
       )}
     >
       {hasVideo ? (
@@ -1049,7 +1059,7 @@ const FeedContent = ({
                 ? 'max-h-24 w-full object-contain'
                 : isFullView
                 ? 'absolute inset-0 h-full w-full object-contain'
-                : 'w-full min-h-[10rem] max-h-[min(40vh,360px)] object-contain',
+                : 'h-full w-full min-h-0 flex-1 object-cover', // panel: fill cell like avatar + waves column
             )}
             autoPlay
             playsInline
@@ -1072,7 +1082,11 @@ const FeedContent = ({
           className={cn(
             'flex w-full flex-col items-center justify-center gap-3 p-4 text-center',
             'bg-gradient-to-b from-zinc-900/95 to-black',
-            isFullView && !isPip ? 'min-h-0 flex-1' : 'min-h-[10rem]',
+            isFullView && !isPip
+              ? 'min-h-0 flex-1'
+              : isPip
+              ? undefined
+              : 'h-full min-h-[10rem] flex-1', // panel: fill grid cell to match video tile
             isPip && 'gap-1.5 p-2',
           )}
           aria-label={label}
