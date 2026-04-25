@@ -5,6 +5,7 @@ import { SewingPinFilledIcon } from '@radix-ui/react-icons';
 import { PersonAvatar } from './person-avatar';
 import { useEvents } from '@hypha-platform/core/client';
 import React from 'react';
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
   useSpaceBySlug,
@@ -283,21 +284,23 @@ export const MemberCard: React.FC<MemberCardProps> = ({
     >
       {useSplit && profileHref ? (
         <>
-          <a
+          <Link
             href={profileHref}
+            scroll={false}
             className="block w-full no-underline outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {mainBlock}
-          </a>
+          </Link>
           {delegateFooter}
         </>
       ) : singleLink && profileHref ? (
-        <a
+        <Link
           href={profileHref}
+          scroll={false}
           className="block w-full no-underline outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           {mainBlock}
-        </a>
+        </Link>
       ) : (
         <>
           {mainBlock}
