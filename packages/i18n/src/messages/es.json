@@ -23,6 +23,7 @@
     "copyWalletAddress": "Copiar dirección de la billetera",
     "walletAddressCopied": "¡Copiado!",
     "otherMembers": "+ {count} otros miembros",
+    "Ecosystem": "Ecosistema",
     "exploreSpaces": "Explorar espacios",
     "findCategory": "Encuentra una categoría",
     "noSpacesYet": "Aún no se han creado ni se han unido espacios. Explora nuestra red y únete a un Espacio, o crea el tuyo propio.",
@@ -956,8 +957,10 @@
     }
   },
   "SelectNavigationAction": {
-    "title": "Navegación espacial",
-    "content": "Navega por todos tus espacios en un único mapa interactivo para ver cómo se conectan entre sí. Visite fácilmente espacios anidados, explore membresías de espacio a espacio y siga los flujos de valor en su ecosistema directo.",
+    "title": "Ecosistema",
+    "mapRegionAriaLabel": "Mapa de relaciones entre espacios",
+    "dataPanelAriaLabel": "Espacios anidados, búsqueda y acciones",
+    "content": "Así se conectan tus espacios. Usa el mapa para explorar; busca y abre espacios anidados en el panel—en pantallas grandes permanece a la vista.",
     "tabs": {
       "nestedSpaces": "Espacios anidados",
       "spaceToSpace": "Espacio-espacio",

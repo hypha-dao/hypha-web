@@ -2,12 +2,12 @@
 
 ## Document control
 
-| Field                                  | Value                                                                                                                                                                      |
-| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Status**                             | Spec only (implementation is a follow-up)                                                                                                                                  |
-| **Scope**                              | DHO space main column: `@tab/spaces` → `SpaceNavigationView`, `SpaceVisualization`, `VisibleSpacesList`, **left rail** item currently labeled **Spaces** (`Common.Spaces`) |
-| **Depends on**                         | [Hypha UI stack](../../.agents/skills/hypha-ui-stack/SKILL.md); [dho-central-left-nav-and-space-graph-tech-spec.md](./dho-central-left-nav-and-space-graph-tech-spec.md)   |
-| **Out of scope (this spec iteration)** | Finishing **Space-to-Space** and **Values Flows** tab content (remain placeholders or “coming soon” until a dedicated initiative); API changes to org graph data           |
+| Field                                  | Value                                                                                                                                                                               |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**                             | Implemented in app: Ecosystem **label** + split **map** / **data** layout + full-bleed + `/ecosystem` → `/spaces` redirect. Ambient “wow” = gradient mesh; further polish optional. |
+| **Scope**                              | DHO space main column: `@tab/spaces` → `SpaceNavigationView`, `SpaceVisualization`, `VisibleSpacesList`, **left rail** item currently labeled **Spaces** (`Common.Spaces`)          |
+| **Depends on**                         | [Hypha UI stack](../../.agents/skills/hypha-ui-stack/SKILL.md); [dho-central-left-nav-and-space-graph-tech-spec.md](./dho-central-left-nav-and-space-graph-tech-spec.md)            |
+| **Out of scope (this spec iteration)** | Finishing **Space-to-Space** and **Values Flows** tab content (remain placeholders or “coming soon” until a dedicated initiative); API changes to org graph data                    |
 
 ---
 

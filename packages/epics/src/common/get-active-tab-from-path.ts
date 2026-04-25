@@ -6,6 +6,7 @@ const KNOWN_DHO_TABS = new Set([
   'coherence',
   'wiki',
   'spaces',
+  'ecosystem',
   'overview',
 ]);
 
