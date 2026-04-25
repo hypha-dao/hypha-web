@@ -1,7 +1,10 @@
 import { Locale } from '@hypha-platform/i18n';
 import { ReactNode } from 'react';
 import { DhoSpaceWorkspace } from '../_components/dho-space-workspace';
-import { getEnableCoherence } from '@hypha-platform/feature-flags';
+import {
+  getEnableCoherence,
+  getEnableSpaceMemory,
+} from '@hypha-platform/feature-flags';
 
 export default async function TabLayout({
   children,
@@ -12,11 +15,13 @@ export default async function TabLayout({
 }) {
   const { id: daoSlug, lang } = await params;
   const coherenceEnabled = await getEnableCoherence();
+  const spaceMemoryEnabled = await getEnableSpaceMemory();
   return (
     <DhoSpaceWorkspace
       id={daoSlug}
       lang={lang}
       coherenceEnabled={coherenceEnabled}
+      spaceMemoryEnabled={spaceMemoryEnabled}
     >
       {children}
     </DhoSpaceWorkspace>

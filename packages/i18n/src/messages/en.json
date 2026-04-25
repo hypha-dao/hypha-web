@@ -42,6 +42,8 @@
     "publish": "Publish",
     "invalidTransactions": "Invalid transactions",
     "Coherence": "Coherence",
+    "Signals": "Signals",
+    "Artifact": "Artifact",
     "uploadLeadImage": {
       "cropTitle": "Upload an image",
       "cropDescription": "Adjust how your image is framed, then save. Drag to reposition and use zoom to fit the banner area (JPEG, PNG, or WebP — max 4 MB).",
@@ -2009,11 +2011,13 @@
     "callPaneResizeSpeakerShare": "Resize speaker and screen share"
   },
   "CoherenceTab": {
+    "artifact": "Artifact",
     "signals": "Signals",
-    "signInToSee": "Please, sign in to see signals, space memory, and conversations",
+    "signInToSee": "Please, sign in to see signals, artifacts, and conversations",
     "searchSignals": "Search signals...",
     "newSignal": "New Signal",
     "backToCoherence": "Back to Coherence",
+    "backToSignals": "Back to Signals",
     "all": "All",
     "listIsEmpty": "List is empty",
     "loadMore": "Load more",

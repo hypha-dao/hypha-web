@@ -26,10 +26,16 @@ const MATRIX_SPACE_MEMORY_REFRESH_DEBOUNCE_MS = 1_800;
 
 type SpaceMemorySectionProps = {
   spaceSlug: string;
+  /**
+   * When true (Artifact tab), render as a full-width section without the
+   * inner top border from the Coherence “stacked card” layout.
+   */
+  standalonePage?: boolean;
 };
 
 export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
   spaceSlug,
+  standalonePage = false,
 }) => {
   const t = useTranslations('CoherenceTab');
   const { space } = useSpaceBySlug(spaceSlug);
@@ -100,12 +106,16 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
 
   return (
     <section
-      className="flex w-full flex-col gap-5 border-t border-border/50 pt-10"
-      aria-label={t('spaceMemory')}
+      className={
+        standalonePage
+          ? 'flex w-full flex-col gap-5'
+          : 'flex w-full flex-col gap-5 border-t border-border/50 pt-10'
+      }
+      aria-label={standalonePage ? t('artifact') : t('spaceMemory')}
     >
       <SectionFilter
         count={totalCount}
-        label={t('spaceMemory')}
+        label={standalonePage ? t('artifact') : t('spaceMemory')}
         hasSearch={true}
         searchPlaceholder={t('searchSpaceMemory')}
         onChangeSearch={setSearchTerm}

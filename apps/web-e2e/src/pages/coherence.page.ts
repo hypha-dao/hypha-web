@@ -19,7 +19,7 @@ export class CoherencePage extends BasePage {
 
   // ── Navigation ─────────────────────────────────────────────────────────────
   /**
-   * The "Coherence" item in the DHO workspace nav (link with `aria-current` when active).
+   * The Signals tab (URL segment `coherence`) in the DHO workspace nav.
    */
   readonly coherenceNavLink: Locator;
 
@@ -44,9 +44,7 @@ export class CoherencePage extends BasePage {
     super(page);
     this.spaceSlug = spaceSlug;
 
-    this.coherenceNavLink = page.getByRole('link', {
-      name: /coherence|cohérence|coerência|coherencia|kohärenz/i,
-    });
+    this.coherenceNavLink = page.getByTestId('dho-workspace-nav-coherence');
 
     // Signal section label (SectionFilter: "{label} | {count}"; count omitted when 0)
     this.signalsSectionHeading = page.getByText(
