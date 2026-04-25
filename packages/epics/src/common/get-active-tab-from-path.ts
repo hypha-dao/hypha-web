@@ -1,6 +1,7 @@
 // path: /[lang]/dho/[id]/{activeTab}/what/ever?path=afterActiveTab
 const KNOWN_DHO_TABS = new Set([
   'agreements',
+  'artifact',
   'members',
   'treasury',
   'coherence',
