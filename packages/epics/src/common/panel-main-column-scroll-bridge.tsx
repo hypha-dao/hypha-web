@@ -35,7 +35,7 @@ export function PanelDualSidebarScrollBridge({
   rightContent,
   children,
 }: Props) {
-  const bindScrollRoot = React.useCallback((node: HTMLElement | null) => {
+  const setMainColumnRef = React.useCallback((node: HTMLElement | null) => {
     setMainColumnScrollRoot(node);
   }, []);
 
@@ -59,9 +59,15 @@ export function PanelDualSidebarScrollBridge({
         {leftContent}
         <SidebarResizeHandle />
       </Sidebar>
+      {/*
+        The inner `SidebarProvider` is `h-svh` and lays out the center column + right panel in
+        a row. Scrolling must happen *inside* that row’s center column — not on this outer
+        `SidebarInset`. Otherwise the scrollable height equals the viewport, nothing overflows
+        here, and the real scroll moves to an ancestor/window, breaking `setMainColumnScrollRoot`
+        and DHO sticky chrome (fixed bar + opacity) that subscribe to the main column.
+      */}
       <SidebarInset
-        ref={bindScrollRoot}
-        className={cn('overflow-y-auto narrow-scrollbar')}
+        className={cn('min-h-0 flex-1 flex-col overflow-hidden')}
         style={
           {
             '--main-column-scrollbar-width': '0px',
@@ -84,7 +90,12 @@ export function PanelDualSidebarScrollBridge({
             wrapper they become **separate flex items** next to the right Sidebar: header | content
             | footer | panel in one horizontal row.
           */}
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>
+          <div
+            ref={setMainColumnRef}
+            className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto narrow-scrollbar"
+          >
+            {children}
+          </div>
           <Sidebar
             side="right"
             variant="sidebar"
