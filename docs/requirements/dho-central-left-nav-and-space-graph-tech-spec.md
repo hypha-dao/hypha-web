@@ -55,7 +55,7 @@ Today, the DHO “space” experience mixes:
 ### Hard constraints
 
 - **C1** — **`prefers-reduced-motion`**: optional subtle transitions may be disabled; no essential information should depend on motion alone.
-- **C2** — **Internationalization**: all new labels go through `next-intl` namespaces used by DHO (extend `Common` / `DHO` / `SelectNavigationAction` as appropriate; follow [`i18n-translate`](../.agents/skills/i18n-translate/SKILL.md) conventions).
+- **C2** — **Internationalization**: all new labels go through `next-intl` namespaces used by DHO (extend `Common` / `DHO` / `DhoWorkspaceNav` as appropriate; follow [`i18n-translate`](../../.agents/skills/i18n-translate/SKILL.md) conventions).
 - **C3** — **Accessibility**: the nav is a **navigation landmark** with **clear current location**; keyboard and screen reader behavior are implemented as **nav links** with `aria-current="page"` in `DhoSpaceWorkspace`.
 
 ---
@@ -91,7 +91,7 @@ Today, the DHO “space” experience mixes:
 **Option A (preferred) — new segment, minimal churn**
 
 - Add a sibling segment such as `apps/web/src/app/[lang]/dho/[id]/@tab/spaces/`
-  - `page.tsx` hosts the `SelectNavigationAction` body (or a thin wrapper that re-exports the same client tree with layout tweaks).
+  - `page.tsx` hosts the `SpaceNavigationView` body (or a thin wrapper that re-exports the same client tree with layout tweaks).
 - Add path helper `getDhoPathSpaces(lang, id)` in a new `constants.ts` next to other tab routes.
 - Update `getActiveTabFromPath` in `@hypha-platform/epics` to recognize **`spaces`** (and ensure **no tab value collision** with existing `agreements` | `members` | `treasury` | `coherence`).
 
@@ -145,7 +145,7 @@ The [Vercel changelog](https://vercel.com/changelog/new-dashboard-navigation-ava
 
 - **Type:** `client` component (needs pathname + maybe panel state).
 - **Placement:** `apps/web/src/app/[lang]/dho/[id]/@tab/layout.tsx` **wraps** `{children}`: left rail + flex row for content.
-- **Styling:** Tailwind 4 + design tokens; rail uses **neutral / muted** backgrounds consistent with `packages/ui` (see [Hypha UI stack](../.agents/skills/hypha-ui-stack/SKILL.md)).
+- **Styling:** Tailwind 4 + design tokens; rail uses **neutral / muted** backgrounds consistent with `packages/ui` (see [Hypha UI stack](../../.agents/skills/hypha-ui-stack/SKILL.md)).
 
 **Active state** — `usePathname` + `getActiveTabFromPath` (or a thin wrapper) to set `aria-current` on the active `Link`.
 
@@ -182,14 +182,14 @@ The [Vercel changelog](https://vercel.com/changelog/new-dashboard-navigation-ava
 
 | Area | Test type | Notes |
 |------|------------|------|
-| **Panel sync** | Playwright | On `/[lang]/dho/[id]/agreements` (or similar), open AI left panel: assert main column (and rail) **X offset** or bounding box shift; **no clipped focus rings**. Reuse patterns from e2e skill (feature flags, cookies) per [`e2e-testing`](../.agents/skills/e2e-testing/SKILL.md). |
+| **Panel sync** | Playwright | On `/{lang}/dho/{id}/agreements` (or similar), open AI left panel: assert main column (and rail) **X offset** or bounding box shift; **no clipped focus rings**. Reuse patterns from e2e skill (feature flags, cookies) per [`e2e-testing`](../../.agents/skills/e2e-testing/SKILL.md). |
 | **Routing** | E2E | Each nav item lands on the correct path; `Coherence` respects feature flag. |
 | **Deep links** | E2E | `spaces` URL loads graph + lists without aside. |
 | **Mobile viewport** | E2E + manual | `375×812` — bottom bar or drawer can reach all sections. |
 | **A11y** | `@axe-core/playwright` | New surfaces scanned on navigation open/close. |
 | **Reduced motion** | Unit / manual | `prefers-reduced-motion: reduce` does not break layout. |
 
-**Regression watchlist** — `ProposalOverlayShell` z-index vs `Sidebar` (`z-[50]` in `PanelWrapLayout`), `NestedSpacesButton` `data-space-nav` e2e selectors, i18n for `SelectNavigationAction` (space map copy) and `DhoWorkspaceNav`.
+**Regression watchlist** — `ProposalOverlayShell` z-index vs `Sidebar` (`z-[50]` in `PanelWrapLayout`), `NestedSpacesButton` `data-space-nav` e2e selectors, i18n for `DhoWorkspaceNav` (including space map copy).
 
 ---
 
@@ -202,7 +202,7 @@ Stages are **sequential**; each should be shippable behind a feature flag if the
 | **0 — Discovery / UX sign-off** | Design tokens, copy for “Spaces”, mobile pattern decision | Figma or doc-approved wire: desktop rail + **one** mobile pattern; spacing tokens | Stakeholder approval |
 | **1 — Shell** | `DhoSpaceWorkspace` in `@tab/layout.tsx` | Visual rail + **stub** routes / placeholders | Layout stable at `md+`; no double scrollbars; AI panel open/close looks smooth |
 | **2 — Link parity** | Remove horizontal tabs; wire all items | Rail drives existing tab pages | `NavigationTabs` removed; keyboard + SR parity |
-| **3 — Spaces page** | New `spaces` segment, move `SelectNavigationAction` | In-flow graph page | `NestedSpacesButton` points here; old aside **redirects** (if chosen) |
+| **3 — Spaces page** | New `spaces` segment, move `SpaceNavigationView` | In-flow graph page | `NestedSpacesButton` points here; old aside **redirects** (if chosen) |
 | **4 — Mobile** | Bottom bar or drawer | Responsive implementation | E2E on narrow viewport; safe-area verified |
 | **5 — Hardening** | i18n, a11y polish, performance | Dynamic import tuning, copy pass | Axe clean; LCP within budget; legacy links monitored |
 | **6 — Cleanup** | Remove dead aside route if safe | Code deletion PR | No remaining primary entry to legacy overlay |
@@ -223,7 +223,7 @@ Stages are **sequential**; each should be shippable behind a feature flag if the
 | Product requirement | Verification |
 |---------------------|-------------|
 | Central left nav | Visual + DOM `nav` in main column; tabs removed |
-| Graph in main column | Route `/[lang]/dho/[id]/@tab/spaces` (or chosen path) renders `SpaceVisualization` |
+| Graph in main column | Public route `/{lang}/dho/{id}/spaces` renders `SpaceVisualization` |
 | Smooth move with AI chat | E2E bounding box or computed style during `--sidebar-left-width` transition |
 | Mobile works | E2E + manual on small viewport; bottom/sheet access |
 
