@@ -3,13 +3,14 @@
 import { cn } from '@hypha-platform/ui-utils';
 
 const WAVE_BARS = [
-  0.35, 0.7, 0.45, 0.9, 0.5, 0.75, 0.4, 0.6, 0.5, 0.35, 0.8, 0.45,
+  0.32, 0.72, 0.4, 0.95, 0.5, 0.78, 0.35, 0.62, 0.45, 0.28, 0.85, 0.42,
 ];
 
 type CallAudioVoiceWavesProps = {
   active: boolean;
   className?: string;
-  size?: 'sm' | 'md';
+  /** In-call: `sm` = PiP, `md` = sidebar, `lg` = full view / main tile. */
+  size?: 'sm' | 'md' | 'lg';
 };
 
 /**
@@ -21,15 +22,24 @@ export function CallAudioVoiceWaves({
   className,
   size = 'md',
 }: CallAudioVoiceWavesProps) {
-  const hMax = size === 'sm' ? 10 : 12;
-  const gap = size === 'sm' ? 'gap-0.5' : 'gap-0.5';
+  const hMax = size === 'sm' ? 10 : size === 'lg' ? 22 : 12;
+  const hScale = size === 'sm' ? 8 : size === 'lg' ? 34 : 14;
+  const gap = size === 'sm' ? 'gap-0.5' : size === 'lg' ? 'gap-1' : 'gap-0.5';
+  const barWidth =
+    size === 'lg'
+      ? 'w-1 min-w-[3px] max-w-[4px]'
+      : 'w-0.5 min-w-[2px] max-w-[3px]';
+  const barActive =
+    size === 'lg'
+      ? 'bg-emerald-400/95 motion-safe:will-change-transform shadow-sm shadow-emerald-500/25'
+      : 'bg-primary/80 motion-safe:will-change-transform';
 
   return (
     <>
       <style>{`
         @keyframes hypha-call-voice-wave-bar {
-          0%, 100% { transform: scaleY(0.42); }
-          50% { transform: scaleY(1.18); }
+          0%, 100% { transform: scaleY(0.3); }
+          50% { transform: scaleY(1.28); }
         }
         @media (prefers-reduced-motion: reduce) {
           [data-hypha-call-voice-waves] span {
@@ -40,33 +50,36 @@ export function CallAudioVoiceWaves({
       <div
         data-hypha-call-voice-waves=""
         className={cn(
-          'flex min-w-0 items-center justify-center',
+          'flex min-w-0 items-end justify-center',
           gap,
-          size === 'md' ? 'h-7' : 'h-4',
+          size === 'sm'
+            ? 'h-4'
+            : size === 'lg'
+            ? 'h-12 min-h-[2.5rem] sm:h-14'
+            : 'h-7',
           className,
         )}
         aria-hidden
       >
         {WAVE_BARS.map((h, i) => {
-          const heightPx = Math.round(hMax + h * (size === 'sm' ? 8 : 14));
+          const heightPx = Math.round(hMax + h * hScale);
           return (
             <span
               key={`w-${String(h)}-${String(i)}`}
               className={cn(
-                'inline-block w-0.5 min-w-[2px] max-w-[3px] origin-center rounded-full',
-                active
-                  ? 'bg-primary/80 motion-safe:will-change-transform'
-                  : 'bg-muted-foreground/30',
+                'inline-block origin-bottom rounded-full',
+                barWidth,
+                active ? barActive : 'bg-muted-foreground/30',
               )}
               style={{
                 height: `${heightPx}px`,
                 ...(active
                   ? {
                       animationName: 'hypha-call-voice-wave-bar',
-                      animationDuration: '0.55s',
+                      animationDuration: size === 'lg' ? '0.5s' : '0.55s',
                       animationTimingFunction: 'ease-in-out',
                       animationIterationCount: 'infinite',
-                      animationDelay: `${i * 42}ms`,
+                      animationDelay: `${i * 38}ms`,
                     }
                   : {}),
               }}

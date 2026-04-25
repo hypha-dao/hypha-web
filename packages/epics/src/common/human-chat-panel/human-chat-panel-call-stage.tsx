@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useMemo,
   useReducer,
   useRef,
   useState,
@@ -38,6 +39,8 @@ type HumanChatPanelCallStageBaseProps = {
   activeSpeakerKey: string | null;
   currentUserId: string | null;
   resolveMemberLabel: (userId: string | undefined) => string;
+  /** App profile / DB avatar for the signed-in user (for local tile when no Matrix avatar). */
+  currentUserProfileAvatarUrl?: string | null;
 };
 
 type HumanChatPanelCallStageProps = HumanChatPanelCallStageBaseProps & {
@@ -77,6 +80,24 @@ function feedKey(feed: CallFeed, index: number): string {
   return `${feed.userId}:${String(feed.deviceId)}:${String(
     feed.purpose,
   )}:${index}`;
+}
+
+/** Room member Matrix avatar → HTTP for `<img>` in call tiles (no media auth). */
+function matrixMemberAvatarSquareForCall(
+  client: MatrixClient | null,
+  roomId: string | null,
+  userId: string | undefined,
+  px: number,
+): string | undefined {
+  if (!client || !roomId || !userId) return undefined;
+  const room = client.getRoom(roomId);
+  const member = room?.getMember(userId);
+  if (!member) return undefined;
+  const mxc = member.getMxcAvatarUrl();
+  if (!mxc || !mxc.startsWith('mxc://')) return undefined;
+  return (
+    client.mxcUrlToHttp(mxc, px, px, 'crop', true, false, false) ?? undefined
+  );
 }
 
 export type CallStageContentModel = {
@@ -214,6 +235,7 @@ export function HumanChatPanelCallStage({
   activeSpeakerKey,
   currentUserId,
   resolveMemberLabel,
+  currentUserProfileAvatarUrl = null,
   layout,
   onRequestFullView,
   fullViewOpen = false,
@@ -345,6 +367,9 @@ export function HumanChatPanelCallStage({
   const renderUserTile = (feed: CallFeed, keyIdx: number) => (
     <CallFeedTile
       key={feedKey(feed, keyIdx)}
+      client={client}
+      roomId={roomId}
+      currentUserProfileAvatarUrl={currentUserProfileAvatarUrl}
       feed={feed}
       isFullView={isFull}
       isActiveSpeaker={
@@ -418,6 +443,11 @@ export function HumanChatPanelCallStage({
                         className="flex min-h-0 min-w-0 flex-1 flex-col"
                       >
                         <CallFeedTile
+                          client={client}
+                          roomId={roomId}
+                          currentUserProfileAvatarUrl={
+                            currentUserProfileAvatarUrl
+                          }
                           feed={feed}
                           isShare
                           isFullView={isFull}
@@ -480,6 +510,11 @@ export function HumanChatPanelCallStage({
                         className="flex min-h-0 min-w-0 flex-1 flex-col"
                       >
                         <CallFeedTile
+                          client={client}
+                          roomId={roomId}
+                          currentUserProfileAvatarUrl={
+                            currentUserProfileAvatarUrl
+                          }
                           feed={feed}
                           isShare
                           isFullView={isFull}
@@ -535,6 +570,11 @@ export function HumanChatPanelCallStage({
                     >
                       <div className="h-full min-h-0" key="speaker-top-tile">
                         <CallFeedTile
+                          client={client}
+                          roomId={roomId}
+                          currentUserProfileAvatarUrl={
+                            currentUserProfileAvatarUrl
+                          }
                           feed={speakerFeedForTopMode}
                           isFullView={isFull}
                           isActiveSpeaker
@@ -567,6 +607,11 @@ export function HumanChatPanelCallStage({
                         className="flex min-h-0 min-w-0 flex-1 flex-col"
                       >
                         <CallFeedTile
+                          client={client}
+                          roomId={roomId}
+                          currentUserProfileAvatarUrl={
+                            currentUserProfileAvatarUrl
+                          }
                           feed={feed}
                           isShare
                           isFullView={isFull}
@@ -593,6 +638,9 @@ export function HumanChatPanelCallStage({
                   className="absolute inset-0 flex min-h-0 min-w-0"
                 >
                   <CallFeedTile
+                    client={client}
+                    roomId={roomId}
+                    currentUserProfileAvatarUrl={currentUserProfileAvatarUrl}
                     feed={feed}
                     isShare
                     isFullView={isFull}
@@ -643,6 +691,9 @@ export function HumanChatPanelCallStage({
                 )}
               >
                 <CallFeedTile
+                  client={client}
+                  roomId={roomId}
+                  currentUserProfileAvatarUrl={currentUserProfileAvatarUrl}
                   feed={feed}
                   isShare
                   isFullView={isFull}
@@ -670,6 +721,9 @@ export function HumanChatPanelCallStage({
             {remoteUserMedia[0] ? (
               <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col">
                 <CallFeedTile
+                  client={client}
+                  roomId={roomId}
+                  currentUserProfileAvatarUrl={currentUserProfileAvatarUrl}
                   feed={remoteUserMedia[0]}
                   isFullView={isFull}
                   isActiveSpeaker={
@@ -685,6 +739,9 @@ export function HumanChatPanelCallStage({
             ) : showLocalInMainGrid && localUserMedia[0] ? (
               <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col">
                 <CallFeedTile
+                  client={client}
+                  roomId={roomId}
+                  currentUserProfileAvatarUrl={currentUserProfileAvatarUrl}
                   feed={localUserMedia[0]}
                   isFullView={isFull}
                   isActiveSpeaker={
@@ -732,6 +789,9 @@ export function HumanChatPanelCallStage({
                 className={isFull ? 'min-h-0 w-full min-w-0' : undefined}
               >
                 <CallFeedTile
+                  client={client}
+                  roomId={roomId}
+                  currentUserProfileAvatarUrl={currentUserProfileAvatarUrl}
                   feed={feed}
                   isFullView={isFull}
                   isActiveSpeaker={
@@ -752,6 +812,9 @@ export function HumanChatPanelCallStage({
                   className={isFull ? 'min-h-0 w-full min-w-0' : undefined}
                 >
                   <CallFeedTile
+                    client={client}
+                    roomId={roomId}
+                    currentUserProfileAvatarUrl={currentUserProfileAvatarUrl}
                     feed={feed}
                     isFullView={isFull}
                     isActiveSpeaker={
@@ -782,6 +845,9 @@ export function HumanChatPanelCallStage({
           >
             {localUserMedia.map((feed, i) => (
               <CallFeedTile
+                client={client}
+                roomId={roomId}
+                currentUserProfileAvatarUrl={currentUserProfileAvatarUrl}
                 key={feedKey(feed, i)}
                 feed={feed}
                 isPip
@@ -818,6 +884,9 @@ function displayLabel(
 }
 
 const CallFeedTile = ({
+  client,
+  roomId,
+  currentUserProfileAvatarUrl,
   feed,
   isShare = false,
   isPip = false,
@@ -828,6 +897,9 @@ const CallFeedTile = ({
   resolveMemberLabel,
   t,
 }: {
+  client: MatrixClient | null;
+  roomId: string | null;
+  currentUserProfileAvatarUrl?: string | null;
   feed: CallFeed;
   isShare?: boolean;
   isPip?: boolean;
@@ -857,6 +929,10 @@ const CallFeedTile = ({
       );
   return (
     <FeedContent
+      client={client}
+      roomId={roomId}
+      currentUserId={currentUserId}
+      currentUserProfileAvatarUrl={currentUserProfileAvatarUrl}
       feed={feed}
       isShare={isShare}
       isPip={isPip}
@@ -869,6 +945,10 @@ const CallFeedTile = ({
 };
 
 const FeedContent = ({
+  client,
+  roomId,
+  currentUserId,
+  currentUserProfileAvatarUrl,
   feed,
   isShare,
   isPip,
@@ -877,6 +957,10 @@ const FeedContent = ({
   label,
   t,
 }: {
+  client: MatrixClient | null;
+  roomId: string | null;
+  currentUserId: string | null;
+  currentUserProfileAvatarUrl?: string | null;
   feed: CallFeed;
   isShare: boolean;
   isPip: boolean;
@@ -932,6 +1016,35 @@ const FeedContent = ({
     !feed.isAudioMuted() &&
     stream.getAudioTracks().length > 0;
 
+  const tileAvatarSizePx = isPip ? 48 : isFullView && !isPip ? 128 : 80;
+  const tileAvatarUrl = useMemo(() => {
+    if (isShare) return undefined;
+    if (feed.isLocal() && currentUserId) {
+      const mxc = matrixMemberAvatarSquareForCall(
+        client,
+        roomId,
+        currentUserId,
+        tileAvatarSizePx,
+      );
+      if (mxc) return mxc;
+      return currentUserProfileAvatarUrl?.trim() || undefined;
+    }
+    return matrixMemberAvatarSquareForCall(
+      client,
+      roomId,
+      feed.userId,
+      tileAvatarSizePx,
+    );
+  }, [
+    client,
+    currentUserId,
+    currentUserProfileAvatarUrl,
+    feed,
+    isShare,
+    roomId,
+    tileAvatarSizePx,
+  ]);
+
   return (
     <div
       className={cn(
@@ -984,7 +1097,7 @@ const FeedContent = ({
         >
           <div
             className={cn(
-              'flex shrink-0 items-center justify-center rounded-full bg-muted/30 text-muted-foreground ring-1 ring-border/40',
+              'relative flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted/30 text-muted-foreground ring-1 ring-border/40',
               isPip
                 ? 'h-8 w-8'
                 : isFullView
@@ -992,16 +1105,27 @@ const FeedContent = ({
                 : 'h-14 w-14',
             )}
           >
-            <User
-              className={cn(
-                isPip
-                  ? 'h-4 w-4'
-                  : isFullView
-                  ? 'h-10 w-10 sm:h-12 sm:w-12'
-                  : 'h-7 w-7',
-              )}
-              aria-hidden
-            />
+            {tileAvatarUrl ? (
+              <img
+                src={tileAvatarUrl}
+                alt=""
+                className="h-full w-full object-cover"
+                loading="eager"
+                decoding="async"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <User
+                className={cn(
+                  isPip
+                    ? 'h-4 w-4'
+                    : isFullView
+                    ? 'h-10 w-10 sm:h-12 sm:w-12'
+                    : 'h-7 w-7',
+                )}
+                aria-hidden
+              />
+            )}
           </div>
           <p
             className={cn(
@@ -1015,8 +1139,10 @@ const FeedContent = ({
           </p>
           <CallAudioVoiceWaves
             active={showVoiceWaves}
-            size={isPip ? 'sm' : 'md'}
-            className={isPip ? 'max-w-[4.5rem]' : 'max-w-[min(16rem,85%)]'}
+            size={isPip ? 'sm' : isFullView && !isPip ? 'lg' : 'md'}
+            className={
+              isPip ? 'max-w-[4.5rem]' : 'w-full max-w-[min(18rem,92%)]'
+            }
           />
         </div>
       )}

@@ -1918,6 +1918,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 feedVersion={spaceCallFeedVersion}
                 activeSpeakerKey={spaceCallActiveSpeakerKey}
                 currentUserId={currentUserId}
+                currentUserProfileAvatarUrl={currentUserAvatarUrl}
                 resolveMemberLabel={resolveMemberLabel}
                 layout={
                   callFullViewOpen && canOpenCallFullView ? 'hidden' : 'panel'
@@ -2130,6 +2131,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   feedVersion={spaceCallFeedVersion}
                   activeSpeakerKey={spaceCallActiveSpeakerKey}
                   currentUserId={currentUserId}
+                  currentUserProfileAvatarUrl={currentUserAvatarUrl}
                   resolveMemberLabel={resolveMemberLabel}
                   layout="fullView"
                   fullViewOpen
