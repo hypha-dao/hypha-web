@@ -251,6 +251,7 @@ export const SpaceNavigationView = ({
                   ) : null}
                   {!isLoading && hierarchyData ? (
                     <div
+                      role="region"
                       className="relative order-2 flex min-h-0 w-full min-w-0 flex-1 items-center justify-center overflow-hidden border border-border/20 lg:order-1 lg:min-h-0 lg:flex-[1.65]"
                       style={{
                         minHeight: 'min(50dvh, 80vw)',
@@ -270,6 +271,7 @@ export const SpaceNavigationView = ({
                     ? visibleSpaces.length > 0 &&
                       nonArchivedSpaces.length > 0 && (
                         <div
+                          role="region"
                           className="order-1 flex w-full min-w-0 max-w-full flex-col border-t border-border/40 bg-background/90 py-2 backdrop-blur-sm lg:order-2 lg:min-h-0 lg:max-w-[40%] lg:shrink-0 lg:border-l lg:border-t-0"
                           style={{ minHeight: 'min(40dvh, 520px)' }}
                           aria-label={t('dataPanelAriaLabel')}
