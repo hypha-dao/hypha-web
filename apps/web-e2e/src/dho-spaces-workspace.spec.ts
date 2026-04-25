@@ -127,8 +127,8 @@ test.describe('DHO spaces tab and workspace (hardening)', () => {
       page.getByRole('navigation', { name: 'Space sections' }),
     ).toHaveCount(0);
 
-    await page.getByRole('button', { name: 'Space menu' }).click();
-    const sheet = page.locator('#dho-workspace-menu');
+    await page.getByRole('button', { name: /space menu/i }).click();
+    const sheet = page.getByRole('dialog');
     await expect(sheet).toBeVisible();
 
     const agreements = sheet.getByRole('link', { name: 'Agreements' });
