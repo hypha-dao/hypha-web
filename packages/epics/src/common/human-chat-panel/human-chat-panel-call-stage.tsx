@@ -106,6 +106,10 @@ function buildRemoteUserTiles(
   return out;
 }
 
+/** Stable empty refs so `useMemo` for `remoteUserTiles` always runs the same number of hooks. */
+const emptyCallFeedsUnstable: CallFeed[] = [];
+const emptyUserIdsUnstable: string[] = [];
+
 /** Room member Matrix avatar → HTTP for `<img>` in call tiles (no media auth). */
 function matrixMemberAvatarSquareForCall(
   client: MatrixClient | null,
@@ -297,6 +301,17 @@ export function HumanChatPanelCallStage({
     onRequestFullView?.();
   }, [onRequestFullView]);
 
+  const emptyCallFeeds: CallFeed[] = emptyCallFeedsUnstable;
+  const emptyUserIds: string[] = emptyUserIdsUnstable;
+  const rmuForTiles =
+    model?.kind === 'main' ? model.remoteUserMedia : emptyCallFeeds;
+  const missForTiles =
+    model?.kind === 'main' ? model.missingRemoteUserIds : emptyUserIds;
+  const remoteUserTiles = useMemo(
+    () => buildRemoteUserTiles(rmuForTiles, missForTiles),
+    [rmuForTiles, missForTiles],
+  );
+
   if (!model) {
     return null;
   }
@@ -373,11 +388,6 @@ export function HumanChatPanelCallStage({
     hasLocalWebcam &&
     showLocalPip &&
     !(isFull && shareFeeds.length > 0);
-
-  const remoteUserTiles = useMemo(
-    () => buildRemoteUserTiles(remoteUserMedia, missingRemoteUserIds),
-    [remoteUserMedia, missingRemoteUserIds],
-  );
 
   const userTilesForFullViewShare: RemoteTileItem[] = (() => {
     const out: RemoteTileItem[] = [...remoteUserTiles];
