@@ -1,12 +1,9 @@
 import { SpaceMemorySection } from '@hypha-platform/epics';
 import { getDhoPathAgreements } from '../agreements/constants';
 import { getDhoPathCoherence } from '../coherence/constants';
-import {
-  getEnableSpaceMemory,
-  getEnableCoherence,
-} from '@hypha-platform/feature-flags';
 import { Locale } from '@hypha-platform/i18n';
 import { redirect } from 'next/navigation';
+import { getRedirectWhenWikiDisabled } from './resolve-wiki-redirect';
 
 type PageProps = {
   params: Promise<{ lang: Locale; id: string }>;
@@ -20,14 +17,9 @@ export default async function DhoWikiPage(props: PageProps) {
   const params = await props.params;
   const { lang, id } = params;
 
-  const spaceMemoryEnabled = await getEnableSpaceMemory();
-  if (!spaceMemoryEnabled) {
-    const coherenceEnabled = await getEnableCoherence();
-    redirect(
-      coherenceEnabled
-        ? getDhoPathCoherence(lang, id)
-        : getDhoPathAgreements(lang, id),
-    );
+  const fallback = await getRedirectWhenWikiDisabled(lang, id);
+  if (fallback) {
+    redirect(fallback);
   }
 
   return (
