@@ -23,7 +23,7 @@
 - **UI/UX (design engineering)**
 
   - Establish **optical alignment** rules (type metrics, not arbitrary pixel nudging).
-  - Define an **icon system** (metaphor, size, weight, color states) that matches `packages/ui` + Hypha tokens ([Hypha UI stack](../.agents/skills/hypha-ui-stack/SKILL.md)).
+  - Define an **icon system** (metaphor, size, weight, color states) that matches `packages/ui` + Hypha tokens ([Hypha UI stack](../../.agents/skills/hypha-ui-stack/SKILL.md)).
   - Specify **reduced motion** and **contrast** so “wow” never sacrifices WCAG 2.1 AA.
 
 - **Fullstack / Next.js**
@@ -36,7 +36,7 @@
   - **Visual + DOM** checks: rail first row vs main heading **baseline/ cap alignment** at `md+`.
   - **Keyboard / SR**: nav remains a real `<nav>` with list semantics; current item `aria-current="page"`; **icons** are `aria-hidden` with visible text _or_ accessible names on the control.
   - **Flags**: `getEnableCoherence()` / `getEnableSpaceMemory()` (and related build-time flags) — nav items appear/disappear and deep links **redirect** consistently when disabled.
-  - **Playwright** ([e2e-testing](../.agents/skills/e2e-testing/SKILL.md)): update selectors that key off `"Coherence"` copy or `coherence` nav name once implementation lands.
+  - **Playwright** ([e2e-testing](../../.agents/skills/e2e-testing/SKILL.md)): update selectors that key off `"Coherence"` copy or `coherence` nav name once implementation lands.
 
 ---
 
