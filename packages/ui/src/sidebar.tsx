@@ -242,9 +242,14 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
         <div
           data-sidebar-gap
           className={cn(
-            'relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear',
-            'group-data-[collapsible=offcanvas]:w-0',
+            'relative min-w-0 shrink-0 bg-transparent transition-[width] duration-200 ease-linear',
             'group-data-[side=right]:rotate-180',
+            // Offcanvas collapsed: `!w-0` beats `w-(--sidebar-width) !important` in Tailwind v4 so
+            // the flex track cannot stay 320px with the panel visually closed. `group-data-[…]`
+            // is redundant with the same collapsed state — width is controlled here only.
+            collapsible === 'offcanvas' && state === 'collapsed'
+              ? '!w-0 !min-w-0 !max-w-0 grow-0 basis-0 overflow-hidden'
+              : 'w-(--sidebar-width) grow-0',
             variant === 'floating' || variant === 'inset'
               ? 'group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]'
               : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon)',
@@ -254,7 +259,7 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
           data-sidebar-fixed
           ref={ref}
           className={cn(
-            'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex',
+            'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) overflow-visible transition-[left,right,width] duration-200 ease-linear md:flex',
             side === 'left'
               ? 'left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]'
               : 'right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]',
@@ -563,7 +568,8 @@ const SidebarResizeHandle = React.forwardRef<
           // Layout & hit target (12px wide, centered on edge)
           // Position on the outer edge: right for left-side panels, left for right-side panels
           // Top is offset by --menu-top-height so the handle starts below the menu bar
-          'group/resize absolute bottom-0 z-20 w-3',
+          // z-[45]: above main column so the grip is not partially clipped (overflow/stacking)
+          'group/resize absolute bottom-0 z-[45] w-3',
           'top-[var(--menu-top-height,0px)]',
           'group-data-[side=left]:-right-1.5 group-data-[side=right]:-left-1.5',
           'hidden sm:flex items-center justify-center',

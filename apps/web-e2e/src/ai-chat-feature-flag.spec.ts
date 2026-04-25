@@ -8,14 +8,16 @@ import { AiChatPanelPage } from './pages/ai-chat-panel.page';
  * the panel trigger button and sidebar are rendered. When unset or
  * any other value, only the page children render (no AI panel).
  *
- * Note: This is a NEXT_PUBLIC_ env var, bundled at build time.
- * The "flag disabled" tests require a separate build without the flag.
+ * Default runtime: off. E2E enables the flag via `HYPHA_ENABLE_AI_CHAT` cookie
+ * (see `AiChatPanelPage.enableAiChat`). The "flag disabled" tests require a build
+ * where `NEXT_PUBLIC_ENABLE_AI_CHAT` is not "true" for SSR.
  */
 
 test.describe('AI Chat Panel — Feature Flag Enabled', () => {
   let chatPanel: AiChatPanelPage;
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ context, page }) => {
+    await AiChatPanelPage.enableAiChat(context);
     chatPanel = new AiChatPanelPage(page);
     await chatPanel.open();
   });

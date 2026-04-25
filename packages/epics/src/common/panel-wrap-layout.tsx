@@ -191,6 +191,7 @@ export function PanelWrapLayout({
   } else if (effectiveRight) {
     content = (
       <SidebarProvider
+        defaultOpen={false}
         open={rightOpen}
         onOpenChange={(open) => {
           if (open !== rightOpen) toggleRight();
@@ -218,6 +219,7 @@ export function PanelWrapLayout({
   } else if (effectiveLeft) {
     content = (
       <SidebarProvider
+        defaultOpen={false}
         open={leftOpen}
         onOpenChange={(open) => {
           if (open !== leftOpen) toggleLeft();

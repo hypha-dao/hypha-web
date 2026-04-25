@@ -14,9 +14,9 @@ import {
 } from './vercel-toolbar-overrides';
 
 /**
- * **Guideline:** safe defaults — features off until enabled via cookie / `NEXT_PUBLIC_*` /
- * Vercel Flags Toolbar. Human Chat uses the same opt-in pattern as Coherence (`NEXT_PUBLIC_ENABLE_*`).
- * Kill switch: `HYPHA_DISABLE_HUMAN_CHAT=true` / `NEXT_PUBLIC_DISABLE_HUMAN_CHAT=true`.
+ * **Guideline:** product feature flags (AI / Human / Coherence / Space Memory) default **off**
+ * until enabled via cookie, `NEXT_PUBLIC_*=true`, or Vercel Flags Toolbar. Human chat kill
+ * switch: `HYPHA_DISABLE_HUMAN_CHAT=true` / `NEXT_PUBLIC_DISABLE_HUMAN_CHAT=true`.
  */
 
 /**
@@ -33,7 +33,8 @@ export const flagDefinitionsForDiscovery = {
   enableWeb3Auth: {
     key: 'enable-web3-auth',
     defaultValue: false,
-    description: 'Use Web3Auth as the auth provider when cookie matches',
+    description:
+      'Web3 auth — enabled only when HYPHA_AUTH_PROVIDER=web3auth (cookie) or toolbar override; not a global product default',
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
@@ -47,7 +48,8 @@ export const flagDefinitionsForDiscovery = {
   enableAiChat: {
     key: 'enable-ai-chat',
     defaultValue: false,
-    description: 'Enable the AI Chat panel in space pages',
+    description:
+      'AI Chat panel on space pages. Opt in: cookie or NEXT_PUBLIC_ENABLE_AI_CHAT=true',
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
@@ -55,14 +57,15 @@ export const flagDefinitionsForDiscovery = {
     key: 'enable-coherence',
     defaultValue: false,
     description:
-      'Coherence tab and signals (`NEXT_PUBLIC_ENABLE_COHERENCE`, cookie). Space Memory uses enable-space-memory.',
+      'Coherence tab and signals. Opt in: HYPHA_ENABLE_COHERENCE cookie or NEXT_PUBLIC_ENABLE_COHERENCE=true. Space Memory uses enable-space-memory.',
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
   enableSpaceMemory: {
     key: 'enable-space-memory',
     defaultValue: false,
-    description: 'Show the Space Memory panel on the Coherence tab',
+    description:
+      'Space Memory on Coherence tab. Opt in: HYPHA_ENABLE_SPACE_MEMORY cookie or NEXT_PUBLIC_ENABLE_SPACE_MEMORY=true',
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
@@ -73,7 +76,7 @@ export const flagDefinitionsForDiscovery = {
     key: 'enable-human-chat',
     defaultValue: false,
     description:
-      'Human Chat panel (`NEXT_PUBLIC_ENABLE_HUMAN_CHAT`; kill-switch HYPHA_DISABLE_HUMAN_CHAT)',
+      'Human Chat panel. Opt in: HYPHA_ENABLE_HUMAN_CHAT cookie or NEXT_PUBLIC_ENABLE_HUMAN_CHAT=true. Kill-switch: HYPHA_DISABLE_HUMAN_CHAT cookie or NEXT_PUBLIC_DISABLE_HUMAN_CHAT=true',
     origin: 'hypha' as const,
     options: undefined as undefined,
   },
@@ -110,8 +113,11 @@ async function getBooleanFlagFromToolbarCookieOrEnv(
 
   const store = await cookies();
   const cookieValue = store.get(cookieName)?.value;
-  if (cookieValue !== undefined) return cookieValue === 'true';
-  return envValue === 'true';
+  if (cookieValue === 'true') return true;
+  if (cookieValue === 'false') return false;
+  if (envValue === 'true') return true;
+  if (envValue === 'false') return false;
+  return false;
 }
 
 export async function getEnableAiChat(): Promise<boolean> {
@@ -130,7 +136,9 @@ export async function getEnableCoherence(): Promise<boolean> {
   );
 }
 
-/** Opt-in via `NEXT_PUBLIC_ENABLE_HUMAN_CHAT`, cookie, or toolbar; kill-switch still wins. */
+/**
+ * Opt-in via `NEXT_PUBLIC_ENABLE_HUMAN_CHAT`, cookie, or toolbar. Kill switch still wins.
+ */
 export async function getEnableHumanChat(): Promise<boolean> {
   const overrides = await getVercelToolbarFlagOverrides();
   const toolbarHumanChat = readBooleanOverride(overrides, 'enable-human-chat');
@@ -145,7 +153,8 @@ export async function getEnableHumanChat(): Promise<boolean> {
   if (process.env.NEXT_PUBLIC_DISABLE_HUMAN_CHAT === 'true') return false;
 
   const legacyEnable = store.get(HYPHA_ENABLE_HUMAN_CHAT)?.value;
-  if (legacyEnable !== undefined) return legacyEnable === 'true';
+  if (legacyEnable === 'true') return true;
+  if (legacyEnable === 'false') return false;
 
   return process.env.NEXT_PUBLIC_ENABLE_HUMAN_CHAT === 'true';
 }
