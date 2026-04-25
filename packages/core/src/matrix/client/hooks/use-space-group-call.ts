@@ -73,6 +73,11 @@ export function useSpaceGroupCall(roomId: string | null) {
     useState<SpaceGroupCallErrorCode | null>(null);
 
   const groupCallRef = useRef<MatrixSdk.GroupCall | null>(null);
+  /**
+   * Tracks async GroupCall.leave() so a fast re-enter on the same room can await
+   * teardown and avoid racing the SDK.
+   */
+  const leaveInFlightRef = useRef<Promise<void> | null>(null);
   const isJoiningRef = useRef(false);
   /** Batches rapid feed list events into one React update per frame (Phase 5.2). */
   const feedUpdateRafRef = useRef<number | null>(null);
@@ -128,12 +133,21 @@ export function useSpaceGroupCall(roomId: string | null) {
       } catch {
         // ignore
       }
-      const leave = gc.leave.bind(gc) as () => void;
-      if (typeof queueMicrotask === 'function') {
-        queueMicrotask(leave);
-      } else {
-        setTimeout(leave, 0);
-      }
+      const p = (async () => {
+        try {
+          await Promise.resolve((gc as MatrixSdk.GroupCall).leave());
+        } catch (err) {
+          if (process.env.NODE_ENV === 'development') {
+            console.debug('[hypha.group_call] GroupCall.leave() rejected', err);
+          }
+        }
+      })();
+      leaveInFlightRef.current = p;
+      p.finally(() => {
+        if (leaveInFlightRef.current === p) {
+          leaveInFlightRef.current = null;
+        }
+      });
       groupCallRef.current = null;
     }
     activeGroupCallRoomIdRef.current = null;
@@ -286,6 +300,14 @@ export function useSpaceGroupCall(roomId: string | null) {
       }
       if (isJoiningRef.current) return;
       if (groupCallRef.current) return;
+
+      if (leaveInFlightRef.current) {
+        try {
+          await leaveInFlightRef.current;
+        } catch {
+          // leave() rejection already logged in runCleanup
+        }
+      }
 
       setIdleRoomParticipantCount(0);
       setIdleInCallUserIds([]);
