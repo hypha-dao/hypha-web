@@ -74,7 +74,7 @@ export const MembersList: FC<MembersListProps> = ({
               </div>
             );
           })}
-          {spaces.data.map((space) => (
+          {(spaces?.data ?? []).map((space) => (
             <div
               key={space.slug}
               className="min-w-0"
