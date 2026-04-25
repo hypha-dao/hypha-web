@@ -259,14 +259,12 @@ export function PanelWrapLayout({
     (effectiveLeft && leftOpen) || (effectiveRight && rightOpen),
   );
   const gapMeasureKey = [
-    shouldMeasureSidebars,
-    leftOpen,
-    rightOpen,
-    effectiveLeft && 'L',
-    effectiveRight && 'R',
-  ]
-    .filter(Boolean)
-    .join('-');
+    shouldMeasureSidebars ? 'M' : '-',
+    leftOpen ? 'lo' : '-',
+    rightOpen ? 'ro' : '-',
+    effectiveLeft ? 'L' : '-',
+    effectiveRight ? 'R' : '-',
+  ].join('-');
 
   const { containerRef, sidebarWidths } = useMeasuredSidebarGaps(
     shouldMeasureSidebars,
