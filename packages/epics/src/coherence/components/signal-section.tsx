@@ -3,7 +3,12 @@
 import { FC } from 'react';
 import { Text } from '@radix-ui/themes';
 import { useSignalsSection } from '../hooks';
-import { Button, SectionFilter, SectionLoadMore } from '@hypha-platform/ui';
+import {
+  Button,
+  SectionFilter,
+  SectionLoadMore,
+  Skeleton,
+} from '@hypha-platform/ui';
 import { Empty } from '../../common';
 import { SignalGridContainer } from './signal-grid.container';
 import { Coherence, DirectionType } from '@hypha-platform/core/client';
@@ -33,8 +38,8 @@ export const SignalSection: FC<SignalSectionProps> = ({
   label,
   hasSearch = false,
   isLoading,
-  firstPageSize = 3,
-  pageSize = 3,
+  firstPageSize = 6,
+  pageSize = 50,
   refresh,
   onSignalClick,
 }) => {
@@ -54,6 +59,9 @@ export const SignalSection: FC<SignalSectionProps> = ({
   });
 
   const createSignalHref = `/${lang}/dho/${id}/coherence/new-signal`;
+
+  /** Match `SignalGrid`: 1 col mobile, 3 cols sm+; two full rows while fetching. */
+  const initialSkeletonCount = Math.max(6, firstPageSize);
 
   return (
     <div className="flex w-full flex-col gap-5">
@@ -79,7 +87,29 @@ export const SignalSection: FC<SignalSectionProps> = ({
         </div>
       </SectionFilter>
 
-      {pagination?.totalPages === 0 ? (
+      {isLoading && filteredSignals.length === 0 ? (
+        <div
+          className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4"
+          aria-busy="true"
+          aria-label={t('signals')}
+        >
+          {Array.from({ length: initialSkeletonCount }).map((_, i) => (
+            <div
+              key={`signal-skeleton-${i}`}
+              className="flex min-h-[220px] flex-col gap-3 rounded-2xl border border-border/50 bg-card/40 p-4"
+            >
+              <Skeleton className="h-5 w-[60%]" loading={true} height="20px" />
+              <div className="flex flex-wrap gap-2">
+                <Skeleton className="h-6 w-24" loading={true} height="24px" />
+                <Skeleton className="h-6 w-20" loading={true} height="24px" />
+              </div>
+              <Skeleton className="h-4 w-28" loading={true} height="16px" />
+              <Skeleton className="mt-auto h-24 w-full" loading={true} />
+              <Skeleton className="h-10 w-full" loading={true} height="40px" />
+            </div>
+          ))}
+        </div>
+      ) : pagination?.totalPages === 0 ? (
         <Empty>
           <p>{t('listIsEmpty')}</p>
         </Empty>
@@ -102,6 +132,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
                 ],
               }}
               signals={filteredSignals}
+              isLoading={isLoading}
               refresh={refresh}
               onSignalClick={onSignalClick}
             />
