@@ -307,7 +307,7 @@
     "title": "Ecosystem",
     "mapRegionAriaLabel": "Space relationship map",
     "dataPanelAriaLabel": "Nested spaces, search, and actions",
-    "content": "See how your spaces connect. Use the map to explore; search and open nested spaces in the panel—stays in view on large screens.",
+    "content": "See how your spaces connect. Use the map to explore; search and open nested spaces in the panel, which stays in view on large screens.",
     "tabs": {
       "nestedSpaces": "Nested Spaces",
       "spaceToSpace": "Space-to-Space",
@@ -2023,7 +2023,7 @@
     "wiki": "Wiki",
     "artifact": "Artifact",
     "signals": "Signals",
-    "signInToSee": "Please, sign in to see signals, artifacts, and conversations",
+    "signInToSee": "Please sign in to see signals, artifacts, and conversations",
     "searchSignals": "Search signals...",
     "newSignal": "New Signal",
     "backToCoherence": "Back to Coherence",
