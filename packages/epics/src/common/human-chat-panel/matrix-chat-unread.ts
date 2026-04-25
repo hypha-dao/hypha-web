@@ -6,9 +6,9 @@ import {
 } from 'matrix-js-sdk';
 
 import {
+  contentMentionsMatrixUser,
   getMessageReplaceTargetEventId,
   isRedactedRoomMessageEvent,
-  parseMentionUserIdsFromWireContent,
 } from '@hypha-platform/core/client';
 
 export type HumanChatUnreadState = {
@@ -108,10 +108,14 @@ function countUnreadMentionMessagesForUser(
     const sender = ev.getSender()!;
     if (sender === viewerId) continue;
 
-    const ids = parseMentionUserIdsFromWireContent(
-      wireContentForMentionParse(ev, replacementsByRootId),
-    );
-    if (!ids?.includes(viewerId)) continue;
+    if (
+      !contentMentionsMatrixUser(
+        wireContentForMentionParse(ev, replacementsByRootId),
+        viewerId,
+      )
+    ) {
+      continue;
+    }
 
     if (readUpToId) {
       const cmp = room.compareEventOrdering(readUpToId, id);

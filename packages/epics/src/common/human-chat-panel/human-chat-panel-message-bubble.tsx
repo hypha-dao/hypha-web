@@ -901,7 +901,8 @@ function splitPlainTextMatrixMentions(
  */
 function chatMentionPillClass(onViewerMentionTintRow: boolean): string {
   return cn(
-    'inline-flex max-w-full items-baseline rounded-md px-[5px] py-[1px] text-[13px] font-semibold leading-snug tracking-tight',
+    /* `min-h` + vertical centering so the chip fills the message line box (not only the glyph bbox). */
+    'inline-flex min-h-[1.35em] w-fit max-w-full min-w-0 items-center self-baseline rounded-md px-[5px] py-0.5 text-[13px] font-semibold leading-snug tracking-tight',
     /* Foreground text keeps contrast on any space-derived accent tint (lime, etc.). */
     onViewerMentionTintRow
       ? 'bg-accent-9/22 text-foreground ring-1 ring-inset ring-accent-9/45 dark:bg-accent-9/28 dark:text-foreground dark:ring-accent-10/50'

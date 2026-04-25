@@ -629,16 +629,35 @@ export function useSpaceGroupCall(roomId: string | null) {
     if (groupCallRef.current) return;
     if (callState !== 'idle' && callState !== 'error') return;
 
-    const gc = client.getGroupCallForRoom(roomId);
-    if (!gc) return;
-
     const myId = client.getUserId() ?? null;
+    /** Which idle `GroupCall` we attach `ParticipantsChanged` to (may appear after sync). */
+    let watchedGroupCall: MatrixSdk.GroupCall | null = null;
+
+    const unwatchParticipants = () => {
+      if (watchedGroupCall) {
+        watchedGroupCall.removeListener(
+          GroupCallEvent.ParticipantsChanged,
+          sync,
+        );
+        watchedGroupCall = null;
+      }
+    };
+
+    const watchParticipantsOn = (gc: MatrixSdk.GroupCall | null) => {
+      if (watchedGroupCall === gc) return;
+      unwatchParticipants();
+      watchedGroupCall = gc;
+      if (gc) {
+        gc.on(GroupCallEvent.ParticipantsChanged, sync);
+      }
+    };
 
     const sync = () => {
       if (groupCallRef.current) {
         return;
       }
       const current = client.getGroupCallForRoom(roomId);
+      watchParticipantsOn(current ?? null);
       if (!current) {
         setIdleRoomParticipantCount(0);
         setIdleInCallUserIds([]);
@@ -654,18 +673,36 @@ export function useSpaceGroupCall(roomId: string | null) {
       setIdleInCallUserIds(p.inCallUserIds);
     };
 
-    sync();
-    gc.on(GroupCallEvent.ParticipantsChanged, sync);
-    const onEnded = (ended: MatrixSdk.GroupCall) => {
-      if (ended.room?.roomId !== roomId) return;
+    const onIncoming = (incoming: MatrixSdk.GroupCall) => {
+      if (incoming.room?.roomId !== roomId) return;
+      /* `GroupCallEventHandler` may emit this before `getGroupCallForRoom` is populated in edge races. */
+      watchParticipantsOn(incoming);
       sync();
     };
+
+    const onEnded = (ended: MatrixSdk.GroupCall) => {
+      if (ended.room?.roomId !== roomId) return;
+      unwatchParticipants();
+      sync();
+    };
+
+    /* Subscribe before the first `sync` so we do not miss `GroupCall.incoming` (was "alone until reload"). */
+    client.on(
+      GroupCallEventHandlerEvent.Incoming,
+      onIncoming as (c: MatrixSdk.GroupCall) => void,
+    );
     client.on(
       GroupCallEventHandlerEvent.Ended,
       onEnded as (ended: MatrixSdk.GroupCall) => void,
     );
+    sync();
+
     const unsub = () => {
-      gc.removeListener(GroupCallEvent.ParticipantsChanged, sync);
+      unwatchParticipants();
+      client.removeListener(
+        GroupCallEventHandlerEvent.Incoming,
+        onIncoming as (c: MatrixSdk.GroupCall) => void,
+      );
       client.removeListener(
         GroupCallEventHandlerEvent.Ended,
         onEnded as (ended: MatrixSdk.GroupCall) => void,

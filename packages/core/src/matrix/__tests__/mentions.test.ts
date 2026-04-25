@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  contentMentionsMatrixUser,
   extractMentionUserIdsFromPlainBody,
   isLikelyMatrixUserId,
   mentionsContentFromUserIds,
@@ -73,6 +74,41 @@ describe('parseMentionUserIdsFromWireContent', () => {
         },
       }),
     ).toEqual(['@good:matrix.org']);
+  });
+});
+
+describe('contentMentionsMatrixUser', () => {
+  const u = '@viewer:example.org';
+  it('is true for MSC3952 m.mentions', () => {
+    expect(
+      contentMentionsMatrixUser(
+        { 'm.mentions': { user_ids: [u] }, body: 'hi' },
+        u,
+      ),
+    ).toBe(true);
+  });
+  it('is true when only body has @mxid (no m.mentions)', () => {
+    expect(
+      contentMentionsMatrixUser(
+        { body: `hello ${u} there`, msgtype: 'm.text' },
+        u,
+      ),
+    ).toBe(true);
+  });
+  it('ignores mxids only inside rich-reply quoted prefix', () => {
+    const quoted = `> <@other:example.org> parent\n\nhello`;
+    expect(contentMentionsMatrixUser({ body: quoted }, u)).toBe(false);
+  });
+  it('is false when neither field mentions user', () => {
+    expect(
+      contentMentionsMatrixUser(
+        {
+          body: 'no mention',
+          'm.mentions': { user_ids: ['@other:example.org'] },
+        },
+        u,
+      ),
+    ).toBe(false);
   });
 });
 

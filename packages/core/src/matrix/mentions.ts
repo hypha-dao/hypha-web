@@ -59,6 +59,23 @@ export function isLikelyMatrixUserId(id: string): boolean {
 }
 
 /**
+ * Matrix rich-reply `body` often prefixes a `>`-quoted block; `extractMentionUserIdsFromPlainBody`
+ * should scan the same visible line as the UI (mirrors `stripMatrixReplyFallback` in rich-reply).
+ */
+function bodyPlainForMentionExtraction(body: string): string {
+  const normalized = body.replace(/\r\n/g, '\n');
+  const idx = normalized.indexOf('\n\n');
+  if (idx === -1) return body;
+  const head = normalized.slice(0, idx);
+  const headLines = head.split('\n');
+  const isQuotedBlock = headLines.every(
+    (line) => line.startsWith('>') || line.trim() === '',
+  );
+  if (!isQuotedBlock) return body;
+  return normalized.slice(idx + 2).trimEnd();
+}
+
+/**
  * Deduped `@user:homeserver` IDs found in plaintext (composer or Matrix body).
  */
 export function extractMentionUserIdsFromPlainBody(plain: string): string[] {
@@ -130,6 +147,26 @@ export function resolveMentionUserIdsForSend(
     return [...new Set(explicitUserIds.filter(isLikelyMatrixUserId))];
   }
   return extractMentionUserIdsFromPlainBody(plain);
+}
+
+/**
+ * True when a room message’s wire content @-mentions `userId`: MSC3952
+ * `m.mentions.user_ids` **or** an MXID token in `body` (for clients that omit
+ * `m.mentions` while the rendered text still contains `@user:server`).
+ */
+export function contentMentionsMatrixUser(
+  content: unknown,
+  userId: string,
+): boolean {
+  if (!content || typeof content !== 'object') return false;
+  const c = content as Record<string, unknown>;
+  const m = parseMentionUserIdsFromWireContent(c);
+  if (m?.includes(userId)) return true;
+  const body = c.body;
+  if (typeof body !== 'string' || !body) return false;
+  return extractMentionUserIdsFromPlainBody(
+    bodyPlainForMentionExtraction(body),
+  ).includes(userId);
 }
 
 /** Read `m.mentions.user_ids` from an `m.room.message` wire content object. */
