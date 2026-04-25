@@ -5,6 +5,7 @@
 | Field | Value |
 |--------|--------|
 | **Status** | Ready to implement (spec / design / QA only — no product code in this change) |
+| **Related (product evolution)** | [DHO workspace — Signals, Artifact, icon-first rail, title alignment](./dho-workspace-signals-artifact-nav-ux-spec.md) (UX/IA: renames, new Artifact route, iconography, H1 ↔ rail alignment). Supersedes nav copy and order in this file where they conflict. |
 | **Primary references** | [Vercel changelog — New dashboard navigation](https://vercel.com/changelog/new-dashboard-navigation-available) (sidebar + mobile bottom bar patterns as **UX inspiration**, not a dependency) |
 | **In-repo anchors** | `PanelWrapLayout` + `--sidebar-left-width` (`packages/epics/src/common/panel-wrap-layout.tsx`); DHO tab chrome (`@tab/layout` → `DhoSpaceWorkspace`); legacy `.../select-navigation-action` URLs **redirect in middleware** to `/{lang}/dho/{id}/spaces` |
 | **Out of scope for this spec PR** | Feature-flag rollout strategy, Figma handoff, and implementation PRs (tracked as follow-up work) |
