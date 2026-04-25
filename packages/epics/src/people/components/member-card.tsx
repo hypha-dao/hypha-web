@@ -123,54 +123,79 @@ export const MemberCard: React.FC<MemberCardProps> = ({
 
   const metaForTitle = [location?.trim(), joinLine].filter(Boolean).join(' · ');
 
-  const mainBlock = (
-    <div className="min-w-0 space-y-2 p-3">
-      <div className="flex min-w-0 gap-2.5">
+  const heroVisual = (
+    <div className="relative isolate overflow-hidden">
+      <div
+        className={cn(
+          'relative h-[5.25rem] w-full overflow-hidden bg-muted/50',
+          'after:pointer-events-none after:absolute after:inset-0 after:bg-gradient-to-b after:from-transparent after:via-background/55 after:to-background',
+        )}
+      >
+        {isLoading ? (
+          <Skeleton
+            className="h-full w-full rounded-none"
+            loading
+            height="100%"
+          />
+        ) : avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt=""
+            aria-hidden
+            className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-45 blur-[2px] motion-reduce:scale-100 motion-reduce:blur-none"
+          />
+        ) : (
+          <div
+            className="absolute inset-0 bg-gradient-to-br from-accent-5/35 via-muted/60 to-background"
+            aria-hidden
+          />
+        )}
+      </div>
+      <div className="relative z-10 -mt-10 px-3">
         <PersonAvatar
           avatarSrc={avatarUrl}
           userName={nickname}
-          size="md"
+          size="lg"
           isLoading={isLoading}
           shape="circle"
-          className="shrink-0"
+          className="shrink-0 shadow-md ring-4 ring-card"
         />
-        <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 items-start justify-between gap-1.5">
-            {isLoading ? (
-              <Skeleton
-                className="my-0.5"
-                width="7rem"
-                height="1.1rem"
-                loading
-              />
-            ) : (
-              <p
-                className="text-4 line-clamp-1 font-medium leading-tight"
-                title={fullName}
-              >
-                {fullName}
-              </p>
-            )}
-            <Badge
-              className="h-fit max-w-[40%] shrink-0 border text-[10px] font-medium uppercase"
-              variant="outline"
-              colorVariant="neutral"
-            >
-              {tCommon('memberRoleLabel')}
-            </Badge>
-          </div>
-          {isLoading ? (
-            <Skeleton className="mt-1" width="5rem" height="0.7rem" loading />
-          ) : (
-            <p
-              className="mt-0.5 line-clamp-1 text-1 text-muted-foreground"
-              title={atNick || undefined}
-            >
-              {atNick || '\u00a0'}
-            </p>
-          )}
-        </div>
       </div>
+    </div>
+  );
+
+  const mainBlock = (
+    <div className="min-w-0 space-y-2 px-3 pb-3 pt-1">
+      {heroVisual}
+      <div className="flex min-w-0 items-start justify-between gap-1.5 pt-0.5">
+        {isLoading ? (
+          <Skeleton className="my-0.5" width="7rem" height="1.1rem" loading />
+        ) : (
+          <p
+            className="text-4 line-clamp-1 font-medium leading-tight"
+            title={fullName}
+          >
+            {fullName}
+          </p>
+        )}
+        <Badge
+          className="h-fit max-w-[40%] shrink-0 border text-[10px] font-medium uppercase"
+          variant="outline"
+          colorVariant="neutral"
+        >
+          {tCommon('memberRoleLabel')}
+        </Badge>
+      </div>
+      {isLoading ? (
+        <Skeleton className="mt-0.5" width="5rem" height="0.7rem" loading />
+      ) : (
+        <p
+          className="mt-0.5 line-clamp-1 text-1 text-muted-foreground"
+          title={atNick || undefined}
+        >
+          {atNick || '\u00a0'}
+        </p>
+      )}
       <div className="min-h-5 w-full" aria-hidden />
       <div className="flex min-h-5 w-full max-w-full flex-wrap content-center gap-1.5">
         <StatusBadge isLoading={isLoading} status={status} />
