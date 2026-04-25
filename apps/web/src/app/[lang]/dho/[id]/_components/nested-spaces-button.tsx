@@ -55,19 +55,32 @@ export const NestedSpacesButton = ({
     langParam as Locale,
     (spaceSlug || routeId || '') as string,
   );
-  const href = !isDisabled ? toSpaces : '#';
+
+  if (isDisabled) {
+    return (
+      <span
+        data-space-nav
+        className="inline-flex cursor-not-allowed"
+        aria-disabled="true"
+        tabIndex={-1}
+        title={tooltipMessage}
+      >
+        <Button
+          variant="link"
+          disabled
+          className="flex h-auto min-h-0 shrink-0 items-center gap-2 px-0 py-0 text-xs font-medium"
+        >
+          <Eye className="w-4 h-4" />
+          <span>{tDho('nestedSpacesButton.label')}</span>
+        </Button>
+      </span>
+    );
+  }
 
   return (
-    <Link
-      data-space-nav
-      className={isDisabled ? 'cursor-not-allowed' : ''}
-      href={href}
-      onClick={isDisabled ? (e) => e.preventDefault() : undefined}
-      title={tooltipMessage}
-    >
+    <Link data-space-nav href={toSpaces} title={tooltipMessage}>
       <Button
         variant="link"
-        disabled={isDisabled}
         className="flex h-auto min-h-0 shrink-0 items-center gap-2 px-0 py-0 text-xs font-medium"
       >
         <Eye className="w-4 h-4" />
