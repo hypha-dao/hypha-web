@@ -135,37 +135,19 @@ export function getHumanChatPanelCallStageModel(
   const userMediaFeeds = [...groupCall.userMediaFeeds];
   const shareFeeds = [...groupCall.screenshareFeeds];
   const hasLocalWebcam = isVideoCall && !isLocalVideoMuted;
-  if (!isVideoCall && shareFeeds.length === 0) {
+
+  /**
+   * While display capture is starting, `screenshareFeeds` can be empty briefly — panel
+   * shows a thin line; the full min-frame (avatar + share) appears once the feed exists.
+   */
+  if (
+    isVideoCall &&
+    !hasLocalWebcam &&
+    shareFeeds.length === 0 &&
+    isScreensharing
+  ) {
     return {
-      kind: 'hidden',
-      isVideoCall,
-      userMediaFeeds,
-      shareFeeds,
-      hasLocalWebcam,
-      remoteUserMedia: [],
-      localUserMedia: [],
-      hasRemotesOrShare: false,
-      showLocalInMainGrid: false,
-      showLocalPip: false,
-    };
-  }
-  if (isVideoCall && !hasLocalWebcam && shareFeeds.length === 0) {
-    if (isScreensharing) {
-      return {
-        kind: 'screenSharePendingStrip',
-        isVideoCall,
-        userMediaFeeds,
-        shareFeeds,
-        hasLocalWebcam,
-        remoteUserMedia: [],
-        localUserMedia: [],
-        hasRemotesOrShare: false,
-        showLocalInMainGrid: false,
-        showLocalPip: false,
-      };
-    }
-    return {
-      kind: 'hidden',
+      kind: 'screenSharePendingStrip',
       isVideoCall,
       userMediaFeeds,
       shareFeeds,
@@ -181,8 +163,8 @@ export function getHumanChatPanelCallStageModel(
   const remoteUserMedia = userMediaFeeds.filter((f) => !f.isLocal());
   const localUserMedia = userMediaFeeds.filter((f) => f.isLocal());
   const hasRemotesOrShare = shareFeeds.length > 0 || remoteUserMedia.length > 0;
-  const showLocalInMainGrid =
-    !hasRemotesOrShare && localUserMedia.length > 0 && hasLocalWebcam;
+  /** Solo in room: show local tile whenever we have a local user-media feed — video, camera-off, or audio-only (avatar + waves). */
+  const showLocalInMainGrid = !hasRemotesOrShare && localUserMedia.length > 0;
   const showLocalPip = hasRemotesOrShare;
   return {
     kind: 'main',
