@@ -588,7 +588,6 @@ export function SpaceVisualization({
     });
 
     zoomTo(view);
-    previousVisibleSpacesRef.current = '';
     notifyVisibleSpaces(focus);
 
     function zoom(target: SpaceHierarchyNode) {
