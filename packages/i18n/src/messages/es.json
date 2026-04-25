@@ -808,7 +808,9 @@
     "openSpaceMenu": "Menú del espacio",
     "spaceMenuTitle": "Espacio",
     "closeMenu": "Cerrar",
-    "spaceMapLoading": "Cargando mapa de espacios"
+    "spaceMapLoading": "Cargando mapa de espacios",
+    "expandNavLabels": "Mostrar nombres de sección",
+    "collapseNavLabels": "Ocultar nombres de sección"
   },
   "SpaceSettingsAction": {
     "title": "Configuración de espacio",

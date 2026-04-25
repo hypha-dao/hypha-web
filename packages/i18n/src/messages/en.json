@@ -153,7 +153,9 @@
     "openSpaceMenu": "Space menu",
     "spaceMenuTitle": "Space",
     "closeMenu": "Close",
-    "spaceMapLoading": "Loading space map"
+    "spaceMapLoading": "Loading space map",
+    "expandNavLabels": "Show section names",
+    "collapseNavLabels": "Hide section names"
   },
   "SpaceSettingsAction": {
     "title": "Space Settings",

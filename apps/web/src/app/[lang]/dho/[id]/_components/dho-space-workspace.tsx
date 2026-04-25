@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
+  ChevronsLeft,
+  ChevronsRight,
   FileCheck2,
   Library,
   LayoutGrid,
@@ -36,6 +38,8 @@ import { cn } from '@hypha-platform/ui-utils';
 const NAV_ICON_CLASS = 'h-5 w-5 shrink-0 opacity-80 group-hover:opacity-100';
 const NAV_MOTION =
   'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-left-1 motion-reduce:animate-none';
+
+const NAV_LABELS_EXPANDED_STORAGE_KEY = 'dho-workspace-nav-labels-expanded';
 
 export type DhoSpaceWorkspaceNavItem = {
   name: string;
@@ -109,8 +113,10 @@ type NavRowProps = {
   icon: LucideIcon;
   isActive: boolean;
   onNavigate?: () => void;
-  /** `desktop` = compact icon rail; `sheet` = mobile drawer with full labels */
+  /** `desktop` = icon rail (optional labels); `sheet` = mobile drawer with full labels */
   variant: 'desktop' | 'sheet';
+  /** Desktop: when false, icons only; when true, icons + visible labels */
+  showLabels?: boolean;
   index: number;
   linkRef?: React.Ref<HTMLAnchorElement>;
   reducedMotion: boolean;
@@ -124,12 +130,15 @@ function NavRow({
   isActive,
   onNavigate,
   variant,
+  showLabels = false,
   index,
   linkRef,
   reducedMotion,
 }: NavRowProps) {
+  const desktopIconOnly = variant === 'desktop' && !showLabels;
   const itemClass = cn(
-    'group flex min-h-11 w-full min-w-0 items-center gap-2 rounded-md px-2 py-2 text-left text-sm font-medium leading-snug',
+    'group flex min-h-11 w-full min-w-0 items-center rounded-md py-2 text-left text-sm font-medium leading-snug',
+    desktopIconOnly ? 'justify-center gap-0 px-1.5' : 'gap-2 px-2',
     'outline-none ring-offset-background transition-colors',
     'focus-visible:ring-2 focus-visible:ring-ring',
     isActive
@@ -148,13 +157,10 @@ function NavRow({
       />
       {variant === 'sheet' ? (
         <span className="min-w-0 flex-1 truncate">{label}</span>
+      ) : showLabels ? (
+        <span className="min-w-0 flex-1 overflow-hidden truncate">{label}</span>
       ) : (
-        <span
-          className="min-w-0 flex-1 max-xl:sr-only xl:inline xl:overflow-hidden xl:truncate"
-          // Keep label in DOM for SR when using sr-only at md–lg; avoids duplicate with tooltip
-        >
-          {label}
-        </span>
+        <span className="sr-only">{label}</span>
       )}
     </>
   );
@@ -177,29 +183,31 @@ function NavRow({
     );
   }
 
+  const linkEl = (
+    <Link
+      data-testid={`dho-workspace-nav-${name}`}
+      href={href}
+      onClick={onNavigate}
+      aria-current={isActive ? 'page' : undefined}
+      className={itemClass}
+      title={undefined}
+    >
+      {content}
+    </Link>
+  );
+
   return (
     <li className="w-full" style={style}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Link
-            data-testid={`dho-workspace-nav-${name}`}
-            href={href}
-            onClick={onNavigate}
-            aria-current={isActive ? 'page' : undefined}
-            className={itemClass}
-            title={undefined}
-          >
-            {content}
-          </Link>
-        </TooltipTrigger>
-        <TooltipContent
-          side="right"
-          sideOffset={6}
-          className="max-xl:block xl:hidden"
-        >
-          {label}
-        </TooltipContent>
-      </Tooltip>
+      {showLabels ? (
+        linkEl
+      ) : (
+        <Tooltip>
+          <TooltipTrigger asChild>{linkEl}</TooltipTrigger>
+          <TooltipContent side="right" sideOffset={6}>
+            {label}
+          </TooltipContent>
+        </Tooltip>
+      )}
     </li>
   );
 }
@@ -209,20 +217,25 @@ function NavLinkList({
   activeName,
   onNavigate,
   variant,
+  showLabels,
   className,
   firstLinkRef,
   reducedMotion,
+  listId,
 }: {
   items: DhoSpaceWorkspaceNavItem[];
   activeName: string;
   onNavigate?: () => void;
   variant: 'desktop' | 'sheet';
+  showLabels?: boolean;
   className?: string;
   firstLinkRef?: React.Ref<HTMLAnchorElement>;
   reducedMotion: boolean;
+  listId?: string;
 }) {
   return (
     <ul
+      id={listId}
       className={cn('flex list-none flex-col gap-0.5 p-0', className)}
       role="list"
     >
@@ -238,6 +251,7 @@ function NavLinkList({
             isActive={isActive}
             onNavigate={onNavigate}
             variant={variant}
+            showLabels={showLabels}
             index={index}
             reducedMotion={reducedMotion}
             linkRef={
@@ -282,6 +296,29 @@ export function DhoSpaceWorkspace({
     return () => mq.removeEventListener('change', handler);
   }, []);
 
+  const navListId = React.useId();
+  const [labelsExpanded, setLabelsExpanded] = React.useState(false);
+
+  React.useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(NAV_LABELS_EXPANDED_STORAGE_KEY);
+      if (raw === '1') setLabelsExpanded(true);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  React.useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        NAV_LABELS_EXPANDED_STORAGE_KEY,
+        labelsExpanded ? '1' : '0',
+      );
+    } catch {
+      /* ignore */
+    }
+  }, [labelsExpanded]);
+
   const closeSheet = React.useCallback(() => {
     setSheetOpen(false);
   }, []);
@@ -302,14 +339,56 @@ export function DhoSpaceWorkspace({
   return (
     <div className="flex w-full min-w-0 flex-col gap-0 md:flex-row">
       <nav
-        className="hidden w-[4.5rem] shrink-0 border-r border-border pl-0 pr-1 pt-4 md:block xl:min-w-0 xl:w-[min(12.5rem,100%)] xl:pl-0 xl:pr-2"
+        className={cn(
+          'hidden shrink-0 pt-4 transition-[width] duration-200 ease-out md:block',
+          labelsExpanded
+            ? 'w-[min(12.5rem,100%)] pl-0 pr-2'
+            : 'w-[3.75rem] pl-0 pr-1',
+        )}
         aria-label={t('spaceNavAriaLabel')}
       >
+        <div
+          className={cn(
+            'mb-2 flex',
+            labelsExpanded ? 'justify-end px-0.5' : 'justify-center',
+          )}
+        >
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                aria-expanded={labelsExpanded}
+                aria-controls={navListId}
+                onClick={() => setLabelsExpanded((v) => !v)}
+                data-testid="dho-workspace-nav-toggle-labels"
+              >
+                {labelsExpanded ? (
+                  <ChevronsLeft className="h-4 w-4" aria-hidden />
+                ) : (
+                  <ChevronsRight className="h-4 w-4" aria-hidden />
+                )}
+                <span className="sr-only">
+                  {labelsExpanded
+                    ? t('collapseNavLabels')
+                    : t('expandNavLabels')}
+                </span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={6}>
+              {labelsExpanded ? t('collapseNavLabels') : t('expandNavLabels')}
+            </TooltipContent>
+          </Tooltip>
+        </div>
         <NavLinkList
           items={items}
           activeName={activeName}
           variant="desktop"
+          showLabels={labelsExpanded}
           reducedMotion={reducedMotion}
+          listId={navListId}
         />
       </nav>
 

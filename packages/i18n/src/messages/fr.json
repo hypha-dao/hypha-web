@@ -153,7 +153,9 @@
     "openSpaceMenu": "Menu de l’espace",
     "spaceMenuTitle": "Espace",
     "closeMenu": "Fermer",
-    "spaceMapLoading": "Chargement de la carte des espaces"
+    "spaceMapLoading": "Chargement de la carte des espaces",
+    "expandNavLabels": "Afficher les noms des sections",
+    "collapseNavLabels": "Masquer les noms des sections"
   },
   "SpaceSettingsAction": {
     "title": "Paramètres de l'espace",
