@@ -333,6 +333,8 @@
   },
   "MembersTab": {
     "searchMembers": "Search members",
+    "nestedSpaceTypeLabel": "Space",
+    "spaceDelegateLabel": "Delegate",
     "delegateVoting": "Delegate Voting",
     "listIsEmpty": "List is empty",
     "loading": "Loading...",

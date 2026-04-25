@@ -9,13 +9,34 @@ import { useSpaceBySlug } from '@hypha-platform/core/client';
 import { useEvents } from '@hypha-platform/core/client';
 import React from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
+import { cn } from '@hypha-platform/ui-utils';
+import { Calendar, LayoutGrid } from 'lucide-react';
 
-export const SpaceMemberCard: React.FC<{
+const JOIN_DATE_FORMAT = {
+  year: 'numeric' as const,
+  month: 'short' as const,
+  day: 'numeric' as const,
+};
+
+type SpaceMemberCardProps = {
   hostSpaceId?: number;
   space: Space;
   isLoading?: boolean;
-}> = ({ hostSpaceId: spaceId, space, isLoading }) => {
+  className?: string;
+};
+
+/**
+ * Nested space on the members roster. Parent `Link` in `MembersList` provides navigation;
+ * this component must not render nested interactive links.
+ */
+export const SpaceMemberCard: React.FC<SpaceMemberCardProps> = ({
+  hostSpaceId: spaceId,
+  space,
+  isLoading,
+  className,
+}) => {
   const tCommon = useTranslations('Common');
+  const tMembers = useTranslations('MembersTab');
   const format = useFormatter();
   const { id: spaceSlug } = useParams();
   const { space: currentSpace } = useSpaceBySlug(spaceSlug as string);
@@ -31,99 +52,141 @@ export const SpaceMemberCard: React.FC<{
   });
 
   const joinEvent = React.useMemo(() => {
-    if (!space?.address || isLoadingEvents || !events) {
-      return undefined;
-    }
-    if (events.length === 0) {
-      return undefined;
-    }
-    const normalizedAddress = space.address.toLowerCase();
-    const event = events.find(
-      (el) =>
-        el.parameters?.['memberAddress']?.toLowerCase?.() === normalizedAddress,
+    if (!space?.address || isLoadingEvents || !events) return undefined;
+    const n = space.address.toLowerCase();
+    return events.find(
+      (el) => el.parameters?.['memberAddress']?.toLowerCase?.() === n,
     );
-    return event;
   }, [space, events, isLoadingEvents]);
 
+  const joinLine =
+    joinEvent &&
+    tCommon('joinedSpaceOn', {
+      date: format.dateTime(new Date(joinEvent.createdAt), JOIN_DATE_FORMAT),
+    });
+
+  const desc = space.description?.trim() ?? '';
+  const metaTitle = [desc, joinLine].filter(Boolean).join(' · ');
+
   return (
-    <Card className="w-full h-full p-5 mb-2 flex gap-5 flex-col">
-      <div className="flex gap-3">
-        <Skeleton
-          width="64px"
-          height="64px"
-          loading={isLoading}
-          className="rounded-full"
-        >
-          <Image
-            className="h-[64px] w-[64px] rounded-full object-cover"
-            src={space.logoUrl || '/placeholder/default-space.svg'}
-            height={64}
-            width={64}
-            alt={space.title}
-          />
-        </Skeleton>
-        <div className="flex flex-col justify-center grow">
-          <Badge className="w-fit" colorVariant="accent">
-            Space
-          </Badge>
-          <Skeleton height="26px" width="160px" loading={isLoading}>
-            <Text className="text-4">{space.title}</Text>
-          </Skeleton>
-          <Skeleton height="16px" width="120px" loading={isLoading}>
-            <Text className="text-1 text-neutral-11">{space.description}</Text>
+    <Card
+      className={cn(
+        'h-full min-h-36 w-full min-w-0 border-l-2 border-l-muted-foreground/25 p-0',
+        'transition-shadow duration-150 hover:shadow-sm motion-reduce:transition-none',
+        'border border-border/80',
+        className,
+      )}
+      data-testid="space-member-card-grid"
+    >
+      <div className="flex min-w-0 gap-2.5 p-3">
+        <div className="shrink-0 self-start">
+          <Skeleton
+            width="40px"
+            height="40px"
+            loading={isLoading}
+            className="rounded-md"
+          >
+            <div className="h-10 w-10 overflow-hidden rounded-md border border-border/60">
+              <Image
+                className="h-10 w-10 object-cover"
+                src={space.logoUrl || '/placeholder/default-space.svg'}
+                height={40}
+                width={40}
+                alt=""
+              />
+            </div>
           </Skeleton>
         </div>
-        {(isLoadingEvents || joinEvent) && (
-          <div className="flex justify-between flex-col gap-6 items-end">
-            <Skeleton
-              height="16px"
-              width="120px"
-              loading={isLoading || isLoadingEvents}
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            <LayoutGrid
+              className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+              strokeWidth={2.25}
+              aria-hidden
+            />
+            <span className="sr-only">{tMembers('nestedSpaceTypeLabel')}</span>
+            <Badge
+              className="h-5 max-w-full shrink-0 border text-[10px] font-semibold uppercase tracking-wide"
+              colorVariant="accent"
             >
-              <Text className="text-1 text-gray-500">
-                {joinEvent && (
-                  <>
-                    {tCommon('joinedSpaceOn', {
-                      date: format.dateTime(new Date(joinEvent.createdAt), {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                      }),
-                    })}
-                  </>
-                )}
-              </Text>
-            </Skeleton>
+              {tMembers('nestedSpaceTypeLabel')}
+            </Badge>
           </div>
-        )}
+          {isLoading ? (
+            <Skeleton className="mt-1.5" width="8rem" height="1rem" loading />
+          ) : (
+            <Text
+              as="p"
+              className="mt-1.5 line-clamp-2 text-4 font-medium leading-snug"
+              title={space.title}
+            >
+              {space.title}
+            </Text>
+          )}
+        </div>
       </div>
-      <div>
-        {delegator ? (
-          <div className="flex flex-col gap-2">
-            <span className="text-1 text-neutral-11 font-bold">Delegate</span>
-            <div className="flex gap-3 items-center">
-              <Image
-                className="h-[32px] w-[32px] rounded-lg"
-                src={delegator?.avatarUrl || '/placeholder/default-space.svg'}
-                height={32}
-                width={32}
-                alt={delegator?.nickname}
+
+      <div className="min-h-5 px-3" aria-hidden />
+
+      {isLoading ? (
+        <div className="px-3 pb-3">
+          <Skeleton className="mt-1.5" width="100%" height="0.75rem" loading />
+        </div>
+      ) : desc || joinLine ? (
+        <p
+          className="line-clamp-2 min-h-8 px-3 pb-2 text-1 text-muted-foreground"
+          title={metaTitle || undefined}
+        >
+          {desc ? <span className="block line-clamp-1">{desc}</span> : null}
+          {desc && joinLine ? ' · ' : null}
+          {joinLine ? (
+            <span className="inline" title={joinLine}>
+              <Calendar
+                className="mr-0.5 inline h-3 w-3 -translate-y-0.5 opacity-80"
+                aria-hidden
               />
-              <div className="flex gap-1 flex-col">
-                <span className="text-1 font-bold text-bg-foreground">
-                  {delegator?.name} {delegator?.surname}
-                </span>
-                <span className="text-1 text-neutral-11">
-                  @{delegator?.nickname}
-                </span>
-              </div>
+              {joinLine}
+            </span>
+          ) : null}
+        </p>
+      ) : null}
+
+      {delegator && !isLoading ? (
+        <div className="border-t border-border/50 px-3 py-2">
+          <p className="text-[10px] font-semibold uppercase text-muted-foreground">
+            {tMembers('spaceDelegateLabel')}
+          </p>
+          <div className="mt-1.5 flex min-w-0 items-center gap-2">
+            <div className="h-7 w-7 shrink-0 overflow-hidden rounded border border-border/60">
+              <Image
+                className="h-7 w-7 object-cover"
+                src={delegator.avatarUrl || '/placeholder/default-space.svg'}
+                height={28}
+                width={28}
+                alt=""
+              />
+            </div>
+            <div className="min-w-0">
+              <p
+                className="line-clamp-1 text-1 font-medium leading-tight"
+                title={[delegator.name, delegator.surname]
+                  .filter(Boolean)
+                  .join(' ')}
+              >
+                {delegator.name} {delegator.surname}
+              </p>
+              {delegator.nickname ? (
+                <p
+                  className="line-clamp-1 text-1 text-muted-foreground"
+                  title={`@${delegator.nickname}`}
+                >
+                  @{delegator.nickname}
+                </p>
+              ) : null}
             </div>
           </div>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </Card>
   );
 };
