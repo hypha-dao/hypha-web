@@ -1913,7 +1913,7 @@
     "callMembersTabJoinCallBody": "Abra o separador Chat e use Entrar (áudio ou vídeo) ou o telefone e a câmara no cabeçalho para a mesma chamada. Todos no espaço partilham a mesma chamada.",
     "callMembersTabInCallPreamble": "{count, plural, one {# pessoa na chamada} other {# pessoas na chamada}} (Matrix):",
     "callAudio": "Iniciar chamada de voz neste espaço",
-    "callVideo": "Iniciar vide chamada neste espaço",
+    "callVideo": "Iniciar chamada de vídeo neste espaço",
     "callSearch": "Pesquisar no chat (em breve)",
     "callSearchComingSoon": "Pesquisar no chat — em breve",
     "callActiveInSpace": "Chamada do espaço (todos neste espaço podem entrar)",
