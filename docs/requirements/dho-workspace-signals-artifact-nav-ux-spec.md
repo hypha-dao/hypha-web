@@ -74,7 +74,7 @@
 
 - **User-facing** label: **Signals** (all locales; new or updated `next-intl` keys with translator context: _“Navigation item: signals, coherence, DAO alignment”_).
 - **Engineering** — The existing URL segment `coherence` may **remain** for backward compatibility and analytics continuity; the **nav label and any heading copy** use **Signals**. If marketing/legal requires a URL change later, that is a **separate, migration-gated** task (301 map, e2e, external links).
-- **Order** (when Coherence/Signals is enabled) — **Signals** stays **first** in the group (per [dho-workspace-nav-phase-0-1.md](./dho-workspace-nav-phase-0-1.md) and product wireframe: Signals at top). Full order with Artifact is in §4.3.
+- **Order** (when Coherence/Signals is enabled) — **Signals** stays **first** in the group (per [dho-workspace-nav-phases-0-6.md](./dho-workspace-nav-phases-0-6.md) and product wireframe: Signals at top). Full order with Artifact is in §4.3.
 
 ### 4.2 “Space memory” → **Artifact**
 
@@ -184,7 +184,7 @@ When a flag is off, that item is **omitted**; the list collapses with **no place
 | Document                                                                                                 | Update                                                                                                                                                         |
 | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [dho-central-left-nav-and-space-graph-tech-spec.md](./dho-central-left-nav-and-space-graph-tech-spec.md) | Add pointer to this spec; supersede “Coherence”/“Space Memory” phrasing in nav for future implementation passes.                                               |
-| [dho-workspace-nav-phase-0-1.md](./dho-workspace-nav-phase-0-1.md)                                       | Add **follow-up** row: **Signals / Artifact / icon rail / title alignment** tracked in this document (does not re-open closed phases; adds product iteration). |
+| [dho-workspace-nav-phases-0-6.md](./dho-workspace-nav-phases-0-6.md)                                       | Add **follow-up** row: **Signals / Artifact / icon rail / title alignment** tracked in this document (does not re-open closed phases; adds product iteration). |
 
 ---
 
