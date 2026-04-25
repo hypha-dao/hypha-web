@@ -261,7 +261,7 @@ export function DhoSpaceWorkspace({
 }) {
   const t = useTranslations('DhoWorkspaceNav');
   const pathname = usePathname();
-  const activeName = getActiveTabFromPath(pathname);
+  const activeName = getActiveTabFromPath(pathname) ?? '';
   const items = useNavItems(lang, id, coherenceEnabled, spaceMemoryEnabled);
   const titleId = React.useId();
   const [sheetOpen, setSheetOpen] = React.useState(false);
