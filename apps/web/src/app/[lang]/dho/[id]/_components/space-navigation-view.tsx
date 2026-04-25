@@ -142,7 +142,15 @@ export const SpaceNavigationView = ({
   }, [currentSpace, filteredSpaces, nonArchivedSpaces]);
 
   const handleVisibleSpacesChange = useCallback((spaces: VisibleSpace[]) => {
-    const spacesKey = JSON.stringify(spaces.map((s) => s.id).sort());
+    const snapshot = [...spaces]
+      .sort((a, b) => a.id - b.id)
+      .map((s) => ({
+        id: s.id,
+        name: s.name,
+        parentId: s.parentId,
+        root: s.root,
+      }));
+    const spacesKey = JSON.stringify(snapshot);
     if (previousSpacesRef.current !== spacesKey) {
       previousSpacesRef.current = spacesKey;
       setVisibleSpaces(spaces);
