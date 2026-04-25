@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { Minimize2 } from 'lucide-react';
 import {
   RoomStateEvent,
   type MatrixClient,
@@ -19,6 +20,12 @@ import {
   SidebarContent,
   SidebarFooter,
   useSidebar,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from '@hypha-platform/ui';
 import {
   useMatrix,
@@ -39,6 +46,7 @@ import {
   isMatrixRateLimitedError,
   getMessageReplaceTargetEventId,
   isRedactedRoomMessageEvent,
+  useSpaceGroupCall,
   type MessageReaction,
   type Person,
 } from '@hypha-platform/core/client';
@@ -56,9 +64,23 @@ import {
   HumanChatPanelMembers,
   HumanChatPanelMentionBell,
   HumanChatPanelMentionTab,
+  HumanChatPanelCallToolbar,
+  HumanChatPanelCallBanner,
+  HumanChatPanelCallJoinStrip,
+  HumanChatPanelInCallControls,
+  HumanChatPanelCallStage,
+  canOpenHumanChatCallFullView,
+  DEFAULT_CALL_FULL_VIEW_LAYOUT,
+  HumanChatPanelCallFullViewLayoutMenu,
+  persistCallFullViewLayout,
+  readCallFullViewLayoutFromStorage,
+  type CallFullViewPaneSplit,
+  readCallFullViewPaneSplit,
+  persistCallFullViewPaneSplit,
   type ChatDraftAttachment,
   type ChatMentionCandidate,
   type ChatPanelAttachmentMedia,
+  type CallFullViewLayoutMode,
 } from './human-chat-panel';
 import type { ChatPanelTab } from './human-chat-panel';
 import { useHumanChatPanel } from './human-chat-panel-context';
@@ -68,6 +90,7 @@ import {
   shortenMatrixIdForDisplay,
 } from './human-chat-panel/matrix-room-member-display';
 import { getActiveTabFromPath } from './get-active-tab-from-path';
+import { useCallJoinChime } from './human-chat-panel/use-call-join-chime';
 
 function personRosterLabel(p: Person, unknownLabel: string): string {
   const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
@@ -482,6 +505,28 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [composerError, setComposerError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ChatPanelTab>('chat');
+  const [callFullViewOpen, setCallFullViewOpen] = useState(false);
+  const [callFullViewLayoutMode, setCallFullViewLayoutMode] =
+    useState<CallFullViewLayoutMode>(DEFAULT_CALL_FULL_VIEW_LAYOUT);
+  const [callFullViewPaneSplit, setCallFullViewPaneSplit] = useState<{
+    sideBySide: number;
+    filmstrip: number;
+    speakerOnTop: number;
+  }>(() => ({
+    sideBySide: readCallFullViewPaneSplit('sideBySide'),
+    filmstrip: readCallFullViewPaneSplit('filmstrip'),
+    speakerOnTop: readCallFullViewPaneSplit('speakerOnTop'),
+  }));
+  const [callLeftMessage, setCallLeftMessage] = useState<string | null>(null);
+  const callFullViewSplitContainerRef = useRef<HTMLDivElement | null>(null);
+  /**
+   * `HumanChatPanelCallStage` only mounts the expand control when
+   * `layout === "panel" && !fullViewOpen`, so this ref is set on the open
+   * button in the sidebar. While the full-view `Dialog` is open the stage
+   * uses `layout="hidden"`, so the button unmounts but the ref value is
+   * retained for Radix `onCloseAutoFocus` to restore focus to the trigger.
+   */
+  const callFullViewTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [scrollToEventId, setScrollToEventId] = useState<string | null>(null);
   /** Shown in timeline after a short delay while large attachment sends run. */
   const [sendingPending, setSendingPending] = useState<null | {
@@ -501,6 +546,181 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   roomIdRef.current = roomId;
   const matrixClientRef = useRef(client);
   matrixClientRef.current = client;
+
+  const {
+    callState: spaceCallState,
+    errorCode: spaceCallError,
+    callKind: spaceCallKind,
+    enterAudio: enterSpaceCallAudio,
+    enterVideo: enterSpaceCallVideo,
+    leave: leaveSpaceCall,
+    setMicrophoneMuted: setSpaceCallMicMuted,
+    setCameraMuted: setSpaceCallCameraMuted,
+    participantSummary: spaceCallParticipantSummary,
+    roomGroupCallDeviceCount: spaceCallRoomGroupDeviceCount,
+    othersInRoomCallCount: spaceCallOthersInRoom,
+    inCallUserIdsForRoster: spaceCallInCallUserIds,
+    showRoomCallInProgress: spaceCallShowJoinStrip,
+    isMicrophoneMuted: spaceCallMicMuted,
+    isLocalVideoMuted: spaceCallVideoMuted,
+    isScreensharing: spaceCallScreensharing,
+    groupCall: spaceGroupCall,
+    feedVersion: spaceCallFeedVersion,
+    screenshareErrorCode: spaceCallScreenshareError,
+    dismissScreenshareError: dismissSpaceCallScreenshareError,
+    activeSpeakerKey: spaceCallActiveSpeakerKey,
+    setScreensharingEnabled: setSpaceCallScreensharing,
+    tabBackgroundWhileInCall: spaceCallTabBackground,
+    retryFromError: retrySpaceCall,
+    dismissCallError: dismissSpaceCallError,
+  } = useSpaceGroupCall(mode === 'space' ? roomId : null);
+
+  const callUiEnabled = useMemo(
+    () =>
+      mode === 'space' &&
+      Boolean(roomId) &&
+      isMatrixAvailable &&
+      isMatrixAuthenticated,
+    [mode, roomId, isMatrixAvailable, isMatrixAuthenticated],
+  );
+
+  const inSpaceCall =
+    spaceCallState === 'connected' ||
+    spaceCallState === 'connecting' ||
+    spaceCallState === 'awaiting_media' ||
+    spaceCallState === 'initializing';
+
+  useEffect(() => {
+    if (inSpaceCall) setCallLeftMessage(null);
+  }, [inSpaceCall]);
+
+  const spaceCallToolbarJoinHint = callUiEnabled && spaceCallShowJoinStrip;
+
+  const spaceCallShowJoinChime = useMemo(
+    () => callUiEnabled && spaceCallShowJoinStrip && !inSpaceCall,
+    [callUiEnabled, spaceCallShowJoinStrip, inSpaceCall],
+  );
+
+  const joinChimeNotification = useMemo(
+    () => ({
+      title: t('callJoinNotificationTitle'),
+      body: t('callJoinNotificationBody', {
+        count: spaceCallRoomGroupDeviceCount,
+      }),
+    }),
+    [t, spaceCallRoomGroupDeviceCount],
+  );
+
+  const { joinAlertSoundEnabled, setJoinAlertSoundEnabled } = useCallJoinChime({
+    callUiEnabled,
+    roomId,
+    showJoinOpportunity: spaceCallShowJoinChime,
+    roomCallDeviceCount: spaceCallRoomGroupDeviceCount,
+    notification: joinChimeNotification,
+  });
+
+  const spaceCallBusyJoining =
+    spaceCallState === 'initializing' ||
+    spaceCallState === 'awaiting_media' ||
+    spaceCallState === 'connecting';
+
+  const clearCallLeftBanner = useCallback(() => {
+    setCallLeftMessage(null);
+  }, []);
+
+  const handleCallAudio = useCallback(() => {
+    setCallLeftMessage(null);
+    void enterSpaceCallAudio();
+  }, [enterSpaceCallAudio]);
+
+  const handleCallVideo = useCallback(() => {
+    setCallLeftMessage(null);
+    void enterSpaceCallVideo();
+  }, [enterSpaceCallVideo]);
+
+  const onCallFullViewPaneSplitChange = useCallback(
+    (which: CallFullViewPaneSplit, value: number) => {
+      persistCallFullViewPaneSplit(which, value);
+      setCallFullViewPaneSplit((prev) => ({ ...prev, [which]: value }));
+    },
+    [],
+  );
+
+  const handleCallLeave = useCallback(() => {
+    const k = spaceCallKind;
+    void leaveSpaceCall();
+    setCallLeftMessage(k === 'video' ? t('callLeftVideo') : t('callLeftAudio'));
+  }, [leaveSpaceCall, spaceCallKind, t]);
+
+  const handleCallToggleMic = useCallback(() => {
+    void setSpaceCallMicMuted(!spaceCallMicMuted);
+  }, [setSpaceCallMicMuted, spaceCallMicMuted]);
+
+  const handleCallToggleCamera = useCallback(() => {
+    void setSpaceCallCameraMuted(!spaceCallVideoMuted);
+  }, [setSpaceCallCameraMuted, spaceCallVideoMuted]);
+
+  const handleCallToggleScreenshare = useCallback(() => {
+    void setSpaceCallScreensharing(!spaceCallScreensharing);
+  }, [setSpaceCallScreensharing, spaceCallScreensharing]);
+
+  const handleRetrySpaceCall = useCallback(() => {
+    retrySpaceCall();
+  }, [retrySpaceCall]);
+
+  const canOpenCallFullView = useMemo(
+    () =>
+      canOpenHumanChatCallFullView(
+        spaceGroupCall,
+        spaceCallKind,
+        spaceCallVideoMuted,
+        spaceCallScreensharing,
+        spaceCallState,
+        currentUserId,
+        spaceCallInCallUserIds,
+      ),
+    [
+      spaceGroupCall,
+      spaceCallKind,
+      spaceCallVideoMuted,
+      spaceCallScreensharing,
+      spaceCallState,
+      currentUserId,
+      spaceCallInCallUserIds,
+    ],
+  );
+
+  const showCallLayoutMenuInFullView = useMemo(() => {
+    if (!spaceGroupCall) return false;
+    return (
+      spaceGroupCall.screenshareFeeds.length > 0 &&
+      spaceGroupCall.userMediaFeeds.length > 0
+    );
+  }, [spaceGroupCall]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setCallFullViewLayoutMode(readCallFullViewLayoutFromStorage());
+  }, []);
+
+  const onCallFullViewLayoutChange = useCallback(
+    (m: CallFullViewLayoutMode) => {
+      setCallFullViewLayoutMode(m);
+      persistCallFullViewLayout(m);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!callFullViewOpen) return;
+    if (
+      activeTab !== 'chat' ||
+      !canOpenCallFullView ||
+      spaceCallState !== 'connected'
+    ) {
+      setCallFullViewOpen(false);
+    }
+  }, [activeTab, canOpenCallFullView, spaceCallState, callFullViewOpen]);
 
   /** Bumps when Matrix room membership changes so `@` mention candidates + button state refresh without reload. */
   const [mentionMembershipEpoch, setMentionMembershipEpoch] = useState(0);
@@ -1608,12 +1828,19 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         <HumanChatPanelHeader
           title={mode === 'coherence' ? coherenceTitle ?? undefined : undefined}
           onBack={mode === 'coherence' ? closeCoherenceChat : undefined}
+          notificationSettingsHref={notificationCentreHref}
           trailingStart={
             roomId ? (
               <HumanChatPanelMentionBell
                 unreadCount={unreadChatState.unreadMentionCount}
                 countIsCapped={unreadChatState.mentionCountIsCapped}
+                mentionsTabActive={activeTab === 'mentions'}
                 onOpenMentions={() => setActiveTab('mentions')}
+                callJoinRingControlsActive={
+                  callUiEnabled && !inSpaceCall && spaceCallShowJoinStrip
+                }
+                callJoinAlertsUnmuted={joinAlertSoundEnabled}
+                onCallJoinAlertsUnmutedChange={setJoinAlertSoundEnabled}
               />
             ) : null
           }
@@ -1625,8 +1852,58 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           chatMentionCountCapped={unreadChatState.mentionCountIsCapped}
           mentionTabBadgeCount={unreadChatState.unreadMentionCount}
           mentionTabBadgeCapped={unreadChatState.mentionCountIsCapped}
-          notificationCentreHref={notificationCentreHref}
+          tabRowEnd={
+            callUiEnabled ? (
+              <HumanChatPanelCallToolbar
+                callState={spaceCallState}
+                callKind={spaceCallKind}
+                disabled={!callUiEnabled}
+                roomCallInProgressToJoin={spaceCallToolbarJoinHint}
+                onlyLocalInRoomCall={
+                  spaceCallShowJoinStrip && spaceCallRoomGroupDeviceCount === 1
+                }
+                onAudio={handleCallAudio}
+                onVideo={handleCallVideo}
+              />
+            ) : null
+          }
         />
+        {callUiEnabled &&
+          !inSpaceCall &&
+          (spaceCallShowJoinStrip || callLeftMessage) && (
+            <HumanChatPanelCallJoinStrip
+              deviceCount={spaceCallRoomGroupDeviceCount}
+              disabled={!callUiEnabled}
+              busy={spaceCallBusyJoining}
+              onJoinCall={handleCallAudio}
+              durableMessage={callLeftMessage}
+              onDismissDurable={clearCallLeftBanner}
+            />
+          )}
+        {callUiEnabled &&
+          (inSpaceCall ||
+            spaceCallState === 'error' ||
+            spaceCallState === 'disconnecting') && (
+            <HumanChatPanelCallBanner
+              callState={spaceCallState}
+              callKind={spaceCallKind}
+              errorCode={spaceCallError}
+              isScreensharing={spaceCallScreensharing}
+              screenshareErrorCode={spaceCallScreenshareError}
+              tabBackgroundWhileInCall={spaceCallTabBackground}
+              isMicrophoneMuted={spaceCallMicMuted}
+              isLocalVideoMuted={spaceCallVideoMuted}
+              participantCount={spaceCallRoomGroupDeviceCount}
+              othersInRoomCallCount={spaceCallOthersInRoom}
+              onLeave={handleCallLeave}
+              onToggleMic={handleCallToggleMic}
+              onToggleCamera={handleCallToggleCamera}
+              onToggleScreenshare={handleCallToggleScreenshare}
+              onDismissScreenshareError={dismissSpaceCallScreenshareError}
+              onRetryCall={handleRetrySpaceCall}
+              onDismissCallError={dismissSpaceCallError}
+            />
+          )}
       </SidebarHeader>
       {/* overflow-hidden: single scroll inside tab bodies (messages / members / mentions); avoids stacked full-height scrollbars */}
       <SidebarContent className="flex min-h-0 flex-col overflow-hidden bg-background-2">
@@ -1636,6 +1913,44 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             role="tabpanel"
             id="chat-tabpanel-chat"
           >
+            {callUiEnabled && (
+              <div
+                className={
+                  inSpaceCall
+                    ? /* cap height so min-heights on tiles (share grid) cannot overlap the message list */
+                      'flex min-h-0 min-w-0 max-h-[min(52dvh,520px)] shrink-0 flex-col overflow-hidden'
+                    : 'shrink-0'
+                }
+              >
+                <HumanChatPanelCallStage
+                  client={client}
+                  roomId={roomId}
+                  groupCall={spaceGroupCall}
+                  callKind={spaceCallKind}
+                  isLocalVideoMuted={spaceCallVideoMuted}
+                  isScreensharing={spaceCallScreensharing}
+                  callState={spaceCallState}
+                  feedVersion={spaceCallFeedVersion}
+                  activeSpeakerKey={spaceCallActiveSpeakerKey}
+                  currentUserId={currentUserId}
+                  inCallUserIds={spaceCallInCallUserIds}
+                  currentUserProfileAvatarUrl={currentUserAvatarUrl}
+                  resolveMemberLabel={resolveMemberLabel}
+                  layout={
+                    callFullViewOpen && canOpenCallFullView ? 'hidden' : 'panel'
+                  }
+                  onRequestFullView={
+                    canOpenCallFullView
+                      ? () => {
+                          setCallFullViewOpen(true);
+                        }
+                      : undefined
+                  }
+                  fullViewOpen={callFullViewOpen}
+                  fullViewTriggerRef={callFullViewTriggerRef}
+                />
+              </div>
+            )}
             {error && (
               <div
                 role="alert"
@@ -1714,6 +2029,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                 useMembers={useMembers}
                 spaceSlug={spaceSlug}
                 roomId={roomId}
+                inCallMatrixUserIds={spaceCallInCallUserIds}
+                inOurCallSession={inSpaceCall && spaceCallState === 'connected'}
+                currentUserMatrixId={currentUserId}
               />
             </div>
           </div>
@@ -1735,7 +2053,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         )}
       </SidebarContent>
       {activeTab === 'chat' && (
-        <SidebarFooter className="bg-background-2 p-0">
+        <SidebarFooter className="relative z-20 bg-background-2 p-0">
           <div className="rounded-t-2xl border border-border/60 border-b-0 bg-card/35 shadow-[0_-8px_32px_-16px_rgba(15,23,42,0.12)] backdrop-blur-[1px] supports-[backdrop-filter]:bg-card/25 dark:bg-card/45 dark:shadow-[0_-8px_36px_-16px_rgba(0,0,0,0.45)] dark:supports-[backdrop-filter]:bg-card/35">
             <HumanChatPanelChatBar
               value={input}
@@ -1771,6 +2089,113 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
             />
           </div>
         </SidebarFooter>
+      )}
+
+      {callUiEnabled && canOpenCallFullView && (
+        <Dialog
+          open={callFullViewOpen}
+          onOpenChange={(o) => {
+            setCallFullViewOpen(o);
+          }}
+        >
+          <DialogContent
+            className="fixed z-[100] flex h-[min(90dvh,900px)] max-h-[min(90dvh,900px)] w-[min(96vw,80rem)] max-w-full !left-1/2 !top-1/2 -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden border border-border/50 bg-background p-0 text-foreground shadow-2xl data-[state=open]:sm:rounded-xl data-[state=open]:duration-200 motion-reduce:data-[state=open]:duration-0 motion-reduce:data-[state=open]:zoom-in-100"
+            hideCloseButton
+            overlayClassName="fixed z-[99] !inset-0 !left-0 !right-0 !top-0 !bottom-0 border-0 bg-black/50 backdrop-blur-sm supports-[backdrop-filter]:bg-black/40 motion-reduce:backdrop-blur-none motion-reduce:animate-none"
+            onCloseAutoFocus={(e) => {
+              e.preventDefault();
+              callFullViewTriggerRef.current?.focus();
+            }}
+          >
+            <DialogHeader className="relative flex shrink-0 border-b border-border/50 bg-muted/40 px-3 py-2.5 pe-2 text-left">
+              <DialogClose
+                className="absolute end-2 top-2 z-10 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={t('callFullViewClose')}
+                title={t('callFullViewClose')}
+              >
+                <Minimize2 className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+              </DialogClose>
+              <div className="min-w-0 flex-1 space-y-0.5 pe-10">
+                <DialogTitle className="text-sm font-medium tracking-tight text-foreground sm:text-left">
+                  {t('callFullView')}
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground sm:text-left">
+                  {t('callFullViewDescription')}
+                </DialogDescription>
+              </div>
+              {showCallLayoutMenuInFullView && (
+                <div className="mt-1 w-full shrink-0 sm:mt-0 sm:w-auto sm:justify-self-end sm:pe-10">
+                  <HumanChatPanelCallFullViewLayoutMenu
+                    value={callFullViewLayoutMode}
+                    onValueChange={onCallFullViewLayoutChange}
+                  />
+                </div>
+              )}
+            </DialogHeader>
+            <div
+              ref={callFullViewSplitContainerRef}
+              className="flex min-h-0 min-w-0 flex-1 flex-col p-0"
+              role="presentation"
+            >
+              <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
+                <HumanChatPanelCallStage
+                  client={client}
+                  roomId={roomId}
+                  groupCall={spaceGroupCall}
+                  callKind={spaceCallKind}
+                  isLocalVideoMuted={spaceCallVideoMuted}
+                  isScreensharing={spaceCallScreensharing}
+                  callState={spaceCallState}
+                  feedVersion={spaceCallFeedVersion}
+                  activeSpeakerKey={spaceCallActiveSpeakerKey}
+                  currentUserId={currentUserId}
+                  inCallUserIds={spaceCallInCallUserIds}
+                  currentUserProfileAvatarUrl={currentUserAvatarUrl}
+                  resolveMemberLabel={resolveMemberLabel}
+                  layout="fullView"
+                  fullViewOpen
+                  fullViewLayoutMode={callFullViewLayoutMode}
+                  fullViewPaneSplit={callFullViewPaneSplit}
+                  onFullViewPaneSplitChange={onCallFullViewPaneSplitChange}
+                  fullViewSplitContainerRef={callFullViewSplitContainerRef}
+                />
+              </div>
+              {spaceCallScreenshareError && spaceCallState === 'connected' && (
+                <div
+                  role="alert"
+                  className="flex shrink-0 items-start justify-center gap-2 border-t border-destructive/20 bg-destructive/10 px-3 py-1.5"
+                >
+                  <p className="min-w-0 flex-1 text-center text-xs text-destructive">
+                    {spaceCallScreenshareError === 'PERMISSION_DENIED'
+                      ? t('callErrorPermission')
+                      : t('callErrorScreenshare')}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={dismissSpaceCallScreenshareError}
+                    className="shrink-0 text-xs font-medium text-destructive underline-offset-2 hover:underline"
+                  >
+                    {t('callScreenshareDismiss')}
+                  </button>
+                </div>
+              )}
+              <div className="shrink-0 border-t border-border/50 bg-muted/30 px-3 py-2.5 backdrop-blur-sm">
+                <HumanChatPanelInCallControls
+                  callState={spaceCallState}
+                  callKind={spaceCallKind}
+                  isMicrophoneMuted={spaceCallMicMuted}
+                  isLocalVideoMuted={spaceCallVideoMuted}
+                  isScreensharing={spaceCallScreensharing}
+                  onToggleMic={handleCallToggleMic}
+                  onToggleCamera={handleCallToggleCamera}
+                  onToggleScreenshare={handleCallToggleScreenshare}
+                  onLeave={handleCallLeave}
+                  variant="fullView"
+                />
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </>
   );

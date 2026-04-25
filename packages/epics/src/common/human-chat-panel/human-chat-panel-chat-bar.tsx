@@ -1807,7 +1807,7 @@ export function HumanChatPanelChatBar({
           <div
             role="listbox"
             aria-label={t('mentionListLabel')}
-            className="absolute bottom-full left-2 right-2 z-20 mb-1 max-h-52 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
+            className="absolute bottom-full left-2 right-2 z-50 mb-1 max-h-52 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
           >
             {atSuggestions.map((m, idx) => (
               <HumanChatMentionCandidateRow
@@ -1826,7 +1826,7 @@ export function HumanChatPanelChatBar({
           <div
             role="listbox"
             aria-label={t('emojiShortcodeListLabel')}
-            className="absolute bottom-full left-2 right-2 z-20 mb-1 max-h-48 overflow-y-auto rounded-md border border-border bg-popover shadow-md"
+            className="absolute bottom-full left-2 right-2 z-50 mb-1 max-h-48 overflow-y-auto rounded-md border border-border bg-popover shadow-md"
           >
             {colonSuggestions.map((s, idx) => (
               <button

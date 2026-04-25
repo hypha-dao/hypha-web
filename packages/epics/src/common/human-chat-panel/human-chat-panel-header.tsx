@@ -1,7 +1,13 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { ArrowLeft, MessageCircle, PanelRightClose } from 'lucide-react';
+import Link from 'next/link';
+import {
+  ArrowLeft,
+  MessageCircle,
+  PanelRightClose,
+  Settings,
+} from 'lucide-react';
 import { useSidebar } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
 
@@ -11,6 +17,11 @@ type HumanChatPanelHeaderProps = {
   onBack?: () => void;
   /** Controls after the sidebar/back control (e.g. mention inbox bell). Same row height as other header buttons. */
   trailingStart?: ReactNode;
+  /**
+   * Opens notification preferences (right of the mention bell in the top row).
+   * Same target as the former settings control on the tab row.
+   */
+  notificationSettingsHref?: string | null;
 };
 
 export function HumanChatPanelHeader({
@@ -18,6 +29,7 @@ export function HumanChatPanelHeader({
   description,
   onBack,
   trailingStart,
+  notificationSettingsHref,
 }: HumanChatPanelHeaderProps) {
   const { toggleSidebar } = useSidebar();
   const t = useTranslations('HumanChatPanel');
@@ -49,6 +61,16 @@ export function HumanChatPanelHeader({
           </button>
         )}
         {trailingStart}
+        {notificationSettingsHref ? (
+          <Link
+            href={notificationSettingsHref}
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            aria-label={t('mentionInboxNotificationSettings')}
+            title={t('mentionInboxNotificationSettings')}
+          >
+            <Settings className="h-3.5 w-3.5" aria-hidden />
+          </Link>
+        ) : null}
       </div>
       <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
         {displayDescription && (

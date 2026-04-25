@@ -11,7 +11,7 @@
     "generate": "turbo run generate",
     "wagmi:generate": "turbo run wagmi:generate",
     "add-component": "cd packages/ui && pnpm dlx shadcn@latest add",
-    "lint": "turbo run lint",
+    "lint": "pnpm run check:matrix-sdk && turbo run lint",
     "verify:messages": "pnpm --filter @hypha-platform/i18n run verify:messages",
     "lint:fix": "turbo run lint -- --fix",
     "format:check": "npx prettier --check 'apps/**/*.{ts,tsx}' --check 'packages/**/*.{ts,tsx}'",
@@ -20,7 +20,8 @@
     "vercel:link": "npx vercel link",
     "e2e": "npx playwright test --config=apps/web-e2e/playwright-local.config.ts --reporter=line",
     "e2e:ui": "npx playwright test --config=apps/web-e2e/playwright-local.config.ts --ui",
-    "e2e:debug": "npx playwright test --config=apps/web-e2e/playwright-local.config.ts --debug"
+    "e2e:debug": "npx playwright test --config=apps/web-e2e/playwright-local.config.ts --debug",
+    "check:matrix-sdk": "node scripts/check-matrix-js-sdk-version.mjs"
   },
   "private": true,
   "nx": {},

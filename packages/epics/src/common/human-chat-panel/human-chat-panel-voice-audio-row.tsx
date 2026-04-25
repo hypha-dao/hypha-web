@@ -1,46 +1,54 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Mic, Pause } from 'lucide-react';
 
 import { cn } from '@hypha-platform/ui-utils';
 
-/** Short static “waveform” like Telegram (no real analysis; fits the space). */
-const WAVE_BARS = [
+const WAVE_BARS = 12;
+const WAVE_BARS_SEED = [
   0.35, 0.7, 0.45, 0.9, 0.5, 0.75, 0.4, 0.6, 0.5, 0.35, 0.8, 0.45,
-];
+] as const;
+const MIN_PX = 4;
+const MAX_PX = 28;
+const IDLED = WAVE_BARS_SEED.map((h) => MIN_PX + h * (MAX_PX - MIN_PX));
 
-function VoiceWaveform({ active }: { active: boolean }) {
+function resumeAudioContextIfNeeded(ctx: globalThis.BaseAudioContext) {
+  if (ctx.state !== 'suspended') {
+    return;
+  }
+  const ac = ctx as globalThis.AudioContext;
+  if (typeof ac.resume === 'function') {
+    void ac.resume();
+  }
+}
+
+function VoiceWaveformBars({
+  active,
+  levels,
+}: {
+  active: boolean;
+  levels: number[];
+}) {
+  const id = useId();
   return (
     <div
       data-hypha-voice-waveform=""
-      className="flex h-6 min-w-0 flex-1 items-center justify-center gap-0.5"
+      className="flex h-6 min-w-0 flex-1 items-end justify-center gap-0.5"
       aria-hidden
     >
-      {WAVE_BARS.map((h, i) => {
-        const heightPx = Math.round(12 + h * 14);
+      {WAVE_BARS_SEED.map((h, i) => {
+        const heightPx = active
+          ? Math.round(levels[i] ?? MIN_PX + h * (MAX_PX - MIN_PX))
+          : Math.round(12 + h * 14);
         return (
           <span
-            // eslint-disable-next-line react/no-array-index-key -- static pattern
-            key={i}
+            key={`${id}bar${String(i)}`}
             className={cn(
-              'inline-block w-0.5 min-w-[2px] max-w-[3px] origin-center rounded-full transition-colors',
-              active
-                ? 'bg-primary/70 motion-safe:will-change-transform'
-                : 'bg-muted-foreground/40',
+              'inline-block w-0.5 min-w-[2px] max-w-[3px] origin-bottom rounded-full transition-[height,background-color] duration-100 ease-out',
+              active ? 'bg-primary/75' : 'bg-muted-foreground/40',
             )}
-            style={{
-              height: `${heightPx}px`,
-              ...(active
-                ? {
-                    animationName: 'hypha-voice-wave-bar',
-                    animationDuration: '0.55s',
-                    animationTimingFunction: 'ease-in-out',
-                    animationIterationCount: 'infinite',
-                    animationDelay: `${i * 42}ms`,
-                  }
-                : {}),
-            }}
+            style={{ height: `${heightPx}px` }}
           />
         );
       })}
@@ -48,22 +56,38 @@ function VoiceWaveform({ active }: { active: boolean }) {
   );
 }
 
+function usePrefersReducedMotion(): boolean {
+  const [m, setM] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setM(mq.matches);
+    const fn = () => setM(mq.matches);
+    mq.addEventListener('change', fn);
+    return () => mq.removeEventListener('change', fn);
+  }, []);
+  return m;
+}
+
+type VoiceAnalysis = {
+  ctx: AudioContext;
+  analyser: AnalyserNode;
+};
+
 export type ChatVoiceAudioRowProps = {
-  /** Audio URL ( MXC HTTP or blob: ). */
   audioSrc: string;
-  /** Accessible name + visible duration line. */
   durationLabel: string;
   voiceLabel: string;
-  /** Wider cap in timeline; drafts sit in narrow cards — use tighter max. */
   variant?: 'timeline' | 'draft';
   className?: string;
-  /** Draft preview: blur row + badge (timeline reveal uses parent overlay). */
   spoilerPreview?: boolean;
   spoilerBadgeLabel?: string;
 };
 
 /**
- * Telegram-style compact row: mic (idle) / pause (playing) • waveform • duration.
+ * Mic / pause, duration, and bars. While playing, `AnalyserNode` frequency
+ * data from the same `<audio>` drives bar height (per-bin peaks + light
+ * smoothing). Idle = static silhouette. `prefers-reduced-motion` keeps a fixed
+ * mid pattern while playing.
  */
 export function ChatVoiceAudioRow({
   audioSrc,
@@ -76,14 +100,137 @@ export function ChatVoiceAudioRow({
 }: ChatVoiceAudioRowProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
+  const [levels, setLevels] = useState<number[]>(() => [...IDLED]);
+  const reduceMotion = usePrefersReducedMotion();
+
+  const analysisRef = useRef<VoiceAnalysis | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const dataBufRef = useRef<Uint8Array | null>(null);
+  const smoothRef = useRef<number[]>(WAVE_BARS_SEED.map(() => 0));
+  const lastTRef = useRef(0);
+
+  const ensureAnalysis = useCallback((audio: HTMLAudioElement) => {
+    if (analysisRef.current) {
+      return analysisRef.current.analyser;
+    }
+    const Ctx: typeof AudioContext =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext })
+        .webkitAudioContext;
+    if (!Ctx) {
+      return null;
+    }
+    try {
+      const ctx = new Ctx();
+      const source = ctx.createMediaElementSource(audio);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.72;
+      source.connect(analyser);
+      analyser.connect(ctx.destination);
+      analysisRef.current = { ctx, analyser };
+      dataBufRef.current = new Uint8Array(analyser.frequencyBinCount);
+      return analyser;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const stopLoop = useCallback(() => {
+    if (rafRef.current != null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+  }, []);
+
+  const teardownAll = useCallback(() => {
+    stopLoop();
+    if (analysisRef.current) {
+      void analysisRef.current.ctx.close();
+      analysisRef.current = null;
+    }
+    dataBufRef.current = null;
+    smoothRef.current = WAVE_BARS_SEED.map(() => 0);
+  }, [stopLoop]);
 
   useEffect(() => {
-    const el = audioRef.current;
-    if (!el) return;
-    el.pause();
-    el.currentTime = 0;
     setPlaying(false);
-  }, [audioSrc]);
+    setLevels([...IDLED]);
+    teardownAll();
+  }, [audioSrc, teardownAll]);
+
+  useEffect(() => {
+    const canAnimate = playing && !spoilerPreview && !reduceMotion;
+    if (!canAnimate) {
+      stopLoop();
+      smoothRef.current = WAVE_BARS_SEED.map(() => 0);
+      if (reduceMotion && playing && !spoilerPreview) {
+        setLevels(
+          WAVE_BARS_SEED.map((h) => MIN_PX + h * 0.55 * (MAX_PX - MIN_PX)),
+        );
+      } else {
+        setLevels([...IDLED]);
+      }
+      return;
+    }
+
+    const audio = audioRef.current;
+    if (!audio) {
+      return;
+    }
+
+    const run = (now: number) => {
+      rafRef.current = requestAnimationFrame(run);
+      if (now - lastTRef.current < 32) {
+        return;
+      }
+      lastTRef.current = now;
+
+      const a = ensureAnalysis(audio);
+      const data = dataBufRef.current;
+      if (!a || !data) {
+        return;
+      }
+      resumeAudioContextIfNeeded(a.context);
+      a.getByteFrequencyData(data);
+      const n = data.length;
+      const cut = Math.max(1, Math.floor(n * 0.4));
+      const out: number[] = [];
+      for (let i = 0; i < WAVE_BARS; i += 1) {
+        const from = Math.floor((i / WAVE_BARS) * cut);
+        const to = Math.floor(((i + 1) / WAVE_BARS) * cut);
+        let peak = 0;
+        for (let j = from; j < to; j += 1) {
+          if (data[j]! > peak) {
+            peak = data[j]!;
+          }
+        }
+        const norm = Math.min(1, peak / 200);
+        const t = 0.38;
+        const prev = smoothRef.current[i] ?? 0;
+        const mix = t * norm + (1 - t) * prev;
+        smoothRef.current[i] = mix;
+        out.push(MIN_PX + mix * (MAX_PX - MIN_PX));
+      }
+      setLevels(out);
+    };
+
+    rafRef.current = requestAnimationFrame((t) => {
+      lastTRef.current = t;
+      run(t);
+    });
+
+    return () => {
+      stopLoop();
+    };
+  }, [playing, spoilerPreview, reduceMotion, ensureAnalysis, stopLoop]);
+
+  useEffect(
+    () => () => {
+      teardownAll();
+    },
+    [teardownAll],
+  );
 
   const row = (
     <div
@@ -97,17 +244,6 @@ export function ChatVoiceAudioRow({
       )}
       data-testid="chat-voice-audio-row"
     >
-      <style>{`
-        @keyframes hypha-voice-wave-bar {
-          0%, 100% { transform: scaleY(0.42); }
-          50% { transform: scaleY(1.18); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          [data-hypha-voice-waveform] span {
-            animation: none !important;
-          }
-        }
-      `}</style>
       <button
         type="button"
         disabled={spoilerPreview}
@@ -120,7 +256,9 @@ export function ChatVoiceAudioRow({
         }
         onClick={() => {
           const el = audioRef.current;
-          if (!el) return;
+          if (!el) {
+            return;
+          }
           if (playing) {
             el.pause();
           } else {
@@ -134,7 +272,7 @@ export function ChatVoiceAudioRow({
           <Mic className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
         )}
       </button>
-      <VoiceWaveform active={playing && !spoilerPreview} />
+      <VoiceWaveformBars active={playing && !spoilerPreview} levels={levels} />
       <span className="shrink-0 tabular-nums text-[11px] font-medium text-muted-foreground">
         {durationLabel}
       </span>
@@ -143,9 +281,23 @@ export function ChatVoiceAudioRow({
         src={audioSrc}
         preload="metadata"
         className="hidden"
-        onPlay={() => setPlaying(true)}
-        onPause={() => setPlaying(false)}
-        onEnded={() => setPlaying(false)}
+        crossOrigin="anonymous"
+        playsInline
+        onPlay={() => {
+          if (!reduceMotion && !analysisRef.current && audioRef.current) {
+            const a = ensureAnalysis(audioRef.current);
+            if (a) {
+              resumeAudioContextIfNeeded(a.context);
+            }
+          }
+          setPlaying(true);
+        }}
+        onPause={() => {
+          setPlaying(false);
+        }}
+        onEnded={() => {
+          setPlaying(false);
+        }}
       />
     </div>
   );
@@ -169,7 +321,6 @@ export function ChatVoiceAudioRow({
   return row;
 }
 
-/** Resolve mm:ss from optional duration ms; fallback for unknown length. */
 export function formatVoiceDurationLabel(
   durationMs: number | undefined,
   unknownShort: string,
@@ -190,7 +341,6 @@ type DraftVoiceDurationProps = {
   fallbackLabel: string;
 };
 
-/** Load duration from a local blob URL for draft preview. */
 export function useDraftVoiceDuration({
   objectUrl,
   fallbackLabel,

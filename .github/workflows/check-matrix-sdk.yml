@@ -1,0 +1,31 @@
+# CodeRabbit: run matrix-js-sdk version policy in CI (not only locally via `pnpm run lint`).
+name: Check matrix-js-sdk version
+
+# Code scanning: GITHUB_TOKEN must be least-privilege (read-only; no default write scopes).
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: check-matrix-sdk-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  matrix-sdk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Omit `version` so pnpm/action-setup uses `packageManager` in root package.json
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Enforce matrix-js-sdk policy
+        run: pnpm run check:matrix-sdk

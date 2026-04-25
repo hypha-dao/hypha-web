@@ -7,18 +7,27 @@ import { useMatrix } from '@hypha-platform/core/client';
 import { PersonAvatar } from '../../people/components/person-avatar';
 import { APP_CHROME_SUBTLE_SQUARE_RADIUS } from '../../spaces/components/compact-space-banner';
 import { UseMembers } from '../../spaces';
+import { shortenMatrixIdForDisplay } from './matrix-room-member-display';
 
 type HumanChatPanelMembersProps = {
   useMembers: UseMembers;
   spaceSlug?: string;
   /** Active Matrix room for presence (space or coherence chat). */
   roomId?: string | null;
+  /** Matrix @user:server ids with devices in the room group call. */
+  inCallMatrixUserIds?: string[];
+  /** Local user has joined the `GroupCall` in this room. */
+  inOurCallSession?: boolean;
+  currentUserMatrixId?: string | null;
 };
 
 export function HumanChatPanelMembers({
   useMembers,
   spaceSlug,
   roomId,
+  inCallMatrixUserIds = [],
+  inOurCallSession = false,
+  currentUserMatrixId,
 }: HumanChatPanelMembersProps) {
   const t = useTranslations('HumanChatPanel');
   const { getRoomMembers, isMatrixAvailable, isAuthenticated } = useMatrix();
@@ -52,11 +61,35 @@ export function HumanChatPanelMembers({
     };
   }, [roomId, isMatrixAvailable, isAuthenticated, getRoomMembers]);
 
+  const hasExternalCall = !inOurCallSession && inCallMatrixUserIds.length > 0;
+
   return (
     <div
       className="flex flex-col gap-1 px-3 py-3"
       data-testid="chat-panel-members"
     >
+      {hasExternalCall && (
+        <div className="mb-2 rounded-md border border-border/60 bg-accent-9/10 px-2.5 py-2 text-xs text-foreground">
+          <p className="font-medium">{t('callMembersTabJoinCallTitle')}</p>
+          <p className="mt-1 text-muted-foreground">
+            {t('callMembersTabJoinCallBody')}
+          </p>
+        </div>
+      )}
+      {inOurCallSession && inCallMatrixUserIds.length > 0 && (
+        <div className="mb-2 rounded-md border border-border/60 bg-muted/40 px-2.5 py-2 text-xs text-foreground">
+          <p className="font-medium">
+            {t('callMembersTabInCallPreamble', {
+              count: inCallMatrixUserIds.length,
+            })}
+          </p>
+          <p className="mt-1 break-words text-muted-foreground">
+            {inCallMatrixUserIds
+              .map((id) => shortenMatrixIdForDisplay(id))
+              .join(' · ')}
+          </p>
+        </div>
+      )}
       <div className="px-1 pb-2 text-xs font-medium text-muted-foreground">
         {t('membersCount', {
           count: totalCount,

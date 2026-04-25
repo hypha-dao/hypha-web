@@ -901,7 +901,8 @@ function splitPlainTextMatrixMentions(
  */
 function chatMentionPillClass(onViewerMentionTintRow: boolean): string {
   return cn(
-    'inline-flex max-w-full items-baseline rounded-md px-[5px] py-[1px] text-[13px] font-semibold leading-snug tracking-tight',
+    /* `min-h` + vertical centering so the chip fills the message line box (not only the glyph bbox). */
+    'inline-flex min-h-[1.35em] w-fit max-w-full min-w-0 items-center self-baseline rounded-md px-[5px] py-0.5 text-[13px] font-semibold leading-snug tracking-tight',
     /* Foreground text keeps contrast on any space-derived accent tint (lime, etc.). */
     onViewerMentionTintRow
       ? 'bg-accent-9/22 text-foreground ring-1 ring-inset ring-accent-9/45 dark:bg-accent-9/28 dark:text-foreground dark:ring-accent-10/50'
@@ -1007,27 +1008,47 @@ type ReplyConnectorGeometry = {
   d: string;
 };
 
+/** Rounded L-corner radius (px); keep small vs stem so the arc is visible. */
+const REPLY_CONNECTOR_CORNER_R = 6;
+/** Start the vertical stem slightly below the main avatar so the stroke does not sit on the tile image. */
+const REPLY_CONNECTOR_MAIN_AVATAR_INSET = 3;
+
 /**
- * L-shaped path in row-local px: vertical from main-avatar top-center to the reply-row
- * height, then horizontal toward the small avatar. Uses only `L` segments so the path
- * cannot degenerate like the previous quadratic branch when yRep ≪ yMainTop.
+ * L-shaped path in row-local px: vertical from below main avatar center, rounded elbow,
+ * then horizontal to the small-avatar line. Rounded join avoids a harsh 90° kink; stem
+ * starts under the main avatar to reduce visual overlap (layering: svg z-0, avatars z-1).
  */
-function buildReplyConnectorPolylineD(params: {
+function buildReplyConnectorPathD(params: {
   xMain: number;
-  yMainTop: number;
+  yStemStart: number;
   yRep: number;
   xEnd: number;
 }): string {
-  const { xMain, yMainTop, yRep, xEnd } = params;
+  const { xMain, yStemStart, yRep, xEnd } = params;
+  const r = REPLY_CONNECTOR_CORNER_R;
+
   if (Math.abs(xEnd - xMain) < 0.75) {
-    return `M ${xMain} ${yMainTop} L ${xMain} ${yRep}`;
+    return `M ${xMain} ${yStemStart} L ${xMain} ${yRep}`;
   }
-  return `M ${xMain} ${yMainTop} L ${xMain} ${yRep} L ${xEnd} ${yRep}`;
+
+  const goRight = xEnd > xMain;
+  const yBefore = yRep - r;
+  if (yStemStart >= yBefore - 0.5) {
+    return `M ${xMain} ${yStemStart} L ${xMain} ${yRep} L ${xEnd} ${yRep}`;
+  }
+  if (goRight) {
+    return `M ${xMain} ${yStemStart} L ${xMain} ${yBefore} A ${r} ${r} 0 0 1 ${
+      xMain + r
+    } ${yRep} L ${xEnd} ${yRep}`;
+  }
+  return `M ${xMain} ${yStemStart} L ${xMain} ${yBefore} A ${r} ${r} 0 0 0 ${
+    xMain - r
+  } ${yRep} L ${xEnd} ${yRep}`;
 }
 
 /**
- * Measured Discord-style connector: stem from **top-center** of main avatar, vertical to
- * reply row, rounded corner, horizontal ending just **left** of the small avatar.
+ * Measured Discord-style connector: stem from main-avatar column (under the image),
+ * up to the reply row with a **rounded** elbow, horizontal to just before the small avatar.
  */
 function ChatReplyConnectorMeasured({
   rowRef,
@@ -1041,13 +1062,7 @@ function ChatReplyConnectorMeasured({
   const [geom, setGeom] = useState<ReplyConnectorGeometry | null>(null);
 
   useLayoutEffect(() => {
-    const row = rowRef.current;
-    const replyA = replyAvatarRef.current;
-    const mainA = mainAvatarRef.current;
-    if (!row || !replyA || !mainA) {
-      setGeom(null);
-      return;
-    }
+    let raf = 0;
 
     const measure = () => {
       const rEl = rowRef.current;
@@ -1068,9 +1083,16 @@ function ChatReplyConnectorMeasured({
       }
       const xMain = mainRect.left + mainRect.width / 2 - rowRect.left;
       const yRep = repRect.top - rowRect.top + repRect.height / 2;
-      /** Stem starts at main avatar top-center (Discord-style). */
-      const yMainTop =
-        mainRect.top - rowRect.top + Math.min(4, mainRect.height * 0.06);
+      const mainBottomLocal = mainRect.bottom - rowRect.top;
+      const r = REPLY_CONNECTOR_CORNER_R;
+      /** Stem starts just under the main avatar (not from top) so the line does not cross the image. */
+      const yStemStart = Math.max(
+        mainRect.top - rowRect.top + mainRect.height * 0.35,
+        Math.min(
+          mainBottomLocal - REPLY_CONNECTOR_MAIN_AVATAR_INSET,
+          yRep - r * 2 - 1,
+        ),
+      );
       const gapPx = 6;
       const smallLeft = repRect.left - rowRect.left;
       const smallRight = repRect.right - rowRect.left;
@@ -1080,24 +1102,59 @@ function ChatReplyConnectorMeasured({
         smallLeft >= xMain
           ? Math.min(xEndTarget, smallLeft - 2)
           : Math.max(xEndTarget, smallRight + 2);
-      const d = buildReplyConnectorPolylineD({
+      const d = buildReplyConnectorPathD({
         xMain,
-        yMainTop,
+        yStemStart,
         yRep,
         xEnd,
       });
       setGeom({ width: w, height: h, d });
     };
 
-    measure();
-    const ro = new ResizeObserver(() => measure());
-    ro.observe(row);
-    ro.observe(replyA);
-    ro.observe(mainA);
-    window.addEventListener('resize', measure);
+    const requestMeasure = () => {
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        measure();
+      });
+    };
+
+    const ro = new ResizeObserver(() => {
+      requestMeasure();
+    });
+    const row = rowRef.current;
+    const repAtMount = replyAvatarRef.current;
+    const mainAtMount = mainAvatarRef.current;
+    if (row) {
+      ro.observe(row);
+    }
+    if (repAtMount) {
+      ro.observe(repAtMount);
+    }
+    if (mainAtMount) {
+      ro.observe(mainAtMount);
+    }
+
+    requestMeasure();
+    const lateRefFrame = requestAnimationFrame(() => {
+      const rep = replyAvatarRef.current;
+      const main = mainAvatarRef.current;
+      if (rep && repAtMount == null) {
+        ro.observe(rep);
+      }
+      if (main && mainAtMount == null) {
+        ro.observe(main);
+      }
+      requestMeasure();
+    });
+    window.addEventListener('resize', requestMeasure);
     return () => {
+      if (raf) {
+        cancelAnimationFrame(raf);
+      }
+      cancelAnimationFrame(lateRefFrame);
       ro.disconnect();
-      window.removeEventListener('resize', measure);
+      window.removeEventListener('resize', requestMeasure);
     };
   }, [rowRef, replyAvatarRef, mainAvatarRef]);
 
@@ -1105,7 +1162,7 @@ function ChatReplyConnectorMeasured({
 
   return (
     <svg
-      className="pointer-events-none absolute inset-0 z-[8] overflow-visible text-muted-foreground/60 dark:text-muted-foreground/70"
+      className="pointer-events-none absolute inset-0 z-0 overflow-visible text-border/80 dark:text-border/85"
       width={geom.width}
       height={geom.height}
       viewBox={`0 0 ${geom.width} ${geom.height}`}
@@ -1116,9 +1173,10 @@ function ChatReplyConnectorMeasured({
         d={geom.d}
         fill="none"
         stroke="currentColor"
-        strokeWidth={1.75}
+        strokeWidth={1.5}
         strokeLinecap="round"
         strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
       />
     </svg>
   );

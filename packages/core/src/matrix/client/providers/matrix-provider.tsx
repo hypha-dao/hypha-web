@@ -386,11 +386,19 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
       }
       try {
         const { accessToken, userId, homeserverUrl, deviceId } = matrixToken;
+        // Voice and video (group calls): keep VoIP enabled; TURN/ICE for WebRTC. See
+        // docs/requirements/voice-video-call-implementation-spec.md §2.1
         const matrixClient = MatrixSdk.createClient({
           baseUrl: homeserverUrl,
           accessToken,
           userId,
           deviceId,
+          disableVoip: false,
+          useE2eForGroupCall: true,
+          useLivekitForGroupCalls: false,
+          forceTURN: false,
+          fallbackICEServerAllowed: false,
+          iceCandidatePoolSize: 0,
         });
 
         await matrixClient.startClient();
