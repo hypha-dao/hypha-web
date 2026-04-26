@@ -310,7 +310,7 @@
     "title": "Ökosystem",
     "mapRegionAriaLabel": "Karte der Space-Beziehungen",
     "dataPanelAriaLabel": "Verschachtelte Spaces, Suche und Aktionen",
-    "content": "So hängen Ihre Spaces zusammen. Nutzen Sie die Karte zum Erkunden; in der Seitenleiste suchen und verschachtelte Spaces öffnen—auf großen Bildschirmen immer sichtbar.",
+    "content": "",
     "tabs": {
       "nestedSpaces": "Verschachtelte Spaces",
       "spaceToSpace": "Space-zu-Space",

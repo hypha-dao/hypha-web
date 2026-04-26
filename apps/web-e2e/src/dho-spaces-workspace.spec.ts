@@ -71,7 +71,7 @@ test.describe('DHO spaces tab and workspace (hardening)', () => {
     const spaceNav = page.getByRole('navigation', { name: 'Space-Bereiche' });
     await expect(spaceNav).toBeVisible();
     await expect(
-      spaceNav.getByRole('link', { name: 'Spaces' }),
+      spaceNav.getByRole('link', { name: 'Ökosystem' }),
     ).toHaveAttribute('aria-current', 'page');
     const tabs = page.getByTestId('dho-space-nav-map-tabs');
     await expect(
@@ -89,8 +89,8 @@ test.describe('DHO spaces tab and workspace (hardening)', () => {
     const spaceNav = page.getByRole('navigation', { name: 'Space sections' });
     await expect(spaceNav).toBeVisible();
 
-    const spacesLink = spaceNav.getByRole('link', { name: 'Spaces' });
-    await expect(spacesLink).toHaveAttribute('aria-current', 'page');
+    const ecosystemLink = spaceNav.getByRole('link', { name: 'Ecosystem' });
+    await expect(ecosystemLink).toHaveAttribute('aria-current', 'page');
   });
 
   test('opening AI left panel shifts main column bounds', async ({ page }) => {

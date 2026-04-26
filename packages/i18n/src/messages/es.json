@@ -965,7 +965,7 @@
     "title": "Ecosistema",
     "mapRegionAriaLabel": "Mapa de relaciones entre espacios",
     "dataPanelAriaLabel": "Espacios anidados, búsqueda y acciones",
-    "content": "Así se conectan tus espacios. Usa el mapa para explorar; busca y abre espacios anidados en el panel—en pantallas grandes permanece a la vista.",
+    "content": "",
     "tabs": {
       "nestedSpaces": "Espacios anidados",
       "spaceToSpace": "Espacio-espacio",
