@@ -863,7 +863,8 @@
     "exchangeDepositProposalConfirming": "Confirmation...",
     "exchangeDepositProposalTitle": "Déposer {amount} {symbol} – Régler l'escrow (#{escrowId})",
     "exchangeDepositProposalDescription": "Approuvez et déposez {payAmount} {paySymbol} dans l'escrow (#{escrowId}) pour finaliser l'échange avec {otherParty}. En retour, {activeSpace} recevra {receiveAmount} {receiveSymbol}.",
-    "investmentDepositProposalDescription": "Approuvez et déposez {payAmount} {paySymbol} dans l'escrow (#{escrowId}) pour finaliser l'investissement dans {otherParty}. En retour, {activeSpace} recevra {receiveAmount} {receiveSymbol}."
+    "investmentDepositProposalDescription": "Approuvez et déposez {payAmount} {paySymbol} dans l'escrow (#{escrowId}) pour finaliser l'investissement dans {otherParty}. En retour, {activeSpace} recevra {receiveAmount} {receiveSymbol}.",
+    "dismissBanner": "Fermer la bannière"
   },
   "AgreementFlow": {
     "labels": {
