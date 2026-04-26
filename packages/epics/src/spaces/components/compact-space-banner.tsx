@@ -137,7 +137,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
   return (
     <section
       className={cn(
-        'relative overflow-hidden rounded-xl border border-[#30363d]',
+        'relative overflow-hidden rounded-lg border border-[#30363d]',
         'shadow-[0_24px_48px_-12px_rgba(5,33,22,0.55)]',
         /* Bottom breathing room lives on the footer strip so metadata + badges center between hairline and card edge */
         'px-8 pt-8 pb-0',
