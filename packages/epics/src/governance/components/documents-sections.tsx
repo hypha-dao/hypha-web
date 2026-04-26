@@ -10,7 +10,12 @@ import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
 import { Text } from '@radix-ui/themes';
 import { useDocumentsSection } from '../hooks/use-documents-section';
 import { DirectionType } from '@hypha-platform/core/client';
-import { Empty } from '../../common';
+import {
+  Empty,
+  DhoTabListStack,
+  DhoTabPage,
+  DhoTabToolbarStack,
+} from '../../common';
 
 type DocumentsSectionsProps = {
   lang: string;
@@ -57,19 +62,13 @@ export function DocumentsSections({
     });
 
   return (
-    <div
-      className="flex flex-col gap-4 py-4"
-      data-testid="agreements-tab-panels"
-    >
+    <DhoTabPage data-testid="agreements-tab-panels">
       <Tabs
         value={tab}
         onValueChange={(v) => setTab(v as AgreementTab)}
         className="w-full min-w-0"
       >
-        <div
-          className="flex w-full min-w-0 flex-col gap-3"
-          data-testid="agreements-section-toolbar"
-        >
+        <DhoTabToolbarStack data-testid="agreements-section-toolbar">
           <SectionFilter
             count={pagination?.total ?? 0}
             label={tCommon('Agreements')}
@@ -94,14 +93,14 @@ export function DocumentsSections({
               </TabsTrigger>
             </TabsList>
           </SectionFilter>
-        </div>
+        </DhoTabToolbarStack>
 
         {pagination?.totalPages === 0 ? (
           <Empty>
             <p>{t('listIsEmpty')}</p>
           </Empty>
         ) : (
-          <div className="w-full space-y-2">
+          <DhoTabListStack>
             {Array.from({ length: pages }).map((_, index) => (
               <DocumentGridContainer
                 key={`${tab}-${index}`}
@@ -121,7 +120,7 @@ export function DocumentsSections({
                 documents={filteredDocuments}
               />
             ))}
-          </div>
+          </DhoTabListStack>
         )}
         {pagination?.totalPages === 0 ? null : (
           <SectionLoadMore
@@ -137,6 +136,6 @@ export function DocumentsSections({
           </SectionLoadMore>
         )}
       </Tabs>
-    </div>
+    </DhoTabPage>
   );
 }

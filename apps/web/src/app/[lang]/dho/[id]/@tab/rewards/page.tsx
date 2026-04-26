@@ -1,5 +1,6 @@
 import { Locale } from '@hypha-platform/i18n';
 import {
+  DhoTabPage,
   SpacePendingRewardsSection,
   SpaceTabAccessWrapper,
 } from '@hypha-platform/epics';
@@ -19,11 +20,11 @@ export default async function RewardsPage(props: PageProps) {
 
   return (
     <SpaceTabAccessWrapper spaceId={web3SpaceId as number} spaceSlug={id}>
-      <div className="flex flex-col gap-6 py-4">
+      <DhoTabPage>
         {typeof web3SpaceId === 'number' && Number.isFinite(web3SpaceId) ? (
           <SpacePendingRewardsSection web3SpaceId={web3SpaceId} />
         ) : null}
-      </div>
+      </DhoTabPage>
     </SpaceTabAccessWrapper>
   );
 }

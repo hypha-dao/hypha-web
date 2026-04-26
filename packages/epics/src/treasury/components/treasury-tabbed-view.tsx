@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import { SectionFilter } from '@hypha-platform/ui/server';
+import { DhoTabPage, DhoTabToolbarStack } from '../../common';
 import { AssetsSection } from './assets/assets-section';
 import { VaultsSection } from './assets/vaults-section';
 import { TransactionsSection } from './requests/transactions-section';
@@ -28,16 +29,13 @@ export function TreasuryTabbedView({
   const basePath = `/${lang}/dho/${spaceSlug}/treasury`;
 
   return (
-    <div className="flex flex-col gap-4 py-4" data-testid="treasury-tab-panels">
+    <DhoTabPage data-testid="treasury-tab-panels">
       <Tabs
         value={tab}
         onValueChange={(v) => setTab(v as TreasurySubTab)}
         className="w-full min-w-0"
       >
-        <div
-          className="flex w-full min-w-0 flex-col gap-3"
-          data-testid="treasury-section-toolbar"
-        >
+        <DhoTabToolbarStack data-testid="treasury-section-toolbar">
           <SectionFilter
             label={tCommon('Treasury')}
             className="min-w-0 flex-wrap justify-end gap-2 sm:flex-nowrap sm:justify-end"
@@ -58,18 +56,18 @@ export function TreasuryTabbedView({
               </TabsTrigger>
             </TabsList>
           </SectionFilter>
-        </div>
+        </DhoTabToolbarStack>
 
-        <TabsContent value="balance" className="mt-1 outline-none">
+        <TabsContent value="balance" className="mt-0 min-h-0 outline-none">
           <AssetsSection basePath={basePath} web3SpaceId={web3SpaceId} />
         </TabsContent>
-        <TabsContent value="transactions" className="mt-1 outline-none">
+        <TabsContent value="transactions" className="mt-0 min-h-0 outline-none">
           <TransactionsSection spaceSlug={spaceSlug} />
         </TabsContent>
-        <TabsContent value="vaults" className="mt-1 outline-none">
+        <TabsContent value="vaults" className="mt-0 min-h-0 outline-none">
           <VaultsSection />
         </TabsContent>
       </Tabs>
-    </div>
+    </DhoTabPage>
   );
 }

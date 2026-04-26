@@ -2,6 +2,7 @@
 
 import { useAuthentication } from '@hypha-platform/authentication';
 import { Empty } from '../../common/empty';
+import { DhoTabPage } from '../../common';
 import {
   Coherence,
   useFindCoherences,
@@ -66,7 +67,7 @@ export function CoherenceBlock({
   const onSignalClick = humanChatEnabled ? handleSignalClick : undefined;
 
   return (
-    <div className="flex flex-col gap-6 py-4">
+    <DhoTabPage>
       {isAuthenticated ? (
         <SignalSection
           basePath={chatBasePath}
@@ -84,6 +85,6 @@ export function CoherenceBlock({
           <p>{t('signInToSee')}</p>
         </Empty>
       )}
-    </div>
+    </DhoTabPage>
   );
 }

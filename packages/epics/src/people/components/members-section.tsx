@@ -3,6 +3,7 @@
 import { FC } from 'react';
 import { Text } from '@radix-ui/themes';
 import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
+import { DhoTabListStack, DhoTabPage, DhoTabToolbarStack } from '../../common';
 
 import { MembersList } from './members-list';
 import { useMembersSection } from '../hooks/use-members-section';
@@ -57,18 +58,20 @@ export const MembersSection: FC<MemberSectionProps> = ({
     : '';
 
   return (
-    <div className="flex w-full flex-col items-stretch justify-center gap-4">
+    <DhoTabPage>
       <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <div className="min-w-0 flex-1">
-          <SectionFilter
-            count={pagination?.total || 0}
-            label={tCommon('Members')}
-            hasSearch
-            searchPlaceholder={tMembers('searchMembers')}
-            onChangeSearch={onUpdateSearch}
-          >
-            <ExitSpace web3SpaceId={space?.web3SpaceId as number} />
-          </SectionFilter>
+          <DhoTabToolbarStack>
+            <SectionFilter
+              count={pagination?.total || 0}
+              label={tCommon('Members')}
+              hasSearch
+              searchPlaceholder={tMembers('searchMembers')}
+              onChangeSearch={onUpdateSearch}
+            >
+              <ExitSpace web3SpaceId={space?.web3SpaceId as number} />
+            </SectionFilter>
+          </DhoTabToolbarStack>
         </div>
         {!isDelegate && (
           <div className="shrink-0 self-start sm:self-center">
@@ -90,18 +93,20 @@ export const MembersSection: FC<MemberSectionProps> = ({
           <p>{tMembers('listIsEmpty')}</p>
         </Empty>
       ) : (
-        Array.from({ length: pages }).map((_, index) => (
-          <MembersList
-            basePath={basePath}
-            page={index + 1}
-            key={index}
-            useMembers={useMembers}
-            spaceId={space?.id}
-            spaceSlug={spaceSlug}
-            searchTerm={searchTerm}
-            refreshInterval={refreshInterval}
-          />
-        ))
+        <DhoTabListStack>
+          {Array.from({ length: pages }).map((_, index) => (
+            <MembersList
+              basePath={basePath}
+              page={index + 1}
+              key={index}
+              useMembers={useMembers}
+              spaceId={space?.id}
+              spaceSlug={spaceSlug}
+              searchTerm={searchTerm}
+              refreshInterval={refreshInterval}
+            />
+          ))}
+        </DhoTabListStack>
       )}
       {pagination?.total === 0 ? null : (
         <SectionLoadMore
@@ -123,6 +128,6 @@ export const MembersSection: FC<MemberSectionProps> = ({
           </Text>
         </SectionLoadMore>
       )}
-    </div>
+    </DhoTabPage>
   );
 };
