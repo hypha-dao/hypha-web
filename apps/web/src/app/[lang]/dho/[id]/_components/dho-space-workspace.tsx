@@ -147,7 +147,8 @@ function NavRow({
   const desktopIconOnly = variant === 'desktop' && !showLabels;
   const itemClass = cn(
     'group flex min-h-11 w-full min-w-0 items-center rounded-md py-2 text-left text-sm font-medium leading-snug',
-    desktopIconOnly ? 'justify-center gap-0 px-2' : 'gap-1.5 px-1.5',
+    /* Rail: use symmetric horizontal padding so icon is centered; matches nav pl/pr (see parent). */
+    desktopIconOnly ? 'justify-center gap-0 px-1.5' : 'gap-1.5 px-1.5',
     'outline-none ring-offset-background transition-colors',
     'focus-visible:ring-2 focus-visible:ring-ring',
     isActive
@@ -351,7 +352,8 @@ export function DhoSpaceWorkspace({
       <nav
         className={cn(
           'hidden shrink-0 pt-4 transition-[width] duration-200 ease-out md:flex md:flex-col md:self-stretch',
-          labelsExpanded ? 'w-[min(10rem,100%)] px-1.5' : 'w-[3.75rem] px-1',
+          /* Collapsed: mirror the left gutter (pl) on the right (pr) so the rail is symmetric with the main column. */
+          labelsExpanded ? 'w-[min(10rem,100%)] px-1.5' : 'w-[3.75rem] px-1.5',
         )}
         aria-label={t('spaceNavAriaLabel')}
       >
