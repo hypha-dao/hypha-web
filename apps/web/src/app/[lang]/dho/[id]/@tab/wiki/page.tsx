@@ -1,4 +1,4 @@
-import { SpaceMemorySection } from '@hypha-platform/epics';
+import { DhoTabPage, SpaceMemorySection } from '@hypha-platform/epics';
 import { getDhoPathAgreements } from '../agreements/constants';
 import { getDhoPathCoherence } from '../coherence/constants';
 import { Locale } from '@hypha-platform/i18n';
@@ -23,8 +23,8 @@ export default async function DhoWikiPage(props: PageProps) {
   }
 
   return (
-    <div className="w-full min-w-0 py-4">
+    <DhoTabPage>
       <SpaceMemorySection spaceSlug={id} standalonePage />
-    </div>
+    </DhoTabPage>
   );
 }

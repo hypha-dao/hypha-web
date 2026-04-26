@@ -8,7 +8,7 @@ import {
   SectionLoadMore,
   Separator,
 } from '@hypha-platform/ui';
-import { Empty } from '../../common';
+import { DhoTabToolbarStack, Empty } from '../../common';
 import React from 'react';
 import { useTranslations } from 'next-intl';
 import {
@@ -21,6 +21,7 @@ import {
 import type { MatrixEvent, Room } from 'matrix-js-sdk';
 import { useSpaceMemoryOrg } from '../hooks/use-space-memory-org';
 import { SpaceMemoryTimelineItem } from './space-memory-timeline-item';
+import { cn } from '@hypha-platform/ui-utils';
 
 const MATRIX_SPACE_MEMORY_REFRESH_DEBOUNCE_MS = 1_800;
 
@@ -106,35 +107,36 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
 
   return (
     <section
-      className={
-        standalonePage
-          ? 'flex w-full flex-col gap-5'
-          : 'flex w-full flex-col gap-5 border-t border-border/50 pt-10'
-      }
+      className={cn(
+        'flex w-full min-w-0 flex-col gap-4',
+        !standalonePage && 'border-t border-border/50 pt-10',
+      )}
       aria-label={standalonePage ? t('wiki') : t('spaceMemory')}
     >
-      <SectionFilter
-        count={totalCount}
-        label={standalonePage ? t('wiki') : t('spaceMemory')}
-        hasSearch={true}
-        searchPlaceholder={t('searchSpaceMemory')}
-        onChangeSearch={setSearchTerm}
-        inlineLabel={true}
-      >
-        <Button
-          type="button"
-          variant="ghost"
-          colorVariant="accent"
-          disabled={isLoading}
-          onClick={() => void refresh()}
+      <DhoTabToolbarStack>
+        <SectionFilter
+          count={totalCount}
+          label={standalonePage ? t('wiki') : t('spaceMemory')}
+          hasSearch={true}
+          searchPlaceholder={t('searchSpaceMemory')}
+          onChangeSearch={setSearchTerm}
+          inlineLabel={true}
         >
-          {t('spaceMemoryRefresh')}
-        </Button>
-      </SectionFilter>
-      <Separator className="bg-border/70" />
+          <Button
+            type="button"
+            variant="ghost"
+            colorVariant="accent"
+            disabled={isLoading}
+            onClick={() => void refresh()}
+          >
+            {t('spaceMemoryRefresh')}
+          </Button>
+        </SectionFilter>
+      </DhoTabToolbarStack>
+      {!standalonePage ? <Separator className="bg-border/70" /> : null}
 
       {error ? (
-        <div className="flex flex-col items-center gap-2 w-full px-4">
+        <div className="flex w-full flex-col items-center gap-2">
           <Text className="text-muted-foreground text-center">
             {t('spaceMemoryError')}
           </Text>

@@ -19,6 +19,11 @@ import React from 'react';
 import { useTranslations } from 'next-intl';
 import { Plus } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
+import {
+  DhoTabListStack,
+  DhoTabSection,
+  DhoTabToolbarStack,
+} from '../../common';
 
 type SignalSectionProps = {
   basePath: string;
@@ -67,38 +72,40 @@ export const SignalSection: FC<SignalSectionProps> = ({
   const createLabel = t('newSignal');
 
   return (
-    <div className="flex w-full flex-col gap-5">
-      <SectionFilter
-        count={pagination?.total || 0}
-        label={label || ''}
-        hasSearch={hasSearch}
-        searchPlaceholder={t('searchSignals')}
-        onChangeSearch={onUpdateSearch}
-        inlineLabel={true}
-        className="min-w-0 flex-wrap justify-end gap-2 sm:flex-nowrap sm:justify-end"
-      >
-        <Button
-          asChild
-          size="icon"
-          variant="outline"
-          colorVariant="accent"
-          disabled={isLoading}
+    <DhoTabSection>
+      <DhoTabToolbarStack>
+        <SectionFilter
+          count={pagination?.total || 0}
+          label={label || ''}
+          hasSearch={hasSearch}
+          searchPlaceholder={t('searchSignals')}
+          onChangeSearch={onUpdateSearch}
+          inlineLabel={true}
+          className="min-w-0 flex-wrap justify-end gap-2 sm:flex-nowrap sm:justify-end"
         >
-          <Link
-            href={createSignalHref}
-            scroll={false}
-            title={createLabel}
-            aria-label={createLabel}
-            className={cn(isLoading && 'pointer-events-none')}
+          <Button
+            asChild
+            size="icon"
+            variant="outline"
+            colorVariant="accent"
+            disabled={isLoading}
           >
-            <Plus
-              className="h-[1.125rem] w-[1.125rem]"
-              strokeWidth={2.25}
-              aria-hidden
-            />
-          </Link>
-        </Button>
-      </SectionFilter>
+            <Link
+              href={createSignalHref}
+              scroll={false}
+              title={createLabel}
+              aria-label={createLabel}
+              className={cn(isLoading && 'pointer-events-none')}
+            >
+              <Plus
+                className="h-[1.125rem] w-[1.125rem]"
+                strokeWidth={2.25}
+                aria-hidden
+              />
+            </Link>
+          </Button>
+        </SectionFilter>
+      </DhoTabToolbarStack>
 
       {isLoading && filteredSignals.length === 0 ? (
         <div
@@ -141,7 +148,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
           <p>{t('listIsEmpty')}</p>
         </Empty>
       ) : (
-        <div className="w-full space-y-2">
+        <DhoTabListStack>
           {Array.from({ length: pages }).map((_, index) => (
             <SignalGridContainer
               key={`signal-container-${index}`}
@@ -164,7 +171,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
               onSignalClick={onSignalClick}
             />
           ))}
-        </div>
+        </DhoTabListStack>
       )}
       {pagination?.totalPages === 0 ? null : (
         <SectionLoadMore
@@ -177,6 +184,6 @@ export const SignalSection: FC<SignalSectionProps> = ({
           </Text>
         </SectionLoadMore>
       )}
-    </div>
+    </DhoTabSection>
   );
 };

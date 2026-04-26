@@ -20,7 +20,10 @@ import { SectionFilter } from '@hypha-platform/ui/server';
 import { cn } from '@hypha-platform/ui-utils';
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import type { VisibleSpace } from './types';
-import { useFilterSpacesListWithDiscoverability } from '@hypha-platform/epics';
+import {
+  DhoTabToolbarStack,
+  useFilterSpacesListWithDiscoverability,
+} from '@hypha-platform/epics';
 import { useTranslations } from 'next-intl';
 
 function SpaceMapLoadingPlaceholder() {
@@ -187,7 +190,7 @@ export const SpaceNavigationView = ({
           onValueChange={setActiveTab}
           className="w-full min-w-0"
         >
-          <div className="flex w-full min-w-0 flex-col gap-2">
+          <DhoTabToolbarStack>
             {isLoading ? (
               <div className="flex min-h-11 w-full flex-wrap items-center gap-3">
                 <Skeleton className="h-7 w-40" loading />
@@ -215,11 +218,11 @@ export const SpaceNavigationView = ({
                 </TabsList>
               </SectionFilter>
             )}
-          </div>
+          </DhoTabToolbarStack>
 
           <TabsContent
             value="nested-spaces"
-            className="mt-3 min-h-0 min-w-0 focus-visible:outline-none"
+            className="mt-0 min-h-0 min-w-0 focus-visible:outline-none"
           >
             {/* Map + list: cap height to the viewport so the D3 view fits at 100% zoom without
                 forcing page scroll; list is a separate scrollport on lg. */}
