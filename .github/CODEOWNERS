@@ -17,4 +17,6 @@
 
 /packages/core/src/common/server/encrypt-matrix-token.ts @plitzenberger
 /packages/core/src/common/server/decrypt-matrix-token.ts @plitzenberger
+/packages/core/src/common/server/encrypt-aes.ts @plitzenberger
+/packages/core/src/matrix/server/actions.ts @plitzenberger
 /packages/core/src/governance/server/resolve-user-matrix-access-token-for-org-memory.ts @plitzenberger
