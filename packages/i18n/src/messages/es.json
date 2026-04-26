@@ -794,6 +794,9 @@
   },
   "DHO": {
     "Dashboard": "Panel de control DHO",
+    "spaceChrome": {
+      "scrollToBanner": "Mostrar banner del espacio"
+    },
     "actionButtons": {
       "spaceSettings": "Configuración de espacio",
       "create": "Crear",

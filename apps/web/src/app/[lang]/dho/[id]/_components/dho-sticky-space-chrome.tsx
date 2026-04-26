@@ -5,10 +5,15 @@ import { createPortal } from 'react-dom';
 import {
   STICKY_SPACE_CHROME_AVATAR_CLASSNAME,
   STICKY_SPACE_CHROME_TITLE_CLASSNAME,
+  getMainColumnScrollRoot,
+  setMainColumnScrollY,
   subscribeMainColumnScroll,
+  getMainColumnScrollY,
 } from '@hypha-platform/epics';
-import { Avatar, AvatarImage } from '@hypha-platform/ui';
+import { Avatar, AvatarImage, Button } from '@hypha-platform/ui';
 import { cn } from '@hypha-platform/ui-utils';
+import { ChevronUp } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export type DhoStickySpaceChromeProps = {
   breadcrumbsRow: React.ReactNode;
@@ -45,14 +50,28 @@ function useMenuTopOffsetPx(): number {
   return px;
 }
 
+/** scrollTop so `el`'s top aligns with the main column scrollport top. */
+function scrollTopToAlignElementTop(el: HTMLElement | null): number {
+  if (!el || typeof window === 'undefined') return 0;
+  const root = getMainColumnScrollRoot();
+  if (root) {
+    return (
+      el.getBoundingClientRect().top -
+      root.getBoundingClientRect().top +
+      root.scrollTop
+    );
+  }
+  return el.getBoundingClientRect().top + window.scrollY;
+}
+
 /**
  * Desktop (md+): pin a secondary chrome row under `MenuTop`. Lighter typography + avatar than
  * `CompactSpaceBanner` so it reads as tier-2 chrome. Actions / nested-space move via portal so the
  * same React trees (hooks) transition between positions — pixel-identical Button UI.
  *
- * Note: `createPortal` remounts its subtree when the container DOM node changes (e.g. when
- * `actionsPortalTarget` swaps between in-flow and sticky targets). Stateful descendants reset;
- * lift state above the portaled subtree if that becomes a problem.
+ * Space scroll UX: default view hides the hero “top card” and pins the actions row under the
+ * menu; scroll is clamped so users cannot scroll above that. A chevron scrolls smoothly to the top
+ * to reveal the full banner again.
  */
 export function DhoStickySpaceChrome({
   breadcrumbsRow,
@@ -64,11 +83,14 @@ export function DhoStickySpaceChrome({
   logoAlt,
   defaultLogoSrc,
 }: DhoStickySpaceChromeProps) {
+  const tDho = useTranslations('DHO');
   const menuTopPx = useMenuTopOffsetPx();
   /** Bottom edge of the space image banner — sticky engages when this passes under MenuTop */
   const bannerBottomSentinelRef = React.useRef<HTMLDivElement>(null);
+  /** Hero / `CompactSpaceBanner` only — scroll-to-top reveals this “top card” */
+  const heroBannerAnchorRef = React.useRef<HTMLDivElement | null>(null);
 
-  const [flowActionsEl, setFlowActionsEl] =
+  const [flowActionsInnerEl, setFlowActionsInnerEl] =
     React.useState<HTMLDivElement | null>(null);
   const [stickyActionsEl, setStickyActionsEl] =
     React.useState<HTMLDivElement | null>(null);
@@ -81,18 +103,67 @@ export function DhoStickySpaceChrome({
 
   const [flowMinH, setFlowMinH] = React.useState(44);
 
+  const minScrollLockYRef = React.useRef(0);
+  const clampRafRef = React.useRef(0);
+
+  const recomputeMinScrollLock = React.useCallback(() => {
+    const actions = flowActionsInnerEl;
+    if (!actions) return;
+    minScrollLockYRef.current = Math.max(
+      0,
+      Math.round(scrollTopToAlignElementTop(actions)),
+    );
+  }, [flowActionsInnerEl]);
+
   React.useLayoutEffect(() => {
-    const el = flowActionsEl;
-    if (!el || stuck) return;
+    const outer = flowActionsInnerEl?.parentElement;
+    if (!outer || stuck) return;
     const measure = () => {
-      const h = Math.ceil(el.getBoundingClientRect().height);
+      const h = Math.ceil(outer.getBoundingClientRect().height);
       if (h > 0) setFlowMinH(h);
     };
     measure();
     const ro = new ResizeObserver(measure);
-    ro.observe(el);
+    ro.observe(outer);
     return () => ro.disconnect();
-  }, [stuck, flowActionsEl]);
+  }, [stuck, flowActionsInnerEl]);
+
+  const scrollToShowHero = React.useCallback(() => {
+    const el = heroBannerAnchorRef.current;
+    if (!el) {
+      setMainColumnScrollY(0, 'smooth');
+      return;
+    }
+    const y = Math.max(0, Math.round(scrollTopToAlignElementTop(el)));
+    setMainColumnScrollY(y, 'smooth');
+  }, []);
+
+  const snapToDefaultSpaceView = React.useCallback(() => {
+    recomputeMinScrollLock();
+    const y = minScrollLockYRef.current;
+    if (y > 0) {
+      setMainColumnScrollY(y, 'auto');
+    }
+  }, [recomputeMinScrollLock]);
+
+  React.useLayoutEffect(() => {
+    if (!flowActionsInnerEl) return;
+    snapToDefaultSpaceView();
+    const t = window.requestAnimationFrame(snapToDefaultSpaceView);
+    return () => window.cancelAnimationFrame(t);
+  }, [flowActionsInnerEl, snapToDefaultSpaceView]);
+
+  React.useEffect(() => {
+    const onResize = () => {
+      recomputeMinScrollLock();
+      const y = getMainColumnScrollY();
+      if (y < minScrollLockYRef.current) {
+        setMainColumnScrollY(minScrollLockYRef.current, 'auto');
+      }
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [recomputeMinScrollLock]);
 
   React.useEffect(() => {
     const sentinel = bannerBottomSentinelRef.current;
@@ -123,7 +194,20 @@ export function DhoStickySpaceChrome({
 
     const onScroll = () => {
       if (raf) return;
-      raf = requestAnimationFrame(tick);
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        tick();
+        recomputeMinScrollLock();
+        const minY = minScrollLockYRef.current;
+        const y = getMainColumnScrollY();
+        if (y < minY) {
+          if (clampRafRef.current) cancelAnimationFrame(clampRafRef.current);
+          clampRafRef.current = requestAnimationFrame(() => {
+            clampRafRef.current = 0;
+            setMainColumnScrollY(minY, 'auto');
+          });
+        }
+      });
     };
 
     tick();
@@ -135,13 +219,28 @@ export function DhoStickySpaceChrome({
       unsubscribeScroll();
       window.removeEventListener('resize', onScroll);
       if (raf) cancelAnimationFrame(raf);
+      if (clampRafRef.current) cancelAnimationFrame(clampRafRef.current);
     };
-  }, [menuTopPx]);
+  }, [menuTopPx, recomputeMinScrollLock]);
 
   const logoSrc = logoUrl || defaultLogoSrc;
 
-  const actionsPortalTarget = stuck ? stickyActionsEl : flowActionsEl;
+  const actionsPortalTarget = stuck ? stickyActionsEl : flowActionsInnerEl;
   const nestedPortalTarget = nestedSpacesSlot ? flowNestedEl : null;
+
+  const renderScrollToTopButton = () => (
+    <Button
+      type="button"
+      variant="outline"
+      size="icon"
+      className="h-10 w-10 shrink-0 border-border/80 bg-background/90 text-muted-foreground shadow-sm backdrop-blur-sm hover:text-foreground"
+      onClick={scrollToShowHero}
+      title={tDho('spaceChrome.scrollToBanner')}
+      aria-label={tDho('spaceChrome.scrollToBanner')}
+    >
+      <ChevronUp className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+    </Button>
+  );
 
   return (
     <>
@@ -180,10 +279,13 @@ export function DhoStickySpaceChrome({
               {title}
             </p>
           </div>
-          <div
-            ref={setStickyActionsEl}
-            className="flex shrink-0 flex-nowrap items-center gap-2"
-          />
+          <div className="flex shrink-0 items-center gap-2">
+            {renderScrollToTopButton()}
+            <div
+              ref={setStickyActionsEl}
+              className="flex shrink-0 flex-nowrap items-center gap-2"
+            />
+          </div>
         </div>
       </div>
 
@@ -197,24 +299,32 @@ export function DhoStickySpaceChrome({
           ) : null}
         </div>
 
-        <div className="relative">
-          {banner}
-          <div
-            ref={bannerBottomSentinelRef}
-            className="pointer-events-none absolute bottom-0 left-0 h-px w-full opacity-0"
-            aria-hidden
-          />
-        </div>
+        <div className="flex flex-col gap-4">
+          <div ref={heroBannerAnchorRef} className="relative">
+            {banner}
+            <div
+              ref={bannerBottomSentinelRef}
+              className="pointer-events-none absolute bottom-0 left-0 h-px w-full opacity-0"
+              aria-hidden
+            />
+          </div>
 
-        <div
-          ref={setFlowActionsEl}
-          className={cn(
-            /* Same min-height as HumanChatPanelTabs so bottom borders align with chat panel */
-            'flex justify-end gap-2 px-0 md:flex-nowrap md:items-center md:min-h-[var(--secondary-chrome-actions-row-height,52px)]',
-            stuck && 'pointer-events-none invisible opacity-0',
-          )}
-          style={stuck ? { minHeight: flowMinH } : undefined}
-        />
+          <div
+            className={cn(
+              'flex items-center justify-end gap-2 px-0 md:flex-nowrap md:min-h-[var(--secondary-chrome-actions-row-height,52px)]',
+              stuck && 'pointer-events-none invisible opacity-0',
+            )}
+            style={stuck ? { minHeight: flowMinH } : undefined}
+          >
+            {renderScrollToTopButton()}
+            <div
+              ref={setFlowActionsInnerEl}
+              className={cn(
+                'flex min-h-[var(--secondary-chrome-actions-row-height,52px)] flex-1 flex-wrap items-center justify-end gap-2 md:flex-nowrap',
+              )}
+            />
+          </div>
+        </div>
       </div>
 
       {actionsPortalTarget
