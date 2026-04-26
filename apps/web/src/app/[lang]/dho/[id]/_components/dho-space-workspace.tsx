@@ -147,7 +147,7 @@ function NavRow({
   const desktopIconOnly = variant === 'desktop' && !showLabels;
   const itemClass = cn(
     'group flex min-h-11 w-full min-w-0 items-center rounded-md py-2 text-left text-sm font-medium leading-snug',
-    desktopIconOnly ? 'justify-center gap-0 px-1.5' : 'gap-1.5 px-1.5',
+    desktopIconOnly ? 'justify-center gap-0 px-2' : 'gap-1.5 px-1.5',
     'outline-none ring-offset-background transition-colors',
     'focus-visible:ring-2 focus-visible:ring-ring',
     isActive
@@ -351,16 +351,14 @@ export function DhoSpaceWorkspace({
       <nav
         className={cn(
           'hidden shrink-0 pt-4 transition-[width] duration-200 ease-out md:flex md:flex-col md:self-stretch',
-          labelsExpanded
-            ? 'w-[min(10rem,100%)] pl-0 pr-1'
-            : 'w-[3.5rem] pl-0 pr-0.5',
+          labelsExpanded ? 'w-[min(10rem,100%)] px-1.5' : 'w-[3.75rem] px-1',
         )}
         aria-label={t('spaceNavAriaLabel')}
       >
         <div
           className={cn(
             'mb-2 flex',
-            labelsExpanded ? 'justify-end px-0.5' : 'justify-center',
+            labelsExpanded ? 'justify-end' : 'justify-center',
           )}
         >
           <Button
@@ -395,7 +393,7 @@ export function DhoSpaceWorkspace({
           <div
             className={cn(
               'mt-auto border-t border-border/60 pt-2',
-              labelsExpanded ? 'px-0.5' : 'flex justify-center px-0',
+              labelsExpanded ? 'px-0' : 'flex justify-center',
             )}
           >
             {settingsDisabled || !settingsHref ? (
