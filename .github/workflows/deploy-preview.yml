@@ -162,9 +162,14 @@ jobs:
 
       - name: Alias preview to deterministic PR domain
         id: alias
+        env:
+          VERCEL_TOKEN: ${{ env.VERCEL_TOKEN }}
+          PREVIEW_ALIAS_SUFFIX: ${{ env.PREVIEW_ALIAS_SUFFIX }}
+          PREVIEW_URL: ${{ steps.deploy.outputs.preview_url }}
         run: |
-          PREVIEW_ALIAS_DOMAIN="pr-${{ env.PREVIEW_ALIAS_SUFFIX }}.preview-app.hypha.earth"
-          vercel alias set "${{ steps.deploy.outputs.preview_url }}" "${PREVIEW_ALIAS_DOMAIN}" --token=${{ env.VERCEL_TOKEN }}
+          set -euo pipefail
+          PREVIEW_ALIAS_DOMAIN="pr-${PREVIEW_ALIAS_SUFFIX}.preview-app.hypha.earth"
+          npx --yes vercel@52 alias set "${PREVIEW_URL}" "${PREVIEW_ALIAS_DOMAIN}" --token="${VERCEL_TOKEN}"
           echo "preview_custom_url=https://${PREVIEW_ALIAS_DOMAIN}" >> "$GITHUB_OUTPUT"
 
       - name: Comment custom preview URL on PR

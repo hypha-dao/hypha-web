@@ -51,6 +51,19 @@ jobs:
           api_key: ${{ secrets.NEON_API_KEY }}
 
       - name: Remove deterministic preview alias
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          PR_NUMBER: ${{ github.event.number }}
         run: |
-          PREVIEW_ALIAS_DOMAIN="pr-${{ github.event.number }}.preview-app.hypha.earth"
-          npx vercel@latest alias rm "${PREVIEW_ALIAS_DOMAIN}" --yes --token="${{ secrets.VERCEL_TOKEN }}" || true
+          set -euo pipefail
+          PREVIEW_ALIAS_DOMAIN="pr-${PR_NUMBER}.preview-app.hypha.earth"
+
+          if ! out="$(npx --yes vercel@52 alias rm "${PREVIEW_ALIAS_DOMAIN}" --yes --token="${VERCEL_TOKEN}" 2>&1)"; then
+            if echo "${out}" | rg -i "not\\s*found|does not exist|404" >/dev/null; then
+              echo "Alias ${PREVIEW_ALIAS_DOMAIN} not found; nothing to remove."
+            else
+              echo "::error::Failed to remove alias ${PREVIEW_ALIAS_DOMAIN}"
+              echo "${out}"
+              exit 1
+            fi
+          fi
