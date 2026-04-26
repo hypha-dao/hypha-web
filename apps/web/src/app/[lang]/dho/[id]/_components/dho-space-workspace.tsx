@@ -23,9 +23,6 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
 } from '@hypha-platform/ui';
 import { getDhoPathAgreements } from '../@tab/agreements/constants';
 import { getDhoPathWiki } from '../@tab/wiki/constants';
@@ -331,34 +328,25 @@ export function DhoSpaceWorkspace({
             labelsExpanded ? 'justify-end px-0.5' : 'justify-center',
           )}
         >
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
-                aria-expanded={labelsExpanded}
-                aria-controls={navListId}
-                onClick={() => setLabelsExpanded((v) => !v)}
-                data-testid="dho-workspace-nav-toggle-labels"
-              >
-                {labelsExpanded ? (
-                  <ChevronsLeft className="h-4 w-4" aria-hidden />
-                ) : (
-                  <ChevronsRight className="h-4 w-4" aria-hidden />
-                )}
-                <span className="sr-only">
-                  {labelsExpanded
-                    ? t('collapseNavLabels')
-                    : t('expandNavLabels')}
-                </span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={6}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+            aria-expanded={labelsExpanded}
+            aria-controls={navListId}
+            onClick={() => setLabelsExpanded((v) => !v)}
+            data-testid="dho-workspace-nav-toggle-labels"
+          >
+            {labelsExpanded ? (
+              <ChevronsLeft className="h-4 w-4" aria-hidden />
+            ) : (
+              <ChevronsRight className="h-4 w-4" aria-hidden />
+            )}
+            <span className="sr-only">
               {labelsExpanded ? t('collapseNavLabels') : t('expandNavLabels')}
-            </TooltipContent>
-          </Tooltip>
+            </span>
+          </Button>
         </div>
         <NavLinkList
           items={items}
