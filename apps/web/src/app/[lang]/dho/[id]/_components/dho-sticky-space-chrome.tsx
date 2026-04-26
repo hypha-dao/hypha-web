@@ -50,9 +50,12 @@ function useMenuTopOffsetPx(): number {
  * `CompactSpaceBanner` so it reads as tier-2 chrome. Actions / nested-space move via portal so the
  * same React trees (hooks) transition between positions — pixel-identical Button UI.
  *
- * Note: `createPortal` remounts its subtree when the container DOM node changes (e.g. when
- * `actionsPortalTarget` swaps between in-flow and sticky targets). Stateful descendants reset;
- * lift state above the portaled subtree if that becomes a problem.
+ * **In-flow (not stuck):** `CompactSpaceBanner` can expose a host `div` next to
+ * `footerTrailing` (badges) so join / create sit on the same row as the free-trial tag.
+ * **Stuck:** actions move to the secondary chrome bar as before.
+ *
+ * Note: `createPortal` remounts when `actionsPortalTarget` changes; stateful portaled
+ * children reset across host swaps.
  */
 export function DhoStickySpaceChrome({
   breadcrumbsRow,
@@ -80,10 +83,34 @@ export function DhoStickySpaceChrome({
   const stuckRef = React.useRef(false);
 
   const [flowMinH, setFlowMinH] = React.useState(44);
+  const [inBannerActionsHost, setInBannerActionsHost] =
+    React.useState<HTMLDivElement | null>(null);
+  const setInBannerHostRef = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      setInBannerActionsHost(node);
+    },
+    [],
+  );
+
+  const bannerWithActionsHost = React.useMemo(() => {
+    if (!React.isValidElement(banner)) return banner;
+    return React.cloneElement(
+      banner as React.ReactElement<{
+        actionsPortalHostRef?: React.Ref<HTMLDivElement> | null;
+      }>,
+      { actionsPortalHostRef: setInBannerHostRef },
+    );
+  }, [banner, setInBannerHostRef]);
+
+  const actionsMeasureEl = React.useMemo(() => {
+    if (stuck) return stickyActionsEl;
+    if (inBannerActionsHost) return inBannerActionsHost;
+    return flowActionsEl;
+  }, [stuck, stickyActionsEl, inBannerActionsHost, flowActionsEl]);
 
   React.useLayoutEffect(() => {
-    const el = flowActionsEl;
-    if (!el || stuck) return;
+    const el = actionsMeasureEl;
+    if (!el) return;
     const measure = () => {
       const h = Math.ceil(el.getBoundingClientRect().height);
       if (h > 0) setFlowMinH(h);
@@ -92,7 +119,7 @@ export function DhoStickySpaceChrome({
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [stuck, flowActionsEl]);
+  }, [stuck, actionsMeasureEl]);
 
   React.useEffect(() => {
     const sentinel = bannerBottomSentinelRef.current;
@@ -140,7 +167,9 @@ export function DhoStickySpaceChrome({
 
   const logoSrc = logoUrl || defaultLogoSrc;
 
-  const actionsPortalTarget = stuck ? stickyActionsEl : flowActionsEl;
+  const actionsPortalTarget = stuck
+    ? stickyActionsEl
+    : inBannerActionsHost ?? flowActionsEl;
   const nestedPortalTarget = nestedSpacesSlot ? flowNestedEl : null;
 
   return (
@@ -198,7 +227,7 @@ export function DhoStickySpaceChrome({
         </div>
 
         <div className="relative">
-          {banner}
+          {bannerWithActionsHost}
           <div
             ref={bannerBottomSentinelRef}
             className="pointer-events-none absolute bottom-0 left-0 h-px w-full opacity-0"
@@ -209,8 +238,10 @@ export function DhoStickySpaceChrome({
         <div
           ref={setFlowActionsEl}
           className={cn(
-            /* Same min-height as HumanChatPanelTabs so bottom borders align with chat panel */
-            'flex justify-end gap-2 px-0 md:flex-nowrap md:items-center md:min-h-[var(--secondary-chrome-actions-row-height,52px)]',
+            'flex justify-end gap-2 px-0 md:flex-nowrap md:items-center',
+            /* Only reserve the actions row when portaling under the card (not into banner, not stuck). */
+            !inBannerActionsHost &&
+              'md:min-h-[var(--secondary-chrome-actions-row-height,52px)]',
             stuck && 'pointer-events-none invisible opacity-0',
           )}
           style={stuck ? { minHeight: flowMinH } : undefined}
