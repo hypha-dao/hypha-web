@@ -74,7 +74,7 @@ export const CreateSubspaceForm = ({
         backUrl={backUrl}
         backLabel={t('backToSettings')}
         onSubmit={(values) => createSpace(values)}
-        initialParentSpaceId={parentSpaceId as number}
+        initialParentSpaceId={parentSpaceId}
         parentSpaceSlug={parentSpaceSlug}
         label="add"
         slugIncorrectMessage={t('slugAlreadyExistsLong')}
