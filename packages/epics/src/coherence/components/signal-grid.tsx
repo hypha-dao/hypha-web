@@ -35,7 +35,7 @@ export function SignalGrid({
             role="button"
             tabIndex={0}
             className={cn(
-              'flex h-full min-h-0 w-full cursor-pointer rounded-2xl text-left outline-none',
+              'flex h-full min-h-0 w-full cursor-pointer rounded-xl text-left outline-none',
               'focus-visible:ring-2 focus-visible:ring-accent-9/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
             )}
             onClick={() => onSignalClick(signal)}

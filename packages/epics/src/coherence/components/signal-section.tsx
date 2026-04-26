@@ -12,12 +12,13 @@ import {
 import { Empty } from '../../common';
 import { SignalGridContainer } from './signal-grid.container';
 import { Coherence, DirectionType } from '@hypha-platform/core/client';
-import { PlusIcon } from '@radix-ui/react-icons';
 import { useParams } from 'next/navigation';
 import { Locale } from '@hypha-platform/i18n';
 import Link from 'next/link';
 import React from 'react';
 import { useTranslations } from 'next-intl';
+import { ChevronsRight, Plus } from 'lucide-react';
+import { cn } from '@hypha-platform/ui-utils';
 
 type SignalSectionProps = {
   basePath: string;
@@ -63,6 +64,15 @@ export const SignalSection: FC<SignalSectionProps> = ({
   /** Match `SignalGrid`: 1 col mobile, 3 cols sm+; two full rows while fetching. */
   const initialSkeletonCount = Math.max(6, firstPageSize);
 
+  const chevronMark = (
+    <>
+      <ChevronsRight className="h-4 w-4" aria-hidden />
+      <ChevronsRight className="-ml-2.5 h-4 w-4" aria-hidden />
+    </>
+  );
+
+  const createLabel = t('newSignal');
+
   return (
     <div className="flex w-full flex-col gap-5">
       <SectionFilter
@@ -72,19 +82,30 @@ export const SignalSection: FC<SignalSectionProps> = ({
         searchPlaceholder={t('searchSignals')}
         onChangeSearch={onUpdateSearch}
         inlineLabel={true}
+        leadingSlot={chevronMark}
+        className="min-w-0 flex-wrap justify-end gap-2 sm:flex-nowrap sm:justify-end"
       >
-        <div className="flex flex-row gap-2">
-          <Link href={createSignalHref}>
-            <Button
-              variant="default"
-              colorVariant="accent"
-              disabled={isLoading}
-            >
-              <PlusIcon />
-              {t('newSignal')}
-            </Button>
+        <Button
+          asChild
+          size="icon"
+          variant="outline"
+          colorVariant="accent"
+          disabled={isLoading}
+        >
+          <Link
+            href={createSignalHref}
+            scroll={false}
+            title={createLabel}
+            aria-label={createLabel}
+            className={cn(isLoading && 'pointer-events-none')}
+          >
+            <Plus
+              className="h-[1.125rem] w-[1.125rem]"
+              strokeWidth={2.25}
+              aria-hidden
+            />
           </Link>
-        </div>
+        </Button>
       </SectionFilter>
 
       {isLoading && filteredSignals.length === 0 ? (
@@ -96,16 +117,30 @@ export const SignalSection: FC<SignalSectionProps> = ({
           {Array.from({ length: initialSkeletonCount }).map((_, i) => (
             <div
               key={`signal-skeleton-${i}`}
-              className="flex min-h-[220px] flex-col gap-3 rounded-2xl border border-border/50 bg-card/40 p-4"
+              className="flex min-h-[16rem] flex-col overflow-hidden rounded-xl border border-border/80 bg-card"
             >
-              <Skeleton className="h-5 w-[60%]" loading={true} height="20px" />
-              <div className="flex flex-wrap gap-2">
-                <Skeleton className="h-6 w-24" loading={true} height="24px" />
-                <Skeleton className="h-6 w-20" loading={true} height="24px" />
+              <Skeleton
+                className="h-[5.25rem] w-full rounded-none"
+                loading
+                height="100%"
+              />
+              <div className="space-y-2 px-3 pb-3 pt-1">
+                <div className="-mt-10 flex px-3">
+                  <Skeleton
+                    className="h-16 w-16 rounded-full"
+                    loading
+                    width="64px"
+                    height="64px"
+                  />
+                </div>
+                <Skeleton className="h-5 w-[65%]" loading height="20px" />
+                <Skeleton className="h-4 w-24" loading height="16px" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-6 w-20" loading height="24px" />
+                </div>
+                <Skeleton className="h-16 w-full" loading />
+                <Skeleton className="h-10 w-full" loading height="40px" />
               </div>
-              <Skeleton className="h-4 w-28" loading={true} height="16px" />
-              <Skeleton className="mt-auto h-24 w-full" loading={true} />
-              <Skeleton className="h-10 w-full" loading={true} height="40px" />
             </div>
           ))}
         </div>
