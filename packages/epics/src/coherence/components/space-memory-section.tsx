@@ -160,7 +160,7 @@ export const SpaceMemorySection: FC<SpaceMemorySectionProps> = ({
       ) : (
         <>
           <ul
-            className="m-0 flex w-full list-none flex-wrap justify-start gap-x-6 gap-y-10 p-0"
+            className="m-0 grid w-full min-w-0 list-none grid-cols-1 gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3"
             aria-label={t('spaceMemoryTimelineLabel')}
           >
             {items.map((row) => (

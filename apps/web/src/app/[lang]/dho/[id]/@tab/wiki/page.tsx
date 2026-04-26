@@ -23,12 +23,8 @@ export default async function DhoWikiPage(props: PageProps) {
   }
 
   return (
-    <div className="w-full min-w-0">
-      <div className="rounded-2xl border border-border/60 bg-card/35 py-4 shadow-sm backdrop-blur-[2px] supports-[backdrop-filter]:bg-card/25 dark:bg-card/40 dark:supports-[backdrop-filter]:bg-card/30">
-        <div className="px-4 pb-4 pt-0 md:px-8">
-          <SpaceMemorySection spaceSlug={id} standalonePage />
-        </div>
-      </div>
+    <div className="w-full min-w-0 py-4">
+      <SpaceMemorySection spaceSlug={id} standalonePage />
     </div>
   );
 }

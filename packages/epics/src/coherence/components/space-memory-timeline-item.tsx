@@ -8,9 +8,9 @@ import { formatDate } from '@hypha-platform/ui-utils';
 import React, { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 
-/** Matches Human Chat image slot: `rounded-lg border border-border bg-muted/30` + object-contain preview */
+/** Preview tile — full width of grid cell, fixed height like Human Chat thumbnails */
 const THUMB_SHELL =
-  'relative flex h-44 w-44 max-w-full shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted/30';
+  'relative flex h-44 w-full max-w-full shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted/30';
 
 function isSafeAssetUrl(url: string): boolean {
   try {
@@ -27,6 +27,13 @@ function isMxcUrl(url: string): boolean {
 
 function looksLikePdf(name: string, url: string): boolean {
   return /\.pdf(\?|#|$)/i.test(name) || /\.pdf(\?|#|$)/i.test(url);
+}
+
+function looksLikeVideo(name: string, url: string): boolean {
+  return (
+    /\.(mp4|webm|mov|mkv|m4v)(\?|#|$)/i.test(name) ||
+    /\.(mp4|webm|mov|mkv|m4v)(\?|#|$)/i.test(url)
+  );
 }
 
 type MatrixClientLike = NonNullable<ReturnType<typeof useMatrix>['client']>;
@@ -72,6 +79,8 @@ export function SpaceMemoryTimelineItem({
   const { client, isMatrixAvailable } = useMatrix();
   const uploaded = formatDate(new Date(item.uploadedAt), true);
   const [imageFailed, setImageFailed] = React.useState(false);
+  /** Proposal URLs sometimes lack MIME/extension in org-memory — try `<img>` then fall back. */
+  const [httpImageProbeFailed, setHttpImageProbeFailed] = React.useState(false);
   /** After a scaled thumbnail fails, retry full media (Synapse sometimes fails thumbnailing only). */
   const [matrixImagePhase, setMatrixImagePhase] = React.useState<
     'preview' | 'full'
@@ -90,10 +99,21 @@ export function SpaceMemoryTimelineItem({
 
   React.useEffect(() => {
     setImageFailed(false);
+    setHttpImageProbeFailed(false);
     setMatrixImagePhase('preview');
   }, [mxc, client, item.id]);
 
   const httpSafe = isSafeAssetUrl(item.url);
+  const tryHttpImageFirst =
+    !mxc &&
+    httpSafe &&
+    item.source === 'proposal_upload' &&
+    !looksLikePdf(item.name, item.url) &&
+    !looksLikeVideo(item.name, item.url) &&
+    (item.kind === 'image' ||
+      item.kind === 'other' ||
+      (item.kind === 'document' && !looksLikePdf(item.name, item.url)));
+
   const imageSrcForMatrix =
     item.kind === 'image' && mxc
       ? matrixImagePhase === 'preview' && matrixThumbDistinct
@@ -211,6 +231,24 @@ export function SpaceMemoryTimelineItem({
         />
       );
     }
+    if (tryHttpImageFirst && !httpImageProbeFailed && !imageFailed) {
+      return (
+        <img
+          src={item.url}
+          alt=""
+          className="max-h-full max-w-full object-contain"
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={() => {
+            if (item.kind === 'image') {
+              setImageFailed(true);
+            } else {
+              setHttpImageProbeFailed(true);
+            }
+          }}
+        />
+      );
+    }
     if (item.kind === 'image' && !imageFailed) {
       if (looksLikePdf(item.name, item.url)) {
         return (
@@ -226,6 +264,7 @@ export function SpaceMemoryTimelineItem({
           alt=""
           className="max-h-full max-w-full object-contain"
           loading="lazy"
+          referrerPolicy="no-referrer"
           onError={() => setImageFailed(true)}
         />
       );
@@ -275,7 +314,7 @@ export function SpaceMemoryTimelineItem({
     'inline-flex items-start gap-1 text-xs font-medium leading-snug text-foreground underline-offset-2 group-hover:text-primary group-hover:underline';
 
   return (
-    <li className="flex w-44 shrink-0 flex-col items-stretch">
+    <li className="flex min-w-0 w-full shrink-0 flex-col items-stretch">
       <span
         className="mb-1.5 h-2 w-2 shrink-0 self-center rounded-full border-2 border-background bg-accent-9 shadow-sm ring-1 ring-border"
         aria-hidden
