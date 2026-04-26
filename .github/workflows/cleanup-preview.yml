@@ -49,3 +49,8 @@ jobs:
           project_id: ${{ secrets.NEON_PROJECT_ID }}
           branch: preview/pr-${{ github.event.number }}-${{ steps.branch-name.outputs.current_branch }}
           api_key: ${{ secrets.NEON_API_KEY }}
+
+      - name: Remove deterministic preview alias
+        run: |
+          PREVIEW_ALIAS_DOMAIN="pr-${{ github.event.number }}.preview-app.hypha.earth"
+          npx vercel@latest alias rm "${PREVIEW_ALIAS_DOMAIN}" --yes --token="${{ secrets.VERCEL_TOKEN }}" || true
