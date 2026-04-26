@@ -22,6 +22,7 @@ import {
 } from '@hypha-platform/epics';
 import type { VisibleSpace } from './types';
 import { useTranslations } from 'next-intl';
+import { cn } from '@hypha-platform/ui-utils';
 
 type VisibleSpacesListProps = {
   visibleSpaces: VisibleSpace[];
@@ -37,9 +38,18 @@ type AddSpaceButtonProps = {
   space: VisibleSpace;
   allSpaces: Space[];
   lang: Locale;
+  /** Compact controls for the Ecosystem side panel (avoids layout collision with title). */
+  size?: 'default' | 'sm';
+  className?: string;
 };
 
-function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
+function AddSpaceButton({
+  space,
+  allSpaces,
+  lang,
+  size = 'default',
+  className,
+}: AddSpaceButtonProps) {
   const t = useTranslations('SelectNavigationAction');
   const fullSpace = allSpaces.find((s) => s.id === space.id);
   const web3SpaceId = fullSpace?.web3SpaceId;
@@ -56,17 +66,19 @@ function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
     space: fullSpace,
   });
 
+  const btnClass = cn('w-full sm:w-auto shrink-0', className);
+
   if (!hasSpaceInfo) {
     return (
       <Button
         variant="default"
-        size="default"
+        size={size}
         colorVariant="accent"
-        className="w-full md:w-auto"
+        className={btnClass}
         disabled={true}
         title={t('visibleSpaces.spaceInfoNotAvailable')}
       >
-        <PlusIcon className="w-4 h-4" />
+        <PlusIcon className="h-3.5 w-3.5" />
         {t('visibleSpaces.addSpace')}
       </Button>
     );
@@ -81,7 +93,7 @@ function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
   return (
     <Link
       href={hasAccess && !isLoading ? createSpacePath : '#'}
-      className={isDisabled ? 'cursor-not-allowed' : 'flex-1 md:flex-none'}
+      className={isDisabled ? 'cursor-not-allowed' : 'w-full min-w-0 sm:w-auto'}
       title={
         isLoading
           ? t('visibleSpaces.loading')
@@ -92,12 +104,12 @@ function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
     >
       <Button
         variant="default"
-        size="default"
+        size={size}
         colorVariant="accent"
-        className="w-full md:w-auto"
+        className={btnClass}
         disabled={isDisabled}
       >
-        <PlusIcon className="w-4 h-4" />
+        <PlusIcon className="h-3.5 w-3.5" />
         {t('visibleSpaces.addSpace')}
       </Button>
     </Link>
@@ -147,153 +159,291 @@ export function VisibleSpacesList({
     );
   }, [descendantSpaces, searchQuery]);
 
-  const getCreateSpacePath = (spaceId: number, spaceSlug?: string) => {
-    if (!spaceSlug) return '#';
-    return `/${lang}/dho/${spaceSlug}/space/create`;
-  };
-
   if (!rootSpace) {
     return null;
   }
 
   const rootNestedPath = buildNestedPath(rootSpace);
-  const rootCreateSpacePath = getCreateSpacePath(rootSpace.id, rootSpace.slug);
   const rootVisitSpacePath = rootSpace.slug
     ? getDhoPathAgreements(lang, rootSpace.slug)
     : '#';
 
   return (
     <div
-      className={
-        isPanel
-          ? `flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1 ${
-              className ?? ''
-            }`
-          : `flex flex-col gap-4 ${className ?? ''}`
-      }
+      className={cn(
+        'flex min-h-0 w-full min-w-0 flex-col',
+        isPanel ? 'h-full min-h-0 max-h-full gap-0 overflow-hidden' : 'gap-4',
+        className,
+      )}
       data-testid="dho-ecosystem-spaces-list"
     >
-      <Card className="p-4">
-        <div className="flex flex-col md:flex-row md:items-center gap-4">
-          <div className="flex items-center gap-4 flex-1 min-w-0">
-            <Avatar className="w-12 h-12 flex-shrink-0">
-              <AvatarImage
-                src={rootSpace.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE}
-                alt={`${rootSpace.name} logo`}
-              />
-            </Avatar>
-
-            <div className="flex-1 min-w-0">
-              <div className="text-base font-medium text-foreground mb-1">
-                {rootSpace.name}
-              </div>
-              <Badge
-                variant="outline"
-                size={1}
-                colorVariant="neutral"
-                className="w-fit"
-              >
-                {rootNestedPath}
-              </Badge>
-            </div>
-          </div>
-
-          <div className="flex gap-2 flex-shrink-0 md:flex-shrink-0">
-            <AddSpaceButton
-              space={rootSpace}
-              allSpaces={allSpaces}
-              lang={lang}
-            />
-            <Link href={rootVisitSpacePath} className="flex-1 md:flex-none">
-              <Button
-                colorVariant="neutral"
-                variant="outline"
-                size="default"
-                disabled={rootSpace.id === entrySpaceId}
-                className="w-full md:w-auto"
-              >
-                {t('visibleSpaces.visitSpace')}
-              </Button>
-            </Link>
-          </div>
+      <div
+        className={cn(
+          'shrink-0',
+          isPanel
+            ? 'space-y-2.5 border-b border-border/40 pb-2.5'
+            : 'space-y-0',
+        )}
+      >
+        <div className="flex min-w-0 items-center justify-between gap-2">
+          {isPanel ? (
+            <h3 className="min-w-0 text-left text-0 font-medium uppercase leading-none tracking-wide text-muted-foreground">
+              {t('visibleSpaces.panelListHeading')}
+            </h3>
+          ) : null}
         </div>
-      </Card>
-
-      <Separator />
-
-      <div className="flex gap-2">
-        <Input
-          placeholder={t('visibleSpaces.searchSpaces')}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="flex-1"
-          data-testid="dho-ecosystem-spaces-search"
-        />
+        <div className="flex gap-2">
+          <Input
+            placeholder={t('visibleSpaces.searchSpaces')}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-8 flex-1 text-1"
+            data-testid="dho-ecosystem-spaces-search"
+          />
+        </div>
       </div>
 
-      <div className="flex flex-col gap-3">
+      {isPanel ? null : <Separator />}
+
+      <div
+        className={cn(
+          'min-h-0 w-full',
+          isPanel
+            ? 'flex flex-1 flex-col gap-2.5 overflow-y-auto overflow-x-hidden pr-0.5 pt-2.5 [scrollbar-gutter:stable] narrow-scrollbar'
+            : 'flex flex-col gap-3',
+        )}
+      >
+        <Card
+          className={cn('border-border/60 p-0 shadow-sm', isPanel && 'p-0')}
+        >
+          <div
+            className={cn(
+              'p-2.5',
+              isPanel
+                ? 'flex flex-col gap-2.5 sm:flex-col'
+                : 'flex flex-col gap-4 md:flex-row md:items-center',
+            )}
+          >
+            <div
+              className={cn(
+                'flex min-w-0',
+                isPanel
+                  ? 'w-full min-w-0 items-start gap-2.5 sm:min-w-0 sm:max-w-full'
+                  : 'min-w-0 flex-1 items-center gap-4',
+              )}
+            >
+              <Avatar
+                className={cn(
+                  'flex-shrink-0',
+                  isPanel ? 'h-9 w-9' : 'h-12 w-12',
+                )}
+              >
+                <AvatarImage
+                  src={rootSpace.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE}
+                  alt={`${rootSpace.name} logo`}
+                />
+              </Avatar>
+              <div
+                className="min-w-0 flex-1 [overflow-wrap:anywhere]"
+                style={{ minWidth: 0 }}
+              >
+                <p
+                  className={cn(
+                    'font-medium leading-snug text-foreground',
+                    isPanel ? 'text-0 sm:text-1' : 'mb-1 text-base',
+                  )}
+                >
+                  {rootSpace.name}
+                </p>
+                <Badge
+                  variant="outline"
+                  size={1}
+                  colorVariant="neutral"
+                  className="mt-1 w-fit max-w-full whitespace-normal break-words text-0"
+                >
+                  {rootNestedPath}
+                </Badge>
+              </div>
+            </div>
+            {isPanel ? null : <Separator className="my-1" />}
+            <div
+              className={cn(
+                isPanel
+                  ? 'grid min-w-0 w-full gap-1.5 [grid-template-columns:minmax(0,1fr)] sm:grid-cols-2 [min-width:0]'
+                  : 'flex w-full min-w-0 flex-wrap items-center justify-end gap-2',
+              )}
+            >
+              {isPanel ? (
+                <>
+                  <AddSpaceButton
+                    space={rootSpace}
+                    allSpaces={allSpaces}
+                    lang={lang}
+                    size="sm"
+                    className="w-full min-w-0"
+                  />
+                  <Link href={rootVisitSpacePath} className="min-w-0">
+                    <Button
+                      colorVariant="neutral"
+                      variant="outline"
+                      size="sm"
+                      disabled={rootSpace.id === entrySpaceId}
+                      className="w-full"
+                    >
+                      {t('visibleSpaces.visitSpace')}
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <AddSpaceButton
+                    space={rootSpace}
+                    allSpaces={allSpaces}
+                    lang={lang}
+                  />
+                  <Link href={rootVisitSpacePath} className="w-full sm:w-auto">
+                    <Button
+                      colorVariant="neutral"
+                      variant="outline"
+                      size="default"
+                      disabled={rootSpace.id === entrySpaceId}
+                      className="w-full sm:w-auto"
+                    >
+                      {t('visibleSpaces.visitSpace')}
+                    </Button>
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+        </Card>
         {filteredSpaces.map((space) => {
           const nestedPath = buildNestedPath(space);
-          const createSpacePath = getCreateSpacePath(space.id, space.slug);
           const visitSpacePath = space.slug
             ? getDhoPathAgreements(lang, space.slug)
             : '#';
 
           return (
-            <Card key={space.id} className="p-4">
-              <div className="flex flex-col md:flex-row md:items-center gap-4">
-                <div className="flex items-center gap-4 flex-1 min-w-0">
-                  <Avatar className="w-12 h-12 flex-shrink-0">
+            <Card
+              key={space.id}
+              className={cn('border-border/60 p-0 shadow-sm', isPanel && 'p-0')}
+            >
+              <div
+                className={cn(
+                  'p-2.5',
+                  isPanel
+                    ? 'flex flex-col gap-2.5'
+                    : 'flex flex-col gap-4 md:flex-row md:items-center',
+                )}
+              >
+                <div
+                  className={cn(
+                    'flex min-w-0',
+                    isPanel
+                      ? 'w-full items-start gap-2.5'
+                      : 'min-w-0 flex-1 items-center gap-4',
+                  )}
+                >
+                  <Avatar
+                    className={cn(
+                      'flex-shrink-0',
+                      isPanel ? 'h-9 w-9' : 'h-12 w-12',
+                    )}
+                  >
                     <AvatarImage
                       src={space.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE}
                       alt={`${space.name} logo`}
                     />
                   </Avatar>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="text-base font-medium text-foreground mb-1">
+                  <div
+                    className="min-w-0 flex-1 [overflow-wrap:anywhere]"
+                    style={{ minWidth: 0 }}
+                  >
+                    <p
+                      className={cn(
+                        'font-medium leading-snug text-foreground',
+                        isPanel ? 'text-0 sm:text-1' : 'mb-1 text-base',
+                      )}
+                    >
                       {space.name}
-                    </div>
+                    </p>
                     <Badge
                       variant="outline"
                       size={1}
                       colorVariant="neutral"
-                      className="w-fit"
+                      className="mt-1 w-fit max-w-full whitespace-normal break-words text-0"
                     >
                       {nestedPath}
                     </Badge>
                   </div>
                 </div>
-
-                <div className="flex gap-2 flex-shrink-0 md:flex-shrink-0">
-                  <AddSpaceButton
-                    space={space}
-                    allSpaces={allSpaces}
-                    lang={lang}
-                  />
-                  <Link href={visitSpacePath} className="flex-1 md:flex-none">
-                    <Button
-                      colorVariant="neutral"
-                      variant="outline"
-                      size="default"
-                      disabled={space.id === entrySpaceId}
-                      className="w-full md:w-auto"
-                    >
-                      {t('visibleSpaces.visitSpace')}
-                    </Button>
-                  </Link>
+                {isPanel ? null : <Separator className="my-1" />}
+                <div
+                  className={cn(
+                    'w-full min-w-0',
+                    isPanel
+                      ? 'mt-0.5 flex w-full min-w-0 flex-col gap-1.5'
+                      : 'flex w-full flex-wrap items-center justify-end gap-2',
+                  )}
+                >
+                  {!isPanel && (
+                    <>
+                      <AddSpaceButton
+                        space={space}
+                        allSpaces={allSpaces}
+                        lang={lang}
+                      />
+                      <Link href={visitSpacePath} className="w-full sm:w-auto">
+                        <Button
+                          colorVariant="neutral"
+                          variant="outline"
+                          size="default"
+                          disabled={space.id === entrySpaceId}
+                          className="w-full sm:w-auto"
+                        >
+                          {t('visibleSpaces.visitSpace')}
+                        </Button>
+                      </Link>
+                    </>
+                  )}
+                  {isPanel && (
+                    <div className="grid min-w-0 w-full gap-1.5 [grid-template-columns:minmax(0,1fr)] sm:grid-cols-2 [min-width:0]">
+                      <AddSpaceButton
+                        space={space}
+                        allSpaces={allSpaces}
+                        lang={lang}
+                        size="sm"
+                        className="w-full min-w-0 justify-center sm:min-w-0"
+                      />
+                      <Link
+                        href={visitSpacePath}
+                        className="w-full min-w-0 sm:min-w-0"
+                      >
+                        <Button
+                          colorVariant="neutral"
+                          variant="outline"
+                          size="sm"
+                          disabled={space.id === entrySpaceId}
+                          className="w-full min-w-0 justify-center sm:min-w-0"
+                        >
+                          {t('visibleSpaces.visitSpace')}
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
                 </div>
               </div>
             </Card>
           );
         })}
-      </div>
 
-      {filteredSpaces.length === 0 && (
-        <div className="text-center text-neutral-11 py-8">
-          {t('visibleSpaces.noSpacesFound')}
-        </div>
-      )}
+        {filteredSpaces.length === 0 && (
+          <div className="text-center text-0 text-neutral-11">
+            {t('visibleSpaces.noSpacesFound')}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -81,8 +81,12 @@ export function SpaceVisualization({
     const measure = () => {
       const w = el.clientWidth;
       const h = el.clientHeight;
-      const inner = h > 0 ? Math.min(w, h) : w;
-      const s = Math.round(Math.max(320, Math.min(1200, inner)));
+      if (w <= 0) return;
+      // In flex layouts `clientHeight` can be 0 on the first pass; use width so the
+      // first paint matches the square map region, then correct when height arrives.
+      const hEff = h > 0 ? h : w;
+      const inner = Math.min(w, hEff);
+      const s = Math.round(Math.max(280, Math.min(1200, inner)));
       setCanvasSize(s);
     };
     measure();
@@ -694,8 +698,7 @@ export function SpaceVisualization({
     >
       <svg
         ref={svgRef}
-        className="h-full w-full max-w-full"
-        style={{ minHeight: canvasSize }}
+        className="block h-full w-full min-h-0 max-h-full max-w-full"
         role="img"
         aria-label="Space hierarchy visualization"
       />
