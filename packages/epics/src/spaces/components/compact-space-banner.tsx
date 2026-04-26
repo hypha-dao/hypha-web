@@ -57,6 +57,16 @@ type CompactSpaceBannerCommon = {
   /** Localized accessible name for the description region (screen readers). */
   descriptionLabel: string;
   footerTrailing?: React.ReactNode;
+  /**
+   * Empty `div` rendered after `footerTrailing` in the banner footer (right group).
+   * DHO portaled join / create actions mount here so they sit beside subscription badges
+   * instead of below the card.
+   */
+  /**
+   * When set, a host `div` is reserved in the footer (after badges) for portaled DHO actions.
+   * Omitted on non-DHO uses.
+   */
+  actionsPortalHostRef?: React.Ref<HTMLDivElement | null> | null;
   className?: string;
 };
 
@@ -97,6 +107,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
     defaultLeadImageSrc,
     descriptionLabel,
     footerTrailing,
+    actionsPortalHostRef,
     className,
   } = props;
   const showSpaceStats = isSpaceWithStats(props);
@@ -285,7 +296,10 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
         ) : null}
 
         {/* Hairline + metadata: one flex item so gap-5 does not double-space above the strip */}
-        {footerLeading || showSpaceStats || footerTrailing ? (
+        {footerLeading ||
+        showSpaceStats ||
+        footerTrailing ||
+        actionsPortalHostRef ? (
           <div className="flex flex-col">
             <div
               className="h-px w-full shrink-0 bg-white/12"
@@ -328,9 +342,22 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
                 ) : null}
               </div>
 
-              {footerTrailing ? (
-                <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end [&_a]:inline-flex [&_a]:items-center [&_div]:inline-flex [&_div]:items-center">
+              {footerTrailing || actionsPortalHostRef ? (
+                <div
+                  className={cn(
+                    'flex min-w-0 flex-1 flex-wrap items-center justify-start gap-2',
+                    'sm:justify-end sm:gap-2.5',
+                    '[&_a]:inline-flex [&_a]:items-center [&_div]:inline-flex [&_div]:items-center',
+                  )}
+                >
                   {footerTrailing}
+                  {actionsPortalHostRef ? (
+                    <div
+                      ref={actionsPortalHostRef}
+                      className="flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-2"
+                      data-dho-banner-actions-host=""
+                    />
+                  ) : null}
                 </div>
               ) : null}
             </div>
