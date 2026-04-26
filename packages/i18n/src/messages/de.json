@@ -46,7 +46,7 @@
     "Coherence": "Kohärenz",
     "Signals": "Signale",
     "Artifact": "Artefakt",
-    "Wiki": "Speicher",
+    "Wiki": "Memory",
     "uploadLeadImage": {
       "cropTitle": "Ein Bild hochladen",
       "cropDescription": "Passen Sie den Ausschnitt an und speichern Sie. Ziehen Sie zum Verschieben und zoomen Sie, um den Bannerbereich auszufüllen (JPEG, PNG oder WebP — max. 4 MB).",
@@ -1994,7 +1994,7 @@
     "callPaneResizeSpeakerShare": "Sprecher*in und Bildschirmfreigabe skalieren"
   },
   "CoherenceTab": {
-    "wiki": "Speicher",
+    "wiki": "Memory",
     "artifact": "Artefakt",
     "signals": "Signale",
     "signInToSee": "Bitte melden Sie sich an, um Signale, Artefakte und Gespräche zu sehen",
