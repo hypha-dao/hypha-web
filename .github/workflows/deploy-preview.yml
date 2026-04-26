@@ -3,6 +3,17 @@ name: Deploy Preview
 on:
   pull_request:
   merge_group:
+  workflow_dispatch:
+    inputs:
+      force_preview_deploy:
+        description: 'Force preview deployment even when detect-changes is false'
+        required: true
+        default: true
+        type: boolean
+      pr_number:
+        description: 'PR number used for deterministic preview alias naming'
+        required: false
+        type: string
 
 concurrency:
   group: deploy-preview-${{ github.event.pull_request.number || github.event.merge_group.head_sha || github.ref }}
@@ -62,7 +73,9 @@ jobs:
 
   deploy-preview:
     needs: [detect-changes, check-types, i18n-verify]
-    if: github.event_name == 'pull_request' && needs.detect-changes.outputs.has_preview_deploy_changes == 'true'
+    if: |
+      (github.event_name == 'pull_request' && needs.detect-changes.outputs.has_preview_deploy_changes == 'true') ||
+      (github.event_name == 'workflow_dispatch' && inputs.force_preview_deploy == true)
     runs-on: blacksmith-4vcpu-ubuntu-2404
     env:
       NEON_DATABASE_USERNAME: ${{ secrets.DB_USER_NAME }}
@@ -74,7 +87,8 @@ jobs:
       PRIVATE_KEY: ${{ secrets.EVM_SC_OWNER_PRIVATE_KEY }}
       DEFAULT_DB_AUTHENTICATED_URL: ${{ secrets.POSTGRES_AUTHENTICATED_URL }}
       DEFAULT_DB_ANONYMOUS_URL: ${{ secrets.POSTGRES_ANONYMOUS_URL }}
-      PR_OR_QUEUE_HEAD: ${{ github.event.pull_request.number || github.event.merge_group.head_sha }}
+      PR_OR_QUEUE_HEAD: ${{ github.event.pull_request.number || github.event.merge_group.head_sha || inputs.pr_number || github.run_id }}
+      PREVIEW_ALIAS_SUFFIX: ${{ github.event.pull_request.number || inputs.pr_number || github.run_id }}
 
     steps:
       - uses: actions/checkout@v4
@@ -145,6 +159,61 @@ jobs:
         env:
           BRANCH_DB_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}
         run: echo preview_url=$(vercel deploy --prebuilt --token=${{ env.VERCEL_TOKEN }} --env BRANCH_DB_URL=${{ env.BRANCH_DB_URL }}) >> $GITHUB_OUTPUT
+
+      - name: Alias preview to deterministic PR domain
+        id: alias
+        env:
+          VERCEL_TOKEN: ${{ env.VERCEL_TOKEN }}
+          PREVIEW_ALIAS_SUFFIX: ${{ env.PREVIEW_ALIAS_SUFFIX }}
+          PREVIEW_URL: ${{ steps.deploy.outputs.preview_url }}
+        run: |
+          set -euo pipefail
+          PREVIEW_ALIAS_DOMAIN="pr-${PREVIEW_ALIAS_SUFFIX}.preview-app.hypha.earth"
+          npx --yes vercel@52 alias set "${PREVIEW_URL}" "${PREVIEW_ALIAS_DOMAIN}" --token="${VERCEL_TOKEN}"
+          echo "preview_custom_url=https://${PREVIEW_ALIAS_DOMAIN}" >> "$GITHUB_OUTPUT"
+
+      - name: Comment custom preview URL on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          PREVIEW_CUSTOM_URL: ${{ steps.alias.outputs.preview_custom_url }}
+        with:
+          script: |
+            const marker = '<!-- custom-preview-domain -->';
+            const body = `${marker}
+            🔗 Custom preview URL: ${process.env.PREVIEW_CUSTOM_URL}`;
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+
+            const existing = comments.find(
+              (comment) =>
+                comment.user?.type === 'Bot' &&
+                comment.body?.includes(marker),
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
 
   main:
     needs: [detect-changes]
