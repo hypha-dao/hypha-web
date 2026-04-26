@@ -11,7 +11,6 @@
     "@hypha-platform/config-typescript": "workspace:*"
   },
   "dependencies": {
-    "@hypha-platform/cookie": "workspace:*",
     "flags": "^4.0.5"
   },
   "peerDependencies": {

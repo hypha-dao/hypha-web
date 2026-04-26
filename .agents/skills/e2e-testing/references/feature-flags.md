@@ -23,7 +23,6 @@ Canonical source: `packages/cookie/src/constants.ts`
 | `HYPHA_ENABLE_HUMAN_CHAT` | `NEXT_PUBLIC_ENABLE_HUMAN_CHAT` | Human Chat right panel |
 | `HYPHA_ENABLE_COHERENCE` | `NEXT_PUBLIC_ENABLE_COHERENCE` | Coherence tab (signals / conversations) |
 | `HYPHA_ENABLE_AI_CHAT` | `NEXT_PUBLIC_ENABLE_AI_CHAT` | AI Chat left panel |
-| `HYPHA_AUTH_PROVIDER` | *(none — cookie only)* | Auth provider selection (`web3auth`) |
 | `HYPHA_SHOW_LANGUAGE_SELECT` | *(none — cookie only)* | i18n language selector |
 
 ## Why Cookies Alone Don't Work in E2E
