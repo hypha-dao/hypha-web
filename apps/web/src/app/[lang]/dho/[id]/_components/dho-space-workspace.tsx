@@ -8,6 +8,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   FileCheck2,
+  Gift,
   Library,
   LayoutGrid,
   Radio,
@@ -31,6 +32,7 @@ import { getDhoPathCoherence } from '../@tab/coherence/constants';
 import { getDhoPathMembers } from '../@tab/members/constants';
 import { getDhoPathSpaces } from '../@tab/spaces/constants';
 import { getDhoPathTreasury } from '../@tab/treasury/constants';
+import { getDhoPathRewards } from '../@tab/rewards/constants';
 import { cn } from '@hypha-platform/ui-utils';
 import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
 import { cleanPath } from './clean-path';
@@ -87,6 +89,12 @@ function useNavItems(
         href: getDhoPathTreasury(lang, spaceSlug),
         label: t('Treasury'),
         icon: Vault,
+      },
+      {
+        name: 'rewards',
+        href: getDhoPathRewards(lang, spaceSlug),
+        label: t('Rewards'),
+        icon: Gift,
       },
       ...(spaceMemoryEnabled
         ? [
