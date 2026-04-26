@@ -139,6 +139,9 @@
   },
   "DHO": {
     "Dashboard": "DHO Übersicht",
+    "spaceChrome": {
+      "scrollToBanner": "Space-Banner anzeigen"
+    },
     "actionButtons": {
       "spaceSettings": "Space-Einstellungen",
       "create": "Erstellen",
