@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import type { FC, ReactNode } from 'react';
 import { Text } from '@radix-ui/themes';
 import { Input } from '@hypha-platform/ui';
 import { SearchIcon } from 'lucide-react';
@@ -15,9 +15,11 @@ type SectionFilterProps = {
   hasSearch?: boolean;
   searchPlaceholder?: string;
   inlineLabel?: boolean;
+  /** Optional mark before the label (e.g. section chevrons). */
+  leadingSlot?: ReactNode;
   className?: string;
   onChangeSearch?: (term: string) => void;
-  children?: React.ReactNode;
+  children?: ReactNode;
 };
 
 export const SectionFilter: FC<SectionFilterProps> = ({
@@ -26,27 +28,40 @@ export const SectionFilter: FC<SectionFilterProps> = ({
   hasSearch,
   searchPlaceholder = 'Search',
   inlineLabel = true,
+  leadingSlot,
   className,
   onChangeSearch,
   children,
 }) => {
   return (
-    <div className="flex justify-between items-center w-full gap-4">
+    <div className="flex w-full items-center justify-between gap-3 sm:gap-4">
       {inlineLabel ? (
         <>
-          <Text className="text-4 capitalize text-nowrap">
-            {label} {count ? <>| {count}</> : null}
-          </Text>
+          <div className="flex min-w-0 shrink-0 items-center gap-2">
+            {leadingSlot ? (
+              <span className="flex shrink-0 text-muted-foreground [&_svg]:size-4">
+                {leadingSlot}
+              </span>
+            ) : null}
+            <Text className="text-4 shrink-0 capitalize text-nowrap">
+              {label} {count ? <>| {count}</> : null}
+            </Text>
+          </div>
           {hasSearch ? (
             <Input
-              className="w-full"
+              className="min-w-0 flex-1 basis-0 sm:max-w-md lg:max-w-lg"
               placeholder={searchPlaceholder}
               leftIcon={<SearchIcon size="16px" />}
               onChange={(e) => onChangeSearch?.(e.target.value)}
             />
           ) : null}
           {children && (
-            <div className={cn('flex items-center text-nowrap', className)}>
+            <div
+              className={cn(
+                'flex shrink-0 items-center text-nowrap',
+                className,
+              )}
+            >
               {children}
             </div>
           )}
