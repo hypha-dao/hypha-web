@@ -140,7 +140,12 @@ function NavRow({
     'outline-none ring-offset-background transition-colors',
     'focus-visible:ring-2 focus-visible:ring-ring',
     isActive
-      ? 'bg-accent/15 text-foreground [&_svg]:opacity-100'
+      ? [
+          'text-foreground [&_svg]:opacity-100',
+          'bg-[color-mix(in_oklab,var(--space-accent,var(--color-accent-9))_18%,var(--card))]',
+          'ring-1 ring-inset ring-[color:color-mix(in_srgb,var(--space-accent,var(--color-accent-9))_38%,transparent)]',
+          '[&_svg]:text-[var(--space-accent,var(--color-accent-9))]',
+        ].join(' ')
       : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
     NAV_MOTION,
   );
