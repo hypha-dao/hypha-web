@@ -2,7 +2,6 @@ import 'server-only';
 
 import { PrivyClient } from '@privy-io/node';
 import { determineEnvironment } from '../../coherence/lib/determine-environment';
-import { getDecoratedPrivyId } from '../../coherence/lib/get-decorated-privy-id';
 import { MatrixSharedSecret } from '../../coherence/lib/matrix-shared-secret';
 import { decryptMatrixToken } from '../../common/server/decrypt-matrix-token';
 import { getLinkByPrivyUserId } from '../../matrix/server/web3/get-link-by-privy-user-id';
@@ -37,10 +36,9 @@ export async function resolveUserMatrixAccessTokenForOrgMemory(
     return null;
   }
 
-  const decoratedPrivyUserId = getDecoratedPrivyId(privyUserId, environment);
   try {
     const existing = await getLinkByPrivyUserId({
-      privyUserId: decoratedPrivyUserId,
+      privyUserId,
       environment,
     });
     if (!existing?.encryptedAccessToken) {

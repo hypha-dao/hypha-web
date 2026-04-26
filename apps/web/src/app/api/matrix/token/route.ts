@@ -7,7 +7,6 @@ import {
   getLinkByPrivyUserId,
   getAdminUserNameAction,
   MatrixSharedSecret,
-  MatrixUserLink,
   updateEncryptedAccessTokenAction,
 } from '@hypha-platform/core/server';
 import { PrivyClient } from '@privy-io/node';
@@ -196,7 +195,7 @@ export async function GET(request: NextRequest) {
     const decoratedPrivyUserId = getDecoratedPrivyId(privyUserId, environment);
 
     const existing = await getLinkByPrivyUserId({
-      privyUserId: decoratedPrivyUserId,
+      privyUserId,
       environment,
     });
     if (existing) {
@@ -238,7 +237,7 @@ export async function GET(request: NextRequest) {
 
             await updateEncryptedAccessTokenAction(
               {
-                privyUserId: decoratedPrivyUserId,
+                privyUserId,
                 environment,
                 encryptedAccessToken,
                 deviceId,
@@ -304,7 +303,7 @@ export async function GET(request: NextRequest) {
             encryptedAccessToken,
             deviceId,
             matrixUserId: userId,
-            privyUserId: decoratedPrivyUserId,
+            privyUserId,
           },
           { authToken },
         );
@@ -329,7 +328,7 @@ export async function GET(request: NextRequest) {
         encryptedAccessToken,
         deviceId,
         matrixUserId,
-        privyUserId: decoratedPrivyUserId,
+        privyUserId,
       },
       { authToken },
     );

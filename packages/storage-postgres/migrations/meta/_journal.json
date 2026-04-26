@@ -330,6 +330,13 @@
       "when": 1775200000000,
       "tag": "0046_space_chat_room_id",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1775200100000,
+      "tag": "0047_canonical_matrix_privy_id",
+      "breakpoints": true
     }
   ]
 }
