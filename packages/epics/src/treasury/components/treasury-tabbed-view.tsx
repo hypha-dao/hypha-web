@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import { ChevronsRight } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import { SectionFilter } from '@hypha-platform/ui/server';
 import { AssetsSection } from './assets/assets-section';
@@ -28,13 +27,6 @@ export function TreasuryTabbedView({
 
   const basePath = `/${lang}/dho/${spaceSlug}/treasury`;
 
-  const chevronMark = (
-    <>
-      <ChevronsRight className="h-4 w-4" aria-hidden />
-      <ChevronsRight className="-ml-2.5 h-4 w-4" aria-hidden />
-    </>
-  );
-
   return (
     <div className="flex flex-col gap-4 py-4" data-testid="treasury-tab-panels">
       <Tabs
@@ -48,7 +40,6 @@ export function TreasuryTabbedView({
         >
           <SectionFilter
             label={tCommon('Treasury')}
-            leadingSlot={chevronMark}
             className="min-w-0 flex-wrap justify-end gap-2 sm:flex-nowrap sm:justify-end"
           >
             <TabsList

@@ -17,7 +17,7 @@ import { Locale } from '@hypha-platform/i18n';
 import Link from 'next/link';
 import React from 'react';
 import { useTranslations } from 'next-intl';
-import { ChevronsRight, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 
 type SignalSectionProps = {
@@ -64,13 +64,6 @@ export const SignalSection: FC<SignalSectionProps> = ({
   /** Match `SignalGrid`: 1 col mobile, 3 cols sm+; two full rows while fetching. */
   const initialSkeletonCount = Math.max(6, firstPageSize);
 
-  const chevronMark = (
-    <>
-      <ChevronsRight className="h-4 w-4" aria-hidden />
-      <ChevronsRight className="-ml-2.5 h-4 w-4" aria-hidden />
-    </>
-  );
-
   const createLabel = t('newSignal');
 
   return (
@@ -82,7 +75,6 @@ export const SignalSection: FC<SignalSectionProps> = ({
         searchPlaceholder={t('searchSignals')}
         onChangeSearch={onUpdateSearch}
         inlineLabel={true}
-        leadingSlot={chevronMark}
         className="min-w-0 flex-wrap justify-end gap-2 sm:flex-nowrap sm:justify-end"
       >
         <Button

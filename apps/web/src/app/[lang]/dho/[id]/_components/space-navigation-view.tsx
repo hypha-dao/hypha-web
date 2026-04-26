@@ -19,7 +19,6 @@ import {
 import { SectionFilter } from '@hypha-platform/ui/server';
 import { cn } from '@hypha-platform/ui-utils';
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { ChevronsRight } from 'lucide-react';
 import type { VisibleSpace } from './types';
 import { useFilterSpacesListWithDiscoverability } from '@hypha-platform/epics';
 import { useTranslations } from 'next-intl';
@@ -169,13 +168,6 @@ export const SpaceNavigationView = ({
     previousSpacesRef.current = '';
   }, [currentSpaceId, allSpacesLength]);
 
-  const chevronMark = (
-    <>
-      <ChevronsRight className="h-4 w-4" aria-hidden />
-      <ChevronsRight className="-ml-2.5 h-4 w-4" aria-hidden />
-    </>
-  );
-
   const showSpacesPanel =
     !isLoading &&
     hierarchyData &&
@@ -204,7 +196,6 @@ export const SpaceNavigationView = ({
             ) : (
               <SectionFilter
                 label={t('title')}
-                leadingSlot={chevronMark}
                 className="min-w-0 flex-wrap justify-end gap-2 sm:flex-nowrap sm:justify-end"
               >
                 <TabsList
