@@ -1,12 +1,8 @@
 import { Locale } from '@hypha-platform/i18n';
 import {
-  AssetsSection,
-  TransactionsSection,
-  VaultsSection,
   SpaceTabAccessWrapper,
-  SpacePendingRewardsSection,
+  TreasuryTabbedView,
 } from '@hypha-platform/epics';
-import { getDhoPathTreasury } from './constants';
 import { findSpaceBySlug } from '@hypha-platform/core/server';
 import { db } from '@hypha-platform/storage-postgres';
 
@@ -19,7 +15,6 @@ export default async function TreasuryPage(props: PageProps) {
 
   const { lang, id } = params;
 
-  const basePath = getDhoPathTreasury(lang, id);
   const spaceFromDb = await findSpaceBySlug({ slug: id }, { db });
 
   return (
@@ -27,17 +22,15 @@ export default async function TreasuryPage(props: PageProps) {
       spaceId={spaceFromDb?.web3SpaceId as number}
       spaceSlug={id}
     >
-      <div className="flex flex-col gap-6 py-4">
-        <SpacePendingRewardsSection
-          web3SpaceId={spaceFromDb?.web3SpaceId as number}
-        />
-        <VaultsSection />
-        <AssetsSection
-          basePath={basePath}
-          web3SpaceId={spaceFromDb?.web3SpaceId as number}
-        />
-        <TransactionsSection spaceSlug={id} />
-      </div>
+      <TreasuryTabbedView
+        lang={lang}
+        spaceSlug={id}
+        web3SpaceId={
+          typeof spaceFromDb?.web3SpaceId === 'number'
+            ? spaceFromDb.web3SpaceId
+            : undefined
+        }
+      />
     </SpaceTabAccessWrapper>
   );
 }
