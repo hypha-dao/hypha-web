@@ -80,13 +80,9 @@ export const flagDefinitionsForDiscovery = {
 };
 
 export async function getShowLanguageSelect(): Promise<boolean> {
-  const overrides = await getVercelToolbarFlagOverrides();
-  const o = readBooleanOverride(overrides, 'show-language-select');
-  if (o !== undefined) return o;
-
-  return (
-    isPreviewEnvironment() ||
-    isEnabled(process.env.NEXT_PUBLIC_ENABLE_SHOW_LANGUAGE_SELECT)
+  return getBooleanFlagFromToolbarOrEnv(
+    'show-language-select',
+    process.env.NEXT_PUBLIC_ENABLE_SHOW_LANGUAGE_SELECT,
   );
 }
 
