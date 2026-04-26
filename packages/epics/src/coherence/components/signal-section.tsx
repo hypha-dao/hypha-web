@@ -116,7 +116,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
           {Array.from({ length: initialSkeletonCount }).map((_, i) => (
             <div
               key={`signal-skeleton-${i}`}
-              className="flex min-h-[16rem] flex-col overflow-hidden rounded-xl border border-border/80 bg-card"
+              className="flex min-h-[16rem] flex-col overflow-hidden rounded-lg border border-border/80 bg-card"
             >
               <Skeleton
                 className="h-[5.25rem] w-full rounded-none"
