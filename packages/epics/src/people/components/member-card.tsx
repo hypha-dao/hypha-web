@@ -124,7 +124,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
       date: format.dateTime(new Date(joinEvent.createdAt), JOIN_DATE_FORMAT),
     });
 
-  const metaForTitle = [location?.trim(), joinLine].filter(Boolean).join(' · ');
+  const metaForTitle = [joinLine, location?.trim()].filter(Boolean).join(' · ');
 
   const heroVisual = (
     <div className="relative isolate overflow-hidden">
@@ -210,18 +210,8 @@ export const MemberCard: React.FC<MemberCardProps> = ({
           className="line-clamp-2 min-h-8 text-1 text-muted-foreground"
           title={metaForTitle || undefined}
         >
-          {location?.trim() || joinLine ? (
+          {joinLine || location?.trim() ? (
             <span>
-              {location?.trim() ? (
-                <span className="inline" title={location}>
-                  <SewingPinFilledIcon
-                    className="mr-0.5 inline h-3 w-3 -translate-y-0.5 opacity-80"
-                    aria-hidden
-                  />
-                  {location}
-                </span>
-              ) : null}
-              {location?.trim() && joinLine ? ' · ' : null}
               {joinLine ? (
                 <span className="inline" title={joinLine}>
                   <Calendar
@@ -229,6 +219,16 @@ export const MemberCard: React.FC<MemberCardProps> = ({
                     aria-hidden
                   />
                   {joinLine}
+                </span>
+              ) : null}
+              {joinLine && location?.trim() ? ' · ' : null}
+              {location?.trim() ? (
+                <span className="inline" title={location}>
+                  <SewingPinFilledIcon
+                    className="mr-0.5 inline h-3 w-3 -translate-y-0.5 opacity-80"
+                    aria-hidden
+                  />
+                  {location}
                 </span>
               ) : null}
             </span>
