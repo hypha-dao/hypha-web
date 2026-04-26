@@ -1,3 +1,5 @@
+'use client';
+
 import * as React from 'react';
 import { LinkIcon } from '../../common/link-icon';
 import { LinkLabel } from '../../common/link-label';
@@ -58,13 +60,9 @@ type CompactSpaceBannerCommon = {
   descriptionLabel: string;
   footerTrailing?: React.ReactNode;
   /**
-   * Empty `div` rendered after `footerTrailing` in the banner footer (right group).
-   * DHO portaled join / create actions mount here so they sit beside subscription badges
-   * instead of below the card.
-   */
-  /**
-   * When set, a host `div` is reserved in the footer (after badges) for portaled DHO actions.
-   * Omitted on non-DHO uses.
+   * When set, a host is reserved in the **footer** for portaled DHO join/create actions
+   * (`DhoStickySpaceChrome`). The banner is a client module so the ref is applied; server-only
+   * RSCs cannot receive refs from `cloneElement`—they must be client.
    */
   actionsPortalHostRef?: React.Ref<HTMLDivElement | null> | null;
   className?: string;
@@ -345,8 +343,9 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
               {footerTrailing || actionsPortalHostRef ? (
                 <div
                   className={cn(
-                    'flex min-w-0 flex-1 flex-wrap items-center justify-start gap-2',
-                    'sm:justify-end sm:gap-2.5',
+                    'flex min-w-0 flex-1 flex-col items-stretch justify-end gap-2',
+                    'sm:max-w-[min(100%,50rem)] sm:flex-initial sm:flex-row sm:flex-nowrap',
+                    'sm:items-center sm:justify-end sm:gap-2.5',
                     '[&_a]:inline-flex [&_a]:items-center [&_div]:inline-flex [&_div]:items-center',
                   )}
                 >
@@ -354,7 +353,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
                   {actionsPortalHostRef ? (
                     <div
                       ref={actionsPortalHostRef}
-                      className="flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-2"
+                      className="flex min-w-0 w-full shrink-0 flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap sm:gap-2.5"
                       data-dho-banner-actions-host=""
                     />
                   ) : null}
