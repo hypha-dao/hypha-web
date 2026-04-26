@@ -795,7 +795,8 @@
     "Dashboard": "Painel DHO",
     "actionButtons": {
       "spaceSettings": "Configurações de espaço",
-      "create": "Criar"
+      "create": "Criar",
+      "createProposal": "Criar proposta"
     },
     "nestedSpacesButton": {
       "label": "Navegação Espacial",
@@ -810,7 +811,8 @@
     "closeMenu": "Fechar",
     "spaceMapLoading": "Carregando mapa de espaços",
     "expandNavLabels": "Mostrar nomes das seções",
-    "collapseNavLabels": "Ocultar nomes das seções"
+    "collapseNavLabels": "Ocultar nomes das seções",
+    "openSpaceSettings": "Definições do espaço"
   },
   "SpaceSettingsAction": {
     "title": "Configurações de espaço",

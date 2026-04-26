@@ -140,7 +140,8 @@
     "Dashboard": "DHO Übersicht",
     "actionButtons": {
       "spaceSettings": "Space-Einstellungen",
-      "create": "Erstellen"
+      "create": "Erstellen",
+      "createProposal": "Vorschlag erstellen"
     },
     "nestedSpacesButton": {
       "label": "Space-Navigation",
@@ -155,7 +156,8 @@
     "closeMenu": "Schließen",
     "spaceMapLoading": "Space-Karte wird geladen",
     "expandNavLabels": "Bereichsnamen anzeigen",
-    "collapseNavLabels": "Bereichsnamen ausblenden"
+    "collapseNavLabels": "Bereichsnamen ausblenden",
+    "openSpaceSettings": "Space-Einstellungen"
   },
   "SpaceSettingsAction": {
     "title": "Space-Einstellungen",

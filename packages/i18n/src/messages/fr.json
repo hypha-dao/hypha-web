@@ -140,7 +140,8 @@
     "Dashboard": "Tableau de bord DHO",
     "actionButtons": {
       "spaceSettings": "Paramètres de l'espace",
-      "create": "Créer"
+      "create": "Créer",
+      "createProposal": "Créer une proposition"
     },
     "nestedSpacesButton": {
       "label": "Navigation des espaces",
@@ -155,7 +156,8 @@
     "closeMenu": "Fermer",
     "spaceMapLoading": "Chargement de la carte des espaces",
     "expandNavLabels": "Afficher les noms des sections",
-    "collapseNavLabels": "Masquer les noms des sections"
+    "collapseNavLabels": "Masquer les noms des sections",
+    "openSpaceSettings": "Paramètres de l'espace"
   },
   "SpaceSettingsAction": {
     "title": "Paramètres de l'espace",
