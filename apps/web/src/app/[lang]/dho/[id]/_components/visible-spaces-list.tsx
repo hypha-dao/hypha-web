@@ -209,7 +209,7 @@ export function VisibleSpacesList({
         className={cn(
           'min-h-0 w-full',
           isPanel
-            ? 'flex flex-1 flex-col gap-2.5 overflow-y-auto overflow-x-hidden pr-0.5 pt-2.5 [scrollbar-gutter:stable] narrow-scrollbar'
+            ? 'flex flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden pr-0.5 pt-2 [scrollbar-gutter:stable] narrow-scrollbar'
             : 'flex flex-col gap-3',
         )}
       >
@@ -218,24 +218,23 @@ export function VisibleSpacesList({
         >
           <div
             className={cn(
-              'p-2.5',
               isPanel
-                ? 'flex flex-col gap-2.5 sm:flex-col'
-                : 'flex flex-col gap-4 md:flex-row md:items-center',
+                ? 'flex flex-col gap-2 p-2 sm:flex-row sm:items-center sm:gap-2.5 sm:py-2 sm:pl-2 sm:pr-2.5'
+                : 'flex flex-col gap-4 p-2.5 md:flex-row md:items-center',
             )}
           >
             <div
               className={cn(
                 'flex min-w-0',
                 isPanel
-                  ? 'w-full min-w-0 items-start gap-2.5 sm:min-w-0 sm:max-w-full'
+                  ? 'min-w-0 flex-1 items-center gap-2'
                   : 'min-w-0 flex-1 items-center gap-4',
               )}
             >
               <Avatar
                 className={cn(
                   'flex-shrink-0',
-                  isPanel ? 'h-9 w-9' : 'h-12 w-12',
+                  isPanel ? 'h-8 w-8' : 'h-12 w-12',
                 )}
               >
                 <AvatarImage
@@ -249,8 +248,10 @@ export function VisibleSpacesList({
               >
                 <p
                   className={cn(
-                    'font-medium leading-snug text-foreground',
-                    isPanel ? 'text-0 sm:text-1' : 'mb-1 text-base',
+                    'font-medium text-foreground',
+                    isPanel
+                      ? 'text-0 leading-tight sm:text-1 sm:leading-snug'
+                      : 'mb-1 text-base leading-snug',
                   )}
                 >
                   {rootSpace.name}
@@ -259,7 +260,7 @@ export function VisibleSpacesList({
                   variant="outline"
                   size={1}
                   colorVariant="neutral"
-                  className="mt-1 w-fit max-w-full whitespace-normal break-words text-0"
+                  className="mt-0.5 w-fit max-w-full whitespace-normal break-words text-0"
                 >
                   {rootNestedPath}
                 </Badge>
@@ -269,7 +270,7 @@ export function VisibleSpacesList({
             <div
               className={cn(
                 isPanel
-                  ? 'grid min-w-0 w-full gap-1.5 [grid-template-columns:minmax(0,1fr)] sm:grid-cols-2 [min-width:0]'
+                  ? 'grid w-full min-w-0 shrink-0 gap-1.5 [grid-template-columns:1fr_1fr] [min-width:0] sm:w-auto sm:min-w-[10.5rem]'
                   : 'flex w-full min-w-0 flex-wrap items-center justify-end gap-2',
               )}
             >
@@ -280,7 +281,7 @@ export function VisibleSpacesList({
                     allSpaces={allSpaces}
                     lang={lang}
                     size="sm"
-                    className="w-full min-w-0"
+                    className="h-8 w-full min-w-0 text-0"
                   />
                   <Link href={rootVisitSpacePath} className="min-w-0">
                     <Button
@@ -288,7 +289,7 @@ export function VisibleSpacesList({
                       variant="outline"
                       size="sm"
                       disabled={rootSpace.id === entrySpaceId}
-                      className="w-full"
+                      className="h-8 w-full px-2.5 text-0"
                     >
                       {t('visibleSpaces.visitSpace')}
                     </Button>
@@ -330,24 +331,23 @@ export function VisibleSpacesList({
             >
               <div
                 className={cn(
-                  'p-2.5',
                   isPanel
-                    ? 'flex flex-col gap-2.5'
-                    : 'flex flex-col gap-4 md:flex-row md:items-center',
+                    ? 'flex flex-col gap-2 p-2 sm:flex-row sm:items-center sm:gap-2.5 sm:py-2 sm:pl-2 sm:pr-2.5'
+                    : 'flex flex-col gap-4 p-2.5 md:flex-row md:items-center',
                 )}
               >
                 <div
                   className={cn(
                     'flex min-w-0',
                     isPanel
-                      ? 'w-full items-start gap-2.5'
+                      ? 'min-w-0 flex-1 items-center gap-2'
                       : 'min-w-0 flex-1 items-center gap-4',
                   )}
                 >
                   <Avatar
                     className={cn(
                       'flex-shrink-0',
-                      isPanel ? 'h-9 w-9' : 'h-12 w-12',
+                      isPanel ? 'h-8 w-8' : 'h-12 w-12',
                     )}
                   >
                     <AvatarImage
@@ -362,8 +362,10 @@ export function VisibleSpacesList({
                   >
                     <p
                       className={cn(
-                        'font-medium leading-snug text-foreground',
-                        isPanel ? 'text-0 sm:text-1' : 'mb-1 text-base',
+                        'font-medium text-foreground',
+                        isPanel
+                          ? 'text-0 leading-tight sm:text-1 sm:leading-snug'
+                          : 'mb-1 text-base leading-snug',
                       )}
                     >
                       {space.name}
@@ -372,7 +374,7 @@ export function VisibleSpacesList({
                       variant="outline"
                       size={1}
                       colorVariant="neutral"
-                      className="mt-1 w-fit max-w-full whitespace-normal break-words text-0"
+                      className="mt-0.5 w-fit max-w-full whitespace-normal break-words text-0"
                     >
                       {nestedPath}
                     </Badge>
@@ -383,7 +385,7 @@ export function VisibleSpacesList({
                   className={cn(
                     'w-full min-w-0',
                     isPanel
-                      ? 'mt-0.5 flex w-full min-w-0 flex-col gap-1.5'
+                      ? 'grid w-full min-w-0 gap-1.5 [grid-template-columns:1fr_1fr] [min-width:0] sm:w-auto sm:min-w-[10.5rem] sm:shrink-0'
                       : 'flex w-full flex-wrap items-center justify-end gap-2',
                   )}
                 >
@@ -408,13 +410,13 @@ export function VisibleSpacesList({
                     </>
                   )}
                   {isPanel && (
-                    <div className="grid min-w-0 w-full gap-1.5 [grid-template-columns:minmax(0,1fr)] sm:grid-cols-2 [min-width:0]">
+                    <>
                       <AddSpaceButton
                         space={space}
                         allSpaces={allSpaces}
                         lang={lang}
                         size="sm"
-                        className="w-full min-w-0 justify-center sm:min-w-0"
+                        className="h-8 w-full min-w-0 text-0"
                       />
                       <Link
                         href={visitSpacePath}
@@ -425,12 +427,12 @@ export function VisibleSpacesList({
                           variant="outline"
                           size="sm"
                           disabled={space.id === entrySpaceId}
-                          className="w-full min-w-0 justify-center sm:min-w-0"
+                          className="h-8 w-full min-w-0 justify-center px-2.5 text-0"
                         >
                           {t('visibleSpaces.visitSpace')}
                         </Button>
                       </Link>
-                    </div>
+                    </>
                   )}
                 </div>
               </div>
