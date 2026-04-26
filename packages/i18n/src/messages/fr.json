@@ -139,9 +139,6 @@
   },
   "DHO": {
     "Dashboard": "Tableau de bord DHO",
-    "spaceChrome": {
-      "scrollToBanner": "Afficher la bannière de l’espace"
-    },
     "actionButtons": {
       "spaceSettings": "Paramètres de l'espace",
       "create": "Créer",
