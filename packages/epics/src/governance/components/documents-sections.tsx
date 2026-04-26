@@ -1,21 +1,31 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Plus } from 'lucide-react';
 import { DocumentGridContainer } from './document-grid.container';
 import { useSpaceDocumentsWithStatuses } from '../hooks/use-space-documents-with-statuses';
 import { Document, Order } from '@hypha-platform/core/client';
+import { useIsDelegate } from '@hypha-platform/core/client';
+import { useAuthentication } from '@hypha-platform/authentication';
 import { useTranslations } from 'next-intl';
-import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
+import { Button, Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
 import { Text } from '@radix-ui/themes';
 import { useDocumentsSection } from '../hooks/use-documents-section';
 import { DirectionType } from '@hypha-platform/core/client';
+import { useSpaceMember } from '../../spaces/hooks/use-space-member';
+import { cleanPath } from '../../spaces/utils/cleanPath';
 import {
   Empty,
   DhoTabListStack,
   DhoTabPage,
   DhoTabToolbarStack,
 } from '../../common';
+
+/** Parallel-route segment for the create (proposal) chooser; matches `apps/web` @web/app/constants. */
+const PATH_SELECT_CREATE_ACTION = '/select-create-action' as const;
 
 type DocumentsSectionsProps = {
   lang: string;
@@ -37,6 +47,23 @@ export function DocumentsSections({
 }: DocumentsSectionsProps) {
   const t = useTranslations('AgreementsTab');
   const tCommon = useTranslations('Common');
+  const tDho = useTranslations('DHO');
+  const pathname = usePathname();
+  const { isAuthenticated } = useAuthentication();
+  const { isMember } = useSpaceMember({ spaceId: web3SpaceId });
+  const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId });
+
+  const createDisabled = !isAuthenticated || (!isMember && !isDelegate);
+  const createTooltip = !isAuthenticated
+    ? tCommon('signIn')
+    : !isMember && !isDelegate
+    ? tCommon('joinSpaceToUse')
+    : '';
+  const createHref = !createDisabled
+    ? `${cleanPath(pathname)}${PATH_SELECT_CREATE_ACTION}`
+    : '';
+  const createLabel = tDho('actionButtons.createProposal');
+
   const { documents, isLoading } = useSpaceDocumentsWithStatuses({
     spaceId: web3SpaceId,
     spaceSlug,
@@ -77,6 +104,45 @@ export function DocumentsSections({
             onChangeSearch={onUpdateSearch}
             className="min-w-0 flex-wrap justify-end gap-2 sm:flex-nowrap sm:justify-end"
           >
+            {createDisabled || !createHref ? (
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                colorVariant="accent"
+                disabled
+                title={createTooltip || createLabel}
+                aria-label={createLabel}
+                data-testid="agreements-section-create"
+              >
+                <Plus
+                  className="h-[1.125rem] w-[1.125rem]"
+                  strokeWidth={2.25}
+                  aria-hidden
+                />
+              </Button>
+            ) : (
+              <Button
+                asChild
+                size="icon"
+                variant="outline"
+                colorVariant="accent"
+                data-testid="agreements-section-create"
+              >
+                <Link
+                  href={createHref}
+                  scroll={false}
+                  title={createLabel}
+                  aria-label={createLabel}
+                >
+                  <Plus
+                    className="h-[1.125rem] w-[1.125rem]"
+                    strokeWidth={2.25}
+                    aria-hidden
+                  />
+                </Link>
+              </Button>
+            )}
             <TabsList
               triggerVariant="switch"
               className="w-full shrink-0 justify-center sm:w-auto"
