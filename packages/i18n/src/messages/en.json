@@ -163,6 +163,8 @@
   "SpaceSettingsAction": {
     "title": "Space Settings",
     "content": "Access and manage the settings for your space, including its appearance, structure, methods, membership, and treasury.",
+    "searchSettings": "Search settings…",
+    "noSettingsMatch": "No settings match your search.",
     "groups": {
       "overview": "Overview",
       "agreements": "Agreements",

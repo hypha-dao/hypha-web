@@ -163,6 +163,8 @@
   "SpaceSettingsAction": {
     "title": "Space-Einstellungen",
     "content": "Greifen Sie auf die Einstellungen Ihres Spaces zu und verwalten Sie sie, einschließlich Erscheinungsbild, Struktur, Methoden, Mitgliedschaft und Schatzkammer.",
+    "searchSettings": "Einstellungen durchsuchen…",
+    "noSettingsMatch": "Keine Einstellungen entsprechen Ihrer Suche.",
     "groups": {
       "overview": "Überblick",
       "agreements": "Vereinbarungen",

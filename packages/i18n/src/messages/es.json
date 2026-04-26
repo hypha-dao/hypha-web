@@ -818,6 +818,8 @@
   "SpaceSettingsAction": {
     "title": "Configuración de espacio",
     "content": "Acceda y administre la configuración de su espacio, incluida su apariencia, estructura, métodos, membresía y tesorería.",
+    "searchSettings": "Buscar en la configuración…",
+    "noSettingsMatch": "Ningún ajuste coincide con su búsqueda.",
     "groups": {
       "overview": "Descripción general",
       "agreements": "Acuerdos",
