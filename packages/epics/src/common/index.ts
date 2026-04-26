@@ -25,8 +25,6 @@ export {
 export {
   useMainColumnScrollY,
   getMainColumnScrollY,
-  getMainColumnScrollRoot,
-  setMainColumnScrollY,
   subscribeMainColumnScroll,
   pushMainColumnOverlayScrollLock,
   popMainColumnOverlayScrollLock,

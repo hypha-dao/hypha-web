@@ -794,9 +794,6 @@
   },
   "DHO": {
     "Dashboard": "Painel DHO",
-    "spaceChrome": {
-      "scrollToBanner": "Mostrar faixa do espaço"
-    },
     "actionButtons": {
       "spaceSettings": "Configurações de espaço",
       "create": "Criar",

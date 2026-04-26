@@ -78,29 +78,6 @@ export function getMainColumnScrollY(): number {
   return readScrollY();
 }
 
-/** The element that receives main-column scroll (`SidebarInset`), or `null` when using `window`. */
-export function getMainColumnScrollRoot(): HTMLElement | null {
-  return scrollRoot;
-}
-
-/**
- * Scroll the main column to `y` (0 = top of inset or document).
- * Uses `scrollTo` with `behavior` when supported on the inset element.
- */
-export function setMainColumnScrollY(
-  y: number,
-  behavior: ScrollBehavior = 'auto',
-): void {
-  if (typeof window === 'undefined') return;
-  const yClamped = Math.max(0, y);
-  if (scrollRoot) {
-    scrollRoot.scrollTo({ top: yClamped, behavior });
-  } else {
-    window.scrollTo({ top: yClamped, behavior });
-  }
-  onScroll();
-}
-
 export function useMainColumnScrollY(): number {
   return useSyncExternalStore(
     subscribeMainColumnScroll,
