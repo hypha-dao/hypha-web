@@ -10,8 +10,8 @@ type PageProps = {
 };
 
 /**
- * Wiki — space memory (org memory API). Rich media and transcripts
- * to be extended in a separate task; data source unchanged for now.
+ * Memory tab (URL segment `wiki`) — space memory (org memory API).
+ * Rich media and transcripts to be extended in a separate task.
  */
 export default async function DhoWikiPage(props: PageProps) {
   const params = await props.params;

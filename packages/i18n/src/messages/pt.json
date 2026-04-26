@@ -46,7 +46,7 @@
     "Coherence": "Coerência",
     "Signals": "Sinais",
     "Artifact": "Artefato",
-    "Wiki": "Wiki",
+    "Wiki": "Memória",
     "uploadLeadImage": {
       "cropTitle": "Carregar uma imagem",
       "cropDescription": "Ajuste o enquadramento e salve. Arraste para reposicionar e use o zoom para a área do banner (JPEG, PNG ou WebP — máx. 4 MB).",
@@ -1993,7 +1993,7 @@
     "callPaneResizeSpeakerShare": "Redimensionar orador e partilha de ecrã"
   },
   "CoherenceTab": {
-    "wiki": "Wiki",
+    "wiki": "Memória",
     "artifact": "Artefato",
     "signals": "Sinais",
     "signInToSee": "Por favor, faça login para ver sinais, artefatos e conversas",
