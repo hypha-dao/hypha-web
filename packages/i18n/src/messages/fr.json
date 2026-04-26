@@ -412,8 +412,12 @@
       "joinSpaceToUpdateBackingVault": "Rejoignez l’espace pour mettre à jour le coffre de garantie"
     },
     "assetCard": {
+      "tokenIconAlt": "Jeton {name}",
+      "collateralType": "Garantie",
+      "referencePrice": "Prix",
+      "issuanceLabel": "Émission",
       "fromSpace": "de {spaceTitle}",
-      "totalIssuance": "Émission totale : {value}",
+      "totalIssuance": "{value}",
       "createdOn": "Créé le {date}",
       "mutualCredit": {
         "debtBadge": "Doit {amount} {symbol}",

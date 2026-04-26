@@ -412,8 +412,12 @@
       "joinSpaceToUpdateBackingVault": "Treten Sie dem Space bei, um den Sicherungsvault zu aktualisieren"
     },
     "assetCard": {
+      "tokenIconAlt": "{name}-Token",
+      "collateralType": "Sicherheit",
+      "referencePrice": "Preis",
+      "issuanceLabel": "Ausgabe",
       "fromSpace": "von {spaceTitle}",
-      "totalIssuance": "Gesamtausgabe: {value}",
+      "totalIssuance": "{value}",
       "createdOn": "Erstellt am {date}",
       "mutualCredit": {
         "debtBadge": "Schuldet {amount} {symbol}",

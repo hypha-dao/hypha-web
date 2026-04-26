@@ -412,8 +412,12 @@
       "joinSpaceToUpdateBackingVault": "Join the space to update backing vault"
     },
     "assetCard": {
+      "tokenIconAlt": "{name} token",
+      "collateralType": "Collateral",
+      "referencePrice": "Price",
+      "issuanceLabel": "Issuance",
       "fromSpace": "from {spaceTitle}",
-      "totalIssuance": "Total Issuance: {value}",
+      "totalIssuance": "{value}",
       "createdOn": "Created on {date}",
       "mutualCredit": {
         "debtBadge": "Owes {amount} {symbol}",
