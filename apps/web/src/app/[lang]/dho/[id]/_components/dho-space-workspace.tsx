@@ -11,6 +11,7 @@ import {
   Library,
   LayoutGrid,
   Radio,
+  Settings,
   type LucideIcon,
   Users,
   Vault,
@@ -31,6 +32,11 @@ import { getDhoPathMembers } from '../@tab/members/constants';
 import { getDhoPathSpaces } from '../@tab/spaces/constants';
 import { getDhoPathTreasury } from '../@tab/treasury/constants';
 import { cn } from '@hypha-platform/ui-utils';
+import { PATH_SELECT_SETTINGS_ACTION } from '@web/app/constants';
+import { cleanPath } from './clean-path';
+import { useIsDelegate, useSpaceBySlug } from '@hypha-platform/core/client';
+import { useSpaceMember } from '@hypha-platform/epics';
+import { useAuthentication } from '@hypha-platform/authentication';
 
 const NAV_ICON_CLASS = 'h-5 w-5 shrink-0 opacity-80 group-hover:opacity-100';
 const NAV_MOTION =
@@ -262,6 +268,7 @@ export function DhoSpaceWorkspace({
   children: React.ReactNode;
 }) {
   const t = useTranslations('DhoWorkspaceNav');
+  const tCommon = useTranslations('Common');
   const pathname = usePathname();
   const activeName = getActiveTabFromPath(pathname) ?? '';
   const items = useNavItems(lang, id, coherenceEnabled, spaceMemoryEnabled);
@@ -311,11 +318,31 @@ export function DhoSpaceWorkspace({
     }
   }, [sheetOpen]);
 
+  const { space } = useSpaceBySlug(id);
+  const rawWeb3 = space?.web3SpaceId;
+  const web3SpaceId =
+    typeof rawWeb3 === 'number' && Number.isFinite(rawWeb3)
+      ? rawWeb3
+      : undefined;
+  const { isAuthenticated } = useAuthentication();
+  const { isMember } = useSpaceMember({ spaceId: web3SpaceId });
+  const { isDelegate } = useIsDelegate({ spaceId: web3SpaceId });
+  const settingsDisabled =
+    !isAuthenticated || web3SpaceId === undefined || (!isMember && !isDelegate);
+  const settingsTooltip = !isAuthenticated
+    ? tCommon('signIn')
+    : !isMember && !isDelegate
+    ? tCommon('joinSpaceToUse')
+    : t('openSpaceSettings');
+  const settingsHref = !settingsDisabled
+    ? `${cleanPath(pathname)}${PATH_SELECT_SETTINGS_ACTION}`
+    : '';
+
   return (
     <div className="flex w-full min-w-0 flex-col gap-0 md:flex-row">
       <nav
         className={cn(
-          'hidden shrink-0 pt-4 transition-[width] duration-200 ease-out md:block',
+          'hidden shrink-0 pt-4 transition-[width] duration-200 ease-out md:flex md:flex-col md:self-stretch',
           labelsExpanded
             ? 'w-[min(10rem,100%)] pl-0 pr-1'
             : 'w-[3.5rem] pl-0 pr-0.5',
@@ -348,13 +375,54 @@ export function DhoSpaceWorkspace({
             </span>
           </Button>
         </div>
-        <NavLinkList
-          items={items}
-          activeName={activeName}
-          variant="desktop"
-          showLabels={labelsExpanded}
-          listId={navListId}
-        />
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <NavLinkList
+            items={items}
+            activeName={activeName}
+            variant="desktop"
+            showLabels={labelsExpanded}
+            listId={navListId}
+            className="min-w-0 flex-1"
+          />
+          <div
+            className={cn(
+              'mt-auto border-t border-border/60 pt-2',
+              labelsExpanded ? 'px-0.5' : 'flex justify-center px-0',
+            )}
+          >
+            {settingsDisabled || !settingsHref ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                disabled
+                className="h-11 w-11 shrink-0 text-muted-foreground"
+                title={settingsTooltip}
+                aria-label={t('openSpaceSettings')}
+                data-testid="dho-workspace-nav-settings"
+              >
+                <Settings className={NAV_ICON_CLASS} aria-hidden />
+              </Button>
+            ) : (
+              <Button
+                asChild
+                variant="ghost"
+                size="icon"
+                className="h-11 w-11 shrink-0 text-muted-foreground hover:text-foreground"
+                data-testid="dho-workspace-nav-settings"
+              >
+                <Link
+                  href={settingsHref}
+                  scroll={false}
+                  title={settingsTooltip}
+                  aria-label={t('openSpaceSettings')}
+                >
+                  <Settings className={NAV_ICON_CLASS} aria-hidden />
+                </Link>
+              </Button>
+            )}
+          </div>
+        </div>
       </nav>
 
       <div
@@ -404,16 +472,47 @@ export function DhoSpaceWorkspace({
               {t('spaceMenuTitle')}
             </SheetTitle>
           </SheetHeader>
-          <div className="min-h-0 flex-1 overflow-y-auto p-2">
-            <nav aria-label={t('spaceNavAriaLabel')}>
-              <NavLinkList
-                items={items}
-                activeName={activeName}
-                onNavigate={closeSheet}
-                variant="sheet"
-                firstLinkRef={firstLinkRef}
-              />
-            </nav>
+          <div className="flex min-h-0 flex-1 flex-col">
+            <div className="min-h-0 flex-1 overflow-y-auto p-2">
+              <nav aria-label={t('spaceNavAriaLabel')}>
+                <NavLinkList
+                  items={items}
+                  activeName={activeName}
+                  onNavigate={closeSheet}
+                  variant="sheet"
+                  firstLinkRef={firstLinkRef}
+                />
+              </nav>
+            </div>
+            <div className="shrink-0 border-t border-border p-2">
+              {settingsDisabled || !settingsHref ? (
+                <div
+                  className="flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground"
+                  title={settingsTooltip}
+                >
+                  <Settings
+                    className="h-5 w-5 shrink-0 opacity-80"
+                    aria-hidden
+                  />
+                  <span>{t('openSpaceSettings')}</span>
+                </div>
+              ) : (
+                <Link
+                  href={settingsHref}
+                  scroll={false}
+                  onClick={closeSheet}
+                  className="flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-foreground outline-none hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring"
+                  title={settingsTooltip}
+                  aria-label={t('openSpaceSettings')}
+                >
+                  <Settings
+                    className="h-5 w-5 shrink-0 opacity-80"
+                    aria-hidden
+                  />
+                  <span>{t('openSpaceSettings')}</span>
+                </Link>
+              )}
+            </div>
           </div>
         </SheetContent>
       </Sheet>

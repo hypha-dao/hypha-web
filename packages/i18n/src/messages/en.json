@@ -140,7 +140,8 @@
     "Dashboard": "DHO Dashboard",
     "actionButtons": {
       "spaceSettings": "Space Settings",
-      "create": "Create"
+      "create": "Create",
+      "createProposal": "Create a proposal"
     },
     "nestedSpacesButton": {
       "label": "Space Navigation",
@@ -155,7 +156,8 @@
     "closeMenu": "Close",
     "spaceMapLoading": "Loading space map",
     "expandNavLabels": "Show section names",
-    "collapseNavLabels": "Hide section names"
+    "collapseNavLabels": "Hide section names",
+    "openSpaceSettings": "Space settings"
   },
   "SpaceSettingsAction": {
     "title": "Space Settings",
