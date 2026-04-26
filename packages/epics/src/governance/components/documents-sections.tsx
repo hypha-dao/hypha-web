@@ -8,7 +8,6 @@ import { useTranslations } from 'next-intl';
 import { Tabs, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import { SectionFilter, SectionLoadMore } from '@hypha-platform/ui/server';
 import { Text } from '@radix-ui/themes';
-import { ChevronsRight } from 'lucide-react';
 import { useDocumentsSection } from '../hooks/use-documents-section';
 import { DirectionType } from '@hypha-platform/core/client';
 import { Empty } from '../../common';
@@ -57,13 +56,6 @@ export function DocumentsSections({
       pageSize: LOAD_MORE_INCREMENT,
     });
 
-  const chevronMark = (
-    <>
-      <ChevronsRight className="h-4 w-4" aria-hidden />
-      <ChevronsRight className="-ml-2.5 h-4 w-4" aria-hidden />
-    </>
-  );
-
   return (
     <div
       className="flex flex-col gap-4 py-4"
@@ -84,7 +76,6 @@ export function DocumentsSections({
             hasSearch
             searchPlaceholder={t('searchDocuments')}
             onChangeSearch={onUpdateSearch}
-            leadingSlot={chevronMark}
             className="min-w-0 flex-wrap justify-end gap-2 sm:flex-nowrap sm:justify-end"
           >
             <TabsList
