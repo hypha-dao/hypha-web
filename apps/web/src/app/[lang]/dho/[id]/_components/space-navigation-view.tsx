@@ -234,7 +234,7 @@ export const SpaceNavigationView = ({
               <div
                 role="region"
                 className={cn(
-                  'relative order-1 flex w-full min-w-0 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border/40 bg-muted/15',
+                  'relative order-1 flex w-full min-w-0 shrink-0 items-center justify-center overflow-hidden bg-muted/10',
                   'aspect-square max-h-[min(85dvh,min(100vw,960px))] max-w-[min(100%,960px)] self-center lg:order-1 lg:flex-1 lg:self-stretch',
                 )}
                 style={{
@@ -244,7 +244,7 @@ export const SpaceNavigationView = ({
               >
                 {isLoading ? (
                   <Skeleton
-                    className="absolute inset-2 rounded-lg"
+                    className="absolute inset-0 rounded-none"
                     loading
                     height="100%"
                   />
