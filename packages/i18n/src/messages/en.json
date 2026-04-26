@@ -310,7 +310,7 @@
     "title": "Ecosystem",
     "mapRegionAriaLabel": "Space relationship map",
     "dataPanelAriaLabel": "Nested spaces, search, and actions",
-    "content": "See how your spaces connect. Use the map to explore; search and open nested spaces in the panel, which stays in view on large screens.",
+    "content": "",
     "tabs": {
       "nestedSpaces": "Nested Spaces",
       "spaceToSpace": "Space-to-Space",

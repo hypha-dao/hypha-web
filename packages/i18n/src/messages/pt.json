@@ -965,7 +965,7 @@
     "title": "Ecossistema",
     "mapRegionAriaLabel": "Mapa de relações entre espaços",
     "dataPanelAriaLabel": "Espaços aninhados, pesquisa e ações",
-    "content": "Veja como os seus espaços se conectam. Use o mapa para explorar; pesquise e abra espaços aninhados no painel—sempre visível em ecrãs grandes.",
+    "content": "",
     "tabs": {
       "nestedSpaces": "Espaços aninhados",
       "spaceToSpace": "Espaço-a-Espaço",

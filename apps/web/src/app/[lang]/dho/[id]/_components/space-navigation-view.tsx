@@ -1,7 +1,6 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { SelectAction } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import { VisibleSpacesList } from './visible-spaces-list';
 import {
@@ -17,9 +16,10 @@ import {
   TabsContent,
   Skeleton,
 } from '@hypha-platform/ui';
+import { SectionFilter } from '@hypha-platform/ui/server';
 import { cn } from '@hypha-platform/ui-utils';
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { useTheme } from 'next-themes';
+import { ChevronsRight } from 'lucide-react';
 import type { VisibleSpace } from './types';
 import { useFilterSpacesListWithDiscoverability } from '@hypha-platform/epics';
 import { useTranslations } from 'next-intl';
@@ -103,7 +103,6 @@ export const SpaceNavigationView = ({
   children,
 }: SpaceNavigationViewProps) => {
   const t = useTranslations('SelectNavigationAction');
-  const { resolvedTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('nested-spaces');
   const [visibleSpaces, setVisibleSpaces] = useState<VisibleSpace[]>([]);
   const previousSpacesRef = useRef<string>('');
@@ -170,139 +169,127 @@ export const SpaceNavigationView = ({
     previousSpacesRef.current = '';
   }, [currentSpaceId, allSpacesLength]);
 
+  const chevronMark = (
+    <>
+      <ChevronsRight className="h-4 w-4" aria-hidden />
+      <ChevronsRight className="-ml-2.5 h-4 w-4" aria-hidden />
+    </>
+  );
+
+  const showSpacesPanel =
+    !isLoading &&
+    hierarchyData &&
+    visibleSpaces.length > 0 &&
+    nonArchivedSpaces.length > 0;
+
   return (
     <section
       className="min-w-0"
       data-testid="dho-space-navigation-view"
       aria-label={t('title')}
     >
-      <SelectAction
-        title={t('title')}
-        content={t('content')}
-        showTitle
-        showActionCards={false}
-        actions={[]}
-        isLoading={isLoading}
-        className="!gap-3"
-      >
-        {children}
-        <div className="mt-1" data-testid="dho-space-nav-map-tabs">
-          <Tabs
-            value={activeTab}
-            onValueChange={setActiveTab}
-            className="w-full"
-          >
-            <div
-              className={cn(
-                'sticky top-0 z-10 flex w-full justify-center border-b border-border/60 py-2 backdrop-blur-md',
-                resolvedTheme === 'dark'
-                  ? 'bg-background/80'
-                  : 'bg-background/90',
-              )}
-            >
-              <TabsList triggerVariant="switch">
-                <TabsTrigger variant="switch" value="nested-spaces">
-                  {t('tabs.nestedSpaces')}
-                </TabsTrigger>
-                <TabsTrigger variant="switch" value="space-to-space">
-                  {t('tabs.spaceToSpace')}
-                </TabsTrigger>
-                <TabsTrigger variant="switch" value="values-flows">
-                  {t('tabs.valuesFlows')}
-                </TabsTrigger>
-              </TabsList>
-            </div>
-            <TabsContent
-              value="nested-spaces"
-              className="mt-0 pt-0 focus-visible:outline-none"
-            >
-              <div
-                className="relative -mx-3 min-h-[min(90dvh,1200px)] w-[calc(100%+1.5rem)] sm:-mx-4 sm:w-[calc(100%+2rem)]"
-                data-testid="dho-space-nav-map"
+      {children}
+      <div className="w-full min-w-0" data-testid="dho-space-nav-map-tabs">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="w-full min-w-0"
+        >
+          <div className="flex w-full min-w-0 flex-col gap-2">
+            {isLoading ? (
+              <div className="flex min-h-11 w-full flex-wrap items-center gap-3">
+                <Skeleton className="h-7 w-40" loading />
+                <Skeleton className="h-9 flex-1 basis-48 sm:max-w-md" loading />
+              </div>
+            ) : (
+              <SectionFilter
+                label={t('title')}
+                leadingSlot={chevronMark}
+                className="min-w-0 flex-wrap justify-end gap-2 sm:flex-nowrap sm:justify-end"
               >
-                <div
-                  className="pointer-events-none absolute inset-0 overflow-hidden"
-                  aria-hidden
+                <TabsList
+                  triggerVariant="switch"
+                  className="w-full shrink-0 justify-center sm:w-auto"
+                  data-testid="dho-space-nav-ecosystem-tabs"
                 >
-                  <div
-                    className="absolute -inset-[20%] opacity-40 dark:opacity-30 motion-reduce:animate-none"
-                    style={{
-                      background:
-                        resolvedTheme === 'dark'
-                          ? 'radial-gradient(ellipse 80% 50% at 50% 40%, hsl(var(--accent) / 0.12), transparent 60%), radial-gradient(ellipse 60% 40% at 20% 80%, hsl(var(--primary) / 0.08), transparent 50%)'
-                          : 'radial-gradient(ellipse 80% 50% at 50% 30%, hsl(var(--accent) / 0.08), transparent 55%)',
-                    }}
+                  <TabsTrigger variant="switch" value="nested-spaces">
+                    {t('tabs.nestedSpaces')}
+                  </TabsTrigger>
+                  <TabsTrigger variant="switch" value="space-to-space">
+                    {t('tabs.spaceToSpace')}
+                  </TabsTrigger>
+                  <TabsTrigger variant="switch" value="values-flows">
+                    {t('tabs.valuesFlows')}
+                  </TabsTrigger>
+                </TabsList>
+              </SectionFilter>
+            )}
+          </div>
+
+          <TabsContent
+            value="nested-spaces"
+            className="mt-3 min-w-0 focus-visible:outline-none"
+          >
+            <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
+              <div
+                role="region"
+                className={cn(
+                  'relative order-1 flex w-full min-w-0 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border/40 bg-muted/15',
+                  'aspect-square max-h-[min(85dvh,min(100vw,960px))] max-w-[min(100%,960px)] self-center lg:order-1 lg:flex-1 lg:self-stretch',
+                )}
+                style={{
+                  boxShadow: 'inset 0 0 60px hsl(0 0% 0% / 0.1)',
+                }}
+                aria-label={t('mapRegionAriaLabel')}
+              >
+                {isLoading ? (
+                  <Skeleton
+                    className="absolute inset-2 rounded-lg"
+                    loading
+                    height="100%"
+                  />
+                ) : null}
+                {!isLoading && hierarchyData ? (
+                  <SpaceVisualization
+                    data={hierarchyData}
+                    currentSpaceId={currentSpace?.id}
+                    onVisibleSpacesChange={handleVisibleSpacesChange}
+                    className="!flex h-full w-full min-h-0"
+                  />
+                ) : null}
+              </div>
+
+              {showSpacesPanel ? (
+                <div
+                  role="region"
+                  className="order-2 w-full min-w-0 border-t border-border/50 pt-4 lg:order-2 lg:max-w-md lg:shrink-0 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0"
+                  aria-label={t('dataPanelAriaLabel')}
+                >
+                  <VisibleSpacesList
+                    visibleSpaces={visibleSpaces}
+                    allSpaces={nonArchivedSpaces}
+                    lang={lang}
+                    entrySpaceId={currentSpace?.id}
+                    variant="ecosystemPanel"
+                    className="pl-0 sm:pl-1"
                   />
                 </div>
-                <div className="relative z-[1] flex min-h-0 w-full min-w-0 flex-col gap-3 px-1 pb-3 sm:px-2 lg:h-[min(90dvh,1200px)] lg:flex-row lg:gap-4">
-                  {isLoading ? (
-                    <div className="order-1 flex min-h-[min(40dvh,500px)] w-full flex-1 flex-col gap-2 lg:order-2">
-                      <Skeleton
-                        className="min-h-32 w-full flex-1 rounded-md"
-                        loading
-                        height="100%"
-                      />
-                      <Skeleton
-                        className="h-10 w-full rounded-md"
-                        loading
-                        height="2.5rem"
-                      />
-                    </div>
-                  ) : null}
-                  {!isLoading && hierarchyData ? (
-                    <div
-                      role="region"
-                      className="relative order-2 flex min-h-0 w-full min-w-0 flex-1 items-center justify-center overflow-hidden border border-border/20 lg:order-1 lg:min-h-0 lg:flex-[1.65]"
-                      style={{
-                        minHeight: 'min(50dvh, 80vw)',
-                        boxShadow: 'inset 0 0 80px hsl(0 0% 0% / 0.12)',
-                      }}
-                      aria-label={t('mapRegionAriaLabel')}
-                    >
-                      <SpaceVisualization
-                        data={hierarchyData}
-                        currentSpaceId={currentSpace?.id}
-                        onVisibleSpacesChange={handleVisibleSpacesChange}
-                        className="!flex h-full w-full"
-                      />
-                    </div>
-                  ) : null}
-                  {!isLoading && hierarchyData
-                    ? visibleSpaces.length > 0 &&
-                      nonArchivedSpaces.length > 0 && (
-                        <div
-                          role="region"
-                          className="order-1 flex w-full min-w-0 max-w-full flex-col border-t border-border/40 bg-background/90 py-2 backdrop-blur-sm lg:order-2 lg:min-h-0 lg:max-w-[40%] lg:shrink-0 lg:border-l lg:border-t-0"
-                          style={{ minHeight: 'min(40dvh, 520px)' }}
-                          aria-label={t('dataPanelAriaLabel')}
-                        >
-                          <VisibleSpacesList
-                            visibleSpaces={visibleSpaces}
-                            allSpaces={nonArchivedSpaces}
-                            lang={lang}
-                            entrySpaceId={currentSpace?.id}
-                            variant="ecosystemPanel"
-                            className="pl-0 sm:pl-1"
-                          />
-                        </div>
-                      )
-                    : null}
-                </div>
-              </div>
-            </TabsContent>
-            <TabsContent value="space-to-space" className="mt-4 min-h-32">
-              <div className="py-8 text-center text-neutral-11">
-                {t('comingSoon.spaceToSpaceVisualization')}
-              </div>
-            </TabsContent>
-            <TabsContent value="values-flows" className="mt-4 min-h-32">
-              <div className="py-8 text-center text-neutral-11">
-                {t('comingSoon.valuesFlowsVisualization')}
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </SelectAction>
+              ) : null}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="space-to-space" className="mt-4 min-h-32">
+            <div className="py-8 text-center text-neutral-11">
+              {t('comingSoon.spaceToSpaceVisualization')}
+            </div>
+          </TabsContent>
+          <TabsContent value="values-flows" className="mt-4 min-h-32">
+            <div className="py-8 text-center text-neutral-11">
+              {t('comingSoon.valuesFlowsVisualization')}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
     </section>
   );
 };

@@ -310,7 +310,7 @@
     "title": "Écosystème",
     "mapRegionAriaLabel": "Carte des relations entre espaces",
     "dataPanelAriaLabel": "Espaces imbriqués, recherche et actions",
-    "content": "Voici comment vos espaces se connectent. Utilisez la carte pour explorer ; cherchez et ouvrez les espaces imbriqués dans le panneau—visible en permanence sur les grands écrans.",
+    "content": "",
     "tabs": {
       "nestedSpaces": "Espaces imbriqués",
       "spaceToSpace": "Espace-à-espace",

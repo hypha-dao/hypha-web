@@ -62,6 +62,12 @@ function useNavItems(
   const t = useTranslations('Common');
   return React.useMemo(
     () => [
+      {
+        name: 'spaces',
+        href: getDhoPathSpaces(lang, spaceSlug),
+        label: t('Ecosystem'),
+        icon: LayoutGrid,
+      },
       ...(coherenceEnabled
         ? [
             {
@@ -106,12 +112,6 @@ function useNavItems(
             },
           ]
         : []),
-      {
-        name: 'spaces',
-        href: getDhoPathSpaces(lang, spaceSlug),
-        label: t('Ecosystem'),
-        icon: LayoutGrid,
-      },
     ],
     [coherenceEnabled, spaceMemoryEnabled, lang, spaceSlug, t],
   );

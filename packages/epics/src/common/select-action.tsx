@@ -37,6 +37,8 @@ type SelectActionProps = {
    * Use for full-page or content-only layouts.
    */
   showActionCards?: boolean;
+  /** When false, omit the intro/description paragraph under the title. */
+  showContent?: boolean;
   /**
    * `stack` — full-width rows (icon + text side by side), default.
    * `grid` — responsive card grid with vertical tiles (easier to scan, less overwhelming).
@@ -58,6 +60,7 @@ export const SelectAction = ({
   children,
   showTitle = true,
   showActionCards = true,
+  showContent = true,
   actionLayout = 'stack',
   className,
 }: SelectActionProps) => {
@@ -86,16 +89,18 @@ export const SelectAction = ({
           </Skeleton>
         </header>
       ) : null}
-      <Skeleton
-        width="100%"
-        height="72px"
-        loading={isLoading}
-        className="rounded-lg"
-      >
-        <p className="w-full min-w-0 text-2 leading-relaxed text-muted-foreground">
-          {content}
-        </p>
-      </Skeleton>
+      {showContent ? (
+        <Skeleton
+          width="100%"
+          height="72px"
+          loading={isLoading}
+          className="rounded-lg"
+        >
+          <p className="w-full min-w-0 text-2 leading-relaxed text-muted-foreground">
+            {content}
+          </p>
+        </Skeleton>
+      ) : null}
       {children}
       {showActionCards ? (
         <>
