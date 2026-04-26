@@ -34,16 +34,24 @@ export const SectionFilter: FC<SectionFilterProps> = ({
   children,
 }) => {
   return (
-    <div className="flex w-full items-center justify-between gap-3 sm:gap-4">
+    <div className="flex w-full min-h-0 items-center justify-between gap-3 sm:gap-4">
       {inlineLabel ? (
         <>
-          <div className="flex min-w-0 shrink-0 items-center gap-2">
+          {/*
+            Shared row height (min-h) + items-center + leading-none keeps the label visually
+            centered on the mark (e.g. chevrons in a box) — Radix Text’s default line-height
+            can otherwise make the title look vertically offset.
+          */}
+          <div className="flex min-h-0 min-w-0 shrink-0 items-center gap-2">
             {leadingSlot ? (
-              <span className="flex shrink-0 text-muted-foreground [&_svg]:size-4">
+              <span className="inline-flex h-8 min-h-8 shrink-0 items-center justify-center self-center px-0.5 text-muted-foreground [&_svg]:size-4">
                 {leadingSlot}
               </span>
             ) : null}
-            <Text className="text-4 shrink-0 capitalize text-nowrap">
+            <Text
+              as="span"
+              className="inline-flex min-h-8 shrink-0 items-center self-center text-4 capitalize leading-tight text-nowrap"
+            >
               {label} {count ? <>| {count}</> : null}
             </Text>
           </div>
