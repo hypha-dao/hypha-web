@@ -14,8 +14,9 @@ const DialogPortal = DialogPrimitive.Portal;
 
 const DialogClose = DialogPrimitive.Close;
 
+/* Main column only; under sticky header; scrim `z-40` below `MenuTop` and offcanvas sidebars (`z-[50]`). */
 const DIALOG_VIEWPORT_INSET =
-  'top-0 bottom-0 left-[var(--sidebar-left-width,0px)] right-[var(--sidebar-right-width,0px)]';
+  'top-[var(--menu-top-height,65px)] bottom-0 left-[var(--sidebar-left-width,0px)] right-[calc(var(--sidebar-right-width,0px)+var(--main-column-scrollbar-width,0px))]';
 
 /** Default: lighter scrim + blur; pass `className` on `DialogOverlay` or `overlayClassName` on `DialogContent` for emphasis. */
 const DIALOG_OVERLAY_DEFAULT =
@@ -28,7 +29,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      'fixed z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+      'fixed z-40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
       DIALOG_VIEWPORT_INSET,
       DIALOG_OVERLAY_DEFAULT,
       className,
@@ -65,8 +66,8 @@ const DialogContent = React.forwardRef<
       <DialogPrimitive.Content
         ref={ref}
         className={cn(
-          'fixed z-50 grid w-[min(32rem,calc(100vw-var(--sidebar-left-width,0px)-var(--sidebar-right-width,0px)-2rem))] max-w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg',
-          'left-[calc((var(--sidebar-left-width,0px)+100vw-var(--sidebar-right-width,0px))/2)] top-[50%]',
+          'fixed z-[41] grid w-[min(32rem,calc(100vw-var(--sidebar-left-width,0px)-var(--sidebar-right-width,0px)-var(--main-column-scrollbar-width,0px)-2rem))] max-w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg',
+          'left-[calc((var(--sidebar-left-width,0px)+100vw-var(--sidebar-right-width,0px)-var(--main-column-scrollbar-width,0px))/2)] top-[calc((100dvh+var(--menu-top-height,65px))/2)]',
           className,
         )}
         {...props}

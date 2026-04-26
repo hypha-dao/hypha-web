@@ -469,7 +469,13 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             </div>
           </Skeleton>
 
-          <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+          {/* Non-modal: focus is managed by Radix, but the scrim is below the app header
+           * and offcanvas side panels; users can use top nav + side triggers while open. */}
+          <Dialog
+            open={detailsOpen}
+            onOpenChange={setDetailsOpen}
+            modal={false}
+          >
             <DialogContent
               className={cn(
                 'flex max-h-[min(560px,85dvh)] flex-col gap-0 overflow-hidden border-border/70 bg-card/95 p-0 shadow-2xl backdrop-blur-sm sm:max-w-lg',
