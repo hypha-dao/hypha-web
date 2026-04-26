@@ -1067,8 +1067,12 @@
       "joinSpaceToUpdateBackingVault": "Únete al espacio para actualizar la bóveda de respaldo"
     },
     "assetCard": {
+      "tokenIconAlt": "Token {name}",
+      "collateralType": "Colateral",
+      "referencePrice": "Precio",
+      "issuanceLabel": "Emisión",
       "fromSpace": "de {spaceTitle}",
-      "totalIssuance": "Emisión total: {value}",
+      "totalIssuance": "{value}",
       "createdOn": "Creado en {date}",
       "mutualCredit": {
         "debtBadge": "Debe {amount} {symbol}",

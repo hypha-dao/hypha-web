@@ -1,12 +1,12 @@
 'use client';
 
-import { Text } from '@radix-ui/themes';
 import { Card, Skeleton, Image, Badge } from '@hypha-platform/ui';
 import { formatCurrencyValue } from '@hypha-platform/ui-utils';
 import { getDhoPathAgreements } from '@hypha-platform/epics';
 import { Locale } from '@hypha-platform/i18n';
 import Link from 'next/link';
 import { useFormatter, useTranslations } from 'next-intl';
+import { cn } from '@hypha-platform/ui-utils';
 
 type AssetCardProps = {
   icon?: string;
@@ -50,7 +50,6 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   valueDisplay,
   tokenPrice,
   referenceCurrency,
-  usdEqual,
   isLoading,
   supply,
   space,
@@ -62,13 +61,16 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   const tTreasury = useTranslations('TreasuryTab');
   const tAgreementFlow = useTranslations('AgreementFlow');
   const format = useFormatter();
+
   const tokenTypeLabel =
-    type &&
-    tAgreementFlow.has(
-      `plugins.issueNewToken.general.tokenTypeOptions.${type}.label` as Parameters<
-        typeof tAgreementFlow
-      >[0],
-    )
+    type === 'Collateral'
+      ? tTreasury('assetCard.collateralType')
+      : type &&
+        tAgreementFlow.has(
+          `plugins.issueNewToken.general.tokenTypeOptions.${type}.label` as Parameters<
+            typeof tAgreementFlow
+          >[0],
+        )
       ? tAgreementFlow(
           `plugins.issueNewToken.general.tokenTypeOptions.${type}.label` as Parameters<
             typeof tAgreementFlow
@@ -76,131 +78,230 @@ export const AssetCard: React.FC<AssetCardProps> = ({
         )
       : type;
 
-  return (
-    <Card className="w-full h-full p-5 mb-2 flex flex-col justify-between">
-      <div className="w-full flex flex-row items-center mb-2">
-        <div className="mr-3">
+  const valueLine = valueDisplay ?? formatCurrencyValue(value ?? 0, lang);
+  const priceLine =
+    tokenPrice !== undefined && tokenPrice > 0
+      ? `${formatCurrencyValue(tokenPrice)} ${
+          referenceCurrency?.trim() || 'USD'
+        }`
+      : null;
+  const issuanceLine =
+    supply?.total !== undefined
+      ? tTreasury('assetCard.totalIssuance', {
+          value: formatCurrencyValue(supply.total, lang),
+        })
+      : null;
+  const createdLine =
+    createdAt instanceof Date && !Number.isNaN(createdAt.getTime())
+      ? tTreasury('assetCard.createdOn', {
+          date: format.dateTime(createdAt, {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+          }),
+        })
+      : null;
+
+  const heroVisual = (
+    <div className="relative isolate overflow-hidden">
+      <div
+        className={cn(
+          'relative h-[4.5rem] w-full overflow-hidden bg-muted/50',
+          'after:pointer-events-none after:absolute after:inset-0 after:bg-gradient-to-b after:from-transparent after:via-background/55 after:to-background',
+        )}
+      >
+        {isLoading ? (
           <Skeleton
-            width="40px"
-            height="40px"
-            loading={isLoading}
-            className="rounded-full"
-          >
+            className="h-full w-full rounded-none"
+            loading
+            height="100%"
+          />
+        ) : icon ? (
+          <img
+            src={icon}
+            alt=""
+            aria-hidden
+            className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-40 blur-[2px] motion-reduce:scale-100 motion-reduce:blur-none"
+          />
+        ) : (
+          <div
+            className="absolute inset-0 bg-gradient-to-br from-accent-5/30 via-muted/55 to-background"
+            aria-hidden
+          />
+        )}
+      </div>
+      <div className="relative z-10 -mt-9 px-3">
+        <Skeleton
+          width="56px"
+          height="56px"
+          loading={isLoading}
+          className="rounded-full"
+        >
+          <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full bg-card shadow-md ring-4 ring-card">
             <Image
-              className="rounded-full min-w-7 min-h-7"
-              src={icon ? icon : ''}
-              height={32}
-              width={32}
-              alt={name ? name : ''}
+              className="h-full w-full object-cover"
+              src={icon ? icon : '/placeholder/default-space.svg'}
+              height={56}
+              width={56}
+              alt={name ? tTreasury('assetCard.tokenIconAlt', { name }) : ''}
             />
-          </Skeleton>
-        </div>
-        <div className="flex flex-col justify-center">
-          <Skeleton
-            width="80px"
-            height="16px"
-            loading={isLoading}
-            className="mb-1 flex gap-1"
-          >
-            <Text className="text-4 font-medium text-secondary-foreground">
-              {valueDisplay ?? formatCurrencyValue(value ?? 0, lang)}
-            </Text>
-          </Skeleton>
-          <Skeleton width="80px" height="16px" loading={isLoading}>
-            <span className="flex gap-2 items-center">
-              <span className="flex gap-2 items-center">
-                <Text className="text-1 text-gray-500">{symbol}</Text>
-                {type && (
-                  <Badge
-                    colorVariant="accent"
-                    variant="outline"
-                    className="w-fit h-fit"
-                  >
-                    {tokenTypeLabel}
-                  </Badge>
-                )}
-              </span>
-              {space?.title ? (
-                <Link
-                  href={getDhoPathAgreements(lang as Locale, space.slug)}
-                  className="text-accent-11 text-1 text-ellipsis overflow-hidden hover:underline"
+          </div>
+        </Skeleton>
+      </div>
+    </div>
+  );
+
+  return (
+    <Card
+      className={cn(
+        'flex h-full min-h-[14rem] w-full min-w-0 flex-col overflow-hidden p-0',
+        'border-border/80 transition-shadow duration-150 hover:border-border hover:shadow-sm',
+        'motion-reduce:transition-none',
+      )}
+    >
+      <div className="flex min-w-0 flex-1 flex-col">
+        {heroVisual}
+
+        <div className="flex min-w-0 flex-1 flex-col gap-2 px-3 pb-3 pt-1">
+          <div className="flex min-w-0 items-start justify-between gap-2 pt-0.5">
+            {isLoading ? (
+              <Skeleton
+                className="my-0.5"
+                width="5rem"
+                height="1.25rem"
+                loading
+              />
+            ) : (
+              <p
+                className="text-4 font-semibold tabular-nums leading-tight tracking-tight text-foreground"
+                title={valueLine}
+              >
+                {valueLine}
+              </p>
+            )}
+            {type && tokenTypeLabel ? (
+              isLoading ? (
+                <Skeleton className="h-5 w-16 shrink-0" loading />
+              ) : (
+                <Badge
+                  className="h-fit max-w-[48%] shrink-0 border text-[10px] font-medium uppercase"
+                  colorVariant="accent"
+                  variant="outline"
                 >
-                  {tTreasury('assetCard.fromSpace', {
-                    spaceTitle: space.title,
-                  })}
-                </Link>
+                  {tokenTypeLabel}
+                </Badge>
+              )
+            ) : null}
+          </div>
+
+          {isLoading ? (
+            <Skeleton className="h-4 w-12" loading />
+          ) : (
+            <p className="line-clamp-1 text-1 font-medium text-muted-foreground">
+              {symbol}
+            </p>
+          )}
+
+          {isLoading ? (
+            <Skeleton className="h-4 w-[60%] max-w-[12rem]" loading />
+          ) : name ? (
+            <p className="line-clamp-2 text-1 leading-snug text-muted-foreground">
+              {name}
+            </p>
+          ) : null}
+
+          {space?.title && lang ? (
+            isLoading ? (
+              <Skeleton className="h-4 w-32" loading />
+            ) : (
+              <Link
+                href={getDhoPathAgreements(lang, space.slug)}
+                className="line-clamp-2 text-left text-1 font-medium text-accent-11 underline-offset-2 hover:underline"
+              >
+                {tTreasury('assetCard.fromSpace', {
+                  spaceTitle: space.title,
+                })}
+              </Link>
+            )
+          ) : null}
+
+          {(priceLine || issuanceLine) && (
+            <dl className="mt-1 space-y-1.5 border-t border-border/50 pt-2 text-1 leading-snug text-muted-foreground">
+              {priceLine ? (
+                <div className="flex min-w-0 justify-between gap-2">
+                  <dt className="shrink-0 text-muted-foreground/90">
+                    {tTreasury('assetCard.referencePrice')}
+                  </dt>
+                  <dd className="min-w-0 text-right font-medium text-foreground">
+                    {priceLine}
+                  </dd>
+                </div>
               ) : null}
-            </span>
-          </Skeleton>
-        </div>
-      </div>
-      <div className="w-full flex flex-row gap-1">
-        <Text className="text-1">{name}</Text>
-        {tokenPrice !== undefined && tokenPrice > 0 && (
-          <Text className="text-1 text-neutral-11">
-            {`${formatCurrencyValue(tokenPrice)} ${
-              referenceCurrency?.trim() || 'USD'
-            }`}
-          </Text>
-        )}
-        {supply?.total !== undefined && (
-          <Text className="text-1 text-neutral-11">
-            {tTreasury('assetCard.totalIssuance', {
-              value: formatCurrencyValue(supply.total, lang),
-            })}
-          </Text>
-        )}
-      </div>
-      {mutualCredit && symbol ? (
-        <div className="w-full flex flex-row gap-2 flex-wrap items-center mt-1">
-          {mutualCredit.netBalance !== 0 ? (
-            <Badge
-              colorVariant={mutualCredit.netBalance < 0 ? 'warn' : 'accent'}
-              variant="outline"
-              className="w-fit h-fit"
-            >
-              {mutualCredit.netBalance < 0
-                ? tTreasury('assetCard.mutualCredit.debtBadge', {
-                    amount: formatCurrencyValue(
-                      Math.abs(mutualCredit.netBalance),
+              {issuanceLine ? (
+                <div className="flex min-w-0 justify-between gap-2">
+                  <dt className="shrink-0 text-muted-foreground/90">
+                    {tTreasury('assetCard.issuanceLabel')}
+                  </dt>
+                  <dd className="min-w-0 text-right font-medium text-foreground">
+                    {issuanceLine}
+                  </dd>
+                </div>
+              ) : null}
+            </dl>
+          )}
+
+          {mutualCredit && symbol ? (
+            <div className="flex w-full flex-row flex-wrap items-center gap-2 border-t border-border/50 pt-2">
+              {mutualCredit.netBalance !== 0 ? (
+                <Badge
+                  colorVariant={mutualCredit.netBalance < 0 ? 'warn' : 'accent'}
+                  variant="outline"
+                  className="h-fit w-fit"
+                >
+                  {mutualCredit.netBalance < 0
+                    ? tTreasury('assetCard.mutualCredit.debtBadge', {
+                        amount: formatCurrencyValue(
+                          Math.abs(mutualCredit.netBalance),
+                          lang,
+                        ),
+                        symbol,
+                      })
+                    : tTreasury('assetCard.mutualCredit.netBadge', {
+                        amount: formatCurrencyValue(
+                          mutualCredit.netBalance,
+                          lang,
+                        ),
+                        symbol,
+                      })}
+                </Badge>
+              ) : null}
+              {mutualCredit.defaultCreditLimit > 0 ? (
+                <span className="text-1 text-muted-foreground">
+                  {tTreasury('assetCard.mutualCredit.limit', {
+                    limit: formatCurrencyValue(
+                      mutualCredit.defaultCreditLimit,
                       lang,
                     ),
                     symbol,
-                  })
-                : tTreasury('assetCard.mutualCredit.netBadge', {
-                    amount: formatCurrencyValue(mutualCredit.netBalance, lang),
-                    symbol,
                   })}
-            </Badge>
+                </span>
+              ) : null}
+            </div>
           ) : null}
-          {mutualCredit.defaultCreditLimit > 0 && (
-            <Text className="text-1 text-neutral-11">
-              {tTreasury('assetCard.mutualCredit.limit', {
-                limit: formatCurrencyValue(
-                  mutualCredit.defaultCreditLimit,
-                  lang,
-                ),
-                symbol,
-              })}
-            </Text>
-          )}
+
+          {createdLine ? (
+            isLoading ? (
+              <Skeleton className="mt-auto h-4 w-full" loading />
+            ) : (
+              <p className="mt-auto line-clamp-2 pt-1 text-[11px] leading-snug text-muted-foreground">
+                {createdLine}
+              </p>
+            )
+          ) : null}
         </div>
-      ) : null}
-      <div className="w-full flex flex-row gap-1">
-        {createdAt instanceof Date && !Number.isNaN(createdAt.getTime()) && (
-          <Text className="text-1 text-neutral-11">
-            {tTreasury('assetCard.createdOn', {
-              date: format.dateTime(createdAt, {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-              }),
-            })}
-          </Text>
-        )}
       </div>
     </Card>
   );
