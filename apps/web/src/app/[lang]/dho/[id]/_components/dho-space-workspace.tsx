@@ -51,6 +51,15 @@ export type DhoSpaceWorkspaceNavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
+  asDisabledAction?: boolean;
+  disabledActionTitle?: string;
+  disabledActionLabel?: string;
+  /** On the <li> — e.g. separator and push last item to bottom in flex */
+  listItemClassName?: string;
+  /** Next.js <Link scroll={…}>; default true */
+  linkScroll?: boolean;
+  /** Optional `title` on the anchor (e.g. same tooltip for icon-only) */
+  linkTitle?: string;
 };
 
 function useNavItems(
@@ -130,6 +139,16 @@ type NavRowProps = {
   showLabels?: boolean;
   index: number;
   linkRef?: React.Ref<HTMLAnchorElement>;
+  /**
+   * When set, row is not a link (e.g. space settings with no access).
+   * Uses the same hit target as a nav item but is inert and dimmed.
+   */
+  asDisabledAction?: boolean;
+  disabledActionTitle?: string;
+  disabledActionLabel?: string;
+  listItemClassName?: string;
+  linkScroll?: boolean;
+  linkTitle?: string;
 };
 
 function NavRow({
@@ -143,6 +162,12 @@ function NavRow({
   showLabels = false,
   index,
   linkRef,
+  asDisabledAction,
+  disabledActionTitle,
+  disabledActionLabel,
+  listItemClassName,
+  linkScroll = true,
+  linkTitle,
 }: NavRowProps) {
   const desktopIconOnly = variant === 'desktop' && !showLabels;
   const itemClass = cn(
@@ -159,6 +184,7 @@ function NavRow({
           '[&_svg]:text-[var(--space-accent,var(--color-accent-9))]',
         ].join(' ')
       : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+    asDisabledAction && 'pointer-events-none cursor-not-allowed opacity-50',
     NAV_MOTION,
   );
   const delay = index * 32;
@@ -178,20 +204,58 @@ function NavRow({
     </>
   );
 
+  if (variant === 'sheet' && asDisabledAction) {
+    return (
+      <li className={cn('w-full', listItemClassName)}>
+        <div
+          data-testid={`dho-workspace-nav-${name}`}
+          className={itemClass}
+          style={style}
+          title={disabledActionTitle}
+          aria-label={disabledActionLabel ?? label}
+          aria-disabled
+        >
+          {content}
+        </div>
+      </li>
+    );
+  }
+
   if (variant === 'sheet') {
     return (
-      <li>
+      <li className={listItemClassName}>
         <Link
           ref={linkRef}
           data-testid={`dho-workspace-nav-${name}`}
           href={href}
+          scroll={linkScroll}
           onClick={onNavigate}
           aria-current={isActive ? 'page' : undefined}
           className={itemClass}
           style={style}
+          title={linkTitle}
         >
           {content}
         </Link>
+      </li>
+    );
+  }
+
+  if (asDisabledAction) {
+    return (
+      <li className={cn('w-full', listItemClassName)}>
+        <div
+          data-testid={`dho-workspace-nav-${name}`}
+          className={itemClass}
+          style={style}
+          title={disabledActionTitle}
+          aria-label={
+            disabledActionLabel ?? (desktopIconOnly ? label : undefined)
+          }
+          aria-disabled
+        >
+          {content}
+        </div>
       </li>
     );
   }
@@ -200,18 +264,19 @@ function NavRow({
     <Link
       data-testid={`dho-workspace-nav-${name}`}
       href={href}
+      scroll={linkScroll}
       onClick={onNavigate}
       aria-current={isActive ? 'page' : undefined}
       className={itemClass}
       style={style}
       aria-label={desktopIconOnly ? label : undefined}
-      title={desktopIconOnly ? label : undefined}
+      title={linkTitle ?? (desktopIconOnly ? label : undefined)}
     >
       {content}
     </Link>
   );
 
-  return <li className="w-full">{linkEl}</li>;
+  return <li className={cn('w-full', listItemClassName)}>{linkEl}</li>;
 }
 
 function NavLinkList({
@@ -256,6 +321,12 @@ function NavLinkList({
             linkRef={
               index === 0 && variant === 'sheet' ? firstLinkRef : undefined
             }
+            asDisabledAction={item.asDisabledAction}
+            disabledActionTitle={item.disabledActionTitle}
+            disabledActionLabel={item.disabledActionLabel}
+            listItemClassName={item.listItemClassName}
+            linkScroll={item.linkScroll}
+            linkTitle={item.linkTitle}
           />
         );
       })}
@@ -347,6 +418,27 @@ export function DhoSpaceWorkspace({
     ? `${cleanPath(pathname)}${PATH_SELECT_SETTINGS_ACTION}`
     : '';
 
+  const navItems = React.useMemo((): DhoSpaceWorkspaceNavItem[] => {
+    const settingsItem: DhoSpaceWorkspaceNavItem = {
+      name: 'settings',
+      href: settingsHref,
+      label: t('openSpaceSettings'),
+      icon: Settings,
+      listItemClassName: 'mt-auto w-full border-t border-border/60 pt-2',
+      linkScroll: false,
+      linkTitle:
+        settingsDisabled || !settingsHref ? undefined : settingsTooltip,
+      ...(settingsDisabled || !settingsHref
+        ? {
+            asDisabledAction: true,
+            disabledActionTitle: settingsTooltip,
+            disabledActionLabel: t('openSpaceSettings'),
+          }
+        : {}),
+    };
+    return [...items, settingsItem];
+  }, [items, settingsDisabled, settingsHref, settingsTooltip, t]);
+
   return (
     <div className="flex w-full min-w-0 flex-col gap-0 md:flex-row">
       <nav
@@ -385,51 +477,13 @@ export function DhoSpaceWorkspace({
         </div>
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <NavLinkList
-            items={items}
+            items={navItems}
             activeName={activeName}
             variant="desktop"
             showLabels={labelsExpanded}
             listId={navListId}
             className="min-w-0 flex-1"
           />
-          <div
-            className={cn(
-              'mt-auto border-t border-border/60 pt-2',
-              labelsExpanded ? 'px-0' : 'flex justify-center',
-            )}
-          >
-            {settingsDisabled || !settingsHref ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                disabled
-                className="h-11 w-11 shrink-0 text-muted-foreground"
-                title={settingsTooltip}
-                aria-label={t('openSpaceSettings')}
-                data-testid="dho-workspace-nav-settings"
-              >
-                <Settings className={NAV_ICON_CLASS} aria-hidden />
-              </Button>
-            ) : (
-              <Button
-                asChild
-                variant="ghost"
-                size="icon"
-                className="h-11 w-11 shrink-0 text-muted-foreground hover:text-foreground"
-                data-testid="dho-workspace-nav-settings"
-              >
-                <Link
-                  href={settingsHref}
-                  scroll={false}
-                  title={settingsTooltip}
-                  aria-label={t('openSpaceSettings')}
-                >
-                  <Settings className={NAV_ICON_CLASS} aria-hidden />
-                </Link>
-              </Button>
-            )}
-          </div>
         </div>
       </nav>
 
@@ -484,42 +538,13 @@ export function DhoSpaceWorkspace({
             <div className="min-h-0 flex-1 overflow-y-auto p-2">
               <nav aria-label={t('spaceNavAriaLabel')}>
                 <NavLinkList
-                  items={items}
+                  items={navItems}
                   activeName={activeName}
                   onNavigate={closeSheet}
                   variant="sheet"
                   firstLinkRef={firstLinkRef}
                 />
               </nav>
-            </div>
-            <div className="shrink-0 border-t border-border p-2">
-              {settingsDisabled || !settingsHref ? (
-                <div
-                  className="flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground"
-                  title={settingsTooltip}
-                >
-                  <Settings
-                    className="h-5 w-5 shrink-0 opacity-80"
-                    aria-hidden
-                  />
-                  <span>{t('openSpaceSettings')}</span>
-                </div>
-              ) : (
-                <Link
-                  href={settingsHref}
-                  scroll={false}
-                  onClick={closeSheet}
-                  className="flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-foreground outline-none hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring"
-                  title={settingsTooltip}
-                  aria-label={t('openSpaceSettings')}
-                >
-                  <Settings
-                    className="h-5 w-5 shrink-0 opacity-80"
-                    aria-hidden
-                  />
-                  <span>{t('openSpaceSettings')}</span>
-                </Link>
-              )}
             </div>
           </div>
         </SheetContent>
