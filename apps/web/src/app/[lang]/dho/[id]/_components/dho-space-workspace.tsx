@@ -136,7 +136,7 @@ function NavRow({
   const desktopIconOnly = variant === 'desktop' && !showLabels;
   const itemClass = cn(
     'group flex min-h-11 w-full min-w-0 items-center rounded-md py-2 text-left text-sm font-medium leading-snug',
-    desktopIconOnly ? 'justify-center gap-0 px-1.5' : 'gap-2 px-2',
+    desktopIconOnly ? 'justify-center gap-0 px-1.5' : 'gap-1.5 px-1.5',
     'outline-none ring-offset-background transition-colors',
     'focus-visible:ring-2 focus-visible:ring-ring',
     isActive
@@ -320,8 +320,8 @@ export function DhoSpaceWorkspace({
         className={cn(
           'hidden shrink-0 pt-4 transition-[width] duration-200 ease-out md:block',
           labelsExpanded
-            ? 'w-[min(12.5rem,100%)] pl-0 pr-2'
-            : 'w-[3.75rem] pl-0 pr-1',
+            ? 'w-[min(10rem,100%)] pl-0 pr-1'
+            : 'w-[3.5rem] pl-0 pr-0.5',
         )}
         aria-label={t('spaceNavAriaLabel')}
       >
