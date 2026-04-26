@@ -1,8 +1,15 @@
 'use client';
 
-import { Card, Separator, Skeleton, TextWithLinks } from '@hypha-platform/ui';
+import {
+  Card,
+  Input,
+  Separator,
+  Skeleton,
+  TextWithLinks,
+} from '@hypha-platform/ui';
 import clsx from 'clsx';
 import Link from 'next/link';
+import { SearchIcon } from 'lucide-react';
 import React from 'react';
 import { useTranslations } from 'next-intl';
 
@@ -44,6 +51,11 @@ type SelectActionProps = {
    * `grid` — responsive card grid with vertical tiles (easier to scan, less overwhelming).
    */
   actionLayout?: SelectActionActionLayout;
+  /** When true, show a search field and filter actions by title, description, or group label. */
+  showSearch?: boolean;
+  searchPlaceholder?: string;
+  /** Shown when no actions match the search (optional; omit to show nothing). */
+  searchEmptyMessage?: string;
   /** Optional class on the root wrapper. */
   className?: string;
 };
@@ -62,12 +74,28 @@ export const SelectAction = ({
   showActionCards = true,
   showContent = true,
   actionLayout = 'stack',
+  showSearch = false,
+  searchPlaceholder = '',
+  searchEmptyMessage,
   className,
 }: SelectActionProps) => {
   const tCommon = useTranslations('Common');
+  const [searchTerm, setSearchTerm] = React.useState('');
+
+  const filteredActions = React.useMemo(() => {
+    if (!showSearch || !searchTerm.trim()) return actions ?? [];
+    const q = searchTerm.trim().toLowerCase();
+    return (actions ?? []).filter((action) => {
+      const title = action.title.toLowerCase();
+      const desc = action.description.toLowerCase();
+      const group = (action.group ?? '').toLowerCase();
+      return title.includes(q) || desc.includes(q) || group.includes(q);
+    });
+  }, [actions, searchTerm, showSearch]);
+
   const groupedActions = React.useMemo(
     () =>
-      actions?.reduce<GroupedActions>((groups, action) => {
+      filteredActions.reduce<GroupedActions>((groups, action) => {
         const group = action.group || '';
         if (!groups[group]) {
           groups[group] = [];
@@ -75,8 +103,10 @@ export const SelectAction = ({
         groups[group].push(action);
         return groups;
       }, {}),
-    [actions],
+    [filteredActions],
   );
+
+  const hasAnyFiltered = filteredActions.length > 0;
 
   return (
     <div className={clsx('flex flex-col gap-6', className)}>
@@ -105,6 +135,21 @@ export const SelectAction = ({
       {showActionCards ? (
         <>
           <Separator />
+          {showSearch ? (
+            <Input
+              className="w-full min-w-0 sm:max-w-md"
+              placeholder={searchPlaceholder}
+              leftIcon={<SearchIcon className="h-4 w-4" aria-hidden />}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label={searchPlaceholder}
+            />
+          ) : null}
+          {!hasAnyFiltered && searchEmptyMessage ? (
+            <p className="py-4 text-center text-sm text-muted-foreground">
+              {searchEmptyMessage}
+            </p>
+          ) : null}
           <div className="flex flex-col gap-8">
             {Object.entries(groupedActions || {}).map(
               ([group, groupActions]) => (
@@ -117,7 +162,7 @@ export const SelectAction = ({
                   <div
                     className={clsx(
                       actionLayout === 'grid' &&
-                        'grid grid-cols-1 gap-3 sm:grid-cols-2',
+                        'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3',
                       actionLayout === 'stack' && 'flex flex-col gap-3',
                     )}
                   >
