@@ -232,12 +232,15 @@ export const SpaceNavigationView = ({
               <div
                 role="region"
                 className={cn(
-                  'relative order-1 flex w-full min-w-0 shrink-0 items-center justify-center overflow-hidden bg-muted/10',
+                  'relative order-1 flex w-full min-w-0 shrink-0 items-center justify-center overflow-hidden',
+                  'bg-muted/15',
+                  'bg-[radial-gradient(ellipse_95%_80%_at_50%_35%,_color-mix(in_oklch,var(--color-accent-5)_28%,transparent)_0%,_transparent_58%)]',
+                  'dark:bg-[radial-gradient(ellipse_100%_85%_at_50%_38%,_hsl(250_28%_16%_/_0.75)_0%,_hsl(240_18%_7%_/_0.96)_100%)]',
                   'aspect-square max-h-[min(72dvh,calc(100dvh-10rem),min(100vw,56rem))] max-w-full self-center',
                   'lg:order-1 lg:min-h-0 lg:max-h-full lg:max-w-none lg:flex-1 lg:self-stretch',
                 )}
                 style={{
-                  boxShadow: 'inset 0 0 60px hsl(0 0% 0% / 0.1)',
+                  boxShadow: 'inset 0 0 100px hsl(0 0% 0% / 0.04)',
                 }}
                 aria-label={t('mapRegionAriaLabel')}
               >
