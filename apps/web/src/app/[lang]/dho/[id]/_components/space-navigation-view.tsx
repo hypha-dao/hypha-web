@@ -228,14 +228,22 @@ export const SpaceNavigationView = ({
 
           <TabsContent
             value="nested-spaces"
-            className="mt-3 min-w-0 focus-visible:outline-none"
+            className="mt-3 min-h-0 min-w-0 focus-visible:outline-none"
           >
-            <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
+            {/* Map + list: cap height to the viewport so the D3 view fits at 100% zoom without
+                forcing page scroll; list is a separate scrollport on lg. */}
+            <div
+              className={cn(
+                'flex min-h-0 w-full min-w-0 flex-col gap-4',
+                'lg:max-h-[min(75dvh,calc(100dvh-9.5rem))] lg:flex-row lg:items-stretch lg:gap-5',
+              )}
+            >
               <div
                 role="region"
                 className={cn(
                   'relative order-1 flex w-full min-w-0 shrink-0 items-center justify-center overflow-hidden bg-muted/10',
-                  'aspect-square max-h-[min(85dvh,min(100vw,960px))] max-w-[min(100%,960px)] self-center lg:order-1 lg:flex-1 lg:self-stretch',
+                  'aspect-square max-h-[min(72dvh,calc(100dvh-10rem),min(100vw,56rem))] max-w-full self-center',
+                  'lg:order-1 lg:min-h-0 lg:max-h-full lg:max-w-none lg:flex-1 lg:self-stretch',
                 )}
                 style={{
                   boxShadow: 'inset 0 0 60px hsl(0 0% 0% / 0.1)',
@@ -262,7 +270,11 @@ export const SpaceNavigationView = ({
               {showSpacesPanel ? (
                 <div
                   role="region"
-                  className="order-2 w-full min-w-0 border-t border-border/50 pt-4 lg:order-2 lg:max-w-md lg:shrink-0 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0"
+                  className={cn(
+                    'order-2 flex min-h-0 w-full min-w-0 flex-col border-t border-border/50 pt-4',
+                    'lg:order-2 lg:max-w-[20rem] lg:shrink-0 lg:overflow-hidden lg:border-l lg:border-t-0',
+                    'lg:pl-4 lg:pt-0 xl:max-w-[22rem]',
+                  )}
                   aria-label={t('dataPanelAriaLabel')}
                 >
                   <VisibleSpacesList
@@ -271,7 +283,7 @@ export const SpaceNavigationView = ({
                     lang={lang}
                     entrySpaceId={currentSpace?.id}
                     variant="ecosystemPanel"
-                    className="pl-0 sm:pl-1"
+                    className="h-full min-h-0 pl-0 sm:pl-0.5"
                   />
                 </div>
               ) : null}

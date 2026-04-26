@@ -332,7 +332,8 @@
       "noAccessAddSpace": "You do not have access to add spaces to this organization.",
       "visitSpace": "Visit Space",
       "searchSpaces": "Search spaces",
-      "noSpacesFound": "No spaces found"
+      "noSpacesFound": "No spaces found",
+      "panelListHeading": "Spaces"
     }
   },
   "AgreementsTab": {

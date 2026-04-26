@@ -332,7 +332,8 @@
       "noAccessAddSpace": "Vous n'avez pas accès pour ajouter des espaces à cette organisation.",
       "visitSpace": "Visiter l'espace",
       "searchSpaces": "Rechercher des espaces",
-      "noSpacesFound": "Aucun espace trouvé"
+      "noSpacesFound": "Aucun espace trouvé",
+      "panelListHeading": "Espaces"
     }
   },
   "AgreementsTab": {
