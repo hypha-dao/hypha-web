@@ -110,6 +110,8 @@ export const MemberCard: React.FC<MemberCardProps> = ({
         if (delegateCacheKey) await mutateCache(delegateCacheKey);
       } catch (err) {
         console.error('Undelegate failed:', err);
+        setLocalIsDelegate(true);
+        window.alert(tMembers('delegateSection.errors.undelegateFailed'));
       }
     })();
   };

@@ -1026,7 +1026,8 @@
       "success": "¡Delegación completada con éxito!",
       "errors": {
         "selectMember": "Selecciona un miembro",
-        "selectSpace": "Selecciona un espacio"
+        "selectSpace": "Selecciona un espacio",
+        "undelegateFailed": "No se pudo quitar la delegación. Inténtalo de nuevo."
       }
     }
   },
