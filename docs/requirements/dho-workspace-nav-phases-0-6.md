@@ -10,8 +10,8 @@
 ## Phase 0 — Locked decisions (UX / engineering)
 
 1. **Copy — Ecosystem (graph tab)** — Nav uses **`Common` → `Ecosystem`**. Canonical route **`/spaces`**; optional alias **`/ecosystem`** redirects to `/spaces` (see `getActiveTabFromPath` for segment `ecosystem`).
-2. **Default space landing** — **`/agreements`** remains the default primary tab. **`/spaces`** is the in-flow graph.
-3. **Nav order** — When Coherence is enabled: **Coherence → Agreements → Members → Treasury → Spaces**.
+2. **Default space landing** — Bare **`/[lang]/dho/[id]`** redirects to **Signals** (`/coherence`) when Coherence is enabled (feature flag), otherwise to **Ecosystem** (`/spaces`). In-flow tabs still include Agreements, Members, Treasury, etc.
+3. **Nav order** — **Ecosystem first**, then **Signals** when Coherence is enabled, then Agreements, Members, Treasury, Rewards, Wiki (when enabled), and Space settings at the bottom of the rail.
 4. **Mobile** — **Left sheet** + floating **Space menu** (not a full-width bottom bar).
 5. **Layout tokens (desktop rail)** — Fixed rail **`min(15rem, 100%)`**, in-flow with **`PanelWrapLayout`**.
 

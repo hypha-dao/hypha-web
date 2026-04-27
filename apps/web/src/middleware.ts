@@ -98,7 +98,7 @@ export function middleware(request: NextRequest) {
   if (legacyNav) {
     const [, lang, dhoId] = legacyNav;
     const to = new URL(`/${lang}/dho/${dhoId}/spaces${search}`, origin);
-    const res = NextResponse.redirect(to);
+    const res = NextResponse.redirect(to, 308);
     res.headers.set('x-hypha-legacy-redirect', 'dho-spaces');
     if (process.env.NODE_ENV === 'development') {
       console.info(

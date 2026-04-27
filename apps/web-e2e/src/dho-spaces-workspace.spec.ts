@@ -31,10 +31,7 @@ test.describe('DHO spaces tab and workspace (hardening)', () => {
     const r = await request.get(LEGACY_NAV, {
       maxRedirects: 0,
     });
-    expect(
-      r.status() >= 300 && r.status() < 400,
-      'expected redirect to /spaces',
-    ).toBeTruthy();
+    expect(r.status(), 'expected 308 permanent redirect to /spaces').toBe(308);
     expect(r.headers()['x-hypha-legacy-redirect']).toBe('dho-spaces');
   });
 

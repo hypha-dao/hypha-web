@@ -1,6 +1,13 @@
 'use client';
 
-import { Card, StatusBadge, Skeleton, Button, Badge } from '@hypha-platform/ui';
+import {
+  Card,
+  StatusBadge,
+  Skeleton,
+  Button,
+  Badge,
+  Image,
+} from '@hypha-platform/ui';
 import { SewingPinFilledIcon } from '@radix-ui/react-icons';
 import { PersonAvatar } from './person-avatar';
 import { useEvents } from '@hypha-platform/core/client';
@@ -141,10 +148,12 @@ export const MemberCard: React.FC<MemberCardProps> = ({
             height="100%"
           />
         ) : avatarUrl ? (
-          <img
+          <Image
             src={avatarUrl}
             alt=""
             aria-hidden
+            width={320}
+            height={84}
             className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-45 blur-[2px] motion-reduce:scale-100 motion-reduce:blur-none"
           />
         ) : (

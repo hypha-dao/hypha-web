@@ -63,10 +63,12 @@ type HierarchyNode = {
 
 function findRootSpace(space: Space, allSpaces: Space[]): Space {
   let current = space;
+  const visited = new Set<number>([current.id]);
 
   while (current.parentId) {
     const parent = allSpaces.find((s) => s.id === current.parentId);
-    if (!parent) break;
+    if (!parent || visited.has(parent.id)) break;
+    visited.add(parent.id);
     current = parent;
   }
 
@@ -138,7 +140,6 @@ export const SpaceNavigationView = ({
     const accessibleSpaceIds = new Set(spacesWithCurrent.map((s) => s.id));
 
     const rootSpace = findRootSpace(currentSpace, spacesWithCurrent);
-    if (!rootSpace) return null;
     return buildHierarchy(rootSpace, spacesWithCurrent, accessibleSpaceIds);
   }, [currentSpace, filteredSpaces, nonArchivedSpaces]);
 

@@ -124,11 +124,11 @@
 ## 6) Engineering follow-ups (non-normative checklist)
 
 | Area                     | Note                                                                                                                                                                                                |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **URL**                  | If renaming route to `/ecosystem`, add **redirect** from `/spaces` + middleware; update `getDhoPathSpaces` / `getActiveTabFromPath` and any deep links.                                             |
-| **Default tab**          | If product picks **B** (§1.2), change default redirect for `/[lang]/dho/[id]` to **`spaces`**/ecosystem segment with flag.                                                                          |
+| **Default tab**          | If product picks **B** (§1.2), change default redirect for `/[lang]/dho/[id]` to **`spaces`** / ecosystem segment with flag.                                                                        |
 | **SelectAction**         | Tighten **intro copy**; avoid pushing map below the fold.                                                                                                                                           |
-| **SpaceVisualization**   | May need **props** for `className` / `fit: 'viewport'                                                                                                                                               | 'width'`; confirm with file `apps/web/.../space-visualization.tsx`. |
+| **SpaceVisualization**   | May need **props** for `className` / `fit: 'viewport'` or `'width'`; confirm with `apps/web/.../space-visualization.tsx`.                                                                           |
 | **visibleSpaces + list** | Ensure `VisibleSpacesList` layout matches **grid spec** in [dho-members-tab-card-grid-ux-spec.md](./dho-members-tab-card-grid-ux-spec.md) **only where applicable**; avoid duplicate card language. |
 
 ---

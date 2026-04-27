@@ -208,7 +208,9 @@ export const JoinSpace = ({ spaceId, web3SpaceId }: JoinSpaceProps) => {
         <Badge
           variant="outline"
           colorVariant="neutral"
-          className="inline-flex h-10 w-fit max-w-full shrink-0 items-center gap-1.5 border-white/25 bg-white/10 px-3 py-0 text-[11px] font-medium uppercase tracking-wide text-white/90 backdrop-blur-sm [text-shadow:0_1px_2px_rgba(0,0,0,0.35)]"
+          role="status"
+          aria-label={t('alreadyMember')}
+          className="inline-flex h-10 w-fit max-w-full shrink-0 items-center gap-1.5 px-3 py-0 text-[11px] font-medium uppercase tracking-wide"
         >
           <PersonIcon width={14} height={14} className="shrink-0 opacity-90" />
           <span className="truncate">{t('alreadyMember')}</span>

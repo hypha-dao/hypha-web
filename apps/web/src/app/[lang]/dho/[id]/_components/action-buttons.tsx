@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import * as React from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@hypha-platform/ui';
 import { usePathname } from 'next/navigation';
@@ -17,6 +18,7 @@ interface ActionButtonsProps {
 }
 
 export const ActionButtons = ({ web3SpaceId }: ActionButtonsProps) => {
+  const disabledReasonId = React.useId();
   const tDho = useTranslations('DHO');
   const tCommon = useTranslations('Common');
   const pathname = usePathname();
@@ -45,19 +47,29 @@ export const ActionButtons = ({ web3SpaceId }: ActionButtonsProps) => {
   );
 
   if (isDisabled || !createHref) {
+    const reason = tooltipMessage || createLabel;
     return (
-      <Button
-        type="button"
-        disabled
-        size="icon"
-        variant="outline"
-        colorVariant="accent"
-        className={iconButtonClass}
-        title={tooltipMessage || createLabel}
-        aria-label={createLabel}
+      <span
+        className="inline-flex"
+        tabIndex={0}
+        aria-describedby={disabledReasonId}
       >
-        <Plus aria-hidden />
-      </Button>
+        <span id={disabledReasonId} className="sr-only">
+          {reason}
+        </span>
+        <Button
+          type="button"
+          disabled
+          size="icon"
+          variant="outline"
+          colorVariant="accent"
+          className={iconButtonClass}
+          title={reason}
+          aria-label={createLabel}
+        >
+          <Plus aria-hidden />
+        </Button>
+      </span>
     );
   }
 

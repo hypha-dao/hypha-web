@@ -352,7 +352,7 @@ export function DhoSpaceWorkspace({
   const pathname = usePathname();
   const activeName = getActiveTabFromPath(pathname) ?? '';
   const items = useNavItems(lang, id, coherenceEnabled, spaceMemoryEnabled);
-  const titleId = React.useId();
+  const sheetMenuTitleId = React.useId();
   const [sheetOpen, setSheetOpen] = React.useState(false);
   const openButtonRef = React.useRef<HTMLButtonElement>(null);
   const firstLinkRef = React.useRef<HTMLAnchorElement | null>(null);
@@ -528,9 +528,10 @@ export function DhoSpaceWorkspace({
           className="flex w-[min(20rem,100vw)] flex-col gap-0 p-0"
           showClose
           closeLabel={t('closeMenu')}
+          aria-labelledby={sheetMenuTitleId}
         >
           <SheetHeader className="border-b border-border px-4 py-3 text-left">
-            <SheetTitle id={titleId} className="text-base">
+            <SheetTitle id={sheetMenuTitleId} className="text-base">
               {t('spaceMenuTitle')}
             </SheetTitle>
           </SheetHeader>
