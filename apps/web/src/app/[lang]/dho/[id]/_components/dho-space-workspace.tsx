@@ -388,10 +388,10 @@ export function DhoSpaceWorkspace({
   React.useEffect(() => {
     if (sheetOpen) {
       hadSheetOpen.current = true;
-      const tId = window.setTimeout(() => {
+      const focusSheetFirstLinkTimerId = window.setTimeout(() => {
         firstLinkRef.current?.focus();
       }, 0);
-      return () => clearTimeout(tId);
+      return () => clearTimeout(focusSheetFirstLinkTimerId);
     }
     if (hadSheetOpen.current) {
       openButtonRef.current?.focus();
