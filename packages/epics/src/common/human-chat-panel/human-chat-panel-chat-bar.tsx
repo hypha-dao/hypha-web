@@ -62,6 +62,7 @@ import {
   useDraftVoiceDuration,
 } from './human-chat-panel-voice-audio-row';
 import { HumanChatMentionCandidateRow } from './human-chat-mention-candidate-row';
+import { formatComposerMentionToken } from './human-chat-display-mention';
 
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
 
@@ -745,7 +746,7 @@ export function HumanChatPanelChatBar({
       const el = textareaRef.current;
       const tok = atTokenRef.current;
       if (!el || !tok) return;
-      const insertion = `${member.userId} `;
+      const insertion = formatComposerMentionToken(member.displayLabel);
       const start = tok.start;
       const end = el.selectionStart ?? value.length;
       const { next, caret } = insertAtCaret(value, start, end, insertion);
