@@ -55,12 +55,18 @@ export function useResolvedMentionCandidateLabel(
     return fromPerson || matrixFallbackLabel;
   }, [candidate, person, matrixFallbackLabel]);
 
+  /** True while Matrix→Privy link or Person profile is still loading — do not insert composer text yet. */
   const busy =
     Boolean(candidate) &&
     ((!privySub && loadingLink) || (Boolean(resolvedSub) && loadingPerson));
 
   const avatarUrl = person?.avatarUrl?.trim() || undefined;
-  const pickDisabled = !privySub && loadingLink;
 
-  return { resolvedLabel, busy, avatarUrl, pickDisabled };
+  return {
+    resolvedLabel,
+    busy,
+    avatarUrl,
+    /** Block pick until Hypha resolution settles so we never insert shortened MXID by mistake. */
+    pickDisabled: busy,
+  };
 }

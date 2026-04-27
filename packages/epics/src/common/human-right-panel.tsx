@@ -496,10 +496,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     Record<string, string>
   >({});
 
-  useEffect(() => {
-    setMentionDisplayOverride({});
-  }, [roomId]);
-
   const [draftAttachments, setDraftAttachments] = useState<
     ChatDraftAttachment[]
   >([]);
@@ -512,6 +508,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const [replyDraft, setReplyDraft] = useState<ReplyDraft | null>(null);
   const [editDraft, setEditDraft] = useState<EditDraft | null>(null);
   const [roomId, setRoomId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMentionDisplayOverride({});
+  }, [roomId]);
+
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reactionError, setReactionError] = useState<string | null>(null);
@@ -895,9 +896,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   }, [mentionLabelByUserId]);
 
   const resolveMentionMemberLabel = useCallback(
-    (userId: string) =>
-      mentionLabelByUserId.get(userId) ?? resolveMemberLabel(userId),
-    [mentionLabelByUserId, resolveMemberLabel],
+    (userId: string | undefined) => {
+      const id = userId?.trim();
+      if (!id) return t('unknownMember');
+      return mentionLabelByUserId.get(id) ?? resolveMemberLabel(id);
+    },
+    [mentionLabelByUserId, resolveMemberLabel, t],
   );
 
   /** Same roster merge as pills — timeline sender/reply headers use this first. */

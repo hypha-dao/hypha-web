@@ -534,8 +534,10 @@ export function HumanChatPanelChatBar({
           Math.max(0, Math.min(atActive, atSuggestions.length - 1))
         ] ?? null
       : null;
-  const { resolvedLabel: keyboardResolvedPickLabel } =
-    useResolvedMentionCandidateLabel(activeAtPick);
+  const {
+    resolvedLabel: keyboardResolvedPickLabel,
+    pickDisabled: keyboardPickDisabled,
+  } = useResolvedMentionCandidateLabel(activeAtPick);
 
   const [selectionBar, setSelectionBar] = useState<{
     top: number;
@@ -1342,6 +1344,7 @@ export function HumanChatPanelChatBar({
         }
         if (e.key === 'Enter' || e.key === 'Tab') {
           e.preventDefault();
+          if (keyboardPickDisabled) return;
           const safeIndex = Math.max(
             0,
             Math.min(atActive, atSuggestions.length - 1),
@@ -1411,6 +1414,7 @@ export function HumanChatPanelChatBar({
       atActive,
       applyAtChoice,
       keyboardResolvedPickLabel,
+      keyboardPickDisabled,
       colonOpen,
       colonSuggestions,
       colonActive,
