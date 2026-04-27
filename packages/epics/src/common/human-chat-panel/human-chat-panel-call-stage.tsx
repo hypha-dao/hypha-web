@@ -18,8 +18,16 @@ import {
 import { useTranslations } from 'next-intl';
 import { cn } from '@hypha-platform/ui-utils';
 import { Loader2, Maximize2, MicOff, User } from 'lucide-react';
-import type { SpaceGroupCallState } from '@hypha-platform/core/client';
-import { matrixMemberDisplayLabel } from './matrix-room-member-display';
+import {
+  usePersonBySub,
+  useUserPrivyIdByMatrixId,
+  type SpaceGroupCallState,
+} from '@hypha-platform/core/client';
+import { Skeleton } from '@hypha-platform/ui';
+import {
+  matrixMemberDisplayLabel,
+  needsHyphaProfileResolutionForMatrixLabel,
+} from './matrix-room-member-display';
 import { CallAudioVoiceWaves } from './call-audio-voice-waves';
 import type { CallFullViewLayoutMode } from './call-full-view-layout';
 import { CallFullViewPaneSplitter } from './human-chat-panel-call-full-view-pane-splitter';
@@ -980,6 +988,41 @@ export function HumanChatPanelCallStage({
   );
 }
 
+function usePlaceholderParticipantName(
+  room: Room | null,
+  userId: string,
+  resolveMemberLabel: (userId: string | undefined) => string,
+  fallback: string,
+): { text: string; showSkeleton: boolean } {
+  const syncLabel = useMemo(() => {
+    const roster = resolveMemberLabel(userId)?.trim();
+    if (roster) return roster;
+    const m = room?.getMember(userId) ?? null;
+    if (m) return matrixMemberDisplayLabel(m, userId);
+    return resolveMemberLabel(userId)?.trim() || fallback;
+  }, [room, userId, resolveMemberLabel, fallback]);
+
+  const needsProfile = needsHyphaResolutionForCallLabel(syncLabel, userId);
+  const { privyUserId: linkedSub, isLoading: loadingLink } =
+    useUserPrivyIdByMatrixId({
+      matrixUserId: needsProfile ? userId : undefined,
+    });
+  const { person, isLoading: loadingPerson } = usePersonBySub({
+    sub: linkedSub,
+  });
+
+  const text = useMemo(() => {
+    const fromPerson = person ? formatHyphaPersonName(person) : '';
+    if (fromPerson) return fromPerson;
+    return syncLabel;
+  }, [person, syncLabel]);
+
+  const showSkeleton =
+    needsProfile && (loadingLink || (Boolean(linkedSub) && loadingPerson));
+
+  return { text, showSkeleton };
+}
+
 function CallParticipantPlaceholderTile({
   client,
   roomId,
@@ -1003,10 +1046,12 @@ function CallParticipantPlaceholderTile({
 }) {
   const room: Room | null =
     roomId && client ? client.getRoom(roomId) ?? null : null;
-  const member = room?.getMember(userId) ?? null;
-  const label = member
-    ? matrixMemberDisplayLabel(member, userId)
-    : resolveMemberLabel(userId) || t('callRemoteParticipant');
+  const { text: label, showSkeleton } = usePlaceholderParticipantName(
+    room,
+    userId,
+    resolveMemberLabel,
+    t('callRemoteParticipant'),
+  );
   const px = isPip ? 48 : isFullView && !isPip ? 128 : 80;
   const avatarUrl =
     matrixMemberAvatarSquareForCall(client, roomId, userId, px) ??
@@ -1073,7 +1118,11 @@ function CallParticipantPlaceholderTile({
           isPip && 'text-[10px] leading-tight',
         )}
       >
-        {label}
+        {showSkeleton ? (
+          <Skeleton loading width={100} height={14} className="mx-auto" />
+        ) : (
+          label
+        )}
       </p>
       <p
         className={cn(
@@ -1087,19 +1136,89 @@ function CallParticipantPlaceholderTile({
   );
 }
 
-function displayLabel(
+function formatHyphaPersonName(p: {
+  name?: string | null;
+  surname?: string | null;
+  nickname?: string | null;
+}): string {
+  const full = [p.name, p.surname].filter(Boolean).join(' ').trim();
+  if (full) return full;
+  if (p.nickname?.trim()) return p.nickname.trim();
+  return '';
+}
+
+/** Same rule as timeline headers: fetch Hypha Person when Matrix/roster label is still bridged-tech. */
+function needsHyphaResolutionForCallLabel(
+  profileLabel: string | undefined,
+  matrixUserId: string | undefined,
+): boolean {
+  if (!matrixUserId?.trim()) return false;
+  const l = profileLabel?.trim() ?? '';
+  if (!l) return true;
+  if (l === matrixUserId) return true;
+  return needsHyphaProfileResolutionForMatrixLabel(l);
+}
+
+function useCallParticipantDisplayName(
   room: Room | null,
   feed: CallFeed,
   currentUserId: string | null,
   resolveMemberLabel: (userId: string | undefined) => string,
   fallback: string,
-): string {
-  if (feed.isLocal() && currentUserId) {
-    return resolveMemberLabel(currentUserId);
-  }
-  const m = room?.getMember(feed.userId) ?? null;
-  if (m) return matrixMemberDisplayLabel(m, feed.userId);
-  return resolveMemberLabel(feed.userId) || fallback;
+  isPip: boolean,
+  isShare: boolean,
+): { text: string; showSkeleton: boolean } {
+  const uid = feed.userId;
+  const isLocalFeed = feed.isLocal();
+
+  const syncLabel = useMemo(() => {
+    if (isPip) return ''; // caller uses "You"
+    if (isLocalFeed && currentUserId) {
+      return resolveMemberLabel(currentUserId).trim();
+    }
+    /** Roster/Hypha merge first — avoid Privy slug from raw Matrix member displayname. */
+    const roster = resolveMemberLabel(uid)?.trim();
+    if (roster) return roster;
+    const m = room?.getMember(uid) ?? null;
+    if (m) return matrixMemberDisplayLabel(m, uid);
+    return resolveMemberLabel(uid)?.trim() || fallback;
+  }, [
+    room,
+    uid,
+    isLocalFeed,
+    currentUserId,
+    resolveMemberLabel,
+    fallback,
+    isPip,
+    isShare,
+  ]);
+
+  const needsProfile =
+    !isPip &&
+    !isShare &&
+    !isLocalFeed &&
+    needsHyphaResolutionForCallLabel(syncLabel, uid);
+
+  const { privyUserId: linkedSub, isLoading: loadingLink } =
+    useUserPrivyIdByMatrixId({
+      matrixUserId: needsProfile ? uid : undefined,
+    });
+  const { person, isLoading: loadingPerson } = usePersonBySub({
+    sub: linkedSub,
+  });
+
+  const text = useMemo(() => {
+    if (isPip) return ''; // overlay uses callYou
+    if (isLocalFeed && currentUserId) return syncLabel;
+    const fromPerson = person ? formatHyphaPersonName(person) : '';
+    if (fromPerson) return fromPerson;
+    return syncLabel;
+  }, [isPip, isLocalFeed, currentUserId, person, syncLabel]);
+
+  const showSkeleton =
+    needsProfile && (loadingLink || (Boolean(linkedSub) && loadingPerson));
+
+  return { text, showSkeleton };
 }
 
 const CallFeedTile = ({
@@ -1129,27 +1248,14 @@ const CallFeedTile = ({
   resolveMemberLabel: (userId: string | undefined) => string;
   t: (key: string) => string;
 }) => {
-  const label = isPip
-    ? t('callYou')
-    : isShare
-    ? displayLabel(
-        room,
-        feed,
-        currentUserId,
-        resolveMemberLabel,
-        t('callScreenShare'),
-      )
-    : displayLabel(
-        room,
-        feed,
-        currentUserId,
-        resolveMemberLabel,
-        t('callRemoteParticipant'),
-      );
+  const nameFallback = isShare
+    ? t('callScreenShare')
+    : t('callRemoteParticipant');
   return (
     <FeedContent
       client={client}
       roomId={roomId}
+      room={room}
       currentUserId={currentUserId}
       currentUserProfileAvatarUrl={currentUserProfileAvatarUrl}
       feed={feed}
@@ -1157,7 +1263,8 @@ const CallFeedTile = ({
       isPip={isPip}
       isFullView={isFullView}
       isActiveSpeaker={isActiveSpeaker}
-      label={label}
+      resolveMemberLabel={resolveMemberLabel}
+      nameFallback={nameFallback}
       t={t}
     />
   );
@@ -1166,6 +1273,7 @@ const CallFeedTile = ({
 const FeedContent = ({
   client,
   roomId,
+  room,
   currentUserId,
   currentUserProfileAvatarUrl,
   feed,
@@ -1173,11 +1281,13 @@ const FeedContent = ({
   isPip,
   isFullView,
   isActiveSpeaker,
-  label,
+  resolveMemberLabel,
+  nameFallback,
   t,
 }: {
   client: MatrixClient | null;
   roomId: string | null;
+  room: Room | null;
   currentUserId: string | null;
   currentUserProfileAvatarUrl?: string | null;
   feed: CallFeed;
@@ -1185,9 +1295,23 @@ const FeedContent = ({
   isPip: boolean;
   isFullView: boolean;
   isActiveSpeaker: boolean;
-  label: string;
+  resolveMemberLabel: (userId: string | undefined) => string;
+  nameFallback: string;
   t: (key: string) => string;
 }) => {
+  const { text: resolvedName, showSkeleton } = useCallParticipantDisplayName(
+    room,
+    feed,
+    currentUserId,
+    resolveMemberLabel,
+    nameFallback,
+    isPip,
+    isShare,
+  );
+  const overlayLabel = isPip ? t('callYou') : resolvedName;
+  const ariaLabel =
+    isShare && !isPip ? nameFallback : isPip ? t('callYou') : resolvedName;
+
   const ref = useRef<HTMLVideoElement | null>(null);
   const stream = feed.stream;
 
@@ -1291,7 +1415,7 @@ const FeedContent = ({
             autoPlay
             playsInline
             muted={feed.isLocal()}
-            aria-label={label}
+            aria-label={ariaLabel}
           />
           {feed.isAudioMuted() && (
             <div
@@ -1319,7 +1443,11 @@ const FeedContent = ({
                 isFullView ? 'bottom-2' : 'bottom-1',
               )}
             >
-              {label}
+              {showSkeleton ? (
+                <Skeleton loading width={88} height={14} />
+              ) : (
+                overlayLabel
+              )}
             </div>
           )}
         </>
@@ -1336,7 +1464,7 @@ const FeedContent = ({
               : 'h-full min-h-[10rem] flex-1', // panel: fill grid cell to match video tile
             isPip && 'gap-1.5 p-2',
           )}
-          aria-label={label}
+          aria-label={ariaLabel}
         >
           <div
             className={cn(
@@ -1377,8 +1505,19 @@ const FeedContent = ({
               isPip && 'text-[10px] leading-tight',
             )}
           >
-            {label}
-            {feed.isAudioMuted() ? ` · ${t('callParticipantMuted')}` : null}
+            {showSkeleton ? (
+              <Skeleton
+                loading
+                width={100}
+                height={16}
+                className="mx-auto rounded"
+              />
+            ) : (
+              <>
+                {overlayLabel}
+                {feed.isAudioMuted() ? ` · ${t('callParticipantMuted')}` : null}
+              </>
+            )}
           </p>
           <CallAudioVoiceWaves
             mediaStream={stream}
