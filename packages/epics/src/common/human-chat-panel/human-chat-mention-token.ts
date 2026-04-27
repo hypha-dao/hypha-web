@@ -2,6 +2,8 @@
  * Parse an active `@query` fragment before the cursor for mention autocomplete.
  */
 
+import { MENTION_DISPLAY_ZWSP } from './human-chat-display-mention';
+
 export type ActiveAtToken = {
   /** Index of `@` in `value`. */
   start: number;
@@ -32,10 +34,14 @@ export function getActiveAtToken(
   if (!isAtWordStart(value, atIdx)) return null;
 
   const afterAt = before.slice(atIdx + 1);
-  if (afterAt.includes('\n')) return null;
-  if (/\s/.test(afterAt)) return null;
+  /** Composer tokens are `@` + ZWSP + display name — strip ZWSP for query matching. */
+  const afterForQuery = afterAt.startsWith(MENTION_DISPLAY_ZWSP)
+    ? afterAt.slice(MENTION_DISPLAY_ZWSP.length)
+    : afterAt;
+  if (afterForQuery.includes('\n')) return null;
+  if (/\s/.test(afterForQuery)) return null;
 
-  const query = afterAt.slice(0, MAX_QUERY_LEN);
+  const query = afterForQuery.slice(0, MAX_QUERY_LEN);
   /** Unicode letters / marks / numbers — `\w` is ASCII-only and rejects José, Zoë, etc. */
   if (!/^[\p{L}\p{M}\p{N}_.=\-/:']*$/u.test(query)) return null;
 
