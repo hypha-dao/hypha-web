@@ -282,7 +282,7 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
           </p>
           {isDelegate ? (
             <Badge colorVariant="accent" variant="outline" size={1}>
-              Delegate
+              {tCommon('delegateBadge')}
             </Badge>
           ) : null}
         </div>
