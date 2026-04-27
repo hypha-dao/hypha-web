@@ -20,7 +20,7 @@ export default async function RewardsPage(props: PageProps) {
   if (!spaceFromDb) {
     notFound();
   }
-  const web3SpaceId = spaceFromDb.web3SpaceId;
+  const web3SpaceId = spaceFromDb.web3SpaceId ?? undefined;
 
   return (
     <SpaceTabAccessWrapper spaceId={web3SpaceId} spaceSlug={id}>

@@ -21,7 +21,7 @@ export default async function MembershipPage(props: PageProps) {
   if (!spaceFromDb) {
     notFound();
   }
-  const web3SpaceId = spaceFromDb.web3SpaceId;
+  const web3SpaceId = spaceFromDb.web3SpaceId ?? undefined;
 
   const basePath = getDhoPathMembers(lang as Locale, id as string);
 
