@@ -229,21 +229,24 @@ export const SpaceNavigationView = ({
             <div
               className={cn(
                 'flex min-h-0 w-full min-w-0 flex-col gap-4',
-                'lg:max-h-[min(75dvh,calc(100dvh-9.5rem))] lg:flex-row lg:items-stretch lg:gap-5',
+                'lg:max-h-[min(75dvh,calc(100dvh-9.5rem))] lg:flex-row lg:items-stretch lg:gap-4',
               )}
             >
               <div
                 role="region"
                 className={cn(
-                  'relative order-1 flex w-full min-w-0 shrink-0 items-center justify-center overflow-hidden',
-                  'bg-muted/15',
-                  'bg-[radial-gradient(ellipse_95%_80%_at_50%_35%,_color-mix(in_oklch,var(--color-accent-5)_28%,transparent)_0%,_transparent_58%)]',
-                  'dark:bg-[radial-gradient(ellipse_100%_85%_at_50%_38%,_hsl(250_28%_16%_/_0.75)_0%,_hsl(240_18%_7%_/_0.96)_100%)]',
+                  'relative order-1 flex w-full min-w-0 shrink-0 items-center justify-center overflow-hidden rounded-lg',
+                  /* Blend with page chrome — avoid a flat black “square” behind the map */
+                  'bg-muted/20',
+                  'bg-[radial-gradient(ellipse_92%_78%_at_50%_38%,color-mix(in_oklab,var(--space-accent,var(--color-accent-9))_22%,transparent)_0%,transparent_62%)]',
+                  'dark:bg-[radial-gradient(ellipse_92%_78%_at_50%_42%,color-mix(in_oklab,var(--space-accent,var(--color-accent-9))_18%,transparent)_0%,transparent_58%)]',
                   'aspect-square max-h-[min(72dvh,calc(100dvh-10rem),min(100vw,56rem))] max-w-full self-center',
-                  'lg:order-1 lg:min-h-0 lg:max-h-full lg:max-w-none lg:flex-1 lg:self-stretch',
+                  /* Give the diagram most of the row; side panel stays readable */
+                  'lg:order-1 lg:min-h-0 lg:max-h-full lg:max-w-none lg:flex-[3] lg:min-w-0 lg:self-stretch',
                 )}
                 style={{
-                  boxShadow: 'inset 0 0 100px hsl(0 0% 0% / 0.04)',
+                  boxShadow:
+                    'inset 0 0 80px color-mix(in oklab, var(--space-accent, var(--color-accent-9)) 8%, transparent)',
                 }}
                 aria-label={t('mapRegionAriaLabel')}
               >
@@ -269,8 +272,8 @@ export const SpaceNavigationView = ({
                   role="region"
                   className={cn(
                     'order-2 flex min-h-0 w-full min-w-0 flex-col border-t border-border/50 pt-4',
-                    'lg:order-2 lg:max-w-[20rem] lg:shrink-0 lg:overflow-hidden lg:border-l lg:border-t-0',
-                    'lg:pl-4 lg:pt-0 xl:max-w-[22rem]',
+                    'lg:order-2 lg:w-[min(17.5rem,max(14rem,28vw))] lg:max-w-[17.5rem] lg:min-w-[13.5rem] lg:shrink-0 lg:overflow-hidden lg:border-l lg:border-t-0',
+                    'lg:pl-3 lg:pt-0',
                   )}
                   aria-label={t('dataPanelAriaLabel')}
                 >

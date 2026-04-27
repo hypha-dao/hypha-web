@@ -38,10 +38,52 @@ const VISUALIZATION_CONFIG = {
   STROKE_WIDTH_SCALE: 0.7,
 } as const;
 
-const ACCENT = {
-  light: { stroke: 'rgb(99 102 241 / 0.5)', fill: 'rgb(99 102 241 / 0.1)' },
-  dark: { stroke: 'rgb(180 170 255 / 0.45)', fill: 'rgb(120 100 200 / 0.08)' },
-} as const;
+const FALLBACK_ACCENT_RGB: [number, number, number] = [99, 102, 241];
+
+function rgbFromCssColor(css: string): [number, number, number] | null {
+  const m = css.match(
+    /^rgba?\(\s*([\d.]+)\s*(?:,|\s)\s*([\d.]+)\s*(?:,|\s)\s*([\d.]+)/,
+  );
+  if (!m) return null;
+  return [
+    Math.round(Number(m[1])),
+    Math.round(Number(m[2])),
+    Math.round(Number(m[3])),
+  ];
+}
+
+/** Resolves `--space-accent` from the layout (banner-driven) for map tints and halos. */
+function readSpaceAccentRgb(): [number, number, number] {
+  if (typeof window === 'undefined') return FALLBACK_ACCENT_RGB;
+  const probe = document.createElement('span');
+  probe.hidden = true;
+  probe.style.color = 'var(--space-accent, rgb(99, 102, 241))';
+  document.documentElement.appendChild(probe);
+  const computed = getComputedStyle(probe).color;
+  probe.remove();
+  return rgbFromCssColor(computed) ?? FALLBACK_ACCENT_RGB;
+}
+
+function mixRgb(
+  a: [number, number, number],
+  b: [number, number, number],
+  t: number,
+): [number, number, number] {
+  const u = Math.min(1, Math.max(0, t));
+  return [
+    Math.round(a[0] * (1 - u) + b[0] * u),
+    Math.round(a[1] * (1 - u) + b[1] * u),
+    Math.round(a[2] * (1 - u) + b[2] * u),
+  ];
+}
+
+function rgbCs(...parts: [number, number, number]): string {
+  return `${parts[0]} ${parts[1]} ${parts[2]}`;
+}
+
+function rgbA(parts: [number, number, number], alpha: number): string {
+  return `rgb(${rgbCs(...parts)} / ${alpha})`;
+}
 
 export function SpaceVisualization({
   data,
@@ -155,18 +197,19 @@ export function SpaceVisualization({
   useEffect(() => {
     if (!svgRef.current || !focusRef.current) return;
 
+    const accentRgb = readSpaceAccentRgb();
     const getSelectedSpaceFillColor = () =>
       themeRef.current === 'dark' ? '#1a1a1a' : '#ffffff';
+    const getLogoFaceFill = (isFocus: boolean) => {
+      if (isFocus) return getSelectedSpaceFillColor();
+      return themeRef.current === 'dark' ? 'rgb(22 24 28)' : 'rgb(246 246 249)';
+    };
     const isDark = themeRef.current === 'dark';
     const orbitLineMuted = isDark
       ? 'rgb(175 180 200 / 0.36)'
       : 'rgb(100 100 120 / 0.28)';
-    const orbitLineActive = isDark
-      ? 'rgb(200 200 255 / 0.55)'
-      : 'rgb(80 80 150 / 0.4)';
-    const focusFill = isDark
-      ? 'rgb(99 102 241 / 0.12)'
-      : 'rgb(99 102 241 / 0.07)';
+    const orbitLineActive = rgbA(accentRgb, isDark ? 0.52 : 0.42);
+    const focusFill = rgbA(accentRgb, isDark ? 0.14 : 0.09);
     const parentFill = isDark ? 'rgb(255 255 255 / 0.04)' : 'rgb(0 0 0 / 0.03)';
 
     const svg = d3.select(svgRef.current);
@@ -197,9 +240,7 @@ export function SpaceVisualization({
     const logos = svg.selectAll<SVGGElement, SpaceHierarchyNode>('g.logo');
     logos.each(function (d: SpaceHierarchyNode) {
       const circle = d3.select(this).select('circle.logo-face');
-      if (d === f) {
-        circle.attr('fill', getSelectedSpaceFillColor());
-      }
+      circle.attr('fill', getLogoFaceFill(d === f));
       circle
         .attr('stroke', getSelectedSpaceFillColor())
         .attr('stroke-width', getStrokeWidth(d.depth));
@@ -209,16 +250,19 @@ export function SpaceVisualization({
   useEffect(() => {
     if (!svgRef.current) return;
 
+    const accentRgb = readSpaceAccentRgb();
     const getSelectedSpaceFillColor = () =>
       themeRef.current === 'dark' ? '#1a1a1a' : '#ffffff';
+    const getLogoFaceFill = (isFocus: boolean) => {
+      if (isFocus) return getSelectedSpaceFillColor();
+      return themeRef.current === 'dark' ? 'rgb(22 24 28)' : 'rgb(246 246 249)';
+    };
     const isDark = themeRef.current === 'dark';
-    const accent = isDark ? ACCENT.dark : ACCENT.light;
+    const accentStroke = rgbA(accentRgb, isDark ? 0.45 : 0.5);
     const orbitLineMuted = isDark
       ? 'rgb(175 180 200 / 0.36)'
       : 'rgb(100 100 120 / 0.28)';
-    const orbitLineActive = isDark
-      ? 'rgb(200 200 255 / 0.55)'
-      : 'rgb(80 80 150 / 0.4)';
+    const orbitLineActive = rgbA(accentRgb, isDark ? 0.52 : 0.42);
 
     const getStrokeWidth = (depth: number): number => {
       return (
@@ -438,32 +482,39 @@ export function SpaceVisualization({
       .attr('cx', '50%')
       .attr('cy', '50%')
       .attr('r', '58%');
+    const bgInnerDark = mixRgb(accentRgb, [26, 28, 38], 0.38);
+    const bgMidDark = mixRgb(accentRgb, [16, 18, 28], 0.32);
+    const bgOuterDark = mixRgb(accentRgb, [10, 12, 22], 0.28);
+    const bgInnerLight = mixRgb(accentRgb, [255, 255, 255], 0.72);
+    const bgMidLight = mixRgb(accentRgb, [248, 248, 252], 0.55);
+    const bgOuterLight = mixRgb(accentRgb, [236, 238, 248], 0.45);
+
     if (isDark) {
       bgGrad
         .append('stop')
         .attr('offset', '0%')
-        .attr('stop-color', 'rgb(32 32 50)');
+        .attr('stop-color', `rgb(${rgbCs(bgInnerDark)})`);
       bgGrad
         .append('stop')
         .attr('offset', '55%')
-        .attr('stop-color', 'rgb(16 16 30)');
+        .attr('stop-color', `rgb(${rgbCs(bgMidDark)})`);
       bgGrad
         .append('stop')
         .attr('offset', '100%')
-        .attr('stop-color', 'rgb(5 5 10)');
+        .attr('stop-color', `rgb(${rgbCs(bgOuterDark)})`);
     } else {
       bgGrad
         .append('stop')
         .attr('offset', '0%')
-        .attr('stop-color', 'rgb(255 255 255)');
+        .attr('stop-color', `rgb(${rgbCs(bgInnerLight)})`);
       bgGrad
         .append('stop')
         .attr('offset', '45%')
-        .attr('stop-color', 'rgb(240 240 255)');
+        .attr('stop-color', `rgb(${rgbCs(bgMidLight)})`);
       bgGrad
         .append('stop')
         .attr('offset', '100%')
-        .attr('stop-color', 'rgb(220 220 240)');
+        .attr('stop-color', `rgb(${rgbCs(bgOuterLight)})`);
     }
 
     const fLogo = defs
@@ -488,10 +539,7 @@ export function SpaceVisualization({
       .attr('dx', 0)
       .attr('dy', 0)
       .attr('stdDeviation', 9)
-      .attr(
-        'flood-color',
-        isDark ? 'rgb(140 130 255 / 0.4)' : 'rgb(99 102 241 / 0.2)',
-      )
+      .attr('flood-color', rgbA(accentRgb, isDark ? 0.38 : 0.22))
       .attr('flood-opacity', 0.9)
       .attr('result', 'sGlow');
     fLogo
@@ -517,9 +565,7 @@ export function SpaceVisualization({
       .attr('offset', '100%')
       .attr('stop-color', isDark ? 'rgb(0 0 0 / 0.2)' : 'rgb(0 0 0 / 0.06)');
 
-    const focusTintA = isDark
-      ? 'rgb(99 102 241 / 0.12)'
-      : 'rgb(99 102 241 / 0.07)';
+    const focusTintA = rgbA(accentRgb, isDark ? 0.13 : 0.08);
     const orbitParentTint = isDark
       ? 'rgb(255 255 255 / 0.04)'
       : 'rgb(0 0 0 / 0.03)';
@@ -540,16 +586,13 @@ export function SpaceVisualization({
     ringGrad
       .append('stop')
       .attr('offset', '0%')
-      .attr(
-        'stop-color',
-        isDark ? 'rgb(200 200 255 / 0.55)' : 'rgb(99 102 241 / 0.5)',
-      );
+      .attr('stop-color', rgbA(accentRgb, isDark ? 0.48 : 0.45));
     ringGrad
       .append('stop')
       .attr('offset', '100%')
       .attr(
         'stop-color',
-        isDark ? 'rgb(99 102 241 / 0.2)' : 'rgb(200 200 255 / 0.25)',
+        rgbA(mixRgb(accentRgb, [255, 255, 255], 0.35), isDark ? 0.22 : 0.28),
       );
 
     const bgLayer = svg
@@ -569,10 +612,7 @@ export function SpaceVisualization({
       .attr('cx', 0)
       .attr('cy', -height * 0.04)
       .attr('r', maxR * 0.5)
-      .attr(
-        'fill',
-        isDark ? 'rgb(200 200 255 / 0.04)' : 'rgb(255 255 255 / 0.4)',
-      );
+      .attr('fill', rgbA(accentRgb, isDark ? 0.06 : 0.12));
     bgLayer
       .append('rect')
       .attr('x', -width / 2)
@@ -592,7 +632,7 @@ export function SpaceVisualization({
       .attr('cy', 0)
       .attr('r', (r) => r)
       .attr('fill', 'none')
-      .attr('stroke', isDark ? 'rgb(200 200 255 / 0.07)' : 'rgb(0 0 0 / 0.055)')
+      .attr('stroke', isDark ? rgbA(accentRgb, 0.09) : 'rgb(0 0 0 / 0.055)')
       .attr('stroke-width', 0.75)
       .attr('vector-effect', 'non-scaling-stroke');
 
@@ -607,7 +647,7 @@ export function SpaceVisualization({
         .attr('cy', 0)
         .attr('r', (d) => maxR * d)
         .attr('fill', 'none')
-        .attr('stroke', accent.stroke)
+        .attr('stroke', accentStroke)
         .attr('stroke-width', 0.5)
         .attr('vector-effect', 'non-scaling-stroke')
         .attr('opacity', 0.35)
@@ -635,10 +675,7 @@ export function SpaceVisualization({
           .attr('y1', y1)
           .attr('x2', x2)
           .attr('y2', y2)
-          .attr(
-            'stroke',
-            isDark ? 'rgb(200 200 255 / 0.04)' : 'rgb(0 0 0 / 0.035)',
-          )
+          .attr('stroke', isDark ? rgbA(accentRgb, 0.05) : 'rgb(0 0 0 / 0.035)')
           .attr('stroke-width', 0.35);
       }
     }
@@ -723,7 +760,7 @@ export function SpaceVisualization({
         .attr('filter', `url(#${idPrefix}-logoCard)`)
         .append('circle')
         .attr('class', 'logo-face')
-        .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000')
+        .attr('fill', getLogoFaceFill(d === focus))
         .attr('stroke', getSelectedSpaceFillColor())
         .attr('stroke-width', getStrokeWidth(d.depth));
 
@@ -858,7 +895,7 @@ export function SpaceVisualization({
     logos.each(function (d: SpaceHierarchyNode) {
       d3.select(this)
         .select('circle.logo-face')
-        .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000')
+        .attr('fill', getLogoFaceFill(d === focus))
         .attr('stroke', getSelectedSpaceFillColor())
         .attr('stroke-width', getStrokeWidth(d.depth));
     });
@@ -907,7 +944,7 @@ export function SpaceVisualization({
           .select('circle.logo-face')
           .transition()
           .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
-          .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000')
+          .attr('fill', getLogoFaceFill(d === focus))
           .attr('stroke', getSelectedSpaceFillColor())
           .attr('stroke-width', getStrokeWidth(d.depth));
       });
@@ -950,7 +987,7 @@ export function SpaceVisualization({
           d3.select(this)
             .select('circle.logo-face')
             .attr('r', r)
-            .attr('fill', d === focus ? getSelectedSpaceFillColor() : '#000')
+            .attr('fill', getLogoFaceFill(d === focus))
             .attr('stroke', getSelectedSpaceFillColor())
             .attr('stroke-width', getStrokeWidth(d.depth));
 
