@@ -239,11 +239,16 @@ export function SpaceVisualization({
 
     const logos = svg.selectAll<SVGGElement, SpaceHierarchyNode>('g.logo');
     logos.each(function (d: SpaceHierarchyNode) {
-      const circle = d3.select(this).select('circle.logo-face');
-      circle.attr('fill', getLogoFaceFill(d === f));
-      circle
+      const sw = getStrokeWidth(d.depth);
+      d3.select(this)
+        .select('circle.logo-face-fill')
+        .attr('fill', getLogoFaceFill(d === f))
+        .attr('stroke', 'none');
+      d3.select(this)
+        .select('circle.logo-face-stroke')
+        .attr('fill', 'none')
         .attr('stroke', getSelectedSpaceFillColor())
-        .attr('stroke-width', getStrokeWidth(d.depth));
+        .attr('stroke-width', sw);
     });
   }, [resolvedTheme]);
 
@@ -757,20 +762,42 @@ export function SpaceVisualization({
 
       clipPath.append('circle').attr('r', 1);
 
-      logoGroup
-        .attr('filter', `url(#${idPrefix}-logoCard)`)
-        .append('circle')
-        .attr('class', 'logo-face')
-        .attr('fill', getLogoFaceFill(d === focus))
-        .attr('stroke', getSelectedSpaceFillColor())
-        .attr('stroke-width', getStrokeWidth(d.depth));
+      const sw0 = getStrokeWidth(d.depth);
+      /* Outer radius (stroke centerline); inner fill radius so fill meets stroke inner edge */
+      const rOuter0 =
+        d.r! * (width / view[2]) * VISUALIZATION_CONFIG.LOGO_RATIO;
+      const rInner0 = Math.max(0, rOuter0 - sw0 / 2);
 
-      logoGroup
+      const logoBody = logoGroup
+        .append('g')
+        .attr('class', 'logo-body')
+        .attr('filter', `url(#${idPrefix}-logoCard)`);
+
+      logoBody
+        .append('circle')
+        .attr('class', 'logo-face-fill')
+        .attr('fill', getLogoFaceFill(d === focus))
+        .attr('stroke', 'none')
+        .attr('r', rInner0);
+
+      logoBody
         .append('image')
         .attr('href', d.data.logoUrl || DEFAULT_SPACE_AVATAR_IMAGE)
         .attr('preserveAspectRatio', 'xMidYMid slice')
         .attr('alt', `${d.data.name} logo`)
-        .attr('clip-path', `url(#${clipId})`);
+        .attr('clip-path', `url(#${clipId})`)
+        .attr('x', -rInner0)
+        .attr('y', -rInner0)
+        .attr('width', rInner0 * 2)
+        .attr('height', rInner0 * 2);
+
+      logoGroup
+        .append('circle')
+        .attr('class', 'logo-face-stroke')
+        .attr('fill', 'none')
+        .attr('stroke', getSelectedSpaceFillColor())
+        .attr('stroke-width', sw0)
+        .attr('r', rOuter0);
     });
 
     svg.on('click', () => {
@@ -894,11 +921,16 @@ export function SpaceVisualization({
     );
 
     logos.each(function (d: SpaceHierarchyNode) {
+      const swU = getStrokeWidth(d.depth);
       d3.select(this)
-        .select('circle.logo-face')
+        .select('circle.logo-face-fill')
         .attr('fill', getLogoFaceFill(d === focus))
+        .attr('stroke', 'none');
+      d3.select(this)
+        .select('circle.logo-face-stroke')
+        .attr('fill', 'none')
         .attr('stroke', getSelectedSpaceFillColor())
-        .attr('stroke-width', getStrokeWidth(d.depth));
+        .attr('stroke-width', swU);
     });
 
     zoomTo(view);
@@ -941,13 +973,19 @@ export function SpaceVisualization({
         .style('fill', (d: SpaceHierarchyNode) => orbitFillForNode(d, focus));
 
       logos.each(function (d: SpaceHierarchyNode) {
+        const swT = getStrokeWidth(d.depth);
         d3.select(this)
-          .select('circle.logo-face')
+          .select('circle.logo-face-fill')
           .transition()
           .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
-          .attr('fill', getLogoFaceFill(d === focus))
+          .attr('fill', getLogoFaceFill(d === focus));
+        d3.select(this)
+          .select('circle.logo-face-stroke')
+          .transition()
+          .duration(VISUALIZATION_CONFIG.ZOOM_DURATION)
+          .attr('fill', 'none')
           .attr('stroke', getSelectedSpaceFillColor())
-          .attr('stroke-width', getStrokeWidth(d.depth));
+          .attr('stroke-width', swT);
       });
 
       transition.on('end', () => {
@@ -982,24 +1020,32 @@ export function SpaceVisualization({
             `translate(${(d.x! - v[0]) * k}, ${(d.y! - v[1]) * k})`,
         )
         .each(function (d: SpaceHierarchyNode) {
-          const r = d.r! * k * VISUALIZATION_CONFIG.LOGO_RATIO;
+          const rOuter = d.r! * k * VISUALIZATION_CONFIG.LOGO_RATIO;
+          const swZ = getStrokeWidth(d.depth);
+          const rInner = Math.max(0, rOuter - swZ / 2);
           const clipId = `clip-${idPrefix}-${d.data.id}`;
 
           d3.select(this)
-            .select('circle.logo-face')
-            .attr('r', r)
+            .select('circle.logo-face-fill')
+            .attr('r', rInner)
             .attr('fill', getLogoFaceFill(d === focus))
-            .attr('stroke', getSelectedSpaceFillColor())
-            .attr('stroke-width', getStrokeWidth(d.depth));
+            .attr('stroke', 'none');
 
-          defs.select(`#${clipId} circle`).attr('r', r);
+          d3.select(this)
+            .select('circle.logo-face-stroke')
+            .attr('r', rOuter)
+            .attr('fill', 'none')
+            .attr('stroke', getSelectedSpaceFillColor())
+            .attr('stroke-width', swZ);
+
+          defs.select(`#${clipId} circle`).attr('r', rInner);
 
           d3.select(this)
             .select('image')
-            .attr('x', -r)
-            .attr('y', -r)
-            .attr('width', r * 2)
-            .attr('height', r * 2);
+            .attr('x', -rInner)
+            .attr('y', -rInner)
+            .attr('width', rInner * 2)
+            .attr('height', rInner * 2);
         });
     }
   }, [
