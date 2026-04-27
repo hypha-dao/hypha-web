@@ -31,7 +31,7 @@ export function useSpaceDiscoverability({
     error,
   } = useSWR(
     swrKey,
-    async ([spaceId]) => {
+    async ([spaceId]: readonly [number | bigint, 'getSpaceVisibility']) => {
       const spaceIdBigInt =
         typeof spaceId === 'number' ? BigInt(spaceId) : spaceId;
       return publicClient.readContract(
