@@ -65,6 +65,11 @@ type CompactSpaceBannerCommon = {
    * RSCs cannot receive refs from `cloneElement`—they must be client.
    */
   actionsPortalHostRef?: React.Ref<HTMLDivElement | null> | null;
+  /**
+   * Placed on the hairline between the hero (image area) and the metadata/actions strip so
+   * sticky chrome can engage when that line reaches the app header (`--menu-top-height`).
+   */
+  delimiterSentinelRef?: React.Ref<HTMLDivElement | null> | null;
   className?: string;
 };
 
@@ -106,6 +111,7 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
     descriptionLabel,
     footerTrailing,
     actionsPortalHostRef,
+    delimiterSentinelRef,
     className,
   } = props;
   const showSpaceStats = isSpaceWithStats(props);
@@ -300,8 +306,10 @@ export function CompactSpaceBanner(props: CompactSpaceBannerProps) {
         actionsPortalHostRef ? (
           <div className="flex flex-col">
             <div
+              ref={delimiterSentinelRef ?? undefined}
               className="h-px w-full shrink-0 bg-white/12"
               role="presentation"
+              aria-hidden
             />
             <div className="flex flex-col gap-3 gap-x-5 py-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-1 text-white/88 [text-shadow:0_1px_2px_rgba(0,0,0,0.45)]">

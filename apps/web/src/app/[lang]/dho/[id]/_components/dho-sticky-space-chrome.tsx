@@ -51,8 +51,9 @@ function useMenuTopOffsetPx(): number {
  * same React trees (hooks) transition between positions — pixel-identical Button UI.
  *
  * **In-flow (not stuck):** portaled actions can sit in the banner footer host.
- * **Stuck (md+):** when the **bottom** of the space card (`bannerBottomSentinelRef`) reaches
- * the `MenuTop` line, the secondary bar becomes visible; its inner width uses the same
+ * **Stuck (md+):** when the **hairline** between hero and metadata (`delimiterSentinelRef`
+ * on `CompactSpaceBanner`) reaches the bottom of `MenuTop` (`--menu-top-height`), the
+ * secondary bar becomes visible; its inner width uses the same
  * max-width + `px-4` as DHO `Container size="lg"` so it aligns with the banner edges.
  *
  * Note: `createPortal` remounts when `actionsPortalTarget` changes; stateful portaled
@@ -69,8 +70,8 @@ export function DhoStickySpaceChrome({
   defaultLogoSrc,
 }: DhoStickySpaceChromeProps) {
   const menuTopPx = useMenuTopOffsetPx();
-  /** Bottom edge of the space image banner — sticky engages when this passes under MenuTop */
-  const bannerBottomSentinelRef = React.useRef<HTMLDivElement>(null);
+  /** Top edge of hairline between hero and footer strip — aligns with user-visible “delimiter” */
+  const bannerDelimiterSentinelRef = React.useRef<HTMLDivElement>(null);
 
   const [flowActionsEl, setFlowActionsEl] =
     React.useState<HTMLDivElement | null>(null);
@@ -98,8 +99,12 @@ export function DhoStickySpaceChrome({
     return React.cloneElement(
       banner as React.ReactElement<{
         actionsPortalHostRef?: React.Ref<HTMLDivElement> | null;
+        delimiterSentinelRef?: React.Ref<HTMLDivElement | null>;
       }>,
-      { actionsPortalHostRef: setInBannerHostRef },
+      {
+        actionsPortalHostRef: setInBannerHostRef,
+        delimiterSentinelRef: bannerDelimiterSentinelRef,
+      },
     );
   }, [banner, setInBannerHostRef]);
 
@@ -123,7 +128,7 @@ export function DhoStickySpaceChrome({
   }, [stuck, actionsMeasureEl]);
 
   React.useEffect(() => {
-    const sentinel = bannerBottomSentinelRef.current;
+    const sentinel = bannerDelimiterSentinelRef.current;
     if (!sentinel) return;
 
     const mq = window.matchMedia('(min-width: 768px)');
@@ -140,12 +145,11 @@ export function DhoStickySpaceChrome({
         }
         return;
       }
-      /* Bottom edge of the space banner (card) in viewport coords — same as the hairline under the metadata row. */
-      const bannerBottom = sentinel.getBoundingClientRect().bottom;
+      /* Top of delimiter hairline: engage when it meets the bottom edge of MenuTop (same Y as menu header bottom). */
+      const delimiterTop = sentinel.getBoundingClientRect().top;
       let next = stuckRef.current;
-      /* Show secondary chrome when the banner bottom has reached the app header (MenuTop) line. */
-      if (!next && bannerBottom <= menuTopPx) next = true;
-      if (next && bannerBottom > menuTopPx + HYST) next = false;
+      if (!next && delimiterTop <= menuTopPx) next = true;
+      if (next && delimiterTop > menuTopPx + HYST) next = false;
       if (next !== stuckRef.current) {
         stuckRef.current = next;
         setStuck(next);
@@ -239,14 +243,7 @@ export function DhoStickySpaceChrome({
           ) : null}
         </div>
 
-        <div className="relative">
-          {bannerWithActionsHost}
-          <div
-            ref={bannerBottomSentinelRef}
-            className="pointer-events-none absolute bottom-0 left-0 h-px w-full opacity-0"
-            aria-hidden
-          />
-        </div>
+        <div className="relative">{bannerWithActionsHost}</div>
 
         <div
           ref={setFlowActionsEl}
