@@ -41,7 +41,7 @@ export const useUserAssetsSection = ({
     Math.abs(balance),
   )}`;
 
-  const baseFiltered = React.useMemo(() => {
+  const filteredAssets = React.useMemo(() => {
     let result = assets;
 
     if (hideSmallBalances) {
@@ -58,15 +58,10 @@ export const useUserAssetsSection = ({
       );
     }
 
-    return result;
-  }, [assets, hideSmallBalances, searchTerm]);
+    return result.slice(0, visibleCount);
+  }, [assets, hideSmallBalances, searchTerm, visibleCount]);
 
-  const filteredAssets = React.useMemo(
-    () => baseFiltered.slice(0, visibleCount),
-    [baseFiltered, visibleCount],
-  );
-
-  const hasMore = !searchTerm.trim() && visibleCount < baseFiltered.length;
+  const hasMore = !searchTerm.trim() && filteredAssets.length < assets.length;
 
   return {
     isLoading,
