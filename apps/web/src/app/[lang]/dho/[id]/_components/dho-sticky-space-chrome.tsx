@@ -191,13 +191,11 @@ export function DhoStickySpaceChrome({
           'after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/80',
           'transition-[opacity,transform] duration-200 ease-linear motion-reduce:transition-none',
           stuck
-            ? 'pointer-events-auto translate-y-0 opacity-100'
-            : '-translate-y-1 opacity-0 motion-reduce:translate-y-0',
+            ? 'pointer-events-auto visible translate-y-0 opacity-100'
+            : 'invisible -translate-y-1 opacity-0 motion-reduce:translate-y-0',
         )}
         style={{ top: 'var(--menu-top-height, 4rem)' }}
         aria-hidden={!stuck}
-        /* When invisible (md+), still occupies a fixed band; opacity-0 alone can leave hit-testing quirks — inert removes the subtree from targeting so clicks reach content below. */
-        inert={!stuck ? true : undefined}
       >
         <div
           className={cn(
