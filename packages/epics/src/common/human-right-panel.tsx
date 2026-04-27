@@ -111,6 +111,39 @@ function disposeDraftAttachmentUrls(drafts: ChatDraftAttachment[]) {
   }
 }
 
+/** Sanitized labels shared by multiple members need a disambiguated composer token + map key. */
+function computeDuplicateSanitizedDisplayKeys(
+  mentionLabelByUserId: ReadonlyMap<string, string>,
+): Set<string> {
+  const counts = new Map<string, number>();
+  for (const label of mentionLabelByUserId.values()) {
+    const k = sanitizeMentionDisplayLabel(label);
+    if (!k) continue;
+    counts.set(k, (counts.get(k) ?? 0) + 1);
+  }
+  const dup = new Set<string>();
+  for (const [k, n] of counts) {
+    if (n > 1) dup.add(k);
+  }
+  return dup;
+}
+
+function disambiguatedMentionTokenKey(
+  userId: string,
+  displayLabel: string,
+  duplicateKeys: ReadonlySet<string>,
+): string {
+  let key = sanitizeMentionDisplayLabel(displayLabel);
+  if (!key) return '';
+  if (!duplicateKeys.has(key)) return key;
+  const stem = shortenMatrixIdForDisplay(userId).replace(/^@/, '').trim();
+  const short =
+    stem.length <= 26 ? stem : `${stem.slice(0, 12)}…${stem.slice(-8)}`;
+  key = sanitizeMentionDisplayLabel(`${displayLabel} (${short})`);
+  if (!key) return sanitizeMentionDisplayLabel(userId);
+  return key;
+}
+
 type UIMessage = {
   id: string;
   role: 'user' | 'member';
@@ -884,16 +917,39 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     [mentionCandidates, mentionDisplayOverride],
   );
 
+  const duplicateSanitizedDisplayKeys = useMemo(
+    () => computeDuplicateSanitizedDisplayKeys(mentionLabelByUserId),
+    [mentionLabelByUserId],
+  );
+
   /** Sanitized display label → MXID for converting composer `@Name` tokens before Matrix send. */
   const mentionSanitizedLabelToUserId = useMemo(() => {
     const m = new Map<string, string>();
     for (const [userId, label] of mentionLabelByUserId) {
-      const key = sanitizeMentionDisplayLabel(label);
-      if (!key || m.has(key)) continue;
+      const key = disambiguatedMentionTokenKey(
+        userId,
+        label,
+        duplicateSanitizedDisplayKeys,
+      );
+      if (!key) continue;
       m.set(key, userId);
     }
     return m;
-  }, [mentionLabelByUserId]);
+  }, [mentionLabelByUserId, duplicateSanitizedDisplayKeys]);
+
+  const getMentionComposerLabel = useCallback(
+    (member: ChatMentionCandidate, resolvedComposerLabel?: string) => {
+      const label = resolvedComposerLabel?.trim() || member.displayLabel;
+      return (
+        disambiguatedMentionTokenKey(
+          member.userId,
+          label,
+          duplicateSanitizedDisplayKeys,
+        ) || label
+      );
+    },
+    [duplicateSanitizedDisplayKeys],
+  );
 
   const resolveMentionMemberLabel = useCallback(
     (userId: string | undefined) => {
@@ -2146,6 +2202,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onSend={handleSend}
               mentionCandidates={mentionCandidates}
               mentionPickerEnabled={mentionPickerEnabled}
+              getMentionComposerLabel={getMentionComposerLabel}
               onMergeMentionDisplayLabel={mergeMentionDisplayLabel}
               draftAttachments={draftAttachments}
               onDraftAttachmentsChange={setDraftAttachments}

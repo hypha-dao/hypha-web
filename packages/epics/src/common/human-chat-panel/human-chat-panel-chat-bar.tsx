@@ -187,6 +187,14 @@ type HumanChatPanelChatBarProps = {
    * (Matrix fallback is often a shortened MXID). Merge the chosen display string so send + timeline pills match.
    */
   onMergeMentionDisplayLabel?: (userId: string, displayLabel: string) => void;
+  /**
+   * When multiple members sanitize to the same mention key, append a disambiguator so wire send resolves
+   * to the correct MXID (must match {@link HumanRightPanel}'s `mentionSanitizedLabelToUserId`).
+   */
+  getMentionComposerLabel?: (
+    member: ChatMentionCandidate,
+    resolvedComposerLabel?: string,
+  ) => string;
 };
 
 /** Blinking REC dot (“on-air”) for active voice recording / dictation controls. */
@@ -468,6 +476,7 @@ export function HumanChatPanelChatBar({
   mentionCandidates = [],
   mentionPickerEnabled,
   onMergeMentionDisplayLabel,
+  getMentionComposerLabel,
 }: HumanChatPanelChatBarProps) {
   const t = useTranslations('HumanChatPanel');
 
@@ -768,10 +777,13 @@ export function HumanChatPanelChatBar({
       const el = textareaRef.current;
       const tok = atTokenRef.current;
       if (!el || !tok) return;
-      const labelForToken =
+      const labelForMerge =
         resolvedComposerLabel?.trim() || member.displayLabel;
+      const labelForToken =
+        getMentionComposerLabel?.(member, resolvedComposerLabel) ??
+        labelForMerge;
       const insertion = formatComposerMentionToken(labelForToken);
-      onMergeMentionDisplayLabel?.(member.userId, labelForToken);
+      onMergeMentionDisplayLabel?.(member.userId, labelForMerge);
       const start = tok.start;
       const end = el.selectionStart ?? value.length;
       const { next, caret } = insertAtCaret(value, start, end, insertion);
@@ -785,7 +797,13 @@ export function HumanChatPanelChatBar({
         autoResize();
       });
     },
-    [value, onChange, autoResize, onMergeMentionDisplayLabel],
+    [
+      value,
+      onChange,
+      autoResize,
+      onMergeMentionDisplayLabel,
+      getMentionComposerLabel,
+    ],
   );
 
   const openMentionPicker = useCallback(() => {
