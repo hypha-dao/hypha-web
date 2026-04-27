@@ -58,7 +58,7 @@ test.describe('AI Chat Panel — Feature Flag Enabled', () => {
   test('should not render AI trigger button on non-space pages', async ({
     page,
   }) => {
-    await gotoApp(page, '/my-spaces');
+    await gotoApp(page, '/en/my-spaces');
     await page.waitForLoadState('domcontentloaded');
 
     const aiButton = page.getByRole('button', {
