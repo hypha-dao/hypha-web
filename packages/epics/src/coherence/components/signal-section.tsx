@@ -18,7 +18,6 @@ import Link from 'next/link';
 import React from 'react';
 import { useTranslations } from 'next-intl';
 import { Plus } from 'lucide-react';
-import { cn } from '@hypha-platform/ui-utils';
 import {
   DhoTabListStack,
   DhoTabSection,
@@ -83,27 +82,43 @@ export const SignalSection: FC<SignalSectionProps> = ({
           inlineLabel={true}
           className="min-w-0 flex-wrap justify-end gap-2 sm:flex-nowrap sm:justify-end"
         >
-          <Button
-            asChild
-            size="icon"
-            variant="outline"
-            colorVariant="accent"
-            disabled={isLoading}
-          >
-            <Link
-              href={createSignalHref}
-              scroll={false}
+          {isLoading ? (
+            <span
+              className="inline-flex"
+              aria-disabled="true"
+              tabIndex={-1}
               title={createLabel}
-              aria-label={createLabel}
-              className={cn(isLoading && 'pointer-events-none')}
             >
-              <Plus
-                className="h-[1.125rem] w-[1.125rem]"
-                strokeWidth={2.25}
-                aria-hidden
-              />
-            </Link>
-          </Button>
+              <Button
+                size="icon"
+                variant="outline"
+                colorVariant="accent"
+                disabled
+                aria-label={createLabel}
+              >
+                <Plus
+                  className="h-[1.125rem] w-[1.125rem]"
+                  strokeWidth={2.25}
+                  aria-hidden
+                />
+              </Button>
+            </span>
+          ) : (
+            <Button asChild size="icon" variant="outline" colorVariant="accent">
+              <Link
+                href={createSignalHref}
+                scroll={false}
+                title={createLabel}
+                aria-label={createLabel}
+              >
+                <Plus
+                  className="h-[1.125rem] w-[1.125rem]"
+                  strokeWidth={2.25}
+                  aria-hidden
+                />
+              </Link>
+            </Button>
+          )}
         </SectionFilter>
       </DhoTabToolbarStack>
 
