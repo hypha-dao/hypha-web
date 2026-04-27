@@ -69,7 +69,7 @@ const TabsTrigger = React.forwardRef<
       variant === 'outlined' &&
         'mr-2 rounded-lg border data-[state=active]:bg-secondary-foreground data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm',
       variant === 'switch' &&
-        'bg-neutral-3 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm',
+        'rounded-lg bg-neutral-3 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm',
       className,
     )}
     {...props}

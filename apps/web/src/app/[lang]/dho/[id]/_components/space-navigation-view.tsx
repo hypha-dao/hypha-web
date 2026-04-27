@@ -16,7 +16,6 @@ import {
   TabsContent,
   Skeleton,
 } from '@hypha-platform/ui';
-import { SectionFilter } from '@hypha-platform/ui/server';
 import { cn } from '@hypha-platform/ui-utils';
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import type { VisibleSpace } from './types';
@@ -197,14 +196,29 @@ export const SpaceNavigationView = ({
                 <Skeleton className="h-9 flex-1 basis-48 sm:max-w-md" loading />
               </div>
             ) : (
-              <SectionFilter
-                label={t('title')}
-                className="min-w-0 flex-wrap justify-end gap-2 sm:flex-nowrap sm:justify-end"
+              /*
+                Align the tab strip with the right-hand “Spaces” panel on lg+: same grid column
+                as cards (map lives in column 1). Mobile: stacked title + full-width tabs.
+              */
+              <div
+                className={cn(
+                  'flex w-full min-w-0 flex-col gap-3',
+                  'lg:grid lg:grid-cols-[minmax(0,3fr)_min(17.5rem,max(14rem,28vw))] lg:items-center lg:gap-x-4',
+                )}
               >
+                <div className="flex min-h-8 min-w-0 shrink-0 items-center lg:col-start-1 lg:row-start-1">
+                  <span className="text-4 capitalize leading-tight text-nowrap">
+                    {t('title')}
+                  </span>
+                </div>
                 <TabsList
                   triggerVariant="switch"
-                  className="w-full shrink-0 justify-center sm:w-auto"
                   data-testid="dho-space-nav-ecosystem-tabs"
+                  className={cn(
+                    'h-auto min-h-10 w-full shrink-0 flex-wrap justify-center gap-1 sm:flex-nowrap',
+                    'lg:col-start-2 lg:row-start-1 lg:inline-flex lg:w-full lg:min-w-0 lg:flex-nowrap lg:justify-stretch lg:gap-0.5 lg:px-1',
+                    'lg:[&>button]:min-w-0 lg:[&>button]:flex-1',
+                  )}
                 >
                   <TabsTrigger variant="switch" value="nested-spaces">
                     {t('tabs.nestedSpaces')}
@@ -216,7 +230,7 @@ export const SpaceNavigationView = ({
                     {t('tabs.valuesFlows')}
                   </TabsTrigger>
                 </TabsList>
-              </SectionFilter>
+              </div>
             )}
           </DhoTabToolbarStack>
 
