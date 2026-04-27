@@ -67,7 +67,7 @@ export function HumanChatMentionCandidateRow({
       role="option"
       aria-selected={isActive}
       aria-busy={busy || undefined}
-      title={matrixUserId}
+      title={resolvedName}
       disabled={!privySub && loadingLink}
       className={cn(
         'flex w-full min-w-0 items-center gap-2.5 rounded-sm px-2 py-1.5 text-left text-sm',
@@ -84,13 +84,8 @@ export function HumanChatMentionCandidateRow({
         className={cn('shrink-0', APP_CHROME_SUBTLE_SQUARE_RADIUS)}
         isLoading={busy}
       />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate font-medium leading-snug">
-          {resolvedName}
-        </span>
-        <span className="block truncate font-mono text-[11px] text-muted-foreground">
-          {matrixUserId}
-        </span>
+      <span className="min-w-0 flex-1 truncate font-medium leading-snug">
+        {resolvedName}
       </span>
     </button>
   );
