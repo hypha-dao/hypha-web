@@ -26,7 +26,8 @@ export default async function TreasuryPage(props: PageProps) {
         lang={lang}
         spaceSlug={id}
         web3SpaceId={
-          typeof spaceFromDb?.web3SpaceId === 'number'
+          typeof spaceFromDb?.web3SpaceId === 'number' &&
+          Number.isFinite(spaceFromDb.web3SpaceId)
             ? spaceFromDb.web3SpaceId
             : undefined
         }
