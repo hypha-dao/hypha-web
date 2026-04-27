@@ -1954,6 +1954,7 @@
     "callSearchComingSoon": "Search in chat — coming soon",
     "callActiveInSpace": "Space call (everyone in this space can join)",
     "callConnecting": "Connecting…",
+    "callRemoteMediaStallHint": "Others are listed in this call but their audio/video is not arriving — often a network or browser issue. Try leaving and rejoining, or switch networks.",
     "callDisconnecting": "Leaving call…",
     "callLeave": "Leave",
     "callMute": "Mute microphone",

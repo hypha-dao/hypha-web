@@ -25,6 +25,12 @@ const { GroupCallEvent, GroupCallIntent, GroupCallType, GroupCallState } =
 /** Abort `gc.enter()` hang (SFU/TURN stuck) — user-recoverable via Retry. */
 const CONNECT_STALL_ABORT_MS = 90_000;
 
+/** Room shows others in-call but no remote userMedia CallFeed yet (signaling/WebRTC issue). */
+const REMOTE_MEDIA_STALL_MS = 45_000;
+
+/** Dev console: periodic sample of feeds vs participant map (not every Matrix event). */
+const MEDIA_SNAPSHOT_INTERVAL_MS = 12_000;
+
 /** `callSessionId` for correlation; must not use `Math.random()` (CodeQL / GAS-weak-randomness). */
 function newCallSessionId(): string {
   const c = globalThis.crypto;
@@ -94,6 +100,20 @@ export function useSpaceGroupCall(roomId: string | null) {
   const connectingStallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  /** Dev / support: periodic media snapshots while connected (`setInterval`). */
+  const mediaDebugIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+    null,
+  );
+  /** First time we saw others in participant map but no remote CallFeed (ms since epoch). */
+  const remoteMediaGapSinceRef = useRef<number | null>(null);
+  const remoteMediaStallLoggedRef = useRef(false);
+  const remoteMediaStallBannerDismissedRef = useRef(false);
+  const [remoteMediaStall, setRemoteMediaStall] = useState(false);
+
+  const dismissRemoteMediaStallBanner = useCallback(() => {
+    remoteMediaStallBannerDismissedRef.current = true;
+    setRemoteMediaStall(false);
+  }, []);
   const [tabBackgroundWhileInCall, setTabBackgroundWhileInCall] =
     useState(false);
   /**
@@ -128,8 +148,20 @@ export function useSpaceGroupCall(roomId: string | null) {
     }
   }, []);
 
+  const clearMediaDebugInterval = useCallback(() => {
+    if (mediaDebugIntervalRef.current != null) {
+      clearInterval(mediaDebugIntervalRef.current);
+      mediaDebugIntervalRef.current = null;
+    }
+  }, []);
+
   const runCleanup = useCallback(() => {
     clearConnectingStallTimer();
+    clearMediaDebugInterval();
+    remoteMediaGapSinceRef.current = null;
+    remoteMediaStallLoggedRef.current = false;
+    remoteMediaStallBannerDismissedRef.current = false;
+    setRemoteMediaStall(false);
     if (feedUpdateRafRef.current != null) {
       cancelAnimationFrame(feedUpdateRafRef.current);
       feedUpdateRafRef.current = null;
@@ -176,7 +208,7 @@ export function useSpaceGroupCall(roomId: string | null) {
     setScreenshareErrorCode(null);
     loggedStatsForGroupCallIdRef.current = null;
     lastRoomIdForTelemetryRef.current = null;
-  }, [clearConnectingStallTimer]);
+  }, [clearConnectingStallTimer, clearMediaDebugInterval]);
 
   const refreshLocalPreview = useCallback(() => {
     const gc = groupCallRef.current;
@@ -233,6 +265,90 @@ export function useSpaceGroupCall(roomId: string | null) {
     [readParticipantsFromGroupCall],
   );
 
+  /** Stall detection: others in participant map but no remote userMedia CallFeed (WebRTC lag). */
+  const evalRemoteMediaStall = useCallback(() => {
+    const gc = groupCallRef.current;
+    if (!gc || !roomId?.trim() || !client) return;
+    const myId = client.getUserId() ?? null;
+    const remoteFeeds = gc.userMediaFeeds.filter((f) => !f.isLocal());
+    const remoteIdsWithFeed = new Set(
+      remoteFeeds.map((f) => f.userId).filter(Boolean) as string[],
+    );
+    const othersInCall = inCallUserIdsFromGroupCall(gc).filter(
+      (id) => id && id !== myId,
+    );
+    const missingRemoteFeedCount = othersInCall.filter(
+      (id) => !remoteIdsWithFeed.has(id),
+    ).length;
+
+    const now = Date.now();
+    if (missingRemoteFeedCount > 0 && othersInCall.length > 0) {
+      if (remoteMediaGapSinceRef.current == null) {
+        remoteMediaGapSinceRef.current = now;
+      }
+      const waitedMs = now - remoteMediaGapSinceRef.current;
+      if (
+        waitedMs >= REMOTE_MEDIA_STALL_MS &&
+        !remoteMediaStallLoggedRef.current
+      ) {
+        remoteMediaStallLoggedRef.current = true;
+        logSpaceGroupCallEvent({
+          name: 'hypha.group_call.remote_media_stall',
+          roomId,
+          kind: lastJoinKindRef.current ?? undefined,
+          groupCallId: gc.groupCallId,
+          missingRemoteFeedCount,
+          waitedMs,
+        });
+        if (!remoteMediaStallBannerDismissedRef.current) {
+          setRemoteMediaStall(true);
+        }
+      }
+    } else {
+      remoteMediaGapSinceRef.current = null;
+      remoteMediaStallLoggedRef.current = false;
+      remoteMediaStallBannerDismissedRef.current = false;
+      setRemoteMediaStall(false);
+    }
+  }, [
+    client,
+    roomId,
+    inCallUserIdsFromGroupCall,
+    readParticipantsFromGroupCall,
+  ]);
+
+  const logDevMediaSnapshot = useCallback(() => {
+    const gc = groupCallRef.current;
+    if (!gc || !roomId?.trim() || !client) return;
+    const myId = client.getUserId() ?? null;
+    const remoteFeeds = gc.userMediaFeeds.filter((f) => !f.isLocal());
+    const remoteIdsWithFeed = new Set(
+      remoteFeeds.map((f) => f.userId).filter(Boolean) as string[],
+    );
+    const othersInCall = inCallUserIdsFromGroupCall(gc).filter(
+      (id) => id && id !== myId,
+    );
+    const missingRemoteFeedCount = othersInCall.filter(
+      (id) => !remoteIdsWithFeed.has(id),
+    ).length;
+    logSpaceGroupCallEvent({
+      name: 'hypha.group_call.media_snapshot',
+      roomId,
+      kind: lastJoinKindRef.current ?? undefined,
+      groupCallId: gc.groupCallId,
+      userMediaFeedCount: gc.userMediaFeeds.length,
+      remoteUserMediaFeedCount: remoteFeeds.length,
+      screenshareFeedCount: gc.screenshareFeeds.length,
+      participantDeviceCount: readParticipantsFromGroupCall(gc).count,
+      missingRemoteFeedCount,
+    });
+  }, [
+    client,
+    roomId,
+    inCallUserIdsFromGroupCall,
+    readParticipantsFromGroupCall,
+  ]);
+
   const attachGroupCallListeners = useCallback(
     (gc: MatrixSdk.GroupCall) => {
       const onError = (err: unknown) => {
@@ -273,10 +389,12 @@ export function useSpaceGroupCall(roomId: string | null) {
       });
       gc.on(GroupCallEvent.ParticipantsChanged, () => {
         updateParticipantCount();
+        evalRemoteMediaStall();
       });
       const onFeedsMaybeParticipants = () => {
         scheduleFeedBatched();
         updateParticipantCount();
+        evalRemoteMediaStall();
       };
       gc.on(GroupCallEvent.UserMediaFeedsChanged, onFeedsMaybeParticipants);
       gc.on(GroupCallEvent.ScreenshareFeedsChanged, onFeedsMaybeParticipants);
@@ -303,6 +421,7 @@ export function useSpaceGroupCall(roomId: string | null) {
       runCleanup,
       scheduleFeedBatched,
       updateParticipantCount,
+      evalRemoteMediaStall,
     ],
   );
 
@@ -504,6 +623,18 @@ export function useSpaceGroupCall(roomId: string | null) {
       setActiveKeyFromGroupCall(gc);
       isJoiningRef.current = false;
       lastRoomIdForTelemetryRef.current = roomId;
+
+      if (roomId) {
+        logSpaceGroupCallEvent({
+          name: 'hypha.group_call.connected',
+          roomId,
+          kind,
+          groupCallId: gc.groupCallId,
+        });
+      }
+      logDevMediaSnapshot();
+      evalRemoteMediaStall();
+
       const t1 =
         typeof performance !== 'undefined' ? performance.now() : Date.now();
       if (joinStartedAtRef.current != null) {
@@ -542,6 +673,8 @@ export function useSpaceGroupCall(roomId: string | null) {
       runCleanup,
       setActiveKeyFromGroupCall,
       updateParticipantCount,
+      logDevMediaSnapshot,
+      evalRemoteMediaStall,
     ],
   );
 
@@ -671,12 +804,35 @@ export function useSpaceGroupCall(roomId: string | null) {
     if (!room) return;
     const bump = () => {
       updateParticipantCount();
+      evalRemoteMediaStall();
     };
     room.on(RoomStateEvent.Update, bump);
     return () => {
       room.off(RoomStateEvent.Update, bump);
     };
-  }, [client, roomId, callState, updateParticipantCount]);
+  }, [client, roomId, callState, updateParticipantCount, evalRemoteMediaStall]);
+
+  /** Dev: periodic feed vs participant-map snapshots while connected. */
+  useEffect(() => {
+    if (callState !== 'connected') {
+      clearMediaDebugInterval();
+      return;
+    }
+    logDevMediaSnapshot();
+    mediaDebugIntervalRef.current = setInterval(() => {
+      logDevMediaSnapshot();
+      evalRemoteMediaStall();
+    }, MEDIA_SNAPSHOT_INTERVAL_MS);
+    return () => {
+      clearMediaDebugInterval();
+    };
+  }, [
+    callState,
+    roomId,
+    clearMediaDebugInterval,
+    logDevMediaSnapshot,
+    evalRemoteMediaStall,
+  ]);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -873,6 +1029,9 @@ export function useSpaceGroupCall(roomId: string | null) {
     dismissScreenshareError,
     dismissCallError,
     retryFromError,
+    /** Matrix lists others in-call but no remote media after threshold — likely WebRTC/signaling. */
+    remoteMediaStall,
+    dismissRemoteMediaStallBanner,
     tabBackgroundWhileInCall,
     activeSpeakerKey,
     threadContext,

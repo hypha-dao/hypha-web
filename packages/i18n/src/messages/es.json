@@ -1922,6 +1922,7 @@
     "callSearchComingSoon": "Buscar en el chat — próximamente",
     "callActiveInSpace": "Llamada del espacio (todos en este espacio pueden unirse)",
     "callConnecting": "Conectando…",
+    "callRemoteMediaStallHint": "Hay otras personas en la llamada pero no llega su audio/vídeo; suele ser red o navegador. Sal y vuelve a unirte o cambia de red.",
     "callDisconnecting": "Saliendo de la llamada…",
     "callLeave": "Salir",
     "callMute": "Silenciar micrófono",

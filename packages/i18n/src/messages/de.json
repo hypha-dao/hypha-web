@@ -1923,6 +1923,7 @@
     "callSearchComingSoon": "Im Chat suchen — demnächst",
     "callActiveInSpace": "Space-Anruf (alle in diesem Space können beitreten)",
     "callConnecting": "Verbinden…",
+    "callRemoteMediaStallHint": "Andere sind im Anruf gelistet, aber Audio/Video kommt nicht an — oft Netzwerk oder Browser. Verlassen und erneut beitreten oder das Netzwerk wechseln.",
     "callDisconnecting": "Anruf wird beendet…",
     "callLeave": "Verlassen",
     "callMute": "Mikrofon stummschalten",

@@ -620,6 +620,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     tabBackgroundWhileInCall: spaceCallTabBackground,
     retryFromError: retrySpaceCall,
     dismissCallError: dismissSpaceCallError,
+    remoteMediaStall: spaceCallRemoteMediaStall,
+    dismissRemoteMediaStallBanner: dismissSpaceCallRemoteMediaStall,
   } = useSpaceGroupCall(mode === 'space' ? roomId : null);
 
   const callUiEnabled = useMemo(
@@ -2060,6 +2062,8 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               isLocalVideoMuted={spaceCallVideoMuted}
               participantCount={spaceCallRoomGroupDeviceCount}
               othersInRoomCallCount={spaceCallOthersInRoom}
+              remoteMediaStall={spaceCallRemoteMediaStall}
+              onDismissRemoteMediaStall={dismissSpaceCallRemoteMediaStall}
               onLeave={handleCallLeave}
               onToggleMic={handleCallToggleMic}
               onToggleCamera={handleCallToggleCamera}

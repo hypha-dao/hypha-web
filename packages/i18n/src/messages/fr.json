@@ -1922,6 +1922,7 @@
     "callSearchComingSoon": "Rechercher dans le chat — bientôt",
     "callActiveInSpace": "Appel d’espace (tout le monde dans cet espace peut rejoindre)",
     "callConnecting": "Connexion…",
+    "callRemoteMediaStallHint": "D’autres sont listés dans l’appel mais leur audio/vidéo n’arrive pas — souvent réseau ou navigateur. Quittez puis rejoignez, ou changez de réseau.",
     "callDisconnecting": "Sortie de l’appel…",
     "callLeave": "Quitter",
     "callMute": "Couper le micro",

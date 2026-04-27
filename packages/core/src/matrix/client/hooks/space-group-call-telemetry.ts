@@ -8,12 +8,24 @@ export type SpaceGroupCallTelemetryEvent = {
   name:
     | 'hypha.group_call.join_ms'
     | 'hypha.group_call.left'
-    | 'hypha.group_call.error';
+    | 'hypha.group_call.error'
+    | 'hypha.group_call.connected'
+    | 'hypha.group_call.media_snapshot'
+    | 'hypha.group_call.remote_media_stall';
   roomId: string;
   kind?: 'audio' | 'video';
   joinMs?: number;
   errorCode?: string;
   reason?: 'user' | 'error' | 'room' | 'unmount';
+  /** Matrix group call id (opaque); helps confirm both peers share one session. */
+  groupCallId?: string;
+  userMediaFeedCount?: number;
+  remoteUserMediaFeedCount?: number;
+  screenshareFeedCount?: number;
+  participantDeviceCount?: number;
+  /** Room state lists them in-call but no userMedia CallFeed yet (WebRTC lag / failure). */
+  missingRemoteFeedCount?: number;
+  waitedMs?: number;
 };
 
 export function logSpaceGroupCallEvent(
