@@ -1110,6 +1110,59 @@ function chatMentionPillClass(onViewerMentionTintRow: boolean): string {
   );
 }
 
+/** Strip trailing punctuation often pasted after URLs (not part of the href). */
+function trimTrailingUrlPunctuation(raw: string): string {
+  let u = raw;
+  while (u.length > 0 && /[.,;:!?)\]}]+$/u.test(u)) {
+    u = u.slice(0, -1);
+  }
+  return u;
+}
+
+type PlainUrlPiece =
+  | { kind: 'text'; value: string }
+  | { kind: 'url'; href: string; trailing: string };
+
+function splitPlainTextUrls(text: string): PlainUrlPiece[] {
+  const out: PlainUrlPiece[] = [];
+  const re = /https?:\/\/[^\s<>"']+/gi;
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) {
+      out.push({ kind: 'text', value: text.slice(last, m.index) });
+    }
+    const raw = m[0];
+    const href = trimTrailingUrlPunctuation(raw);
+    const trailing = raw.slice(href.length);
+    out.push({ kind: 'url', href, trailing });
+    last = m.index + raw.length;
+  }
+  if (last < text.length) {
+    out.push({ kind: 'text', value: text.slice(last) });
+  }
+  return out.length > 0 ? out : [{ kind: 'text', value: text }];
+}
+
+const chatBodyLinkClass =
+  'break-all font-medium text-primary underline decoration-primary/35 underline-offset-2 hover:decoration-primary/70';
+
+function renderPlainUrlLink(href: string, key: string): ReactNode {
+  const safe = href.trim();
+  if (!safe) return null;
+  return (
+    <a
+      key={key}
+      href={safe}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={chatBodyLinkClass}
+    >
+      {safe}
+    </a>
+  );
+}
+
 /**
  * `@mxid` pill in message body: sync label from room/roster may be a technical bridged ID after reload.
  * Mirror sender-row logic — resolve Hypha Person via matrix_user_links when the label still looks synthetic.
@@ -1175,7 +1228,7 @@ function renderTextWithMentions(
   const segments = splitPlainTextMatrixMentions(text);
   const localHandleRe = /(^|[^\w.+-])@([^\s@]{1,100}?)(?=\s|$|[.,!?;:])/g;
 
-  const mapPlainFragment = (
+  const mapPlainFragmentWithMentionsOnly = (
     fragment: string,
     keyBase: string,
   ): React.ReactNode[] => {
@@ -1214,6 +1267,38 @@ function renderTextWithMentions(
       return [<span key={keyBase}>{fragment}</span>];
     }
     return chunks;
+  };
+
+  const mapPlainFragment = (
+    fragment: string,
+    keyBase: string,
+  ): React.ReactNode[] => {
+    const pieces = splitPlainTextUrls(fragment);
+    const out: React.ReactNode[] = [];
+    let pieceIdx = 0;
+    for (const piece of pieces) {
+      if (piece.kind === 'text') {
+        out.push(
+          ...mapPlainFragmentWithMentionsOnly(
+            piece.value,
+            `${keyBase}-tx${pieceIdx++}`,
+          ),
+        );
+      } else {
+        const linkKey = `${keyBase}-url${pieceIdx++}`;
+        const linkEl = renderPlainUrlLink(piece.href, linkKey);
+        if (linkEl) out.push(linkEl);
+        if (piece.trailing) {
+          out.push(
+            ...mapPlainFragmentWithMentionsOnly(
+              piece.trailing,
+              `${keyBase}-trail${pieceIdx++}`,
+            ),
+          );
+        }
+      }
+    }
+    return out;
   };
 
   const parts: React.ReactNode[] = [];
