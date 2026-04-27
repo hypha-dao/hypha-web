@@ -124,9 +124,8 @@ async function upgradeFactory(
 
   try {
     // Get current implementation
-    result.oldImplementation = await upgrades.erc1967.getImplementationAddress(
-      proxyAddress,
-    );
+    result.oldImplementation =
+      await upgrades.erc1967.getImplementationAddress(proxyAddress);
     console.log(`  Current implementation: ${result.oldImplementation}`);
 
     const ContractFactory = await ethers.getContractFactory(factoryName);
@@ -161,9 +160,8 @@ async function upgradeFactory(
 
     await upgradedContract.waitForDeployment();
 
-    result.newImplementation = await upgrades.erc1967.getImplementationAddress(
-      proxyAddress,
-    );
+    result.newImplementation =
+      await upgrades.erc1967.getImplementationAddress(proxyAddress);
     console.log(`  New implementation: ${result.newImplementation}`);
 
     if (

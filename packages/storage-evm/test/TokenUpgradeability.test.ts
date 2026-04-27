@@ -58,9 +58,8 @@ describe('Token Contract Upgradeability Tests', function () {
       await spaceTokenV1Impl.getAddress(),
     );
 
-    const DecayingSpaceTokenV1 = await ethers.getContractFactory(
-      'DecayingSpaceToken',
-    );
+    const DecayingSpaceTokenV1 =
+      await ethers.getContractFactory('DecayingSpaceToken');
     const decayingSpaceTokenV1Impl = await DecayingSpaceTokenV1.deploy();
     await decayingTokenFactory.setDecayingTokenImplementation(
       await decayingSpaceTokenV1Impl.getAddress(),
@@ -234,9 +233,8 @@ describe('Token Contract Upgradeability Tests', function () {
       const DecayingSpaceTokenV2 = await ethers.getContractFactory(
         'contracts/DecayingSpaceTokenV2.sol:DecayingSpaceTokenV2',
       );
-      const DecayingSpaceTokenV1 = await ethers.getContractFactory(
-        'DecayingSpaceToken',
-      );
+      const DecayingSpaceTokenV1 =
+        await ethers.getContractFactory('DecayingSpaceToken');
 
       // 4. Import the proxy and then upgrade it
       await upgrades.forceImport(

@@ -1,9 +1,8 @@
 import { ethers, upgrades } from 'hardhat';
 
 async function main(): Promise<void> {
-  const DecayingSpaceToken = await ethers.getContractFactory(
-    'DecayingSpaceToken',
-  );
+  const DecayingSpaceToken =
+    await ethers.getContractFactory('DecayingSpaceToken');
   console.log('Deploying DecayingSpaceToken implementation...');
 
   const implementationAddress = await upgrades.deployImplementation(

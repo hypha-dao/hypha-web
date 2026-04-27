@@ -374,9 +374,8 @@ async function testExecutorMintFunctionality(): Promise<void> {
     console.log(`   📛 Token name: Test Token`);
     console.log(`   🏷️  Token symbol: TEST`);
 
-    const deployProposalTx = await daoProposals.createProposal(
-      deployProposalParams,
-    );
+    const deployProposalTx =
+      await daoProposals.createProposal(deployProposalParams);
     console.log(`   Transaction submitted: ${deployProposalTx.hash}`);
 
     const deployProposalReceipt = await deployProposalTx.wait();
@@ -410,9 +409,8 @@ async function testExecutorMintFunctionality(): Promise<void> {
     console.log('   ✅ Token deployment vote confirmed');
 
     // Check if deployment proposal was executed
-    const deployProposalData = await daoProposals.getProposalCore(
-      deployProposalId,
-    );
+    const deployProposalData =
+      await daoProposals.getProposalCore(deployProposalId);
     if (!deployProposalData.executed) {
       console.error('❌ Token deployment proposal was not executed');
       console.log(`   Executed: ${deployProposalData.executed}`);

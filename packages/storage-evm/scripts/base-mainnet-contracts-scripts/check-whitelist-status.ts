@@ -141,12 +141,10 @@ async function main(): Promise<void> {
     console.log('-'.repeat(50));
 
     try {
-      const mintStatus = await hyphaToken.isMintTransferWhitelisted(
-        accountAddress,
-      );
-      const normalStatus = await hyphaToken.isNormalTransferWhitelisted(
-        accountAddress,
-      );
+      const mintStatus =
+        await hyphaToken.isMintTransferWhitelisted(accountAddress);
+      const normalStatus =
+        await hyphaToken.isNormalTransferWhitelisted(accountAddress);
       const balance = await hyphaToken.balanceOf(accountAddress);
 
       console.log(

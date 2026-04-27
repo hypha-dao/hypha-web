@@ -22,9 +22,8 @@ async function main() {
   );
 
   // Deploy TransferHelper
-  const TransferHelperFactory = await ethers.getContractFactory(
-    'TransferHelper',
-  );
+  const TransferHelperFactory =
+    await ethers.getContractFactory('TransferHelper');
   const transferHelper = await TransferHelperFactory.deploy();
   await transferHelper.waitForDeployment();
 

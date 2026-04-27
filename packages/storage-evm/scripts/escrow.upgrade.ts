@@ -9,9 +9,8 @@ async function main(): Promise<void> {
   console.log('Upgrading with admin address:', adminAddress);
   console.log('Proxy address:', PROXY_ADDRESS);
 
-  const currentImpl = await upgrades.erc1967.getImplementationAddress(
-    PROXY_ADDRESS,
-  );
+  const currentImpl =
+    await upgrades.erc1967.getImplementationAddress(PROXY_ADDRESS);
   console.log('Current implementation address:', currentImpl);
 
   const EscrowImplementation = await ethers.getContractFactory(
@@ -35,9 +34,8 @@ async function main(): Promise<void> {
   console.log('Upgrade tx hash:', tx.hash);
   await tx.wait();
 
-  const verifyImpl = await upgrades.erc1967.getImplementationAddress(
-    PROXY_ADDRESS,
-  );
+  const verifyImpl =
+    await upgrades.erc1967.getImplementationAddress(PROXY_ADDRESS);
   console.log('Implementation after upgrade:', verifyImpl);
 
   if (currentImpl.toLowerCase() === verifyImpl.toLowerCase()) {

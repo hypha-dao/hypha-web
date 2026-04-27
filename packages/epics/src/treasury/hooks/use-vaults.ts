@@ -58,7 +58,7 @@ export const useVaults = ({
   const { id } = useParams<{ id: string }>();
   const { getAccessToken } = useAuthentication();
   const resolvedSpaceSlug =
-    typeof spaceSlug === 'string' ? spaceSlug : id ?? undefined;
+    typeof spaceSlug === 'string' ? spaceSlug : (id ?? undefined);
 
   const endpoint = React.useMemo(
     () =>

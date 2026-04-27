@@ -286,9 +286,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should fail payment with insufficient USDC', async function () {
-      const { hyphaToken, usdc, user1, usdcPerDay } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, usdc, user1, usdcPerDay } =
+        await loadFixture(deployHyphaFixture);
 
       const spaceIds = [1];
       const usdcAmounts = [usdcPerDay]; // Need USDC but user has none
@@ -324,9 +323,8 @@ describe('HyphaToken Comprehensive Tests', function () {
       await hyphaToken.connect(user1).payForSpaces([spaceId], [initialPayment]);
 
       // Get initial expiry time
-      const initialExpiry = await spacePaymentTracker.getSpaceExpiryTime(
-        spaceId,
-      );
+      const initialExpiry =
+        await spacePaymentTracker.getSpaceExpiryTime(spaceId);
 
       // Make additional payment
       const additionalDuration = 10; // 10 more days
@@ -454,9 +452,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should correctly process large investments', async function () {
-      const { hyphaToken, usdc, user1, hyphaPrice } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, usdc, user1, hyphaPrice } =
+        await loadFixture(deployHyphaFixture);
 
       // Large investment amount
       const usdcAmount = ethers.parseUnits('1000000', 6); // 1 million USDC
@@ -562,9 +559,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should fail when paying with insufficient HYPHA balance', async function () {
-      const { hyphaToken, user2, hyphaPerDay } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, user2, hyphaPerDay } =
+        await loadFixture(deployHyphaFixture);
 
       // User2 has no HYPHA tokens yet
       const spaceIds = [1];
@@ -779,9 +775,8 @@ describe('HyphaToken Comprehensive Tests', function () {
       // Note: Since HyphaToken has transfers disabled, we should create a modified test
       // that verifies the _beforeTokenTransfer reward accounting logic is correct
 
-      const { hyphaToken, usdc, user1, user2, usdcPerDay } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, usdc, user1, user2, usdcPerDay } =
+        await loadFixture(deployHyphaFixture);
 
       // Set distribution multiplier to a high value for testing
       await hyphaToken.setDistributionMultiplier(2000n); // 20%
@@ -824,9 +819,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should gracefully handle the case when totalSupply is zero', async function () {
-      const { hyphaToken, usdc, user1, usdcPerDay } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, usdc, user1, usdcPerDay } =
+        await loadFixture(deployHyphaFixture);
 
       // Set distribution multiplier to a high value for testing
       await hyphaToken.setDistributionMultiplier(3000n); // 3000x = 300,000% bonus
@@ -874,9 +868,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should verify governance functions correctly update parameters', async function () {
-      const { hyphaToken, owner, user1 } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, owner, user1 } =
+        await loadFixture(deployHyphaFixture);
 
       // Initial values
       const initialHyphaPrice = await hyphaToken.HYPHA_PRICE_USD();
@@ -2002,9 +1995,8 @@ describe('HyphaToken Comprehensive Tests', function () {
 
   describe('Mint Whitelist and Minting Functions', function () {
     it('Should allow owner to add address to mint whitelist and emit event', async function () {
-      const { hyphaToken, owner, user1, user2 } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, owner, user1, user2 } =
+        await loadFixture(deployHyphaFixture);
 
       // Initially, user1 should not be whitelisted
       expect(
@@ -2041,9 +2033,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should not allow non-owner to modify mint whitelist', async function () {
-      const { hyphaToken, user1, user2 } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, user1, user2 } =
+        await loadFixture(deployHyphaFixture);
 
       // Non-owner tries to add address to mint whitelist
       await expect(
@@ -2069,9 +2060,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should allow whitelisted address to mint tokens', async function () {
-      const { hyphaToken, owner, user1, user2, user3 } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, owner, user1, user2, user3 } =
+        await loadFixture(deployHyphaFixture);
 
       // Add user1 and user2 to mint whitelist
       await hyphaToken
@@ -2117,9 +2107,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should not allow non-whitelisted addresses to mint tokens', async function () {
-      const { hyphaToken, owner, user1, user2, user3 } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, owner, user1, user2, user3 } =
+        await loadFixture(deployHyphaFixture);
 
       // Add user1 to mint whitelist but not user2
       await hyphaToken
@@ -2139,9 +2128,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should not allow minting to zero address', async function () {
-      const { hyphaToken, owner, user1 } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, owner, user1 } =
+        await loadFixture(deployHyphaFixture);
 
       // Add user1 to mint whitelist
       await hyphaToken
@@ -2159,9 +2147,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should not allow minting zero amount', async function () {
-      const { hyphaToken, owner, user1, user2 } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, owner, user1, user2 } =
+        await loadFixture(deployHyphaFixture);
 
       // Add user1 to mint whitelist
       await hyphaToken
@@ -2175,9 +2162,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should not allow minting beyond max supply', async function () {
-      const { hyphaToken, owner, user1, user2 } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, owner, user1, user2 } =
+        await loadFixture(deployHyphaFixture);
 
       // Add user1 to mint whitelist
       await hyphaToken
@@ -2197,9 +2183,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should allow minting up to max supply', async function () {
-      const { hyphaToken, owner, user1, user2 } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, owner, user1, user2 } =
+        await loadFixture(deployHyphaFixture);
 
       // Add user1 to mint whitelist
       await hyphaToken
@@ -2337,9 +2322,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should handle multiple whitelisted addresses correctly', async function () {
-      const { hyphaToken, owner, user1, user2, user3 } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, owner, user1, user2, user3 } =
+        await loadFixture(deployHyphaFixture);
 
       // Add both user1 and user2 to mint whitelist
       await hyphaToken
@@ -2377,9 +2361,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should handle whitelist changes correctly', async function () {
-      const { hyphaToken, owner, user1, user2, user3 } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, owner, user1, user2, user3 } =
+        await loadFixture(deployHyphaFixture);
 
       // Add user1 to mint whitelist
       await hyphaToken
@@ -2425,9 +2408,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should handle large mint amounts correctly', async function () {
-      const { hyphaToken, owner, user1, user2 } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, owner, user1, user2 } =
+        await loadFixture(deployHyphaFixture);
 
       // Add user1 to mint whitelist
       await hyphaToken
@@ -2454,9 +2436,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should emit events correctly for all operations', async function () {
-      const { hyphaToken, owner, user1, user2 } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, owner, user1, user2 } =
+        await loadFixture(deployHyphaFixture);
 
       // Test setWhitelistStatus event
       await expect(
@@ -2477,9 +2458,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should correctly track mint transfer whitelist status', async function () {
-      const { hyphaToken, owner, user1, user2, user3 } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, owner, user1, user2, user3 } =
+        await loadFixture(deployHyphaFixture);
 
       // Initially should be false
       expect(
@@ -2531,9 +2511,8 @@ describe('HyphaToken Comprehensive Tests', function () {
 
   describe('Transfer Whitelists and Functions', function () {
     it('Should allow owner to manage mint transfer whitelist', async function () {
-      const { hyphaToken, owner, user1, user2 } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, owner, user1, user2 } =
+        await loadFixture(deployHyphaFixture);
 
       // Initially, addresses should not be whitelisted
       expect(
@@ -2571,9 +2550,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should allow owner to manage normal transfer whitelist', async function () {
-      const { hyphaToken, owner, user1, user2 } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, owner, user1, user2 } =
+        await loadFixture(deployHyphaFixture);
 
       // Initially, addresses should not be whitelisted
       expect(
@@ -2611,9 +2589,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should not allow non-owner to modify whitelists', async function () {
-      const { hyphaToken, user1, user2 } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, user1, user2 } =
+        await loadFixture(deployHyphaFixture);
 
       // Non-owner tries to modify mint transfer whitelist
       await expect(
@@ -2647,9 +2624,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should reject transfers from non-whitelisted addresses', async function () {
-      const { hyphaToken, usdc, user1, user2 } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, usdc, user1, user2 } =
+        await loadFixture(deployHyphaFixture);
 
       // Give user1 some HYPHA tokens through investment
       const investAmount = ethers.parseUnits('100', 6);
@@ -2681,9 +2657,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should allow normal transfer whitelist addresses to transfer with sufficient balance', async function () {
-      const { hyphaToken, usdc, owner, user1, user2 } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, usdc, owner, user1, user2 } =
+        await loadFixture(deployHyphaFixture);
 
       // Add user1 to normal transfer whitelist
       await hyphaToken
@@ -2721,9 +2696,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should reject normal transfer whitelist addresses with insufficient balance', async function () {
-      const { hyphaToken, usdc, owner, user1, user2 } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, usdc, owner, user1, user2 } =
+        await loadFixture(deployHyphaFixture);
 
       // Add user1 to normal transfer whitelist
       await hyphaToken
@@ -2750,9 +2724,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should allow mint transfer whitelist addresses to transfer with sufficient balance (no minting)', async function () {
-      const { hyphaToken, usdc, owner, user1, user2 } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, usdc, owner, user1, user2 } =
+        await loadFixture(deployHyphaFixture);
 
       // Add user1 to mint transfer whitelist
       await hyphaToken
@@ -2793,9 +2766,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should allow mint transfer whitelist addresses to transfer beyond balance (with minting)', async function () {
-      const { hyphaToken, usdc, owner, user1, user2 } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, usdc, owner, user1, user2 } =
+        await loadFixture(deployHyphaFixture);
 
       // Add user1 to mint transfer whitelist
       await hyphaToken
@@ -2842,9 +2814,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should handle mint transfer when sender has zero balance (pure minting)', async function () {
-      const { hyphaToken, owner, user1, user2 } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, owner, user1, user2 } =
+        await loadFixture(deployHyphaFixture);
 
       // Add user1 to mint transfer whitelist
       await hyphaToken
@@ -2981,9 +2952,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should reject mint transfers that exceed max supply', async function () {
-      const { hyphaToken, owner, user1, user2 } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, owner, user1, user2 } =
+        await loadFixture(deployHyphaFixture);
 
       // Add user1 to mint transfer whitelist
       await hyphaToken
@@ -3055,9 +3025,8 @@ describe('HyphaToken Comprehensive Tests', function () {
     });
 
     it('Should handle both whitelists correctly when address is in both', async function () {
-      const { hyphaToken, usdc, owner, user1, user2 } = await loadFixture(
-        deployHyphaFixture,
-      );
+      const { hyphaToken, usdc, owner, user1, user2 } =
+        await loadFixture(deployHyphaFixture);
 
       // Add user1 to both whitelists
       await hyphaToken

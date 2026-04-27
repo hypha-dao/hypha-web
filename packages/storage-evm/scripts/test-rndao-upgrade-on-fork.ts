@@ -126,9 +126,8 @@ async function main(): Promise<void> {
   console.log('');
 
   // Get current contract with DecayingSpaceToken ABI
-  const DecayingSpaceToken = await ethers.getContractFactory(
-    'DecayingSpaceToken',
-  );
+  const DecayingSpaceToken =
+    await ethers.getContractFactory('DecayingSpaceToken');
   const currentContract = DecayingSpaceToken.attach(PROXY_ADDRESS);
 
   const stateBefore = await getContractState(currentContract);
@@ -138,9 +137,8 @@ async function main(): Promise<void> {
   }
 
   // Get current implementation address
-  const implBefore = await upgrades.erc1967.getImplementationAddress(
-    PROXY_ADDRESS,
-  );
+  const implBefore =
+    await upgrades.erc1967.getImplementationAddress(PROXY_ADDRESS);
   console.log('');
   console.log('Current implementation:', implBefore);
 
@@ -196,9 +194,8 @@ async function main(): Promise<void> {
     console.log('✅ Upgrade completed!');
 
     // Get new implementation address
-    const implAfter = await upgrades.erc1967.getImplementationAddress(
-      PROXY_ADDRESS,
-    );
+    const implAfter =
+      await upgrades.erc1967.getImplementationAddress(PROXY_ADDRESS);
     console.log('');
     console.log('Previous implementation:', implBefore);
     console.log('New implementation:', implAfter);

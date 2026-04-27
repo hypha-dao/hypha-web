@@ -66,14 +66,14 @@ export const ExpireProposalBanner = ({
   const tooltipMessage = !isAuthenticated
     ? tCommon('signIn')
     : isMemberLoading
-    ? tProposalDetails('expireBanner.checkingMembership')
-    : !isMember && !isDelegate
-    ? tCommon('joinSpaceToUse')
-    : isExpiring
-    ? tProposalDetails('expireBanner.processing')
-    : localActionCompleted
-    ? tProposalDetails('expireBanner.actionCompleted')
-    : '';
+      ? tProposalDetails('expireBanner.checkingMembership')
+      : !isMember && !isDelegate
+        ? tCommon('joinSpaceToUse')
+        : isExpiring
+          ? tProposalDetails('expireBanner.processing')
+          : localActionCompleted
+            ? tProposalDetails('expireBanner.actionCompleted')
+            : '';
 
   const getBannerStateKey = (): BannerStateKey => {
     if (quorumPercentage === 0 && unityPercentage === 0) {
@@ -101,30 +101,32 @@ export const ExpireProposalBanner = ({
     stateKey === 'noParticipation'
       ? tProposalDetails('expireBanner.states.noParticipation.subtitle')
       : stateKey === 'insufficientParticipation'
-      ? tProposalDetails(
-          'expireBanner.states.insufficientParticipation.subtitle',
-        )
-      : stateKey === 'lackAlignment'
-      ? tProposalDetails('expireBanner.states.lackAlignment.subtitle')
-      : stateKey === 'approved'
-      ? tProposalDetails('expireBanner.states.approved.subtitle')
-      : tProposalDetails(
-          'expireBanner.states.insufficientParticipationAndAlignment.subtitle',
-        );
+        ? tProposalDetails(
+            'expireBanner.states.insufficientParticipation.subtitle',
+          )
+        : stateKey === 'lackAlignment'
+          ? tProposalDetails('expireBanner.states.lackAlignment.subtitle')
+          : stateKey === 'approved'
+            ? tProposalDetails('expireBanner.states.approved.subtitle')
+            : tProposalDetails(
+                'expireBanner.states.insufficientParticipationAndAlignment.subtitle',
+              );
   const completedMessage =
     stateKey === 'noParticipation'
       ? tProposalDetails('expireBanner.states.noParticipation.completedMessage')
       : stateKey === 'insufficientParticipation'
-      ? tProposalDetails(
-          'expireBanner.states.insufficientParticipation.completedMessage',
-        )
-      : stateKey === 'lackAlignment'
-      ? tProposalDetails('expireBanner.states.lackAlignment.completedMessage')
-      : stateKey === 'approved'
-      ? tProposalDetails('expireBanner.states.approved.completedMessage')
-      : tProposalDetails(
-          'expireBanner.states.insufficientParticipationAndAlignment.completedMessage',
-        );
+        ? tProposalDetails(
+            'expireBanner.states.insufficientParticipation.completedMessage',
+          )
+        : stateKey === 'lackAlignment'
+          ? tProposalDetails(
+              'expireBanner.states.lackAlignment.completedMessage',
+            )
+          : stateKey === 'approved'
+            ? tProposalDetails('expireBanner.states.approved.completedMessage')
+            : tProposalDetails(
+                'expireBanner.states.insufficientParticipationAndAlignment.completedMessage',
+              );
   const buttonText = isExpiring
     ? tProposalDetails('expireBanner.processing')
     : tProposalDetails('expireBanner.confirmDecision');

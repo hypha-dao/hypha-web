@@ -567,9 +567,8 @@ describe('EscrowImplementation', function () {
       }
 
       it('refunds partyA in a single tx when creator cancels', async function () {
-        const { escrow, tokenA, partyA, creator, AMOUNT_A } = await loadFixture(
-          partyAFundedFixture,
-        );
+        const { escrow, tokenA, partyA, creator, AMOUNT_A } =
+          await loadFixture(partyAFundedFixture);
 
         const aBefore = await tokenA.balanceOf(partyA.address);
 
@@ -725,9 +724,8 @@ describe('EscrowImplementation', function () {
         // Confirms the frontend's existing soft-success branch still
         // matches: cancelEscrow now refunds, the follow-up withdraw
         // hits the no-funds revert which the client treats as success.
-        const { escrow, partyA, creator } = await loadFixture(
-          partyAFundedFixture,
-        );
+        const { escrow, partyA, creator } =
+          await loadFixture(partyAFundedFixture);
 
         await escrow.connect(creator).cancelEscrow(1);
 

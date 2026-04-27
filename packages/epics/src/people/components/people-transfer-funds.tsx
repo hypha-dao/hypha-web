@@ -65,7 +65,7 @@ export const ProfileTransferFunds = ({
        */
       const canDrawCredit = Boolean(
         asset.mutualCredit?.creditEligible &&
-          asset.mutualCredit.creditLimitLeft > 0,
+        asset.mutualCredit.creditLimitLeft > 0,
       );
       return hasBalance || canDrawCredit;
     })

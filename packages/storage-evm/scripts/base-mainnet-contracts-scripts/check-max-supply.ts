@@ -311,8 +311,8 @@ async function main(): Promise<void> {
         tokenInfo.maxSupply === null
           ? 'N/A (Standard ERC20)'
           : tokenInfo.maxSupply === 0n
-          ? 'Unlimited'
-          : ethers.formatUnits(tokenInfo.maxSupply, tokenInfo.decimals),
+            ? 'Unlimited'
+            : ethers.formatUnits(tokenInfo.maxSupply, tokenInfo.decimals),
       );
       console.log('===============\n');
     } catch (error: any) {
@@ -374,9 +374,8 @@ async function main(): Promise<void> {
       currentSpaceId++
     ) {
       try {
-        const spaceDetails = await daoSpaceFactory.getSpaceDetails(
-          currentSpaceId,
-        );
+        const spaceDetails =
+          await daoSpaceFactory.getSpaceDetails(currentSpaceId);
 
         // Check if this is a valid space (has a creator address)
         if (spaceDetails.creator === ethers.ZeroAddress) {
@@ -419,8 +418,11 @@ async function main(): Promise<void> {
                 tokenInfo.maxSupply === null
                   ? 'N/A (Standard ERC20)'
                   : tokenInfo.maxSupply === 0n
-                  ? 'Unlimited'
-                  : ethers.formatUnits(tokenInfo.maxSupply, tokenInfo.decimals),
+                    ? 'Unlimited'
+                    : ethers.formatUnits(
+                        tokenInfo.maxSupply,
+                        tokenInfo.decimals,
+                      ),
               );
 
               if (tokenInfo.isSpaceToken) {

@@ -87,9 +87,8 @@ describe('Token Configuration Tests', function () {
       await daoSpaceFactory.getAddress(),
     );
 
-    const RegularSpaceToken = await ethers.getContractFactory(
-      'RegularSpaceToken',
-    );
+    const RegularSpaceToken =
+      await ethers.getContractFactory('RegularSpaceToken');
     const regularSpaceTokenImpl = await RegularSpaceToken.deploy();
     await regularTokenFactory.setSpaceTokenImplementation(
       await regularSpaceTokenImpl.getAddress(),
@@ -108,9 +107,8 @@ describe('Token Configuration Tests', function () {
       await daoSpaceFactory.getAddress(),
     );
 
-    const DecayingSpaceToken = await ethers.getContractFactory(
-      'DecayingSpaceToken',
-    );
+    const DecayingSpaceToken =
+      await ethers.getContractFactory('DecayingSpaceToken');
     const decayingSpaceTokenImpl = await DecayingSpaceToken.deploy();
     await decayingTokenFactory.setDecayingTokenImplementation(
       await decayingSpaceTokenImpl.getAddress(),

@@ -18,10 +18,9 @@ const ContextMenuSub = ContextMenuPrimitive.Sub;
 
 const ContextMenuRadioGroup = ContextMenuPrimitive.RadioGroup;
 
-export interface ContextMenuSubTriggerProps
-  extends React.ComponentPropsWithoutRef<
-    typeof ContextMenuPrimitive.SubTrigger
-  > {
+export interface ContextMenuSubTriggerProps extends React.ComponentPropsWithoutRef<
+  typeof ContextMenuPrimitive.SubTrigger
+> {
   inset?: boolean;
 }
 
@@ -84,8 +83,9 @@ const ContextMenuContent = React.forwardRef<
 ));
 ContextMenuContent.displayName = ContextMenuPrimitive.Content.displayName;
 
-export interface ContextMenuItemProps
-  extends React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Item> {
+export interface ContextMenuItemProps extends React.ComponentPropsWithoutRef<
+  typeof ContextMenuPrimitive.Item
+> {
   inset?: boolean;
 }
 
@@ -159,8 +159,9 @@ const ContextMenuRadioItem = React.forwardRef<
 ));
 ContextMenuRadioItem.displayName = ContextMenuPrimitive.RadioItem.displayName;
 
-export interface ContextMenuLabelProps
-  extends React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Label> {
+export interface ContextMenuLabelProps extends React.ComponentPropsWithoutRef<
+  typeof ContextMenuPrimitive.Label
+> {
   inset?: boolean;
 }
 

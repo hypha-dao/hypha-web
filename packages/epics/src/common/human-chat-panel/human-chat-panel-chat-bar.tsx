@@ -817,10 +817,10 @@ export function HumanChatPanelChatBar({
         )
           ? 'image'
           : isVideo
-          ? 'video'
-          : isAudio
-          ? 'audio'
-          : 'file';
+            ? 'video'
+            : isAudio
+              ? 'audio'
+              : 'file';
         next.push({
           id: newAttachmentDraftId(),
           file,

@@ -30,8 +30,8 @@ export const ActionButtons = ({ web3SpaceId }: ActionButtonsProps) => {
   const tooltipMessage = !isAuthenticated
     ? tCommon('signIn')
     : !isMember && !isDelegate
-    ? tCommon('joinSpaceToUse')
-    : '';
+      ? tCommon('joinSpaceToUse')
+      : '';
 
   return (
     <>

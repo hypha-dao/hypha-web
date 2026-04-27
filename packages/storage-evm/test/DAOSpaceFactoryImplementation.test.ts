@@ -337,9 +337,8 @@ describe('DAOSpaceFactoryImplementation', function () {
     });
 
     it('Should create a proposal when joining a space with join method 2', async function () {
-      const { daoSpaceFactory, owner, voter1, other } = await loadFixture(
-        deployFixture,
-      );
+      const { daoSpaceFactory, owner, voter1, other } =
+        await loadFixture(deployFixture);
 
       // First we need to deploy a proper DAOProposals contract to use
       const DAOProposals = await ethers.getContractFactory(
@@ -439,9 +438,8 @@ describe('DAOSpaceFactoryImplementation', function () {
     });
 
     it('Should remove a member from a space', async function () {
-      const { spaceHelper, daoSpaceFactory, other } = await loadFixture(
-        deployFixture,
-      );
+      const { spaceHelper, daoSpaceFactory, other } =
+        await loadFixture(deployFixture);
 
       // Create space with exit method 1 (only executor can remove members)
       const spaceParams = {
@@ -778,9 +776,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       const spaceId = (await spaceHelper.contract.spaceCounter()).toString();
 
       // Get the executor
-      const executorAddress = await spaceHelper.contract.getSpaceExecutor(
-        spaceId,
-      );
+      const executorAddress =
+        await spaceHelper.contract.getSpaceExecutor(spaceId);
 
       // Impersonate the executor
       await ethers.provider.send('hardhat_impersonateAccount', [
@@ -980,9 +977,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       const afterTransferVoter1Balance = await token.balanceOf(
         await voter1.getAddress(),
       );
-      const afterTransferExecutorBalance = await token.balanceOf(
-        executorAddress,
-      );
+      const afterTransferExecutorBalance =
+        await token.balanceOf(executorAddress);
 
       console.log(
         `After transfer total supply: ${ethers.formatUnits(
@@ -1027,9 +1023,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       const beforeTransferFromVoter2Balance = await token.balanceOf(
         await voter2.getAddress(),
       );
-      const beforeTransferFromExecutorBalance = await token.balanceOf(
-        executorAddress,
-      );
+      const beforeTransferFromExecutorBalance =
+        await token.balanceOf(executorAddress);
 
       const transferFromAmount = ethers.parseUnits('50', 18);
 
@@ -1046,9 +1041,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       const afterTransferFromVoter2Balance = await token.balanceOf(
         await voter2.getAddress(),
       );
-      const afterTransferFromExecutorBalance = await token.balanceOf(
-        executorAddress,
-      );
+      const afterTransferFromExecutorBalance =
+        await token.balanceOf(executorAddress);
 
       console.log(
         `After transferFrom total supply: ${ethers.formatUnits(
@@ -1163,9 +1157,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       const spaceId = (await spaceHelper.contract.spaceCounter()).toString();
 
       // Get the executor
-      const executorAddress = await spaceHelper.contract.getSpaceExecutor(
-        spaceId,
-      );
+      const executorAddress =
+        await spaceHelper.contract.getSpaceExecutor(spaceId);
 
       // Impersonate the executor
       await ethers.provider.send('hardhat_impersonateAccount', [
@@ -1263,9 +1256,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       const spaceId = (await spaceHelper.contract.spaceCounter()).toString();
 
       // Get the executor
-      const executorAddress = await spaceHelper.contract.getSpaceExecutor(
-        spaceId,
-      );
+      const executorAddress =
+        await spaceHelper.contract.getSpaceExecutor(spaceId);
 
       // Impersonate the executor
       await ethers.provider.send('hardhat_impersonateAccount', [
@@ -1406,9 +1398,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       const spaceId = (await spaceHelper.contract.spaceCounter()).toString();
 
       // Get the executor
-      const executorAddress = await spaceHelper.contract.getSpaceExecutor(
-        spaceId,
-      );
+      const executorAddress =
+        await spaceHelper.contract.getSpaceExecutor(spaceId);
 
       // Impersonate the executor
       await ethers.provider.send('hardhat_impersonateAccount', [
@@ -1591,9 +1582,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       console.log(`Space created with ID: ${spaceId}`);
 
       // Get the executor
-      const executorAddress = await spaceHelper.contract.getSpaceExecutor(
-        spaceId,
-      );
+      const executorAddress =
+        await spaceHelper.contract.getSpaceExecutor(spaceId);
       await ethers.provider.send('hardhat_impersonateAccount', [
         executorAddress,
       ]);
@@ -1924,9 +1914,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       console.log(`Space created with ID: ${spaceId}`);
 
       // Get the executor
-      const executorAddress = await spaceHelper.contract.getSpaceExecutor(
-        spaceId,
-      );
+      const executorAddress =
+        await spaceHelper.contract.getSpaceExecutor(spaceId);
       await ethers.provider.send('hardhat_impersonateAccount', [
         executorAddress,
       ]);
@@ -2441,9 +2430,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       const proposalId = await daoProposals.proposalCounter();
 
       // Check that the proposal is not executed before voting
-      const proposalBeforeVoting = await daoProposals.getProposalCore(
-        proposalId,
-      );
+      const proposalBeforeVoting =
+        await daoProposals.getProposalCore(proposalId);
       expect(proposalBeforeVoting[3]).to.equal(false); // Check that executed is false
 
       // 5. Vote on the proposal with enough votes to pass
@@ -2452,9 +2440,8 @@ describe('DAOSpaceFactoryImplementation', function () {
 
       // Check if the proposal was executed after voter1 votes
       // If it was executed already, don't try to vote with voter2
-      const proposalAfterVoter1 = await daoProposals.getProposalCore(
-        proposalId,
-      );
+      const proposalAfterVoter1 =
+        await daoProposals.getProposalCore(proposalId);
 
       if (!proposalAfterVoter1[3]) {
         // Only vote with voter2 if the proposal isn't already executed
@@ -3338,9 +3325,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       const afterTransferVoter1Balance = await token.balanceOf(
         await voter1.getAddress(),
       );
-      const afterTransferExecutorBalance = await token.balanceOf(
-        executorAddress,
-      );
+      const afterTransferExecutorBalance =
+        await token.balanceOf(executorAddress);
 
       console.log(
         `After transfer total supply: ${ethers.formatUnits(
@@ -3385,9 +3371,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       const beforeTransferFromVoter2Balance = await token.balanceOf(
         await voter2.getAddress(),
       );
-      const beforeTransferFromExecutorBalance = await token.balanceOf(
-        executorAddress,
-      );
+      const beforeTransferFromExecutorBalance =
+        await token.balanceOf(executorAddress);
 
       const transferFromAmount = ethers.parseUnits('50', 18);
 
@@ -3404,9 +3389,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       const afterTransferFromVoter2Balance = await token.balanceOf(
         await voter2.getAddress(),
       );
-      const afterTransferFromExecutorBalance = await token.balanceOf(
-        executorAddress,
-      );
+      const afterTransferFromExecutorBalance =
+        await token.balanceOf(executorAddress);
 
       console.log(
         `After transferFrom total supply: ${ethers.formatUnits(
@@ -3694,9 +3678,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       }
 
       // Verify mint proposal was executed
-      const executedMintProposal = await daoProposals.getProposalCore(
-        mintProposalId,
-      );
+      const executedMintProposal =
+        await daoProposals.getProposalCore(mintProposalId);
       expect(executedMintProposal[3]).to.equal(true);
 
       // Verify each recipient received tokens
@@ -3897,9 +3880,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       console.log(`Direct token was deployed at: ${directTokenAddress}`);
 
       // Now we need to get the nonce that will be used for the next deployment
-      const executorNonce = await ethers.provider.getTransactionCount(
-        executorAddress,
-      );
+      const executorNonce =
+        await ethers.provider.getTransactionCount(executorAddress);
       console.log(`Current executor nonce: ${executorNonce}`);
 
       // Here we'll create a single proposal with 8 transactions:
@@ -3999,9 +3981,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       }
 
       // Verify mint proposal was executed
-      const executedMintProposal = await daoProposals.getProposalCore(
-        mintProposalId,
-      );
+      const executedMintProposal =
+        await daoProposals.getProposalCore(mintProposalId);
       expect(executedMintProposal[3]).to.equal(true);
 
       // Verify each recipient received tokens
@@ -4152,9 +4133,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       await this.daoProposals.connect(this.voter1).vote(proposal1Id, true);
       console.log('Cast vote 1: YES');
 
-      let proposal1Status = await this.daoProposals.getProposalCore(
-        proposal1Id,
-      );
+      let proposal1Status =
+        await this.daoProposals.getProposalCore(proposal1Id);
       console.log(
         `After vote 1 - Executed: ${proposal1Status[3]}, YES: ${proposal1Status[5]}, NO: ${proposal1Status[6]}`,
       );
@@ -4224,9 +4204,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       await this.daoProposals.connect(this.voter3).vote(proposal2Id, false);
       console.log('Cast vote 3: NO');
 
-      const proposal2Status = await this.daoProposals.getProposalCore(
-        proposal2Id,
-      );
+      const proposal2Status =
+        await this.daoProposals.getProposalCore(proposal2Id);
       console.log(`Proposal 2 executed: ${proposal2Status[3]}`);
       console.log(
         `Proposal 2 YES votes: ${proposal2Status[5]}, NO votes: ${proposal2Status[6]}`,
@@ -4259,9 +4238,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       // Cast just 1 vote (not enough for quorum)
       await this.daoProposals.connect(this.voter1).vote(proposal3Id, true);
 
-      const proposal3StatusBefore = await this.daoProposals.getProposalCore(
-        proposal3Id,
-      );
+      const proposal3StatusBefore =
+        await this.daoProposals.getProposalCore(proposal3Id);
       console.log(
         `Proposal 3 executed before expiration: ${proposal3StatusBefore[3]}`,
       );
@@ -4277,9 +4255,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       // Check expiration
       await this.daoProposals.checkProposalExpiration(proposal3Id);
 
-      const proposal3StatusAfter = await this.daoProposals.getProposalCore(
-        proposal3Id,
-      );
+      const proposal3StatusAfter =
+        await this.daoProposals.getProposalCore(proposal3Id);
       console.log(`Proposal 3 expired: ${proposal3StatusAfter[4]}`);
 
       // PROPOSAL 4: Create another accepted proposal with a simple transaction
@@ -4310,9 +4287,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       await this.daoProposals.connect(this.voter1).vote(proposal4Id, true);
       console.log('Cast vote 1: YES');
 
-      let proposal4Status = await this.daoProposals.getProposalCore(
-        proposal4Id,
-      );
+      let proposal4Status =
+        await this.daoProposals.getProposalCore(proposal4Id);
       console.log(`After vote 1 - Executed: ${proposal4Status[3]}`);
 
       if (!proposal4Status[3]) {
@@ -4952,9 +4928,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       await this.daoSpaceFactory.connect(this.other).joinSpace(testSpaceId);
 
       // Verify we have 5 members total (owner + 4 others)
-      const spaceMembers = await this.daoSpaceFactory.getSpaceMembers(
-        testSpaceId,
-      );
+      const spaceMembers =
+        await this.daoSpaceFactory.getSpaceMembers(testSpaceId);
       expect(spaceMembers.length).to.equal(
         5,
         'Test space should have 5 members',
@@ -4994,9 +4969,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       console.log(`\nCreated proposal ${proposalId} for voter tracking test`);
 
       // Initially, no voters should be tracked
-      let [yesVoters, noVoters] = await this.daoProposals.getProposalVoters(
-        proposalId,
-      );
+      let [yesVoters, noVoters] =
+        await this.daoProposals.getProposalVoters(proposalId);
       expect(yesVoters.length).to.equal(
         0,
         'Should have no yes voters initially',
@@ -5031,9 +5005,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       );
 
       // Retrieve voter addresses
-      [yesVoters, noVoters] = await this.daoProposals.getProposalVoters(
-        proposalId,
-      );
+      [yesVoters, noVoters] =
+        await this.daoProposals.getProposalVoters(proposalId);
 
       console.log(`\nRetrieved voter addresses:`);
       console.log(`YES voters: [${yesVoters.join(', ')}]`);
@@ -5110,18 +5083,16 @@ describe('DAOSpaceFactoryImplementation', function () {
 
   describe('Space Governance Method Changes', function () {
     it('Should allow space executor to change the voting method', async function () {
-      const { spaceHelper, daoSpaceFactory, owner } = await loadFixture(
-        deployFixture,
-      );
+      const { spaceHelper, daoSpaceFactory, owner } =
+        await loadFixture(deployFixture);
 
       // Create a space with initial voting power source = 1
       await spaceHelper.createDefaultSpace();
       const spaceId = (await daoSpaceFactory.spaceCounter()).toString();
 
       // Get the initial voting power source
-      const initialSpaceDetails = await daoSpaceFactory.getSpaceDetails(
-        spaceId,
-      );
+      const initialSpaceDetails =
+        await daoSpaceFactory.getSpaceDetails(spaceId);
       const initialVotingPowerSource = initialSpaceDetails.votingPowerSource;
       expect(initialVotingPowerSource).to.equal(1);
 
@@ -5162,27 +5133,24 @@ describe('DAOSpaceFactoryImplementation', function () {
         );
 
       // Verify the voting power source has been updated
-      const updatedSpaceDetails = await daoSpaceFactory.getSpaceDetails(
-        spaceId,
-      );
+      const updatedSpaceDetails =
+        await daoSpaceFactory.getSpaceDetails(spaceId);
       expect(updatedSpaceDetails.votingPowerSource).to.equal(
         newVotingPowerSource,
       );
     });
 
     it('Should allow space executor to change the entry method', async function () {
-      const { spaceHelper, daoSpaceFactory, owner } = await loadFixture(
-        deployFixture,
-      );
+      const { spaceHelper, daoSpaceFactory, owner } =
+        await loadFixture(deployFixture);
 
       // Create a space with initial join method = 1 (open join)
       await spaceHelper.createDefaultSpace();
       const spaceId = (await daoSpaceFactory.spaceCounter()).toString();
 
       // Get the initial join method
-      const initialSpaceDetails = await daoSpaceFactory.getSpaceDetails(
-        spaceId,
-      );
+      const initialSpaceDetails =
+        await daoSpaceFactory.getSpaceDetails(spaceId);
       const initialJoinMethod = initialSpaceDetails.joinMethod;
       expect(initialJoinMethod).to.equal(1);
 
@@ -5213,16 +5181,14 @@ describe('DAOSpaceFactoryImplementation', function () {
         .withArgs(spaceId, initialJoinMethod, newJoinMethod);
 
       // Verify the join method has been updated
-      const updatedSpaceDetails = await daoSpaceFactory.getSpaceDetails(
-        spaceId,
-      );
+      const updatedSpaceDetails =
+        await daoSpaceFactory.getSpaceDetails(spaceId);
       expect(updatedSpaceDetails.joinMethod).to.equal(newJoinMethod);
     });
 
     it('Should prevent non-executors from changing the voting method', async function () {
-      const { spaceHelper, daoSpaceFactory, other } = await loadFixture(
-        deployFixture,
-      );
+      const { spaceHelper, daoSpaceFactory, other } =
+        await loadFixture(deployFixture);
 
       // Create a space
       await spaceHelper.createDefaultSpace();
@@ -5235,9 +5201,8 @@ describe('DAOSpaceFactoryImplementation', function () {
     });
 
     it('Should prevent non-executors from changing the entry method', async function () {
-      const { spaceHelper, daoSpaceFactory, other } = await loadFixture(
-        deployFixture,
-      );
+      const { spaceHelper, daoSpaceFactory, other } =
+        await loadFixture(deployFixture);
 
       // Create a space
       await spaceHelper.createDefaultSpace();
@@ -5250,9 +5215,8 @@ describe('DAOSpaceFactoryImplementation', function () {
     });
 
     it('Should reject invalid voting method IDs', async function () {
-      const { spaceHelper, daoSpaceFactory, owner } = await loadFixture(
-        deployFixture,
-      );
+      const { spaceHelper, daoSpaceFactory, owner } =
+        await loadFixture(deployFixture);
 
       // Create a space
       await spaceHelper.createDefaultSpace();
@@ -5280,9 +5244,8 @@ describe('DAOSpaceFactoryImplementation', function () {
     });
 
     it('Should reject invalid entry method IDs', async function () {
-      const { spaceHelper, daoSpaceFactory, owner } = await loadFixture(
-        deployFixture,
-      );
+      const { spaceHelper, daoSpaceFactory, owner } =
+        await loadFixture(deployFixture);
 
       // Create a space
       await spaceHelper.createDefaultSpace();
@@ -5308,9 +5271,8 @@ describe('DAOSpaceFactoryImplementation', function () {
     });
 
     it('Should allow changing method via proposal', async function () {
-      const { daoSpaceFactory, owner, voter1, voter2 } = await loadFixture(
-        deployFixture,
-      );
+      const { daoSpaceFactory, owner, voter1, voter2 } =
+        await loadFixture(deployFixture);
 
       // Deploy a proper DAOProposals contract
       const DAOProposals = await ethers.getContractFactory(
@@ -5425,25 +5387,22 @@ describe('DAOSpaceFactoryImplementation', function () {
       }
 
       // Check if the voting method was changed
-      const updatedSpaceDetails = await daoSpaceFactory.getSpaceDetails(
-        spaceId,
-      );
+      const updatedSpaceDetails =
+        await daoSpaceFactory.getSpaceDetails(spaceId);
       expect(updatedSpaceDetails.votingPowerSource).to.equal(3);
     });
 
     it('Should allow contract owner to change the voting method', async function () {
-      const { spaceHelper, daoSpaceFactory, owner } = await loadFixture(
-        deployFixture,
-      );
+      const { spaceHelper, daoSpaceFactory, owner } =
+        await loadFixture(deployFixture);
 
       // Create a space
       await spaceHelper.createDefaultSpace();
       const spaceId = (await daoSpaceFactory.spaceCounter()).toString();
 
       // Get the initial voting power source
-      const initialSpaceDetails = await daoSpaceFactory.getSpaceDetails(
-        spaceId,
-      );
+      const initialSpaceDetails =
+        await daoSpaceFactory.getSpaceDetails(spaceId);
       const initialVotingPowerSource = initialSpaceDetails.votingPowerSource;
       expect(initialVotingPowerSource).to.equal(1);
 
@@ -5469,9 +5428,8 @@ describe('DAOSpaceFactoryImplementation', function () {
         );
 
       // Verify the voting power source has been updated
-      const updatedSpaceDetails = await daoSpaceFactory.getSpaceDetails(
-        spaceId,
-      );
+      const updatedSpaceDetails =
+        await daoSpaceFactory.getSpaceDetails(spaceId);
       expect(updatedSpaceDetails.votingPowerSource).to.equal(
         newVotingPowerSource,
       );
@@ -5509,9 +5467,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       const spaceId = (await spaceHelper.contract.spaceCounter()).toString();
 
       // Get the executor for the space
-      const executorAddress = await spaceHelper.contract.getSpaceExecutor(
-        spaceId,
-      );
+      const executorAddress =
+        await spaceHelper.contract.getSpaceExecutor(spaceId);
       await ethers.provider.send('hardhat_impersonateAccount', [
         executorAddress,
       ]);
@@ -5684,9 +5641,8 @@ describe('DAOSpaceFactoryImplementation', function () {
 
     describe('Creating Escrows with Detailed Tracking', function () {
       it('Should create an escrow with correct parameters and log all details', async function () {
-        const { escrow, tokenA, tokenB, partyA, partyB } = await loadFixture(
-          escrowFixture,
-        );
+        const { escrow, tokenA, tokenB, partyA, partyB } =
+          await loadFixture(escrowFixture);
 
         console.log('\n=== CREATING ESCROW TEST ===');
         const amountA = ethers.parseEther('10');
@@ -5763,9 +5719,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       });
 
       it('Should create escrow with immediate funding and track token movements', async function () {
-        const { escrow, tokenA, tokenB, partyA, partyB } = await loadFixture(
-          escrowFixture,
-        );
+        const { escrow, tokenA, tokenB, partyA, partyB } =
+          await loadFixture(escrowFixture);
 
         console.log('\n=== CREATING ESCROW WITH IMMEDIATE FUNDING ===');
         const amountA = ethers.parseEther('10');
@@ -5875,9 +5830,8 @@ describe('DAOSpaceFactoryImplementation', function () {
 
     describe('Complete Escrow Flow with Detailed Balance Tracking', function () {
       it('Should complete a full escrow swap with comprehensive logging', async function () {
-        const { escrow, tokenA, tokenB, partyA, partyB } = await loadFixture(
-          escrowFixture,
-        );
+        const { escrow, tokenA, tokenB, partyA, partyB } =
+          await loadFixture(escrowFixture);
 
         console.log('\n=== COMPLETE ESCROW SWAP TEST ===');
         const amountA = ethers.parseEther('15');
@@ -6108,9 +6062,8 @@ describe('DAOSpaceFactoryImplementation', function () {
 
     describe('Cancellation and Withdrawal with Balance Tracking', function () {
       it('Should handle cancellation and withdrawal with detailed logging', async function () {
-        const { escrow, tokenA, tokenB, partyA, partyB } = await loadFixture(
-          escrowFixture,
-        );
+        const { escrow, tokenA, tokenB, partyA, partyB } =
+          await loadFixture(escrowFixture);
 
         console.log('\n=== ESCROW CANCELLATION AND WITHDRAWAL TEST ===');
         const amountA = ethers.parseEther('12');
@@ -6294,9 +6247,8 @@ describe('DAOSpaceFactoryImplementation', function () {
       });
 
       it('Should handle double funding attempts with logging', async function () {
-        const { escrow, tokenA, tokenB, partyA, partyB } = await loadFixture(
-          escrowFixture,
-        );
+        const { escrow, tokenA, tokenB, partyA, partyB } =
+          await loadFixture(escrowFixture);
 
         console.log('\n=== TESTING DOUBLE FUNDING PREVENTION ===');
 

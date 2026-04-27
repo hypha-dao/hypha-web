@@ -199,7 +199,7 @@ export const TokenPercentageFieldArray = ({
                                     others.push(
                                       i === index
                                         ? percentage
-                                        : prev[i]?.percentage ?? '',
+                                        : (prev[i]?.percentage ?? ''),
                                     );
                                   }
                                   const rem =

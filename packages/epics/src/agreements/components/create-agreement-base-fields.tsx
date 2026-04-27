@@ -568,8 +568,8 @@ export function CreateAgreementBaseFields({
                           ? field.value
                           : null
                         : resubmitFormData?.leadImage?.trim()
-                        ? resubmitFormData.leadImage
-                        : undefined
+                          ? resubmitFormData.leadImage
+                          : undefined
                     }
                   />
                 </FormControl>

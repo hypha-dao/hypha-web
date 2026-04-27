@@ -76,8 +76,8 @@ export function ModalStickyNavigation({
     rawBackUrl === undefined || rawBackUrl === null
       ? undefined
       : rawBackUrl === ''
-      ? '/'
-      : rawBackUrl;
+        ? '/'
+        : rawBackUrl;
 
   const resolvedBackLabel = backLabel ?? tCommon('back');
 

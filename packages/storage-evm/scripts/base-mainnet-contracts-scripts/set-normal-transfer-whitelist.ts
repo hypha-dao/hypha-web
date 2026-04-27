@@ -285,9 +285,8 @@ async function main(): Promise<void> {
   // Check current whitelist status
   let currentStatus = false;
   try {
-    currentStatus = await hyphaToken.isNormalTransferWhitelisted(
-      accountAddress,
-    );
+    currentStatus =
+      await hyphaToken.isNormalTransferWhitelisted(accountAddress);
     console.log(
       'Current whitelist status for',
       accountAddress + ':',

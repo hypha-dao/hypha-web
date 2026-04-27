@@ -92,8 +92,8 @@ export function CompactSpaceBannerLead({ src }: Props) {
               imageFailed
                 ? 'pointer-events-none opacity-0'
                 : ready
-                ? 'opacity-100'
-                : 'opacity-0',
+                  ? 'opacity-100'
+                  : 'opacity-0',
             )}
             onLoad={() => setReady(true)}
             onError={() => {

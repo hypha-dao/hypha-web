@@ -71,9 +71,8 @@ async function main(): Promise<void> {
   }
 
   console.log('\nDeploying new RegularSpaceToken implementation...');
-  const regularTokenFactory = await ethers.getContractFactory(
-    'RegularSpaceToken',
-  );
+  const regularTokenFactory =
+    await ethers.getContractFactory('RegularSpaceToken');
   const newImplementation = (await upgrades.deployImplementation(
     regularTokenFactory,
     {

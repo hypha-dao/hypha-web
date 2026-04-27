@@ -46,7 +46,7 @@ export function computeHumanChatUnreadState(
   );
   const total = room.getUnreadNotificationCount(NotificationCountType.Total);
   const unreadNotificationCount =
-    typeof highlight === 'number' && highlight > 0 ? highlight : total ?? 0;
+    typeof highlight === 'number' && highlight > 0 ? highlight : (total ?? 0);
 
   const unreadCountIsCapped = unreadNotificationCount >= 100;
 

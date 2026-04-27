@@ -71,9 +71,8 @@ async function main(): Promise<void> {
   }
 
   console.log('\nDeploying new DecayingSpaceToken implementation...');
-  const decayingTokenFactory = await ethers.getContractFactory(
-    'DecayingSpaceToken',
-  );
+  const decayingTokenFactory =
+    await ethers.getContractFactory('DecayingSpaceToken');
   const newImplementation = (await upgrades.deployImplementation(
     decayingTokenFactory,
     {

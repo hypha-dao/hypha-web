@@ -346,7 +346,7 @@ export const useCreateIssueTokenOrchestrator = ({
           const enableMutualCredit =
             (arg.enableMutualCredit ?? false) && isRegularToken;
           const defaultCreditLimit = enableMutualCredit
-            ? arg.defaultCreditLimit ?? 0
+            ? (arg.defaultCreditLimit ?? 0)
             : 0;
           /**
            * Always include the issuing space so its members are eligible immediately.

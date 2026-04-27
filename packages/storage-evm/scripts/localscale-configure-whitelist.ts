@@ -66,9 +66,8 @@ async function main(): Promise<void> {
 
   const finalUseTransferWhitelist = await token.useTransferWhitelist();
   const finalCanTransfer = await token.canTransfer(ADDRESS_TO_WHITELIST);
-  const canAccountTransferResult = await token.canAccountTransfer(
-    ADDRESS_TO_WHITELIST,
-  );
+  const canAccountTransferResult =
+    await token.canAccountTransfer(ADDRESS_TO_WHITELIST);
 
   console.log(`useTransferWhitelist: ${finalUseTransferWhitelist}`);
   console.log(`canTransfer(${ADDRESS_TO_WHITELIST}): ${finalCanTransfer}`);

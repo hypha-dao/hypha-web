@@ -283,9 +283,8 @@ async function main(): Promise<void> {
           // Check current visibility
           let currentVisibility: { discoverability: bigint; access: bigint };
           try {
-            currentVisibility = await daoSpaceFactory.getSpaceVisibility(
-              spaceId,
-            );
+            currentVisibility =
+              await daoSpaceFactory.getSpaceVisibility(spaceId);
           } catch {
             console.log(
               `   ⚠️  Space ${spaceId}: Could not fetch current visibility, skipping...`,

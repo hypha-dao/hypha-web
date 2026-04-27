@@ -168,9 +168,8 @@ async function getTokensFromFactory(
         tokenCount++;
 
         // Check if token is deployed by this factory
-        const isFromFactory = await factory.isTokenDeployedByFactory(
-          tokenAddress,
-        );
+        const isFromFactory =
+          await factory.isTokenDeployedByFactory(tokenAddress);
 
         if (!isFromFactory) {
           console.log(

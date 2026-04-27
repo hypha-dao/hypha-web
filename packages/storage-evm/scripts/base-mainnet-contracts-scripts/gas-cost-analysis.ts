@@ -617,9 +617,8 @@ async function analyzeTransactionCosts(): Promise<void> {
     console.log(`Voting USD cost: $${deployVoteGasCost.usdCost}`);
 
     // Check proposal status immediately after voting (execution happens automatically)
-    const deployProposalData = await daoProposals.getProposalCore(
-      deployProposalId,
-    );
+    const deployProposalData =
+      await daoProposals.getProposalCore(deployProposalId);
     console.log('Proposal status after voting:');
     console.log(`- Yes votes: ${deployProposalData.yesVotes}`);
     console.log(`- No votes: ${deployProposalData.noVotes}`);

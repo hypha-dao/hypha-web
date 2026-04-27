@@ -106,7 +106,7 @@ export const ConfirmDialog: FC<ConfirmDialogProps> = ({
               >
                 {isProcessing || isLoading
                   ? 'Processing...'
-                  : customAcceptButtonText ?? 'OK'}
+                  : (customAcceptButtonText ?? 'OK')}
               </Button>
             </AlertDialogAction>
           </div>

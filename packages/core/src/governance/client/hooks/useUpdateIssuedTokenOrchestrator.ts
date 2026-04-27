@@ -531,7 +531,7 @@ export const useUpdateIssuedTokenOrchestrator = ({
       }
       let createdDocumentId: number | undefined;
       const effectiveMaxSupply =
-        arg.enableLimitedSupply === true ? arg.maxSupply ?? 0 : 0;
+        arg.enableLimitedSupply === true ? (arg.maxSupply ?? 0) : 0;
       const tokenUpdateData: TokenUpdateData = {
         name: arg.name,
         symbol: arg.symbol,

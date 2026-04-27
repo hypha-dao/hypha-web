@@ -6,6 +6,7 @@ import { SmartWalletsProvider } from '@privy-io/react-auth/smart-wallets';
 import React from 'react';
 import { base } from '@wagmi/core/chains';
 import { EvmProvider } from '@hypha-platform/evm';
+import { LOCAL_SCALE_GLOBAL_WALLET_LOGIN_METHOD } from './global-wallets';
 
 export type PrivyAuthProviderConfig = {
   appId: string;
@@ -22,7 +23,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 }) => {
   return (
     <PrivyProvider
-      config={{ defaultChain: base }}
+      config={{
+        defaultChain: base,
+        loginMethodsAndOrder: {
+          primary: [LOCAL_SCALE_GLOBAL_WALLET_LOGIN_METHOD, 'email'],
+          overflow: ['detected_ethereum_wallets'],
+        },
+      }}
       appId={providerProps.config.appId}
     >
       <SmartWalletsProvider>

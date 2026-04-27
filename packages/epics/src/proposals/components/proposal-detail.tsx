@@ -278,7 +278,7 @@ function buildIssueNewTokenResubmitPayload(
     toSpaceRows.length > 0;
   const enableAdvancedTransferControls = Boolean(
     (token.useTransferWhitelist || token.useReceiveWhitelist) &&
-      hasWhitelistAddresses,
+    hasWhitelistAddresses,
   );
 
   const matchedDb =
@@ -364,8 +364,8 @@ function buildIssueNewTokenResubmitPayload(
     (token.tokenType === 'voice'
       ? 'voice'
       : token.tokenType === 'ownership'
-      ? 'ownership'
-      : 'utility');
+        ? 'ownership'
+        : 'utility');
 
   const decaySettings =
     formType === 'voice' &&
@@ -385,8 +385,8 @@ function buildIssueNewTokenResubmitPayload(
     draftTokenForAgreement.iconUrl.length > 0
       ? draftTokenForAgreement.iconUrl
       : typeof matchedDb?.iconUrl === 'string' && matchedDb.iconUrl.length > 0
-      ? matchedDb.iconUrl
-      : undefined;
+        ? matchedDb.iconUrl
+        : undefined;
 
   return {
     name: token.name,
@@ -692,13 +692,13 @@ export const ProposalDetail = ({
 
     const isQuorumReached = Boolean(
       Number(proposalDetails?.quorumPercentage ?? 0) >=
-        Number(spaceDetails?.quorum ?? 0),
+      Number(spaceDetails?.quorum ?? 0),
     );
     setQuorumReached(isQuorumReached);
 
     const isUnityReached = Boolean(
       Number(proposalDetails?.unityPercentage ?? 0) >=
-        Number(spaceDetails?.unity ?? 0),
+      Number(spaceDetails?.unity ?? 0),
     );
     setUnityReached(isUnityReached);
 
@@ -1098,8 +1098,8 @@ export const ProposalDetail = ({
     label === 'Investment'
       ? stripHyphaInvestmentFormMarker(content ?? '')
       : label === 'Exchange'
-      ? stripExchangeDetailsBlock(content ?? '')
-      : content;
+        ? stripExchangeDetailsBlock(content ?? '')
+        : content;
 
   const escrowAddr = getEscrowImplementationAddress();
 
@@ -1156,8 +1156,8 @@ export const ProposalDetail = ({
         {label === 'Investment'
           ? stripHyphaInvestmentFormMarker(content ?? '')
           : label === 'Exchange'
-          ? stripExchangeDetailsBlock(content ?? '')
-          : content}
+            ? stripExchangeDetailsBlock(content ?? '')
+            : content}
       </MarkdownSuspense>
       <AttachmentList attachments={attachments || []} />
       {label === 'Investment' ? (
@@ -1425,7 +1425,7 @@ export const ProposalDetail = ({
         documentId={documentId}
         updateTokenProposalSnapshot={
           label === 'Update Token'
-            ? proposalDetails?.updateTokenData ?? null
+            ? (proposalDetails?.updateTokenData ?? null)
             : undefined
         }
         updateTokenDecodedWhitelist={

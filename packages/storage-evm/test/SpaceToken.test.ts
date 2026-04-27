@@ -117,9 +117,8 @@ describe('SpaceToken + Extensions Tests', function () {
     const spaceTokenImpl = await SpaceToken.deploy();
 
     // Deploy SpaceTokenFactory
-    const SpaceTokenFactory = await ethers.getContractFactory(
-      'SpaceTokenFactory',
-    );
+    const SpaceTokenFactory =
+      await ethers.getContractFactory('SpaceTokenFactory');
     const spaceTokenFactory = await upgrades.deployProxy(
       SpaceTokenFactory,
       [owner.address],

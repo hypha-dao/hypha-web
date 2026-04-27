@@ -205,18 +205,16 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
     );
 
     // Deploy RegularSpaceToken implementation
-    const RegularSpaceToken = await ethers.getContractFactory(
-      'RegularSpaceToken',
-    );
+    const RegularSpaceToken =
+      await ethers.getContractFactory('RegularSpaceToken');
     const regularSpaceTokenImpl = await RegularSpaceToken.deploy();
     await regularTokenFactory.setSpaceTokenImplementation(
       await regularSpaceTokenImpl.getAddress(),
     );
 
     // Deploy DecayingSpaceToken implementation
-    const DecayingSpaceToken = await ethers.getContractFactory(
-      'DecayingSpaceToken',
-    );
+    const DecayingSpaceToken =
+      await ethers.getContractFactory('DecayingSpaceToken');
     const decayingSpaceTokenImpl = await DecayingSpaceToken.deploy();
     await decayingTokenFactory.setDecayingTokenImplementation(
       await decayingSpaceTokenImpl.getAddress(),
@@ -1346,9 +1344,8 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         );
 
         // Verify that the default duration was set to 72 hours (contract default for q < 20)
-        const minDuration = await daoProposals.spaceMinProposalDuration(
-          spaceId,
-        );
+        const minDuration =
+          await daoProposals.spaceMinProposalDuration(spaceId);
         expect(minDuration).to.equal(259200); // 72 hours in seconds
 
         console.log('✅ Default minimum duration correctly set to 72 hours');
@@ -1402,9 +1399,8 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         );
 
         // Verify that the default duration was set to 72 hours (contract default for q < 20)
-        const minDuration = await daoProposals.spaceMinProposalDuration(
-          spaceId,
-        );
+        const minDuration =
+          await daoProposals.spaceMinProposalDuration(spaceId);
         expect(minDuration).to.equal(259200); // 72 hours in seconds
 
         console.log(
@@ -3628,9 +3624,8 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       await daoProposals.connect(owner).withdrawProposal(proposal3);
 
       // Check withdrawn proposals for space 1
-      const withdrawnSpace1 = await daoProposals.getWithdrawnProposalsBySpace(
-        spaceId1,
-      );
+      const withdrawnSpace1 =
+        await daoProposals.getWithdrawnProposalsBySpace(spaceId1);
       expect(withdrawnSpace1.length).to.equal(2);
       expect(withdrawnSpace1).to.include(proposal1);
       expect(withdrawnSpace1).to.include(proposal2);
@@ -3638,9 +3633,8 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       console.log(`Space 1 withdrawn proposals: ${withdrawnSpace1.length}`);
 
       // Check withdrawn proposals for space 2
-      const withdrawnSpace2 = await daoProposals.getWithdrawnProposalsBySpace(
-        spaceId2,
-      );
+      const withdrawnSpace2 =
+        await daoProposals.getWithdrawnProposalsBySpace(spaceId2);
       expect(withdrawnSpace2.length).to.equal(1);
       expect(withdrawnSpace2).to.include(proposal3);
 
@@ -3845,15 +3839,12 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       }
 
       // Verify all spaces have correct withdrawal counts
-      const space1Withdrawn = await daoProposals.getWithdrawnProposalsBySpace(
-        space1,
-      );
-      const space2Withdrawn = await daoProposals.getWithdrawnProposalsBySpace(
-        space2,
-      );
-      const space3Withdrawn = await daoProposals.getWithdrawnProposalsBySpace(
-        space3,
-      );
+      const space1Withdrawn =
+        await daoProposals.getWithdrawnProposalsBySpace(space1);
+      const space2Withdrawn =
+        await daoProposals.getWithdrawnProposalsBySpace(space2);
+      const space3Withdrawn =
+        await daoProposals.getWithdrawnProposalsBySpace(space3);
 
       expect(space1Withdrawn.length).to.equal(3);
       expect(space2Withdrawn.length).to.equal(3);
@@ -4002,9 +3993,8 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         expect(await daoProposals.isProposalWithdrawn(proposalId)).to.equal(
           true,
         );
-        const withdrawnList = await daoProposals.getWithdrawnProposalsBySpace(
-          spaceId,
-        );
+        const withdrawnList =
+          await daoProposals.getWithdrawnProposalsBySpace(spaceId);
         expect(withdrawnList.map((id: any) => id.toString())).to.include(
           proposalId.toString(),
         );
@@ -4027,9 +4017,8 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         );
 
         // Verify not added to executed lists
-        const executedBySpace = await daoProposals.getExecutedProposalsBySpace(
-          spaceId,
-        );
+        const executedBySpace =
+          await daoProposals.getExecutedProposalsBySpace(spaceId);
         expect(executedBySpace.map((id: any) => id.toString())).to.not.include(
           proposalId.toString(),
         );
@@ -4040,9 +4029,8 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         );
 
         // Verify not added to rejected lists either
-        const [accepted, rejected] = await daoProposals.getSpaceProposals(
-          spaceId,
-        );
+        const [accepted, rejected] =
+          await daoProposals.getSpaceProposals(spaceId);
         expect(accepted.map((id: any) => id.toString())).to.not.include(
           proposalId.toString(),
         );
@@ -4096,9 +4084,8 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
 
       // Confirm withdrawn state via all getters
       expect(await daoProposals.isProposalWithdrawn(proposalId)).to.equal(true);
-      const withdrawnList = await daoProposals.getWithdrawnProposalsBySpace(
-        spaceId,
-      );
+      const withdrawnList =
+        await daoProposals.getWithdrawnProposalsBySpace(spaceId);
       expect(withdrawnList.map((id: any) => id.toString())).to.include(
         proposalId.toString(),
       );
@@ -4132,9 +4119,8 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       expect(await daoProposals.isProposalWithdrawn(proposalId)).to.equal(true);
 
       // Verify not added to rejected/expired lists
-      const [accepted, rejected] = await daoProposals.getSpaceProposals(
-        spaceId,
-      );
+      const [accepted, rejected] =
+        await daoProposals.getSpaceProposals(spaceId);
       expect(accepted.map((id: any) => id.toString())).to.not.include(
         proposalId.toString(),
       );
@@ -4143,9 +4129,8 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
       );
 
       // Verify not added to executed lists
-      const executedBySpace = await daoProposals.getExecutedProposalsBySpace(
-        spaceId,
-      );
+      const executedBySpace =
+        await daoProposals.getExecutedProposalsBySpace(spaceId);
       expect(executedBySpace.map((id: any) => id.toString())).to.not.include(
         proposalId.toString(),
       );
@@ -4294,9 +4279,8 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
         );
 
         // Get total voting power - should only count member holdings
-        const totalVotingPower = await tokenVotingPower.getTotalVotingPower(
-          spaceId,
-        );
+        const totalVotingPower =
+          await tokenVotingPower.getTotalVotingPower(spaceId);
         console.log(
           `Total voting power: ${ethers.formatEther(totalVotingPower)}`,
         );
@@ -4393,9 +4377,8 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
           .connect(executorSigner)
           .mint(members[5].address, ethers.parseEther('700')); // Non-member
 
-        const totalVotingPower = await tokenVotingPower.getTotalVotingPower(
-          spaceId,
-        );
+        const totalVotingPower =
+          await tokenVotingPower.getTotalVotingPower(spaceId);
         expect(totalVotingPower).to.equal(ethers.parseEther('300')); // Only member holdings
 
         console.log(
@@ -4822,9 +4805,8 @@ describe('Comprehensive Proposal Creation and Voting Tests with Delegation', fun
           .connect(executorSigner)
           .mint(owner.address, ethers.parseEther('500')); // owner now has 600 tokens
 
-        const newTotalVotingPower = await tokenVotingPower.getTotalVotingPower(
-          spaceId,
-        );
+        const newTotalVotingPower =
+          await tokenVotingPower.getTotalVotingPower(spaceId);
         console.log(
           `New total voting power (after minting): ${ethers.formatEther(
             newTotalVotingPower,

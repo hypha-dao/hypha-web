@@ -39,7 +39,8 @@ const headingVariants = cva('font-family-inherit m-0', {
 });
 
 export interface HeadingProps
-  extends React.HTMLAttributes<HTMLHeadingElement>,
+  extends
+    React.HTMLAttributes<HTMLHeadingElement>,
     VariantProps<typeof headingVariants> {
   asChild?: boolean;
   size?: '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';

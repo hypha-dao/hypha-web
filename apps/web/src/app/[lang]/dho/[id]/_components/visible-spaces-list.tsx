@@ -83,8 +83,8 @@ function AddSpaceButton({ space, allSpaces, lang }: AddSpaceButtonProps) {
         isLoading
           ? t('visibleSpaces.loading')
           : !hasAccess
-          ? t('visibleSpaces.noAccessAddSpace')
-          : t('visibleSpaces.addSpace')
+            ? t('visibleSpaces.noAccessAddSpace')
+            : t('visibleSpaces.addSpace')
       }
     >
       <Button

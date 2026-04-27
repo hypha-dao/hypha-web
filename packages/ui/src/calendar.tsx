@@ -127,10 +127,10 @@ function Calendar({
             orientation === 'left'
               ? ChevronLeft
               : orientation === 'right'
-              ? ChevronRight
-              : orientation === 'up'
-              ? ChevronUp
-              : ChevronDown;
+                ? ChevronRight
+                : orientation === 'up'
+                  ? ChevronUp
+                  : ChevronDown;
           return (
             <Icon
               className={cn('size-4', chevronClass)}

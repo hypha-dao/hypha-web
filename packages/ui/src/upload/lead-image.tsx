@@ -139,8 +139,8 @@ export const UploadLeadImage = ({
           defaultImage === null
             ? null
             : typeof defaultImage === 'string' && defaultImage.trim() === ''
-            ? null
-            : defaultImage || null,
+              ? null
+              : defaultImage || null,
         );
         onChange(null);
         return;

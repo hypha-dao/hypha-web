@@ -204,9 +204,8 @@ describe('TokenBackingVault', function () {
     });
 
     it('Should reject if space token has no price set and no redemption price override', async function () {
-      const { vault, usdc, usdcFeed, executor, SPACE_ID } = await loadFixture(
-        deployFixture,
-      );
+      const { vault, usdc, usdcFeed, executor, SPACE_ID } =
+        await loadFixture(deployFixture);
 
       // Deploy a community token with price = 0
       const Community = await ethers.getContractFactory('MockSpaceToken');
@@ -232,9 +231,8 @@ describe('TokenBackingVault', function () {
     });
 
     it('Should accept a zero-price space token when a redemption-price override is provided', async function () {
-      const { vault, usdc, usdcFeed, executor, SPACE_ID } = await loadFixture(
-        deployFixture,
-      );
+      const { vault, usdc, usdcFeed, executor, SPACE_ID } =
+        await loadFixture(deployFixture);
 
       // Space token has tokenPrice() == 0 — vault must use the override.
       const Community = await ethers.getContractFactory('MockSpaceToken');
@@ -270,9 +268,8 @@ describe('TokenBackingVault', function () {
 
   describe('createVault', function () {
     it('Should create an empty vault with no backing tokens', async function () {
-      const { vault, communityToken, executor, SPACE_ID } = await loadFixture(
-        deployFixture,
-      );
+      const { vault, communityToken, executor, SPACE_ID } =
+        await loadFixture(deployFixture);
 
       await expect(
         vault
@@ -402,9 +399,8 @@ describe('TokenBackingVault', function () {
     });
 
     it('Should revert if the vault already exists', async function () {
-      const { vault, communityToken, executor, SPACE_ID } = await loadFixture(
-        deployFixture,
-      );
+      const { vault, communityToken, executor, SPACE_ID } =
+        await loadFixture(deployFixture);
 
       await vault
         .connect(executor)
@@ -452,9 +448,8 @@ describe('TokenBackingVault', function () {
     });
 
     it('Should reject minimumBackingBps > 1000% (100000 bps)', async function () {
-      const { vault, communityToken, executor, SPACE_ID } = await loadFixture(
-        deployFixture,
-      );
+      const { vault, communityToken, executor, SPACE_ID } =
+        await loadFixture(deployFixture);
 
       await expect(
         vault
@@ -472,9 +467,8 @@ describe('TokenBackingVault', function () {
     });
 
     it('Should reject maxRedemptionBps > 100%', async function () {
-      const { vault, communityToken, executor, SPACE_ID } = await loadFixture(
-        deployFixture,
-      );
+      const { vault, communityToken, executor, SPACE_ID } =
+        await loadFixture(deployFixture);
 
       await expect(
         vault
@@ -492,9 +486,8 @@ describe('TokenBackingVault', function () {
     });
 
     it('Should reject maxRedemptionBps > 0 with periodDays == 0', async function () {
-      const { vault, communityToken, executor, SPACE_ID } = await loadFixture(
-        deployFixture,
-      );
+      const { vault, communityToken, executor, SPACE_ID } =
+        await loadFixture(deployFixture);
 
       await expect(
         vault
@@ -512,9 +505,8 @@ describe('TokenBackingVault', function () {
     });
 
     it('Should reject from non-executor', async function () {
-      const { vault, communityToken, alice, SPACE_ID } = await loadFixture(
-        deployFixture,
-      );
+      const { vault, communityToken, alice, SPACE_ID } =
+        await loadFixture(deployFixture);
 
       await expect(
         vault
@@ -1368,9 +1360,8 @@ describe('TokenBackingVault', function () {
 
   describe('Vault Creation — Edge Cases', function () {
     it('Should reject zero-address space token', async function () {
-      const { vault, usdc, usdcFeed, executor, SPACE_ID } = await loadFixture(
-        deployFixture,
-      );
+      const { vault, usdc, usdcFeed, executor, SPACE_ID } =
+        await loadFixture(deployFixture);
 
       await expect(
         vault
@@ -1392,9 +1383,8 @@ describe('TokenBackingVault', function () {
     });
 
     it('Should reject empty backing tokens array', async function () {
-      const { vault, communityToken, executor, SPACE_ID } = await loadFixture(
-        deployFixture,
-      );
+      const { vault, communityToken, executor, SPACE_ID } =
+        await loadFixture(deployFixture);
 
       await expect(
         vault
@@ -4246,9 +4236,8 @@ describe('TokenBackingVault', function () {
     });
 
     it('Should reject for non-existent vault', async function () {
-      const { vault, communityToken, alice, SPACE_ID } = await loadFixture(
-        deployFixture,
-      );
+      const { vault, communityToken, alice, SPACE_ID } =
+        await loadFixture(deployFixture);
 
       await expect(
         vault.getMaxRedemptionPercentage(
@@ -4259,9 +4248,8 @@ describe('TokenBackingVault', function () {
     });
 
     it('Should reject getRedemptionUsage for non-existent vault', async function () {
-      const { vault, communityToken, SPACE_ID } = await loadFixture(
-        deployFixture,
-      );
+      const { vault, communityToken, SPACE_ID } =
+        await loadFixture(deployFixture);
 
       await expect(
         vault.getRedemptionUsage(SPACE_ID, await communityToken.getAddress()),

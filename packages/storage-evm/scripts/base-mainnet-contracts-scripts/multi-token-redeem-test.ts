@@ -363,9 +363,8 @@ async function main(): Promise<void> {
   );
 
   await delay(2000);
-  const spaceTokens: string[] = await regularTokenFactory.getSpaceToken(
-    spaceId,
-  );
+  const spaceTokens: string[] =
+    await regularTokenFactory.getSpaceToken(spaceId);
   if (spaceTokens.length < 3) {
     throw new Error(`Expected >= 3 tokens, got ${spaceTokens.length}`);
   }

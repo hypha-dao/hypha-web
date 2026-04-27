@@ -568,7 +568,7 @@ export const PeopleRedeemForm = ({
       hasInvalidAsset = true;
       return {
         ...conversion,
-        asset: index === 0 ? conversionAssets[0]?.address ?? '' : '',
+        asset: index === 0 ? (conversionAssets[0]?.address ?? '') : '',
       };
     });
 

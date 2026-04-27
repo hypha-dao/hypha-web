@@ -143,8 +143,8 @@ export const updateToken = async (
     agreementId !== undefined
       ? `agreementId: ${agreementId}`
       : agreementWeb3Id !== undefined
-      ? `agreementWeb3Id: ${agreementWeb3Id}`
-      : `address: ${address}`;
+        ? `agreementWeb3Id: ${agreementWeb3Id}`
+        : `address: ${address}`;
 
   if (existingToken.length === 0) {
     throw new Error(`No token found with ${lookup}`);

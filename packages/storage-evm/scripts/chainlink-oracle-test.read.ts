@@ -83,10 +83,10 @@ async function main() {
         staleSec < 60
           ? `${staleSec}s ago`
           : staleSec < 3600
-          ? `${Math.floor(staleSec / 60)}m ago`
-          : `${Math.floor(staleSec / 3600)}h ${Math.floor(
-              (staleSec % 3600) / 60,
-            )}m ago`;
+            ? `${Math.floor(staleSec / 60)}m ago`
+            : `${Math.floor(staleSec / 3600)}h ${Math.floor(
+                (staleSec % 3600) / 60,
+              )}m ago`;
 
       const status = result.isStale ? '⚠️  STALE' : '✅';
 

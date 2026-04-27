@@ -51,8 +51,8 @@ export const PersonAvatar = ({
     shape === 'circle'
       ? 'rounded-full'
       : shape === 'squircle'
-      ? 'rounded-[35%]'
-      : 'rounded-md';
+        ? 'rounded-[35%]'
+        : 'rounded-md';
 
   return (
     <Skeleton

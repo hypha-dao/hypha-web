@@ -95,9 +95,8 @@ async function upgradeToken(
     let maxPriorityFeePerGas: bigint | undefined;
 
     // Get current implementation address
-    result.oldImplementation = await upgrades.erc1967.getImplementationAddress(
-      tokenAddress,
-    );
+    result.oldImplementation =
+      await upgrades.erc1967.getImplementationAddress(tokenAddress);
     console.log(`  Current implementation: ${result.oldImplementation}`);
 
     if (dryRun) {
@@ -235,9 +234,8 @@ async function upgradeToken(
     await new Promise((resolve) => setTimeout(resolve, 3000));
 
     // Get new implementation address
-    result.newImplementation = await upgrades.erc1967.getImplementationAddress(
-      tokenAddress,
-    );
+    result.newImplementation =
+      await upgrades.erc1967.getImplementationAddress(tokenAddress);
     console.log(`  New implementation: ${result.newImplementation}`);
 
     // Verify the upgrade actually happened

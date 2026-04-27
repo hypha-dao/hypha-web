@@ -193,12 +193,10 @@ async function main(): Promise<void> {
 
   // Check current whitelist status
   try {
-    const currentMintStatus = await hyphaToken.isMintTransferWhitelisted(
-      accountAddress,
-    );
-    const currentNormalStatus = await hyphaToken.isNormalTransferWhitelisted(
-      accountAddress,
-    );
+    const currentMintStatus =
+      await hyphaToken.isMintTransferWhitelisted(accountAddress);
+    const currentNormalStatus =
+      await hyphaToken.isNormalTransferWhitelisted(accountAddress);
     console.log('Current status for', accountAddress + ':');
     console.log('  Mint transfer whitelist:', currentMintStatus);
     console.log('  Normal transfer whitelist:', currentNormalStatus);
@@ -227,12 +225,10 @@ async function main(): Promise<void> {
     console.log('\n✅ Whitelist status set successfully!');
 
     // Verify the new status
-    const newMintStatus = await hyphaToken.isMintTransferWhitelisted(
-      accountAddress,
-    );
-    const newNormalStatus = await hyphaToken.isNormalTransferWhitelisted(
-      accountAddress,
-    );
+    const newMintStatus =
+      await hyphaToken.isMintTransferWhitelisted(accountAddress);
+    const newNormalStatus =
+      await hyphaToken.isNormalTransferWhitelisted(accountAddress);
     console.log('\nNew status for', accountAddress + ':');
     console.log('  Mint transfer whitelist:', newMintStatus);
     console.log('  Normal transfer whitelist:', newNormalStatus);

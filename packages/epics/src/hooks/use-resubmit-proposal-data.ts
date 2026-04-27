@@ -217,13 +217,13 @@ export const useResubmitProposalData = <
             ...(parsed.spaceToSpaceTargetAddress !== undefined
               ? { space: parsed.spaceToSpaceTargetAddress }
               : typeof parsed.space === 'number'
-              ? { space: parsed.space }
-              : {}),
+                ? { space: parsed.space }
+                : {}),
             ...(parsed.spaceToSpaceMemberAddress !== undefined
               ? { member: parsed.spaceToSpaceMemberAddress }
               : parsed.member !== undefined
-              ? { member: parsed.member }
-              : {}),
+                ? { member: parsed.member }
+                : {}),
             leadImage: undefined,
             attachments: undefined,
             spaceId: spaceId ?? undefined,
@@ -231,10 +231,10 @@ export const useResubmitProposalData = <
             ...(hasChosenToken
               ? {}
               : resubmitTokenAddress
-              ? { tokenAddress: resubmitTokenAddress }
-              : parsed.tokenAddress !== undefined
-              ? { tokenAddress: parsed.tokenAddress }
-              : {}),
+                ? { tokenAddress: resubmitTokenAddress }
+                : parsed.tokenAddress !== undefined
+                  ? { tokenAddress: parsed.tokenAddress }
+                  : {}),
             ...(typeof parsed.activatePurchase === 'boolean'
               ? { activatePurchase: parsed.activatePurchase }
               : {}),

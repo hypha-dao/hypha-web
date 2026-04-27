@@ -384,9 +384,8 @@ async function main(): Promise<void> {
     'Deploy space token + backing token',
   );
 
-  const spaceTokens: string[] = await regularTokenFactory.getSpaceToken(
-    spaceId,
-  );
+  const spaceTokens: string[] =
+    await regularTokenFactory.getSpaceToken(spaceId);
   if (spaceTokens.length < 2) {
     throw new Error(`Expected at least 2 tokens, got ${spaceTokens.length}`);
   }

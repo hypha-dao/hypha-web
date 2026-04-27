@@ -141,8 +141,8 @@ export async function getMutualCreditInfo(
       creditLimitLeftResult?.status === 'success'
         ? Number(formatUnits(creditLimitLeftResult.result as bigint, DECIMALS))
         : canDeriveCreditLimitLeft
-        ? Math.max(0, creditLimit - creditBalance)
-        : 0;
+          ? Math.max(0, creditLimit - creditBalance)
+          : 0;
 
     const isCreditEnabled =
       defaultCreditLimit > 0 || whitelistedSpaceIds.length > 0;

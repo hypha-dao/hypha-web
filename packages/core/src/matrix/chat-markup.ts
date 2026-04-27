@@ -216,10 +216,10 @@ function parseInlineMarkup(s: string): MarkupNode[] {
         kind === 'bold'
           ? ({ type: 'bold', children } as MarkupNode)
           : kind === 'italic'
-          ? ({ type: 'italic', children } as MarkupNode)
-          : kind === 'strike'
-          ? ({ type: 'strike', children } as MarkupNode)
-          : ({ type: 'spoiler', children } as MarkupNode);
+            ? ({ type: 'italic', children } as MarkupNode)
+            : kind === 'strike'
+              ? ({ type: 'strike', children } as MarkupNode)
+              : ({ type: 'spoiler', children } as MarkupNode);
       nodes.push(wrap);
     }
   }

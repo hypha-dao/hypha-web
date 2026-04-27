@@ -29,8 +29,9 @@ const DialogOverlay = React.forwardRef<
 ));
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
-export interface DialogContentProps
-  extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
+export interface DialogContentProps extends React.ComponentPropsWithoutRef<
+  typeof DialogPrimitive.Content
+> {
   /** Hide the default top-right close control (use custom footer actions). */
   hideCloseButton?: boolean;
   /** Optional classes for the portaled overlay (defaults to dark scrim). */
