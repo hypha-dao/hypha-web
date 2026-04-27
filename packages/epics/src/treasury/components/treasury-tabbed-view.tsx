@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { Locale } from '@hypha-platform/i18n';
 import { useTranslations } from 'next-intl';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hypha-platform/ui';
 import { SectionFilter } from '@hypha-platform/ui/server';
@@ -10,7 +11,7 @@ import { VaultsSection } from './assets/vaults-section';
 import { TransactionsSection } from './requests/transactions-section';
 
 export type TreasuryTabbedViewProps = {
-  lang: string;
+  lang: Locale;
   spaceSlug: string;
   web3SpaceId?: number;
 };
