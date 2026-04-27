@@ -25,15 +25,19 @@ export function useSpaceDiscoverability({
     ? [spaceId, 'getSpaceVisibility' as const]
     : null;
 
+  type SpaceVisibilityKey = readonly [number | bigint, 'getSpaceVisibility'];
+
   const {
     data: visibility,
     isLoading,
     error,
   } = useSWR(
-    swrKey,
-    async ([spaceId]) => {
+    swrKey as SpaceVisibilityKey | null,
+    async ([onChainSpaceId]: SpaceVisibilityKey) => {
       const spaceIdBigInt =
-        typeof spaceId === 'number' ? BigInt(spaceId) : spaceId;
+        typeof onChainSpaceId === 'number'
+          ? BigInt(onChainSpaceId)
+          : onChainSpaceId;
       return publicClient.readContract(
         getSpaceVisibility({ spaceId: spaceIdBigInt }),
       );
