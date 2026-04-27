@@ -236,18 +236,13 @@ export const SpaceNavigationView = ({
                 role="region"
                 className={cn(
                   'relative order-1 flex w-full min-w-0 shrink-0 items-center justify-center overflow-hidden rounded-lg',
-                  /* Blend with page chrome — avoid a flat black “square” behind the map */
-                  'bg-muted/20',
-                  'bg-[radial-gradient(ellipse_92%_78%_at_50%_38%,color-mix(in_oklab,var(--space-accent,var(--color-accent-9))_22%,transparent)_0%,transparent_62%)]',
-                  'dark:bg-[radial-gradient(ellipse_92%_78%_at_50%_42%,color-mix(in_oklab,var(--space-accent,var(--color-accent-9))_18%,transparent)_0%,transparent_58%)]',
+                  /* Neutral chrome only — accent shows on orbit/graph strokes, not the canvas */
+                  'bg-muted/25 dark:bg-muted/15',
                   'aspect-square max-h-[min(72dvh,calc(100dvh-10rem),min(100vw,56rem))] max-w-full self-center',
                   /* Give the diagram most of the row; side panel stays readable */
                   'lg:order-1 lg:min-h-0 lg:max-h-full lg:max-w-none lg:flex-[3] lg:min-w-0 lg:self-stretch',
+                  'shadow-[inset_0_0_72px_rgb(0_0_0/0.06)] dark:shadow-[inset_0_0_64px_rgb(0_0_0/0.45)]',
                 )}
-                style={{
-                  boxShadow:
-                    'inset 0 0 80px color-mix(in oklab, var(--space-accent, var(--color-accent-9)) 8%, transparent)',
-                }}
                 aria-label={t('mapRegionAriaLabel')}
               >
                 {isLoading ? (

@@ -482,12 +482,13 @@ export function SpaceVisualization({
       .attr('cx', '50%')
       .attr('cy', '50%')
       .attr('r', '58%');
-    const bgInnerDark = mixRgb(accentRgb, [26, 28, 38], 0.38);
-    const bgMidDark = mixRgb(accentRgb, [16, 18, 28], 0.32);
-    const bgOuterDark = mixRgb(accentRgb, [10, 12, 22], 0.28);
-    const bgInnerLight = mixRgb(accentRgb, [255, 255, 255], 0.72);
-    const bgMidLight = mixRgb(accentRgb, [248, 248, 252], 0.55);
-    const bgOuterLight = mixRgb(accentRgb, [236, 238, 248], 0.45);
+    /* Field fill stays neutral so saturated space accents do not wash the canvas magenta/pink */
+    const bgInnerDark: [number, number, number] = [32, 33, 42];
+    const bgMidDark: [number, number, number] = [18, 19, 28];
+    const bgOuterDark: [number, number, number] = [10, 11, 18];
+    const bgInnerLight: [number, number, number] = [255, 255, 255];
+    const bgMidLight: [number, number, number] = [245, 246, 250];
+    const bgOuterLight: [number, number, number] = [232, 234, 242];
 
     if (isDark) {
       bgGrad
