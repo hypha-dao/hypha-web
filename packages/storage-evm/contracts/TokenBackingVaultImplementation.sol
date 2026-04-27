@@ -443,6 +443,7 @@ contract TokenBackingVaultImplementation is
 
     vaultRedemptionPrice[vaultId] = price;
     vaultRedemptionPriceCurrencyFeed[vaultId] = currencyFeed;
+    _requirePriceableSpaceToken(vaultId, spaceToken);
 
     emit RedemptionPriceUpdated(vaultId, price, currencyFeed);
   }
