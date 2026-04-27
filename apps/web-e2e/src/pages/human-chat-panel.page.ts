@@ -77,7 +77,7 @@ export class HumanChatPanelPage extends BasePage {
 
   /** Navigate to a space's agreements page. Defaults to 'hypha'. */
   async navigateToSpace(spaceSlug = 'hypha') {
-    await this.page.goto(`/en/dho/${spaceSlug}/agreements`);
+    await this.gotoApp(`/en/dho/${spaceSlug}/agreements`);
     await this.waitForPageLoad();
   }
 

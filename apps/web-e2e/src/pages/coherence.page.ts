@@ -81,7 +81,7 @@ export class CoherencePage extends BasePage {
    * from which we can click the Coherence navigation tab.
    */
   async openDhoPage() {
-    await this.page.goto(`/en/dho/${this.spaceSlug}/agreements`);
+    await this.gotoApp(`/en/dho/${this.spaceSlug}/agreements`);
     await this.waitForPageLoad();
   }
 
@@ -89,7 +89,7 @@ export class CoherencePage extends BasePage {
    * Navigate directly to the coherence page URL.
    */
   async openCoherencePage() {
-    await this.page.goto(`/en/dho/${this.spaceSlug}/coherence`);
+    await this.gotoApp(`/en/dho/${this.spaceSlug}/coherence`);
     await this.waitForPageLoad();
   }
 

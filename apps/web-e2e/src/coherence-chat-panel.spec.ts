@@ -30,6 +30,7 @@
 import { test, expect } from '@playwright/test';
 import { CoherenceChatPanelPage } from './pages/coherence-chat-panel.page';
 import { HumanChatPanelPage } from './pages/human-chat-panel.page';
+import { gotoApp } from './utils/nav-url';
 
 test.describe('Coherence Chat Panel Integration', () => {
   const SPACE_SLUG = 'hypha';
@@ -46,7 +47,7 @@ test.describe('Coherence Chat Panel Integration', () => {
       page,
     }) => {
       const chatPanel = new HumanChatPanelPage(page);
-      await page.goto(`/en/dho/${SPACE_SLUG}/coherence`);
+      await gotoApp(page, `/en/dho/${SPACE_SLUG}/coherence`);
       await page.waitForLoadState('domcontentloaded');
 
       await expect(chatPanel.openButton).toBeVisible();
@@ -60,7 +61,7 @@ test.describe('Coherence Chat Panel Integration', () => {
       page,
     }) => {
       const chatPanel = new HumanChatPanelPage(page);
-      await page.goto(`/en/dho/${SPACE_SLUG}/coherence`);
+      await gotoApp(page, `/en/dho/${SPACE_SLUG}/coherence`);
       await page.waitForLoadState('domcontentloaded');
       await chatPanel.openPanel();
 
@@ -73,7 +74,7 @@ test.describe('Coherence Chat Panel Integration', () => {
       page,
     }) => {
       const chatPanel = new CoherenceChatPanelPage(page, SPACE_SLUG);
-      await page.goto(`/en/dho/${SPACE_SLUG}/coherence`);
+      await gotoApp(page, `/en/dho/${SPACE_SLUG}/coherence`);
       await page.waitForLoadState('domcontentloaded');
       // Open button exists; back button should NOT be present in space mode
       await chatPanel.openPanelButton.click();
@@ -85,7 +86,7 @@ test.describe('Coherence Chat Panel Integration', () => {
       page,
     }) => {
       const chatPanel = new HumanChatPanelPage(page);
-      await page.goto(`/en/dho/${SPACE_SLUG}/coherence`);
+      await gotoApp(page, `/en/dho/${SPACE_SLUG}/coherence`);
       await page.waitForLoadState('domcontentloaded');
       await chatPanel.openPanel();
 
@@ -440,7 +441,7 @@ test.describe('Coherence Chat Panel Integration', () => {
       'space chat mode is the default state of the panel on coherence page',
       async ({ page }) => {
         const chatPanel = new HumanChatPanelPage(page);
-        await page.goto(`/en/dho/${SPACE_SLUG}/coherence`);
+        await gotoApp(page, `/en/dho/${SPACE_SLUG}/coherence`);
         await page.waitForLoadState('domcontentloaded');
 
         await chatPanel.openPanel();
@@ -461,7 +462,7 @@ test.describe('Coherence Chat Panel Integration', () => {
         await expect(chatPanel.headerText).toBeVisible(); // "Chat"
 
         // Navigate to coherence page
-        await page.goto(`/en/dho/${SPACE_SLUG}/coherence`);
+        await gotoApp(page, `/en/dho/${SPACE_SLUG}/coherence`);
         await page.waitForLoadState('domcontentloaded');
 
         // Panel should still be in space chat mode (no signal was clicked)

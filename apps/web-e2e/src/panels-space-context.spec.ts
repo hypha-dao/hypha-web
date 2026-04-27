@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { gotoApp } from './utils/nav-url';
 
 /**
  * Side Panels — Space Context Only
@@ -34,7 +35,7 @@ test.describe('Panels visible on space pages', () => {
   });
 
   test('should show Human Chat trigger on a space page', async ({ page }) => {
-    await page.goto('/en/dho/hypha/agreements');
+    await gotoApp(page, '/en/dho/hypha/agreements');
     await page.waitForLoadState('domcontentloaded');
 
     await expect(
@@ -43,7 +44,7 @@ test.describe('Panels visible on space pages', () => {
   });
 
   test('should show AI trigger on a space page', async ({ page }) => {
-    await page.goto('/en/dho/hypha/agreements');
+    await gotoApp(page, '/en/dho/hypha/agreements');
     await page.waitForLoadState('domcontentloaded');
 
     await expect(page.getByRole('button', { name: AI_TRIGGER })).toBeVisible();
@@ -69,7 +70,7 @@ test.describe('Panels hidden on non-space pages', () => {
   });
 
   test('should NOT show Human Chat trigger on /network', async ({ page }) => {
-    await page.goto('/en/network');
+    await gotoApp(page, '/en/network');
     await page.waitForLoadState('domcontentloaded');
 
     await expect(page.getByRole('button', { name: CHAT_TRIGGER })).toHaveCount(
@@ -78,14 +79,14 @@ test.describe('Panels hidden on non-space pages', () => {
   });
 
   test('should NOT show AI trigger on /network', async ({ page }) => {
-    await page.goto('/en/network');
+    await gotoApp(page, '/en/network');
     await page.waitForLoadState('domcontentloaded');
 
     await expect(page.getByRole('button', { name: AI_TRIGGER })).toHaveCount(0);
   });
 
   test('should NOT show Human Chat trigger on /my-spaces', async ({ page }) => {
-    await page.goto('/en/my-spaces');
+    await gotoApp(page, '/en/my-spaces');
     await page.waitForLoadState('domcontentloaded');
 
     await expect(page.getByRole('button', { name: CHAT_TRIGGER })).toHaveCount(
@@ -94,14 +95,14 @@ test.describe('Panels hidden on non-space pages', () => {
   });
 
   test('should NOT show AI trigger on /my-spaces', async ({ page }) => {
-    await page.goto('/en/my-spaces');
+    await gotoApp(page, '/en/my-spaces');
     await page.waitForLoadState('domcontentloaded');
 
     await expect(page.getByRole('button', { name: AI_TRIGGER })).toHaveCount(0);
   });
 
   test('should NOT render sidebar markup on /network', async ({ page }) => {
-    await page.goto('/en/network');
+    await gotoApp(page, '/en/network');
     await page.waitForLoadState('domcontentloaded');
 
     // No panel sidebars should be in the DOM on non-space pages
@@ -134,7 +135,7 @@ test.describe('Panels appear after navigating into a space', () => {
     page,
   }) => {
     // Start on a non-space page
-    await page.goto('/en/network');
+    await gotoApp(page, '/en/network');
     await page.waitForLoadState('domcontentloaded');
 
     // Verify triggers are absent

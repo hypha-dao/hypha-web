@@ -14,7 +14,7 @@ export class MySpaces extends BasePage {
   }
 
   async open() {
-    await this.page.goto('/my-spaces');
+    await this.gotoApp('/my-spaces');
     await this.waitForPageLoad();
   }
 

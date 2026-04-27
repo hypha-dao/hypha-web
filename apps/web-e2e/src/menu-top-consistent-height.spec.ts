@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { LayoutPage } from './pages/layout.page';
+import { gotoApp } from './utils/nav-url';
 
 /**
  * MenuTop — Consistent Height
@@ -35,7 +36,7 @@ test.describe('MenuTop consistent height', () => {
     const menuSelector = 'header.sticky';
 
     // Measure on a space page (trigger icons present)
-    await page.goto('/en/dho/hypha/agreements');
+    await gotoApp(page, '/en/dho/hypha/agreements');
     await page.waitForLoadState('domcontentloaded');
     const spaceHeader = page.locator(menuSelector).first();
     await spaceHeader.waitFor({ state: 'visible' });
@@ -43,7 +44,7 @@ test.describe('MenuTop consistent height', () => {
     expect(spaceBox).not.toBeNull();
 
     // Measure on a non-space page (no trigger icons)
-    await page.goto('/en/network');
+    await gotoApp(page, '/en/network');
     await page.waitForLoadState('domcontentloaded');
     const networkHeader = page.locator(menuSelector).first();
     await networkHeader.waitFor({ state: 'visible' });
@@ -57,7 +58,7 @@ test.describe('MenuTop consistent height', () => {
   test('--menu-top-height CSS variable should be set and integer', async ({
     page,
   }) => {
-    await page.goto('/en/dho/hypha/agreements');
+    await gotoApp(page, '/en/dho/hypha/agreements');
     await page.waitForLoadState('domcontentloaded');
 
     // Poll until --menu-top-height is set by ResizeObserver
