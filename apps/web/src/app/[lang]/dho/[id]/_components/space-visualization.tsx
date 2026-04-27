@@ -493,28 +493,28 @@ export function SpaceVisualization({
       bgGrad
         .append('stop')
         .attr('offset', '0%')
-        .attr('stop-color', `rgb(${rgbCs(bgInnerDark)})`);
+        .attr('stop-color', `rgb(${rgbCs(...bgInnerDark)})`);
       bgGrad
         .append('stop')
         .attr('offset', '55%')
-        .attr('stop-color', `rgb(${rgbCs(bgMidDark)})`);
+        .attr('stop-color', `rgb(${rgbCs(...bgMidDark)})`);
       bgGrad
         .append('stop')
         .attr('offset', '100%')
-        .attr('stop-color', `rgb(${rgbCs(bgOuterDark)})`);
+        .attr('stop-color', `rgb(${rgbCs(...bgOuterDark)})`);
     } else {
       bgGrad
         .append('stop')
         .attr('offset', '0%')
-        .attr('stop-color', `rgb(${rgbCs(bgInnerLight)})`);
+        .attr('stop-color', `rgb(${rgbCs(...bgInnerLight)})`);
       bgGrad
         .append('stop')
         .attr('offset', '45%')
-        .attr('stop-color', `rgb(${rgbCs(bgMidLight)})`);
+        .attr('stop-color', `rgb(${rgbCs(...bgMidLight)})`);
       bgGrad
         .append('stop')
         .attr('offset', '100%')
-        .attr('stop-color', `rgb(${rgbCs(bgOuterLight)})`);
+        .attr('stop-color', `rgb(${rgbCs(...bgOuterLight)})`);
     }
 
     const fLogo = defs
