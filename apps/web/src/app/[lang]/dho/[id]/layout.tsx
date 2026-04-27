@@ -120,15 +120,7 @@ export default async function DhoLayout({
       <div className="flex w-full min-w-0">
         {/* `px-4!` = 16px: tighter than default Container `px-5` (20px) for DHO hero/tabs vs app chrome */}
         <Container size="lg" className="min-w-0 flex-1 px-4!">
-          {/* React 19+: link rel="preload" is hoisted to document head */}
-          {heroBannerImageHref !== DEFAULT_SPACE_LEAD_IMAGE ? (
-            <link
-              rel="preload"
-              as="image"
-              href={heroBannerImageHref}
-              fetchPriority="high"
-            />
-          ) : null}
+          {/* Hero image: CompactSpaceBannerLead uses next/image priority — avoid duplicate link preload (Chrome warns) */}
           <SpaceAccentFromImages
             bannerSrc={heroBannerImageHref}
             logoSrc={accentLogoHref}
