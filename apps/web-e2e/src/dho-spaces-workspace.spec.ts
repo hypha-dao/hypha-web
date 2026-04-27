@@ -93,6 +93,27 @@ test.describe('DHO spaces tab and workspace (hardening)', () => {
     await expect(ecosystemLink).toHaveAttribute('aria-current', 'page');
   });
 
+  test('ecosystem tab strip and spaces panel use the same column width (desktop)', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1200, height: 800 });
+    await page.goto(SPACES);
+    await page.waitForLoadState('domcontentloaded');
+
+    const tabs = page.getByTestId('dho-space-nav-ecosystem-tabs');
+    const panel = page.getByTestId('dho-ecosystem-spaces-panel');
+    await expect(tabs).toBeVisible();
+    await expect(panel).toBeVisible();
+
+    const tabsBox = await tabs.boundingBox();
+    const panelBox = await panel.boundingBox();
+    expect(tabsBox && panelBox).toBeTruthy();
+    expect(
+      Math.abs(tabsBox!.width - panelBox!.width),
+      `tab list width ${tabsBox!.width} vs panel ${panelBox!.width}`,
+    ).toBeLessThanOrEqual(2);
+  });
+
   test('opening AI left panel shifts main column bounds', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 });
     await page.goto(SPACES);

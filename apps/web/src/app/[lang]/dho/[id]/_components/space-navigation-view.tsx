@@ -25,6 +25,10 @@ import {
 } from '@hypha-platform/epics';
 import { useTranslations } from 'next-intl';
 
+/** Map + side panel share one column template on lg+ (diagram ~3fr, list grows with ~2fr). */
+const ECOSYSTEM_LG_GRID_COLS =
+  'lg:grid-cols-[minmax(0,3fr)_minmax(18rem,2fr)]' as const;
+
 function SpaceMapLoadingPlaceholder() {
   const t = useTranslations('DhoWorkspaceNav');
   return (
@@ -203,7 +207,8 @@ export const SpaceNavigationView = ({
               <div
                 className={cn(
                   'flex w-full min-w-0 flex-col gap-3',
-                  'lg:grid lg:grid-cols-[minmax(0,3fr)_min(17.5rem,max(14rem,28vw))] lg:items-center lg:gap-x-4',
+                  'lg:grid lg:items-center lg:gap-x-4',
+                  ECOSYSTEM_LG_GRID_COLS,
                 )}
               >
                 <div className="flex min-h-8 min-w-0 shrink-0 items-center lg:col-start-1 lg:row-start-1">
@@ -215,9 +220,10 @@ export const SpaceNavigationView = ({
                   triggerVariant="switch"
                   data-testid="dho-space-nav-ecosystem-tabs"
                   className={cn(
-                    'h-auto min-h-10 w-full shrink-0 flex-wrap justify-center gap-1 sm:flex-nowrap',
-                    'lg:col-start-2 lg:row-start-1 lg:inline-flex lg:w-full lg:min-w-0 lg:flex-nowrap lg:justify-stretch lg:gap-0.5 lg:px-1',
-                    'lg:[&>button]:min-w-0 lg:[&>button]:flex-1',
+                    'inline-flex h-auto min-h-10 w-full min-w-0 flex-wrap justify-center gap-1 px-0.5',
+                    'lg:col-start-2 lg:row-start-1 lg:w-full lg:justify-stretch lg:gap-0.5 lg:px-1',
+                    /* Wrap when the panel column is still tight — avoids overlapping labels */
+                    '[&>button]:min-h-9 [&>button]:min-w-[7.5rem] [&>button]:flex-1 [&>button]:basis-[min(100%,11rem)]',
                   )}
                 >
                   <TabsTrigger variant="switch" value="nested-spaces">
@@ -243,7 +249,8 @@ export const SpaceNavigationView = ({
             <div
               className={cn(
                 'flex min-h-0 w-full min-w-0 flex-col gap-4',
-                'lg:max-h-[min(75dvh,calc(100dvh-9.5rem))] lg:flex-row lg:items-stretch lg:gap-4',
+                'lg:grid lg:max-h-[min(75dvh,calc(100dvh-9.5rem))] lg:items-stretch lg:gap-x-4 lg:gap-y-0',
+                ECOSYSTEM_LG_GRID_COLS,
               )}
             >
               <div
@@ -253,8 +260,7 @@ export const SpaceNavigationView = ({
                   /* Neutral chrome only — accent shows on orbit/graph strokes, not the canvas */
                   'bg-muted/25 dark:bg-muted/15',
                   'aspect-square max-h-[min(72dvh,calc(100dvh-10rem),min(100vw,56rem))] max-w-full self-center',
-                  /* Give the diagram most of the row; side panel stays readable */
-                  'lg:order-1 lg:min-h-0 lg:max-h-full lg:max-w-none lg:flex-[3] lg:min-w-0 lg:self-stretch',
+                  'lg:col-start-1 lg:row-start-1 lg:aspect-auto lg:h-full lg:max-h-full lg:w-full lg:max-w-none lg:min-h-0 lg:self-stretch',
                   'shadow-[inset_0_0_72px_rgb(0_0_0/0.06)] dark:shadow-[inset_0_0_64px_rgb(0_0_0/0.45)]',
                 )}
                 aria-label={t('mapRegionAriaLabel')}
@@ -279,10 +285,11 @@ export const SpaceNavigationView = ({
               {showSpacesPanel ? (
                 <div
                   role="region"
+                  data-testid="dho-ecosystem-spaces-panel"
                   className={cn(
                     'order-2 flex min-h-0 w-full min-w-0 flex-col border-t border-border/50 pt-4',
-                    'lg:order-2 lg:w-[min(17.5rem,max(14rem,28vw))] lg:max-w-[17.5rem] lg:min-w-[13.5rem] lg:shrink-0 lg:overflow-hidden lg:border-l lg:border-t-0',
-                    'lg:pl-3 lg:pt-0',
+                    'lg:col-start-2 lg:row-start-1 lg:min-h-0 lg:w-full lg:min-w-0 lg:max-w-none lg:overflow-hidden lg:border-l lg:border-t-0 lg:pt-0',
+                    'lg:pl-3',
                   )}
                   aria-label={t('dataPanelAriaLabel')}
                 >
