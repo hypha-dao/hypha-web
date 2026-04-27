@@ -38,6 +38,10 @@ import {
   HumanChatPanelMessageOverflow,
   pushRecentChatReaction,
 } from './human-chat-panel-message-overflow';
+import {
+  hyphaDhoSlugFromUrl,
+  isHyphaDhoChatMessageUrl,
+} from './human-chat-message-link';
 import { ChatMessageRichText } from './parse-simple-matrix-html';
 import {
   matrixMemberDisplayLabelFromRoom,
@@ -1147,9 +1151,43 @@ function splitPlainTextUrls(text: string): PlainUrlPiece[] {
 const chatBodyLinkClass =
   'break-all font-medium text-primary underline decoration-primary/35 underline-offset-2 hover:decoration-primary/70';
 
+/** Discord-style compact chip for Hypha chat deep links (short `?msg=` URLs). */
+const chatDeepLinkPillClass =
+  'inline-flex max-w-[min(100%,18rem)] min-w-0 items-center gap-1 self-baseline truncate rounded-md bg-indigo-100 px-2 py-0.5 text-[13px] font-semibold leading-snug text-indigo-950 ring-1 ring-inset ring-indigo-300/40 dark:bg-indigo-950/50 dark:text-indigo-50 dark:ring-indigo-400/25';
+
+function shortMatrixEventLabel(id: string): string {
+  const t = id.trim();
+  if (!t) return '';
+  if (t.startsWith('$') && t.length > 14) return `${t.slice(0, 10)}…`;
+  return t.length > 16 ? `${t.slice(0, 12)}…` : t;
+}
+
 function renderPlainUrlLink(href: string, key: string): ReactNode {
   const safe = href.trim();
   if (!safe) return null;
+  if (isHyphaDhoChatMessageUrl(safe)) {
+    const slug = hyphaDhoSlugFromUrl(safe) ?? 'chat';
+    let msgShort = '';
+    try {
+      const msg = new URL(safe).searchParams.get('msg');
+      if (msg) msgShort = shortMatrixEventLabel(msg);
+    } catch {
+      // ignore
+    }
+    const label = msgShort ? `# ${slug} · ${msgShort}` : `# ${slug}`;
+    return (
+      <a
+        key={key}
+        href={safe}
+        target="_blank"
+        rel="noopener noreferrer"
+        title={safe}
+        className={chatDeepLinkPillClass}
+      >
+        {label}
+      </a>
+    );
+  }
   return (
     <a
       key={key}

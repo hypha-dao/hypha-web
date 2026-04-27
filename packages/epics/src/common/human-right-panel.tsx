@@ -1628,7 +1628,10 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     if (mode !== 'space') return;
     const qpChat = searchParams?.get('chat')?.trim();
     const qpMsg = searchParams?.get('msg')?.trim();
-    if (!qpChat || !qpMsg || !roomId || qpChat !== roomId) return;
+    if (!qpMsg || !roomId) return;
+    /** Short link: `?msg=` only (same space room). Legacy: `?chat=` + `msg`. */
+    const sameRoom = (!qpChat && roomId) || (qpChat && qpChat === roomId);
+    if (!sameRoom) return;
 
     openHumanChatPanel();
     setActiveTab('chat');
