@@ -491,6 +491,15 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   currentUserAvatarUrlRef.current = currentUserAvatarUrl;
 
   const [input, setInput] = useState('');
+  /** Hypha-resolved names from the mention picker (may differ from Matrix fallback displayLabel). */
+  const [mentionDisplayOverride, setMentionDisplayOverride] = useState<
+    Record<string, string>
+  >({});
+
+  useEffect(() => {
+    setMentionDisplayOverride({});
+  }, [roomId]);
+
   const [draftAttachments, setDraftAttachments] = useState<
     ChatDraftAttachment[]
   >([]);
@@ -821,15 +830,30 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     mentionMembershipEpoch,
   ]);
 
+  const mergeMentionDisplayLabel = useCallback(
+    (userId: string, displayLabel: string) => {
+      const t = displayLabel.trim();
+      if (!t) return;
+      setMentionDisplayOverride((prev) => {
+        if (prev[userId] === t) return prev;
+        return { ...prev, [userId]: t };
+      });
+    },
+    [],
+  );
+
   const mentionLabelByUserId = useMemo(
     () =>
       new Map(
-        mentionCandidates.map((candidate) => [
-          candidate.userId,
-          candidate.displayLabel,
-        ]),
+        mentionCandidates.map((candidate) => {
+          const o = mentionDisplayOverride[candidate.userId];
+          return [
+            candidate.userId,
+            o?.trim() ? o : candidate.displayLabel,
+          ] as const;
+        }),
       ),
-    [mentionCandidates],
+    [mentionCandidates, mentionDisplayOverride],
   );
 
   /** Sanitized display label → MXID for converting composer `@Name` tokens before Matrix send. */
@@ -2091,6 +2115,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
               onSend={handleSend}
               mentionCandidates={mentionCandidates}
               mentionPickerEnabled={mentionPickerEnabled}
+              onMergeMentionDisplayLabel={mergeMentionDisplayLabel}
               draftAttachments={draftAttachments}
               onDraftAttachmentsChange={setDraftAttachments}
               replyPreview={
