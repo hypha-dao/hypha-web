@@ -34,6 +34,21 @@ type AiPanelMessageBubbleProps = {
   isStreaming?: boolean;
 };
 
+/**
+ * Models often emit markdown-ish lists on one line: `Intro: * a * b * c`.
+ * Break those into real line breaks so each bullet reads as its own row.
+ */
+function normalizeAssistantListText(raw: string): string {
+  let s = raw;
+  // "...colon * first item" → newline before first bullet
+  s = s.replace(/:\s*\*\s+/g, ':\n• ');
+  // Remaining inline bullets: space + asterisk + space before next segment
+  s = s.replace(/\s+\*\s+(?=\S)/g, '\n• ');
+  // Hyphen list only right after a colon (avoid splitting "word - word" in prose)
+  s = s.replace(/:\s*-\s+/g, ':\n– ');
+  return s;
+}
+
 export function AiPanelMessageBubble({
   message,
   isStreaming,
@@ -69,6 +84,11 @@ export function AiPanelMessageBubble({
     (p) => p.state !== 'output-available',
   );
 
+  const assistantDisplayText =
+    !isUser && textContent && textContent !== '(no text)'
+      ? normalizeAssistantListText(textContent)
+      : textContent;
+
   const handleCopy = useCallback(async () => {
     if (!textContent) return;
     try {
@@ -99,8 +119,15 @@ export function AiPanelMessageBubble({
               : 'rounded-tl-sm border border-border bg-muted text-foreground',
           )}
         >
-          {textContent && textContent !== '(no text)' && (
-            <span>{textContent}</span>
+          {assistantDisplayText && assistantDisplayText !== '(no text)' && (
+            <div
+              className={cn(
+                !isUser &&
+                  'whitespace-pre-wrap break-words [overflow-wrap:anywhere]',
+              )}
+            >
+              {assistantDisplayText}
+            </div>
           )}
           {fileParts.length > 0 && (
             <div className="flex flex-wrap gap-2">
