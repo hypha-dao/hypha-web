@@ -4,7 +4,7 @@ import { nxE2EPreset } from '@nx/playwright/preset';
 import { workspaceRoot } from '@nx/devkit';
 
 // For CI, you may want to set BASE_URL to the deployed application.
-const baseURL = process.env['BASE_URL'] || 'http://127.0.0.1:3000';
+const baseURL = process.env['BASE_URL']?.trim() || 'http://127.0.0.1:3000';
 
 /**
  * Read environment variables from file.
