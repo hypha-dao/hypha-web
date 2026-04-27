@@ -34,7 +34,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         defaultChain: base,
         ...(hasGlobalWalletLoginMethods && {
           loginMethodsAndOrder: {
-            primary: [...globalWalletLoginMethods, 'email'],
+            primary: ['email', ...globalWalletLoginMethods],
             overflow: ['detected_ethereum_wallets'],
           },
         }),
