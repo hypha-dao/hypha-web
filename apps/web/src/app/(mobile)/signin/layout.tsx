@@ -36,11 +36,17 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const localScaleGlobalWalletAppId =
+    process.env.NEXT_PUBLIC_LOCAL_SCALE_GLOBAL_WALLET_APP_ID?.trim();
+
   return (
     <Html className={clsx(lato.variable, sourceSans.variable)}>
       <AuthProvider
         config={{
           appId: process.env.NEXT_PUBLIC_PRIVY_APP_ID!,
+          globalWalletProviderAppIds: localScaleGlobalWalletAppId
+            ? [localScaleGlobalWalletAppId]
+            : undefined,
         }}
       >
         <ThemeProvider
