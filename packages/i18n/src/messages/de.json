@@ -1969,6 +1969,8 @@
     "callParticipantMicOff": "Mikrofon aus",
     "callLeftAudio": "Du hast den Sprachanruf verlassen.",
     "callLeftVideo": "Du hast den Videoanruf verlassen.",
+    "callLeftAudioIdle": "Du hast den Sprachanruf verlassen — nach einer Weile ist niemand beigetreten.",
+    "callLeftVideoIdle": "Du hast den Videoanruf verlassen — nach einer Weile ist niemand beigetreten.",
     "callLeftBannerDismiss": "Schließen",
     "callPaneResizeSharePeople": "Bildschirmfreigabe und Personen skalieren",
     "callPaneResizeShareStrip": "Bildschirmfreigabe und Filmstreifen skalieren",

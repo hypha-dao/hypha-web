@@ -1968,6 +1968,8 @@
     "callParticipantMicOff": "Micro desligado",
     "callLeftAudio": "Saiu da chamada de voz.",
     "callLeftVideo": "Saiu da videchamada.",
+    "callLeftAudioIdle": "Saiu da chamada de voz — ninguém mais entrou após algum tempo.",
+    "callLeftVideoIdle": "Saiu da videchamada — ninguém mais entrou após algum tempo.",
     "callLeftBannerDismiss": "Fechar",
     "callPaneResizeSharePeople": "Redimensionar partilha e pessoas",
     "callPaneResizeShareStrip": "Redimensionar partilha e filme",

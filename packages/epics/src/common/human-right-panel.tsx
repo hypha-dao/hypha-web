@@ -665,6 +665,33 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     setCallLeftMessage(k === 'video' ? t('callLeftVideo') : t('callLeftAudio'));
   }, [leaveSpaceCall, spaceCallKind, t]);
 
+  /** End ghost sessions: when connected and no other participants for 5 minutes, leave locally. */
+  useEffect(() => {
+    if (!callUiEnabled || spaceCallState !== 'connected') return;
+    if (spaceCallOthersInRoom > 0 || spaceCallRoomGroupDeviceCount === 0)
+      return;
+
+    const SOLO_IDLE_LEAVE_MS = 5 * 60 * 1000;
+    const id = window.setTimeout(() => {
+      void leaveSpaceCall();
+      setCallLeftMessage(
+        spaceCallKind === 'video'
+          ? t('callLeftVideoIdle')
+          : t('callLeftAudioIdle'),
+      );
+    }, SOLO_IDLE_LEAVE_MS);
+
+    return () => window.clearTimeout(id);
+  }, [
+    callUiEnabled,
+    spaceCallState,
+    spaceCallOthersInRoom,
+    spaceCallRoomGroupDeviceCount,
+    leaveSpaceCall,
+    spaceCallKind,
+    t,
+  ]);
+
   const handleCallToggleMic = useCallback(() => {
     void setSpaceCallMicMuted(!spaceCallMicMuted);
   }, [setSpaceCallMicMuted, spaceCallMicMuted]);
@@ -1989,7 +2016,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   currentUserId={currentUserId}
                   inCallUserIds={spaceCallInCallUserIds}
                   currentUserProfileAvatarUrl={currentUserAvatarUrl}
-                  resolveMemberLabel={resolveMemberLabel}
+                  resolveMemberLabel={resolveMentionMemberLabel}
                   layout={
                     callFullViewOpen && canOpenCallFullView ? 'hidden' : 'panel'
                   }
@@ -2206,7 +2233,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
                   currentUserId={currentUserId}
                   inCallUserIds={spaceCallInCallUserIds}
                   currentUserProfileAvatarUrl={currentUserAvatarUrl}
-                  resolveMemberLabel={resolveMemberLabel}
+                  resolveMemberLabel={resolveMentionMemberLabel}
                   layout="fullView"
                   fullViewOpen
                   fullViewLayoutMode={callFullViewLayoutMode}

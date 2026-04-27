@@ -1968,6 +1968,8 @@
     "callParticipantMicOff": "Micro coupé",
     "callLeftAudio": "Vous avez quitté l'appel vocal.",
     "callLeftVideo": "Vous avez quitté l'appel vidéo.",
+    "callLeftAudioIdle": "Vous avez quitté l'appel vocal — personne d'autre ne s'est joint après un moment.",
+    "callLeftVideoIdle": "Vous avez quitté l'appel vidéo — personne d'autre ne s'est joint après un moment.",
     "callLeftBannerDismiss": "Fermer",
     "callPaneResizeSharePeople": "Redimensionner partage d’écran et personnes",
     "callPaneResizeShareStrip": "Redimensionner partage d’écran et film",

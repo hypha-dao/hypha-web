@@ -2000,6 +2000,8 @@
     "callParticipantMicOff": "Microphone off",
     "callLeftAudio": "You left the voice call.",
     "callLeftVideo": "You left the video call.",
+    "callLeftAudioIdle": "You left the voice call — no one else joined after a while.",
+    "callLeftVideoIdle": "You left the video call — no one else joined after a while.",
     "callLeftBannerDismiss": "Dismiss",
     "callPaneResizeSharePeople": "Resize screen share and people",
     "callPaneResizeShareStrip": "Resize screen share and filmstrip",

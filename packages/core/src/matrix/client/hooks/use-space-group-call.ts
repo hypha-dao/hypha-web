@@ -22,6 +22,9 @@ export type SpaceGroupCallErrorCode =
 const { GroupCallEvent, GroupCallIntent, GroupCallType, GroupCallState } =
   MatrixSdk;
 
+/** Abort `gc.enter()` hang (SFU/TURN stuck) — user-recoverable via Retry. */
+const CONNECT_STALL_ABORT_MS = 90_000;
+
 /** `callSessionId` for correlation; must not use `Math.random()` (CodeQL / GAS-weak-randomness). */
 function newCallSessionId(): string {
   const c = globalThis.crypto;
@@ -87,6 +90,10 @@ export function useSpaceGroupCall(roomId: string | null) {
   const lastRoomIdForTelemetryRef = useRef<string | null>(null);
   const activeGroupCallRoomIdRef = useRef<string | null>(null);
   const loggedStatsForGroupCallIdRef = useRef<string | null>(null);
+  /** Cleared on enter or teardown — abort endless "Connecting…" when enter() hangs. */
+  const connectingStallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const [tabBackgroundWhileInCall, setTabBackgroundWhileInCall] =
     useState(false);
   /**
@@ -114,7 +121,15 @@ export function useSpaceGroupCall(roomId: string | null) {
     });
   }, []);
 
+  const clearConnectingStallTimer = useCallback(() => {
+    if (connectingStallTimerRef.current != null) {
+      clearTimeout(connectingStallTimerRef.current);
+      connectingStallTimerRef.current = null;
+    }
+  }, []);
+
   const runCleanup = useCallback(() => {
+    clearConnectingStallTimer();
     if (feedUpdateRafRef.current != null) {
       cancelAnimationFrame(feedUpdateRafRef.current);
       feedUpdateRafRef.current = null;
@@ -161,7 +176,7 @@ export function useSpaceGroupCall(roomId: string | null) {
     setScreenshareErrorCode(null);
     loggedStatsForGroupCallIdRef.current = null;
     lastRoomIdForTelemetryRef.current = null;
-  }, []);
+  }, [clearConnectingStallTimer]);
 
   const refreshLocalPreview = useCallback(() => {
     const gc = groupCallRef.current;
@@ -425,9 +440,37 @@ export function useSpaceGroupCall(roomId: string | null) {
       updateParticipantCount();
       setCallState('connecting');
 
+      clearConnectingStallTimer();
+      connectingStallTimerRef.current = setTimeout(() => {
+        clearConnectingStallTimer();
+        if (groupCallRef.current !== gc) return;
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[hypha.group_call] enter() stalled — forcing cleanup', {
+            roomId,
+            ms: CONNECT_STALL_ABORT_MS,
+          });
+        }
+        isJoiningRef.current = false;
+        setErrorCode('UNKNOWN');
+        if (roomId) {
+          logSpaceGroupCallEvent({
+            name: 'hypha.group_call.error',
+            roomId,
+            kind,
+            errorCode: 'CONNECT_STALL',
+          });
+        }
+        setCallState('error');
+        runCleanup();
+        setCallKind(null);
+        setThreadContext(null);
+        joinStartedAtRef.current = null;
+      }, CONNECT_STALL_ABORT_MS);
+
       try {
         await gc.enter();
       } catch (e) {
+        clearConnectingStallTimer();
         isJoiningRef.current = false;
         const permissionLike = isPermissionLikeGroupCallError(e);
         if (permissionLike) {
@@ -450,6 +493,8 @@ export function useSpaceGroupCall(roomId: string | null) {
         joinStartedAtRef.current = null;
         return;
       }
+
+      clearConnectingStallTimer();
 
       setCallState('connected');
       refreshLocalPreview();
