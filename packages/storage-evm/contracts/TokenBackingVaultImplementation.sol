@@ -116,8 +116,65 @@ contract TokenBackingVaultImplementation is
   ) internal override onlyOwner {}
 
   // ============================================================
-  //          PRIMARY ENTRY POINT — addBackingToken
+  //          PRIMARY ENTRY POINTS — createVault / addBackingToken
   // ============================================================
+
+  /**
+   * @dev Create an empty vault for a space token.
+   *
+   * Allows setting up the vault parameters (minimum backing, redemption price,
+   * caps) without registering any backing collateral up-front. Backing tokens
+   * can be added later via `addBackingToken`.
+   *
+   * The space token must be priceable at redemption time — either via the
+   * vault's `redemptionPrice` override or via the token's `tokenPrice()`.
+   *
+   * @param redemptionPrice Optional redemption price (6 decimals). 0 = use official token price.
+   * @param redemptionPriceCurrencyFeed Chainlink X/USD feed for the redemption price currency.
+   *        address(0) = USD. Ignored when redemptionPrice is 0.
+   * @param maxRedemptionBps Max % of supply redeemable in rolling period (basis points). 0 = unlimited.
+   * @param maxRedemptionPeriodDays Rolling window in days. Must be > 0 when maxRedemptionBps > 0.
+   */
+  function createVault(
+    uint256 spaceId,
+    address spaceToken,
+    uint256 minimumBackingBps,
+    uint256 redemptionPrice,
+    address redemptionPriceCurrencyFeed,
+    uint256 maxRedemptionBps,
+    uint256 maxRedemptionPeriodDays
+  ) external nonReentrant returns (uint256 vaultId) {
+    _requireExecutorOrOwner(spaceId);
+
+    require(spaceToken != address(0), 'Invalid space token');
+    require(
+      vaultKeys[_getVaultKey(spaceId, spaceToken)] == 0,
+      'Vault already exists'
+    );
+    require(
+      minimumBackingBps <= MAX_BACKING_BPS,
+      'Min backing cannot exceed 1000%'
+    );
+    require(maxRedemptionBps <= BASIS_POINTS, 'Cannot exceed 100%');
+    require(
+      maxRedemptionBps == 0 || maxRedemptionPeriodDays > 0,
+      'Period must be > 0 when cap is set'
+    );
+
+    vaultId = _getOrCreateVault(
+      spaceId,
+      spaceToken,
+      minimumBackingBps,
+      redemptionPrice,
+      redemptionPriceCurrencyFeed,
+      maxRedemptionBps,
+      maxRedemptionPeriodDays
+    );
+
+    _requirePriceableSpaceToken(vaultId, spaceToken);
+
+    return vaultId;
+  }
 
   /**
    * @dev Add one or more backing tokens, optionally funding each.
@@ -164,10 +221,6 @@ contract TokenBackingVaultImplementation is
       'Period must be > 0 when cap is set'
     );
 
-    // Validate the space token has a price set
-    uint256 pegPrice = ISpaceTokenPrice(spaceToken).tokenPrice();
-    require(pegPrice > 0, 'Space token price must be > 0');
-
     vaultId = _getOrCreateVault(
       spaceId,
       spaceToken,
@@ -177,6 +230,13 @@ contract TokenBackingVaultImplementation is
       maxRedemptionBps,
       maxRedemptionPeriodDays
     );
+
+    // The space token must be priceable at redemption time — either via the
+    // vault's redemption-price override or via the token's tokenPrice().
+    // This replaces the unconditional `pegPrice > 0` check so spaces that
+    // peg redemption to a fixed currency (USDC, EUR, etc.) can run with a
+    // tokenPrice() of 0.
+    _requirePriceableSpaceToken(vaultId, spaceToken);
 
     for (uint256 i = 0; i < backingTokens.length; i++) {
       address bt = backingTokens[i];
@@ -383,6 +443,7 @@ contract TokenBackingVaultImplementation is
 
     vaultRedemptionPrice[vaultId] = price;
     vaultRedemptionPriceCurrencyFeed[vaultId] = currencyFeed;
+    _requirePriceableSpaceToken(vaultId, spaceToken);
 
     emit RedemptionPriceUpdated(vaultId, price, currencyFeed);
   }
@@ -834,6 +895,25 @@ contract TokenBackingVaultImplementation is
     bytes32 key = _getVaultKey(spaceId, spaceToken);
     vaultId = vaultKeys[key];
     require(vaultId != 0, 'Vault does not exist');
+  }
+
+  /**
+   * @dev Ensure the vault can value the space token at redemption time.
+   * Either the vault has a non-zero `vaultRedemptionPrice` override stored,
+   * or the space token's own `tokenPrice()` is non-zero. When both are 0,
+   * `_getEffectiveRedemptionPriceInUsd` would return 0 and every redeem call
+   * would revert with `Redemption price is 0`.
+   */
+  function _requirePriceableSpaceToken(
+    uint256 vaultId,
+    address spaceToken
+  ) internal view {
+    if (vaultRedemptionPrice[vaultId] > 0) return;
+    uint256 pegPrice = ISpaceTokenPrice(spaceToken).tokenPrice();
+    require(
+      pegPrice > 0,
+      'Need space token price or redemption price > 0'
+    );
   }
 
   function _requireRedemptionAllowed(

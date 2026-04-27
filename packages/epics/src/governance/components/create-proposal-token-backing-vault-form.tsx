@@ -7,6 +7,7 @@ import {
   useMe,
   useJwt,
   useCreateTokenBackingVaultOrchestrator,
+  preflightTokenBackingVault,
   CURRENCY_FEED_OPTIONS,
 } from '@hypha-platform/core/client';
 import { z } from 'zod';
@@ -63,12 +64,37 @@ export const CreateProposalTokenBackingVaultForm = ({
     isError,
     isPending,
     progress,
+    errors,
   } = useCreateTokenBackingVaultOrchestrator({
     authToken: jwt,
     config,
   });
 
   const [formError, setFormError] = React.useState<string | null>(null);
+
+  // Aggregate every actionable message from the orchestration chain
+  // (preflight validation, web2 mutation, web3 wait, etc.) so the user
+  // sees the actual revert reason instead of just a generic "Oh snap".
+  // The preflight hook joins multiple problems with `\n`, so split each
+  // raw message into individual lines to render them as separate bullets.
+  const errorMessages = React.useMemo(() => {
+    const seen = new Set<string>();
+    const messages: string[] = [];
+    const pushLines = (raw: string) => {
+      for (const line of raw.split('\n')) {
+        const trimmed = line.trim();
+        if (!trimmed || seen.has(trimmed)) continue;
+        seen.add(trimmed);
+        messages.push(trimmed);
+      }
+    };
+    for (const err of errors) {
+      if (!err) continue;
+      pushLines(err instanceof Error ? err.message : String(err));
+    }
+    if (formError) pushLines(formError);
+    return messages;
+  }, [errors, formError]);
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const form = useForm<FormValues>({
@@ -112,11 +138,66 @@ export const CreateProposalTokenBackingVaultForm = ({
 
   const handleCreate = async (data: FormValues) => {
     setFormError(null);
-    await createTokenBackingVault({
-      ...data,
-      spaceId: spaceId as number,
-      web3SpaceId: web3SpaceId as number,
-    });
+
+    // Runtime guards. The TS types allow `null | undefined` and we previously
+    // cast with `as number`, which silently passed garbage to the orchestrator.
+    // - Missing `spaceId` would blow up the web2 schema parse with a cryptic Zod error.
+    // - Missing `web3SpaceId` is worse: the orchestrator silently SKIPS the web3 step
+    //   while the web2 agreement still gets created, so the user thinks the proposal
+    //   exists on-chain when it doesn't. Catch both up-front with a friendly message.
+    if (typeof spaceId !== 'number' || !Number.isFinite(spaceId)) {
+      setFormError(
+        tAgreementFlow('plugins.tokenBackingVault.errors.spaceNotReady'),
+      );
+      return;
+    }
+    if (typeof web3SpaceId !== 'number' || !Number.isFinite(web3SpaceId)) {
+      setFormError(
+        tAgreementFlow('plugins.tokenBackingVault.errors.spaceNotOnChain'),
+      );
+      return;
+    }
+
+    // Run the on-chain preflight BEFORE invoking the orchestrator. If we let
+    // the orchestrator start its first task, the loading-backdrop modal opens
+    // immediately and validation failures appear as a full-screen overlay.
+    // Surfacing them inline here keeps the user on the form with the same
+    // controls visible, matching the rest of the validation experience.
+    try {
+      await preflightTokenBackingVault({
+        spaceId: web3SpaceId,
+        spaceToken: data.tokenBackingVault.spaceToken as `0x${string}`,
+        activateVault: data.tokenBackingVault.activateVault,
+        enableRedemption: data.tokenBackingVault.enableRedemption,
+        addCollaterals: data.tokenBackingVault.addCollaterals,
+        removeCollaterals: data.tokenBackingVault.removeCollaterals,
+        referenceCurrency: data.tokenBackingVault.referenceCurrency,
+        tokenPrice: data.tokenBackingVault.tokenPrice,
+        minimumBackingPercent: data.tokenBackingVault.minimumBackingPercent,
+        maxRedemptionPercent: data.tokenBackingVault.maxRedemptionPercent,
+        maxRedemptionPeriodDays: data.tokenBackingVault.maxRedemptionPeriodDays,
+        redemptionStartDate: data.tokenBackingVault.redemptionStartDate,
+        enableAdvancedRedemptionControls:
+          data.tokenBackingVault.enableAdvancedRedemptionControls,
+        redemptionWhitelist: data.tokenBackingVault.redemptionWhitelist,
+      });
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : String(err));
+      return;
+    }
+
+    try {
+      await createTokenBackingVault({
+        ...data,
+        spaceId,
+        web3SpaceId,
+      });
+    } catch (err) {
+      // SWR mutation already surfaces the error via `errors`, but catching here
+      // prevents an "Uncaught (in promise)" warning in the console and gives
+      // us a fallback message in case the orchestrator's error channel is empty.
+      setFormError(err instanceof Error ? err.message : String(err));
+    }
   };
 
   return (
@@ -128,8 +209,14 @@ export const CreateProposalTokenBackingVaultForm = ({
       isLoading={isPending}
       message={
         isError ? (
-          <div className="flex flex-col">
-            <div>{tSpaces('errorOhSnap')}</div>
+          <div className="flex flex-col gap-3 max-w-lg text-left">
+            {errorMessages.length > 0 && (
+              <ul className="text-2 text-neutral-11 list-disc pl-4 space-y-2 whitespace-pre-wrap break-words">
+                {errorMessages.map((msg, i) => (
+                  <li key={i}>{msg}</li>
+                ))}
+              </ul>
+            )}
             <Button onClick={reset}>{tSpaces('reset')}</Button>
           </div>
         ) : (
@@ -167,7 +254,7 @@ export const CreateProposalTokenBackingVaultForm = ({
           <Separator />
           <div className="flex flex-col gap-2">
             {formError && (
-              <div className="text-error-11 text-2 font-medium">
+              <div className="text-error-11 text-2 font-medium whitespace-pre-line">
                 {formError}
               </div>
             )}

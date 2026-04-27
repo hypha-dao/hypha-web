@@ -1089,7 +1089,11 @@
         "leaveBlankUseTokenPrice": "Leave blank to use token price ({price} {currency})",
         "leaveBlankForTokenContractPrice": "Leave blank for token contract price",
         "add": "Add",
-        "remove": "Remove"
+        "remove": "Remove",
+        "errors": {
+          "spaceNotReady": "Your space isn't fully loaded yet. Please refresh the page and try again.",
+          "spaceNotOnChain": "Your space hasn't been published on-chain yet, so a backing vault can't be created. Publish the space first, then come back to create the vault."
+        }
       },
       "issueNewToken": {
         "general": {

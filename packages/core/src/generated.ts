@@ -7587,6 +7587,29 @@ export const tokenBackingVaultImplementationAbi = [
     inputs: [
       { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
       { name: 'spaceToken', internalType: 'address', type: 'address' },
+      { name: 'minimumBackingBps', internalType: 'uint256', type: 'uint256' },
+      { name: 'redemptionPrice', internalType: 'uint256', type: 'uint256' },
+      {
+        name: 'redemptionPriceCurrencyFeed',
+        internalType: 'address',
+        type: 'address',
+      },
+      { name: 'maxRedemptionBps', internalType: 'uint256', type: 'uint256' },
+      {
+        name: 'maxRedemptionPeriodDays',
+        internalType: 'uint256',
+        type: 'uint256',
+      },
+    ],
+    name: 'createVault',
+    outputs: [{ name: 'vaultId', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'spaceId', internalType: 'uint256', type: 'uint256' },
+      { name: 'spaceToken', internalType: 'address', type: 'address' },
       { name: 'backingToken', internalType: 'address', type: 'address' },
     ],
     name: 'getBackingBalance',
