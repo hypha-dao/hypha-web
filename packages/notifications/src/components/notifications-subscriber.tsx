@@ -92,10 +92,14 @@ export function NotificationSubscriber({
     const foregroundWillDisplayHandler = (
       event: NotificationForegroundWillDisplayEvent,
     ) => {
-      console.log('The notification foreground will display:', event);
+      if (DEV_ENV) {
+        console.log('The notification foreground will display:', event);
+      }
     };
     const notificationDismiss = (event: NotificationDismissEvent) => {
-      console.log('The notification dismiss:', event);
+      if (DEV_ENV) {
+        console.log('The notification dismiss:', event);
+      }
     };
     const permissionChangeHandler = (permission: boolean) => {
       if (DEV_ENV) {
@@ -120,26 +124,40 @@ export function NotificationSubscriber({
         });
     };
     const permissionPromptDisplayHandler = () => {
-      console.log('The notification permission prompt display!');
+      if (DEV_ENV) {
+        console.log('The notification permission prompt display!');
+      }
     };
     const slidedownAllowClickHandler = (wasShown: boolean) => {
-      console.log('Slidedown Allow Click:', wasShown);
+      if (DEV_ENV) {
+        console.log('Slidedown Allow Click:', wasShown);
+      }
     };
     const slidedownCancelClick = (wasShown: boolean) => {
-      console.log('Slidedown Cancel Click:', wasShown);
+      if (DEV_ENV) {
+        console.log('Slidedown Cancel Click:', wasShown);
+      }
       setSubscribed(false);
     };
     const slidedownClosedHandler = (wasShown: boolean) => {
-      console.log('Slidedown Closed:', wasShown);
+      if (DEV_ENV) {
+        console.log('Slidedown Closed:', wasShown);
+      }
     };
     const slidedownQueuedHandler = (wasShown: boolean) => {
-      console.log('Slidedown Queued:', wasShown);
+      if (DEV_ENV) {
+        console.log('Slidedown Queued:', wasShown);
+      }
     };
     const slidedownShownHandler = (wasShown: boolean) => {
-      console.log('Slidedown Shown:', wasShown);
+      if (DEV_ENV) {
+        console.log('Slidedown Shown:', wasShown);
+      }
     };
     const userChangeHandler = (change: UserChangeEvent) => {
-      console.log('User change:', change);
+      if (DEV_ENV) {
+        console.log('User change:', change);
+      }
     };
     const subscriptionChangeHandler = (event: SubscriptionChangeEvent) => {
       if (DEV_ENV) {
@@ -157,7 +175,9 @@ export function NotificationSubscriber({
     };
     const initialize = async () => {
       if (initialized) {
-        console.warn('OneSignal should be initialized only once!');
+        if (DEV_ENV) {
+          console.warn('OneSignal should be initialized only once!');
+        }
         return;
       }
       try {
@@ -195,7 +215,9 @@ export function NotificationSubscriber({
           notificationClickHandlerMatch: 'origin',
           notificationClickHandlerAction: 'focus',
         });
-        console.log('OneSignal initialized');
+        if (DEV_ENV) {
+          console.log('OneSignal initialized');
+        }
         setInitialized(true);
         const isSubscribed = await hasPermission();
         setSubscribed(isSubscribed);
@@ -245,7 +267,7 @@ export function NotificationSubscriber({
           subscriptionChangeHandler,
         );
       } catch (err) {
-        console.log('Initialize error:', err);
+        console.error('OneSignal initialize error:', err);
       }
     };
     initialize();

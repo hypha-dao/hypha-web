@@ -65,19 +65,27 @@ export function useUserSpaceState({
       .map((s) => s.web3SpaceId as number);
   }, [organisationSpaces, effectiveSpaceId]);
 
+  /** Stable tuple for SWR — never `.sort()` in-place on memoized arrays (mutates cached keys). */
+  const organisationSpaceIdsSorted = useMemo(
+    () => [...organisationSpaceIds].sort((a, b) => a - b),
+    [organisationSpaceIds],
+  );
+
   const orgMembershipResults = useSWR(
-    user?.wallet?.address && organisationSpaceIds.length > 0 && isAuthenticated
-      ? ['orgMembership', user.wallet.address, ...organisationSpaceIds.sort()]
+    user?.wallet?.address &&
+      organisationSpaceIdsSorted.length > 0 &&
+      isAuthenticated
+      ? ['orgMembership', user.wallet.address, ...organisationSpaceIdsSorted]
       : null,
     async () => {
-      if (!user?.wallet?.address || organisationSpaceIds.length === 0) {
+      if (!user?.wallet?.address || organisationSpaceIdsSorted.length === 0) {
         return { isOrgMember: false, isOrgDelegate: false };
       }
 
       const userAddress = user.wallet.address as `0x${string}`;
 
       const membershipChecks = await Promise.all(
-        organisationSpaceIds.map(async (spaceId) => {
+        organisationSpaceIdsSorted.map(async (spaceId) => {
           try {
             const [isMemberResult, delegates, spaceDetails] = await Promise.all(
               [
