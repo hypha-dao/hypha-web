@@ -19,8 +19,8 @@ import {
 } from 'lucide-react';
 import { Locale } from '@hypha-platform/i18n';
 import { getActiveTabFromPath } from '@hypha-platform/epics';
-import { Button } from '@hypha-platform/ui';
 import {
+  Button,
   Sheet,
   SheetContent,
   SheetHeader,
