@@ -1,7 +1,9 @@
 'use client';
 
+import { useAuthentication } from '@hypha-platform/authentication';
 import { useMemo } from 'react';
 import {
+  useJwt,
   useUserPrivyIdByMatrixId,
   usePersonBySub,
 } from '@hypha-platform/core/client';
@@ -45,6 +47,8 @@ export function useResolvedMentionCandidateLabel(
       matrixUserId: privySub || !matrixUserId ? undefined : matrixUserId,
     });
   const resolvedSub = privySub ?? linkedSub;
+  const { user } = useAuthentication();
+  const { jwt, isLoadingJwt } = useJwt();
   const { person, isLoading: loadingPerson } = usePersonBySub({
     sub: resolvedSub,
   });
@@ -55,10 +59,18 @@ export function useResolvedMentionCandidateLabel(
     return fromPerson || matrixFallbackLabel;
   }, [candidate, person, matrixFallbackLabel]);
 
-  /** True while Matrix→Privy link or Person profile is still loading — do not insert composer text yet. */
+  /**
+   * Person fetch needs JWT; `usePersonBySub` is idle until then. Block pick while auth is
+   * still resolving JWT (but not forever when logged out — no user to wait for).
+   */
+  const jwtBlockingForPerson =
+    Boolean(resolvedSub) &&
+    ((user && isLoadingJwt && !jwt) || (!user && isLoadingJwt));
+  /** True while Matrix→Privy link, JWT bootstrap, or Person profile is still loading. */
   const busy =
     Boolean(candidate) &&
-    ((!privySub && loadingLink) || (Boolean(resolvedSub) && loadingPerson));
+    ((!privySub && loadingLink) ||
+      (Boolean(resolvedSub) && (loadingPerson || jwtBlockingForPerson)));
 
   const avatarUrl = person?.avatarUrl?.trim() || undefined;
 
