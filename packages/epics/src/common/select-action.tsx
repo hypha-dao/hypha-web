@@ -108,6 +108,11 @@ export const SelectAction = ({
 
   const hasAnyFiltered = filteredActions.length > 0;
 
+  const searchAriaLabel =
+    searchPlaceholder.trim() !== ''
+      ? searchPlaceholder
+      : tCommon('searchActions');
+
   return (
     <div className={clsx('flex flex-col gap-6', className)}>
       {showTitle ? (
@@ -142,7 +147,7 @@ export const SelectAction = ({
               leftIcon={<SearchIcon className="h-4 w-4" aria-hidden />}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              aria-label={searchPlaceholder}
+              aria-label={searchAriaLabel}
             />
           ) : null}
           {!hasAnyFiltered && searchEmptyMessage ? (
