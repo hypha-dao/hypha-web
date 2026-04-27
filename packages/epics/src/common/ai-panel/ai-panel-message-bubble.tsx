@@ -64,6 +64,10 @@ export function AiPanelMessageBubble({
       (p): p is ToolPart =>
         typeof p.type === 'string' && p.type.startsWith('tool-'),
     ) ?? [];
+  /** Tool success summaries (e.g. "Found X — N members") duplicate the assistant text; keep loading + errors only. */
+  const toolPartsForUi = toolParts.filter(
+    (p) => p.state !== 'output-available',
+  );
 
   const handleCopy = useCallback(async () => {
     if (!textContent) return;
@@ -76,76 +80,6 @@ export function AiPanelMessageBubble({
       // clipboard API not available
     }
   }, [textContent]);
-
-  const renderToolOutput = useCallback(
-    (output: unknown) => {
-      if (!output || typeof output !== 'object') {
-        return (
-          <span className="text-muted-foreground">{t('toolCompleted')}</span>
-        );
-      }
-
-      const value = output as {
-        found?: boolean;
-        slug?: string;
-        space?: {
-          title?: string;
-          memberCount?: number;
-          documentCount?: number;
-        };
-        spaceFound?: boolean;
-        tokens?: unknown[];
-      };
-
-      // get_space_by_slug tool output
-      if ('found' in value) {
-        if (value.found && value.space) {
-          return (
-            <span>
-              {t('toolFoundSpace', {
-                title: value.space.title ?? value.slug ?? 'space',
-                slug: value.slug ?? 'unknown',
-                memberCount: value.space.memberCount ?? 0,
-                documentCount: value.space.documentCount ?? 0,
-              })}
-            </span>
-          );
-        }
-        return (
-          <span className="text-muted-foreground">
-            {t('toolNoSpace', { slug: value.slug ?? 'unknown' })}
-          </span>
-        );
-      }
-
-      // get_tokens tool output
-      if ('spaceFound' in value) {
-        if (!value.spaceFound) {
-          return (
-            <span className="text-muted-foreground">
-              {t('toolNoSpace', { slug: value.slug ?? 'unknown' })}
-            </span>
-          );
-        }
-        const tokenCount = Array.isArray(value.tokens)
-          ? value.tokens.length
-          : 0;
-        return (
-          <span className="text-muted-foreground">
-            {t('toolTokens', {
-              count: tokenCount,
-              slug: value.slug ?? 'unknown',
-            })}
-          </span>
-        );
-      }
-
-      return (
-        <span className="text-muted-foreground">{t('toolCompleted')}</span>
-      );
-    },
-    [t],
-  );
 
   return (
     <div className={cn('flex gap-2.5', isUser && 'flex-row-reverse')}>
@@ -192,9 +126,9 @@ export function AiPanelMessageBubble({
               )}
             </div>
           )}
-          {toolParts.length > 0 && (
+          {toolPartsForUi.length > 0 && (
             <div className="flex flex-col gap-1.5">
-              {toolParts.map((part) => (
+              {toolPartsForUi.map((part) => (
                 <div
                   key={part.toolCallId}
                   className="rounded-lg border border-border bg-muted/50 px-2 py-1.5 text-xs"
@@ -211,8 +145,6 @@ export function AiPanelMessageBubble({
                         : t('toolLookingUp')}
                     </span>
                   )}
-                  {part.state === 'output-available' &&
-                    renderToolOutput(part.output)}
                   {part.state === 'output-error' && (
                     <span className="text-destructive">
                       {t('toolError', {
