@@ -192,6 +192,8 @@ export function DhoStickySpaceChrome({
         )}
         style={{ top: 'var(--menu-top-height, 4rem)' }}
         aria-hidden={!stuck}
+        /* When invisible (md+), still occupies a fixed band; opacity-0 alone can leave hit-testing quirks — inert removes the subtree from targeting so clicks reach content below. */
+        inert={!stuck ? true : undefined}
       >
         <div
           className={cn(
