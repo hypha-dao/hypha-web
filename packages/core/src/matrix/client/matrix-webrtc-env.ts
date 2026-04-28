@@ -27,6 +27,15 @@ export function matrixWebRtcForceTurnFromEnv(): boolean {
 }
 
 /**
+ * Emit privacy-safe Matrix group-call diagnostics outside local development.
+ * Enable only on preview/debug deployments.
+ */
+export function matrixWebRtcDebugFromEnv(): boolean {
+  if (typeof process === 'undefined') return false;
+  return parseBool(process.env['NEXT_PUBLIC_MATRIX_WEBRTC_DEBUG'], false);
+}
+
+/**
  * Allow public STUN fallback when the homeserver returns no ICE servers.
  * matrix-js-sdk default is false — set to true only if your deployment allows it.
  */
