@@ -73,10 +73,7 @@ export function logSpaceGroupCallEvent(
     return;
   }
   try {
-    if (
-      process.env.NODE_ENV === 'development' ||
-      matrixWebRtcDebugFromEnv()
-    ) {
+    if (process.env.NODE_ENV === 'development' || matrixWebRtcDebugFromEnv()) {
       console.info('[hypha.group_call]', event);
     }
   } catch {
