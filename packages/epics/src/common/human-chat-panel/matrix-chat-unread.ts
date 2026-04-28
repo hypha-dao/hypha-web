@@ -227,7 +227,17 @@ export function computeAggregateUnreadMentionCount(
   for (const room of rooms) {
     if (room.getMyMembership() !== 'join') continue;
     const readUpToId = effectiveReadCursorEventId(room, userId);
-    total += countUnreadMentionMessagesForUser(room, userId, readUpToId);
+    const localMentionCount = countUnreadMentionMessagesForUser(
+      room,
+      userId,
+      readUpToId,
+    );
+    const highlight = room.getUnreadNotificationCount(
+      NotificationCountType.Highlight,
+    );
+    const serverHighlightCount =
+      typeof highlight === 'number' && highlight > 0 ? highlight : 0;
+    total += Math.max(serverHighlightCount, localMentionCount);
     if (total >= 100) {
       return { count: total, capped: true };
     }
@@ -274,7 +284,15 @@ export function gatherAggregatedMentionPreviews(
   userId: string,
   limit: number,
 ): AggregatedMentionPreview[] {
+  if (limit <= 0) return [];
   const rows: AggregatedMentionPreview[] = [];
+  /** Keep newest-first; drop oldest when over `limit` (avoid materializing all rooms). */
+  const pushTop = (row: AggregatedMentionPreview) => {
+    rows.push(row);
+    rows.sort((a, b) => b.timestamp - a.timestamp);
+    if (rows.length > limit) rows.pop();
+  };
+
   const rooms = client.getRooms().filter((r) => r.getMyMembership() === 'join');
 
   for (const room of rooms) {
@@ -302,7 +320,7 @@ export function gatherAggregatedMentionPreviews(
           ? (ev.getContent() as { body: string }).body
           : '';
       const excerpt = stripMatrixReplyFallback(raw).trim().slice(0, 280);
-      rows.push({
+      pushTop({
         roomId: room.roomId,
         roomDisplayName: matrixRoomShortLabel(room),
         eventId: ev.getId()!,
@@ -313,6 +331,5 @@ export function gatherAggregatedMentionPreviews(
     }
   }
 
-  rows.sort((a, b) => b.timestamp - a.timestamp);
-  return rows.slice(0, limit);
+  return rows;
 }

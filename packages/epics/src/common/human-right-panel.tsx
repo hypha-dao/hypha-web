@@ -987,16 +987,19 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const getMentionComposerLabel = useCallback(
     (member: ChatMentionCandidate, resolvedComposerLabel?: string) => {
-      const label = resolvedComposerLabel?.trim() || member.displayLabel;
+      const label =
+        resolvedComposerLabel?.trim() ||
+        mentionLabelByUserId.get(member.userId)?.trim() ||
+        member.displayLabel;
+      /** Include this pick's effective label when counting duplicates (resolved name can collide). */
+      const effectiveLabels = new Map(mentionLabelByUserId);
+      effectiveLabels.set(member.userId, label);
+      const dupForPick = computeDuplicateSanitizedDisplayKeys(effectiveLabels);
       return (
-        disambiguatedMentionTokenKey(
-          member.userId,
-          label,
-          duplicateSanitizedDisplayKeys,
-        ) || label
+        disambiguatedMentionTokenKey(member.userId, label, dupForPick) || label
       );
     },
-    [duplicateSanitizedDisplayKeys],
+    [mentionLabelByUserId],
   );
 
   const resolveMentionMemberLabel = useCallback(
@@ -1213,6 +1216,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
         if (targetRoomId) {
           try {
             targetRoomId = await ensureJoined(targetRoomId);
+            storeRoomId(spaceSlug, targetRoomId);
           } catch (joinErr) {
             if (canonicalRoomId && targetRoomId === canonicalRoomId) {
               throw joinErr;
