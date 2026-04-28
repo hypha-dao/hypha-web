@@ -476,7 +476,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             </div>
           ) : (
             <Button
-              variant="default"
+              variant="outline"
               colorVariant="accent"
               className="w-full"
               disabled={isLoading || !roomId}
