@@ -36,6 +36,25 @@ const REMOTE_MEDIA_STALL_MS = 45_000;
 /** Dev console: periodic sample of feeds vs participant map (not every Matrix event). */
 const MEDIA_SNAPSHOT_INTERVAL_MS = 12_000;
 
+/**
+ * Matrix group calls use pairwise VoIP: the lexicographically higher MXID places
+ * outbound `m.call.*` to the lower. `placeOutgoingCalls()` runs on participant
+ * updates; a tight race on join can skip the first attempt and leave only one
+ * side with media until reload. Nudge once after enter + optional delayed retry.
+ */
+const PLACE_OUTGOING_DELAYED_MS = 600;
+
+function nudgeGroupCallPlaceOutgoing(gc: MatrixSdk.GroupCall): void {
+  const fn = (gc as unknown as { placeOutgoingCalls?: () => void })
+    .placeOutgoingCalls;
+  if (typeof fn !== 'function') return;
+  try {
+    fn.call(gc);
+  } catch {
+    /* ignore */
+  }
+}
+
 /** Matrix SDK group-call summary stats interval (`NEXT_PUBLIC_MATRIX_WEBRTC_GROUP_STATS_MS`). */
 const GROUP_WEBRTC_SUMMARY_STATS_MS = matrixGroupCallSummaryStatsMsFromEnv();
 
@@ -105,6 +124,8 @@ export function useSpaceGroupCall(roomId: string | null) {
   const activeGroupCallRoomIdRef = useRef<string | null>(null);
   const loggedStatsForGroupCallIdRef = useRef<string | null>(null);
   const webRtcDiagCleanupRef = useRef<(() => void) | null>(null);
+  /** Cleared in runCleanup — delayed second `placeOutgoingCalls` nudge after enter(). */
+  const placeOutgoingNudgeTimerRef = useRef<number | null>(null);
   /** Cleared on enter or teardown — abort endless "Connecting…" when enter() hangs. */
   const connectingStallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -167,6 +188,10 @@ export function useSpaceGroupCall(roomId: string | null) {
   const runCleanup = useCallback(() => {
     clearConnectingStallTimer();
     clearMediaDebugInterval();
+    if (placeOutgoingNudgeTimerRef.current != null) {
+      clearTimeout(placeOutgoingNudgeTimerRef.current);
+      placeOutgoingNudgeTimerRef.current = null;
+    }
     webRtcDiagCleanupRef.current?.();
     webRtcDiagCleanupRef.current = null;
     remoteMediaGapSinceRef.current = null;
@@ -401,6 +426,8 @@ export function useSpaceGroupCall(roomId: string | null) {
       gc.on(GroupCallEvent.ParticipantsChanged, () => {
         updateParticipantCount();
         evalRemoteMediaStall();
+        /** Pairwise VoIP: roster changes can arrive after the internal nudge — retry outbound setup. */
+        nudgeGroupCallPlaceOutgoing(gc);
       });
       const onFeedsMaybeParticipants = () => {
         scheduleFeedBatched();
@@ -684,6 +711,18 @@ export function useSpaceGroupCall(roomId: string | null) {
         } catch {
           /* camera permission / hardware — remain in call with video off */
         }
+      }
+
+      nudgeGroupCallPlaceOutgoing(gc);
+      if (typeof window !== 'undefined') {
+        if (placeOutgoingNudgeTimerRef.current != null) {
+          clearTimeout(placeOutgoingNudgeTimerRef.current);
+        }
+        placeOutgoingNudgeTimerRef.current = window.setTimeout(() => {
+          placeOutgoingNudgeTimerRef.current = null;
+          if (groupCallRef.current !== gc) return;
+          nudgeGroupCallPlaceOutgoing(gc);
+        }, PLACE_OUTGOING_DELAYED_MS);
       }
 
       webRtcDiagCleanupRef.current?.();
