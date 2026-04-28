@@ -231,7 +231,11 @@ export function PanelWrapLayout({
   const effectiveRight = isSpace ? right : undefined;
 
   const leftExpanded = Boolean(leftOpen && leftOverlayVisible);
-  const sidebarLeftPx = effectiveLeft ? (leftExpanded ? '320px' : '48px') : '0px';
+  const sidebarLeftPx = effectiveLeft
+    ? leftExpanded
+      ? '320px'
+      : '48px'
+    : '0px';
   const sidebarRightPx = rightOpen && effectiveRight ? '320px' : '0px';
 
   /** Radix portaled dialogs sit under `body` and do not inherit vars from this div — mirror to `:root`. */

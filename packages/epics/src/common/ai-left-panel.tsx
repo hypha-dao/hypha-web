@@ -7,12 +7,7 @@ import { useAuthentication } from '@hypha-platform/authentication';
 import { useParams, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import {
-  FileCheck2,
-  HandCoins,
-  Radio,
-  UsersRound,
-} from 'lucide-react';
+import { FileCheck2, HandCoins, Radio, UsersRound } from 'lucide-react';
 import {
   DEFAULT_SPACE_AVATAR_IMAGE,
   useSpacesBySlugs,
@@ -59,7 +54,9 @@ export function AiLeftPanel() {
   const lang = typeof params?.lang === 'string' ? params.lang : 'en';
   const { state: sidebarState } = useSidebar();
   const isCollapsed = sidebarState === 'collapsed';
-  const { spaces: activeSpaces } = useSpacesBySlugs(spaceSlug ? [spaceSlug] : []);
+  const { spaces: activeSpaces } = useSpacesBySlugs(
+    spaceSlug ? [spaceSlug] : [],
+  );
   const activeSpaceIcon =
     activeSpaces[0]?.logoUrl?.trim() || DEFAULT_SPACE_AVATAR_IMAGE;
   const activeSpaceTitle = activeSpaces[0]?.title?.trim() || t('title');
