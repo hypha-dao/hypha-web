@@ -153,8 +153,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   const metaBadges: BadgeItem[] = React.useMemo(() => {
     const typeBadge: BadgeItem = {
       label: typeLabel,
-      icon: coherenceType?.icon as LucideReactIcon,
-      variant: 'soft',
+      variant: 'surface',
       colorVariant: typeColorVariant,
     };
     if (!priorityMeta) return [typeBadge];
@@ -166,8 +165,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     );
     const priorityBadge: BadgeItem = {
       label: priorityLabel,
-      icon: priorityMeta.icon as LucideReactIcon,
-      variant: 'soft',
+      variant: 'outline',
       colorVariant: priorityColorVariant,
     };
     return [typeBadge, priorityBadge];
@@ -385,6 +383,12 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       </CardHeader>
       <CardContent className="relative flex min-h-0 flex-1 flex-col gap-0 p-0">
         <div className="relative flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 pt-4">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 text-1 text-muted-foreground">
+            {metaBadges.length > 0 ? (
+              <BadgesList isLoading={isLoading} badges={metaBadges} />
+            ) : null}
+          </div>
+
           <div className="min-w-0">
             <Skeleton
               className="min-w-0"
@@ -399,9 +403,6 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           </div>
 
           <div className="flex min-w-0 flex-wrap items-center gap-2 text-1 text-muted-foreground">
-            {metaBadges.length > 0 ? (
-              <BadgesList isLoading={isLoading} badges={metaBadges} />
-            ) : null}
             <div className="ml-auto flex min-w-0 items-center gap-3">
               <span className="inline-flex min-w-0 items-center gap-1">
                 <ClockIcon
