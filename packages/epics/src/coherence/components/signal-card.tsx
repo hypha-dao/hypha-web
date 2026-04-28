@@ -145,13 +145,16 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   );
 
   const typeColorVariant = React.useMemo<SignalColorVariant>(
-    () => BADGE_COLOR_VARIANT_MAP[coherenceType?.colorVariant ?? 'accent'] ?? 'accent',
+    () =>
+      BADGE_COLOR_VARIANT_MAP[coherenceType?.colorVariant ?? 'accent'] ??
+      'accent',
     [coherenceType?.colorVariant],
   );
 
   const priorityColorVariant = React.useMemo<SignalColorVariant>(
     () =>
-      BADGE_COLOR_VARIANT_MAP[priorityMeta?.colorVariant ?? 'neutral'] ?? 'neutral',
+      BADGE_COLOR_VARIANT_MAP[priorityMeta?.colorVariant ?? 'neutral'] ??
+      'neutral',
     [priorityMeta?.colorVariant],
   );
 
@@ -176,7 +179,14 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       colorVariant: priorityColorVariant,
     };
     return [typeBadge, priorityBadge];
-  }, [coherenceType, priorityMeta, t, typeLabel, typeColorVariant, priorityColorVariant]);
+  }, [
+    coherenceType,
+    priorityMeta,
+    t,
+    typeLabel,
+    typeColorVariant,
+    priorityColorVariant,
+  ]);
 
   const tagList: BadgeItem[] = tags.map((tag) => {
     const displayLabel = (COHERENCE_TAGS as readonly string[]).includes(tag)
@@ -342,7 +352,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 onClick={(e) => e.stopPropagation()}
               >
                 <AlertDialogHeader>
-                  <AlertDialogTitle>{tSignalCard('deleteSignal')}</AlertDialogTitle>
+                  <AlertDialogTitle>
+                    {tSignalCard('deleteSignal')}
+                  </AlertDialogTitle>
                   <AlertDialogDescription>
                     {tSignalCard('deleteConfirm')}
                   </AlertDialogDescription>
@@ -399,7 +411,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           </div>
 
           <div className="flex min-w-0 flex-wrap items-center gap-2 text-1 text-muted-foreground">
-            {metaBadges.length > 0 ? <BadgesList isLoading={isLoading} badges={metaBadges} /> : null}
+            {metaBadges.length > 0 ? (
+              <BadgesList isLoading={isLoading} badges={metaBadges} />
+            ) : null}
             <div className="ml-auto flex min-w-0 items-center gap-3">
               <span className="inline-flex min-w-0 items-center gap-1">
                 <ClockIcon
