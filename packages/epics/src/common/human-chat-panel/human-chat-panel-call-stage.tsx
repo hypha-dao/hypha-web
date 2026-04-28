@@ -1431,7 +1431,7 @@ const FeedContent = ({
             muted={feed.isLocal()}
             aria-label={ariaLabel}
           />
-          {feed.isAudioMuted() && (
+          {feed.isAudioMuted() && !(isFullView && !isPip) && (
             <div
               className={cn(
                 'pointer-events-none absolute z-[2] flex items-center justify-center rounded-md border border-destructive/30 bg-destructive/20 text-destructive-foreground shadow-sm backdrop-blur-sm',
@@ -1529,7 +1529,9 @@ const FeedContent = ({
             ) : (
               <>
                 {overlayLabel}
-                {feed.isAudioMuted() ? ` · ${t('callParticipantMuted')}` : null}
+                {feed.isAudioMuted() && !(isFullView && !isPip)
+                  ? ` · ${t('callParticipantMuted')}`
+                  : null}
               </>
             )}
           </p>
