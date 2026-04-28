@@ -1714,14 +1714,28 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     }
   }, [pathname, roomId, mode]);
 
+  /**
+   * Global mention badge: avoid listening to `ClientEvent.Room` — it fires on almost every
+   * room/timeline update and was calling `computeAggregateUnreadMentionCount` (full timeline
+   * scan per joined room) hundreds of times per second, freezing the UI and flooding DevTools.
+   * Incremental sync covers new @-mentions across rooms; current-room bumps still flow via
+   * `unreadBump` from timeline/receipt listeners.
+   */
   useEffect(() => {
     if (!client || !currentUserId) return;
-    const bump = () => setAggregateMentionBump((n) => n + 1);
-    client.on(ClientEvent.Sync, bump);
-    client.on(ClientEvent.Room, bump);
+    let debounce: ReturnType<typeof setTimeout> | null = null;
+    const SCHEDULE_MS = 500;
+    const scheduleBump = () => {
+      if (debounce != null) return;
+      debounce = setTimeout(() => {
+        debounce = null;
+        setAggregateMentionBump((n) => n + 1);
+      }, SCHEDULE_MS);
+    };
+    client.on(ClientEvent.Sync, scheduleBump);
     return () => {
-      client.removeListener(ClientEvent.Sync, bump);
-      client.removeListener(ClientEvent.Room, bump);
+      if (debounce != null) clearTimeout(debounce);
+      client.removeListener(ClientEvent.Sync, scheduleBump);
     };
   }, [client, currentUserId]);
 
