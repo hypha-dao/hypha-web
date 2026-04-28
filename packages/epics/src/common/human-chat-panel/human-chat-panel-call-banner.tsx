@@ -158,8 +158,8 @@ export function HumanChatPanelCallBanner({
         {isConnectingPhase
           ? t('callConnecting')
           : callState === 'connected'
-            ? t('callActiveInSpace')
-            : null}
+          ? t('callActiveInSpace')
+          : null}
       </div>
       {callState === 'connected' && tabBackgroundWhileInCall && (
         <p className="border-b border-border/60 bg-muted/50 px-4 py-1.5 text-xs text-muted-foreground">
