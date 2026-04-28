@@ -49,6 +49,93 @@ export type UploadLeadImageProps = {
   };
 };
 
+const PARALLAX_SCROLL_CSS_VAR = '--upload-lead-scroll-y';
+
+type ParallaxTarget = Window | HTMLElement;
+
+type ParallaxSubscription = {
+  count: number;
+  rafId: number;
+  onScroll: () => void;
+  detach: () => void;
+};
+
+const parallaxSubscriptions = new Map<ParallaxTarget, ParallaxSubscription>();
+
+function findScrollableAncestor(start: HTMLElement): HTMLElement | null {
+  let node: HTMLElement | null = start.parentElement;
+  while (node) {
+    const style = window.getComputedStyle(node);
+    const canScrollY = /(auto|scroll|overlay)/.test(style.overflowY);
+    if (canScrollY && node.scrollHeight > node.clientHeight) return node;
+    node = node.parentElement;
+  }
+  return null;
+}
+
+function getTargetScrollY(target: ParallaxTarget): number {
+  return target instanceof Window ? target.scrollY : target.scrollTop;
+}
+
+function setTargetScrollCssVar(target: ParallaxTarget): void {
+  const scrollY = getTargetScrollY(target);
+  if (target instanceof Window) {
+    document.documentElement.style.setProperty(
+      PARALLAX_SCROLL_CSS_VAR,
+      `${scrollY}px`,
+    );
+    return;
+  }
+  target.style.setProperty(PARALLAX_SCROLL_CSS_VAR, `${scrollY}px`);
+}
+
+function ensureParallaxSubscription(target: ParallaxTarget): () => void {
+  const existing = parallaxSubscriptions.get(target);
+  if (existing) {
+    existing.count += 1;
+    return () => {
+      existing.count -= 1;
+      if (existing.count > 0) return;
+      if (existing.rafId) window.cancelAnimationFrame(existing.rafId);
+      existing.detach();
+      parallaxSubscriptions.delete(target);
+    };
+  }
+
+  let rafId = 0;
+  const onScroll = () => {
+    if (rafId) return;
+    rafId = window.requestAnimationFrame(() => {
+      rafId = 0;
+      setTargetScrollCssVar(target);
+      const subscription = parallaxSubscriptions.get(target);
+      if (subscription) subscription.rafId = 0;
+    });
+    const subscription = parallaxSubscriptions.get(target);
+    if (subscription) subscription.rafId = rafId;
+  };
+  const detach = () => target.removeEventListener('scroll', onScroll);
+
+  setTargetScrollCssVar(target);
+  target.addEventListener('scroll', onScroll, { passive: true });
+  parallaxSubscriptions.set(target, {
+    count: 1,
+    rafId,
+    onScroll,
+    detach,
+  });
+
+  return () => {
+    const subscription = parallaxSubscriptions.get(target);
+    if (!subscription) return;
+    subscription.count -= 1;
+    if (subscription.count > 0) return;
+    if (subscription.rafId) window.cancelAnimationFrame(subscription.rafId);
+    subscription.detach();
+    parallaxSubscriptions.delete(target);
+  };
+}
+
 function dataURLtoFile(dataUrl: string, filename: string) {
   if (!dataUrl) throw new Error('dataUrl is undefined');
   const arr = dataUrl.split(',');
@@ -131,7 +218,6 @@ export const UploadLeadImage = ({
   } | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const rootRef = React.useRef<HTMLDivElement | null>(null);
-  const [parallaxY, setParallaxY] = React.useState(0);
   const [reduceMotion, setReduceMotion] = React.useState(false);
 
   React.useEffect(() => {
@@ -145,51 +231,15 @@ export const UploadLeadImage = ({
 
   React.useEffect(() => {
     if (reduceMotion) {
-      setParallaxY(0);
+      rootRef.current?.style.removeProperty(PARALLAX_SCROLL_CSS_VAR);
       return;
     }
 
     const rootEl = rootRef.current;
     if (!rootEl) return;
 
-    const findScrollableAncestor = (start: HTMLElement): HTMLElement | null => {
-      let node: HTMLElement | null = start.parentElement;
-      while (node) {
-        const style = window.getComputedStyle(node);
-        const canScrollY = /(auto|scroll|overlay)/.test(style.overflowY);
-        if (canScrollY && node.scrollHeight > node.clientHeight) return node;
-        node = node.parentElement;
-      }
-      return null;
-    };
-
     const scrollTarget = findScrollableAncestor(rootEl) ?? window;
-    let rafId = 0;
-
-    const readScrollTop = () => {
-      const raw =
-        scrollTarget instanceof Window
-          ? scrollTarget.scrollY
-          : scrollTarget.scrollTop;
-      const next = Math.min(20, Math.max(-20, raw * 0.08));
-      setParallaxY(next);
-    };
-
-    const onScroll = () => {
-      if (rafId) return;
-      rafId = window.requestAnimationFrame(() => {
-        rafId = 0;
-        readScrollTop();
-      });
-    };
-
-    readScrollTop();
-    scrollTarget.addEventListener('scroll', onScroll, { passive: true });
-
-    return () => {
-      if (rafId) window.cancelAnimationFrame(rafId);
-      scrollTarget.removeEventListener('scroll', onScroll);
-    };
+    return ensureParallaxSubscription(scrollTarget);
   }, [reduceMotion]);
 
   const onDrop = React.useCallback(
@@ -296,7 +346,9 @@ export const UploadLeadImage = ({
             style={
               reduceMotion
                 ? undefined
-                : { transform: `translate3d(0, ${parallaxY}px, 0)` }
+                : {
+                    transform: `translate3d(0, clamp(-20px, calc(var(${PARALLAX_SCROLL_CSS_VAR}, 0px) * 0.08), 20px), 0)`,
+                  }
             }
             aria-hidden
           >
