@@ -21,6 +21,7 @@ export type SpaceGroupCallErrorCode =
   | 'NO_ROOM'
   | 'NOT_READY'
   | 'PERMISSION_DENIED'
+  | 'CONNECT_STALL'
   | 'WEBRTC_FAILED'
   | 'UNKNOWN';
 
@@ -652,6 +653,12 @@ export function useSpaceGroupCall(roomId: string | null) {
       updateParticipantCount();
       setCallState('connecting');
 
+      /**
+       * Probe TURN before `enter()`: missing homeserver TURN config often makes
+       * `gc.enter()` stall, so post-enter diagnostics would never be emitted.
+       */
+      void probeMatrixTurnServerReadiness({ client, roomId, kind });
+
       clearConnectingStallTimer();
       connectingStallTimerRef.current = setTimeout(() => {
         clearConnectingStallTimer();
@@ -664,7 +671,7 @@ export function useSpaceGroupCall(roomId: string | null) {
           });
         }
         isJoiningRef.current = false;
-        setErrorCode('UNKNOWN');
+        setErrorCode('CONNECT_STALL');
         if (roomId) {
           logSpaceGroupCallEvent({
             name: 'hypha.group_call.error',
@@ -752,8 +759,6 @@ export function useSpaceGroupCall(roomId: string | null) {
           summaryStatsIntervalMs: GROUP_WEBRTC_SUMMARY_STATS_MS,
         });
       }
-
-      void probeMatrixTurnServerReadiness({ client, roomId, kind });
 
       setCallState('connected');
       refreshLocalPreview();

@@ -1942,6 +1942,7 @@
     "callErrorPermission": "Se denegó el acceso a la cámara o al micrófono. Revisa la configuración del navegador.",
     "callErrorPermissionGuidance": "Actualiza los permisos de cámara y micrófono de este sitio en la configuración del navegador e inténtalo de nuevo aquí.",
     "callErrorGeneric": "No se pudo iniciar la llamada. Inténtalo de nuevo.",
+    "callErrorConnectStall": "La llamada no pudo conectarse. A menudo se debe a que falta la configuración del servidor TURN de Matrix o a una red restrictiva.",
     "callErrorNotReady": "El servidor de llamadas aún no está listo. Espera un momento e inténtalo de nuevo.",
     "callErrorNoClient": "No estás conectado al chat. Revisa la conexión e inténtalo de nuevo.",
     "callErrorNoRoom": "Esta conversación no está disponible. Vuelve al espacio e inténtalo de nuevo.",

@@ -44,6 +44,8 @@ function errorKey(code: SpaceGroupCallErrorCode): string {
       return 'callErrorPermission';
     case 'NOT_READY':
       return 'callErrorNotReady';
+    case 'CONNECT_STALL':
+      return 'callErrorConnectStall';
     case 'NO_ROOM':
       return 'callErrorNoRoom';
     case 'NO_CLIENT':
@@ -86,7 +88,9 @@ export function HumanChatPanelCallBanner({
   const t = useTranslations('HumanChatPanel');
   const showRetryOnError =
     errorCode != null &&
-    (errorCode === 'WEBRTC_FAILED' || errorCode === 'UNKNOWN');
+    (errorCode === 'CONNECT_STALL' ||
+      errorCode === 'WEBRTC_FAILED' ||
+      errorCode === 'UNKNOWN');
 
   if (callState === 'error' && errorCode) {
     return (
@@ -154,8 +158,8 @@ export function HumanChatPanelCallBanner({
         {isConnectingPhase
           ? t('callConnecting')
           : callState === 'connected'
-          ? t('callActiveInSpace')
-          : null}
+            ? t('callActiveInSpace')
+            : null}
       </div>
       {callState === 'connected' && tabBackgroundWhileInCall && (
         <p className="border-b border-border/60 bg-muted/50 px-4 py-1.5 text-xs text-muted-foreground">

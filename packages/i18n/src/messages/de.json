@@ -1943,6 +1943,7 @@
     "callErrorPermission": "Kamera- oder Mikrofonzugriff verweigert. Bitte Browsereinstellungen prüfen.",
     "callErrorPermissionGuidance": "Aktualisieren Sie Kamera- und Mikrofonberechtigungen für diese Seite in den Browsereinstellungen, und versuchen Sie es hier erneut.",
     "callErrorGeneric": "Anruf konnte nicht gestartet werden. Bitte erneut versuchen.",
+    "callErrorConnectStall": "Der Anruf konnte keine Verbindung herstellen. Häufig liegt das an fehlender Matrix-TURN-Server-Konfiguration oder einem eingeschränkten Netzwerk.",
     "callErrorNotReady": "Der Anrufdienst ist noch nicht bereit. Warten Sie kurz und versuchen Sie es erneut.",
     "callErrorNoClient": "Sie sind nicht mit dem Chat verbunden. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
     "callErrorNoRoom": "Dieses Gespräch ist nicht verfügbar. Gehen Sie zum Space zurück und versuchen Sie es erneut.",
