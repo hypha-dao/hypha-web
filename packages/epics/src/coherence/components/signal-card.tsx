@@ -62,6 +62,20 @@ const PRIORITY_BANNER_OVERLAY: Record<CoherencePriority, string> = {
   low: 'bg-success-9/15',
 };
 
+/** Badge only exposes accent|error|warn|neutral|success — map coherence-only tokens. */
+function badgeColorFromCoherenceType(
+  cv: string | undefined,
+): BadgeProps['colorVariant'] {
+  switch (cv) {
+    case 'tension':
+      return 'warn';
+    case 'insight':
+      return 'accent';
+    default:
+      return (cv ?? 'accent') as BadgeProps['colorVariant'];
+  }
+}
+
 type SignalCardProps = {
   isLoading: boolean;
   refresh: () => Promise<void>;
@@ -131,9 +145,8 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     const typeBadge: BadgeItem = {
       label: typeLabel,
       icon: coherenceType?.icon as LucideReactIcon,
-      variant: 'outline',
-      colorVariant: (coherenceType?.colorVariant ??
-        'accent') as BadgeProps['colorVariant'],
+      variant: 'soft',
+      colorVariant: badgeColorFromCoherenceType(coherenceType?.colorVariant),
     };
     return [typeBadge];
   }, [coherenceType, typeLabel]);
@@ -185,7 +198,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       : tag;
     return {
       label: `#${displayLabel}`,
-      variant: 'outline',
+      variant: 'soft',
       colorVariant: 'neutral',
     };
   });
