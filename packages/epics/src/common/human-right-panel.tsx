@@ -1870,11 +1870,18 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           while (pendingCoherenceMessageCountRef.current) {
             const next = pendingCoherenceMessageCountRef.current;
             pendingCoherenceMessageCountRef.current = null;
-            await updateCoherenceBySlug({
-              slug: next.slug,
-              messages: next.count,
-            });
-            lastPersistedCoherenceMessageCountRef.current = next;
+            try {
+              await updateCoherenceBySlug({
+                slug: next.slug,
+                messages: next.count,
+              });
+              lastPersistedCoherenceMessageCountRef.current = next;
+            } catch (error) {
+              if (!pendingCoherenceMessageCountRef.current) {
+                pendingCoherenceMessageCountRef.current = next;
+              }
+              throw error;
+            }
           }
         } finally {
           coherenceMessageCountSyncInFlightRef.current = false;
@@ -1886,6 +1893,17 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
           '[HumanRightPanel] Failed to persist coherence message count:',
           error,
         );
+        if (pendingCoherenceMessageCountRef.current) {
+          coherenceMessageCountSyncTimeoutRef.current = setTimeout(() => {
+            if (coherenceMessageCountSyncInFlightRef.current) return;
+            void flushMessageCountSync().catch((retryError) => {
+              console.warn(
+                '[HumanRightPanel] Retry failed to persist coherence message count:',
+                retryError,
+              );
+            });
+          }, 1000);
+        }
       });
     }, 500);
 
