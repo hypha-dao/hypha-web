@@ -37,9 +37,7 @@ export const SignalGridContainer = ({
       isLoading={false}
       basePath={basePath}
       leadImage={leadImage}
-      signals={paginatedSignals.map((signal) => ({
-        ...signal,
-      }))}
+      signals={paginatedSignals}
       refresh={refresh}
       onSignalClick={onSignalClick}
     />

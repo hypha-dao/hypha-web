@@ -545,6 +545,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const coherenceMessageCountSyncTimeoutRef = useRef<ReturnType<
     typeof setTimeout
   > | null>(null);
+  const coherenceMessageCountSeqRef = useRef(0);
 
   const currentUserId = client?.getUserId?.() ?? null;
   const currentUserIdRef = useRef(currentUserId);
@@ -1852,14 +1853,19 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     }
 
     coherenceMessageCountSyncTimeoutRef.current = setTimeout(() => {
+      const nextSeq = coherenceMessageCountSeqRef.current + 1;
+      coherenceMessageCountSeqRef.current = nextSeq;
+
       updateCoherenceBySlug({ slug: coherenceSlug, messages: messageCount })
         .then(() => {
+          if (coherenceMessageCountSeqRef.current !== nextSeq) return;
           lastPersistedCoherenceMessageCountRef.current = {
             slug: coherenceSlug,
             count: messageCount,
           };
         })
         .catch((error) => {
+          if (coherenceMessageCountSeqRef.current !== nextSeq) return;
           console.warn(
             '[HumanRightPanel] Failed to persist coherence message count:',
             error,

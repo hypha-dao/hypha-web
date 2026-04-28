@@ -130,6 +130,67 @@ export const UploadLeadImage = ({
     height: number;
   } | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const rootRef = React.useRef<HTMLDivElement | null>(null);
+  const [parallaxY, setParallaxY] = React.useState(0);
+  const [reduceMotion, setReduceMotion] = React.useState(false);
+
+  React.useEffect(() => {
+    const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    if (!mq) return;
+    const sync = () => setReduceMotion(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+
+  React.useEffect(() => {
+    if (reduceMotion) {
+      setParallaxY(0);
+      return;
+    }
+
+    const rootEl = rootRef.current;
+    if (!rootEl) return;
+
+    const findScrollableAncestor = (start: HTMLElement): HTMLElement | null => {
+      let node: HTMLElement | null = start.parentElement;
+      while (node) {
+        const style = window.getComputedStyle(node);
+        const canScrollY = /(auto|scroll|overlay)/.test(style.overflowY);
+        if (canScrollY && node.scrollHeight > node.clientHeight) return node;
+        node = node.parentElement;
+      }
+      return null;
+    };
+
+    const scrollTarget = findScrollableAncestor(rootEl) ?? window;
+    let rafId = 0;
+
+    const readScrollTop = () => {
+      const raw =
+        scrollTarget instanceof Window
+          ? scrollTarget.scrollY
+          : scrollTarget.scrollTop;
+      const next = Math.min(20, Math.max(-20, raw * 0.08));
+      setParallaxY(next);
+    };
+
+    const onScroll = () => {
+      if (rafId) return;
+      rafId = window.requestAnimationFrame(() => {
+        rafId = 0;
+        readScrollTop();
+      });
+    };
+
+    readScrollTop();
+    scrollTarget.addEventListener('scroll', onScroll, { passive: true });
+
+    return () => {
+      if (rafId) window.cancelAnimationFrame(rafId);
+      scrollTarget.removeEventListener('scroll', onScroll);
+    };
+  }, [reduceMotion]);
 
   const onDrop = React.useCallback(
     (acceptedFiles: File[]) => {
@@ -220,6 +281,7 @@ export const UploadLeadImage = ({
       <AspectRatio
         ratio={762 / 270}
         {...getRootProps()}
+        ref={rootRef}
         className={clsx(
           'group cursor-pointer relative',
           'flex justify-center items-center overflow-hidden',
@@ -229,7 +291,20 @@ export const UploadLeadImage = ({
       >
         <input {...getInputProps()} />
         {displaySrc && typeof displaySrc === 'string' && (
-          <PreviewImg src={displaySrc} />
+          <div
+            className="pointer-events-none absolute inset-x-0 top-[-10%] h-[120%] will-change-transform"
+            style={
+              reduceMotion
+                ? undefined
+                : { transform: `translate3d(0, ${parallaxY}px, 0)` }
+            }
+            aria-hidden
+          >
+            <PreviewImg
+              src={displaySrc}
+              className="pointer-events-none h-full w-full object-cover"
+            />
+          </div>
         )}
         <PreviewOverlay isVisible={!displaySrc || isDragActive}>
           {isDragActive ? (

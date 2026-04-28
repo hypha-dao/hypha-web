@@ -49,7 +49,7 @@ export const CoherenceTypeButton = ({
       <div className="flex w-full flex-row items-start gap-3">
         <div
           className={cn(
-            'flex h-8 w-8 shrink-0 items-center justify-center text-foreground',
+            'flex h-8 w-8 shrink-0 items-center justify-center',
             textColor,
           )}
         >
