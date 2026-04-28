@@ -6,10 +6,27 @@ import { DefaultChatTransport } from 'ai';
 import { useAuthentication } from '@hypha-platform/authentication';
 import { useParams, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
+import {
+  FileCheck2,
+  HandCoins,
+  Radio,
+  UsersRound,
+} from 'lucide-react';
+import {
+  DEFAULT_SPACE_AVATAR_IMAGE,
+  useSpacesBySlugs,
+} from '@hypha-platform/core/client';
 import {
   SidebarHeader,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
 } from '@hypha-platform/ui';
 
 import { AiPanelHeader, AiPanelMessages, AiPanelChatBar } from './ai-panel';
@@ -28,7 +45,7 @@ const DEBUG = process.env.NEXT_PUBLIC_CHAT_DEBUG === 'true';
 export function AiLeftPanel() {
   const { isAuthenticated, isLoading, login, getAccessToken } =
     useAuthentication();
-  const params = useParams<{ id?: string }>();
+  const params = useParams<{ id?: string; lang?: string }>();
   const pathname = usePathname();
   const spaceSlugFromPath = useMemo(
     () => getDhoSpaceSlugFromPathname(pathname),
@@ -37,6 +54,49 @@ export function AiLeftPanel() {
   /** Prefer pathname: AiLeftPanel mounts in root layout where `id` is often missing for `/dho/[id]/...` routes. */
   const spaceSlug = spaceSlugFromPath ?? params?.id;
   const t = useTranslations('AiPanel');
+  const tCommon = useTranslations('Common');
+  const tCoherence = useTranslations('CoherenceTab');
+  const lang = typeof params?.lang === 'string' ? params.lang : 'en';
+  const { state: sidebarState } = useSidebar();
+  const isCollapsed = sidebarState === 'collapsed';
+  const { spaces: activeSpaces } = useSpacesBySlugs(spaceSlug ? [spaceSlug] : []);
+  const activeSpaceIcon =
+    activeSpaces[0]?.logoUrl?.trim() || DEFAULT_SPACE_AVATAR_IMAGE;
+  const activeSpaceTitle = activeSpaces[0]?.title?.trim() || t('title');
+
+  const sectionNavItems = useMemo(() => {
+    if (!spaceSlug) return [];
+    return [
+      {
+        key: 'signals',
+        label: tCoherence('signals'),
+        icon: Radio,
+        href: `/${lang}/dho/${spaceSlug}/coherence`,
+        active: pathname.includes('/coherence'),
+      },
+      {
+        key: 'agreements',
+        label: tCommon('Agreements'),
+        icon: FileCheck2,
+        href: `/${lang}/dho/${spaceSlug}/agreements`,
+        active: pathname.includes('/agreements'),
+      },
+      {
+        key: 'members',
+        label: tCommon('Members'),
+        icon: UsersRound,
+        href: `/${lang}/dho/${spaceSlug}/members`,
+        active: pathname.includes('/members'),
+      },
+      {
+        key: 'treasury',
+        label: tCommon('Treasury'),
+        icon: HandCoins,
+        href: `/${lang}/dho/${spaceSlug}/treasury`,
+        active: pathname.includes('/treasury'),
+      },
+    ];
+  }, [lang, pathname, spaceSlug, tCommon, tCoherence]);
 
   const [input, setInput] = useState('');
 
@@ -63,7 +123,7 @@ export function AiLeftPanel() {
     [getAccessToken, spaceSlug],
   );
 
-  const { messages, sendMessage, stop, status, setMessages, error } = useChat({
+  const { messages, sendMessage, stop, status, error } = useChat({
     transport,
   });
 
@@ -100,8 +160,6 @@ export function AiLeftPanel() {
     void stop();
   }, [stop]);
 
-  const handleResetChat = useCallback(() => setMessages([]), [setMessages]);
-
   const handleSuggestionSelect = useCallback(
     async (text: string) => {
       try {
@@ -123,7 +181,7 @@ export function AiLeftPanel() {
     return (
       <>
         <SidebarHeader className="bg-background-2 p-0">
-          <AiPanelHeader onResetChat={handleResetChat} />
+          <AiPanelHeader />
         </SidebarHeader>
         <SidebarContent className="flex flex-1 items-center justify-center">
           <div className="text-sm text-muted-foreground">{t('loading')}</div>
@@ -136,7 +194,7 @@ export function AiLeftPanel() {
     return (
       <>
         <SidebarHeader className="bg-background-2 p-0">
-          <AiPanelHeader onResetChat={handleResetChat} />
+          <AiPanelHeader />
         </SidebarHeader>
         <SidebarContent className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
           <div className="text-center text-sm text-muted-foreground">
@@ -153,12 +211,69 @@ export function AiLeftPanel() {
     );
   }
 
+  if (isCollapsed) {
+    return (
+      <>
+        <SidebarHeader className="items-center bg-background-2 p-2">
+          <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border/70">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={activeSpaceIcon}
+              alt={activeSpaceTitle}
+              className="h-full w-full object-cover"
+            />
+          </div>
+        </SidebarHeader>
+        <SidebarContent className="bg-background-2">
+          <SidebarGroup className="p-2">
+            <SidebarGroupContent>
+              <SidebarMenu className="items-center">
+                {sectionNavItems.map((item) => (
+                  <SidebarMenuItem key={item.key}>
+                    <SidebarMenuButton
+                      asChild
+                      tooltip={item.label}
+                      isActive={item.active}
+                      className="justify-center px-0"
+                    >
+                      <Link href={item.href} aria-label={item.label}>
+                        <item.icon />
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+      </>
+    );
+  }
+
   return (
     <>
       <SidebarHeader className="bg-background-2 p-0">
-        <AiPanelHeader onResetChat={handleResetChat} />
+        <AiPanelHeader />
       </SidebarHeader>
       <SidebarContent className="bg-background-2 min-h-0">
+        {sectionNavItems.length > 0 ? (
+          <SidebarGroup className="border-b border-border/70 p-2">
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {sectionNavItems.map((item) => (
+                  <SidebarMenuItem key={item.key}>
+                    <SidebarMenuButton asChild isActive={item.active}>
+                      <Link href={item.href}>
+                        <item.icon />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ) : null}
         {error && (
           <div
             role="alert"
