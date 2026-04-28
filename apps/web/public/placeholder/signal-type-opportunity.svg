@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 96" fill="none" aria-hidden="true">
+  <defs>
+    <linearGradient id="oppBg" x1="0" y1="96" x2="400" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ecfdf5"/>
+      <stop offset="0.45" stop-color="#a7f3d0"/>
+      <stop offset="1" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="oppRay" x1="200" y1="96" x2="200" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="96" fill="url(#oppBg)"/>
+  <path d="M0 72 Q100 40 200 48 T400 32 L400 96 L0 96 Z" fill="url(#oppRay)" opacity="0.9"/>
+  <path d="M52 68 L120 28 L188 52 L268 20 L348 44" stroke="#047857" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.45" fill="none"/>
+</svg>

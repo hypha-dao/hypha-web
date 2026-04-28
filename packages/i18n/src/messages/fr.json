@@ -1990,6 +1990,7 @@
     "hideArchived": "Masquer les archivés",
     "messageCount": "{count, plural, one {# message} other {# messages}}",
     "priorityVisualAlt": "Niveau de priorité",
+    "typeSignalBannerAlt": "Signal {type}, priorité {priority}",
     "unarchiveConversation": "Désarchiver la conversation",
     "unarchiveConfirm": "Voulez-vous vraiment désarchiver cette conversation ?",
     "yesUnarchive": "Oui, désarchiver",
