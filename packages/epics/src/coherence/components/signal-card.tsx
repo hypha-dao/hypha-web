@@ -342,30 +342,28 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             </Skeleton>
           </div>
 
-          <div className="flex min-w-0 flex-wrap items-center gap-2 text-1 text-muted-foreground">
-            <div className="ml-auto flex min-w-0 items-center gap-3">
-              <span className="inline-flex min-w-0 items-center gap-1">
-                <ClockIcon
-                  className="h-3.5 w-3.5 shrink-0 opacity-70"
-                  aria-hidden
-                />
-                {createdAt
-                  ? formatDistanceToNowStrict(new Date(createdAt), {
-                      addSuffix: true,
-                      locale: dateFnsLocale,
-                    })
-                  : ''}
-              </span>
-              <Badge
-                isLoading={isLoading}
-                variant="outline"
-                colorVariant="neutral"
-                className="gap-1.5"
-              >
-                <Users size={12} aria-hidden />
-                <span>{t('messageCount', { count: messages })}</span>
-              </Badge>
-            </div>
+          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 text-1 text-muted-foreground">
+            <span className="inline-flex min-w-0 items-center gap-1">
+              <ClockIcon
+                className="h-3.5 w-3.5 shrink-0 opacity-70"
+                aria-hidden
+              />
+              {createdAt
+                ? formatDistanceToNowStrict(new Date(createdAt), {
+                    addSuffix: true,
+                    locale: dateFnsLocale,
+                  })
+                : ''}
+            </span>
+            <Badge
+              isLoading={isLoading}
+              variant="outline"
+              colorVariant="neutral"
+              className="gap-1.5"
+            >
+              <Users size={12} aria-hidden />
+              <span>{t('messageCount', { count: messages })}</span>
+            </Badge>
           </div>
 
           <Skeleton
