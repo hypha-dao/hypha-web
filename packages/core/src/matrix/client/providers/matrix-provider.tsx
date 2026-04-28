@@ -402,7 +402,8 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           /** Default matrix-js-sdk log level is extremely chatty in the browser. */
           logger: createHyphaMatrixClientLogger(),
           disableVoip: false,
-          useE2eForGroupCall: true,
+          /** matrix-js-sdk v40 Rust crypto path cannot send encrypted group-call to-device VoIP events. */
+          useE2eForGroupCall: false,
           useLivekitForGroupCalls: false,
           forceTURN: matrixWebRtcForceTurnFromEnv(),
           fallbackICEServerAllowed: matrixWebRtcFallbackIceAllowedFromEnv(),

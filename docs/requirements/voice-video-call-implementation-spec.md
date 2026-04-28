@@ -100,7 +100,7 @@ Extend `MatrixSdk.createClient({ ... })` with **explicit** VoIP-related options 
 | Option                     | Value (v1 recommendation)                                           | Rationale                                                    |
 | -------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------ |
 | `disableVoip`              | `false`                                                             | Enable TURN fetch and VoIP stack.                            |
-| `useE2eForGroupCall`       | `true` (default in typings)                                         | Encrypt to-device signaling for group calls where supported. |
+| `useE2eForGroupCall`       | `false` for `matrix-js-sdk@40.x`                                    | SDK v40 Rust crypto path throws `Unimplemented` for encrypted group-call to-device VoIP signaling; WebRTC media remains encrypted. |
 | `useLivekitForGroupCalls`  | `false`                                                             | Native WebRTC via SDK for v1; LiveKit is a later epic.       |
 | `forceTURN`                | `false` initially; expose env/feature flag if enterprise NAT issues | Stricter relay; test in staging.                             |
 | `fallbackICEServerAllowed` | align with security review                                          | Only enable if HS provides no TURN and product approves.     |
