@@ -5,8 +5,7 @@ import {
   COHERENCE_PRIORITY_OPTIONS,
   COHERENCE_TAGS,
   COHERENCE_TYPE_OPTIONS,
-  CoherencePriority,
-  CoherenceType,
+  DEFAULT_SPACE_LEAD_IMAGE,
   useCoherenceMutationsWeb2Rsc,
   useJwt,
   useMe,
@@ -20,10 +19,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   BadgeItem,
+  Badge,
   BadgesList,
   Button,
   Card,
   CardContent,
+  CardHeader,
   CardTitle,
   ConfirmDialog,
   Dialog,
@@ -42,45 +43,44 @@ import { ChatBubbleIcon, ClockIcon } from '@radix-ui/react-icons';
 import React from 'react';
 import type { BadgeProps } from '@hypha-platform/ui';
 import { useLocale, useTranslations } from 'next-intl';
-import { MessageSquare, Trash2 } from 'lucide-react';
+import { Trash2, Users } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
-
-const SIGNAL_TYPE_BANNER: Record<CoherenceType, string> = {
-  Opportunity: '/placeholder/signal-type-opportunity.svg',
-  Risk: '/placeholder/signal-type-risk.svg',
-  Tension: '/placeholder/signal-type-tension.svg',
-  Insight: '/placeholder/signal-type-insight.svg',
-  Trend: '/placeholder/signal-type-trend.svg',
-  Proposal: '/placeholder/signal-type-proposal.svg',
-};
-
-const PRIORITY_BANNER_OVERLAY: Record<CoherencePriority, string> = {
-  high: 'bg-destructive/25',
-  medium: 'bg-warning-9/20',
-  low: 'bg-success-9/15',
-};
-
-/** Badge only exposes accent|error|warn|neutral|success — map coherence-only tokens. */
-function badgeColorFromCoherenceType(
-  cv: string | undefined,
-): BadgeProps['colorVariant'] {
-  switch (cv) {
-    case 'tension':
-      return 'warn';
-    case 'insight':
-      return 'accent';
-    default:
-      return (cv ?? 'accent') as BadgeProps['colorVariant'];
-  }
-}
 
 type SignalCardProps = {
   isLoading: boolean;
   refresh: () => Promise<void>;
   onOpenConversation?: () => void;
   className?: string;
+  leadImage?: string;
+};
+
+const BADGE_COLOR_VARIANT_MAP: Record<string, BadgeProps['colorVariant']> = {
+  accent: 'accent',
+  error: 'error',
+  warn: 'warn',
+  warning: 'warn',
+  success: 'success',
+  neutral: 'neutral',
+  tension: 'warn',
+  insight: 'accent',
+};
+
+const HERO_TINT_CLASS_MAP: Record<BadgeProps['colorVariant'], string> = {
+  accent: 'bg-accent-9/23',
+  error: 'bg-error-9/23',
+  warn: 'bg-warning-9/23',
+  success: 'bg-success-9/23',
+  neutral: 'bg-neutral-9/23',
+};
+
+const HERO_PRIORITY_GRADIENT_CLASS_MAP: Record<BadgeProps['colorVariant'], string> = {
+  accent: 'to-accent-9/27',
+  error: 'to-error-9/27',
+  warn: 'to-warning-9/27',
+  success: 'to-success-9/27',
+  neutral: 'to-neutral-9/27',
 };
 
 export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
@@ -99,6 +99,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   refresh,
   onOpenConversation,
   className,
+  leadImage,
 }) => {
   const { jwt: authToken } = useJwt();
   const { person } = useMe();
@@ -141,46 +142,39 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     [priority],
   );
 
+  const typeColorVariant = React.useMemo<BadgeProps['colorVariant']>(
+    () => BADGE_COLOR_VARIANT_MAP[coherenceType?.colorVariant ?? 'accent'] ?? 'accent',
+    [coherenceType?.colorVariant],
+  );
+
+  const priorityColorVariant = React.useMemo<BadgeProps['colorVariant']>(
+    () =>
+      BADGE_COLOR_VARIANT_MAP[priorityMeta?.colorVariant ?? 'neutral'] ?? 'neutral',
+    [priorityMeta?.colorVariant],
+  );
+
   const metaBadges: BadgeItem[] = React.useMemo(() => {
     const typeBadge: BadgeItem = {
       label: typeLabel,
       icon: coherenceType?.icon as LucideReactIcon,
       variant: 'soft',
-      colorVariant: badgeColorFromCoherenceType(coherenceType?.colorVariant),
+      colorVariant: typeColorVariant,
     };
-    return [typeBadge];
-  }, [coherenceType, typeLabel]);
-
-  const priorityLabel = React.useMemo(() => {
-    if (!priorityMeta) return '';
-    return t(
+    if (!priorityMeta) return [typeBadge];
+    const priorityLabel = t(
       `priorities.${priorityMeta.priority}` as
         | 'priorities.high'
         | 'priorities.medium'
         | 'priorities.low',
     );
-  }, [priorityMeta, t]);
-
-  const typeBannerSrc =
-    SIGNAL_TYPE_BANNER[type] ?? SIGNAL_TYPE_BANNER.Opportunity;
-
-  const signalBannerAlt = React.useMemo(() => {
-    const pri =
-      priorityLabel ||
-      t(
-        `priorities.${priority}` as
-          | 'priorities.high'
-          | 'priorities.medium'
-          | 'priorities.low',
-      );
-    return t('typeSignalBannerAlt', {
-      type: typeLabel,
-      priority: pri,
-    });
-  }, [priority, priorityLabel, t, typeLabel]);
-
-  const priorityOverlayClass =
-    PRIORITY_BANNER_OVERLAY[priority] ?? PRIORITY_BANNER_OVERLAY.medium;
+    const priorityBadge: BadgeItem = {
+      label: priorityLabel,
+      icon: priorityMeta.icon as LucideReactIcon,
+      variant: 'soft',
+      colorVariant: priorityColorVariant,
+    };
+    return [typeBadge, priorityBadge];
+  }, [coherenceType, priorityMeta, t, typeLabel, typeColorVariant, priorityColorVariant]);
 
   const tagList: BadgeItem[] = tags.map((tag) => {
     const displayLabel = (COHERENCE_TAGS as readonly string[]).includes(tag)
@@ -198,7 +192,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
       : tag;
     return {
       label: `#${displayLabel}`,
-      variant: 'soft',
+      variant: 'outline',
       colorVariant: 'neutral',
     };
   });
@@ -260,48 +254,54 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   return (
     <Card
       className={cn(
-        'group flex h-full w-full min-h-0 flex-col overflow-hidden rounded-xl border-border/70 bg-card pt-0 shadow-sm',
+        'group flex h-full w-full min-h-0 flex-col overflow-hidden rounded-2xl border-border/70 bg-card pt-0 shadow-sm',
         'transition-[border-color,box-shadow] duration-200 ease-out',
         'hover:border-accent-8/75 hover:shadow-md',
         'focus-within:border-accent-8/75 focus-within:shadow-md',
         className,
       )}
     >
-      <CardContent className="relative flex min-h-0 flex-1 flex-col gap-0 p-0">
-        <div className="relative w-full overflow-hidden">
-          <Skeleton
-            className="w-full rounded-none"
-            width="100%"
-            height="88px"
-            loading={isLoading}
-          >
-            <div className="relative h-[5.5rem] w-full overflow-hidden rounded-t-xl sm:h-24">
-              <Image
-                width={400}
-                height={96}
-                className="h-full w-full object-cover object-center"
-                src={typeBannerSrc}
-                alt={signalBannerAlt}
-                unoptimized
-              />
-              <div
-                className={cn(
-                  'pointer-events-none absolute inset-0',
-                  priorityOverlayClass,
-                )}
-                aria-hidden
-              />
-            </div>
-          </Skeleton>
-        </div>
+      <CardHeader className="relative h-48 shrink-0 overflow-hidden p-0">
+        <Skeleton
+          className="h-full min-w-full"
+          width="100%"
+          height="192px"
+          loading={isLoading}
+        >
+          <Image
+            width={640}
+            height={192}
+            className="h-full w-full object-cover"
+            src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
+            alt={title || ''}
+          />
+          <div
+            className={cn(
+              'absolute inset-0 pointer-events-none',
+              HERO_TINT_CLASS_MAP[typeColorVariant],
+            )}
+            aria-hidden
+          />
+          <div
+            className={cn(
+              'absolute inset-0 pointer-events-none bg-gradient-to-tr from-transparent via-transparent',
+              HERO_PRIORITY_GRADIENT_CLASS_MAP[priorityColorVariant],
+            )}
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/22 to-transparent"
+            aria-hidden
+          />
+        </Skeleton>
         {isCreator && slug ? (
           <>
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
               colorVariant="neutral"
               size="sm"
-              className="absolute right-2 top-2 z-10 h-9 w-9 shrink-0 rounded-md border border-border/50 bg-background/80 p-0 text-muted-foreground shadow-sm backdrop-blur-sm hover:bg-background hover:text-destructive"
+              className="absolute right-3 top-3 z-10 h-10 w-10 shrink-0 rounded-none border border-white/15 bg-black/45 p-0 text-neutral-1 shadow-sm backdrop-blur-[1px] hover:bg-black/55 hover:text-white focus-visible:ring-2 focus-visible:ring-white/70"
               disabled={isLoading}
               aria-label={tSignalCard('deleteMenu')}
               title={tSignalCard('deleteMenu')}
@@ -327,9 +327,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 onClick={(e) => e.stopPropagation()}
               >
                 <AlertDialogHeader>
-                  <AlertDialogTitle>
-                    {tSignalCard('deleteSignal')}
-                  </AlertDialogTitle>
+                  <AlertDialogTitle>{tSignalCard('deleteSignal')}</AlertDialogTitle>
                   <AlertDialogDescription>
                     {tSignalCard('deleteConfirm')}
                   </AlertDialogDescription>
@@ -364,8 +362,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             </AlertDialog>
           </>
         ) : null}
-        <div className="relative flex min-h-0 min-w-0 flex-1 flex-col gap-3 px-4 pb-3 pt-4">
-          <div className={cn('min-w-0', isCreator && slug && 'pr-10')}>
+      </CardHeader>
+      <CardContent className="relative flex min-h-0 flex-1 flex-col gap-0 p-0">
+        <div className="relative flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 pt-4">
+          <div className="min-w-0">
             <Skeleton
               className="min-w-0"
               width="100%"
@@ -376,29 +376,33 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 {title}
               </CardTitle>
             </Skeleton>
-            {priorityLabel ? (
-              <p className="mt-0.5 text-1 font-medium text-muted-foreground">
-                {priorityLabel}
-              </p>
-            ) : null}
           </div>
 
-          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-2 text-1 text-muted-foreground">
-            {metaBadges.length > 0 ? (
-              <BadgesList isLoading={isLoading} badges={metaBadges} />
-            ) : null}
-            <span className="inline-flex min-w-0 items-center gap-1">
-              <ClockIcon
-                className="h-3.5 w-3.5 shrink-0 opacity-70"
-                aria-hidden
-              />
-              {createdAt
-                ? formatDistanceToNow(new Date(createdAt), {
-                    addSuffix: true,
-                    locale: dateFnsLocale,
-                  })
-                : ''}
-            </span>
+          <div className="flex min-w-0 flex-wrap items-center gap-2 text-1 text-muted-foreground">
+            {metaBadges.length > 0 ? <BadgesList isLoading={isLoading} badges={metaBadges} /> : null}
+            <div className="ml-auto flex min-w-0 items-center gap-3">
+              <span className="inline-flex min-w-0 items-center gap-1">
+                <ClockIcon
+                  className="h-3.5 w-3.5 shrink-0 opacity-70"
+                  aria-hidden
+                />
+                {createdAt
+                  ? formatDistanceToNow(new Date(createdAt), {
+                      addSuffix: true,
+                      locale: dateFnsLocale,
+                    })
+                  : ''}
+              </span>
+              <Badge
+                isLoading={isLoading}
+                variant="outline"
+                colorVariant="neutral"
+                className="gap-1.5"
+              >
+                <Users size={12} aria-hidden />
+                <span>{t('mentions', { count: messages })}</span>
+              </Badge>
+            </div>
           </div>
 
           <Skeleton
@@ -432,22 +436,18 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
             <DialogContent
               className={cn(
-                'flex max-h-[min(560px,85dvh)] flex-col gap-0 overflow-hidden border border-border/90 bg-background-2 p-0 shadow-2xl sm:max-w-lg',
+                'flex max-h-[min(560px,85dvh)] flex-col gap-0 overflow-hidden border-border/70 bg-card/95 p-0 shadow-2xl backdrop-blur-sm sm:max-w-lg',
                 'border-l-[3px] border-l-[var(--space-accent)]',
               )}
               style={spaceAccentPortalStyle}
               onClick={(e) => e.stopPropagation()}
               onPointerDownOutside={(e) => e.stopPropagation()}
             >
-              <DialogHeader
-                className={cn(
-                  'sticky top-0 z-[1] shrink-0 space-y-1 border-b border-border/90 bg-background-2/95 px-6 pb-4 pt-5 backdrop-blur-md supports-[backdrop-filter]:bg-background-2/80',
-                )}
-              >
-                <DialogTitle className="pr-2 text-balance text-base font-semibold leading-tight tracking-tight text-foreground">
+              <DialogHeader className="shrink-0 space-y-1.5 border-b border-border/60 bg-gradient-to-b from-muted/25 to-transparent px-6 pb-4 pt-6">
+                <DialogTitle className="pr-10 text-balance text-lg font-semibold leading-snug tracking-tight">
                   {title}
                 </DialogTitle>
-                <DialogDescription className="text-1 text-muted-foreground">
+                <DialogDescription className="text-xs text-muted-foreground">
                   {tSignalCard('fullDescriptionDialogSubtitle')}
                 </DialogDescription>
               </DialogHeader>
@@ -461,11 +461,11 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                   {plainDescription}
                 </p>
               </div>
-              <DialogFooter className="shrink-0 border-t border-border/90 bg-muted/10 px-6 py-4">
+              <DialogFooter className="shrink-0 border-t border-border/60 bg-muted/10 px-6 py-4">
                 <Button
                   type="button"
                   variant="outline"
-                  colorVariant="neutral"
+                  colorVariant="accent"
                   className="w-full sm:w-auto"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -481,23 +481,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           {tagList?.length > 0 ? (
             <BadgesList isLoading={isLoading} badges={tagList ?? []} />
           ) : null}
-
-          <div className="inline-flex items-center gap-1.5 text-1 text-muted-foreground">
-            <Skeleton loading={isLoading} height="16px" width="100px">
-              <>
-                <MessageSquare
-                  className="h-3.5 w-3.5 shrink-0 opacity-70"
-                  aria-hidden
-                />
-                <span className="text-neutral-11">
-                  {t('messageCount', { count: messages ?? 0 })}
-                </span>
-              </>
-            </Skeleton>
-          </div>
         </div>
 
-        <div className="mt-auto flex min-h-[4.25rem] shrink-0 flex-col justify-center border-t border-border/80 px-4 py-3">
+        <div className="mt-auto flex min-h-[4.25rem] shrink-0 flex-col justify-center border-t border-border px-4 py-3">
           {archived ? (
             <div
               onClick={(e) => {
