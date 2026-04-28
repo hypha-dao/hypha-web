@@ -32,6 +32,7 @@ import {
   matrixWebRtcForceTurnFromEnv,
   matrixWebRtcIceCandidatePoolSizeFromEnv,
 } from '../matrix-webrtc-env';
+import { createHyphaMatrixClientLogger } from '../matrix-client-logger';
 
 export interface SendAttachmentInput {
   file: File;
@@ -398,6 +399,8 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           accessToken,
           userId,
           deviceId,
+          /** Default matrix-js-sdk log level is extremely chatty in the browser. */
+          logger: createHyphaMatrixClientLogger(),
           disableVoip: false,
           useE2eForGroupCall: true,
           useLivekitForGroupCalls: false,

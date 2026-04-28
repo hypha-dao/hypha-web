@@ -1681,13 +1681,24 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     const room = client.getRoom(roomId);
     if (!room) return;
 
-    const bumpUnread = () => setUnreadBump((n) => n + 1);
+    /** Timeline fires very often during sync — debounce unread recompute to avoid main-thread thrash. */
+    let debounce: ReturnType<typeof setTimeout> | null = null;
+    const UNREAD_RECOMPUTE_MS = 400;
+    const bumpUnread = () => {
+      if (debounce != null) return;
+      debounce = setTimeout(() => {
+        debounce = null;
+        setUnreadBump((n) => n + 1);
+      }, UNREAD_RECOMPUTE_MS);
+    };
+
     room.on(RoomEvent.Receipt, bumpUnread);
     room.on(RoomEvent.AccountData, bumpUnread);
     room.on(RoomEvent.UnreadNotifications, bumpUnread);
     room.on(RoomEvent.Timeline, bumpUnread);
 
     return () => {
+      if (debounce != null) clearTimeout(debounce);
       room.off(RoomEvent.Receipt, bumpUnread);
       room.off(RoomEvent.AccountData, bumpUnread);
       room.off(RoomEvent.UnreadNotifications, bumpUnread);
@@ -1753,12 +1764,13 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     return computeHumanChatUnreadState(room ?? undefined, currentUserId);
   }, [client, roomId, currentUserId, unreadBump, mergedMessages.length]);
 
+  /** `unreadBump` intentionally omitted — it was re-running the all-rooms scan on every timeline event. */
   const aggregateMentionBadge = useMemo(() => {
     if (!client || !currentUserId) {
       return { count: 0, capped: false };
     }
     return computeAggregateUnreadMentionCount(client.getRooms(), currentUserId);
-  }, [client, currentUserId, aggregateMentionBump, unreadBump]);
+  }, [client, currentUserId, aggregateMentionBump]);
 
   const bellMentionCount = aggregateMentionBadge.count;
   const bellMentionCapped = aggregateMentionBadge.capped;
