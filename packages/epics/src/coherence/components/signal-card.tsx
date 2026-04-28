@@ -247,7 +247,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   return (
     <Card
       className={cn(
-        'group flex h-full w-full min-h-0 flex-col overflow-hidden rounded-2xl border-border/70 bg-card pt-0 shadow-sm',
+        'group flex h-full w-full min-h-0 flex-col overflow-hidden rounded-xl border-border/70 bg-card pt-0 shadow-sm',
         'transition-[border-color,box-shadow] duration-200 ease-out',
         'hover:border-accent-8/75 hover:shadow-md',
         'focus-within:border-accent-8/75 focus-within:shadow-md',
@@ -262,7 +262,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             height="88px"
             loading={isLoading}
           >
-            <div className="relative h-[5.5rem] w-full sm:h-24">
+            <div className="relative h-[5.5rem] w-full overflow-hidden rounded-t-xl sm:h-24">
               <Image
                 width={400}
                 height={96}
