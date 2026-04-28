@@ -66,11 +66,26 @@ existing global top-menu behavior that is explicitly out of scope.
 
 ### FR-5: Close-to-Collapsed Behavior (Images 9-10)
 
-- Clicking close collapses the left panel into icon-only rail state.
+- Clicking close collapses the **left navigation menu shell** (the new overlaid
+  menu that contains the former tabs as menu items) into icon-only rail state.
 - Collapsed state shows:
   - active space icon at top
   - vertical icon-only section navigation below
 - Expanding from collapsed state restores full menu with labels and dropdown.
+
+### FR-6: Non-Glitch State Coordination (Overlay vs Composer)
+
+- The menu shell and AI composer are separate visual layers but share one
+  canonical sidebar state: `expanded` or `collapsed`.
+- Close icon always writes the same state transition:
+  - `expanded -> collapsed`
+  - `collapsed -> collapsed` (no-op, no re-animation)
+- If overlay content is not currently visible (e.g. hover not active), close
+  still updates canonical state so next reveal opens in collapsed rail form.
+- Hover/focus reveal must **not** mutate collapse state by itself; it only
+  changes visibility of the shell.
+- Route changes and async data hydration must preserve last explicit collapse
+  state (no automatic expand flicker during mount/re-render).
 
 ## UX + Accessibility Requirements
 
@@ -108,6 +123,11 @@ existing global top-menu behavior that is explicitly out of scope.
   - `ecosystem group identifier` (for dropdown grouping)
 - If ecosystem grouping data is unavailable, fallback behavior:
   - show all spaces in one list, no misleading grouping labels.
+- Sidebar/menu state model:
+  - `sidebarCollapsed: boolean` (source of truth for expanded vs icon rail)
+  - `overlayVisible: boolean` (ephemeral hover/focus visibility)
+  - Render rule: `overlayVisible` decides visibility, `sidebarCollapsed` decides
+    shape; these states must never be conflated.
 
 ## Acceptance Criteria
 
@@ -118,6 +138,10 @@ existing global top-menu behavior that is explicitly out of scope.
 - Menu includes Signals, Agreements, Members, Treasury in that order.
 - AI header no longer shows reload/reset action.
 - Close action collapses to icon-only rail with active space icon + nav icons.
+- Closing while overlay is hidden still results in collapsed state on next open
+  (deterministic state, no visual jump).
+- No double-transition flicker when close is clicked repeatedly or during
+  hover-in/hover-out.
 - Existing top-right menu behavior remains unchanged.
 - No new lint/type errors in touched files.
 
