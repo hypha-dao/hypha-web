@@ -1836,7 +1836,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       setSendingPending({
         id: pendingId,
         attachmentCount: savedAttachments.length,
-        captionPreview: wirePlain,
+        captionPreview: text,
         uploadedCount: 0,
       });
     }
