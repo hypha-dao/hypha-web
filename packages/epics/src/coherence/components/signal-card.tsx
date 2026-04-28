@@ -301,89 +301,29 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             aria-hidden
           />
         </Skeleton>
-        {isCreator && slug ? (
-          <>
-            <Button
-              type="button"
-              variant="ghost"
-              colorVariant="neutral"
-              size="sm"
-              className="absolute right-3 top-3 z-10 h-10 w-10 shrink-0 p-0 text-neutral-1/90 hover:text-white focus-visible:ring-2 focus-visible:ring-white/70"
-              disabled={isLoading}
-              aria-label={tSignalCard('deleteMenu')}
-              title={tSignalCard('deleteMenu')}
-              onClick={(e) => {
-                e.stopPropagation();
-                setDeleteOpen(true);
-              }}
-              onKeyDown={stopCardActivationKey}
-            >
-              <Trash2
-                className="h-4 w-4 drop-shadow-[0_1px_2px_rgba(0,0,0,0.65)]"
-                aria-hidden
-              />
-            </Button>
-            <AlertDialog
-              open={deleteOpen}
-              onOpenChange={(open) => {
-                setDeleteOpen(open);
-                if (!open) setDeleteError(null);
-              }}
-            >
-              <AlertDialogContent
-                overlayClassName="bg-black/75 backdrop-blur-sm supports-[backdrop-filter]:bg-black/65"
-                className="border-l-[3px] border-l-[var(--space-accent)]"
-                style={spaceAccentPortalStyle}
-                data-space-accent-scope=""
-                onClick={(e) => e.stopPropagation()}
-              >
-                <AlertDialogHeader>
-                  <AlertDialogTitle>
-                    {tSignalCard('deleteSignal')}
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    {tSignalCard('deleteConfirm')}
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                {deleteError ? (
-                  <p
-                    role="alert"
-                    className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-                  >
-                    {deleteError}
-                  </p>
-                ) : null}
-                <AlertDialogFooter>
-                  <AlertDialogCancel asChild>
-                    <Button
-                      variant="outline"
-                      colorVariant="neutral"
-                      onKeyDown={stopCardActivationKey}
-                    >
-                      {t('noLeave')}
-                    </Button>
-                  </AlertDialogCancel>
-                  <Button
-                    type="button"
-                    colorVariant="accent"
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      const deleted = await handleDelete();
-                      if (deleted) setDeleteOpen(false);
-                    }}
-                    onKeyDown={stopCardActivationKey}
-                  >
-                    {tSignalCard('deleteConfirmAction')}
-                  </Button>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </>
-        ) : null}
       </CardHeader>
       <CardContent className="relative flex min-h-0 flex-1 flex-col gap-0 p-0">
+        {isCreator && slug ? (
+          <Button
+            type="button"
+            variant="ghost"
+            colorVariant="neutral"
+            size="sm"
+            className="absolute right-3 top-3 z-10 h-9 w-9 shrink-0 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            disabled={isLoading}
+            aria-label={tSignalCard('deleteMenu')}
+            title={tSignalCard('deleteMenu')}
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteOpen(true);
+            }}
+            onKeyDown={stopCardActivationKey}
+          >
+            <Trash2 className="h-4 w-4" aria-hidden />
+          </Button>
+        ) : null}
         <div className="relative flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 pt-4">
-          <div className="flex min-w-0 flex-wrap items-center gap-2 text-1 text-muted-foreground">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 pr-10 text-1 text-muted-foreground">
             {metaBadges.length > 0 ? (
               <BadgesList isLoading={isLoading} badges={metaBadges} />
             ) : null}
@@ -551,6 +491,59 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             </Button>
           )}
         </div>
+        <AlertDialog
+          open={deleteOpen}
+          onOpenChange={(open) => {
+            setDeleteOpen(open);
+            if (!open) setDeleteError(null);
+          }}
+        >
+          <AlertDialogContent
+            overlayClassName="bg-black/75 backdrop-blur-sm supports-[backdrop-filter]:bg-black/65"
+            className="border-l-[3px] border-l-[var(--space-accent)]"
+            style={spaceAccentPortalStyle}
+            data-space-accent-scope=""
+            onClick={(e) => e.stopPropagation()}
+          >
+            <AlertDialogHeader>
+              <AlertDialogTitle>{tSignalCard('deleteSignal')}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {tSignalCard('deleteConfirm')}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            {deleteError ? (
+              <p
+                role="alert"
+                className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              >
+                {deleteError}
+              </p>
+            ) : null}
+            <AlertDialogFooter>
+              <AlertDialogCancel asChild>
+                <Button
+                  variant="outline"
+                  colorVariant="neutral"
+                  onKeyDown={stopCardActivationKey}
+                >
+                  {t('noLeave')}
+                </Button>
+              </AlertDialogCancel>
+              <Button
+                type="button"
+                colorVariant="accent"
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  const deleted = await handleDelete();
+                  if (deleted) setDeleteOpen(false);
+                }}
+                onKeyDown={stopCardActivationKey}
+              >
+                {tSignalCard('deleteConfirmAction')}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );
