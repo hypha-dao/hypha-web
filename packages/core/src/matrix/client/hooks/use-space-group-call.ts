@@ -325,6 +325,13 @@ export function useSpaceGroupCall(roomId: string | null) {
 
     const now = Date.now();
     if (missingRemoteFeedCount > 0 && othersInCall.length > 0) {
+      /**
+       * The SDK can know the remote participant from group-call member state
+       * while the pairwise `MatrixCall` never finishes selecting an opponent
+       * (candidates get buffered, no CallFeed arrives). Retry placement from
+       * the stalled side as well as from ParticipantsChanged/room-state bumps.
+       */
+      nudgeGroupCallPlaceOutgoing(gc);
       if (remoteMediaGapSinceRef.current == null) {
         remoteMediaGapSinceRef.current = now;
       }
