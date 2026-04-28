@@ -47,6 +47,7 @@ import { Trash2, Users } from 'lucide-react';
 import { cn } from '@hypha-platform/ui-utils';
 import { useSpaceAccentPortalStyles } from '../../spaces/components/space-accent-portal-context';
 import { resolveDateFnsLocale } from '../../utils/date-fns-locale';
+import { useScrollParallax } from '../../common/use-scroll-parallax';
 
 type SignalCardProps = {
   isLoading: boolean;
@@ -141,6 +142,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [deleteError, setDeleteError] = React.useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = React.useState(false);
+  const { reduceMotion, parallaxY } = useScrollParallax({
+    rate: 0.12,
+    maxShiftPx: 20,
+  });
   const descriptionClampRef = React.useRef<HTMLParagraphElement>(null);
   const [descriptionTruncated, setDescriptionTruncated] = React.useState(false);
   const isCreator = person?.id === creatorId;
@@ -311,45 +316,56 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           height="160px"
           loading={isLoading}
         >
-          <Image
-            width={640}
-            height={160}
-            className="h-full w-full object-cover"
-            src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
-            alt={title || ''}
-          />
-          <div
-            className={cn(
-              'absolute inset-0 pointer-events-none',
-              HERO_PRIORITY_WASH_CLASS_MAP[priorityColorVariant],
-            )}
-            aria-hidden
-          />
-          <div
-            className={cn(
-              'pointer-events-none absolute inset-0',
-              HERO_PRIORITY_SPOTLIGHT_CLASS_MAP[priorityColorVariant],
-            )}
-            aria-hidden
-          />
-          <div
-            className={cn(
-              'absolute inset-0 pointer-events-none',
-              HERO_PRIORITY_VIGNETTE_CLASS_MAP[priorityColorVariant],
-            )}
-            aria-hidden
-          />
-          <div
-            className={cn(
-              'pointer-events-none absolute inset-x-0 bottom-0 h-20',
-              HERO_PRIORITY_BOTTOM_EDGE_CLASS_MAP[priorityColorVariant],
-            )}
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/20 to-transparent"
-            aria-hidden
-          />
+          <div className="absolute inset-0 overflow-hidden">
+            <div
+              className="absolute inset-x-0 top-[-10%] h-[120%] will-change-transform"
+              style={
+                reduceMotion
+                  ? undefined
+                  : { transform: `translate3d(0, ${parallaxY}px, 0)` }
+              }
+            >
+              <Image
+                width={640}
+                height={160}
+                className="h-full w-full object-cover"
+                src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
+                alt={title || ''}
+              />
+              <div
+                className={cn(
+                  'absolute inset-0 pointer-events-none',
+                  HERO_PRIORITY_WASH_CLASS_MAP[priorityColorVariant],
+                )}
+                aria-hidden
+              />
+              <div
+                className={cn(
+                  'pointer-events-none absolute inset-0',
+                  HERO_PRIORITY_SPOTLIGHT_CLASS_MAP[priorityColorVariant],
+                )}
+                aria-hidden
+              />
+              <div
+                className={cn(
+                  'absolute inset-0 pointer-events-none',
+                  HERO_PRIORITY_VIGNETTE_CLASS_MAP[priorityColorVariant],
+                )}
+                aria-hidden
+              />
+              <div
+                className={cn(
+                  'pointer-events-none absolute inset-x-0 bottom-0 h-20',
+                  HERO_PRIORITY_BOTTOM_EDGE_CLASS_MAP[priorityColorVariant],
+                )}
+                aria-hidden
+              />
+              <div
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/20 to-transparent"
+                aria-hidden
+              />
+            </div>
+          </div>
         </Skeleton>
       </CardHeader>
       <CardContent className="relative flex min-h-0 flex-1 flex-col gap-0 p-0">

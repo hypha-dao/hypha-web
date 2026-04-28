@@ -20,6 +20,7 @@ import {
 import { stripExchangeDetailsBlock } from '../utils/strip-exchange-details-block';
 import React from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
+import { useScrollParallax } from '../../common/use-scroll-parallax';
 
 interface Document {
   id?: number;
@@ -117,6 +118,10 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
   createdAt,
   status,
 }) => {
+  const { reduceMotion, parallaxY } = useScrollParallax({
+    rate: 0.12,
+    maxShiftPx: 18,
+  });
   const tCommon = useTranslations('Common');
   const format = useFormatter();
   const formatDateTime = (date: string | number | Date) => {
@@ -160,13 +165,24 @@ export const DocumentCard: React.FC<DocumentCardProps & Document> = ({
           height="150px"
           width="250px"
         >
-          <Image
-            className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full"
-            src={leadImage || '/placeholder/document-lead-image.webp'}
-            alt={title || ''}
-            width={250}
-            height={150}
-          />
+          <div className="relative h-[150px] overflow-hidden">
+            <div
+              className="absolute inset-x-0 top-[-10%] h-[120%] will-change-transform"
+              style={
+                reduceMotion
+                  ? undefined
+                  : { transform: `translate3d(0, ${parallaxY}px, 0)` }
+              }
+            >
+              <Image
+                className="rounded-tl-xl rounded-tr-xl object-cover w-full h-full"
+                src={leadImage || '/placeholder/document-lead-image.webp'}
+                alt={title || ''}
+                width={250}
+                height={150}
+              />
+            </div>
+          </div>
         </Skeleton>
       </CardHeader>
       <CardContent className="relative space-y-4">

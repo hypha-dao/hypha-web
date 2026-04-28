@@ -41,7 +41,7 @@
     "errorLoadTreasuryTab": "Oups, une erreur s'est produite. Impossible de charger l'onglet trésorerie.",
     "publish": "Publier",
     "invalidTransactions": "Transactions invalides",
-    "Coherence": "Cohérence",
+    "Coherence": "Signaux",
     "uploadLeadImage": {
       "cropTitle": "Téléverser une image",
       "cropDescription": "Ajustez le cadrage, puis enregistrez. Faites glisser pour repositionner et zoomez pour remplir la zone de bannière (JPEG, PNG ou WebP — max. 4 Mo).",
