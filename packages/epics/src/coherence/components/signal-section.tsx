@@ -58,7 +58,7 @@ export const SignalSection: FC<SignalSectionProps> = ({
   const createSignalHref = `/${lang}/dho/${id}/coherence/new-signal`;
 
   return (
-    <div className="flex w-full flex-col gap-5">
+    <div className="flex w-full flex-col items-center justify-around gap-4">
       <SectionFilter
         count={pagination?.total || 0}
         label={label || ''}

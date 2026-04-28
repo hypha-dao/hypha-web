@@ -71,7 +71,7 @@ export function CoherenceBlock({
   return (
     <div className="flex flex-col gap-6 py-4">
       {isAuthenticated ? (
-        <div className="flex flex-col gap-10 px-0 pb-2 pt-2 md:px-0 md:pb-4 md:pt-4">
+        <div className="flex flex-col gap-6">
           <SignalSection
             basePath={chatBasePath}
             label={t('signals')}
