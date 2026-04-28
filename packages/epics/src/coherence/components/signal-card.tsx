@@ -67,7 +67,9 @@ const BADGE_COLOR_VARIANT_MAP: Record<string, BadgeProps['colorVariant']> = {
   insight: 'accent',
 };
 
-const HERO_TINT_CLASS_MAP: Record<BadgeProps['colorVariant'], string> = {
+type SignalColorVariant = NonNullable<BadgeProps['colorVariant']>;
+
+const HERO_TINT_CLASS_MAP: Record<SignalColorVariant, string> = {
   accent: 'bg-accent-9/23',
   error: 'bg-error-9/23',
   warn: 'bg-warning-9/23',
@@ -75,7 +77,7 @@ const HERO_TINT_CLASS_MAP: Record<BadgeProps['colorVariant'], string> = {
   neutral: 'bg-neutral-9/23',
 };
 
-const HERO_PRIORITY_GRADIENT_CLASS_MAP: Record<BadgeProps['colorVariant'], string> = {
+const HERO_PRIORITY_GRADIENT_CLASS_MAP: Record<SignalColorVariant, string> = {
   accent: 'to-accent-9/27',
   error: 'to-error-9/27',
   warn: 'to-warning-9/27',
@@ -142,12 +144,12 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     [priority],
   );
 
-  const typeColorVariant = React.useMemo<BadgeProps['colorVariant']>(
+  const typeColorVariant = React.useMemo<SignalColorVariant>(
     () => BADGE_COLOR_VARIANT_MAP[coherenceType?.colorVariant ?? 'accent'] ?? 'accent',
     [coherenceType?.colorVariant],
   );
 
-  const priorityColorVariant = React.useMemo<BadgeProps['colorVariant']>(
+  const priorityColorVariant = React.useMemo<SignalColorVariant>(
     () =>
       BADGE_COLOR_VARIANT_MAP[priorityMeta?.colorVariant ?? 'neutral'] ?? 'neutral',
     [priorityMeta?.colorVariant],
@@ -254,6 +256,9 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   const stopCardActivationKey = React.useCallback(
     (e: React.KeyboardEvent<HTMLElement>) => {
       if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+        if (e.key === ' ' || e.key === 'Spacebar') {
+          e.preventDefault();
+        }
         e.stopPropagation();
       }
     },
