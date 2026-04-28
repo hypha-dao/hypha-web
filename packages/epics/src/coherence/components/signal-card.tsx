@@ -70,30 +70,41 @@ const BADGE_COLOR_VARIANT_MAP: Record<string, BadgeProps['colorVariant']> = {
 type SignalColorVariant = NonNullable<BadgeProps['colorVariant']>;
 
 const HERO_PRIORITY_WASH_CLASS_MAP: Record<SignalColorVariant, string> = {
-  accent: 'bg-accent-9/22',
-  error: 'bg-error-9/24',
-  warn: 'bg-warning-9/23',
-  success: 'bg-success-9/22',
-  neutral: 'bg-neutral-9/20',
+  accent: 'bg-accent-9/18',
+  error: 'bg-error-9/20',
+  warn: 'bg-warning-9/19',
+  success: 'bg-success-9/18',
+  neutral: 'bg-neutral-9/16',
 };
 
 const HERO_PRIORITY_SPOTLIGHT_CLASS_MAP: Record<SignalColorVariant, string> = {
-  accent: 'bg-gradient-to-bl from-accent-9/70 via-accent-8/35 to-transparent',
-  error: 'bg-gradient-to-bl from-error-9/75 via-error-8/40 to-transparent',
-  warn: 'bg-gradient-to-bl from-warning-9/75 via-warning-8/40 to-transparent',
+  accent: 'bg-gradient-to-br from-accent-9/34 via-accent-8/16 to-transparent',
+  error: 'bg-gradient-to-br from-error-9/36 via-error-8/18 to-transparent',
+  warn: 'bg-gradient-to-br from-warning-9/36 via-warning-8/18 to-transparent',
   success:
-    'bg-gradient-to-bl from-success-9/70 via-success-8/35 to-transparent',
+    'bg-gradient-to-br from-success-9/34 via-success-8/16 to-transparent',
   neutral:
-    'bg-gradient-to-bl from-neutral-9/65 via-neutral-8/35 to-transparent',
+    'bg-gradient-to-br from-neutral-9/30 via-neutral-8/14 to-transparent',
 };
 
 const HERO_PRIORITY_VIGNETTE_CLASS_MAP: Record<SignalColorVariant, string> = {
-  accent: 'bg-gradient-to-r from-black/20 via-transparent to-accent-10/20',
-  error: 'bg-gradient-to-r from-black/22 via-transparent to-error-10/22',
-  warn: 'bg-gradient-to-r from-black/22 via-transparent to-warning-10/22',
-  success: 'bg-gradient-to-r from-black/20 via-transparent to-success-10/20',
-  neutral: 'bg-gradient-to-r from-black/20 via-transparent to-neutral-10/18',
+  accent: 'bg-gradient-to-t from-black/22 via-black/8 to-accent-10/14',
+  error: 'bg-gradient-to-t from-black/24 via-black/10 to-error-10/16',
+  warn: 'bg-gradient-to-t from-black/24 via-black/10 to-warning-10/16',
+  success: 'bg-gradient-to-t from-black/22 via-black/8 to-success-10/14',
+  neutral: 'bg-gradient-to-t from-black/22 via-black/8 to-neutral-10/12',
 };
+
+const HERO_PRIORITY_BOTTOM_EDGE_CLASS_MAP: Record<SignalColorVariant, string> =
+  {
+    accent: 'bg-gradient-to-t from-accent-10/30 via-accent-9/14 to-transparent',
+    error: 'bg-gradient-to-t from-error-10/34 via-error-9/16 to-transparent',
+    warn: 'bg-gradient-to-t from-warning-10/34 via-warning-9/16 to-transparent',
+    success:
+      'bg-gradient-to-t from-success-10/30 via-success-9/14 to-transparent',
+    neutral:
+      'bg-gradient-to-t from-neutral-10/24 via-neutral-9/12 to-transparent',
+  };
 
 export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
   isLoading,
@@ -293,7 +304,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         className,
       )}
     >
-      <CardHeader className="relative h-40 shrink-0 overflow-hidden p-0">
+      <CardHeader className="relative h-40 shrink-0 overflow-hidden p-0 isolate">
         <Skeleton
           className="h-full min-w-full"
           width="100%"
@@ -316,7 +327,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           />
           <div
             className={cn(
-              'pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full blur-2xl',
+              'pointer-events-none absolute inset-0',
               HERO_PRIORITY_SPOTLIGHT_CLASS_MAP[priorityColorVariant],
             )}
             aria-hidden
@@ -329,7 +340,14 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
             aria-hidden
           />
           <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/22 to-transparent"
+            className={cn(
+              'pointer-events-none absolute inset-x-0 bottom-0 h-20',
+              HERO_PRIORITY_BOTTOM_EDGE_CLASS_MAP[priorityColorVariant],
+            )}
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/20 to-transparent"
             aria-hidden
           />
         </Skeleton>
