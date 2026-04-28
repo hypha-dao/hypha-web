@@ -934,7 +934,8 @@ export function useSpaceGroupCall(roomId: string | null) {
   /**
    * Room member `m.call.*` state is applied asynchronously in the GroupCall. When
    * `updateParticipants` runs, `participants` updates but `ParticipantsChanged`
-   * may not re-fire. Re-sync the banner count on every room state update while in a call.
+   * may not re-fire. Re-sync the banner count and retry pairwise call placement
+   * on every room state update while in a call.
    */
   useEffect(() => {
     if (!client || !roomId?.trim()) return;
@@ -948,6 +949,10 @@ export function useSpaceGroupCall(roomId: string | null) {
     const room = client.getRoom(roomId);
     if (!room) return;
     const bump = () => {
+      const gc = groupCallRef.current;
+      if (gc) {
+        nudgeGroupCallPlaceOutgoing(gc);
+      }
       updateParticipantCount();
       evalRemoteMediaStall();
     };
