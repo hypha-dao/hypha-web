@@ -563,7 +563,9 @@ export function useSpaceGroupCall(roomId: string | null) {
        */
       if (kind === 'video' && gc.type !== GroupCallType.Video) {
         const prevType = gc.type;
-        const gcSync = gc as MatrixSdk.GroupCall & {
+        /** SDK method is private on `GroupCall`; intersecting types collapses to `never`. */
+        const gcSync = gc as unknown as {
+          type: MatrixSdk.GroupCall['type'];
           sendCallStateEvent(): Promise<void>;
         };
         gcSync.type = GroupCallType.Video;
