@@ -577,8 +577,16 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const sendOperationTokenRef = useRef<symbol | null>(null);
   const sendAbortControllerRef = useRef<AbortController | null>(null);
   const [messages, setMessages] = useState<UIMessage[]>([]);
+  /** Coalesce Matrix timeline bursts into one React commit per frame (sync backfills). */
+  const timelineFlushRafRef = useRef<number | null>(null);
+  const pendingTimelineRedactIdsRef = useRef<Set<string>>(new Set());
+  const pendingTimelineMessagesRef = useRef<Map<string, Message>>(new Map());
   const [replyDraft, setReplyDraft] = useState<ReplyDraft | null>(null);
   const [editDraft, setEditDraft] = useState<EditDraft | null>(null);
+  const replyDraftRef = useRef(replyDraft);
+  replyDraftRef.current = replyDraft;
+  const editDraftRef = useRef(editDraft);
+  editDraftRef.current = editDraft;
   const [roomId, setRoomId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -1474,47 +1482,80 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   useEffect(() => {
     if (!roomId || !isMatrixAvailable) return;
 
+    const scheduleTimelineFlush = () => {
+      if (timelineFlushRafRef.current != null) return;
+      timelineFlushRafRef.current = requestAnimationFrame(() => {
+        timelineFlushRafRef.current = null;
+
+        const redacts = pendingTimelineRedactIdsRef.current;
+        pendingTimelineRedactIdsRef.current = new Set();
+        const upserts = pendingTimelineMessagesRef.current;
+        pendingTimelineMessagesRef.current = new Map();
+
+        if (redacts.size === 0 && upserts.size === 0) return;
+
+        setMessages((prev) => {
+          let next = prev;
+          if (redacts.size > 0) {
+            next = next.filter((m) => !redacts.has(m.id));
+          }
+          for (const message of upserts.values()) {
+            const ui = toUIMessage(
+              message,
+              currentUserIdRef.current,
+              resolveMemberLabelRef.current,
+              currentUserAvatarUrlRef.current,
+              undefined,
+              roomId,
+              matrixRef.current.client ?? null,
+            );
+            const idx = next.findIndex((m) => m.id === ui.id);
+            if (idx === -1) {
+              next = [...next, ui];
+            } else {
+              next = next.map((m, i) => (i === idx ? ui : m));
+            }
+          }
+          return next;
+        });
+
+        for (const message of upserts.values()) {
+          if (
+            message.sender === currentUserIdRef.current &&
+            message.id &&
+            !String(message.id).startsWith('hypha-send-pending')
+          ) {
+            setSendingPending(null);
+            break;
+          }
+        }
+
+        const rId = replyDraftRef.current?.messageId;
+        if (rId && redacts.has(rId)) {
+          setReplyDraft(null);
+        }
+        const eId = editDraftRef.current?.messageId;
+        if (eId && redacts.has(eId)) {
+          disposeDraftAttachmentUrls(draftAttachmentsRef.current);
+          setDraftAttachments([]);
+          setInput('');
+          setEditDraft(null);
+        }
+      });
+    };
+
     const { registerRoomListener, unregisterRoomListener } = matrixRef.current;
 
     registerRoomListener(
       roomId,
       async (message: Message) => {
         if (message.redacted) {
-          const id = message.id;
-          setMessages((prev) => prev.filter((m) => m.id !== id));
-          setReplyDraft((draft) => (draft?.messageId === id ? null : draft));
-          setEditDraft((draft) => {
-            if (draft?.messageId !== id) return draft;
-            disposeDraftAttachmentUrls(draftAttachmentsRef.current);
-            setDraftAttachments([]);
-            setInput('');
-            return null;
-          });
+          pendingTimelineRedactIdsRef.current.add(message.id);
+          scheduleTimelineFlush();
           return;
         }
-        setMessages((prev) => {
-          const next = toUIMessage(
-            message,
-            currentUserIdRef.current,
-            resolveMemberLabelRef.current,
-            currentUserAvatarUrlRef.current,
-            undefined,
-            roomId,
-            matrixRef.current.client ?? null,
-          );
-          const idx = prev.findIndex((m) => m.id === next.id);
-          if (idx === -1) {
-            return [...prev, next];
-          }
-          return prev.map((m, i) => (i === idx ? next : m));
-        });
-        if (
-          message.sender === currentUserIdRef.current &&
-          message.id &&
-          !String(message.id).startsWith('hypha-send-pending')
-        ) {
-          setSendingPending(null);
-        }
+        pendingTimelineMessagesRef.current.set(message.id, message);
+        scheduleTimelineFlush();
       },
       async (_pinned: string[]) => {
         // pinned messages not used in human chat panel
@@ -1522,6 +1563,12 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     );
 
     return () => {
+      if (timelineFlushRafRef.current != null) {
+        cancelAnimationFrame(timelineFlushRafRef.current);
+        timelineFlushRafRef.current = null;
+      }
+      pendingTimelineRedactIdsRef.current = new Set();
+      pendingTimelineMessagesRef.current = new Map();
       unregisterRoomListener(roomId);
     };
   }, [roomId, isMatrixAvailable]);

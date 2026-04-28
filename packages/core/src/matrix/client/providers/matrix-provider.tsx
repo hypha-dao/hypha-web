@@ -417,7 +417,6 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         setActiveMatrixUserId(userId);
         setIsMatrixAvailable(matrixClient !== null);
         setIsAuthenticated(true);
-        console.log('Matrix client initialized');
       } catch (error) {
         console.error('Failed to initialize Matrix client:', error);
         setClient(null);
@@ -1297,8 +1296,22 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
         if (event.getRoomId() !== roomId) {
           return;
         }
-        const room = client.getRoom(roomId);
         const type = event.getType();
+        /**
+         * `RoomEvent.Timeline` fires for **every** persisted event in the room during
+         * incremental sync (membership, typing, power levels, …). Human chat only cares
+         * about a handful — skipping early avoids heavy `findEventById` / reaction work
+         * per event and stops React from saturating on large backfills.
+         */
+        if (
+          type !== MatrixSdk.EventType.RoomMessage &&
+          type !== MatrixSdk.EventType.RoomPinnedEvents &&
+          type !== MatrixSdk.EventType.Reaction &&
+          type !== MatrixSdk.EventType.RoomRedaction
+        ) {
+          return;
+        }
+        const room = client.getRoom(roomId);
 
         if (type === EventType.RoomMessage) {
           if (isRedactedRoomMessageEvent(event)) {
