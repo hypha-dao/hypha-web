@@ -1,7 +1,10 @@
 import { Locale } from '@hypha-platform/i18n';
 import { ReactNode } from 'react';
 import { NavigationTabs } from '../_components/navigation-tabs';
-import { getEnableAiChat, getEnableCoherence } from '@hypha-platform/feature-flags';
+import {
+  getEnableAiChat,
+  getEnableCoherence,
+} from '@hypha-platform/feature-flags';
 
 export default async function TabLayout({
   children,
