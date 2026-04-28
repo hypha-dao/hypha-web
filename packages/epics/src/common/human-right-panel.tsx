@@ -90,6 +90,7 @@ import {
   computeHumanChatUnreadState,
 } from './human-chat-panel/matrix-chat-unread';
 import {
+  looksLikeTechnicalMatrixDisplayName,
   matrixMemberDisplayLabel,
   shortenMatrixIdForDisplay,
 } from './human-chat-panel/matrix-room-member-display';
@@ -847,25 +848,6 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   /** Bumps when Matrix room membership changes so `@` mention candidates + button state refresh without reload. */
   const [mentionMembershipEpoch, setMentionMembershipEpoch] = useState(0);
 
-  const resolveMemberLabel = useCallback(
-    (userId: string | undefined) => {
-      if (!userId) return t('unknownMember');
-      if (currentUserId && userId === currentUserId) {
-        const full = [me?.name, me?.surname].filter(Boolean).join(' ').trim();
-        return full || t('you');
-      }
-      if (roomId && client) {
-        const room = client.getRoom(roomId);
-        const member = room?.getMember(userId);
-        if (member) {
-          return matrixMemberDisplayLabel(member, userId);
-        }
-      }
-      return shortenMatrixIdForDisplay(userId);
-    },
-    [client, roomId, currentUserId, me?.name, me?.surname, t],
-  );
-
   const rosterSubs = useMemo(
     () =>
       spaceMembers
@@ -877,6 +859,51 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
   const { subToMatrixUserId } = useMatrixUserIdsByPrivySubs({
     privySubs: rosterSubs,
   });
+
+  /** Same source as `@` mention labels: Hypha roster wins over Matrix bridge displaynames. */
+  const matrixUserIdToPersonLabel = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const p of spaceMembers) {
+      const sub = p.sub?.trim();
+      if (!sub) continue;
+      const mxid = subToMatrixUserId[sub]?.trim();
+      if (!mxid) continue;
+      m.set(mxid, personRosterLabel(p, t('unknownMember')));
+    }
+    return m;
+  }, [spaceMembers, subToMatrixUserId, t]);
+
+  const resolveMemberLabel = useCallback(
+    (userId: string | undefined) => {
+      if (!userId) return t('unknownMember');
+      if (currentUserId && userId === currentUserId) {
+        const full = [me?.name, me?.surname].filter(Boolean).join(' ').trim();
+        return full || t('you');
+      }
+      const rosterLabel = matrixUserIdToPersonLabel.get(userId)?.trim();
+      if (rosterLabel) return rosterLabel;
+      if (roomId && client) {
+        const room = client.getRoom(roomId);
+        const member = room?.getMember(userId);
+        if (member) {
+          const fromMatrix = matrixMemberDisplayLabel(member, userId);
+          if (!looksLikeTechnicalMatrixDisplayName(fromMatrix, userId)) {
+            return fromMatrix;
+          }
+        }
+      }
+      return shortenMatrixIdForDisplay(userId);
+    },
+    [
+      client,
+      currentUserId,
+      matrixUserIdToPersonLabel,
+      me?.name,
+      me?.surname,
+      roomId,
+      t,
+    ],
+  );
 
   const mentionCandidates = useMemo((): ChatMentionCandidate[] => {
     if (!client || !roomId) return [];
@@ -1127,6 +1154,7 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     client,
     currentUserId,
     currentUserAvatarUrl,
+    matrixUserIdToPersonLabel,
     me?.name,
     me?.surname,
     t,

@@ -47,6 +47,8 @@ export const useMatrixUserIdsByPrivySubs = ({
       }
       return map;
     },
+    /** Avoid flashing Privy/Matrix technical locals when JWT refreshes or focus revalidation races. */
+    { keepPreviousData: true },
   );
 
   return {
