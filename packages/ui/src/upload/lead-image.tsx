@@ -325,13 +325,23 @@ export const UploadLeadImage = ({
   /** Prefer in-component preview (upload/crop); fall through to parent default URL immediately so we never flash an empty dashed box while defaultImage hydrates. */
   const displaySrc = preview ?? defaultImage ?? null;
   const showEmptyPlaceholder = !displaySrc && !imageSrc;
+  const { ref: dropzoneRef, ...rootProps } = getRootProps();
 
   return (
     <>
       <AspectRatio
         ratio={762 / 270}
-        {...getRootProps()}
-        ref={rootRef}
+        {...rootProps}
+        ref={(node) => {
+          rootRef.current = node;
+          if (typeof dropzoneRef === 'function') {
+            dropzoneRef(node);
+            return;
+          }
+          if (dropzoneRef && 'current' in dropzoneRef) {
+            dropzoneRef.current = node;
+          }
+        }}
         className={clsx(
           'group cursor-pointer relative',
           'flex justify-center items-center overflow-hidden',
