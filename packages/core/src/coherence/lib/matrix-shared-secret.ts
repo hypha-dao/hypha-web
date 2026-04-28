@@ -15,6 +15,10 @@ type RegisterResponse = {
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 
+function createMatrixDeviceId(): string {
+  return `hypha_${crypto.randomUUID().replace(/-/g, '')}`;
+}
+
 async function fetchWithTimeout(
   url: string,
   options: RequestInit = {},
@@ -164,6 +168,8 @@ export class MatrixSharedSecret {
         username,
         password,
         admin: isAdmin,
+        device_id: createMatrixDeviceId(),
+        initial_device_display_name: 'Hypha Web',
         mac,
       }),
     } as const;
@@ -338,11 +344,12 @@ export class MatrixSharedSecret {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          device_id: createMatrixDeviceId(),
           identifier: {
             type: 'm.id.user',
             user: username,
           },
-          initial_device_display_name: `device_${Date.now()}`,
+          initial_device_display_name: 'Hypha Web',
           password,
           type: 'm.login.password',
         }),
