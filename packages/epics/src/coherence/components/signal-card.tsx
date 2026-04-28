@@ -38,7 +38,7 @@ import {
   Skeleton,
 } from '@hypha-platform/ui';
 import { stripDescription, stripMarkdown } from '@hypha-platform/ui-utils';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNowStrict } from 'date-fns';
 import { ChatBubbleIcon, ClockIcon } from '@radix-ui/react-icons';
 import React from 'react';
 import type { BadgeProps } from '@hypha-platform/ui';
@@ -69,20 +69,12 @@ const BADGE_COLOR_VARIANT_MAP: Record<string, BadgeProps['colorVariant']> = {
 
 type SignalColorVariant = NonNullable<BadgeProps['colorVariant']>;
 
-const HERO_TINT_CLASS_MAP: Record<SignalColorVariant, string> = {
-  accent: 'bg-accent-9/23',
-  error: 'bg-error-9/23',
-  warn: 'bg-warning-9/23',
-  success: 'bg-success-9/23',
-  neutral: 'bg-neutral-9/23',
-};
-
-const HERO_PRIORITY_GRADIENT_CLASS_MAP: Record<SignalColorVariant, string> = {
-  accent: 'to-accent-9/27',
-  error: 'to-error-9/27',
-  warn: 'to-warning-9/27',
-  success: 'to-success-9/27',
-  neutral: 'to-neutral-9/27',
+const HERO_PRIORITY_OVERLAY_CLASS_MAP: Record<SignalColorVariant, string> = {
+  accent: 'bg-accent-9/18',
+  error: 'bg-error-9/18',
+  warn: 'bg-warning-9/18',
+  success: 'bg-success-9/18',
+  neutral: 'bg-neutral-9/18',
 };
 
 export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
@@ -285,16 +277,16 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
         className,
       )}
     >
-      <CardHeader className="relative h-48 shrink-0 overflow-hidden p-0">
+      <CardHeader className="relative h-40 shrink-0 overflow-hidden p-0">
         <Skeleton
           className="h-full min-w-full"
           width="100%"
-          height="192px"
+          height="160px"
           loading={isLoading}
         >
           <Image
             width={640}
-            height={192}
+            height={160}
             className="h-full w-full object-cover"
             src={leadImage || DEFAULT_SPACE_LEAD_IMAGE}
             alt={title || ''}
@@ -302,14 +294,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           <div
             className={cn(
               'absolute inset-0 pointer-events-none',
-              HERO_TINT_CLASS_MAP[typeColorVariant],
-            )}
-            aria-hidden
-          />
-          <div
-            className={cn(
-              'absolute inset-0 pointer-events-none bg-gradient-to-tr from-transparent via-transparent',
-              HERO_PRIORITY_GRADIENT_CLASS_MAP[priorityColorVariant],
+              HERO_PRIORITY_OVERLAY_CLASS_MAP[priorityColorVariant],
             )}
             aria-hidden
           />
@@ -424,7 +409,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                   aria-hidden
                 />
                 {createdAt
-                  ? formatDistanceToNow(new Date(createdAt), {
+                  ? formatDistanceToNowStrict(new Date(createdAt), {
                       addSuffix: true,
                       locale: dateFnsLocale,
                     })
@@ -437,7 +422,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 className="gap-1.5"
               >
                 <Users size={12} aria-hidden />
-                <span>{t('mentions', { count: messages })}</span>
+                <span>{t('messageCount', { count: messages })}</span>
               </Badge>
             </div>
           </div>
