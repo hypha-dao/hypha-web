@@ -1114,13 +1114,27 @@ function chatMentionPillClass(onViewerMentionTintRow: boolean): string {
   );
 }
 
-/** Strip trailing punctuation often pasted after URLs (not part of the href). */
+/** Characters often pasted immediately after a URL (not part of the href). */
+const TRAILING_URL_PUNCT_CHARS = new Set('.,;:!?)]}');
+
+/** Strip trailing punctuation — linear scan (avoid polynomial regex on user text). */
 function trimTrailingUrlPunctuation(raw: string): string {
-  let u = raw;
-  while (u.length > 0 && /[.,;:!?)\]}]+$/u.test(u)) {
-    u = u.slice(0, -1);
+  let end = raw.length;
+  while (end > 0) {
+    const ch = raw[end - 1];
+    if (!TRAILING_URL_PUNCT_CHARS.has(ch)) break;
+    end--;
   }
-  return u;
+  return raw.slice(0, end);
+}
+
+function nextHttpSchemeIndex(text: string, from: number): number {
+  const httpIdx = text.indexOf('http://', from);
+  const httpsIdx = text.indexOf('https://', from);
+  const hi = httpsIdx >= 0 ? httpsIdx : Number.POSITIVE_INFINITY;
+  const lo = httpIdx >= 0 ? httpIdx : Number.POSITIVE_INFINITY;
+  const start = Math.min(lo, hi);
+  return Number.isFinite(start) ? start : -1;
 }
 
 type PlainUrlPiece =
@@ -1129,21 +1143,40 @@ type PlainUrlPiece =
 
 function splitPlainTextUrls(text: string): PlainUrlPiece[] {
   const out: PlainUrlPiece[] = [];
-  const re = /https?:\/\/[^\s<>"']+/gi;
   let last = 0;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(text)) !== null) {
-    if (m.index > last) {
-      out.push({ kind: 'text', value: text.slice(last, m.index) });
+  const n = text.length;
+  while (last < n) {
+    const start = nextHttpSchemeIndex(text, last);
+    if (start < 0) {
+      out.push({ kind: 'text', value: text.slice(last) });
+      break;
     }
-    const raw = m[0];
+    if (start > last) {
+      out.push({ kind: 'text', value: text.slice(last, start) });
+    }
+    const schemeLen = text.startsWith('https://', start) ? 8 : 7;
+    let end = start + schemeLen;
+    while (end < n) {
+      const ch = text[end];
+      if (
+        ch === ' ' ||
+        ch === '\t' ||
+        ch === '\n' ||
+        ch === '\r' ||
+        ch === '<' ||
+        ch === '>' ||
+        ch === '"' ||
+        ch === "'"
+      ) {
+        break;
+      }
+      end++;
+    }
+    const raw = text.slice(start, end);
     const href = trimTrailingUrlPunctuation(raw);
     const trailing = raw.slice(href.length);
     out.push({ kind: 'url', href, trailing });
-    last = m.index + raw.length;
-  }
-  if (last < text.length) {
-    out.push({ kind: 'text', value: text.slice(last) });
+    last = start + raw.length;
   }
   return out.length > 0 ? out : [{ kind: 'text', value: text }];
 }
