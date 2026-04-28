@@ -895,11 +895,11 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
 
   const mergeMentionDisplayLabel = useCallback(
     (userId: string, displayLabel: string) => {
-      const t = displayLabel.trim();
-      if (!t) return;
+      const trimmedLabel = displayLabel.trim();
+      if (!trimmedLabel) return;
       setMentionDisplayOverride((prev) => {
-        if (prev[userId] === t) return prev;
-        return { ...prev, [userId]: t };
+        if (prev[userId] === trimmedLabel) return prev;
+        return { ...prev, [userId]: trimmedLabel };
       });
     },
     [],
