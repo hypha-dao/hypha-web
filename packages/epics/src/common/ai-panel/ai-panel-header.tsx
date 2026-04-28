@@ -1,15 +1,15 @@
 'use client';
 
 import { PanelLeftClose, RefreshCw, Sparkles } from 'lucide-react';
-import { useSidebar } from '@hypha-platform/ui';
 import { useTranslations } from 'next-intl';
+import { useAiPanel } from '../human-chat-panel-context';
 
 type AiPanelHeaderProps = {
   onResetChat?: () => void;
 };
 
 export function AiPanelHeader({ onResetChat }: AiPanelHeaderProps) {
-  const { toggleSidebar } = useSidebar();
+  const { setContentMode } = useAiPanel();
   const t = useTranslations('AiPanel');
   return (
     <div className="flex min-h-[var(--menu-top-height,65px)] min-w-0 flex-shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-2 border-b border-border bg-background-2 px-4 py-3">
@@ -35,10 +35,12 @@ export function AiPanelHeader({ onResetChat }: AiPanelHeaderProps) {
         )}
         <button
           type="button"
-          onClick={toggleSidebar}
+          onClick={() => {
+            setContentMode('menu');
+          }}
           className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          title={t('hidePanel')}
-          aria-label={t('closePanel')}
+          title={t('backToMenu')}
+          aria-label={t('backToMenu')}
         >
           <PanelLeftClose className="h-3.5 w-3.5" />
         </button>
