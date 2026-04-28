@@ -1,12 +1,25 @@
 'use client';
 
-import type { MatrixClient } from 'matrix-js-sdk';
 import {
   GroupCallStatsReportEvent,
   type GroupCall,
-} from 'matrix-js-sdk/lib/webrtc/groupCall';
-import type { SummaryStatsReport } from 'matrix-js-sdk/lib/webrtc/stats/statsReport';
+  type MatrixClient,
+} from 'matrix-js-sdk';
 import { logSpaceGroupCallEvent } from './space-group-call-telemetry';
+
+/** Fields we log from Matrix SDK summary stats (avoid deep imports Next cannot bundle). */
+type GroupCallSummaryStatsReport = {
+  percentageReceivedMedia: number;
+  percentageReceivedAudioMedia: number;
+  percentageReceivedVideoMedia: number;
+  maxJitter: number;
+  maxPacketLoss: number;
+  peerConnections: number;
+  opponentUsersInCall?: number;
+  opponentDevicesInCall?: number;
+  diffDevicesToPeerConnections?: number;
+  ratioPeerConnectionToDevices?: number;
+};
 
 const TURN_PROBE_LOG_THROTTLE_MS = 60_000;
 
@@ -209,7 +222,7 @@ export function attachGroupCallWebRtcDiagnostics(options: {
     gc.setGroupCallStatsInterval(summaryStatsIntervalMs);
   }
 
-  const onSummary = (payload: { report: SummaryStatsReport }) => {
+  const onSummary = (payload: { report: GroupCallSummaryStatsReport }) => {
     const r = payload.report;
     logSpaceGroupCallEvent({
       name: 'hypha.group_call.webrtc_summary',
