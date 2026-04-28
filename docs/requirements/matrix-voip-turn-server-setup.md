@@ -44,7 +44,7 @@ Exact YAML keys evolve with Synapse releases — always verify against **[Synaps
   - **UDP** on your TURN ports (default often **3478**, plus relay port range you configure).
   - **TCP** **3478** (and **5349** if using TLS TURN).
   - **Relay port range** (e.g. **49152–65535** UDP) as documented in coturn config — this is where media often flows.
-- Configure **`realm`**, **`listening-ip`**, **`external-ip`** (if behind NAT), and **`use-auth-secret`** + **`static-auth-secret`** matching Synapse.
+- Configure **`realm`**, **`listening-ip`**, **`external-ip`** (if behind NAT), and **`use-auth-secret`** + **`static-auth-secret`** matching the homeserver TURN shared secret.
 
 ### 2.2 Synapse
 
@@ -56,7 +56,25 @@ In **`homeserver.yaml`** (names may vary slightly by version):
 
 After editing, **restart Synapse**.
 
-### 2.3 Permissions
+### 2.3 Dendrite
+
+In **`dendrite.yaml`**, configure TURN under **`client_api.turn`**:
+
+```yaml
+client_api:
+  turn:
+    turn_user_lifetime: "24h"
+    turn_uris:
+      - "turn:turn.example.org:3478?transport=udp"
+      - "turn:turn.example.org:3478?transport=tcp"
+    turn_shared_secret: "<same-secret-as-coturn>"
+    turn_username: ""
+    turn_password: ""
+```
+
+After editing, **restart Dendrite**.
+
+### 2.4 Permissions
 
 Ensure Matrix users who should call are **allowed** to request TURN credentials (Synapse historically tied this to settings like allowing VoIP; check current Synapse docs for **guest / restricted** accounts).
 
