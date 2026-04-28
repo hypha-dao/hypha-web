@@ -9,14 +9,28 @@ import { createContext, useCallback, useContext, useState } from 'react';
  */
 export type PanelContextValue = {
   open: boolean;
+  overlayVisible: boolean;
   toggle: () => void;
+  /** Idempotently expands the AI sidebar without toggling it closed. */
+  openAiPanel: () => void;
+  /** Idempotently collapses the AI sidebar without toggling it open. */
+  closeAiPanel: () => void;
+  /** Shows AI overlay without changing collapsed/expanded intent. */
+  showAiOverlay: () => void;
+  /** Hides AI overlay without changing collapsed/expanded intent. */
+  hideAiOverlay: () => void;
 };
 
 // ─── AI Panel Context ────────────────────────────────────────────────────────
 
 const AiPanelContext = createContext<PanelContextValue>({
   open: false,
+  overlayVisible: false,
   toggle: () => {},
+  openAiPanel: () => {},
+  closeAiPanel: () => {},
+  showAiOverlay: () => {},
+  hideAiOverlay: () => {},
 });
 
 export const AiPanelProvider = AiPanelContext.Provider;
