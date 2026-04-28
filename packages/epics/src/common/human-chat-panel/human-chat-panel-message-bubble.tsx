@@ -1122,7 +1122,7 @@ function trimTrailingUrlPunctuation(raw: string): string {
   let end = raw.length;
   while (end > 0) {
     const ch = raw[end - 1];
-    if (!TRAILING_URL_PUNCT_CHARS.has(ch)) break;
+    if (ch === undefined || !TRAILING_URL_PUNCT_CHARS.has(ch)) break;
     end--;
   }
   return raw.slice(0, end);
