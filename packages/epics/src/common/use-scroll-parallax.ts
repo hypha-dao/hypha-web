@@ -15,7 +15,12 @@ function clampShift(scrollY: number, rate: number, maxShiftPx: number): number {
 export function useScrollParallax(options: ScrollParallaxOptions = {}) {
   const { rate = 0.12, maxShiftPx = 32 } = options;
   const mainScrollY = useMainColumnScrollY();
-  const [reduceMotion, setReduceMotion] = React.useState(false);
+  const [reduceMotion, setReduceMotion] = React.useState(() => {
+    if (typeof window === 'undefined') return false;
+    return (
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+    );
+  });
 
   React.useEffect(() => {
     const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)');
