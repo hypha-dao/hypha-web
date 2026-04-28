@@ -251,6 +251,15 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
     }
   }, [slug, deleteCoherenceBySlug, refresh, tSignalCard]);
 
+  const stopCardActivationKey = React.useCallback(
+    (e: React.KeyboardEvent<HTMLElement>) => {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+        e.stopPropagation();
+      }
+    },
+    [],
+  );
+
   return (
     <Card
       className={cn(
@@ -309,6 +318,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 e.stopPropagation();
                 setDeleteOpen(true);
               }}
+              onKeyDown={stopCardActivationKey}
             >
               <Trash2 className="h-4 w-4" aria-hidden />
             </Button>
@@ -342,7 +352,11 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                 ) : null}
                 <AlertDialogFooter>
                   <AlertDialogCancel asChild>
-                    <Button variant="outline" colorVariant="neutral">
+                    <Button
+                      variant="outline"
+                      colorVariant="neutral"
+                      onKeyDown={stopCardActivationKey}
+                    >
                       {t('noLeave')}
                     </Button>
                   </AlertDialogCancel>
@@ -354,6 +368,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                       const deleted = await handleDelete();
                       if (deleted) setDeleteOpen(false);
                     }}
+                    onKeyDown={stopCardActivationKey}
                   >
                     {tSignalCard('deleteConfirmAction')}
                   </Button>
@@ -426,6 +441,7 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
                     e.stopPropagation();
                     setDetailsOpen(true);
                   }}
+                  onKeyDown={stopCardActivationKey}
                 >
                   {tSignalCard('readFullDescription')}
                 </button>
