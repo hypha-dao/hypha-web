@@ -322,10 +322,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           <>
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               colorVariant="neutral"
               size="sm"
-              className="absolute right-3 top-3 z-10 h-10 w-10 shrink-0 rounded-none border border-white/15 bg-black/45 p-0 text-neutral-1 shadow-sm backdrop-blur-[1px] hover:bg-black/55 hover:text-white focus-visible:ring-2 focus-visible:ring-white/70"
+              className="absolute right-3 top-3 z-10 h-10 w-10 shrink-0 p-0 text-neutral-1/90 hover:text-white focus-visible:ring-2 focus-visible:ring-white/70"
               disabled={isLoading}
               aria-label={tSignalCard('deleteMenu')}
               title={tSignalCard('deleteMenu')}
@@ -335,7 +335,10 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
               }}
               onKeyDown={stopCardActivationKey}
             >
-              <Trash2 className="h-4 w-4" aria-hidden />
+              <Trash2
+                className="h-4 w-4 drop-shadow-[0_1px_2px_rgba(0,0,0,0.65)]"
+                aria-hidden
+              />
             </Button>
             <AlertDialog
               open={deleteOpen}
