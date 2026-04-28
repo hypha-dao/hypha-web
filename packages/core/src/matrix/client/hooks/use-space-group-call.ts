@@ -7,6 +7,11 @@ import { GroupCallEventHandlerEvent } from 'matrix-js-sdk/lib/webrtc/groupCallEv
 import { useMatrix } from '../providers/matrix-provider';
 import { isPermissionLikeGroupCallError } from './space-group-call-utils';
 import { logSpaceGroupCallEvent } from './space-group-call-telemetry';
+import { matrixGroupCallSummaryStatsMsFromEnv } from '../matrix-webrtc-env';
+import {
+  attachGroupCallWebRtcDiagnostics,
+  probeMatrixTurnServerReadiness,
+} from './group-call-webrtc-diagnostics';
 import type { SpaceGroupCallState } from './space-group-call-state';
 
 export type { SpaceGroupCallState } from './space-group-call-state';
@@ -30,6 +35,9 @@ const REMOTE_MEDIA_STALL_MS = 45_000;
 
 /** Dev console: periodic sample of feeds vs participant map (not every Matrix event). */
 const MEDIA_SNAPSHOT_INTERVAL_MS = 12_000;
+
+/** Matrix SDK group-call summary stats interval (`NEXT_PUBLIC_MATRIX_WEBRTC_GROUP_STATS_MS`). */
+const GROUP_WEBRTC_SUMMARY_STATS_MS = matrixGroupCallSummaryStatsMsFromEnv();
 
 /** `callSessionId` for correlation; must not use `Math.random()` (CodeQL / GAS-weak-randomness). */
 function newCallSessionId(): string {
@@ -96,6 +104,7 @@ export function useSpaceGroupCall(roomId: string | null) {
   const lastRoomIdForTelemetryRef = useRef<string | null>(null);
   const activeGroupCallRoomIdRef = useRef<string | null>(null);
   const loggedStatsForGroupCallIdRef = useRef<string | null>(null);
+  const webRtcDiagCleanupRef = useRef<(() => void) | null>(null);
   /** Cleared on enter or teardown — abort endless "Connecting…" when enter() hangs. */
   const connectingStallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -158,6 +167,8 @@ export function useSpaceGroupCall(roomId: string | null) {
   const runCleanup = useCallback(() => {
     clearConnectingStallTimer();
     clearMediaDebugInterval();
+    webRtcDiagCleanupRef.current?.();
+    webRtcDiagCleanupRef.current = null;
     remoteMediaGapSinceRef.current = null;
     remoteMediaStallLoggedRef.current = false;
     remoteMediaStallBannerDismissedRef.current = false;
@@ -614,6 +625,18 @@ export function useSpaceGroupCall(roomId: string | null) {
       }
 
       clearConnectingStallTimer();
+
+      webRtcDiagCleanupRef.current?.();
+      webRtcDiagCleanupRef.current = null;
+      if (GROUP_WEBRTC_SUMMARY_STATS_MS > 0) {
+        webRtcDiagCleanupRef.current = attachGroupCallWebRtcDiagnostics({
+          gc,
+          roomId,
+          summaryStatsIntervalMs: GROUP_WEBRTC_SUMMARY_STATS_MS,
+        });
+      }
+
+      void probeMatrixTurnServerReadiness({ client, roomId, kind });
 
       setCallState('connected');
       refreshLocalPreview();

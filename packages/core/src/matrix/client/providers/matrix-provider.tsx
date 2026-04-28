@@ -27,6 +27,11 @@ import {
   mergeMatrixMentionsIntoContent,
   resolveMentionUserIdsForSend,
 } from '../../mentions';
+import {
+  matrixWebRtcFallbackIceAllowedFromEnv,
+  matrixWebRtcForceTurnFromEnv,
+  matrixWebRtcIceCandidatePoolSizeFromEnv,
+} from '../matrix-webrtc-env';
 
 export interface SendAttachmentInput {
   file: File;
@@ -396,9 +401,9 @@ export const MatrixProvider: React.FC<MatrixProviderProps> = ({ children }) => {
           disableVoip: false,
           useE2eForGroupCall: true,
           useLivekitForGroupCalls: false,
-          forceTURN: false,
-          fallbackICEServerAllowed: false,
-          iceCandidatePoolSize: 0,
+          forceTURN: matrixWebRtcForceTurnFromEnv(),
+          fallbackICEServerAllowed: matrixWebRtcFallbackIceAllowedFromEnv(),
+          iceCandidatePoolSize: matrixWebRtcIceCandidatePoolSizeFromEnv(),
         });
 
         await matrixClient.startClient();
