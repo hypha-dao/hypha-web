@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as MatrixSdk from 'matrix-js-sdk';
-import { RoomStateEvent } from 'matrix-js-sdk';
+import { ClientEvent, RoomStateEvent } from 'matrix-js-sdk';
 import { GroupCallEventHandlerEvent } from 'matrix-js-sdk/lib/webrtc/groupCallEventHandler';
 import { useMatrix } from '../providers/matrix-provider';
 import { isPermissionLikeGroupCallError } from './space-group-call-utils';
@@ -1019,6 +1019,26 @@ export function useSpaceGroupCall(roomId: string | null) {
       sync();
     };
 
+    /**
+     * Last member leaving updates `m.group_call_member` state without always firing
+     * `GroupCallEvent.ParticipantsChanged`, so the Join strip could stay stale.
+     * Debounce — member state can fan out several updates per sync.
+     */
+    let idleRoomDebounce: ReturnType<typeof setTimeout> | null = null;
+    const bumpIdleFromRoomState = () => {
+      if (idleRoomDebounce != null) clearTimeout(idleRoomDebounce);
+      idleRoomDebounce = setTimeout(() => {
+        idleRoomDebounce = null;
+        sync();
+      }, 150);
+    };
+
+    const roomObj = client.getRoom(roomId);
+    if (roomObj) {
+      roomObj.on(RoomStateEvent.Update, bumpIdleFromRoomState);
+    }
+    client.on(ClientEvent.Sync, bumpIdleFromRoomState);
+
     /* Subscribe before the first `sync` so we do not miss `GroupCall.incoming` (was "alone until reload"). */
     client.on(
       GroupCallEventHandlerEvent.Incoming,
@@ -1031,6 +1051,9 @@ export function useSpaceGroupCall(roomId: string | null) {
     sync();
 
     const unsub = () => {
+      if (idleRoomDebounce != null) clearTimeout(idleRoomDebounce);
+      roomObj?.off(RoomStateEvent.Update, bumpIdleFromRoomState);
+      client.removeListener(ClientEvent.Sync, bumpIdleFromRoomState);
       unwatchParticipants();
       client.removeListener(
         GroupCallEventHandlerEvent.Incoming,
