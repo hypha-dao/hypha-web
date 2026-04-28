@@ -69,12 +69,30 @@ const BADGE_COLOR_VARIANT_MAP: Record<string, BadgeProps['colorVariant']> = {
 
 type SignalColorVariant = NonNullable<BadgeProps['colorVariant']>;
 
-const HERO_PRIORITY_OVERLAY_CLASS_MAP: Record<SignalColorVariant, string> = {
-  accent: 'bg-accent-9/18',
-  error: 'bg-error-9/18',
-  warn: 'bg-warning-9/18',
-  success: 'bg-success-9/18',
-  neutral: 'bg-neutral-9/18',
+const HERO_PRIORITY_WASH_CLASS_MAP: Record<SignalColorVariant, string> = {
+  accent: 'bg-accent-9/22',
+  error: 'bg-error-9/24',
+  warn: 'bg-warning-9/23',
+  success: 'bg-success-9/22',
+  neutral: 'bg-neutral-9/20',
+};
+
+const HERO_PRIORITY_SPOTLIGHT_CLASS_MAP: Record<SignalColorVariant, string> = {
+  accent: 'bg-gradient-to-bl from-accent-9/70 via-accent-8/35 to-transparent',
+  error: 'bg-gradient-to-bl from-error-9/75 via-error-8/40 to-transparent',
+  warn: 'bg-gradient-to-bl from-warning-9/75 via-warning-8/40 to-transparent',
+  success:
+    'bg-gradient-to-bl from-success-9/70 via-success-8/35 to-transparent',
+  neutral:
+    'bg-gradient-to-bl from-neutral-9/65 via-neutral-8/35 to-transparent',
+};
+
+const HERO_PRIORITY_VIGNETTE_CLASS_MAP: Record<SignalColorVariant, string> = {
+  accent: 'bg-gradient-to-r from-black/20 via-transparent to-accent-10/20',
+  error: 'bg-gradient-to-r from-black/22 via-transparent to-error-10/22',
+  warn: 'bg-gradient-to-r from-black/22 via-transparent to-warning-10/22',
+  success: 'bg-gradient-to-r from-black/20 via-transparent to-success-10/20',
+  neutral: 'bg-gradient-to-r from-black/20 via-transparent to-neutral-10/18',
 };
 
 export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
@@ -292,7 +310,21 @@ export const SignalCard: React.FC<SignalCardProps & Coherence> = ({
           <div
             className={cn(
               'absolute inset-0 pointer-events-none',
-              HERO_PRIORITY_OVERLAY_CLASS_MAP[priorityColorVariant],
+              HERO_PRIORITY_WASH_CLASS_MAP[priorityColorVariant],
+            )}
+            aria-hidden
+          />
+          <div
+            className={cn(
+              'pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full blur-2xl',
+              HERO_PRIORITY_SPOTLIGHT_CLASS_MAP[priorityColorVariant],
+            )}
+            aria-hidden
+          />
+          <div
+            className={cn(
+              'absolute inset-0 pointer-events-none',
+              HERO_PRIORITY_VIGNETTE_CLASS_MAP[priorityColorVariant],
             )}
             aria-hidden
           />
