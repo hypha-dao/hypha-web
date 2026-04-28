@@ -1808,8 +1808,9 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
       };
     }
     const room = client.getRoom(roomId);
+    /** `mergedMessages.length` omitted — it changed on every timeline row and re-ran a full timeline scan per sync batch. */
     return computeHumanChatUnreadState(room ?? undefined, currentUserId);
-  }, [client, roomId, currentUserId, unreadBump, mergedMessages.length]);
+  }, [client, roomId, currentUserId, unreadBump]);
 
   /** `unreadBump` intentionally omitted — it was re-running the all-rooms scan on every timeline event. */
   const aggregateMentionBadge = useMemo(() => {
@@ -1928,14 +1929,67 @@ export function HumanRightPanel({ useMembers }: HumanRightPanelProps) {
     return () => {
       cancelled = true;
     };
+  }, [mode, roomId, pathname, router, searchParams, openHumanChatPanel]);
+
+  /**
+   * When `?msg=` is present, retry locating the row after the timeline grows (initial effect may run
+   * before messages arrive). One rAF per `messages.length` change — not merged list length tricks.
+   */
+  const deepLinkEventId =
+    mode === 'space' ? searchParams?.get('msg')?.trim() : undefined;
+  useEffect(() => {
+    if (!deepLinkEventId || !roomId) return;
+    const qpChat = searchParams?.get('chat')?.trim();
+    const sameRoom =
+      (!qpChat && Boolean(roomId)) || (qpChat && qpChat === roomId);
+    if (!sameRoom) return;
+
+    let cancelled = false;
+    const tryOnce = () => {
+      if (cancelled) return;
+      const escaped =
+        typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+          ? CSS.escape(deepLinkEventId)
+          : deepLinkEventId.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+      const el = document.querySelector(
+        `[data-matrix-event-id="${escaped}"]`,
+      ) as HTMLElement | null;
+      if (!el) return;
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      el.classList.add(
+        'ring-2',
+        'ring-primary',
+        'rounded-sm',
+        'transition-shadow',
+      );
+      window.setTimeout(() => {
+        el.classList.remove(
+          'ring-2',
+          'ring-primary',
+          'rounded-sm',
+          'transition-shadow',
+        );
+      }, 2400);
+      const next = new URLSearchParams(searchParams?.toString() ?? '');
+      next.delete('chat');
+      next.delete('msg');
+      const qs = next.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    };
+
+    const id = requestAnimationFrame(tryOnce);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(id);
+    };
   }, [
-    mode,
+    deepLinkEventId,
     roomId,
+    messages.length,
+    mode,
     pathname,
     router,
     searchParams,
-    mergedMessages.length,
-    openHumanChatPanel,
   ]);
 
   const handleReplyToMessage = useCallback(
